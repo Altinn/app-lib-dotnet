@@ -1,9 +1,39 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFrameworks>net6.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <AdditionalFiles Include="..\stylecop.json" Link="stylecop.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\..\..\..\Users\rbi\.nuget\packages\altinn.common.pep\1.0.39\contentFiles\any\netcoreapp3.1\appsettings.Development.json" Link="appsettings.Development.json">
+      <Private>False</Private>
+      <NuGetPackageVersion>1.0.39</NuGetPackageVersion>
+      <NuGetItemType>Content</NuGetItemType>
+      <NuGetPackageId>Altinn.Common.PEP</NuGetPackageId>
+      <Pack>false</Pack>
+    </Content>
+    <Content Include="..\..\..\..\Users\rbi\.nuget\packages\altinn.common.pep\1.0.39\contentFiles\any\netcoreapp3.1\appsettings.json" Link="appsettings.json">
+      <Private>False</Private>
+      <NuGetPackageVersion>1.0.39</NuGetPackageVersion>
+      <NuGetItemType>Content</NuGetItemType>
+      <NuGetPackageId>Altinn.Common.PEP</NuGetPackageId>
+      <Pack>false</Pack>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Altinn.Common.AccessTokenClient" Version="1.0.5" />
+    <PackageReference Include="Altinn.Common.EFormidlingClient" Version="1.2.0" />
+    <PackageReference Include="Altinn.Platform.Models" Version="1.1.1" />
+    <PackageReference Include="Altinn.Platform.Storage.Interface" Version="3.11.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+  </ItemGroup>
 </Project>
