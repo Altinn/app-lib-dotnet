@@ -5,7 +5,7 @@ VisualStudioVersion = 17.0.31912.275
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Altinn.App.Api", "src\Altinn.App.Api\Altinn.App.Api.csproj", "{E8F29FE8-6B62-41F1-A08C-2A318DD08BB4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Altinn.App.PlatformServices.Tests", "test\Altinn.App.PlatformServices.Tests\Altinn.App.PlatformServices.Tests.csproj", "{17D7DCE9-7797-4BC1-B448-D0529FD6FB3D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Altinn.App.Core.Tests", "test\Altinn.App.Core.Tests\Altinn.App.Core.Tests.csproj", "{17D7DCE9-7797-4BC1-B448-D0529FD6FB3D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Altinn.App.Api.Tests", "test\Altinn.App.Api.Tests\Altinn.App.Api.Tests.csproj", "{2FD56505-1DB2-4AE1-8911-E076E535EAC6}"
 EndProject

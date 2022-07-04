@@ -4,6 +4,8 @@
     <TargetFrameworks>net6.0</TargetFrameworks>
 
     <IsPackable>false</IsPackable>
+
+    <RootNamespace>Altinn.App.PlatformServices.Tests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -36,7 +38,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Altinn.App.Core\Altinn.App.Core.csproj" />
+    <ProjectReference Include="..\..\src\Altinn.App.Core\Altinn.App.Core.csproj" />
   </ItemGroup>
 
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
