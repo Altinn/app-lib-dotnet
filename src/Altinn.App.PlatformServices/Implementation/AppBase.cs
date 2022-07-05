@@ -109,7 +109,7 @@ namespace Altinn.App.Services.Implementation
         }
 
         /// <inheritdoc />
-        public virtual Task<bool> RunProcessDataWrite(Instance instance, Guid? dataId, object data)
+        public virtual Task<bool> RunProcessDataWrite(Instance instance, Guid? dataId, object data, Dictionary<string, object> currentFields)
         {
             return Task.FromResult(false);
         }

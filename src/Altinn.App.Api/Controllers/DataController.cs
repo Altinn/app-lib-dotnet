@@ -535,7 +535,6 @@ namespace Altinn.App.Api.Controllers
         private async Task<ActionResult> PutFormData(string org, string app, Instance instance, Guid dataGuid, string dataType)
         {
             int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
-
             string classRef = _appResourcesService.GetClassRefForLogicDataType(dataType);
             Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
 
@@ -553,7 +552,20 @@ namespace Altinn.App.Api.Controllers
             }
 
             string serviceModelJsonString = JsonSerializer.Serialize(serviceModel);
-            bool changedByCalculation = await _altinnApp.RunProcessDataWrite(instance, dataGuid, serviceModel);
+
+            var formData = await _dataClient.GetFormData(instanceGuid, serviceModel.GetType(), org, app, instanceOwnerPartyId, dataGuid);
+            string formDataJsonString = JsonSerializer.Serialize(formData);
+            Dictionary<string, object> currentFields = new();
+            try
+            {
+                currentFields = JsonHelper.FindChangedFields(formDataJsonString, serviceModelJsonString);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Unable to determine changed fields");
+            }
+
+            bool changedByCalculation = await _altinnApp.RunProcessDataWrite(instance, dataGuid, serviceModel, currentFields);
 
             await UpdatePresentationTextsOnInstance(instance, dataType, serviceModel);
             await UpdateDataValuesOnInstance(instance, dataType, serviceModel);
