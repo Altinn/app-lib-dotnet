@@ -103,7 +103,7 @@ namespace Altinn.App.Services.Interface
         /// <param name="instance">Instance that data belongs to</param>
         /// <param name="dataId">Data id for the  data</param>
         /// <param name="data">The data to perform calculations on</param>
-        Task<bool> RunProcessDataWrite(Instance instance, Guid? dataId, object data, Dictionary<string, object> currentFields);
+        Task<bool> RunProcessDataWrite(Instance instance, Guid? dataId, object data);
 
         /// <summary>
         /// Is called to run custom instantiation validation defined by app developer.

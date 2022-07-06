@@ -22,6 +22,7 @@ using Altinn.Platform.Storage.Interface.Models;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 
@@ -41,6 +42,7 @@ namespace Altinn.App.Api.Controllers
         private readonly IAltinnApp _altinnApp;
         private readonly IAppResources _appResourcesService;
         private readonly IPrefill _prefillService;
+        private readonly IServiceProvider _serviceProvider;
 
         private const long REQUEST_SIZE_LIMIT = 2000 * 1024 * 1024;
 
@@ -59,15 +61,16 @@ namespace Altinn.App.Api.Controllers
             IData dataClient,
             IAltinnApp altinnApp,
             IAppResources appResourcesService,
-            IPrefill prefillService)
+            IPrefill prefillService,
+            IServiceProvider serviceProvider)
         {
             _logger = logger;
-
             _instanceClient = instanceClient;
             _dataClient = dataClient;
             _altinnApp = altinnApp;
             _appResourcesService = appResourcesService;
             _prefillService = prefillService;
+            _serviceProvider = serviceProvider;
         }
 
         /// <summary>
@@ -553,19 +556,31 @@ namespace Altinn.App.Api.Controllers
 
             string serviceModelJsonString = JsonSerializer.Serialize(serviceModel);
 
-            var formData = await _dataClient.GetFormData(instanceGuid, serviceModel.GetType(), org, app, instanceOwnerPartyId, dataGuid);
-            string formDataJsonString = JsonSerializer.Serialize(formData);
-            Dictionary<string, object> currentFields = new();
-            try
+            bool changedByCalculation;
+            using (var scope = _serviceProvider.CreateScope())
             {
-                currentFields = JsonHelper.FindChangedFields(formDataJsonString, serviceModelJsonString);
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "Unable to determine changed fields");
-            }
+                var dataProcessing = scope.ServiceProvider.GetService<IDataProcessing>();
+                if (dataProcessing is not null)
+                {
+                    var formData = await _dataClient.GetFormData(instanceGuid, serviceModel.GetType(), org, app, instanceOwnerPartyId, dataGuid);
+                    string formDataJsonString = JsonSerializer.Serialize(formData);
+                    Dictionary<string, object> currentFields = new();
+                    try
+                    {
+                        currentFields = JsonHelper.FindChangedFields(formDataJsonString, serviceModelJsonString);
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogError(e, "Unable to determine changed fields");
+                    }
 
-            bool changedByCalculation = await _altinnApp.RunProcessDataWrite(instance, dataGuid, serviceModel, currentFields);
+                    changedByCalculation = await dataProcessing.RunProcessDataWriteNEW(instance, dataGuid, serviceModel, currentFields);
+                }
+                else
+                {
+                    changedByCalculation = await _altinnApp.RunProcessDataWrite(instance, dataGuid, serviceModel);
+                }
+            }
 
             await UpdatePresentationTextsOnInstance(instance, dataType, serviceModel);
             await UpdateDataValuesOnInstance(instance, dataType, serviceModel);

@@ -28,7 +28,7 @@ namespace Altinn.App.Services.Implementation
     /// <summary>
     /// Default implementation of the core Altinn App interface.
     /// </summary>
-    public abstract class AppBase : IAltinnApp
+    public abstract class AppBase : IAltinnApp, IDataProcessing
     {
         private readonly Application _appMetadata;
         private readonly IAppResources _resourceService;
@@ -109,7 +109,13 @@ namespace Altinn.App.Services.Implementation
         }
 
         /// <inheritdoc />
-        public virtual Task<bool> RunProcessDataWrite(Instance instance, Guid? dataId, object data, Dictionary<string, object> currentFields)
+        public virtual Task<bool> RunProcessDataWrite(Instance instance, Guid? dataId, object data)
+        {
+            return Task.FromResult(false);
+        }
+
+        /// <inheritdoc />
+        public virtual Task<bool> RunProcessDataWriteNEW(Instance instance, Guid? dataId, object data, Dictionary<string, object> currentFields)
         {
             return Task.FromResult(false);
         }
