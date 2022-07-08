@@ -1,6 +1,7 @@
 using System;
 
 using Altinn.App.Core.Implementation;
+using Altinn.App.Core.Infrastructure.Storage.HttpClients;
 using Altinn.App.Core.Interface;
 using Altinn.App.PlatformServices.Implementation;
 using Altinn.App.PlatformServices.Interface;

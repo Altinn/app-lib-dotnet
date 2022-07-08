@@ -1,8 +1,5 @@
-using System;
 using System.Net;
-using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Threading.Tasks;
 
 using Altinn.App.Services.Configuration;
 using Altinn.App.Services.Constants;
@@ -14,7 +11,7 @@ using Microsoft.Extensions.Options;
 
 using Newtonsoft.Json;
 
-namespace Altinn.App.Services.Implementation
+namespace Altinn.App.Core.Infrastructure.Storage.HttpClients
 {
     /// <summary>
     /// Client for retrieving application for Altinn Platform
