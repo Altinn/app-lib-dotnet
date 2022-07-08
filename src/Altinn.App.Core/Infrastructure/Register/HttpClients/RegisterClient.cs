@@ -1,8 +1,5 @@
-using System;
 using System.Net;
-using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Threading.Tasks;
 using Altinn.App.PlatformServices.Extensions;
 using Altinn.App.PlatformServices.Helpers;
 using Altinn.App.Services.Configuration;
@@ -17,7 +14,7 @@ using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using IRegister = Altinn.App.Services.Interface.IRegister;
 
-namespace Altinn.App.Services.Implementation
+namespace Altinn.App.Core.Infrastructure.Register.HttpClients
 {
     /// <summary>
     /// A client for retrieving register data from Altinn Platform.
@@ -93,13 +90,13 @@ namespace Altinn.App.Services.Implementation
             string endpointUrl = $"parties/{partyId}";
             string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
             HttpResponseMessage response = await _client.GetAsync(token, endpointUrl, _accessTokenGenerator.GenerateAccessToken(_appResources.GetApplication().Org, _appResources.GetApplication().Id.Split("/")[1]));
-            if (response.StatusCode == System.Net.HttpStatusCode.OK)
+            if (response.StatusCode == HttpStatusCode.OK)
             {
                 party = await response.Content.ReadAsAsync<Party>();
             }
-            else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            else if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
-                 throw new ServiceException(HttpStatusCode.Unauthorized, "Unauthorized for party");
+                throw new ServiceException(HttpStatusCode.Unauthorized, "Unauthorized for party");
             }
             else
             {
@@ -121,7 +118,7 @@ namespace Altinn.App.Services.Implementation
             content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
             HttpRequestMessage request = new HttpRequestMessage
             {
-                RequestUri = new System.Uri(endpointUrl, System.UriKind.Relative),
+                RequestUri = new Uri(endpointUrl, UriKind.Relative),
                 Method = HttpMethod.Post,
                 Content = content
             };
