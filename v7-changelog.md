@@ -3,4 +3,5 @@
    - Kept namespacesd and folder structure
    - Consolidated all Nuget packages
    - Removed support for .Net5.0
-3. 
+3. Moved and grouped http clients into new namespaces
+   - From Implementation folder to Altinn.App.Core.Infrastructure.[Area].HttpClients where area is Register, Storage
