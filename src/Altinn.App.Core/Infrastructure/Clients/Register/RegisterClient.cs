@@ -14,7 +14,7 @@ using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using IRegister = Altinn.App.Services.Interface.IRegister;
 
-namespace Altinn.App.Core.Infrastructure.Register.HttpClients
+namespace Altinn.App.Core.Infrastructure.Clients.Register
 {
     /// <summary>
     /// A client for retrieving register data from Altinn Platform.

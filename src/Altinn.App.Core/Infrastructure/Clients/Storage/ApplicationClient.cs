@@ -11,7 +11,7 @@ using Microsoft.Extensions.Options;
 
 using Newtonsoft.Json;
 
-namespace Altinn.App.Core.Infrastructure.Storage.HttpClients
+namespace Altinn.App.Core.Infrastructure.Clients.Storage
 {
     /// <summary>
     /// Client for retrieving application for Altinn Platform

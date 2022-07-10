@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Altinn.App.Core.Infrastructure.Register.HttpClients
+namespace Altinn.App.Core.Infrastructure.Clients.Register
 {
     /// <summary>
     /// A client for retriecing DSF data from Altinn Platform.
