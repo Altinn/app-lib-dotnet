@@ -2,18 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-using Altinn.App.Common.Serialization;
+using Altinn.App.Core.Interface;
 using Altinn.App.PlatformServices.Models;
-using Altinn.App.Services.Implementation;
 using Altinn.App.Services.Interface;
-using Altinn.Platform.Storage.Interface.Models;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace Altinn.App.Api.Controllers
 {
@@ -25,9 +22,9 @@ namespace Altinn.App.Api.Controllers
     [Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/pages")]
     public class PagesController : ControllerBase
     {
-        private readonly IAltinnApp _altinnApp;
-        private readonly IPageOrder _pageOrder;
+        private readonly IAppModelHandler _appModelHandler;
         private readonly IAppResources _resources;
+        private readonly IPageOrder _pageOrder;
         private readonly ILogger _logger;
 
         /// <summary>
@@ -37,9 +34,13 @@ namespace Altinn.App.Api.Controllers
         /// <param name="resources">The app resource service</param>
         /// <param name="logger">A logger provided by the logging framework.</param>
         /// <param name="pageOrder">The page order service</param>
-        public PagesController(IAltinnApp altinnApp, IAppResources resources, IPageOrder pageOrder, ILogger<PagesController> logger)
+        public PagesController(
+            IAppModelHandler appModelHandler,
+            IAppResources resources, 
+            IPageOrder pageOrder, 
+            ILogger<PagesController> logger)
         {
-            _altinnApp = altinnApp;
+            _appModelHandler = appModelHandler;
             _resources = resources;
             _pageOrder = pageOrder;
             _logger = logger;
@@ -67,7 +68,7 @@ namespace Altinn.App.Api.Controllers
 
             string classRef = _resources.GetClassRefForLogicDataType(dataTypeId);
 
-            object data = JsonConvert.DeserializeObject(formData.ToString(), _altinnApp.GetAppModelType(classRef));
+            object data = JsonConvert.DeserializeObject(formData.ToString(), _appModelHandler.GetModelType(classRef));
             return await _pageOrder.GetPageOrder(new AppIdentifier(org, app), new InstanceIdentifier(instanceOwnerPartyId, instanceGuid), layoutSetId, currentPage, dataTypeId, data);
         }
     }

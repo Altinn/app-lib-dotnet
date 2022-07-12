@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Altinn.App.Common.Models;
+﻿using Altinn.App.Common.Models;
 using Altinn.App.PlatformServices.Models;
 using Altinn.App.Services.Interface;
 
@@ -29,31 +26,18 @@ namespace Altinn.App.Services.Implementation
         /// <inheritdoc />
         public async Task<List<string>> GetPageOrder(AppIdentifier appIdentifier, InstanceIdentifier instanceIdentifier, string layoutSetId, string currentPage, string dataTypeId, object formData)
         {
-            if (instanceIdentifier.IsNoInstance)
+            LayoutSettings layoutSettings = null;
+
+            if (string.IsNullOrEmpty(layoutSetId))
             {
-                LayoutSettings layoutSettings = null;
-
-                if (string.IsNullOrEmpty(layoutSetId))
-                {
-                    layoutSettings = _resources.GetLayoutSettings();
-                }
-                else
-                {
-                    layoutSettings = _resources.GetLayoutSettingsForSet(layoutSetId);
-                }
-
-                return await Task.FromResult(layoutSettings.Pages.Order);
+                layoutSettings = _resources.GetLayoutSettings();
+            }
+            else
+            {
+                layoutSettings = _resources.GetLayoutSettingsForSet(layoutSetId);
             }
 
-            return await _altinnApp.GetPageOrder(
-                appIdentifier.Org,
-                appIdentifier.App,
-                instanceIdentifier.InstanceOwnerPartyId,
-                instanceIdentifier.InstanceGuid,
-                layoutSetId,
-                currentPage,
-                dataTypeId,
-                formData);
+            return await Task.FromResult(layoutSettings.Pages.Order);
         }
     }
 }

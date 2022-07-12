@@ -1,10 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-
-using Altinn.App.Common.Models;
+using Altinn.App.Core.Interface;
 using Altinn.App.PlatformServices.Interface;
 using Altinn.App.Services.Configuration;
 using Altinn.App.Services.Constants;
@@ -15,9 +9,7 @@ using Altinn.Common.AccessTokenClient.Services;
 using Altinn.Common.EFormidlingClient;
 using Altinn.Common.EFormidlingClient.Models.SBD;
 using Altinn.Platform.Storage.Interface.Models;
-
 using AltinnCore.Authentication.Utils;
-
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
@@ -28,10 +20,9 @@ namespace Altinn.App.Services.Implementation
     /// <summary>
     /// Default implementation of the core Altinn App interface.
     /// </summary>
-    public abstract class AppBase : IAltinnApp
+    public class AppBase : IAltinnApp
     {
         private readonly Application _appMetadata;
-        private readonly IAppResources _resourceService;
         private readonly ILogger<AppBase> _logger;
         private readonly IEFormidlingClient _eFormidlingClient;
         private readonly IHttpContextAccessor _httpContextAccessor;
@@ -42,6 +33,11 @@ namespace Altinn.App.Services.Implementation
         private readonly IInstance _instanceClient;
         private readonly IAccessTokenGenerator _tokenGenerator;
         private readonly PlatformSettings _platformSettings;
+        private readonly IValidationHandler _validationHandler;
+        private readonly IInstantiationHandler _instantiationHandler;
+        private readonly IDataProcessingHandler _dataProcessingHandler;
+        private readonly ITaskProcessingHandler _taskProcessingHandler;
+        private readonly IAppModelHandler _appModel;
 
         private readonly string _org;
         private readonly string _app;
@@ -60,7 +56,7 @@ namespace Altinn.App.Services.Implementation
         /// <param name="appSettings">The appsettings</param>
         /// <param name="platformSettings">The platform settings</param>
         /// <param name="tokenGenerator">The access token generator</param>
-        protected AppBase(
+        public AppBase(
             IAppResources resourceService,
             ILogger<AppBase> logger,
             IData dataClient,
@@ -68,13 +64,17 @@ namespace Altinn.App.Services.Implementation
             IPrefill prefillService,
             IInstance instanceClient,
             IHttpContextAccessor httpContextAccessor,
+            IInstantiationHandler instantiationHandler,
+            IValidationHandler validationHandler,
+            IDataProcessingHandler dataProcessingHandler,
+            ITaskProcessingHandler taskProcessingHandler,
+            IAppModelHandler appModel,
             IEFormidlingClient eFormidlingClient = null,
             IOptions<AppSettings> appSettings = null,
             IOptions<PlatformSettings> platformSettings = null,
             IAccessTokenGenerator tokenGenerator = null)
         {
             _appMetadata = resourceService.GetApplication();
-            _resourceService = resourceService;
             _logger = logger;
             _dataClient = dataClient;
             _pdfService = pdfService;
@@ -85,52 +85,57 @@ namespace Altinn.App.Services.Implementation
             _eFormidlingClient = eFormidlingClient;
             _tokenGenerator = tokenGenerator;
             _platformSettings = platformSettings?.Value;
+            _validationHandler = validationHandler;
+            _instantiationHandler = instantiationHandler;
+            _dataProcessingHandler = dataProcessingHandler;
+            _taskProcessingHandler = taskProcessingHandler;
+            _appModel = appModel;
 
             _org = _appMetadata.Org;
             _app = _appMetadata.Id.Split("/")[1];
         }
 
         /// <inheritdoc />
-        public abstract Type GetAppModelType(string classRef);
-
-        /// <inheritdoc />
-        public abstract object CreateNewAppModel(string classRef);
-
-        /// <inheritdoc />
-        public abstract Task RunDataValidation(object data, ModelStateDictionary validationResults);
-
-        /// <inheritdoc />
-        public abstract Task RunTaskValidation(Instance instance, string taskId, ModelStateDictionary validationResults);
-
-        /// <inheritdoc />
-        public virtual Task<bool> RunProcessDataRead(Instance instance, Guid? dataId, object data)
+        public async Task RunDataValidation(object data, ModelStateDictionary validationResults)
         {
-            return Task.FromResult(false);
+            await _validationHandler.ValidateData(data, validationResults);
         }
 
         /// <inheritdoc />
-        public virtual Task<bool> RunProcessDataWrite(Instance instance, Guid? dataId, object data)
+        public async Task RunTaskValidation(Instance instance, string taskId, ModelStateDictionary validationResults)
         {
-            return Task.FromResult(false);
+            await _validationHandler.ValidateTask(instance, taskId, validationResults);
         }
 
         /// <inheritdoc />
-        public abstract Task<InstantiationValidationResult> RunInstantiationValidation(Instance instance);
-
-        /// <inheritdoc />
-        public virtual Task RunDataCreation(Instance instance, object data)
+        public async Task<bool> RunProcessDataRead(Instance instance, Guid? dataId, object data)
         {
-            return Task.CompletedTask;
+            return await _dataProcessingHandler.ProcessDataRead(instance, dataId, data);
         }
 
         /// <inheritdoc />
-        public virtual Task RunDataCreation(Instance instance, object data, Dictionary<string, string> prefill)
+        public async Task<bool> RunProcessDataWrite(Instance instance, Guid? dataId, object data)
         {
-            throw new NotImplementedException("RunDataCreation with external prefill not implemented in app");
+            return await _dataProcessingHandler.ProcessDataWrite(instance, dataId, data);
         }
 
         /// <inheritdoc />
-        public abstract Task RunProcessTaskEnd(string taskId, Instance instance);
+        public async Task<InstantiationValidationResult> RunInstantiationValidation(Instance instance)
+        {
+            return await _instantiationHandler.RunInstantiationValidation(instance);
+        }
+
+        /// <inheritdoc />
+        public async Task RunDataCreation(Instance instance, object data, Dictionary<string, string> prefill)
+        {
+            await _instantiationHandler.DataCreation(instance, data, prefill);
+        }
+
+        /// <inheritdoc />
+        public async Task RunProcessTaskEnd(string taskId, Instance instance)
+        {
+            await _taskProcessingHandler.ProcessTaskEnd(taskId, instance);
+        }
 
         /// <inheritdoc />
         public Task<string> OnInstantiateGetStartEvent()
@@ -174,7 +179,8 @@ namespace Altinn.App.Services.Implementation
                 }
             }
 
-            foreach (DataType dataType in _appMetadata.DataTypes.Where(dt => dt.TaskId == taskId && dt.AppLogic?.AutoCreate == true))
+            foreach (DataType dataType in _appMetadata.DataTypes.Where(dt =>
+                         dt.TaskId == taskId && dt.AppLogic?.AutoCreate == true))
             {
                 _logger.LogInformation($"Auto create data element: {dataType.Id}");
 
@@ -182,23 +188,16 @@ namespace Altinn.App.Services.Implementation
 
                 if (dataElement == null)
                 {
-                    dynamic data = CreateNewAppModel(dataType.AppLogic.ClassRef);
+                    dynamic data = _appModel.Create(dataType.AppLogic.ClassRef);
 
                     // runs prefill from repo configuration if config exists
                     await _prefillService.PrefillDataModel(instance.InstanceOwner.PartyId, dataType.Id, data, prefill);
-                    try
-                    {
-                        await RunDataCreation(instance, data, prefill);
-                    }
-                    catch (NotImplementedException)
-                    {
-                        // Trigger application business logic the old way. DEPRICATED
-                        await RunDataCreation(instance, data);
-                    }
+                    await RunDataCreation(instance, data, prefill);
 
-                    Type type = GetAppModelType(dataType.AppLogic.ClassRef);
+                    Type type = _appModel.GetModelType(dataType.AppLogic.ClassRef);
 
-                    DataElement createdDataElement = await _dataClient.InsertFormData(instance, dataType.Id, data, type);
+                    DataElement createdDataElement =
+                        await _dataClient.InsertFormData(instance, dataType.Id, data, type);
                     instance.Data.Add(createdDataElement);
 
                     await UpdatePresentationTextsOnInstance(instance, dataType.Id, data);
@@ -210,7 +209,8 @@ namespace Altinn.App.Services.Implementation
         }
 
         /// <inheritdoc />
-        public async Task<bool> CanEndProcessTask(string taskId, Instance instance, List<ValidationIssue> validationIssues)
+        public async Task<bool> CanEndProcessTask(string taskId, Instance instance,
+            List<ValidationIssue> validationIssues)
         {
             // check if the task is validated
             if (instance.Process?.CurrentTask?.Validated != null)
@@ -255,8 +255,9 @@ namespace Altinn.App.Services.Implementation
 
                     if (generatePdf)
                     {
-                        Type dataElementType = GetAppModelType(dataType.AppLogic.ClassRef);
-                        Task createPdf = _pdfService.GenerateAndStoreReceiptPDF(instance, taskId, dataElement, dataElementType);
+                        Type dataElementType = _appModel.GetModelType(dataType.AppLogic.ClassRef);
+                        Task createPdf =
+                            _pdfService.GenerateAndStoreReceiptPDF(instance, taskId, dataElement, dataElementType);
                         await Task.WhenAll(updateData, createPdf);
                     }
                     else
@@ -266,11 +267,13 @@ namespace Altinn.App.Services.Implementation
                 }
             }
 
-            if (_appSettings != null && _platformSettings != null && _appSettings.EnableEFormidling && _appMetadata.EFormidling.SendAfterTaskId == taskId)
+            if (_appSettings != null && _platformSettings != null && _appSettings.EnableEFormidling &&
+                _appMetadata.EFormidling.SendAfterTaskId == taskId)
             {
                 if (_eFormidlingClient == null || _tokenGenerator == null)
                 {
-                    throw new EntryPointNotFoundException("eFormidling support has not been correctly configured in App.cs. " +
+                    throw new EntryPointNotFoundException(
+                        "eFormidling support has not been correctly configured in App.cs. " +
                         "Ensure that IEformidlingClient and IAccessTokenGenerator are included in the base constructor.");
                 }
 
@@ -291,31 +294,16 @@ namespace Altinn.App.Services.Implementation
         {
             await RunProcessTaskEnd(taskId, instance);
 
-            _logger.LogInformation($"OnAbandonProcessTask for {instance.Id}. Locking data elements connected to {taskId}");
+            _logger.LogInformation(
+                $"OnAbandonProcessTask for {instance.Id}. Locking data elements connected to {taskId}");
             await Task.CompletedTask;
-        }
-
-        /// <inheritdoc />
-        public virtual async Task<List<string>> GetPageOrder(string org, string app, int instanceOwnerId, Guid instanceGuid, string layoutSetId, string currentPage, string dataTypeId, object formData)
-        {
-            LayoutSettings layoutSettings = null;
-
-            if (string.IsNullOrEmpty(layoutSetId))
-            {
-                layoutSettings = _resourceService.GetLayoutSettings();
-            }
-            else
-            {
-                layoutSettings = _resourceService.GetLayoutSettingsForSet(layoutSetId);
-            }
-
-            return await Task.FromResult(layoutSettings.Pages.Order);
         }
 
         /// <inheritdoc />
         public virtual Task<(string MetadataFilename, Stream Metadata)> GenerateEFormidlingMetadata(Instance instance)
         {
-            throw new NotImplementedException("No method available for generating arkivmelding for eFormidling shipment.");
+            throw new NotImplementedException(
+                "No method available for generating arkivmelding for eFormidling shipment.");
         }
 
         /// <inheritdoc />
@@ -345,9 +333,9 @@ namespace Altinn.App.Services.Implementation
             if (updatedValues.Count > 0)
             {
                 var updatedInstance = await _instanceClient.UpdatePresentationTexts(
-                      int.Parse(instance.Id.Split("/")[0]),
-                      Guid.Parse(instance.Id.Split("/")[1]),
-                      new PresentationTexts { Texts = updatedValues });
+                    int.Parse(instance.Id.Split("/")[0]),
+                    Guid.Parse(instance.Id.Split("/")[1]),
+                    new PresentationTexts { Texts = updatedValues });
 
                 instance.PresentationTexts = updatedInstance.PresentationTexts;
             }
@@ -384,21 +372,28 @@ namespace Altinn.App.Services.Implementation
                     continue;
                 }
 
-                bool appLogic = _appMetadata.DataTypes.Any(d => d.Id == dataElement.DataType && d.AppLogic?.ClassRef != null);
+                bool appLogic =
+                    _appMetadata.DataTypes.Any(d => d.Id == dataElement.DataType && d.AppLogic?.ClassRef != null);
 
                 string fileName = appLogic ? $"{dataElement.DataType}.xml" : dataElement.Filename;
-                using Stream stream = await _dataClient.GetBinaryData(_org, _app, instanceOwnerPartyId, instanceGuid, new Guid(dataElement.Id));
+                using Stream stream = await _dataClient.GetBinaryData(_org, _app, instanceOwnerPartyId, instanceGuid,
+                    new Guid(dataElement.Id));
 
-                bool successful = await _eFormidlingClient.UploadAttachment(stream, instanceGuid.ToString(), fileName, requestHeaders);
+                bool successful =
+                    await _eFormidlingClient.UploadAttachment(stream, instanceGuid.ToString(), fileName,
+                        requestHeaders);
 
                 if (!successful)
                 {
-                    _logger.LogError("// AppBase // SendInstanceData // DataElement {DataElementId} was not sent with shipment for instance {InstanceId} failed.", dataElement.Id, instance.Id);
+                    _logger.LogError(
+                        "// AppBase // SendInstanceData // DataElement {DataElementId} was not sent with shipment for instance {InstanceId} failed.",
+                        dataElement.Id, instance.Id);
                 }
             }
         }
 
-        private async Task<StandardBusinessDocument> ConstructStandardBusinessDocument(string instanceGuid, Instance instance)
+        private async Task<StandardBusinessDocument> ConstructStandardBusinessDocument(string instanceGuid,
+            Instance instance)
         {
             DateTime completedTime = DateTime.Now;
 
@@ -415,19 +410,19 @@ namespace Altinn.App.Services.Implementation
             List<Receiver> receivers = await GetEFormidlingReceivers(instance);
 
             Scope scope =
-            new Scope
-            {
-                Identifier = _appMetadata.EFormidling.Process,
-                InstanceIdentifier = Guid.NewGuid().ToString(),
-                Type = "ConversationId",
-                ScopeInformation = new List<ScopeInformation>
+                new Scope
+                {
+                    Identifier = _appMetadata.EFormidling.Process,
+                    InstanceIdentifier = Guid.NewGuid().ToString(),
+                    Type = "ConversationId",
+                    ScopeInformation = new List<ScopeInformation>
                     {
                         new ScopeInformation
                         {
                             ExpectedResponseDateTime = completedTime.AddHours(2)
                         }
                     },
-            };
+                };
 
             BusinessScope businessScope = new BusinessScope
             {
@@ -469,7 +464,8 @@ namespace Altinn.App.Services.Implementation
         private async Task SendEFormidlingShipment(Instance instance)
         {
             string accessToken = _tokenGenerator.GenerateAccessToken(_org, _app);
-            string authzToken = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _appSettings.RuntimeCookieName);
+            string authzToken =
+                JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _appSettings.RuntimeCookieName);
 
             var requestHeaders = new Dictionary<string, string>
             {
@@ -498,14 +494,16 @@ namespace Altinn.App.Services.Implementation
             }
             catch
             {
-                _logger.LogError("// AppBase // SendEFormidlingShipment // Shipment of instance {InstanceId} failed.", instance.Id);
+                _logger.LogError("// AppBase // SendEFormidlingShipment // Shipment of instance {InstanceId} failed.",
+                    instance.Id);
                 throw;
             }
         }
 
         private async Task AutoDeleteDataElements(Instance instance)
         {
-            List<string> typesToDelete = _appMetadata.DataTypes.Where(dt => dt?.AppLogic?.AutoDeleteOnProcessEnd == true).Select(dt => dt.Id).ToList();
+            List<string> typesToDelete = _appMetadata.DataTypes
+                .Where(dt => dt?.AppLogic?.AutoDeleteOnProcessEnd == true).Select(dt => dt.Id).ToList();
             if (typesToDelete.Count == 0)
             {
                 return;
@@ -519,12 +517,12 @@ namespace Altinn.App.Services.Implementation
             {
                 deleteTasks.Add(
                     _dataClient.DeleteData(
-                    _org,
-                    _app,
-                    int.Parse(instance.InstanceOwner.PartyId),
-                    Guid.Parse(item.InstanceGuid),
-                    Guid.Parse(item.Id),
-                    true));
+                        _org,
+                        _app,
+                        int.Parse(instance.InstanceOwner.PartyId),
+                        Guid.Parse(item.InstanceGuid),
+                        Guid.Parse(item.Id),
+                        true));
             }
 
             await Task.WhenAll(deleteTasks);

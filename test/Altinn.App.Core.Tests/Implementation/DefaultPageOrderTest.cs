@@ -22,34 +22,7 @@ namespace Altinn.App.PlatformServices.Tests.Implementation
         }
 
         [Fact]
-        public async Task GetPageOrder_Returns_PageOrder_From_IAltinnApp()
-        {
-            // Arrange
-            AppIdentifier appIdentifier = new AppIdentifier("ttd", "best-app");
-            Guid guid = Guid.NewGuid();
-            InstanceIdentifier instanceIdentifier = new InstanceIdentifier(1337, guid);
-            string layoutSetId = "layoutSetId";
-            string currentPage = "currentPage";
-            string dataTypeId = "dataTypeId";
-            object formData = new object();
-
-            List<string> expected = new List<string> { "page1", "page2" };
-            altinnAppMock.Setup(aa => aa.GetPageOrder("ttd", "best-app", 1337, guid, layoutSetId, currentPage, dataTypeId, formData)).Returns(Task.FromResult(expected));
-
-            // Act
-            DefaultPageOrder target = new DefaultPageOrder(altinnAppMock.Object, appResourcesMock.Object);
-
-            List<string> actual = await target.GetPageOrder(appIdentifier, instanceIdentifier, layoutSetId, currentPage, dataTypeId, formData);
-
-            // Assert
-            Assert.Equal(expected, actual);
-            altinnAppMock.Verify(aa => aa.GetPageOrder("ttd", "best-app", 1337, guid, layoutSetId, currentPage, dataTypeId, formData), Times.Once);
-            appResourcesMock.VerifyNoOtherCalls();
-            altinnAppMock.VerifyNoOtherCalls();
-        }
-
-        [Fact]
-        public async Task GetPageOrder_Returns_LayoutSettingsForSet_when_NoInstance_and_layoutSetId_is_defined()
+        public async Task GetPageOrder_Returns_LayoutSettingsForSet_when_layoutSetId_is_defined()
         {
             // Arrange
             AppIdentifier appIdentifier = new AppIdentifier("ttd", "best-app");
@@ -76,7 +49,7 @@ namespace Altinn.App.PlatformServices.Tests.Implementation
         }
 
         [Fact]
-        public async Task GetPageOrder_Returns_LayoutSettings_when_NoInstance_and_layoutSetId_is_null()
+        public async Task GetPageOrder_Returns_LayoutSettings_layoutSetId_is_null()
         {
             // Arrange
             AppIdentifier appIdentifier = new AppIdentifier("ttd", "best-app");

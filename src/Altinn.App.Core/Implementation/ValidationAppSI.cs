@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
+using Altinn.App.Core.Interface;
 using Altinn.App.Services.Configuration;
 using Altinn.App.Services.Interface;
 using Altinn.App.Services.Models.Validation;
@@ -28,6 +24,7 @@ namespace Altinn.App.Services.Implementation
         private readonly IData _dataService;
         private readonly IInstance _instanceService;
         private readonly IAltinnApp _altinnApp;
+        private readonly IAppModelHandler _appModelHandler;
         private readonly IAppResources _appResourcesService;
         private readonly IObjectModelValidator _objectModelValidator;
         private readonly IHttpContextAccessor _httpContextAccessor;
@@ -41,6 +38,7 @@ namespace Altinn.App.Services.Implementation
             IData dataService,
             IInstance instanceService,
             IAltinnApp altinnApp,
+            IAppModelHandler appModelHandler,
             IAppResources appResourcesService,
             IObjectModelValidator objectModelValidator,
             IHttpContextAccessor httpContextAccessor,
@@ -50,6 +48,7 @@ namespace Altinn.App.Services.Implementation
             _dataService = dataService;
             _instanceService = instanceService;
             _altinnApp = altinnApp;
+            _appModelHandler = appModelHandler;
             _appResourcesService = appResourcesService;
             _objectModelValidator = objectModelValidator;
             _httpContextAccessor = httpContextAccessor;
@@ -182,7 +181,7 @@ namespace Altinn.App.Services.Implementation
 
             if (dataType.AppLogic?.ClassRef != null)
             {
-                Type modelType = _altinnApp.GetAppModelType(dataType.AppLogic.ClassRef);
+                Type modelType = _appModelHandler.GetModelType(dataType.AppLogic.ClassRef);
                 Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
                 string app = instance.AppId.Split("/")[1];
                 int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
