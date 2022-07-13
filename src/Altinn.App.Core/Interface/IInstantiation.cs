@@ -4,9 +4,9 @@ using Altinn.Platform.Storage.Interface.Models;
 namespace Altinn.App.Core.Interface;
 
 /// <summary>
-/// IInstantiationHandler defines the methods that must be implemented by a class that handles instantiation of a process.
+/// IInstantiation defines the methods that must be implemented by a class that handles custom logic during instantiation of a new instance.
 /// </summary>
-public interface IInstantiationHandler
+public interface IInstantiation
 {
     /// <summary>
     /// Run validations related to instantiation
@@ -20,7 +20,7 @@ public interface IInstantiationHandler
     /// </example>
     /// <param name="instance">The instance being validated</param>
     /// <returns>The validation result object (null if no errors) </returns>
-    public Task<InstantiationValidationResult> RunInstantiationValidation(Instance instance);
+    public Task<InstantiationValidationResult> Validation(Instance instance);
     
     /// <summary>
     /// Run events related to instantiation

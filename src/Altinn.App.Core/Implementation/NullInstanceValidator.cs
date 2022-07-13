@@ -5,10 +5,10 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 namespace Altinn.App.Core.Implementation;
 
 /// <summary>
-/// Default implementation of the IValidationHandler interface.
+/// Default implementation of the IInstanceValidator interface.
 /// This implementation does not do any validation and always returns true.
 /// </summary>
-public class NullValidationHandler: IValidationHandler
+public class NullInstanceValidator: IInstanceValidator
 {
     /// <inheritdoc />
     public async Task ValidateData(object data, ModelStateDictionary validationResults)

@@ -19,22 +19,22 @@ namespace Altinn.App.Api.Controllers
     [AllowAnonymous]
     public class StatelessPagesController : ControllerBase
     {
-        private readonly IAppModelHandler _appModelHandler;
+        private readonly IAppModel _appModel;
         private readonly IAppResources _resources;
         private readonly IPageOrder _pageOrder;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PagesController"/> class.
         /// </summary>
-        /// <param name="altinnApp">The current App Core used to interface with custom logic</param>
+        /// <param name="appModel">The current appmodel implementation for getting the model Type</param>
         /// <param name="resources">The app resource service</param>
         /// <param name="pageOrder">The page order service</param>
         public StatelessPagesController(
-            IAppModelHandler appModelHandler, 
+            IAppModel appModel, 
             IAppResources resources, 
             IPageOrder pageOrder)
         {
-            _appModelHandler = appModelHandler;
+            _appModel = appModel;
             _resources = resources;
             _pageOrder = pageOrder;
         }
@@ -59,7 +59,7 @@ namespace Altinn.App.Api.Controllers
 
             string classRef = _resources.GetClassRefForLogicDataType(dataTypeId);
 
-            object data = JsonConvert.DeserializeObject(formData.ToString(), _appModelHandler.GetModelType(classRef));
+            object data = JsonConvert.DeserializeObject(formData.ToString(), _appModel.GetModelType(classRef));
             return await _pageOrder.GetPageOrder(new AppIdentifier(org, app), InstanceIdentifier.NoInstance, layoutSetId, currentPage, dataTypeId, data);
         }
     }

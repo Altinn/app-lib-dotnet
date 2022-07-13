@@ -5,7 +5,7 @@ namespace Altinn.App.Core.Interface;
 /// <summary>
 /// This interface defines all the methods that are required for overriding DataProcessing calls.
 /// </summary>
-public interface IDataProcessingHandler
+public interface IDataProcessor
 {
     /// <summary>
     /// Is called to run custom calculation events defined by app developer when data is read from app

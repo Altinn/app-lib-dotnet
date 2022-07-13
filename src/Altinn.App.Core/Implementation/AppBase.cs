@@ -33,11 +33,11 @@ namespace Altinn.App.Services.Implementation
         private readonly IInstance _instanceClient;
         private readonly IAccessTokenGenerator _tokenGenerator;
         private readonly PlatformSettings _platformSettings;
-        private readonly IValidationHandler _validationHandler;
-        private readonly IInstantiationHandler _instantiationHandler;
-        private readonly IDataProcessingHandler _dataProcessingHandler;
-        private readonly ITaskProcessingHandler _taskProcessingHandler;
-        private readonly IAppModelHandler _appModel;
+        private readonly IInstanceValidator _instanceValidator;
+        private readonly IInstantiation _instantiation;
+        private readonly IDataProcessor _dataProcessor;
+        private readonly ITaskProcessor _taskProcessor;
+        private readonly IAppModel _appModel;
 
         private readonly string _org;
         private readonly string _app;
@@ -64,11 +64,11 @@ namespace Altinn.App.Services.Implementation
             IPrefill prefillService,
             IInstance instanceClient,
             IHttpContextAccessor httpContextAccessor,
-            IInstantiationHandler instantiationHandler,
-            IValidationHandler validationHandler,
-            IDataProcessingHandler dataProcessingHandler,
-            ITaskProcessingHandler taskProcessingHandler,
-            IAppModelHandler appModel,
+            IInstantiation instantiation,
+            IInstanceValidator instanceValidator,
+            IDataProcessor dataProcessor,
+            ITaskProcessor taskProcessor,
+            IAppModel appModel,
             IEFormidlingClient eFormidlingClient = null,
             IOptions<AppSettings> appSettings = null,
             IOptions<PlatformSettings> platformSettings = null,
@@ -85,10 +85,10 @@ namespace Altinn.App.Services.Implementation
             _eFormidlingClient = eFormidlingClient;
             _tokenGenerator = tokenGenerator;
             _platformSettings = platformSettings?.Value;
-            _validationHandler = validationHandler;
-            _instantiationHandler = instantiationHandler;
-            _dataProcessingHandler = dataProcessingHandler;
-            _taskProcessingHandler = taskProcessingHandler;
+            _instanceValidator = instanceValidator;
+            _instantiation = instantiation;
+            _dataProcessor = dataProcessor;
+            _taskProcessor = taskProcessor;
             _appModel = appModel;
 
             _org = _appMetadata.Org;
@@ -98,43 +98,43 @@ namespace Altinn.App.Services.Implementation
         /// <inheritdoc />
         public async Task RunDataValidation(object data, ModelStateDictionary validationResults)
         {
-            await _validationHandler.ValidateData(data, validationResults);
+            await _instanceValidator.ValidateData(data, validationResults);
         }
 
         /// <inheritdoc />
         public async Task RunTaskValidation(Instance instance, string taskId, ModelStateDictionary validationResults)
         {
-            await _validationHandler.ValidateTask(instance, taskId, validationResults);
+            await _instanceValidator.ValidateTask(instance, taskId, validationResults);
         }
 
         /// <inheritdoc />
         public async Task<bool> RunProcessDataRead(Instance instance, Guid? dataId, object data)
         {
-            return await _dataProcessingHandler.ProcessDataRead(instance, dataId, data);
+            return await _dataProcessor.ProcessDataRead(instance, dataId, data);
         }
 
         /// <inheritdoc />
         public async Task<bool> RunProcessDataWrite(Instance instance, Guid? dataId, object data)
         {
-            return await _dataProcessingHandler.ProcessDataWrite(instance, dataId, data);
+            return await _dataProcessor.ProcessDataWrite(instance, dataId, data);
         }
 
         /// <inheritdoc />
         public async Task<InstantiationValidationResult> RunInstantiationValidation(Instance instance)
         {
-            return await _instantiationHandler.RunInstantiationValidation(instance);
+            return await _instantiation.Validation(instance);
         }
 
         /// <inheritdoc />
         public async Task RunDataCreation(Instance instance, object data, Dictionary<string, string> prefill)
         {
-            await _instantiationHandler.DataCreation(instance, data, prefill);
+            await _instantiation.DataCreation(instance, data, prefill);
         }
 
         /// <inheritdoc />
         public async Task RunProcessTaskEnd(string taskId, Instance instance)
         {
-            await _taskProcessingHandler.ProcessTaskEnd(taskId, instance);
+            await _taskProcessor.ProcessTaskEnd(taskId, instance);
         }
 
         /// <inheritdoc />

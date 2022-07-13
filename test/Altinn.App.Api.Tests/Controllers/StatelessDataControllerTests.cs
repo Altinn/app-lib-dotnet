@@ -26,7 +26,7 @@ public class StatelessDataControllerTests
     {
         // Arrange
         var altinnAppMock = new Mock<IAltinnApp>();
-        var altinnAppModelMock = new Mock<IAppModelHandler>();
+        var altinnAppModelMock = new Mock<IAppModel>();
         var appResourcesMock = new Mock<IAppResources>();
         var prefillMock = new Mock<IPrefill>();
         var registerMock = new Mock<IRegister>();
@@ -53,7 +53,7 @@ public class StatelessDataControllerTests
     {
         // Arrange
         var altinnAppMock = new Mock<IAltinnApp>();
-        var appModelMock = new Mock<IAppModelHandler>();
+        var appModelMock = new Mock<IAppModel>();
         var appResourcesMock = new Mock<IAppResources>();
         var prefillMock = new Mock<IPrefill>();
         var registerMock = new Mock<IRegister>();
@@ -84,7 +84,7 @@ public class StatelessDataControllerTests
     {
         // Arrange
         var altinnAppMock = new Mock<IAltinnApp>();
-        var appModelMock = new Mock<IAppModelHandler>();
+        var appModelMock = new Mock<IAppModel>();
         var appResourcesMock = new Mock<IAppResources>();
         var prefillMock = new Mock<IPrefill>();
         var registerMock = new Mock<IRegister>();
@@ -117,7 +117,7 @@ public class StatelessDataControllerTests
     {
         // Arrange
         var altinnAppMock = new Mock<IAltinnApp>();
-        var appModelMock = new Mock<IAppModelHandler>();
+        var appModelMock = new Mock<IAppModel>();
         var appResourcesMock = new Mock<IAppResources>();
         var prefillMock = new Mock<IPrefill>();
         var registerMock = new Mock<IRegister>();
@@ -150,7 +150,7 @@ public class StatelessDataControllerTests
     {
         // Arrange
         var altinnAppMock = new Mock<IAltinnApp>();
-        var appModelMock = new Mock<IAppModelHandler>();
+        var appModelMock = new Mock<IAppModel>();
         var appResourcesMock = new Mock<IAppResources>();
         var prefillMock = new Mock<IPrefill>();
         var registerMock = new Mock<IRegister>();
@@ -190,7 +190,7 @@ public class StatelessDataControllerTests
     {
         // Arrange
         var altinnAppMock = new Mock<IAltinnApp>();
-        var appModelMock = new Mock<IAppModelHandler>();
+        var appModelMock = new Mock<IAppModel>();
         var appResourcesMock = new Mock<IAppResources>();
         var prefillMock = new Mock<IPrefill>();
         var registerMock = new Mock<IRegister>();
@@ -242,7 +242,7 @@ public class StatelessDataControllerTests
     {
         // Arrange
         var altinnAppMock = new Mock<IAltinnApp>();
-        var appModelMock = new Mock<IAppModelHandler>();
+        var appModelMock = new Mock<IAppModel>();
         var appResourcesMock = new Mock<IAppResources>();
         var prefillMock = new Mock<IPrefill>();
         var registerMock = new Mock<IRegister>();

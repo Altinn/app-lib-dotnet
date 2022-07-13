@@ -22,7 +22,7 @@ namespace Altinn.App.Api.Controllers
     [Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/pages")]
     public class PagesController : ControllerBase
     {
-        private readonly IAppModelHandler _appModelHandler;
+        private readonly IAppModel _appModel;
         private readonly IAppResources _resources;
         private readonly IPageOrder _pageOrder;
         private readonly ILogger _logger;
@@ -35,12 +35,12 @@ namespace Altinn.App.Api.Controllers
         /// <param name="logger">A logger provided by the logging framework.</param>
         /// <param name="pageOrder">The page order service</param>
         public PagesController(
-            IAppModelHandler appModelHandler,
+            IAppModel appModel,
             IAppResources resources, 
             IPageOrder pageOrder, 
             ILogger<PagesController> logger)
         {
-            _appModelHandler = appModelHandler;
+            _appModel = appModel;
             _resources = resources;
             _pageOrder = pageOrder;
             _logger = logger;
@@ -68,7 +68,7 @@ namespace Altinn.App.Api.Controllers
 
             string classRef = _resources.GetClassRefForLogicDataType(dataTypeId);
 
-            object data = JsonConvert.DeserializeObject(formData.ToString(), _appModelHandler.GetModelType(classRef));
+            object data = JsonConvert.DeserializeObject(formData.ToString(), _appModel.GetModelType(classRef));
             return await _pageOrder.GetPageOrder(new AppIdentifier(org, app), new InstanceIdentifier(instanceOwnerPartyId, instanceGuid), layoutSetId, currentPage, dataTypeId, data);
         }
     }

@@ -27,7 +27,7 @@ public class StatelessPagesControllerTests
         // Arrange
         var appResourcesMock = new Mock<IAppResources>();
         var pageOrderMock = new Mock<IPageOrder>();
-        var appModelMock = new Mock<IAppModelHandler>();
+        var appModelMock = new Mock<IAppModel>();
         const string dataTypeId = "DummyModel";
         string classRef = typeof(DummyModel).FullName;
         List<string> expected = new List<string> { "pagetwo", "pagethree" };
@@ -76,7 +76,7 @@ public class StatelessPagesControllerTests
         // Arrange
         var appResourcesMock = new Mock<IAppResources>();
         var pageOrderMock = new Mock<IPageOrder>();
-        var appModelMock = new Mock<IAppModelHandler>();
+        var appModelMock = new Mock<IAppModel>();
         var controller = new StatelessPagesController(
             appModelMock.Object,
             appResourcesMock.Object,
@@ -99,7 +99,7 @@ public class StatelessPagesControllerTests
         // Arrange
         var appResourcesMock = new Mock<IAppResources>();
         var pageOrderMock = new Mock<IPageOrder>();
-        var appModelMock = new Mock<IAppModelHandler>();
+        var appModelMock = new Mock<IAppModel>();
         var controller = new StatelessPagesController(
             appModelMock.Object,
             appResourcesMock.Object,

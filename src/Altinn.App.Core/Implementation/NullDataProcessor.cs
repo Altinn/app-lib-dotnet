@@ -4,10 +4,10 @@ using Altinn.Platform.Storage.Interface.Models;
 namespace Altinn.App.Core.Implementation;
 
 /// <summary>
-/// Default implementation of the IDataProcessingHandler interface.
+/// Default implementation of the IDataProcessor interface.
 /// This implementation does not do any thing to the data
 /// </summary>
-public class NullDataProcessingHandler: IDataProcessingHandler
+public class NullDataProcessor: IDataProcessor
 {
     /// <inheritdoc />
     public async Task<bool> ProcessDataRead(Instance instance, Guid? dataId, object data)

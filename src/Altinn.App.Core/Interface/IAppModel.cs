@@ -3,7 +3,7 @@ namespace Altinn.App.Core.Interface;
 /// <summary>
 /// This interface is used to define the methods that are used to instantiate the applications data model.
 /// </summary>
-public interface IAppModelHandler
+public interface IAppModel
 {
     /// <summary>
     /// Creates a new Instance of the service model

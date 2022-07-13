@@ -5,13 +5,13 @@ using Altinn.Platform.Storage.Interface.Models;
 namespace Altinn.App.Core.Implementation;
 
 /// <summary>
-/// Default implementation of the IInstantiationHandler interface.
+/// Default implementation of the IInstantiation interface.
 /// This implementation does not do any thing to the data
 /// </summary>
-public class NullInstantiationHandler: IInstantiationHandler
+public class NullInstantiation: IInstantiation
 {
     /// <inheritdoc />
-    public async Task<InstantiationValidationResult> RunInstantiationValidation(Instance instance)
+    public async Task<InstantiationValidationResult> Validation(Instance instance)
     {
         return await Task.FromResult((InstantiationValidationResult)null);
     }

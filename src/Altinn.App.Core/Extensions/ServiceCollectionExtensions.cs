@@ -86,10 +86,10 @@ namespace Altinn.App.PlatformServices.Extensions
             services.AddTransient<IProcessEngine, ProcessEngine>();
             services.AddTransient<IProcessChangeHandler, ProcessChangeHandler>();
             services.TryAddTransient<IPageOrder, DefaultPageOrder>();
-            services.TryAddTransient<IInstantiationHandler, NullInstantiationHandler>();
-            services.TryAddTransient<IValidationHandler, NullValidationHandler>();
-            services.TryAddTransient<IDataProcessingHandler, NullDataProcessingHandler>();
-            services.TryAddTransient<ITaskProcessingHandler, NullTaskProcessingHandler>();
+            services.TryAddTransient<IInstantiation, NullInstantiation>();
+            services.TryAddTransient<IInstanceValidator, NullInstanceValidator>();
+            services.TryAddTransient<IDataProcessor, NullDataProcessor>();
+            services.TryAddTransient<ITaskProcessor, NullTaskProcessor>();
             services.Configure<Altinn.Common.PEP.Configuration.PepSettings>(configuration.GetSection("PEPSettings"));
             services.Configure<Altinn.Common.PEP.Configuration.PlatformSettings>(configuration.GetSection("PlatformSettings"));
             services.Configure<AccessTokenSettings>(configuration.GetSection("AccessTokenSettings"));
@@ -132,7 +132,7 @@ namespace Altinn.App.PlatformServices.Extensions
             // handler registered.
             // If someone wants to customize pdf formatting the PdfHandler class in the
             // app should be used and registered in the DI container.
-            services.TryAddTransient<ICustomPdfHandler, NullPdfHandler>();
+            services.TryAddTransient<IPdfFormatter, NullPdfFormatter>();
         }
 
         private static void AddAppOptions(IServiceCollection services)

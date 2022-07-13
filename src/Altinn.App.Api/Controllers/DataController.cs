@@ -40,7 +40,7 @@ namespace Altinn.App.Api.Controllers
         private readonly IData _dataClient;
         private readonly IInstance _instanceClient;
         private readonly IAltinnApp _altinnApp;
-        private readonly IAppModelHandler _appModelHandler;
+        private readonly IAppModel _appModel;
         private readonly IAppResources _appResourcesService;
         private readonly IPrefill _prefillService;
 
@@ -60,7 +60,7 @@ namespace Altinn.App.Api.Controllers
             IInstance instanceClient,
             IData dataClient,
             IAltinnApp altinnApp,
-            IAppModelHandler appModelHandler,
+            IAppModel appModel,
             IAppResources appResourcesService,
             IPrefill prefillService)
         {
@@ -69,7 +69,7 @@ namespace Altinn.App.Api.Controllers
             _instanceClient = instanceClient;
             _dataClient = dataClient;
             _altinnApp = altinnApp;
-            _appModelHandler = appModelHandler;
+            _appModel = appModel;
             _appResourcesService = appResourcesService;
             _prefillService = prefillService;
         }
@@ -387,11 +387,11 @@ namespace Altinn.App.Api.Controllers
 
             if (Request.ContentType == null)
             {
-                appModel = _appModelHandler.Create(classRef);
+                appModel = _appModel.Create(classRef);
             }
             else
             {
-                ModelDeserializer deserializer = new ModelDeserializer(_logger, _appModelHandler.GetModelType(classRef));
+                ModelDeserializer deserializer = new ModelDeserializer(_logger, _appModel.GetModelType(classRef));
                 appModel = await deserializer.DeserializeAsync(Request.Body, Request.ContentType);
 
                 if (!string.IsNullOrEmpty(deserializer.Error))
@@ -410,7 +410,7 @@ namespace Altinn.App.Api.Controllers
 
             int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
 
-            DataElement dataElement = await _dataClient.InsertFormData(appModel, instanceGuid, _appModelHandler.GetModelType(classRef), org, app, instanceOwnerPartyId, dataType);
+            DataElement dataElement = await _dataClient.InsertFormData(appModel, instanceGuid, _appModel.GetModelType(classRef), org, app, instanceOwnerPartyId, dataType);
             SelfLinkHelper.SetDataAppSelfLinks(instanceOwnerPartyId, instanceGuid, dataElement, Request);
 
             return Created(dataElement.SelfLinks.Apps, dataElement);
@@ -497,7 +497,7 @@ namespace Altinn.App.Api.Controllers
             // Get Form Data from data service. Assumes that the data element is form data.
             object appModel = await _dataClient.GetFormData(
                 instanceGuid,
-                _appModelHandler.GetModelType(appModelclassRef),
+                _appModel.GetModelType(appModelclassRef),
                 org,
                 app,
                 instanceOwnerId,
@@ -534,7 +534,7 @@ namespace Altinn.App.Api.Controllers
             string classRef = _appResourcesService.GetClassRefForLogicDataType(dataType);
             Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
 
-            ModelDeserializer deserializer = new ModelDeserializer(_logger, _appModelHandler.GetModelType(classRef));
+            ModelDeserializer deserializer = new ModelDeserializer(_logger, _appModel.GetModelType(classRef));
             object serviceModel = await deserializer.DeserializeAsync(Request.Body, Request.ContentType);
 
             if (!string.IsNullOrEmpty(deserializer.Error))
@@ -557,7 +557,7 @@ namespace Altinn.App.Api.Controllers
             DataElement updatedDataElement = await _dataClient.UpdateData(
                 serviceModel,
                 instanceGuid,
-                _appModelHandler.GetModelType(classRef),
+                _appModel.GetModelType(classRef),
                 org,
                 app,
                 instanceOwnerPartyId,

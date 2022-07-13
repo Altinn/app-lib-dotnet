@@ -4,9 +4,9 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 namespace Altinn.App.Core.Interface;
 
 /// <summary>
-/// IValidationHandler defines the methods that are used to validate data and tasks
+/// IInstanceValidator defines the methods that are used to validate data and tasks
 /// </summary>
-public interface IValidationHandler
+public interface IInstanceValidator
 {
     /// <summary>
     /// Is called to run custom data validation events.

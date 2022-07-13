@@ -64,7 +64,7 @@ namespace Altinn.App.Api.Controllers
 
         private readonly IAppResources _appResourcesService;
         private readonly IAltinnApp _altinnApp;
-        private readonly IAppModelHandler _appModelHandler;
+        private readonly IAppModel _appModel;
         private readonly IPDP _pdp;
         private readonly IPrefill _prefillService;
         private readonly IProcessEngine _processEngine;
@@ -82,7 +82,7 @@ namespace Altinn.App.Api.Controllers
             IData dataClient,
             IAppResources appResourcesService,
             IAltinnApp altinnApp,
-            IAppModelHandler appModelHandler,
+            IAppModel appModel,
             IPDP pdp,
             IEvents eventsService,
             IOptions<AppSettings> appSettings,
@@ -96,7 +96,7 @@ namespace Altinn.App.Api.Controllers
             _appResourcesService = appResourcesService;
             _registerClient = registerClient;
             _altinnApp = altinnApp;
-            _appModelHandler = appModelHandler;
+            _appModel = appModel;
             _pdp = pdp;
             _eventsService = eventsService;
             _appSettings = appSettings.Value;
@@ -522,7 +522,7 @@ namespace Altinn.App.Api.Controllers
                     Type type;
                     try
                     {
-                        type = _appModelHandler.GetModelType(dt.AppLogic.ClassRef);
+                        type = _appModel.GetModelType(dt.AppLogic.ClassRef);
                     }
                     catch (Exception altinnAppException)
                     {
@@ -848,7 +848,7 @@ namespace Altinn.App.Api.Controllers
                     Type type;
                     try
                     {
-                        type = _appModelHandler.GetModelType(dataType.AppLogic.ClassRef);
+                        type = _appModel.GetModelType(dataType.AppLogic.ClassRef);
                     }
                     catch (Exception altinnAppException)
                     {
