@@ -18,7 +18,6 @@ using Altinn.App.Core.Models;
 using Altinn.App.PlatformServices.Extensions;
 using Altinn.App.PlatformServices.Helpers;
 using Altinn.App.PlatformServices.Interface;
-using Altinn.App.PlatformServices.Models;
 using Altinn.App.Services.Configuration;
 using Altinn.App.Services.Helpers;
 using Altinn.App.Services.Interface;
@@ -65,6 +64,7 @@ namespace Altinn.App.Api.Controllers
 
         private readonly IAppResources _appResourcesService;
         private readonly IAltinnApp _altinnApp;
+        private readonly IAppModel _appModel;
         private readonly IPDP _pdp;
         private readonly IPrefill _prefillService;
         private readonly IProcessEngine _processEngine;
@@ -82,6 +82,7 @@ namespace Altinn.App.Api.Controllers
             IData dataClient,
             IAppResources appResourcesService,
             IAltinnApp altinnApp,
+            IAppModel appModel,
             IPDP pdp,
             IEvents eventsService,
             IOptions<AppSettings> appSettings,
@@ -95,6 +96,7 @@ namespace Altinn.App.Api.Controllers
             _appResourcesService = appResourcesService;
             _registerClient = registerClient;
             _altinnApp = altinnApp;
+            _appModel = appModel;
             _pdp = pdp;
             _eventsService = eventsService;
             _appSettings = appSettings.Value;
@@ -520,7 +522,7 @@ namespace Altinn.App.Api.Controllers
                     Type type;
                     try
                     {
-                        type = _altinnApp.GetAppModelType(dt.AppLogic.ClassRef);
+                        type = _appModel.GetModelType(dt.AppLogic.ClassRef);
                     }
                     catch (Exception altinnAppException)
                     {
@@ -535,16 +537,8 @@ namespace Altinn.App.Api.Controllers
                     }
 
                     await _prefillService.PrefillDataModel(instanceOwnerPartyId.ToString(), dt.Id, data);
-
-                    try
-                    {
-                        await _altinnApp.RunDataCreation(targetInstance, data, null);
-                    }
-                    catch (NotImplementedException)
-                    {
-                        // Trigger application business logic the old way. DEPRECATED
-                        await _altinnApp.RunDataCreation(targetInstance, data);
-                    }
+                    
+                    await _altinnApp.RunDataCreation(targetInstance, data, null);
 
                     await _dataClient.InsertFormData(
                         data,
@@ -854,7 +848,7 @@ namespace Altinn.App.Api.Controllers
                     Type type;
                     try
                     {
-                        type = _altinnApp.GetAppModelType(dataType.AppLogic.ClassRef);
+                        type = _appModel.GetModelType(dataType.AppLogic.ClassRef);
                     }
                     catch (Exception altinnAppException)
                     {
@@ -870,15 +864,8 @@ namespace Altinn.App.Api.Controllers
                     }
 
                     await _prefillService.PrefillDataModel(instance.InstanceOwner.PartyId, part.Name, data);
-                    try
-                    {
-                        await _altinnApp.RunDataCreation(instance, data, null);
-                    }
-                    catch (NotImplementedException)
-                    {
-                        // Trigger application business logic the old way. DEPRECATED
-                        await _altinnApp.RunDataCreation(instance, data);
-                    }
+                    
+                    await _altinnApp.RunDataCreation(instance, data, null);
 
                     dataElement = await _dataClient.InsertFormData(
                         data,

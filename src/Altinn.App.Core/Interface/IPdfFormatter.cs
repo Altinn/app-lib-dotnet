@@ -6,7 +6,7 @@ namespace Altinn.App.PlatformServices.Interface
     /// <summary>
     /// Interface to customize PDF formatting.
     /// </summary>
-    public interface ICustomPdfHandler
+    public interface IPdfFormatter
     {
         /// <summary>
         /// Method to format the PDF dynamically

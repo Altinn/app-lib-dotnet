@@ -17,17 +17,6 @@ namespace Altinn.App.Services.Interface
     /// </summary>
     public interface IAltinnApp
     {
-        /// <summary>
-        /// Creates a new Instance of the service model
-        /// </summary>
-        /// <returns>An instance of the service model</returns>
-        object CreateNewAppModel(string classRef);
-
-        /// <summary>
-        /// Get the service Type
-        /// </summary>
-        /// <returns>The Type of the service model for the current service</returns>
-        Type GetAppModelType(string classRef);
 
         /// <summary>
         /// AppLogic must set the start event of the process model.
@@ -112,32 +101,9 @@ namespace Altinn.App.Services.Interface
         Task<InstantiationValidationResult> RunInstantiationValidation(Instance instance);
 
         /// <summary>
-        /// Is called to run data creation (custom prefill) defined by app developer.
-        /// </summary>
-        Task RunDataCreation(Instance instance, object data);
-
-        /// <summary>
         /// Is called to run data creation (custom prefill) defined by app developer. Includes external prefill
         /// </summary>
         Task RunDataCreation(Instance instance, object data, Dictionary<string, string> prefill);
-
-        /// <summary>
-        /// Gets the current page order of the app
-        /// </summary>
-        /// <param name="org">The app owner.</param>
-        /// <param name="app">The app.</param>
-        /// <param name="instanceOwnerId">The instance owner partyId</param>
-        /// <param name="instanceGuid">The instanceGuid</param>
-        /// <param name="layoutSetId">The layout set id</param>
-        /// <param name="currentPage">The current page of the instance.</param>
-        /// <param name="dataTypeId">The data type id of the current layout.</param>
-        /// <param name="formData">The form data.</param>
-        /// <returns> The pages in sorted order.</returns>
-        [Obsolete("This method is deprecated. Use transient dependency of IStatefulPageOrder instead.", UrlFormat="https://docs.altinn.studio/app/development/ux/pages/tracks/")]
-        virtual async Task<List<string>> GetPageOrder(string org, string app, int instanceOwnerId, Guid instanceGuid, string layoutSetId, string currentPage, string dataTypeId, object formData)
-        {
-            return await Task.FromResult(new List<string>());
-        }
 
         /// <summary>
         /// Event where app developers can add logic. 

@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 
 using Altinn.App.Api.Filters;
 using Altinn.App.Common.Serialization;
+using Altinn.App.Core.Interface;
 using Altinn.App.PlatformServices.Extensions;
 using Altinn.App.Services.Interface;
 using Altinn.Authorization.ABAC.Xacml.JsonProfile;
@@ -31,6 +32,7 @@ namespace Altinn.App.Api.Controllers
     {
         private readonly ILogger<DataController> _logger;
         private readonly IAltinnApp _altinnApp;
+        private readonly IAppModel _appModel;
         private readonly IAppResources _appResourcesService;
         private readonly IPrefill _prefillService;
         private readonly IRegister _registerClient;
@@ -49,6 +51,7 @@ namespace Altinn.App.Api.Controllers
         public StatelessDataController(
             ILogger<DataController> logger,
             IAltinnApp altinnApp,
+            IAppModel appModel,
             IAppResources appResourcesService,
             IPrefill prefillService,
             IRegister registerClient,
@@ -56,6 +59,7 @@ namespace Altinn.App.Api.Controllers
         {
             _logger = logger;
             _altinnApp = altinnApp;
+            _appModel = appModel;
             _appResourcesService = appResourcesService;
             _prefillService = prefillService;
             _registerClient = registerClient;
@@ -111,7 +115,7 @@ namespace Altinn.App.Api.Controllers
                 return Forbidden(enforcementResult);
             }
         
-            object appModel = _altinnApp.CreateNewAppModel(classRef);
+            object appModel = _appModel.Create(classRef);
 
             // runs prefill from repo configuration if config exists
             await _prefillService.PrefillDataModel(owner.PartyId, dataType, appModel);
@@ -148,7 +152,7 @@ namespace Altinn.App.Api.Controllers
                 return BadRequest($"Invalid dataType {dataType} provided. Please provide a valid dataType as query parameter.");
             }
 
-            object appModel = _altinnApp.CreateNewAppModel(classRef);
+            object appModel = _appModel.Create(classRef);
 
             var virutalInstance = new Instance();
             await _altinnApp.RunProcessDataRead(virutalInstance, null, appModel);
@@ -205,7 +209,7 @@ namespace Altinn.App.Api.Controllers
                 return Forbidden(enforcementResult);
             }
 
-            ModelDeserializer deserializer = new ModelDeserializer(_logger, _altinnApp.GetAppModelType(classRef));
+            ModelDeserializer deserializer = new ModelDeserializer(_logger, _appModel.GetModelType(classRef));
             object appModel = await deserializer.DeserializeAsync(Request.Body, Request.ContentType);
 
             if (!string.IsNullOrEmpty(deserializer.Error))
@@ -248,7 +252,7 @@ namespace Altinn.App.Api.Controllers
                 return BadRequest($"Invalid dataType {dataType} provided. Please provide a valid dataType as query parameter.");
             }
 
-            ModelDeserializer deserializer = new ModelDeserializer(_logger, _altinnApp.GetAppModelType(classRef));
+            ModelDeserializer deserializer = new ModelDeserializer(_logger, _appModel.GetModelType(classRef));
             object appModel = await deserializer.DeserializeAsync(Request.Body, Request.ContentType);
 
             if (!string.IsNullOrEmpty(deserializer.Error))

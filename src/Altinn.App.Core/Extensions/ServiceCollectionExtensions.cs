@@ -1,5 +1,3 @@
-using System;
-
 using Altinn.App.Core.Implementation;
 using Altinn.App.Core.Infrastructure.Clients.Register;
 using Altinn.App.Core.Infrastructure.Clients.Storage;
@@ -15,7 +13,6 @@ using Altinn.App.Services.Implementation;
 using Altinn.App.Services.Interface;
 using Altinn.Common.AccessTokenClient.Configuration;
 using Altinn.Common.AccessTokenClient.Services;
-using Altinn.Common.EFormidlingClient;
 using Altinn.Common.PEP.Implementation;
 using Altinn.Common.PEP.Interfaces;
 
@@ -25,6 +22,7 @@ using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 
 namespace Altinn.App.PlatformServices.Extensions
@@ -68,6 +66,7 @@ namespace Altinn.App.PlatformServices.Extensions
             services.AddTransient<IAccessTokenGenerator, AccessTokenGenerator>();
             services.AddTransient<IPersonLookup, PersonService>();
             services.AddTransient<IApplicationLanguage, ApplicationLanguage>();
+            services.AddTransient<IAltinnApp, AppBase>();
         }
 
         /// <summary>
@@ -83,11 +82,14 @@ namespace Altinn.App.PlatformServices.Extensions
             services.AddTransient<IValidation, ValidationAppSI>();
             services.AddTransient<IPrefill, PrefillSI>();
             services.AddTransient<ISigningCredentialsResolver, SigningCredentialsResolver>();
-            services.AddHttpClient<IEFormidlingClient, Altinn.Common.EFormidlingClient.EFormidlingClient>();
             services.AddSingleton<IAppResources, AppResourcesSI>();
             services.AddTransient<IProcessEngine, ProcessEngine>();
             services.AddTransient<IProcessChangeHandler, ProcessChangeHandler>();
-            services.AddTransient<IPageOrder, DefaultPageOrder>();
+            services.TryAddTransient<IPageOrder, DefaultPageOrder>();
+            services.TryAddTransient<IInstantiation, NullInstantiation>();
+            services.TryAddTransient<IInstanceValidator, NullInstanceValidator>();
+            services.TryAddTransient<IDataProcessor, NullDataProcessor>();
+            services.TryAddTransient<ITaskProcessor, NullTaskProcessor>();
             services.Configure<Altinn.Common.PEP.Configuration.PepSettings>(configuration.GetSection("PEPSettings"));
             services.Configure<Altinn.Common.PEP.Configuration.PlatformSettings>(configuration.GetSection("PlatformSettings"));
             services.Configure<AccessTokenSettings>(configuration.GetSection("AccessTokenSettings"));
@@ -130,7 +132,7 @@ namespace Altinn.App.PlatformServices.Extensions
             // handler registered.
             // If someone wants to customize pdf formatting the PdfHandler class in the
             // app should be used and registered in the DI container.
-            services.AddTransient<ICustomPdfHandler, NullPdfHandler>();
+            services.TryAddTransient<IPdfFormatter, NullPdfFormatter>();
         }
 
         private static void AddAppOptions(IServiceCollection services)

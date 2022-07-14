@@ -34,7 +34,7 @@ namespace Altinn.App.PlatformServices.Implementation
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IProfile _profileClient;
         private readonly IRegister _registerClient;
-        private readonly ICustomPdfHandler _customPdfHandler;
+        private readonly IPdfFormatter _pdfFormatter;
         private readonly string pdfElementType = "ref-data-as-pdf";
 
         /// <summary>
@@ -47,8 +47,8 @@ namespace Altinn.App.PlatformServices.Implementation
         /// <param name="httpContextAccessor">The httpContextAccessor</param>
         /// <param name="profileClient">The profile client</param>
         /// <param name="registerClient">The register client</param>
-        /// <param name="customPdfHandler">Class for customizing pdf formatting and layout.</param>
-        public PdfService(IPDF pdfClient, IAppResources appResources, IAppOptionsService appOptionsService, IData dataClient, IHttpContextAccessor httpContextAccessor, IProfile profileClient, IRegister registerClient, ICustomPdfHandler customPdfHandler)
+        /// <param name="pdfFormatter">Class for customizing pdf formatting and layout.</param>
+        public PdfService(IPDF pdfClient, IAppResources appResources, IAppOptionsService appOptionsService, IData dataClient, IHttpContextAccessor httpContextAccessor, IProfile profileClient, IRegister registerClient, IPdfFormatter pdfFormatter)
         {
             _pdfClient = pdfClient;
             _resourceService = appResources;
@@ -57,7 +57,7 @@ namespace Altinn.App.PlatformServices.Implementation
             _httpContextAccessor = httpContextAccessor;
             _profileClient = profileClient;
             _registerClient = registerClient;
-            _customPdfHandler = customPdfHandler;
+            _pdfFormatter = pdfFormatter;
         }
 
         /// <inheritdoc/>
@@ -95,7 +95,7 @@ namespace Altinn.App.PlatformServices.Implementation
 
             object data = await _dataClient.GetFormData(instanceGuid, dataElementModelType, org, app, instanceOwnerId, new Guid(dataElement.Id));
 
-            layoutSettings = await _customPdfHandler.FormatPdf(layoutSettings, data);
+            layoutSettings = await _pdfFormatter.FormatPdf(layoutSettings, data);
             XmlSerializer serializer = new XmlSerializer(dataElementModelType);
             using MemoryStream stream = new MemoryStream();
 
