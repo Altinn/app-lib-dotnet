@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Altinn.App.Common.Process;
 using Altinn.App.Common.Process.Elements;
 using Altinn.App.Core.Interface;
+using Altinn.App.Core.Invokers;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Process;
 using Altinn.App.PlatformServices.Extensions;
@@ -42,6 +43,7 @@ namespace Altinn.App.Core.Implementation
         private readonly IEvents _eventsService;
         private readonly IProfile _profileClient;
         private readonly AppSettings _appSettings;
+        private readonly IAppEventOrchestrator _orchestrator;
 
         /// <summary>
         /// Altinn App specific process change handler
@@ -54,7 +56,8 @@ namespace Altinn.App.Core.Implementation
             IValidation validationService,
             IEvents eventsService,
             IProfile profileClient,
-            IOptions<AppSettings> appSettings)
+            IOptions<AppSettings> appSettings,
+            IAppEventOrchestrator orchestrator)
         {
             _altinnApp = altinnApp;
             _logger = logger;
@@ -66,6 +69,7 @@ namespace Altinn.App.Core.Implementation
             _eventsService = eventsService;
             _profileClient = profileClient;
             _appSettings = appSettings.Value;
+            _orchestrator = orchestrator;
         }
 
         /// <inheritdoc />
@@ -147,14 +151,14 @@ namespace Altinn.App.Core.Implementation
                 return null;
             }
 
-            ITask task = new DataTask(_altinnApp);
+            ITask task = new DataTask(_orchestrator);
             if (altinnTaskType.Equals("confirmation"))
             {
-                task = new ConfirmationTask(_altinnApp);
+                task = new ConfirmationTask(_orchestrator);
             }
             else if (altinnTaskType.Equals("feedback"))
             {
-                task = new FeedbackTask(_altinnApp);
+                task = new FeedbackTask(_orchestrator);
             }
 
             return task;
@@ -206,7 +210,8 @@ namespace Altinn.App.Core.Implementation
                             break;
                         case InstanceEventType.process_EndEvent:
                             processChangeContext.ElementToBeProcessed = processEvent.ProcessInfo?.EndEvent;
-                            await _altinnApp.OnEndProcess(processEvent.ProcessInfo?.EndEvent, processChangeContext.Instance);
+                            //await _altinnApp.OnEndProcess(processEvent.ProcessInfo?.EndEvent, processChangeContext.Instance);
+                            await _orchestrator.OnEndProcess(processEvent.ProcessInfo?.EndEvent, processChangeContext.Instance);
                             break;
                     }
                 }

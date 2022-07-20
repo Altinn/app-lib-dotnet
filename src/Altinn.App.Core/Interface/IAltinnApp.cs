@@ -22,44 +22,13 @@ namespace Altinn.App.Services.Interface
         /// AppLogic must set the start event of the process model.
         /// </summary>
         /// <returns>the id of the start event</returns>
-        Task<string> OnInstantiateGetStartEvent();
-
-        /// <summary>
-        /// Callback on first start event of process.
-        /// </summary>
-        /// <returns></returns>
-        Task OnStartProcess(string startEvent, Instance instance);
-
-        /// <summary>
-        /// Callback to app after task has been started.
-        /// </summary>
-        /// <returns></returns>
-        Task OnStartProcessTask(string taskId, Instance instance, Dictionary<string, string> prefill);
+        //Task<string> OnInstantiateGetStartEvent();
 
         /// <summary>
         ///  Called before a process task is ended. App can do extra validation logic and add validation issues to collection which will be returned by the controller.
         /// </summary>
         /// <returns>true task can be ended, false otherwise</returns>
         Task<bool> CanEndProcessTask(string taskId, Instance instance, List<ValidationIssue> validationIssues);
-
-        /// <summary>
-        /// Is called after the process task is ended. Method can update instance and data element metadata. 
-        /// </summary>
-        /// <param name="taskId">task id task to end</param>
-        /// <param name="instance">instance data</param>
-        Task OnEndProcessTask(string taskId, Instance instance);
-
-        /// <summary>
-        /// Is called after the process task is abonded. Method can update instance and data element metadata. 
-        /// </summary>
-        /// <param name="taskId">task id task to end</param>
-        /// <param name="instance">instance data</param>
-        Task OnAbandonProcessTask(string taskId, Instance instance);
-
-        /// <summary>
-        /// Is called when the process for an instance is ended.
-        /// </summary>
-        Task OnEndProcess(string endEvent, Instance instance);
 
         /// <summary>
         /// Is called to run custom data validation events defined by app developer.
@@ -104,37 +73,5 @@ namespace Altinn.App.Services.Interface
         /// Is called to run data creation (custom prefill) defined by app developer. Includes external prefill
         /// </summary>
         Task RunDataCreation(Instance instance, object data, Dictionary<string, string> prefill);
-
-        /// <summary>
-        /// Event where app developers can add logic. 
-        /// </summary>
-        /// <param name="taskId">The taskId</param>
-        /// <param name="instance">The instance</param>
-        Task RunProcessTaskEnd(string taskId, Instance instance);
-        
-        /// <summary>
-        /// Gets a list of eFormidling shipment receivers
-        /// </summary>
-        /// <remarks>
-        /// Note that the identifier value property on the receiver objects should be prefixed with `0192:` for Norwegian organisations.
-        /// </remarks>
-        virtual async Task<List<Receiver>> GetEFormidlingReceivers(Instance instance)
-        {
-            await Task.CompletedTask;
-            return null;
-        }
-
-        /// <summary>
-        /// Generates the metadata document for the eFormidling shipment. e.g. arkivmelding.
-        /// </summary>
-        /// <remarks>
-        /// The metadata file should be parsed to XML before assigning it to the stream.
-        /// </remarks>
-        /// <returns>A touple containing the metadata file name and the metadata in a stream.</returns>
-        virtual async Task<(string MetadataFilename, Stream Metadata)> GenerateEFormidlingMetadata(Instance instance)
-        {
-            await Task.CompletedTask;
-            return (null, null);
-        }
     }
 }

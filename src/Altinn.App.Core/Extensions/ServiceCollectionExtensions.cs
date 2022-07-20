@@ -2,6 +2,8 @@ using Altinn.App.Core.Implementation;
 using Altinn.App.Core.Infrastructure.Clients.Register;
 using Altinn.App.Core.Infrastructure.Clients.Storage;
 using Altinn.App.Core.Interface;
+using Altinn.App.Core.Invokers;
+using Altinn.App.Core.Receivers;
 using Altinn.App.PlatformServices.Implementation;
 using Altinn.App.PlatformServices.Interface;
 using Altinn.App.PlatformServices.Options;
@@ -13,6 +15,7 @@ using Altinn.App.Services.Implementation;
 using Altinn.App.Services.Interface;
 using Altinn.Common.AccessTokenClient.Configuration;
 using Altinn.Common.AccessTokenClient.Services;
+using Altinn.Common.EFormidlingClient;
 using Altinn.Common.PEP.Implementation;
 using Altinn.Common.PEP.Interfaces;
 
@@ -85,6 +88,9 @@ namespace Altinn.App.PlatformServices.Extensions
             services.AddSingleton<IAppResources, AppResourcesSI>();
             services.AddTransient<IProcessEngine, ProcessEngine>();
             services.AddTransient<IProcessChangeHandler, ProcessChangeHandler>();
+            services.AddTransient<IAppEventOrchestrator, AppEventOrchestrator>();
+            services.AddTransient<IAppEventReceiver, DefaultAppEventReceiver>();
+            services.AddTransient<ITaskEventReceiver, DefaultTaskEventReceiver>();
             services.TryAddTransient<IPageOrder, DefaultPageOrder>();
             services.TryAddTransient<IInstantiation, NullInstantiation>();
             services.TryAddTransient<IInstanceValidator, NullInstanceValidator>();
@@ -93,7 +99,6 @@ namespace Altinn.App.PlatformServices.Extensions
             services.Configure<Altinn.Common.PEP.Configuration.PepSettings>(configuration.GetSection("PEPSettings"));
             services.Configure<Altinn.Common.PEP.Configuration.PlatformSettings>(configuration.GetSection("PlatformSettings"));
             services.Configure<AccessTokenSettings>(configuration.GetSection("AccessTokenSettings"));
-            services.Configure<Altinn.Common.EFormidlingClient.Configuration.EFormidlingClientSettings>(configuration.GetSection("EFormidlingClientSettings"));
             services.Configure<FrontEndSettings>(configuration.GetSection(nameof(FrontEndSettings)));
             AddAppOptions(services);
             AddPdfServices(services);
@@ -120,6 +125,14 @@ namespace Altinn.App.PlatformServices.Extensions
                 services.AddApplicationInsightsTelemetryProcessor<HealthTelemetryFilter>();
                 services.AddSingleton<ITelemetryInitializer, CustomTelemetryInitializer>();
             }
+        }
+        
+        public static void AddEFormidlingServices<T>(this IServiceCollection services, IConfiguration configuration) where T: IEFormidlingMetadata
+        {
+            services.AddHttpClient<IEFormidlingClient, Altinn.Common.EFormidlingClient.EFormidlingClient>();
+            services.AddTransient<IEFormidlingService, DefaultEFormidlingService>();
+            services.Configure<Altinn.Common.EFormidlingClient.Configuration.EFormidlingClientSettings>(configuration.GetSection("EFormidlingClientSettings"));
+            services.AddTransient(typeof(IEFormidlingMetadata), typeof(T));
         }
 
         private static void AddPdfServices(IServiceCollection services)
