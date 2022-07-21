@@ -1,4 +1,4 @@
-using Altinn.App.Core.Interface;
+using Altinn.App.Core.EFormidling.Interface;
 using Altinn.App.Services.Configuration;
 using Altinn.App.Services.Constants;
 using Altinn.App.Services.Interface;
@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Altinn.App.Core.Implementation;
+namespace Altinn.App.Core.EFormidling.Implementation;
 
 public class DefaultEFormidlingService : IEFormidlingService
 {
@@ -24,6 +24,7 @@ public class DefaultEFormidlingService : IEFormidlingService
     private readonly IEFormidlingMetadata _eFormidlingMetadata;
     private readonly Application _appMetadata;
     private readonly IData _dataClient;
+    private readonly IEFormidlingReceivers _eFormidlingReceivers;
     private readonly string _org;
     private readonly string _app;
 
@@ -32,6 +33,7 @@ public class DefaultEFormidlingService : IEFormidlingService
         IHttpContextAccessor httpContextAccessor,
         IAppResources appResources,
         IData dataClient,
+        IEFormidlingReceivers eFormidlingReceivers,
         IOptions<AppSettings>? appSettings = null,
         IOptions<PlatformSettings>? platformSettings = null,
         IEFormidlingClient eFormidlingClient = null,
@@ -47,6 +49,7 @@ public class DefaultEFormidlingService : IEFormidlingService
         _eFormidlingMetadata = eFormidlingMetadata;
         _appMetadata = appResources.GetApplication();
         _dataClient = dataClient;
+        _eFormidlingReceivers = eFormidlingReceivers;
         _org = _appMetadata.Org;
         _app = _appMetadata.Id.Split("/")[1];
     }
@@ -99,21 +102,6 @@ public class DefaultEFormidlingService : IEFormidlingService
         }
     }
 
-    public async Task<List<Receiver>> GetEFormidlingReceivers(Instance instance)
-    {
-        await Task.CompletedTask;
-        Identifier identifier = new Identifier
-        {
-            // 0192 prefix for all Norwegian organisations.
-            Value = $"0192:{_appMetadata.EFormidling.Receiver.Trim()}",
-            Authority = "iso6523-actorid-upis"
-        };
-
-        Receiver receiver = new Receiver { Identifier = identifier };
-
-        return new List<Receiver> { receiver };
-    }
-
     private async Task<StandardBusinessDocument> ConstructStandardBusinessDocument(string instanceGuid,
         Instance instance)
     {
@@ -129,7 +117,7 @@ public class DefaultEFormidlingService : IEFormidlingService
             }
         };
 
-        List<Receiver> receivers = await GetEFormidlingReceivers(instance);
+        List<Receiver> receivers = await _eFormidlingReceivers.GetEFormidlingReceivers(instance);
 
         Scope scope =
             new Scope

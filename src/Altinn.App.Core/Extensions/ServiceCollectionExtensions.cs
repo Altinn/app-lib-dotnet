@@ -1,3 +1,5 @@
+using Altinn.App.Core.EFormidling.Implementation;
+using Altinn.App.Core.EFormidling.Interface;
 using Altinn.App.Core.Implementation;
 using Altinn.App.Core.Infrastructure.Clients.Register;
 using Altinn.App.Core.Infrastructure.Clients.Storage;
@@ -125,14 +127,6 @@ namespace Altinn.App.PlatformServices.Extensions
                 services.AddApplicationInsightsTelemetryProcessor<HealthTelemetryFilter>();
                 services.AddSingleton<ITelemetryInitializer, CustomTelemetryInitializer>();
             }
-        }
-        
-        public static void AddEFormidlingServices<T>(this IServiceCollection services, IConfiguration configuration) where T: IEFormidlingMetadata
-        {
-            services.AddHttpClient<IEFormidlingClient, Altinn.Common.EFormidlingClient.EFormidlingClient>();
-            services.AddTransient<IEFormidlingService, DefaultEFormidlingService>();
-            services.Configure<Altinn.Common.EFormidlingClient.Configuration.EFormidlingClientSettings>(configuration.GetSection("EFormidlingClientSettings"));
-            services.AddTransient(typeof(IEFormidlingMetadata), typeof(T));
         }
 
         private static void AddPdfServices(IServiceCollection services)

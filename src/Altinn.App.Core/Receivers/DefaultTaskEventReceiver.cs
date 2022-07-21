@@ -1,3 +1,4 @@
+using Altinn.App.Core.EFormidling.Interface;
 using Altinn.App.Core.Interface;
 using Altinn.App.Core.Invokers;
 using Altinn.App.PlatformServices.Interface;

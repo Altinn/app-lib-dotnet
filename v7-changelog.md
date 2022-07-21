@@ -14,3 +14,13 @@
    - ICustomPdfGenerator renamed to IPdfFormatter, ICustomPdfGenerator was already implemented with DI, `App/logic/Print/PdfHandler.cs` in app-template is no longer needed.
    - Deprecated method `IAltinnApp.GetPageOrder()` is removed. It's now only possible to override this logic by injecting a class implementing IPageOrder
    - Overriding logic for RunProcessTaskEnd is done by injecting a class implementing ITaskProcessor.  
+5. Replace all public Task On****() methods in AppBase with event handler pattern. Methods with return values does not seem to fit this pattern
+   - OnStartAppEvent (not used today) and OnEndAppEvent are sent to all registered services implementing IAppEventReceiver.
+   - OnStartProcessTask, OnEndProcessTask and OnAbandonProcessTask are sent to all registered services implementing ITaskEventReceiver.
+6. Move EFormidling logic out of AppBase. Not a separate nuget yet, but moved to a separate namespace
+   - SendEFormidlingShipment(Instance instance) method and all related private methods moved to DefaultEFormidlingService.
+   - GenerateEFormidlingMetadata(Instance instance) methods is removed and should be implemented by providing a class implementing IEFormidlingMetadata.
+   - To make injecting EFormidling services easier a new method is added to Extensions.ServiceCollectionExtensions.
+     - AddEFormidlingServices<T>(IConfiguration configuration) where T is the class implementing IEFormidlingMetadata in the serviceowners project. Eg: services.AddEFormidlingServices<Altinn.App.ServiceOwners.MyEFormidlingMetadata>(config). This will register all necessary services.
+   - GetEFormidlingReceivers() is overridden by implementing IEFormidlingReceivers and supplied as the second Generic to AddEFromidlingServices, default implementation is used if not supplied. This is used to get the list of services that should receive the EFormidlingShipment.
+   - TODO: Test if this logic can be written as a new Event receiver making it easier to extend an application with EFormidling just by including the EFormidling nuget

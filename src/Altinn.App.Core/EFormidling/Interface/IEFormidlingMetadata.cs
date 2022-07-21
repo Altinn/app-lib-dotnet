@@ -1,6 +1,6 @@
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Interface;
+namespace Altinn.App.Core.EFormidling.Interface;
 
 public interface IEFormidlingMetadata
 {
