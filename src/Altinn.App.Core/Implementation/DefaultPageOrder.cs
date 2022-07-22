@@ -14,7 +14,6 @@ namespace Altinn.App.Services.Implementation
         /// <summary>
         /// Default implementation for page order
         /// </summary>
-        /// <param name="altinnApp">IAltinnApp service</param>
         /// <param name="resources">IAppResources service</param>
         public DefaultPageOrder(IAppResources resources)
         {

@@ -13,6 +13,9 @@ using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.EFormidling.Implementation;
 
+/// <summary>
+/// Default implementation of <see cref="Altinn.App.Core.EFormidling.Interface.IEFormidlingService"/>
+/// </summary>
 public class DefaultEFormidlingService : IEFormidlingService
 {
     private readonly ILogger<DefaultEFormidlingService> _logger;
@@ -28,6 +31,19 @@ public class DefaultEFormidlingService : IEFormidlingService
     private readonly string _org;
     private readonly string _app;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DefaultEFormidlingService"/> class.
+    /// </summary>
+    /// <param name="logger"></param>
+    /// <param name="httpContextAccessor"></param>
+    /// <param name="appResources"></param>
+    /// <param name="dataClient"></param>
+    /// <param name="eFormidlingReceivers"></param>
+    /// <param name="appSettings"></param>
+    /// <param name="platformSettings"></param>
+    /// <param name="eFormidlingClient"></param>
+    /// <param name="tokenGenerator"></param>
+    /// <param name="eFormidlingMetadata"></param>
     public DefaultEFormidlingService(
         ILogger<DefaultEFormidlingService> logger,
         IHttpContextAccessor httpContextAccessor,
@@ -54,7 +70,7 @@ public class DefaultEFormidlingService : IEFormidlingService
         _app = _appMetadata.Id.Split("/")[1];
     }
 
-
+    /// <inheritdoc />
     public async Task SendEFormidlingShipment(Instance instance)
     {
         if (_eFormidlingClient == null || _tokenGenerator == null || _eFormidlingMetadata == null ||

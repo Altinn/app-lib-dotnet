@@ -2,6 +2,9 @@ using Altinn.App.Core.Invokers;
 
 namespace Altinn.App.Core.Receivers;
 
+/// <summary>
+/// Interface for implementing a receiver handling task process events.
+/// </summary>
 public interface ITaskEventReceiver
 {
     /// <summary>

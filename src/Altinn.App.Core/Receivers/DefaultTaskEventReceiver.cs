@@ -11,6 +11,9 @@ using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Receivers;
 
+/// <summary>
+/// Default handling of task process events.
+/// </summary>
 public class DefaultTaskEventReceiver : ITaskEventReceiver
 {
     private readonly ILogger<DefaultTaskEventReceiver> _logger;
@@ -51,6 +54,7 @@ public class DefaultTaskEventReceiver : ITaskEventReceiver
         _appSettings = appSettings?.Value;
     }
 
+    /// <inheritdoc />
     public async Task OnStartProcessTask(object? sender, TaskEventWithPrefillArgs eventArgs)
     {
         var instance = eventArgs.Instance;
@@ -100,6 +104,7 @@ public class DefaultTaskEventReceiver : ITaskEventReceiver
         }
     }
 
+    /// <inheritdoc />
     public async Task OnEndProcessTask(object? sender, TaskEventArgs eventArgs)
     {
         var taskId = eventArgs.TaskId;
@@ -148,6 +153,7 @@ public class DefaultTaskEventReceiver : ITaskEventReceiver
         await Task.CompletedTask;
     }
 
+    /// <inheritdoc />
     public async Task OnAbandonProcessTask(object? sender, TaskEventArgs eventArgs)
     {
         var taskId = eventArgs.TaskId;

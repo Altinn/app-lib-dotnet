@@ -5,6 +5,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Altinn.App.Core.Receivers;
 
+/// <summary>
+/// Default handling of instance events
+/// </summary>
 public class DefaultAppEventReceiver: IAppEventReceiver
 {
     private readonly ILogger<DefaultAppEventReceiver> _logger;
@@ -30,11 +33,13 @@ public class DefaultAppEventReceiver: IAppEventReceiver
         _app = _appMetadata.Id.Split("/")[1];
     }
 
+    /// <inheritdoc />
     public async Task OnStartAppEvent(object? sender, AppEventArgs eventArgs)
     {
         await Task.CompletedTask;
     }
 
+    /// <inheritdoc />
     public async Task OnEndAppEvent(object? sender, AppEventArgs eventArgs)
     {
         var endEvent = eventArgs.Event;

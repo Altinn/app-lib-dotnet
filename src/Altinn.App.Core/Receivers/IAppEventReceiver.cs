@@ -2,6 +2,9 @@ using Altinn.App.Core.Invokers;
 
 namespace Altinn.App.Core.Receivers;
 
+/// <summary>
+/// Interface for implementing a receiver handling instance events.
+/// </summary>
 public interface IAppEventReceiver
 {
     /// <summary>
