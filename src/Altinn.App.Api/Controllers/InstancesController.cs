@@ -63,8 +63,8 @@ namespace Altinn.App.Api.Controllers
         private readonly IProfile _profileClientClient;
 
         private readonly IAppResources _appResourcesService;
-        private readonly IAltinnApp _altinnApp;
         private readonly IAppModel _appModel;
+        private readonly IInstantiation _instantiation;
         private readonly IPDP _pdp;
         private readonly IPrefill _prefillService;
         private readonly IProcessEngine _processEngine;
@@ -81,8 +81,8 @@ namespace Altinn.App.Api.Controllers
             IInstance instanceClient,
             IData dataClient,
             IAppResources appResourcesService,
-            IAltinnApp altinnApp,
             IAppModel appModel,
+            IInstantiation instantiation,
             IPDP pdp,
             IEvents eventsService,
             IOptions<AppSettings> appSettings,
@@ -95,8 +95,8 @@ namespace Altinn.App.Api.Controllers
             _dataClient = dataClient;
             _appResourcesService = appResourcesService;
             _registerClient = registerClient;
-            _altinnApp = altinnApp;
             _appModel = appModel;
+            _instantiation = instantiation;
             _pdp = pdp;
             _eventsService = eventsService;
             _appSettings = appSettings.Value;
@@ -268,7 +268,7 @@ namespace Altinn.App.Api.Controllers
             }
 
             // Run custom app logic to validate instantiation
-            InstantiationValidationResult validationResult = await _altinnApp.RunInstantiationValidation(instanceTemplate);
+            InstantiationValidationResult validationResult = await _instantiation.Validation(instanceTemplate);
             if (validationResult != null && !validationResult.Valid)
             {
                 return StatusCode((int)HttpStatusCode.Forbidden, validationResult);
@@ -418,7 +418,7 @@ namespace Altinn.App.Api.Controllers
             };
 
             // Run custom app logic to validate instantiation
-            InstantiationValidationResult validationResult = await _altinnApp.RunInstantiationValidation(instanceTemplate);
+            InstantiationValidationResult validationResult = await _instantiation.Validation(instanceTemplate);
             if (validationResult != null && !validationResult.Valid)
             {
                 return StatusCode((int)HttpStatusCode.Forbidden, validationResult);
@@ -538,7 +538,7 @@ namespace Altinn.App.Api.Controllers
 
                     await _prefillService.PrefillDataModel(instanceOwnerPartyId.ToString(), dt.Id, data);
                     
-                    await _altinnApp.RunDataCreation(targetInstance, data, null);
+                    await _instantiation.DataCreation(targetInstance, data, null);
 
                     await _dataClient.InsertFormData(
                         data,
@@ -865,7 +865,7 @@ namespace Altinn.App.Api.Controllers
 
                     await _prefillService.PrefillDataModel(instance.InstanceOwner.PartyId, part.Name, data);
                     
-                    await _altinnApp.RunDataCreation(instance, data, null);
+                    await _instantiation.DataCreation(instance, data, null);
 
                     dataElement = await _dataClient.InsertFormData(
                         data,

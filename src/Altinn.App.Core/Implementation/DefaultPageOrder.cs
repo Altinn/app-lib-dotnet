@@ -9,7 +9,6 @@ namespace Altinn.App.Services.Implementation
     /// </summary>
     public class DefaultPageOrder : IPageOrder
     {
-        private readonly IAltinnApp _altinnApp;
         private readonly IAppResources _resources;
 
         /// <summary>
@@ -17,9 +16,8 @@ namespace Altinn.App.Services.Implementation
         /// </summary>
         /// <param name="altinnApp">IAltinnApp service</param>
         /// <param name="resources">IAppResources service</param>
-        public DefaultPageOrder(IAltinnApp altinnApp, IAppResources resources)
+        public DefaultPageOrder(IAppResources resources)
         {
-            _altinnApp = altinnApp;
             _resources = resources;
         }
 

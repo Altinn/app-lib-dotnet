@@ -1,9 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Security.Claims;
-using System.Threading.Tasks;
 
 using Altinn.App.Common.Process;
 using Altinn.App.Common.Process.Elements;
@@ -18,7 +13,6 @@ using Altinn.App.Services.Helpers;
 using Altinn.App.Services.Interface;
 using Altinn.App.Services.Models.Validation;
 using Altinn.Platform.Profile.Models;
-using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
 
@@ -34,7 +28,6 @@ namespace Altinn.App.Core.Implementation
     /// </summary>
     public class ProcessChangeHandler : IProcessChangeHandler
     {
-        private readonly IAltinnApp _altinnApp;
         private readonly IInstance _instanceClient;
         private readonly IProcess _processService;
         private readonly ProcessHelper _processHelper;
@@ -49,7 +42,6 @@ namespace Altinn.App.Core.Implementation
         /// Altinn App specific process change handler
         /// </summary>
         public ProcessChangeHandler(
-            IAltinnApp altinnApp,
             ILogger<ProcessChangeHandler> logger,
             IProcess processService,
             IInstance instanceClient,
@@ -59,7 +51,6 @@ namespace Altinn.App.Core.Implementation
             IOptions<AppSettings> appSettings,
             IAppEventOrchestrator orchestrator)
         {
-            _altinnApp = altinnApp;
             _logger = logger;
             _processService = processService;
             _instanceClient = instanceClient;
@@ -130,11 +121,11 @@ namespace Altinn.App.Core.Implementation
             {
                 validationIssues = await _validationService.ValidateAndUpdateProcess(processChange.Instance, processChange.Instance.Process.CurrentTask?.ElementId);
 
-                canEndTask = await _altinnApp.CanEndProcessTask(processChange.Instance.Process.CurrentTask?.ElementId, processChange.Instance, validationIssues);
+                canEndTask = await ProcessHelper.CanEndProcessTask(processChange.Instance.Process.CurrentTask?.ElementId, processChange.Instance, validationIssues);
             }
             else
             {
-                canEndTask = await _altinnApp.CanEndProcessTask(processChange.Instance.Process.CurrentTask?.ElementId, processChange.Instance, validationIssues);
+                canEndTask = await ProcessHelper.CanEndProcessTask(processChange.Instance.Process.CurrentTask?.ElementId, processChange.Instance, validationIssues);
             }
 
             return canEndTask;

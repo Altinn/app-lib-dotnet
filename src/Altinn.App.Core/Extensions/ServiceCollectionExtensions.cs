@@ -71,7 +71,6 @@ namespace Altinn.App.PlatformServices.Extensions
             services.AddTransient<IAccessTokenGenerator, AccessTokenGenerator>();
             services.AddTransient<IPersonLookup, PersonService>();
             services.AddTransient<IApplicationLanguage, ApplicationLanguage>();
-            services.AddTransient<IAltinnApp, AppBase>();
         }
 
         /// <summary>

@@ -24,3 +24,7 @@
      - AddEFormidlingServices<T>(IConfiguration configuration) where T is the class implementing IEFormidlingMetadata in the serviceowners project. Eg: services.AddEFormidlingServices<Altinn.App.ServiceOwners.MyEFormidlingMetadata>(config). This will register all necessary services.
    - GetEFormidlingReceivers() is overridden by implementing IEFormidlingReceivers and supplied as the second Generic to AddEFromidlingServices, default implementation is used if not supplied. This is used to get the list of services that should receive the EFormidlingShipment.
    - TODO: Test if this logic can be written as a new Event receiver making it easier to extend an application with EFormidling just by including the EFormidling nuget
+7. A side effect of 4. 5. and 6. the only methods left in IAltinnApp/AppBase was calls to other services.
+   - Replaced calls in the code with direct calls to these services and removed them from AppBase.
+   - Removed CanEndProcessTask(....) from AppBase and replaced it with a static method in Helpers.ProcessHelpers (the checks only use the input arguments to the method)
+   - No methods are left in IAltinnApp/AppBase. Removed the interface and implementation.

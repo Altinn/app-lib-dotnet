@@ -23,7 +23,7 @@ namespace Altinn.App.Services.Implementation
         private readonly ILogger _logger;
         private readonly IData _dataService;
         private readonly IInstance _instanceService;
-        private readonly IAltinnApp _altinnApp;
+        private readonly IInstanceValidator _instanceValidator;
         private readonly IAppModel _appModel;
         private readonly IAppResources _appResourcesService;
         private readonly IObjectModelValidator _objectModelValidator;
@@ -37,7 +37,7 @@ namespace Altinn.App.Services.Implementation
             ILogger<ValidationAppSI> logger,
             IData dataService,
             IInstance instanceService,
-            IAltinnApp altinnApp,
+            IInstanceValidator instanceValidator,
             IAppModel appModel,
             IAppResources appResourcesService,
             IObjectModelValidator objectModelValidator,
@@ -47,7 +47,7 @@ namespace Altinn.App.Services.Implementation
             _logger = logger;
             _dataService = dataService;
             _instanceService = instanceService;
-            _altinnApp = altinnApp;
+            _instanceValidator = instanceValidator;
             _appModel = appModel;
             _appResourcesService = appResourcesService;
             _objectModelValidator = objectModelValidator;
@@ -68,7 +68,7 @@ namespace Altinn.App.Services.Implementation
             List<ValidationIssue> messages = new List<ValidationIssue>();
 
             ModelStateDictionary validationResults = new ModelStateDictionary();
-            await _altinnApp.RunTaskValidation(instance, taskId, validationResults);
+            await _instanceValidator.ValidateTask(instance, taskId, validationResults);
             messages.AddRange(MapModelStateToIssueList(validationResults, instance));
 
             Application application = _appResourcesService.GetApplication();
@@ -197,7 +197,7 @@ namespace Altinn.App.Services.Implementation
 
                 ValidationStateDictionary validationState = new ValidationStateDictionary();
                 _objectModelValidator.Validate(actionContext, validationState, null, data);
-                await _altinnApp.RunDataValidation(data, validationResults);
+                await _instanceValidator.ValidateData(data, validationResults);
 
                 if (!validationResults.IsValid)
                 {

@@ -18,7 +18,6 @@ namespace Altinn.App.Api.Controllers
     [ApiController]
     public class OptionsController : ControllerBase
     {
-        private readonly IAltinnApp _altinnApp;
         private readonly IAppOptionsService _appOptionsService;
 
         /// <summary>
@@ -26,9 +25,8 @@ namespace Altinn.App.Api.Controllers
         /// </summary>
         /// <param name="altinnApp">The current App Core used to interface with custom logic</param>
         /// <param name="appOptionsService">Service for handling app options</param>
-        public OptionsController(IAltinnApp altinnApp, IAppOptionsService appOptionsService)
+        public OptionsController(IAppOptionsService appOptionsService)
         {
-            _altinnApp = altinnApp;
             _appOptionsService = appOptionsService;
         }
 
