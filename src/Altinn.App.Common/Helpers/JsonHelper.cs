@@ -77,6 +77,29 @@ namespace Altinn.App.Common.Helpers
                         index++;
                     }
 
+                    var oldArray = Old as JArray;
+                    while (index < oldArray.Count)
+                    {
+                        FindDiff(dict, oldArray[index], JValue.CreateNull(), $"{prefix}[{index}]");
+                        index++;
+                    }
+
+                    break;
+
+                case JTokenType.Null:
+                    if (Old.Type == JTokenType.Object)
+                    {
+                        var oldObject = Old as JObject;
+                        foreach (string key in oldObject.Properties().Select(c => c.Name))
+                        {
+                            FindDiff(dict, oldObject[key], JValue.CreateNull(), Join(prefix, key));
+                        }
+                    }
+                    else
+                    {
+                        dict.Add(prefix, ((JValue)Current).Value);
+                    }
+
                     break;
 
                 default:
