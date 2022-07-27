@@ -71,10 +71,53 @@ namespace Altinn.App.Common.Helpers
 
                 case JTokenType.Array:
                     int index = 0;
-                    foreach (JToken value in Current.Children())
+
+                    if (Old.Type == JTokenType.Array)
                     {
-                        FindDiff(dict, new JObject(), value, $"{prefix}[{index}]");
-                        index++;
+                        var oldArray = Old as JArray;
+                        foreach (JToken value in Current.Children())
+                        {
+                            if (oldArray.Count - 1 >= index)
+                            {
+                                FindDiff(dict, oldArray[index], value, $"{prefix}[{index}]");
+                            }
+                            else
+                            {
+                                FindDiff(dict, new JObject(), value, $"{prefix}[{index}]");
+                            }
+
+                            index++;
+                        }
+
+                        while (index < oldArray.Count)
+                        {
+                            FindDiff(dict, oldArray[index], JValue.CreateNull(), $"{prefix}[{index}]");
+                            index++;
+                        }
+                    }
+                    else
+                    {
+                        foreach (JToken value in Current.Children())
+                        {
+                            FindDiff(dict, new JObject(), value, $"{prefix}[{index}]");
+                            index++;
+                        }
+                    }
+
+                    break;
+
+                case JTokenType.Null:
+                    if (Old.Type == JTokenType.Object)
+                    {
+                        var oldObject = Old as JObject;
+                        foreach (string key in oldObject.Properties().Select(c => c.Name))
+                        {
+                            FindDiff(dict, oldObject[key], JValue.CreateNull(), Join(prefix, key));
+                        }
+                    }
+                    else
+                    {
+                        dict.Add(prefix, ((JValue)Current).Value);
                     }
 
                     break;
