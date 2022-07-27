@@ -71,17 +71,37 @@ namespace Altinn.App.Common.Helpers
 
                 case JTokenType.Array:
                     int index = 0;
-                    foreach (JToken value in Current.Children())
-                    {
-                        FindDiff(dict, new JObject(), value, $"{prefix}[{index}]");
-                        index++;
-                    }
 
-                    var oldArray = Old as JArray;
-                    while (index < oldArray.Count)
+                    if (Old.Type == JTokenType.Array)
                     {
-                        FindDiff(dict, oldArray[index], JValue.CreateNull(), $"{prefix}[{index}]");
-                        index++;
+                        var oldArray = Old as JArray;
+                        foreach (JToken value in Current.Children())
+                        {
+                            if (oldArray.Count - 1 >= index)
+                            {
+                                FindDiff(dict, oldArray[index], value, $"{prefix}[{index}]");
+                            }
+                            else
+                            {
+                                FindDiff(dict, new JObject(), value, $"{prefix}[{index}]");
+                            }
+
+                            index++;
+                        }
+
+                        while (index < oldArray.Count)
+                        {
+                            FindDiff(dict, oldArray[index], JValue.CreateNull(), $"{prefix}[{index}]");
+                            index++;
+                        }
+                    }
+                    else
+                    {
+                        foreach (JToken value in Current.Children())
+                        {
+                            FindDiff(dict, new JObject(), value, $"{prefix}[{index}]");
+                            index++;
+                        }
                     }
 
                     break;
