@@ -19,7 +19,6 @@ namespace Altinn.App.Common.Tests.Helpers.JsonHelperTests
 
             Dictionary<string, object> changedFields = JsonHelper.FindChangedFields(before, after);
 
-            changedFields.Should().HaveCount(18);
             changedFields.Should().Equal(new Dictionary<string, object>
             {
                 {"willBeRemoved", null},
@@ -46,11 +45,23 @@ namespace Altinn.App.Common.Tests.Helpers.JsonHelperTests
                 // This index used to be a number, but the number was removed, so what was [4] is now [3].
                 // We need to tell the client that the scalar value in [3] is no more, while also putting
                 // an object there to replace it.
-                // {"moreAdvanced.mixedList[3]", null}, // TODO: Implement
+                // TODO: Implement
+                // {"moreAdvanced.mixedList[3]", null},
+
                 {"moreAdvanced.mixedList[3].first", "absolutely not"},
 
                 {"moreAdvanced.mixedList[4].first", null},
                 {"moreAdvanced.mixedList[4].otherRemovedProp", null},
+
+                // TODO: The array keys should be removed, not the entire array
+                {"removedArray", null},
+
+                {"arrayWithItemsAdded[3]", 7},
+                {"arrayWithItemsAdded[4]", 8},
+                {"arrayWithItemsAdded[5]", true},
+
+                {"newArray[0]", 1},
+                {"newArray[1]", 2},
             });
         }
     }

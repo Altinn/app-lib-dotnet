@@ -35,5 +35,7 @@
         "first": "absolutely not"
       }
     ]
-  }
+  },
+  "arrayWithItemsAdded": [4, 5, 6, 7, 8, true],
+  "newArray": [1, 2]
 }

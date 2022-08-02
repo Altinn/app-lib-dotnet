@@ -44,5 +44,7 @@
         "otherRemovedProp": 1234
       }
     ]
-  }
+  },
+  "removedArray": [1, 2, 3],
+  "arrayWithItemsAdded": [4, 5, 6]
 }
