@@ -32,6 +32,7 @@ namespace Altinn.App.Common.Helpers
                 return;
             }
 
+            int index = 0;
             switch (Current.Type)
             {
                 case JTokenType.Object:
@@ -53,12 +54,12 @@ namespace Altinn.App.Common.Helpers
                     IEnumerable<string> unchangedKeys = current.Properties().Where(c => JToken.DeepEquals(c.Value, old[c.Name])).Select(c => c.Name);
                     foreach (string key in addedKeys)
                     {
-                        FindDiff(dict, new JObject(), current[key], Join(prefix, key));
+                        FindDiff(dict, JValue.CreateNull(), current[key], Join(prefix, key));
                     }
 
                     foreach (string key in removedKeys)
                     {
-                        dict.Add(Join(prefix, key), null);
+                        FindDiff(dict, old[key], JValue.CreateNull(), Join(prefix, key));
                     }
 
                     var potentiallyModifiedKeys = current.Properties().Select(c => c.Name).Except(addedKeys).Except(unchangedKeys);
@@ -70,8 +71,6 @@ namespace Altinn.App.Common.Helpers
                     break;
 
                 case JTokenType.Array:
-                    int index = 0;
-
                     if (Old.Type == JTokenType.Array)
                     {
                         var oldArray = Old as JArray;
@@ -99,7 +98,7 @@ namespace Altinn.App.Common.Helpers
                     {
                         foreach (JToken value in Current.Children())
                         {
-                            FindDiff(dict, new JObject(), value, $"{prefix}[{index}]");
+                            FindDiff(dict, JValue.CreateNull(), value, $"{prefix}[{index}]");
                             index++;
                         }
                     }
@@ -113,6 +112,14 @@ namespace Altinn.App.Common.Helpers
                         foreach (string key in oldObject.Properties().Select(c => c.Name))
                         {
                             FindDiff(dict, oldObject[key], JValue.CreateNull(), Join(prefix, key));
+                        }
+                    }
+                    else if (Old.Type == JTokenType.Array)
+                    {
+                        var oldArray = Old as JArray;
+                        for (index = 0; index < oldArray?.Count; index++)
+                        {
+                            dict.Add($"{prefix}[{index}]", null);
                         }
                     }
                     else

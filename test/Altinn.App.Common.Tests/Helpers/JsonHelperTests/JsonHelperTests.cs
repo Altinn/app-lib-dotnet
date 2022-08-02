@@ -19,7 +19,7 @@ namespace Altinn.App.Common.Tests.Helpers.JsonHelperTests
 
             Dictionary<string, object> changedFields = JsonHelper.FindChangedFields(before, after);
 
-            changedFields.Should().Equal(new Dictionary<string, object>
+            Dictionary<string, object> expected = new Dictionary<string, object>
             {
                 {"willBeRemoved", null},
                 {"willChangeValue", false},
@@ -31,10 +31,12 @@ namespace Altinn.App.Common.Tests.Helpers.JsonHelperTests
                 {"moreAdvanced.oneRemovedInList[3]", "kept4"},
                 {"moreAdvanced.oneRemovedInList[4]", null},
 
-                {"moreAdvanced.objectWithRemovedProperty.removed1", null},
+                {"moreAdvanced.objectWithRemovedProperty.removed1.hello", null},
 
-                {"moreAdvanced.objectWithRemovedPropertyAndInnerChanges.removed1", null},
-                {"moreAdvanced.objectWithRemovedPropertyAndInnerChanges.removed2", null},
+                {"moreAdvanced.objectWithRemovedPropertyAndInnerChanges.removed1.hello", null},
+                {"moreAdvanced.objectWithRemovedPropertyAndInnerChanges.removed1.alsoRemovedProp", null},
+                {"moreAdvanced.objectWithRemovedPropertyAndInnerChanges.removed2.hello", null},
+                {"moreAdvanced.objectWithRemovedPropertyAndInnerChanges.removed2.alsoRemovedProp", null},
                 {"moreAdvanced.objectWithRemovedPropertyAndInnerChanges.kept1.removedProp", null},
                 {"moreAdvanced.objectWithRemovedPropertyAndInnerChanges.kept2.second", true},
 
@@ -53,8 +55,9 @@ namespace Altinn.App.Common.Tests.Helpers.JsonHelperTests
                 {"moreAdvanced.mixedList[4].first", null},
                 {"moreAdvanced.mixedList[4].otherRemovedProp", null},
 
-                // TODO: The array keys should be removed, not the entire array
-                {"removedArray", null},
+                {"removedArray[0]", null},
+                {"removedArray[1]", null},
+                {"removedArray[2]", null},
 
                 {"arrayWithItemsAdded[3]", 7},
                 {"arrayWithItemsAdded[4]", 8},
@@ -62,7 +65,9 @@ namespace Altinn.App.Common.Tests.Helpers.JsonHelperTests
 
                 {"newArray[0]", 1},
                 {"newArray[1]", 2},
-            });
+            };
+
+            changedFields.Should().Equal(expected);
         }
     }
 }
