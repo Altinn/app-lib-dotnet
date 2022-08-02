@@ -39,11 +39,26 @@ namespace Altinn.App.Common.Helpers
                     JObject current = Current as JObject;
                     JObject old = Old as JObject;
 
+                    if (Old.Type == JTokenType.Array)
+                    {
+                        var oldArray = Old as JArray;
+                        for (index = 0; index < oldArray?.Count; index++)
+                        {
+                            dict.Add($"{prefix}[{index}]", null);
+                        }
+                    }
+                    else if (Old.Type != JTokenType.Object)
+                    {
+                        // Scalar values would use the plain prefix, but object create deeper prefixes. If a scalar
+                        // value is replaced by an object, we need to unset the scalar value as well.
+                        dict.Add(prefix, null);
+                    }
+
                     if (old == null)
                     {
                         foreach (string key in current.Properties().Select(c => c.Name))
                         {
-                            FindDiff(dict, new JObject(), current[key], Join(prefix, key));
+                            FindDiff(dict, JValue.CreateNull(), current[key], Join(prefix, key));
                         }
 
                         break;
@@ -96,6 +111,11 @@ namespace Altinn.App.Common.Helpers
                     }
                     else
                     {
+                        if (Old.Type == JTokenType.Object)
+                        {
+                            FindDiff(dict, Old, JValue.CreateNull(), prefix);
+                        }
+
                         foreach (JToken value in Current.Children())
                         {
                             FindDiff(dict, JValue.CreateNull(), value, $"{prefix}[{index}]");

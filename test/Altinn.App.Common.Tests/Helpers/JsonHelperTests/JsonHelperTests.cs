@@ -47,9 +47,7 @@ namespace Altinn.App.Common.Tests.Helpers.JsonHelperTests
                 // This index used to be a number, but the number was removed, so what was [4] is now [3].
                 // We need to tell the client that the scalar value in [3] is no more, while also putting
                 // an object there to replace it.
-                // TODO: Implement
-                // {"moreAdvanced.mixedList[3]", null},
-
+                {"moreAdvanced.mixedList[3]", null},
                 {"moreAdvanced.mixedList[3].first", "absolutely not"},
 
                 {"moreAdvanced.mixedList[4].first", null},
@@ -65,6 +63,17 @@ namespace Altinn.App.Common.Tests.Helpers.JsonHelperTests
 
                 {"newArray[0]", 1},
                 {"newArray[1]", 2},
+
+                {"objectReplacedByArray.key", null},
+                {"objectReplacedByArray[0]", 1},
+                {"objectReplacedByArray[1]", 2},
+
+                {"arrayReplacedByObject[0]", null},
+                {"arrayReplacedByObject[1]", null},
+                {"arrayReplacedByObject.key", "value"},
+
+                {"scalarReplacedByObject", null},
+                {"scalarReplacedByObject.key", "value"},
             };
 
             changedFields.Should().Equal(expected);
