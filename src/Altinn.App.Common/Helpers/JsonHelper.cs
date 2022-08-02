@@ -149,7 +149,7 @@ namespace Altinn.App.Common.Helpers
                     break;
 
                 default:
-                    dict.Add(prefix, current == null ? null : ((JValue) current).Value);
+                    dict.Add(prefix, current == null ? null : ((JValue)current).Value);
                     break;
             }
         }
