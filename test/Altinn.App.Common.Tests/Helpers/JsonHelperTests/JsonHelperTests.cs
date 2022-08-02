@@ -17,9 +17,9 @@ namespace Altinn.App.Common.Tests.Helpers.JsonHelperTests
                 "Altinn.App.Common.Tests.Helpers.JsonHelperTests.TestData.after.json"
             );
 
-            Dictionary<string, object> changedFields = JsonHelper.FindChangedFields(before, after);
+            Dictionary<string, object?> changedFields = JsonHelper.FindChangedFields(before, after);
 
-            Dictionary<string, object> expected = new Dictionary<string, object>
+            Dictionary<string, object?> expected = new Dictionary<string, object?>
             {
                 {"willBeRemoved", null},
                 {"willChangeValue", false},
