@@ -1,0 +1,39 @@
+{
+  "willBeKept": true,
+  "willChangeValue": false,
+  "object": {
+    "willBeKept": 123,
+    "listInObject": [
+      "kept1",
+      "kept2"
+    ]
+  },
+  "moreAdvanced": {
+    "oneRemovedInList": [
+      "kept1",
+      "kept2",
+      "kept3",
+      "kept4"
+    ],
+    "objectWithRemovedProperty": {
+      "kept1": { "hello": "world" },
+      "kept2": { "hello": "world" }
+    },
+    "objectWithRemovedPropertyAndInnerChanges": {
+      "kept1": { "hello": "world" },
+      "kept2": { "hello": "world", "second": true }
+    },
+    "mixedList": [
+      {
+        "first": false
+      },
+      {
+        "first": true
+      },
+      "some string that changes",
+      {
+        "first": "absolutely not"
+      }
+    ]
+  }
+}

@@ -8,13 +8,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Helpers\JsonHelperTests\TestData\simple_changed.json" />
-    <None Remove="Helpers\JsonHelperTests\TestData\simple_unchanged.json" />
+    <None Remove="Helpers\JsonHelperTests\TestData\before.json" />
+    <None Remove="Helpers\JsonHelperTests\TestData\after.json" />
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Helpers\JsonHelperTests\TestData\simple_changed.json" />
-    <EmbeddedResource Include="Helpers\JsonHelperTests\TestData\simple_unchanged.json" />
+    <EmbeddedResource Include="Helpers\JsonHelperTests\TestData\before.json" />
+    <EmbeddedResource Include="Helpers\JsonHelperTests\TestData\after.json" />
   </ItemGroup>
 
   <ItemGroup>
