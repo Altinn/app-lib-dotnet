@@ -1,29 +1,26 @@
-﻿using System;
-using System.Threading.Tasks;
-
-using Altinn.App.Services.Configuration;
+﻿using Altinn.App.Services.Configuration;
 using Altinn.App.Services.Interface;
 using Altinn.Platform.Profile.Models;
 
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 
-namespace Altinn.App.Services.Decorators
+namespace Altinn.App.Core.Infrastructure.Clients.Profile
 {
     /// <summary>.
     /// Decorates an implementation of IProfile by caching the party object.
     /// If available, object is retrieved from cache without calling the service
     /// </summary>
-    public class ProfileClientCachingDecorator : IProfile
+    public class ProfileClientCached : IProfile
     {
         private readonly IProfile _decoratedService;
         private readonly IMemoryCache _memoryCache;
         private readonly MemoryCacheEntryOptions _cacheOptions;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ProfileClientCachingDecorator"/> class.
+        /// Initializes a new instance of the <see cref="ProfileClientCached"/> class.
         /// </summary>
-        public ProfileClientCachingDecorator(IProfile decoratedService, IMemoryCache memoryCache, IOptions<CacheSettings> _settings)
+        public ProfileClientCached(IProfile decoratedService, IMemoryCache memoryCache, IOptions<CacheSettings> _settings)
         {
             _decoratedService = decoratedService;
             _memoryCache = memoryCache;
