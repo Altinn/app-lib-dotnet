@@ -1,4 +1,10 @@
 using Altinn.App.Core.Implementation;
+using Altinn.App.Core.Infrastructure.Clients.Authentication;
+using Altinn.App.Core.Infrastructure.Clients.Authorization;
+using Altinn.App.Core.Infrastructure.Clients.Events;
+using Altinn.App.Core.Infrastructure.Clients.KeyVault;
+using Altinn.App.Core.Infrastructure.Clients.Pdf;
+using Altinn.App.Core.Infrastructure.Clients.Profile;
 using Altinn.App.Core.Infrastructure.Clients.Register;
 using Altinn.App.Core.Infrastructure.Clients.Storage;
 using Altinn.App.Core.Interface;
@@ -59,7 +65,7 @@ namespace Altinn.App.PlatformServices.Extensions
             services.Decorate<IProfile, ProfileClientCachingDecorator>();
             services.AddHttpClient<IRegister, RegisterClient>();
             services.AddHttpClient<IText, TextClient>();
-            services.AddHttpClient<IProcess, ProcessAppSI>();
+            services.AddHttpClient<IProcess, ProcessClient>();
             services.AddHttpClient<IPersonRetriever, PersonClient>();
 
             services.AddTransient<IUserTokenProvider, UserTokenProvider>();
@@ -100,12 +106,12 @@ namespace Altinn.App.PlatformServices.Extensions
 
             if (!env.IsDevelopment())
             {
-                services.AddSingleton<ISecrets, SecretsAppSI>();
+                services.AddSingleton<ISecrets, SecretsClient>();
                 services.Configure<KeyVaultSettings>(configuration.GetSection("kvSetting"));
             }
             else
             {
-                services.AddSingleton<ISecrets, SecretsLocalAppSI>();
+                services.AddSingleton<ISecrets, SecretsLocalClient>();
             }
 
             // Set up application insights

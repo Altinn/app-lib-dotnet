@@ -4,8 +4,9 @@
    - Consolidated all Nuget packages
    - Removed support for .Net5.0
 3. Moved and grouped http clients into new namespaces
-   - From Implementation folder to Altinn.App.Core.Infrastructure.Clients.[Area] where area is Register, Storage
+   - From Implementation folder to Altinn.App.Core.Infrastructure.Clients.[Area] where area is: Register, Storage, Profile, Authorization, Authentication, Events, Pdf, KeyVault
    - Not named HttpClients since clients might be other than http.
+   - ProcessAppSI
 4. Replaced virtual/abstract methods in AppBase with Dependency Injection to implement custom code.
    - GetAppModelType() and CreateNewAppModel() is replaced by new class in the App that implements IAppModel (This file should be the only dotnet code needed by default for an app). Remove the inheritence and implementation of IAltinnApp. Remove the call to base constructor. Add IAppModel.
    - Overriding ProcessDataWrite/Read is now done by injecting a class implementing IDataProcessor. `App/logic/DataProcessing/DataProcessingHandler.cs` in app-template is no longer needed. Add IDataProcessor to DataProcessingHandler.cs if you have custom code there. Register the implemenation in program.cs `services.AddTransient<IDataProcessor, DataProcessingHandler>();`

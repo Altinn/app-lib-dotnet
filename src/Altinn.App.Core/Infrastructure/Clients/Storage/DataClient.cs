@@ -1,13 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Mime;
 using System.Text;
-using System.Threading.Tasks;
 using System.Xml.Serialization;
 
 using Altinn.App.Common.Serialization;
@@ -28,7 +22,7 @@ using Microsoft.Extensions.Primitives;
 
 using Newtonsoft.Json;
 
-namespace Altinn.App.Services.Implementation
+namespace Altinn.App.Core.Infrastructure.Clients.Storage
 {
     /// <summary>
     /// A client for handling actions on data in Altinn Platform.
@@ -76,7 +70,7 @@ namespace Altinn.App.Services.Implementation
                 Id = $"{instanceOwnerPartyId}/{instanceGuid}",
             };
 
-            return await InsertFormData<T>(instance, dataType, dataToSerialize, type);
+            return await InsertFormData(instance, dataType, dataToSerialize, type);
         }
 
         /// <inheritdoc />

@@ -1,14 +1,10 @@
 ﻿#nullable enable
 
-using System;
 using System.Net;
-using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 
 using Altinn.App.PlatformServices.Helpers;
 using Altinn.App.PlatformServices.Interface;
@@ -22,7 +18,7 @@ using Altinn.Platform.Storage.Interface.Models;
 
 using Microsoft.Extensions.Options;
 
-namespace Altinn.App.PlatformServices.Implementation
+namespace Altinn.App.Core.Infrastructure.Clients.Register
 {
     /// <summary>
     /// Represents an implementation of <see cref="IPersonRetriever"/> that will call the Register
@@ -50,7 +46,7 @@ namespace Altinn.App.PlatformServices.Implementation
         /// <param name="accessTokenGenerator">An access token generator to create an access token.</param>
         /// <param name="userTokenProvider">A service that can obtain the user JWT token.</param>
         public PersonClient(
-            HttpClient httpClient, 
+            HttpClient httpClient,
             IOptions<PlatformSettings> platformSettings,
             IAppResources appResources,
             IAccessTokenGenerator accessTokenGenerator,
@@ -59,7 +55,7 @@ namespace Altinn.App.PlatformServices.Implementation
             _httpClient = httpClient;
             _httpClient.BaseAddress = new Uri(platformSettings.Value.ApiRegisterEndpoint);
             _httpClient.DefaultRequestHeaders.Add(
-                General.SubscriptionKeyHeaderName, 
+                General.SubscriptionKeyHeaderName,
                 platformSettings.Value.SubscriptionKey);
             _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 

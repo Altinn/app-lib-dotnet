@@ -1,9 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
-using System.Threading.Tasks;
 
 using Altinn.App.PlatformServices.Extensions;
 using Altinn.App.PlatformServices.Helpers;
@@ -15,11 +11,10 @@ using Altinn.Platform.Storage.Interface.Models;
 using AltinnCore.Authentication.Utils;
 
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 
-namespace Altinn.App.Services.Implementation
+namespace Altinn.App.Core.Infrastructure.Clients.Storage
 {
     /// <summary>
     /// A client for handling actions on instance events in Altinn Platform.

@@ -1,8 +1,4 @@
-using System;
-using System.IO;
-using System.Net.Http;
 using System.Text;
-using System.Threading.Tasks;
 
 using Altinn.App.Services.Configuration;
 using Altinn.App.Services.Constants;
@@ -15,7 +11,7 @@ using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace Altinn.App.Services.Implementation
+namespace Altinn.App.Core.Infrastructure.Clients.Pdf
 {
     /// <summary>
     /// A client for handling actions on pdf in Altinn Platform.

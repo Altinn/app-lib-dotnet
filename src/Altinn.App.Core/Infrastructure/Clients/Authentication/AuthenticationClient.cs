@@ -1,7 +1,4 @@
-using System;
-using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Threading.Tasks;
 
 using Altinn.App.PlatformServices.Extensions;
 using Altinn.App.Services.Configuration;
@@ -14,7 +11,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Altinn.App.Services.Implementation
+namespace Altinn.App.Core.Infrastructure.Clients.Authentication
 {
     /// <summary>
     /// A client for authentication actions in Altinn Platform.
@@ -50,7 +47,7 @@ namespace Altinn.App.Services.Implementation
         public async Task<string> RefreshToken()
         {
             string endpointUrl = $"refresh";
-            string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, Constants.General.RuntimeCookieName);
+            string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, General.RuntimeCookieName);
             HttpResponseMessage response = await _client.GetAsync(token, endpointUrl);
 
             if (response.StatusCode == System.Net.HttpStatusCode.OK)

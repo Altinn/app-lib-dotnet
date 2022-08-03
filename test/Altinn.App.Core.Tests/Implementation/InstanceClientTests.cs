@@ -5,10 +5,9 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-
+using Altinn.App.Core.Infrastructure.Clients.Storage;
 using Altinn.App.PlatformServices.Helpers;
 using Altinn.App.Services.Configuration;
-using Altinn.App.Services.Implementation;
 using Altinn.App.Services.Models;
 using Altinn.Platform.Storage.Interface.Models;
 

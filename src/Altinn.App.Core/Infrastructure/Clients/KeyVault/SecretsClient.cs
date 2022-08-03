@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 
 using Altinn.App.Services.Interface;
 
@@ -10,23 +9,23 @@ using Microsoft.Azure.KeyVault.WebKey;
 using Microsoft.Azure.Services.AppAuthentication;
 using Microsoft.Extensions.Options;
 
-namespace Altinn.App.PlatformServices.Implementation
+namespace Altinn.App.Core.Infrastructure.Clients.KeyVault
 {
     /// <summary>
     /// Class that handles integration with Azure Key Vault
     /// </summary>
-    public class SecretsAppSI : ISecrets
+    public class SecretsClient : ISecrets
     {
         private readonly string _vaultUri;
         private readonly AzureServiceTokenProvider _azureServiceTokenProvider;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SecretsAppSI"/> class with a client using the credentials from the key vault settings.
+        /// Initializes a new instance of the <see cref="SecretsClient"/> class with a client using the credentials from the key vault settings.
         /// </summary>
         /// <param name="keyVaultSettings">
         /// The <see cref="KeyVaultSettings"/> with information about the principal to use when getting secrets from a key vault.
         /// </param>
-        public SecretsAppSI(IOptions<KeyVaultSettings> keyVaultSettings)
+        public SecretsClient(IOptions<KeyVaultSettings> keyVaultSettings)
         {
             string connectionString = $"RunAs=App;AppId={keyVaultSettings.Value.ClientId};" +
                                  $"TenantId={keyVaultSettings.Value.TenantId};" +

@@ -4,9 +4,8 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-
+using Altinn.App.Core.Infrastructure.Clients.Events;
 using Altinn.App.PlatformServices.Helpers;
-using Altinn.App.PlatformServices.Implementation;
 using Altinn.App.PlatformServices.Models;
 using Altinn.App.Services.Configuration;
 using Altinn.App.Services.Interface;

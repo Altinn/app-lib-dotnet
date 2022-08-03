@@ -8,9 +8,8 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-
+using Altinn.App.Core.Infrastructure.Clients.Register;
 using Altinn.App.PlatformServices.Helpers;
-using Altinn.App.PlatformServices.Implementation;
 using Altinn.App.PlatformServices.Tests.Mocks;
 using Altinn.App.Services;
 using Altinn.App.Services.Configuration;
