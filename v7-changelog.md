@@ -16,4 +16,7 @@
    - Deprecated method `IAltinnApp.GetPageOrder()` is removed. It's now only possible to override this logic by injecting a class implementing IPageOrder
    - Overriding logic for RunProcessTaskEnd is done by injecting a class implementing ITaskProcessor.
 5. Created AddAltinnAppServices in Api project as the new main method to call from Program.cs in the app
-6. Moved registration of Application Insights from Core to Api project.
+6. Moved code
+   - Moved registration of Application Insights from Core to Api project.
+   - Moved Filters to Infrastructure namespace in Api project
+   - Moved SecurityHeaders middleware to Infrastructure namespace in Api project

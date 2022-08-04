@@ -1,6 +1,7 @@
+using Altinn.App.Api.Infrastructure.Middleware;
 using Microsoft.AspNetCore.Builder;
 
-namespace Altinn.App.Api.Middleware
+namespace Altinn.App.Api.Extensions
 {
     /// <summary>
     /// Extensions for adding default security headers middleware to the pipeline.

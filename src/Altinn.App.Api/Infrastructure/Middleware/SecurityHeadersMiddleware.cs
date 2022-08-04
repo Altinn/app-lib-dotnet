@@ -1,11 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Primitives;
 
-namespace Altinn.App.Api.Middleware
+namespace Altinn.App.Api.Infrastructure.Middleware
 {
     /// <summary>
     /// Middleware for sending security headers in response.

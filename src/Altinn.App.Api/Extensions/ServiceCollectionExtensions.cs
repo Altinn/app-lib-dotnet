@@ -1,5 +1,6 @@
 ﻿using System;
 using Altinn.App.Api.Infrastructure.Telemetry;
+using Altinn.App.Core.Extensions;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -21,6 +22,9 @@ namespace Altinn.App.Api.Extensions
         /// <param name="env">A reference to the current <see cref="IWebHostEnvironment"/> object.</param>
         public static void AddAltinnAppServices(this IServiceCollection services, IConfiguration configuration, IWebHostEnvironment env)
         {
+            services.AddPlatformServices(configuration, env);
+            services.AddAppServices(configuration, env);
+
             AddApplicationInsights(services, configuration, env);
         }
 
