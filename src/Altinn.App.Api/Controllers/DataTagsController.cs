@@ -4,7 +4,7 @@ using System.Net.Mime;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-using Altinn.App.Api.Filters;
+using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
 using Altinn.App.Common.Constants;
 using Altinn.App.Services.Interface;

@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.Options;
 
-namespace Altinn.App.Api.Filters
+namespace Altinn.App.Api.Infrastructure.Filters
 {
     /// <summary>
     /// Represents a class that can perform request forgery checking.

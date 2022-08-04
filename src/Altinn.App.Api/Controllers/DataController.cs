@@ -7,8 +7,7 @@ using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Threading.Tasks;
-
-using Altinn.App.Api.Filters;
+using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Common.Constants;
 using Altinn.App.Common.Helpers;
 using Altinn.App.Common.Helpers.Extensions;
