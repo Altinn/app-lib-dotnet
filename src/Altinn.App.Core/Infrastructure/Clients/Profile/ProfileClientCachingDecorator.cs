@@ -11,16 +11,16 @@ namespace Altinn.App.Core.Infrastructure.Clients.Profile
     /// Decorates an implementation of IProfile by caching the party object.
     /// If available, object is retrieved from cache without calling the service
     /// </summary>
-    public class ProfileClientCached : IProfile
+    public class ProfileClientCachingDecorator : IProfile
     {
         private readonly IProfile _decoratedService;
         private readonly IMemoryCache _memoryCache;
         private readonly MemoryCacheEntryOptions _cacheOptions;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ProfileClientCached"/> class.
+        /// Initializes a new instance of the <see cref="ProfileClientCachingDecorator"/> class.
         /// </summary>
-        public ProfileClientCached(IProfile decoratedService, IMemoryCache memoryCache, IOptions<CacheSettings> _settings)
+        public ProfileClientCachingDecorator(IProfile decoratedService, IMemoryCache memoryCache, IOptions<CacheSettings> _settings)
         {
             _decoratedService = decoratedService;
             _memoryCache = memoryCache;

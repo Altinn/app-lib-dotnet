@@ -13,7 +13,6 @@ using Altinn.App.PlatformServices.Interface;
 using Altinn.App.PlatformServices.Options;
 using Altinn.App.Services;
 using Altinn.App.Services.Configuration;
-using Altinn.App.Services.Filters;
 using Altinn.App.Services.Implementation;
 using Altinn.App.Services.Interface;
 using Altinn.Common.AccessTokenClient.Configuration;
@@ -22,8 +21,6 @@ using Altinn.Common.PEP.Implementation;
 using Altinn.Common.PEP.Interfaces;
 
 using AltinnCore.Authentication.Constants;
-
-using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -61,7 +58,7 @@ namespace Altinn.App.PlatformServices.Extensions
             services.AddHttpClient<IEvents, EventsClient>();
             services.AddHttpClient<IPDF, PDFClient>();
             services.AddHttpClient<IProfile, ProfileClient>();
-            services.Decorate<IProfile, ProfileClientCached>();
+            services.Decorate<IProfile, ProfileClientCachingDecorator>();
             services.AddHttpClient<IRegister, RegisterClient>();
             services.AddHttpClient<IText, TextClient>();
             services.AddHttpClient<IProcess, ProcessClient>();
@@ -111,19 +108,6 @@ namespace Altinn.App.PlatformServices.Extensions
             else
             {
                 services.AddSingleton<ISecrets, SecretsLocalClient>();
-            }
-
-            // Set up application insights
-            string applicationInsightsKey = env.IsDevelopment() ?
-             configuration["ApplicationInsights:InstrumentationKey"]
-             : Environment.GetEnvironmentVariable("ApplicationInsights__InstrumentationKey");
-
-            if (!string.IsNullOrEmpty(applicationInsightsKey))
-            {
-                services.AddApplicationInsightsTelemetry(applicationInsightsKey);
-                services.AddApplicationInsightsTelemetryProcessor<IdentityTelemetryFilter>();
-                services.AddApplicationInsightsTelemetryProcessor<HealthTelemetryFilter>();
-                services.AddSingleton<ITelemetryInitializer, CustomTelemetryInitializer>();
             }
         }
 

@@ -14,4 +14,6 @@
    - Overriding validation logic is done by injecting a class implementing IInstanceValidator. `App/logic/Validation/ValidationHandler.cs` in app-template is no longer needed. Add IInstanceValidator to ValidationHandler.cs if you have custom code there. Register the implementation in program.cs `services.AddTransient<IInstanceValidator, ValidationHandler>();`. 
    - ICustomPdfGenerator renamed to IPdfFormatter, ICustomPdfGenerator was already implemented with DI, `App/logic/Print/PdfHandler.cs` in app-template is no longer needed.
    - Deprecated method `IAltinnApp.GetPageOrder()` is removed. It's now only possible to override this logic by injecting a class implementing IPageOrder
-   - Overriding logic for RunProcessTaskEnd is done by injecting a class implementing ITaskProcessor.  
+   - Overriding logic for RunProcessTaskEnd is done by injecting a class implementing ITaskProcessor.
+5. Created AddAltinnAppServices in Api project as the new main method to call from Program.cs in the app
+6. Moved registration of Application Insights from Core to Api project.

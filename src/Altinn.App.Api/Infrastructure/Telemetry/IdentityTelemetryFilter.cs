@@ -7,7 +7,7 @@ using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Http;
 
-namespace Altinn.App.Services.Filters
+namespace Altinn.App.Api.Infrastructure.Telemetry
 {
     /// <summary>
     /// Filter to enrich request telemetry with identity information

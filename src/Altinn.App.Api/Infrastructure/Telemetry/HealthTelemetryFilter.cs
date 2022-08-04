@@ -4,7 +4,7 @@ using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 
-namespace Altinn.App.Services.Filters
+namespace Altinn.App.Api.Infrastructure.Telemetry
 {
     /// <summary>
     /// Filter to exclude health check request from Application Insights
