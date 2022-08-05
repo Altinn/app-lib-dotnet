@@ -363,7 +363,28 @@ This documentation assumes you are on version 6 of the application template.
       ```csharp
       services.AddTransient<IAppModel, Altinn.App.AppLogic.App>();
       ```
-
-   3. Update using statements
       
-      A few files have shifted namespace
+      This will reqire the following using statement to be added:
+
+      ```csharp
+      using Altinn.App.Core.Interface;
+      ```
+
+   3. Remove old and not used using statements
+      
+      A few files have shifted namespace. The tooling should help you out, but the following should be removed:
+
+      ```csharp
+      using Altinn.App.Api.Filters;
+      using Altinn.App.Api.Middleware;
+
+      using Altinn.App.Services.Interface;
+
+      using Microsoft.ApplicationInsights;
+      using Microsoft.ApplicationInsights.Extensibility;
+      ```
+
+      The following should be added:
+      ```csharp
+      using Altinn.App.Api.Infrastructure.Filters;
+      ```
