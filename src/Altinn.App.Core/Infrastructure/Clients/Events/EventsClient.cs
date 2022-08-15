@@ -1,9 +1,6 @@
-using System;
-using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 using Altinn.App.PlatformServices.Extensions;
 using Altinn.App.PlatformServices.Helpers;
@@ -19,7 +16,7 @@ using AltinnCore.Authentication.Utils;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 
-namespace Altinn.App.PlatformServices.Implementation
+namespace Altinn.App.Core.Infrastructure.Clients.Events
 {
     /// <summary>
     /// A client for handling actions on events in Altinn Platform.

@@ -1,20 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Security.Claims;
-using System.Threading.Tasks;
-using Altinn.App.Common.Process.Elements;
 using Altinn.App.PlatformServices.Extensions;
 using Altinn.App.PlatformServices.Helpers;
-using Altinn.App.PlatformServices.Models;
 using Altinn.App.Services.Configuration;
 using Altinn.App.Services.Constants;
 using Altinn.App.Services.Helpers;
 using Altinn.App.Services.Interface;
-using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
 using AltinnCore.Authentication.Utils;
 using Microsoft.AspNetCore.Http;
@@ -22,15 +12,15 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 
-namespace Altinn.App.Services.Implementation
+namespace Altinn.App.Core.Infrastructure.Clients.Storage
 {
     /// <summary>
     /// The app implementation of the process service.
     /// </summary>
-    public class ProcessAppSI : IProcess
+    public class ProcessClient : IProcess
     {
         private readonly AppSettings _appSettings;
-        private readonly ILogger<ProcessAppSI> _logger;
+        private readonly ILogger<ProcessClient> _logger;
         private readonly IInstanceEvent _instanceEventClient;
         private readonly HttpClient _client;
         private readonly IHttpContextAccessor _httpContextAccessor;
@@ -41,13 +31,13 @@ namespace Altinn.App.Services.Implementation
         public ProcessHelper ProcessHelper { get; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ProcessAppSI"/> class.
+        /// Initializes a new instance of the <see cref="ProcessClient"/> class.
         /// </summary>
-        public ProcessAppSI(
+        public ProcessClient(
             IOptions<PlatformSettings> platformSettings,
             IOptions<AppSettings> appSettings,
             IInstanceEvent instanceEventClient,
-            ILogger<ProcessAppSI> logger,
+            ILogger<ProcessClient> logger,
             IHttpContextAccessor httpContextAccessor,
             HttpClient httpClient)
         {
@@ -80,7 +70,7 @@ namespace Altinn.App.Services.Implementation
                 throw;
             }
         }
-        
+
         /// <inheritdoc />
         public async Task<ProcessHistoryList> GetProcessHistory(string instanceGuid, string instanceOwnerPartyId)
         {

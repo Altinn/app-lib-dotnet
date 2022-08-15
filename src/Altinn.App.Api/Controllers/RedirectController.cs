@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
-using Altinn.App.Api.Filters;
+using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Services.Configuration;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;

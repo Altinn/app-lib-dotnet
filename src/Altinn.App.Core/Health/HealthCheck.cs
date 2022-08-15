@@ -1,6 +1,4 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-
+﻿
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace Altinn.App.Core.Health

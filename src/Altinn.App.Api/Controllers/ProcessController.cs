@@ -5,7 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
-using Altinn.App.Api.Filters;
+using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Common.Process;
 using Altinn.App.Common.Process.Elements;
 using Altinn.App.Core.Interface;

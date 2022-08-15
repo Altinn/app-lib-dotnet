@@ -3,7 +3,7 @@ using System;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Altinn.App.Api.Filters
+namespace Altinn.App.Api.Infrastructure.Filters
 {
     /// <summary>
     /// This attribute is part of the anti request forgery system.

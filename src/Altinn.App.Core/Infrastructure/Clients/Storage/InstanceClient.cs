@@ -1,10 +1,6 @@
-using System;
-using System.Collections.Generic;
 using System.Net;
-using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
-using System.Threading.Tasks;
 
 using Altinn.App.PlatformServices.Extensions;
 using Altinn.App.PlatformServices.Helpers;
@@ -23,7 +19,7 @@ using Microsoft.Extensions.Primitives;
 
 using Newtonsoft.Json;
 
-namespace Altinn.App.Services.Implementation
+namespace Altinn.App.Core.Infrastructure.Clients.Storage
 {
     /// <summary>
     /// A client for handling actions on instances in Altinn Platform.

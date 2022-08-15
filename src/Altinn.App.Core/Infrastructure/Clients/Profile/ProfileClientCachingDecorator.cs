@@ -1,14 +1,11 @@
-﻿using System;
-using System.Threading.Tasks;
-
-using Altinn.App.Services.Configuration;
+﻿using Altinn.App.Services.Configuration;
 using Altinn.App.Services.Interface;
 using Altinn.Platform.Profile.Models;
 
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 
-namespace Altinn.App.Services.Decorators
+namespace Altinn.App.Core.Infrastructure.Clients.Profile
 {
     /// <summary>.
     /// Decorates an implementation of IProfile by caching the party object.

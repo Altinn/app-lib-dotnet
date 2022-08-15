@@ -1,4 +1,10 @@
 using Altinn.App.Core.Implementation;
+using Altinn.App.Core.Infrastructure.Clients.Authentication;
+using Altinn.App.Core.Infrastructure.Clients.Authorization;
+using Altinn.App.Core.Infrastructure.Clients.Events;
+using Altinn.App.Core.Infrastructure.Clients.KeyVault;
+using Altinn.App.Core.Infrastructure.Clients.Pdf;
+using Altinn.App.Core.Infrastructure.Clients.Profile;
 using Altinn.App.Core.Infrastructure.Clients.Register;
 using Altinn.App.Core.Infrastructure.Clients.Storage;
 using Altinn.App.Core.Interface;
@@ -8,8 +14,6 @@ using Altinn.App.PlatformServices.Interface;
 using Altinn.App.PlatformServices.Options;
 using Altinn.App.Services;
 using Altinn.App.Services.Configuration;
-using Altinn.App.Services.Decorators;
-using Altinn.App.Services.Filters;
 using Altinn.App.Services.Implementation;
 using Altinn.App.Services.Interface;
 using Altinn.Common.AccessTokenClient.Configuration;
@@ -18,15 +22,13 @@ using Altinn.Common.PEP.Implementation;
 using Altinn.Common.PEP.Interfaces;
 
 using AltinnCore.Authentication.Constants;
-
-using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 
-namespace Altinn.App.PlatformServices.Extensions
+namespace Altinn.App.Core.Extensions
 {
     /// <summary>
     /// This class holds a collection of extension methods for the <see cref="IServiceCollection"/> interface.
@@ -60,7 +62,7 @@ namespace Altinn.App.PlatformServices.Extensions
             services.Decorate<IProfile, ProfileClientCachingDecorator>();
             services.AddHttpClient<IRegister, RegisterClient>();
             services.AddHttpClient<IText, TextClient>();
-            services.AddHttpClient<IProcess, ProcessAppSI>();
+            services.AddHttpClient<IProcess, ProcessClient>();
             services.AddHttpClient<IPersonRetriever, PersonClient>();
 
             services.AddTransient<IUserTokenProvider, UserTokenProvider>();
@@ -101,25 +103,12 @@ namespace Altinn.App.PlatformServices.Extensions
 
             if (!env.IsDevelopment())
             {
-                services.AddSingleton<ISecrets, SecretsAppSI>();
+                services.AddSingleton<ISecrets, SecretsClient>();
                 services.Configure<KeyVaultSettings>(configuration.GetSection("kvSetting"));
             }
             else
             {
-                services.AddSingleton<ISecrets, SecretsLocalAppSI>();
-            }
-
-            // Set up application insights
-            string applicationInsightsKey = env.IsDevelopment() ?
-             configuration["ApplicationInsights:InstrumentationKey"]
-             : Environment.GetEnvironmentVariable("ApplicationInsights__InstrumentationKey");
-
-            if (!string.IsNullOrEmpty(applicationInsightsKey))
-            {
-                services.AddApplicationInsightsTelemetry(applicationInsightsKey);
-                services.AddApplicationInsightsTelemetryProcessor<IdentityTelemetryFilter>();
-                services.AddApplicationInsightsTelemetryProcessor<HealthTelemetryFilter>();
-                services.AddSingleton<ITelemetryInitializer, CustomTelemetryInitializer>();
+                services.AddSingleton<ISecrets, SecretsLocalClient>();
             }
         }
 

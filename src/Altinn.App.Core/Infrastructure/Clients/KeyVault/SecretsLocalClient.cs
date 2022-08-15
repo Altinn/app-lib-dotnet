@@ -1,27 +1,24 @@
-using System;
-using System.IO;
 using System.Text.Json;
-using System.Threading.Tasks;
 using Altinn.App.Services.Interface;
 using Microsoft.Azure.KeyVault;
 using Microsoft.Azure.KeyVault.WebKey;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json.Linq;
 
-namespace Altinn.App.PlatformServices.Implementation
+namespace Altinn.App.Core.Infrastructure.Clients.KeyVault
 {
     /// <summary>
     /// Class that handles integration with Azure Key Vault
     /// </summary>
-    public class SecretsLocalAppSI : ISecrets
+    public class SecretsLocalClient : ISecrets
     {
         private readonly IConfiguration _configuration;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SecretsLocalAppSI"/> class.
+        /// Initializes a new instance of the <see cref="SecretsLocalClient"/> class.
         /// </summary>
         /// <param name="configuration">IConfiguration</param>
-        public SecretsLocalAppSI(IConfiguration configuration)
+        public SecretsLocalClient(IConfiguration configuration)
         {
             _configuration = configuration;
         }
