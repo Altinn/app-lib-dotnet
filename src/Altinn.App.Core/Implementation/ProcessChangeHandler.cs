@@ -3,9 +3,9 @@ using System.Security.Claims;
 using Altinn.App.Common.Process;
 using Altinn.App.Common.Process.Elements;
 using Altinn.App.Core.Interface;
-using Altinn.App.Core.Invokers;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Process;
+using Altinn.App.Core.Receivers;
 using Altinn.App.PlatformServices.Extensions;
 using Altinn.App.PlatformServices.Interface;
 using Altinn.App.Services.Configuration;
@@ -36,7 +36,8 @@ namespace Altinn.App.Core.Implementation
         private readonly IEvents _eventsService;
         private readonly IProfile _profileClient;
         private readonly AppSettings _appSettings;
-        private readonly IAppEventOrchestrator _orchestrator;
+        private readonly IAppEvents _appEvents;
+        private readonly ITaskEvents _taskEvents;
 
         /// <summary>
         /// Altinn App specific process change handler
@@ -49,7 +50,8 @@ namespace Altinn.App.Core.Implementation
             IEvents eventsService,
             IProfile profileClient,
             IOptions<AppSettings> appSettings,
-            IAppEventOrchestrator orchestrator)
+            IAppEvents appEvents,
+            ITaskEvents taskEvents)
         {
             _logger = logger;
             _processService = processService;
@@ -60,7 +62,8 @@ namespace Altinn.App.Core.Implementation
             _eventsService = eventsService;
             _profileClient = profileClient;
             _appSettings = appSettings.Value;
-            _orchestrator = orchestrator;
+            _appEvents = appEvents;
+            _taskEvents = taskEvents;
         }
 
         /// <inheritdoc />
@@ -142,14 +145,14 @@ namespace Altinn.App.Core.Implementation
                 return null;
             }
 
-            ITask task = new DataTask(_orchestrator);
+            ITask task = new DataTask(_taskEvents);
             if (altinnTaskType.Equals("confirmation"))
             {
-                task = new ConfirmationTask(_orchestrator);
+                task = new ConfirmationTask(_taskEvents);
             }
             else if (altinnTaskType.Equals("feedback"))
             {
-                task = new FeedbackTask(_orchestrator);
+                task = new FeedbackTask(_taskEvents);
             }
 
             return task;
@@ -201,8 +204,7 @@ namespace Altinn.App.Core.Implementation
                             break;
                         case InstanceEventType.process_EndEvent:
                             processChangeContext.ElementToBeProcessed = processEvent.ProcessInfo?.EndEvent;
-                            //await _altinnApp.OnEndProcess(processEvent.ProcessInfo?.EndEvent, processChangeContext.Instance);
-                            await _orchestrator.OnEndProcess(processEvent.ProcessInfo?.EndEvent, processChangeContext.Instance);
+                            await _appEvents.OnEndAppEvent(processEvent.ProcessInfo?.EndEvent, processChangeContext.Instance);
                             break;
                     }
                 }

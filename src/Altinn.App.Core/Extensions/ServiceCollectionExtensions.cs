@@ -1,10 +1,7 @@
-using Altinn.App.Core.EFormidling.Implementation;
-using Altinn.App.Core.EFormidling.Interface;
 using Altinn.App.Core.Implementation;
 using Altinn.App.Core.Infrastructure.Clients.Register;
 using Altinn.App.Core.Infrastructure.Clients.Storage;
 using Altinn.App.Core.Interface;
-using Altinn.App.Core.Invokers;
 using Altinn.App.Core.Receivers;
 using Altinn.App.PlatformServices.Implementation;
 using Altinn.App.PlatformServices.Interface;
@@ -17,7 +14,6 @@ using Altinn.App.Services.Implementation;
 using Altinn.App.Services.Interface;
 using Altinn.Common.AccessTokenClient.Configuration;
 using Altinn.Common.AccessTokenClient.Services;
-using Altinn.Common.EFormidlingClient;
 using Altinn.Common.PEP.Implementation;
 using Altinn.Common.PEP.Interfaces;
 
@@ -89,9 +85,8 @@ namespace Altinn.App.PlatformServices.Extensions
             services.AddSingleton<IAppResources, AppResourcesSI>();
             services.AddTransient<IProcessEngine, ProcessEngine>();
             services.AddTransient<IProcessChangeHandler, ProcessChangeHandler>();
-            services.AddTransient<IAppEventOrchestrator, AppEventOrchestrator>();
-            services.AddTransient<IAppEventReceiver, DefaultAppEventReceiver>();
-            services.AddTransient<ITaskEventReceiver, DefaultTaskEventReceiver>();
+            services.AddTransient<IAppEvents, DefaultAppEvents>();
+            services.AddTransient<ITaskEvents, DefaultTaskEvents>();
             services.TryAddTransient<IPageOrder, DefaultPageOrder>();
             services.TryAddTransient<IInstantiation, NullInstantiation>();
             services.TryAddTransient<IInstanceValidator, NullInstanceValidator>();

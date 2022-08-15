@@ -1,7 +1,5 @@
-using System.Threading.Tasks;
-using Altinn.App.Core.Invokers;
 using Altinn.App.Core.Models;
-using Altinn.App.Services.Interface;
+using Altinn.App.Core.Receivers;
 
 namespace Altinn.App.Core.Process
 {
@@ -10,32 +8,32 @@ namespace Altinn.App.Core.Process
     /// </summary>
     public class DataTask : TaskBase
     {
-        private readonly IAppEventOrchestrator _orchestrator;
+        private readonly ITaskEvents _taskEvents;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DataTask"/> class.
         /// </summary>
-        public DataTask(IAppEventOrchestrator orchestrator)
+        public DataTask(ITaskEvents taskEvents)
         {
-            _orchestrator = orchestrator;
+            _taskEvents = taskEvents;
         }
 
         /// <inheritdoc/>
         public override async Task HandleTaskAbandon(ProcessChangeContext processChangeContext)
         {
-            await _orchestrator.OnAbandonProcessTask(processChangeContext.ElementToBeProcessed, processChangeContext.Instance);
+            await _taskEvents.OnAbandonProcessTask(processChangeContext.ElementToBeProcessed, processChangeContext.Instance);
         }
 
         /// <inheritdoc/>
         public override async Task HandleTaskComplete(ProcessChangeContext processChangeContext)
         {
-            await _orchestrator.OnEndProcessTask(processChangeContext.ElementToBeProcessed, processChangeContext.Instance);
+            await _taskEvents.OnEndProcessTask(processChangeContext.ElementToBeProcessed, processChangeContext.Instance);
         }
 
         /// <inheritdoc/>
         public override async Task HandleTaskStart(ProcessChangeContext processChangeContext)
         {
-            await _orchestrator.OnStartProcessTask(processChangeContext.ElementToBeProcessed,
+            await _taskEvents.OnStartProcessTask(processChangeContext.ElementToBeProcessed,
                 processChangeContext.Instance, processChangeContext.Prefill);
         }
     }

@@ -1,4 +1,3 @@
-using Altinn.App.Core.Invokers;
 using Altinn.App.Services.Interface;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
@@ -8,9 +7,9 @@ namespace Altinn.App.Core.Receivers;
 /// <summary>
 /// Default handling of instance events
 /// </summary>
-public class DefaultAppEventReceiver: IAppEventReceiver
+public class DefaultAppEvents: IAppEvents
 {
-    private readonly ILogger<DefaultAppEventReceiver> _logger;
+    private readonly ILogger<DefaultAppEvents> _logger;
     private readonly Application _appMetadata;
     private readonly IInstance _instanceClient;
     private readonly IData _dataClient;
@@ -18,8 +17,8 @@ public class DefaultAppEventReceiver: IAppEventReceiver
     private readonly string _org;
     private readonly string _app;
     
-    public DefaultAppEventReceiver(
-        ILogger<DefaultAppEventReceiver> logger, 
+    public DefaultAppEvents(
+        ILogger<DefaultAppEvents> logger, 
         IAppResources resourceService, 
         IInstance instanceClient,
         IData dataClient)
@@ -34,16 +33,14 @@ public class DefaultAppEventReceiver: IAppEventReceiver
     }
 
     /// <inheritdoc />
-    public async Task OnStartAppEvent(object? sender, AppEventArgs eventArgs)
+    public async Task OnStartAppEvent(string startEvent, Instance instance)
     {
         await Task.CompletedTask;
     }
 
     /// <inheritdoc />
-    public async Task OnEndAppEvent(object? sender, AppEventArgs eventArgs)
+    public async Task OnEndAppEvent(string endEvent, Instance instance)
     {
-        var endEvent = eventArgs.Event;
-        var instance = eventArgs.Instance;
         await AutoDeleteDataElements(instance);
 
         _logger.LogInformation($"OnEndProcess for {instance.Id}, endEvent: {endEvent}");

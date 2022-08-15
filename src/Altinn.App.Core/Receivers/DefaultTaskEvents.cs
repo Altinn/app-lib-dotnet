@@ -1,6 +1,5 @@
 using Altinn.App.Core.EFormidling.Interface;
 using Altinn.App.Core.Interface;
-using Altinn.App.Core.Invokers;
 using Altinn.App.PlatformServices.Interface;
 using Altinn.App.Services.Configuration;
 using Altinn.App.Services.Helpers;
@@ -14,9 +13,9 @@ namespace Altinn.App.Core.Receivers;
 /// <summary>
 /// Default handling of task process events.
 /// </summary>
-public class DefaultTaskEventReceiver : ITaskEventReceiver
+public class DefaultTaskEvents : ITaskEvents
 {
-    private readonly ILogger<DefaultTaskEventReceiver> _logger;
+    private readonly ILogger<DefaultTaskEvents> _logger;
     private readonly Application _appMetadata;
     private readonly IData _dataClient;
     private readonly IPrefill _prefillService;
@@ -28,8 +27,8 @@ public class DefaultTaskEventReceiver : ITaskEventReceiver
     private readonly IEFormidlingService? _eFormidlingService;
     private readonly AppSettings? _appSettings;
 
-    public DefaultTaskEventReceiver(
-        ILogger<DefaultTaskEventReceiver> logger,
+    public DefaultTaskEvents(
+        ILogger<DefaultTaskEvents> logger,
         IAppResources resourceService,
         IData dataClient,
         IPrefill prefillService,
@@ -55,11 +54,8 @@ public class DefaultTaskEventReceiver : ITaskEventReceiver
     }
 
     /// <inheritdoc />
-    public async Task OnStartProcessTask(object? sender, TaskEventWithPrefillArgs eventArgs)
+    public async Task OnStartProcessTask(string taskId, Instance instance, Dictionary<string, string> prefill)
     {
-        var instance = eventArgs.Instance;
-        var taskId = eventArgs.TaskId;
-        var prefill = eventArgs.Prefill;
         _logger.LogInformation($"OnStartProcessTask for {instance.Id}");
 
         // If this is a revisit to a previous task we need to unlock data
@@ -105,16 +101,14 @@ public class DefaultTaskEventReceiver : ITaskEventReceiver
     }
 
     /// <inheritdoc />
-    public async Task OnEndProcessTask(object? sender, TaskEventArgs eventArgs)
+    public async Task OnEndProcessTask(string endEvent, Instance instance)
     {
-        var taskId = eventArgs.TaskId;
-        var instance = eventArgs.Instance;
         
-        await _taskProcessor.ProcessTaskEnd(taskId, instance);
+        await _taskProcessor.ProcessTaskEnd(endEvent, instance);
 
-        _logger.LogInformation($"OnEndProcessTask for {instance.Id}. Locking data elements connected to {taskId} ===========");
+        _logger.LogInformation($"OnEndProcessTask for {instance.Id}. Locking data elements connected to {endEvent} ===========");
 
-        List<DataType> dataTypesToLock = _appMetadata.DataTypes.FindAll(dt => dt.TaskId == taskId);
+        List<DataType> dataTypesToLock = _appMetadata.DataTypes.FindAll(dt => dt.TaskId == endEvent);
 
         Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
         foreach (DataType dataType in dataTypesToLock)
@@ -131,7 +125,7 @@ public class DefaultTaskEventReceiver : ITaskEventReceiver
                 {
                     Type dataElementType = _appModel.GetModelType(dataType.AppLogic.ClassRef);
                     Task createPdf =
-                        _pdfService.GenerateAndStoreReceiptPDF(instance, taskId, dataElement, dataElementType);
+                        _pdfService.GenerateAndStoreReceiptPDF(instance, endEvent, dataElement, dataElementType);
                     await Task.WhenAll(updateData, createPdf);
                 }
                 else
@@ -140,7 +134,7 @@ public class DefaultTaskEventReceiver : ITaskEventReceiver
                 }
             }
         }
-        if (_appSettings?.EnableEFormidling == true && _appMetadata.EFormidling?.SendAfterTaskId == taskId && _eFormidlingService != null)
+        if (_appSettings?.EnableEFormidling == true && _appMetadata.EFormidling?.SendAfterTaskId == endEvent && _eFormidlingService != null)
         {
             await _eFormidlingService.SendEFormidlingShipment(instance);
         }
@@ -154,10 +148,8 @@ public class DefaultTaskEventReceiver : ITaskEventReceiver
     }
 
     /// <inheritdoc />
-    public async Task OnAbandonProcessTask(object? sender, TaskEventArgs eventArgs)
+    public async Task OnAbandonProcessTask(string taskId, Instance instance)
     {
-        var taskId = eventArgs.TaskId;
-        var instance = eventArgs.Instance;
         await _taskProcessor.ProcessTaskEnd(taskId, instance);
         
         _logger.LogInformation(
