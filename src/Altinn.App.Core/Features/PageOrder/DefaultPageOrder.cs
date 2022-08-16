@@ -2,7 +2,7 @@
 using Altinn.App.PlatformServices.Models;
 using Altinn.App.Services.Interface;
 
-namespace Altinn.App.Services.Implementation
+namespace Altinn.App.Core.Features.PageOrder
 {
     /// <summary>
     /// Interface for page order handling in stateless apps

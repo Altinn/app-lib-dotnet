@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
+using Altinn.App.Core.Features.Options;
 using Altinn.App.PlatformServices.Models;
-using Altinn.App.PlatformServices.Options;
 using FluentAssertions;
 using Xunit;
 

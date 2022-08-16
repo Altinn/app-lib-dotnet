@@ -1,13 +1,10 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Altinn.App.Common.Models;
-using Altinn.App.PlatformServices.Options;
-using Altinn.App.PlatformServices.Options.Altinn2Provider;
+using Altinn.App.Core.Features.Options;
+using Altinn.App.Core.Features.Options.Altinn2Provider;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
-using Moq;
 using Xunit;
 
 namespace Altinn.App.PlatformServices.Tests.Options.Altinn2Provider

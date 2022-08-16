@@ -1,8 +1,5 @@
 #nullable enable
-using System.Net.Http;
-using System.Threading.Tasks;
-
-namespace Altinn.App.PlatformServices.Options.Altinn2Provider
+namespace Altinn.App.Core.Features.Options.Altinn2Provider
 {
     /// <summary>
     /// HttpClientWrapper for the altinn2 metadata/codelists api

@@ -1,16 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Security.Claims;
-using System.Threading.Tasks;
+﻿using System.Security.Claims;
 using System.Xml.Serialization;
 using Altinn.App.Common.Helpers.Extensions;
 using Altinn.App.Common.Models;
+using Altinn.App.Core.Features.Options;
 using Altinn.App.PlatformServices.Extensions;
 using Altinn.App.PlatformServices.Interface;
 using Altinn.App.PlatformServices.Models;
-using Altinn.App.PlatformServices.Options;
 using Altinn.App.Services.Interface;
 using Altinn.App.Services.Models;
 using Altinn.Platform.Profile.Models;
@@ -20,7 +15,7 @@ using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace Altinn.App.PlatformServices.Implementation
+namespace Altinn.App.Core.Features.Pdf
 {
     /// <summary>
     /// Class for generating and storing PDF

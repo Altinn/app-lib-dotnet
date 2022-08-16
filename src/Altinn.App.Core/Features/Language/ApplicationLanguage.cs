@@ -1,14 +1,11 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using System.Text.Json;
-using System.Threading.Tasks;
+﻿using System.Text.Json;
 using Altinn.App.PlatformServices.Interface;
 using Altinn.App.Services.Configuration;
 using Altinn.App.Services.Implementation;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Altinn.App.PlatformServices.Implementation
+namespace Altinn.App.Core.Features.Language
 {
     /// <summary>
     /// An implementation used to retrieve the supported application languages.

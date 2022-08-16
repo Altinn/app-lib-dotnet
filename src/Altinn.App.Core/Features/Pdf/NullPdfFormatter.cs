@@ -1,8 +1,7 @@
-﻿using System.Threading.Tasks;
-using Altinn.App.Common.Models;
+﻿using Altinn.App.Common.Models;
 using Altinn.App.PlatformServices.Interface;
 
-namespace Altinn.App.PlatformServices.Implementation
+namespace Altinn.App.Core.Features.Pdf
 {
     /// <summary>
     /// Null object for representing a custom PDF formatter.

@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Altinn.App.PlatformServices.Options;
-using Altinn.App.PlatformServices.Options.Altinn2Provider;
+using Altinn.App.Core.Features.Options;
+using Altinn.App.Core.Features.Options.Altinn2Provider;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;

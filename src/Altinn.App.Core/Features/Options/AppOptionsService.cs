@@ -1,10 +1,7 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Altinn.App.Common.Models;
 using Altinn.App.PlatformServices.Models;
-using Altinn.App.PlatformServices.Options;
 
-namespace Altinn.App.Services.Implementation
+namespace Altinn.App.Core.Features.Options
 {
     /// <summary>
     /// Service for handling app options aka code lists.

@@ -1,14 +1,11 @@
-using System.Collections.Generic;
-using System.IO;
 using System.Text;
-using System.Threading.Tasks;
 using Altinn.App.Common.Models;
 using Altinn.App.PlatformServices.Helpers;
 using Altinn.App.Services.Configuration;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 
-namespace Altinn.App.PlatformServices.Options
+namespace Altinn.App.Core.Features.Options
 {
     /// <inheritdoc/>
     public class AppOptionsFileHandler : IAppOptionsFileHandler

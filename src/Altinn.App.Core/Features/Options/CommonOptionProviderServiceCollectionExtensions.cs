@@ -1,12 +1,10 @@
 #nullable enable
-using System;
-using System.Linq;
 using Altinn.App.Common.Models;
-using Altinn.App.PlatformServices.Options.Altinn2Provider;
+using Altinn.App.Core.Features.Options.Altinn2Provider;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Altinn.App.PlatformServices.Options
+namespace Altinn.App.Core.Features.Options
 {
     /// <summary>
     /// class to hold the Extention method for

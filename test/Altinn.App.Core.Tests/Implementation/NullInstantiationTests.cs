@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Altinn.App.Core.Implementation;
+using Altinn.App.Core.Features.Instantiation;
 using Altinn.App.PlatformServices.Tests.Implementation.TestResources;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;

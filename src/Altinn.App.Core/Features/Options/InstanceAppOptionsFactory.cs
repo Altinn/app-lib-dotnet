@@ -1,6 +1,4 @@
-using System.Collections.Generic;
-
-namespace Altinn.App.PlatformServices.Options
+namespace Altinn.App.Core.Features.Options
 {
     /// <summary>
     /// Factory class for resolving <see cref="IInstanceAppOptionsProvider"/> implementations

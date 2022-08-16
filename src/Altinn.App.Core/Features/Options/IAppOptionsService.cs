@@ -1,10 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Altinn.App.Common.Models;
 using Altinn.App.PlatformServices.Models;
 
-namespace Altinn.App.PlatformServices.Options
+namespace Altinn.App.Core.Features.Options
 {
     /// <summary>
     /// Interface for working with <see cref="AppOption"/>

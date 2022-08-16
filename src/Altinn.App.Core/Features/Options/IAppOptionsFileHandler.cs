@@ -1,8 +1,6 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Altinn.App.Common.Models;
 
-namespace Altinn.App.PlatformServices.Options
+namespace Altinn.App.Core.Features.Options
 {
     /// <summary>
     /// Interface for handling option files on disk

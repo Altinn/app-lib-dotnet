@@ -2,7 +2,7 @@ using Altinn.App.Core.Interface;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
-namespace Altinn.App.Core.Implementation;
+namespace Altinn.App.Core.Features.Validation;
 
 /// <summary>
 /// Default implementation of the IInstanceValidator interface.

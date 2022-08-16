@@ -1,7 +1,7 @@
 using Altinn.App.Core.Interface;
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Implementation;
+namespace Altinn.App.Core.Features.DataProcessing;
 
 /// <summary>
 /// Default implementation of the IDataProcessor interface.

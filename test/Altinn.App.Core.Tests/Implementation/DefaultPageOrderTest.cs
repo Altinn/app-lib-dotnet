@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Altinn.App.Common.Models;
+using Altinn.App.Core.Features.PageOrder;
 using Altinn.App.PlatformServices.Models;
 using Altinn.App.Services.Implementation;
 using Altinn.App.Services.Interface;

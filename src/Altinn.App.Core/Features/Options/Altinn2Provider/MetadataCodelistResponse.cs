@@ -1,7 +1,5 @@
 #nullable disable
-using System.Collections.Generic;
-
-namespace Altinn.App.PlatformServices.Options.Altinn2Provider
+namespace Altinn.App.Core.Features.Options.Altinn2Provider
 {
     /// <summary>
     /// Outer model for the https://www.altinn.no/api/metadata/codelists api

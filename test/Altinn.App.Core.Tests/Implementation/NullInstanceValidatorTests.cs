@@ -1,4 +1,4 @@
-using Altinn.App.Core.Implementation;
+using Altinn.App.Core.Features.Validation;
 using Altinn.App.PlatformServices.Tests.Implementation.TestResources;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Mvc.ModelBinding;

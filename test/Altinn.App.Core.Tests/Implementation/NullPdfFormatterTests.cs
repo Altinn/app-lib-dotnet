@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using Altinn.App.Common.Models;
-using Altinn.App.PlatformServices.Implementation;
+using Altinn.App.Core.Features.Pdf;
 using Altinn.App.PlatformServices.Tests.Implementation.TestResources;
 using FluentAssertions;
 using Xunit;
