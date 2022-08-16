@@ -31,9 +31,9 @@ namespace Altinn.App.Api.Controllers
     public class StatelessDataController : ControllerBase
     {
         private readonly ILogger<DataController> _logger;
-        private readonly IAltinnApp _altinnApp;
         private readonly IAppModel _appModel;
         private readonly IAppResources _appResourcesService;
+        private readonly IDataProcessor _dataProcessor;
         private readonly IPrefill _prefillService;
         private readonly IRegister _registerClient;
         private readonly IPDP _pdp;
@@ -50,17 +50,17 @@ namespace Altinn.App.Api.Controllers
         /// </summary>
         public StatelessDataController(
             ILogger<DataController> logger,
-            IAltinnApp altinnApp,
             IAppModel appModel,
             IAppResources appResourcesService,
+            IDataProcessor dataProcessor,
             IPrefill prefillService,
             IRegister registerClient,
             IPDP pdp)
         {
             _logger = logger;
-            _altinnApp = altinnApp;
             _appModel = appModel;
             _appResourcesService = appResourcesService;
+            _dataProcessor = dataProcessor;
             _prefillService = prefillService;
             _registerClient = registerClient;
             _pdp = pdp;
@@ -121,7 +121,7 @@ namespace Altinn.App.Api.Controllers
             await _prefillService.PrefillDataModel(owner.PartyId, dataType, appModel);
 
             Instance virutalInstance = new Instance() { InstanceOwner = owner };
-            await _altinnApp.RunProcessDataRead(virutalInstance, null, appModel);
+            await _dataProcessor.ProcessDataRead(virutalInstance, null, appModel);
 
             return Ok(appModel);
         }
@@ -155,7 +155,8 @@ namespace Altinn.App.Api.Controllers
             object appModel = _appModel.Create(classRef);
 
             var virutalInstance = new Instance();
-            await _altinnApp.RunProcessDataRead(virutalInstance, null, appModel);
+            
+            await _dataProcessor.ProcessDataRead(virutalInstance, null, appModel);
 
             return Ok(appModel);
         }
@@ -221,7 +222,7 @@ namespace Altinn.App.Api.Controllers
             await _prefillService.PrefillDataModel(owner.PartyId, dataType, appModel);
 
             Instance virutalInstance = new Instance() { InstanceOwner = owner };
-            await _altinnApp.RunProcessDataRead(virutalInstance, null, appModel);
+            await _dataProcessor.ProcessDataRead(virutalInstance, null, appModel);
 
             return Ok(appModel);
         }
@@ -261,7 +262,7 @@ namespace Altinn.App.Api.Controllers
             }
 
             Instance virutalInstance = new Instance();
-            await _altinnApp.RunProcessDataRead(virutalInstance, null, appModel);
+            await _dataProcessor.ProcessDataRead(virutalInstance, null, appModel);
 
             return Ok(appModel);
         }

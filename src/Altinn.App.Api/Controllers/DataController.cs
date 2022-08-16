@@ -37,8 +37,9 @@ namespace Altinn.App.Api.Controllers
     {
         private readonly ILogger<DataController> _logger;
         private readonly IData _dataClient;
+        private readonly IDataProcessor _dataProcessor;
         private readonly IInstance _instanceClient;
-        private readonly IAltinnApp _altinnApp;
+        private readonly IInstantiation _instantiation;
         private readonly IAppModel _appModel;
         private readonly IAppResources _appResourcesService;
         private readonly IPrefill _prefillService;
@@ -51,14 +52,14 @@ namespace Altinn.App.Api.Controllers
         /// <param name="logger">logger</param>
         /// <param name="instanceClient">instance service to store instances</param>
         /// <param name="dataClient">A service with access to data storage.</param>
-        /// <param name="altinnApp">The app logic for current service</param>
         /// <param name="appResourcesService">The apps resource service</param>
         /// <param name="prefillService">A service with prefill related logic.</param>
         public DataController(
             ILogger<DataController> logger,
             IInstance instanceClient,
+            IInstantiation instantiation,
             IData dataClient,
-            IAltinnApp altinnApp,
+            IDataProcessor dataProcessor,
             IAppModel appModel,
             IAppResources appResourcesService,
             IPrefill prefillService)
@@ -66,8 +67,9 @@ namespace Altinn.App.Api.Controllers
             _logger = logger;
 
             _instanceClient = instanceClient;
+            _instantiation = instantiation;
             _dataClient = dataClient;
-            _altinnApp = altinnApp;
+            _dataProcessor = dataProcessor;
             _appModel = appModel;
             _appResourcesService = appResourcesService;
             _prefillService = prefillService;
@@ -402,7 +404,7 @@ namespace Altinn.App.Api.Controllers
             // runs prefill from repo configuration if config exists
             await _prefillService.PrefillDataModel(instance.InstanceOwner.PartyId, dataType, appModel);
 
-            await _altinnApp.RunDataCreation(instance, appModel, null);
+            await _instantiation.DataCreation(instance, appModel, null);
 
             await UpdatePresentationTextsOnInstance(instance, dataType, appModel);
             await UpdateDataValuesOnInstance(instance, dataType, appModel);
@@ -507,7 +509,7 @@ namespace Altinn.App.Api.Controllers
                 return BadRequest($"Did not find form data for data element {dataGuid}");
             }
 
-            await _altinnApp.RunProcessDataRead(instance, dataGuid, appModel);
+            await _dataProcessor.ProcessDataRead(instance, dataGuid, appModel);
 
             string userOrgClaim = User.GetOrg();
             if (userOrgClaim == null || !org.Equals(userOrgClaim, StringComparison.InvariantCultureIgnoreCase))
@@ -547,7 +549,7 @@ namespace Altinn.App.Api.Controllers
             }
 
             string serviceModelJsonString = JsonSerializer.Serialize(serviceModel);
-            bool changedByCalculation = await _altinnApp.RunProcessDataWrite(instance, dataGuid, serviceModel);
+            bool changedByCalculation = await _dataProcessor.ProcessDataWrite(instance, dataGuid, serviceModel);
 
             await UpdatePresentationTextsOnInstance(instance, dataType, serviceModel);
             await UpdateDataValuesOnInstance(instance, dataType, serviceModel);

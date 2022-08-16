@@ -42,7 +42,6 @@ namespace Altinn.App.Api.Controllers
         private readonly ILogger<ProcessController> _logger;
         private readonly IInstance _instanceClient;
         private readonly IProcess _processService;
-        private readonly IAltinnApp _altinnApp;
         private readonly IValidation _validationService;
         private readonly IPDP _pdp;
         private readonly IProcessEngine _processEngine;
@@ -55,7 +54,6 @@ namespace Altinn.App.Api.Controllers
             ILogger<ProcessController> logger,
             IInstance instanceClient,
             IProcess processService,
-            IAltinnApp altinnApp,
             IValidation validationService,
             IPDP pdp,
             IProcessEngine processEngine)
@@ -63,7 +61,6 @@ namespace Altinn.App.Api.Controllers
             _logger = logger;
             _instanceClient = instanceClient;
             _processService = processService;
-            _altinnApp = altinnApp;
             _validationService = validationService;
             _pdp = pdp;
             _processEngine = processEngine;
@@ -224,11 +221,11 @@ namespace Altinn.App.Api.Controllers
             {
                 validationIssues = await _validationService.ValidateAndUpdateProcess(instance, currentElementId);
 
-                canEndTask = await _altinnApp.CanEndProcessTask(currentElementId, instance, validationIssues);
+                canEndTask = await ProcessHelper.CanEndProcessTask(currentElementId, instance, validationIssues);
             }
             else
             {
-                canEndTask = await _altinnApp.CanEndProcessTask(currentElementId, instance, validationIssues);
+                canEndTask = await ProcessHelper.CanEndProcessTask(currentElementId, instance, validationIssues);
             }
 
             return canEndTask;

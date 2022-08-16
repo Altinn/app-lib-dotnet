@@ -68,7 +68,6 @@ namespace Altinn.App.Core.Extensions
             services.AddTransient<IAccessTokenGenerator, AccessTokenGenerator>();
             services.AddTransient<IPersonLookup, PersonService>();
             services.AddTransient<IApplicationLanguage, ApplicationLanguage>();
-            services.AddTransient<IAltinnApp, AppBase>();
         }
 
         /// <summary>
@@ -87,6 +86,8 @@ namespace Altinn.App.Core.Extensions
             services.AddSingleton<IAppResources, AppResourcesSI>();
             services.AddTransient<IProcessEngine, ProcessEngine>();
             services.AddTransient<IProcessChangeHandler, ProcessChangeHandler>();
+            services.AddTransient<IAppEvents, DefaultAppEvents>();
+            services.AddTransient<ITaskEvents, DefaultTaskEvents>();
             services.TryAddTransient<IPageOrder, DefaultPageOrder>();
             services.TryAddTransient<IInstantiation, NullInstantiation>();
             services.TryAddTransient<IInstanceValidator, NullInstanceValidator>();
@@ -95,7 +96,6 @@ namespace Altinn.App.Core.Extensions
             services.Configure<Altinn.Common.PEP.Configuration.PepSettings>(configuration.GetSection("PEPSettings"));
             services.Configure<Altinn.Common.PEP.Configuration.PlatformSettings>(configuration.GetSection("PlatformSettings"));
             services.Configure<AccessTokenSettings>(configuration.GetSection("AccessTokenSettings"));
-            services.Configure<Altinn.Common.EFormidlingClient.Configuration.EFormidlingClientSettings>(configuration.GetSection("EFormidlingClientSettings"));
             services.Configure<FrontEndSettings>(configuration.GetSection(nameof(FrontEndSettings)));
             AddAppOptions(services);
             AddPdfServices(services);

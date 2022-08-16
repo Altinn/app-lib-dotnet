@@ -5,6 +5,8 @@ using System.Linq;
 
 using Altinn.App.Common.Process;
 using Altinn.App.Common.Process.Elements;
+using Altinn.App.Services.Models.Validation;
+using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Services.Helpers
 {
@@ -203,6 +205,37 @@ namespace Altinn.App.Services.Helpers
             }
 
             return ProcessSequenceFlowType.CompleteCurrentMoveToNext;
+        }
+        
+        /// <summary>
+        ///  Called before a process task is ended. App can do extra validation logic and add validation issues to collection which will be returned by the controller.
+        /// </summary>
+        /// <param name="taskId">The id of the task to be ended.</param>
+        /// <param name="instance">The instance to be ended.</param>
+        /// <param name="validationIssues">The collection of validation issues.</param> 
+        /// <returns>true task can be ended, false otherwise</returns>
+        public static async Task<bool> CanEndProcessTask(string taskId, Instance instance,
+            List<ValidationIssue> validationIssues)
+        {
+            // check if the task is validated
+            if (instance.Process?.CurrentTask?.Validated != null)
+            {
+                ValidationStatus validationStatus = instance.Process.CurrentTask.Validated;
+
+                if (validationStatus.CanCompleteTask)
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                if (validationIssues.Count == 0)
+                {
+                    return true;
+                }
+            }
+
+            return await Task.FromResult(false);
         }
 
         private ProcessError Conflict(string text)
