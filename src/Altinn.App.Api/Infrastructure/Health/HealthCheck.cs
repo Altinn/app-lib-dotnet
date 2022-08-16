@@ -1,7 +1,8 @@
-﻿
+﻿using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
-namespace Altinn.App.Core.Health
+namespace Altinn.App.Api.Infrastructure.Health
 {
     /// <summary>
     /// Health check service configured in startup https://docs.microsoft.com/en-us/aspnet/core/host-and-deploy/health-checks
