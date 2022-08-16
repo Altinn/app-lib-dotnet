@@ -8,7 +8,7 @@ using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Altinn.App.Core.Receivers;
+namespace Altinn.App.Core.Implementation;
 
 /// <summary>
 /// Default handling of task process events.

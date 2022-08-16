@@ -1,8 +1,9 @@
+using Altinn.App.Core.Interface;
 using Altinn.App.Services.Interface;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
 
-namespace Altinn.App.Core.Receivers;
+namespace Altinn.App.Core.Implementation;
 
 /// <summary>
 /// Default handling of instance events

@@ -8,7 +8,6 @@ using Altinn.App.Core.Infrastructure.Clients.Profile;
 using Altinn.App.Core.Infrastructure.Clients.Register;
 using Altinn.App.Core.Infrastructure.Clients.Storage;
 using Altinn.App.Core.Interface;
-using Altinn.App.Core.Receivers;
 using Altinn.App.PlatformServices.Implementation;
 using Altinn.App.PlatformServices.Interface;
 using Altinn.App.PlatformServices.Options;

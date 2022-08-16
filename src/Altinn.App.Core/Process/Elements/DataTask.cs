@@ -1,5 +1,5 @@
+using Altinn.App.Core.Interface;
 using Altinn.App.Core.Models;
-using Altinn.App.Core.Receivers;
 
 namespace Altinn.App.Core.Process
 {
