@@ -1,8 +1,5 @@
-using System;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Xml.Linq;
-using Altinn.App.Services.ModelMetadata;
 
 namespace Altinn.App.PlatformServices.Extensions
 {
@@ -196,30 +193,6 @@ namespace Altinn.App.PlatformServices.Extensions
         public static string AttributeValue(this XElement element, string attributeName)
         {
             return element.AttributeValue(XName.Get(attributeName));
-        }
-
-        /// <summary>
-        /// Creates the culture string from X element.
-        /// </summary>
-        /// <param name="element">
-        /// The element.
-        /// </param>
-        /// <returns>
-        /// culture string
-        /// </returns>
-        public static CultureString CreateCultureStringFromXElement(this XElement element)
-        {
-            CultureString cs = new CultureString();
-            foreach (XElement content in element.Elements("content"))
-            {
-                XAttribute xAttribute = content.Attribute("lang");
-                if (xAttribute != null && !string.IsNullOrEmpty(xAttribute.Value))
-                {
-                    cs[xAttribute.Value] = content.Value;
-                }
-            }
-
-            return cs;
         }
 
         /// <summary>

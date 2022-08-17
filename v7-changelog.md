@@ -19,6 +19,8 @@
    - Moved registration of Application Insights from Core to Api project.
    - Moved Filters to Infrastructure namespace in Api project
    - Moved SecurityHeaders middleware to Infrastructure namespace in Api project
+   - Moved various helper classes into Helpers namespace in both Api and Core
+   - Deleted all classes under the ModelMetadata folder as these are not used
 7. Replace all public Task On****() methods in AppBase in separate interfaces for Task and App events.
 8. Move EFormidling logic out of AppBase. Not a separate nuget yet, but moved to a separate namespace
    - SendEFormidlingShipment(Instance instance) method and all related private methods moved to DefaultEFormidlingService.
@@ -31,8 +33,6 @@
    - Replaced calls in the code with direct calls to these services and removed them from AppBase.
    - Removed CanEndProcessTask(....) from AppBase and replaced it with a static method in Helpers.ProcessHelpers (the checks only use the input arguments to the method)
    - No methods are left in IAltinnApp/AppBase. Removed the interface and implementation.
-
-
 
 DRAFT: Upgrade documentation
 
@@ -398,3 +398,7 @@ Your IDE should give you some help with doing this automatically, but in the end
    ```csharp
    using Altinn.App.Api.Infrastructure.Filters;
    ```
+
+4. Update using statements
+   As a lot of classes within the nuget packages have moved the using statements needs to reflect this if you have used our classes in your custom code.
+   Most of the code has moved from `Altinn.App.Common` and `Altinn.App.PlatformServices` and into `Altinn.App.Core` so if you have used classes from those namespaces you will most likely find them in `Altinn.App.Core`. A few classes have moved to `Altinn.App.Api` as well, so check there if you can't find them in `Altinn.App.Core`. 
