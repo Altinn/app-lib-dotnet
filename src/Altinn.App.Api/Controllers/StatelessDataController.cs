@@ -3,7 +3,7 @@ using System.Net;
 using System.Threading.Tasks;
 
 using Altinn.App.Api.Infrastructure.Filters;
-using Altinn.App.Common.Serialization;
+using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Interface;
 using Altinn.App.PlatformServices.Extensions;
 using Altinn.App.Services.Interface;

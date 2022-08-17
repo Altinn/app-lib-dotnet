@@ -4,12 +4,11 @@ using System.IO;
 using System.Threading.Tasks;
 
 using Altinn.App.Common.Helpers.Extensions;
-
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Net.Http.Headers;
 
-namespace Altinn.App.Common.RequestHandling
+namespace Altinn.App.Api.Helpers.RequestHandling
 {
     /// <summary>
     /// Represents a reader that can read a multipart http request and split it in data elements.
@@ -25,8 +24,8 @@ namespace Altinn.App.Common.RequestHandling
         public MultipartRequestReader(HttpRequest request)
         {
             this.request = request;
-            this.Parts = new List<RequestPart>();
-            this.Errors = new List<string>();
+            Parts = new List<RequestPart>();
+            Errors = new List<string>();
         }
 
         /// <summary>
@@ -36,7 +35,7 @@ namespace Altinn.App.Common.RequestHandling
         {
             get
             {
-                return !string.IsNullOrEmpty(request.ContentType) 
+                return !string.IsNullOrEmpty(request.ContentType)
                   && request.ContentType.IndexOf("multipart/", StringComparison.OrdinalIgnoreCase) >= 0;
             }
         }

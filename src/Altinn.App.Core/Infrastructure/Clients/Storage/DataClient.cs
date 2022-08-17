@@ -3,8 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Mime;
 using System.Text;
 using System.Xml.Serialization;
-
-using Altinn.App.Common.Serialization;
+using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.PlatformServices.Extensions;
 using Altinn.App.PlatformServices.Helpers;
 using Altinn.App.Services.Configuration;

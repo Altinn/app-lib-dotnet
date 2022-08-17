@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 
 using Newtonsoft.Json;
 
-namespace Altinn.App.Common.Serialization
+namespace Altinn.App.Core.Helpers.Serialization
 {
     /// <summary>
     /// Represents logic to deserialize a stream of data to an instance of the given type

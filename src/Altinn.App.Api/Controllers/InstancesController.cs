@@ -5,14 +5,13 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-
+using Altinn.App.Api.Helpers.RequestHandling;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Mappers;
 using Altinn.App.Api.Models;
 using Altinn.App.Common.Constants;
 using Altinn.App.Common.Helpers;
-using Altinn.App.Common.RequestHandling;
-using Altinn.App.Common.Serialization;
+using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Interface;
 using Altinn.App.Core.Models;
 using Altinn.App.PlatformServices.Extensions;

@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Common.RequestHandling
+namespace Altinn.App.Api.Helpers.RequestHandling
 {
     /// <summary>
     /// Represents a validator of a single <see cref="RequestPart"/> with the help of app metadata

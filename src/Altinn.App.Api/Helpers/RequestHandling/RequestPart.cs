@@ -1,6 +1,6 @@
 using System.IO;
 
-namespace Altinn.App.Common.RequestHandling
+namespace Altinn.App.Api.Helpers.RequestHandling
 {
     /// <summary>
     /// A helper to organise the parts in a multipart

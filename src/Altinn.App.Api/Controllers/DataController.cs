@@ -12,7 +12,7 @@ using Altinn.App.Common.Constants;
 using Altinn.App.Common.Helpers;
 using Altinn.App.Common.Helpers.Extensions;
 using Altinn.App.Common.Models;
-using Altinn.App.Common.Serialization;
+using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Interface;
 using Altinn.App.PlatformServices.Extensions;
 using Altinn.App.PlatformServices.Helpers;
