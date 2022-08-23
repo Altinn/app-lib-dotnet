@@ -4,6 +4,7 @@ using Altinn.App.Core.Features.Language;
 using Altinn.App.Core.Features.Options;
 using Altinn.App.Core.Features.PageOrder;
 using Altinn.App.Core.Features.Pdf;
+using Altinn.App.Core.Features.Texts;
 using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Implementation;
 using Altinn.App.Core.Infrastructure.Clients.Authentication;

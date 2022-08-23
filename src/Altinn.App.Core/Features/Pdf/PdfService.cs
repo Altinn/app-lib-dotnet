@@ -4,7 +4,6 @@ using Altinn.App.Common.Helpers.Extensions;
 using Altinn.App.Common.Models;
 using Altinn.App.Core.Features.Options;
 using Altinn.App.PlatformServices.Extensions;
-using Altinn.App.PlatformServices.Interface;
 using Altinn.App.PlatformServices.Models;
 using Altinn.App.Services.Interface;
 using Altinn.App.Services.Models;

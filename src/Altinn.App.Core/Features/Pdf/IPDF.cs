@@ -1,8 +1,6 @@
-using System.IO;
-using System.Threading.Tasks;
 using Altinn.App.Services.Models;
 
-namespace Altinn.App.Services.Interface
+namespace Altinn.App.Core.Features.Pdf
 {
     /// <summary>
     /// The pdf service

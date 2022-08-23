@@ -1,8 +1,6 @@
-﻿using System;
-using System.Threading.Tasks;
-using Altinn.Platform.Storage.Interface.Models;
+﻿using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.PlatformServices.Interface
+namespace Altinn.App.Core.Features.Pdf
 {
     /// <summary>
     /// Interface for handling generation and storing of PDF's

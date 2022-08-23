@@ -1,8 +1,6 @@
-using System.Threading.Tasks;
-
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Services.Interface
+namespace Altinn.App.Core.Features.Texts
 {
     /// <summary>
     /// Describes the public methods of a text resources service

@@ -1,10 +1,7 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
 using Altinn.App.Services.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Services.Interface
+namespace Altinn.App.Core.Features.Validation
 {
     /// <summary>
     /// Describes the public methods of a validation service

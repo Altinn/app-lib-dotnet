@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Altinn.App.Api.Controllers;
+using Altinn.App.Core.Features.Validation;
 using Altinn.App.Services.Helpers;
 using Altinn.App.Services.Interface;
 using Altinn.App.Services.Models.Validation;

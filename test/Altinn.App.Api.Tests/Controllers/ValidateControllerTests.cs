@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Altinn.App.Api.Controllers;
+using Altinn.App.Core.Features.Validation;
 using Altinn.App.Services.Interface;
 using Altinn.App.Services.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;

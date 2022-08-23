@@ -2,6 +2,7 @@ using System.Security.Claims;
 
 using Altinn.App.Common.Process;
 using Altinn.App.Common.Process.Elements;
+using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Interface;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Process;

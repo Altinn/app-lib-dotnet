@@ -1,5 +1,4 @@
 ﻿using System.Text.Json;
-using Altinn.App.PlatformServices.Interface;
 using Altinn.App.Services.Configuration;
 using Altinn.App.Services.Implementation;
 using Microsoft.Extensions.Logging;

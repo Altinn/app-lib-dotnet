@@ -1,8 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-using Altinn.App.Common.Models;
-
-namespace Altinn.App.PlatformServices.Interface
+﻿namespace Altinn.App.Core.Features.Language
 {
     /// <summary>
     /// Interface for retrieving languages supported by the application.
@@ -13,6 +9,6 @@ namespace Altinn.App.PlatformServices.Interface
         /// Gets the supported languages from the application located in the text resource folder.
         /// </summary>
         /// <returns>Returns a list of the supported languages</returns>
-        Task<List<ApplicationLanguage>> GetApplicationLanguages();
+        Task<List<Common.Models.ApplicationLanguage>> GetApplicationLanguages();
     }
 }
