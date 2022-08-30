@@ -1,6 +1,6 @@
 using System.Xml.Serialization;
 
-namespace Altinn.App.Common.Process.Elements
+namespace Altinn.App.Core.Process.Elements
 {
     /// <summary>
     /// Class representing the sequence flow of a process

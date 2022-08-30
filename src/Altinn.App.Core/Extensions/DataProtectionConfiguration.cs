@@ -1,9 +1,8 @@
-using System.IO;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.DataProtection.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Altinn.App.PlatformServices.Extensions
+namespace Altinn.App.Core.Extensions
 {
     /// <summary>
     /// Configuration for DataProtection

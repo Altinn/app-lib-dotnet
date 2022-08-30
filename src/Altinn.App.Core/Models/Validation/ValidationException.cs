@@ -1,6 +1,4 @@
-using System;
-
-namespace Altinn.App.Services.Models.Validation
+namespace Altinn.App.Core.Models.Validation
 {
     /// <summary>
     /// Represents errors that occur while handling a validation request.

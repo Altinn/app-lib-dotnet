@@ -1,6 +1,4 @@
-
-using Altinn.App.Services.Interface;
-
+using Altinn.App.Core.Interface;
 using AltinnCore.Authentication.Constants;
 
 using Microsoft.Azure.KeyVault;

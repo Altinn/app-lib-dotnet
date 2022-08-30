@@ -1,19 +1,16 @@
 using System.Text;
 using System.Text.Json;
-
-using Altinn.App.Common.Models;
-using Altinn.App.PlatformServices.Helpers;
-using Altinn.App.Services.Configuration;
-using Altinn.App.Services.Interface;
+using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Interface;
+using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
-
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-
 using Newtonsoft.Json;
 
-namespace Altinn.App.Services.Implementation
+namespace Altinn.App.Core.Implementation
 {
     /// <summary>
     /// App implementation of the execution service needed for executing an Altinn Core Application (Functional term).

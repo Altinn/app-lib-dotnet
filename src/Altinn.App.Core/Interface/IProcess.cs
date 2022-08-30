@@ -1,12 +1,6 @@
-using System.Collections.Generic;
-using System.IO;
-using System.Security.Claims;
-using System.Threading.Tasks;
-
-using Altinn.App.PlatformServices.Models;
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Services.Interface
+namespace Altinn.App.Core.Interface
 {
     /// <summary>
     /// Process service that encapsulate reading of the BPMN process definition.

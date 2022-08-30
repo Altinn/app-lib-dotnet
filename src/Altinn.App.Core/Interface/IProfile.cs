@@ -1,8 +1,6 @@
-using System.Threading.Tasks;
-using Altinn.App.Services.Models;
 using Altinn.Platform.Profile.Models;
 
-namespace Altinn.App.Services.Interface
+namespace Altinn.App.Core.Interface
 {
     /// <summary>
     /// Interface for profile functionality

@@ -1,11 +1,8 @@
 ﻿#nullable enable
 
-using System.Threading;
-using System.Threading.Tasks;
-
 using Altinn.Platform.Register.Models;
 
-namespace Altinn.App.PlatformServices.Interface
+namespace Altinn.App.Core.Interface
 {
     /// <summary>
     /// Describes the required methods for an implementation of a person repository client.

@@ -9,6 +9,6 @@
         /// Gets the supported languages from the application located in the text resource folder.
         /// </summary>
         /// <returns>Returns a list of the supported languages</returns>
-        Task<List<Common.Models.ApplicationLanguage>> GetApplicationLanguages();
+        Task<List<Models.ApplicationLanguage>> GetApplicationLanguages();
     }
 }

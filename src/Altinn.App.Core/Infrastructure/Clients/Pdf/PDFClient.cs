@@ -1,10 +1,9 @@
 using System.Text;
+using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features.Pdf;
-using Altinn.App.Services.Configuration;
-using Altinn.App.Services.Constants;
-using Altinn.App.Services.Helpers;
-using Altinn.App.Services.Models;
-
+using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Models;
 using Microsoft.Extensions.Options;
 
 using Newtonsoft.Json;

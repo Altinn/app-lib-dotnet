@@ -1,12 +1,7 @@
-using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
-using Altinn.App.Common.Process;
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Interface;
 using Altinn.App.Core.Models;
-using Altinn.App.PlatformServices.Models;
-using Altinn.App.Services.Helpers;
-using Altinn.App.Services.Interface;
+using Altinn.App.Core.Process;
 
 namespace Altinn.App.Core.Implementation
 {

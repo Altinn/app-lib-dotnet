@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
-namespace Altinn.App.Services.Models.Validation
+namespace Altinn.App.Core.Models.Validation
 {
     /// <summary>
     /// Represents a detailed message from validation.

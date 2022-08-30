@@ -3,7 +3,6 @@ using System.Security.Claims;
 using Altinn.App.Api.Controllers;
 using Altinn.App.Api.Tests.Controllers.TestResources;
 using Altinn.App.Core.Interface;
-using Altinn.App.Services.Interface;
 using Altinn.Authorization.ABAC.Xacml;
 using Altinn.Authorization.ABAC.Xacml.JsonProfile;
 using Altinn.Common.PEP.Interfaces;

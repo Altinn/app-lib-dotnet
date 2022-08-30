@@ -1,14 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-
-using Altinn.App.Common.Process;
-using Altinn.App.Common.Process.Elements;
-using Altinn.App.Services.Models.Validation;
+using Altinn.App.Core.Models.Validation;
+using Altinn.App.Core.Process;
+using Altinn.App.Core.Process.Elements;
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Services.Helpers
+namespace Altinn.App.Core.Helpers
 {
     /// <summary>
     /// Helper class for handling the process for an instance.

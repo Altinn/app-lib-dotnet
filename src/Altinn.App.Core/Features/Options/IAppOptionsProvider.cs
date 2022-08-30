@@ -1,4 +1,4 @@
-using Altinn.App.Common.Models;
+using Altinn.App.Core.Models;
 
 namespace Altinn.App.Core.Features.Options
 {

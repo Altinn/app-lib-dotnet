@@ -1,12 +1,9 @@
 ﻿#nullable enable
 
-using System.Threading;
-using System.Threading.Tasks;
-
-using Altinn.App.PlatformServices.Interface;
+using Altinn.App.Core.Interface;
 using Altinn.Platform.Register.Models;
 
-namespace Altinn.App.PlatformServices.Implementation
+namespace Altinn.App.Core.Implementation
 {
     /// <summary>
     /// Represents a collection of business logic operation related to persons.

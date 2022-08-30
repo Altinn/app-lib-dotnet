@@ -1,6 +1,4 @@
-using System;
-
-namespace Altinn.App.Common.Process.Elements
+namespace Altinn.App.Core.Process.Elements
 {
     /// <summary>
     /// Represents information about an element in a BPMN description.

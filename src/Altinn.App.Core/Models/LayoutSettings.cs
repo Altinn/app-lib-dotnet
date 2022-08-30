@@ -1,4 +1,4 @@
-namespace Altinn.App.Common.Models
+namespace Altinn.App.Core.Models
 {
     /// <summary>
     /// Defines the layout settings

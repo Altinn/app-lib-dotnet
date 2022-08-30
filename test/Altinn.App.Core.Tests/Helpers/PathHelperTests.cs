@@ -1,4 +1,4 @@
-using Altinn.App.PlatformServices.Helpers;
+using Altinn.App.Core.Helpers;
 using Xunit;
 
 namespace Altinn.App.PlatformServices.Tests.Helpers

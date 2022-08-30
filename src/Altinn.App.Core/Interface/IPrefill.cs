@@ -1,7 +1,4 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
-namespace Altinn.App.Services.Interface
+namespace Altinn.App.Core.Interface
 {
     /// <summary>
     /// The prefill service

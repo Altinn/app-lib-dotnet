@@ -1,4 +1,4 @@
-﻿namespace Altinn.App.Services.Configuration
+﻿namespace Altinn.App.Core.Configuration
 {
     /// <summary>
     /// Represents caching settings used by the platform services

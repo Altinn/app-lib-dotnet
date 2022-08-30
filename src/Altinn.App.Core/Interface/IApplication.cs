@@ -1,7 +1,6 @@
-using System.Threading.Tasks;
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Services.Interface
+namespace Altinn.App.Core.Interface
 {
     /// <summary>
     /// Interface for retrieving application metadata data related operations

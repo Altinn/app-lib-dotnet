@@ -1,4 +1,4 @@
-namespace Altinn.App.Common.Models
+namespace Altinn.App.Core.Models
 {
     /// <summary>
     /// Represents a key value pair to be used as options in dropdown selectors.

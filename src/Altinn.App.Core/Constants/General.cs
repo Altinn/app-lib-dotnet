@@ -1,4 +1,4 @@
-namespace Altinn.App.Services.Constants
+namespace Altinn.App.Core.Constants
 {
     /// <summary>
     /// app token

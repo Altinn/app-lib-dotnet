@@ -1,9 +1,7 @@
-using System.Threading.Tasks;
-
 using Microsoft.Azure.KeyVault;
 using Microsoft.Azure.KeyVault.WebKey;
 
-namespace Altinn.App.Services.Interface
+namespace Altinn.App.Core.Interface
 {
     /// <summary>
     /// Interface for secrets service

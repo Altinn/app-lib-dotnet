@@ -1,7 +1,7 @@
 using Altinn.App.Core.Interface;
 using Altinn.App.Core.Models;
 
-namespace Altinn.App.Core.Process
+namespace Altinn.App.Core.Process.Elements
 {
     /// <summary>
     /// Represents the process task responsible for form filling steps. 

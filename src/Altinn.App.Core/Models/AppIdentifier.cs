@@ -1,6 +1,4 @@
-using System;
-
-namespace Altinn.App.PlatformServices.Models
+namespace Altinn.App.Core.Models
 {
     /// <summary>
     /// Class representing the id of an instance.

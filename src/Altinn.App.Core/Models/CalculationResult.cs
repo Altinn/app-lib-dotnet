@@ -1,8 +1,6 @@
-using System.Collections.Generic;
-
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Common.Models
+namespace Altinn.App.Core.Models
 {
     /// <summary>
     /// The result of a calculation 

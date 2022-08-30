@@ -1,6 +1,4 @@
-using System;
-
-namespace Altinn.App.Common.Process
+namespace Altinn.App.Core.Process
 {
     /// <summary>
     /// Represents errors that occur while handling a process.

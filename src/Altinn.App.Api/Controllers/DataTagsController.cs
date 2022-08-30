@@ -6,9 +6,8 @@ using System.Threading.Tasks;
 
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
-using Altinn.App.Common.Constants;
-using Altinn.App.Services.Interface;
-
+using Altinn.App.Core.Constants;
+using Altinn.App.Core.Interface;
 using Altinn.Platform.Storage.Interface.Models;
 
 using Microsoft.AspNetCore.Authorization;

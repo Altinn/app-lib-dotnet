@@ -1,11 +1,10 @@
 using System.Net.Http.Headers;
 using System.Text;
-
-using Altinn.App.PlatformServices.Extensions;
-using Altinn.App.PlatformServices.Helpers;
-using Altinn.App.Services.Configuration;
-using Altinn.App.Services.Constants;
-using Altinn.App.Services.Interface;
+using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Constants;
+using Altinn.App.Core.Extensions;
+using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Interface;
 using Altinn.Platform.Storage.Interface.Models;
 
 using AltinnCore.Authentication.Utils;

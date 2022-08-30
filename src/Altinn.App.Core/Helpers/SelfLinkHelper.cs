@@ -1,8 +1,7 @@
-using System;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
 
-namespace Altinn.App.Common.Helpers
+namespace Altinn.App.Core.Helpers
 {
     /// <summary>
     /// Helper class for setting application self links

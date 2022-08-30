@@ -1,8 +1,6 @@
-using System.Collections.Generic;
-
 using Newtonsoft.Json;
 
-namespace Altinn.App.Services.Models
+namespace Altinn.App.Core.Models
 {
     /// <summary>
     /// Query response object 

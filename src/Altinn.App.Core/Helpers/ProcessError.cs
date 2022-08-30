@@ -1,4 +1,4 @@
-namespace Altinn.App.Services.Helpers
+namespace Altinn.App.Core.Helpers
 {
     /// <summary>
     /// Represents an error from the process "system".

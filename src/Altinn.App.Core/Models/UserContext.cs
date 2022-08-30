@@ -1,8 +1,7 @@
 using System.Security.Claims;
-
 using Altinn.Platform.Register.Models;
 
-namespace Altinn.App.Services.Models
+namespace Altinn.App.Core.Models
 {
     /// <summary>
     /// Contains information about a user context

@@ -4,11 +4,11 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Infrastructure.Clients.Events;
-using Altinn.App.PlatformServices.Helpers;
-using Altinn.App.PlatformServices.Models;
-using Altinn.App.Services.Configuration;
-using Altinn.App.Services.Interface;
+using Altinn.App.Core.Interface;
+using Altinn.App.Core.Models;
 using Altinn.Common.AccessTokenClient.Services;
 using Altinn.Platform.Storage.Interface.Models;
 

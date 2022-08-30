@@ -1,12 +1,10 @@
 ﻿using System.Security.Claims;
 using System.Xml.Serialization;
-using Altinn.App.Common.Helpers.Extensions;
-using Altinn.App.Common.Models;
 using Altinn.App.Core.Features.Options;
-using Altinn.App.PlatformServices.Extensions;
-using Altinn.App.PlatformServices.Models;
-using Altinn.App.Services.Interface;
-using Altinn.App.Services.Models;
+using Altinn.App.Core.Extensions;
+using Altinn.App.Core.Helpers.Extensions;
+using Altinn.App.Core.Interface;
+using Altinn.App.Core.Models;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;

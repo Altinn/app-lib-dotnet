@@ -1,8 +1,8 @@
 using System.Net.Http.Headers;
-using Altinn.App.PlatformServices.Extensions;
-using Altinn.App.Services.Configuration;
-using Altinn.App.Services.Constants;
-using Altinn.App.Services.Interface;
+using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Constants;
+using Altinn.App.Core.Extensions;
+using Altinn.App.Core.Interface;
 using Altinn.Common.AccessTokenClient.Services;
 using Altinn.Platform.Register.Models;
 using AltinnCore.Authentication.Utils;

@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Altinn.App.Common.Constants
+namespace Altinn.App.Core.Constants
 {
     /// <summary>
     /// Constands related to authorization.

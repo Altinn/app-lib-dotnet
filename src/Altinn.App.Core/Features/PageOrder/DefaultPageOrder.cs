@@ -1,6 +1,5 @@
-﻿using Altinn.App.Common.Models;
-using Altinn.App.PlatformServices.Models;
-using Altinn.App.Services.Interface;
+﻿using Altinn.App.Core.Interface;
+using Altinn.App.Core.Models;
 
 namespace Altinn.App.Core.Features.PageOrder
 {

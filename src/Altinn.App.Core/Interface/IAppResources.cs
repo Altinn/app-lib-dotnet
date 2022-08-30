@@ -1,9 +1,7 @@
-using System;
-using System.Threading.Tasks;
-using Altinn.App.Common.Models;
+using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Services.Interface
+namespace Altinn.App.Core.Interface
 {
     /// <summary>
     /// Interface for execution functionality

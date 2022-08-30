@@ -1,4 +1,4 @@
-namespace Altinn.App.Services.Models.Validation
+namespace Altinn.App.Core.Models.Validation
 {
     /// <summary>
     /// Specifies the severity of a validation issue

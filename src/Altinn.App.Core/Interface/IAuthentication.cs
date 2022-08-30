@@ -1,6 +1,4 @@
-using System.Threading.Tasks;
-
-namespace Altinn.App.Services.Interface
+namespace Altinn.App.Core.Interface
 {
     /// <summary>
     /// Authentication interface.

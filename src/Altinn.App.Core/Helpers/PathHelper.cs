@@ -1,7 +1,4 @@
-using System;
-using System.IO;
-
-namespace Altinn.App.PlatformServices.Helpers
+namespace Altinn.App.Core.Helpers
 {
     /// <summary>
     /// Helper class for Path manipulation and checks

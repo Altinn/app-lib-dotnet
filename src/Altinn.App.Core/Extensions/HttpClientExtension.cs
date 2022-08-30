@@ -1,8 +1,4 @@
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace Altinn.App.PlatformServices.Extensions
+namespace Altinn.App.Core.Extensions
 {
     /// <summary>
     /// This extension is created to make it easy to add a bearer token to a HttpRequests. 

@@ -1,8 +1,6 @@
-using System.Collections.Generic;
-
 using Altinn.Platform.Register.Models;
 
-namespace Altinn.App.Services.Models.Validation
+namespace Altinn.App.Core.Models.Validation
 {
     /// <summary>
     /// A status returned when validating instantiation

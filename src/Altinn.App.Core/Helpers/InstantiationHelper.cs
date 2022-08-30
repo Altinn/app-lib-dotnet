@@ -1,9 +1,8 @@
-using System.Collections.Generic;
 using Altinn.Platform.Register.Enums;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Services.Helpers
+namespace Altinn.App.Core.Helpers
 {
     /// <summary>
     /// Various helper methods for instantiation

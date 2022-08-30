@@ -1,11 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
-
-using Altinn.App.Services.Helpers;
-using Altinn.App.Services.Interface;
+using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Interface;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
 
@@ -14,7 +9,7 @@ using Microsoft.Extensions.Logging;
 
 using Newtonsoft.Json.Linq;
 
-namespace Altinn.App.Services.Implementation
+namespace Altinn.App.Core.Implementation
 {
     /// <inheritdoc/>
     public class PrefillSI : IPrefill

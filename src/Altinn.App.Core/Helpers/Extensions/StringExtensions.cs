@@ -1,7 +1,4 @@
-using System;
-using System.Linq;
-
-namespace Altinn.App.Common.Helpers.Extensions
+namespace Altinn.App.Core.Helpers.Extensions
 {
     /// <summary>
     /// Extensions to facilitate sanitization of string values

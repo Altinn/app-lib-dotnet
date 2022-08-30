@@ -5,13 +5,10 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
-
-using Altinn.App.PlatformServices.Helpers;
-using Altinn.App.PlatformServices.Interface;
-using Altinn.App.Services;
-using Altinn.App.Services.Configuration;
-using Altinn.App.Services.Constants;
-using Altinn.App.Services.Interface;
+using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Constants;
+using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Interface;
 using Altinn.Common.AccessTokenClient.Services;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;

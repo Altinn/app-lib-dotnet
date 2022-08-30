@@ -1,8 +1,6 @@
-using System.Threading.Tasks;
-
 using Altinn.Platform.Register.Models;
 
-namespace Altinn.App.Services.Interface
+namespace Altinn.App.Core.Interface
 {
     /// <summary>
     /// Interface for register functionality

@@ -1,6 +1,4 @@
-using System.Collections.Generic;
-
-namespace Altinn.App.Common.Models
+namespace Altinn.App.Core.Models
 {
     /// <summary>
     /// Layoutsets for a specific app containg one or more layoytset

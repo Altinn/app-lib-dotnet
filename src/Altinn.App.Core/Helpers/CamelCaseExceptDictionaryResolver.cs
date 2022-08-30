@@ -1,6 +1,6 @@
 using Newtonsoft.Json.Serialization;
 
-namespace Altinn.App.Services.Helpers
+namespace Altinn.App.Core.Helpers
 {
     /// <summary>
     /// Camel case property name resolver but does not camel case dictionary keys

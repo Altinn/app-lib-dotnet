@@ -1,4 +1,4 @@
-namespace Altinn.App.Services.Models.Validation
+namespace Altinn.App.Core.Models.Validation
 {
     /// <summary>
     /// Represents unique codes for different validation issues. The values should also exists in language files as lookup keys.

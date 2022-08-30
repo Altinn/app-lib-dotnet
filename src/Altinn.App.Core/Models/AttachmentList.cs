@@ -1,6 +1,4 @@
-using System.Collections.Generic;
-
-namespace Altinn.App.Services.Models
+namespace Altinn.App.Core.Models
 {
     /// <summary>
     /// Attachment metadata list

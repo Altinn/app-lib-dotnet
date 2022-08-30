@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
-
-using Altinn.App.Services.Configuration;
+using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Constants;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -78,7 +78,7 @@ namespace Altinn.App.Api.Infrastructure.Filters
                 return false;
             }
 
-            string authCookie = context.HttpContext.Request.Cookies[Services.Constants.General.RuntimeCookieName];
+            string authCookie = context.HttpContext.Request.Cookies[General.RuntimeCookieName];
             if (authCookie == null)
             {
                 return false;

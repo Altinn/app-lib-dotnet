@@ -1,5 +1,5 @@
 using Altinn.App.Core.EFormidling.Interface;
-using Altinn.App.Services.Interface;
+using Altinn.App.Core.Interface;
 using Altinn.Common.EFormidlingClient.Models.SBD;
 using Altinn.Platform.Storage.Interface.Models;
 

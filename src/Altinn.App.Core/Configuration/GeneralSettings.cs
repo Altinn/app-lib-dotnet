@@ -1,6 +1,4 @@
-using System;
-
-namespace Altinn.App.Services.Configuration
+namespace Altinn.App.Core.Configuration
 {
     /// <summary>
     /// General configuration settings

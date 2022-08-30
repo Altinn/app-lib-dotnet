@@ -1,8 +1,7 @@
-using System.IO;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.FileProviders;
 
-namespace Altinn.App.PlatformServices.Extensions
+namespace Altinn.App.Core.Extensions
 {
     /// <summary>
     /// This class holds a collection of extension methods for <see cref="IConfigurationBuilder"/>.

@@ -2,7 +2,7 @@ using System.Security.Claims;
 
 using AltinnCore.Authentication.Constants;
 
-namespace Altinn.App.PlatformServices.Extensions
+namespace Altinn.App.Core.Extensions
 {
     /// <summary>
     /// This class holds a collection of extension methods for the <see cref="ClaimsPrincipal"/> class.

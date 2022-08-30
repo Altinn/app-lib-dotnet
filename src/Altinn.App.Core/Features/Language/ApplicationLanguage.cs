@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
-using Altinn.App.Services.Configuration;
-using Altinn.App.Services.Implementation;
+using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Implementation;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -28,20 +28,20 @@ namespace Altinn.App.Core.Features.Language
         }
 
         /// <inheritdoc />
-        public async Task<List<Common.Models.ApplicationLanguage>> GetApplicationLanguages()
+        public async Task<List<Models.ApplicationLanguage>> GetApplicationLanguages()
         {
             var pathTextsResourceFolder = Path.Join(_settings.AppBasePath, _settings.ConfigurationFolder, _settings.TextFolder);
             var directoryInfo = new DirectoryInfo(pathTextsResourceFolder);
             var textResourceFilesInDirectory = directoryInfo.GetFiles();
-            var applicationLanguages = new List<Common.Models.ApplicationLanguage>();
+            var applicationLanguages = new List<Models.ApplicationLanguage>();
 
             foreach (var fileInfo in textResourceFilesInDirectory)
             {
-                Common.Models.ApplicationLanguage applicationLanguage;
+                Models.ApplicationLanguage applicationLanguage;
                 await using (FileStream fileStream = new(fileInfo.FullName, FileMode.Open, FileAccess.Read))
                 {
                     JsonSerializerOptions options = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-                    applicationLanguage = await JsonSerializer.DeserializeAsync<Common.Models.ApplicationLanguage>(fileStream, options);
+                    applicationLanguage = await JsonSerializer.DeserializeAsync<Models.ApplicationLanguage>(fileStream, options);
                 }
 
                 applicationLanguages.Add(applicationLanguage);

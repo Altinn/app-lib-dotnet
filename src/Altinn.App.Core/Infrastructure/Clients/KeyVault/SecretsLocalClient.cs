@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Altinn.App.Services.Interface;
+using Altinn.App.Core.Interface;
 using Microsoft.Azure.KeyVault;
 using Microsoft.Azure.KeyVault.WebKey;
 using Microsoft.Extensions.Configuration;

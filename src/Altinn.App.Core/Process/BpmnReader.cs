@@ -1,12 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Xml.Serialization;
+using Altinn.App.Core.Process.Elements;
 
-using Altinn.App.Common.Process.Elements;
-
-namespace Altinn.App.Common.Process
+namespace Altinn.App.Core.Process
 {
     /// <summary>
     /// Represents an engine that can provide information about the next step in a process based on its definition and given task.

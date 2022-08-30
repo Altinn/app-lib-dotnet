@@ -1,8 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Altinn.App.Common.Models;
 using Altinn.App.Core.Features.Options;
-using Altinn.App.PlatformServices.Models;
+using Altinn.App.Core.Models;
 using FluentAssertions;
 using Xunit;
 

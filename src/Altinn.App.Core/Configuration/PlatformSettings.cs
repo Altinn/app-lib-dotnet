@@ -1,4 +1,4 @@
-namespace Altinn.App.Services.Configuration
+namespace Altinn.App.Core.Configuration
 {
     /// <summary>
     /// Represents a set of configuration options when communicating with the platform API.

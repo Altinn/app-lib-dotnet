@@ -1,11 +1,8 @@
-using System;
 using System.Security.Claims;
-
 using AltinnCore.Authentication.Constants;
-
 using Microsoft.AspNetCore.Http;
 
-namespace Altinn.App.Services.Helpers
+namespace Altinn.App.Core.Helpers
 {
     /// <summary>
     /// helper class for authentication

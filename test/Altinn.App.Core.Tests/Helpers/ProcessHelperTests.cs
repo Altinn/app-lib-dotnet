@@ -1,6 +1,6 @@
 using System.Collections.Generic;
-using Altinn.App.Services.Helpers;
-using Altinn.App.Services.Models.Validation;
+using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Xunit;

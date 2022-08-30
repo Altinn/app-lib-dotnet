@@ -1,9 +1,6 @@
-using System;
-using System.Net.Http;
 using System.Runtime.Serialization;
-using System.Threading.Tasks;
 
-namespace Altinn.App.PlatformServices.Helpers
+namespace Altinn.App.Core.Helpers
 {
     /// <summary>
     /// Exception class to hold exceptions when talking to the platform REST services

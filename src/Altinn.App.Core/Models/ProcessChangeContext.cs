@@ -1,7 +1,5 @@
-using System.Collections.Generic;
 using System.Security.Claims;
-using Altinn.App.Common.Process;
-using Altinn.App.PlatformServices.Models;
+using Altinn.App.Core.Process;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Models

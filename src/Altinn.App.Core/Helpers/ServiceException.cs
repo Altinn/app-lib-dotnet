@@ -1,8 +1,7 @@
-using System;
 using System.Net;
 using System.Runtime.Serialization;
 
-namespace Altinn.App.PlatformServices.Helpers
+namespace Altinn.App.Core.Helpers
 {
     /// <summary>
     /// Exception that is thrown by service implementation. 

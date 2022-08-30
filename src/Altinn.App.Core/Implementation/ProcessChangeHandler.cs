@@ -1,17 +1,13 @@
 using System.Security.Claims;
-
-using Altinn.App.Common.Process;
-using Altinn.App.Common.Process.Elements;
+using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Interface;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Process;
-using Altinn.App.PlatformServices.Extensions;
-using Altinn.App.PlatformServices.Interface;
-using Altinn.App.Services.Configuration;
-using Altinn.App.Services.Helpers;
-using Altinn.App.Services.Interface;
-using Altinn.App.Services.Models.Validation;
+using Altinn.App.Core.Extensions;
+using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Models.Validation;
+using Altinn.App.Core.Process.Elements;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;

@@ -1,10 +1,8 @@
 #nullable enable
-using System.Collections.Generic;
-using System.Linq;
 
 using Newtonsoft.Json.Linq;
 
-namespace Altinn.App.Common.Helpers
+namespace Altinn.App.Core.Helpers
 {
     /// <summary>
     /// Helper class for processing JSON objects

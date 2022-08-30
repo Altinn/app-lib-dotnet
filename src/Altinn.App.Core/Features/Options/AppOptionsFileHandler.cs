@@ -1,7 +1,7 @@
 using System.Text;
-using Altinn.App.Common.Models;
-using Altinn.App.PlatformServices.Helpers;
-using Altinn.App.Services.Configuration;
+using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Models;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 

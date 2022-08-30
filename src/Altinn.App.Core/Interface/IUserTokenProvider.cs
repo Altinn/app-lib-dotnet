@@ -1,6 +1,6 @@
 ﻿#nullable enable
 
-namespace Altinn.App.Services
+namespace Altinn.App.Core.Interface
 {
     /// <summary>
     /// Defines the methods required for an implementation of a user JSON Web Token provider.

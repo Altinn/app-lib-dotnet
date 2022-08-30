@@ -1,15 +1,13 @@
-using System;
 using System.Security.Claims;
-using System.Threading.Tasks;
-using Altinn.App.Services.Configuration;
-using Altinn.App.Services.Interface;
-using Altinn.App.Services.Models;
+using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Interface;
+using Altinn.App.Core.Models;
 using Altinn.Platform.Profile.Models;
 using AltinnCore.Authentication.Constants;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 
-namespace Altinn.App.Services.Helpers
+namespace Altinn.App.Core.Helpers
 {
     /// <summary>
     /// The helper for user functionality

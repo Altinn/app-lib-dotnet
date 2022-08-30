@@ -24,6 +24,7 @@ namespace Altinn.App.Api.Extensions
         {
             services.AddPlatformServices(configuration, env);
             services.AddAppServices(configuration, env);
+            services.ConfigureDataProtection();
 
             AddApplicationInsights(services, configuration, env);
         }

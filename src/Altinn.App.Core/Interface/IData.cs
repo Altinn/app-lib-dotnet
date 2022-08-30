@@ -1,14 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
-
-using Altinn.App.Services.Models;
+using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
-
 using Microsoft.AspNetCore.Http;
 
-namespace Altinn.App.Services.Interface
+namespace Altinn.App.Core.Interface
 {
     /// <summary>
     /// Interface for data handling

@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Altinn.App.Common.Models
+namespace Altinn.App.Core.Models
 {
     /// <summary>
     /// Represents the supported language in the text resource folder.

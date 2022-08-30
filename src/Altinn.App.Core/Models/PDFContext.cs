@@ -1,12 +1,9 @@
-using System.Collections.Generic;
-using Altinn.App.Common.Models;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
-
 using Newtonsoft.Json;
 
-namespace Altinn.App.Services.Models
+namespace Altinn.App.Core.Models
 {
     /// <summary>
     /// Represents a collection of all data required to generate a PDF

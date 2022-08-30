@@ -1,6 +1,4 @@
-using System.Collections.Generic;
-
-namespace Altinn.App.Services.Configuration
+namespace Altinn.App.Core.Configuration
 {
     /// <summary>
     /// Represents settings used by the front end react application. These settings are separate because they are

@@ -1,3 +1,4 @@
+using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features.DataProcessing;
 using Altinn.App.Core.Features.Instantiation;
 using Altinn.App.Core.Features.Language;
@@ -16,12 +17,6 @@ using Altinn.App.Core.Infrastructure.Clients.Profile;
 using Altinn.App.Core.Infrastructure.Clients.Register;
 using Altinn.App.Core.Infrastructure.Clients.Storage;
 using Altinn.App.Core.Interface;
-using Altinn.App.PlatformServices.Implementation;
-using Altinn.App.PlatformServices.Interface;
-using Altinn.App.Services;
-using Altinn.App.Services.Configuration;
-using Altinn.App.Services.Implementation;
-using Altinn.App.Services.Interface;
 using Altinn.Common.AccessTokenClient.Configuration;
 using Altinn.Common.AccessTokenClient.Services;
 using Altinn.Common.PEP.Implementation;

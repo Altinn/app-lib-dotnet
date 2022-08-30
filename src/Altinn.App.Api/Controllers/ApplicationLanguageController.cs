@@ -1,12 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using Altinn.App.Common.Models;
 using Altinn.App.Core.Features.Language;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using ApplicationLanguage = Altinn.App.Core.Models.ApplicationLanguage;
 
 namespace Altinn.App.Api.Controllers
 {
@@ -38,7 +38,7 @@ namespace Altinn.App.Api.Controllers
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<List<Common.Models.ApplicationLanguage>>> GetLanguages()
+        public async Task<ActionResult<List<ApplicationLanguage>>> GetLanguages()
         {
             try
             {

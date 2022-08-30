@@ -1,14 +1,14 @@
 ﻿#nullable enable
 
 using System.Diagnostics.CodeAnalysis;
-
-using Altinn.App.Services.Configuration;
+using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Interface;
 using AltinnCore.Authentication.Utils;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 
-namespace Altinn.App.Services
+namespace Altinn.App.Core.Implementation
 {
     /// <summary>
     /// Represents an implementation of <see cref="IUserTokenProvider"/> using the HttpContext to obtain

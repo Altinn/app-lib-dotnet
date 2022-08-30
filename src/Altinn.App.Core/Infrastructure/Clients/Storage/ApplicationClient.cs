@@ -1,9 +1,8 @@
 using System.Net;
 using System.Net.Http.Headers;
-
-using Altinn.App.Services.Configuration;
-using Altinn.App.Services.Constants;
-using Altinn.App.Services.Interface;
+using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Constants;
+using Altinn.App.Core.Interface;
 using Altinn.Platform.Storage.Interface.Models;
 
 using Microsoft.Extensions.Logging;

@@ -1,10 +1,7 @@
-using System.Collections.Generic;
-
-using Altinn.App.Services.Models;
-
+using Altinn.App.Core.Models;
 using Newtonsoft.Json;
 
-namespace Altinn.App.Services.Configuration
+namespace Altinn.App.Core.Configuration
 {
     /// <summary>
     /// Class that represents the ServiceRepositorySettings

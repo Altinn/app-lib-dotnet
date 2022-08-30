@@ -1,10 +1,10 @@
 using System.Net;
 using System.Net.Http.Headers;
-using Altinn.App.PlatformServices.Extensions;
-using Altinn.App.PlatformServices.Helpers;
-using Altinn.App.Services.Configuration;
-using Altinn.App.Services.Constants;
-using Altinn.App.Services.Interface;
+using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Constants;
+using Altinn.App.Core.Extensions;
+using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Interface;
 using Altinn.Common.AccessTokenClient.Services;
 using Altinn.Platform.Register.Models;
 using AltinnCore.Authentication.Utils;
@@ -12,14 +12,13 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using IRegister = Altinn.App.Services.Interface.IRegister;
 
 namespace Altinn.App.Core.Infrastructure.Clients.Register
 {
     /// <summary>
     /// A client for retrieving register data from Altinn Platform.
     /// </summary>
-    public class RegisterClient : IRegister
+    public class RegisterClient : Interface.IRegister
     {
         private readonly IDSF _dsfClient;
         private readonly IER _erClient;

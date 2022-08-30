@@ -1,7 +1,7 @@
 using System.Linq.Expressions;
 using System.Xml.Linq;
 
-namespace Altinn.App.PlatformServices.Extensions
+namespace Altinn.App.Core.Extensions
 {
     /// <summary>
     /// XML to LINQ helper extensions

@@ -1,6 +1,4 @@
-using System.Collections.Generic;
-
-namespace Altinn.App.Common.Models
+namespace Altinn.App.Core.Models
 {
     /// <summary>
     /// UI Components

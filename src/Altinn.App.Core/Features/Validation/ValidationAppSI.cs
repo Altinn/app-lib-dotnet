@@ -1,7 +1,6 @@
+using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Interface;
-using Altinn.App.Services.Configuration;
-using Altinn.App.Services.Interface;
-using Altinn.App.Services.Models.Validation;
+using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
