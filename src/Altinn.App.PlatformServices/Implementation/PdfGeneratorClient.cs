@@ -73,6 +73,6 @@ public class PdfGeneratorClient : IPdfGeneratorClient
             new StringContent(requestContent, Encoding.UTF8, "application/json"), 
             ct);
 
-        return await httpResponseMessage.Content.ReadAsStreamAsync();
+        return await httpResponseMessage.Content.ReadAsStreamAsync(ct);
     }
 }
