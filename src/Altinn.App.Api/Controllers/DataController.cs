@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
+using Altinn.App.Core.Features.DataProcessing;
+using Altinn.App.Core.Features.Instantiation;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.Extensions;
 using Altinn.App.Core.Helpers.Serialization;

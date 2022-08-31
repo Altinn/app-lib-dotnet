@@ -60,7 +60,7 @@ namespace Altinn.App.Core.Features.Validation
         /// <returns>A list of validation errors if any were found</returns>
         public async Task<List<ValidationIssue>> ValidateAndUpdateProcess(Instance instance, string taskId)
         {
-            _logger.LogInformation($"Validation of {instance.Id}");
+            _logger.LogInformation("Validation of {instance.Id}", instance.Id);
 
             List<ValidationIssue> messages = new List<ValidationIssue>();
 
@@ -127,7 +127,7 @@ namespace Altinn.App.Core.Features.Validation
         /// <returns>A list of validation errors if any were found</returns>
         public async Task<List<ValidationIssue>> ValidateDataElement(Instance instance, DataType dataType, DataElement dataElement)
         {
-            _logger.LogInformation($"Validation of data element {dataElement.Id} of instance {instance.Id}");
+            _logger.LogInformation("Validation of data element {dataElement.Id} of instance {instance.Id}", dataElement.Id, instance.Id);
 
             List<ValidationIssue> messages = new List<ValidationIssue>();
 

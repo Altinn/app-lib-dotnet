@@ -1,6 +1,6 @@
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Interface;
+namespace Altinn.App.Core.Features.DataProcessing;
 
 /// <summary>
 /// This interface defines all the methods that are required for overriding DataProcessing calls.

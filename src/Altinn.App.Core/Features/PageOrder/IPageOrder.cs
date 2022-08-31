@@ -1,6 +1,6 @@
 using Altinn.App.Core.Models;
 
-namespace Altinn.App.Core.Interface
+namespace Altinn.App.Core.Features.PageOrder
 {
     /// <summary>
     /// Interface for page order handling in stateful apps

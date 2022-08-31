@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Security.Claims;
 using Altinn.App.Api.Controllers;
 using Altinn.App.Api.Tests.Controllers.TestResources;
+using Altinn.App.Core.Features.DataProcessing;
 using Altinn.App.Core.Interface;
 using Altinn.Authorization.ABAC.Xacml;
 using Altinn.Authorization.ABAC.Xacml.JsonProfile;

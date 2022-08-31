@@ -1,7 +1,7 @@
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Interface;
+namespace Altinn.App.Core.Features.Instantiation;
 
 /// <summary>
 /// IInstantiation defines the methods that must be implemented by a class that handles custom logic during instantiation of a new instance.
