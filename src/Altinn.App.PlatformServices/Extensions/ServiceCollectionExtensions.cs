@@ -2,6 +2,7 @@ using System;
 
 using Altinn.App.Core.Implementation;
 using Altinn.App.Core.Interface;
+using Altinn.App.PlatformServices.Configuration;
 using Altinn.App.PlatformServices.Implementation;
 using Altinn.App.PlatformServices.Interface;
 using Altinn.App.PlatformServices.Options;
@@ -86,11 +87,13 @@ namespace Altinn.App.PlatformServices.Extensions
             services.AddTransient<IProcessEngine, ProcessEngine>();
             services.AddTransient<IProcessChangeHandler, ProcessChangeHandler>();
             services.AddTransient<IPageOrder, DefaultPageOrder>();
+            services.AddTransient<IPdfGeneratorClient, PdfGeneratorClient>();
             services.Configure<Altinn.Common.PEP.Configuration.PepSettings>(configuration.GetSection("PEPSettings"));
             services.Configure<Altinn.Common.PEP.Configuration.PlatformSettings>(configuration.GetSection("PlatformSettings"));
             services.Configure<AccessTokenSettings>(configuration.GetSection("AccessTokenSettings"));
             services.Configure<Altinn.Common.EFormidlingClient.Configuration.EFormidlingClientSettings>(configuration.GetSection("EFormidlingClientSettings"));
             services.Configure<FrontEndSettings>(configuration.GetSection(nameof(FrontEndSettings)));
+            services.Configure<PdfGeneratorSettings>(configuration.GetSection(nameof(PdfGeneratorSettings)));
             AddAppOptions(services);
             AddPdfServices(services);
 

@@ -3,20 +3,29 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Claims;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
+
 using Altinn.App.Common.Helpers.Extensions;
 using Altinn.App.Common.Models;
+using Altinn.App.PlatformServices.Configuration;
 using Altinn.App.PlatformServices.Extensions;
 using Altinn.App.PlatformServices.Interface;
 using Altinn.App.PlatformServices.Models;
 using Altinn.App.PlatformServices.Options;
+using Altinn.App.Services.Configuration;
 using Altinn.App.Services.Interface;
 using Altinn.App.Services.Models;
+
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
+
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
+
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -35,7 +44,12 @@ namespace Altinn.App.PlatformServices.Implementation
         private readonly IProfile _profileClient;
         private readonly IRegister _registerClient;
         private readonly ICustomPdfHandler _customPdfHandler;
-        private readonly string pdfElementType = "ref-data-as-pdf";
+        private readonly IPdfGeneratorClient _pdfGeneratorClient;
+        private readonly PdfGeneratorSettings _pdfGeneratorSettings;
+        private readonly GeneralSettings _generalSettings;
+
+        private const string PdfElementType = "ref-data-as-pdf";
+        private const string PdfContentType = "application/pdf";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PdfService"/> class.
@@ -48,7 +62,21 @@ namespace Altinn.App.PlatformServices.Implementation
         /// <param name="profileClient">The profile client</param>
         /// <param name="registerClient">The register client</param>
         /// <param name="customPdfHandler">Class for customizing pdf formatting and layout.</param>
-        public PdfService(IPDF pdfClient, IAppResources appResources, IAppOptionsService appOptionsService, IData dataClient, IHttpContextAccessor httpContextAccessor, IProfile profileClient, IRegister registerClient, ICustomPdfHandler customPdfHandler)
+        /// <param name="pdfGeneratorClient">PDF generator client for the experimental PDF generator service</param>
+        /// <param name="pdfGeneratorSettings">PDF generator related settings.</param>
+        /// <param name="generalSettings">The app general settings.</param>
+        public PdfService(
+            IPDF pdfClient,
+            IAppResources appResources,
+            IAppOptionsService appOptionsService,
+            IData dataClient,
+            IHttpContextAccessor httpContextAccessor,
+            IProfile profileClient,
+            IRegister registerClient,
+            ICustomPdfHandler customPdfHandler,
+            IPdfGeneratorClient pdfGeneratorClient,
+            IOptions<PdfGeneratorSettings> pdfGeneratorSettings,
+            IOptions<GeneralSettings> generalSettings)
         {
             _pdfClient = pdfClient;
             _resourceService = appResources;
@@ -58,6 +86,9 @@ namespace Altinn.App.PlatformServices.Implementation
             _profileClient = profileClient;
             _registerClient = registerClient;
             _customPdfHandler = customPdfHandler;
+            _pdfGeneratorClient = pdfGeneratorClient;
+            _pdfGeneratorSettings = pdfGeneratorSettings.Value;
+            _generalSettings = generalSettings.Value;
         }
 
         /// <inheritdoc/>
@@ -161,6 +192,26 @@ namespace Altinn.App.PlatformServices.Implementation
             pdfContent.Dispose();
         }
 
+        /// <inheritdoc/>
+        public async Task GenerateAndStorePdf(Instance instance, CancellationToken ct)
+        {
+            StringBuilder address = new StringBuilder(_pdfGeneratorSettings.AppPdfPageUriTemplate.ToLower());
+
+            // "https://{hostname}/{appid}/#/instance/{instanceid}"
+            address.Replace("{hostname}", _generalSettings.HostName);
+            address.Replace("{appid}", instance.AppId);
+            address.Replace("{instanceid}", instance.Id);
+
+            var pdfContent = await _pdfGeneratorClient.GeneratePdf(new Uri(address.ToString()), ct);
+
+            await _dataClient.InsertBinaryData(
+                instance.Id,
+                PdfElementType,
+                PdfContentType,
+                "experimental.pdf",
+                pdfContent);
+        }
+
         private async Task<DataElement> StorePDF(Stream pdfStream, Instance instance, TextResource textResource)
         {
             string fileName = null;
@@ -183,8 +234,8 @@ namespace Altinn.App.PlatformServices.Implementation
 
             return await _dataClient.InsertBinaryData(
                 instance.Id,
-                pdfElementType,
-                "application/pdf",
+                PdfElementType,
+                PdfContentType,
                 fileName,
                 pdfStream);
         }
