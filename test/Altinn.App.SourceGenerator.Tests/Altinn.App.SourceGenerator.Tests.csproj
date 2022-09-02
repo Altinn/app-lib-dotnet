@@ -22,17 +22,11 @@
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="6.0.0" />
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.3.1" />
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\..\src\Altinn.App.Core\Altinn.App.Core.csproj" />
         <ProjectReference Include="..\..\src\Altinn.App.SourceGenerator\Altinn.App.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <None CopyToOutputDirectory="PreserveNewest" Include="config/**" LinkBase="config/" />
-        <None CopyToOutputDirectory="PreserveNewest" Include="TestData/**" LinkBase="/" Link="/%(Filename)%(Extension)" />
     </ItemGroup>
 
 </Project>
