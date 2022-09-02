@@ -16,6 +16,7 @@ namespace Altinn.App.Api.Controllers
     /// <summary>
     /// Controller for redirect and validation of URL
     /// </summary>
+    [AllowAnonymous]
     [AutoValidateAntiforgeryTokenIfAuthCookie]
     [Route("{org}/{app}/api/v1/redirect")]
     [ApiController]
