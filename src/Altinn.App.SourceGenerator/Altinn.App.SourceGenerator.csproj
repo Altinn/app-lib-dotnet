@@ -16,7 +16,6 @@
         </PackageReference>
         <!-- Version 4.2.0+ of Microsoft.CodeAnalysis.CSharp requires dotnet verison 6.0.300 or newer! -->
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.2.0" PrivateAssets="all" />
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.3.1" PrivateAssets="all" />
     </ItemGroup>
 
     <ItemGroup>
