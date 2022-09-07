@@ -197,7 +197,7 @@ namespace Altinn.App.PlatformServices.Implementation
         {
             StringBuilder address = new StringBuilder(_pdfGeneratorSettings.AppPdfPageUriTemplate.ToLower());
 
-            // "https://{hostname}/{appid}/#/instance/{instanceid}"
+            address.Replace("{org}", instance.Org);
             address.Replace("{hostname}", _generalSettings.HostName);
             address.Replace("{appid}", instance.AppId);
             address.Replace("{instanceid}", instance.Id);

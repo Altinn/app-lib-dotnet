@@ -17,11 +17,13 @@ public class PdfGeneratorSettings
     /// </summary>
     /// <remarks>
     /// The app logic will perform string replacement for a specific set of tokens. (Tokens can be omitted):
+    /// org - will be taken from current instance.Org.
     /// hostName - will be taken from GeneralSettings.HostName.
     /// appId - will be taken from current instance.AppId.
     /// instanceId - will be taken from current instance.Id.
     /// </remarks>
-    public string AppPdfPageUriTemplate { get; set; } = "https://{hostName}/{appId}/#/instance/{instanceId}";
+    public string AppPdfPageUriTemplate { get; set; } = 
+        "https://{org}.apps.{hostName}/{appId}/#/instance/{instanceId}";
 
     /// <summary>
     /// The name of a DOM element to wait for before triggering PDF-generator.
@@ -31,6 +33,6 @@ public class PdfGeneratorSettings
     /// <summary>
     /// The number of milliseconds the PDF-generator should wait for a page to render. Default is 5000.
     /// </summary>
-    /// <remarks>This wilø be ignored if <see cref="WaitForSelector"/> has been assigned a value.</remarks>
+    /// <remarks>This will be ignored if <see cref="WaitForSelector"/> has been assigned a value.</remarks>
     public int WaitForTime { get; set; } = 5000;
 }

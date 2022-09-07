@@ -55,6 +55,11 @@ internal class PdfGeneratorRequestOptions
     /// Defines the page size. Default is A4.
     /// </summary>
     public string Format { get; set; } = "A4";
+
+    /// <summary>
+    /// Defines the page margins. Default is "0.4in" on all sides.
+    /// </summary>
+    public MarginOptions Margin { get; set; } = new();
 }
 
 /// <summary>
@@ -81,4 +86,30 @@ internal class PdfGeneratorCookieOptions
     /// The cookie sameSite settings.
     /// </summary>
     public string SameSite { get; } = "Lax";
+}
+
+/// <summary>
+/// This class is created to match the PDF generator marking options.
+/// </summary>
+internal class MarginOptions
+{
+    /// <summary>
+    /// Top margin, accepts values labeled with units.
+    /// </summary>
+    public string Top { get; set; } = "0.4in";
+
+    /// <summary>
+    /// Left margin, accepts values labeled with units
+    /// </summary>
+    public string Left { get; set; } = "0.4in";
+
+    /// <summary>
+    /// Bottom margin, accepts values labeled with units
+    /// </summary>
+    public string Bottom { get; set; } = "0.4in";
+
+    /// <summary>
+    /// Right margin, accepts values labeled with units
+    /// </summary>
+    public string Right { get; set; } = "0.4in";
 }
