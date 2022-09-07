@@ -15,14 +15,16 @@ using Altinn.Platform.Storage.Interface.Models;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
+
 using Moq;
+
 using Xunit;
 
 namespace Altinn.App.PlatformServices.Tests.Implementation
 {
     public class PdfServiceTests
     {
-        private const string HostName = "digdir.apps.at22.altinn.cloud";
+        private const string HostName = "at22.altinn.cloud";
 
         private readonly Mock<IPDF> _pdf = new();
         private readonly Mock<IAppResources> _appResources = new();
@@ -74,7 +76,8 @@ namespace Altinn.App.PlatformServices.Tests.Implementation
             Instance instance = new()
             {
                 Id = $"509378/{Guid.NewGuid()}",
-                AppId = "digdir/not-really-an-app"
+                AppId = "digdir/not-really-an-app",
+                Org = "digdir"
             };
             
             // Act
@@ -85,7 +88,7 @@ namespace Altinn.App.PlatformServices.Tests.Implementation
                 s => s.GeneratePdf(
                     It.Is<Uri>(
                         u => u.Scheme == "https" && 
-                        u.Host == HostName &&
+                        u.Host == $"{instance.Org}.apps.{HostName}" &&
                         u.AbsoluteUri.Contains(instance.AppId) &&
                         u.AbsoluteUri.Contains(instance.Id)), 
                     It.IsAny<CancellationToken>()), 
