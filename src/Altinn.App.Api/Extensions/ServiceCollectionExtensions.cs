@@ -1,4 +1,5 @@
 ﻿using System;
+using Altinn.App.Api.Controllers;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Infrastructure.Health;
 using Altinn.App.Api.Infrastructure.Telemetry;
@@ -24,6 +25,22 @@ namespace Altinn.App.Api.Extensions
     /// </summary>
     public static class ServiceCollectionExtensions
     {
+        /// <summary>
+        /// Add the controllers and views used by an Altinn application
+        /// </summary>
+        public static void AddAltinnAppControllersWithViews(this IServiceCollection services)
+        {
+            // Add API controllers from Altinn.App.Api
+            IMvcBuilder mvcBuilder = services.AddControllersWithViews();
+            mvcBuilder
+                .AddApplicationPart(typeof(InstancesController).Assembly)
+                .AddXmlSerializerFormatters()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+                });
+        }
+
         /// <summary>
         /// Adds all services to run an Altinn application.
         /// </summary>
