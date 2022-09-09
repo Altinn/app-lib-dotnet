@@ -245,7 +245,7 @@ For customizing these two methods moving forward, you now need to implement the 
 1. Add the `IInstantiation` interface to the class definition
 
    ```csharp
-   public class ValidationHandler : IInstanceValidator
+  public class InstantiationHandler: IInstantiation
    ```
 
 2. Add a using statement `using Altinn.App.Core.Interface;`
