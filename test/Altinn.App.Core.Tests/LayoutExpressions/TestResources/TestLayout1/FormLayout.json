@@ -1,0 +1,345 @@
+{
+  "$schema": "https://altinncdn.no/schemas/json/layout/layout.schema.v1.json",
+  "data": {
+    "layout": [
+      {
+        "id": "Info",
+        "type": "Paragraph",
+        "textResourceBindings": {
+          "title": "0.info"
+        },
+        "dataModelBindings": {}
+      },
+      {
+        "id": "Header1",
+        "type": "Header",
+        "textResourceBindings": {
+          "title": "1.generalInfo"
+        },
+        "dataModelBindings": {},
+        "size": "S",
+        "readOnly": true
+      },
+      {
+        "id": "1-1",
+        "type": "Input",
+        "textResourceBindings": {
+          "title": "1.1.orgNr"
+        },
+        "dataModelBindings": {
+          "simpleBinding": "rapport.innsender.foretak.organisasjonsnummer.value"
+        },
+        "required": true,
+        "readOnly": true,
+        "grid": {
+          "labelGrid": {
+            "sm": 6
+          },
+          "innerGrid": {
+            "sm": 6
+          }
+        },
+        "hidden": true
+      },
+      {
+        "id": "1-2",
+        "type": "Input",
+        "textResourceBindings": {
+          "title": "1.2.name"
+        },
+        "dataModelBindings": {
+          "simpleBinding": "rapport.innsender.foretak.navn.value"
+        },
+        "grid": {
+          "labelGrid": {
+            "sm": 6
+          },
+          "innerGrid": {
+            "sm": 6
+          }
+        },
+        "hidden": {
+          "function": "equals",
+          "args": [
+            {
+              "function": "dataModel",
+              "args": [
+                "rapport.innsender.foretak.organisasjonsnummer.value"
+              ]
+            },
+            "123456789"
+          ]
+        },
+        "required": true,
+        "readOnly": true
+      },
+      {
+        "id": "1-3-address",
+        "type": "Input",
+        "textResourceBindings": {
+          "title": "1.3.address"
+        },
+        "dataModelBindings": {
+          "simpleBinding": "rapport.innsender.adresse.adresselinje1.value"
+        },
+        "required": false,
+        "hidden": false,
+        "grid": {
+          "labelGrid": {
+            "sm": 6
+          },
+          "innerGrid": {
+            "sm": 6
+          }
+        }
+      },
+      {
+        "id": "1-4-postcode",
+        "type": "Input",
+        "textResourceBindings": {
+          "title": "1.4.postCode"
+        },
+        "dataModelBindings": {
+          "simpleBinding": "rapport.innsender.adresse.postnummer.value"
+        },
+        "required": false,
+        "readOnly": true,
+        "grid": {
+          "sm": 6,
+          "innerGrid": {
+            "sm": 6
+          }
+        }
+      },
+      {
+        "id": "1-5-postcity",
+        "type": "Input",
+        "textResourceBindings": {
+          "title": "1.5.postCity"
+        },
+        "dataModelBindings": {
+          "simpleBinding": "rapport.innsender.adresse.poststed.value"
+        },
+        "grid": {
+          "sm": 4
+        },
+        "required": false,
+        "readOnly": true
+      },
+      {
+        "id": "Header2",
+        "type": "Header",
+        "textResourceBindings": {
+          "title": "2.contactInfo"
+        },
+        "dataModelBindings": {},
+        "size": "S",
+        "readOnly": true
+      },
+      {
+        "id": "2-1",
+        "type": "Input",
+        "textResourceBindings": {
+          "title": "2.1.contact1.name"
+        },
+        "dataModelBindings": {
+          "simpleBinding": "rapport.rapportering.kontaktperson1.navn.value"
+        },
+        "required": true,
+        "readOnly": false,
+        "grid": {
+          "labelGrid": {
+            "sm": 6
+          },
+          "innerGrid": {
+            "sm": 6
+          }
+        }
+      },
+      {
+        "id": "2-2",
+        "type": "Input",
+        "textResourceBindings": {
+          "title": "2.2.contact1.mail"
+        },
+        "dataModelBindings": {
+          "simpleBinding": "rapport.rapportering.kontaktperson1.epost.value"
+        },
+        "required": true,
+        "readOnly": false,
+        "grid": {
+          "labelGrid": {
+            "sm": 6
+          },
+          "innerGrid": {
+            "sm": 6
+          },
+          "formatting": {
+            "Input": "Email"
+          }
+        }
+      },
+      {
+        "id": "2-3Prefix",
+        "type": "Input",
+        "textResourceBindings": {
+          "title": "2.3.contact1.prefix"
+        },
+        "dataModelBindings": {
+          "simpleBinding": "rapport.rapportering.kontaktperson1.telefonprefiks.value"
+        },
+        "grid": {
+          "sm": 6,
+          "innerGrid": {
+            "sm": 3
+          }
+        },
+        "required": true,
+        "readOnly": false
+      },
+      {
+        "id": "2-3",
+        "type": "Input",
+        "textResourceBindings": {
+          "title": "2.3.contact1.tlf"
+        },
+        "dataModelBindings": {
+          "simpleBinding": "rapport.rapportering.kontaktperson1.telefonnummer.value"
+        },
+        "grid": {
+          "sm": 6,
+          "innerGrid": {
+            "sm": 6
+          }
+        },
+        "required": true,
+        "readOnly": false,
+        "formatting": {
+          "number": {
+            "format": "### ## ###"
+          }
+        }
+      },
+      {
+        "id": "2-4",
+        "type": "Input",
+        "textResourceBindings": {
+          "title": "2.4.contact2.name"
+        },
+        "dataModelBindings": {
+          "simpleBinding": "rapport.rapportering.kontaktperson2.navn.value"
+        },
+        "required": false,
+        "readOnly": false,
+        "grid": {
+          "labelGrid": {
+            "sm": 6
+          },
+          "innerGrid": {
+            "sm": 6
+          }
+        }
+      },
+      {
+        "id": "2-5",
+        "type": "Input",
+        "textResourceBindings": {
+          "title": "2.5.contact2.mail"
+        },
+        "dataModelBindings": {
+          "simpleBinding": "rapport.rapportering.kontaktperson2.epost.value"
+        },
+        "required": false,
+        "readOnly": false,
+        "grid": {
+          "labelGrid": {
+            "sm": 6
+          },
+          "innerGrid": {
+            "sm": 6
+          }
+        }
+      },
+      {
+        "id": "2-6Prefix",
+        "type": "Input",
+        "textResourceBindings": {
+          "title": "2.6.contact2.prefix"
+        },
+        "dataModelBindings": {
+          "simpleBinding": "rapport.rapportering.kontaktperson2.telefonprefiks.value"
+        },
+        "grid": {
+          "sm": 6,
+          "innerGrid": {
+            "sm": 3
+          }
+        },
+        "required": false,
+        "readOnly": false
+      },
+      {
+        "id": "I2-6",
+        "type": "Input",
+        "textResourceBindings": {
+          "title": "2.6.contact2.tlf"
+        },
+        "dataModelBindings": {
+          "simpleBinding": "rapport.rapportering.kontaktperson2.telefonnummer.value"
+        },
+        "grid": {
+          "sm": 6,
+          "innerGrid": {
+            "sm": 6
+          }
+        },
+        "required": false,
+        "readOnly": false,
+        "formatting": {
+          "number": {
+            "format": "### ## ###"
+          }
+        }
+      },
+      {
+        "id": "FilOpplasting",
+        "type": "FileUpload",
+        "textResourceBindings": {
+          "title": "Vedlegg"
+        },
+        "dataModelBindings": {},
+        "maxFileSizeInMB": 190,
+        "maxNumberOfAttachments": 25,
+        "minNumberOfAttachments": 1,
+        "displayMode": "list",
+        "required": true,
+        "hasCustomFileEndings": true,
+        "validFileEndings": ".pdf, .xls, .xlsx, .doc, .docx, .rtf, .jpg, .jpeg, .txt, .pptx, .ppt, .zip, .odp, .ods, .odt"
+      },
+      {
+        "id": "4-0",
+        "type": "TextArea",
+        "textResourceBindings": {
+          "title": "4.description",
+          "help": "4.description.hint"
+        },
+        "dataModelBindings": {
+          "simpleBinding": "rapport.rapportering.beskrivelse.value"
+        },
+        "required": false,
+        "readOnly": false
+      },
+      {
+        "id": "Tilbake-knapp",
+        "type": "NavigationButtons",
+        "componentType": "NavigationButtons",
+        "textResourceBindings": {
+          "next": "button.next",
+          "back": "back"
+        },
+        "dataModelBindings": {},
+        "showBackButton": false
+      }
+    ]
+  }
+}
