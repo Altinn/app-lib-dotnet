@@ -1,7 +1,7 @@
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
-namespace Altinn.App.Core.Interface;
+namespace Altinn.App.Core.Features.Validation;
 
 /// <summary>
 /// IInstanceValidator defines the methods that are used to validate data and tasks
