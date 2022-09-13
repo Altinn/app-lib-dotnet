@@ -1,11 +1,10 @@
-using Altinn.App.Core.Interface;
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Implementation;
+namespace Altinn.App.Core.Features.Process;
 
 /// <summary>
-/// Default implementation of the ITaskProcessor interface.
-/// This implementation does not do any thing on TaskEnd
+/// Default Implementation of the ITaskProcessor interface.
+/// This implementation does nothing.
 /// </summary>
 public class NullTaskProcessor: ITaskProcessor
 {

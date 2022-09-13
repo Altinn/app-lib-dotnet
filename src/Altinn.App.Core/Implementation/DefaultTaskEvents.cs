@@ -1,7 +1,8 @@
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.EFormidling.Interface;
-using Altinn.App.Core.Features.Instantiation;
+using Altinn.App.Core.Features.DataProcessing;
 using Altinn.App.Core.Features.Pdf;
+using Altinn.App.Core.Features.Process;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Interface;
 using Altinn.Platform.Storage.Interface.Models;
@@ -20,7 +21,7 @@ public class DefaultTaskEvents : ITaskEvents
     private readonly IData _dataClient;
     private readonly IPrefill _prefillService;
     private readonly IAppModel _appModel;
-    private readonly IInstantiation _instantiation;
+    private readonly IInstantiationProcessor _instantiationProcessor;
     private readonly IInstance _instanceClient;
     private readonly ITaskProcessor _taskProcessor;
     private readonly IPdfService _pdfService;
@@ -33,7 +34,7 @@ public class DefaultTaskEvents : ITaskEvents
         IData dataClient,
         IPrefill prefillService,
         IAppModel appModel,
-        IInstantiation instantiation,
+        IInstantiationProcessor instantiationProcessor,
         IInstance instanceClient,
         ITaskProcessor taskProcessor,
         IPdfService pdfService,
@@ -45,7 +46,7 @@ public class DefaultTaskEvents : ITaskEvents
         _dataClient = dataClient;
         _prefillService = prefillService;
         _appModel = appModel;
-        _instantiation = instantiation;
+        _instantiationProcessor = instantiationProcessor;
         _instanceClient = instanceClient;
         _taskProcessor = taskProcessor;
         _pdfService = pdfService;
@@ -84,7 +85,7 @@ public class DefaultTaskEvents : ITaskEvents
 
                 // runs prefill from repo configuration if config exists
                 await _prefillService.PrefillDataModel(instance.InstanceOwner.PartyId, dataType.Id, data, prefill);
-                await _instantiation.DataCreation(instance, data, prefill);
+                await _instantiationProcessor.DataCreation(instance, data, prefill);
 
                 Type type = _appModel.GetModelType(dataType.AppLogic.ClassRef);
 

@@ -1,10 +1,10 @@
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features.DataProcessing;
-using Altinn.App.Core.Features.Instantiation;
 using Altinn.App.Core.Features.Language;
 using Altinn.App.Core.Features.Options;
 using Altinn.App.Core.Features.PageOrder;
 using Altinn.App.Core.Features.Pdf;
+using Altinn.App.Core.Features.Process;
 using Altinn.App.Core.Features.Texts;
 using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Implementation;
@@ -85,13 +85,14 @@ namespace Altinn.App.Core.Extensions
             services.AddTransient<IValidation, ValidationAppSI>();
             services.AddTransient<IPrefill, PrefillSI>();
             services.AddTransient<ISigningCredentialsResolver, SigningCredentialsResolver>();
-            services.AddSingleton<IAppResources, AppResourcesSI>();
+            services.TryAddSingleton<IAppResources, AppResourcesSI>();
             services.AddTransient<IProcessEngine, ProcessEngine>();
             services.AddTransient<IProcessChangeHandler, ProcessChangeHandler>();
             services.AddTransient<IAppEvents, DefaultAppEvents>();
             services.AddTransient<ITaskEvents, DefaultTaskEvents>();
             services.TryAddTransient<IPageOrder, DefaultPageOrder>();
-            services.TryAddTransient<IInstantiation, NullInstantiation>();
+            services.TryAddTransient<IInstantiationProcessor, NullInstantiationProcessor>();
+            services.TryAddTransient<IInstantiationValidator, NullInstantiationValidator>();
             services.TryAddTransient<IInstanceValidator, NullInstanceValidator>();
             services.TryAddTransient<IDataProcessor, NullDataProcessor>();
             services.TryAddTransient<ITaskProcessor, NullTaskProcessor>();

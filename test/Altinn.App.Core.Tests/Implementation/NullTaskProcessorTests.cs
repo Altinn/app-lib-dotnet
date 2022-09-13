@@ -1,4 +1,4 @@
-using Altinn.App.Core.Implementation;
+using Altinn.App.Core.Features.Process;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Xunit;

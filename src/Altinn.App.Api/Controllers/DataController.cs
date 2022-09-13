@@ -11,7 +11,6 @@ using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features.DataProcessing;
-using Altinn.App.Core.Features.Instantiation;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.Extensions;
 using Altinn.App.Core.Helpers.Serialization;
@@ -38,7 +37,7 @@ namespace Altinn.App.Api.Controllers
         private readonly IData _dataClient;
         private readonly IDataProcessor _dataProcessor;
         private readonly IInstance _instanceClient;
-        private readonly IInstantiation _instantiation;
+        private readonly IInstantiationProcessor _instantiationProcessor;
         private readonly IAppModel _appModel;
         private readonly IAppResources _appResourcesService;
         private readonly IPrefill _prefillService;
@@ -50,13 +49,16 @@ namespace Altinn.App.Api.Controllers
         /// </summary>
         /// <param name="logger">logger</param>
         /// <param name="instanceClient">instance service to store instances</param>
+        /// <param name="instantiationProcessor">Instantiation processor</param>
         /// <param name="dataClient">A service with access to data storage.</param>
+        /// <param name="dataProcessor">Serive implemnting logic during data read/write</param>
+        /// <param name="appModel">Service for generating app model</param>
         /// <param name="appResourcesService">The apps resource service</param>
         /// <param name="prefillService">A service with prefill related logic.</param>
         public DataController(
             ILogger<DataController> logger,
             IInstance instanceClient,
-            IInstantiation instantiation,
+            IInstantiationProcessor instantiationProcessor,
             IData dataClient,
             IDataProcessor dataProcessor,
             IAppModel appModel,
@@ -66,7 +68,7 @@ namespace Altinn.App.Api.Controllers
             _logger = logger;
 
             _instanceClient = instanceClient;
-            _instantiation = instantiation;
+            _instantiationProcessor = instantiationProcessor;
             _dataClient = dataClient;
             _dataProcessor = dataProcessor;
             _appModel = appModel;
@@ -403,7 +405,7 @@ namespace Altinn.App.Api.Controllers
             // runs prefill from repo configuration if config exists
             await _prefillService.PrefillDataModel(instance.InstanceOwner.PartyId, dataType, appModel);
 
-            await _instantiation.DataCreation(instance, appModel, null);
+            await _instantiationProcessor.DataCreation(instance, appModel, null);
 
             await UpdatePresentationTextsOnInstance(instance, dataType, appModel);
             await UpdateDataValuesOnInstance(instance, dataType, appModel);

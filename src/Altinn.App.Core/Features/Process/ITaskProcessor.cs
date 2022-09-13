@@ -1,9 +1,9 @@
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Interface;
+namespace Altinn.App.Core.Features.Process;
 
 /// <summary>
-/// ITaskProcessor defines the methods that must be implemented by a task processing handler.
+/// ITaskProcessor defines the methods that must be implemented by a task processor.
 /// </summary>
 public interface ITaskProcessor
 {
