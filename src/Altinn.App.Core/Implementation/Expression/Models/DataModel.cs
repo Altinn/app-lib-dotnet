@@ -1,19 +1,48 @@
+using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace Altinn.App.Core.Implementation.Expression;
 
+/// <summary>
+/// Interface for accessing fields in the data model
+/// </summary>
 public interface IDataModelAccessor
 {
+    /// <summary>
+    /// Get model data based on key and optionally indicies
+    /// </summary>
+    /// <remarks>
+    /// Inline indicies in the key "Bedrifter[1].Ansatte[1].Alder" will override
+    /// normal indicies, and if both "Bedrifter" and "Ansatte" is lists,
+    /// "Bedrifter[1].Ansatte.Alder", will fail, because the indicies will be reset
+    /// after an inline index is used
+    /// </remarks>
     object? GetModelData(string key, ReadOnlySpan<int> indicies = default);
 
+    /// <summary>
+    /// Get the count of data elements set in a group (enumerable)
+    /// </summary>
     int? GetModelDataCount(string key, ReadOnlySpan<int> indicies = default);
+
+    string? AddIndicies(string key, ReadOnlySpan<int> indicies = default);
 }
 
+/// <summary>
+/// Implementation of <see cref="IDataModelAccessor" /> for data models based on JsonElement (mainliy for testing )
+/// </summary>
+/// <remarks>
+/// This class is written to enable the use of shared tests (with frontend) where the datamodel is defined
+/// in json. It's hard to IL generate proper C# classes to use the normal <see cref="DataModel" /> in tests
+/// </remarks>
 public class JsonDataModel : IDataModelAccessor
 {
     private readonly JsonElement? _modelRoot;
+
+    /// <summary>
+    /// Constructor that creates a JsonDataModel based on a JsonElement
+    /// </summary>
     public JsonDataModel(JsonElement? modelRoot)
     {
         _modelRoot = modelRoot;
@@ -103,7 +132,7 @@ public class JsonDataModel : IDataModelAccessor
 
         if (childModel.ValueKind == JsonValueKind.Array)
         {
-            if (index == keys.Length -1)
+            if (index == keys.Length - 1)
             {
                 return childModel.GetArrayLength();
             }
@@ -112,7 +141,7 @@ public class JsonDataModel : IDataModelAccessor
             {
                 if (indicies.Length == 0)
                 {
-                    return null; //Don't know index 
+                    return null; // Error index for collection not specified
                 }
 
                 groupIndex = indicies[0];
@@ -128,9 +157,17 @@ public class JsonDataModel : IDataModelAccessor
 
         return GetModelDataCountRecurs(keys, index + 1, childModel, indicies);
     }
+
+    /// <inheritdoc />
+    public string? AddIndicies(string key, ReadOnlySpan<int> indicies)
+    {
+        throw new NotImplementedException();
+    }
 }
 
-
+/// <summary>
+/// Get data fields from a model, using string keys (like "Bedrifter[1].Ansatte[1].Alder")
+/// </summary>
 public class DataModel : IDataModelAccessor
 {
     private readonly object _serviceModel;
@@ -141,33 +178,77 @@ public class DataModel : IDataModelAccessor
     }
 
 
-    public object? GetModelData(string key, ReadOnlySpan<int> inidicies)
+    public object? GetModelData(string key, ReadOnlySpan<int> indicies)
     {
-        return GetModelDataRecursive(key.Split('.'), 0, _serviceModel);
+        return GetModelDataRecursive(key.Split('.'), 0, _serviceModel, indicies);
     }
 
+    /// <inheritdoc />
+    public int? GetModelDataCount(string key, ReadOnlySpan<int> indicies = default)
+    {
+        return GetModelDataRecursive(key.Split('.'), 0, _serviceModel, indicies) as int?;
+    }
 
-    private object? GetModelDataRecursive(string[] keys, int index, object currentModel)
+    private object? GetModelDataRecursive(string[] keys, int index, object currentModel, ReadOnlySpan<int> indicies)
     {
         if (index == keys.Length)
         {
             return currentModel;
         }
 
-        var key = keys[index];
-        // TODO: Support indexed keys (eg; model.repeatingGroup[1].name.value)
-        // TODO: Use [JsonPropertyName], [JsonProperty(PropertyName = )], before resorting to actuall property name.
-        var prop = currentModel.GetType().GetProperty(
-                key,
-                BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+        var (key, groupIndex) = ParseKeyPart(keys[index]);
+        var prop = currentModel.GetType().GetProperties().FirstOrDefault(p => IsPropertyWithJsonName(p, key));
+        if (prop is null)
+        {
+            //throw new Exception($"Unknown model property {key} in {string.Join('.', keys)}");
+            return null;
+        }
 
-        var childModel = prop?.GetValue(currentModel);
+        var childModel = prop.GetValue(currentModel);
         if (childModel is null)
         {
             return null;
         }
 
-        return GetModelDataRecursive(keys, index + 1, childModel);
+        // Strings are enumerable in C#
+        // Other enumerable types is treated as an collection
+        if (childModel is not string && childModel is System.Collections.IEnumerable childModelList)
+        {
+            if (index == keys.Length - 1)
+            {
+                // The Linq IEnumerable<T>.Count() does not work on non generic enumerable
+                // that we need to use with reflection
+                int childCount = 0;
+                foreach (var _ in childModelList)
+                {
+                    childCount++;
+                }
+                return childCount;
+            }
+            if (groupIndex is null)
+            {
+                if (indicies.Length == 0)
+                {
+                    return null; // Error index for collection not specified
+                }
+
+                groupIndex = indicies[0];
+            }
+            else
+            {
+                indicies = default; //when you use a literal index, the context indecies are not to be used later.
+            }
+
+            foreach (var arrayElement in childModelList)
+            {
+                if (groupIndex-- < 1)
+                {
+                    return GetModelDataRecursive(keys, index + 1, arrayElement, indicies.Length > 0 ? indicies.Slice(1) : indicies);
+                }
+            }
+        }
+
+        return GetModelDataRecursive(keys, index + 1, childModel, indicies);
     }
 
     private static Regex KeyPartRegex = new Regex(@"^(\w+)\[(\d+)\]?$");
@@ -182,9 +263,75 @@ public class DataModel : IDataModelAccessor
 
     }
 
-    /// <inheritdoc />
-    public int? GetModelDataCount(string key, ReadOnlySpan<int> indicies = default)
+    private static void AddIndiciesRecursive(List<string> ret, Type currentModelType, ReadOnlySpan<string> keys, string fullKey, ReadOnlySpan<int> indicies)
     {
-        throw new NotImplementedException();
+        if (keys.Length == 0)
+        {
+            return;
+        }
+        var (key, groupIndex) = ParseKeyPart(keys[0]);
+        var prop = currentModelType.GetProperties().FirstOrDefault(p => IsPropertyWithJsonName(p, key));
+        if (prop is null)
+        {
+            throw new Exception($"Unknown model property {key} in {fullKey}");
+        }
+
+        var type = prop.PropertyType;
+        if (type != typeof(string) && type.IsAssignableTo(typeof(System.Collections.IEnumerable)))
+        {
+
+            if (groupIndex is null)
+            {
+                ret.Add($"{key}[{indicies[0]}]");
+            }
+            else
+            {
+                ret.Add($"{key}[{groupIndex}]");
+                indicies = default;
+            }
+
+            AddIndiciesRecursive(ret, type, keys.Slice(1), fullKey, indicies.Slice(1));
+            return;
+        }
+
+        if (groupIndex is not null)
+        {
+            throw new Exception("Index on non indexable property");
+        }
+
+
+    }
+
+    /// <inheritdoc />
+    public string? AddIndicies(string key, ReadOnlySpan<int> indicies)
+    {
+        if (indicies.Length == 0)
+        {
+            return key;
+        }
+
+        var ret = new List<string>();
+        AddIndiciesRecursive(ret, this._serviceModel.GetType(), key.Split('.'), key, indicies);
+        return string.Join('.', ret);
+    }
+
+    private static bool IsPropertyWithJsonName(PropertyInfo propertyInfo, string key)
+    {
+        var ca = propertyInfo.CustomAttributes;
+        var system_text_json_attribute = (ca.FirstOrDefault(attr => attr.AttributeType.FullName == "System.Text.Json.Serialization.JsonPropertyNameAttribute")?.ConstructorArguments.FirstOrDefault().Value as string);
+        if (system_text_json_attribute is not null)
+        {
+            return system_text_json_attribute == key;
+        }
+
+        var newtonsoft_json_attribute = (ca.FirstOrDefault(attr => attr.AttributeType.FullName == "Newtonsoft.Json.JsonPropertyAttribute")?.ConstructorArguments.FirstOrDefault().Value as string);
+        if (newtonsoft_json_attribute is not null)
+        {
+            return newtonsoft_json_attribute == key;
+        }
+
+        // Fallback to property name if all attributes could not be found
+        var keyName = propertyInfo.Name;
+        return keyName == key;
     }
 }

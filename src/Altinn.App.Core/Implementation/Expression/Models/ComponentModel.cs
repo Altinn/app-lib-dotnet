@@ -77,13 +77,20 @@ public class Component
         Id = element.GetProperty("id")!.GetString()!;
         Page = page;
         Element = element;
-        if (element.TryGetProperty("type", out var type) && (type.GetString()?.Equals("group", StringComparison.InvariantCultureIgnoreCase) ?? false))
+        // Figure out if the element is an repeating group
+        if (
+            element.TryGetProperty("type", out var type) &&
+            (type.GetString()?.Equals("group", StringComparison.InvariantCultureIgnoreCase) ?? false) &&
+            element.TryGetProperty("maxCount", out var maxCountElement) &&
+            maxCountElement.TryGetInt32(out int maxCount) &&
+            maxCount > 1 &&
+            element.TryGetProperty("children", out var children)
+            )
         {
-            if (element.TryGetProperty("children", out var children))
-            {
-                Children = new List<Component>();
-                ChildIds = children.EnumerateArray().Select(e => e.GetString()!).ToList();
-            }
+
+            Children = new List<Component>();
+            ChildIds = children.EnumerateArray().Select(e => e.GetString()!).ToList();
+
         }
     }
 

@@ -43,7 +43,7 @@ public class LayoutEvaluatorState
 
     public IEnumerable<ComponentContext> GetComponentContexts()
     {
-        if (_componentModel is null)
+        if (_componentModel is null || _dataModel is null)
         {
             return Enumerable.Empty<ComponentContext>();
         }
@@ -120,5 +120,14 @@ public class LayoutEvaluatorState
     public object? GetApplicationSetting(string key)
     {
         return (_frontEndSettings?.TryGetValue(key, out var value) ?? false) ? value : null;
+    }
+
+    public string? AddInidicies(string binding, ComponentContext context)
+    {
+        if(_dataModel is null)
+        {
+            throw new Exception("_dataModel is null");
+        }
+        return _dataModel.AddIndicies(binding, context.RowIndices);
     }
 }

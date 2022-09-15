@@ -20,20 +20,23 @@ public class LayoutModelTools
 
         foreach (var context in state.GetComponentContexts())
         {
-            // var context = new ComponentContext{ ComponentId = component.Id, CurrentPageName = component.Page, RowIndices = new List<int>()};
             var hidden = ExpressionEvaluator.EvaluateBooleanExpression(state, context.Component, "hidden", false, context);
             var dataModelBindings = LayoutEvaluatorState.GetModelBindings(context.Component.Element);
             if (dataModelBindings?.Count > 0)
             {
                 foreach (var binding in dataModelBindings.Values)
                 {
-                    if (hidden)
+                    var indexed_binding = state.AddInidicies(binding, context);
+                    if (indexed_binding is not null)
                     {
-                        hiddenModelBindings.Add(binding);
-                    }
-                    else
-                    {
-                        nonHiddenModelBindings.Add(binding);
+                        if (hidden)
+                        {
+                            hiddenModelBindings.Add(indexed_binding);
+                        }
+                        else
+                        {
+                            nonHiddenModelBindings.Add(indexed_binding);
+                        }
                     }
                 }
             }
@@ -58,7 +61,7 @@ public class LayoutModelTools
             {
                 foreach (var (bindingName, binding) in dataModelBindings)
                 {
-                    if (state.GetModelData(binding) is null)
+                    if (state.GetModelData(binding, context) is null)
                     {
                         ret.Add(new ValidationIssue()
                         {

@@ -47,7 +47,7 @@ public static class ExpressionEvaluator
             "dataModel" => state.GetModelData(args.First()?.ToString()!, context),
             "component" => state.GetComponentData(args.First()?.ToString()!, context),
             "instanceContext" => state.GetInstanceContext(args.First()?.ToString()!),
-            "applicationSettings" => state.GetApplicationSetting(args.First()?.ToString()!),
+            "frontendSettings" => state.GetApplicationSetting(args.First()?.ToString()!),
             "concat" => Concat(args),
             "equals" => EqualsImplementation(args),
             "notEquals" => !EqualsImplementation(args),
