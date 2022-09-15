@@ -32,6 +32,10 @@ public class TestContextLists
     public void Group_Theory(ContextListRoot test) => RunTestCase(test);
 
     [Theory]
+    [SharedTestContextList("nonRepeatingGroups")]
+    public void NonRepeatingGroup_Theory(ContextListRoot test) => RunTestCase(test);
+
+    [Theory]
     [SharedTestContextList("recursiveGroups")]
     public void RecursiveGroup_Theory(ContextListRoot test) => RunTestCase(test);
 
@@ -63,7 +67,7 @@ public class TestContextLists
     public void Ensure_tests_For_All_Folders()
     {
         // This is just a way to ensure that all folders have test methods associcated.
-        var jsonTestFolders = Directory.GetDirectories(Path.Join("LayoutExpressions", "ContextLists")).Select(d => Path.GetFileName(d)).ToArray();
+        var jsonTestFolders = Directory.GetDirectories(Path.Join("LayoutExpressions", "CommonTests", "shared-tests", "context-lists")).Select(d => Path.GetFileName(d)).ToArray();
         var testMethods = this.GetType().GetMethods().Select(m => m.CustomAttributes.FirstOrDefault(ca => ca.AttributeType == typeof(SharedTestContextListAttribute))?.ConstructorArguments.FirstOrDefault().Value).OfType<string>().ToArray();
         testMethods.Should().BeEquivalentTo(jsonTestFolders, "Shared test folders should have a corresponding test method");
     }
@@ -80,7 +84,7 @@ public class SharedTestContextListAttribute : DataAttribute
 
     public override IEnumerable<object[]> GetData(MethodInfo methodInfo)
     {
-        var files = Directory.GetFiles(Path.Join("LayoutExpressions", "ContextLists", _folder));
+        var files = Directory.GetFiles(Path.Join("LayoutExpressions", "CommonTests", "shared-tests", "context-lists", _folder));
         foreach (var file in files)
         {
             ContextListRoot testCase = new();

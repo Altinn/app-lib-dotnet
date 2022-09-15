@@ -49,7 +49,7 @@ public class ExpressionTestCaseRoot
     [JsonPropertyName("dataModel")]
     public JsonElement? DataModel { get; set; }
 
-    [JsonPropertyName("appSettings")]
+    [JsonPropertyName("frontendSettings")]
     public FrontEndSettings? FrontEndSettings { get; set; }
 
     [JsonPropertyName("instanceContext")]

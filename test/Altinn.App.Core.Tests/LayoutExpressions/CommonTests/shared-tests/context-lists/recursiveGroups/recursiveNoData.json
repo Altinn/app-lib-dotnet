@@ -1,5 +1,5 @@
 {
-  "name": "Recursive group Layout with one row",
+  "name": "Recursive group Layout with no data",
   "layouts": {
     "Page1": {
       "data": {
@@ -12,6 +12,7 @@
             "id": "group0",
             "type": "Group",
             "children": ["group1"],
+            "maxCount": 99,
             "dataModelBindings": {
               "group": "group"
             }
@@ -20,6 +21,7 @@
             "id": "group1",
             "type": "Group",
             "children": ["comp3", "comp4"],
+            "maxCount": 99,
             "dataModelBindings": {
               "group": "group.subgroup"
             }
@@ -72,21 +74,6 @@
       "currentLayout": "Page1"
     },
     {
-      "component": "group1",
-      "currentLayout": "Page1",
-      "rowIndices": [0]
-    },
-    {
-      "component": "comp3",
-      "currentLayout": "Page1",
-      "rowIndices": [0, 0]
-    },
-    {
-      "component": "comp4",
-      "currentLayout": "Page1",
-      "rowIndices": [0, 0]
-    },
-    {
       "component": "comp5",
       "currentLayout": "Page2"
     },
@@ -95,15 +82,5 @@
       "currentLayout": "Page2"
     }
   ],
-  "dataModel": {
-    "group": [
-      {
-        "subgroup": [
-          {
-            "asdf": "123"
-          }
-        ]
-      }
-    ]
-  }
+  "dataModel": {}
 }

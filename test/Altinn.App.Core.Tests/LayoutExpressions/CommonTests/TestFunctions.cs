@@ -14,11 +14,11 @@ using Xunit.Sdk;
 
 namespace Altinn.App.Core.Tests.LayoutExpressions;
 
-public class TestCommonCases
+public class TestFunctions
 {
     private readonly ITestOutputHelper _output;
 
-    public TestCommonCases(ITestOutputHelper output)
+    public TestFunctions(ITestOutputHelper output)
     {
         _output = output;
     }
@@ -28,8 +28,8 @@ public class TestCommonCases
     public void And_Theory(ExpressionTestCaseRoot test) => RunTestCase(test);
 
     [Theory]
-    [SharedTest("applicationSettings")]
-    public void ApplicationSettings_Theory(ExpressionTestCaseRoot test) => RunTestCase(test);
+    [SharedTest("frontendSettings")]
+    public void FrontendSettings_Theory(ExpressionTestCaseRoot test) => RunTestCase(test);
 
     [Theory]
     [SharedTest("component")]
@@ -59,10 +59,9 @@ public class TestCommonCases
     [SharedTest("instanceContext")]
     public void InstanceContext_Theory(ExpressionTestCaseRoot test) => RunTestCase(test);
 
-    [Theory]
-    [SharedTest("invalid")]
-    public void Invalid_Theory(ExpressionTestCaseRoot test) => RunTestCase(test);
-
+    // [Theory]
+    // [SharedTest("invalid")]
+    // public void Invalid_Theory(ExpressionTestCaseRoot test) => RunTestCase(test);
     [Theory]
     [SharedTest("lessThan")]
     public void LessThan_Theory(ExpressionTestCaseRoot test) => RunTestCase(test);
@@ -143,7 +142,7 @@ public class TestCommonCases
     public void Ensure_tests_For_All_Folders()
     {
         // This is just a way to ensure that all folders have test methods associcated.
-        var jsonTestFolders = Directory.GetDirectories(Path.Join("LayoutExpressions", "CommonTests")).Select(d => Path.GetFileName(d)).ToArray();
+        var jsonTestFolders = Directory.GetDirectories(Path.Join("LayoutExpressions", "CommonTests", "shared-tests", "functions")).Select(d => Path.GetFileName(d)).ToArray();
         var testMethods = this.GetType().GetMethods().Select(m => m.CustomAttributes.FirstOrDefault(ca => ca.AttributeType == typeof(SharedTestAttribute))?.ConstructorArguments.FirstOrDefault().Value).OfType<string>().ToArray();
         testMethods.Should().BeEquivalentTo(jsonTestFolders, "Shared test folders should have a corresponding test method");
     }
@@ -160,7 +159,7 @@ public class SharedTestAttribute : DataAttribute
 
     public override IEnumerable<object[]> GetData(MethodInfo methodInfo)
     {
-        var files = Directory.GetFiles(Path.Join("LayoutExpressions", "CommonTests", _folder));
+        var files = Directory.GetFiles(Path.Join("LayoutExpressions", "CommonTests", "shared-tests", "functions", _folder));
         foreach (var file in files)
         {
             ExpressionTestCaseRoot testCase = new();

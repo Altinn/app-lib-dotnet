@@ -1,5 +1,5 @@
 {
-  "name": "Group Layout with two rows",
+  "name": "Recursive group Layout with one row",
   "layouts": {
     "Page1": {
       "data": {
@@ -9,26 +9,35 @@
             "type": "Heading"
           },
           {
+            "id": "group0",
+            "type": "Group",
+            "children": ["group1"],
+            "maxCount": 99,
+            "dataModelBindings": {
+              "group": "group"
+            }
+          },
+          {
             "id": "group1",
             "type": "Group",
-            "dataModelBindings": {
-              "group": "gruppe1"
-            },
+            "children": ["comp3", "comp4"],
             "maxCount": 99,
-            "children": ["comp3", "comp4"]
+            "dataModelBindings": {
+              "group": "group.subgroup"
+            }
           },
           {
             "id": "comp3",
             "type": "Input",
             "dataModelBindings": {
-              "simpleBinding": "gruppe1.comp3binding"
+              "simpleBinding": "group.subgroup.asdf"
             }
           },
           {
             "id": "comp4",
             "type": "Input",
             "dataModelBindings": {
-              "simpleBinding": "gruppe1.comp4binding"
+              "simpleBinding": "group.subgroup.asdf"
             }
           }
         ]
@@ -61,28 +70,23 @@
       "currentLayout": "Page1"
     },
     {
+      "component": "group0",
+      "currentLayout": "Page1"
+    },
+    {
       "component": "group1",
-      "currentLayout": "Page1"
+      "currentLayout": "Page1",
+      "rowIndices": [0]
     },
     {
       "component": "comp3",
-      "rowIndices": [0],
-      "currentLayout": "Page1"
+      "currentLayout": "Page1",
+      "rowIndices": [0, 0]
     },
     {
       "component": "comp4",
-      "rowIndices": [0],
-      "currentLayout": "Page1"
-    },
-    {
-      "component": "comp3",
-      "rowIndices": [1],
-      "currentLayout": "Page1"
-    },
-    {
-      "component": "comp4",
-      "rowIndices": [1],
-      "currentLayout": "Page1"
+      "currentLayout": "Page1",
+      "rowIndices": [0, 0]
     },
     {
       "component": "comp5",
@@ -94,6 +98,14 @@
     }
   ],
   "dataModel": {
-    "gruppe1": [{ "comp3binding": "123", "comp4binding": "dadda" },{ "comp3binding": "456", "comp4binding": "dodo" }]
+    "group": [
+      {
+        "subgroup": [
+          {
+            "asdf": "123"
+          }
+        ]
+      }
+    ]
   }
 }

@@ -1,5 +1,5 @@
 {
-  "name": "Recursive group Layout with two rows on inner group",
+  "name": "Non-repeating group with no maxCount",
   "layouts": {
     "Page1": {
       "data": {
@@ -9,33 +9,22 @@
             "type": "Heading"
           },
           {
-            "id": "group0",
-            "type": "Group",
-            "children": ["group1"],
-            "dataModelBindings": {
-              "group": "group"
-            }
-          },
-          {
             "id": "group1",
             "type": "Group",
-            "children": ["comp3", "comp4"],
-            "dataModelBindings": {
-              "group": "group.subgroup"
-            }
+            "children": ["comp3", "comp4"]
           },
           {
             "id": "comp3",
             "type": "Input",
             "dataModelBindings": {
-              "simpleBinding": "group.subgroup.asdf"
+              "simpleBinding": "asdf"
             }
           },
           {
             "id": "comp4",
             "type": "Input",
             "dataModelBindings": {
-              "simpleBinding": "group.subgroup.asdf"
+              "simpleBinding": "asdf"
             }
           }
         ]
@@ -68,33 +57,16 @@
       "currentLayout": "Page1"
     },
     {
-      "component": "group0",
+      "component": "group1",
       "currentLayout": "Page1"
     },
     {
-      "component": "group1",
-      "currentLayout": "Page1",
-      "rowIndices": [0]
-    },
-    {
       "component": "comp3",
-      "currentLayout": "Page1",
-      "rowIndices": [0, 0]
+      "currentLayout": "Page1"
     },
     {
       "component": "comp4",
-      "currentLayout": "Page1",
-      "rowIndices": [0, 0]
-    },
-    {
-      "component": "comp3",
-      "currentLayout": "Page1",
-      "rowIndices": [0, 1]
-    },
-    {
-      "component": "comp4",
-      "currentLayout": "Page1",
-      "rowIndices": [0, 1]
+      "currentLayout": "Page1"
     },
     {
       "component": "comp5",
@@ -105,18 +77,5 @@
       "currentLayout": "Page2"
     }
   ],
-  "dataModel": {
-    "group": [
-      {
-        "subgroup": [
-          {
-            "asdf": "123"
-          },
-          {
-            "asdf": "456"
-          }
-        ]
-      }
-    ]
-  }
+  "dataModel": {}
 }
