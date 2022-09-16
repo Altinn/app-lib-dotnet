@@ -37,10 +37,30 @@ public class LayoutExpressionConverter : JsonConverter<LayoutExpression>
             JsonTokenType.Number => new LayoutExpression { Value = reader.GetDouble() },
             JsonTokenType.StartObject => ReadObject(ref reader, options),
             JsonTokenType.Null => new LayoutExpression { Value = null },
-            //TODO? Read array as an lisp expression
+            JsonTokenType.StartArray => ReadArray(ref reader, options),
             _ => throw new JsonException(),
         };
     }
+    private LayoutExpression ReadArray(ref Utf8JsonReader reader, JsonSerializerOptions options)
+    {
+        reader.Read();
+        if (reader.TokenType != JsonTokenType.String)
+        {
+            throw new JsonException("First list item in a layout Expression must be a string");
+        }
+        var expr = new LayoutExpression(){
+            Function = reader.GetString()!,
+            Args = new List<LayoutExpression>()
+        };
+
+        while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
+        {
+            expr.Args.Add(ReadNotNull(ref reader, options));
+        }
+
+        return expr;
+    }
+
 
     private LayoutExpression ReadObject(ref Utf8JsonReader reader, JsonSerializerOptions options)
     {
@@ -73,13 +93,13 @@ public class LayoutExpressionConverter : JsonConverter<LayoutExpression>
             }
             else
             {
-                throw new JsonException($"Unknown property {propertyName} in LayoutExpression. (Accepted: function, args)");
+                throw new JsonException($"Unknown property \"{propertyName}\" in LayoutExpression. (Accepted: function, args)");
             }
         }
 
         if (expr.Function is null || expr.Args is null)
         {
-            throw new JsonException($"LayoutExpression is missing property required property function or args"); //TODO: Improve error mesage. This is likely to be hit for invalid json
+            throw new JsonException($"LayoutExpression is missing required property function or args"); //TODO: Improve error mesage. This is likely to be hit for invalid json
         }
 
         return expr;

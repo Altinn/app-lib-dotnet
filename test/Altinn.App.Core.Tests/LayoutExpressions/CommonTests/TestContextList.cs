@@ -47,8 +47,8 @@ public class TestContextLists
         var state = new LayoutEvaluatorState(
             new JsonDataModel(test.DataModel),
             test.ComponentModel,
-            null,
-            null);
+            new(),
+            new());
 
         test.ParsingException.Should().BeNull("Loading of test failed");
 

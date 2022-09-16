@@ -30,7 +30,7 @@ public static class ExpressionEvaluator
         };
     }
 
-    public static object? EvaluateExpression(LayoutEvaluatorState state, LayoutExpression expr, ComponentContext? context)
+    public static object? EvaluateExpression(LayoutEvaluatorState state, LayoutExpression expr, ComponentContext context)
     {
         if(expr is null)
         {
@@ -222,6 +222,7 @@ public static class ExpressionEvaluator
 
         if (value is string svalue)
         {
+            // Special case for "TruE" to be equal to true
             if ("true".Equals(svalue, StringComparison.InvariantCultureIgnoreCase))
             {
                 return "true";

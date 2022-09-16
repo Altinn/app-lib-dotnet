@@ -6,12 +6,12 @@ namespace Altinn.App.Core.Implementation.Expression;
 
 public class LayoutEvaluatorState
 {
-    private readonly IDataModelAccessor? _dataModel;
-    private readonly ComponentModel? _componentModel;
-    private readonly FrontEndSettings? _frontEndSettings;
-    private readonly Instance? _instanceContext;
+    private readonly IDataModelAccessor _dataModel;
+    private readonly ComponentModel _componentModel;
+    private readonly FrontEndSettings _frontEndSettings;
+    private readonly Instance _instanceContext;
 
-    public LayoutEvaluatorState(IDataModelAccessor dataModel, ComponentModel? componentModel, FrontEndSettings? frontEndSettings, Instance? instance)
+    public LayoutEvaluatorState(IDataModelAccessor dataModel, ComponentModel componentModel, FrontEndSettings frontEndSettings, Instance instance)
     {
         _dataModel = dataModel;
         _componentModel = componentModel;
@@ -25,7 +25,7 @@ public class LayoutEvaluatorState
         yield return new ComponentContext(component, indexes.Any() ? indexes.ToArray() : null);
         if ((component.Children?.Any() ?? false) && (component.GetModelBinding("group") is not null))
         {
-            var rowLength =  _dataModel!.GetModelDataCount(component.GetModelBinding("group")!, indexes.ToArray()) ?? 0;
+            var rowLength = _dataModel!.GetModelDataCount(component.GetModelBinding("group")!, indexes.ToArray()) ?? 0;
             foreach (var index in Enumerable.Range(0, rowLength))
             {
                 foreach (var child in component.Children)
@@ -78,35 +78,26 @@ public class LayoutEvaluatorState
 
     public string? GetFrontendSetting(string key)
     {
-        return (_frontEndSettings?.TryGetValue(key, out var setting) ?? false) ? setting : null;
+        return _frontEndSettings.TryGetValue(key, out var setting) ? setting : null;
     }
 
     public object? GetModelData(string key, ComponentContext? context = null)
     {
-        return _dataModel?.GetModelData(key, context?.RowIndices);
+        return _dataModel.GetModelData(key, context?.RowIndices);
     }
 
-    public object? GetComponentData(string key, ComponentContext? context)
+    public void RemoveDataField(string key)
     {
-        if (_componentModel is null || _dataModel is null)
-        {
-            return null;
-        }
-        if (context is null)
-        {
-            throw new Exception("ComponentContext can not be null for component lookups");
-        }
+        _dataModel.RemoveField(key);
+    }
 
+    public object? GetComponentData(string key, ComponentContext context)
+    {
         return _componentModel.GetComponentData(key, context, _dataModel);
     }
 
-    public object? GetInstanceContext(string key)
+    public string GetInstanceContext(string key)
     {
-        if (_instanceContext is null)
-        {
-            return null;
-        }
-
         // Instance context only supports a small subset of variables from the instance
         return key switch
         {
@@ -122,12 +113,8 @@ public class LayoutEvaluatorState
         return (_frontEndSettings?.TryGetValue(key, out var value) ?? false) ? value : null;
     }
 
-    public string? AddInidicies(string binding, ComponentContext context)
+    public string AddInidicies(string binding, ComponentContext context)
     {
-        if(_dataModel is null)
-        {
-            throw new Exception("_dataModel is null");
-        }
         return _dataModel.AddIndicies(binding, context.RowIndices);
     }
 }

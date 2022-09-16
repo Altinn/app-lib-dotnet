@@ -4,5 +4,5 @@
     "function": "equals",
     "args": [true, []]
   },
-  "expectsFailure": "Missing \"function\" property"
+  "expectsFailure": "First list item in a layout Expression must be a string"
 }

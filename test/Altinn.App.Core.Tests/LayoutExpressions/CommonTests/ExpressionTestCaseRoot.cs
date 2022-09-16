@@ -114,6 +114,6 @@ public class ComponentContextForTestSpec
 
     public ComponentContext ToContext(ComponentModel model)
     {
-        return new ComponentContext(model.GetComponent(CurrentPageName, ComponentId), RowIndices?.ToArray());
+        return new ComponentContext(model.GetComponent(CurrentPageName, ComponentId), RowIndices);
     }
 }

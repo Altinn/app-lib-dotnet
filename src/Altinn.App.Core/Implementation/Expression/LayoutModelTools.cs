@@ -2,19 +2,10 @@ using Altinn.App.Core.Models.Validation;
 
 namespace Altinn.App.Core.Implementation.Expression;
 
-public class LayoutModelTools
+public static class LayoutModelTools
 {
-    private readonly LayoutEvaluatorStateInitializer _layoutInitializer;
-
-    public LayoutModelTools(LayoutEvaluatorStateInitializer layoutInitializer)
+    public static List<string> GetHiddenFieldsForRemoval(LayoutEvaluatorState state)
     {
-        _layoutInitializer = layoutInitializer;
-    }
-
-    public async Task<List<string>> GetHiddenFieldsForRemoval(Guid instanceGuid, Type type, string org, string app, int instanceOwnerPartyId, Guid dataId)
-    {
-        var state = await _layoutInitializer.Init(instanceGuid, type, org, app, instanceOwnerPartyId, dataId);
-
         var hiddenModelBindings = new HashSet<string>();
         var nonHiddenModelBindings = new HashSet<string>();
 
@@ -47,10 +38,18 @@ public class LayoutModelTools
         return existsForRemoval.ToList();
     }
 
-    public async Task<IEnumerable<ValidationIssue>> RunLayoutValidationsForRequired(Guid instanceGuid, Type type, string org, string app, int instanceOwnerPartyId, Guid dataId)
+    public static void RemoveHiddenData(LayoutEvaluatorState state)
+    {
+        var fields = GetHiddenFieldsForRemoval(state);
+        foreach (var field in fields)
+        {
+            state.RemoveDataField(field);
+        }
+    }
+
+    public static IEnumerable<ValidationIssue> RunLayoutValidationsForRequired(LayoutEvaluatorState state, string dataElementId)
     {
         var ret = new List<ValidationIssue>();
-        var state = await _layoutInitializer.Init(instanceGuid, type, org, app, instanceOwnerPartyId, dataId);
 
         foreach (var context in state.GetComponentContexts())
         {
@@ -61,14 +60,15 @@ public class LayoutModelTools
             {
                 foreach (var (bindingName, binding) in dataModelBindings)
                 {
+                    var indexedBinding = state.AddInidicies(binding, context);
                     if (state.GetModelData(binding, context) is null)
                     {
                         ret.Add(new ValidationIssue()
                         {
                             Severity = ValidationIssueSeverity.Error,
-                            InstanceId = instanceGuid.ToString(),
-                            DataElementId = dataId.ToString(),
-                            Field = binding,
+                            InstanceId = state.GetInstanceContext("instanceId").ToString(),
+                            DataElementId = dataElementId,
+                            Field = state.AddInidicies(binding, context),
                             Description = "TODO required",
                             Code = "required",
                         });

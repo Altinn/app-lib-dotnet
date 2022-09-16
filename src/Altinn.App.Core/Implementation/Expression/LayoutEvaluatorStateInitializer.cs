@@ -32,4 +32,11 @@ public class LayoutEvaluatorStateInitializer
         return new LayoutEvaluatorState(new DataModel(data), layouts, _frontEndSettings, instance);
 
     }
+
+    public async Task<LayoutEvaluatorState> Init(Instance instance, string? layoutSetId, object data)
+    {
+        string formLayoutsFileContent = layoutSetId == null ? _appResources.GetLayouts() : _appResources.GetLayoutsForSet(layoutSetId);
+        var layouts = JsonSerializer.Deserialize<ComponentModel>(formLayoutsFileContent);
+        return new LayoutEvaluatorState(new DataModel(data), layouts, _frontEndSettings, instance);
+    }
 }

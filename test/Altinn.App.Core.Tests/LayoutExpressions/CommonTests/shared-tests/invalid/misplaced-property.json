@@ -5,5 +5,5 @@
     "args": [true, false],
     "extra": 55
   },
-  "expectsFailure": "Unexpected property"
+  "expectsFailure": "Unknown property \"extra\" in LayoutExpression. (Accepted: function, args)"
 }

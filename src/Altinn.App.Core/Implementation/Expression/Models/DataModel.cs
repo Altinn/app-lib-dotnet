@@ -19,14 +19,16 @@ public interface IDataModelAccessor
     /// "Bedrifter[1].Ansatte.Alder", will fail, because the indicies will be reset
     /// after an inline index is used
     /// </remarks>
-    object? GetModelData(string key, ReadOnlySpan<int> indicies = default);
+    object? GetModelData(string key, ReadOnlySpan<int> indicies = default, bool throwOnError = false);
 
     /// <summary>
     /// Get the count of data elements set in a group (enumerable)
     /// </summary>
-    int? GetModelDataCount(string key, ReadOnlySpan<int> indicies = default);
+    int? GetModelDataCount(string key, ReadOnlySpan<int> indicies = default, bool throwOnError = false);
 
-    string? AddIndicies(string key, ReadOnlySpan<int> indicies = default);
+    string AddIndicies(string key, ReadOnlySpan<int> indicies = default, bool throwOnError = false);
+
+    void RemoveField(string key, bool throwOnError = false);
 }
 
 /// <summary>
@@ -50,18 +52,18 @@ public class JsonDataModel : IDataModelAccessor
 
 
     /// <inheritdoc />
-    public object? GetModelData(string key, ReadOnlySpan<int> indicies = default)
+    public object? GetModelData(string key, ReadOnlySpan<int> indicies = default, bool throwOnError = false)
     {
         if (_modelRoot is null)
         {
             return null;
         }
 
-        return GetModelDataRecursive(key.Split('.'), 0, _modelRoot.Value, indicies);
+        return GetModelDataRecursive(key.Split('.'), 0, _modelRoot.Value, indicies, throwOnError);
     }
 
 
-    private object? GetModelDataRecursive(string[] keys, int index, JsonElement currentModel, ReadOnlySpan<int> indicies)
+    private object? GetModelDataRecursive(string[] keys, int index, JsonElement currentModel, ReadOnlySpan<int> indicies, bool throwOnError)
     {
         if (index == keys.Length)
         {
@@ -98,25 +100,25 @@ public class JsonDataModel : IDataModelAccessor
             }
 
             var arrayElement = childModel.EnumerateArray().ElementAt((int)groupIndex);
-            return GetModelDataRecursive(keys, index + 1, arrayElement, indicies.Length > 0 ? indicies.Slice(1) : indicies);
+            return GetModelDataRecursive(keys, index + 1, arrayElement, indicies.Length > 0 ? indicies.Slice(1) : indicies, throwOnError);
         }
 
 
-        return GetModelDataRecursive(keys, index + 1, childModel, indicies);
+        return GetModelDataRecursive(keys, index + 1, childModel, indicies, throwOnError);
     }
 
     /// <inheritdoc />
-    public int? GetModelDataCount(string key, ReadOnlySpan<int> indicies = default)
+    public int? GetModelDataCount(string key, ReadOnlySpan<int> indicies = default, bool throwOnError = false)
     {
         if (_modelRoot is null)
         {
             return null;
         }
 
-        return GetModelDataCountRecurs(key.Split('.'), 0, _modelRoot.Value, indicies);
+        return GetModelDataCountRecurs(key.Split('.'), 0, _modelRoot.Value, indicies, throwOnError);
     }
 
-    private int? GetModelDataCountRecurs(string[] keys, int index, JsonElement currentModel, ReadOnlySpan<int> indicies)
+    private int? GetModelDataCountRecurs(string[] keys, int index, JsonElement currentModel, ReadOnlySpan<int> indicies, bool throwOnError)
     {
         if (index == keys.Length)
         {
@@ -152,16 +154,23 @@ public class JsonDataModel : IDataModelAccessor
             }
 
             var arrayElement = childModel.EnumerateArray().ElementAt((int)groupIndex);
-            return GetModelDataCountRecurs(keys, index + 1, arrayElement, indicies.Length > 0 ? indicies.Slice(1) : indicies);
+            return GetModelDataCountRecurs(keys, index + 1, arrayElement, indicies.Length > 0 ? indicies.Slice(1) : indicies, throwOnError);
         }
 
-        return GetModelDataCountRecurs(keys, index + 1, childModel, indicies);
+        return GetModelDataCountRecurs(keys, index + 1, childModel, indicies, throwOnError);
     }
 
     /// <inheritdoc />
-    public string? AddIndicies(string key, ReadOnlySpan<int> indicies)
+    public string AddIndicies(string key, ReadOnlySpan<int> indicies, bool throwOnError = false)
     {
+        // We don't have a schema for the datamodel in Json
         throw new NotImplementedException();
+    }
+
+    /// <inheritdoc />
+    public void RemoveField(string key, bool throwOnError = false)
+    {
+        throw new NotImplementedException("Impossible to remove fields in a json model");
     }
 }
 
@@ -178,18 +187,28 @@ public class DataModel : IDataModelAccessor
     }
 
 
-    public object? GetModelData(string key, ReadOnlySpan<int> indicies)
+    public object? GetModelData(string key, ReadOnlySpan<int> indicies, bool throwOnError = false)
     {
-        return GetModelDataRecursive(key.Split('.'), 0, _serviceModel, indicies);
+        return GetModelDataRecursive(key.Split('.'), 0, _serviceModel, indicies, throwOnError);
     }
 
     /// <inheritdoc />
-    public int? GetModelDataCount(string key, ReadOnlySpan<int> indicies = default)
+    public int? GetModelDataCount(string key, ReadOnlySpan<int> indicies = default, bool throwOnError = false)
     {
-        return GetModelDataRecursive(key.Split('.'), 0, _serviceModel, indicies) as int?;
+        if (GetModelDataRecursive(key.Split('.'), 0, _serviceModel, indicies, throwOnError) is System.Collections.IEnumerable childEnum)
+        {
+            int retCount = 0;
+            foreach (var _ in childEnum)
+            {
+                retCount++;
+            }
+            return retCount;
+        }
+
+        return null;
     }
 
-    private object? GetModelDataRecursive(string[] keys, int index, object currentModel, ReadOnlySpan<int> indicies)
+    private object? GetModelDataRecursive(string[] keys, int index, object currentModel, ReadOnlySpan<int> indicies, bool throwOnError)
     {
         if (index == keys.Length)
         {
@@ -214,19 +233,13 @@ public class DataModel : IDataModelAccessor
         // Other enumerable types is treated as an collection
         if (childModel is not string && childModel is System.Collections.IEnumerable childModelList)
         {
-            if (index == keys.Length - 1)
-            {
-                // The Linq IEnumerable<T>.Count() does not work on non generic enumerable
-                // that we need to use with reflection
-                int childCount = 0;
-                foreach (var _ in childModelList)
-                {
-                    childCount++;
-                }
-                return childCount;
-            }
             if (groupIndex is null)
             {
+                if (index == keys.Length - 1)
+                {
+                    return childModelList;
+                }
+
                 if (indicies.Length == 0)
                 {
                     return null; // Error index for collection not specified
@@ -239,20 +252,21 @@ public class DataModel : IDataModelAccessor
                 indicies = default; //when you use a literal index, the context indecies are not to be used later.
             }
 
+            // Return the element with index = groupIndex (could not find anohter way to get the n'th element in non generic enumerable)
             foreach (var arrayElement in childModelList)
             {
                 if (groupIndex-- < 1)
                 {
-                    return GetModelDataRecursive(keys, index + 1, arrayElement, indicies.Length > 0 ? indicies.Slice(1) : indicies);
+                    return GetModelDataRecursive(keys, index + 1, arrayElement, indicies.Length > 0 ? indicies.Slice(1) : indicies, throwOnError);
                 }
             }
         }
 
-        return GetModelDataRecursive(keys, index + 1, childModel, indicies);
+        return GetModelDataRecursive(keys, index + 1, childModel, indicies, throwOnError);
     }
 
     private static Regex KeyPartRegex = new Regex(@"^(\w+)\[(\d+)\]?$");
-    public static (string key, int? index) ParseKeyPart(string keypart)
+    internal static (string key, int? index) ParseKeyPart(string keypart)
     {
         if (keypart.Last() != ']')
         {
@@ -263,7 +277,7 @@ public class DataModel : IDataModelAccessor
 
     }
 
-    private static void AddIndiciesRecursive(List<string> ret, Type currentModelType, ReadOnlySpan<string> keys, string fullKey, ReadOnlySpan<int> indicies)
+    private static void AddIndiciesRecursive(List<string> ret, Type currentModelType, ReadOnlySpan<string> keys, string fullKey, ReadOnlySpan<int> indicies, bool throwOnError)
     {
         if (keys.Length == 0)
         {
@@ -290,7 +304,7 @@ public class DataModel : IDataModelAccessor
                 indicies = default;
             }
 
-            AddIndiciesRecursive(ret, type, keys.Slice(1), fullKey, indicies.Slice(1));
+            AddIndiciesRecursive(ret, type, keys.Slice(1), fullKey, indicies.Slice(1), throwOnError);
             return;
         }
 
@@ -298,12 +312,10 @@ public class DataModel : IDataModelAccessor
         {
             throw new Exception("Index on non indexable property");
         }
-
-
     }
 
     /// <inheritdoc />
-    public string? AddIndicies(string key, ReadOnlySpan<int> indicies)
+    public string AddIndicies(string key, ReadOnlySpan<int> indicies, bool throwOnError = false)
     {
         if (indicies.Length == 0)
         {
@@ -311,7 +323,7 @@ public class DataModel : IDataModelAccessor
         }
 
         var ret = new List<string>();
-        AddIndiciesRecursive(ret, this._serviceModel.GetType(), key.Split('.'), key, indicies);
+        AddIndiciesRecursive(ret, this._serviceModel.GetType(), key.Split('.'), key, indicies, throwOnError);
         return string.Join('.', ret);
     }
 
@@ -333,5 +345,47 @@ public class DataModel : IDataModelAccessor
         // Fallback to property name if all attributes could not be found
         var keyName = propertyInfo.Name;
         return keyName == key;
+    }
+
+    /// <inheritdoc />
+    public void RemoveField(string key, bool throwOnError = false)
+    {
+        var keys_split = key.Split('.');
+        var keys = keys_split[0..^1];
+        var (lastKey, lastGroupIndex) = ParseKeyPart(keys_split[^1]);
+
+        if (lastGroupIndex is not null)
+        {
+            // TODO: Consider implementing. Would be required for rowHidden on groups
+            throw new NotImplementedException($"Deleting elements in List is not implemented {key}");
+        }
+
+        var containingObject = GetModelDataRecursive(keys, 0, _serviceModel, default, throwOnError);
+        if (containingObject is null)
+        {
+            // Already empty field
+            return;
+        }
+
+        if (containingObject is System.Collections.IEnumerable)
+        {
+            throw new NotImplementedException($"Tried to remove field {key}, ended in an enumerable");
+        }
+
+
+        var property = containingObject.GetType().GetProperties().FirstOrDefault(p => IsPropertyWithJsonName(p, lastKey));
+        if (property is null)
+        {
+            if(throwOnError)
+            {
+                throw new Exception($"{key} can't be deleted, because {lastKey} is not a valid property");
+            }
+
+            return;
+        }
+
+        var nullValue = property.PropertyType.GetTypeInfo().IsValueType ? Activator.CreateInstance(property.PropertyType) : null;
+
+        property.SetValue(containingObject, nullValue);
     }
 }

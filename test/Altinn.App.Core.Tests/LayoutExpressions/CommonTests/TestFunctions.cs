@@ -78,6 +78,10 @@ public class TestFunctions
     [SharedTest("or")]
     public void Or_Theory(ExpressionTestCaseRoot test) => RunTestCase(test);
 
+    [Theory]
+    [SharedTest("unknown")]
+    public void Unknown_Theory(ExpressionTestCaseRoot test) => RunTestCase(test);
+
     private void RunTestCase(ExpressionTestCaseRoot test)
     {
         _output.WriteLine($"{test.Filename} in {test.Folder}");
@@ -86,31 +90,23 @@ public class TestFunctions
         var state = new LayoutEvaluatorState(
             new JsonDataModel(test.DataModel),
             test.ComponentModel,
-            test.FrontEndSettings,
-            test.InstanceContext);
+            test.FrontEndSettings ?? new(),
+            test.InstanceContext ?? new());
 
-        if (test.Folder != "invalid")
-        {
-            test.ParsingException.Should().BeNull("Loading of test failed");
-        }
-        else if (test.ParsingException is not null)
-        {
-            // Don't continue with parsing errors
-            return; 
-        }
+        test.ParsingException.Should().BeNull("Loading of test failed");
 
         if (test.ExpectsFailure is not null)
         {
             Action act = () =>
             {
-                ExpressionEvaluator.EvaluateExpression(state, test.Expression, test.Context?.ToContext(test.ComponentModel));
+                ExpressionEvaluator.EvaluateExpression(state, test.Expression, test.Context?.ToContext(test.ComponentModel)!);
             };
             act.Should().Throw<Exception>().WithMessage(test.ExpectsFailure);
 
             return;
         }
 
-        var result = ExpressionEvaluator.EvaluateExpression(state, test.Expression, test.Context?.ToContext(test.ComponentModel));
+        var result = ExpressionEvaluator.EvaluateExpression(state, test.Expression, test.Context?.ToContext(test.ComponentModel)!);
 
         switch (test.Expects.ValueKind)
         {
