@@ -6,6 +6,9 @@ using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Implementation.Expression;
 
+/// <summary>
+/// Utility class for collecting all the services from DI that are needed to initialize <see cref="LayoutEvaluatorState" />
+/// </summary>
 public class LayoutEvaluatorStateInitializer
 {
     // Dependency injection properties (set in ctor)
@@ -13,6 +16,9 @@ public class LayoutEvaluatorStateInitializer
     private readonly IAppResources _appResources;
     private readonly FrontEndSettings _frontEndSettings;
 
+    /// <summary>
+    /// Constructor with services from dependency injection
+    /// </summary>
     public LayoutEvaluatorStateInitializer(IData data, IAppResources appResources, IOptions<FrontEndSettings> frontEndSettings)
     {
         _data = data;
@@ -20,23 +26,13 @@ public class LayoutEvaluatorStateInitializer
         _frontEndSettings = frontEndSettings.Value;
     }
 
-    public async Task<LayoutEvaluatorState> Init(Guid instanceGuid, Type type, string org, string app, int instanceOwnerPartyId, Guid dataId)
-    {
-        var layoutsString = _appResources.GetLayouts();
-        var layouts = JsonSerializer.Deserialize<ComponentModel>(layoutsString);
-
-        //TODO: Only load data that is actually referenced from layout expressions
-        Instance? instance = null;
-        object data = await _data.GetFormData(instanceGuid, type, org, app, instanceOwnerPartyId, dataId);
-        
-        return new LayoutEvaluatorState(new DataModel(data), layouts, _frontEndSettings, instance);
-
-    }
-
-    public async Task<LayoutEvaluatorState> Init(Instance instance, string? layoutSetId, object data)
+    /// <summary>
+    /// Initialize LayoutEvaluatorState with given Instance, data object and layoutSetId
+    /// </summary>
+    public Task<LayoutEvaluatorState> Init(Instance instance, object data, string? layoutSetId)
     {
         string formLayoutsFileContent = layoutSetId == null ? _appResources.GetLayouts() : _appResources.GetLayoutsForSet(layoutSetId);
-        var layouts = JsonSerializer.Deserialize<ComponentModel>(formLayoutsFileContent);
-        return new LayoutEvaluatorState(new DataModel(data), layouts, _frontEndSettings, instance);
+        var layouts = JsonSerializer.Deserialize<ComponentModel>(formLayoutsFileContent)!;
+        return Task.FromResult(new LayoutEvaluatorState(new DataModel(data), layouts, _frontEndSettings, instance));
     }
 }

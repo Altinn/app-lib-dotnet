@@ -2,8 +2,14 @@ using Altinn.App.Core.Models.Validation;
 
 namespace Altinn.App.Core.Implementation.Expression;
 
+/// <summary>
+/// Utilities for using the expression results to do tasks in backend
+/// </summary>
 public static class LayoutModelTools
 {
+    /// <summary>
+    /// Get a list of fields that are only referenced in hidden components in <see cref="LayoutEvaluatorState" />
+    /// </summary>
     public static List<string> GetHiddenFieldsForRemoval(LayoutEvaluatorState state)
     {
         var hiddenModelBindings = new HashSet<string>();
@@ -38,6 +44,9 @@ public static class LayoutModelTools
         return existsForRemoval.ToList();
     }
 
+    /// <summary>
+    /// Remove fields that are only refrenced from hidden fields from the data object in the state.
+    /// </summary>
     public static void RemoveHiddenData(LayoutEvaluatorState state)
     {
         var fields = GetHiddenFieldsForRemoval(state);
@@ -47,6 +56,9 @@ public static class LayoutModelTools
         }
     }
 
+    /// <summary>
+    /// Return a list of <see cref="ValidationIssue" /> for the given state and dataElementId
+    /// </summary>
     public static IEnumerable<ValidationIssue> RunLayoutValidationsForRequired(LayoutEvaluatorState state, string dataElementId)
     {
         var ret = new List<ValidationIssue>();

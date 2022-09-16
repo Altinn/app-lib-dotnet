@@ -4,11 +4,15 @@ using System.Text.RegularExpressions;
 
 namespace Altinn.App.Core.Implementation.Expression;
 
+/// <summary>
+/// Static class used to evaluate expressions. Holds the implementation for all expression functions.
+/// </summary>
 public static class ExpressionEvaluator
 {
-
-
-    public static bool EvaluateBooleanExpression(LayoutEvaluatorState state, Component component, string property, bool defaultReturn, ComponentContext? context)
+    /// <summary>
+    /// Shortcut for evaluating a boolean expression on a given property on a <see cref="Component" />
+    /// </summary>
+    public static bool EvaluateBooleanExpression(LayoutEvaluatorState state, Component component, string property, bool defaultReturn, ComponentContext context)
     {
         if (!component.Element.TryGetProperty(property, out var jsonExpression))
         {
@@ -30,9 +34,12 @@ public static class ExpressionEvaluator
         };
     }
 
+    /// <summary>
+    /// Evaluate a <see cref="LayoutExpression" /> from a given <see cref="LayoutEvaluatorState" /> in a <see cref="ComponentContext" /> 
+    /// </summary>
     public static object? EvaluateExpression(LayoutEvaluatorState state, LayoutExpression expr, ComponentContext context)
     {
-        if(expr is null)
+        if (expr is null)
         {
             return null;
         }
@@ -67,7 +74,7 @@ public static class ExpressionEvaluator
 
     private static string? Concat(object?[] args)
     {
-        return string.Join("", args.Select(a=> a switch{string s => s, _ => ToStringForEquals(a)}));
+        return string.Join("", args.Select(a => a switch { string s => s, _ => ToStringForEquals(a) }));
     }
 
     private static bool PrepareBooleanArg(object? arg)
@@ -184,7 +191,6 @@ public static class ExpressionEvaluator
         }
         return a <= b; // Actual implementation
     }
-
 
     private static bool? GreaterThan(object?[] args)
     {
