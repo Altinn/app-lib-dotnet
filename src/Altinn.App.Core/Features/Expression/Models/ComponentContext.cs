@@ -1,4 +1,4 @@
-namespace Altinn.App.Core.Implementation.Expression;
+namespace Altinn.App.Core.Features.Expression;
 
 /// <summary>
 /// Simple class for holding the context for <see cref="ExpressionEvaluator"/>

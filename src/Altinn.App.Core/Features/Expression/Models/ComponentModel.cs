@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Altinn.App.Core.Implementation.Expression;
+namespace Altinn.App.Core.Features.Expression;
 
 [JsonConverter(typeof(ComponentModelConverter))]
 public class ComponentModel

@@ -2,7 +2,7 @@ using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Implementation.Expression;
+namespace Altinn.App.Core.Features.Expression;
 
 public class LayoutEvaluatorState
 {

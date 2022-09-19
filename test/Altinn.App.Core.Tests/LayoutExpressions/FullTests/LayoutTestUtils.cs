@@ -7,7 +7,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 
 using Altinn.App.Core.Configuration;
-using Altinn.App.Core.Implementation.Expression;
+using Altinn.App.Core.Features.Expression;
 using Altinn.App.Core.Interface;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -45,6 +45,6 @@ public static class LayoutTestUtils
 
         var initializer = serviceProvider.GetRequiredService<LayoutEvaluatorStateInitializer>();
 
-        return await initializer.Init(new Instance { Id = "123/" + Guid.NewGuid().ToString() }, null, model);
+        return await initializer.Init(new Instance { Id = "123/" + Guid.NewGuid().ToString() }, model, null);
     }
 }

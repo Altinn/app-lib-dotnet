@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace Altinn.App.Core.Implementation.Expression;
+namespace Altinn.App.Core.Features.Expression;
 
 /// <summary>
 /// Static class used to evaluate expressions. Holds the implementation for all expression functions.

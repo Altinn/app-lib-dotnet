@@ -3,7 +3,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace Altinn.App.Core.Implementation.Expression;
+namespace Altinn.App.Core.Features.Expression;
 
 /// <summary>
 /// Interface for accessing fields in the data model
@@ -26,8 +26,19 @@ public interface IDataModelAccessor
     /// </summary>
     int? GetModelDataCount(string key, ReadOnlySpan<int> indicies = default, bool throwOnError = false);
 
+    /// <summary>
+    /// Return a full dataModelBiding from a context aware binding by adding indicies
+    /// </summary>
+    /// <example>
+    /// key = "bedrift.ansatte.navn"
+    /// indicies = [1,2]
+    /// => "bedrift[1].ansatte[2].navn"
+    /// </example>
     string AddIndicies(string key, ReadOnlySpan<int> indicies = default, bool throwOnError = false);
 
+    /// <summary>
+    /// Remove a value from the wrapped datamodel
+    /// </summary>
     void RemoveField(string key, bool throwOnError = false);
 }
 
@@ -181,12 +192,15 @@ public class DataModel : IDataModelAccessor
 {
     private readonly object _serviceModel;
 
+    /// <summary>
+    /// Constructor that wraps a PCOC data model, and gives extra tool for working with the data
+    /// </summary>
     public DataModel(object serviceModel)
     {
         _serviceModel = serviceModel;
     }
 
-
+    /// <inheritdoc />
     public object? GetModelData(string key, ReadOnlySpan<int> indicies, bool throwOnError = false)
     {
         return GetModelDataRecursive(key.Split('.'), 0, _serviceModel, indicies, throwOnError);

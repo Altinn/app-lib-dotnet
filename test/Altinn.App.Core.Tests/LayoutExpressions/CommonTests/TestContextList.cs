@@ -6,7 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 
-using Altinn.App.Core.Implementation.Expression;
+using Altinn.App.Core.Features.Expression;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;

@@ -1,13 +1,33 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Altinn.App.Core.Implementation.Expression;
+namespace Altinn.App.Core.Features.Expression;
 
+/// <summary>
+/// Model for C# representation of a Layout Expression that can be part of a layout and Evaluated with <see cref="ExpressionEvaluator" />
+/// </summary>
+/// <remarks>
+/// All props are marked as nullable, but a valid instance has either <see cref="Function" /> and <see cref="Args" /> or <see cref="Value" />
+/// </remarks>
 [JsonConverter(typeof(LayoutExpressionConverter))]
 public class LayoutExpression
 {
+    /// <summary>
+    /// Name of the function. Must be one those actually implemented in <see cref="ExpressionEvaluator" />
+    /// </summary>
     public string? Function { get; set; }
+
+    /// <summary>
+    /// List of arguments to the function. These expressions will be evaluated before passed to the function.
+    /// </summary>
     public List<LayoutExpression>? Args { get; set; }
+
+    /// <summary>
+    /// Some expressions are just literal values that evaluate to the same value.
+    /// </summary>
+    /// <remarks>
+    ///  If <see cref="Value" /> isn't null, <see cref="Function" /> and <see cref="Args" /> must be
+    /// </remarks>    
     public object? Value { get; set; }
 }
 
@@ -16,7 +36,7 @@ public class LayoutExpression
 /// JsonConverter to be able to parse any valid LayoutExpression in Json format to the C# <see cref="LayoutExpression"/>
 /// </summary>
 /// <remarks>
-/// This can possibly be extended to support shorthand 
+/// Currently this parser supports {"function":"funcname", "args": [arg1, arg2]} and ["funcname", arg1, arg2] syntax, and literal primitive types
 /// </remarks>
 public class LayoutExpressionConverter : JsonConverter<LayoutExpression>
 {
@@ -26,7 +46,9 @@ public class LayoutExpressionConverter : JsonConverter<LayoutExpression>
         return ReadNotNull(ref reader, options);
     }
 
-    /// 
+    /// <summary>
+    /// Same as <see cref="Read" />, but without the nullable return type required by the interface. Throw an exeption instead.
+    /// </summary>
     private LayoutExpression ReadNotNull(ref Utf8JsonReader reader, JsonSerializerOptions options)
     {
         return reader.TokenType switch
@@ -41,6 +63,7 @@ public class LayoutExpressionConverter : JsonConverter<LayoutExpression>
             _ => throw new JsonException(),
         };
     }
+
     private LayoutExpression ReadArray(ref Utf8JsonReader reader, JsonSerializerOptions options)
     {
         reader.Read();
@@ -48,7 +71,8 @@ public class LayoutExpressionConverter : JsonConverter<LayoutExpression>
         {
             throw new JsonException("First list item in a layout Expression must be a string");
         }
-        var expr = new LayoutExpression(){
+        var expr = new LayoutExpression()
+        {
             Function = reader.GetString()!,
             Args = new List<LayoutExpression>()
         };

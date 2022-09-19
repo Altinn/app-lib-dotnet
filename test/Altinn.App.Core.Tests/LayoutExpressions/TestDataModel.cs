@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Altinn.App.Core.Implementation.Expression;
+using Altinn.App.Core.Features.Expression;
 using FluentAssertions;
 
 using Newtonsoft.Json;

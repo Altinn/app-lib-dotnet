@@ -1,6 +1,6 @@
 using Altinn.App.Core.Models.Validation;
 
-namespace Altinn.App.Core.Implementation.Expression;
+namespace Altinn.App.Core.Features.Expression;
 
 /// <summary>
 /// Utilities for using the expression results to do tasks in backend
