@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -112,8 +113,22 @@ public class ComponentContextForTestSpec
     [JsonPropertyName("currentLayout")]
     public string CurrentPageName { get; set; } = default!;
 
+    [JsonPropertyName("children")]
+    public IEnumerable<ComponentContextForTestSpec> ChildContexts { get; set; } = Enumerable.Empty<ComponentContextForTestSpec>();
+
     public ComponentContext ToContext(ComponentModel model)
     {
-        return new ComponentContext(model.GetComponent(CurrentPageName, ComponentId), RowIndices);
+        return new ComponentContext(model.GetComponent(CurrentPageName, ComponentId), RowIndices, Enumerable.Empty<ComponentContext>());
+    }
+
+    public static ComponentContextForTestSpec FromContext(ComponentContext context)
+    {
+        return new ComponentContextForTestSpec
+        {
+            ComponentId = context.Component.Id,
+            CurrentPageName = context.Component.Page,
+            ChildContexts = context.ChildContexts?.Select(c => FromContext(c)) ?? Enumerable.Empty<ComponentContextForTestSpec>(),
+            RowIndices = context.RowIndices
+        };
     }
 }

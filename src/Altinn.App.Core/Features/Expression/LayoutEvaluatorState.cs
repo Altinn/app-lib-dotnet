@@ -1,9 +1,13 @@
+using System;
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Features.Expression;
 
+/// <summary>
+/// Collection class to hold all the shared state that is required for evaluating expressions in a layout.
+/// </summary>
 public class LayoutEvaluatorState
 {
     private readonly IDataModelAccessor _dataModel;
@@ -11,6 +15,9 @@ public class LayoutEvaluatorState
     private readonly FrontEndSettings _frontEndSettings;
     private readonly Instance _instanceContext;
 
+    /// <summary>
+    /// Constructor for LayoutEvaluatorState. Usually called via <see cref="LayoutEvaluatorStateInitializer" /> that can be fetched from dependency injection.
+    /// </summary>
     public LayoutEvaluatorState(IDataModelAccessor dataModel, ComponentModel componentModel, FrontEndSettings frontEndSettings, Instance instance)
     {
         _dataModel = dataModel;
@@ -20,47 +27,50 @@ public class LayoutEvaluatorState
         // TODO: shaddowFields ...
     }
 
-    private IEnumerable<ComponentContext> GetComponentContextsReucrs(Component component, IEnumerable<int> indexes)
-    {
-        yield return new ComponentContext(component, indexes.Any() ? indexes.ToArray() : null);
-        if ((component.Children?.Any() ?? false) && (component.GetModelBinding("group") is not null))
-        {
-            var rowLength = _dataModel!.GetModelDataCount(component.GetModelBinding("group")!, indexes.ToArray()) ?? 0;
-            foreach (var index in Enumerable.Range(0, rowLength))
-            {
-                foreach (var child in component.Children)
-                {
-                    var subIndexes = indexes.ToList();
-                    subIndexes.Add(index);
-                    foreach (var context in GetComponentContextsReucrs(child, subIndexes))
-                    {
-                        yield return context;
-                    }
-                }
-            }
-        }
-    }
 
+    /// <summary>
+    /// Get a hierarcy of the different contexts in the component model (remember to iterate <see cref="ComponentContext.ChildContexts" />)
+    /// </summary>
     public IEnumerable<ComponentContext> GetComponentContexts()
     {
         if (_componentModel is null || _dataModel is null)
         {
-            return Enumerable.Empty<ComponentContext>();
+            throw new InvalidOperationException("Layout evaluator state is not properly initialized");
         }
 
-
-        var ret = new List<ComponentContext>();
-        foreach (var page in _componentModel.Pages.Values)
-        {
-            foreach (var component in page.Components)
-            {
-                ret.AddRange(GetComponentContextsReucrs(component, Enumerable.Empty<int>()));
-            }
-        }
-
-        return ret;
+        return _componentModel.Pages.Values.Select((
+            (page) => new ComponentContext
+            (
+                page,
+                null,
+                page.Children.Select(c => GetComponentContextsRecurs(c, _dataModel, new int[] { })).ToArray()
+            )
+        )).ToArray();
     }
 
+    private static ComponentContext GetComponentContextsRecurs(Component component, IDataModelAccessor dataModel, int[] indexes)
+    {
+        if ((component.Children?.Any() ?? false) && (component.DataModelBindings.TryGetValue("group", out var groupBinding)))
+        {
+            var children = new List<ComponentContext>();
+            var rowLength = dataModel.GetModelDataCount(groupBinding, indexes.ToArray()) ?? 0;
+            foreach (var index in Enumerable.Range(0, rowLength))
+            {
+                foreach (var child in component.Children)
+                {
+                    // concatenate [...indexes, index]
+                    var subIndexes = new int[indexes.Length + 1];
+                    indexes.CopyTo(subIndexes.AsSpan());
+                    subIndexes[^1] = index;
+
+                    children.Add(GetComponentContextsRecurs(child, dataModel, subIndexes));
+                }
+            }
+
+            return new ComponentContext(component, indexes.Length == 0 ? null : indexes.ToArray(), children);
+        }
+        return new ComponentContext(component, indexes.Length == 0 ? null : indexes.ToArray(), Enumerable.Empty<ComponentContext>());
+    }
 
     public static Dictionary<string, string>? GetModelBindings(JsonElement component)
     {

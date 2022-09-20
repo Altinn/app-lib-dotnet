@@ -52,7 +52,7 @@ public class TestContextLists
 
         test.ParsingException.Should().BeNull("Loading of test failed");
 
-        var results = state.GetComponentContexts().Select(c => new ComponentContextForTestSpec { ComponentId = c.Component.Id, CurrentPageName = c.Component.Page, RowIndices = c.RowIndices }).ToList();
+        var results = state.GetComponentContexts().Select(c => ComponentContextForTestSpec.FromContext(c)).ToList();
         _output.WriteLine(JsonSerializer.Serialize(new { resultContexts = results }, new JsonSerializerOptions { WriteIndented = true }));
 
         foreach (var (result, expected, index) in results.Zip(test.Expected, Enumerable.Range(0, int.MaxValue)))

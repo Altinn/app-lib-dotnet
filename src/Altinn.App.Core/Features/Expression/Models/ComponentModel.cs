@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -6,7 +7,7 @@ namespace Altinn.App.Core.Features.Expression;
 [JsonConverter(typeof(ComponentModelConverter))]
 public class ComponentModel
 {
-    public Dictionary<string, ComponentPage> Pages { get; init; } = new Dictionary<string, ComponentPage>();
+    public Dictionary<string, PageComponent> Pages { get; init; } = new Dictionary<string, PageComponent>();
 
     public Component GetComponent(string pageName, string componentId)
     {
@@ -15,7 +16,7 @@ public class ComponentModel
             throw new Exception($"Unknown page name {pageName}");
         }
 
-        if (!page.ComponentDictionary.TryGetValue(componentId, out var component))
+        if (!page.ComponentLookup.TryGetValue(componentId, out var component))
         {
             throw new Exception($"Unknown component {componentId} on {pageName}");
         }
@@ -24,15 +25,15 @@ public class ComponentModel
 
     public object? GetComponentData(string componentId, ComponentContext context, IDataModelAccessor dataModel)
     {
-        if (context.Component.Group is not null)
+        if (context.Component is GroupComponent)
         {
-            throw new NotImplementedException("Component lookup for groups not implemented");
+            //TODO before release
+            throw new NotImplementedException("Component lookup for components in groups not implemented");
         }
 
         var component = GetComponent(context.Component.Page, componentId);
 
-        var binding = component.GetModelBinding("simpleBinding");
-        if (binding is null)
+        if (!component.DataModelBindings.TryGetValue("simpleBinding", out var binding))
         {
             throw new Exception("component lookup requires the target component ");
         }
@@ -40,214 +41,103 @@ public class ComponentModel
     }
 }
 
-public class ComponentPage
+
+public class PageComponent : Component
 {
-    public string PageName { get; init; }
-
-
-    public ComponentPage(string pageName)
+    public PageComponent(string id, List<Component> children, Dictionary<string, Component> componentLookup ) :
+        base(id, "page", null, children, hidden: null, required: null) //TODO: add support for hidden and required on page
     {
-        PageName = pageName;
+        ComponentLookup = componentLookup;
     }
 
-    public void AddComponent(Component component)
-    {
-        ComponentDictionary[component.Id] = component;
-
-        var parent = ComponentDictionary.Values.FirstOrDefault(c => c.ChildIds?.Any(childId => childId == component.Id) ?? false);
-        if (parent is not null)
-        {
-            parent.Children!.Add(component);
-        }
-        else
-        {
-            Components.Add(component);
-        }
-    }
-
-    public List<Component> Components { get; init; } = new();
-    public Dictionary<string, Component> ComponentDictionary { get; init; } = new();
-    //TODO: Run dynamics
+    /// <summary>
+    /// Helper dictionary to find components without raversing childern.
+    /// </summary>
+    public Dictionary<string, Component> ComponentLookup { get;}
 }
 
-public class Component
+public class RepeatingGroupComponent : GroupComponent
 {
-    public Component(string page, JsonElement element)
+    public RepeatingGroupComponent(string id, string type, IReadOnlyDictionary<string, string>? dataModelBindings, IEnumerable<Component> children, int maxCount, LayoutExpression? hidden, LayoutExpression? required) :
+        base(id, type, dataModelBindings, children, hidden, required)
     {
-        Id = element.GetProperty("id")!.GetString()!;
-        Page = page;
-        Element = element;
-        // Figure out if the element is an repeating group
-        if (
-            element.TryGetProperty("type", out var type) &&
-            (type.GetString()?.Equals("group", StringComparison.InvariantCultureIgnoreCase) ?? false) &&
-            element.TryGetProperty("maxCount", out var maxCountElement) &&
-            maxCountElement.TryGetInt32(out int maxCount) &&
-            maxCount > 1 &&
-            element.TryGetProperty("children", out var children)
-            )
-        {
-
-            Children = new List<Component>();
-            ChildIds = children.EnumerateArray().Select(e => e.GetString()!).ToList();
-
-        }
+        MaxCount = maxCount;
     }
 
-    public string Id { get; set; }
-    public string Page { get; set; }
-    public List<Component>? Children { get; set; }
-    public List<string>? ChildIds { get; set; }
-    public Component? Group { get; set; }
-    public int? GroupIndex { get; set; }
-    public JsonElement Element { get; set; }
+    public int MaxCount { get; }
+}
 
-    public Dictionary<string, string>? GetModelBindings()
+public class GroupComponent : Component
+{
+    public GroupComponent(string id, string type, IReadOnlyDictionary<string, string>? dataModelBindings, IEnumerable<Component> children, LayoutExpression? hidden, LayoutExpression? required) :
+        base(id, type, dataModelBindings, children, hidden, required)
     {
-        if (Element.ValueKind == JsonValueKind.Object &&
-             Element.TryGetProperty("dataModelBindings", out var dataModelBindings) &&
-             dataModelBindings.ValueKind == JsonValueKind.Object)
-        {
-            return dataModelBindings
-                    .EnumerateObject()
-                    .Where(j => j.Value.ValueKind == JsonValueKind.String)
-                    .ToDictionary(j => j.Name, j => j.Value.GetString()!);
-        }
-        return null;
-    }
-    public string? GetModelBinding(string key)
-    {
-        if (Element.ValueKind == JsonValueKind.Object &&
-             Element.TryGetProperty("dataModelBindings", out var dataModelBindings) &&
-             dataModelBindings.ValueKind == JsonValueKind.Object &&
-             dataModelBindings.TryGetProperty(key, out var bindingValue))
-        {
-            return bindingValue.GetString();
-        }
-
-        return null;
     }
 }
 
 /// <summary>
-/// Custom converter for parsing Layout files in json format to <see cref="ComponentModel" />
+/// Inteface to be able to handle all component groups the same way.
 /// </summary>
-/// <remarks>
-/// The layout files in json format contains lots of polymorphism witch is hard for the
-/// standard json parser to convert to an object graph. Using <see cref="Utf8JsonReader"/>
-/// directly I can convert to a more suitable C# representation directly
-/// </remarks>
-public class ComponentModelConverter : JsonConverter<ComponentModel>
+public class Component
 {
-    /// <inheritdoc />
-    public override ComponentModel? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public Component(string id, string type, IReadOnlyDictionary<string, string>? dataModelBindings, IEnumerable<Component>? children, LayoutExpression? hidden, LayoutExpression? required) 
     {
-        if (reader.TokenType != JsonTokenType.StartObject)
+        Id = id;
+        Type = type;
+        DataModelBindings = dataModelBindings ?? ImmutableDictionary<string,string>.Empty;
+        Hidden = hidden;
+        Required = required;
+        Children = children ?? Enumerable.Empty<Component>();
+        foreach (var child in Children)
         {
-            throw new JsonException();
+            child.Parent = this;
         }
-        var componentModel = new ComponentModel();
-        // Read dictionary of pages
-        while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
-        {
-            if (reader.TokenType != JsonTokenType.PropertyName)
-            {
-                throw new JsonException(); //Think this is impossible. After a JsonTokenType.StartObject, everything should be JsonTokenType.PropertyName
-            }
-            var componentPage = new ComponentPage(reader.GetString()!);
-            reader.Read();
-
-            componentModel.Pages[componentPage.PageName] = ReadPage(ref reader, componentPage, options);
-        }
-
-
-
-        return componentModel;
     }
+    /// <summary>
+    /// ID of the component (or pagename for pages)
+    /// </summary>
+    public string Id { get; }
 
-    private ComponentPage ReadPage(ref Utf8JsonReader reader, ComponentPage componentPage, JsonSerializerOptions options)
+    /// <summary>
+    /// Get the page for the component
+    /// </summary>
+    public string Page
     {
-        if (reader.TokenType != JsonTokenType.StartObject)
+        get
         {
-            throw new JsonException();
-        }
-
-        while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
-        {
-            if (reader.TokenType != JsonTokenType.PropertyName)
-            {
-                throw new JsonException(); //Think this is impossible. After a JsonTokenType.StartObject, everything should be JsonTokenType.PropertyName
-            }
-
-            var propertyName = reader.GetString()!;
-            reader.Read();
-            if (propertyName == "data")
-            {
-                ReadData(ref reader, componentPage, options);
-            }
-            else
-            {
-                // Ignore other properties than "data"
-                reader.Skip();
-            }
-        }
-        return componentPage;
-    }
-
-    private void ReadData(ref Utf8JsonReader reader, ComponentPage componentPage, JsonSerializerOptions options)
-    {
-        if (reader.TokenType != JsonTokenType.StartObject)
-        {
-            throw new JsonException();
-        }
-
-        while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
-        {
-            if (reader.TokenType != JsonTokenType.PropertyName)
-            {
-                throw new JsonException(); //Think this is impossible. After a JsonTokenType.StartObject, everything should be JsonTokenType.PropertyName
-            }
-
-            var propertyName = reader.GetString()!;
-            reader.Read();
-            if (propertyName == "layout")
-            {
-                ReadLayout(ref reader, componentPage, options);
-            }
-            else
-            {
-                reader.Skip();
-            }
+            //Get the Id of the first component without a parent.
+            return Parent?.Page ?? Id;
         }
     }
 
-    private void ReadLayout(ref Utf8JsonReader reader, ComponentPage componentPage, JsonSerializerOptions options)
-    {
-        if (reader.TokenType != JsonTokenType.StartArray)
-        {
-            throw new JsonException();
-        }
+    /// <summary>
+    /// Component type
+    /// </summary>
+    public string Type { get; }
 
-        while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
-        {
-            ReadComponent(ref reader, componentPage, options);
-        }
-    }
+    /// <summary>
+    /// Layout Expression that can be evaluated to see if component should be hidden
+    /// </summary>
+    public LayoutExpression? Hidden { get; }
 
-    private void ReadComponent(ref Utf8JsonReader reader, ComponentPage componentPage, JsonSerializerOptions options)
-    {
-        var component = JsonElement.ParseValue(ref reader);
-        componentPage.AddComponent(
-            new Component(
-                page: componentPage.PageName,
-                element: component
-            )
-        );
-    }
+    /// <summary>
+    /// Layout Expression that can be evaluated to see if component should be required
+    /// </summary>
+    public LayoutExpression? Required { get; }
 
-    /// <inheritdoc />
-    public override void Write(Utf8JsonWriter writer, ComponentModel value, JsonSerializerOptions options)
-    {
-        throw new NotImplementedException();
-    }
+    /// <summary>
+    /// Data model bindings for the component or group
+    /// </summary>
+    public IReadOnlyDictionary<string, string> DataModelBindings { get; }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public Component? Parent { get; internal set; }
+
+    /// <summary>
+    /// The children in this group/page
+    /// </summary>
+    public IEnumerable<Component> Children { get; internal set; }
 }
+

@@ -12,14 +12,14 @@ public static class ExpressionEvaluator
     /// <summary>
     /// Shortcut for evaluating a boolean expression on a given property on a <see cref="Component" />
     /// </summary>
-    public static bool EvaluateBooleanExpression(LayoutEvaluatorState state, Component component, string property, bool defaultReturn, ComponentContext context)
+    public static bool EvaluateBooleanExpression(LayoutEvaluatorState state, ComponentContext context, string property, bool defaultReturn)
     {
-        if (!component.Element.TryGetProperty(property, out var jsonExpression))
+        var expr = property switch
         {
-            return defaultReturn;
-        }
-
-        var expr = jsonExpression.Deserialize<LayoutExpression>();
+            "hidden" => context.Component.Hidden,
+            "required" => context.Component.Required,
+            _ => throw new Exception($"unknown boolean expression property {property}")
+        };
         if (expr is null)
         {
             return defaultReturn;
@@ -30,7 +30,7 @@ public static class ExpressionEvaluator
             true => true,
             false => false,
             null => defaultReturn,
-            _ => throw new Exception($"Return from evaluating \"{property}\" on \"{(component.Element.TryGetProperty("id", out var idElement) ? idElement.GetString() : "Unknown component")}\" was not boolean (value)")
+            _ => throw new Exception($"Return from evaluating \"{property}\" on \"{context.Component.Id}\" was not boolean (value)")
         };
     }
 

@@ -59,9 +59,6 @@ public class TestFunctions
     [SharedTest("instanceContext")]
     public void InstanceContext_Theory(ExpressionTestCaseRoot test) => RunTestCase(test);
 
-    // [Theory]
-    // [SharedTest("invalid")]
-    // public void Invalid_Theory(ExpressionTestCaseRoot test) => RunTestCase(test);
     [Theory]
     [SharedTest("lessThan")]
     public void LessThan_Theory(ExpressionTestCaseRoot test) => RunTestCase(test);

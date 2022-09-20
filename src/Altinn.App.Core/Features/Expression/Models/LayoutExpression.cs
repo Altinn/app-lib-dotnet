@@ -10,7 +10,7 @@ namespace Altinn.App.Core.Features.Expression;
 /// All props are marked as nullable, but a valid instance has either <see cref="Function" /> and <see cref="Args" /> or <see cref="Value" />
 /// </remarks>
 [JsonConverter(typeof(LayoutExpressionConverter))]
-public class LayoutExpression
+public sealed class LayoutExpression
 {
     /// <summary>
     /// Name of the function. Must be one those actually implemented in <see cref="ExpressionEvaluator" />

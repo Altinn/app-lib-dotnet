@@ -1,4 +1,5 @@
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Features.Expression;
 using Altinn.App.Core.Interface;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
@@ -23,6 +24,7 @@ namespace Altinn.App.Core.Features.Validation
         private readonly IInstanceValidator _instanceValidator;
         private readonly IAppModel _appModel;
         private readonly IAppResources _appResourcesService;
+        private readonly LayoutEvaluatorStateInitializer _layoutEvaluatorStateInitializer;
         private readonly IObjectModelValidator _objectModelValidator;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly GeneralSettings _generalSettings;
@@ -38,6 +40,7 @@ namespace Altinn.App.Core.Features.Validation
             IAppModel appModel,
             IAppResources appResourcesService,
             IObjectModelValidator objectModelValidator,
+            LayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer,
             IHttpContextAccessor httpContextAccessor,
             IOptions<GeneralSettings> generalSettings)
         {
@@ -48,6 +51,7 @@ namespace Altinn.App.Core.Features.Validation
             _appModel = appModel;
             _appResourcesService = appResourcesService;
             _objectModelValidator = objectModelValidator;
+            _layoutEvaluatorStateInitializer = layoutEvaluatorStateInitializer;
             _httpContextAccessor = httpContextAccessor;
             _generalSettings = generalSettings.Value;
         }
@@ -185,21 +189,34 @@ namespace Altinn.App.Core.Features.Validation
                 dynamic data = await _dataService.GetFormData(
                     instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, Guid.Parse(dataElement.Id));
 
+                // Remove hidden data before validation
+                //TODO: Figure out the layout set id from task name
+                var evaluationState = await _layoutEvaluatorStateInitializer.Init(instance, (object)data, layoutSetId: null);
+                LayoutModelTools.RemoveHiddenData(evaluationState);
+
+                // run Standard mvc validation using the System.ComponentModel.DataAnnotations
                 ModelStateDictionary validationResults = new ModelStateDictionary();
                 var actionContext = new ActionContext(
                     _httpContextAccessor.HttpContext,
                     new Microsoft.AspNetCore.Routing.RouteData(),
                     new ActionDescriptor(),
                     validationResults);
-
                 ValidationStateDictionary validationState = new ValidationStateDictionary();
                 _objectModelValidator.Validate(actionContext, validationState, null, data);
+
+                // Call custom validation from the IInstanceValidator
                 await _instanceValidator.ValidateData(data, validationResults);
 
+                // Add the validation messages from System.ComponentModel.DataAnnotations and IInstanceValidator to the return list
                 if (!validationResults.IsValid)
                 {
                     messages.AddRange(MapModelStateToIssueList(actionContext.ModelState, instance, dataElement.Id));
                 }
+
+                // Evaluate expressions in layout and validate that all required data is included and that maxLength
+                // is respected on groups
+                var layoutErrors = LayoutModelTools.RunLayoutValidationsForRequired(evaluationState, dataElement.Id);
+                messages.AddRange(layoutErrors);
             }
 
             return messages;
