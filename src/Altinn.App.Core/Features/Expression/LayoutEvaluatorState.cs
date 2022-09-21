@@ -50,40 +50,38 @@ public class LayoutEvaluatorState
 
     private static ComponentContext GetComponentContextsRecurs(Component component, IDataModelAccessor dataModel, int[] indexes)
     {
-        if ((component.Children?.Any() ?? false) && (component.DataModelBindings.TryGetValue("group", out var groupBinding)))
+        if (component.Children?.Any() ?? false)
         {
             var children = new List<ComponentContext>();
-            var rowLength = dataModel.GetModelDataCount(groupBinding, indexes.ToArray()) ?? 0;
-            foreach (var index in Enumerable.Range(0, rowLength))
+
+            if (component.DataModelBindings.TryGetValue("group", out var groupBinding))
+            {
+                var rowLength = dataModel.GetModelDataCount(groupBinding, indexes.ToArray()) ?? 0;
+                foreach (var index in Enumerable.Range(0, rowLength))
+                {
+                    foreach (var child in component.Children)
+                    {
+                        // concatenate [...indexes, index]
+                        var subIndexes = new int[indexes.Length + 1];
+                        indexes.CopyTo(subIndexes.AsSpan());
+                        subIndexes[^1] = index;
+
+                        children.Add(GetComponentContextsRecurs(child, dataModel, subIndexes));
+                    }
+                }
+            }
+            else
             {
                 foreach (var child in component.Children)
                 {
-                    // concatenate [...indexes, index]
-                    var subIndexes = new int[indexes.Length + 1];
-                    indexes.CopyTo(subIndexes.AsSpan());
-                    subIndexes[^1] = index;
-
-                    children.Add(GetComponentContextsRecurs(child, dataModel, subIndexes));
+                    children.Add(GetComponentContextsRecurs(child, dataModel, indexes));
                 }
             }
 
             return new ComponentContext(component, indexes.Length == 0 ? null : indexes.ToArray(), children);
         }
-        return new ComponentContext(component, indexes.Length == 0 ? null : indexes.ToArray(), Enumerable.Empty<ComponentContext>());
-    }
 
-    public static Dictionary<string, string>? GetModelBindings(JsonElement component)
-    {
-        if (component.ValueKind == JsonValueKind.Object &&
-             component.TryGetProperty("dataModelBindings", out var dataModelBindings) &&
-             dataModelBindings.ValueKind == JsonValueKind.Object)
-        {
-            return dataModelBindings
-                    .EnumerateObject()
-                    .Where(j => j.Value.ValueKind == JsonValueKind.String)
-                    .ToDictionary(j => j.Name, j => j.Value.GetString()!);
-        }
-        return null;
+        return new ComponentContext(component, indexes.Length == 0 ? null : indexes.ToArray(), Enumerable.Empty<ComponentContext>());
     }
 
     public string? GetFrontendSetting(string key)
@@ -116,11 +114,6 @@ public class LayoutEvaluatorState
             "instanceId" => _instanceContext.Id,
             _ => throw new Exception($"Unknown Instance context property {key}"),
         };
-    }
-
-    public object? GetApplicationSetting(string key)
-    {
-        return (_frontEndSettings?.TryGetValue(key, out var value) ?? false) ? value : null;
     }
 
     public string AddInidicies(string binding, ComponentContext context)

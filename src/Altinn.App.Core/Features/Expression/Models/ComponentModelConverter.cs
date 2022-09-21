@@ -125,6 +125,10 @@ public class ComponentModelConverter : JsonConverter<ComponentModel>
 
     private static void AddChildrenToLookup(Component component, Dictionary<string, Component> componentLookup)
     {
+        if(componentLookup.ContainsKey(component.Id))
+        {
+            throw new JsonException($"Duplicate key \"{component.Id}\" detected on page \"{component.Page}\"");
+        }
         componentLookup[component.Id] = component;
         foreach (var child in component.Children)
         {
@@ -203,6 +207,10 @@ public class ComponentModelConverter : JsonConverter<ComponentModel>
             var children = ReadChildren(ref reader, id, childIds, options);
             if (maxCount > 1)
             {
+                if (!(dataModelBindings?.ContainsKey("group") ?? false))
+                {
+                    throw new JsonException($"A group id:\"{id}\" with maxCount: {maxCount} does not have a \"group\" dataModelBinding");
+                }
                 return new RepeatingGroupComponent(id, type, dataModelBindings, children, maxCount, hidden, required);
             }
             else
