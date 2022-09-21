@@ -1,6 +1,8 @@
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.EFormidling.Interface;
+using Altinn.App.Core.Features.DataProcessing;
 using Altinn.App.Core.Features.Instantiation;
+using Altinn.App.Core.Features.Expression;
 using Altinn.App.Core.Features.Pdf;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Interface;
@@ -24,6 +26,8 @@ public class DefaultTaskEvents : ITaskEvents
     private readonly IInstance _instanceClient;
     private readonly ITaskProcessor _taskProcessor;
     private readonly IPdfService _pdfService;
+    private readonly LayoutEvaluatorStateInitializer _layoutEvaluatorStateInitializer;
+    private readonly IEnumerable<IDataProcessor> _dataProcessors;
     private readonly IEFormidlingService? _eFormidlingService;
     private readonly AppSettings? _appSettings;
 
@@ -37,6 +41,8 @@ public class DefaultTaskEvents : ITaskEvents
         IInstance instanceClient,
         ITaskProcessor taskProcessor,
         IPdfService pdfService,
+        LayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer,
+        IEnumerable<IDataProcessor> dataProcessors,
         IOptions<AppSettings>? appSettings = null,
         IEFormidlingService? eFormidlingService = null)
     {
@@ -49,6 +55,8 @@ public class DefaultTaskEvents : ITaskEvents
         _instanceClient = instanceClient;
         _taskProcessor = taskProcessor;
         _pdfService = pdfService;
+        _layoutEvaluatorStateInitializer = layoutEvaluatorStateInitializer;
+        _dataProcessors = dataProcessors;
         _eFormidlingService = eFormidlingService;
         _appSettings = appSettings?.Value;
     }
@@ -103,14 +111,42 @@ public class DefaultTaskEvents : ITaskEvents
     /// <inheritdoc />
     public async Task OnEndProcessTask(string endEvent, Instance instance)
     {
-        
+        Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
+        List<DataType> dataTypesToLock = _appMetadata.DataTypes.FindAll(dt => dt.TaskId == endEvent);
+
+        foreach (var dataType in dataTypesToLock.Where(dt => dt.AppLogic != null))
+        {
+            foreach (DataElement dataElement in instance.Data.FindAll(de => de.DataType == dataType.Id))
+            {
+                // Delete hidden data in datamodel
+                Type modelType = _appModel.GetModelType(dataType.AppLogic.ClassRef);
+                string app = instance.AppId.Split("/")[1];
+                int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
+                dynamic data = await _dataClient.GetFormData(
+                    instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, Guid.Parse(dataElement.Id));
+                
+
+                // Remove hidden data before validation
+                //TODO: Figure out the layout set id from task name
+                var evaluationState = await _layoutEvaluatorStateInitializer.Init(instance, (object)data, layoutSetId: null);
+                LayoutModelTools.RemoveHiddenData(evaluationState);
+
+                // TODO: Not sure if these are relevant here. Maybe not?
+                foreach (var dataProcessor in _dataProcessors)
+                {
+                    await dataProcessor.ProcessDataRead(instance, Guid.Parse(dataElement.Id), data);
+                    await dataProcessor.ProcessDataWrite(instance, Guid.Parse(dataElement.Id), data);
+                }
+
+                // save the updated data if there are changes
+                await _dataClient.InsertFormData(data, instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, dataType.Id);
+            }
+        }
+
         await _taskProcessor.ProcessTaskEnd(endEvent, instance);
 
         _logger.LogInformation($"OnEndProcessTask for {instance.Id}. Locking data elements connected to {endEvent} ===========");
 
-        List<DataType> dataTypesToLock = _appMetadata.DataTypes.FindAll(dt => dt.TaskId == endEvent);
-
-        Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
         foreach (DataType dataType in dataTypesToLock)
         {
             bool generatePdf = dataType.AppLogic?.ClassRef != null && dataType.EnablePdfCreation;
@@ -144,14 +180,13 @@ public class DefaultTaskEvents : ITaskEvents
             int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
             await _instanceClient.DeleteInstance(instanceOwnerPartyId, instanceGuid, true);
         }
-        await Task.CompletedTask;
     }
 
     /// <inheritdoc />
     public async Task OnAbandonProcessTask(string taskId, Instance instance)
     {
         await _taskProcessor.ProcessTaskEnd(taskId, instance);
-        
+
         _logger.LogInformation(
             $"OnAbandonProcessTask for {instance.Id}. Locking data elements connected to {taskId}");
         await Task.CompletedTask;
