@@ -1,27 +1,12 @@
-using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Features.Instantiation;
+namespace Altinn.App.Core.Features.DataProcessing;
 
 /// <summary>
 /// IInstantiation defines the methods that must be implemented by a class that handles custom logic during instantiation of a new instance.
 /// </summary>
-public interface IInstantiation
+public interface IInstantiationProcessor
 {
-    /// <summary>
-    /// Run validations related to instantiation
-    /// </summary>
-    /// <example>
-    /// if ([some condition])
-    /// {
-    ///     return new ValidationResult("[error message]");
-    /// }
-    /// return null;
-    /// </example>
-    /// <param name="instance">The instance being validated</param>
-    /// <returns>The validation result object (null if no errors) </returns>
-    public Task<InstantiationValidationResult> Validation(Instance instance);
-    
     /// <summary>
     /// Run events related to instantiation
     /// </summary>

@@ -1,10 +1,10 @@
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features.DataProcessing;
-using Altinn.App.Core.Features.Instantiation;
 using Altinn.App.Core.Features.Language;
 using Altinn.App.Core.Features.Options;
 using Altinn.App.Core.Features.PageOrder;
 using Altinn.App.Core.Features.Pdf;
+using Altinn.App.Core.Features.Process;
 using Altinn.App.Core.Features.Texts;
 using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Implementation;
@@ -66,10 +66,10 @@ namespace Altinn.App.Core.Extensions
             services.AddHttpClient<IProcess, ProcessClient>();
             services.AddHttpClient<IPersonRetriever, PersonClient>();
 
-            services.AddTransient<IUserTokenProvider, UserTokenProvider>();
-            services.AddTransient<IAccessTokenGenerator, AccessTokenGenerator>();
-            services.AddTransient<IPersonLookup, PersonService>();
-            services.AddTransient<IApplicationLanguage, ApplicationLanguage>();
+            services.TryAddTransient<IUserTokenProvider, UserTokenProvider>();
+            services.TryAddTransient<IAccessTokenGenerator, AccessTokenGenerator>();
+            services.TryAddTransient<IPersonLookup, PersonService>();
+            services.TryAddTransient<IApplicationLanguage, ApplicationLanguage>();
         }
 
         /// <summary>
@@ -81,17 +81,18 @@ namespace Altinn.App.Core.Extensions
         public static void AddAppServices(this IServiceCollection services, IConfiguration configuration, IWebHostEnvironment env)
         {
             // Services for Altinn App
-            services.AddTransient<IPDP, PDPAppSI>();
-            services.AddTransient<IValidation, ValidationAppSI>();
-            services.AddTransient<IPrefill, PrefillSI>();
-            services.AddTransient<ISigningCredentialsResolver, SigningCredentialsResolver>();
-            services.AddSingleton<IAppResources, AppResourcesSI>();
-            services.AddTransient<IProcessEngine, ProcessEngine>();
-            services.AddTransient<IProcessChangeHandler, ProcessChangeHandler>();
-            services.AddTransient<IAppEvents, DefaultAppEvents>();
-            services.AddTransient<ITaskEvents, DefaultTaskEvents>();
+            services.TryAddTransient<IPDP, PDPAppSI>();
+            services.TryAddTransient<IValidation, ValidationAppSI>();
+            services.TryAddTransient<IPrefill, PrefillSI>();
+            services.TryAddTransient<ISigningCredentialsResolver, SigningCredentialsResolver>();
+            services.TryAddSingleton<IAppResources, AppResourcesSI>();
+            services.TryAddTransient<IProcessEngine, ProcessEngine>();
+            services.TryAddTransient<IProcessChangeHandler, ProcessChangeHandler>();
+            services.TryAddTransient<IAppEvents, DefaultAppEvents>();
+            services.TryAddTransient<ITaskEvents, DefaultTaskEvents>();
             services.TryAddTransient<IPageOrder, DefaultPageOrder>();
-            services.TryAddTransient<IInstantiation, NullInstantiation>();
+            services.TryAddTransient<IInstantiationProcessor, NullInstantiationProcessor>();
+            services.TryAddTransient<IInstantiationValidator, NullInstantiationValidator>();
             services.TryAddTransient<IInstanceValidator, NullInstanceValidator>();
             services.TryAddTransient<IDataProcessor, NullDataProcessor>();
             services.TryAddTransient<ITaskProcessor, NullTaskProcessor>();
@@ -104,18 +105,18 @@ namespace Altinn.App.Core.Extensions
 
             if (!env.IsDevelopment())
             {
-                services.AddSingleton<ISecrets, SecretsClient>();
+                services.TryAddSingleton<ISecrets, SecretsClient>();
                 services.Configure<KeyVaultSettings>(configuration.GetSection("kvSetting"));
             }
             else
             {
-                services.AddSingleton<ISecrets, SecretsLocalClient>();
+                services.TryAddSingleton<ISecrets, SecretsLocalClient>();
             }
         }
 
         private static void AddPdfServices(IServiceCollection services)
         {
-            services.AddTransient<IPdfService, PdfService>();
+            services.TryAddTransient<IPdfService, PdfService>();
 
             // In old versions of the app the PdfHandler did not have an interface and
             // was new'ed up in the app. We now have an interface to customize the pdf
@@ -129,15 +130,15 @@ namespace Altinn.App.Core.Extensions
         private static void AddAppOptions(IServiceCollection services)
         {
             // Main service for interacting with options
-            services.AddTransient<IAppOptionsService, AppOptionsService>();
+            services.TryAddTransient<IAppOptionsService, AppOptionsService>();
 
             // Services related to application options
-            services.AddTransient<AppOptionsFactory>();
+            services.TryAddTransient<AppOptionsFactory>();
             services.AddTransient<IAppOptionsProvider, DefaultAppOptionsProvider>();
-            services.AddTransient<IAppOptionsFileHandler, AppOptionsFileHandler>();
+            services.TryAddTransient<IAppOptionsFileHandler, AppOptionsFileHandler>();
 
             // Services related to instance aware and secure app options
-            services.AddTransient<InstanceAppOptionsFactory>();
+            services.TryAddTransient<InstanceAppOptionsFactory>();
         }
     }
 }

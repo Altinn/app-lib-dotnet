@@ -20,6 +20,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 
 using Newtonsoft.Json;
+using System.Xml;
 
 namespace Altinn.App.Core.Infrastructure.Clients.Storage
 {
@@ -78,11 +79,10 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             string apiUrl = $"instances/{instance.Id}/data?dataType={dataType}";
             string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
             DataElement dataElement;
-
-            XmlSerializer serializer = new XmlSerializer(type);
+            
             using MemoryStream stream = new MemoryStream();
+            Serialize(dataToSerialize, type, stream);
 
-            serializer.Serialize(stream, dataToSerialize);
             stream.Position = 0;
             StreamContent streamContent = new StreamContent(stream);
             streamContent.Headers.ContentType = MediaTypeHeaderValue.Parse("application/xml");
@@ -107,9 +107,10 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             string apiUrl = $"instances/{instanceIdentifier}/data/{dataId}";
             string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
 
-            XmlSerializer serializer = new XmlSerializer(type);
             using MemoryStream stream = new MemoryStream();
-            serializer.Serialize(stream, dataToSerialize);
+            
+            Serialize(dataToSerialize, type, stream);
+
             stream.Position = 0;
             StreamContent streamContent = new StreamContent(stream);
             streamContent.Headers.ContentType = MediaTypeHeaderValue.Parse("application/xml");
@@ -124,6 +125,20 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             }
 
             throw await PlatformHttpException.CreateAsync(response);
+        }
+
+        // Serializing using XmlWriter with UTF8 Encoding without generating BOM
+        // to avoid issue introduced with .Net when MS introduced BOM by default
+        // when serializing ref. https://github.com/dotnet/runtime/issues/63585
+        // Will be fixed with  https://github.com/dotnet/runtime/pull/75637
+        private static void Serialize<T>(T dataToSerialize, Type type, MemoryStream targetStream)
+        {
+            XmlWriterSettings xmlWriterSettings = new XmlWriterSettings() { Encoding = new UTF8Encoding(false) };
+            XmlWriter xmlWriter = XmlWriter.Create(targetStream, xmlWriterSettings);
+
+            XmlSerializer serializer = new(type);
+
+            serializer.Serialize(xmlWriter, dataToSerialize);
         }
 
         /// <inheritdoc />

@@ -1,32 +1,19 @@
 using System.Collections.Generic;
-using Altinn.App.Core.Features.Instantiation;
+using Altinn.App.Core.Features.DataProcessing;
 using Altinn.App.PlatformServices.Tests.Implementation.TestResources;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Xunit;
 
-namespace Altinn.App.PlatformServices.Tests.Implementation;
+namespace Altinn.App.PlatformServices.Tests.Features.DataProcessing;
 
-public class NullInstantiationTests
+public class NullInstantiationProcessTests
 {
-    [Fact]
-    public async void NullInstantiationTest_Validation_returns_null()
-    {
-        // Arrange
-        var nullInstantiation = new NullInstantiation();
-
-        // Act
-        var result = await nullInstantiation.Validation(new Instance());
-
-        // Assert
-        result.Should().BeNull();
-    }
-    
     [Fact]
     public async void NullInstantiationTest_DataCreation_changes_nothing()
     {
         // Arrange
-        var nullInstantiation = new NullInstantiation();
+        var nullInstantiation = new NullInstantiationProcessor();
         DummyModel expected = new DummyModel()
         {
             Name = "Test",

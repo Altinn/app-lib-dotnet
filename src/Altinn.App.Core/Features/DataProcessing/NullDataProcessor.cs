@@ -1,4 +1,3 @@
-using Altinn.App.Core.Interface;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Features.DataProcessing;
