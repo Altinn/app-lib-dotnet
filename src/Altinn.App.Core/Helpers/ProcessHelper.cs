@@ -1,6 +1,6 @@
+using Altinn.App.Core.Internal.Process;
+using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Models.Validation;
-using Altinn.App.Core.Process;
-using Altinn.App.Core.Process.Elements;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Helpers

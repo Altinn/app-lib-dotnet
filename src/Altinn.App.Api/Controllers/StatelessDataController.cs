@@ -4,9 +4,10 @@ using System.Threading.Tasks;
 
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Core.Extensions;
-using Altinn.App.Core.Features.DataProcessing;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Interface;
+using Altinn.App.Core.Internal.AppModel;
 using Altinn.Authorization.ABAC.Xacml.JsonProfile;
 using Altinn.Common.PEP.Helpers;
 using Altinn.Common.PEP.Interfaces;

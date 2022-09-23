@@ -1,4 +1,3 @@
-using Altinn.App.Core.Interface;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 

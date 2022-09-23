@@ -1,10 +1,10 @@
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.EFormidling.Interface;
-using Altinn.App.Core.Features.DataProcessing;
-using Altinn.App.Core.Features.Pdf;
-using Altinn.App.Core.Features.Process;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Interface;
+using Altinn.App.Core.Internal.AppModel;
+using Altinn.App.Core.Internal.Pdf;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;

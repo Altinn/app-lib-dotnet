@@ -1,7 +1,7 @@
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Interface;
+using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Models;
-using Altinn.App.Core.Process;
 
 namespace Altinn.App.Core.Implementation
 {

@@ -1,5 +1,5 @@
 using System.Security.Claims;
-using Altinn.App.Core.Process;
+using Altinn.App.Core.Internal.Process;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Models

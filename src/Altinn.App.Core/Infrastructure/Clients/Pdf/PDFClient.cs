@@ -1,8 +1,8 @@
 using System.Text;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
-using Altinn.App.Core.Features.Pdf;
 using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Models;
 using Microsoft.Extensions.Options;
 
