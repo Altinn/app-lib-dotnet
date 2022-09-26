@@ -10,6 +10,7 @@ using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -41,7 +42,9 @@ namespace Altinn.App.Core.Internal.Pdf
         /// <param name="profileClient">The profile client</param>
         /// <param name="registerClient">The register client</param>
         /// <param name="pdfFormatter">Class for customizing pdf formatting and layout.</param>
-        public PdfService(IPDF pdfClient, IAppResources appResources, IAppOptionsService appOptionsService, IData dataClient, IHttpContextAccessor httpContextAccessor, IProfile profileClient, IRegister registerClient, IPdfFormatter pdfFormatter)
+        public PdfService(IPDF pdfClient, IAppResources appResources, IAppOptionsService appOptionsService,
+            IData dataClient, IHttpContextAccessor httpContextAccessor, IProfile profileClient,
+            IRegister registerClient, IPdfFormatter pdfFormatter)
         {
             _pdfClient = pdfClient;
             _resourceService = appResources;
@@ -54,7 +57,8 @@ namespace Altinn.App.Core.Internal.Pdf
         }
 
         /// <inheritdoc/>
-        public async Task GenerateAndStoreReceiptPDF(Instance instance, string taskId, DataElement dataElement, Type dataElementModelType)
+        public async Task GenerateAndStoreReceiptPDF(Instance instance, string taskId, DataElement dataElement,
+            Type dataElementModelType)
         {
             string app = instance.AppId.Split("/")[1];
             string org = instance.Org;
@@ -67,10 +71,13 @@ namespace Altinn.App.Core.Internal.Pdf
             if (!string.IsNullOrEmpty(layoutSetsString))
             {
                 layoutSets = JsonConvert.DeserializeObject<LayoutSets>(layoutSetsString);
-                layoutSet = layoutSets.Sets.FirstOrDefault(t => t.DataType.Equals(dataElement.DataType) && t.Tasks.Contains(taskId));
+                layoutSet = layoutSets.Sets.FirstOrDefault(t =>
+                    t.DataType.Equals(dataElement.DataType) && t.Tasks.Contains(taskId));
             }
 
-            string layoutSettingsFileContent = layoutSet == null ? _resourceService.GetLayoutSettingsString() : _resourceService.GetLayoutSettingsStringForSet(layoutSet.Id);
+            string layoutSettingsFileContent = layoutSet == null
+                ? _resourceService.GetLayoutSettingsString()
+                : _resourceService.GetLayoutSettingsStringForSet(layoutSet.Id);
 
             LayoutSettings layoutSettings = null;
             if (!string.IsNullOrEmpty(layoutSettingsFileContent))
@@ -86,7 +93,8 @@ namespace Altinn.App.Core.Internal.Pdf
             layoutSettings.Components ??= new();
             layoutSettings.Components.ExcludeFromPdf ??= new();
 
-            object data = await _dataClient.GetFormData(instanceGuid, dataElementModelType, org, app, instanceOwnerId, new Guid(dataElement.Id));
+            object data = await _dataClient.GetFormData(instanceGuid, dataElementModelType, org, app, instanceOwnerId,
+                new Guid(dataElement.Id));
 
             layoutSettings = await _pdfFormatter.FormatPdf(layoutSettings, data);
             XmlSerializer serializer = new XmlSerializer(dataElementModelType);
@@ -122,7 +130,9 @@ namespace Altinn.App.Core.Internal.Pdf
             }
 
             // If layoutset exists pick correct layotFiles
-            string formLayoutsFileContent = layoutSet == null ? _resourceService.GetLayouts() : _resourceService.GetLayoutsForSet(layoutSet.Id);
+            string formLayoutsFileContent = layoutSet == null
+                ? _resourceService.GetLayouts()
+                : _resourceService.GetLayoutsForSet(layoutSet.Id);
 
             TextResource textResource = await _resourceService.GetTexts(org, app, language);
 
@@ -188,11 +198,13 @@ namespace Altinn.App.Core.Internal.Pdf
             return fileName;
         }
 
-        private async Task<Dictionary<string, Dictionary<string, string>>> GetOptionsDictionary(string formLayout, string language, object data, string instanceId)
+        private async Task<Dictionary<string, Dictionary<string, string>>> GetOptionsDictionary(string formLayout,
+            string language, object data, string instanceId)
         {
             IEnumerable<JToken> componentsWithOptionsDefined = GetFormComponentsWithOptionsDefined(formLayout);
 
-            Dictionary<string, Dictionary<string, string>> dictionary = new Dictionary<string, Dictionary<string, string>>();
+            Dictionary<string, Dictionary<string, string>> dictionary =
+                new Dictionary<string, Dictionary<string, string>>();
 
             foreach (JToken component in componentsWithOptionsDefined)
             {
@@ -200,25 +212,38 @@ namespace Altinn.App.Core.Internal.Pdf
                 bool hasMappings = component.SelectToken("mapping") != null;
                 var secureToken = component.SelectToken("secure");
                 bool isSecureOptions = secureToken != null && secureToken.Value<bool>();
+                Dictionary<string, List<string>> keyValues = new Dictionary<string, List<string>>();
+                keyValues = hasMappings
+                    ? GetComponentKeyValuePairs(component, data)
+                    : new Dictionary<string, List<string>>();
 
-                Dictionary<string, string> keyValuePairs = hasMappings ? GetComponentKeyValuePairs(component, data) : new Dictionary<string, string>();
-                AppOptions appOptions;
-                if (isSecureOptions)
+                var instanceIdentifier = new InstanceIdentifier(instanceId);
+                foreach (var pair in keyValues)
                 {
-                    var instanceIdentifier = new InstanceIdentifier(instanceId);
-                    appOptions = await _appOptionsService.GetOptionsAsync(instanceIdentifier, optionsId, language, keyValuePairs);
-                }
-                else
-                {
-                    appOptions = await _appOptionsService.GetOptionsAsync(optionsId, language, keyValuePairs);
-                }
+                    foreach (var value in pair.Value)
+                    {
+                        AppOptions appOptions;
+                        if (isSecureOptions)
+                        {
+                            appOptions = await _appOptionsService.GetOptionsAsync(instanceIdentifier, optionsId,
+                                language,
+                                new Dictionary<string, string>() { { pair.Key, value } });
+                        }
+                        else
+                        {
+                            appOptions = await _appOptionsService.GetOptionsAsync(optionsId,
+                                language,
+                                new Dictionary<string, string>() { { pair.Key, value } });
+                        }
 
-                if (!dictionary.ContainsKey(optionsId))
-                {
-                    dictionary.Add(optionsId, new Dictionary<string, string>());
-                }
+                        if (!dictionary.ContainsKey(optionsId))
+                        {
+                            dictionary.Add(optionsId, new Dictionary<string, string>());
+                        }
 
-                AppendOptionsToDictionary(dictionary[optionsId], appOptions.Options);
+                        AppendOptionsToDictionary(dictionary[optionsId], appOptions.Options);
+                    }
+                }
             }
 
             return dictionary;
@@ -232,21 +257,22 @@ namespace Altinn.App.Core.Internal.Pdf
             return formLayoutObject.SelectTokens("*.data.layout[?(@.optionsId)]");
         }
 
-        private static Dictionary<string, string> GetComponentKeyValuePairs(JToken component, object data)
+        private static Dictionary<string, List<string>> GetComponentKeyValuePairs(JToken component, object data)
         {
-            var componentKeyValuePairs = new Dictionary<string, string>();
+            var componentKeyValuePairs = new Dictionary<string, List<string>>();
             JObject jsonData = JObject.FromObject(data);
 
             Dictionary<string, string> mappings = GetMappingsForComponent(component);
             foreach (var map in mappings)
             {
-                JToken selectedData = jsonData.SelectToken(map.Key);
-                componentKeyValuePairs.Add(map.Value, selectedData.ToString());
+                var selectedDatas = GetMappingValues(jsonData, map, 0);
+
+                componentKeyValuePairs.Add(map.Value, selectedDatas);
             }
 
             return componentKeyValuePairs;
         }
-        
+
         private static Dictionary<string, string> GetMappingsForComponent(JToken component)
         {
             var maps = new Dictionary<string, string>();
@@ -267,6 +293,58 @@ namespace Altinn.App.Core.Internal.Pdf
                     dictionary.Add(item.Label, item.Value);
                 }
             }
+        }
+
+
+        
+        private static List<string> GetMappingValues(JObject jsonData, KeyValuePair<string, string> map, int depth, int? parentGroupIndex = null)
+        {
+            int count = 1;
+            if (MappingHasRepeatingGroup(map.Key))
+            {
+                var mappingUntilFirstGroup = GetMappingUntilFirstGroup(map.Key);
+                JToken repeatingGroup = jsonData.SelectToken(mappingUntilFirstGroup);
+                count = repeatingGroup.Children().Count();
+            }
+
+            List<string> selectedDatas = new List<string>();
+            for (var i = 0; i < count; i++)
+            {
+                string replaceText = "{" + depth + "}";
+
+                string select = map.Key.Replace(replaceText, i.ToString());
+                if (MappingHasRepeatingGroup(select))
+                {
+                    selectedDatas.AddRange(GetMappingValues(jsonData,
+                        new KeyValuePair<string, string>(select, map.Value), ++depth, i));
+                }
+                else
+                {
+                    selectedDatas.Add(jsonData.SelectToken(select).ToString());
+                }
+            }
+
+            return selectedDatas;
+        }
+
+        /// <summary>
+        /// Return true if mapping contains a array replacement start "[{"
+        /// </summary>
+        /// <param name="mapping">Field mapping</param>
+        /// <returns></returns>
+        private static bool MappingHasRepeatingGroup(string mapping)
+        {
+            return mapping.Contains("[{");
+        }
+
+        /// <summary>
+        /// Returns mapping of first element in mapping that is a list with replacement string.
+        /// </summary>
+        /// <param name="mapping"></param>
+        /// <returns></returns>
+        private static string GetMappingUntilFirstGroup(string mapping)
+        {
+            return mapping.Substring(0, mapping.IndexOf("[{"));
         }
     }
 }
