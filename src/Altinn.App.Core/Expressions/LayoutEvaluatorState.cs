@@ -1,6 +1,9 @@
 using System;
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Models.Expression;
+using Altinn.App.Core.Models.Layout;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Expressions;
@@ -11,14 +14,14 @@ namespace Altinn.App.Core.Expressions;
 public class LayoutEvaluatorState
 {
     private readonly IDataModelAccessor _dataModel;
-    private readonly ComponentModel _componentModel;
+    private readonly LayoutModel _componentModel;
     private readonly FrontEndSettings _frontEndSettings;
     private readonly Instance _instanceContext;
 
     /// <summary>
     /// Constructor for LayoutEvaluatorState. Usually called via <see cref="LayoutEvaluatorStateInitializer" /> that can be fetched from dependency injection.
     /// </summary>
-    public LayoutEvaluatorState(IDataModelAccessor dataModel, ComponentModel componentModel, FrontEndSettings frontEndSettings, Instance instance)
+    public LayoutEvaluatorState(IDataModelAccessor dataModel, LayoutModel componentModel, FrontEndSettings frontEndSettings, Instance instance)
     {
         _dataModel = dataModel;
         _componentModel = componentModel;
@@ -84,26 +87,41 @@ public class LayoutEvaluatorState
         return new ComponentContext(component, indexes.Length == 0 ? null : indexes.ToArray(), Enumerable.Empty<ComponentContext>());
     }
 
+    /// <summary>
+    /// Get frontend setting with specified key
+    /// </summary>
     public string? GetFrontendSetting(string key)
     {
         return _frontEndSettings.TryGetValue(key, out var setting) ? setting : null;
     }
 
+    /// <summary>
+    /// Get field from dataModel with key and context
+    /// </summary>
     public object? GetModelData(string key, ComponentContext? context = null)
     {
         return _dataModel.GetModelData(key, context?.RowIndices);
     }
 
+    /// <summary>
+    /// Set the value of a field to null.
+    /// </summary>
     public void RemoveDataField(string key)
     {
         _dataModel.RemoveField(key);
     }
 
+    /// <summary>
+    /// Get data from the `simpleBinding` property of 
+    /// </summary>
     public object? GetComponentData(string key, ComponentContext context)
     {
         return _componentModel.GetComponentData(key, context, _dataModel);
     }
 
+    /// <summary>
+    /// Lookup variables in instance. Only a limited set is supported
+    /// </summary>
     public string GetInstanceContext(string key)
     {
         // Instance context only supports a small subset of variables from the instance
@@ -116,6 +134,14 @@ public class LayoutEvaluatorState
         };
     }
 
+    /// <summary>
+    /// Return a full dataModelBiding from a context aware binding by adding indicies
+    /// </summary>
+    /// <example>
+    /// key = "bedrift.ansatte.navn"
+    /// indicies = [1,2]
+    /// => "bedrift[1].ansatte[2].navn"
+    /// </example>
     public string AddInidicies(string binding, ComponentContext context)
     {
         return _dataModel.AddIndicies(binding, context.RowIndices);

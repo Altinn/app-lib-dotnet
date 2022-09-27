@@ -1,6 +1,8 @@
 using System.Text.Json;
 using Altinn.App.Core.Interface;
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Helpers.DataModel;
+using Altinn.App.Core.Models.Layout;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Options;
 
@@ -32,7 +34,7 @@ public class LayoutEvaluatorStateInitializer
     public Task<LayoutEvaluatorState> Init(Instance instance, object data, string? layoutSetId)
     {
         string formLayoutsFileContent = layoutSetId == null ? _appResources.GetLayouts() : _appResources.GetLayoutsForSet(layoutSetId);
-        var layouts = JsonSerializer.Deserialize<ComponentModel>(formLayoutsFileContent)!;
+        var layouts = JsonSerializer.Deserialize<LayoutModel>(formLayoutsFileContent)!;
         return Task.FromResult(new LayoutEvaluatorState(new DataModel(data), layouts, _frontEndSettings, instance));
     }
 }

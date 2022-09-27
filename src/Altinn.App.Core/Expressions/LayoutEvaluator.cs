@@ -1,3 +1,4 @@
+using Altinn.App.Core.Models.Expression;
 using Altinn.App.Core.Models.Validation;
 
 namespace Altinn.App.Core.Expressions;
@@ -78,7 +79,8 @@ public static class LayoutEvaluator
 
         return validationIssues;
     }
-    public static void RunLayoutValidationsForRequiredRecurs(List<ValidationIssue> validationIssues, LayoutEvaluatorState state, string dataElementId, ComponentContext context)
+
+    private static void RunLayoutValidationsForRequiredRecurs(List<ValidationIssue> validationIssues, LayoutEvaluatorState state, string dataElementId, ComponentContext context)
     {
         var hidden = ExpressionEvaluator.EvaluateBooleanExpression(state, context, "hidden", false);
         if (!hidden)

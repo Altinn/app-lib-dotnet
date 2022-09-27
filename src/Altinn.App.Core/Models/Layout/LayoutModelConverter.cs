@@ -1,16 +1,18 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Altinn.App.Core.Expressions;
+using Altinn.App.Core.Models.Layout.Components;
+
+namespace Altinn.App.Core.Models.Layout;
 /// <summary>
-/// Custom converter for parsing Layout files in json format to <see cref="ComponentModel" />
+/// Custom converter for parsing Layout files in json format to <see cref="LayoutModel" />
 /// </summary>
 /// <remarks>
 /// The layout files in json format contains lots of polymorphism witch is hard for the
 /// standard json parser to convert to an object graph. Using <see cref="Utf8JsonReader"/>
 /// directly I can convert to a more suitable C# representation directly
 /// </remarks>
-public class ComponentModelConverter : JsonConverter<ComponentModel>
+public class LayoutModelConverter : JsonConverter<LayoutModel>
 {
     /// <summary>
     /// Activate extra checks while parsing, and include a dictionary of extra properties
@@ -18,13 +20,13 @@ public class ComponentModelConverter : JsonConverter<ComponentModel>
     public bool Debug {get; set; } = false;
 
     /// <inheritdoc />
-    public override ComponentModel? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public override LayoutModel? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (reader.TokenType != JsonTokenType.StartObject)
         {
             throw new JsonException();
         }
-        var componentModel = new ComponentModel();
+        var componentModel = new LayoutModel();
         // Read dictionary of pages
         while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
         {
@@ -160,7 +162,7 @@ public class ComponentModelConverter : JsonConverter<ComponentModel>
         string? componentRef = null;
         string? pageRef = null;
 
-
+        //TODO: Actually store the extra properties in the component object
         Dictionary<string, JsonElement> extra = new();
 
 
@@ -280,7 +282,7 @@ public class ComponentModelConverter : JsonConverter<ComponentModel>
     }
 
     /// <inheritdoc />
-    public override void Write(Utf8JsonWriter writer, ComponentModel value, JsonSerializerOptions options)
+    public override void Write(Utf8JsonWriter writer, LayoutModel value, JsonSerializerOptions options)
     {
         throw new NotImplementedException();
     }

@@ -2,6 +2,9 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
+using Altinn.App.Core.Models.Expression;
+using Altinn.App.Core.Models.Layout;
+
 namespace Altinn.App.Core.Expressions;
 
 /// <summary>

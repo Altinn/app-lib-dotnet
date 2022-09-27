@@ -7,7 +7,8 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 
 using Altinn.App.Core.Configuration;
-using Altinn.App.Core.Expressions;
+using Altinn.App.Core.Models.Expression;
+using Altinn.App.Core.Models.Layout;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Tests.LayoutExpressions;
@@ -45,7 +46,7 @@ public class ExpressionTestCaseRoot
     public string? ExpectsFailure { get; set; }
 
     [JsonPropertyName("layouts")]
-    public ComponentModel ComponentModel { get; set; } = default!;
+    public LayoutModel ComponentModel { get; set; } = default!;
 
     [JsonPropertyName("dataModel")]
     public JsonElement? DataModel { get; set; }
@@ -116,7 +117,7 @@ public class ComponentContextForTestSpec
     [JsonPropertyName("children")]
     public IEnumerable<ComponentContextForTestSpec> ChildContexts { get; set; } = Enumerable.Empty<ComponentContextForTestSpec>();
 
-    public ComponentContext ToContext(ComponentModel model)
+    public ComponentContext ToContext(LayoutModel model)
     {
         return new ComponentContext(model.GetComponent(CurrentPageName, ComponentId), RowIndices, Enumerable.Empty<ComponentContext>());
     }

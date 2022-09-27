@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-using Altinn.App.Core.Expressions;
+using Altinn.App.Core.Models.Layout;
 
 namespace Altinn.App.Core.Tests.LayoutExpressions;
 
@@ -29,7 +29,7 @@ public class ContextListRoot
     public string Name { get; set; } = default!;
 
     [JsonPropertyName("layouts")]
-    public ComponentModel ComponentModel { get; set; } = default!;
+    public LayoutModel ComponentModel { get; set; } = default!;
 
     [JsonPropertyName("dataModel")]
     public JsonElement? DataModel { get; set; }

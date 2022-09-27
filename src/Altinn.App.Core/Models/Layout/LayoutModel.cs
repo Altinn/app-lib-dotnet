@@ -1,11 +1,15 @@
-using System.Collections.Immutable;
-using System.Text.Json;
 using System.Text.Json.Serialization;
+using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Models.Expression;
+using Altinn.App.Core.Models.Layout.Components;
 
-namespace Altinn.App.Core.Expressions;
+namespace Altinn.App.Core.Models.Layout;
 
-[JsonConverter(typeof(ComponentModelConverter))]
-public class ComponentModel
+/// <summary>
+/// Class for 
+/// </summary>
+[JsonConverter(typeof(LayoutModelConverter))]
+public class LayoutModel
 {
     public Dictionary<string, PageComponent> Pages { get; init; } = new Dictionary<string, PageComponent>();
 
