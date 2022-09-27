@@ -1,11 +1,11 @@
 using Altinn.App.Core.Models.Validation;
 
-namespace Altinn.App.Core.Features.Expression;
+namespace Altinn.App.Core.Expressions;
 
 /// <summary>
 /// Utilities for using the expression results to do tasks in backend
 /// </summary>
-public static class LayoutModelTools
+public static class LayoutEvaluator
 {
     /// <summary>
     /// Get a list of fields that are only referenced in hidden components in <see cref="LayoutEvaluatorState" />
@@ -27,6 +27,8 @@ public static class LayoutModelTools
 
     private static void HiddenFieldsForRemovalReucrs(LayoutEvaluatorState state, HashSet<string> hiddenModelBindings, HashSet<string> nonHiddenModelBindings, ComponentContext context)
     {
+
+        //TODO: Hidden should cascade
         foreach (var childContext in context.ChildContexts)
         {
             HiddenFieldsForRemovalReucrs(state, hiddenModelBindings, nonHiddenModelBindings, childContext);

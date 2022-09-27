@@ -3,7 +3,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace Altinn.App.Core.Features.Expression;
+namespace Altinn.App.Core.Expressions;
 
 /// <summary>
 /// Interface for accessing fields in the data model

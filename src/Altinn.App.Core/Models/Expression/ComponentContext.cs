@@ -1,4 +1,4 @@
-namespace Altinn.App.Core.Features.Expression;
+namespace Altinn.App.Core.Expressions;
 
 /// <summary>
 /// Simple class for holding the context for <see cref="ExpressionEvaluator"/>
@@ -8,7 +8,7 @@ public sealed class ComponentContext
     /// <summary>
     /// 
     /// </summary>
-    public ComponentContext(Component component, int[]? RowIndicies, IEnumerable<ComponentContext> childContexts)
+    public ComponentContext(BaseComponent component, int[]? RowIndicies, IEnumerable<ComponentContext> childContexts)
     {
         Component = component;
         RowIndices = RowIndicies;
@@ -18,7 +18,7 @@ public sealed class ComponentContext
     /// <summary>
     /// The component from <see cref="ComponentModel"/> that should be used as context
     /// </summary>
-    public Component Component { get; }
+    public BaseComponent Component { get; }
 
     /// <summary>
     /// The indicies for this context (in case the component is part of a repeating group)

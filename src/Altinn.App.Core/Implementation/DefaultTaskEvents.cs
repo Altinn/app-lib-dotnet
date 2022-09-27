@@ -1,5 +1,6 @@
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.EFormidling.Interface;
+using Altinn.App.Core.Expressions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Interface;
@@ -29,6 +30,8 @@ public class DefaultTaskEvents : ITaskEvents
     private readonly IPdfService _pdfService;
     private readonly IEFormidlingService? _eFormidlingService;
     private readonly AppSettings? _appSettings;
+    private readonly LayoutEvaluatorStateInitializer _layoutEvaluatorStateInitializer;
+    private readonly IEnumerable<IDataProcessor> _dataProcessors;
 
     /// <summary>
     /// Constructor with services from DI
@@ -140,7 +143,7 @@ public class DefaultTaskEvents : ITaskEvents
                 // Remove hidden data before validation
                 //TODO: Figure out the layout set id from task name
                 var evaluationState = await _layoutEvaluatorStateInitializer.Init(instance, (object)data, layoutSetId: null);
-                LayoutModelTools.RemoveHiddenData(evaluationState);
+                LayoutEvaluator.RemoveHiddenData(evaluationState);
 
                 // TODO: Not sure if these are relevant here. Maybe not?
                 foreach (var dataProcessor in _dataProcessors)

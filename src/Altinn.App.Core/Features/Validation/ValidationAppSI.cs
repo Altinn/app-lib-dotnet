@@ -2,6 +2,7 @@ using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Models.Validation;
+using Altinn.App.Core.Expressions;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -192,7 +193,7 @@ namespace Altinn.App.Core.Features.Validation
                 // Remove hidden data before validation
                 //TODO: Figure out the layout set id from task name
                 var evaluationState = await _layoutEvaluatorStateInitializer.Init(instance, (object)data, layoutSetId: null);
-                LayoutModelTools.RemoveHiddenData(evaluationState);
+                LayoutEvaluator.RemoveHiddenData(evaluationState);
 
                 // run Standard mvc validation using the System.ComponentModel.DataAnnotations
                 ModelStateDictionary validationResults = new ModelStateDictionary();
@@ -215,7 +216,7 @@ namespace Altinn.App.Core.Features.Validation
 
                 // Evaluate expressions in layout and validate that all required data is included and that maxLength
                 // is respected on groups
-                var layoutErrors = LayoutModelTools.RunLayoutValidationsForRequired(evaluationState, dataElement.Id);
+                var layoutErrors = LayoutEvaluator.RunLayoutValidationsForRequired(evaluationState, dataElement.Id);
                 messages.AddRange(layoutErrors);
             }
 

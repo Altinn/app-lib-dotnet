@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace Altinn.App.Core.Features.Expression;
+namespace Altinn.App.Core.Expressions;
 
 /// <summary>
 /// Static class used to evaluate expressions. Holds the implementation for all expression functions.
@@ -10,7 +10,7 @@ namespace Altinn.App.Core.Features.Expression;
 public static class ExpressionEvaluator
 {
     /// <summary>
-    /// Shortcut for evaluating a boolean expression on a given property on a <see cref="Component" />
+    /// Shortcut for evaluating a boolean expression on a given property on a <see cref="BaseComponent" />
     /// </summary>
     public static bool EvaluateBooleanExpression(LayoutEvaluatorState state, ComponentContext context, string property, bool defaultReturn)
     {
