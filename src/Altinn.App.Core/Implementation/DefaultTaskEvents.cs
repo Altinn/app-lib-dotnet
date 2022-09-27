@@ -45,6 +45,8 @@ public class DefaultTaskEvents : ITaskEvents
         IEnumerable<IProcessTaskEnd> taskEnds,
         IEnumerable<IProcessTaskAbandon> taskAbandons,
         IPdfService pdfService,
+        LayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer,
+        IEnumerable<IDataProcessor> dataProcessors,
         IOptions<AppSettings>? appSettings = null,
         IEFormidlingService? eFormidlingService = null)
     {
@@ -59,6 +61,8 @@ public class DefaultTaskEvents : ITaskEvents
         _taskEnds = taskEnds;
         _taskAbandons = taskAbandons;
         _pdfService = pdfService;
+        _layoutEvaluatorStateInitializer = layoutEvaluatorStateInitializer;
+        _dataProcessors = dataProcessors;
         _eFormidlingService = eFormidlingService;
         _appSettings = appSettings?.Value;
     }
@@ -118,6 +122,38 @@ public class DefaultTaskEvents : ITaskEvents
     /// <inheritdoc />
     public async Task OnEndProcessTask(string endEvent, Instance instance)
     {
+        Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
+        List<DataType> dataTypesToLock = _appMetadata.DataTypes.FindAll(dt => dt.TaskId == endEvent);
+
+        foreach (var dataType in dataTypesToLock.Where(dt => dt.AppLogic != null))
+        {
+            foreach (DataElement dataElement in instance.Data.FindAll(de => de.DataType == dataType.Id))
+            {
+                // Delete hidden data in datamodel
+                Type modelType = _appModel.GetModelType(dataType.AppLogic.ClassRef);
+                string app = instance.AppId.Split("/")[1];
+                int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
+                dynamic data = await _dataClient.GetFormData(
+                    instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, Guid.Parse(dataElement.Id));
+                
+
+                // Remove hidden data before validation
+                //TODO: Figure out the layout set id from task name
+                var evaluationState = await _layoutEvaluatorStateInitializer.Init(instance, (object)data, layoutSetId: null);
+                LayoutModelTools.RemoveHiddenData(evaluationState);
+
+                // TODO: Not sure if these are relevant here. Maybe not?
+                foreach (var dataProcessor in _dataProcessors)
+                {
+                    await dataProcessor.ProcessDataRead(instance, Guid.Parse(dataElement.Id), data);
+                    await dataProcessor.ProcessDataWrite(instance, Guid.Parse(dataElement.Id), data);
+                }
+
+                // save the updated data if there are changes
+                await _dataClient.InsertFormData(data, instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, dataType.Id);
+            }
+        }
+
         foreach (var taskEnd in _taskEnds)
         {
             await taskEnd.End(endEvent, instance);
@@ -125,9 +161,6 @@ public class DefaultTaskEvents : ITaskEvents
 
         _logger.LogInformation($"OnEndProcessTask for {instance.Id}. Locking data elements connected to {endEvent} ===========");
 
-        List<DataType> dataTypesToLock = _appMetadata.DataTypes.FindAll(dt => dt.TaskId == endEvent);
-
-        Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
         foreach (DataType dataType in dataTypesToLock)
         {
             bool generatePdf = dataType.AppLogic?.ClassRef != null && dataType.EnablePdfCreation;
@@ -161,7 +194,6 @@ public class DefaultTaskEvents : ITaskEvents
             int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
             await _instanceClient.DeleteInstance(instanceOwnerPartyId, instanceGuid, true);
         }
-        await Task.CompletedTask;
     }
 
     /// <inheritdoc />
