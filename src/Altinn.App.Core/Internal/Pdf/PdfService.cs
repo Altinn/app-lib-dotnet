@@ -253,7 +253,7 @@ namespace Altinn.App.Core.Internal.Pdf
             Dictionary<string, string> mappings = GetMappingsForComponent(component);
             foreach (var map in mappings)
             {
-                var selectedDatas = GetMappingValues(jsonData, map, 0);
+                var selectedDatas = GetMappingValues(jsonData, map);
 
                 componentKeyValuePairs.Add(map.Value, selectedDatas);
             }
@@ -285,7 +285,7 @@ namespace Altinn.App.Core.Internal.Pdf
 
 
         
-        private static List<string> GetMappingValues(JObject jsonData, KeyValuePair<string, string> map, int depth, int? parentGroupIndex = null)
+        private static List<string> GetMappingValues(JObject jsonData, KeyValuePair<string, string> map, int depth = 0)
         {
             int count = 1;
             if (MappingHasRepeatingGroup(map.Key))
@@ -304,7 +304,7 @@ namespace Altinn.App.Core.Internal.Pdf
                 if (MappingHasRepeatingGroup(select))
                 {
                     selectedDatas.AddRange(GetMappingValues(jsonData,
-                        new KeyValuePair<string, string>(select, map.Value), ++depth, i));
+                        new KeyValuePair<string, string>(select, map.Value), ++depth));
                 }
                 else
                 {
