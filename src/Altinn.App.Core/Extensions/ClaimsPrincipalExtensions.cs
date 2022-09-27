@@ -38,13 +38,13 @@ namespace Altinn.App.Core.Extensions
         /// <summary>
         /// Returns the organisation number of an org user or null if claim does not exist.
         /// </summary>
-        public static int? GetOrgNumber(this ClaimsPrincipal user) =>
+        public static int? GetOrgNumber(this ClaimsPrincipal? user) =>
             user.GetFirstOfTypeAsInt(AltinnCoreClaimTypes.OrgNumber);
 
         /// <summary>
         /// Return the userId as an int or null if UserId claim is not set
         /// </summary>
-        public static int? GetUserIdAsInt(this ClaimsPrincipal user) =>
+        public static int? GetUserIdAsInt(this ClaimsPrincipal? user) =>
             user.GetFirstOfTypeAsInt(AltinnCoreClaimTypes.UserId);
 
         /// <summary>
@@ -59,10 +59,10 @@ namespace Altinn.App.Core.Extensions
         public static int? GetPartyIdAsInt(this ClaimsPrincipal user) =>
             user.GetFirstOfTypeAsInt(AltinnCoreClaimTypes.PartyID);
 
-        private static string? GetFirstOfType(this ClaimsPrincipal user, string type) =>
+        private static string? GetFirstOfType(this ClaimsPrincipal? user, string type) =>
             user?.FindFirst(c => c.Type == type)?.Value;
 
-        private static int? GetFirstOfTypeAsInt(this ClaimsPrincipal user, string type) =>
+        private static int? GetFirstOfTypeAsInt(this ClaimsPrincipal? user, string type) =>
             int.TryParse(user.GetFirstOfType(type), out var v) ? v : null;
     }
 }

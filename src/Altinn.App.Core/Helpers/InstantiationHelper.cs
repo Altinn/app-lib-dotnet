@@ -153,7 +153,7 @@ namespace Altinn.App.Core.Helpers
                 }
                 else if (party.ChildParties != null && party.ChildParties.Count > 0)
                 {
-                    Party validChildParty = party.ChildParties.Find(cp => cp.PartyId == partyId);
+                    Party? validChildParty = party.ChildParties.Find(cp => cp.PartyId == partyId);
                     if (validChildParty != null)
                     {
                       validParty = validChildParty;

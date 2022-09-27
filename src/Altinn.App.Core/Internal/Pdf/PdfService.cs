@@ -62,17 +62,17 @@ namespace Altinn.App.Core.Internal.Pdf
             Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
 
             string layoutSetsString = _resourceService.GetLayoutSets();
-            LayoutSets layoutSets = null;
-            LayoutSet layoutSet = null;
+            LayoutSets? layoutSets = null;
+            LayoutSet? layoutSet = null;
             if (!string.IsNullOrEmpty(layoutSetsString))
             {
-                layoutSets = JsonConvert.DeserializeObject<LayoutSets>(layoutSetsString);
+                layoutSets = JsonConvert.DeserializeObject<LayoutSets>(layoutSetsString)!;
                 layoutSet = layoutSets.Sets.FirstOrDefault(t => t.DataType.Equals(dataElement.DataType) && t.Tasks.Contains(taskId));
             }
 
-            string layoutSettingsFileContent = layoutSet == null ? _resourceService.GetLayoutSettingsString() : _resourceService.GetLayoutSettingsStringForSet(layoutSet.Id);
+            string? layoutSettingsFileContent = layoutSet == null ? _resourceService.GetLayoutSettingsString() : _resourceService.GetLayoutSettingsStringForSet(layoutSet.Id);
 
-            LayoutSettings layoutSettings = null;
+            LayoutSettings? layoutSettings = null;
             if (!string.IsNullOrEmpty(layoutSettingsFileContent))
             {
                 layoutSettings = JsonConvert.DeserializeObject<LayoutSettings>(layoutSettingsFileContent);
@@ -100,8 +100,8 @@ namespace Altinn.App.Core.Internal.Pdf
             string encodedXml = Convert.ToBase64String(dataAsBytes);
 
             string language = "nb";
-            Party actingParty = null;
-            ClaimsPrincipal user = _httpContextAccessor.HttpContext.User;
+            Party? actingParty = null;
+            ClaimsPrincipal? user = _httpContextAccessor.HttpContext?.User;
 
             int? userId = user.GetUserIdAsInt();
 
@@ -117,14 +117,14 @@ namespace Altinn.App.Core.Internal.Pdf
             }
             else
             {
-                string orgNumber = user.GetOrgNumber().ToString();
+                string? orgNumber = user.GetOrgNumber().ToString();
                 actingParty = await _registerClient.LookupParty(new PartyLookup { OrgNo = orgNumber });
             }
 
             // If layoutset exists pick correct layotFiles
             string formLayoutsFileContent = layoutSet == null ? _resourceService.GetLayouts() : _resourceService.GetLayoutsForSet(layoutSet.Id);
 
-            TextResource textResource = await _resourceService.GetTexts(org, app, language);
+            TextResource? textResource = await _resourceService.GetTexts(org, app, language);
 
             if (textResource == null && language != "nb")
             {
@@ -139,9 +139,9 @@ namespace Altinn.App.Core.Internal.Pdf
             var pdfContext = new PDFContext
             {
                 Data = encodedXml,
-                FormLayouts = JsonConvert.DeserializeObject<Dictionary<string, object>>(formLayoutsFileContent),
+                FormLayouts = JsonConvert.DeserializeObject<Dictionary<string, object>>(formLayoutsFileContent)!,
                 LayoutSettings = layoutSettings,
-                TextResources = JsonConvert.DeserializeObject(textResourcesString),
+                TextResources = JsonConvert.DeserializeObject(textResourcesString)!,
                 OptionsDictionary = optionsDictionary,
                 Party = await _registerClient.GetParty(instanceOwnerId),
                 Instance = instance,
@@ -156,10 +156,10 @@ namespace Altinn.App.Core.Internal.Pdf
 
         private async Task<DataElement> StorePDF(Stream pdfStream, Instance instance, TextResource textResource)
         {
-            string fileName = null;
+            string? fileName = null;
             string app = instance.AppId.Split("/")[1];
 
-            TextResourceElement titleText =
+            TextResourceElement? titleText =
                 textResource.Resources.Find(textResourceElement => textResourceElement.Id.Equals("appName")) ??
                 textResource.Resources.Find(textResourceElement => textResourceElement.Id.Equals("ServiceName"));
 
@@ -196,7 +196,7 @@ namespace Altinn.App.Core.Internal.Pdf
 
             foreach (JToken component in componentsWithOptionsDefined)
             {
-                string optionsId = component.SelectToken("optionsId").Value<string>();
+                string? optionsId = component.SelectToken("optionsId")?.Value<string>();
                 bool hasMappings = component.SelectToken("mapping") != null;
                 var secureToken = component.SelectToken("secure");
                 bool isSecureOptions = secureToken != null && secureToken.Value<bool>();

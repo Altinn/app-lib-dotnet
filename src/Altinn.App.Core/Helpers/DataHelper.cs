@@ -16,9 +16,9 @@ namespace Altinn.App.Core.Helpers
         /// <param name="dataType">The type of the updated data objects</param>
         /// <param name="updatedData">The updated data object</param>
         /// <returns>A dictionary with the new or changed data values</returns>
-        public static Dictionary<string, string> GetUpdatedDataValues(List<DataField> dataFields, Dictionary<string, string> currentDataValues, string dataType, object updatedData)
+        public static Dictionary<string, string?> GetUpdatedDataValues(List<DataField> dataFields, Dictionary<string, string?> currentDataValues, string dataType, object updatedData)
         {
-            Dictionary<string, string> dataFieldValues = GetDataFieldValues(dataFields, dataType, updatedData);
+            Dictionary<string, string?> dataFieldValues = GetDataFieldValues(dataFields, dataType, updatedData);
             return CompareDictionaries(currentDataValues, dataFieldValues);
         }
 
@@ -72,9 +72,9 @@ namespace Altinn.App.Core.Helpers
         /// <summary>
         /// Retrieves data values from a data object based on a list of data fields.
         /// </summary>
-        private static Dictionary<string, string> GetDataFieldValues(List<DataField> dataFields, string dataType, object data)
+        private static Dictionary<string, string?> GetDataFieldValues(List<DataField> dataFields, string dataType, object data)
         {
-            Dictionary<string, string> dataFieldValues = new Dictionary<string, string>();
+            Dictionary<string, string?> dataFieldValues = new Dictionary<string, string?>();
 
             if (dataFields == null || !dataFields.Any(pf => pf.DataTypeId == dataType))
             {
@@ -91,7 +91,7 @@ namespace Altinn.App.Core.Helpers
                 string fixedPath = field.Path.Replace("-", string.Empty);
                 string[] keys = fixedPath.Split(".");
 
-                string value = GetValueFromDatamodel(keys, data);
+                string? value = GetValueFromDatamodel(keys, data);
                 dataFieldValues.Add(field.Id, value);
             }
 
@@ -104,19 +104,19 @@ namespace Altinn.App.Core.Helpers
         /// <param name="originalDictionary">The original dictionary</param>
         /// <param name="newDictionary">The updated dictionary</param>
         /// <returns>A dictionary containing changed and new entries not represented in the original dictionary.</returns>
-        private static Dictionary<string, string> CompareDictionaries(Dictionary<string, string> originalDictionary, Dictionary<string, string> newDictionary)
+        private static Dictionary<string, string?> CompareDictionaries(Dictionary<string, string?>? originalDictionary, Dictionary<string, string?> newDictionary)
         {
-            Dictionary<string, string> updatedValues = new Dictionary<string, string>();
+            Dictionary<string, string?> updatedValues = new Dictionary<string, string?>();
 
             if (originalDictionary == null)
             {
                 return newDictionary;
             }
 
-            foreach (KeyValuePair<string, string> entry in newDictionary)
+            foreach (KeyValuePair<string, string?> entry in newDictionary)
             {
                 string key = entry.Key;
-                string value = entry.Value;
+                string? value = entry.Value;
 
                 if (originalDictionary.ContainsKey(key) && originalDictionary[key] != value)
                 {

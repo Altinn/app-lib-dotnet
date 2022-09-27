@@ -28,6 +28,9 @@ public class DefaultTaskEvents : ITaskEvents
     private readonly IEFormidlingService? _eFormidlingService;
     private readonly AppSettings? _appSettings;
 
+    /// <summary>
+    /// Constructor with services from DI
+    /// </summary>
     public DefaultTaskEvents(
         ILogger<DefaultTaskEvents> logger,
         IAppResources resourceService,
@@ -62,7 +65,7 @@ public class DefaultTaskEvents : ITaskEvents
         // If this is a revisit to a previous task we need to unlock data
         foreach (DataType dataType in _appMetadata.DataTypes.Where(dt => dt.TaskId == taskId))
         {
-            DataElement dataElement = instance.Data.Find(d => d.DataType == dataType.Id);
+            DataElement? dataElement = instance.Data.Find(d => d.DataType == dataType.Id);
 
             if (dataElement != null && dataElement.Locked)
             {
@@ -77,7 +80,7 @@ public class DefaultTaskEvents : ITaskEvents
         {
             _logger.LogInformation($"Auto create data element: {dataType.Id}");
 
-            DataElement dataElement = instance.Data.Find(d => d.DataType == dataType.Id);
+            DataElement? dataElement = instance.Data.Find(d => d.DataType == dataType.Id);
 
             if (dataElement == null)
             {
@@ -114,16 +117,15 @@ public class DefaultTaskEvents : ITaskEvents
         Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
         foreach (DataType dataType in dataTypesToLock)
         {
-            bool generatePdf = dataType.AppLogic?.ClassRef != null && dataType.EnablePdfCreation;
-
             foreach (DataElement dataElement in instance.Data.FindAll(de => de.DataType == dataType.Id))
             {
                 dataElement.Locked = true;
                 _logger.LogInformation($"Locking data element {dataElement.Id} of dataType {dataType.Id}.");
                 Task updateData = _dataClient.Update(instance, dataElement);
 
-                if (generatePdf)
+                if (dataType.AppLogic?.ClassRef != null && dataType.EnablePdfCreation)
                 {
+                    // Generate PDF
                     Type dataElementType = _appModel.GetModelType(dataType.AppLogic.ClassRef);
                     Task createPdf =
                         _pdfService.GenerateAndStoreReceiptPDF(instance, endEvent, dataElement, dataElementType);
