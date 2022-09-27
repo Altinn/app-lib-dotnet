@@ -41,9 +41,7 @@ namespace Altinn.App.Core.Internal.Pdf
         /// <param name="profileClient">The profile client</param>
         /// <param name="registerClient">The register client</param>
         /// <param name="pdfFormatter">Class for customizing pdf formatting and layout.</param>
-        public PdfService(IPDF pdfClient, IAppResources appResources, IAppOptionsService appOptionsService,
-            IData dataClient, IHttpContextAccessor httpContextAccessor, IProfile profileClient,
-            IRegister registerClient, IPdfFormatter pdfFormatter)
+        public PdfService(IPDF pdfClient, IAppResources appResources, IAppOptionsService appOptionsService, IData dataClient, IHttpContextAccessor httpContextAccessor, IProfile profileClient, IRegister registerClient, IPdfFormatter pdfFormatter)
         {
             _pdfClient = pdfClient;
             _resourceService = appResources;
@@ -56,8 +54,7 @@ namespace Altinn.App.Core.Internal.Pdf
         }
 
         /// <inheritdoc/>
-        public async Task GenerateAndStoreReceiptPDF(Instance instance, string taskId, DataElement dataElement,
-            Type dataElementModelType)
+        public async Task GenerateAndStoreReceiptPDF(Instance instance, string taskId, DataElement dataElement, Type dataElementModelType)
         {
             string app = instance.AppId.Split("/")[1];
             string org = instance.Org;
@@ -70,13 +67,10 @@ namespace Altinn.App.Core.Internal.Pdf
             if (!string.IsNullOrEmpty(layoutSetsString))
             {
                 layoutSets = JsonConvert.DeserializeObject<LayoutSets>(layoutSetsString);
-                layoutSet = layoutSets.Sets.FirstOrDefault(t =>
-                    t.DataType.Equals(dataElement.DataType) && t.Tasks.Contains(taskId));
+                layoutSet = layoutSets.Sets.FirstOrDefault(t => t.DataType.Equals(dataElement.DataType) && t.Tasks.Contains(taskId));
             }
 
-            string layoutSettingsFileContent = layoutSet == null
-                ? _resourceService.GetLayoutSettingsString()
-                : _resourceService.GetLayoutSettingsStringForSet(layoutSet.Id);
+            string layoutSettingsFileContent = layoutSet == null ? _resourceService.GetLayoutSettingsString() : _resourceService.GetLayoutSettingsStringForSet(layoutSet.Id);
 
             LayoutSettings layoutSettings = null;
             if (!string.IsNullOrEmpty(layoutSettingsFileContent))
@@ -92,8 +86,7 @@ namespace Altinn.App.Core.Internal.Pdf
             layoutSettings.Components ??= new();
             layoutSettings.Components.ExcludeFromPdf ??= new();
 
-            object data = await _dataClient.GetFormData(instanceGuid, dataElementModelType, org, app, instanceOwnerId,
-                new Guid(dataElement.Id));
+            object data = await _dataClient.GetFormData(instanceGuid, dataElementModelType, org, app, instanceOwnerId, new Guid(dataElement.Id));
 
             layoutSettings = await _pdfFormatter.FormatPdf(layoutSettings, data);
             XmlSerializer serializer = new XmlSerializer(dataElementModelType);
@@ -129,9 +122,7 @@ namespace Altinn.App.Core.Internal.Pdf
             }
 
             // If layoutset exists pick correct layotFiles
-            string formLayoutsFileContent = layoutSet == null
-                ? _resourceService.GetLayouts()
-                : _resourceService.GetLayoutsForSet(layoutSet.Id);
+            string formLayoutsFileContent = layoutSet == null ? _resourceService.GetLayouts() : _resourceService.GetLayoutsForSet(layoutSet.Id);
 
             TextResource textResource = await _resourceService.GetTexts(org, app, language);
 
@@ -197,13 +188,11 @@ namespace Altinn.App.Core.Internal.Pdf
             return fileName;
         }
 
-        private async Task<Dictionary<string, Dictionary<string, string>>> GetOptionsDictionary(string formLayout,
-            string language, object data, string instanceId)
+        private async Task<Dictionary<string, Dictionary<string, string>>> GetOptionsDictionary(string formLayout, string language, object data, string instanceId)
         {
             IEnumerable<JToken> componentsWithOptionsDefined = GetFormComponentsWithOptionsDefined(formLayout);
 
-            Dictionary<string, Dictionary<string, string>> dictionary =
-                new Dictionary<string, Dictionary<string, string>>();
+            Dictionary<string, Dictionary<string, string>> dictionary = new Dictionary<string, Dictionary<string, string>>();
 
             foreach (JToken component in componentsWithOptionsDefined)
             {
