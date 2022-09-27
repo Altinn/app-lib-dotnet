@@ -7,7 +7,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 
 using Altinn.App.Core.Configuration;
-using Altinn.App.Core.Features.Expression;
+using Altinn.App.Core.Expressions;
 using Altinn.App.Core.Interface;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;

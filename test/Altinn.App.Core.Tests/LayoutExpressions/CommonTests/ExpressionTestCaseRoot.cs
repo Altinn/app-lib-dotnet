@@ -7,7 +7,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 
 using Altinn.App.Core.Configuration;
-using Altinn.App.Core.Features.Expression;
+using Altinn.App.Core.Expressions;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Tests.LayoutExpressions;

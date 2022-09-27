@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Altinn.App.Core.Features.Expression;
+namespace Altinn.App.Core.Expressions;
 /// <summary>
 /// Custom converter for parsing Layout files in json format to <see cref="ComponentModel" />
 /// </summary>
@@ -12,6 +12,11 @@ namespace Altinn.App.Core.Features.Expression;
 /// </remarks>
 public class ComponentModelConverter : JsonConverter<ComponentModel>
 {
+    /// <summary>
+    /// Activate extra checks while parsing, and include a dictionary of extra properties
+    /// </summary>
+    public bool Debug {get; set; } = false;
+
     /// <inheritdoc />
     public override ComponentModel? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
@@ -79,8 +84,8 @@ public class ComponentModelConverter : JsonConverter<ComponentModel>
             throw new JsonException();
         }
 
-        var components = new List<Component>();
-        var componentLookup = new Dictionary<string, Component>();
+        var components = new List<BaseComponent>();
+        var componentLookup = new Dictionary<string, BaseComponent>();
 
 
         while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
@@ -99,6 +104,7 @@ public class ComponentModelConverter : JsonConverter<ComponentModel>
                     break;
                 //TODO: Add "hidden" (and "required")
                 default:
+                    // Ignore unknown properties.
                     reader.Skip();
                     break;
             }
@@ -107,7 +113,7 @@ public class ComponentModelConverter : JsonConverter<ComponentModel>
         return new PageComponent(pageName, components, componentLookup);
     }
 
-    private void ReadLayout(ref Utf8JsonReader reader, List<Component> components, Dictionary<string, Component> componentLookup, JsonSerializerOptions options)
+    private void ReadLayout(ref Utf8JsonReader reader, List<BaseComponent> components, Dictionary<string, BaseComponent> componentLookup, JsonSerializerOptions options)
     {
         if (reader.TokenType != JsonTokenType.StartArray)
         {
@@ -123,9 +129,9 @@ public class ComponentModelConverter : JsonConverter<ComponentModel>
         }
     }
 
-    private static void AddChildrenToLookup(Component component, Dictionary<string, Component> componentLookup)
+    private static void AddChildrenToLookup(BaseComponent component, Dictionary<string, BaseComponent> componentLookup)
     {
-        if(componentLookup.ContainsKey(component.Id))
+        if (componentLookup.ContainsKey(component.Id))
         {
             throw new JsonException($"Duplicate key \"{component.Id}\" detected on page \"{component.Page}\"");
         }
@@ -136,7 +142,7 @@ public class ComponentModelConverter : JsonConverter<ComponentModel>
         }
     }
 
-    private Component ReadComponent(ref Utf8JsonReader reader, JsonSerializerOptions options)
+    private BaseComponent ReadComponent(ref Utf8JsonReader reader, JsonSerializerOptions options)
     {
         if (reader.TokenType != JsonTokenType.StartObject)
         {
@@ -145,10 +151,18 @@ public class ComponentModelConverter : JsonConverter<ComponentModel>
         string? id = null;
         string? type = null;
         Dictionary<string, string>? dataModelBindings = null;
-        List<string>? childIds = null;
-        int maxCount = 1; // > 1 is repeating, but might not be specified for non-repeating groups
         LayoutExpression? hidden = null;
         LayoutExpression? required = null;
+        // Custom properities for group
+        List<string>? childIds = null;
+        int maxCount = 1; // > 1 is repeating, but might not be specified for non-repeating groups
+        // Custom properties for Summary
+        string? componentRef = null;
+        string? pageRef = null;
+
+
+        Dictionary<string, JsonElement> extra = new();
+
 
 
         while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
@@ -171,6 +185,8 @@ public class ComponentModelConverter : JsonConverter<ComponentModel>
                 case "datamodelbindings":
                     dataModelBindings = JsonSerializer.Deserialize<Dictionary<string, string>>(ref reader, options);
                     break;
+                // case "textresourcebindings":
+                //     break;
                 case "children":
                     childIds = JsonSerializer.Deserialize<List<string>>(ref reader, options);
                     break;
@@ -183,8 +199,22 @@ public class ComponentModelConverter : JsonConverter<ComponentModel>
                 case "required":
                     required = JsonSerializer.Deserialize<LayoutExpression>(ref reader, options);
                     break;
+                case "componentref":
+                    componentRef = reader.GetString();
+                    break;
+                case "pageref":
+                    pageRef = reader.GetString();
+                    break;
+                // case "optionid":
                 default:
-                    reader.Skip();
+                    if(Debug)
+                    {
+                        extra[propertyName] = JsonElement.ParseValue(ref reader);
+                    }
+                    else
+                    {
+                        reader.Skip();
+                    }
                     // Ignore unknown properties. They only have meaning in frontend
                     break;
             }
@@ -198,32 +228,40 @@ public class ComponentModelConverter : JsonConverter<ComponentModel>
             throw new JsonException("\"type\" property of component should not be null");
         }
 
-        if (type.ToLowerInvariant() == "group")
+        switch (type.ToLowerInvariant())
         {
-            if (childIds is null)
-            {
-                throw new JsonException("Component with \"type\": \"Group\" requires a \"children\" property");
-            }
-            var children = ReadChildren(ref reader, id, childIds, options);
-            if (maxCount > 1)
-            {
-                if (!(dataModelBindings?.ContainsKey("group") ?? false))
+            case "group":
+                if (childIds is null)
                 {
-                    throw new JsonException($"A group id:\"{id}\" with maxCount: {maxCount} does not have a \"group\" dataModelBinding");
+                    throw new JsonException("Component with \"type\": \"Group\" requires a \"children\" property");
                 }
-                return new RepeatingGroupComponent(id, type, dataModelBindings, children, maxCount, hidden, required);
-            }
-            else
-            {
-                return new GroupComponent(id, type, dataModelBindings, children, hidden, required);
-            }
+                var children = ReadChildren(ref reader, id, childIds, options);
+                if (maxCount > 1)
+                {
+                    if (!(dataModelBindings?.ContainsKey("group") ?? false))
+                    {
+                        throw new JsonException($"A group id:\"{id}\" with maxCount: {maxCount} does not have a \"group\" dataModelBinding");
+                    }
+                    return new RepeatingGroupComponent(id, type, dataModelBindings, children, maxCount, hidden, required);
+                }
+                else
+                {
+                    return new GroupComponent(id, type, dataModelBindings, children, hidden, required);
+                }
+            case "summary":
+                if(componentRef is null || pageRef is null)
+                {
+                    throw new JsonException("Component with \"type\": \"Summary\" requires \"componentRef\" and \"pageRef\" properties");
+                }
+                return new SummaryComponent(id, type, hidden, componentRef, pageRef);
+                
         }
-        return new Component(id, type, dataModelBindings, children: null, hidden, required);
+        return new BaseComponent(id, type, dataModelBindings, children: null, hidden, required);
     }
 
-    private List<Component> ReadChildren(ref Utf8JsonReader reader, string parentId, List<string> childIds, JsonSerializerOptions options)
+    private List<BaseComponent> ReadChildren(ref Utf8JsonReader reader, string parentId, List<string> childIds, JsonSerializerOptions options)
     {
-        var ret = new List<Component>();
+        var ret = new List<BaseComponent>();
         foreach (var childId in childIds)
         {
             reader.Read();

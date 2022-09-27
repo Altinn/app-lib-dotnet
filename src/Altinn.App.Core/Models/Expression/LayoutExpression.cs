@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Altinn.App.Core.Features.Expression;
+namespace Altinn.App.Core.Expressions;
 
 /// <summary>
 /// Model for C# representation of a Layout Expression that can be part of a layout and Evaluated with <see cref="ExpressionEvaluator" />

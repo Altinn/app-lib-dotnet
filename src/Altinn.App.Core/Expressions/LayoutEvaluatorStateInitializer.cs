@@ -4,7 +4,7 @@ using Altinn.App.Core.Configuration;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Options;
 
-namespace Altinn.App.Core.Features.Expression;
+namespace Altinn.App.Core.Expressions;
 
 /// <summary>
 /// Utility class for collecting all the services from DI that are needed to initialize <see cref="LayoutEvaluatorState" />

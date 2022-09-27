@@ -3,7 +3,7 @@ using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Features.Expression;
+namespace Altinn.App.Core.Expressions;
 
 /// <summary>
 /// Collection class to hold all the shared state that is required for evaluating expressions in a layout.
@@ -48,7 +48,7 @@ public class LayoutEvaluatorState
         )).ToArray();
     }
 
-    private static ComponentContext GetComponentContextsRecurs(Component component, IDataModelAccessor dataModel, int[] indexes)
+    private static ComponentContext GetComponentContextsRecurs(BaseComponent component, IDataModelAccessor dataModel, int[] indexes)
     {
         if (component.Children?.Any() ?? false)
         {
