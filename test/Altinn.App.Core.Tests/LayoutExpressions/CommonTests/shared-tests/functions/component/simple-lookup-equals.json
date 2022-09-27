@@ -1,0 +1,52 @@
+{
+  "name": "Simple lookup equals other lookup",
+  "expression": {
+    "function": "equals",
+    "args": [
+      {
+        "function": "component",
+        "args": ["my-component"]
+      },
+      {
+        "function": "component",
+        "args": ["my-other-component"]
+      }
+    ]
+  },
+  "expects": true,
+  "layouts": {
+    "Page1": {
+      "$schema": "https://altinncdn.no/schemas/json/layout/layout.schema.v1.json",
+      "data": {
+        "layout": [
+          {
+            "id": "my-component",
+            "type": "Input",
+            "dataModelBindings": {
+              "simpleBinding": "ComponentContent"
+            }
+          },
+          {
+            "id": "my-other-component",
+            "type": "Input",
+            "dataModelBindings": {
+              "simpleBinding": "OtherComponentContent"
+            }
+          },
+          {
+            "id": "current-component",
+            "type": "Paragraph"
+          }
+        ]
+      }
+    }
+  },
+  "dataModel": {
+    "ComponentContent": "hello world",
+    "OtherComponentContent": "hello world"
+  },
+  "context": {
+    "component": "current-component",
+    "currentLayout": "Page1"
+  }
+}
