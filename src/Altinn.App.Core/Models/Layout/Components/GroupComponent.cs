@@ -2,7 +2,9 @@ using System.Collections.Immutable;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Altinn.App.Core.Expressions;
+using Altinn.App.Core.Models.Layout;
+
+namespace Altinn.App.Core.Models.Layout.Components;
 
 public class GroupComponent : BaseComponent
 {

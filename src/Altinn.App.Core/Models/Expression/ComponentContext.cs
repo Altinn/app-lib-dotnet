@@ -1,4 +1,7 @@
-namespace Altinn.App.Core.Expressions;
+using Altinn.App.Core.Expressions;
+using Altinn.App.Core.Models.Layout;
+
+namespace Altinn.App.Core.Models.Expression;
 
 /// <summary>
 /// Simple class for holding the context for <see cref="ExpressionEvaluator"/>
@@ -16,7 +19,7 @@ public sealed class ComponentContext
     }
 
     /// <summary>
-    /// The component from <see cref="ComponentModel"/> that should be used as context
+    /// The component from <see cref="LayoutModel"/> that should be used as context
     /// </summary>
     public BaseComponent Component { get; }
 

@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Text.Json;
 
 using Altinn.App.Core.Expressions;
+using Altinn.App.Core.Helpers.DataModel;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
