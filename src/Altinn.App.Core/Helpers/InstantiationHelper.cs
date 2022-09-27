@@ -136,14 +136,14 @@ namespace Altinn.App.Core.Helpers
         /// <param name="partyList">The party list</param>
         /// <param name="partyId">The party id</param>
         /// <returns>party from the party list</returns>
-        public static Party GetPartyByPartyId(List<Party> partyList, int partyId)
+        public static Party? GetPartyByPartyId(List<Party> partyList, int partyId)
         {
             if (partyList == null)
             {
                 return null;
             }
 
-            Party validParty = null;
+            Party? validParty = null;
 
             foreach (Party party in partyList)
             {

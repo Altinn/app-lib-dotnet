@@ -43,7 +43,7 @@ namespace Altinn.App.Core.Helpers
             Type current = data.GetType();
             bool isLastKey = (keys.Length - 1) == index;
 
-            PropertyInfo property = current.GetProperty(
+            PropertyInfo? property = current.GetProperty(
                key,
                BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
 
@@ -52,7 +52,7 @@ namespace Altinn.App.Core.Helpers
                 return;
             }
 
-            object propertyValue = property.GetValue(data, null);
+            object? propertyValue = property.GetValue(data, null);
 
             if (propertyValue == null)
             {
@@ -61,12 +61,12 @@ namespace Altinn.App.Core.Helpers
 
             if (isLastKey)
             {
-                object defaultValue = property.PropertyType.IsValueType ? Activator.CreateInstance(property.PropertyType) : null;
+                object? defaultValue = property.PropertyType.IsValueType ? Activator.CreateInstance(property.PropertyType) : null;
                 property.SetValue(data, defaultValue);
                 return;
             }
 
-            ResetDataField(keys, property.GetValue(data, null), index + 1);
+            ResetDataField(keys, propertyValue, index + 1);
         }
 
         /// <summary>
@@ -131,13 +131,13 @@ namespace Altinn.App.Core.Helpers
             return updatedValues;
         }
 
-        private static string GetValueFromDatamodel(string[] keys, object data, int index = 0)
+        private static string? GetValueFromDatamodel(string[] keys, object data, int index = 0)
         {
             string key = keys[index];
             bool isLastKey = (keys.Length - 1) == index;
             Type current = data.GetType();
 
-            PropertyInfo property = current.GetProperty(
+            PropertyInfo? property = current.GetProperty(
                key,
                BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
 
@@ -148,10 +148,10 @@ namespace Altinn.App.Core.Helpers
             }
             else
             {
-                object propertyValue = property.GetValue(data, null);
+                object? propertyValue = property.GetValue(data, null);
                 if (isLastKey)
                 {
-                    return propertyValue == null ? (string)propertyValue : propertyValue.ToString();
+                    return propertyValue == null ? null : propertyValue.ToString();
                 }
                 else
                 {
@@ -162,7 +162,7 @@ namespace Altinn.App.Core.Helpers
                     }
 
                     // recurivly assign values
-                    return GetValueFromDatamodel(keys, property.GetValue(data, null), index + 1);
+                    return GetValueFromDatamodel(keys, propertyValue, index + 1);
                 }
             }
         }
