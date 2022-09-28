@@ -13,4 +13,10 @@ public class NullTaskProcessor: ITaskProcessor
     {
         await Task.CompletedTask;
     }
+
+    /// <inheritdoc />
+    public async Task ProcessTaskAbandon(string taskId, Instance instance)
+    {
+        await Task.CompletedTask;
+    }
 }

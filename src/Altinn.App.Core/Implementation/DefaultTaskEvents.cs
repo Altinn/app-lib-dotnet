@@ -151,7 +151,7 @@ public class DefaultTaskEvents : ITaskEvents
     /// <inheritdoc />
     public async Task OnAbandonProcessTask(string taskId, Instance instance)
     {
-        await _taskProcessor.ProcessTaskEnd(taskId, instance);
+        await _taskProcessor.ProcessTaskAbandon(taskId, instance);
         
         _logger.LogInformation(
             $"OnAbandonProcessTask for {instance.Id}. Locking data elements connected to {taskId}");

@@ -13,4 +13,12 @@ public interface ITaskProcessor
     /// <param name="taskId">The taskId</param>
     /// <param name="instance">The instance</param>
     public Task ProcessTaskEnd(string taskId, Instance instance);
+    
+    /// <summary>
+    /// Method for defining custom process on TaskAbandoned event.
+    /// </summary>
+    /// <param name="taskId"></param>
+    /// <param name="instance"></param>
+    /// <returns></returns>
+    public Task ProcessTaskAbandon(string taskId, Instance instance);
 }
