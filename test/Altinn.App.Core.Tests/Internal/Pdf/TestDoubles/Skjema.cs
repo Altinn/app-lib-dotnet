@@ -12,7 +12,6 @@ public class Skjema
     [JsonProperty("melding")]
     [JsonPropertyName("melding")]
     public Dummy Melding { get; set; }
-
   }
 
   public class Dummy
@@ -46,7 +45,6 @@ public class Skjema
     [JsonProperty("toggle")]
     [JsonPropertyName("toggle")]
     public bool Toggle { get; set; }
-
   }
 
   public class ValuesList
@@ -55,7 +53,6 @@ public class Skjema
     [JsonProperty("simple_keyvalues")]
     [JsonPropertyName("simple_keyvalues")]
     public List<SimpleKeyvalues> SimpleKeyvalues { get; set; }
-
   }
 
   public class SimpleKeyvalues
@@ -75,7 +72,6 @@ public class Skjema
     [JsonProperty("intValue")]
     [JsonPropertyName("intValue")]
     public decimal IntValue { get; set; }
-
   }
 
   public class Nested
@@ -89,5 +85,4 @@ public class Skjema
     [JsonProperty("values")]
     [JsonPropertyName("values")]
     public List<SimpleKeyvalues> Values { get; set; }
-
   }

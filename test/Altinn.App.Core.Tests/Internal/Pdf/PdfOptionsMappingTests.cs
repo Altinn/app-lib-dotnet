@@ -26,7 +26,7 @@ public class PdfOptionsMappingTests
         res["repdropdown"]["val"].Should().Be("1-repdropdown-nb");
     }
 
-    private object ReadTestData()
+    private static object ReadTestData()
     {
         System.Xml.Serialization.XmlSerializer reader = new System.Xml.Serialization.XmlSerializer(typeof(Skjema));
         using (StreamReader file = new System.IO.StreamReader(Path.Combine("Internal", "Pdf", "TestData", "data.xml")))

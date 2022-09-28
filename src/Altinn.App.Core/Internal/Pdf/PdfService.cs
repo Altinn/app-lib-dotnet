@@ -33,7 +33,7 @@ namespace Altinn.App.Core.Internal.Pdf
         /// </summary>
         /// <param name="pdfClient">Client for communicating with the Platform PDF service.</param>
         /// <param name="appResources">The service giving access to local resources.</param>
-        /// <param name="appOptionsService">The service responsible for fetching options.</param>
+        /// <param name="pdfOptionsMapping">The service responsible for mapping options.</param>
         /// <param name="dataClient">The data client.</param>
         /// <param name="httpContextAccessor">The httpContextAccessor</param>
         /// <param name="profileClient">The profile client</param>

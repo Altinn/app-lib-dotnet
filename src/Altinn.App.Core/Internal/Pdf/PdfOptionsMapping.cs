@@ -4,15 +4,24 @@ using Newtonsoft.Json.Linq;
 
 namespace Altinn.App.Core.Internal.Pdf;
 
+/// <summary>
+/// Default implementation of IPdfOptionsMapping
+/// </summary>
 public class PdfOptionsMapping: IPdfOptionsMapping
 {
     private readonly IAppOptionsService _appOptionsService;
 
+    /// <summary>
+    /// Create new instance of PdfOptionsMapping
+    /// </summary>
+    /// <param name="appOptionsService"><see cref="IAppOptionsService"/> used to fetch mapped value of option</param>
     public PdfOptionsMapping(IAppOptionsService appOptionsService)
     {
         _appOptionsService = appOptionsService;
     }
     
+    
+    /// <inheritdoc />
     public async Task<Dictionary<string, Dictionary<string, string>>> GetOptionsDictionary(string formLayout, string language, object data, string instanceId)
         {
             IEnumerable<JToken> componentsWithOptionsDefined = GetFormComponentsWithOptionsDefined(formLayout);
@@ -95,8 +104,9 @@ public class PdfOptionsMapping: IPdfOptionsMapping
         private static Dictionary<string, string> GetMappingsForComponent(JToken component)
         {
             var maps = new Dictionary<string, string>();
-            foreach (JProperty map in component.SelectToken("mapping").Children())
+            foreach (var jToken in component.SelectToken("mapping")?.Children()!)
             {
+                var map = (JProperty)jToken;
                 maps.Add(map.Name, map.Value.ToString());
             }
 
