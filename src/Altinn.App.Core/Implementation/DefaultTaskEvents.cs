@@ -23,8 +23,8 @@ public class DefaultTaskEvents : ITaskEvents
     private readonly IAppModel _appModel;
     private readonly IInstantiationProcessor _instantiationProcessor;
     private readonly IInstance _instanceClient;
-    private readonly IEnumerable<ITaskEnd> _taskEnds;
-    private readonly IEnumerable<ITaskAbandon> _taskAbandons;
+    private readonly IEnumerable<IProcessTaskEnd> _taskEnds;
+    private readonly IEnumerable<IProcessTaskAbandon> _taskAbandons;
     private readonly IPdfService _pdfService;
     private readonly IEFormidlingService? _eFormidlingService;
     private readonly AppSettings? _appSettings;
@@ -37,8 +37,8 @@ public class DefaultTaskEvents : ITaskEvents
         IAppModel appModel,
         IInstantiationProcessor instantiationProcessor,
         IInstance instanceClient,
-        IEnumerable<ITaskEnd> taskEnds,
-        IEnumerable<ITaskAbandon> taskAbandons,
+        IEnumerable<IProcessTaskEnd> taskEnds,
+        IEnumerable<IProcessTaskAbandon> taskAbandons,
         IPdfService pdfService,
         IOptions<AppSettings>? appSettings = null,
         IEFormidlingService? eFormidlingService = null)
@@ -109,7 +109,7 @@ public class DefaultTaskEvents : ITaskEvents
     {
         foreach (var taskEnd in _taskEnds)
         {
-            await taskEnd.ProcessEvent(endEvent, instance);
+            await taskEnd.HandleEvent(endEvent, instance);
         }
 
         _logger.LogInformation($"OnEndProcessTask for {instance.Id}. Locking data elements connected to {endEvent} ===========");
@@ -158,7 +158,7 @@ public class DefaultTaskEvents : ITaskEvents
     {
         foreach (var taskAbandon in _taskAbandons)
         {
-            await taskAbandon.ProcessEvent(taskId, instance);
+            await taskAbandon.HandleEvent(taskId, instance);
         }
         
         _logger.LogInformation(
