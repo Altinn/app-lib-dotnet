@@ -17,7 +17,7 @@ public class DefaultTaskEventsTests: IDisposable
 {
     private ILogger<DefaultTaskEvents> logger = NullLogger<DefaultTaskEvents>.Instance;
     private Mock<IAppResources> resMock;
-    private Mock<Application> applicationMock;
+    private Application application;
     private Mock<IData> dataMock;
     private Mock<IPrefill> prefillMock;
     private IAppModel appModel;
@@ -29,9 +29,8 @@ public class DefaultTaskEventsTests: IDisposable
 
     public DefaultTaskEventsTests()
     {
-        applicationMock = new Mock<Application>();
+        application = new Application();
         resMock = new Mock<IAppResources>();
-        resMock.Setup(r => r.GetApplication()).Returns(applicationMock.Object);
         dataMock = new Mock<IData>();
         prefillMock = new Mock<IPrefill>();
         appModel = new DefaultAppModel(NullLogger<DefaultAppModel>.Instance);
@@ -45,6 +44,7 @@ public class DefaultTaskEventsTests: IDisposable
     [Fact]
     public async void OnAbandonProcessTask_handles_no_IProcessTaskAbandon_injected()
     {
+        resMock.Setup(r => r.GetApplication()).Returns(application);
         DefaultTaskEvents te = new DefaultTaskEvents(
             logger,
             resMock.Object,
@@ -56,12 +56,13 @@ public class DefaultTaskEventsTests: IDisposable
             taskEnds,
             taskAbandons,
             pdfMock.Object);
-        te.OnAbandonProcessTask("Task_1", new Instance());
+        await te.OnAbandonProcessTask("Task_1", new Instance());
     }
     
     [Fact]
     public async void OnAbandonProcessTask_calls_all_added_implementations()
     {
+        resMock.Setup(r => r.GetApplication()).Returns(application);
         Mock<IProcessTaskAbandon> abandonOne = new Mock<IProcessTaskAbandon>();
         Mock<IProcessTaskAbandon> abandonTwo = new Mock<IProcessTaskAbandon>();
         taskAbandons = new List<IProcessTaskAbandon>() { abandonOne.Object, abandonTwo.Object };
@@ -77,18 +78,47 @@ public class DefaultTaskEventsTests: IDisposable
             taskAbandons,
             pdfMock.Object);
         var instance = new Instance();
-        te.OnAbandonProcessTask("Task_1", instance);
+        await te.OnAbandonProcessTask("Task_1", instance);
         abandonOne.Verify(a => a.HandleEvent("Task_1", instance));
         abandonTwo.Verify(a => a.HandleEvent("Task_1", instance));
         abandonOne.VerifyNoOtherCalls();
         abandonTwo.VerifyNoOtherCalls();
     }
 
+    [Fact]
+    public async void OnEndProcessTask_calls_all_added_implementations_of_IProcessTaskEnd()
+    {
+        application.DataTypes = new List<DataType>();
+        resMock.Setup(r => r.GetApplication()).Returns(application);
+        Mock<IProcessTaskEnd> endOne = new Mock<IProcessTaskEnd>();
+        Mock<IProcessTaskEnd> endTwo = new Mock<IProcessTaskEnd>();
+        taskEnds = new List<IProcessTaskEnd>() { endOne.Object, endTwo.Object };
+        DefaultTaskEvents te = new DefaultTaskEvents(
+            logger,
+            resMock.Object,
+            dataMock.Object,
+            prefillMock.Object,
+            appModel,
+            instantiationMock.Object,
+            instanceMock.Object,
+            taskEnds,
+            taskAbandons,
+            pdfMock.Object);
+        var instance = new Instance()
+        {
+            Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d"
+        };
+        await te.OnEndProcessTask("Task_1", instance);
+        endOne.Verify(a => a.HandleEvent("Task_1", instance));
+        endTwo.Verify(a => a.HandleEvent("Task_1", instance));
+        endOne.VerifyNoOtherCalls();
+        endTwo.VerifyNoOtherCalls();
+    }
+
     public void Dispose()
     {
         resMock.Verify(r => r.GetApplication());
         resMock.VerifyNoOtherCalls();
-        applicationMock.VerifyNoOtherCalls();
         dataMock.VerifyNoOtherCalls();
         prefillMock.VerifyNoOtherCalls();
         instantiationMock.VerifyNoOtherCalls();
