@@ -13,5 +13,5 @@ public interface IProcessTaskAbandon
     /// <param name="taskId"></param>
     /// <param name="instance"></param>
     /// <returns></returns>
-    public Task HandleEvent(string taskId, Instance instance);
+    public Task Abandon(string taskId, Instance instance);
 }

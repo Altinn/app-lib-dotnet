@@ -79,8 +79,8 @@ public class DefaultTaskEventsTests: IDisposable
             _pdfMock.Object);
         var instance = new Instance();
         await te.OnAbandonProcessTask("Task_1", instance);
-        abandonOne.Verify(a => a.HandleEvent("Task_1", instance));
-        abandonTwo.Verify(a => a.HandleEvent("Task_1", instance));
+        abandonOne.Verify(a => a.Abandon("Task_1", instance));
+        abandonTwo.Verify(a => a.Abandon("Task_1", instance));
         abandonOne.VerifyNoOtherCalls();
         abandonTwo.VerifyNoOtherCalls();
     }
@@ -109,8 +109,8 @@ public class DefaultTaskEventsTests: IDisposable
             Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d"
         };
         await te.OnEndProcessTask("Task_1", instance);
-        endOne.Verify(a => a.HandleEvent("Task_1", instance));
-        endTwo.Verify(a => a.HandleEvent("Task_1", instance));
+        endOne.Verify(a => a.End("Task_1", instance));
+        endTwo.Verify(a => a.End("Task_1", instance));
         endOne.VerifyNoOtherCalls();
         endTwo.VerifyNoOtherCalls();
     }

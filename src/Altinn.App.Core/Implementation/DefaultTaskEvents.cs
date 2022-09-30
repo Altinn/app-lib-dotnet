@@ -109,7 +109,7 @@ public class DefaultTaskEvents : ITaskEvents
     {
         foreach (var taskEnd in _taskEnds)
         {
-            await taskEnd.HandleEvent(endEvent, instance);
+            await taskEnd.End(endEvent, instance);
         }
 
         _logger.LogInformation($"OnEndProcessTask for {instance.Id}. Locking data elements connected to {endEvent} ===========");
@@ -158,7 +158,7 @@ public class DefaultTaskEvents : ITaskEvents
     {
         foreach (var taskAbandon in _taskAbandons)
         {
-            await taskAbandon.HandleEvent(taskId, instance);
+            await taskAbandon.Abandon(taskId, instance);
         }
         
         _logger.LogInformation(
