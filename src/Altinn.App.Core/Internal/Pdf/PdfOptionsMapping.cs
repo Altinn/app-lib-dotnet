@@ -20,23 +20,26 @@ public class PdfOptionsMapping : IPdfOptionsMapping
     {
         _appOptionsService = appOptionsService;
     }
-    
-    
+
+
     /// <inheritdoc />
-    public async Task<Dictionary<string, Dictionary<string, string>>> GetOptionsDictionary(string formLayout, string language, object data, string instanceId)
+    public async Task<Dictionary<string, Dictionary<string, string>>> GetOptionsDictionary(string formLayout,
+        string language, object data, string instanceId)
     {
         IEnumerable<JToken> componentsWithOptionsDefined = GetFormComponentsWithOptionsDefined(formLayout);
 
-        Dictionary<string, Dictionary<string, string>> dictionary = new Dictionary<string, Dictionary<string, string>>();
+        Dictionary<string, Dictionary<string, string>>
+            dictionary = new Dictionary<string, Dictionary<string, string>>();
 
         foreach (JToken component in componentsWithOptionsDefined)
         {
-            string optionsId = component.SelectToken("optionsId").Value<string>();
+            string? optionsId = component.SelectToken("optionsId")?.Value<string>();
+            if (optionsId == null)
+                break;
             bool hasMappings = component.SelectToken("mapping") != null;
             var secureToken = component.SelectToken("secure");
             bool isSecureOptions = secureToken != null && secureToken.Value<bool>();
-            Dictionary<string, List<string>> keyValues = new Dictionary<string, List<string>>();
-            keyValues = hasMappings
+            Dictionary<string, List<string>> keyValues = hasMappings
                 ? GetComponentKeyValuePairs(component, data)
                 : new Dictionary<string, List<string>>();
 
@@ -48,7 +51,7 @@ public class PdfOptionsMapping : IPdfOptionsMapping
 
     private async Task GetMappingsForComponent(string language, string instanceId,
         Dictionary<string, List<string>> mappings,
-        bool isSecureOptions, string? optionsId, Dictionary<string, Dictionary<string, string>> dictionary)
+        bool isSecureOptions, string optionsId, Dictionary<string, Dictionary<string, string>> dictionary)
     {
         if (!dictionary.ContainsKey(optionsId))
         {
