@@ -194,7 +194,6 @@ namespace Altinn.App.Core.Implementation
                             break;
                         case InstanceEventType.process_EndTask:
                             await task.HandleTaskComplete(processChangeContext);
-                            await _instanceClient.UpdateProcess(processChangeContext.Instance);
                             break;
                         case InstanceEventType.process_AbandonTask:
                             await task.HandleTaskAbandon(processChangeContext);
