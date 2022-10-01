@@ -163,7 +163,6 @@ namespace Altinn.App.Core.Implementation
 
             // need to update the instance process and then the instance in case appbase has changed it, e.g. endEvent sets status.archived
             Instance updatedInstance = await _instanceClient.UpdateProcess(processChangeContext.Instance);
-           
             await _processService.DispatchProcessEventsToStorage(updatedInstance, processChangeContext.ProcessStateChange.Events);
 
             // remember to get the instance anew since AppBase can have updated a data element or stored something in the database.
