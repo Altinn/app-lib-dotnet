@@ -1,3 +1,4 @@
+using Altinn.App.Core.Infrastructure.Clients.Events;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Interface
@@ -11,5 +12,10 @@ namespace Altinn.App.Core.Interface
         /// Adds a new event to the events published by the Events component.
         /// </summary>
         Task<string> AddEvent(string eventType, Instance instance);
+
+        /// <summary>
+        /// Adds a new event subscription in the Events component.
+        /// </summary>
+        Task<Subscription> AddSubscription(string org, string app, string eventType);
     }
 }

@@ -1,5 +1,8 @@
+using Altinn.App.Controllers;
 using Altinn.App.Core.EFormidling.Implementation;
 using Altinn.App.Core.EFormidling.Interface;
+using Altinn.App.Core.Features;
+using Altinn.App.Core.Internal.Events;
 using Altinn.Common.EFormidlingClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,6 +28,8 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IEFormidlingService, DefaultEFormidlingService>();
         services.Configure<Altinn.Common.EFormidlingClient.Configuration.EFormidlingClientSettings>(configuration.GetSection("EFormidlingClientSettings"));
         services.AddTransient(typeof(IEFormidlingMetadata), typeof(TM));
+        services.AddTransient<IEventHandlerResolver, EventHandlerResolver>();
+        services.AddTransient<IEventHandler, EformidlingStatusCheckEventHandler>();
     }
     
     /// <summary>
@@ -42,5 +47,7 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IEFormidlingService, DefaultEFormidlingService>();
         services.Configure<Altinn.Common.EFormidlingClient.Configuration.EFormidlingClientSettings>(configuration.GetSection("EFormidlingClientSettings"));
         services.AddTransient(typeof(IEFormidlingMetadata), typeof(TM));
+        services.AddTransient<IEventHandlerResolver, EventHandlerResolver>();
+        services.AddTransient<IEventHandler, EformidlingStatusCheckEventHandler>();
     }
 }
