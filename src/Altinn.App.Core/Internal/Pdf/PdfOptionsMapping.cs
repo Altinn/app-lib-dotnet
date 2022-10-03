@@ -23,25 +23,21 @@ public class PdfOptionsMapping : IPdfOptionsMapping
 
 
     /// <inheritdoc />
-    public async Task<Dictionary<string, Dictionary<string, string>>> GetOptionsDictionary(string formLayout,
-        string language, object data, string instanceId)
+    public async Task<Dictionary<string, Dictionary<string, string>>> GetOptionsDictionary(string formLayout, string language, object data, string instanceId)
     {
         IEnumerable<JToken> componentsWithOptionsDefined = GetFormComponentsWithOptionsDefined(formLayout);
 
-        Dictionary<string, Dictionary<string, string>>
-            dictionary = new Dictionary<string, Dictionary<string, string>>();
+        Dictionary<string, Dictionary<string, string>> dictionary = new Dictionary<string, Dictionary<string, string>>();
 
         foreach (JToken component in componentsWithOptionsDefined)
         {
             string? optionsId = component.SelectToken("optionsId")?.Value<string>();
             if (optionsId == null)
-                break;
+                continue;
             bool hasMappings = component.SelectToken("mapping") != null;
             var secureToken = component.SelectToken("secure");
             bool isSecureOptions = secureToken != null && secureToken.Value<bool>();
-            Dictionary<string, List<string>> keyValues = hasMappings
-                ? GetComponentKeyValuePairs(component, data)
-                : new Dictionary<string, List<string>>();
+            Dictionary<string, List<string>> keyValues = hasMappings ? GetComponentKeyValuePairs(component, data) : new Dictionary<string, List<string>>();
 
             await GetMappingsForComponent(language, instanceId, keyValues, isSecureOptions, optionsId, dictionary);
         }
@@ -49,9 +45,7 @@ public class PdfOptionsMapping : IPdfOptionsMapping
         return dictionary;
     }
 
-    private async Task GetMappingsForComponent(string language, string instanceId,
-        Dictionary<string, List<string>> mappings,
-        bool isSecureOptions, string optionsId, Dictionary<string, Dictionary<string, string>> dictionary)
+    private async Task GetMappingsForComponent(string language, string instanceId, Dictionary<string, List<string>> mappings, bool isSecureOptions, string optionsId, Dictionary<string, Dictionary<string, string>> dictionary)
     {
         if (!dictionary.ContainsKey(optionsId))
         {
@@ -61,8 +55,7 @@ public class PdfOptionsMapping : IPdfOptionsMapping
         var instanceIdentifier = new InstanceIdentifier(instanceId);
         if (mappings.IsNullOrEmpty())
         {
-            AppOptions appOptions = await GetOptions(isSecureOptions, instanceIdentifier, optionsId, language,
-                new Dictionary<string, string>());
+            AppOptions appOptions = await GetOptions(isSecureOptions, instanceIdentifier, optionsId, language, new Dictionary<string, string>());
             AppendOptionsToDictionary(dictionary[optionsId], appOptions.Options);
             return;
         }
@@ -71,29 +64,22 @@ public class PdfOptionsMapping : IPdfOptionsMapping
         {
             foreach (var value in pair.Value)
             {
-                AppOptions appOptions = await GetOptions(isSecureOptions, instanceIdentifier, optionsId, language,
-                    new Dictionary<string, string>() { { pair.Key, value } });
+                AppOptions appOptions = await GetOptions(isSecureOptions, instanceIdentifier, optionsId, language, new Dictionary<string, string>() { { pair.Key, value } });
 
                 AppendOptionsToDictionary(dictionary[optionsId], appOptions.Options);
             }
         }
     }
 
-    private async Task<AppOptions> GetOptions(bool isSecure, InstanceIdentifier instanceIdentifier, string optionsId,
-        string language,
-        Dictionary<string, string> mappings)
+    private async Task<AppOptions> GetOptions(bool isSecure, InstanceIdentifier instanceIdentifier, string optionsId, string language, Dictionary<string, string> mappings)
     {
         if (isSecure)
         {
-            return await _appOptionsService.GetOptionsAsync(instanceIdentifier, optionsId,
-                language,
-                mappings);
+            return await _appOptionsService.GetOptionsAsync(instanceIdentifier, optionsId, language, mappings);
         }
         else
         {
-            return await _appOptionsService.GetOptionsAsync(optionsId,
-                language,
-                mappings);
+            return await _appOptionsService.GetOptionsAsync(optionsId, language, mappings);
         }
     }
 
@@ -163,8 +149,7 @@ public class PdfOptionsMapping : IPdfOptionsMapping
             string select = map.Key.Replace(replaceText, i.ToString());
             if (MappingHasRepeatingGroup(select))
             {
-                selectedDatas.AddRange(GetMappingValues(jsonData,
-                    new KeyValuePair<string, string>(select, map.Value), depth + 1));
+                selectedDatas.AddRange(GetMappingValues(jsonData, new KeyValuePair<string, string>(select, map.Value), depth + 1));
             }
             else
             {
