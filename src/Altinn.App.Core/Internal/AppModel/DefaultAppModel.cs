@@ -27,6 +27,6 @@ public class DefaultAppModel: IAppModel
     public Type GetModelType(string classRef)
     {
         _logger.LogInformation($"GetAppModelType {classRef}");
-        return Assembly.GetEntryAssembly()?.GetType(classRef) ?? throw new Exception("App model of type {classRef} does not exist");
+        return Assembly.GetEntryAssembly()!.GetType(classRef, true)!;
     }
 }
