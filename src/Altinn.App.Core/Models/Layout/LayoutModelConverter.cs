@@ -169,6 +169,10 @@ public class LayoutModelConverter : JsonConverter<LayoutModel>
         // Custom properties for Summary
         string? componentRef = null;
         string? pageRef = null;
+        // Custom properties for components with optionId or literal options
+        string? optionId = null;
+        List<AppOption>? literalOptions = null;
+        bool secure = false;
 
         // extra properties that are not stored in a specific class.
         Dictionary<string, JsonElement> extra = new();
@@ -215,7 +219,15 @@ public class LayoutModelConverter : JsonConverter<LayoutModel>
                 case "pageref":
                     pageRef = reader.GetString();
                     break;
-                // case "optionid":
+                case "optionid":
+                    optionId = reader.GetString();
+                    break;
+                case "options":
+                    literalOptions = JsonSerializer.Deserialize<List<AppOption>>(ref reader, options);
+                    break;
+                case "secure":
+                    secure = reader.TokenType == JsonTokenType.True;
+                    break;
                 default:
                     extra[propertyName] = JsonElement.ParseValue(ref reader);
                     break;
@@ -258,6 +270,23 @@ public class LayoutModelConverter : JsonConverter<LayoutModel>
                 }
 
                 return new SummaryComponent(id, type, hidden, componentRef, pageRef, extra);
+            case "checkboxes":
+            case "radiobuttons":
+            case "dropdown":
+                if (optionId is null && literalOptions is null)
+                {
+                    throw new JsonException("\"optionId\" or \"options\" is required on checkboxes, radiobuttons and dropdowns");
+                }
+                if (optionId is null || literalOptions is null)
+                {
+                    throw new JsonException("\"optionId\" and \"options\" can't both be specified");
+                }
+                if (literalOptions is not null && secure)
+                {
+                    throw new JsonException("\"secure\": true is invalid for components with literal \"options\"");
+                }
+
+                return new OptionsComponent(id, type, hidden, optionId, literalOptions, secure, extra);
         }
 
         // Most compoents are handled as BaseComponent
