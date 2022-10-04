@@ -11,8 +11,14 @@ namespace Altinn.App.Core.Models.Layout;
 [JsonConverter(typeof(LayoutModelConverter))]
 public class LayoutModel
 {
+    /// <summary>
+    /// Dictionary to hold the different pages that are part of this LayoutModel
+    /// </summary>
     public Dictionary<string, PageComponent> Pages { get; init; } = new Dictionary<string, PageComponent>();
 
+    /// <summary>
+    /// Get a specific component on a specifc page.
+    /// </summary>
     public BaseComponent GetComponent(string pageName, string componentId)
     {
         if (!Pages.TryGetValue(pageName, out var page))
@@ -32,15 +38,20 @@ public class LayoutModel
     /// </summary>
     public IEnumerable<BaseComponent> GetComponents()
     {
+        // Use a stack in order to implement a depth first search
         var nodes = new Stack<BaseComponent>(Pages.Values);
         while (nodes.Any())
         {
             var node = nodes.Pop();
             yield return node;
-            foreach (var n in node.Children) nodes.Push(n);
+            if(node is GroupComponent groupNode)
+            foreach (var n in groupNode.Children) nodes.Push(n);
         }
     }
 
+    /// <summary>
+    /// Get data from the `simpleBinding` property of a component on the same page
+    /// </summary>
     public object? GetComponentData(string componentId, ComponentContext context, IDataModelAccessor dataModel)
     {
         if (context.Component is GroupComponent)

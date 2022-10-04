@@ -2,7 +2,7 @@ using System.Collections.Immutable;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-using Altinn.App.Core.Models.Layout;
+using Altinn.App.Core.Models.Expression;
 
 namespace Altinn.App.Core.Models.Layout.Components;
 
@@ -11,11 +11,17 @@ namespace Altinn.App.Core.Models.Layout.Components;
 /// </summary>
 public class RepeatingGroupComponent : GroupComponent
 {
-    public RepeatingGroupComponent(string id, string type, IReadOnlyDictionary<string, string>? dataModelBindings, IEnumerable<BaseComponent> children, int maxCount, LayoutExpression? hidden, LayoutExpression? required) :
-        base(id, type, dataModelBindings, children, hidden, required)
+    /// <summary>
+    /// Constructor for RepeatingGroupComponent
+    /// </summary>
+    public RepeatingGroupComponent(string id, string type, IReadOnlyDictionary<string, string>? dataModelBindings, IEnumerable<BaseComponent> children, int maxCount, LayoutExpression? hidden, LayoutExpression? required, IReadOnlyDictionary<string, JsonElement> extra) :
+        base(id, type, dataModelBindings, children, hidden, required, extra)
     {
         MaxCount = maxCount;
     }
 
+    /// <summary>
+    /// Maximum number of repeatitions of this repating group
+    /// </summary>
     public int MaxCount { get; }
 }

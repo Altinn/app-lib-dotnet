@@ -8,31 +8,26 @@ namespace Altinn.App.Core.Models.Layout;
 
 
 /// <summary>
-/// Inteface to be able to handle all component groups the same way.
+/// Inteface to be able to handle all most components same way.
 /// </summary>
 /// <remarks>
-/// Includes <see cref="Children" /> and other properties that might be
-/// null for some types of components. We include them at Base level,
-/// because they have a common meaning and having a separate level
-/// complicates client the codes that traverses components.
+/// See <see cref="GroupComponent" /> for any components that handle children.
+/// Includes <see cref="DataModelBindings" /> that will be initialized to an empty dictionary
+/// for components that don't have them.
 /// </remarks>
 public class BaseComponent
 {
     /// <summary>
     /// Constructor that ensures n
     /// </summary>
-    public BaseComponent(string id, string type, IReadOnlyDictionary<string, string>? dataModelBindings, IEnumerable<BaseComponent>? children, LayoutExpression? hidden, LayoutExpression? required)
+    public BaseComponent(string id, string type, IReadOnlyDictionary<string, string>? dataModelBindings, LayoutExpression? hidden, LayoutExpression? required, IReadOnlyDictionary<string, JsonElement>? extra)
     {
         Id = id;
         Type = type;
         DataModelBindings = dataModelBindings ?? ImmutableDictionary<string, string>.Empty;
         Hidden = hidden;
         Required = required;
-        Children = children ?? Enumerable.Empty<BaseComponent>();
-        foreach (var child in Children)
-        {
-            child.Parent = this;
-        }
+        Extra = extra ?? ImmutableDictionary<string, JsonElement>.Empty;
     }
     /// <summary>
     /// ID of the component (or pagename for pages)
@@ -72,13 +67,13 @@ public class BaseComponent
     public IReadOnlyDictionary<string, string> DataModelBindings { get; }
 
     /// <summary>
-    /// 
+    /// The group or page that this component is part of. NULL for page components
     /// </summary>
     public BaseComponent? Parent { get; internal set; }
 
     /// <summary>
-    /// The children in this group/page
+    /// Extra properties that are not modelled explicitly as a class that inhertits from <see cref="BaseComponent" />
     /// </summary>
-    public IEnumerable<BaseComponent> Children { get; internal set; }
+    public IReadOnlyDictionary<string, JsonElement> Extra { get; set; }
 }
 
