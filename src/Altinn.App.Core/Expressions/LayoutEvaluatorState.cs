@@ -53,16 +53,16 @@ public class LayoutEvaluatorState
 
     private static ComponentContext GetComponentContextsRecurs(BaseComponent component, IDataModelAccessor dataModel, int[] indexes)
     {
-        if (component.Children?.Any() ?? false)
+        if (component is GroupComponent groupComponent && groupComponent.Children.Any())
         {
             var children = new List<ComponentContext>();
 
-            if (component.DataModelBindings.TryGetValue("group", out var groupBinding))
+            if (groupComponent.DataModelBindings.TryGetValue("group", out var groupBinding))
             {
                 var rowLength = dataModel.GetModelDataCount(groupBinding, indexes.ToArray()) ?? 0;
                 foreach (var index in Enumerable.Range(0, rowLength))
                 {
-                    foreach (var child in component.Children)
+                    foreach (var child in groupComponent.Children)
                     {
                         // concatenate [...indexes, index]
                         var subIndexes = new int[indexes.Length + 1];
@@ -75,7 +75,7 @@ public class LayoutEvaluatorState
             }
             else
             {
-                foreach (var child in component.Children)
+                foreach (var child in groupComponent.Children)
                 {
                     children.Add(GetComponentContextsRecurs(child, dataModel, indexes));
                 }
@@ -112,7 +112,7 @@ public class LayoutEvaluatorState
     }
 
     /// <summary>
-    /// Get data from the `simpleBinding` property of 
+    /// Get data from the `simpleBinding` property of a component on the same page
     /// </summary>
     public object? GetComponentData(string key, ComponentContext context)
     {
