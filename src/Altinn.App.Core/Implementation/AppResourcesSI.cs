@@ -263,7 +263,7 @@ namespace Altinn.App.Core.Implementation
                 return layoutSettings;
             }
 
-            throw new Exception($"Could not find file in {filename}");
+            throw new FileNotFoundException($"Could not find layoutsettings file: {filename}");
         }
 
         /// <inheritdoc />
