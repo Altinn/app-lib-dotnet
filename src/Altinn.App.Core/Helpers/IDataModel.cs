@@ -19,12 +19,12 @@ public interface IDataModelAccessor
     /// "Bedrifter[1].Ansatte.Alder", will fail, because the indicies will be reset
     /// after an inline index is used
     /// </remarks>
-    object? GetModelData(string key, ReadOnlySpan<int> indicies = default, bool throwOnError = false);
+    object? GetModelData(string key, ReadOnlySpan<int> indicies = default);
 
     /// <summary>
     /// Get the count of data elements set in a group (enumerable)
     /// </summary>
-    int? GetModelDataCount(string key, ReadOnlySpan<int> indicies = default, bool throwOnError = false);
+    int? GetModelDataCount(string key, ReadOnlySpan<int> indicies = default);
 
     /// <summary>
     /// Return a full dataModelBiding from a context aware binding by adding indicies
@@ -34,12 +34,17 @@ public interface IDataModelAccessor
     /// indicies = [1,2]
     /// => "bedrift[1].ansatte[2].navn"
     /// </example>
-    string AddIndicies(string key, ReadOnlySpan<int> indicies = default, bool throwOnError = false);
+    string AddIndicies(string key, ReadOnlySpan<int> indicies = default);
 
     /// <summary>
     /// Remove a value from the wrapped datamodel
     /// </summary>
-    void RemoveField(string key, bool throwOnError = false);
+    void RemoveField(string key);
+
+    /// <summary>
+    /// Verify that a Key is a valid lookup for the datamodel 
+    /// </summary>
+    bool VerifyKey(string key);
 }
 
 
