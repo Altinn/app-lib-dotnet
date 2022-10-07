@@ -18,7 +18,7 @@ public static class LayoutEvaluator
 
         foreach (var context in state.GetComponentContexts())
         {
-            HiddenFieldsForRemovalReucrs(state, hiddenModelBindings, nonHiddenModelBindings, context);
+            HiddenFieldsForRemovalReucrs(state, hiddenModelBindings, nonHiddenModelBindings, context, parentHidden: false);
         }
 
         var forRemoval = hiddenModelBindings.Except(nonHiddenModelBindings);
@@ -26,29 +26,26 @@ public static class LayoutEvaluator
         return existsForRemoval.ToList();
     }
 
-    private static void HiddenFieldsForRemovalReucrs(LayoutEvaluatorState state, HashSet<string> hiddenModelBindings, HashSet<string> nonHiddenModelBindings, ComponentContext context)
+    private static void HiddenFieldsForRemovalReucrs(LayoutEvaluatorState state, HashSet<string> hiddenModelBindings, HashSet<string> nonHiddenModelBindings, ComponentContext context, bool parentHidden)
     {
+        var hidden = parentHidden || ExpressionEvaluator.EvaluateBooleanExpression(state, context, "hidden", false);
 
-        //TODO: Hidden should cascade
         foreach (var childContext in context.ChildContexts)
         {
-            HiddenFieldsForRemovalReucrs(state, hiddenModelBindings, nonHiddenModelBindings, childContext);
+            HiddenFieldsForRemovalReucrs(state, hiddenModelBindings, nonHiddenModelBindings, childContext, hidden);
         }
 
         foreach (var binding in context.Component.DataModelBindings.Values)
         {
-            var hidden = ExpressionEvaluator.EvaluateBooleanExpression(state, context, "hidden", false);
             var indexed_binding = state.AddInidicies(binding, context);
-            if (indexed_binding is not null)
+
+            if (hidden)
             {
-                if (hidden)
-                {
-                    hiddenModelBindings.Add(indexed_binding);
-                }
-                else
-                {
-                    nonHiddenModelBindings.Add(indexed_binding);
-                }
+                hiddenModelBindings.Add(indexed_binding);
+            }
+            else
+            {
+                nonHiddenModelBindings.Add(indexed_binding);
             }
         }
     }
@@ -95,7 +92,6 @@ public static class LayoutEvaluator
             {
                 foreach (var (bindingName, binding) in context.Component.DataModelBindings)
                 {
-                    var indexedBinding = state.AddInidicies(binding, context);
                     if (state.GetModelData(binding, context) is null)
                     {
                         validationIssues.Add(new ValidationIssue()
