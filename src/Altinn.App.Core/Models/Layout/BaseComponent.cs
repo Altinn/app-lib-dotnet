@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using System.Text.Json;
 
-using Altinn.App.Core.Models.Expression;
+using Altinn.App.Core.Models.Expressions;
 
 namespace Altinn.App.Core.Models.Layout;
 
@@ -19,7 +19,7 @@ public class BaseComponent
     /// <summary>
     /// Constructor that ensures n
     /// </summary>
-    public BaseComponent(string id, string type, IReadOnlyDictionary<string, string>? dataModelBindings, LayoutExpression? hidden, LayoutExpression? required, LayoutExpression? readOnly, IReadOnlyDictionary<string, string>? extra)
+    public BaseComponent(string id, string type, IReadOnlyDictionary<string, string>? dataModelBindings, Expression? hidden, Expression? required, Expression? readOnly, IReadOnlyDictionary<string, string>? extra)
     {
         Id = id;
         Type = type;
@@ -54,17 +54,17 @@ public class BaseComponent
     /// <summary>
     /// Layout Expression that can be evaluated to see if component should be hidden
     /// </summary>
-    public LayoutExpression? Hidden { get; }
+    public Expression? Hidden { get; }
 
     /// <summary>
     /// Layout Expression that can be evaluated to see if component should be required
     /// </summary>
-    public LayoutExpression? Required { get; }
+    public Expression? Required { get; }
 
     /// <summary>
     /// Layout Expression that can be evaluated to see if component should be read only
     /// </summary>
-    public LayoutExpression? ReadOnly { get; }
+    public Expression? ReadOnly { get; }
 
     /// <summary>
     /// Data model bindings for the component or group

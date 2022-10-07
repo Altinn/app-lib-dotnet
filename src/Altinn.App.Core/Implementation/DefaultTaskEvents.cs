@@ -141,7 +141,7 @@ public class DefaultTaskEvents : ITaskEvents
                 
 
                 // Remove hidden data before validation
-                //TODO: Figure out the layout set id from task name
+                // TODO: Figure out the layout set id from task name
                 var evaluationState = await _layoutEvaluatorStateInitializer.Init(instance, (object)data, layoutSetId: null);
                 LayoutEvaluator.RemoveHiddenData(evaluationState);
 

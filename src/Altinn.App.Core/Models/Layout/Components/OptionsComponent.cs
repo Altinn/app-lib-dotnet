@@ -2,7 +2,7 @@ using System.Collections.Immutable;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-using Altinn.App.Core.Models.Expression;
+using Altinn.App.Core.Models.Expressions;
 
 namespace Altinn.App.Core.Models.Layout.Components;
 
@@ -29,7 +29,7 @@ public class OptionsComponent : BaseComponent
     /// <summary>
     /// Constructor
     /// </summary>
-    public OptionsComponent(string id, string type, IReadOnlyDictionary<string, string>? dataModelBindings, LayoutExpression? hidden, LayoutExpression? required, LayoutExpression? readOnly, string? optionId, List<AppOption>? options, bool secure, IReadOnlyDictionary<string, string>? extra) :
+    public OptionsComponent(string id, string type, IReadOnlyDictionary<string, string>? dataModelBindings, Expression? hidden, Expression? required, Expression? readOnly, string? optionId, List<AppOption>? options, bool secure, IReadOnlyDictionary<string, string>? extra) :
         base(id, type, dataModelBindings, hidden, required, readOnly, extra)
     {
         OptionId = optionId;

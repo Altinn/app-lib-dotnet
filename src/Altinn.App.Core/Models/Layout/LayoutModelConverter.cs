@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 using Altinn.App.Core.Helpers.Extensions;
 using Altinn.App.Core.Models.Layout.Components;
-using Altinn.App.Core.Models.Expression;
+using Altinn.App.Core.Models.Expressions;
 
 namespace Altinn.App.Core.Models.Layout;
 /// <summary>
@@ -88,9 +88,9 @@ public class LayoutModelConverter : JsonConverter<LayoutModel>
         var componentLookup = new Dictionary<string, BaseComponent>();
 
         // Hidden is the only property that cascades.
-        LayoutExpression? hidden = null;
-        LayoutExpression? required = null;
-        LayoutExpression? readOnly = null;
+        Expression? hidden = null;
+        Expression? required = null;
+        Expression? readOnly = null;
 
         // extra properties that are not stored in a specific class.
 
@@ -116,13 +116,13 @@ public class LayoutModelConverter : JsonConverter<LayoutModel>
                     ReadLayout(ref reader, components, componentLookup, options);
                     break;
                 case "hidden":
-                    hidden = JsonSerializer.Deserialize<LayoutExpression>(ref reader, options);
+                    hidden = JsonSerializer.Deserialize<Expression>(ref reader, options);
                     break;
                 case "required":
-                    required = JsonSerializer.Deserialize<LayoutExpression>(ref reader, options);
+                    required = JsonSerializer.Deserialize<Expression>(ref reader, options);
                     break;
                 case "readonly":
-                    readOnly = JsonSerializer.Deserialize<LayoutExpression>(ref reader, options);
+                    readOnly = JsonSerializer.Deserialize<Expression>(ref reader, options);
                     break;
                 default:
 #if DEBUG
@@ -179,9 +179,9 @@ public class LayoutModelConverter : JsonConverter<LayoutModel>
         string? id = null;
         string? type = null;
         Dictionary<string, string>? dataModelBindings = null;
-        LayoutExpression? hidden = null;
-        LayoutExpression? required = null;
-        LayoutExpression? readOnly = null;
+        Expression? hidden = null;
+        Expression? required = null;
+        Expression? readOnly = null;
         // Custom properities for group
         List<string>? childIds = null;
         int maxCount = 1; // > 1 is repeating, but might not be specified for non-repeating groups
@@ -231,13 +231,13 @@ public class LayoutModelConverter : JsonConverter<LayoutModel>
                     maxCount = reader.GetInt32();
                     break;
                 case "hidden":
-                    hidden = JsonSerializer.Deserialize<LayoutExpression>(ref reader, options);
+                    hidden = JsonSerializer.Deserialize<Expression>(ref reader, options);
                     break;
                 case "required":
-                    required = JsonSerializer.Deserialize<LayoutExpression>(ref reader, options);
+                    required = JsonSerializer.Deserialize<Expression>(ref reader, options);
                     break;
                 case "readonly":
-                    readOnly = JsonSerializer.Deserialize<LayoutExpression>(ref reader, options);
+                    readOnly = JsonSerializer.Deserialize<Expression>(ref reader, options);
                     break;
                 // summary
                 case "componentref":

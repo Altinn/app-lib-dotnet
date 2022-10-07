@@ -46,7 +46,7 @@ public class Test1
     {
         var state = await LayoutTestUtils.GetLayoutModelTools(new DataModel { Some = new() { Data = new() { Binding = "don't hide second page", Binding2 = 1235 } } }, "Test1");
         var validationIssues = LayoutEvaluator.RunLayoutValidationsForRequired(state, dataElementId: "dummy");
-        validationIssues.Should().BeEquivalentTo(new object[] { new {Code = "required", Field="some.data.binding3"} });
+        validationIssues.Should().BeEquivalentTo(new object[] { new { Code = "required", Field = "some.data.binding3" } });
     }
 }
 

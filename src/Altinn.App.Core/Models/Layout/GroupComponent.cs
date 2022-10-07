@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-using Altinn.App.Core.Models.Expression;
+using Altinn.App.Core.Models.Expressions;
 
 namespace Altinn.App.Core.Models.Layout;
 
@@ -12,7 +12,7 @@ public class GroupComponent : BaseComponent
     /// <summary>
     /// Constructor for GroupComponent
     /// </summary>
-    public GroupComponent(string id, string type, IReadOnlyDictionary<string, string>? dataModelBindings, IEnumerable<BaseComponent> children, LayoutExpression? hidden, LayoutExpression? required, LayoutExpression? readOnly, IReadOnlyDictionary<string, string>? extra) :
+    public GroupComponent(string id, string type, IReadOnlyDictionary<string, string>? dataModelBindings, IEnumerable<BaseComponent> children, Expression? hidden, Expression? required, Expression? readOnly, IReadOnlyDictionary<string, string>? extra) :
         base(id, type, dataModelBindings, hidden, required, readOnly, extra)
     {
         Children = children;
