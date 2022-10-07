@@ -41,7 +41,7 @@ public class TestInvalid
                 test.InstanceContext ?? new());
             ExpressionEvaluator.EvaluateExpression(state, test.Expression, test.Context?.ToContext(test.ComponentModel) ?? null!);
         };
-        act.Should().Throw<JsonException>().WithMessage(testCase.ExpectsFailure);
+        act.Should().Throw<Exception>().WithMessage(testCase.ExpectsFailure);
     }
 }
 

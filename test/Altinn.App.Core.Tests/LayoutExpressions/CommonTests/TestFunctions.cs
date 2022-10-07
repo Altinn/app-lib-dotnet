@@ -91,18 +91,25 @@ public class TestFunctions
             test.FrontEndSettings ?? new(),
             test.InstanceContext ?? new());
 
-        test.ParsingException.Should().BeNull("Loading of test failed");
-
         if (test.ExpectsFailure is not null)
         {
-            Action act = () =>
+            if (test.ParsingException is not null)
             {
-                ExpressionEvaluator.EvaluateExpression(state, test.Expression, test.Context?.ToContext(test.ComponentModel)!);
-            };
-            act.Should().Throw<Exception>().WithMessage(test.ExpectsFailure);
+                test.ParsingException.Message.Should().Be(test.ExpectsFailure);
+            }
+            else
+            {
+                Action act = () =>
+                {
+                    ExpressionEvaluator.EvaluateExpression(state, test.Expression, test.Context?.ToContext(test.ComponentModel)!);
+                };
+                act.Should().Throw<Exception>().WithMessage(test.ExpectsFailure);
+            }
 
             return;
         }
+
+        test.ParsingException.Should().BeNull("Loading of test failed");
 
         var result = ExpressionEvaluator.EvaluateExpression(state, test.Expression, test.Context?.ToContext(test.ComponentModel)!);
 
@@ -169,6 +176,10 @@ public class SharedTestAttribute : DataAttribute
             }
             catch (Exception e)
             {
+                using var jsonDocument = JsonDocument.Parse(data);
+
+                testCase.Name = jsonDocument.RootElement.GetProperty("name").GetString();
+                testCase.ExpectsFailure = jsonDocument.RootElement.TryGetProperty("expectsFailure", out var expectsFailure) ? expectsFailure.GetString() : null;
                 testCase.ParsingException = e;
             }
 
