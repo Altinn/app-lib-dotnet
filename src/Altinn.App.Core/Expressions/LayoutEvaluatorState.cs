@@ -160,8 +160,10 @@ public class LayoutEvaluatorState
             GetModelErrorsForExpression(component.ReadOnly, component, errors);
             foreach (var (bindingName, binding) in component.DataModelBindings)
             {
-
-                _dataModel.VerifyKey(binding);
+                if(!_dataModel.VerifyKey(binding))
+                {
+                    errors.Add($"Invalid binding \"{binding}\" on component {component.Page}.{component.Id}");
+                }
             }
         }
         return errors;
@@ -178,12 +180,12 @@ public class LayoutEvaluatorState
         {
             if (expr.Args.Count != 1 || expr.Args[0].Value is not string binding)
             {
-                errors.Add("function \"dataModel\" requires a single string argument");
+                errors.Add($"function \"dataModel\" requires a single string argument on component {component.Page}.{component.Id}");
                 return;
             }
             if(!_dataModel.VerifyKey(binding))
             {
-                errors.Add($"Invalid binding \"{binding}\"");
+                errors.Add($"Invalid binding \"{binding}\" on component {component.Page}.{component.Id}");
             }
             return;
         }
