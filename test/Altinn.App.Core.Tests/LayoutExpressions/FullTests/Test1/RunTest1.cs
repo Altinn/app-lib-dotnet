@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Altinn.App.Core.Tests.LayoutExpressions.FullTests.Test1;
 
-public class Test1
+public class RunTest1
 {
     [Fact]
     public async Task ValidateDataModel()
