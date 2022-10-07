@@ -14,8 +14,8 @@ public class PageComponent : GroupComponent
     /// <summary>
     /// Constructor for PageComponent
     /// </summary>
-    public PageComponent(string id, List<BaseComponent> children, Dictionary<string, BaseComponent> componentLookup, LayoutExpression? hidden, IReadOnlyDictionary<string, JsonElement> extra) :
-        base(id, "page", null, children, hidden: hidden, required: null, extra) //TODO: add support for hidden and required on page
+    public PageComponent(string id, List<BaseComponent> children, Dictionary<string, BaseComponent> componentLookup, LayoutExpression? hidden, LayoutExpression? required, LayoutExpression? readOnly, IReadOnlyDictionary<string, string>? extra) :
+        base(id, "page", null, children, hidden, required, readOnly, extra)
     {
         ComponentLookup = componentLookup;
     }

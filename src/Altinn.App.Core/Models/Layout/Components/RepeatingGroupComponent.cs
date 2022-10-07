@@ -14,8 +14,8 @@ public class RepeatingGroupComponent : GroupComponent
     /// <summary>
     /// Constructor for RepeatingGroupComponent
     /// </summary>
-    public RepeatingGroupComponent(string id, string type, IReadOnlyDictionary<string, string>? dataModelBindings, IEnumerable<BaseComponent> children, int maxCount, LayoutExpression? hidden, LayoutExpression? required, IReadOnlyDictionary<string, JsonElement> extra) :
-        base(id, type, dataModelBindings, children, hidden, required, extra)
+    public RepeatingGroupComponent(string id, string type, IReadOnlyDictionary<string, string>? dataModelBindings, IEnumerable<BaseComponent> children, int maxCount, LayoutExpression? hidden, LayoutExpression? required, LayoutExpression? readOnly, IReadOnlyDictionary<string, string>? extra) :
+        base(id, type, dataModelBindings, children, hidden, required, readOnly, extra)
     {
         MaxCount = maxCount;
     }

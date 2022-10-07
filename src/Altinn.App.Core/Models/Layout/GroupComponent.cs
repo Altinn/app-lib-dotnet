@@ -12,8 +12,8 @@ public class GroupComponent : BaseComponent
     /// <summary>
     /// Constructor for GroupComponent
     /// </summary>
-    public GroupComponent(string id, string type, IReadOnlyDictionary<string, string>? dataModelBindings, IEnumerable<BaseComponent> children, LayoutExpression? hidden, LayoutExpression? required, IReadOnlyDictionary<string, JsonElement> extra) :
-        base(id, type, dataModelBindings, hidden, required, extra)
+    public GroupComponent(string id, string type, IReadOnlyDictionary<string, string>? dataModelBindings, IEnumerable<BaseComponent> children, LayoutExpression? hidden, LayoutExpression? required, LayoutExpression? readOnly, IReadOnlyDictionary<string, string>? extra) :
+        base(id, type, dataModelBindings, hidden, required, readOnly, extra)
     {
         Children = children;
         foreach (var child in Children)
