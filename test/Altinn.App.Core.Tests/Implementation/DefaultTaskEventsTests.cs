@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using Altinn.App.Core.Expressions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Implementation;
 using Altinn.App.Core.Interface;
@@ -27,6 +29,7 @@ public class DefaultTaskEventsTests: IDisposable
     private IEnumerable<IProcessTaskEnd> _taskEnds;
     private IEnumerable<IProcessTaskAbandon> _taskAbandons;
     private readonly Mock<IPdfService> _pdfMock;
+    private readonly LayoutEvaluatorStateInitializer _layoutStateInitializer;
 
     public DefaultTaskEventsTests()
     {
@@ -41,6 +44,7 @@ public class DefaultTaskEventsTests: IDisposable
         _taskEnds = new List<IProcessTaskEnd>();
         _taskAbandons = new List<IProcessTaskAbandon>();
         _pdfMock = new Mock<IPdfService>();
+        _layoutStateInitializer = new LayoutEvaluatorStateInitializer(_dataMock.Object, _resMock.Object, Microsoft.Extensions.Options.Options.Create(new Core.Configuration.FrontEndSettings()));
     }
 
     [Fact]
@@ -58,7 +62,9 @@ public class DefaultTaskEventsTests: IDisposable
             _taskStarts,
             _taskEnds,
             _taskAbandons,
-            _pdfMock.Object);
+            _pdfMock.Object,
+            _layoutStateInitializer,
+            Enumerable.Empty<IDataProcessor>());
         await te.OnAbandonProcessTask("Task_1", new Instance());
     }
     
@@ -80,7 +86,9 @@ public class DefaultTaskEventsTests: IDisposable
             _taskStarts,
             _taskEnds,
             _taskAbandons,
-            _pdfMock.Object);
+            _pdfMock.Object,
+            _layoutStateInitializer,
+            Enumerable.Empty<IDataProcessor>());
         var instance = new Instance();
         await te.OnAbandonProcessTask("Task_1", instance);
         abandonOne.Verify(a => a.Abandon("Task_1", instance));
@@ -108,7 +116,9 @@ public class DefaultTaskEventsTests: IDisposable
             _taskStarts,
             _taskEnds,
             _taskAbandons,
-            _pdfMock.Object);
+            _pdfMock.Object,
+            _layoutStateInitializer,
+            Enumerable.Empty<IDataProcessor>());
         var instance = new Instance()
         {
             Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d"
@@ -139,7 +149,9 @@ public class DefaultTaskEventsTests: IDisposable
             _taskStarts,
             _taskEnds,
             _taskAbandons,
-            _pdfMock.Object);
+            _pdfMock.Object,
+            _layoutStateInitializer,
+            Enumerable.Empty<IDataProcessor>());
         var instance = new Instance()
         {
             Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d"
