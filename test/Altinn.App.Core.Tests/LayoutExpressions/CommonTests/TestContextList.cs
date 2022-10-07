@@ -15,11 +15,11 @@ using Xunit.Sdk;
 
 namespace Altinn.App.Core.Tests.LayoutExpressions;
 
-public class TestContextLists
+public class TestContextList
 {
     private readonly ITestOutputHelper _output;
 
-    public TestContextLists(ITestOutputHelper output)
+    public TestContextList(ITestOutputHelper output)
     {
         _output = output;
     }
