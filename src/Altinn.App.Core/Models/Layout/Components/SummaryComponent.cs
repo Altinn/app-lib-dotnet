@@ -2,7 +2,7 @@ using System.Collections.Immutable;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-using Altinn.App.Core.Models.Expression;
+using Altinn.App.Core.Models.Expressions;
 
 namespace Altinn.App.Core.Models.Layout.Components;
 
@@ -24,7 +24,7 @@ public class SummaryComponent : BaseComponent
     /// <summary>
     /// Constructor
     /// </summary>
-    public SummaryComponent(string id, string type, LayoutExpression? hidden, string componentRef, string pageRef, IReadOnlyDictionary<string, string>? extra) :
+    public SummaryComponent(string id, string type, Expression? hidden, string componentRef, string pageRef, IReadOnlyDictionary<string, string>? extra) :
         base(id, type, null, hidden, null, null, extra)
     {
         ComponentRef = componentRef;

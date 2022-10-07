@@ -1,4 +1,4 @@
-using Altinn.App.Core.Models.Expression;
+using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Validation;
 
 namespace Altinn.App.Core.Expressions;

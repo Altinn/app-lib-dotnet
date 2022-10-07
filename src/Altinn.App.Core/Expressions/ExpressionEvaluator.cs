@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-using Altinn.App.Core.Models.Expression;
+using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Layout;
 
 namespace Altinn.App.Core.Expressions;
@@ -38,9 +38,9 @@ public static class ExpressionEvaluator
     }
 
     /// <summary>
-    /// Evaluate a <see cref="LayoutExpression" /> from a given <see cref="LayoutEvaluatorState" /> in a <see cref="ComponentContext" /> 
+    /// Evaluate a <see cref="Expression" /> from a given <see cref="LayoutEvaluatorState" /> in a <see cref="ComponentContext" />
     /// </summary>
-    public static object? EvaluateExpression(LayoutEvaluatorState state, LayoutExpression expr, ComponentContext context)
+    public static object? EvaluateExpression(LayoutEvaluatorState state, Expression expr, ComponentContext context)
     {
         if (expr is null)
         {
@@ -54,19 +54,19 @@ public static class ExpressionEvaluator
         var args = expr.Args.Select(a => EvaluateExpression(state, a, context)).ToArray();
         var ret = expr.Function switch
         {
-            LayoutExpressionFunctionEnum.dataModel => state.GetModelData(args.First()?.ToString()!, context),
-            LayoutExpressionFunctionEnum.component => state.GetComponentData(args.First()?.ToString()!, context),
-            LayoutExpressionFunctionEnum.instanceContext => state.GetInstanceContext(args.First()?.ToString()!),
-            LayoutExpressionFunctionEnum.frontendSettings => state.GetFrontendSetting(args.First()?.ToString()!),
-            LayoutExpressionFunctionEnum.concat => Concat(args),
-            LayoutExpressionFunctionEnum.equals => EqualsImplementation(args),
-            LayoutExpressionFunctionEnum.notEquals => !EqualsImplementation(args),
-            LayoutExpressionFunctionEnum.greaterThanEq => GreaterThanEq(args),
-            LayoutExpressionFunctionEnum.lessThan => LessThan(args),
-            LayoutExpressionFunctionEnum.lessThanEq => LessThanEq(args),
-            LayoutExpressionFunctionEnum.greaterThan => GreaterThan(args),
-            LayoutExpressionFunctionEnum.and => And(args),
-            LayoutExpressionFunctionEnum.or => Or(args),
+            ExpressionFunctionEnum.dataModel => state.GetModelData(args.First()?.ToString()!, context),
+            ExpressionFunctionEnum.component => state.GetComponentData(args.First()?.ToString()!, context),
+            ExpressionFunctionEnum.instanceContext => state.GetInstanceContext(args.First()?.ToString()!),
+            ExpressionFunctionEnum.frontendSettings => state.GetFrontendSetting(args.First()?.ToString()!),
+            ExpressionFunctionEnum.concat => Concat(args),
+            ExpressionFunctionEnum.equals => EqualsImplementation(args),
+            ExpressionFunctionEnum.notEquals => !EqualsImplementation(args),
+            ExpressionFunctionEnum.greaterThanEq => GreaterThanEq(args),
+            ExpressionFunctionEnum.lessThan => LessThan(args),
+            ExpressionFunctionEnum.lessThanEq => LessThanEq(args),
+            ExpressionFunctionEnum.greaterThan => GreaterThan(args),
+            ExpressionFunctionEnum.and => And(args),
+            ExpressionFunctionEnum.or => Or(args),
             // "<" => args.First() <  args.ElementAt(1),
             // ">" => args.First() > args.ElementAt(1),
             _ => throw new Exception($"Function \"{expr.Function}\" not implemented"),

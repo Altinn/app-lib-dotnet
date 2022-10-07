@@ -2,7 +2,7 @@ using System;
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Helpers;
-using Altinn.App.Core.Models.Expression;
+using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Layout;
 using Altinn.Platform.Storage.Interface.Models;
 
@@ -169,14 +169,14 @@ public class LayoutEvaluatorState
         return errors;
     }
 
-    private void GetModelErrorsForExpression(LayoutExpression? expr, BaseComponent component, List<string> errors)
+    private void GetModelErrorsForExpression(Expression? expr, BaseComponent component, List<string> errors)
     {
         if (expr == null || expr.Value != null || expr.Args == null || expr.Function == null)
         {
             return;
         }
 
-        if (expr.Function == LayoutExpressionFunctionEnum.dataModel)
+        if (expr.Function == ExpressionFunctionEnum.dataModel)
         {
             if (expr.Args.Count != 1 || expr.Args[0].Value is not string binding)
             {

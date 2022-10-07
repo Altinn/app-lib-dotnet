@@ -1,7 +1,7 @@
 using Altinn.App.Core.Expressions;
 using Altinn.App.Core.Models.Layout;
 
-namespace Altinn.App.Core.Models.Expression;
+namespace Altinn.App.Core.Models.Expressions;
 
 /// <summary>
 /// Simple class for holding the context for <see cref="ExpressionEvaluator"/>
