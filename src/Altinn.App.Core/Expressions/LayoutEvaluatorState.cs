@@ -146,4 +146,52 @@ public class LayoutEvaluatorState
     {
         return _dataModel.AddIndicies(binding, context.RowIndices);
     }
+
+    /// <summary>
+    /// Verify all components that dataModel references are correct
+    /// </summary>
+    public List<string> GetModelErrors()
+    {
+        var errors = new List<string>();
+        foreach (var component in _componentModel.GetComponents())
+        {
+            GetModelErrorsForExpression(component.Hidden, component, errors);
+            GetModelErrorsForExpression(component.Required, component, errors);
+            GetModelErrorsForExpression(component.ReadOnly, component, errors);
+            foreach (var (bindingName, binding) in component.DataModelBindings)
+            {
+
+                _dataModel.VerifyKey(binding);
+            }
+        }
+        return errors;
+    }
+
+    private void GetModelErrorsForExpression(LayoutExpression? expr, BaseComponent component, List<string> errors)
+    {
+        if (expr == null || expr.Value != null || expr.Args == null || expr.Function == null)
+        {
+            return;
+        }
+
+        if (expr.Function == LayoutExpressionFunctionEnum.dataModel)
+        {
+            if (expr.Args.Count != 1 || expr.Args[0].Value is not string binding)
+            {
+                errors.Add("function \"dataModel\" requires a single string argument");
+                return;
+            }
+            if(!_dataModel.VerifyKey(binding))
+            {
+                errors.Add($"Invalid binding \"{binding}\"");
+            }
+            return;
+        }
+
+        // check args recursivly
+        foreach (var arg in expr.Args)
+        {
+            GetModelErrorsForExpression(arg, component, errors);
+        }
+    }
 }

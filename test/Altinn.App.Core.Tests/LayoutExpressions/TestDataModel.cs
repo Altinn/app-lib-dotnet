@@ -227,22 +227,22 @@ public class TestDataModel
         };
         IDataModelAccessor modelHelper = new DataModel(model);
         model.Id.Should().Be(2);
-        modelHelper.RemoveField("id", throwOnError: true);
+        modelHelper.RemoveField("id");
         model.Id.Should().Be(default);
 
         model.Name.Value.Should().Be("Ivar");
-        modelHelper.RemoveField("name", throwOnError: true);
+        modelHelper.RemoveField("name");
         model.Name.Should().BeNull();
 
         model.Friends.First().Name!.Value.Should().Be("Første venn");
-        modelHelper.RemoveField("friends[0].name.value", throwOnError: true);
+        modelHelper.RemoveField("friends[0].name.value");
         model.Friends.First().Name!.Value.Should().BeNull();
-        modelHelper.RemoveField("friends[0].name", throwOnError: true);
+        modelHelper.RemoveField("friends[0].name");
         model.Friends.First().Name.Should().BeNull();
         model.Friends.First().Age.Should().Be(1235);
 
         model.Friends.First().Friends!.First().Age.Should().Be(233);
-        modelHelper.RemoveField("friends[0].friends", throwOnError: true);
+        modelHelper.RemoveField("friends[0].friends");
         model.Friends.First().Friends.Should().BeNull();
     }
 }

@@ -19,15 +19,15 @@ public class DataModel : IDataModelAccessor
     }
 
     /// <inheritdoc />
-    public object? GetModelData(string key, ReadOnlySpan<int> indicies, bool throwOnError = false)
+    public object? GetModelData(string key, ReadOnlySpan<int> indicies)
     {
-        return GetModelDataRecursive(key.Split('.'), 0, _serviceModel, indicies, throwOnError);
+        return GetModelDataRecursive(key.Split('.'), 0, _serviceModel, indicies);
     }
 
     /// <inheritdoc />
-    public int? GetModelDataCount(string key, ReadOnlySpan<int> indicies = default, bool throwOnError = false)
+    public int? GetModelDataCount(string key, ReadOnlySpan<int> indicies = default)
     {
-        if (GetModelDataRecursive(key.Split('.'), 0, _serviceModel, indicies, throwOnError) is System.Collections.IEnumerable childEnum)
+        if (GetModelDataRecursive(key.Split('.'), 0, _serviceModel, indicies) is System.Collections.IEnumerable childEnum)
         {
             int retCount = 0;
             foreach (var _ in childEnum)
@@ -40,7 +40,7 @@ public class DataModel : IDataModelAccessor
         return null;
     }
 
-    private object? GetModelDataRecursive(string[] keys, int index, object currentModel, ReadOnlySpan<int> indicies, bool throwOnError)
+    private object? GetModelDataRecursive(string[] keys, int index, object currentModel, ReadOnlySpan<int> indicies)
     {
         if (index == keys.Length)
         {
@@ -51,7 +51,6 @@ public class DataModel : IDataModelAccessor
         var prop = currentModel.GetType().GetProperties().FirstOrDefault(p => IsPropertyWithJsonName(p, key));
         if (prop is null)
         {
-            //throw new Exception($"Unknown model property {key} in {string.Join('.', keys)}");
             return null;
         }
 
@@ -89,17 +88,21 @@ public class DataModel : IDataModelAccessor
             {
                 if (groupIndex-- < 1)
                 {
-                    return GetModelDataRecursive(keys, index + 1, arrayElement, indicies.Length > 0 ? indicies.Slice(1) : indicies, throwOnError);
+                    return GetModelDataRecursive(keys, index + 1, arrayElement, indicies.Length > 0 ? indicies.Slice(1) : indicies);
                 }
             }
         }
 
-        return GetModelDataRecursive(keys, index + 1, childModel, indicies, throwOnError);
+        return GetModelDataRecursive(keys, index + 1, childModel, indicies);
     }
 
     private static Regex KeyPartRegex = new Regex(@"^(\w+)\[(\d+)\]?$");
     internal static (string key, int? index) ParseKeyPart(string keypart)
     {
+        if (keypart.Length == 0)
+        {
+            throw new Exception("Tried to parse empty part of dataModel key");
+        }
         if (keypart.Last() != ']')
         {
             return (keypart, null);
@@ -109,7 +112,7 @@ public class DataModel : IDataModelAccessor
 
     }
 
-    private static void AddIndiciesRecursive(List<string> ret, Type currentModelType, ReadOnlySpan<string> keys, string fullKey, ReadOnlySpan<int> indicies, bool throwOnError)
+    private static void AddIndiciesRecursive(List<string> ret, Type currentModelType, ReadOnlySpan<string> keys, string fullKey, ReadOnlySpan<int> indicies)
     {
         if (keys.Length == 0)
         {
@@ -136,18 +139,22 @@ public class DataModel : IDataModelAccessor
                 indicies = default;
             }
 
-            AddIndiciesRecursive(ret, type, keys.Slice(1), fullKey, indicies.Slice(1), throwOnError);
-            return;
-        }
+            AddIndiciesRecursive(ret, type, keys.Slice(1), fullKey, indicies.Slice(1));
 
-        if (groupIndex is not null)
+        }
+        else
         {
-            throw new Exception("Index on non indexable property");
+            if (groupIndex is not null)
+            {
+                throw new Exception("Index on non indexable property");
+            }
+            ret.Add(key);
+            AddIndiciesRecursive(ret, type, keys.Slice(1), fullKey, indicies);
         }
     }
 
     /// <inheritdoc />
-    public string AddIndicies(string key, ReadOnlySpan<int> indicies, bool throwOnError = false)
+    public string AddIndicies(string key, ReadOnlySpan<int> indicies)
     {
         if (indicies.Length == 0)
         {
@@ -155,7 +162,7 @@ public class DataModel : IDataModelAccessor
         }
 
         var ret = new List<string>();
-        AddIndiciesRecursive(ret, this._serviceModel.GetType(), key.Split('.'), key, indicies, throwOnError);
+        AddIndiciesRecursive(ret, this._serviceModel.GetType(), key.Split('.'), key, indicies);
         return string.Join('.', ret);
     }
 
@@ -180,7 +187,7 @@ public class DataModel : IDataModelAccessor
     }
 
     /// <inheritdoc />
-    public void RemoveField(string key, bool throwOnError = false)
+    public void RemoveField(string key)
     {
         var keys_split = key.Split('.');
         var keys = keys_split[0..^1];
@@ -192,7 +199,7 @@ public class DataModel : IDataModelAccessor
             throw new NotImplementedException($"Deleting elements in List is not implemented {key}");
         }
 
-        var containingObject = GetModelDataRecursive(keys, 0, _serviceModel, default, throwOnError);
+        var containingObject = GetModelDataRecursive(keys, 0, _serviceModel, default);
         if (containingObject is null)
         {
             // Already empty field
@@ -208,16 +215,59 @@ public class DataModel : IDataModelAccessor
         var property = containingObject.GetType().GetProperties().FirstOrDefault(p => IsPropertyWithJsonName(p, lastKey));
         if (property is null)
         {
-            if(throwOnError)
-            {
-                throw new Exception($"{key} can't be deleted, because {lastKey} is not a valid property");
-            }
-
             return;
         }
 
         var nullValue = property.PropertyType.GetTypeInfo().IsValueType ? Activator.CreateInstance(property.PropertyType) : null;
 
         property.SetValue(containingObject, nullValue);
+    }
+
+    /// <inheritdoc />
+    public bool VerifyKey(string key)
+    {
+        return VerifyKeyRecursive(key.Split('.'), 0, _serviceModel.GetType());
+    }
+
+    private bool VerifyKeyRecursive(string[] keys, int index, Type currentModel)
+    {
+        if (index == keys.Length)
+        {
+            return true;
+        }
+        if (keys[index].Length == 0)
+        {
+            return false; // invalid key part
+        }
+
+        var (key, groupIndex) = ParseKeyPart(keys[index]);
+        var prop = currentModel.GetProperties().FirstOrDefault(p => IsPropertyWithJsonName(p, key));
+        if (prop is null)
+        {
+            return false;
+        }
+
+        var childType = prop.PropertyType;
+
+
+        // Strings are enumerable in C#
+        // Other enumerable types is treated as an collection
+        if (childType != typeof(string) && childType.IsAssignableTo(typeof(System.Collections.IEnumerable)))
+        {
+            var childTypeEnumerableParameter = childType.GetInterfaces()
+               .Where(t => t.IsGenericType && t.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+               .Select(t => t.GetGenericArguments()[0]).FirstOrDefault();
+
+            if (childTypeEnumerableParameter is not null)
+            {
+                return VerifyKeyRecursive(keys, index + 1, childTypeEnumerableParameter);
+            }
+        }
+        else if (groupIndex is not null)
+        {
+            return false; // Key parts with group index must be IEnumerable
+        }
+
+        return VerifyKeyRecursive(keys, index + 1, childType);
     }
 }

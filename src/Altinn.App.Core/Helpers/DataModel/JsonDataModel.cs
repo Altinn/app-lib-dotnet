@@ -24,18 +24,18 @@ public class JsonDataModel : IDataModelAccessor
 
 
     /// <inheritdoc />
-    public object? GetModelData(string key, ReadOnlySpan<int> indicies = default, bool throwOnError = false)
+    public object? GetModelData(string key, ReadOnlySpan<int> indicies = default)
     {
         if (_modelRoot is null)
         {
             return null;
         }
 
-        return GetModelDataRecursive(key.Split('.'), 0, _modelRoot.Value, indicies, throwOnError);
+        return GetModelDataRecursive(key.Split('.'), 0, _modelRoot.Value, indicies);
     }
 
 
-    private object? GetModelDataRecursive(string[] keys, int index, JsonElement currentModel, ReadOnlySpan<int> indicies, bool throwOnError)
+    private object? GetModelDataRecursive(string[] keys, int index, JsonElement currentModel, ReadOnlySpan<int> indicies)
     {
         if (index == keys.Length)
         {
@@ -72,25 +72,25 @@ public class JsonDataModel : IDataModelAccessor
             }
 
             var arrayElement = childModel.EnumerateArray().ElementAt((int)groupIndex);
-            return GetModelDataRecursive(keys, index + 1, arrayElement, indicies.Length > 0 ? indicies.Slice(1) : indicies, throwOnError);
+            return GetModelDataRecursive(keys, index + 1, arrayElement, indicies.Length > 0 ? indicies.Slice(1) : indicies);
         }
 
 
-        return GetModelDataRecursive(keys, index + 1, childModel, indicies, throwOnError);
+        return GetModelDataRecursive(keys, index + 1, childModel, indicies);
     }
 
     /// <inheritdoc />
-    public int? GetModelDataCount(string key, ReadOnlySpan<int> indicies = default, bool throwOnError = false)
+    public int? GetModelDataCount(string key, ReadOnlySpan<int> indicies = default)
     {
         if (_modelRoot is null)
         {
             return null;
         }
 
-        return GetModelDataCountRecurs(key.Split('.'), 0, _modelRoot.Value, indicies, throwOnError);
+        return GetModelDataCountRecurs(key.Split('.'), 0, _modelRoot.Value, indicies);
     }
 
-    private int? GetModelDataCountRecurs(string[] keys, int index, JsonElement currentModel, ReadOnlySpan<int> indicies, bool throwOnError)
+    private int? GetModelDataCountRecurs(string[] keys, int index, JsonElement currentModel, ReadOnlySpan<int> indicies)
     {
         if (index == keys.Length)
         {
@@ -126,22 +126,28 @@ public class JsonDataModel : IDataModelAccessor
             }
 
             var arrayElement = childModel.EnumerateArray().ElementAt((int)groupIndex);
-            return GetModelDataCountRecurs(keys, index + 1, arrayElement, indicies.Length > 0 ? indicies.Slice(1) : indicies, throwOnError);
+            return GetModelDataCountRecurs(keys, index + 1, arrayElement, indicies.Length > 0 ? indicies.Slice(1) : indicies);
         }
 
-        return GetModelDataCountRecurs(keys, index + 1, childModel, indicies, throwOnError);
+        return GetModelDataCountRecurs(keys, index + 1, childModel, indicies);
     }
 
     /// <inheritdoc />
-    public string AddIndicies(string key, ReadOnlySpan<int> indicies, bool throwOnError = false)
+    public string AddIndicies(string key, ReadOnlySpan<int> indicies)
     {
         // We don't have a schema for the datamodel in Json
         throw new NotImplementedException();
     }
 
     /// <inheritdoc />
-    public void RemoveField(string key, bool throwOnError = false)
+    public void RemoveField(string key)
     {
         throw new NotImplementedException("Impossible to remove fields in a json model");
+    }
+
+    /// <inheritdoc />
+    public bool VerifyKey(string key)
+    {
+        throw new NotImplementedException("Impossible to verify keys in a json model");
     }
 }
