@@ -1,6 +1,5 @@
 using System.Collections.Immutable;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 using Altinn.App.Core.Models.Expression;
 
@@ -20,14 +19,15 @@ public class BaseComponent
     /// <summary>
     /// Constructor that ensures n
     /// </summary>
-    public BaseComponent(string id, string type, IReadOnlyDictionary<string, string>? dataModelBindings, LayoutExpression? hidden, LayoutExpression? required, IReadOnlyDictionary<string, JsonElement>? extra)
+    public BaseComponent(string id, string type, IReadOnlyDictionary<string, string>? dataModelBindings, LayoutExpression? hidden, LayoutExpression? required, LayoutExpression? readOnly, IReadOnlyDictionary<string, string>? extra)
     {
         Id = id;
         Type = type;
         DataModelBindings = dataModelBindings ?? ImmutableDictionary<string, string>.Empty;
         Hidden = hidden;
         Required = required;
-        Extra = extra ?? ImmutableDictionary<string, JsonElement>.Empty;
+        ReadOnly = readOnly;
+        Extra = extra;
     }
     /// <summary>
     /// ID of the component (or pagename for pages)
@@ -62,6 +62,11 @@ public class BaseComponent
     public LayoutExpression? Required { get; }
 
     /// <summary>
+    /// Layout Expression that can be evaluated to see if component should be read only
+    /// </summary>
+    public LayoutExpression? ReadOnly { get; }
+
+    /// <summary>
     /// Data model bindings for the component or group
     /// </summary>
     public IReadOnlyDictionary<string, string> DataModelBindings { get; }
@@ -74,6 +79,6 @@ public class BaseComponent
     /// <summary>
     /// Extra properties that are not modelled explicitly as a class that inhertits from <see cref="BaseComponent" />
     /// </summary>
-    public IReadOnlyDictionary<string, JsonElement> Extra { get; set; }
+    public IReadOnlyDictionary<string, string>? Extra { get; }
 }
 

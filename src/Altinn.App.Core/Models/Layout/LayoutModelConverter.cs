@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
+using Altinn.App.Core.Helpers.Extensions;
 using Altinn.App.Core.Models.Layout.Components;
 using Altinn.App.Core.Models.Expression;
 
@@ -88,9 +89,16 @@ public class LayoutModelConverter : JsonConverter<LayoutModel>
 
         // Hidden is the only property that cascades.
         LayoutExpression? hidden = null;
+        LayoutExpression? required = null;
+        LayoutExpression? readOnly = null;
 
         // extra properties that are not stored in a specific class.
-        Dictionary<string, JsonElement> extra = new();
+
+#if DEBUG
+        Dictionary<string, string> extra = new();
+#else
+        Dictionary<string, string>? extra = null;
+#endif
 
 
         while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
@@ -110,14 +118,24 @@ public class LayoutModelConverter : JsonConverter<LayoutModel>
                 case "hidden":
                     hidden = JsonSerializer.Deserialize<LayoutExpression>(ref reader, options);
                     break;
+                case "required":
+                    required = JsonSerializer.Deserialize<LayoutExpression>(ref reader, options);
+                    break;
+                case "readonly":
+                    readOnly = JsonSerializer.Deserialize<LayoutExpression>(ref reader, options);
+                    break;
                 default:
+#if DEBUG
                     // read extra properties
-                    extra[propertyName] = JsonElement.ParseValue(ref reader);
+                    extra[propertyName] = reader.SkipReturnString();
+#else
+                    reader.Skip();
+#endif
                     break;
             }
         }
 
-        return new PageComponent(pageName, components, componentLookup, hidden, extra);
+        return new PageComponent(pageName, components, componentLookup, hidden, required, readOnly, extra);
     }
 
     private void ReadLayout(ref Utf8JsonReader reader, List<BaseComponent> components, Dictionary<string, BaseComponent> componentLookup, JsonSerializerOptions options)
@@ -163,6 +181,7 @@ public class LayoutModelConverter : JsonConverter<LayoutModel>
         Dictionary<string, string>? dataModelBindings = null;
         LayoutExpression? hidden = null;
         LayoutExpression? required = null;
+        LayoutExpression? readOnly = null;
         // Custom properities for group
         List<string>? childIds = null;
         int maxCount = 1; // > 1 is repeating, but might not be specified for non-repeating groups
@@ -175,7 +194,11 @@ public class LayoutModelConverter : JsonConverter<LayoutModel>
         bool secure = false;
 
         // extra properties that are not stored in a specific class.
-        Dictionary<string, JsonElement> extra = new();
+#if DEBUG
+        Dictionary<string, string> extra = new();
+#else
+        Dictionary<string, string>? extra = null;
+#endif
 
 
 
@@ -213,12 +236,17 @@ public class LayoutModelConverter : JsonConverter<LayoutModel>
                 case "required":
                     required = JsonSerializer.Deserialize<LayoutExpression>(ref reader, options);
                     break;
+                case "readonly":
+                    readOnly = JsonSerializer.Deserialize<LayoutExpression>(ref reader, options);
+                    break;
+                // summary
                 case "componentref":
                     componentRef = reader.GetString();
                     break;
                 case "pageref":
                     pageRef = reader.GetString();
                     break;
+                // option
                 case "optionid":
                     optionId = reader.GetString();
                     break;
@@ -229,7 +257,12 @@ public class LayoutModelConverter : JsonConverter<LayoutModel>
                     secure = reader.TokenType == JsonTokenType.True;
                     break;
                 default:
-                    extra[propertyName] = JsonElement.ParseValue(ref reader);
+                    // store extra fields as json
+#if DEBUG
+                    extra[propertyName] = reader.SkipReturnString();
+#else
+                    reader.Skip();
+#endif
                     break;
             }
         }
@@ -257,11 +290,11 @@ public class LayoutModelConverter : JsonConverter<LayoutModel>
                         throw new JsonException($"A group id:\"{id}\" with maxCount: {maxCount} does not have a \"group\" dataModelBinding");
                     }
 
-                    return new RepeatingGroupComponent(id, type, dataModelBindings, children, maxCount, hidden, required, extra);
+                    return new RepeatingGroupComponent(id, type, dataModelBindings, children, maxCount, hidden, required, readOnly, extra);
                 }
                 else
                 {
-                    return new GroupComponent(id, type, dataModelBindings, children, hidden, required, extra);
+                    return new GroupComponent(id, type, dataModelBindings, children, hidden, required, readOnly, extra);
                 }
             case "summary":
                 if (componentRef is null || pageRef is null)
@@ -286,11 +319,11 @@ public class LayoutModelConverter : JsonConverter<LayoutModel>
                     throw new JsonException("\"secure\": true is invalid for components with literal \"options\"");
                 }
 
-                return new OptionsComponent(id, type, hidden, optionId, literalOptions, secure, extra);
+                return new OptionsComponent(id, type, dataModelBindings, hidden, required, readOnly, optionId, literalOptions, secure, extra);
         }
 
         // Most compoents are handled as BaseComponent
-        return new BaseComponent(id, type, dataModelBindings, hidden, required, extra);
+        return new BaseComponent(id, type, dataModelBindings, hidden, required, readOnly, extra);
     }
 
     private List<BaseComponent> ReadChildren(ref Utf8JsonReader reader, string parentId, List<string> childIds, JsonSerializerOptions options)
