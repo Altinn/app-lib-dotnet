@@ -10,19 +10,16 @@ namespace Altinn.App.Core.Helpers
     /// </summary>
     public class ProcessHelper
     {
+        private readonly IProcessReader _processReader;
+        
         /// <summary>
         /// Initialize a new instance of the <see cref="ProcessHelper"/> class with the given data stream.
         /// </summary>
         /// <param name="bpmnStream">A stream with access to a BPMN file.</param>
-        public ProcessHelper(Stream bpmnStream)
+        public ProcessHelper(IProcessReader processReader)
         {
-            Process = BpmnReader.Create(bpmnStream);
+            _processReader = processReader;
         }
-
-        /// <summary>
-        /// Gets the internal <see cref="BpmnReader"/>.
-        /// </summary>
-        public BpmnReader Process { get; }
 
         /// <summary>
         /// Try to get the next valid step in the process.
@@ -35,7 +32,7 @@ namespace Altinn.App.Core.Helpers
             nextElementError = null;
             string? nextElementId = null;
 
-            List<string> nextElements = Process.NextElements(currentElement);
+            List<string> nextElements = _processReader.GetNextElementIds(currentElement, true);
 
             if (nextElements.Count > 1)
             {
@@ -60,7 +57,7 @@ namespace Altinn.App.Core.Helpers
         /// <returns>True if the element is a task.</returns>
         public bool IsTask(string nextElementId)
         {
-            List<string> tasks = Process.Tasks();
+            List<string> tasks = _processReader.GetProcessTaskIds();
             return tasks.Contains(nextElementId);
         }
 
@@ -71,8 +68,7 @@ namespace Altinn.App.Core.Helpers
         /// <returns>True if the element is a start event.</returns>
         public bool IsStartEvent(string startEventId)
         {
-            List<string> startEvents = Process.StartEvents();
-
+            List<string> startEvents = _processReader.GetStartEventIds();
             return startEvents.Contains(startEventId);
         }
 
@@ -83,8 +79,7 @@ namespace Altinn.App.Core.Helpers
         /// <returns>True if the element is an end event.</returns>
         public bool IsEndEvent(string nextElementId)
         {
-            List<string> endEvents = Process.EndEvents();
-
+            List<string> endEvents = _processReader.GetEndEventIds();
             return endEvents.Contains(nextElementId);
         }
 
@@ -98,7 +93,7 @@ namespace Altinn.App.Core.Helpers
         {
             startEventError = null;
 
-            List<string> possibleStartEvents = Process.StartEvents();
+            List<string> possibleStartEvents = _processReader.GetStartEventIds();
 
             if (!string.IsNullOrEmpty(proposedStartEvent))
             {
@@ -139,14 +134,9 @@ namespace Altinn.App.Core.Helpers
         public string? GetValidNextElementOrError(string currentElementId, string proposedElementId, out ProcessError? nextElementError)
         {
             nextElementError = null;
-            bool ignoreGatewayDefaults = false;
+            bool useGatewayDefaults = string.IsNullOrEmpty(proposedElementId);
 
-            if (!string.IsNullOrEmpty(proposedElementId))
-            {
-                ignoreGatewayDefaults = true;
-            }
-
-            List<string> possibleNextElements = Process.NextElements(currentElementId, ignoreGatewayDefaults);
+            List<string> possibleNextElements = _processReader.GetNextElementIds(currentElementId, true, useGatewayDefaults);
 
             if (!string.IsNullOrEmpty(proposedElementId))
             {
@@ -186,7 +176,7 @@ namespace Altinn.App.Core.Helpers
         /// </summary>
         public ProcessSequenceFlowType GetSequenceFlowType(string currentId, string nextElementId)
         {
-            List<SequenceFlow> flows = Process.GetSequenceFlowsBetween(currentId, nextElementId);
+            List<SequenceFlow> flows = _processReader.GetSequenceFlowsBetween(currentId, nextElementId);
             foreach (SequenceFlow flow in flows)
             { 
                 if (!string.IsNullOrEmpty(flow.FlowType))

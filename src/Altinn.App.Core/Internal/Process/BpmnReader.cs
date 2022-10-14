@@ -6,6 +6,7 @@ namespace Altinn.App.Core.Internal.Process
     /// <summary>
     /// Represents an engine that can provide information about the next step in a process based on its definition and given task.
     /// </summary>
+    [Obsolete]
     public class BpmnReader
     {
         private readonly Definitions definitions;

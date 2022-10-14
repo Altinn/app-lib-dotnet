@@ -5,6 +5,7 @@ using Altinn.App.Core.Features.Options;
 using Altinn.App.Core.Features.PageOrder;
 using Altinn.App.Core.Features.Pdf;
 using Altinn.App.Core.Features.Validation;
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Implementation;
 using Altinn.App.Core.Infrastructure.Clients.Authentication;
 using Altinn.App.Core.Infrastructure.Clients.Authorization;
@@ -18,6 +19,7 @@ using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Pdf;
+using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Texts;
 using Altinn.Common.AccessTokenClient.Configuration;
 using Altinn.Common.AccessTokenClient.Services;
@@ -88,8 +90,6 @@ namespace Altinn.App.Core.Extensions
             services.TryAddTransient<IPrefill, PrefillSI>();
             services.TryAddTransient<ISigningCredentialsResolver, SigningCredentialsResolver>();
             services.TryAddSingleton<IAppResources, AppResourcesSI>();
-            services.TryAddTransient<IProcessEngine, ProcessEngine>();
-            services.TryAddTransient<IProcessChangeHandler, ProcessChangeHandler>();
             services.TryAddTransient<IAppEvents, DefaultAppEvents>();
             services.TryAddTransient<ITaskEvents, DefaultTaskEvents>();
             services.TryAddTransient<IPageOrder, DefaultPageOrder>();
@@ -104,6 +104,7 @@ namespace Altinn.App.Core.Extensions
             services.Configure<FrontEndSettings>(configuration.GetSection(nameof(FrontEndSettings)));
             AddAppOptions(services);
             AddPdfServices(services);
+            AddProcessServices(services);
 
             if (!env.IsDevelopment())
             {
@@ -142,6 +143,14 @@ namespace Altinn.App.Core.Extensions
 
             // Services related to instance aware and secure app options
             services.TryAddTransient<InstanceAppOptionsFactory>();
+        }
+
+        private static void AddProcessServices(IServiceCollection services)
+        {
+            services.TryAddTransient<IProcessEngine, ProcessEngine>();
+            services.TryAddTransient<IProcessChangeHandler, ProcessChangeHandler>();
+            services.TryAddTransient<ProcessHelper>();
+            services.TryAddTransient<IProcessReader, ProcessReader>();
         }
     }
 }

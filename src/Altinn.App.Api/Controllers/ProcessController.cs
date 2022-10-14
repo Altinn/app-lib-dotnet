@@ -44,7 +44,8 @@ namespace Altinn.App.Api.Controllers
         private readonly IValidation _validationService;
         private readonly IPDP _pdp;
         private readonly IProcessEngine _processEngine;
-        private readonly ProcessHelper processHelper;
+        private readonly ProcessHelper _processHelper;
+        private readonly IProcessReader _processReader;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ProcessController"/>
@@ -55,7 +56,9 @@ namespace Altinn.App.Api.Controllers
             IProcess processService,
             IValidation validationService,
             IPDP pdp,
-            IProcessEngine processEngine)
+            IProcessEngine processEngine,
+            ProcessHelper processHelper,
+            IProcessReader processReader)
         {
             _logger = logger;
             _instanceClient = instanceClient;
@@ -64,7 +67,8 @@ namespace Altinn.App.Api.Controllers
             _pdp = pdp;
             _processEngine = processEngine;
             using Stream bpmnStream = _processService.GetProcessDefinition();
-            processHelper = new ProcessHelper(bpmnStream);
+            _processHelper = processHelper;
+            _processReader = processReader;
         }
 
         /// <summary>
@@ -180,7 +184,7 @@ namespace Altinn.App.Api.Controllers
 
                 if (instance.Process == null)
                 {
-                    return Ok(processHelper.Process.StartEvents());
+                    return Ok(_processReader.GetStartEventIds());
                 }
 
                 currentTaskId = instance.Process.CurrentTask?.ElementId;
@@ -190,7 +194,7 @@ namespace Altinn.App.Api.Controllers
                     return Conflict($"Instance does not have valid info about currentTask");
                 }
 
-                List<string> nextElementIds = processHelper.Process.NextElements(currentTaskId);
+                List<string> nextElementIds = _processReader.GetNextElementIds(currentTaskId, true);
 
                 if (nextElementIds.Count == 0)
                 {
@@ -267,7 +271,7 @@ namespace Altinn.App.Api.Controllers
 
                 if (!string.IsNullOrEmpty(elementId))
                 {
-                    ElementInfo elemInfo = processHelper.Process.GetElementInfo(elementId);
+                    ElementInfo elemInfo = _processReader.GetElementInfo(elementId);
                     if (elemInfo == null)
                     {
                         return BadRequest($"Requested element id {elementId} is not found in process definition");
@@ -282,11 +286,11 @@ namespace Altinn.App.Api.Controllers
                 }
 
                 ProcessSequenceFlowType processSequenceFlowType = ProcessSequenceFlowType.CompleteCurrentMoveToNext;
-                string targetElement = processHelper.GetValidNextElementOrError(instance.Process.CurrentTask?.ElementId, elementId, out ProcessError processError);
+                string targetElement = _processHelper.GetValidNextElementOrError(instance.Process.CurrentTask?.ElementId, elementId, out ProcessError processError);
 
                 if (!string.IsNullOrEmpty(elementId) && processError == null)
                 {
-                    processSequenceFlowType = processHelper.GetSequenceFlowType(instance.Process.CurrentTask?.ElementId, targetElement);
+                    processSequenceFlowType = _processHelper.GetSequenceFlowType(instance.Process.CurrentTask?.ElementId, targetElement);
                 }
 
                 bool authorized = false;
@@ -296,7 +300,7 @@ namespace Altinn.App.Api.Controllers
                 }
                 else
                 {
-                    ElementInfo elemInfo = processHelper.Process.GetElementInfo(targetElement);
+                    ElementInfo elemInfo = _processReader.GetElementInfo(targetElement);
                     authorized = await AuthorizeAction(elemInfo.AltinnTaskType, org, app, instanceOwnerPartyId, instanceGuid, elemInfo.Id);
                 }
 
@@ -391,7 +395,7 @@ namespace Altinn.App.Api.Controllers
                     return Conflict($"Instance is not valid for task {currentTaskId}. Automatic completion of process is stopped");
                 }
 
-                List<string> nextElements = processHelper.Process.NextElements(currentTaskId);
+                List<string> nextElements = _processReader.GetNextElementIds(currentTaskId, true);
 
                 if (nextElements.Count > 1)
                 {

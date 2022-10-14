@@ -27,6 +27,7 @@ namespace Altinn.App.Core.Implementation
         private readonly IInstance _instanceClient;
         private readonly IProcess _processService;
         private readonly ProcessHelper _processHelper;
+        private readonly IProcessReader _processReader;
         private readonly ILogger<ProcessChangeHandler> _logger;
         private readonly IValidation _validationService;
         private readonly IEvents _eventsService;
@@ -41,6 +42,8 @@ namespace Altinn.App.Core.Implementation
         public ProcessChangeHandler(
             ILogger<ProcessChangeHandler> logger,
             IProcess processService,
+            ProcessHelper processHelper,
+            IProcessReader processReader,
             IInstance instanceClient,
             IValidation validationService,
             IEvents eventsService,
@@ -52,8 +55,8 @@ namespace Altinn.App.Core.Implementation
             _logger = logger;
             _processService = processService;
             _instanceClient = instanceClient;
-            using Stream bpmnStream = _processService.GetProcessDefinition();
-            _processHelper = new ProcessHelper(bpmnStream);
+            _processHelper = processHelper;
+            _processReader = processReader;
             _validationService = validationService;
             _eventsService = eventsService;
             _profileClient = profileClient;
@@ -348,7 +351,7 @@ namespace Altinn.App.Core.Implementation
             ProcessState currentState = instance.Process;
             string previousElementId = currentState.CurrentTask?.ElementId;
 
-            ElementInfo nextElementInfo = _processHelper.Process.GetElementInfo(nextElementId);
+            ElementInfo nextElementInfo = _processReader.GetElementInfo(nextElementId);
             ProcessSequenceFlowType sequenceFlowType = _processHelper.GetSequenceFlowType(previousElementId, nextElementId);
             DateTime now = DateTime.UtcNow;
 

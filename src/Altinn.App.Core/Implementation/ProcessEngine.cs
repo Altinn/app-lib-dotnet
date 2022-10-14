@@ -15,18 +15,17 @@ namespace Altinn.App.Core.Implementation
     {
         private readonly IProcessChangeHandler _processChangeHandler;
 
-        private readonly ProcessHelper processHelper;
+        private readonly ProcessHelper _processHelper;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ProcessEngine"/> class.
         /// </summary>
         public ProcessEngine(
                 IProcessChangeHandler processChangeHandler,
-                IProcess processService)
+                ProcessHelper processHelper)
         {
             _processChangeHandler = processChangeHandler;
-            using Stream bpmnStream = processService.GetProcessDefinition();
-            processHelper = new ProcessHelper(bpmnStream);
+            _processHelper = processHelper;
         }
 
         /// <summary>
@@ -53,7 +52,7 @@ namespace Altinn.App.Core.Implementation
             }
 
              // Find next valid element. Later this will be dynamic
-            processChange.RequestedProcessElementId = processHelper.GetValidNextElementOrError(currentElementId, processChange.RequestedProcessElementId, out ProcessError? nextElementError);
+            processChange.RequestedProcessElementId = _processHelper.GetValidNextElementOrError(currentElementId, processChange.RequestedProcessElementId, out ProcessError? nextElementError);
             if (nextElementError != null)
             {
                 processChange.ProcessMessages = new System.Collections.Generic.List<ProcessChangeInfo>();
@@ -62,7 +61,7 @@ namespace Altinn.App.Core.Implementation
                 return processChange;
             }
 
-            processChange.ProcessSequenceFlowType = processHelper.GetSequenceFlowType(currentElementId, processChange.RequestedProcessElementId);
+            processChange.ProcessSequenceFlowType = _processHelper.GetSequenceFlowType(currentElementId, processChange.RequestedProcessElementId);
 
             if (processChange.ProcessSequenceFlowType.Equals(ProcessSequenceFlowType.CompleteCurrentMoveToNext) && await _processChangeHandler.CanTaskBeEnded(processChange))
             {
@@ -93,7 +92,7 @@ namespace Altinn.App.Core.Implementation
                 return processChange;
             }
 
-            string? validStartElement = processHelper.GetValidStartEventOrError(processChange.RequestedProcessElementId, out ProcessError? startEventError);
+            string? validStartElement = _processHelper.GetValidStartEventOrError(processChange.RequestedProcessElementId, out ProcessError? startEventError);
             if (startEventError != null)
             {
                 processChange.ProcessMessages = new System.Collections.Generic.List<ProcessChangeInfo>();
@@ -106,7 +105,7 @@ namespace Altinn.App.Core.Implementation
             processChange.ProcessFlowElements.Add(validStartElement);
 
             // find next task
-            string? nextValidElement = processHelper.GetValidNextElementOrError(validStartElement, out ProcessError? nextElementError);
+            string? nextValidElement = _processHelper.GetValidNextElementOrError(validStartElement, out ProcessError? nextElementError);
             if (nextElementError != null)
             {
                 processChange.ProcessMessages = new System.Collections.Generic.List<ProcessChangeInfo>();
