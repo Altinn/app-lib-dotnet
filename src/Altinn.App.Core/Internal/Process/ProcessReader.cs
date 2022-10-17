@@ -13,6 +13,11 @@ public class ProcessReader : IProcessReader
 {
     private readonly Definitions _definitions;
 
+    /// <summary>
+    /// Create instance of ProcessReader where process stream is fetched from <see cref="IProcess"/>
+    /// </summary>
+    /// <param name="processService">Implementation of IProcess used to get stream of BPMN process</param>
+    /// <exception cref="InvalidOperationException">If BPMN file could not be deserialized</exception>
     public ProcessReader(IProcess processService)
     {
         XmlSerializer serializer = new XmlSerializer(typeof(Definitions));
@@ -88,11 +93,17 @@ public class ProcessReader : IProcessReader
     /// <inheritdoc />
     public List<FlowElement> GetNextElements(string currentElementId, bool followGateways, bool useGatewayDefaults = false)
     {
+        EnsureArgumentNotNull(currentElementId, nameof(currentElementId));
         List<FlowElement> nextElements = new List<FlowElement>();
         List<FlowElement> allElements = GetAllFlowElements();
+        if (!allElements.Exists(e => e.Id == currentElementId))
+        {
+            throw new ProcessException($"Unable to find a element using element id {currentElementId}.");
+        }
+
         foreach (SequenceFlow sequenceFlow in GetSequenceFlows().FindAll(s => s.SourceRef == currentElementId))
         {
-            var nexts = allElements.FindAll(e => e.Incoming.Contains(sequenceFlow.Id));
+            var nexts = allElements.FindAll(e => sequenceFlow.TargetRef == e.Id);
             if (followGateways)
             {
                 foreach (var next in nexts)
@@ -100,13 +111,10 @@ public class ProcessReader : IProcessReader
                     if (next is ExclusiveGateway)
                     {
                         var gateway = (ExclusiveGateway)next;
+                        var nextId = next.Id;
                         if (useGatewayDefaults && !gateway.Default.IsNullOrEmpty())
                         {
-                            var defaultElement = allElements.Find(e => e.Id == gateway.Default);
-                            if (defaultElement != null)
-                            {
-                                nextElements.Add(defaultElement);
-                            }
+                            nextElements.Add(GetDefaultElementForGateway(gateway, allElements));
                         }
                         else
                         {
@@ -133,7 +141,8 @@ public class ProcessReader : IProcessReader
     {
         return GetNextElements(currentElement, followGateways, useGatewayDefaults).Select(e => e.Id).ToList();
     }
-    
+
+    /// <inheritdoc />
     public List<SequenceFlow> GetSequenceFlowsBetween(string currentStepId, string nextElementId)
     {
         List<SequenceFlow> flowsToReachTarget = new List<SequenceFlow>();
@@ -160,12 +169,10 @@ public class ProcessReader : IProcessReader
         return flowsToReachTarget;
     }
 
+    /// <inheritdoc />
     public FlowElement? GetFlowElement(string elementId)
     {
-        if (elementId == null)
-        {
-            throw new ArgumentNullException(nameof(elementId));
-        }
+        EnsureArgumentNotNull(elementId, nameof(elementId));
 
         ProcessTask? task = _definitions.Process.Tasks.Find(t => t.Id == elementId);
         if (task != null)
@@ -188,18 +195,24 @@ public class ProcessReader : IProcessReader
         return null;
     }
 
+    /// <inheritdoc />
     public ElementInfo? GetElementInfo(string elementId)
     {
         var e = GetFlowElement(elementId);
+        if (e == null)
+        {
+            return null;
+        }
+
         ElementInfo elementInfo = new ElementInfo()
         {
             Id = e.Id,
             Name = e.Name,
             ElementType = e.ElementType()
         };
-        if (e is ProcessTask)
+        if (e is ProcessTask task)
         {
-            elementInfo.AltinnTaskType = ((ProcessTask)e).TaskType;
+            elementInfo.AltinnTaskType = task.TaskType;
         }
 
         return elementInfo;
@@ -215,13 +228,21 @@ public class ProcessReader : IProcessReader
         return flowElements;
     }
 
-    private List<string> GetAllFlowElementIds()
+    private FlowElement GetDefaultElementForGateway(ExclusiveGateway exclusiveGateway, List<FlowElement> allElements)
     {
-        List<string> flowElements = new List<string>();
-        flowElements.AddRange(GetStartEventIds());
-        flowElements.AddRange(GetProcessTaskIds());
-        flowElements.AddRange(GetExclusiveGatewayIds());
-        flowElements.AddRange(GetEndEventIds());
-        return flowElements;
+        var defaultSequenceFlow = GetSequenceFlows().Find(s => s.Id == exclusiveGateway.Default)?.TargetRef ?? "";
+        var defaultElement = allElements.Find(e => e.Id == defaultSequenceFlow);
+        if (defaultElement != null)
+        {
+            return defaultElement;
+        }
+
+        throw new ProcessException($"Unable to find process task with id: '{defaultSequenceFlow}' in process definition.");
+    }
+
+    private void EnsureArgumentNotNull(object argument, string paramName)
+    {
+        if (argument == null)
+            throw new ArgumentNullException(paramName);
     }
 }

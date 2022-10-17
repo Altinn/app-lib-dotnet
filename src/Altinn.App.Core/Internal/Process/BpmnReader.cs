@@ -234,7 +234,7 @@ namespace Altinn.App.Core.Internal.Process
                 throw new ProcessException("The number of start events are different from one. Unable to identify the correct start.");
             }
 
-            SequenceFlow? currentSequenceFlow = definitions.Process.SequenceFlow.Find(seq => seq.Id == definitions.Process.StartEvents[0].Outgoing);
+            SequenceFlow? currentSequenceFlow = definitions.Process.SequenceFlow.Find(seq => seq.Id == definitions.Process.StartEvents[0].Outgoing[0]);
             if (currentSequenceFlow != null)
             {
                 ProcessTask? nextStepObj = definitions.Process.Tasks.Find(task => task.Id == currentSequenceFlow.TargetRef);

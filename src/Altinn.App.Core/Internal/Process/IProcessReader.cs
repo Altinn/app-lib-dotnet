@@ -4,6 +4,9 @@ using Altinn.App.Core.Internal.Process.Elements.Base;
 
 namespace Altinn.App.Core.Internal.Process;
 
+/// <summary>
+/// Interface for classes that reads the applications process
+/// </summary>
 public interface IProcessReader
 {
 
@@ -91,8 +94,18 @@ public interface IProcessReader
     /// </summary>
     public List<SequenceFlow> GetSequenceFlowsBetween(string currentStepId, string nextElementId);
 
-    public FlowElement GetFlowElement(string elementId);
+    /// <summary>
+    /// Returns StartEvent, Task or EndEvent with given Id, null if element not found
+    /// </summary>
+    /// <param name="elementId">Id of element to look for</param>
+    /// <returns><see cref="FlowElement"/> or null</returns>
+    public FlowElement? GetFlowElement(string elementId);
 
-    public ElementInfo GetElementInfo(string elementId);
+    /// <summary>
+    /// Retuns ElementInfo for StartEvent, Task or EndEvent with given Id, null if element not found
+    /// </summary>
+    /// <param name="elementId">Id of element to look for</param>
+    /// <returns><see cref="ElementInfo"/> or null</returns>
+    public ElementInfo? GetElementInfo(string elementId);
 
 }
