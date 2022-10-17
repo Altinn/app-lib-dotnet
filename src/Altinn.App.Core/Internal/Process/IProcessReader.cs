@@ -78,7 +78,7 @@ public interface IProcessReader
     /// <param name="followGateways">Follow gateways and return downstream element instead</param>
     /// <param name="useGatewayDefaults">If gateway has default follow it</param>
     /// <returns></returns>
-    public List<FlowElement> GetNextElements(string currentElement, bool followGateways, bool useGatewayDefaults = false);
+    public List<FlowElement> GetNextElements(string currentElement, bool followGateways, bool useGatewayDefaults = true);
 
     /// <summary>
     /// Find ids of all possible next elements from current element
@@ -87,7 +87,7 @@ public interface IProcessReader
     /// <param name="followGateways">Follow gateways and return downstream ids instead</param>
     /// <param name="useGatewayDefaults">If gateway has default follow it</param>
     /// <returns></returns>
-    public List<string> GetNextElementIds(string currentElement, bool followGateways, bool useGatewayDefaults = false);
+    public List<string> GetNextElementIds(string currentElement, bool followGateways, bool useGatewayDefaults = true);
 
     /// <summary>
     /// Returns a list of sequence flow to be followed between current step and next element

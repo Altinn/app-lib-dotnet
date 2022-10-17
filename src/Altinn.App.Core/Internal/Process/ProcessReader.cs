@@ -91,7 +91,7 @@ public class ProcessReader : IProcessReader
     }
 
     /// <inheritdoc />
-    public List<FlowElement> GetNextElements(string currentElementId, bool followGateways, bool useGatewayDefaults = false)
+    public List<FlowElement> GetNextElements(string currentElementId, bool followGateways, bool useGatewayDefaults = true)
     {
         EnsureArgumentNotNull(currentElementId, nameof(currentElementId));
         List<FlowElement> nextElements = new List<FlowElement>();
@@ -137,7 +137,7 @@ public class ProcessReader : IProcessReader
     }
 
     /// <inheritdoc />
-    public List<string> GetNextElementIds(string currentElement, bool followGateways, bool useGatewayDefaults = false)
+    public List<string> GetNextElementIds(string currentElement, bool followGateways, bool useGatewayDefaults = true)
     {
         return GetNextElements(currentElement, followGateways, useGatewayDefaults).Select(e => e.Id).ToList();
     }
