@@ -1,7 +1,9 @@
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.Process;
+using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Models;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Altinn.App.Core.Implementation
 {
@@ -15,17 +17,17 @@ namespace Altinn.App.Core.Implementation
     {
         private readonly IProcessChangeHandler _processChangeHandler;
 
-        private readonly ProcessHelper _processHelper;
+        private readonly IProcessReader _processReader;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ProcessEngine"/> class.
         /// </summary>
         public ProcessEngine(
                 IProcessChangeHandler processChangeHandler,
-                ProcessHelper processHelper)
+                IProcessReader processReader)
         {
             _processChangeHandler = processChangeHandler;
-            _processHelper = processHelper;
+            _processReader = processReader;
         }
 
         /// <summary>
@@ -33,11 +35,11 @@ namespace Altinn.App.Core.Implementation
         /// </summary>
         public async Task<ProcessChangeContext> Next(ProcessChangeContext processChange)
         {
-            string currentElementId = processChange.Instance.Process.CurrentTask?.ElementId;
+            string? currentElementId = processChange.Instance.Process.CurrentTask?.ElementId;
 
             if (currentElementId == null)
             {
-                processChange.ProcessMessages = new System.Collections.Generic.List<ProcessChangeInfo>();
+                processChange.ProcessMessages = new List<ProcessChangeInfo>();
                 processChange.ProcessMessages.Add(new ProcessChangeInfo() { Message = $"Instance does not have current task information!", Type = "Conflict" });
                 processChange.FailedProcessChange = true;
                 return processChange;
@@ -45,23 +47,25 @@ namespace Altinn.App.Core.Implementation
 
             if (currentElementId.Equals(processChange.RequestedProcessElementId))
             {
-                processChange.ProcessMessages = new System.Collections.Generic.List<ProcessChangeInfo>();
+                processChange.ProcessMessages = new List<ProcessChangeInfo>();
                 processChange.ProcessMessages.Add(new ProcessChangeInfo() { Message = $"Requested process element {processChange.RequestedProcessElementId} is same as instance's current task. Cannot change process.", Type = "Conflict" });
                 processChange.FailedProcessChange = true;
                 return processChange;
             }
 
              // Find next valid element. Later this will be dynamic
-            processChange.RequestedProcessElementId = _processHelper.GetValidNextElementOrError(currentElementId, processChange.RequestedProcessElementId, out ProcessError? nextElementError);
+            List<string> possibleNextElements = _processReader.GetNextElementIds(currentElementId, true, processChange.RequestedProcessElementId.IsNullOrEmpty());
+            processChange.RequestedProcessElementId = ProcessHelper.GetValidNextElementOrError(processChange.RequestedProcessElementId, possibleNextElements,out ProcessError? nextElementError);
             if (nextElementError != null)
             {
-                processChange.ProcessMessages = new System.Collections.Generic.List<ProcessChangeInfo>();
+                processChange.ProcessMessages = new List<ProcessChangeInfo>();
                 processChange.ProcessMessages.Add(new ProcessChangeInfo() { Message = nextElementError.Text, Type = "Conflict" });
                 processChange.FailedProcessChange = true;
                 return processChange;
             }
 
-            processChange.ProcessSequenceFlowType = _processHelper.GetSequenceFlowType(currentElementId, processChange.RequestedProcessElementId);
+            List<SequenceFlow> flows = _processReader.GetSequenceFlowsBetween(currentElementId, processChange.RequestedProcessElementId);
+            processChange.ProcessSequenceFlowType = ProcessHelper.GetSequenceFlowType(flows);
 
             if (processChange.ProcessSequenceFlowType.Equals(ProcessSequenceFlowType.CompleteCurrentMoveToNext) && await _processChangeHandler.CanTaskBeEnded(processChange))
             {
@@ -86,35 +90,36 @@ namespace Altinn.App.Core.Implementation
         {
             if (processChange.Instance.Process != null)
             {
-                processChange.ProcessMessages = new System.Collections.Generic.List<ProcessChangeInfo>();
+                processChange.ProcessMessages = new List<ProcessChangeInfo>();
                 processChange.ProcessMessages.Add(new ProcessChangeInfo() { Message = "Process is already started. Use next.", Type = "Conflict" });
                 processChange.FailedProcessChange = true;
                 return processChange;
             }
 
-            string? validStartElement = _processHelper.GetValidStartEventOrError(processChange.RequestedProcessElementId, out ProcessError? startEventError);
+            string? validStartElement = ProcessHelper.GetValidStartEventOrError(processChange.RequestedProcessElementId, _processReader.GetStartEventIds(),out ProcessError? startEventError);
             if (startEventError != null)
             {
-                processChange.ProcessMessages = new System.Collections.Generic.List<ProcessChangeInfo>();
+                processChange.ProcessMessages = new List<ProcessChangeInfo>();
                 processChange.ProcessMessages.Add(new ProcessChangeInfo() { Message = "No matching startevent", Type = "Conflict" });
                 processChange.FailedProcessChange = true;
                 return processChange;
             }
 
             processChange.ProcessFlowElements = new List<string>();
-            processChange.ProcessFlowElements.Add(validStartElement);
+            processChange.ProcessFlowElements.Add(validStartElement!);
 
             // find next task
-            string? nextValidElement = _processHelper.GetValidNextElementOrError(validStartElement, out ProcessError? nextElementError);
+            List<string> possibleNextElements = _processReader.GetNextElementIds(validStartElement!, true);
+            string? nextValidElement = ProcessHelper.GetValidNextElementOrError(null, possibleNextElements,out ProcessError? nextElementError);
             if (nextElementError != null)
             {
-                processChange.ProcessMessages = new System.Collections.Generic.List<ProcessChangeInfo>();
+                processChange.ProcessMessages = new List<ProcessChangeInfo>();
                 processChange.ProcessMessages.Add(new ProcessChangeInfo() { Message = $"Unable to goto next element due to {nextElementError.Code}-{nextElementError.Text}", Type = "Conflict" });
                 processChange.FailedProcessChange = true;
                 return processChange;
             }
 
-            processChange.ProcessFlowElements.Add(nextValidElement);
+            processChange.ProcessFlowElements.Add(nextValidElement!);
 
             return await _processChangeHandler.HandleStart(processChange);
         }

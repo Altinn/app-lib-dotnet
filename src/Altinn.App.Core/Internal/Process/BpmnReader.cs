@@ -6,7 +6,7 @@ namespace Altinn.App.Core.Internal.Process
     /// <summary>
     /// Represents an engine that can provide information about the next step in a process based on its definition and given task.
     /// </summary>
-    [Obsolete]
+    [Obsolete("This class is deprecated. Please use inject Altinn.App.Core.Internal.Process.IProcessReader instead", false)]
     public class BpmnReader
     {
         private readonly Definitions definitions;

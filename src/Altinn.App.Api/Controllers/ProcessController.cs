@@ -22,7 +22,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-
+using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 
 namespace Altinn.App.Api.Controllers
@@ -44,7 +44,6 @@ namespace Altinn.App.Api.Controllers
         private readonly IValidation _validationService;
         private readonly IPDP _pdp;
         private readonly IProcessEngine _processEngine;
-        private readonly ProcessHelper _processHelper;
         private readonly IProcessReader _processReader;
 
         /// <summary>
@@ -57,7 +56,6 @@ namespace Altinn.App.Api.Controllers
             IValidation validationService,
             IPDP pdp,
             IProcessEngine processEngine,
-            ProcessHelper processHelper,
             IProcessReader processReader)
         {
             _logger = logger;
@@ -67,7 +65,6 @@ namespace Altinn.App.Api.Controllers
             _pdp = pdp;
             _processEngine = processEngine;
             using Stream bpmnStream = _processService.GetProcessDefinition();
-            _processHelper = processHelper;
             _processReader = processReader;
         }
 
@@ -146,12 +143,12 @@ namespace Altinn.App.Api.Controllers
             }
             catch (PlatformHttpException e)
             {
-                return HandlePlatformHttpException(e, $"Unable to start the process for instance {instance.Id} of {instance.AppId}");
+                return HandlePlatformHttpException(e, $"Unable to start the process for instance {instance?.Id} of {instance?.AppId}");
             }
             catch (Exception startException)
             {
-                _logger.LogError($"Unable to start the process for instance {instance.Id} of {instance.AppId}. Due to {startException}");
-                return ExceptionResponse(startException, $"Unable to start the process for instance {instance.Id} of {instance.AppId}");
+                _logger.LogError($"Unable to start the process for instance {instance?.Id} of {instance?.AppId}. Due to {startException}");
+                return ExceptionResponse(startException, $"Unable to start the process for instance {instance?.Id} of {instance?.AppId}");
             }
         }
 
@@ -205,12 +202,12 @@ namespace Altinn.App.Api.Controllers
             }
             catch (PlatformHttpException e)
             {
-                return HandlePlatformHttpException(e, $"Unable to find next process element for instance {instance.Id} and current task {currentTaskId}. Exception was {e.Message}. Is the process file OK?");
+                return HandlePlatformHttpException(e, $"Unable to find next process element for instance {instance?.Id} and current task {currentTaskId}. Exception was {e.Message}. Is the process file OK?");
             }
             catch (Exception processException)
             {
-                _logger.LogError($"Unable to find next process element for instance {instance.Id} and current task {currentTaskId}. {processException}");
-                return ExceptionResponse(processException, $"Unable to find next process element for instance {instance.Id} and current task {currentTaskId}. Exception was {processException.Message}. Is the process file OK?");
+                _logger.LogError($"Unable to find next process element for instance {instance?.Id} and current task {currentTaskId}. {processException}");
+                return ExceptionResponse(processException, $"Unable to find next process element for instance {instance?.Id} and current task {currentTaskId}. Exception was {processException.Message}. Is the process file OK?");
             }
         }
 
@@ -286,14 +283,16 @@ namespace Altinn.App.Api.Controllers
                 }
 
                 ProcessSequenceFlowType processSequenceFlowType = ProcessSequenceFlowType.CompleteCurrentMoveToNext;
-                string targetElement = _processHelper.GetValidNextElementOrError(instance.Process.CurrentTask?.ElementId, elementId, out ProcessError processError);
+                List<string> possibleNextElements = _processReader.GetNextElementIds(instance.Process.CurrentTask?.ElementId, true, elementId.IsNullOrEmpty());
+                string targetElement = ProcessHelper.GetValidNextElementOrError(elementId, possibleNextElements, out ProcessError processError);
 
                 if (!string.IsNullOrEmpty(elementId) && processError == null)
                 {
-                    processSequenceFlowType = _processHelper.GetSequenceFlowType(instance.Process.CurrentTask?.ElementId, targetElement);
+                    List<SequenceFlow> flows = _processReader.GetSequenceFlowsBetween(instance.Process.CurrentTask?.ElementId, targetElement);
+                    processSequenceFlowType = ProcessHelper.GetSequenceFlowType(flows);
                 }
 
-                bool authorized = false;
+                bool authorized;
                 if (processSequenceFlowType.Equals(ProcessSequenceFlowType.CompleteCurrentMoveToNext))
                 {
                     authorized = await AuthorizeAction(altinnTaskType, org, app, instanceOwnerPartyId, instanceGuid);

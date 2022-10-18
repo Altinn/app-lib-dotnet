@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -26,6 +27,57 @@ public class ProcessReaderTests
         pr.GetExclusiveGatewayIds().Should().Equal("Gateway1");
     }
 
+    [Fact]
+    public void IsStartEvent_returns_true_when_element_is_StartEvent()
+    {
+        IProcessReader pr = SetupProcessReader("simple-gateway.bpmn");
+        pr.IsStartEvent("StartEvent").Should().BeTrue();
+    }
+
+    [Fact]
+    public void IsStartEvent_returns_false_when_element_is_not_StartEvent()
+    {
+        IProcessReader pr = SetupProcessReader("simple-gateway.bpmn");
+        pr.IsStartEvent("Task1").Should().BeFalse();
+        pr.IsStartEvent("EndEvent").Should().BeFalse();
+        pr.IsStartEvent("Gateway1").Should().BeFalse();
+        pr.IsStartEvent("Foobar").Should().BeFalse();
+    }
+    
+    [Fact]
+    public void IsProcessTask_returns_true_when_element_is_ProcessTask()
+    {
+        IProcessReader pr = SetupProcessReader("simple-gateway.bpmn");
+        pr.IsProcessTask("Task1").Should().BeTrue();
+    }
+
+    [Fact]
+    public void IsProcessTask_returns_false_when_element_is_not_ProcessTask()
+    {
+        IProcessReader pr = SetupProcessReader("simple-gateway.bpmn");
+        pr.IsProcessTask("StartEvent").Should().BeFalse();
+        pr.IsProcessTask("EndEvent").Should().BeFalse();
+        pr.IsProcessTask("Gateway1").Should().BeFalse();
+        pr.IsProcessTask("Foobar").Should().BeFalse();
+    }
+    
+    [Fact]
+    public void IsEndEvent_returns_true_when_element_is_EndEvent()
+    {
+        IProcessReader pr = SetupProcessReader("simple-gateway.bpmn");
+        pr.IsEndEvent("EndEvent").Should().BeTrue();
+    }
+
+    [Fact]
+    public void IsEndEvent_returns_false_when_element_is_not_EndEvent()
+    {
+        IProcessReader pr = SetupProcessReader("simple-gateway.bpmn");
+        pr.IsEndEvent("StartEvent").Should().BeFalse();
+        pr.IsEndEvent("Task1").Should().BeFalse();
+        pr.IsEndEvent("Gateway1").Should().BeFalse();
+        pr.IsEndEvent("Foobar").Should().BeFalse();
+    }
+    
     [Fact]
     public void GetNextElement_returns_gateway_if_follow_gateway_false()
     {
@@ -145,6 +197,7 @@ public class ProcessReaderTests
         {
             expectedException = e;
         }
+        
         actualException.Should().BeOfType(expectedException?.GetType());
     }
     
@@ -175,6 +228,7 @@ public class ProcessReaderTests
         {
             expectedException = e;
         }
+        
         actualException.Should().BeOfType(expectedException?.GetType());
     }
 
@@ -252,6 +306,7 @@ public class ProcessReaderTests
         {
             expectedException = e;
         }
+        
         actualException.Should().BeOfType(expectedException?.GetType());
     }
 
@@ -293,6 +348,62 @@ public class ProcessReaderTests
         var actual = pr.GetSequenceFlowsBetween(currentElement, nextElementId);
         var returnedIds = actual.Select(s => s.Id).ToList();
         returnedIds.Should().BeEquivalentTo("Flow2", "Flow4");
+        BpmnReader br = SetupBpmnReader(bpmnfile);
+        actual.Should().BeEquivalentTo(br.GetSequenceFlowsBetween(currentElement, nextElementId));
+    }
+    
+    [Fact]
+    public void GetSequenceFlowsBetween_returns_empty_list_when_unknown_target()
+    {
+        var bpmnfile = "simple-gateway-default.bpmn";
+        var currentElement = "Task1";
+        var nextElementId = "Foobar";
+        ProcessReader pr = SetupProcessReader(bpmnfile);
+        var actual = pr.GetSequenceFlowsBetween(currentElement, nextElementId);
+        var returnedIds = actual.Select(s => s.Id).ToList();
+        returnedIds.Should().BeEmpty();
+        BpmnReader br = SetupBpmnReader(bpmnfile);
+        actual.Should().BeEquivalentTo(br.GetSequenceFlowsBetween(currentElement, nextElementId));
+    }
+    
+    [Fact]
+    public void GetSequenceFlowsBetween_returns_empty_list_when_current_is_null()
+    {
+        var bpmnfile = "simple-gateway-default.bpmn";
+        string? currentElement = null;
+        var nextElementId = "Foobar";
+        ProcessReader pr = SetupProcessReader(bpmnfile);
+        var actual = pr.GetSequenceFlowsBetween(currentElement, nextElementId);
+        var returnedIds = actual.Select(s => s.Id).ToList();
+        returnedIds.Should().BeEmpty();
+        BpmnReader br = SetupBpmnReader(bpmnfile);
+        actual.Should().BeEquivalentTo(br.GetSequenceFlowsBetween(currentElement, nextElementId));
+    }
+    
+    [Fact]
+    public void GetSequenceFlowsBetween_returns_empty_list_when_next_is_null()
+    {
+        var bpmnfile = "simple-gateway-default.bpmn";
+        string? currentElement = "Task1";
+        string? nextElementId = null;
+        ProcessReader pr = SetupProcessReader(bpmnfile);
+        var actual = pr.GetSequenceFlowsBetween(currentElement, nextElementId);
+        var returnedIds = actual.Select(s => s.Id).ToList();
+        returnedIds.Should().BeEmpty();
+        BpmnReader br = SetupBpmnReader(bpmnfile);
+        actual.Should().BeEquivalentTo(br.GetSequenceFlowsBetween(currentElement, nextElementId));
+    }
+    
+    [Fact]
+    public void GetSequenceFlowsBetween_returns_empty_list_when_current_and_next_is_null()
+    {
+        var bpmnfile = "simple-gateway-default.bpmn";
+        string? currentElement = null;
+        string? nextElementId = null;
+        ProcessReader pr = SetupProcessReader(bpmnfile);
+        var actual = pr.GetSequenceFlowsBetween(currentElement, nextElementId);
+        var returnedIds = actual.Select(s => s.Id).ToList();
+        returnedIds.Should().BeEmpty();
         BpmnReader br = SetupBpmnReader(bpmnfile);
         actual.Should().BeEquivalentTo(br.GetSequenceFlowsBetween(currentElement, nextElementId));
     }

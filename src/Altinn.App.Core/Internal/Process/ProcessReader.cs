@@ -43,6 +43,12 @@ public class ProcessReader : IProcessReader
     }
 
     /// <inheritdoc />
+    public bool IsStartEvent(string elementId)
+    {
+        return GetStartEventIds().Contains(elementId);
+    }
+
+    /// <inheritdoc />
     public List<ProcessTask> GetProcessTasks()
     {
         return _definitions.Process.Tasks;
@@ -52,6 +58,12 @@ public class ProcessReader : IProcessReader
     public List<string> GetProcessTaskIds()
     {
         return GetProcessTasks().Select(t => t.Id).ToList();
+    }
+    
+    /// <inheritdoc />
+    public bool IsProcessTask(string elementId)
+    {
+        return GetProcessTaskIds().Contains(elementId);
     }
 
     /// <inheritdoc />
@@ -77,6 +89,12 @@ public class ProcessReader : IProcessReader
     {
         return GetEndEvents().Select(e => e.Id).ToList();
     }
+    
+    /// <inheritdoc />
+    public bool IsEndEvent(string elementId)
+    {
+        return GetEndEventIds().Contains(elementId);
+    }
 
     /// <inheritdoc />
     public List<SequenceFlow> GetSequenceFlows()
@@ -91,7 +109,7 @@ public class ProcessReader : IProcessReader
     }
 
     /// <inheritdoc />
-    public List<FlowElement> GetNextElements(string currentElementId, bool followGateways, bool useGatewayDefaults = true)
+    public List<FlowElement> GetNextElements(string? currentElementId, bool followGateways, bool useGatewayDefaults = true)
     {
         EnsureArgumentNotNull(currentElementId, nameof(currentElementId));
         List<FlowElement> nextElements = new List<FlowElement>();
@@ -111,7 +129,6 @@ public class ProcessReader : IProcessReader
                     if (next is ExclusiveGateway)
                     {
                         var gateway = (ExclusiveGateway)next;
-                        var nextId = next.Id;
                         if (useGatewayDefaults && !gateway.Default.IsNullOrEmpty())
                         {
                             nextElements.Add(GetDefaultElementForGateway(gateway, allElements));
@@ -137,13 +154,13 @@ public class ProcessReader : IProcessReader
     }
 
     /// <inheritdoc />
-    public List<string> GetNextElementIds(string currentElement, bool followGateways, bool useGatewayDefaults = true)
+    public List<string> GetNextElementIds(string? currentElement, bool followGateways, bool useGatewayDefaults = true)
     {
         return GetNextElements(currentElement, followGateways, useGatewayDefaults).Select(e => e.Id).ToList();
     }
 
     /// <inheritdoc />
-    public List<SequenceFlow> GetSequenceFlowsBetween(string currentStepId, string nextElementId)
+    public List<SequenceFlow> GetSequenceFlowsBetween(string? currentStepId, string? nextElementId)
     {
         List<SequenceFlow> flowsToReachTarget = new List<SequenceFlow>();
         foreach (SequenceFlow sequenceFlow in _definitions.Process.SequenceFlow.FindAll(s => s.SourceRef == currentStepId))
@@ -170,7 +187,7 @@ public class ProcessReader : IProcessReader
     }
 
     /// <inheritdoc />
-    public FlowElement? GetFlowElement(string elementId)
+    public FlowElement? GetFlowElement(string? elementId)
     {
         EnsureArgumentNotNull(elementId, nameof(elementId));
 
@@ -196,7 +213,7 @@ public class ProcessReader : IProcessReader
     }
 
     /// <inheritdoc />
-    public ElementInfo? GetElementInfo(string elementId)
+    public ElementInfo? GetElementInfo(string? elementId)
     {
         var e = GetFlowElement(elementId);
         if (e == null)
@@ -240,7 +257,7 @@ public class ProcessReader : IProcessReader
         throw new ProcessException($"Unable to find process task with id: '{defaultSequenceFlow}' in process definition.");
     }
 
-    private void EnsureArgumentNotNull(object argument, string paramName)
+    private void EnsureArgumentNotNull(object? argument, string paramName)
     {
         if (argument == null)
             throw new ArgumentNullException(paramName);

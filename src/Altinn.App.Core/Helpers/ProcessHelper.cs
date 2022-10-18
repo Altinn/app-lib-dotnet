@@ -11,89 +11,26 @@ namespace Altinn.App.Core.Helpers
     public class ProcessHelper
     {
         private readonly IProcessReader _processReader;
-        
+
         /// <summary>
         /// Initialize a new instance of the <see cref="ProcessHelper"/> class with the given data stream.
         /// </summary>
-        /// <param name="bpmnStream">A stream with access to a BPMN file.</param>
+        /// <param name="processReader">IProcessReader for reading process</param>
         public ProcessHelper(IProcessReader processReader)
         {
             _processReader = processReader;
         }
 
         /// <summary>
-        /// Try to get the next valid step in the process.
-        /// </summary>
-        /// <param name="currentElement">The current element name.</param>
-        /// <param name="nextElementError">Any error preventing the logic to identify next element.</param>
-        /// <returns>The name of the next element.</returns>
-        public string? GetValidNextElementOrError(string currentElement, out ProcessError? nextElementError)
-        {
-            nextElementError = null;
-            string? nextElementId = null;
-
-            List<string> nextElements = _processReader.GetNextElementIds(currentElement, true);
-
-            if (nextElements.Count > 1)
-            {
-                nextElementError = new ProcessError
-                {
-                    Code = "Conflict",
-                    Text = $"There is more than one element reachable from element {currentElement}"
-                };
-            }
-            else
-            {
-                nextElementId = nextElements.First();
-            }
-
-            return nextElementId;
-        }
-
-        /// <summary>
-        /// Checks whether the given element id is a task.
-        /// </summary>
-        /// <param name="nextElementId">The name of an element from the process.</param>
-        /// <returns>True if the element is a task.</returns>
-        public bool IsTask(string nextElementId)
-        {
-            List<string> tasks = _processReader.GetProcessTaskIds();
-            return tasks.Contains(nextElementId);
-        }
-
-        /// <summary>
-        /// Checks whether the given element id is a start event.
-        /// </summary>
-        /// <param name="startEventId">The name of an element from the process.</param>
-        /// <returns>True if the element is a start event.</returns>
-        public bool IsStartEvent(string startEventId)
-        {
-            List<string> startEvents = _processReader.GetStartEventIds();
-            return startEvents.Contains(startEventId);
-        }
-
-        /// <summary>
-        /// Checks whether the given element id is an end event.
-        /// </summary>
-        /// <param name="nextElementId">The name of an element from the process.</param>
-        /// <returns>True if the element is an end event.</returns>
-        public bool IsEndEvent(string nextElementId)
-        {
-            List<string> endEvents = _processReader.GetEndEventIds();
-            return endEvents.Contains(nextElementId);
-        }
-
-        /// <summary>
         /// Validates that the process can start from the given start event.
         /// </summary>
         /// <param name="proposedStartEvent">The name of the start event the process should start from.</param>
+        /// <param name="possibleStartEvents">List of possible start events <see cref="IProcessReader.GetStartEventIds"/></param>
         /// <param name="startEventError">Any error preventing the process from starting.</param>
         /// <returns>The name of the start event or null if start event wasn't found.</returns>
-        public string? GetValidStartEventOrError(string proposedStartEvent, out ProcessError? startEventError)
+        public static string? GetValidStartEventOrError(string? proposedStartEvent, List<string> possibleStartEvents, out ProcessError? startEventError)
         {
             startEventError = null;
-
-            List<string> possibleStartEvents = _processReader.GetStartEventIds();
 
             if (!string.IsNullOrEmpty(proposedStartEvent))
             {
@@ -101,42 +38,36 @@ namespace Altinn.App.Core.Helpers
                 {
                     return proposedStartEvent;
                 }
-                else
-                {
-                    startEventError = Conflict($"There is no such start event as '{proposedStartEvent}' in the process definition.");
-                    return null;
-                }
+
+                startEventError = Conflict($"There is no such start event as '{proposedStartEvent}' in the process definition.");
+                return null;
             }
 
             if (possibleStartEvents.Count == 1)
             {
                 return possibleStartEvents.First();
             }
-            else if (possibleStartEvents.Count > 1)
+
+            if (possibleStartEvents.Count > 1)
             {
-                startEventError = Conflict($"There are more than one start events available. Chose one: {possibleStartEvents}");
+                startEventError = Conflict($"There are more than one start events available. Chose one: [{string.Join(", ", possibleStartEvents)}]");
                 return null;
             }
-            else
-            {
-                startEventError = Conflict($"There is no start events in process definition. Cannot start process!");
-                return null;
-            }
+
+            startEventError = Conflict($"There is no start events in process definition. Cannot start process!");
+            return null;
         }
 
         /// <summary>
         /// Validates that the given element name is a valid next step in the process.
         /// </summary>
-        /// <param name="currentElementId">The current element name.</param>
         /// <param name="proposedElementId">The name of the proposed next element.</param>
+        /// <param name="possibleNextElements">List of possible next elements</param>
         /// <param name="nextElementError">Any error preventing the logic to identify next element.</param>
         /// <returns>The name of the next element.</returns>
-        public string? GetValidNextElementOrError(string currentElementId, string proposedElementId, out ProcessError? nextElementError)
+        public static string? GetValidNextElementOrError(string? proposedElementId, List<string> possibleNextElements, out ProcessError? nextElementError)
         {
             nextElementError = null;
-            bool useGatewayDefaults = string.IsNullOrEmpty(proposedElementId);
-
-            List<string> possibleNextElements = _processReader.GetNextElementIds(currentElementId, true, useGatewayDefaults);
 
             if (!string.IsNullOrEmpty(proposedElementId))
             {
@@ -164,7 +95,7 @@ namespace Altinn.App.Core.Helpers
 
             if (possibleNextElements.Count == 0)
             {
-                nextElementError = Conflict($"There are no outoging sequence flows from current element. Cannot find next process element. Error in bpmn file!");
+                nextElementError = Conflict($"There are no outgoing sequence flows from current element. Cannot find next process element. Error in bpmn file!");
                 return null;
             }
 
@@ -172,17 +103,15 @@ namespace Altinn.App.Core.Helpers
         }
 
         /// <summary>
-        /// Find the flowtype betweeend 
+        /// Find the flowtype between 
         /// </summary>
-        public ProcessSequenceFlowType GetSequenceFlowType(string currentId, string nextElementId)
+        public static ProcessSequenceFlowType GetSequenceFlowType(List<SequenceFlow> flows)
         {
-            List<SequenceFlow> flows = _processReader.GetSequenceFlowsBetween(currentId, nextElementId);
             foreach (SequenceFlow flow in flows)
-            { 
+            {
                 if (!string.IsNullOrEmpty(flow.FlowType))
                 {
-                    ProcessSequenceFlowType flowType;
-                    if (Enum.TryParse(flow.FlowType, out flowType))
+                    if (Enum.TryParse(flow.FlowType, out ProcessSequenceFlowType flowType))
                     {
                         return flowType;
                     }
@@ -191,7 +120,7 @@ namespace Altinn.App.Core.Helpers
 
             return ProcessSequenceFlowType.CompleteCurrentMoveToNext;
         }
-        
+
         /// <summary>
         ///  Called before a process task is ended. App can do extra validation logic and add validation issues to collection which will be returned by the controller.
         /// </summary>
@@ -223,7 +152,44 @@ namespace Altinn.App.Core.Helpers
             return await Task.FromResult(false);
         }
 
-        private ProcessError Conflict(string text)
+
+        /// <summary>
+        /// Checks whether the given element id is a task.
+        /// </summary>
+        /// <param name="nextElementId">The name of an element from the process.</param>
+        /// <returns>True if the element is a task.</returns>
+        [Obsolete("Method is deprecated and will be removed. Please use IProcessReader.IsTask(string) instead", false)]
+        public bool IsTask(string nextElementId)
+        {
+            List<string> tasks = _processReader.GetProcessTaskIds();
+            return tasks.Contains(nextElementId);
+        }
+
+        /// <summary>
+        /// Checks whether the given element id is a start event.
+        /// </summary>
+        /// <param name="startEventId">The name of an element from the process.</param>
+        /// <returns>True if the element is a start event.</returns>
+        [Obsolete("Method is deprecated and will be removed. Please use IProcessReader.IsStartEvent(string) instead", false)]
+        public bool IsStartEvent(string startEventId)
+        {
+            List<string> startEvents = _processReader.GetStartEventIds();
+            return startEvents.Contains(startEventId);
+        }
+
+        /// <summary>
+        /// Checks whether the given element id is an end event.
+        /// </summary>
+        /// <param name="nextElementId">The name of an element from the process.</param>
+        /// <returns>True if the element is an end event.</returns>
+        [Obsolete("Method is deprecated and will be removed. Please use IProcessReader.IsEndEvent(string) instead", false)]
+        public bool IsEndEvent(string nextElementId)
+        {
+            List<string> endEvents = _processReader.GetEndEventIds();
+            return endEvents.Contains(nextElementId);
+        }
+
+        private static ProcessError Conflict(string text)
         {
             return new ProcessError
             {

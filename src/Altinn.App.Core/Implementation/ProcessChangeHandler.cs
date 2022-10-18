@@ -26,7 +26,6 @@ namespace Altinn.App.Core.Implementation
     {
         private readonly IInstance _instanceClient;
         private readonly IProcess _processService;
-        private readonly ProcessHelper _processHelper;
         private readonly IProcessReader _processReader;
         private readonly ILogger<ProcessChangeHandler> _logger;
         private readonly IValidation _validationService;
@@ -42,7 +41,6 @@ namespace Altinn.App.Core.Implementation
         public ProcessChangeHandler(
             ILogger<ProcessChangeHandler> logger,
             IProcess processService,
-            ProcessHelper processHelper,
             IProcessReader processReader,
             IInstance instanceClient,
             IValidation validationService,
@@ -55,7 +53,6 @@ namespace Altinn.App.Core.Implementation
             _logger = logger;
             _processService = processService;
             _instanceClient = instanceClient;
-            _processHelper = processHelper;
             _processReader = processReader;
             _validationService = validationService;
             _eventsService = eventsService;
@@ -349,20 +346,21 @@ namespace Altinn.App.Core.Implementation
 
             ProcessState previousState = Copy(instance.Process);
             ProcessState currentState = instance.Process;
-            string previousElementId = currentState.CurrentTask?.ElementId;
+            string? previousElementId = currentState.CurrentTask?.ElementId;
 
-            ElementInfo nextElementInfo = _processReader.GetElementInfo(nextElementId);
-            ProcessSequenceFlowType sequenceFlowType = _processHelper.GetSequenceFlowType(previousElementId, nextElementId);
+            ElementInfo? nextElementInfo = _processReader.GetElementInfo(nextElementId);
+            List<SequenceFlow> flows = _processReader.GetSequenceFlowsBetween(previousElementId, nextElementId);
+            ProcessSequenceFlowType sequenceFlowType = ProcessHelper.GetSequenceFlowType(flows);
             DateTime now = DateTime.UtcNow;
-
+            bool previousIsProcessTask = _processReader.IsProcessTask(previousElementId);
             // ending previous element if task
-            if (_processHelper.IsTask(previousElementId) && sequenceFlowType.Equals(ProcessSequenceFlowType.CompleteCurrentMoveToNext))
+            if (previousIsProcessTask && sequenceFlowType.Equals(ProcessSequenceFlowType.CompleteCurrentMoveToNext))
             {
                 instance.Process = previousState;
                 events.Add(await GenerateProcessChangeEvent(InstanceEventType.process_EndTask.ToString(), instance, now, user));
                 instance.Process = currentState;
             }
-            else if (_processHelper.IsTask(previousElementId))
+            else if (previousIsProcessTask)
             {
                 instance.Process = previousState;
                 events.Add(await GenerateProcessChangeEvent(InstanceEventType.process_AbandonTask.ToString(), instance, now, user));
@@ -370,7 +368,7 @@ namespace Altinn.App.Core.Implementation
             }
 
             // ending process if next element is end event
-            if (_processHelper.IsEndEvent(nextElementId))
+            if (_processReader.IsEndEvent(nextElementId))
             {
                 currentState.CurrentTask = null;
                 currentState.Ended = now;
@@ -381,15 +379,15 @@ namespace Altinn.App.Core.Implementation
                 // add submit event (to support Altinn2 SBL)
                 events.Add(await GenerateProcessChangeEvent(InstanceEventType.Submited.ToString(), instance, now, user));
             }
-            else if (_processHelper.IsTask(nextElementId))
+            else if (_processReader.IsProcessTask(nextElementId))
             {
                 currentState.CurrentTask = new ProcessElementInfo
                 {
                     Flow = currentState.CurrentTask.Flow + 1,
                     ElementId = nextElementId,
-                    Name = nextElementInfo.Name,
+                    Name = nextElementInfo?.Name,
                     Started = now,
-                    AltinnTaskType = nextElementInfo.AltinnTaskType,
+                    AltinnTaskType = nextElementInfo?.AltinnTaskType,
                     Validated = null,
                     FlowType = sequenceFlowType.ToString(),
                 };
