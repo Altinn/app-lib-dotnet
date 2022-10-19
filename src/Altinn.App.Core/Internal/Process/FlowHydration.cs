@@ -28,7 +28,7 @@ public class FlowHydration: IFlowHydration
     /// <inheritdoc />
     public async Task<List<FlowElement>> NextFollowAndFilterGateways(Instance instance, string? currentElement)
     {
-        List<FlowElement> directFlowTargets = _processReader.GetNextElements(currentElement);
+        List<FlowElement> directFlowTargets = _processReader.GetNextElements(currentElement, false, false);
         return await NextFollowAndFilterGateways(instance, directFlowTargets);
     }
 
