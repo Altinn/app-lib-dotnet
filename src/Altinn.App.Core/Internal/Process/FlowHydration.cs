@@ -1,3 +1,4 @@
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
@@ -5,11 +6,19 @@ using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Internal.Process;
 
+/// <summary>
+/// Class used to get next elements in the process based on the Process and custom implementations of <see cref="IProcessExclusiveGateway" /> to make gateway decisions.
+/// </summary>
 public class FlowHydration: IFlowHydration
 {
     private readonly IProcessReader _processReader;
     private readonly ExclusiveGatewayFactory _gatewayFactory;
 
+    /// <summary>
+    /// Initialize a new instance of FlowHydration
+    /// </summary>
+    /// <param name="processReader">IProcessReader implementation used to read the process</param>
+    /// <param name="gatewayFactory">ExclusiveGatewayFactory used to fetch gateway code to be executed</param>
     public FlowHydration(IProcessReader processReader, ExclusiveGatewayFactory gatewayFactory)
     {
         _processReader = processReader;
@@ -19,8 +28,7 @@ public class FlowHydration: IFlowHydration
     /// <inheritdoc />
     public async Task<List<FlowElement>> NextFollowAndFilterGateways(Instance instance, string? currentElement)
     {
-        List<FlowElement> filteredNext = new List<FlowElement>();
-        var directFlowTargets = _processReader.GetNextElements(currentElement, false, false);
+        List<FlowElement> directFlowTargets = _processReader.GetNextElements(currentElement);
         return await NextFollowAndFilterGateways(instance, directFlowTargets);
     }
 
@@ -41,7 +49,7 @@ public class FlowHydration: IFlowHydration
             }
 
             var gateway = (ExclusiveGateway)directFlowTarget;
-            var gatewayFilter = _gatewayFactory.GetProcessExclusiveGateway(directFlowTarget.Id);
+            IProcessExclusiveGateway? gatewayFilter = _gatewayFactory.GetProcessExclusiveGateway(directFlowTarget.Id);
             List<SequenceFlow> outgoingFlows = _processReader.GetOutgoingSequenceFlows(directFlowTarget);
             List<SequenceFlow> filteredList;
             if (gatewayFilter == null)
@@ -69,7 +77,7 @@ public class FlowHydration: IFlowHydration
         return filteredNext;
     }
 
-    private bool IsGateway(FlowElement flowElement)
+    private static bool IsGateway(FlowElement flowElement)
     {
         return flowElement is ExclusiveGateway;
     }
