@@ -11,6 +11,7 @@ using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
+using Altinn.App.Core.Internal.Process.Elements.Base;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Authorization.ABAC.Xacml.JsonProfile;
@@ -22,7 +23,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 
 namespace Altinn.App.Api.Controllers
@@ -45,6 +45,7 @@ namespace Altinn.App.Api.Controllers
         private readonly IPDP _pdp;
         private readonly IProcessEngine _processEngine;
         private readonly IProcessReader _processReader;
+        private readonly IFlowHydration _flowHydration;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ProcessController"/>
@@ -56,7 +57,8 @@ namespace Altinn.App.Api.Controllers
             IValidation validationService,
             IPDP pdp,
             IProcessEngine processEngine,
-            IProcessReader processReader)
+            IProcessReader processReader,
+            IFlowHydration flowHydration)
         {
             _logger = logger;
             _instanceClient = instanceClient;
@@ -66,6 +68,7 @@ namespace Altinn.App.Api.Controllers
             _processEngine = processEngine;
             using Stream bpmnStream = _processService.GetProcessDefinition();
             _processReader = processReader;
+            _flowHydration = flowHydration;
         }
 
         /// <summary>
@@ -190,15 +193,15 @@ namespace Altinn.App.Api.Controllers
                 {
                     return Conflict($"Instance does not have valid info about currentTask");
                 }
+                
+                List<FlowElement> nextElements = await _flowHydration.NextFollowAndFilterGateways(instance, currentTaskId);
 
-                List<string> nextElementIds = _processReader.GetNextElementIds(currentTaskId, true);
-
-                if (nextElementIds.Count == 0)
+                if (nextElements.Count == 0)
                 {
                     return NotFound("Cannot find any valid process elements that can be reached from current task");
                 }
 
-                return Ok(nextElementIds);
+                return Ok(nextElements.Select(e => e.Id).ToList());
             }
             catch (PlatformHttpException e)
             {
@@ -283,8 +286,8 @@ namespace Altinn.App.Api.Controllers
                 }
 
                 ProcessSequenceFlowType processSequenceFlowType = ProcessSequenceFlowType.CompleteCurrentMoveToNext;
-                List<string> possibleNextElements = _processReader.GetNextElementIds(instance.Process.CurrentTask?.ElementId, true, elementId.IsNullOrEmpty());
-                string targetElement = ProcessHelper.GetValidNextElementOrError(elementId, possibleNextElements, out ProcessError processError);
+                List<FlowElement> possibleNextElements = await _flowHydration.NextFollowAndFilterGateways(instance, instance.Process.CurrentTask?.ElementId);
+                string targetElement = ProcessHelper.GetValidNextElementOrError(elementId, possibleNextElements.Select(e => e.Id).ToList(), out ProcessError processError);
 
                 if (!string.IsNullOrEmpty(elementId) && processError == null)
                 {
@@ -394,14 +397,14 @@ namespace Altinn.App.Api.Controllers
                     return Conflict($"Instance is not valid for task {currentTaskId}. Automatic completion of process is stopped");
                 }
 
-                List<string> nextElements = _processReader.GetNextElementIds(currentTaskId, true);
+                List<FlowElement> nextElements = await _flowHydration.NextFollowAndFilterGateways(instance, currentTaskId);
 
                 if (nextElements.Count > 1)
                 {
                     return Conflict($"Cannot complete process. Multiple outgoing sequence flows detected from task {currentTaskId}. Please select manually among {nextElements}");
                 }
 
-                string nextElement = nextElements.First();
+                string nextElement = nextElements.First().Id;
 
                 try
                 {

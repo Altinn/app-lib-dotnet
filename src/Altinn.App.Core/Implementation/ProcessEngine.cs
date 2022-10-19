@@ -2,8 +2,8 @@ using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
+using Altinn.App.Core.Internal.Process.Elements.Base;
 using Altinn.App.Core.Models;
-using Microsoft.IdentityModel.Tokens;
 
 namespace Altinn.App.Core.Implementation
 {
@@ -18,16 +18,19 @@ namespace Altinn.App.Core.Implementation
         private readonly IProcessChangeHandler _processChangeHandler;
 
         private readonly IProcessReader _processReader;
+        private readonly IFlowHydration _flowHydration;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ProcessEngine"/> class.
         /// </summary>
         public ProcessEngine(
                 IProcessChangeHandler processChangeHandler,
-                IProcessReader processReader)
+                IProcessReader processReader,
+                IFlowHydration flowHydration)
         {
             _processChangeHandler = processChangeHandler;
             _processReader = processReader;
+            _flowHydration = flowHydration;
         }
 
         /// <summary>
@@ -54,8 +57,8 @@ namespace Altinn.App.Core.Implementation
             }
 
              // Find next valid element. Later this will be dynamic
-            List<string> possibleNextElements = _processReader.GetNextElementIds(currentElementId, true, processChange.RequestedProcessElementId.IsNullOrEmpty());
-            processChange.RequestedProcessElementId = ProcessHelper.GetValidNextElementOrError(processChange.RequestedProcessElementId, possibleNextElements,out ProcessError? nextElementError);
+             List<FlowElement> possibleNextElements = await _flowHydration.NextFollowAndFilterGateways(processChange.Instance, currentElementId);
+            processChange.RequestedProcessElementId = ProcessHelper.GetValidNextElementOrError(processChange.RequestedProcessElementId, possibleNextElements.Select(e => e.Id).ToList(),out ProcessError? nextElementError);
             if (nextElementError != null)
             {
                 processChange.ProcessMessages = new List<ProcessChangeInfo>();
@@ -109,8 +112,8 @@ namespace Altinn.App.Core.Implementation
             processChange.ProcessFlowElements.Add(validStartElement!);
 
             // find next task
-            List<string> possibleNextElements = _processReader.GetNextElementIds(validStartElement!, true);
-            string? nextValidElement = ProcessHelper.GetValidNextElementOrError(null, possibleNextElements,out ProcessError? nextElementError);
+            List<FlowElement> possibleNextElements = (await _flowHydration.NextFollowAndFilterGateways(processChange.Instance, validStartElement));
+            string? nextValidElement = ProcessHelper.GetValidNextElementOrError(null, possibleNextElements.Select(e => e.Id).ToList(),out ProcessError? nextElementError);
             if (nextElementError != null)
             {
                 processChange.ProcessMessages = new List<ProcessChangeInfo>();

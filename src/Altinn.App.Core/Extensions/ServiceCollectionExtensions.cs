@@ -4,6 +4,7 @@ using Altinn.App.Core.Features.DataProcessing;
 using Altinn.App.Core.Features.Options;
 using Altinn.App.Core.Features.PageOrder;
 using Altinn.App.Core.Features.Pdf;
+using Altinn.App.Core.Features.Process;
 using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Implementation;
@@ -149,8 +150,9 @@ namespace Altinn.App.Core.Extensions
         {
             services.TryAddTransient<IProcessEngine, ProcessEngine>();
             services.TryAddTransient<IProcessChangeHandler, ProcessChangeHandler>();
-            services.TryAddTransient<ProcessHelper>();
             services.TryAddTransient<IProcessReader, ProcessReader>();
+            services.TryAddTransient<ExclusiveGatewayFactory>();
+            services.TryAddTransient<IFlowHydration, FlowHydration>();
         }
     }
 }

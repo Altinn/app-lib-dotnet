@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
-using Altinn.App.Core.Internal.Process.Elements.Base;
 using Altinn.App.PlatformServices.Tests.Internal.Process.TestUtils;
 using FluentAssertions;
 using Xunit;
@@ -406,6 +405,20 @@ public class ProcessReaderTests
         var actual = pr.GetSequenceFlowsBetween(currentElement, nextElementId);
         var returnedIds = actual.Select(s => s.Id).ToList();
         returnedIds.Should().BeEquivalentTo("Flow2", "Flow4");
+        BpmnReader br = ProcessTestUtils.SetupBpmnReader(bpmnfile);
+        actual.Should().BeEquivalentTo(br.GetSequenceFlowsBetween(currentElement, nextElementId));
+    }
+    
+    [Fact]
+    public void GetSequenceFlowsBetween_returns_all_sequenceflows_between_Task1_and_EndEvent_complex()
+    {
+        var bpmnfile = "simple-gateway-with-join-gateway.bpmn";
+        var currentElement = "Task1";
+        var nextElementId = "EndEvent";
+        ProcessReader pr = ProcessTestUtils.SetupProcessReader(bpmnfile);
+        var actual = pr.GetSequenceFlowsBetween(currentElement, nextElementId);
+        var returnedIds = actual.Select(s => s.Id).ToList();
+        returnedIds.Should().BeEquivalentTo("Flow2", "Flow4", "Flow6");
         BpmnReader br = ProcessTestUtils.SetupBpmnReader(bpmnfile);
         actual.Should().BeEquivalentTo(br.GetSequenceFlowsBetween(currentElement, nextElementId));
     }
