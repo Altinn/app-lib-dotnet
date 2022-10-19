@@ -13,7 +13,7 @@ public class ExclusiveGatewayFactory
         _gateways = gateways;
     }
 
-    public IProcessExclusiveGateway GetProcessExclusiveGateway(string gatewayId)
+    public IProcessExclusiveGateway? GetProcessExclusiveGateway(string gatewayId)
     {
         foreach (var gateway in _gateways)
         {
@@ -23,12 +23,6 @@ public class ExclusiveGatewayFactory
             }
         }
 
-        if (String.Equals(DefaultImplName, gatewayId, StringComparison.CurrentCultureIgnoreCase))
-        {
-            throw new KeyNotFoundException("No default IProcessExclusiveGateway implementation found. Please check your service configuration.");
-        }   
-        
-        var defaultExclusiveGateway = (DefaultExclusiveGateway)GetProcessExclusiveGateway(DefaultImplName);
-        return defaultExclusiveGateway.CloneDefaultTo(gatewayId);
+        return null;
     }
 }

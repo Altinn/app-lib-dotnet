@@ -111,6 +111,13 @@ public interface IProcessReader
     public List<string> GetNextElementIds(string? currentElement, bool followGateways, bool useGatewayDefaults = true);
 
     /// <summary>
+    /// Get SequenceFlows out of the bpmn element
+    /// </summary>
+    /// <param name="flowElement">Element to get the outgoing sequenceflows from</param>
+    /// <returns>Outgoing sequence flows</returns>
+    public List<SequenceFlow> GetOutgoingSequenceFlows(FlowElement? flowElement);
+    
+    /// <summary>
     /// Returns a list of sequence flow to be followed between current step and next element
     /// </summary>
     public List<SequenceFlow> GetSequenceFlowsBetween(string? currentStepId, string? nextElementId);

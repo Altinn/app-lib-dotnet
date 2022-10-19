@@ -160,6 +160,16 @@ public class ProcessReader : IProcessReader
     }
 
     /// <inheritdoc />
+    public List<SequenceFlow> GetOutgoingSequenceFlows(FlowElement? flowElement)
+    {
+        if (flowElement == null)
+        {
+            return new List<SequenceFlow>();
+        }
+        return GetSequenceFlows().FindAll(sf => flowElement.Outgoing.Contains(sf.Id)).ToList();
+    }
+    
+    /// <inheritdoc />
     public List<SequenceFlow> GetSequenceFlowsBetween(string? currentStepId, string? nextElementId)
     {
         List<SequenceFlow> flowsToReachTarget = new List<SequenceFlow>();
@@ -209,14 +219,14 @@ public class ProcessReader : IProcessReader
             return startEvent;
         }
 
-        return null;
+        return _definitions.Process.ExclusiveGateway.Find(e => e.Id == elementId);
     }
 
     /// <inheritdoc />
     public ElementInfo? GetElementInfo(string? elementId)
     {
         var e = GetFlowElement(elementId);
-        if (e == null)
+        if (e == null || e is ExclusiveGateway)
         {
             return null;
         }
