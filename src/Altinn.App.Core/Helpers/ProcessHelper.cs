@@ -98,12 +98,9 @@ namespace Altinn.App.Core.Helpers
         {
             foreach (SequenceFlow flow in flows)
             {
-                if (!string.IsNullOrEmpty(flow.FlowType))
+                if (!string.IsNullOrEmpty(flow.FlowType) && Enum.TryParse(flow.FlowType, out ProcessSequenceFlowType flowType))
                 {
-                    if (Enum.TryParse(flow.FlowType, out ProcessSequenceFlowType flowType))
-                    {
-                        return flowType;
-                    }
+                    return flowType;
                 }
             }
 

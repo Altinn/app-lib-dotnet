@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -66,7 +65,6 @@ namespace Altinn.App.Api.Controllers
             _validationService = validationService;
             _pdp = pdp;
             _processEngine = processEngine;
-            using Stream bpmnStream = _processService.GetProcessDefinition();
             _processReader = processReader;
             _flowHydration = flowHydration;
         }

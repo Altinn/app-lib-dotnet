@@ -1,5 +1,4 @@
 using Altinn.App.Core.Features;
-using Altinn.App.Core.Features.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
 using Altinn.Platform.Storage.Interface.Models;
@@ -29,7 +28,7 @@ public class FlowHydration: IFlowHydration
     public async Task<List<ProcessElement>> NextFollowAndFilterGateways(Instance instance, string? currentElement)
     {
         List<ProcessElement> directFlowTargets = _processReader.GetNextElements(currentElement);
-        return await NextFollowAndFilterGateways(instance, directFlowTargets);
+        return await NextFollowAndFilterGateways(instance, directFlowTargets!);
     }
 
     /// <inheritdoc />

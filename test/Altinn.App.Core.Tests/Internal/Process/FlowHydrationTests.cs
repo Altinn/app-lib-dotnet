@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Altinn.App.Core.Features;
-using Altinn.App.Core.Features.Process;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
@@ -196,8 +195,18 @@ public class FlowHydrationTests
         List<ProcessElement> nextElements = await flowHydrator.NextFollowAndFilterGateways(i, "Task1");
         nextElements.Should().BeEmpty();
     }
+    
+    [Fact]
+    public async void NextFollowAndFilterGateways_returns_empty_list_if_element_has_no_next()
+    {
+        IFlowHydration flowHydrator = SetupFlowHydration("simple-gateway-with-join-gateway.bpmn", new List<IProcessExclusiveGateway>());
+        Instance i = new Instance();
+        
+        List<ProcessElement> nextElements = await flowHydrator.NextFollowAndFilterGateways(i, "EndEvent");
+        nextElements.Should().BeEmpty();
+    }
 
-    private IFlowHydration SetupFlowHydration(string bpmnfile, IEnumerable<IProcessExclusiveGateway> gatewayFilters)
+    private static IFlowHydration SetupFlowHydration(string bpmnfile, IEnumerable<IProcessExclusiveGateway> gatewayFilters)
     {
         ProcessReader pr = ProcessTestUtils.SetupProcessReader(bpmnfile);
         return new FlowHydration(pr, new ExclusiveGatewayFactory(gatewayFilters));

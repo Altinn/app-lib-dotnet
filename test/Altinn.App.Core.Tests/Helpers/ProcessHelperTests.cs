@@ -277,4 +277,27 @@ public class ProcessHelperTests
         };
         ProcessHelper.GetSequenceFlowType(sequenceFlows).Should().Be(ProcessSequenceFlowType.CompleteCurrentMoveToNext);
     }
+    
+    [Fact]
+    public void GetSequenceFlowType_returns_CompleteCurrentMoveToNext_if_Unknown_FlowTypes()
+    {
+        List<SequenceFlow> sequenceFlows = new List<SequenceFlow>()
+        {
+            new SequenceFlow()
+            {
+                Id = "Flow1",
+                SourceRef = "Task1",
+                TargetRef = "Task2",
+                FlowType = "FooFlowType"
+            },
+            new SequenceFlow()
+            {
+                Id = "Flow2",
+                SourceRef = "Task2",
+                TargetRef = "Task3",
+                FlowType = "BarFlowType"
+            }
+        };
+        ProcessHelper.GetSequenceFlowType(sequenceFlows).Should().Be(ProcessSequenceFlowType.CompleteCurrentMoveToNext);
+    }
 }

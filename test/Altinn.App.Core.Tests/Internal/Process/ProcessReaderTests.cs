@@ -148,17 +148,7 @@ public class ProcessReaderTests
     {
         var bpmnfile = "simple-linear.bpmn";
         ProcessReader pr = ProcessTestUtils.SetupProcessReader(bpmnfile);
-        Exception actualException = null;
-        try
-        {
-            pr.GetNextElementIds(null!);
-        }
-        catch (Exception e)
-        {
-            actualException = e;
-        }
-
-        actualException.Should().BeOfType<ArgumentNullException>();
+        pr.Invoking(p => p.GetNextElementIds(null!)).Should().Throw<ArgumentNullException>();
     }
     
     [Fact]
@@ -167,17 +157,7 @@ public class ProcessReaderTests
         var bpmnfile = "simple-linear.bpmn";
         var currentElement = "NoStep";
         ProcessReader pr = ProcessTestUtils.SetupProcessReader(bpmnfile);
-        Exception actualException = null;
-        try
-        {
-            pr.GetNextElementIds(currentElement);
-        }
-        catch (Exception e)
-        {
-            actualException = e;
-        }
-
-        actualException.Should().BeOfType<ProcessException>();
+        pr.Invoking(p => p.GetNextElementIds(currentElement)).Should().Throw<ProcessException>();
     }
 
     [Fact]
@@ -243,17 +223,7 @@ public class ProcessReaderTests
     {
         var bpmnfile = "simple-linear.bpmn";
         ProcessReader pr = ProcessTestUtils.SetupProcessReader(bpmnfile);
-        Exception actualException = null;
-        try
-        {
-            pr.GetElementInfo(null!);
-        }
-        catch (Exception e)
-        {
-            actualException = e;
-        }
-
-        actualException.Should().BeOfType<ArgumentNullException>();
+        pr.Invoking(p => p.GetElementInfo(null!)).Should().Throw<ArgumentNullException>();
     }
 
     [Fact]
