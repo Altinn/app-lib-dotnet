@@ -57,6 +57,7 @@ public static class ExpressionEvaluator
             ExpressionFunctionEnum.dataModel => state.GetModelData(args.First()?.ToString()!, context),
             ExpressionFunctionEnum.component => state.GetComponentData(args.First()?.ToString()!, context),
             ExpressionFunctionEnum.instanceContext => state.GetInstanceContext(args.First()?.ToString()!),
+            ExpressionFunctionEnum.@if => IfImpl(args),
             ExpressionFunctionEnum.frontendSettings => state.GetFrontendSetting(args.First()?.ToString()!),
             ExpressionFunctionEnum.concat => Concat(args),
             ExpressionFunctionEnum.equals => EqualsImplementation(args),
@@ -156,6 +157,39 @@ public static class ExpressionEvaluator
         };
 
         return (a, b);
+    }
+
+    private static object? IfImpl(object?[] args)
+    {
+        if (args.Length == 2)
+        {
+
+            if (PrepareBooleanArg(args[0]))
+            {
+                return args[1];
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        if (args.Length > 2 && !"else".Equals(args[2] as string, StringComparison.InvariantCultureIgnoreCase))
+        {
+            throw new Exception("Expected third argument to be \"else\"");
+        }
+        if (args.Length == 4)
+        {
+            if (PrepareBooleanArg(args[0]))
+            {
+                return args[1];
+            }
+            else
+            {
+                return args[3];
+            }
+        }
+        throw new Exception("Expected either 2 arguments (if) or 4 (if + else), got " + args.Length);
     }
 
     private static readonly Regex numberRegex = new Regex(@"^-?\d+(\.\d+)?$");

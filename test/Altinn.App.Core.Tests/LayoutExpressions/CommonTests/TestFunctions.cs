@@ -57,6 +57,10 @@ public class TestFunctions
     public void GreaterThanEq_Theory(ExpressionTestCaseRoot test) => RunTestCase(test);
 
     [Theory]
+    [SharedTest("if")]
+    public void If_Theory(ExpressionTestCaseRoot test) => RunTestCase(test);
+
+    [Theory]
     [SharedTest("instanceContext")]
     public void InstanceContext_Theory(ExpressionTestCaseRoot test) => RunTestCase(test);
 

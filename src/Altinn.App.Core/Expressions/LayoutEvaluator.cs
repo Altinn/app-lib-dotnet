@@ -35,8 +35,13 @@ public static class LayoutEvaluator
             HiddenFieldsForRemovalReucrs(state, hiddenModelBindings, nonHiddenModelBindings, childContext, hidden);
         }
 
-        foreach (var binding in context.Component.DataModelBindings.Values)
+        foreach (var (bindingName, binding) in context.Component.DataModelBindings)
         {
+            if(bindingName == "group")
+            {
+                continue;
+            }
+
             var indexed_binding = state.AddInidicies(binding, context);
 
             if (hidden)

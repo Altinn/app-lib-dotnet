@@ -125,9 +125,19 @@ public class DataModel : IDataModelAccessor
             throw new Exception($"Unknown model property {key} in {fullKey}");
         }
 
-        var type = prop.PropertyType;
-        if (type != typeof(string) && type.IsAssignableTo(typeof(System.Collections.IEnumerable)))
+        var childType = prop.PropertyType;
+        // Strings are enumerable in C#
+        // Other enumerable types is treated as an collection
+        if (childType != typeof(string) && childType.IsAssignableTo(typeof(System.Collections.IEnumerable)))
         {
+            var childTypeEnumerableParameter = childType.GetInterfaces()
+               .Where(t => t.IsGenericType && t.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+               .Select(t => t.GetGenericArguments()[0]).FirstOrDefault();
+
+            if (childTypeEnumerableParameter is null)
+            {
+                throw new Exception("DataModels must have generic IEnumerable<> implementation for list");
+            }
 
             if (groupIndex is null)
             {
@@ -139,8 +149,7 @@ public class DataModel : IDataModelAccessor
                 indicies = default;
             }
 
-            AddIndiciesRecursive(ret, type, keys.Slice(1), fullKey, indicies.Slice(1));
-
+            AddIndiciesRecursive(ret, childTypeEnumerableParameter, keys.Slice(1), fullKey, indicies.Slice(1));
         }
         else
         {
@@ -149,7 +158,7 @@ public class DataModel : IDataModelAccessor
                 throw new Exception("Index on non indexable property");
             }
             ret.Add(key);
-            AddIndiciesRecursive(ret, type, keys.Slice(1), fullKey, indicies);
+            AddIndiciesRecursive(ret, childType, keys.Slice(1), fullKey, indicies);
         }
     }
 

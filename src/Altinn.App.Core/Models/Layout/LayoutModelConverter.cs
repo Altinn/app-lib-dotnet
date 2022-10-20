@@ -310,7 +310,7 @@ public class LayoutModelConverter : JsonConverter<LayoutModel>
                 {
                     throw new JsonException("\"optionId\" or \"options\" is required on checkboxes, radiobuttons and dropdowns");
                 }
-                if (optionId is null || literalOptions is null)
+                if (optionId is not null && literalOptions is not null)
                 {
                     throw new JsonException("\"optionId\" and \"options\" can't both be specified");
                 }

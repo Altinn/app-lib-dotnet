@@ -44,8 +44,8 @@ public class LayoutModel
         {
             var node = nodes.Pop();
             yield return node;
-            if(node is GroupComponent groupNode)
-            foreach (var n in groupNode.Children) nodes.Push(n);
+            if (node is GroupComponent groupNode)
+                foreach (var n in groupNode.Children) nodes.Push(n);
         }
     }
 
@@ -66,7 +66,8 @@ public class LayoutModel
         {
             throw new Exception("component lookup requires the target component ");
         }
-        return dataModel.GetModelData(binding);
+
+        return dataModel.GetModelData(binding, context.RowIndices);
     }
 }
 
