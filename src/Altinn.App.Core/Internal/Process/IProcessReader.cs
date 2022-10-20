@@ -95,27 +95,23 @@ public interface IProcessReader
     /// <summary>
     /// Find all possible next elements from current element
     /// </summary>
-    /// <param name="currentElement">Current FlowElement</param>
-    /// <param name="followGateways">Follow gateways and return downstream element instead</param>
-    /// <param name="useGatewayDefaults">If gateway has default follow it</param>
+    /// <param name="currentElementId">Current process element id</param>
     /// <returns></returns>
-    public List<FlowElement> GetNextElements(string? currentElement, bool followGateways, bool useGatewayDefaults = true);
+    public List<ProcessElement> GetNextElements(string? currentElementId);
 
     /// <summary>
     /// Find ids of all possible next elements from current element
     /// </summary>
-    /// <param name="currentElement">Current FlowElement Id</param>
-    /// <param name="followGateways">Follow gateways and return downstream ids instead</param>
-    /// <param name="useGatewayDefaults">If gateway has default follow it</param>
+    /// <param name="currentElement">Current ProcessElement Id</param>
     /// <returns></returns>
-    public List<string> GetNextElementIds(string? currentElement, bool followGateways, bool useGatewayDefaults = true);
+    public List<string> GetNextElementIds(string? currentElement);
 
     /// <summary>
     /// Get SequenceFlows out of the bpmn element
     /// </summary>
     /// <param name="flowElement">Element to get the outgoing sequenceflows from</param>
     /// <returns>Outgoing sequence flows</returns>
-    public List<SequenceFlow> GetOutgoingSequenceFlows(FlowElement? flowElement);
+    public List<SequenceFlow> GetOutgoingSequenceFlows(ProcessElement? flowElement);
     
     /// <summary>
     /// Returns a list of sequence flow to be followed between current step and next element
@@ -126,8 +122,8 @@ public interface IProcessReader
     /// Returns StartEvent, Task or EndEvent with given Id, null if element not found
     /// </summary>
     /// <param name="elementId">Id of element to look for</param>
-    /// <returns><see cref="FlowElement"/> or null</returns>
-    public FlowElement? GetFlowElement(string? elementId);
+    /// <returns><see cref="ProcessElement"/> or null</returns>
+    public ProcessElement? GetFlowElement(string? elementId);
 
     /// <summary>
     /// Retuns ElementInfo for StartEvent, Task or EndEvent with given Id, null if element not found

@@ -8,19 +8,8 @@ namespace Altinn.App.Core.Helpers
     /// <summary>
     /// Helper class for handling the process for an instance.
     /// </summary>
-    public class ProcessHelper
+    public static class ProcessHelper
     {
-        private readonly IProcessReader _processReader;
-
-        /// <summary>
-        /// Initialize a new instance of the <see cref="ProcessHelper"/> class with the given data stream.
-        /// </summary>
-        /// <param name="processReader">IProcessReader for reading process</param>
-        public ProcessHelper(IProcessReader processReader)
-        {
-            _processReader = processReader;
-        }
-
         /// <summary>
         /// Validates that the process can start from the given start event.
         /// </summary>
@@ -150,43 +139,6 @@ namespace Altinn.App.Core.Helpers
             }
 
             return await Task.FromResult(false);
-        }
-
-
-        /// <summary>
-        /// Checks whether the given element id is a task.
-        /// </summary>
-        /// <param name="nextElementId">The name of an element from the process.</param>
-        /// <returns>True if the element is a task.</returns>
-        [Obsolete("Method is deprecated and will be removed. Please use IProcessReader.IsTask(string) instead", false)]
-        public bool IsTask(string nextElementId)
-        {
-            List<string> tasks = _processReader.GetProcessTaskIds();
-            return tasks.Contains(nextElementId);
-        }
-
-        /// <summary>
-        /// Checks whether the given element id is a start event.
-        /// </summary>
-        /// <param name="startEventId">The name of an element from the process.</param>
-        /// <returns>True if the element is a start event.</returns>
-        [Obsolete("Method is deprecated and will be removed. Please use IProcessReader.IsStartEvent(string) instead", false)]
-        public bool IsStartEvent(string startEventId)
-        {
-            List<string> startEvents = _processReader.GetStartEventIds();
-            return startEvents.Contains(startEventId);
-        }
-
-        /// <summary>
-        /// Checks whether the given element id is an end event.
-        /// </summary>
-        /// <param name="nextElementId">The name of an element from the process.</param>
-        /// <returns>True if the element is an end event.</returns>
-        [Obsolete("Method is deprecated and will be removed. Please use IProcessReader.IsEndEvent(string) instead", false)]
-        public bool IsEndEvent(string nextElementId)
-        {
-            List<string> endEvents = _processReader.GetEndEventIds();
-            return endEvents.Contains(nextElementId);
         }
 
         private static ProcessError Conflict(string text)

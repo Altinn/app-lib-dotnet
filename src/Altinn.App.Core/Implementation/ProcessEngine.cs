@@ -57,7 +57,7 @@ namespace Altinn.App.Core.Implementation
             }
 
              // Find next valid element. Later this will be dynamic
-             List<FlowElement> possibleNextElements = await _flowHydration.NextFollowAndFilterGateways(processChange.Instance, currentElementId);
+             List<ProcessElement> possibleNextElements = await _flowHydration.NextFollowAndFilterGateways(processChange.Instance, currentElementId);
             processChange.RequestedProcessElementId = ProcessHelper.GetValidNextElementOrError(processChange.RequestedProcessElementId, possibleNextElements.Select(e => e.Id).ToList(),out ProcessError? nextElementError);
             if (nextElementError != null)
             {
@@ -112,7 +112,7 @@ namespace Altinn.App.Core.Implementation
             processChange.ProcessFlowElements.Add(validStartElement!);
 
             // find next task
-            List<FlowElement> possibleNextElements = (await _flowHydration.NextFollowAndFilterGateways(processChange.Instance, validStartElement));
+            List<ProcessElement> possibleNextElements = (await _flowHydration.NextFollowAndFilterGateways(processChange.Instance, validStartElement));
             string? nextValidElement = ProcessHelper.GetValidNextElementOrError(null, possibleNextElements.Select(e => e.Id).ToList(),out ProcessError? nextElementError);
             if (nextElementError != null)
             {

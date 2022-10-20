@@ -5,7 +5,7 @@ namespace Altinn.App.Core.Internal.Process.Elements.Base;
 /// <summary>
 /// Base for all flow elements in BPMN (startevent, taks, gateways, endevents)
 /// </summary>
-public abstract class FlowElement
+public abstract class ProcessElement
 {
     /// <summary>
     /// Gets or sets the ID of a flow element
@@ -31,5 +31,9 @@ public abstract class FlowElement
     [XmlElement("outgoing")]
     public List<string> Outgoing { get; set; }
 
+    /// <summary>
+    /// String representation of process element type
+    /// </summary>
+    /// <returns></returns>
     public abstract string ElementType();
 }

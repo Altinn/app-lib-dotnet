@@ -18,8 +18,8 @@ public class FlowHydrationTests
     public async void NextFollowAndFilterGateways_returns_next_element_if_no_gateway()
     {
         IFlowHydration flowHydrator = SetupFlowHydration("simple-linear.bpmn", new List<IProcessExclusiveGateway>());
-        List<FlowElement> nextElements = await flowHydrator.NextFollowAndFilterGateways(new Instance(), "Task1");
-        nextElements.Should().BeEquivalentTo(new List<FlowElement>()
+        List<ProcessElement> nextElements = await flowHydrator.NextFollowAndFilterGateways(new Instance(), "Task1");
+        nextElements.Should().BeEquivalentTo(new List<ProcessElement>()
         {
             new ProcessTask()
             {
@@ -36,7 +36,7 @@ public class FlowHydrationTests
     public async void NextFollowAndFilterGateways_returns_empty_list_if_no_outgoing_flows()
     {
         IFlowHydration flowHydrator = SetupFlowHydration("simple-linear.bpmn", new List<IProcessExclusiveGateway>());
-        List<FlowElement> nextElements = await flowHydrator.NextFollowAndFilterGateways(new Instance(), "EndEvent");
+        List<ProcessElement> nextElements = await flowHydrator.NextFollowAndFilterGateways(new Instance(), "EndEvent");
         nextElements.Should().BeEmpty();
     }
 
@@ -44,8 +44,8 @@ public class FlowHydrationTests
     public async void NextFollowAndFilterGateways_returns_default_if_no_filtering_is_implemented_and_default_set()
     {
         IFlowHydration flowHydrator = SetupFlowHydration("simple-gateway-default.bpmn", new List<IProcessExclusiveGateway>());
-        List<FlowElement> nextElements = await flowHydrator.NextFollowAndFilterGateways(new Instance(), "Task1");
-        nextElements.Should().BeEquivalentTo(new List<FlowElement>()
+        List<ProcessElement> nextElements = await flowHydrator.NextFollowAndFilterGateways(new Instance(), "Task1");
+        nextElements.Should().BeEquivalentTo(new List<ProcessElement>()
         {
             new ProcessTask()
             {
@@ -62,8 +62,8 @@ public class FlowHydrationTests
     public async void NextFollowAndFilterGateways_returns_all_gateway_target_tasks_if_no_filter_and_default()
     {
         IFlowHydration flowHydrator = SetupFlowHydration("simple-gateway.bpmn", new List<IProcessExclusiveGateway>());
-        List<FlowElement> nextElements = await flowHydrator.NextFollowAndFilterGateways(new Instance(), "Task1");
-        nextElements.Should().BeEquivalentTo(new List<FlowElement>()
+        List<ProcessElement> nextElements = await flowHydrator.NextFollowAndFilterGateways(new Instance(), "Task1");
+        nextElements.Should().BeEquivalentTo(new List<ProcessElement>()
         {
             new ProcessTask()
             {
@@ -99,8 +99,8 @@ public class FlowHydrationTests
             }
         };
         
-        List<FlowElement> nextElements = await flowHydrator.NextFollowAndFilterGateways(i, "Task1");
-        nextElements.Should().BeEquivalentTo(new List<FlowElement>()
+        List<ProcessElement> nextElements = await flowHydrator.NextFollowAndFilterGateways(i, "Task1");
+        nextElements.Should().BeEquivalentTo(new List<ProcessElement>()
         {
             new ProcessTask()
             {
@@ -128,8 +128,8 @@ public class FlowHydrationTests
             }
         };
         
-        List<FlowElement> nextElements = await flowHydrator.NextFollowAndFilterGateways(i, "Task1");
-        nextElements.Should().BeEquivalentTo(new List<FlowElement>()
+        List<ProcessElement> nextElements = await flowHydrator.NextFollowAndFilterGateways(i, "Task1");
+        nextElements.Should().BeEquivalentTo(new List<ProcessElement>()
         {
             new ProcessTask()
             {
@@ -154,8 +154,8 @@ public class FlowHydrationTests
     public async void NextFollowAndFilterGateways_follows_downstream_gateways()
     {
         IFlowHydration flowHydrator = SetupFlowHydration("simple-gateway-with-join-gateway.bpmn", new List<IProcessExclusiveGateway>());
-        List<FlowElement> nextElements = await flowHydrator.NextFollowAndFilterGateways(new Instance(), "Task1");
-        nextElements.Should().BeEquivalentTo(new List<FlowElement>()
+        List<ProcessElement> nextElements = await flowHydrator.NextFollowAndFilterGateways(new Instance(), "Task1");
+        nextElements.Should().BeEquivalentTo(new List<ProcessElement>()
         {
             new ProcessTask()
             {
@@ -193,7 +193,7 @@ public class FlowHydrationTests
             }
         };
         
-        List<FlowElement> nextElements = await flowHydrator.NextFollowAndFilterGateways(i, "Task1");
+        List<ProcessElement> nextElements = await flowHydrator.NextFollowAndFilterGateways(i, "Task1");
         nextElements.Should().BeEmpty();
     }
 

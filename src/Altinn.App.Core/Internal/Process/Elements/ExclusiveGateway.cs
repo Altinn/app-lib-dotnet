@@ -6,14 +6,18 @@ namespace Altinn.App.Core.Internal.Process.Elements
     /// <summary>
     /// Represents an exclusive gateway from a BPMN process definition.
     /// </summary>
-    public class ExclusiveGateway: FlowElement
+    public class ExclusiveGateway: ProcessElement
     {
         /// <summary>
         /// Get or sets the default path of the exclusive gateway.
         /// </summary>
         [XmlAttribute("default")]
-        public string Default { get; set; }
+        public string? Default { get; set; }
 
+        /// <summary>
+        /// String representation of process element type
+        /// </summary>
+        /// <returns>ExclusiveGateway</returns>
         public override string ElementType()
         {
             return "ExclusiveGateway";

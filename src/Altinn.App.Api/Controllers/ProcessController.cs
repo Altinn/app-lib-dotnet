@@ -194,7 +194,7 @@ namespace Altinn.App.Api.Controllers
                     return Conflict($"Instance does not have valid info about currentTask");
                 }
                 
-                List<FlowElement> nextElements = await _flowHydration.NextFollowAndFilterGateways(instance, currentTaskId);
+                List<ProcessElement> nextElements = await _flowHydration.NextFollowAndFilterGateways(instance, currentTaskId);
 
                 if (nextElements.Count == 0)
                 {
@@ -286,7 +286,7 @@ namespace Altinn.App.Api.Controllers
                 }
 
                 ProcessSequenceFlowType processSequenceFlowType = ProcessSequenceFlowType.CompleteCurrentMoveToNext;
-                List<FlowElement> possibleNextElements = await _flowHydration.NextFollowAndFilterGateways(instance, instance.Process.CurrentTask?.ElementId);
+                List<ProcessElement> possibleNextElements = await _flowHydration.NextFollowAndFilterGateways(instance, instance.Process.CurrentTask?.ElementId);
                 string targetElement = ProcessHelper.GetValidNextElementOrError(elementId, possibleNextElements.Select(e => e.Id).ToList(), out ProcessError processError);
 
                 if (!string.IsNullOrEmpty(elementId) && processError == null)
@@ -397,7 +397,7 @@ namespace Altinn.App.Api.Controllers
                     return Conflict($"Instance is not valid for task {currentTaskId}. Automatic completion of process is stopped");
                 }
 
-                List<FlowElement> nextElements = await _flowHydration.NextFollowAndFilterGateways(instance, currentTaskId);
+                List<ProcessElement> nextElements = await _flowHydration.NextFollowAndFilterGateways(instance, currentTaskId);
 
                 if (nextElements.Count > 1)
                 {

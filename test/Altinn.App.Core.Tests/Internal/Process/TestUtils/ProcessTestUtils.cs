@@ -16,10 +16,4 @@ internal static class ProcessTestUtils
         processServiceMock.Setup(p => p.GetProcessDefinition()).Returns(s);
         return new ProcessReader(processServiceMock.Object);
     }
-
-    internal static BpmnReader SetupBpmnReader(string bpmnfile)
-    {
-        var s = new FileStream(Path.Combine(TestDataPath, bpmnfile), FileMode.Open, FileAccess.Read);
-        return BpmnReader.Create(s);
-    }
 }

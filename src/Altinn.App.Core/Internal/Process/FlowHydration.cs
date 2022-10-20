@@ -26,16 +26,16 @@ public class FlowHydration: IFlowHydration
     }
     
     /// <inheritdoc />
-    public async Task<List<FlowElement>> NextFollowAndFilterGateways(Instance instance, string? currentElement)
+    public async Task<List<ProcessElement>> NextFollowAndFilterGateways(Instance instance, string? currentElement)
     {
-        List<FlowElement> directFlowTargets = _processReader.GetNextElements(currentElement, false, false);
+        List<ProcessElement> directFlowTargets = _processReader.GetNextElements(currentElement);
         return await NextFollowAndFilterGateways(instance, directFlowTargets);
     }
 
     /// <inheritdoc />
-    public async Task<List<FlowElement>> NextFollowAndFilterGateways(Instance instance, List<FlowElement?> originNextElements)
+    public async Task<List<ProcessElement>> NextFollowAndFilterGateways(Instance instance, List<ProcessElement?> originNextElements)
     {
-        List<FlowElement> filteredNext = new List<FlowElement>();
+        List<ProcessElement> filteredNext = new List<ProcessElement>();
         foreach (var directFlowTarget in originNextElements)
         {
             if (directFlowTarget == null)
@@ -65,7 +65,7 @@ public class FlowHydration: IFlowHydration
             if (defaultSequenceFlow != null)
             {
                 var defaultTarget = _processReader.GetFlowElement(defaultSequenceFlow.TargetRef);
-                filteredNext.AddRange(await NextFollowAndFilterGateways(instance, new List<FlowElement?> { defaultTarget }));
+                filteredNext.AddRange(await NextFollowAndFilterGateways(instance, new List<ProcessElement?> { defaultTarget }));
             }
             else
             {
@@ -77,8 +77,8 @@ public class FlowHydration: IFlowHydration
         return filteredNext;
     }
 
-    private static bool IsGateway(FlowElement flowElement)
+    private static bool IsGateway(ProcessElement processElement)
     {
-        return flowElement is ExclusiveGateway;
+        return processElement is ExclusiveGateway;
     }
 }
