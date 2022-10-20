@@ -22,6 +22,10 @@ public enum ExpressionFunctionEnum
     /// </summary>
     instanceContext,
     /// <summary>
+    /// Conditional
+    /// </summary>
+    @if,
+    /// <summary>
     /// Lookup settings from the `frontendSettings` key in appsettings.json (or any environment overrides)
     /// </summary>
     frontendSettings,
