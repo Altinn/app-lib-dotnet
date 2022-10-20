@@ -110,12 +110,10 @@ namespace Altinn.App.Core.Helpers
         /// <summary>
         ///  Called before a process task is ended. App can do extra validation logic and add validation issues to collection which will be returned by the controller.
         /// </summary>
-        /// <param name="taskId">The id of the task to be ended.</param>
         /// <param name="instance">The instance to be ended.</param>
         /// <param name="validationIssues">The collection of validation issues.</param> 
         /// <returns>true task can be ended, false otherwise</returns>
-        public static async Task<bool> CanEndProcessTask(string taskId, Instance instance,
-            List<ValidationIssue> validationIssues)
+        public static async Task<bool> CanEndProcessTask(Instance instance, List<ValidationIssue> validationIssues)
         {
             // check if the task is validated
             if (instance.Process?.CurrentTask?.Validated != null)

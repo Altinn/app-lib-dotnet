@@ -38,6 +38,7 @@ public class ProcessReaderTests
         pr.IsStartEvent("EndEvent").Should().BeFalse();
         pr.IsStartEvent("Gateway1").Should().BeFalse();
         pr.IsStartEvent("Foobar").Should().BeFalse();
+        pr.IsStartEvent(null).Should().BeFalse();
     }
     
     [Fact]
@@ -55,6 +56,7 @@ public class ProcessReaderTests
         pr.IsProcessTask("EndEvent").Should().BeFalse();
         pr.IsProcessTask("Gateway1").Should().BeFalse();
         pr.IsProcessTask("Foobar").Should().BeFalse();
+        pr.IsProcessTask(null).Should().BeFalse();
     }
     
     [Fact]
@@ -72,6 +74,7 @@ public class ProcessReaderTests
         pr.IsEndEvent("Task1").Should().BeFalse();
         pr.IsEndEvent("Gateway1").Should().BeFalse();
         pr.IsEndEvent("Foobar").Should().BeFalse();
+        pr.IsEndEvent(null).Should().BeFalse();
     }
     
     [Fact]
@@ -362,7 +365,7 @@ public class ProcessReaderTests
     public void GetSequenceFlowsBetween_returns_empty_list_when_next_is_null()
     {
         var bpmnfile = "simple-gateway-default.bpmn";
-        string? currentElement = "Task1";
+        string currentElement = "Task1";
         string? nextElementId = null;
         ProcessReader pr = ProcessTestUtils.SetupProcessReader(bpmnfile);
         var actual = pr.GetSequenceFlowsBetween(currentElement, nextElementId);

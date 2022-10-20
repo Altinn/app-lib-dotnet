@@ -223,11 +223,11 @@ namespace Altinn.App.Api.Controllers
             {
                 validationIssues = await _validationService.ValidateAndUpdateProcess(instance, currentElementId);
 
-                canEndTask = await ProcessHelper.CanEndProcessTask(currentElementId, instance, validationIssues);
+                canEndTask = await ProcessHelper.CanEndProcessTask(instance, validationIssues);
             }
             else
             {
-                canEndTask = await ProcessHelper.CanEndProcessTask(currentElementId, instance, validationIssues);
+                canEndTask = await ProcessHelper.CanEndProcessTask(instance, validationIssues);
             }
 
             return canEndTask;

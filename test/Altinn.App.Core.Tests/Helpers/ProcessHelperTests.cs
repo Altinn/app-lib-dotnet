@@ -38,7 +38,7 @@ public class ProcessHelperTests
         };
 
         // Act and Assert
-        ProcessHelper.CanEndProcessTask("TaskId", instance, validationIssues).Result.Should().BeTrue();
+        ProcessHelper.CanEndProcessTask(instance, validationIssues).Result.Should().BeTrue();
     }
 
     [Fact]
@@ -49,7 +49,7 @@ public class ProcessHelperTests
         var validationIssues = new List<ValidationIssue>();
 
         // Act and Assert
-        ProcessHelper.CanEndProcessTask("TaskId", instance, validationIssues).Result.Should().BeTrue();
+        ProcessHelper.CanEndProcessTask(instance, validationIssues).Result.Should().BeTrue();
     }
 
     [Fact]
@@ -72,7 +72,7 @@ public class ProcessHelperTests
         var validationIssues = new List<ValidationIssue>();
 
         // Act and Assert
-        ProcessHelper.CanEndProcessTask("TaskId", instance, validationIssues).Result.Should().BeFalse();
+        ProcessHelper.CanEndProcessTask(instance, validationIssues).Result.Should().BeFalse();
     }
 
     [Fact]
@@ -89,7 +89,7 @@ public class ProcessHelperTests
         };
 
         // Act and Assert
-        ProcessHelper.CanEndProcessTask("TaskId", instance, validationIssues).Result.Should().BeFalse();
+        ProcessHelper.CanEndProcessTask(instance, validationIssues).Result.Should().BeFalse();
     }
 
     [Fact]
@@ -213,7 +213,7 @@ public class ProcessHelperTests
     }
 
     [Fact]
-    public void GetSequenceFlowType_returns_flowtype_of_first_sequenceflow()
+    public void GetSequenceFlowType_returns_flowtype_of_first_SequenceFlow()
     {
         List<SequenceFlow> sequenceFlows = new List<SequenceFlow>()
         {

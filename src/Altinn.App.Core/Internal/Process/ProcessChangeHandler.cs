@@ -1,21 +1,19 @@
 using System.Security.Claims;
 using Altinn.App.Core.Configuration;
-using Altinn.App.Core.Features.Validation;
-using Altinn.App.Core.Interface;
-using Altinn.App.Core.Models;
 using Altinn.App.Core.Extensions;
+using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Helpers;
-using Altinn.App.Core.Internal.Process;
+using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.Process.Elements;
+using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
-
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Altinn.App.Core.Implementation
+namespace Altinn.App.Core.Internal.Process
 {
     /// <summary>
     /// Handler that implements needed logic related to different process changes. Identifies the correct types of tasks and trigger the different task and event
@@ -120,11 +118,11 @@ namespace Altinn.App.Core.Implementation
             {
                 validationIssues = await _validationService.ValidateAndUpdateProcess(processChange.Instance, processChange.Instance.Process.CurrentTask?.ElementId);
 
-                canEndTask = await ProcessHelper.CanEndProcessTask(processChange.Instance.Process.CurrentTask?.ElementId, processChange.Instance, validationIssues);
+                canEndTask = await ProcessHelper.CanEndProcessTask(processChange.Instance, validationIssues);
             }
             else
             {
-                canEndTask = await ProcessHelper.CanEndProcessTask(processChange.Instance.Process.CurrentTask?.ElementId, processChange.Instance, validationIssues);
+                canEndTask = await ProcessHelper.CanEndProcessTask(processChange.Instance, validationIssues);
             }
 
             return canEndTask;
@@ -134,11 +132,11 @@ namespace Altinn.App.Core.Implementation
         /// Identify the correct task implementation
         /// </summary>
         /// <returns></returns>
-        private ITask GetProcessTask(string altinnTaskType)
+        private ITask GetProcessTask(string? altinnTaskType)
         {
             if (string.IsNullOrEmpty(altinnTaskType))
             {
-                return null;
+                return new NullTask();
             }
 
             ITask task = new DataTask(_taskEvents);
@@ -232,7 +230,7 @@ namespace Altinn.App.Core.Implementation
 
                 return new ProcessStateChange
                 {
-                    OldProcessState = null,
+                    OldProcessState = null!,
                     NewProcessState = startState,
                     Events = events,
                 };
@@ -312,7 +310,7 @@ namespace Altinn.App.Core.Implementation
         /// <summary>
         /// Moves instance's process to nextElement id. Returns the instance together with process events.
         /// </summary>
-        public async Task<ProcessStateChange> ProcessNext(Instance instance, string nextElementId, ClaimsPrincipal userContext)
+        public async Task<ProcessStateChange> ProcessNext(Instance instance, string? nextElementId, ClaimsPrincipal userContext)
         {
             if (instance.Process != null)
             {
@@ -339,7 +337,7 @@ namespace Altinn.App.Core.Implementation
         /// </summary>
         private async Task<List<InstanceEvent>> MoveProcessToNext(
             Instance instance,
-            string nextElementId,
+            string? nextElementId,
             ClaimsPrincipal user)
         {
             List<InstanceEvent> events = new List<InstanceEvent>();
@@ -418,7 +416,7 @@ namespace Altinn.App.Core.Implementation
                 }
                 catch (Exception exception)
                 {
-                    _logger.LogWarning(exception, "Exception when sending event with the Events component.");
+                    _logger.LogWarning(exception, "Exception when sending event with the Events component");
                 }
             }
         }

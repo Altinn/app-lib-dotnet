@@ -1,4 +1,3 @@
-using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
 
@@ -27,7 +26,7 @@ public interface IProcessReader
     /// </summary>
     /// <param name="elementId">Id of process element</param>
     /// <returns>true if elementId is of type StartEvent</returns>
-    public bool IsStartEvent(string elementId);
+    public bool IsStartEvent(string? elementId);
     
     /// <summary>
     /// Get all defined Tasks in the process
@@ -46,7 +45,7 @@ public interface IProcessReader
     /// </summary>
     /// <param name="elementId">Id of process element</param>
     /// <returns>true if elementId is of type Task</returns>
-    public bool IsProcessTask(string elementId);
+    public bool IsProcessTask(string? elementId);
     
     /// <summary>
     /// Get all ExclusiveGateways defined in the process
@@ -77,7 +76,7 @@ public interface IProcessReader
     /// </summary>
     /// <param name="elementId">Id of process element</param>
     /// <returns>true if elementId is of type EndEvent</returns>
-    public bool IsEndEvent(string elementId);
+    public bool IsEndEvent(string? elementId);
 
     /// <summary>
     /// Get all SequenceFlows defined in the process

@@ -1,12 +1,11 @@
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Interface;
-using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
 using Altinn.App.Core.Models;
 using Microsoft.IdentityModel.Tokens;
 
-namespace Altinn.App.Core.Implementation
+namespace Altinn.App.Core.Internal.Process
 {
     /// <summary>
     /// The process engine is responsible for all BMPN related functionality

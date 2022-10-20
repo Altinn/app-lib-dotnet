@@ -2,7 +2,6 @@ using System.Xml.Serialization;
 using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
-using Microsoft.IdentityModel.Tokens;
 
 namespace Altinn.App.Core.Internal.Process;
 
@@ -39,9 +38,9 @@ public class ProcessReader : IProcessReader
     }
 
     /// <inheritdoc />
-    public bool IsStartEvent(string elementId)
+    public bool IsStartEvent(string? elementId)
     {
-        return GetStartEventIds().Contains(elementId);
+        return elementId != null && GetStartEventIds().Contains(elementId);
     }
 
     /// <inheritdoc />
@@ -57,9 +56,9 @@ public class ProcessReader : IProcessReader
     }
 
     /// <inheritdoc />
-    public bool IsProcessTask(string elementId)
+    public bool IsProcessTask(string? elementId)
     {
-        return GetProcessTaskIds().Contains(elementId);
+        return elementId != null && GetProcessTaskIds().Contains(elementId);
     }
 
     /// <inheritdoc />
@@ -87,9 +86,9 @@ public class ProcessReader : IProcessReader
     }
 
     /// <inheritdoc />
-    public bool IsEndEvent(string elementId)
+    public bool IsEndEvent(string? elementId)
     {
-        return GetEndEventIds().Contains(elementId);
+        return elementId != null && GetEndEventIds().Contains(elementId);
     }
 
     /// <inheritdoc />
