@@ -4,6 +4,7 @@ using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
 using Altinn.App.Core.Models;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Altinn.App.Core.Implementation
 {
@@ -57,7 +58,7 @@ namespace Altinn.App.Core.Implementation
             }
 
              // Find next valid element. Later this will be dynamic
-             List<ProcessElement> possibleNextElements = await _flowHydration.NextFollowAndFilterGateways(processChange.Instance, currentElementId);
+             List<ProcessElement> possibleNextElements = await _flowHydration.NextFollowAndFilterGateways(processChange.Instance, currentElementId, processChange.RequestedProcessElementId.IsNullOrEmpty());
             processChange.RequestedProcessElementId = ProcessHelper.GetValidNextElementOrError(processChange.RequestedProcessElementId, possibleNextElements.Select(e => e.Id).ToList(),out ProcessError? nextElementError);
             if (nextElementError != null)
             {

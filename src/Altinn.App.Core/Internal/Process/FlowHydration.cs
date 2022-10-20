@@ -25,14 +25,14 @@ public class FlowHydration: IFlowHydration
     }
     
     /// <inheritdoc />
-    public async Task<List<ProcessElement>> NextFollowAndFilterGateways(Instance instance, string? currentElement)
+    public async Task<List<ProcessElement>> NextFollowAndFilterGateways(Instance instance, string? currentElement, bool followDefaults = true)
     {
         List<ProcessElement> directFlowTargets = _processReader.GetNextElements(currentElement);
-        return await NextFollowAndFilterGateways(instance, directFlowTargets!);
+        return await NextFollowAndFilterGateways(instance, directFlowTargets!, followDefaults);
     }
 
     /// <inheritdoc />
-    public async Task<List<ProcessElement>> NextFollowAndFilterGateways(Instance instance, List<ProcessElement?> originNextElements)
+    public async Task<List<ProcessElement>> NextFollowAndFilterGateways(Instance instance, List<ProcessElement?> originNextElements, bool followDefaults = true)
     {
         List<ProcessElement> filteredNext = new List<ProcessElement>();
         foreach (var directFlowTarget in originNextElements)
@@ -61,7 +61,7 @@ public class FlowHydration: IFlowHydration
             }
 
             var defaultSequenceFlow = filteredList.Find(s => s.Id == gateway.Default);
-            if (defaultSequenceFlow != null)
+            if (followDefaults && defaultSequenceFlow != null)
             {
                 var defaultTarget = _processReader.GetFlowElement(defaultSequenceFlow.TargetRef);
                 filteredNext.AddRange(await NextFollowAndFilterGateways(instance, new List<ProcessElement?> { defaultTarget }));

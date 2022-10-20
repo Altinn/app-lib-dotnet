@@ -56,12 +56,63 @@ public class FlowHydrationTests
             }
         });
     }
+    
+    [Fact]
+    public async void NextFollowAndFilterGateways_returns_all_if_no_filtering_is_implemented_and_default_set_but_followDefaults_false()
+    {
+        IFlowHydration flowHydrator = SetupFlowHydration("simple-gateway-default.bpmn", new List<IProcessExclusiveGateway>());
+        List<ProcessElement> nextElements = await flowHydrator.NextFollowAndFilterGateways(new Instance(), "Task1", false);
+        nextElements.Should().BeEquivalentTo(new List<ProcessElement>()
+        {
+            new ProcessTask()
+            {
+                Id = "Task2",
+                Name = null!,
+                TaskType = null!,
+                Incoming = new List<string> { "Flow3" },
+                Outgoing = new List<string> { "Flow5" }
+            },
+            new EndEvent()
+            {
+                Id = "EndEvent", 
+                Incoming = new List<string> { "Flow5", "Flow4" }, 
+                Name = null!, 
+                Outgoing = new List<string>()
+            }
+        });
+    }
 
     [Fact]
     public async void NextFollowAndFilterGateways_returns_all_gateway_target_tasks_if_no_filter_and_default()
     {
         IFlowHydration flowHydrator = SetupFlowHydration("simple-gateway.bpmn", new List<IProcessExclusiveGateway>());
         List<ProcessElement> nextElements = await flowHydrator.NextFollowAndFilterGateways(new Instance(), "Task1");
+        nextElements.Should().BeEquivalentTo(new List<ProcessElement>()
+        {
+            new ProcessTask()
+            {
+                Id = "Task2",
+                Name = null!,
+                TaskType = null!,
+                Incoming = new List<string> { "Flow3" },
+                Outgoing = new List<string> { "Flow5" }
+            },
+            new ProcessTask()
+            {
+                Id = "EndEvent",
+                Name = null!,
+                TaskType = null!,
+                Incoming = new List<string> { "Flow4", "Flow5" },
+                Outgoing = new List<string>()
+            }
+        });
+    }
+    
+    [Fact]
+    public async void NextFollowAndFilterGateways_returns_all_gateway_target_tasks_if_no_filter_and_default_folowDefaults_false()
+    {
+        IFlowHydration flowHydrator = SetupFlowHydration("simple-gateway.bpmn", new List<IProcessExclusiveGateway>());
+        List<ProcessElement> nextElements = await flowHydrator.NextFollowAndFilterGateways(new Instance(), "Task1", false);
         nextElements.Should().BeEquivalentTo(new List<ProcessElement>()
         {
             new ProcessTask()

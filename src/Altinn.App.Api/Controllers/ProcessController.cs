@@ -22,6 +22,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 
 namespace Altinn.App.Api.Controllers
@@ -192,7 +193,7 @@ namespace Altinn.App.Api.Controllers
                     return Conflict($"Instance does not have valid info about currentTask");
                 }
                 
-                List<ProcessElement> nextElements = await _flowHydration.NextFollowAndFilterGateways(instance, currentTaskId);
+                List<ProcessElement> nextElements = await _flowHydration.NextFollowAndFilterGateways(instance, currentTaskId, false);
 
                 if (nextElements.Count == 0)
                 {
@@ -284,7 +285,7 @@ namespace Altinn.App.Api.Controllers
                 }
 
                 ProcessSequenceFlowType processSequenceFlowType = ProcessSequenceFlowType.CompleteCurrentMoveToNext;
-                List<ProcessElement> possibleNextElements = await _flowHydration.NextFollowAndFilterGateways(instance, instance.Process.CurrentTask?.ElementId);
+                List<ProcessElement> possibleNextElements = await _flowHydration.NextFollowAndFilterGateways(instance, instance.Process.CurrentTask?.ElementId, elementId.IsNullOrEmpty());
                 string targetElement = ProcessHelper.GetValidNextElementOrError(elementId, possibleNextElements.Select(e => e.Id).ToList(), out ProcessError processError);
 
                 if (!string.IsNullOrEmpty(elementId) && processError == null)
