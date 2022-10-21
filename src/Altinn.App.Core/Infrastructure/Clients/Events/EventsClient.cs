@@ -133,7 +133,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Events
             if (response.IsSuccessStatusCode)
             {
                 var content = await response.Content.ReadAsStringAsync();
-                var subscription = JsonSerializer.Deserialize<Subscription>(content);
+                var subscription = JsonSerializer.Deserialize<Subscription>(content, new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });
 
                 return subscription;
             }
