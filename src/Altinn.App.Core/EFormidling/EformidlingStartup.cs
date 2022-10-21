@@ -28,7 +28,7 @@ namespace Altinn.App.Core.EFormidling
         ///<inheritDoc/>
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            var eventType = "app.eformidling.reminder.checkstatus";
+            var eventType = "app.eformidling.reminder.checkinstancestatus";
             try
             {
                 Subscription subscription = await _eventsClient.AddSubscription(_appIdentifier.Org, _appIdentifier.App, eventType);
