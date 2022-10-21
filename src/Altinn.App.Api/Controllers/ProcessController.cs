@@ -192,11 +192,6 @@ namespace Altinn.App.Api.Controllers
 
                 List<string> nextElementIds = processHelper.Process.NextElements(currentTaskId);
 
-                if (nextElementIds.Count == 0)
-                {
-                    return NotFound("Cannot find any valid process elements that can be reached from current task");
-                }
-
                 return Ok(nextElementIds);
             }
             catch (PlatformHttpException e)
