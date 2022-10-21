@@ -1,8 +1,14 @@
 ﻿using System;
+using System.Threading.Tasks;
+using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Events;
 using Altinn.App.Core.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Api.Controllers
 {
@@ -13,31 +19,39 @@ namespace Altinn.App.Api.Controllers
     public class EventsReceiverController : ControllerBase
     {
         private readonly IEventHandlerResolver _eventHandlerResolver;
+        private readonly ILogger _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EventsReceiverController"/> class.
         /// </summary>
-        public EventsReceiverController(IEventHandlerResolver eventHandlerResolver)
+        public EventsReceiverController(IEventHandlerResolver eventHandlerResolver, ILogger<EventsReceiverController> logger, IOptions<PlatformSettings> options)
         {
             _eventHandlerResolver = eventHandlerResolver;
+            _logger = logger;
         }
 
         /// <summary>
-        /// Create a new inbound for the app to process.
+        /// Create a new inbound event for the app to process.
         /// </summary>
+        [Authorize]
         [HttpPost]
-        public ActionResult Post([FromBody] CloudEvent cloudEvent)
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(425)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<ActionResult> Post([FromBody] CloudEvent cloudEvent)
         {
             IEventHandler eventHandler = _eventHandlerResolver.ResolveEventHandler(cloudEvent.Type);
-
             try
             {
-                eventHandler.ProcessEvent(cloudEvent);
-                return Ok();
+                bool eventSuccessfullyProcessed = await eventHandler.ProcessEvent(cloudEvent);
+
+                // A return value of 425 will ensure the event system triggers the retry mecanism
+                return eventSuccessfullyProcessed ? Ok() : new StatusCodeResult(425);
             }
             catch (Exception ex)
             {
-                return new StatusCodeResult(425);
+                _logger.LogError("Unable to process event {eventType}. An exception was raised while checking for delivery status of message {messageid}. Exception throw {exceptionMessage}", cloudEvent.Type, cloudEvent.Id, ex.Message);
+                return new StatusCodeResult(500);
             }
         }
     }

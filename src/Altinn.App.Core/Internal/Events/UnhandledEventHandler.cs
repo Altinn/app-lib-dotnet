@@ -12,10 +12,10 @@ namespace Altinn.App.Core.Internal.Events
         public string EventType => "app.events.unhandled";
 
         /// <inheritdoc/>
-        public Task ProcessEvent(CloudEvent cloudEvent)
+        public Task<bool> ProcessEvent(CloudEvent cloudEvent)
         {
             //TODO: Log the event data and throw exception
-            return Task.CompletedTask;
+            return Task.FromResult(false); ;
         }
     }
 }
