@@ -52,7 +52,7 @@ public class RunTest2
                     Data = new()
                     {
                        new() { Binding = "binding" },
-                       new() { Binding2 = 2, Binding3="hidden" },
+                       new() { Binding2 = 2, Binding3 = "hidden" },
                     }
                 }
             },

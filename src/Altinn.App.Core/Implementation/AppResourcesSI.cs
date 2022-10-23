@@ -4,6 +4,8 @@ using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Interface;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.Layout;
+using Altinn.App.Core.Models.Layout.Components;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
@@ -343,6 +345,34 @@ namespace Altinn.App.Core.Implementation
         }
 
         /// <inheritdoc />
+        public LayoutModel GetLayoutModel(string? layoutSetId = null)
+        {
+            string folder = Path.Join(_settings.AppBasePath, _settings.UiFolder, layoutSetId);
+            var order = GetLayoutSettingsForSet(layoutSetId).Pages?.Order;
+            if (order is null)
+            {
+                throw new Exception("No $Pages.Order field found" + (layoutSetId is null ? "" : $" for layoutSet {layoutSetId}"));
+            }
+
+            var layoutModel = new LayoutModel();
+            foreach (var page in order)
+            {
+                var pageBytes = File.ReadAllBytes(Path.Join(folder, page + ".json"));
+                var options = new JsonSerializerOptions()
+                {
+                    // This is the default behaviour from Newtonsoft
+                    AllowTrailingCommas = true,
+                    ReadCommentHandling = JsonCommentHandling.Skip,
+                };
+                // Somewhat ugly (but thread safe) way to pass the page name to the deserializer compoent by associating it with a specific options instance.
+                PageComponentConverter.AddPageName(options, page);
+                layoutModel.Pages[page] = System.Text.Json.JsonSerializer.Deserialize<PageComponent>(pageBytes.RemoveBom(), options) ?? throw new Exception(page + ".json is \"null\"");
+            }
+
+            return layoutModel;
+        }
+
+        /// <inheritdoc />
         public string GetLayoutSettingsStringForSet(string layoutSetId)
         {
             string filename = Path.Join(_settings.AppBasePath, _settings.UiFolder, layoutSetId, _settings.FormLayoutSettingsFileName);
@@ -356,10 +386,10 @@ namespace Altinn.App.Core.Implementation
         }
 
         /// <inheritdoc />
-        public LayoutSettings GetLayoutSettingsForSet(string layoutSetId)
+        public LayoutSettings GetLayoutSettingsForSet(string? layoutSetId)
         {
             string filename = Path.Join(_settings.AppBasePath, _settings.UiFolder, layoutSetId, _settings.FormLayoutSettingsFileName);
-            string filedata = null;
+            string? filedata = null;
             if (File.Exists(filename))
             {
                 filedata = File.ReadAllText(filename, Encoding.UTF8);

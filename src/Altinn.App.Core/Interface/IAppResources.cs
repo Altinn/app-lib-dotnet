@@ -1,4 +1,5 @@
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.Layout;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Interface
@@ -122,6 +123,11 @@ namespace Altinn.App.Core.Interface
         string GetLayoutsForSet(string layoutSetId);
 
         /// <summary>
+        /// Gets the full layout model for the optional set
+        /// </summary>
+        LayoutModel GetLayoutModel(string? layoutSetId = null);
+
+        /// <summary>
         /// Gets the the layouts settings for a layoutset
         /// </summary>
         /// <param name="layoutSetId">The layot set id</param>
@@ -132,7 +138,7 @@ namespace Altinn.App.Core.Interface
         /// Gets the the layouts settings for a layoutset
         /// </summary>
         /// <returns>The layout settings</returns>
-        LayoutSettings GetLayoutSettingsForSet(string layoutSetId);
+        LayoutSettings GetLayoutSettingsForSet(string? layoutSetId);
 
         /// <summary>
         /// Gets the ruleconfiguration for av given layoutset
