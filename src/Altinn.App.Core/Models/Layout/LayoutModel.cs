@@ -6,7 +6,7 @@ using Altinn.App.Core.Models.Layout.Components;
 namespace Altinn.App.Core.Models.Layout;
 
 /// <summary>
-/// Class for 
+/// Class for handeling a full layout/layoutset
 /// </summary>
 [JsonConverter(typeof(LayoutModelConverter))]
 public class LayoutModel

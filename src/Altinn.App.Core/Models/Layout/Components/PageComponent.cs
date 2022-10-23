@@ -9,6 +9,7 @@ namespace Altinn.App.Core.Models.Layout.Components;
 /// <summary>
 /// Component like object to add Page as a group like object
 /// </summary>
+[JsonConverter(typeof(PageComponentConverter))]
 public class PageComponent : GroupComponent
 {
     /// <summary>

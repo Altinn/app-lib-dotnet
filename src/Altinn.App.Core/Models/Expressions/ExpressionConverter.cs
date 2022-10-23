@@ -20,7 +20,7 @@ public class ExpressionConverter : JsonConverter<Expression>
     /// <summary>
     /// Same as <see cref="Read" />, but without the nullable return type required by the interface. Throw an exeption instead.
     /// </summary>
-    private Expression ReadNotNull(ref Utf8JsonReader reader, JsonSerializerOptions options)
+    public static Expression ReadNotNull(ref Utf8JsonReader reader, JsonSerializerOptions options)
     {
         return reader.TokenType switch
         {
@@ -35,7 +35,7 @@ public class ExpressionConverter : JsonConverter<Expression>
         };
     }
 
-    private Expression ReadArray(ref Utf8JsonReader reader, JsonSerializerOptions options)
+    private static Expression ReadArray(ref Utf8JsonReader reader, JsonSerializerOptions options)
     {
         reader.Read();
         if (reader.TokenType == JsonTokenType.EndArray)

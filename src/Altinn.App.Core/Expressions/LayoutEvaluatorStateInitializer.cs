@@ -33,8 +33,7 @@ public class LayoutEvaluatorStateInitializer
     /// </summary>
     public Task<LayoutEvaluatorState> Init(Instance instance, object data, string? layoutSetId)
     {
-        string formLayoutsFileContent = layoutSetId == null ? _appResources.GetLayouts() : _appResources.GetLayoutsForSet(layoutSetId);
-        var layouts = JsonSerializer.Deserialize<LayoutModel>(formLayoutsFileContent)!;
+        var layouts = _appResources.GetLayoutModel(layoutSetId);
         return Task.FromResult(new LayoutEvaluatorState(new DataModel(data), layouts, _frontEndSettings, instance));
     }
 }

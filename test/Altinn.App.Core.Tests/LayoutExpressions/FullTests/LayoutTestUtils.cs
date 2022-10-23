@@ -8,7 +8,10 @@ using System.Threading.Tasks;
 
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Expressions;
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Interface;
+using Altinn.App.Core.Models.Layout;
+using Altinn.App.Core.Models.Layout.Components;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -26,16 +29,23 @@ public static class LayoutTestUtils
         services.AddTransient<IData>((sp) => data.Object);
 
         var resources = new Mock<IAppResources>();
-        var layouts = new Dictionary<string, object>();
+        var layoutModel = new LayoutModel();
         var layoutsPath = Path.Join("LayoutExpressions", "FullTests", folder);
         foreach (var layoutFile in Directory.GetFiles(layoutsPath, "*.json"))
         {
-            string layout = await File.ReadAllTextAsync(layoutFile, Encoding.UTF8);
-            string name = layoutFile.Replace(layoutsPath + "/", string.Empty).Replace(".json", string.Empty);
-            layouts.Add(name, JsonSerializer.Deserialize<object>(layout)!);
+            var layout = await File.ReadAllBytesAsync(layoutFile);
+            string pageName = layoutFile.Replace(layoutsPath + "/", string.Empty).Replace(".json", string.Empty);
+
+            var pageOptions = new JsonSerializerOptions();
+
+            // Somewhat ugly (but thread safe) way to pass the page name to the deserializer compoent by associating it with a specific options instance.
+            PageComponentConverter.AddPageName(pageOptions, pageName);
+            var converter = new PageComponentConverter();
+
+            layoutModel.Pages[pageName] = JsonSerializer.Deserialize<PageComponent>(layout.RemoveBom(), pageOptions)!;
         }
 
-        resources.Setup(r => r.GetLayouts()).Returns(JsonSerializer.Serialize(layouts));
+        resources.Setup(r => r.GetLayoutModel(null)).Returns(layoutModel);
 
         services.AddTransient<IAppResources>((sp) => resources.Object);
         services.AddTransient<LayoutEvaluatorStateInitializer>();
