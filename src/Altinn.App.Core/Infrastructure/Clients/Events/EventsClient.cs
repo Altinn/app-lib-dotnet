@@ -6,7 +6,6 @@ using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Interface;
-using Altinn.App.Core.Internal.Events;
 using Altinn.App.Core.Models;
 using Altinn.Common.AccessTokenClient.Services;
 using Altinn.Platform.Storage.Interface.Models;
@@ -100,42 +99,6 @@ namespace Altinn.App.Core.Infrastructure.Clients.Events
             {
                 string eventId = await response.Content.ReadAsStringAsync();
                 return eventId;
-            }
-
-            throw await PlatformHttpException.CreateAsync(response);
-        }
-
-        /// <summary>
-        /// Creates a subscription on behalf of the org/app for the specified event type.
-        /// </summary>
-        /// <param name="org">The organization subscribing to the event.</param>
-        /// <param name="appId">The application the subscription should be deliverd to, will be combinded with org.</param>
-        /// <param name="eventType">The event type to subscribe to.
-        /// Source filter will be automatially added, and set to the url of the application.</param>
-        /// <returns>The created <see cref="Subscription"/></returns>
-        public async Task<Subscription> AddSubscription(string org, string appId, string eventType)
-        {
-            var appBaseUrl = $"https://{org}.apps.{_generalSettings.HostName}/{appId}";
-
-            var subscriptionRequest = new SubscriptionRequest()
-            {
-                TypeFilter = eventType,
-                EndPoint = new Uri(new Uri(appBaseUrl), "/api/v1/eventsreceiver"),
-                SourceFilter = new Uri(appBaseUrl)
-            };
-
-            string serializedSubscriptionRequest = JsonSerializer.Serialize(subscriptionRequest);
-
-            HttpResponseMessage response = await _client.PostAsync(
-                "subscriptions", 
-                new StringContent(serializedSubscriptionRequest, Encoding.UTF8, "application/json"));
-
-            if (response.IsSuccessStatusCode)
-            {
-                var content = await response.Content.ReadAsStringAsync();
-                var subscription = JsonSerializer.Deserialize<Subscription>(content, new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });
-
-                return subscription;
             }
 
             throw await PlatformHttpException.CreateAsync(response);

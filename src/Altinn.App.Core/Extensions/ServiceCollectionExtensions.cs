@@ -1,3 +1,5 @@
+using Altinn.ApiClients.Maskinporten.Config;
+using Altinn.ApiClients.Maskinporten.Extensions;
 using Altinn.ApiClients.Maskinporten.Handlers;
 using Altinn.ApiClients.Maskinporten.Interfaces;
 using Altinn.ApiClients.Maskinporten.Services;
@@ -20,6 +22,7 @@ using Altinn.App.Core.Infrastructure.Clients.Register;
 using Altinn.App.Core.Infrastructure.Clients.Storage;
 using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.AppModel;
+using Altinn.App.Core.Internal.Events;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Texts;
@@ -58,8 +61,6 @@ namespace Altinn.App.Core.Extensions
             services.Configure<CacheSettings>(configuration.GetSection("CacheSettings"));
 
             AddApplicationIdentifier(services);
-            
-            AddMaskinportenServices(services, env);
 
             services.AddHttpClient<IApplication, ApplicationClient>();
             services.AddHttpClient<IAuthentication, AuthenticationClient>();
@@ -69,7 +70,8 @@ namespace Altinn.App.Core.Extensions
             services.AddHttpClient<IER, RegisterERClient>();
             services.AddHttpClient<IInstance, InstanceClient>();
             services.AddHttpClient<IInstanceEvent, InstanceEventClient>();
-            services.AddHttpClient<IEvents, EventsClient>().AddHttpMessageHandler<MaskinportenTokenHandler<MaskinportenClientDefinition>>();
+            services.AddHttpClient<IEventsSubscription, EventsSubscriptionClient>();
+            services.AddHttpClient<IEvents, EventsClient>();
             services.AddHttpClient<IPDF, PDFClient>();
             services.AddHttpClient<IProfile, ProfileClient>();
             services.Decorate<IProfile, ProfileClientCachingDecorator>();
@@ -138,6 +140,7 @@ namespace Altinn.App.Core.Extensions
             services.Configure<FrontEndSettings>(configuration.GetSection(nameof(FrontEndSettings)));
             AddAppOptions(services);
             AddPdfServices(services);
+            AddEventServices(services);
 
             if (!env.IsDevelopment())
             {
@@ -150,20 +153,9 @@ namespace Altinn.App.Core.Extensions
             }            
         }
 
-        private static void AddMaskinportenServices(IServiceCollection services, IWebHostEnvironment env) 
+        private static void AddEventServices(IServiceCollection services)
         {
-            if (!env.IsDevelopment())
-            {
-                services.TryAddTransient<IX509CertificateProvider, X509CertificateKeyVaultProvider>();
-            }
-            else
-            {
-                services.TryAddTransient<IX509CertificateProvider, X509CertificateFileProvider>();
-            }
-
-            services.TryAddSingleton<MaskinportenClientDefinition>();
-            services.TryAddSingleton<IMaskinportenService, MaskinportenService>();
-            services.TryAddTransient<MaskinportenTokenHandler<MaskinportenClientDefinition>>();            
+            services.AddTransient<IEventHandlerResolver, EventHandlerResolver>();
         }
 
         private static void AddPdfServices(IServiceCollection services)

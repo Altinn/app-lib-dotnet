@@ -12,16 +12,16 @@ namespace Altinn.App.Core.EFormidling
     public class EformidlingStartup : IHostedService
     {
         private readonly AppIdentifier _appIdentifier;
-        private readonly IEvents _eventsClient;
+        private readonly IEventsSubscription _eventsSubscriptionClient;
         private readonly ILogger<EformidlingStartup> _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EformidlingStartup"/> class.
         /// </summary>
-        public EformidlingStartup(AppIdentifier appId, IEvents eventsClient, ILogger<EformidlingStartup> logger)
+        public EformidlingStartup(AppIdentifier appId, IEventsSubscription eventsSubscriptionClient, ILogger<EformidlingStartup> logger)
         {
             _appIdentifier = appId;
-            _eventsClient = eventsClient;
+            _eventsSubscriptionClient = eventsSubscriptionClient;
             _logger = logger;
         }
 
@@ -31,7 +31,7 @@ namespace Altinn.App.Core.EFormidling
             var eventType = "app.eformidling.reminder.checkinstancestatus";
             try
             {
-                Subscription subscription = await _eventsClient.AddSubscription(_appIdentifier.Org, _appIdentifier.App, eventType);
+                Subscription subscription = await _eventsSubscriptionClient.AddSubscription(_appIdentifier.Org, _appIdentifier.App, eventType);
 
                 _logger.LogInformation($"Successfully subscribed to event {eventType} for app {_appIdentifier}. Subscription {subscription.Id} is being used.");
             }
