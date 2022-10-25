@@ -15,7 +15,7 @@ namespace Altinn.App.Core.Internal.Events
         public Task<bool> ProcessEvent(CloudEvent cloudEvent)
         {
             //TODO: Log the event data and throw exception
-            return Task.FromResult(false); ;
+            return Task.FromResult(false);
         }
     }
 }

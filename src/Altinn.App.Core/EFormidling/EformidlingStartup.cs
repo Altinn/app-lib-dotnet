@@ -33,12 +33,12 @@ namespace Altinn.App.Core.EFormidling
             {
                 Subscription subscription = await _eventsSubscriptionClient.AddSubscription(_appIdentifier.Org, _appIdentifier.App, eventType);
 
-                _logger.LogInformation($"Successfully subscribed to event {eventType} for app {_appIdentifier}. Subscription {subscription.Id} is being used.");
+                _logger.LogInformation("Successfully subscribed to event {eventType} for app {appIdentifier}. Subscription {subscriptionId} is being used.", eventType, _appIdentifier, subscription.Id);
             }
 
             catch
             {
-                _logger.LogError($"Unable to subscribe to event {eventType} for app {_appIdentifier}");
+                _logger.LogError("Unable to subscribe to event {eventType} for app {appIdentifier}", eventType, _appIdentifier);
                 throw;
             }
         }
