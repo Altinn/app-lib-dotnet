@@ -34,7 +34,7 @@ namespace Altinn.App.Core.Implementation
         /// </summary>
         public async Task<ProcessChangeContext> Next(ProcessChangeContext processChange)
         {
-            string? currentElementId = processChange.Instance.Process.CurrentTask?.ElementId;
+            string currentElementId = processChange.Instance.Process.CurrentTask?.ElementId;
 
             if (currentElementId == null)
             {
