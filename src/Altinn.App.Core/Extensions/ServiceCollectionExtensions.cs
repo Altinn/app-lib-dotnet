@@ -25,6 +25,7 @@ using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Events;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Pdf;
+using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
 using Altinn.Common.AccessTokenClient.Configuration;
@@ -124,8 +125,6 @@ namespace Altinn.App.Core.Extensions
             services.TryAddTransient<IPrefill, PrefillSI>();
             services.TryAddTransient<ISigningCredentialsResolver, SigningCredentialsResolver>();
             services.TryAddSingleton<IAppResources, AppResourcesSI>();
-            services.TryAddTransient<IProcessEngine, ProcessEngine>();
-            services.TryAddTransient<IProcessChangeHandler, ProcessChangeHandler>();
             services.TryAddTransient<IAppEvents, DefaultAppEvents>();
             services.TryAddTransient<ITaskEvents, DefaultTaskEvents>();
             services.TryAddTransient<IPageOrder, DefaultPageOrder>();
@@ -141,6 +140,7 @@ namespace Altinn.App.Core.Extensions
             AddAppOptions(services);
             AddPdfServices(services);
             AddEventServices(services);
+            AddProcessServices(services);
 
             if (!env.IsDevelopment())
             {
@@ -184,6 +184,15 @@ namespace Altinn.App.Core.Extensions
 
             // Services related to instance aware and secure app options
             services.TryAddTransient<InstanceAppOptionsFactory>();
+        }
+
+        private static void AddProcessServices(IServiceCollection services)
+        {
+            services.TryAddTransient<IProcessEngine, ProcessEngine>();
+            services.TryAddTransient<IProcessChangeHandler, ProcessChangeHandler>();
+            services.TryAddTransient<IProcessReader, ProcessReader>();
+            services.TryAddTransient<ExclusiveGatewayFactory>();
+            services.TryAddTransient<IFlowHydration, FlowHydration>();
         }
     }
 }
