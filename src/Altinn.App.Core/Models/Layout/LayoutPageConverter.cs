@@ -160,7 +160,7 @@ public class PageComponentConverter : JsonConverter<PageComponent>
     {
         if (componentLookup.ContainsKey(component.Id))
         {
-            throw new JsonException($"Duplicate key \"{component.Id}\" detected on page \"{component.Page}\"");
+            throw new JsonException($"Duplicate key \"{component.Id}\" detected on page \"{component.PageId}\"");
         }
         componentLookup[component.Id] = component;
         if (component is GroupComponent groupComponent)

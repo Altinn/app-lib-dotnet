@@ -127,7 +127,7 @@ public class ComponentContextForTestSpec
         return new ComponentContextForTestSpec
         {
             ComponentId = context.Component.Id,
-            CurrentPageName = context.Component.Page,
+            CurrentPageName = context.Component.PageId,
             ChildContexts = context.ChildContexts?.Select(c => FromContext(c)) ?? Enumerable.Empty<ComponentContextForTestSpec>(),
             RowIndices = context.RowIndices
         };

@@ -37,12 +37,12 @@ public class BaseComponent
     /// <summary>
     /// Get the page for the component
     /// </summary>
-    public string Page
+    public string PageId
     {
         get
         {
             //Get the Id of the first component without a parent.
-            return Parent?.Page ?? Id;
+            return Parent?.PageId ?? Id;
         }
     }
 

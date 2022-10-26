@@ -60,7 +60,7 @@ public class LayoutModel
             throw new NotImplementedException("Component lookup for components in groups not implemented");
         }
 
-        var component = GetComponent(context.Component.Page, componentId);
+        var component = GetComponent(context.Component.PageId, componentId);
 
         if (!component.DataModelBindings.TryGetValue("simpleBinding", out var binding))
         {
