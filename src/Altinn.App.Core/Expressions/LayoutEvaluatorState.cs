@@ -35,11 +35,6 @@ public class LayoutEvaluatorState
     /// </summary>
     public IEnumerable<ComponentContext> GetComponentContexts()
     {
-        if (_componentModel is null || _dataModel is null)
-        {
-            throw new InvalidOperationException("Layout evaluator state is not properly initialized");
-        }
-
         return _componentModel.Pages.Values.Select((
             (page) => new ComponentContext
             (
