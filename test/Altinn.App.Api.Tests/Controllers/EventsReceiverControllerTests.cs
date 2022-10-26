@@ -26,7 +26,7 @@ namespace Altinn.App.Api.Tests.Controllers
         }
 
         [Fact]
-        public async Task Post_NonValidEventType_ShouldReturnTooEarlly()
+        public async Task Post_NonValidEventType_ShouldThrowException()
         {
             var client = _factory.CreateClient();
             string token = PrincipalUtil.GetToken(1337);
@@ -55,7 +55,7 @@ namespace Altinn.App.Api.Tests.Controllers
             // The status code 425 Too early is not registered as a known enum,
             // hence the cast to int.
             int statusCode = (int)response.StatusCode;
-            statusCode.Should().Be(425);
+            statusCode.Should().Be(500);
         }
     }
 }

@@ -60,9 +60,9 @@ namespace Altinn.App.Core.Infrastructure.Clients.Events
             if (response.IsSuccessStatusCode)
             {
                 var content = await response.Content.ReadAsStringAsync();
-                var subscription = JsonSerializer.Deserialize<Subscription>(content, new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });
+                Subscription? subscription = JsonSerializer.Deserialize<Subscription>(content, new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });
 
-                return subscription;
+                return subscription ?? throw new NullReferenceException("Successfully added a subscription, but the returned subscription deserialized to null!");
             }
 
             throw await PlatformHttpException.CreateAsync(response);

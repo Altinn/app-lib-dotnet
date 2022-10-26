@@ -1,5 +1,4 @@
-﻿using Altinn.App.Controllers;
-using Altinn.App.Core.Features;
+﻿using Altinn.App.Core.Features;
 
 namespace Altinn.App.Core.Internal.Events
 {

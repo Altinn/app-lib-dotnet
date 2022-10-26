@@ -1,5 +1,6 @@
 ﻿using Altinn.App.Core.Features;
 using Altinn.App.Core.Models;
+using System.Text.Json;
 
 namespace Altinn.App.Core.Internal.Events
 {
@@ -14,8 +15,7 @@ namespace Altinn.App.Core.Internal.Events
         /// <inheritdoc/>
         public Task<bool> ProcessEvent(CloudEvent cloudEvent)
         {
-            //TODO: Log the event data and throw exception
-            return Task.FromResult(false);
+            throw new NotImplementedException($"Received unhandled event {cloudEvent.Type} with the following data: {JsonSerializer.Serialize(cloudEvent)}");
         }
     }
 }

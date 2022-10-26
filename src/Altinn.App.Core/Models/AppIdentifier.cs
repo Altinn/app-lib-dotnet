@@ -1,12 +1,11 @@
 using Altinn.App.Core.Extensions;
-using HtmlAgilityPack;
 
 namespace Altinn.App.Core.Models
 {
     /// <summary>
     /// Class representing the id of an instance.
     /// </summary>
-    public class AppIdentifier : IEquatable<AppIdentifier>
+    public sealed class AppIdentifier : IEquatable<AppIdentifier>
     {
         /// <summary>
         /// Organization that owns the app.
@@ -25,6 +24,16 @@ namespace Altinn.App.Core.Models
         /// <param name="app">The app name.</param>
         public AppIdentifier(string org, string app)
         {
+            if (string.IsNullOrEmpty(org))
+            {
+                throw new ArgumentNullException(nameof(org));
+            }
+
+            if (string.IsNullOrEmpty(app))
+            {
+                throw new ArgumentNullException(nameof(app));
+            }
+
             Org = org;
             App = app;
         }
@@ -68,6 +77,12 @@ namespace Altinn.App.Core.Models
         }
 
         ///<inheritDoc/>
+        public override bool Equals(object? obj)
+        {
+            return Equals(obj as AppIdentifier);
+        }
+
+        ///<inheritDoc/>
         public bool Equals(AppIdentifier? other)
         {
             return Org != null && App != null
@@ -79,6 +94,12 @@ namespace Altinn.App.Core.Models
         public override string ToString()
         {
             return $"{Org}/{App}";
+        }
+
+        ///<inheritDoc/>
+        public override int GetHashCode()
+        {
+            return Org.GetHashCode() ^ App.GetHashCode();
         }
     }
 }
