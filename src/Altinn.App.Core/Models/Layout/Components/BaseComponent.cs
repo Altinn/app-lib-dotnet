@@ -19,7 +19,7 @@ public class BaseComponent
     /// <summary>
     /// Constructor that ensures n
     /// </summary>
-    public BaseComponent(string id, string type, IReadOnlyDictionary<string, string>? dataModelBindings, Expression? hidden, Expression? required, Expression? readOnly, IReadOnlyDictionary<string, string>? extra)
+    public BaseComponent(string id, string type, IReadOnlyDictionary<string, string>? dataModelBindings, Expression? hidden, Expression? required, Expression? readOnly, IReadOnlyDictionary<string, string>? additionalProperties)
     {
         Id = id;
         Type = type;
@@ -27,7 +27,7 @@ public class BaseComponent
         Hidden = hidden;
         Required = required;
         ReadOnly = readOnly;
-        Extra = extra;
+        AdditionalDebugProperties = additionalProperties;
     }
     /// <summary>
     /// ID of the component (or pagename for pages)
@@ -77,8 +77,8 @@ public class BaseComponent
     public BaseComponent? Parent { get; internal set; }
 
     /// <summary>
-    /// Extra properties that are not modelled explicitly as a class that inhertits from <see cref="BaseComponent" />
+    /// Extra properties that are not modelled explicitly as a class that inhertits from <see cref="BaseComponent" />.
+    /// value is a JSON serialized string. It is intended for debugging, and is only availibe in DEBUG builds
     /// </summary>
-    public IReadOnlyDictionary<string, string>? Extra { get; }
+    public IReadOnlyDictionary<string, string>? AdditionalDebugProperties { get; }
 }
-

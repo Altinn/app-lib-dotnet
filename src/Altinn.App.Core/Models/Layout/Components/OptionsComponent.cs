@@ -29,8 +29,8 @@ public class OptionsComponent : BaseComponent
     /// <summary>
     /// Constructor
     /// </summary>
-    public OptionsComponent(string id, string type, IReadOnlyDictionary<string, string>? dataModelBindings, Expression? hidden, Expression? required, Expression? readOnly, string? optionId, List<AppOption>? options, bool secure, IReadOnlyDictionary<string, string>? extra) :
-        base(id, type, dataModelBindings, hidden, required, readOnly, extra)
+    public OptionsComponent(string id, string type, IReadOnlyDictionary<string, string>? dataModelBindings, Expression? hidden, Expression? required, Expression? readOnly, string? optionId, List<AppOption>? options, bool secure, IReadOnlyDictionary<string, string>? additionalProperties) :
+        base(id, type, dataModelBindings, hidden, required, readOnly, additionalProperties)
     {
         OptionId = optionId;
         Options = options;
