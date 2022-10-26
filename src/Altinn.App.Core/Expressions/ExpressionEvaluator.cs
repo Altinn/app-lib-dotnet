@@ -3,7 +3,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 
 using Altinn.App.Core.Models.Expressions;
-using Altinn.App.Core.Models.Layout;
+using Altinn.App.Core.Models.Layout.Components;
 
 namespace Altinn.App.Core.Expressions;
 
