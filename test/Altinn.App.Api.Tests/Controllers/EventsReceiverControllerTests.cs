@@ -52,10 +52,7 @@ namespace Altinn.App.Api.Tests.Controllers
             
             HttpResponseMessage response = await client.SendAsync(request);
             
-            // The status code 425 Too early is not registered as a known enum,
-            // hence the cast to int.
-            int statusCode = (int)response.StatusCode;
-            statusCode.Should().Be(500);
+            response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
         }
     }
 }
