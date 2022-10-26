@@ -17,7 +17,7 @@ namespace Altinn.App.Core.Models.Layout.Components;
 public class BaseComponent
 {
     /// <summary>
-    /// Constructor that ensures n
+    /// Constructor
     /// </summary>
     public BaseComponent(string id, string type, IReadOnlyDictionary<string, string>? dataModelBindings, Expression? hidden, Expression? required, Expression? readOnly, IReadOnlyDictionary<string, string>? additionalProperties)
     {
@@ -47,7 +47,7 @@ public class BaseComponent
     }
 
     /// <summary>
-    /// Component type
+    /// Component type as written in the json file
     /// </summary>
     public string Type { get; }
 
@@ -78,7 +78,7 @@ public class BaseComponent
 
     /// <summary>
     /// Extra properties that are not modelled explicitly as a class that inhertits from <see cref="BaseComponent" />.
-    /// value is a JSON serialized string. It is intended for debugging, and is only availibe in DEBUG builds
+    /// value is a JSON serialized string. It is intended for debugging
     /// </summary>
     public IReadOnlyDictionary<string, string>? AdditionalDebugProperties { get; }
 }
