@@ -36,7 +36,7 @@ namespace Altinn.App.Api.Tests.Controllers
                 Id = Guid.NewGuid().ToString(),
                 Source = new Uri("https://dihe.apps.altinn3local.no/dihe/redusert-foreldrebetaling-bhg/instances/510002/553a3ddc-4ca4-40af-9c2a-1e33e659c7e7"),
                 SpecVersion = "1.0",
-                Type = "app.eformidling.reminder.checkinstancestatus",
+                Type = "no.event.handler.registered.for.this.type",
                 Subject = "/party/510002",
                 Time = DateTime.Parse("2022-10-13T09:33:46.6330634Z"),
                 AlternativeSubject = "/person/17858296439"
