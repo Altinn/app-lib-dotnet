@@ -156,6 +156,7 @@ namespace Altinn.App.Core.Extensions
         private static void AddEventServices(IServiceCollection services)
         {
             services.AddTransient<IEventHandlerResolver, EventHandlerResolver>();
+            services.TryAddSingleton<IEventSecretCodeProvider, KeyVaultEventSecretCodeProvider>();
         }
 
         private static void AddPdfServices(IServiceCollection services)

@@ -5,6 +5,7 @@ using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Interface;
+using Altinn.App.Core.Internal.Events;
 using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Infrastructure.Clients.Events
@@ -16,20 +17,23 @@ namespace Altinn.App.Core.Infrastructure.Clients.Events
     {
         private readonly GeneralSettings _generalSettings;
         private readonly HttpClient _client;
+        private readonly IEventSecretCodeProvider _secretCodeProvider;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EventsClient"/> class.
         /// </summary>
-        /// <param name="platformSettings">The platform settings.</param>
-        /// <param name="httpClient">A HttpClient.</param>
-        /// <param name="generalSettings">The general settings of the application.</param>
-        public EventsSubscriptionClient(IOptions<PlatformSettings> platformSettings, HttpClient httpClient, IOptions<GeneralSettings> generalSettings)
+        public EventsSubscriptionClient(
+            IOptions<PlatformSettings> platformSettings, 
+            HttpClient httpClient, 
+            IOptions<GeneralSettings> generalSettings, 
+            IEventSecretCodeProvider secretCodeProvider)
         {
             _generalSettings = generalSettings.Value;
             httpClient.BaseAddress = new Uri(platformSettings.Value.ApiEventsEndpoint);
             httpClient.DefaultRequestHeaders.Add(General.SubscriptionKeyHeaderName, platformSettings.Value.SubscriptionKey);
             httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             _client = httpClient;
+            _secretCodeProvider = secretCodeProvider;
         }
 
         /// <summary>
@@ -47,7 +51,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Events
             var subscriptionRequest = new SubscriptionRequest()
             {
                 TypeFilter = eventType,
-                EndPoint = new Uri(new Uri(appBaseUrl), "/api/v1/eventsreceiver"),
+                EndPoint = new Uri(new Uri(appBaseUrl), $"/api/v1/eventsreceiver?code={await _secretCodeProvider.GetSecretCode()}"),
                 SourceFilter = new Uri(appBaseUrl)
             };
 

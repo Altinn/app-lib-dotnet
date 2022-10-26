@@ -1,7 +1,9 @@
 ﻿using Altinn.App.Api.Extensions;
 using Altinn.App.Api.Tests.Mocks;
 using Altinn.App.Api.Tests.Mocks.Authentication;
+using Altinn.App.Api.Tests.Mocks.Event;
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.Events;
 using AltinnCore.Authentication.JwtCookie;
@@ -43,6 +45,9 @@ void ConfigureMockServices(IServiceCollection services, ConfigurationManager con
     services.AddSingleton<Altinn.Common.PEP.Interfaces.IPDP, PepWithPDPAuthorizationMockSI>();
     services.AddSingleton<ISigningKeysRetriever, SigningKeysRetrieverStub>();
     services.AddSingleton<IPostConfigureOptions<JwtCookieOptions>, JwtCookiePostConfigureOptionsStub>();
+    services.AddSingleton<IEventSecretCodeProvider, EventSecretCodeProviderStub>();
+    services.AddTransient<IEventHandler, DummyFailureEventHandler>();
+    services.AddTransient<IEventHandler, DummySuccessEventHandler>();
 }
 
 void Configure()
