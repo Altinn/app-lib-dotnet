@@ -95,12 +95,7 @@ public class PageComponentConverter : JsonConverter<PageComponent>
         Expression? readOnly = null;
 
         // extra properties that are not stored in a specific class.
-
-#if DEBUG
-        Dictionary<string, string> extra = new();
-#else
-        Dictionary<string, string>? extra = null;
-#endif
+        Dictionary<string, string> additionalProperties = new();
 
 
         while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
@@ -127,17 +122,13 @@ public class PageComponentConverter : JsonConverter<PageComponent>
                     readOnly = ExpressionConverter.ReadNotNull(ref reader, options);
                     break;
                 default:
-#if DEBUG
                     // read extra properties
-                    extra[propertyName] = reader.SkipReturnString();
-#else
-                    reader.Skip();
-#endif
+                    additionalProperties[propertyName] = reader.SkipReturnString();
                     break;
             }
         }
 
-        return new PageComponent(pageName, components, componentLookup, hidden, required, readOnly, extra);
+        return new PageComponent(pageName, components, componentLookup, hidden, required, readOnly, additionalProperties);
     }
 
     private void ReadLayout(ref Utf8JsonReader reader, List<BaseComponent> components, Dictionary<string, BaseComponent> componentLookup, JsonSerializerOptions options)
@@ -196,11 +187,7 @@ public class PageComponentConverter : JsonConverter<PageComponent>
         bool secure = false;
 
         // extra properties that are not stored in a specific class.
-#if DEBUG
         Dictionary<string, string> additionalProperties = new();
-#else
-        Dictionary<string, string>? additionalProperties = null;
-#endif
 
 
 
@@ -261,11 +248,7 @@ public class PageComponentConverter : JsonConverter<PageComponent>
                     break;
                 default:
                     // store extra fields as json
-#if DEBUG
                     additionalProperties[propertyName] = reader.SkipReturnString();
-#else
-                    reader.Skip();
-#endif
                     break;
             }
         }
