@@ -1,5 +1,6 @@
 using Altinn.App.Core.Expressions;
 using Altinn.App.Core.Models.Layout;
+using Altinn.App.Core.Models.Layout.Components;
 
 namespace Altinn.App.Core.Models.Expressions;
 
