@@ -197,9 +197,9 @@ public class PageComponentConverter : JsonConverter<PageComponent>
 
         // extra properties that are not stored in a specific class.
 #if DEBUG
-        Dictionary<string, string> extra = new();
+        Dictionary<string, string> additionalProperties = new();
 #else
-        Dictionary<string, string>? extra = null;
+        Dictionary<string, string>? additionalProperties = null;
 #endif
 
 
@@ -262,7 +262,7 @@ public class PageComponentConverter : JsonConverter<PageComponent>
                 default:
                     // store extra fields as json
 #if DEBUG
-                    extra[propertyName] = reader.SkipReturnString();
+                    additionalProperties[propertyName] = reader.SkipReturnString();
 #else
                     reader.Skip();
 #endif
@@ -293,11 +293,11 @@ public class PageComponentConverter : JsonConverter<PageComponent>
                         throw new JsonException($"A group id:\"{id}\" with maxCount: {maxCount} does not have a \"group\" dataModelBinding");
                     }
 
-                    return new RepeatingGroupComponent(id, type, dataModelBindings, children, maxCount, hidden, required, readOnly, extra);
+                    return new RepeatingGroupComponent(id, type, dataModelBindings, children, maxCount, hidden, required, readOnly, additionalProperties);
                 }
                 else
                 {
-                    return new GroupComponent(id, type, dataModelBindings, children, hidden, required, readOnly, extra);
+                    return new GroupComponent(id, type, dataModelBindings, children, hidden, required, readOnly, additionalProperties);
                 }
             case "summary":
                 if (componentRef is null || pageRef is null)
@@ -305,7 +305,7 @@ public class PageComponentConverter : JsonConverter<PageComponent>
                     throw new JsonException("Component with \"type\": \"Summary\" requires \"componentRef\" and \"pageRef\" properties");
                 }
 
-                return new SummaryComponent(id, type, hidden, componentRef, pageRef, extra);
+                return new SummaryComponent(id, type, hidden, componentRef, pageRef, additionalProperties);
             case "checkboxes":
             case "radiobuttons":
             case "dropdown":
@@ -322,11 +322,11 @@ public class PageComponentConverter : JsonConverter<PageComponent>
                     throw new JsonException("\"secure\": true is invalid for components with literal \"options\"");
                 }
 
-                return new OptionsComponent(id, type, dataModelBindings, hidden, required, readOnly, optionId, literalOptions, secure, extra);
+                return new OptionsComponent(id, type, dataModelBindings, hidden, required, readOnly, optionId, literalOptions, secure, additionalProperties);
         }
 
         // Most compoents are handled as BaseComponent
-        return new BaseComponent(id, type, dataModelBindings, hidden, required, readOnly, extra);
+        return new BaseComponent(id, type, dataModelBindings, hidden, required, readOnly, additionalProperties);
     }
 
     private List<BaseComponent> ReadChildren(ref Utf8JsonReader reader, string parentId, List<string> childIds, JsonSerializerOptions options)

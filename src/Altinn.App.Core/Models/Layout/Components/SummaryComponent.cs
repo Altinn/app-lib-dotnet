@@ -24,8 +24,8 @@ public class SummaryComponent : BaseComponent
     /// <summary>
     /// Constructor
     /// </summary>
-    public SummaryComponent(string id, string type, Expression? hidden, string componentRef, string pageRef, IReadOnlyDictionary<string, string>? extra) :
-        base(id, type, null, hidden, null, null, extra)
+    public SummaryComponent(string id, string type, Expression? hidden, string componentRef, string pageRef, IReadOnlyDictionary<string, string>? additionalProperties) :
+        base(id, type, null, hidden, null, null, additionalProperties)
     {
         ComponentRef = componentRef;
         PageRef = pageRef;
