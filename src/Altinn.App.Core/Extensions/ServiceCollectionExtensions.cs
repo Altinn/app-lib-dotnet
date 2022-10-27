@@ -142,6 +142,8 @@ namespace Altinn.App.Core.Extensions
 
             // Services related to instance aware and secure app options
             services.TryAddTransient<InstanceAppOptionsFactory>();
+
+            services.TryAddTransient<TableAppOptionsFactory>();
         }
     }
 }
