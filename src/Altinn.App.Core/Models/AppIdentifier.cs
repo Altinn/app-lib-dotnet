@@ -49,17 +49,12 @@ namespace Altinn.App.Core.Models
                 throw new ArgumentNullException(nameof(id));
             }
 
-            if (id.ContainsMoreThanOne('/'))
+            if (id.ContainsExactlyOne('/'))
             {
-                throw new ArgumentOutOfRangeException(nameof(id), "You can only have one / (forward slash) in your id");
+                (Org, App) = DeconstructAppId(id);
             }
 
-            if (id.DoesNotContain('/'))
-            {
-                throw new ArgumentOutOfRangeException(nameof(id), "You must have one / (forward slash) in your id");
-            }
-
-            (Org, App) = DeconstructAppId(id);
+            throw new ArgumentOutOfRangeException(nameof(id), "You must have exactly only one / (forward slash) in your id");
         }
 
         /// <summary>

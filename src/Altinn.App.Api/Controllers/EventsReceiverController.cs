@@ -41,6 +41,7 @@ namespace Altinn.App.Api.Controllers
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(425)]
+        [ProducesResponseType(500)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult> Post([FromQuery] string code, [FromBody] CloudEvent cloudEvent)
         {

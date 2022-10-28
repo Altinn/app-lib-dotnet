@@ -1,4 +1,3 @@
-using Altinn.App.Core.Infrastructure.Clients.Events;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Interface

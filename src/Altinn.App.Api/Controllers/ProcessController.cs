@@ -166,7 +166,6 @@ namespace Altinn.App.Api.Controllers
         [Authorize(Policy = "InstanceRead")]
         [HttpGet("next")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
         public async Task<ActionResult<List<string>>> GetNextElements(
             [FromRoute] string org,
