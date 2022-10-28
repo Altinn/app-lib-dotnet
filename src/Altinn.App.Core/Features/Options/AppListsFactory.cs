@@ -25,12 +25,12 @@ namespace Altinn.App.Core.Features.Options
         /// Finds the implementation of IAppListsProvider based on the options id
         /// provided.
         /// </summary>
-        /// <param name="optionsId">Id matching the options requested.</param>
-        public IAppListsProvider GetAppListsProvider(string optionsId)
+        /// <param name="listId">Id matching the options requested.</param>
+        public IAppListsProvider GetAppListsProvider(string listId)
         {
             foreach (var appListsProvider in AppListsProviders)
             {
-                if (appListsProvider.Id.ToLower().Equals(optionsId.ToLower()))
+                if (appListsProvider.Id.ToLower().Equals(listId.ToLower()))
                 {
                     return appListsProvider;
                 }

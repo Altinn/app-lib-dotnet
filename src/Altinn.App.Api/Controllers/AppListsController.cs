@@ -26,18 +26,18 @@ namespace Altinn.App.Api.Controllers
         /// <summary>
         /// Api that exposes app related options
         /// </summary>
-        /// <param name="optionsId">The optionsId</param>
+        /// <param name="listId">The listId</param>
         /// <param name="language">The language selected by the user.</param>
         /// <param name="queryParams">Query parameteres supplied</param>
         /// <returns>The options list</returns>
         [HttpGet]
-        [Route("/{org}/{app}/api/lists/{optionsId}")]
+        [Route("/{org}/{app}/api/lists/{listId}")]
         public async Task<IActionResult> Get(
-            [FromRoute] string optionsId,
+            [FromRoute] string listId,
             [FromQuery] string language,
             [FromQuery] Dictionary<string, string> queryParams)
         {
-            AppLists appLists = await _appListsService.GetAppListsAsync(optionsId, language, queryParams);
+            AppLists appLists = await _appListsService.GetAppListsAsync(listId, language, queryParams);
             if (appLists.ListItems == null)
             {
                 return NotFound();
