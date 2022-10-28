@@ -7,20 +7,20 @@ using Microsoft.AspNetCore.Mvc;
 namespace Altinn.App.Api.Controllers
 {
     /// <summary>
-    /// Represents the TableOptions API.
+    /// Represents the AppLists API.
     /// </summary>
     [ApiController]
-    public class TableOptionsController: ControllerBase
+    public class AppListsController: ControllerBase
     {
-        private readonly IAppOptionsService _appOptionsService;
+        private readonly IAppListsService _appListsService;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TableOptionsController"/> class.
+        /// Initializes a new instance of the <see cref="AppListsController"/> class.
         /// </summary>
-        /// <param name="appOptionsService">Service for handling app options</param>
-        public TableOptionsController(IAppOptionsService appOptionsService)
+        /// <param name="appListsService">Service for handling app options</param>
+        public AppListsController(IAppListsService appListsService)
         {
-            _appOptionsService = appOptionsService;
+            _appListsService = appListsService;
         }
 
         /// <summary>
@@ -31,19 +31,19 @@ namespace Altinn.App.Api.Controllers
         /// <param name="queryParams">Query parameteres supplied</param>
         /// <returns>The options list</returns>
         [HttpGet]
-        [Route("/{org}/{app}/api/options/table/{optionsId}")]
-        public async Task<IActionResult> GetTableOptions(
+        [Route("/{org}/{app}/api/lists/{optionsId}")]
+        public async Task<IActionResult> Get(
             [FromRoute] string optionsId,
             [FromQuery] string language,
             [FromQuery] Dictionary<string, string> queryParams)
         {
-            AppTableOptions appOptions = await _appOptionsService.GetTableOptionsAsync(optionsId, language, queryParams);
-            if (appOptions.ListItems == null)
+            AppLists appLists = await _appListsService.GetAppListsAsync(optionsId, language, queryParams);
+            if (appLists.ListItems == null)
             {
                 return NotFound();
             }
 
-            return Ok(appOptions);
+            return Ok(appLists);
         }
     }
 }

@@ -9,16 +9,14 @@ namespace Altinn.App.Core.Features.Options
     {
         private readonly AppOptionsFactory _appOpptionsFactory;
         private readonly InstanceAppOptionsFactory _instanceAppOptionsFactory;
-        private readonly TableAppOptionsFactory _tableAppOpptionsFactory;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AppOptionsService"/> class.
         /// </summary>
-        public AppOptionsService(AppOptionsFactory appOptionsFactory, InstanceAppOptionsFactory instanceAppOptionsFactory, TableAppOptionsFactory tableAppOptionsFactory)
+        public AppOptionsService(AppOptionsFactory appOptionsFactory, InstanceAppOptionsFactory instanceAppOptionsFactory)
         {
             _appOpptionsFactory = appOptionsFactory;
             _instanceAppOptionsFactory = instanceAppOptionsFactory;
-            _tableAppOpptionsFactory = tableAppOptionsFactory;
         }
 
         /// <inheritdoc/>
@@ -32,12 +30,6 @@ namespace Altinn.App.Core.Features.Options
         {
             return await _instanceAppOptionsFactory.GetOptionsProvider(optionId).GetInstanceAppOptionsAsync(instanceIdentifier, language, keyValuePairs);
         }
-
-        public async Task<AppTableOptions> GetTableOptionsAsync(string optionId, string language, Dictionary<string, string> keyValuePairs)
-        {
-            return await _tableAppOpptionsFactory.GetOptionsProvider(optionId).GetTableAppOptionsAsync(language, keyValuePairs);
-        }
-
     }
 }
  

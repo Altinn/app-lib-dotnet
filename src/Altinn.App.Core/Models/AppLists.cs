@@ -7,18 +7,18 @@ using System.Threading.Tasks;
 namespace Altinn.App.Core.Models
 {
     /// <summary>
-    /// Represents values to be used in a Table.
+    /// Represents values to be used in a AppList.
     /// </summary>
-    public class AppTableOptions
+    public class AppLists
     {
-        public AppTableOptionsMetaData _metaData { get; set; }
+        public AppListsMetaData _metaData { get; set; }
         /// <summary>
         /// Gets or sets the list of options.
         /// </summary>
         public List<object> ListItems { get; set; }
     }
 
-    public class AppTableOptionsMetaData
+    public class AppListsMetaData
     {
         public int Page { get; set; }
         public int PageCount { get; set; }

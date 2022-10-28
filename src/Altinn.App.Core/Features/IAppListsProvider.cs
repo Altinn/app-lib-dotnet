@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Altinn.App.Core.Features
 {
-    public interface ITableAppOptionsProvider
+    public interface IAppListsProvider
     {
         /// <summary>
         /// The id/name of the options this provider supports ie. land, fylker, kommuner.
@@ -22,6 +22,6 @@ namespace Altinn.App.Core.Features
         /// <param name="keyValuePairs">Key/value pairs to control what options to get.
         /// When called from the options controller this will be the querystring key/value pairs.</param>
         /// <returns>A <see cref="Task{TResult}"/> representing the result of the asynchronous operation.</returns>
-        Task<AppTableOptions> GetTableAppOptionsAsync(string language, Dictionary<string, string> keyValuePairs);
+        Task<AppLists> GetAppListsAsync(string language, Dictionary<string, string> keyValuePairs);
     }
 }

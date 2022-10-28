@@ -27,8 +27,5 @@ namespace Altinn.App.Core.Features.Options
         /// <param name="keyValuePairs">Optional list of key/value pairs to use for filtering and further lookup.</param>
         /// <returns>The list of options</returns>
         Task<AppOptions> GetOptionsAsync(InstanceIdentifier instanceIdentifier, string optionId, string language, Dictionary<string, string> keyValuePairs);
-
-
-        Task<AppTableOptions> GetTableOptionsAsync(string optionId, string language, Dictionary<string, string> keyValuePairs);
     }
 }
