@@ -1,12 +1,24 @@
-﻿using Altinn.App.Core.EFormidling.Implementation;
+﻿using Altinn.ApiClients.Maskinporten.Config;
+using Altinn.ApiClients.Maskinporten.Interfaces;
+using Altinn.ApiClients.Maskinporten.Models;
+using Altinn.ApiClients.Maskinporten.Services;
+using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
-using Altinn.App.Core.Interface;
+using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Infrastructure.Clients.Maskinporten;
+using Altinn.App.Core.Infrastructure.Clients.Storage;
 using Altinn.App.Core.Models;
 using Altinn.Common.EFormidlingClient;
 using Altinn.Common.EFormidlingClient.Models;
+using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
+using System.Net;
+using System.Security.Cryptography.X509Certificates;
 
-namespace Altinn.App.Controllers
+namespace Altinn.App.Core.EFormidling.Implementation
 {
     /// <summary>
     /// Handles status checking of messages sent through the Eformidling integration point.
@@ -14,17 +26,33 @@ namespace Altinn.App.Controllers
     public class EformidlingStatusCheckEventHandler : IEventHandler
     {
         private readonly IEFormidlingClient _eFormidlingClient;
-        private readonly IInstance _instanceClient;
         private readonly ILogger<EformidlingStatusCheckEventHandler> _logger;
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly MaskinportenService _maskinportenService;
+        private readonly MaskinportenSettings _maskinportenSettings;
+        private readonly IX509CertificateProvider _x509CertificateProvider;
+        private readonly PlatformSettings _platformSettings;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EformidlingStatusCheckEventHandler"/> class.
         /// </summary>
-        public EformidlingStatusCheckEventHandler(IEFormidlingClient eFormidlingClient, IInstance instanceClient, ILogger<EformidlingStatusCheckEventHandler> logger)
+        public EformidlingStatusCheckEventHandler(
+            IEFormidlingClient eFormidlingClient,
+            IHttpClientFactory httpClientFactory,
+            ILogger<EformidlingStatusCheckEventHandler> logger,
+            MaskinportenService maskinportenService,
+            IOptions<MaskinportenSettings> maskinportenSettings,
+            IX509CertificateProvider x509CertificateProvider,
+            IOptions<PlatformSettings> platformSettings
+            )
         {
             _eFormidlingClient = eFormidlingClient;
-            _instanceClient = instanceClient;
             _logger = logger;
+            _httpClientFactory = httpClientFactory;
+            _maskinportenService = maskinportenService;
+            _maskinportenSettings = maskinportenSettings.Value;
+            _x509CertificateProvider = x509CertificateProvider;
+            _platformSettings = platformSettings.Value;
         }
 
         /// <inheritDoc/>
@@ -38,7 +66,7 @@ namespace Altinn.App.Controllers
             _logger.LogInformation("Received reminder for subject {subject}", subject);
 
             InstanceIdentifier instanceIdentifier = InstanceIdentifier.CreateFromUrl(cloudEvent.Source.ToString());
-            
+
             // Instance GUID is used as shipment identifier
             string id = instanceIdentifier.InstanceGuid.ToString();
             Statuses statusesForShipment = await GetStatusesForShipment(id);
@@ -48,7 +76,8 @@ namespace Altinn.App.Controllers
                 // The instance should wait in feedback step. This enforces a feedback step in the process in current version.
                 // Moving forward sending to Eformidling should considered as a ServiceTask with auto advance in the process
                 // when the message is confirmed.                
-                _ = await _instanceClient.AddCompleteConfirmation(instanceIdentifier.InstanceOwnerPartyId, instanceIdentifier.InstanceGuid);
+
+                _ = await AddCompleteConfirmation(instanceIdentifier.InstanceOwnerPartyId, instanceIdentifier.InstanceGuid);
 
                 return true;
             }
@@ -66,19 +95,63 @@ namespace Altinn.App.Controllers
                 // We will try again later.
                 return false;
             }
-                        
+
             // We don't know if this is the last reminder from the Event system. If the
             // Event system gives up (after 48 hours) it will end up in the dead letter queue,
             // and be handled by the Platform team manually.
         }
 
+        /// This is basically a duplicate of the method in <see cref="InstanceClient"/>
+        /// Duplication is done since the original method requires an http context
+        /// with a logged on user/org, while we would like to authenticate against maskinporten
+        /// here and now and avoid calling out of the app and back into the app on the matching
+        /// endpoint in InstanceController. This method should be remove once we have a better
+        /// alernative for authenticating the app/org without having a http request context with
+        /// a logged on user/org.
+        private async Task<Instance> AddCompleteConfirmation(int instanceOwnerPartyId, Guid instanceGuid)
+        {
+            string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}/complete";
+
+            TokenResponse altinnToken = await GetOrganizationToken();
+
+            var client = _httpClientFactory.CreateClient();
+            client.BaseAddress = new Uri(_platformSettings.ApiStorageEndpoint);
+            HttpResponseMessage response = await client.PostAsync(altinnToken.AccessToken, apiUrl, new StringContent(string.Empty));
+
+            if (response.StatusCode == HttpStatusCode.OK)
+            {
+                string instanceData = await response.Content.ReadAsStringAsync();
+                Instance instance = JsonConvert.DeserializeObject<Instance>(instanceData)!;
+                return instance;
+            }
+
+            throw await PlatformHttpException.CreateAsync(response);
+        }
+
+        private async Task<TokenResponse> GetOrganizationToken()
+        {
+            X509Certificate2 x509cert = await _x509CertificateProvider.GetCertificate();
+            var maskinportenToken = await _maskinportenService.GetToken(x509cert, _maskinportenSettings.Environment, _maskinportenSettings.ClientId, "altinn:serviceowner/instances.read", string.Empty);
+            var altinnToken = await _maskinportenService.ExchangeToAltinnToken(maskinportenToken, _maskinportenSettings.Environment);
+
+            return altinnToken;
+        }
+
         private async Task<Statuses> GetStatusesForShipment(string shipmentId)
         {
-            var requestHeaders = new Dictionary<string, string>(); //TODO: Do we need any? Probably Authorization headers
-
+            var requestHeaders = new Dictionary<string, string>();
             Statuses statuses = await _eFormidlingClient.GetMessageStatusById(shipmentId, requestHeaders);
 
-            _logger.LogInformation("Received the following {count} statuses: {statusValues}.", statuses.Content.Count, string.Join(",", statuses.Content.Select(s => s.Status).ToArray()));
+            if (statuses != null && statuses.Content != null)
+            {
+                _logger.LogInformation("Received the following {count} statuses: {statusValues}.", statuses.Content.Count, string.Join(",", statuses.Content.Select(s => s.Status).ToArray()));
+            }
+            else
+            {
+                _logger.LogWarning("Did not receive any statuses for shipment id {shipmentId}", shipmentId);
+                statuses ??= new Statuses();
+                statuses.Content = new List<Content>();
+            }
 
             return statuses;
         }
