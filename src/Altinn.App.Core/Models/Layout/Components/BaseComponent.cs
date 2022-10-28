@@ -17,7 +17,7 @@ namespace Altinn.App.Core.Models.Layout.Components;
 public class BaseComponent
 {
     /// <summary>
-    /// Constructor
+    /// Constructor for <see cref="BaseComponent" />
     /// </summary>
     public BaseComponent(string id, string type, IReadOnlyDictionary<string, string>? dataModelBindings, Expression? hidden, Expression? required, Expression? readOnly, IReadOnlyDictionary<string, string>? additionalProperties)
     {
