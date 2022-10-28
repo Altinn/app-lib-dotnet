@@ -23,12 +23,10 @@ namespace Altinn.App.Core.Features.Options
         {
             foreach (var appListsProvider in _appListsProviders)
             {
-                if (appListsProvider.Id.ToLower() != optionsId.ToLower())
+                if (appListsProvider.Id.ToLower().Equals(optionsId.ToLower()))
                 {
-                    continue;
+                    return appListsProvider;
                 }
-
-                return appListsProvider;
             }
 
             return new NullAppListsProvider();
