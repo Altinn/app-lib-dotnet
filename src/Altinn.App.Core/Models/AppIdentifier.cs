@@ -52,6 +52,7 @@ namespace Altinn.App.Core.Models
             if (id.ContainsExactlyOne('/'))
             {
                 (Org, App) = DeconstructAppId(id);
+                return;
             }
 
             throw new ArgumentOutOfRangeException(nameof(id), "You must have exactly only one / (forward slash) in your id");
