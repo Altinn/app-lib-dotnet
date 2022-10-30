@@ -1,5 +1,4 @@
 ﻿using Altinn.ApiClients.Maskinporten.Config;
-using Altinn.ApiClients.Maskinporten.Interfaces;
 using Altinn.ApiClients.Maskinporten.Models;
 using Altinn.ApiClients.Maskinporten.Services;
 using Altinn.App.Core.Configuration;
@@ -56,7 +55,7 @@ namespace Altinn.App.Core.EFormidling.Implementation
         }
 
         /// <inheritDoc/>
-        public string EventType { get; internal set; } = "app.eformidling.reminder.checkinstancestatus";
+        public string EventType { get; internal set; } = EformidlingConstants.CheckInstanceStatusEventType;
 
         /// <inheritDoc/>
         public async Task<bool> ProcessEvent(CloudEvent cloudEvent)

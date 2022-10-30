@@ -8,7 +8,7 @@ namespace Altinn.App.Api.Tests.Mocks
 {
     public class AuthorizationMock : IAuthorization
     {
-        public Task<List<Party>> GetPartyList(int userId)
+        public Task<List<Party>?> GetPartyList(int userId)
         {
             throw new NotImplementedException();
         }

@@ -102,7 +102,7 @@ public class DefaultEFormidlingService : IEFormidlingService
         try
         {
             await _eFormidlingClient.SendMessage(instanceGuid, requestHeaders);
-            _ = await _eventClient.AddEvent("app.eformidling.reminder.checkinstancestatus", instance);
+            _ = await _eventClient.AddEvent(EformidlingConstants.CheckInstanceStatusEventType, instance);
         }
         catch
         {

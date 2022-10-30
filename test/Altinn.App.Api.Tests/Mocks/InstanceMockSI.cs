@@ -11,7 +11,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Altinn.App.Api.Tests.Mocks
@@ -32,7 +31,7 @@ namespace Altinn.App.Api.Tests.Mocks
             string partyId = instanceTemplate.InstanceOwner.PartyId;
             Guid instanceGuid = Guid.NewGuid();
 
-            Instance instance = new Instance
+            Instance instance = new()
             {
                 Id = $"{partyId}/{instanceGuid}",
                 AppId = $"{org}/{app}",
@@ -48,10 +47,12 @@ namespace Altinn.App.Api.Tests.Mocks
             }
 
             string instancePath = GetInstancePath(app, org, int.Parse(partyId), instanceGuid);
-            _logger.LogInformation($"//// Created instance for app {org}/{app}. writing to path: {instancePath}");
-            Directory.CreateDirectory(Path.GetDirectoryName(instancePath));
+            string directory = Path.GetDirectoryName(instancePath) ?? throw new IOException($"Could not get directory name of specified path {instancePath}");
+            _ = Directory.CreateDirectory(directory);
             File.WriteAllText(instancePath, instance.ToString());
 
+            _logger.LogInformation("Created instance for app {org}/{app}. writing to path: {instancePath}", org, app, instancePath);
+            
             return Task.FromResult(instance);
         }
 
@@ -69,13 +70,15 @@ namespace Altinn.App.Api.Tests.Mocks
         public Task<Instance> GetInstance(string app, string org, int instanceOwnerPartyId, Guid instanceId)
         {
             Instance instance = GetTestInstance(app, org, instanceOwnerPartyId, instanceId);
-
-            if (instance != null)
+            
+            if (instance is null)
             {
-                instance.Data = GetDataElements(org, app, instanceOwnerPartyId, instanceId);
-                (instance.LastChangedBy, instance.LastChanged) = FindLastChanged(instance);
-            }
+                throw new IOException($"Could not load instance {instanceId} from app {org}/{app}");
+            }            
 
+            instance.Data = GetDataElements(org, app, instanceOwnerPartyId, instanceId);
+            (instance.LastChangedBy, instance.LastChanged) = FindLastChanged(instance);
+                
             return Task.FromResult(instance);
         }
 
@@ -88,45 +91,51 @@ namespace Altinn.App.Api.Tests.Mocks
 
             string instancePath = GetInstancePath(app, instance.Org, int.Parse(instance.InstanceOwner.PartyId), instanceGuid);
 
-            if (File.Exists(instancePath))
+            if (!File.Exists(instancePath))
             {
-                string content = File.ReadAllText(instancePath);
-                Instance storedInstance = (Instance)JsonConvert.DeserializeObject(content, typeof(Instance));
-
-                // Archiving instance if process was ended
-                if (storedInstance?.Process?.Ended == null && process.Ended != null)
-                {
-                    storedInstance.Status ??= new InstanceStatus();
-                    storedInstance.Status.Archived = process.Ended;
-                }
-
-                storedInstance.Process = process;
-                storedInstance.LastChanged = DateTime.UtcNow;
-
-                File.WriteAllText(instancePath, JsonConvert.SerializeObject(storedInstance));
-                return Task.FromResult(storedInstance);
+                throw new IOException($"Could not find instance {instance.Id} on path {instancePath}");
             }
 
-            return Task.FromResult<Instance>(null);
+            string content = File.ReadAllText(instancePath);
+
+            Instance storedInstance = JsonConvert.DeserializeObject<Instance>(content) ?? 
+                throw new InvalidDataException($"Something went wrong deserializing json for instance {instance.Id} from path {instancePath}");
+
+            // Archiving instance if process was ended
+            if (storedInstance.Process?.Ended == null && process.Ended != null)
+            {
+                storedInstance.Status ??= new InstanceStatus();
+                storedInstance.Status.Archived = process.Ended;
+            }
+
+            storedInstance.Process = process;
+            storedInstance.LastChanged = DateTime.UtcNow;
+
+            File.WriteAllText(instancePath, JsonConvert.SerializeObject(storedInstance));
+
+
+            return Task.FromResult(storedInstance);
         }
 
         private static Instance GetTestInstance(string app, string org, int instanceOwnerId, Guid instanceId)
         {
             string instancePath = GetInstancePath(app, org, instanceOwnerId, instanceId);
-            if (File.Exists(instancePath))
+            if (!File.Exists(instancePath))
             {
-                string content = System.IO.File.ReadAllText(instancePath);
-                Instance instance = (Instance)JsonConvert.DeserializeObject(content, typeof(Instance));
-                return instance;
+                throw new IOException($"Could not find file for instance {instanceId} on specified path {instancePath}.");
             }
 
-            return null;
+            string content = File.ReadAllText(instancePath);
+            Instance instance = JsonConvert.DeserializeObject<Instance>(content) ?? 
+                throw new InvalidDataException($"Something went wrong deserializing json for instance from path {instancePath}");
+            
+            return instance;
         }
 
         // Finds the path for the instance based on instanceId. Only works if guid is unique.
         private static string GetInstancePath(int instanceOwnerPartyId, Guid instanceGuid)
         {
-            string[] paths = Directory.GetFiles(GetInstancesPath(), instanceGuid + ".json", SearchOption.AllDirectories);
+            string[] paths = Directory.GetFiles(GetTestDataFolderInstances(), instanceGuid + ".json", SearchOption.AllDirectories);
             paths = paths.Where(p => p.Contains($"{instanceOwnerPartyId}")).ToArray();
             if (paths.Length == 1)
             {
@@ -138,48 +147,58 @@ namespace Altinn.App.Api.Tests.Mocks
 
         private static string GetInstancePath(string app, string org, int instanceOwnerId, Guid instanceId)
         {
-            return Path.Combine(GetInstancesPath(), org, app, instanceOwnerId.ToString(), instanceId.ToString() + ".json");
+            return Path.Combine(GetTestDataFolderInstances(), org, app, instanceOwnerId.ToString(), instanceId.ToString() + ".json");
         }
 
-        private static string GetInstancesPath()
+        private static string GetTestDataRootFolder()
         {
-            string unitTestFolder = Path.GetDirectoryName(new Uri(typeof(InstanceMockSI).Assembly.Location).LocalPath);
-            return Path.Combine(unitTestFolder, @"../../../Data/Instances");
+            var assemblyPath = new Uri(typeof(InstanceMockSI).Assembly.Location).LocalPath;
+
+            return Path.Combine(assemblyPath, @".././../Data");
+        }
+
+        private static string GetTestDataFolderInstances()
+        {
+            string? testDataFolder = Path.GetDirectoryName(GetTestDataRootFolder());
+
+            return Path.Combine(testDataFolder!, @"Instances");
+        }
+
+        private static string GetDataPath(string org, string app, int instanceOwnerId, Guid instanceGuid)
+        {
+            return Path.Combine(GetTestDataFolderInstances(), org, app, instanceOwnerId.ToString(), instanceGuid.ToString()) + Path.DirectorySeparatorChar;
         }
 
         private List<DataElement> GetDataElements(string org, string app, int instanceOwnerId, Guid instanceId)
         {
             string path = GetDataPath(org, app, instanceOwnerId, instanceId);
-            List<DataElement> dataElements = new List<DataElement>();
-
-            if (Directory.Exists(path))
+            
+            if (!Directory.Exists(path))
             {
-                string[] files = Directory.GetFiles(path);
+                throw new IOException($"Can't find data path {path} for instance {instanceId} in app {org}/{app}");
+            }
 
-                foreach (string file in files)
+            List<DataElement> dataElements = new();
+            foreach (string file in Directory.GetFiles(path))
+            {
+                if (file.Contains(".pretest"))
                 {
-                    if (!file.Contains(".pretest"))
-                    {
-                        string content = File.ReadAllText(Path.Combine(path, file));
-                        DataElement dataElement = (DataElement)JsonConvert.DeserializeObject(content, typeof(DataElement));
-
-                        if (dataElement.DeleteStatus?.IsHardDeleted == true && string.IsNullOrEmpty(_httpContextAccessor.HttpContext.User.GetOrg()))
-                        {
-                            continue;
-                        }
-
-                        dataElements.Add(dataElement);
-                    }
+                    continue;
                 }
+
+                string content = File.ReadAllText(Path.Combine(path, file));
+                DataElement dataElement = JsonConvert.DeserializeObject<DataElement>(content) ?? 
+                    throw new InvalidDataException($"Something went wrong deserializing json for data from path {file}");
+
+                if (dataElement.DeleteStatus?.IsHardDeleted == true && string.IsNullOrEmpty(_httpContextAccessor?.HttpContext?.User?.GetOrg()))
+                {
+                    continue;
+                }
+
+                dataElements.Add(dataElement);
             }
 
             return dataElements;
-        }
-
-        private static string GetDataPath(string org, string app, int instanceOwnerId, Guid instanceGuid)
-        {
-            string unitTestFolder = Path.GetDirectoryName(new Uri(typeof(InstanceMockSI).Assembly.Location).LocalPath);
-            return Path.Combine(unitTestFolder, @"../../../Data/Instances", org, app, instanceOwnerId.ToString(), instanceGuid.ToString()) + Path.DirectorySeparatorChar;
         }
 
         public Task<List<Instance>> GetActiveInstances(int instanceOwnerPartyId)
@@ -215,25 +234,25 @@ namespace Altinn.App.Api.Tests.Mocks
         {
             if (!Enum.TryParse(readStatus, true, out ReadStatus newStatus))
             {
-                return null;
+                throw new ArgumentOutOfRangeException(nameof(readStatus), $"Unable to parse argument as a valid ReadStatus enum.");
             }
 
             string instancePath = GetInstancePath(instanceOwnerPartyId, instanceGuid);
 
-            if (File.Exists(instancePath))
+            if (!File.Exists(instancePath))
             {
-                string content = File.ReadAllText(instancePath);
-                Instance storedInstance = (Instance)JsonConvert.DeserializeObject(content, typeof(Instance));
-
-                storedInstance.Status ??= new InstanceStatus();
-
-                storedInstance.Status.ReadStatus = newStatus;
-
-                File.WriteAllText(instancePath, JsonConvert.SerializeObject(storedInstance));
-                return await Task.FromResult(storedInstance);
+                throw new IOException($"Could not find file for instance on specified path {instancePath}.");
             }
+                        
+            string content = File.ReadAllText(instancePath);
+            Instance storedInstance = JsonConvert.DeserializeObject<Instance>(content) ??
+                throw new InvalidDataException($"Something went wrong deserializing json for instance from path {instancePath}");
 
-            return null;
+            storedInstance.Status ??= new InstanceStatus();
+            storedInstance.Status.ReadStatus = newStatus;
+
+            File.WriteAllText(instancePath, JsonConvert.SerializeObject(storedInstance));
+            return await Task.FromResult(storedInstance);
         }
 
         public async Task<Instance> UpdateSubstatus(int instanceOwnerPartyId, Guid instanceGuid, Substatus substatus)
@@ -243,128 +262,128 @@ namespace Altinn.App.Api.Tests.Mocks
             if (substatus == null || string.IsNullOrEmpty(substatus.Label))
             {
                 throw await PlatformHttpException.CreateAsync(
-                    new System.Net.Http.HttpResponseMessage { StatusCode = System.Net.HttpStatusCode.BadRequest });
+                    new HttpResponseMessage { StatusCode = System.Net.HttpStatusCode.BadRequest });
             }
 
             string instancePath = GetInstancePath(instanceOwnerPartyId, instanceGuid);
 
-            if (File.Exists(instancePath))
+            if (!File.Exists(instancePath))
             {
-                string content = File.ReadAllText(instancePath);
-                Instance storedInstance = (Instance)JsonConvert.DeserializeObject(content, typeof(Instance));
-
-                storedInstance.Status ??= new InstanceStatus();
-
-                storedInstance.Status.Substatus = substatus;
-                storedInstance.LastChanged = creationTime;
-
-                // mock does not set last changed by, but this is set by the platform.
-                storedInstance.LastChangedBy = string.Empty;
-
-                File.WriteAllText(instancePath, JsonConvert.SerializeObject(storedInstance));
-                return await GetInstance(storedInstance);
+                throw new IOException($"Could not find file for instance on specified path {instancePath}.");
             }
 
-            return null;
+            string content = File.ReadAllText(instancePath);
+            Instance storedInstance = JsonConvert.DeserializeObject<Instance>(content) ??
+                throw new InvalidDataException($"Something went wrong deserializing json for instance from path {instancePath}");
+
+            storedInstance.Status ??= new InstanceStatus();
+            storedInstance.Status.Substatus = substatus;
+            storedInstance.LastChanged = creationTime;
+
+            // mock does not set last changed by, but this is set by the platform.
+            storedInstance.LastChangedBy = string.Empty;
+
+            File.WriteAllText(instancePath, JsonConvert.SerializeObject(storedInstance));
+            return await GetInstance(storedInstance);
         }
 
         public async Task<Instance> UpdatePresentationTexts(int instanceOwnerPartyId, Guid instanceGuid, PresentationTexts presentationTexts)
         {
             string instancePath = GetInstancePath(instanceOwnerPartyId, instanceGuid);
-            if (File.Exists(instancePath))
+            if (!File.Exists(instancePath))
             {
-                string content = File.ReadAllText(instancePath);
-                Instance storedInstance = (Instance)JsonConvert.DeserializeObject(content, typeof(Instance));
-
-                storedInstance.PresentationTexts ??= new Dictionary<string, string>();
-
-                foreach (KeyValuePair<string, string> entry in presentationTexts.Texts)
-                {
-                    if (string.IsNullOrEmpty(entry.Value))
-                    {
-                        storedInstance.PresentationTexts.Remove(entry.Key);
-                    }
-                    else
-                    {
-                        storedInstance.PresentationTexts[entry.Key] = entry.Value;
-                    }
-                }
-
-                // mock does not set last changed by, but this is set by the platform.
-                storedInstance.LastChangedBy = string.Empty;
-
-                File.WriteAllText(instancePath, JsonConvert.SerializeObject(storedInstance));
-
-                return await GetInstance(storedInstance);
+                throw new IOException($"Could not find file for instance on specified path {instancePath}.");
             }
 
-            return null;
+            string content = File.ReadAllText(instancePath);
+            Instance storedInstance = JsonConvert.DeserializeObject<Instance>(content) ??
+                throw new InvalidDataException($"Something went wrong deserializing json for instance from path {instancePath}");
+
+            storedInstance.PresentationTexts ??= new Dictionary<string, string>();
+
+            foreach (KeyValuePair<string, string> entry in presentationTexts.Texts)
+            {
+                if (string.IsNullOrEmpty(entry.Value))
+                {
+                    storedInstance.PresentationTexts.Remove(entry.Key);
+                }
+                else
+                {
+                    storedInstance.PresentationTexts[entry.Key] = entry.Value;
+                }
+            }
+
+            // mock does not set last changed by, but this is set by the platform.
+            storedInstance.LastChangedBy = string.Empty;
+
+            File.WriteAllText(instancePath, JsonConvert.SerializeObject(storedInstance));
+
+            return await GetInstance(storedInstance);
         }
 
         public async Task<Instance> UpdateDataValues(int instanceOwnerPartyId, Guid instanceGuid, DataValues dataValues)
         {
             string instancePath = GetInstancePath(instanceOwnerPartyId, instanceGuid);
-            if (File.Exists(instancePath))
+            if (!File.Exists(instancePath))
             {
-                string content = File.ReadAllText(instancePath);
-                Instance storedInstance = (Instance)JsonConvert.DeserializeObject(content, typeof(Instance));
-
-                storedInstance.DataValues ??= new Dictionary<string, string>();
-
-                foreach (KeyValuePair<string, string> entry in dataValues.Values)
-                {
-                    if (string.IsNullOrEmpty(entry.Value))
-                    {
-                        storedInstance.DataValues.Remove(entry.Key);
-                    }
-                    else
-                    {
-                        storedInstance.DataValues[entry.Key] = entry.Value;
-                    }
-                }
-
-                // mock does not set last changed by, but this is set by the platform.
-                storedInstance.LastChangedBy = string.Empty;
-
-                File.WriteAllText(instancePath, JsonConvert.SerializeObject(storedInstance));
-
-                return await GetInstance(storedInstance);
+                throw new IOException($"Could not find file for instance on specified path {instancePath}.");
             }
 
-            return null;
+            string content = File.ReadAllText(instancePath);
+            Instance storedInstance = JsonConvert.DeserializeObject<Instance>(content) ??
+                throw new InvalidDataException($"Something went wrong deserializing json for instance from path {instancePath}");
+
+            storedInstance.DataValues ??= new Dictionary<string, string>();
+
+            foreach (KeyValuePair<string, string> entry in dataValues.Values)
+            {
+                if (string.IsNullOrEmpty(entry.Value))
+                {
+                    storedInstance.DataValues.Remove(entry.Key);
+                }
+                else
+                {
+                    storedInstance.DataValues[entry.Key] = entry.Value;
+                }
+            }
+
+            // mock does not set last changed by, but this is set by the platform.
+            storedInstance.LastChangedBy = string.Empty;
+
+            File.WriteAllText(instancePath, JsonConvert.SerializeObject(storedInstance));
+
+            return await GetInstance(storedInstance);
         }
 
         public Task<Instance> DeleteInstance(int instanceOwnerPartyId, Guid instanceGuid, bool hard)
         {
             string instancePath = GetInstancePath(instanceOwnerPartyId, instanceGuid);
-            if (File.Exists(instancePath))
+            if (!File.Exists(instancePath))
             {
-                string content = File.ReadAllText(instancePath);
-                Instance storedInstance = (Instance)JsonConvert.DeserializeObject(content, typeof(Instance));
-
-                if (storedInstance.Status == null)
-                {
-                    storedInstance.Status = new InstanceStatus();
-                }
-
-                if (hard)
-                {
-                    storedInstance.Status.IsHardDeleted = true;
-                    storedInstance.Status.HardDeleted = DateTime.UtcNow;
-                }
-
-                storedInstance.Status.IsSoftDeleted = true;
-                storedInstance.Status.SoftDeleted = DateTime.UtcNow;
-
-                // mock does not set last changed by, but this is set by the platform.
-                storedInstance.LastChangedBy = string.Empty;
-
-                File.WriteAllText(instancePath, JsonConvert.SerializeObject(storedInstance));
-
-                return Task.FromResult(storedInstance);
+                throw new IOException($"Could not find file for instance on specified path {instancePath}.");
             }
 
-            return Task.FromResult<Instance>(null);
+            string content = File.ReadAllText(instancePath);
+            Instance storedInstance = JsonConvert.DeserializeObject<Instance>(content) ??
+                throw new InvalidDataException($"Something went wrong deserializing json for instance from path {instancePath}");
+
+            storedInstance.Status ??= new InstanceStatus();
+
+            if (hard)
+            {
+                storedInstance.Status.IsHardDeleted = true;
+                storedInstance.Status.HardDeleted = DateTime.UtcNow;
+            }
+
+            storedInstance.Status.IsSoftDeleted = true;
+            storedInstance.Status.SoftDeleted = DateTime.UtcNow;
+
+            // mock does not set last changed by, but this is set by the platform.
+            storedInstance.LastChangedBy = string.Empty;
+
+            File.WriteAllText(instancePath, JsonConvert.SerializeObject(storedInstance));
+
+            return Task.FromResult(storedInstance);
         }
 
         /// <summary>
@@ -372,7 +391,7 @@ namespace Altinn.App.Api.Tests.Mocks
         /// </summary>
         public async Task<List<Instance>> GetInstances(Dictionary<string, StringValues> queryParams)
         {
-            List<string> validQueryParams = new List<string>
+            List<string> validQueryParams = new()
             {
                 "org",
                 "appId",
@@ -400,8 +419,8 @@ namespace Altinn.App.Api.Tests.Mocks
             string invalidKey = queryParams.FirstOrDefault(q => !validQueryParams.Contains(q.Key)).Key;
             if (!string.IsNullOrEmpty(invalidKey))
             {
-                // pltform exceptions.
-                HttpResponseMessage res = new HttpResponseMessage
+                // platform exceptions.
+                HttpResponseMessage res = new()
                 {
                     StatusCode = System.Net.HttpStatusCode.BadRequest,
                     Content = new StringContent($"Unknown query parameter: {invalidKey}")
@@ -410,27 +429,21 @@ namespace Altinn.App.Api.Tests.Mocks
                 throw await PlatformHttpException.CreateAsync(res);
             }
 
-            List<Instance> instances = new List<Instance>();
+            List<Instance> instances = new();
 
-            string instancesPath = GetInstancesPath();
+            string instancesPath = GetTestDataFolderInstances();
 
             int fileDepth = 4;
 
-            if (queryParams.TryGetValue("appId", out StringValues appIdQueryVal))
+            if (queryParams.TryGetValue("appId", out StringValues appIdQueryVal) && appIdQueryVal.Count > 0)
             {
-                if (appIdQueryVal.Count > 0)
-                {
-                    instancesPath += Path.DirectorySeparatorChar + appIdQueryVal.First().Replace('/', Path.DirectorySeparatorChar);
-                    fileDepth -= 2;
+                instancesPath += Path.DirectorySeparatorChar + appIdQueryVal.First().Replace('/', Path.DirectorySeparatorChar);
+                fileDepth -= 2;
 
-                    if (queryParams.TryGetValue("instanceOwner.partyId", out StringValues partyIdQueryVal))
-                    {
-                        if (partyIdQueryVal.Count > 0)
-                        {
-                            instancesPath += Path.DirectorySeparatorChar + partyIdQueryVal.First();
-                            fileDepth -= 1;
-                        }
-                    }
+                if (queryParams.TryGetValue("instanceOwner.partyId", out StringValues partyIdQueryVal) && partyIdQueryVal.Count > 0)
+                {
+                    instancesPath += Path.DirectorySeparatorChar + partyIdQueryVal.First();
+                    fileDepth -= 1;
                 }
             }
 
@@ -445,7 +458,7 @@ namespace Altinn.App.Api.Tests.Mocks
                 foreach (var file in instanceFiles)
                 {
                     string content = File.ReadAllText(file);
-                    Instance instance = (Instance)JsonConvert.DeserializeObject(content, typeof(Instance));
+                    Instance? instance = JsonConvert.DeserializeObject<Instance>(content);
                     if (instance != null && instance.Id != null)
                     {
                         instances.Add(instance);
@@ -493,7 +506,7 @@ namespace Altinn.App.Api.Tests.Mocks
                 instances.RemoveAll(i => i.Status.IsSoftDeleted != match);
             }
 
-            instances.RemoveAll(i => i.Status.IsHardDeleted == true);
+            instances.RemoveAll(i => i.Status.IsHardDeleted);
             return instances;
         }
 
@@ -516,7 +529,7 @@ namespace Altinn.App.Api.Tests.Mocks
                 return (lastChangedBy, lastChanged);
             }
 
-            lastChanged = (DateTime)instance.LastChanged;
+            lastChanged = instance.LastChanged;
             newerDataElements.ForEach((DataElement dataElement) =>
             {
                 if (dataElement.LastChanged > lastChanged)
