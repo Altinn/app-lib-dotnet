@@ -1,4 +1,5 @@
-﻿using Altinn.App.Core.Extensions;
+﻿using Altinn.App.Api.Tests.Data;
+using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Interface;
 using Altinn.Platform.Storage.Interface.Models;
@@ -135,7 +136,7 @@ namespace Altinn.App.Api.Tests.Mocks
         // Finds the path for the instance based on instanceId. Only works if guid is unique.
         private static string GetInstancePath(int instanceOwnerPartyId, Guid instanceGuid)
         {
-            string[] paths = Directory.GetFiles(GetTestDataFolderInstances(), instanceGuid + ".json", SearchOption.AllDirectories);
+            string[] paths = Directory.GetFiles(TestData.GetTestDataInstancesFolder(), instanceGuid + ".json", SearchOption.AllDirectories);
             paths = paths.Where(p => p.Contains($"{instanceOwnerPartyId}")).ToArray();
             if (paths.Length == 1)
             {
@@ -147,26 +148,12 @@ namespace Altinn.App.Api.Tests.Mocks
 
         private static string GetInstancePath(string app, string org, int instanceOwnerId, Guid instanceId)
         {
-            return Path.Combine(GetTestDataFolderInstances(), org, app, instanceOwnerId.ToString(), instanceId.ToString() + ".json");
-        }
-
-        private static string GetTestDataRootFolder()
-        {
-            var assemblyPath = new Uri(typeof(InstanceMockSI).Assembly.Location).LocalPath;
-
-            return Path.Combine(assemblyPath, @".././../Data");
-        }
-
-        private static string GetTestDataFolderInstances()
-        {
-            string? testDataFolder = Path.GetDirectoryName(GetTestDataRootFolder());
-
-            return Path.Combine(testDataFolder!, @"Instances");
+            return Path.Combine(TestData.GetTestDataInstancesFolder(), org, app, instanceOwnerId.ToString(), instanceId.ToString() + ".json");
         }
 
         private static string GetDataPath(string org, string app, int instanceOwnerId, Guid instanceGuid)
         {
-            return Path.Combine(GetTestDataFolderInstances(), org, app, instanceOwnerId.ToString(), instanceGuid.ToString()) + Path.DirectorySeparatorChar;
+            return Path.Combine(TestData.GetTestDataInstancesFolder(), org, app, instanceOwnerId.ToString(), instanceGuid.ToString()) + Path.DirectorySeparatorChar;
         }
 
         private List<DataElement> GetDataElements(string org, string app, int instanceOwnerId, Guid instanceId)
@@ -431,7 +418,7 @@ namespace Altinn.App.Api.Tests.Mocks
 
             List<Instance> instances = new();
 
-            string instancesPath = GetTestDataFolderInstances();
+            string instancesPath = TestData.GetTestDataInstancesFolder();
 
             int fileDepth = 4;
 

@@ -1,13 +1,9 @@
 ﻿using Microsoft.IdentityModel.Tokens;
 using System;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.IO;
-using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Altinn.App.Api.Tests.Mocks
 {
@@ -47,11 +43,11 @@ namespace Altinn.App.Api.Tests.Mocks
         /// <returns>ClaimsPrincipal</returns>
         public static ClaimsPrincipal ValidateToken(string token)
         {
-            string unitTestFolder = Path.GetDirectoryName(new Uri(typeof(JwtTokenMock).Assembly.Location).LocalPath);
+            string unitTestFolder = Path.GetDirectoryName(new Uri(typeof(JwtTokenMock).Assembly.Location).LocalPath)!;
 
             string certPath = Path.Combine(unitTestFolder, "JWTValidationCert.cer");
 
-            X509Certificate2 cert = new X509Certificate2(certPath);
+            X509Certificate2 cert = new(certPath);
             SecurityKey key = new X509SecurityKey(cert);
 
             TokenValidationParameters validationParameters = new TokenValidationParameters
@@ -65,13 +61,13 @@ namespace Altinn.App.Api.Tests.Mocks
                 ClockSkew = TimeSpan.Zero
             };
 
-            JwtSecurityTokenHandler validator = new JwtSecurityTokenHandler();
+            JwtSecurityTokenHandler validator = new();
             return validator.ValidateToken(token, validationParameters, out SecurityToken validatedToken);
         }
 
         private static SigningCredentials GetSigningCredentials()
         {
-            string unitTestFolder = Path.GetDirectoryName(new Uri(typeof(JwtTokenMock).Assembly.Location).LocalPath);
+            string unitTestFolder = Path.GetDirectoryName(new Uri(typeof(JwtTokenMock).Assembly.Location).LocalPath)!;
 
             string certPath = Path.Combine(unitTestFolder, "jwtselfsignedcert.pfx");
             X509Certificate2 cert = new X509Certificate2(certPath, "qwer1234");

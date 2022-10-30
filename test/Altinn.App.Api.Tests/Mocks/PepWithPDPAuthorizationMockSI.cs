@@ -14,15 +14,15 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Claims;
-using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 using Altinn.App.Api.Tests.Models;
 using Altinn.App.Api.Tests.Constants;
+using Altinn.App.Api.Tests.Data;
 
 namespace Altinn.App.Api.Tests.Mocks
 {
-    public class PepWithPDPAuthorizationMockSI : Altinn.Common.PEP.Interfaces.IPDP
+    public class PepWithPDPAuthorizationMockSI : Common.PEP.Interfaces.IPDP
     {
         private readonly IInstance _instanceService;
 
@@ -57,7 +57,7 @@ namespace Altinn.App.Api.Tests.Mocks
                 XacmlContextRequest decisionRequest = XacmlJsonXmlConverter.ConvertRequest(xacmlJsonRequest.Request);
                 decisionRequest = await Enrich(decisionRequest);
 
-                Altinn.Authorization.ABAC.PolicyDecisionPoint pdp = new Altinn.Authorization.ABAC.PolicyDecisionPoint();
+                Authorization.ABAC.PolicyDecisionPoint pdp = new();
 
                 XacmlPolicy policy = await GetPolicyAsync(decisionRequest);
                 XacmlContextResponse contextResponse = pdp.Authorize(decisionRequest, policy);
@@ -66,9 +66,8 @@ namespace Altinn.App.Api.Tests.Mocks
             }
             catch
             {
+                return null;
             }
-
-            return null;
         }
 
         public async Task<bool> GetDecisionForUnvalidateRequest(XacmlJsonRequestRoot xacmlJsonRequest, ClaimsPrincipal user)
@@ -135,7 +134,7 @@ namespace Altinn.App.Api.Tests.Mocks
                     }
                     else if (instanceData.Process?.EndEvent != null)
                     {
-                        AddIfValueDoesNotExist(resourceContextAttributes, XacmlRequestAttribute.EndEventAttribute, null, instanceData.Process.EndEvent);
+                        AddIfValueDoesNotExist(resourceContextAttributes, XacmlRequestAttribute.EndEventAttribute, string.Empty, instanceData.Process.EndEvent);
                     }
 
                     AddIfValueDoesNotExist(resourceContextAttributes, XacmlRequestAttribute.PartyAttribute, resourceAttributes.ResourcePartyValue, instanceData.InstanceOwner.PartyId);
@@ -156,7 +155,7 @@ namespace Altinn.App.Api.Tests.Mocks
 
         private static XacmlAttribute GetAttribute(string attributeId, string attributeValue)
         {
-            XacmlAttribute attribute = new XacmlAttribute(new Uri(attributeId), false);
+            XacmlAttribute attribute = new(new Uri(attributeId), false);
             if (attributeId.Equals(XacmlRequestAttribute.PartyAttribute))
             {
                 // When Party attribute is missing from input it is good to return it so PEP can get this information
@@ -167,7 +166,7 @@ namespace Altinn.App.Api.Tests.Mocks
             return attribute;
         }
 
-        private async Task EnrichSubjectAttributes(XacmlContextRequest request, string resourceParty)
+        private static async Task EnrichSubjectAttributes(XacmlContextRequest request, string resourceParty)
         {
             // If there is no resource party then it is impossible to enrich roles
             if (string.IsNullOrEmpty(resourceParty))
@@ -200,7 +199,7 @@ namespace Altinn.App.Api.Tests.Mocks
 
         private static XacmlResourceAttributes GetResourceAttributeValues(XacmlContextAttributes resourceContextAttributes)
         {
-            XacmlResourceAttributes resourceAttributes = new XacmlResourceAttributes();
+            XacmlResourceAttributes resourceAttributes = new();
 
             foreach (XacmlAttribute attribute in resourceContextAttributes.Attributes)
             {
@@ -240,7 +239,7 @@ namespace Altinn.App.Api.Tests.Mocks
 
         private static XacmlAttribute GetRoleAttribute(List<Role> roles)
         {
-            XacmlAttribute attribute = new XacmlAttribute(new Uri(AltinnRoleAttributeId), false);
+            XacmlAttribute attribute = new(new Uri(AltinnRoleAttributeId), false);
             foreach (Role role in roles)
             {
                 attribute.AttributeValues.Add(new XacmlAttributeValue(new Uri(XacmlConstants.DataTypes.XMLString), role.Value));
@@ -251,23 +250,18 @@ namespace Altinn.App.Api.Tests.Mocks
 
         public static Task<List<Role>> GetDecisionPointRolesForUser(int coveredByUserId, int offeredByPartyId)
         {
-            string rolesPath = GetRolesPath(coveredByUserId, offeredByPartyId);
+            string rolesPath = TestData.GetTestDataRolesFolder(coveredByUserId, offeredByPartyId);
 
-            List<Role> roles = new List<Role>();
+            List<Role> roles = new();
 
             if (File.Exists(rolesPath))
             {
-                string content = System.IO.File.ReadAllText(rolesPath);
-                roles = (List<Role>)JsonConvert.DeserializeObject(content, typeof(List<Role>));
+                string content = File.ReadAllText(rolesPath);
+                roles = JsonConvert.DeserializeObject<List<Role>>(content) ??
+                     throw new InvalidDataException($"Something went wrong deserializing json for roles from path {rolesPath}");
             }
 
             return Task.FromResult(roles);
-        }
-
-        private static string GetRolesPath(int userId, int resourcePartyId)
-        {
-            string unitTestFolder = Path.GetDirectoryName(new Uri(typeof(PepWithPDPAuthorizationMockSI).Assembly.Location).LocalPath);
-            return Path.Combine(unitTestFolder, @"../../../Data/authorization/Roles/User_" + userId.ToString(), "party_" + resourcePartyId, "roles.json");
         }
 
         private static Task<XacmlPolicy> GetPolicyAsync(XacmlContextRequest request)
@@ -283,35 +277,27 @@ namespace Altinn.App.Api.Tests.Mocks
             {
                 if (attr.Category.OriginalString.Equals(XacmlConstants.MatchAttributeCategory.Resource))
                 {
-                    foreach (XacmlAttribute asd in attr.Attributes)
+                    foreach (XacmlAttribute xacmlAttribute in attr.Attributes)
                     {
-                        if (asd.AttributeId.OriginalString.Equals(OrgAttributeId))
+                        if (xacmlAttribute.AttributeId.OriginalString.Equals(OrgAttributeId) && xacmlAttribute.AttributeValues.FirstOrDefault() != null)
                         {
-                            foreach (var asff in asd.AttributeValues)
-                            {
-                                org = asff.Value;
-                                break;
-                            }
+                            org = xacmlAttribute.AttributeValues.First().Value;
                         }
 
-                        if (asd.AttributeId.OriginalString.Equals(AppAttributeId))
+                        if (xacmlAttribute.AttributeId.OriginalString.Equals(AppAttributeId) && xacmlAttribute.AttributeValues.FirstOrDefault() != null)
                         {
-                            foreach (var asff in asd.AttributeValues)
-                            {
-                                app = asff.Value;
-                                break;
-                            }
+                            app = xacmlAttribute.AttributeValues.First().Value;
                         }
                     }
                 }
             }
 
-            return GetAltinnAppsPolicyPath(org, app);
+            return TestData.GetAltinnAppsPolicyPath(org, app);
         }
 
         public static XacmlPolicy ParsePolicy(string policyDocumentTitle, string policyPath)
         {
-            XmlDocument policyDocument = new XmlDocument();
+            XmlDocument policyDocument = new();
             policyDocument.Load(Path.Combine(policyPath, policyDocumentTitle));
             XacmlPolicy policy;
             using (XmlReader reader = XmlReader.Create(new StringReader(policyDocument.OuterXml)))
@@ -320,12 +306,6 @@ namespace Altinn.App.Api.Tests.Mocks
             }
 
             return policy;
-        }
-
-        private static string GetAltinnAppsPolicyPath(string org, string app)
-        {
-            string unitTestFolder = Path.GetDirectoryName(new Uri(typeof(PepWithPDPAuthorizationMockSI).Assembly.Location).LocalPath);
-            return Path.Combine(unitTestFolder, "..", "..", "..", "Data", "apps", org, app, "config", "authorization") + Path.DirectorySeparatorChar;
         }
     }
 }
