@@ -130,14 +130,14 @@ public class DefaultTaskEvents : ITaskEvents
 
         foreach (var dataType in dataTypesToLock.Where(dt => dt.AppLogic != null))
         {
-            foreach (DataElement dataElement in instance.Data.FindAll(de => de.DataType == dataType.Id))
+            foreach (Guid dataElementId in instance.Data.Where(de => de.DataType == dataType.Id).Select(dataElement=>Guid.Parse(dataElement.Id)))
             {
                 // Delete hidden data in datamodel
                 Type modelType = _appModel.GetModelType(dataType.AppLogic.ClassRef);
                 string app = instance.AppId.Split("/")[1];
                 int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
                 dynamic data = await _dataClient.GetFormData(
-                    instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, Guid.Parse(dataElement.Id));
+                    instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, dataElementId);
                 
 
                 // Remove hidden data before validation
@@ -148,8 +148,8 @@ public class DefaultTaskEvents : ITaskEvents
                 // TODO: Not sure if these are relevant here. Maybe not?
                 foreach (var dataProcessor in _dataProcessors)
                 {
-                    await dataProcessor.ProcessDataRead(instance, Guid.Parse(dataElement.Id), data);
-                    await dataProcessor.ProcessDataWrite(instance, Guid.Parse(dataElement.Id), data);
+                    await dataProcessor.ProcessDataRead(instance, dataElementId, data);
+                    await dataProcessor.ProcessDataWrite(instance, dataElementId, data);
                 }
 
                 // save the updated data if there are changes

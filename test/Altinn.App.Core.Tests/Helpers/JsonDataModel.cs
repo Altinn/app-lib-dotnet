@@ -1,7 +1,9 @@
+#nullable enable
 using System.Text.Json;
 using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Helpers.DataModel;
 
-namespace Altinn.App.Core.Helpers.DataModel;
+namespace Altinn.App.Core.Tests.Helpers;
 
 /// <summary>
 /// Implementation of <see cref="IDataModelAccessor" /> for data models based on JsonElement (mainliy for testing )
@@ -22,7 +24,6 @@ public class JsonDataModel : IDataModelAccessor
         _modelRoot = modelRoot;
     }
 
-
     /// <inheritdoc />
     public object? GetModelData(string key, ReadOnlySpan<int> indicies = default)
     {
@@ -34,7 +35,6 @@ public class JsonDataModel : IDataModelAccessor
         return GetModelDataRecursive(key.Split('.'), 0, _modelRoot.Value, indicies);
     }
 
-
     private object? GetModelDataRecursive(string[] keys, int index, JsonElement currentModel, ReadOnlySpan<int> indicies)
     {
         if (index == keys.Length)
@@ -43,7 +43,7 @@ public class JsonDataModel : IDataModelAccessor
             {
                 JsonValueKind.String => currentModel.GetString(),
                 JsonValueKind.Number => currentModel.GetDouble(),
-                JsonValueKind.Object => null, //TODO: Verify correct
+                JsonValueKind.Object => null, // TODO: Verify correct
                 _ => throw new NotImplementedException(),
             };
         }
@@ -61,20 +61,19 @@ public class JsonDataModel : IDataModelAccessor
             {
                 if (indicies.Length == 0)
                 {
-                    return null; //Don't know index 
+                    return null; // Don't know index 
                 }
 
                 groupIndex = indicies[0];
             }
             else
             {
-                indicies = default; //when you use a literal index, the context indecies are not to be used later.
+                indicies = default; // when you use a literal index, the context indecies are not to be used later.
             }
 
             var arrayElement = childModel.EnumerateArray().ElementAt((int)groupIndex);
             return GetModelDataRecursive(keys, index + 1, arrayElement, indicies.Length > 0 ? indicies.Slice(1) : indicies);
         }
-
 
         return GetModelDataRecursive(keys, index + 1, childModel, indicies);
     }
@@ -122,7 +121,7 @@ public class JsonDataModel : IDataModelAccessor
             }
             else
             {
-                indicies = default; //when you use a literal index, the context indecies are not to be used later.
+                indicies = default; // when you use a literal index, the context indecies are not to be used later.
             }
 
             var arrayElement = childModel.EnumerateArray().ElementAt((int)groupIndex);
@@ -133,7 +132,7 @@ public class JsonDataModel : IDataModelAccessor
     }
 
     /// <inheritdoc />
-    public string AddIndicies(string key, ReadOnlySpan<int> indicies)
+    public string AddIndicies(string key, ReadOnlySpan<int> indicies = default)
     {
         // We don't have a schema for the datamodel in Json
         throw new NotImplementedException();

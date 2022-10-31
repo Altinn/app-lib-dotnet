@@ -1,7 +1,5 @@
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 using Altinn.App.Core.Expressions;
-using Altinn.App.Core.Models.Validation;
 using FluentAssertions;
 using Xunit;
 
@@ -38,7 +36,7 @@ public class RunTest1
     {
         var state = await LayoutTestUtils.GetLayoutModelTools(new DataModel { Some = new() { Data = new() { Binding = "hideSecondPage", Binding2 = 1235 } } }, "Test1");
         var validationIssues = LayoutEvaluator.RunLayoutValidationsForRequired(state, dataElementId: "dummy");
-        validationIssues.Should().BeEquivalentTo(new ValidationIssue[] { });
+        validationIssues.Should().BeEmpty();
     }
 
     [Fact]

@@ -14,16 +14,14 @@ namespace Altinn.App.Core.Expressions;
 public class LayoutEvaluatorStateInitializer
 {
     // Dependency injection properties (set in ctor)
-    private readonly IData _data;
     private readonly IAppResources _appResources;
     private readonly FrontEndSettings _frontEndSettings;
 
     /// <summary>
     /// Constructor with services from dependency injection
     /// </summary>
-    public LayoutEvaluatorStateInitializer(IData data, IAppResources appResources, IOptions<FrontEndSettings> frontEndSettings)
+    public LayoutEvaluatorStateInitializer(IAppResources appResources, IOptions<FrontEndSettings> frontEndSettings)
     {
-        _data = data;
         _appResources = appResources;
         _frontEndSettings = frontEndSettings.Value;
     }

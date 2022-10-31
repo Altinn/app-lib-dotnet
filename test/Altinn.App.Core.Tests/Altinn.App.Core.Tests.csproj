@@ -6,6 +6,7 @@
     <IsPackable>false</IsPackable>
 
     <RootNamespace>Altinn.App.PlatformServices.Tests</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
   <ItemGroup>

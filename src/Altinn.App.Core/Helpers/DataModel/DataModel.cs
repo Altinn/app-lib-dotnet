@@ -19,7 +19,7 @@ public class DataModel : IDataModelAccessor
     }
 
     /// <inheritdoc />
-    public object? GetModelData(string key, ReadOnlySpan<int> indicies)
+    public object? GetModelData(string key, ReadOnlySpan<int> indicies = default)
     {
         return GetModelDataRecursive(key.Split('.'), 0, _serviceModel, indicies);
     }
@@ -101,7 +101,7 @@ public class DataModel : IDataModelAccessor
     {
         if (keypart.Length == 0)
         {
-            throw new Exception("Tried to parse empty part of dataModel key");
+            throw new DataModelException("Tried to parse empty part of dataModel key");
         }
         if (keypart.Last() != ']')
         {
@@ -122,7 +122,7 @@ public class DataModel : IDataModelAccessor
         var prop = currentModelType.GetProperties().FirstOrDefault(p => IsPropertyWithJsonName(p, key));
         if (prop is null)
         {
-            throw new Exception($"Unknown model property {key} in {fullKey}");
+            throw new DataModelException($"Unknown model property {key} in {fullKey}");
         }
 
         var childType = prop.PropertyType;
@@ -136,7 +136,7 @@ public class DataModel : IDataModelAccessor
 
             if (childTypeEnumerableParameter is null)
             {
-                throw new Exception("DataModels must have generic IEnumerable<> implementation for list");
+                throw new DataModelException("DataModels must have generic IEnumerable<> implementation for list");
             }
 
             if (groupIndex is null)
@@ -155,7 +155,7 @@ public class DataModel : IDataModelAccessor
         {
             if (groupIndex is not null)
             {
-                throw new Exception("Index on non indexable property");
+                throw new DataModelException("Index on non indexable property");
             }
             ret.Add(key);
             AddIndiciesRecursive(ret, childType, keys.Slice(1), fullKey, indicies);

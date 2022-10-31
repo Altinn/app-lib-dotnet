@@ -1,13 +1,9 @@
 #nullable enable
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 
 using Altinn.App.Core.Expressions;
-using Altinn.App.Core.Helpers.DataModel;
+using Altinn.App.Core.Tests.Helpers;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;

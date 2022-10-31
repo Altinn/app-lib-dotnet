@@ -1,10 +1,9 @@
 #nullable enable
-using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.DataModel;
+using Altinn.App.Core.Tests.Helpers;
 using FluentAssertions;
 
 using Newtonsoft.Json;
@@ -169,7 +168,7 @@ public class TestDataModel
         modelHelper.GetModelData("friends[1].friends.name.value", new int[] { 1, 0 }).Should().BeNull("context indexes should not be used after literal index is used");
         modelHelper.GetModelData("friends[1].friends.name.value", new int[] { 1 }).Should().BeNull();
         modelHelper.GetModelData("friends.friends[0].name.value", new int[] { 1, 4, 5, 7 }).Should().Be("Onkel Skrue");
-        modelHelper.GetModelDataCount("friends[1].friends", new int[] { }).Should().Be(1);
+        modelHelper.GetModelDataCount("friends[1].friends", Array.Empty<int>()).Should().Be(1);
         modelHelper.GetModelDataCount("friends.friends", new int[] { 1 }).Should().Be(1);
         modelHelper.GetModelDataCount("friends[1].friends.friends", new int[] { 1, 0, 0 }).Should().BeNull();
         modelHelper.GetModelDataCount("friends[1].friends[0].friends", new int[] { 1, 0, 0 }).Should().Be(2);
@@ -184,7 +183,7 @@ public class TestDataModel
         modelHelper.GetModelData("friends[1].friends.name.value", new int[] { 1, 0 }).Should().BeNull("context indexes should not be used after literal index is used");
         modelHelper.GetModelData("friends[1].friends.name.value", new int[] { 1 }).Should().BeNull();
         modelHelper.GetModelData("friends.friends[0].name.value", new int[] { 1, 4, 5, 7 }).Should().Be("Onkel Skrue");
-        modelHelper.GetModelDataCount("friends[1].friends", new int[] { }).Should().Be(1);
+        modelHelper.GetModelDataCount("friends[1].friends", Array.Empty<int>()).Should().Be(1);
         modelHelper.GetModelDataCount("friends.friends", new int[] { 1 }).Should().Be(1);
         modelHelper.GetModelDataCount("friends[1].friends.friends", new int[] { 1, 0, 0 }).Should().BeNull();
         modelHelper.GetModelDataCount("friends[1].friends[0].friends", new int[] { 1, 0, 0 }).Should().Be(2);

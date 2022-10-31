@@ -21,7 +21,7 @@ public static class ExpressionEvaluator
         {
             "hidden" => context.Component.Hidden,
             "required" => context.Component.Required,
-            _ => throw new Exception($"unknown boolean expression property {property}")
+            _ => throw new ArgumentException($"unknown boolean expression property {property}")
         };
         if (expr is null)
         {
@@ -33,7 +33,7 @@ public static class ExpressionEvaluator
             true => true,
             false => false,
             null => defaultReturn,
-            _ => throw new Exception($"Return from evaluating \"{property}\" on \"{context.Component.Id}\" was not boolean (value)")
+            _ => throw new ExpressionEvaluatorTypeErrorException($"Return from evaluating \"{property}\" on \"{context.Component.Id}\" was not boolean (value)")
         };
     }
 
@@ -54,23 +54,21 @@ public static class ExpressionEvaluator
         var args = expr.Args.Select(a => EvaluateExpression(state, a, context)).ToArray();
         var ret = expr.Function switch
         {
-            ExpressionFunctionEnum.dataModel => state.GetModelData(args.First()?.ToString()!, context),
-            ExpressionFunctionEnum.component => state.GetComponentData(args.First()?.ToString()!, context),
-            ExpressionFunctionEnum.instanceContext => state.GetInstanceContext(args.First()?.ToString()!),
-            ExpressionFunctionEnum.@if => IfImpl(args),
-            ExpressionFunctionEnum.frontendSettings => state.GetFrontendSetting(args.First()?.ToString()!),
-            ExpressionFunctionEnum.concat => Concat(args),
-            ExpressionFunctionEnum.equals => EqualsImplementation(args),
-            ExpressionFunctionEnum.notEquals => !EqualsImplementation(args),
-            ExpressionFunctionEnum.greaterThanEq => GreaterThanEq(args),
-            ExpressionFunctionEnum.lessThan => LessThan(args),
-            ExpressionFunctionEnum.lessThanEq => LessThanEq(args),
-            ExpressionFunctionEnum.greaterThan => GreaterThan(args),
-            ExpressionFunctionEnum.and => And(args),
-            ExpressionFunctionEnum.or => Or(args),
-            // "<" => args.First() <  args.ElementAt(1),
-            // ">" => args.First() > args.ElementAt(1),
-            _ => throw new Exception($"Function \"{expr.Function}\" not implemented"),
+            ExpressionFunction.dataModel => state.GetModelData(args.First()?.ToString()!, context),
+            ExpressionFunction.component => state.GetComponentData(args.First()?.ToString()!, context),
+            ExpressionFunction.instanceContext => state.GetInstanceContext(args.First()?.ToString()!),
+            ExpressionFunction.@if => IfImpl(args),
+            ExpressionFunction.frontendSettings => state.GetFrontendSetting(args.First()?.ToString()!),
+            ExpressionFunction.concat => Concat(args),
+            ExpressionFunction.equals => EqualsImplementation(args),
+            ExpressionFunction.notEquals => !EqualsImplementation(args),
+            ExpressionFunction.greaterThanEq => GreaterThanEq(args),
+            ExpressionFunction.lessThan => LessThan(args),
+            ExpressionFunction.lessThanEq => LessThanEq(args),
+            ExpressionFunction.greaterThan => GreaterThan(args),
+            ExpressionFunction.and => And(args),
+            ExpressionFunction.or => Or(args),
+            _ => throw new ExpressionEvaluatorTypeErrorException($"Function \"{expr.Function}\" not implemented"),
         };
         return ret;
     }
@@ -85,7 +83,7 @@ public static class ExpressionEvaluator
     {
         return arg switch
         {
-            bool b => b == true,
+            bool b => b,
             null => false,
             string s => s switch
             {
@@ -97,16 +95,16 @@ public static class ExpressionEvaluator
                 {
                     1 => true,
                     0 => false,
-                    _ => throw new Exception($"Expected boolean, got value \"{s}\""),
+                    _ => throw new ExpressionEvaluatorTypeErrorException($"Expected boolean, got value \"{s}\""),
                 }
             },
             double s => s switch
             {
                 1 => true,
                 0 => false,
-                _ => throw new Exception($"Expected boolean, got value {s}"),
+                _ => throw new ExpressionEvaluatorTypeErrorException($"Expected boolean, got value {s}"),
             },
-            _ => throw new Exception("TODO: FIxme"),
+            _ => throw new ExpressionEvaluatorTypeErrorException("Unknown data type encountered in expression: " + arg.GetType().Name),
         };
     }
 
@@ -114,7 +112,7 @@ public static class ExpressionEvaluator
     {
         if (args.Length == 0)
         {
-            throw new Exception("Expected 1+ argument(s), got 0");
+            throw new ExpressionEvaluatorTypeErrorException("Expected 1+ argument(s), got 0");
         }
 
         var preparedArgs = args.Select(arg => PrepareBooleanArg(arg)).ToArray();
@@ -126,7 +124,7 @@ public static class ExpressionEvaluator
     {
         if (args.Length == 0)
         {
-            throw new Exception("Expected 1+ argument(s), got 0");
+            throw new ExpressionEvaluatorTypeErrorException("Expected 1+ argument(s), got 0");
         }
 
         var preparedArgs = args.Select(arg => PrepareBooleanArg(arg)).ToArray();
@@ -138,11 +136,11 @@ public static class ExpressionEvaluator
     {
         if (args.Length != 2)
         {
-            throw new Exception("Invalid number of args for compare");
+            throw new ExpressionEvaluatorTypeErrorException("Invalid number of args for compare");
         }
         var a = args[0] switch
         {
-            bool ab => throw new Exception($"Expected number, got value {(ab ? "true" : "false")}"),
+            bool ab => throw new ExpressionEvaluatorTypeErrorException($"Expected number, got value {(ab ? "true" : "false")}"),
             string s => parseNumber(s),
             object o => o as double?, // assume all relevant numers are representable as double (as in frontend)
             _ => null,
@@ -150,7 +148,7 @@ public static class ExpressionEvaluator
 
         var b = args[1] switch
         {
-            bool bb => throw new Exception($"Expected number, got value {(bb ? "true" : "false")}"),
+            bool bb => throw new ExpressionEvaluatorTypeErrorException($"Expected number, got value {(bb ? "true" : "false")}"),
             string s => parseNumber(s),
             object o => o as double?, // assume all relevant numers are representable as double (as in frontend)
             _ => null,
@@ -176,7 +174,7 @@ public static class ExpressionEvaluator
 
         if (args.Length > 2 && !"else".Equals(args[2] as string, StringComparison.InvariantCultureIgnoreCase))
         {
-            throw new Exception("Expected third argument to be \"else\"");
+            throw new ExpressionEvaluatorTypeErrorException("Expected third argument to be \"else\"");
         }
         if (args.Length == 4)
         {
@@ -189,7 +187,7 @@ public static class ExpressionEvaluator
                 return args[3];
             }
         }
-        throw new Exception("Expected either 2 arguments (if) or 4 (if + else), got " + args.Length);
+        throw new ExpressionEvaluatorTypeErrorException("Expected either 2 arguments (if) or 4 (if + else), got " + args.Length);
     }
 
     private static readonly Regex numberRegex = new Regex(@"^-?\d+(\.\d+)?$");
@@ -202,7 +200,7 @@ public static class ExpressionEvaluator
 
         if (throwException)
         {
-            throw new Exception($"Expected number, got value \"{s}\"");
+            throw new ExpressionEvaluatorTypeErrorException($"Expected number, got value \"{s}\"");
         }
         return null;
     }
@@ -298,7 +296,7 @@ public static class ExpressionEvaluator
     {
         if (args.Length != 2)
         {
-            throw new Exception($"Expected 2 argument(s), got {args.Length}");
+            throw new ExpressionEvaluatorTypeErrorException($"Expected 2 argument(s), got {args.Length}");
         }
 
         return string.Equals(ToStringForEquals(args[0]), ToStringForEquals(args[1]), StringComparison.InvariantCulture);

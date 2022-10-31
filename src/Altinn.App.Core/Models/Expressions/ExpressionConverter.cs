@@ -47,7 +47,7 @@ public class ExpressionConverter : JsonConverter<Expression>
             throw new JsonException("Function name in expression should be string");
         }
         var stringFunction = reader.GetString();
-        if (!Enum.TryParse<ExpressionFunctionEnum>(stringFunction, ignoreCase: false, out var functionEnum))
+        if (!Enum.TryParse<ExpressionFunction>(stringFunction, ignoreCase: false, out var functionEnum))
         {
             throw new JsonException($"Function \"{stringFunction}\" not implemented");
         }

@@ -3,7 +3,7 @@ namespace Altinn.App.Core.Models.Expressions;
 /// <summary>
 /// Enumeration for valid functions in Layout Expressions
 /// </summary>
-public enum ExpressionFunctionEnum
+public enum ExpressionFunction
 {
     /// <summary>
     /// Value for all unknown functions.

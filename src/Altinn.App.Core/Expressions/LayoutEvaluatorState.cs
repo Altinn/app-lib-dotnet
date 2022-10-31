@@ -124,7 +124,7 @@ public class LayoutEvaluatorState
             "instanceOwnerPartyId" => _instanceContext.InstanceOwner.PartyId,
             "appId" => _instanceContext.AppId,
             "instanceId" => _instanceContext.Id,
-            _ => throw new Exception($"Unknown Instance context property {key}"),
+            _ => throw new ExpressionEvaluatorTypeErrorException($"Unknown Instance context property {key}"),
         };
     }
 
@@ -170,7 +170,7 @@ public class LayoutEvaluatorState
             return;
         }
 
-        if (expr.Function == ExpressionFunctionEnum.dataModel)
+        if (expr.Function == ExpressionFunction.dataModel)
         {
             if (expr.Args.Count != 1 || expr.Args[0].Value is not string binding)
             {
