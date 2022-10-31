@@ -24,6 +24,7 @@ namespace Altinn.App.PlatformServices.Tests.Internal.Events
 
             eventHandler.Should().BeOfType<SubscriptionValidationHandler>();
             eventHandler.EventType.Should().Be("platform.events.validatesubscription");
+            eventHandler.ProcessEvent(new CloudEvent()).Result.Should().BeTrue();
         }
 
         [Fact]

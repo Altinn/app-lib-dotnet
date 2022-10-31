@@ -36,8 +36,6 @@ void ConfigureServices(IServiceCollection services, IConfiguration config)
 
 void ConfigureMockServices(IServiceCollection services, ConfigurationManager configuration)
 {
-    services.AddTransient<IEventHandlerResolver, EventHandlerResolver>();
-
     PlatformSettings platformSettings = new PlatformSettings() { ApiAuthorizationEndpoint = "http://localhost:5101/authorization/api/v1/" };
     services.AddSingleton<IOptions<PlatformSettings>>(Options.Create(platformSettings));
     services.AddTransient<IAuthorization, AuthorizationMock>();
@@ -45,6 +43,7 @@ void ConfigureMockServices(IServiceCollection services, ConfigurationManager con
     services.AddSingleton<Altinn.Common.PEP.Interfaces.IPDP, PepWithPDPAuthorizationMockSI>();
     services.AddSingleton<ISigningKeysRetriever, SigningKeysRetrieverStub>();
     services.AddSingleton<IPostConfigureOptions<JwtCookieOptions>, JwtCookiePostConfigureOptionsStub>();
+    services.AddTransient<IEventHandlerResolver, EventHandlerResolver>();
     services.AddSingleton<IEventSecretCodeProvider, EventSecretCodeProviderStub>();
     services.AddTransient<IEventHandler, DummyFailureEventHandler>();
     services.AddTransient<IEventHandler, DummySuccessEventHandler>();
