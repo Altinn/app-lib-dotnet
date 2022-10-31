@@ -3,6 +3,8 @@ using Altinn.App.Core.Models;
 using FluentAssertions;
 using Xunit;
 
+#pragma warning disable CA1806 // Do not ignore method results
+
 namespace Altinn.App.PlatformServices.Tests.Models
 {
     public class AppIdentifierTests
@@ -51,7 +53,7 @@ namespace Altinn.App.PlatformServices.Tests.Models
         [InlineData(null, "test-app")]
         public void Constructor_Null_ShouldThrowException(string org, string app)
         {
-            Action action = () => new AppIdentifier(org, app);        // null is an invalid argument
+            Action action = () => new AppIdentifier(org, app);
 
             action.Should().Throw<ArgumentNullException>();
         }
@@ -59,7 +61,7 @@ namespace Altinn.App.PlatformServices.Tests.Models
         [Fact]
         public void Constructor_NullAppId_ShouldThrowException()
         {
-            Action action = () => new AppIdentifier(null);        // null is an invalid argument
+            Action action = () => new AppIdentifier(null);
 
             action.Should().Throw<ArgumentNullException>();
         }
@@ -77,4 +79,6 @@ namespace Altinn.App.PlatformServices.Tests.Models
             appIdentifier1.GetHashCode().Should().Be(appIdentifier2.GetHashCode());
         }
     }
+
+    #pragma warning restore CA1806 // Do not ignore method results
 }
