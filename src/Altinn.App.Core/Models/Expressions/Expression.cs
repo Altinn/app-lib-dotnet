@@ -15,7 +15,7 @@ public sealed class Expression
     /// <summary>
     /// Name of the function. Must be one those actually implemented in <see cref="ExpressionEvaluator" />
     /// </summary>
-    public ExpressionFunctionEnum? Function { get; set; }
+    public ExpressionFunction? Function { get; set; }
 
     /// <summary>
     /// List of arguments to the function. These expressions will be evaluated before passed to the function.

@@ -44,7 +44,7 @@ public class DefaultTaskEventsTests: IDisposable
         _taskEnds = new List<IProcessTaskEnd>();
         _taskAbandons = new List<IProcessTaskAbandon>();
         _pdfMock = new Mock<IPdfService>();
-        _layoutStateInitializer = new LayoutEvaluatorStateInitializer(_dataMock.Object, _resMock.Object, Microsoft.Extensions.Options.Options.Create(new Core.Configuration.FrontEndSettings()));
+        _layoutStateInitializer = new LayoutEvaluatorStateInitializer(_resMock.Object, Microsoft.Extensions.Options.Options.Create(new Core.Configuration.FrontEndSettings()));
     }
 
     [Fact]

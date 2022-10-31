@@ -93,7 +93,7 @@ public static class LayoutEvaluator
             }
 
             var required = ExpressionEvaluator.EvaluateBooleanExpression(state, context, "required", false);
-            if (required && !hidden)
+            if (required)
             {
                 foreach (var (bindingName, binding) in context.Component.DataModelBindings)
                 {

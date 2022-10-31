@@ -26,7 +26,6 @@ public class LayoutEvaluatorState
         _componentModel = componentModel;
         _frontEndSettings = frontEndSettings;
         _instanceContext = instance;
-        // TODO: shaddowFields ...
     }
 
 
@@ -45,40 +44,46 @@ public class LayoutEvaluatorState
         )).ToArray();
     }
 
-    private static ComponentContext GetComponentContextsRecurs(BaseComponent component, IDataModelAccessor dataModel, int[] indexes)
+    private static ComponentContext GetComponentContextsRecurs(BaseComponent component, IDataModelAccessor dataModel, ReadOnlySpan<int> indexes)
     {
-        if (component is GroupComponent groupComponent && groupComponent.Children.Any())
+        if (!(component is GroupComponent groupComponent && groupComponent.Children.Any()))
         {
-            var children = new List<ComponentContext>();
+            // Non group components are simple
+            return new ComponentContext(component, ToArrayOrNullForEmpty(indexes), Enumerable.Empty<ComponentContext>());
+        }
 
-            if (groupComponent.DataModelBindings.TryGetValue("group", out var groupBinding))
-            {
-                var rowLength = dataModel.GetModelDataCount(groupBinding, indexes.ToArray()) ?? 0;
-                foreach (var index in Enumerable.Range(0, rowLength))
-                {
-                    foreach (var child in groupComponent.Children)
-                    {
-                        // concatenate [...indexes, index]
-                        var subIndexes = new int[indexes.Length + 1];
-                        indexes.CopyTo(subIndexes.AsSpan());
-                        subIndexes[^1] = index;
+        var children = new List<ComponentContext>();
 
-                        children.Add(GetComponentContextsRecurs(child, dataModel, subIndexes));
-                    }
-                }
-            }
-            else
+        if (groupComponent.DataModelBindings.TryGetValue("group", out var groupBinding))
+        {
+            var rowLength = dataModel.GetModelDataCount(groupBinding, indexes.ToArray()) ?? 0;
+            foreach (var index in Enumerable.Range(0, rowLength))
             {
                 foreach (var child in groupComponent.Children)
                 {
-                    children.Add(GetComponentContextsRecurs(child, dataModel, indexes));
+                    // concatenate [...indexes, index]
+                    var subIndexes = new int[indexes.Length + 1];
+                    indexes.CopyTo(subIndexes.AsSpan());
+                    subIndexes[^1] = index;
+
+                    children.Add(GetComponentContextsRecurs(child, dataModel, subIndexes));
                 }
             }
-
-            return new ComponentContext(component, indexes.Length == 0 ? null : indexes.ToArray(), children);
+        }
+        else
+        {
+            foreach (var child in groupComponent.Children)
+            {
+                children.Add(GetComponentContextsRecurs(child, dataModel, indexes));
+            }
         }
 
-        return new ComponentContext(component, indexes.Length == 0 ? null : indexes.ToArray(), Enumerable.Empty<ComponentContext>());
+        return new ComponentContext(component, ToArrayOrNullForEmpty(indexes), children);
+    }
+
+    private static T[]? ToArrayOrNullForEmpty<T>(ReadOnlySpan<T> span)
+    {
+        return span.Length > 0 ? span.ToArray() : null;
     }
 
     /// <summary>
@@ -124,7 +129,7 @@ public class LayoutEvaluatorState
             "instanceOwnerPartyId" => _instanceContext.InstanceOwner.PartyId,
             "appId" => _instanceContext.AppId,
             "instanceId" => _instanceContext.Id,
-            _ => throw new Exception($"Unknown Instance context property {key}"),
+            _ => throw new ExpressionEvaluatorTypeErrorException($"Unknown Instance context property {key}"),
         };
     }
 
@@ -154,7 +159,7 @@ public class LayoutEvaluatorState
             GetModelErrorsForExpression(component.ReadOnly, component, errors);
             foreach (var (bindingName, binding) in component.DataModelBindings)
             {
-                if(!_dataModel.VerifyKey(binding))
+                if (!_dataModel.VerifyKey(binding))
                 {
                     errors.Add($"Invalid binding \"{binding}\" on component {component.PageId}.{component.Id}");
                 }
@@ -170,14 +175,14 @@ public class LayoutEvaluatorState
             return;
         }
 
-        if (expr.Function == ExpressionFunctionEnum.dataModel)
+        if (expr.Function == ExpressionFunction.dataModel)
         {
             if (expr.Args.Count != 1 || expr.Args[0].Value is not string binding)
             {
                 errors.Add($"function \"dataModel\" requires a single string argument on component {component.PageId}.{component.Id}");
                 return;
             }
-            if(!_dataModel.VerifyKey(binding))
+            if (!_dataModel.VerifyKey(binding))
             {
                 errors.Add($"Invalid binding \"{binding}\" on component {component.PageId}.{component.Id}");
             }

@@ -19,7 +19,7 @@ public class DataModel : IDataModelAccessor
     }
 
     /// <inheritdoc />
-    public object? GetModelData(string key, ReadOnlySpan<int> indicies)
+    public object? GetModelData(string key, ReadOnlySpan<int> indicies = default)
     {
         return GetModelDataRecursive(key.Split('.'), 0, _serviceModel, indicies);
     }
@@ -49,12 +49,7 @@ public class DataModel : IDataModelAccessor
 
         var (key, groupIndex) = ParseKeyPart(keys[index]);
         var prop = currentModel.GetType().GetProperties().FirstOrDefault(p => IsPropertyWithJsonName(p, key));
-        if (prop is null)
-        {
-            return null;
-        }
-
-        var childModel = prop.GetValue(currentModel);
+        var childModel = prop?.GetValue(currentModel);
         if (childModel is null)
         {
             return null;
@@ -62,38 +57,51 @@ public class DataModel : IDataModelAccessor
 
         // Strings are enumerable in C#
         // Other enumerable types is treated as an collection
-        if (childModel is not string && childModel is System.Collections.IEnumerable childModelList)
+        if (!(childModel is not string && childModel is System.Collections.IEnumerable childModelList))
         {
-            if (groupIndex is null)
-            {
-                if (index == keys.Length - 1)
-                {
-                    return childModelList;
-                }
+            return GetModelDataRecursive(keys, index + 1, childModel, indicies);
+        }
 
-                if (indicies.Length == 0)
-                {
-                    return null; // Error index for collection not specified
-                }
-
-                groupIndex = indicies[0];
-            }
-            else
+        if (groupIndex is null)
+        {
+            if (index == keys.Length - 1)
             {
-                indicies = default; //when you use a literal index, the context indecies are not to be used later.
+                return childModelList;
             }
 
-            // Return the element with index = groupIndex (could not find anohter way to get the n'th element in non generic enumerable)
-            foreach (var arrayElement in childModelList)
+            if (indicies.Length == 0)
             {
-                if (groupIndex-- < 1)
-                {
-                    return GetModelDataRecursive(keys, index + 1, arrayElement, indicies.Length > 0 ? indicies.Slice(1) : indicies);
-                }
+                return null; // Error index for collection not specified
+            }
+
+            groupIndex = indicies[0];
+        }
+        else
+        {
+            indicies = default; //when you use a literal index, the context indecies are not to be used later.
+        }
+
+        var elementAt = GetElementAt(childModelList, groupIndex.Value);
+        if(elementAt is null)
+        {
+            return null; // Error condition, no value at index
+        }
+        return GetModelDataRecursive(keys, index + 1, elementAt, indicies.Length > 0 ? indicies.Slice(1) : indicies);
+         
+    }
+
+    private static object? GetElementAt(System.Collections.IEnumerable enumerable, int index)
+    {
+        // Return the element with index = groupIndex (could not find anohter way to get the n'th element in non generic enumerable)
+        foreach (var arrayElement in enumerable)
+        {
+            if (index-- < 1)
+            {
+                return arrayElement;
             }
         }
 
-        return GetModelDataRecursive(keys, index + 1, childModel, indicies);
+        return null;
     }
 
     private static Regex KeyPartRegex = new Regex(@"^(\w+)\[(\d+)\]?$");
@@ -101,7 +109,7 @@ public class DataModel : IDataModelAccessor
     {
         if (keypart.Length == 0)
         {
-            throw new Exception("Tried to parse empty part of dataModel key");
+            throw new DataModelException("Tried to parse empty part of dataModel key");
         }
         if (keypart.Last() != ']')
         {
@@ -122,7 +130,7 @@ public class DataModel : IDataModelAccessor
         var prop = currentModelType.GetProperties().FirstOrDefault(p => IsPropertyWithJsonName(p, key));
         if (prop is null)
         {
-            throw new Exception($"Unknown model property {key} in {fullKey}");
+            throw new DataModelException($"Unknown model property {key} in {fullKey}");
         }
 
         var childType = prop.PropertyType;
@@ -136,7 +144,7 @@ public class DataModel : IDataModelAccessor
 
             if (childTypeEnumerableParameter is null)
             {
-                throw new Exception("DataModels must have generic IEnumerable<> implementation for list");
+                throw new DataModelException("DataModels must have generic IEnumerable<> implementation for list");
             }
 
             if (groupIndex is null)
@@ -155,7 +163,7 @@ public class DataModel : IDataModelAccessor
         {
             if (groupIndex is not null)
             {
-                throw new Exception("Index on non indexable property");
+                throw new DataModelException("Index on non indexable property");
             }
             ret.Add(key);
             AddIndiciesRecursive(ret, childType, keys.Slice(1), fullKey, indicies);
