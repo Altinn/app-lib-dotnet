@@ -49,12 +49,7 @@ public class DataModel : IDataModelAccessor
 
         var (key, groupIndex) = ParseKeyPart(keys[index]);
         var prop = currentModel.GetType().GetProperties().FirstOrDefault(p => IsPropertyWithJsonName(p, key));
-        if (prop is null)
-        {
-            return null;
-        }
-
-        var childModel = prop.GetValue(currentModel);
+        var childModel = prop?.GetValue(currentModel);
         if (childModel is null)
         {
             return null;
@@ -62,38 +57,51 @@ public class DataModel : IDataModelAccessor
 
         // Strings are enumerable in C#
         // Other enumerable types is treated as an collection
-        if (childModel is not string && childModel is System.Collections.IEnumerable childModelList)
+        if (!(childModel is not string && childModel is System.Collections.IEnumerable childModelList))
         {
-            if (groupIndex is null)
-            {
-                if (index == keys.Length - 1)
-                {
-                    return childModelList;
-                }
+            return GetModelDataRecursive(keys, index + 1, childModel, indicies);
+        }
 
-                if (indicies.Length == 0)
-                {
-                    return null; // Error index for collection not specified
-                }
-
-                groupIndex = indicies[0];
-            }
-            else
+        if (groupIndex is null)
+        {
+            if (index == keys.Length - 1)
             {
-                indicies = default; //when you use a literal index, the context indecies are not to be used later.
+                return childModelList;
             }
 
-            // Return the element with index = groupIndex (could not find anohter way to get the n'th element in non generic enumerable)
-            foreach (var arrayElement in childModelList)
+            if (indicies.Length == 0)
             {
-                if (groupIndex-- < 1)
-                {
-                    return GetModelDataRecursive(keys, index + 1, arrayElement, indicies.Length > 0 ? indicies.Slice(1) : indicies);
-                }
+                return null; // Error index for collection not specified
+            }
+
+            groupIndex = indicies[0];
+        }
+        else
+        {
+            indicies = default; //when you use a literal index, the context indecies are not to be used later.
+        }
+
+        var elementAt = GetElementAt(childModelList, groupIndex.Value);
+        if(elementAt is null)
+        {
+            return null; // Error condition, no value at index
+        }
+        return GetModelDataRecursive(keys, index + 1, elementAt, indicies.Length > 0 ? indicies.Slice(1) : indicies);
+         
+    }
+
+    private static object? GetElementAt(System.Collections.IEnumerable enumerable, int index)
+    {
+        // Return the element with index = groupIndex (could not find anohter way to get the n'th element in non generic enumerable)
+        foreach (var arrayElement in enumerable)
+        {
+            if (index-- < 1)
+            {
+                return arrayElement;
             }
         }
 
-        return GetModelDataRecursive(keys, index + 1, childModel, indicies);
+        return null;
     }
 
     private static Regex KeyPartRegex = new Regex(@"^(\w+)\[(\d+)\]?$");
