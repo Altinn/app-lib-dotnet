@@ -1,4 +1,5 @@
 ﻿using Altinn.ApiClients.Maskinporten.Config;
+using Altinn.ApiClients.Maskinporten.Interfaces;
 using Altinn.ApiClients.Maskinporten.Models;
 using Altinn.ApiClients.Maskinporten.Services;
 using Altinn.App.Core.Configuration;
@@ -27,7 +28,7 @@ namespace Altinn.App.Core.EFormidling.Implementation
         private readonly IEFormidlingClient _eFormidlingClient;
         private readonly ILogger<EformidlingStatusCheckEventHandler> _logger;
         private readonly IHttpClientFactory _httpClientFactory;
-        private readonly MaskinportenService _maskinportenService;
+        private readonly IMaskinportenService _maskinportenService;
         private readonly MaskinportenSettings _maskinportenSettings;
         private readonly IX509CertificateProvider _x509CertificateProvider;
         private readonly PlatformSettings _platformSettings;
@@ -39,7 +40,7 @@ namespace Altinn.App.Core.EFormidling.Implementation
             IEFormidlingClient eFormidlingClient,
             IHttpClientFactory httpClientFactory,
             ILogger<EformidlingStatusCheckEventHandler> logger,
-            MaskinportenService maskinportenService,
+            IMaskinportenService maskinportenService,
             IOptions<MaskinportenSettings> maskinportenSettings,
             IX509CertificateProvider x509CertificateProvider,
             IOptions<PlatformSettings> platformSettings
