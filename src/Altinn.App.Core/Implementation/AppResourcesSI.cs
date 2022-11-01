@@ -324,6 +324,24 @@ namespace Altinn.App.Core.Implementation
 
             return filedata;
         }
+        
+        /// <inheritdoc />
+        public LayoutSets? GetLayoutSet()
+        {
+            string? layoutSetsString = GetLayoutSets();
+            if(layoutSetsString is not null)
+            {
+                return System.Text.Json.JsonSerializer.Deserialize<LayoutSets>(layoutSetsString, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+            }
+            return null;
+        }
+
+        /// <inheritdoc />
+        public LayoutSet? GetLayoutSetForTask(string taskId)
+        {
+            var sets = GetLayoutSet();
+            return sets?.Sets?.FirstOrDefault(s=>s?.Tasks?.Contains(taskId) ?? false);
+        }
 
         /// <inheritdoc />
         public string GetLayoutsForSet(string layoutSetId)

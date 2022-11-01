@@ -116,6 +116,16 @@ namespace Altinn.App.Core.Interface
         string GetLayoutSets();
 
         /// <summary>
+        /// Get the layout set definition. Return null if no layoutsets exists
+        /// </summary>
+        LayoutSets? GetLayoutSet();
+
+        /// <summary>
+        /// 
+        /// </summary>
+        LayoutSet? GetLayoutSetForTask(string taskId);
+
+        /// <summary>
         /// Gets the layouts for av given layoutset
         /// </summary>
         /// <param name="layoutSetId">The layot set id</param>

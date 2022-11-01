@@ -18,6 +18,7 @@ namespace Altinn.App.Core.Implementation;
 public class DefaultTaskEvents : ITaskEvents
 {
     private readonly ILogger<DefaultTaskEvents> _logger;
+    private readonly IAppResources _appResources;
     private readonly Application _appMetadata;
     private readonly IData _dataClient;
     private readonly IPrefill _prefillService;
@@ -31,7 +32,6 @@ public class DefaultTaskEvents : ITaskEvents
     private readonly IEFormidlingService? _eFormidlingService;
     private readonly AppSettings? _appSettings;
     private readonly LayoutEvaluatorStateInitializer _layoutEvaluatorStateInitializer;
-    private readonly IEnumerable<IDataProcessor> _dataProcessors;
 
     /// <summary>
     /// Constructor with services from DI
@@ -49,11 +49,11 @@ public class DefaultTaskEvents : ITaskEvents
         IEnumerable<IProcessTaskAbandon> taskAbandons,
         IPdfService pdfService,
         LayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer,
-        IEnumerable<IDataProcessor> dataProcessors,
         IOptions<AppSettings>? appSettings = null,
         IEFormidlingService? eFormidlingService = null)
     {
         _logger = logger;
+        _appResources = resourceService;
         _appMetadata = resourceService.GetApplication();
         _dataClient = dataClient;
         _prefillService = prefillService;
@@ -65,7 +65,6 @@ public class DefaultTaskEvents : ITaskEvents
         _taskAbandons = taskAbandons;
         _pdfService = pdfService;
         _layoutEvaluatorStateInitializer = layoutEvaluatorStateInitializer;
-        _dataProcessors = dataProcessors;
         _eFormidlingService = eFormidlingService;
         _appSettings = appSettings?.Value;
     }
@@ -127,34 +126,13 @@ public class DefaultTaskEvents : ITaskEvents
     {
         Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
         List<DataType> dataTypesToLock = _appMetadata.DataTypes.FindAll(dt => dt.TaskId == endEvent);
-
-        foreach (var dataType in dataTypesToLock.Where(dt => dt.AppLogic != null))
+        try
         {
-            foreach (Guid dataElementId in instance.Data.Where(de => de.DataType == dataType.Id).Select(dataElement=>Guid.Parse(dataElement.Id)))
-            {
-                // Delete hidden data in datamodel
-                Type modelType = _appModel.GetModelType(dataType.AppLogic.ClassRef);
-                string app = instance.AppId.Split("/")[1];
-                int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
-                dynamic data = await _dataClient.GetFormData(
-                    instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, dataElementId);
-                
-
-                // Remove hidden data before validation
-                // TODO: Figure out the layout set id from task name
-                var evaluationState = await _layoutEvaluatorStateInitializer.Init(instance, (object)data, layoutSetId: null);
-                LayoutEvaluator.RemoveHiddenData(evaluationState);
-
-                // TODO: Not sure if these are relevant here. Maybe not?
-                foreach (var dataProcessor in _dataProcessors)
-                {
-                    await dataProcessor.ProcessDataRead(instance, dataElementId, data);
-                    await dataProcessor.ProcessDataWrite(instance, dataElementId, data);
-                }
-
-                // save the updated data if there are changes
-                await _dataClient.InsertFormData(data, instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, dataType.Id);
-            }
+            await RemoveHiddenData(instance, instanceGuid, dataTypesToLock);
+        }
+        catch(Exception e)
+        {
+            _logger.LogError(e, "Failed to remove hidden data in task");
         }
 
         foreach (var taskEnd in _taskEnds)
@@ -196,6 +174,30 @@ public class DefaultTaskEvents : ITaskEvents
         {
             int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
             await _instanceClient.DeleteInstance(instanceOwnerPartyId, instanceGuid, true);
+        }
+    }
+
+    private async Task RemoveHiddenData(Instance instance, Guid instanceGuid, List<DataType> dataTypesToLock)
+    {
+        foreach (var dataType in dataTypesToLock.Where(dt => dt.AppLogic != null))
+        {
+            foreach (Guid dataElementId in instance.Data.Where(de => de.DataType == dataType.Id).Select(dataElement => Guid.Parse(dataElement.Id)))
+            {
+                // Delete hidden data in datamodel
+                Type modelType = _appModel.GetModelType(dataType.AppLogic.ClassRef);
+                string app = instance.AppId.Split("/")[1];
+                int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
+                dynamic data = await _dataClient.GetFormData(
+                    instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, dataElementId);
+
+                // Remove hidden data before validation
+                var layoutSet = _appResources.GetLayoutSetForTask(dataType.TaskId);
+                var evaluationState = await _layoutEvaluatorStateInitializer.Init(instance, (object)data, layoutSet?.Id);
+                LayoutEvaluator.RemoveHiddenData(evaluationState);
+
+                // save the updated data if there are changes
+                await _dataClient.InsertFormData(data, instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, dataType.Id);
+            }
         }
     }
 

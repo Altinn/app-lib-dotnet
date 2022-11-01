@@ -63,8 +63,7 @@ public class DefaultTaskEventsTests: IDisposable
             _taskEnds,
             _taskAbandons,
             _pdfMock.Object,
-            _layoutStateInitializer,
-            Enumerable.Empty<IDataProcessor>());
+            _layoutStateInitializer);
         await te.OnAbandonProcessTask("Task_1", new Instance());
     }
     
@@ -87,8 +86,7 @@ public class DefaultTaskEventsTests: IDisposable
             _taskEnds,
             _taskAbandons,
             _pdfMock.Object,
-            _layoutStateInitializer,
-            Enumerable.Empty<IDataProcessor>());
+            _layoutStateInitializer);
         var instance = new Instance();
         await te.OnAbandonProcessTask("Task_1", instance);
         abandonOne.Verify(a => a.Abandon("Task_1", instance));
@@ -117,8 +115,7 @@ public class DefaultTaskEventsTests: IDisposable
             _taskEnds,
             _taskAbandons,
             _pdfMock.Object,
-            _layoutStateInitializer,
-            Enumerable.Empty<IDataProcessor>());
+            _layoutStateInitializer);
         var instance = new Instance()
         {
             Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d"
@@ -150,8 +147,7 @@ public class DefaultTaskEventsTests: IDisposable
             _taskEnds,
             _taskAbandons,
             _pdfMock.Object,
-            _layoutStateInitializer,
-            Enumerable.Empty<IDataProcessor>());
+            _layoutStateInitializer);
         var instance = new Instance()
         {
             Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d"

@@ -191,9 +191,16 @@ namespace Altinn.App.Core.Features.Validation
                     instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, Guid.Parse(dataElement.Id));
 
                 // Remove hidden data before validation
-                //TODO: Figure out the layout set id from task name
-                var evaluationState = await _layoutEvaluatorStateInitializer.Init(instance, (object)data, layoutSetId: null);
-                LayoutEvaluator.RemoveHiddenData(evaluationState);
+                try
+                {
+                    var layoutSet = _appResourcesService.GetLayoutSetForTask(dataType.TaskId);
+                    var evaluationState = await _layoutEvaluatorStateInitializer.Init(instance, (object)data, layoutSet?.Id);
+                    LayoutEvaluator.RemoveHiddenData(evaluationState);
+                }
+                catch(Exception e)
+                {
+                    _logger.LogError(e, "Failed to remove hidden data");
+                }
 
                 // run Standard mvc validation using the System.ComponentModel.DataAnnotations
                 ModelStateDictionary validationResults = new ModelStateDictionary();
