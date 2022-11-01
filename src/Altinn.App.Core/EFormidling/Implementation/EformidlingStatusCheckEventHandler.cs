@@ -27,7 +27,7 @@ namespace Altinn.App.Core.EFormidling.Implementation
     {
         private readonly IEFormidlingClient _eFormidlingClient;
         private readonly ILogger<EformidlingStatusCheckEventHandler> _logger;
-        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly HttpClient _httpClient;
         private readonly IMaskinportenService _maskinportenService;
         private readonly MaskinportenSettings _maskinportenSettings;
         private readonly IX509CertificateProvider _x509CertificateProvider;
@@ -38,7 +38,7 @@ namespace Altinn.App.Core.EFormidling.Implementation
         /// </summary>
         public EformidlingStatusCheckEventHandler(
             IEFormidlingClient eFormidlingClient,
-            IHttpClientFactory httpClientFactory,
+            HttpClient httpClient,
             ILogger<EformidlingStatusCheckEventHandler> logger,
             IMaskinportenService maskinportenService,
             IOptions<MaskinportenSettings> maskinportenSettings,
@@ -48,7 +48,7 @@ namespace Altinn.App.Core.EFormidling.Implementation
         {
             _eFormidlingClient = eFormidlingClient;
             _logger = logger;
-            _httpClientFactory = httpClientFactory;
+            _httpClient = httpClient;
             _maskinportenService = maskinportenService;
             _maskinportenSettings = maskinportenSettings.Value;
             _x509CertificateProvider = x509CertificateProvider;
@@ -114,9 +114,8 @@ namespace Altinn.App.Core.EFormidling.Implementation
 
             TokenResponse altinnToken = await GetOrganizationToken();
 
-            var client = _httpClientFactory.CreateClient();
-            client.BaseAddress = new Uri(_platformSettings.ApiStorageEndpoint);
-            HttpResponseMessage response = await client.PostAsync(altinnToken.AccessToken, apiUrl, new StringContent(string.Empty));
+            _httpClient.BaseAddress = new Uri(_platformSettings.ApiStorageEndpoint);
+            HttpResponseMessage response = await _httpClient.PostAsync(altinnToken.AccessToken, apiUrl, new StringContent(string.Empty));
 
             if (response.StatusCode == HttpStatusCode.OK)
             {
