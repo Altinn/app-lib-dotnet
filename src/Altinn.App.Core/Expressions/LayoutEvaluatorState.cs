@@ -39,7 +39,7 @@ public class LayoutEvaluatorState
             (
                 page,
                 null,
-                page.Children.Select(c => GetComponentContextsRecurs(c, _dataModel, new int[] { })).ToArray()
+                page.Children.Select(c => GetComponentContextsRecurs(c, _dataModel, Array.Empty<int>())).ToArray()
             )
         )).ToArray();
     }

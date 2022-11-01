@@ -171,7 +171,7 @@ public class DataModel : IDataModelAccessor
     }
 
     /// <inheritdoc />
-    public string AddIndicies(string key, ReadOnlySpan<int> indicies)
+    public string AddIndicies(string key, ReadOnlySpan<int> indicies = default)
     {
         if (indicies.Length == 0)
         {
