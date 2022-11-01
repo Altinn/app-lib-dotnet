@@ -190,14 +190,14 @@ namespace Altinn.App.Core.Features.Validation
                 dynamic data = await _dataService.GetFormData(
                     instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, Guid.Parse(dataElement.Id));
 
+                var layoutSet = _appResourcesService.GetLayoutSetForTask(dataType.TaskId);
+                var evaluationState = await _layoutEvaluatorStateInitializer.Init(instance, (object)data, layoutSet?.Id);
                 // Remove hidden data before validation
                 try
                 {
-                    var layoutSet = _appResourcesService.GetLayoutSetForTask(dataType.TaskId);
-                    var evaluationState = await _layoutEvaluatorStateInitializer.Init(instance, (object)data, layoutSet?.Id);
                     LayoutEvaluator.RemoveHiddenData(evaluationState);
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     _logger.LogError(e, "Failed to remove hidden data");
                 }

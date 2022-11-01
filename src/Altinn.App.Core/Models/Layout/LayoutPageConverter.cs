@@ -5,6 +5,7 @@ using Altinn.App.Core.Helpers.Extensions;
 using Altinn.App.Core.Models.Layout.Components;
 using Altinn.App.Core.Models.Expressions;
 using System.Runtime.CompilerServices;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Altinn.App.Core.Models.Layout;
 /// <summary>
@@ -175,7 +176,7 @@ public class PageComponentConverter : JsonConverter<PageComponent>
         Expression? required = null;
         Expression? readOnly = null;
         // Custom properities for group
-        List<string>? childIds = null;
+        List<string>? children = null;
         int maxCount = 1; // > 1 is repeating, but might not be specified for non-repeating groups
         // Custom properties for Summary
         string? componentRef = null;
@@ -214,7 +215,7 @@ public class PageComponentConverter : JsonConverter<PageComponent>
                 // case "textresourcebindings":
                 //     break;
                 case "children":
-                    childIds = JsonSerializer.Deserialize<List<string>>(ref reader, options);
+                    children = JsonSerializer.Deserialize<List<string>>(ref reader, options);
                     break;
                 case "maxcount":
                     maxCount = reader.GetInt32();
@@ -257,52 +258,38 @@ public class PageComponentConverter : JsonConverter<PageComponent>
         switch (type.ToLowerInvariant())
         {
             case "group":
-                return CreateGroup(ref reader, options, id, type, dataModelBindings, hidden, required, readOnly, childIds, maxCount, additionalProperties);
+                ThrowJsonExceptionIfNull(children, "Component with \"type\": \"Group\" requires a \"children\" property");
+
+                var childComponents = ReadChildren(ref reader, id, children, options);
+                if (maxCount > 1)
+                {
+                    if (!(dataModelBindings?.ContainsKey("group") ?? false))
+                    {
+                        throw new JsonException($"A group id:\"{id}\" with maxCount: {maxCount} does not have a \"group\" dataModelBinding");
+                    }
+
+                    return new RepeatingGroupComponent(id, type, dataModelBindings, childComponents, maxCount, hidden, required, readOnly, additionalProperties);
+                }
+                else
+                {
+                    return new GroupComponent(id, type, dataModelBindings, childComponents, hidden, required, readOnly, additionalProperties);
+                }
             case "summary":
-                return CreateSummary(id, type, hidden, componentRef, pageRef, additionalProperties);
+                ValidateSummary(componentRef, pageRef);
+                return new SummaryComponent(id, type, hidden, componentRef, pageRef, additionalProperties);
             case "checkboxes":
             case "radiobuttons":
             case "dropdown":
-                return CreateOption(id, type, dataModelBindings, hidden, required, readOnly, optionId, literalOptions, secure, additionalProperties);
+                ValidateOptions(optionId, literalOptions, secure);
+
+                return new OptionsComponent(id, type, dataModelBindings, hidden, required, readOnly, optionId, literalOptions, secure, additionalProperties);
         }
 
         // Most compoents are handled as BaseComponent
         return new BaseComponent(id, type, dataModelBindings, hidden, required, readOnly, additionalProperties);
     }
 
-    private BaseComponent CreateGroup(ref Utf8JsonReader reader, JsonSerializerOptions options, string id, string type, Dictionary<string, string>? dataModelBindings, Expression? hidden, Expression? required, Expression? readOnly, List<string>? childIds, int maxCount, Dictionary<string, string> additionalProperties)
-    {
-        if (childIds is null)
-        {
-            throw new JsonException("Component with \"type\": \"Group\" requires a \"children\" property");
-        }
-        var children = ReadChildren(ref reader, id, childIds, options);
-        if (maxCount > 1)
-        {
-            if (!(dataModelBindings?.ContainsKey("group") ?? false))
-            {
-                throw new JsonException($"A group id:\"{id}\" with maxCount: {maxCount} does not have a \"group\" dataModelBinding");
-            }
-
-            return new RepeatingGroupComponent(id, type, dataModelBindings, children, maxCount, hidden, required, readOnly, additionalProperties);
-        }
-        else
-        {
-            return new GroupComponent(id, type, dataModelBindings, children, hidden, required, readOnly, additionalProperties);
-        }
-    }
-
-    private static BaseComponent CreateSummary(string id, string type, Expression? hidden, string? componentRef, string? pageRef, Dictionary<string, string> additionalProperties)
-    {
-        if (componentRef is null || pageRef is null)
-        {
-            throw new JsonException("Component with \"type\": \"Summary\" requires \"componentRef\" and \"pageRef\" properties");
-        }
-
-        return new SummaryComponent(id, type, hidden, componentRef, pageRef, additionalProperties);
-    }
-
-    private static BaseComponent CreateOption(string id, string type, Dictionary<string, string>? dataModelBindings, Expression? hidden, Expression? required, Expression? readOnly, string? optionId, List<AppOption>? literalOptions, bool secure, Dictionary<string, string> additionalProperties)
+    private static void ValidateOptions(string? optionId, List<AppOption>? literalOptions, bool secure)
     {
         if (optionId is null && literalOptions is null)
         {
@@ -316,19 +303,24 @@ public class PageComponentConverter : JsonConverter<PageComponent>
         {
             throw new JsonException("\"secure\": true is invalid for components with literal \"options\"");
         }
-
-        return new OptionsComponent(id, type, dataModelBindings, hidden, required, readOnly, optionId, literalOptions, secure, additionalProperties);
     }
 
+    private static void ValidateSummary([NotNull] string? componentRef, [NotNull] string? pageRef)
+    {
+        if (componentRef is null || pageRef is null)
+        {
+            throw new JsonException("Component with \"type\": \"Summary\" requires \"componentRef\" and \"pageRef\" properties");
+        }
+    }
 
     /// <summary>
     /// Utility method to recduce so called Coginitve Complexity by writing if in the meth
     /// </summary>
-    private static void ThrowJsonExceptionIfNull([System.Diagnostics.CodeAnalysis.NotNull] object? obj, [CallerArgumentExpression("obj")]string? propertyName = null)
+    private static void ThrowJsonExceptionIfNull([System.Diagnostics.CodeAnalysis.NotNull] object? obj, string? message = null, [CallerArgumentExpression("obj")] string? propertyName = null)
     {
         if (obj is null)
         {
-            throw new JsonException($"\"{propertyName}\" property of component should not be null");
+            throw new JsonException(message ?? $"\"{propertyName}\" property of component should not be null");
         }
     }
 
