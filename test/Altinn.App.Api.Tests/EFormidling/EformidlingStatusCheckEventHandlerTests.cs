@@ -47,7 +47,7 @@ namespace Altinn.App.Api.Tests.EFormidling
         private static EformidlingStatusCheckEventHandler GetMockedEventHandler()
         {
             var eFormidlingClientMock = new Mock<IEFormidlingClient>();
-            var httpClientFactoryMock = new Mock<IHttpClientFactory>();
+            var httpClient = new Mock<HttpClient>();
             var eFormidlingLoggerMock = new Mock<ILogger<EformidlingStatusCheckEventHandler>>();
             
             var httpClientMock = new Mock<HttpClient>();
@@ -61,7 +61,7 @@ namespace Altinn.App.Api.Tests.EFormidling
 
             EformidlingStatusCheckEventHandler eventHandler = new(
                 eFormidlingClientMock.Object,
-                httpClientFactoryMock.Object,
+                httpClient.Object,
                 eFormidlingLoggerMock.Object,
                 maskinportenServiceMock.Object,
                 maskinportenSettingsMock.Object,
