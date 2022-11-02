@@ -142,13 +142,13 @@ namespace Altinn.App.Core.Interface
         /// </summary>
         /// <param name="layoutSetId">The layot set id</param>
         /// <returns>The layout settings as a JSON string</returns>
-        string GetLayoutSettingsStringForSet(string layoutSetId);
+        string? GetLayoutSettingsStringForSet(string layoutSetId);
 
         /// <summary>
         /// Gets the the layouts settings for a layoutset
         /// </summary>
         /// <returns>The layout settings</returns>
-        LayoutSettings GetLayoutSettingsForSet(string? layoutSetId);
+        LayoutSettings? GetLayoutSettingsForSet(string? layoutSetId);
 
         /// <summary>
         /// Gets the ruleconfiguration for av given layoutset

@@ -23,12 +23,12 @@ public class LayoutModel
     {
         if (!Pages.TryGetValue(pageName, out var page))
         {
-            throw new Exception($"Unknown page name {pageName}");
+            throw new ArgumentException($"Unknown page name {pageName}");
         }
 
         if (!page.ComponentLookup.TryGetValue(componentId, out var component))
         {
-            throw new Exception($"Unknown component {componentId} on {pageName}");
+            throw new ArgumentException($"Unknown component {componentId} on {pageName}");
         }
         return component;
     }
@@ -56,7 +56,6 @@ public class LayoutModel
     {
         if (context.Component is GroupComponent)
         {
-            //TODO before release
             throw new NotImplementedException("Component lookup for components in groups not implemented");
         }
 
@@ -64,7 +63,7 @@ public class LayoutModel
 
         if (!component.DataModelBindings.TryGetValue("simpleBinding", out var binding))
         {
-            throw new Exception("component lookup requires the target component ");
+            throw new ArgumentException("component lookup requires the target component ");
         }
 
         return dataModel.GetModelData(binding, context.RowIndices);
