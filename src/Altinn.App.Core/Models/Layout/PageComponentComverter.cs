@@ -18,7 +18,7 @@ namespace Altinn.App.Core.Models.Layout;
 /// </remarks>
 public class PageComponentConverter : JsonConverter<PageComponent>
 {
-    private static ConditionalWeakTable<JsonSerializerOptions, string> PageNames = new();
+    private static readonly ConditionalWeakTable<JsonSerializerOptions, string> PageNames = new();
     /// <summary>
     /// Add pageName as metadata on JsonSerializerOptions that will be used for deserialization
     /// </summary>

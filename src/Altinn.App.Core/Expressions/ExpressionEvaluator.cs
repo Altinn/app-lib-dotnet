@@ -161,32 +161,19 @@ public static class ExpressionEvaluator
     {
         if (args.Length == 2)
         {
-
-            if (PrepareBooleanArg(args[0]))
-            {
-                return args[1];
-            }
-            else
-            {
-                return null;
-            }
+            return PrepareBooleanArg(args[0]) ? args[1] : null;
         }
 
         if (args.Length > 2 && !"else".Equals(args[2] as string, StringComparison.InvariantCultureIgnoreCase))
         {
             throw new ExpressionEvaluatorTypeErrorException("Expected third argument to be \"else\"");
         }
+
         if (args.Length == 4)
         {
-            if (PrepareBooleanArg(args[0]))
-            {
-                return args[1];
-            }
-            else
-            {
-                return args[3];
-            }
+            return PrepareBooleanArg(args[0]) ? args[1] : args[3];
         }
+
         throw new ExpressionEvaluatorTypeErrorException("Expected either 2 arguments (if) or 4 (if + else), got " + args.Length);
     }
 

@@ -187,12 +187,12 @@ public class DefaultTaskEvents : ITaskEvents
                 Type modelType = _appModel.GetModelType(dataType.AppLogic.ClassRef);
                 string app = instance.AppId.Split("/")[1];
                 int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
-                dynamic data = await _dataClient.GetFormData(
+                object data = await _dataClient.GetFormData(
                     instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, dataElementId);
 
                 // Remove hidden data before validation
                 var layoutSet = _appResources.GetLayoutSetForTask(dataType.TaskId);
-                var evaluationState = await _layoutEvaluatorStateInitializer.Init(instance, (object)data, layoutSet?.Id);
+                var evaluationState = await _layoutEvaluatorStateInitializer.Init(instance, data, layoutSet?.Id);
                 LayoutEvaluator.RemoveHiddenData(evaluationState);
 
                 // save the updated data if there are changes

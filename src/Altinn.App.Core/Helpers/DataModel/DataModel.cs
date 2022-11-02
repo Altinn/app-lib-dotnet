@@ -104,7 +104,7 @@ public class DataModel : IDataModelAccessor
         return null;
     }
 
-    private static Regex KeyPartRegex = new Regex(@"^(\w+)\[(\d+)\]?$");
+    private static readonly Regex KeyPartRegex = new Regex(@"^(\w+)\[(\d+)\]?$");
     internal static (string key, int? index) ParseKeyPart(string keypart)
     {
         if (keypart.Length == 0)
