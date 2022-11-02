@@ -186,13 +186,16 @@ public class DataModel : IDataModelAccessor
     private static bool IsPropertyWithJsonName(PropertyInfo propertyInfo, string key)
     {
         var ca = propertyInfo.CustomAttributes;
-        var system_text_json_attribute = (ca.FirstOrDefault(attr => attr.AttributeType.FullName == "System.Text.Json.Serialization.JsonPropertyNameAttribute")?.ConstructorArguments.FirstOrDefault().Value as string);
+
+        // Read [JsonPropertyName("propName")] from System.Text.Json
+        var system_text_json_attribute = (ca.FirstOrDefault(attr => attr.AttributeType == typeof(System.Text.Json.Serialization.JsonPropertyNameAttribute))?.ConstructorArguments.FirstOrDefault().Value as string);
         if (system_text_json_attribute is not null)
         {
             return system_text_json_attribute == key;
         }
 
-        var newtonsoft_json_attribute = (ca.FirstOrDefault(attr => attr.AttributeType.FullName == "Newtonsoft.Json.JsonPropertyAttribute")?.ConstructorArguments.FirstOrDefault().Value as string);
+        // Read [JsonProperty("propName")] from Newtonsoft.Json
+        var newtonsoft_json_attribute = (ca.FirstOrDefault(attr => attr.AttributeType == typeof(Newtonsoft.Json.JsonPropertyAttribute))?.ConstructorArguments.FirstOrDefault().Value as string);
         if (newtonsoft_json_attribute is not null)
         {
             return newtonsoft_json_attribute == key;

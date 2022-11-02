@@ -316,7 +316,7 @@ public class PageComponentConverter : JsonConverter<PageComponent>
     /// <summary>
     /// Utility method to recduce so called Coginitve Complexity by writing if in the meth
     /// </summary>
-    private static void ThrowJsonExceptionIfNull([System.Diagnostics.CodeAnalysis.NotNull] object? obj, string? message = null, [CallerArgumentExpression("obj")] string? propertyName = null)
+    private static void ThrowJsonExceptionIfNull([NotNull] object? obj, string? message = null, [CallerArgumentExpression("obj")] string? propertyName = null)
     {
         if (obj is null)
         {
