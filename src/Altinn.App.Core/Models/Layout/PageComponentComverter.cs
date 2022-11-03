@@ -18,7 +18,7 @@ namespace Altinn.App.Core.Models.Layout;
 /// </remarks>
 public class PageComponentConverter : JsonConverter<PageComponent>
 {
-    private static ConditionalWeakTable<JsonSerializerOptions, string> PageNames = new();
+    private static readonly ConditionalWeakTable<JsonSerializerOptions, string> PageNames = new();
     /// <summary>
     /// Add pageName as metadata on JsonSerializerOptions that will be used for deserialization
     /// </summary>
@@ -316,7 +316,7 @@ public class PageComponentConverter : JsonConverter<PageComponent>
     /// <summary>
     /// Utility method to recduce so called Coginitve Complexity by writing if in the meth
     /// </summary>
-    private static void ThrowJsonExceptionIfNull([System.Diagnostics.CodeAnalysis.NotNull] object? obj, string? message = null, [CallerArgumentExpression("obj")] string? propertyName = null)
+    private static void ThrowJsonExceptionIfNull([NotNull] object? obj, string? message = null, [CallerArgumentExpression("obj")] string? propertyName = null)
     {
         if (obj is null)
         {

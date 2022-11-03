@@ -3,7 +3,7 @@ namespace Altinn.App.Core.Helpers.Extensions;
 
 internal static class Utf8JsonReaderExtensions
 {
-    private static JsonWriterOptions OPTIONS = new()
+    private static readonly JsonWriterOptions OPTIONS = new()
     {
         Indented = true,
     };

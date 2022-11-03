@@ -187,11 +187,11 @@ namespace Altinn.App.Core.Features.Validation
                 Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
                 string app = instance.AppId.Split("/")[1];
                 int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
-                dynamic data = await _dataService.GetFormData(
+                object data = await _dataService.GetFormData(
                     instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, Guid.Parse(dataElement.Id));
 
                 var layoutSet = _appResourcesService.GetLayoutSetForTask(dataType.TaskId);
-                var evaluationState = await _layoutEvaluatorStateInitializer.Init(instance, (object)data, layoutSet?.Id);
+                var evaluationState = await _layoutEvaluatorStateInitializer.Init(instance, data, layoutSet?.Id);
                 // Remove hidden data before validation
                 try
                 {
