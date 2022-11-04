@@ -49,6 +49,6 @@ public static class LayoutTestUtils
 
         var initializer = serviceProvider.GetRequiredService<LayoutEvaluatorStateInitializer>();
 
-        return await initializer.Init(new Instance { Id = "123/" + Guid.NewGuid()}, model, null);
+        return await initializer.Init(new Instance { Id = "123/" + Guid.NewGuid() }, model, null);
     }
 }
