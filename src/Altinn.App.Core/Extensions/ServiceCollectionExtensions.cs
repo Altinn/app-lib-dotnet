@@ -146,6 +146,20 @@ namespace Altinn.App.Core.Extensions
             }            
         }
 
+        /// <summary>
+        /// Checks if a service is already added to the collection.
+        /// </summary>
+        /// <returns>true if the services allready exists in the collection, otherwise false</returns>
+        public static bool IsAdded(this IServiceCollection services, Type serviceType)
+        {
+            if (services.Any(x => x.ServiceType == serviceType))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         private static void AddEventServices(IServiceCollection services)
         {
             services.AddTransient<IEventHandlerResolver, EventHandlerResolver>();
@@ -198,16 +212,6 @@ namespace Altinn.App.Core.Extensions
             services.TryAddTransient<IProcessReader, ProcessReader>();
             services.TryAddTransient<ExclusiveGatewayFactory>();
             services.TryAddTransient<IFlowHydration, FlowHydration>();
-        }
-
-        private static bool IsAdded(this IServiceCollection services, Type serviceType)
-        {
-            if (services.Any(x => x.ServiceType == serviceType))
-            {
-                return true;
-            }
-
-            return false;
         }
     }
 }
