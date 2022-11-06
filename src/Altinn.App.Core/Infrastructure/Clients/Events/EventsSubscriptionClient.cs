@@ -49,7 +49,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Events
         /// <returns>The created <see cref="Subscription"/></returns>
         public async Task<Subscription> AddSubscription(string org, string app, string eventType)
         {
-            var appBaseUrl = $"https://{org}.apps.{_generalSettings.HostName}/{app}";
+            var appBaseUrl = $"https://{org}.apps.{_generalSettings.HostName}/{org}/{app}";
 
             var subscriptionRequest = new SubscriptionRequest()
             {
@@ -75,7 +75,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Events
             else
             {
                 var content = await response.Content.ReadAsStringAsync();
-                _logger.LogError("Unable to create subscriptiod, received status {statusCode} {resonPhrase} with the following content {content}", response.StatusCode, response.ReasonPhrase ?? "Unknown reason phrase", content);
+                _logger.LogError("Unable to create subscription, received status {statusCode} with the following content {content}", response.StatusCode, content);
                 throw await PlatformHttpException.CreateAsync(response);
             }
         }
