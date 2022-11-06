@@ -49,7 +49,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Events
         /// <returns>The created <see cref="Subscription"/></returns>
         public async Task<Subscription> AddSubscription(string org, string app, string eventType)
         {
-            var appBaseUrl = $"https://{org}.apps.{_generalSettings.HostName}/{org}/{app}";
+            var appBaseUrl = $"https://{org}.apps.{_generalSettings.HostName}/{org}/{app}/";
 
             var subscriptionRequest = new SubscriptionRequest()
             {

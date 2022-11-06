@@ -174,7 +174,6 @@ namespace Altinn.App.Core.Extensions
             {
                 services.AddHttpClient<IEventsSubscription, EventsSubscriptionClient>();
             }
-
         }
 
         private static void AddPdfServices(IServiceCollection services)
