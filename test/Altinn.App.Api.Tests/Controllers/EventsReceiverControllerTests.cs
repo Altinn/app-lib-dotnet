@@ -71,7 +71,7 @@ namespace Altinn.App.Api.Tests.Controllers
                 Time = DateTime.Parse("2022-10-13T09:33:46.6330634Z"),
                 AlternativeSubject = "/person/17858296439"
             };
-            CloudEventEnvelope envelope = new() { CloudEvent = cloudEvent };
+            CloudEventEnvelope envelope = new() { CloudEvent = null };
 
             var org = "ttd";
             var app = "non-existing-app";

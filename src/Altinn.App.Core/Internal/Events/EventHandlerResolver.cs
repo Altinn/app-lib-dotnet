@@ -16,6 +16,11 @@ namespace Altinn.App.Core.Internal.Events
         /// <inheritDoc/>
         public IEventHandler ResolveEventHandler(string eventType)
         {
+            if (eventType == null)
+            {
+                return new UnhandledEventHandler();
+            }
+
             foreach (var handler in _eventHandlers)
             {
                 if (handler.EventType.ToLower() != eventType.ToLower())

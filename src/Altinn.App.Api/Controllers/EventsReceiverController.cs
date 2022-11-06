@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
@@ -49,7 +50,13 @@ namespace Altinn.App.Api.Controllers
             {
                 return Unauthorized();
             }
-            
+
+            if (cloudEventEnvelope.CloudEvent == null)
+            {
+                _logger.LogError("CloudEvent is null, unable to process event! Data received: {data}", JsonSerializer.Serialize(cloudEventEnvelope));
+                return BadRequest();
+            }
+
             CloudEvent cloudEvent = cloudEventEnvelope.CloudEvent;
 
             IEventHandler eventHandler = _eventHandlerResolver.ResolveEventHandler(cloudEvent.Type);
