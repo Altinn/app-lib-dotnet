@@ -55,7 +55,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Events
             {
                 TypeFilter = eventType,
                 EndPoint = new Uri(new Uri(appBaseUrl), $"api/v1/eventsreceiver?code={await _secretCodeProvider.GetSecretCode()}"),
-                SourceFilter = new Uri(appBaseUrl)                
+                SourceFilter = new Uri(appBaseUrl)
             };
 
             string serializedSubscriptionRequest = JsonSerializer.Serialize(subscriptionRequest);
