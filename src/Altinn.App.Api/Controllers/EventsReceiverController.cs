@@ -43,12 +43,14 @@ namespace Altinn.App.Api.Controllers
         [ProducesResponseType(425)]
         [ProducesResponseType(500)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<ActionResult> Post([FromQuery] string code, [FromBody] CloudEvent cloudEvent)
+        public async Task<ActionResult> Post([FromQuery] string code, [FromBody] CloudEventEnvelope cloudEventEnvelope)
         {
             if (await _secretCodeProvider.GetSecretCode() != code)
             {
                 return Unauthorized();
             }
+            
+            CloudEvent cloudEvent = cloudEventEnvelope.CloudEvent;
 
             IEventHandler eventHandler = _eventHandlerResolver.ResolveEventHandler(cloudEvent.Type);
             try
@@ -62,7 +64,7 @@ namespace Altinn.App.Api.Controllers
             }
             catch (NotImplementedException)
             {
-                return BadRequest();
+                return BadRequest($"No eventhandler found that supports {cloudEvent.Type}");
             }
             catch (Exception ex)
             {

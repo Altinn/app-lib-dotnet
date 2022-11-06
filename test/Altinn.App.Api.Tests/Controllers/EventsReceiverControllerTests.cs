@@ -23,6 +23,7 @@ namespace Altinn.App.Api.Tests.Controllers
             _factory = factory;
             _secretCodeProvider = _factory.Services.GetRequiredService<IEventSecretCodeProvider>();
         }
+
         [Fact]
         public async Task Post_ValidEventType_ShouldReturnOk()
         {
@@ -39,13 +40,14 @@ namespace Altinn.App.Api.Tests.Controllers
                 Time = DateTime.Parse("2022-10-13T09:33:46.6330634Z"),
                 AlternativeSubject = "/person/17858296439"
             };
+            CloudEventEnvelope envelope = new() { CloudEvent = cloudEvent };
 
             var org = "ttd";
             var app = "non-existing-app";
             string requestUrl = $"{org}/{app}/api/v1/eventsreceiver?code={await _secretCodeProvider.GetSecretCode()}";
             HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, requestUrl)
             {
-                Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(cloudEvent), Encoding.UTF8, "application/json")
+                Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(envelope), Encoding.UTF8, "application/json")
             };
 
             HttpResponseMessage response = await client.SendAsync(request);
@@ -69,13 +71,14 @@ namespace Altinn.App.Api.Tests.Controllers
                 Time = DateTime.Parse("2022-10-13T09:33:46.6330634Z"),
                 AlternativeSubject = "/person/17858296439"
             };
+            CloudEventEnvelope envelope = new() { CloudEvent = cloudEvent };
 
             var org = "ttd";
             var app = "non-existing-app";
             string requestUrl = $"{org}/{app}/api/v1/eventsreceiver?code={await _secretCodeProvider.GetSecretCode()}";
             HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, requestUrl)
             {
-                Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(cloudEvent), Encoding.UTF8, "application/json")
+                Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(envelope), Encoding.UTF8, "application/json")
             };
             
             HttpResponseMessage response = await client.SendAsync(request);
