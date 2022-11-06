@@ -54,7 +54,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Events
             var subscriptionRequest = new SubscriptionRequest()
             {
                 TypeFilter = eventType,
-                EndPoint = new Uri(new Uri(appBaseUrl), $"/api/v1/eventsreceiver?code={await _secretCodeProvider.GetSecretCode()}"),
+                EndPoint = new Uri(new Uri(appBaseUrl), $"api/v1/eventsreceiver?code={await _secretCodeProvider.GetSecretCode()}"),
                 SourceFilter = new Uri(appBaseUrl)                
             };
 
