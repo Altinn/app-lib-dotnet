@@ -2,6 +2,7 @@
 using Altinn.ApiClients.Maskinporten.Interfaces;
 using Altinn.ApiClients.Maskinporten.Models;
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
@@ -15,6 +16,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Security.Cryptography.X509Certificates;
 
 namespace Altinn.App.Core.EFormidling.Implementation
@@ -114,6 +116,8 @@ namespace Altinn.App.Core.EFormidling.Implementation
             TokenResponse altinnToken = await GetOrganizationToken();
 
             _httpClient.BaseAddress = new Uri(_platformSettings.ApiStorageEndpoint);
+            _httpClient.DefaultRequestHeaders.Add(General.SubscriptionKeyHeaderName, _platformSettings.SubscriptionKey);
+            _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             HttpResponseMessage response = await _httpClient.PostAsync(altinnToken.AccessToken, apiUrl, new StringContent(string.Empty));
 
             if (response.StatusCode == HttpStatusCode.OK)

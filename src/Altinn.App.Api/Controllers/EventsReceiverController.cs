@@ -73,7 +73,7 @@ namespace Altinn.App.Api.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError("Unable to process event {eventType}. An exception was raised while checking for delivery status of message {messageid}. Exception throw {exceptionMessage}", cloudEvent.Type, cloudEvent.Id, ex.Message);
+                _logger.LogError("Unable to process event {eventType}. An exception was raised while processing message {messageid}. Exception thrown {exceptionMessage}", cloudEvent.Type, cloudEvent.Id, ex.Message);
                 return new StatusCodeResult(500);
             }
         }
