@@ -44,20 +44,18 @@ namespace Altinn.App.Api.Controllers
         [ProducesResponseType(425)]
         [ProducesResponseType(500)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<ActionResult> Post([FromQuery] string code, [FromBody] CloudEventEnvelope cloudEventEnvelope)
+        public async Task<ActionResult> Post([FromQuery] string code, [FromBody] CloudEvent cloudEvent)
         {
             if (await _secretCodeProvider.GetSecretCode() != code)
             {
                 return Unauthorized();
             }
 
-            if (cloudEventEnvelope.CloudEvent == null)
+            if (cloudEvent.Type == null)
             {
-                _logger.LogError("CloudEvent is null, unable to process event! Data received: {data}", JsonSerializer.Serialize(cloudEventEnvelope));
+                _logger.LogError("CloudEvent.Type is null, unable to process event! Data received: {data}", JsonSerializer.Serialize(cloudEvent));
                 return BadRequest();
             }
-
-            CloudEvent cloudEvent = cloudEventEnvelope.CloudEvent;
 
             IEventHandler eventHandler = _eventHandlerResolver.ResolveEventHandler(cloudEvent.Type);
             try
