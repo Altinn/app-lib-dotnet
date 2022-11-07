@@ -162,6 +162,7 @@ namespace Altinn.App.Core.Extensions
 
         private static void AddEventServices(IServiceCollection services)
         {
+            services.AddTransient<IEventHandler, SubscriptionValidationHandler>();
             services.AddTransient<IEventHandlerResolver, EventHandlerResolver>();
             services.TryAddSingleton<IEventSecretCodeProvider, KeyVaultEventSecretCodeProvider>();
 
