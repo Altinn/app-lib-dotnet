@@ -13,12 +13,14 @@ using Altinn.App.Core.Models;
 using Altinn.Common.EFormidlingClient;
 using Altinn.Common.EFormidlingClient.Models;
 using Altinn.Platform.Storage.Interface.Models;
+using AltinnCore.Authentication.Utils;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Runtime;
 using System.Security.Cryptography.X509Certificates;
 
 namespace Altinn.App.Core.EFormidling.Implementation
@@ -113,9 +115,10 @@ namespace Altinn.App.Core.EFormidling.Implementation
         {
             string url = $"https://{appIdentifier.Org}.apps.{_generalSettings.HostName}/{appIdentifier}/instances/{instanceIdentifier}/process/next";
 
+            TokenResponse altinnToken = await GetOrganizationToken();
             HttpClient httpClient = _httpClientFactory.CreateClient();
 
-            HttpResponseMessage response = await httpClient.PutAsync(url, new StringContent(string.Empty));
+            HttpResponseMessage response = await httpClient.PutAsync(altinnToken.AccessToken, url, new StringContent(string.Empty));
 
             if (response.IsSuccessStatusCode)
             {
