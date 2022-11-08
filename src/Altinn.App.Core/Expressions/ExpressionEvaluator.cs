@@ -68,6 +68,7 @@ public static class ExpressionEvaluator
             ExpressionFunction.greaterThan => GreaterThan(args),
             ExpressionFunction.and => And(args),
             ExpressionFunction.or => Or(args),
+            ExpressionFunction.not => Not(args),
             _ => throw new ExpressionEvaluatorTypeErrorException($"Function \"{expr.Function}\" not implemented"),
         };
         return ret;
@@ -130,6 +131,15 @@ public static class ExpressionEvaluator
         var preparedArgs = args.Select(arg => PrepareBooleanArg(arg)).ToArray();
         // Ensure all args gets converted, because they might throw an Exception
         return preparedArgs.Any(a => a);
+    }
+
+    private static bool? Not(object?[] args)
+    {
+        if(args.Length != 1)
+        {
+            throw new ExpressionEvaluatorTypeErrorException($"Expected 1 argument(s), got {args.Length}");
+        }
+        return !PrepareBooleanArg(args[0]);
     }
 
     private static (double?, double?) PrepareNumericArgs(object?[] args)

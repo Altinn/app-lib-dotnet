@@ -65,4 +65,8 @@ public enum ExpressionFunction
     /// Return true if any of the expressions evaluate to true
     /// </summary>
     or,
+    /// <summary>
+    /// Return true if the single argument evaluate to false, otherwise return false
+    /// </summary>
+    not,
 }
