@@ -126,7 +126,7 @@ namespace Altinn.App.Core.EFormidling.Implementation
             }
             else
             {
-                _logger.LogError("Failed moving instance {instanceId} to next step.", instanceIdentifier);
+                _logger.LogError("Failed moving instance {instanceId} to next step. Received error: {errorCode}. Received content: {content}", instanceIdentifier, response.StatusCode, await response.Content.ReadAsStringAsync());
             }
         }
 
@@ -163,7 +163,7 @@ namespace Altinn.App.Core.EFormidling.Implementation
         private async Task<TokenResponse> GetOrganizationToken()
         {
             X509Certificate2 x509cert = await _x509CertificateProvider.GetCertificate();
-            var maskinportenToken = await _maskinportenService.GetToken(x509cert, _maskinportenSettings.Environment, _maskinportenSettings.ClientId, "altinn:serviceowner/instances.read", string.Empty);
+            var maskinportenToken = await _maskinportenService.GetToken(x509cert, _maskinportenSettings.Environment, _maskinportenSettings.ClientId, "altinn:serviceowner/instances.read altinn:serviceowner/instances.write", string.Empty);
             var altinnToken = await _maskinportenService.ExchangeToAltinnToken(maskinportenToken, _maskinportenSettings.Environment);
 
             return altinnToken;
