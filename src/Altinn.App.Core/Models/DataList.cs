@@ -7,24 +7,24 @@ using System.Threading.Tasks;
 namespace Altinn.App.Core.Models
 {
     /// <summary>
-    /// Represents values to be used in a AppList.
+    /// Represents values to be used in a DataList.
     /// </summary>
-    public class AppLists
+    public class DataList
     {
         /// <summary>
         /// Gets or sets the list of objects.
         /// </summary>
         public List<object> ListItems { get; set; } = new List<object>();
         /// <summary>
-        /// Gets or sets the metadata of the AppList.
+        /// Gets or sets the metadata of the DataList.
         /// </summary>
-        public AppListsMetaData _metaData { get; set; }  = new AppListsMetaData();
+        public DataListMetadata _metaData { get; set; }  = new DataListMetadata();
     }
 
     /// <summary>
-    /// Represents metadata values for an applist.
+    /// Represents metadata values for a DataList.
     /// </summary>
-    public class AppListsMetaData
+    public class DataListMetadata
     {
         /// <summary>
         /// Gets or sets the value of the current page to support pagination.
