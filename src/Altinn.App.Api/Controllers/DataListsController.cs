@@ -1,7 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Altinn.App.Core.Features.DataLists;
 using Altinn.App.Core.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Altinn.App.Api.Controllers
@@ -29,7 +32,7 @@ namespace Altinn.App.Api.Controllers
         /// <param name="id">The listId</param>
         /// <param name="language">The language selected by the user.</param>
         /// <param name="queryParams">Query parameteres supplied</param>
-        /// <returns>The options list</returns>
+        /// <returns>The data list</returns>
         [HttpGet]
         [Route("/{org}/{app}/api/datalists/{id}")]
         public async Task<IActionResult> Get(
@@ -38,6 +41,39 @@ namespace Altinn.App.Api.Controllers
             [FromQuery] Dictionary<string, string> queryParams)
         {
             DataList dataLists = await _dataListsService.GetDataListAsync(id, language, queryParams);
+            if (dataLists.ListItems == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(dataLists);
+        }
+
+        /// <summary>
+        /// Exposes datalists related to the app and logged in user
+        /// </summary>
+        /// <param name="instanceOwnerPartyId">unique id of the party that is the owner of the instance</param>
+        /// <param name="instanceGuid">unique id to identify the instance</param>
+        /// <param name="id">The datalistId</param>
+        /// <param name="language">The language selected by the user.</param>
+        /// <param name="queryParams">Query parameteres supplied</param>
+        /// <returns>A <see cref="Task{TResult}"/> representing the result of the asynchronous operation.</returns>
+        [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [Authorize(Policy = "InstanceRead")]
+        [Route("/{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/datalists/{id}")]
+        public async Task<IActionResult> Get(
+            [FromRoute] int instanceOwnerPartyId,
+            [FromRoute] Guid instanceGuid,
+            [FromRoute] string id,
+            [FromQuery] string language,
+            [FromQuery] Dictionary<string, string> queryParams)
+        {
+            var instanceIdentifier = new InstanceIdentifier(instanceOwnerPartyId, instanceGuid);
+
+            DataList dataLists = await _dataListsService.GetDataListAsync(instanceIdentifier, id, language, queryParams);
+
             if (dataLists.ListItems == null)
             {
                 return NotFound();

@@ -100,6 +100,7 @@ namespace Altinn.App.Core.Extensions
             services.TryAddTransient<IDataProcessor, NullDataProcessor>();
             services.TryAddTransient<IAppModel, DefaultAppModel>();
             services.TryAddTransient<DataListsFactory>();
+            services.TryAddTransient<InstanceDataListsFactory>();
             services.TryAddTransient<IDataListsService, DataListsService>();
             services.Configure<Altinn.Common.PEP.Configuration.PepSettings>(configuration.GetSection("PEPSettings"));
             services.Configure<Altinn.Common.PEP.Configuration.PlatformSettings>(configuration.GetSection("PlatformSettings"));
