@@ -55,7 +55,7 @@ public static class ExpressionEvaluator
         var ret = expr.Function switch
         {
             ExpressionFunction.dataModel => state.GetModelData(args.First()?.ToString()!, context),
-            ExpressionFunction.component => state.GetComponentData(args.First()?.ToString()!, context),
+            ExpressionFunction.component => Component(args, context, state),
             ExpressionFunction.instanceContext => state.GetInstanceContext(args.First()?.ToString()!),
             ExpressionFunction.@if => IfImpl(args),
             ExpressionFunction.frontendSettings => state.GetFrontendSetting(args.First()?.ToString()!),
@@ -68,11 +68,41 @@ public static class ExpressionEvaluator
             ExpressionFunction.greaterThan => GreaterThan(args),
             ExpressionFunction.and => And(args),
             ExpressionFunction.or => Or(args),
+            ExpressionFunction.not => Not(args),
             _ => throw new ExpressionEvaluatorTypeErrorException($"Function \"{expr.Function}\" not implemented"),
         };
         return ret;
     }
 
+    private static object? Component(object?[] args, ComponentContext context, LayoutEvaluatorState state)
+    {
+        var componentId = args.First()?.ToString()!;
+
+        if (context.Component is GroupComponent)
+        {
+            throw new NotImplementedException("Component lookup for components in groups not implemented");
+        }
+
+        var targetContext = state.GetComponentContext(context.Component.PageId, componentId, context.RowIndices);
+
+        if (!targetContext.Component.DataModelBindings.TryGetValue("simpleBinding", out var binding))
+        {
+            throw new ArgumentException("component lookup requires the target component to have a simpleBinding");
+        }
+        ComponentContext? parent = targetContext; 
+        while (parent is not null)
+        {
+            System.Runtime.CompilerServices.RuntimeHelpers.EnsureSufficientExecutionStack();
+            if(EvaluateBooleanExpression(state, parent, "hidden", false))
+            {
+                // Don't lookup data in hidden components
+                return null;
+            }
+            parent = parent.Parent;
+        }
+
+        return state.GetModelData(binding, context);
+    }
 
     private static string? Concat(object?[] args)
     {
@@ -130,6 +160,15 @@ public static class ExpressionEvaluator
         var preparedArgs = args.Select(arg => PrepareBooleanArg(arg)).ToArray();
         // Ensure all args gets converted, because they might throw an Exception
         return preparedArgs.Any(a => a);
+    }
+
+    private static bool? Not(object?[] args)
+    {
+        if(args.Length != 1)
+        {
+            throw new ExpressionEvaluatorTypeErrorException($"Expected 1 argument(s), got {args.Length}");
+        }
+        return !PrepareBooleanArg(args[0]);
     }
 
     private static (double?, double?) PrepareNumericArgs(object?[] args)

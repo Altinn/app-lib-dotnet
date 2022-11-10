@@ -16,15 +16,21 @@ public class LayoutModel
     /// </summary>
     public Dictionary<string, PageComponent> Pages { get; init; } = new Dictionary<string, PageComponent>();
 
+    public PageComponent GetPage(string pageName)
+    {
+        if (Pages.TryGetValue(pageName, out var page))
+        {
+            return page;
+        }
+        throw new ArgumentException($"Unknown page name {pageName}");
+    }
+
     /// <summary>
     /// Get a specific component on a specifc page.
     /// </summary>
     public BaseComponent GetComponent(string pageName, string componentId)
     {
-        if (!Pages.TryGetValue(pageName, out var page))
-        {
-            throw new ArgumentException($"Unknown page name {pageName}");
-        }
+        var page = GetPage(pageName);
 
         if (!page.ComponentLookup.TryGetValue(componentId, out var component))
         {
@@ -47,26 +53,6 @@ public class LayoutModel
             if (node is GroupComponent groupNode)
                 foreach (var n in groupNode.Children) nodes.Push(n);
         }
-    }
-
-    /// <summary>
-    /// Get data from the `simpleBinding` property of a component on the same page
-    /// </summary>
-    public object? GetComponentData(string componentId, ComponentContext context, IDataModelAccessor dataModel)
-    {
-        if (context.Component is GroupComponent)
-        {
-            throw new NotImplementedException("Component lookup for components in groups not implemented");
-        }
-
-        var component = GetComponent(context.Component.PageId, componentId);
-
-        if (!component.DataModelBindings.TryGetValue("simpleBinding", out var binding))
-        {
-            throw new ArgumentException("component lookup requires the target component ");
-        }
-
-        return dataModel.GetModelData(binding, context.RowIndices);
     }
 }
 
