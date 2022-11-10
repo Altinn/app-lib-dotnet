@@ -98,6 +98,14 @@ namespace Altinn.App.PlatformServices.Tests.Models
 
             action.Should().Throw<ArgumentException>();
         }
+
+        [Fact]
+        public void CreateFromUrl_Null_ShouldThrowArgumentNullException()
+        {
+            Action action = () => AppIdentifier.CreateFromUrl(null);
+
+            action.Should().Throw<ArgumentNullException>();
+        }
     }
 
     #pragma warning restore CA1806 // Do not ignore method results
