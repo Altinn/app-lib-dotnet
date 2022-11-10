@@ -190,7 +190,7 @@ namespace Altinn.App.Core.EFormidling.Implementation
 
         private static bool MessageDeliveredToKS(Statuses statuses)
         {
-            return statuses.Content.FirstOrDefault(s => s.Status.ToLower() == "levert") != null;
+            return statuses.Content.FirstOrDefault(s => s.Status.ToLower() == "levert" || s.Status.ToLower() == "lest") != null;
         }
 
         private static bool MessageTimedOutToKS(Statuses statuses, out string errorMessage)
