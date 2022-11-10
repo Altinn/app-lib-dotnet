@@ -32,4 +32,3 @@ namespace Altinn.App.Core.Features.Options
         }
     }
 }
- 
