@@ -2,18 +2,18 @@
 
 namespace Altinn.App.Core.Internal.Events
 {
-    /// <inheritDoc/>
+    /// <inheritdoc/>
     public class EventHandlerResolver : IEventHandlerResolver
     {
         private readonly IEnumerable<IEventHandler> _eventHandlers;
 
-        /// <inheritDoc/>
+        /// <inheritdoc/>
         public EventHandlerResolver(IEnumerable<IEventHandler> eventHandlers)
         {
             _eventHandlers = eventHandlers;
         }
 
-        /// <inheritDoc/>
+        /// <inheritdoc/>
         public IEventHandler ResolveEventHandler(string eventType)
         {
             if (eventType == null)
