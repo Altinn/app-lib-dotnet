@@ -43,8 +43,10 @@ public class JsonDataModel : IDataModelAccessor
             {
                 JsonValueKind.String => currentModel.GetString(),
                 JsonValueKind.Number => currentModel.GetDouble(),
+                JsonValueKind.True => true,
+                JsonValueKind.False => false,
                 JsonValueKind.Object => null, // TODO: Verify correct
-                _ => throw new NotImplementedException(),
+                _ => throw new NotImplementedException($"Get Data is not implemented for {currentModel.ValueKind}"),
             };
         }
 

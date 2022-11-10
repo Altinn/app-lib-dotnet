@@ -55,7 +55,7 @@ public static class ExpressionEvaluator
         var ret = expr.Function switch
         {
             ExpressionFunction.dataModel => state.GetModelData(args.First()?.ToString()!, context),
-            ExpressionFunction.component => state.GetComponentData(args.First()?.ToString()!, context),
+            ExpressionFunction.component => Component(args, context, state),
             ExpressionFunction.instanceContext => state.GetInstanceContext(args.First()?.ToString()!),
             ExpressionFunction.@if => IfImpl(args),
             ExpressionFunction.frontendSettings => state.GetFrontendSetting(args.First()?.ToString()!),
@@ -74,6 +74,35 @@ public static class ExpressionEvaluator
         return ret;
     }
 
+    private static object? Component(object?[] args, ComponentContext context, LayoutEvaluatorState state)
+    {
+        var componentId = args.First()?.ToString()!;
+
+        if (context.Component is GroupComponent)
+        {
+            throw new NotImplementedException("Component lookup for components in groups not implemented");
+        }
+
+        var targetContext = state.GetComponentContext(context.Component.PageId, componentId, context.RowIndices);
+
+        if (!targetContext.Component.DataModelBindings.TryGetValue("simpleBinding", out var binding))
+        {
+            throw new ArgumentException("component lookup requires the target component to have a simpleBinding");
+        }
+        ComponentContext? parent = targetContext; 
+        while (parent is not null)
+        {
+            System.Runtime.CompilerServices.RuntimeHelpers.EnsureSufficientExecutionStack();
+            if(EvaluateBooleanExpression(state, parent, "hidden", false))
+            {
+                // Don't lookup data in hidden components
+                return null;
+            }
+            parent = parent.Parent;
+        }
+
+        return state.GetModelData(binding, context);
+    }
 
     private static string? Concat(object?[] args)
     {

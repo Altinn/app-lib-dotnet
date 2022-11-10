@@ -35,21 +35,24 @@ public class LayoutEvaluatorState
     public IEnumerable<ComponentContext> GetComponentContexts()
     {
         return _componentModel.Pages.Values.Select((
-            (page) => new ComponentContext
+            (page) => GetPageContext(page)
+        )).ToArray();
+    }
+
+    private ComponentContext GetPageContext(PageComponent page) => new ComponentContext
             (
                 page,
                 null,
                 page.Children.Select(c => GetComponentContextsRecurs(c, _dataModel, Array.Empty<int>())).ToArray()
-            )
-        )).ToArray();
-    }
+            );
+
 
     private static ComponentContext GetComponentContextsRecurs(BaseComponent component, IDataModelAccessor dataModel, ReadOnlySpan<int> indexes)
     {
         if (!(component is GroupComponent groupComponent && groupComponent.Children.Any()))
         {
             // Non group components are simple
-            return new ComponentContext(component, ToArrayOrNullForEmpty(indexes), Enumerable.Empty<ComponentContext>());
+            return new ComponentContext(component, ToArrayOrNullForEmpty(indexes));
         }
 
         var children = new List<ComponentContext>();
@@ -95,6 +98,33 @@ public class LayoutEvaluatorState
     }
 
     /// <summary>
+    /// Get component from componentModel
+    /// </summary>
+    public BaseComponent GetComponent(string pageName, string componentId)
+    {
+        return _componentModel.GetComponent(pageName, componentId);
+    }
+
+    /// <summary>
+    /// Get a specific component context based on 
+    /// </summary>
+    public ComponentContext GetComponentContext(string pageName, string componentId, int[]? rowIndicies = null)
+    {
+        var page = _componentModel.GetPage(pageName);
+        var pageContext = GetPageContext(page);
+        // Find all decendent contexts that matches componentId and all the given rowIndicies
+        var matches = pageContext.Decendants.Where(
+                            context =>
+                                context.Component.Id == componentId &&
+                                (context.RowIndices?.Zip(rowIndicies ?? Enumerable.Empty<int>()).All((i) => i.First == i.Second) ?? true)).ToArray();
+        if(matches.Length != 1)
+        {
+            throw new ArgumentException("Expected 1 matching component context for [\"component\"] lookup. Found " + matches.Length);
+        }
+        return matches[0];
+    }
+
+    /// <summary>
     /// Get field from dataModel with key and context
     /// </summary>
     public object? GetModelData(string key, ComponentContext? context = null)
@@ -108,14 +138,6 @@ public class LayoutEvaluatorState
     public void RemoveDataField(string key)
     {
         _dataModel.RemoveField(key);
-    }
-
-    /// <summary>
-    /// Get data from the `simpleBinding` property of a component on the same page
-    /// </summary>
-    public object? GetComponentData(string key, ComponentContext context)
-    {
-        return _componentModel.GetComponentData(key, context, _dataModel);
     }
 
     /// <summary>
