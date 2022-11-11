@@ -15,9 +15,9 @@ namespace Altinn.App.Core.Features.DataLists
         /// <summary>
         /// Initializes a new instance of the <see cref="DataListsFactory"/> class.
         /// </summary>
-        public DataListsFactory(IEnumerable<IDataListProvider> dataListProvider)
+        public DataListsFactory(IEnumerable<IDataListProvider> dataListProviders)
         {
-            DataListProviders = dataListProvider;
+            DataListProviders = dataListProviders;
         }
         private IEnumerable<IDataListProvider> DataListProviders { get; }
 
@@ -37,7 +37,6 @@ namespace Altinn.App.Core.Features.DataLists
             }
 
             return new NullDataListProvider();
-
         }
     }
 }
