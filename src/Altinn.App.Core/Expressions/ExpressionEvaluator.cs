@@ -92,7 +92,6 @@ public static class ExpressionEvaluator
         ComponentContext? parent = targetContext; 
         while (parent is not null)
         {
-            System.Runtime.CompilerServices.RuntimeHelpers.EnsureSufficientExecutionStack();
             if(EvaluateBooleanExpression(state, parent, "hidden", false))
             {
                 // Don't lookup data in hidden components

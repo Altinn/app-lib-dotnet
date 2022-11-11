@@ -110,6 +110,7 @@ public class LayoutEvaluatorState
     /// </summary>
     public ComponentContext GetComponentContext(string pageName, string componentId, int[]? rowIndicies = null)
     {
+        // First look only on the relevant page
         var page = _componentModel.GetPage(pageName);
         var pageContext = GetPageContext(page);
         // Find all decendent contexts that matches componentId and all the given rowIndicies
@@ -117,6 +118,22 @@ public class LayoutEvaluatorState
                             context =>
                                 context.Component.Id == componentId &&
                                 (context.RowIndices?.Zip(rowIndicies ?? Enumerable.Empty<int>()).All((i) => i.First == i.Second) ?? true)).ToArray();
+        if(matches.Length == 1)
+        {
+            return matches[0];
+        }
+        else if (matches.Length > 1)
+        {
+            throw new ArgumentException($"Expected 1 matching component context for [\"component\"] lookup on page {pageName}. Found {matches.Length}");
+        }
+
+        // If no components was found on the same page, look for component on all pages
+        var contexts = GetComponentContexts();
+        // Find all decendent contexts that matches componentId and all the given rowIndicies
+        matches = contexts.SelectMany(p=>p.Decendants.Where(
+                            context =>
+                                context.Component.Id == componentId &&
+                                (context.RowIndices?.Zip(rowIndicies ?? Enumerable.Empty<int>()).All((i) => i.First == i.Second) ?? true))).ToArray();
         if(matches.Length != 1)
         {
             throw new ArgumentException("Expected 1 matching component context for [\"component\"] lookup. Found " + matches.Length);
