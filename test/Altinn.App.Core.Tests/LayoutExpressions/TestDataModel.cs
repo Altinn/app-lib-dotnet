@@ -244,6 +244,113 @@ public class TestDataModel
         modelHelper.RemoveField("friends[0].friends");
         model.Friends.First().Friends.Should().BeNull();
     }
+
+    [Fact]
+    public void TestErrorCases()
+    {
+        var modelHelper = new DataModel(
+            new Model
+            {
+                Id = 3,
+                Friends = new List<Friend>()
+                {
+                    new()
+                    {
+                        Name = new(){ Value = "Ole"},
+                    }
+                }
+            });
+        modelHelper.Invoking(m => m.GetModelData(".")).Should().Throw<DataModelException>().WithMessage("*empty part*");
+        modelHelper.GetModelData("friends[0]").Should().BeOfType<Friend>().Which.Name?.Value.Should().Be("Ole");
+        modelHelper.GetModelData("friends[3]").Should().BeNull();
+
+        modelHelper.Invoking(m => m.AddIndicies("tull.sd", new int[] { 2 }))
+            .Should()
+            .Throw<DataModelException>()
+            .WithMessage("Unknown model property tull in*");
+
+        modelHelper.Invoking(m => m.AddIndicies("id[4]", new int[] { 6 }))
+            .Should()
+            .Throw<DataModelException>()
+            .WithMessage("Index on non indexable property");
+    }
+
+    [Fact]
+    public void TestEdgeCaseWithNonGenericEnumerableForCoverage()
+    {
+        // Test with erronious model with non-generic IEnumerable (special error for code coverage)
+        var modelHelper = new DataModel(new
+        {
+            // ArrayList is not supported as a data model
+            friends = new System.Collections.ArrayList() { 1, 2, 3 },
+        });
+        modelHelper.Invoking(m => m.AddIndicies("friends", new int[] { 0 }))
+            .Should()
+            .Throw<DataModelException>()
+            .WithMessage("DataModels must have generic IEnumerable<> implementation for list");
+    }
+
+    [Fact]
+    public void TestAddIndicies()
+    {
+        IDataModelAccessor modelHelper = new DataModel(
+            new Model
+            {
+                Id = 3,
+                Friends = new List<Friend>()
+                {
+                    new()
+                    {
+                        Name = new(){ Value = "Ole"},
+                    }
+                }
+            });
+
+        // Plain add indicies
+        modelHelper.AddIndicies("friends.friends", new int[] { 0, 1 }).Should().Be("friends[0].friends[1]");
+
+        // Ignore extra indicies
+        modelHelper.AddIndicies("friends.friends", new int[] { 0, 1, 4, 6 }).Should().Be("friends[0].friends[1]");
+
+        // Don't add indicies if they are specified in input
+        modelHelper.AddIndicies("friends[3]", new int[] { 0 }).Should().Be("friends[3]");
+
+        // Seccond index is ignored if the first is explicit
+        modelHelper.Invoking(m => m.AddIndicies("friends[0].friends", new int[] { 0, 3 }))
+            .Should()
+            .Throw<DataModelException>()
+            .WithMessage("Missmatch*");
+    }
+
+    [Fact]
+    public void AddIndicies_WhenGivenIndexOnNonIndexableProperty_ThrowsError()
+    {
+        IDataModelAccessor modelHelper = new DataModel(new Model { Id = 3, });
+
+        // Throws because id is not indexable
+        modelHelper.Invoking(m => m.AddIndicies("id[0]", new int[] { 1, 2, 3 }))
+            .Should()
+            .Throw<DataModelException>()
+            .WithMessage("Index on non indexable property");
+    }
+
+    [Fact]
+    public void RemoveField_WhenValueDoesNotExist_DoNothing()
+    {
+        var modelHelper = new DataModel(new Model());
+
+        // real fields works, no error
+        modelHelper.RemoveField("id");
+
+        // non-existant-fields works, no error
+        modelHelper.RemoveField("doesNotExist");
+
+        // non-existant-fields in subfield works, no error
+        modelHelper.RemoveField("friends.doesNotExist");
+ 
+        // non-existant-fields in subfield works, no error
+        modelHelper.RemoveField("friends[0].doesNotExist");
+    }
 }
 
 public class Model
