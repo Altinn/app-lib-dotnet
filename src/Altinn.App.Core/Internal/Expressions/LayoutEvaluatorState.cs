@@ -5,7 +5,7 @@ using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Models.Layout.Components;
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Expressions;
+namespace Altinn.App.Core.Internal.Expressions;
 
 /// <summary>
 /// Collection class to hold all the shared state that is required for evaluating expressions in a layout.

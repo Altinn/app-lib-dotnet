@@ -1,5 +1,4 @@
 using Altinn.App.Core.Configuration;
-using Altinn.App.Core.Expressions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.DataProcessing;
 using Altinn.App.Core.Features.Options;
@@ -18,6 +17,7 @@ using Altinn.App.Core.Infrastructure.Clients.Storage;
 using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Events;
+using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Process;

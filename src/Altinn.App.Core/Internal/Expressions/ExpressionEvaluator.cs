@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Layout.Components;
 
-namespace Altinn.App.Core.Expressions;
+namespace Altinn.App.Core.Internal.Expressions;
 
 /// <summary>
 /// Static class used to evaluate expressions. Holds the implementation for all expression functions.
