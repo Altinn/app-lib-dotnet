@@ -19,7 +19,7 @@ public class Utf8JsonReaderExtensionsTests
 
         reader.Read();
         var result = Utf8JsonReaderExtensions.SkipReturnString(ref reader);
-        var regex = new Regex(@"\r\n\s*"); // remove newlines and indentation for comparison to work
+        var regex = new Regex(Environment.NewLine + @"\s*"); // remove newlines and indentation for comparison to work
         result = regex.Replace(result, " ");
         result.Should().Be(value);
     }
@@ -27,7 +27,7 @@ public class Utf8JsonReaderExtensionsTests
     [Fact]
     public void TestComment()
     {
-        var nl = "\r\n";
+        var nl = Environment.NewLine;
         var value =
         @"{" + nl +
         @"  ""component"": ""testComp""" + nl +
