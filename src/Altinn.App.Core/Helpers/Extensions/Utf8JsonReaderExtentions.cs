@@ -27,24 +27,34 @@ internal static class Utf8JsonReaderExtensions
                 break;
             case JsonTokenType.StartObject:
                 writer.WriteStartObject();
-                while(reader.Read() && reader.TokenType != JsonTokenType.EndObject)
+                while (reader.Read())
                 {
-                    writer.WritePropertyName(reader.ValueSpan);
-                    reader.Read();
-                    Copy(ref reader, writer);
+                    switch (reader.TokenType)
+                    {
+                        case JsonTokenType.PropertyName:
+                            writer.WritePropertyName(reader.ValueSpan);
+                            reader.Read();
+                            Copy(ref reader, writer);
+                            break;
+                        case JsonTokenType.Comment:
+                            writer.WriteCommentValue(reader.ValueSpan);
+                            break;
+                        case JsonTokenType.EndObject:
+                            writer.WriteEndObject();
+                            return;
+                        default:
+                            throw new JsonException($"Something is wrong, did not expect {reader.TokenType} here2");
+                    }
                 }
-                writer.WriteEndObject();
-                return;
+                break;
             case JsonTokenType.StartArray:
                 writer.WriteStartArray();
-                while(reader.Read() && reader.TokenType != JsonTokenType.EndArray)
+                while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
                 {
                     Copy(ref reader, writer);
                 }
                 writer.WriteEndArray();
-                return;
-            case JsonTokenType.PropertyName:
-                throw new JsonException("something is wrong, did not expect property name here");
+                break;
             case JsonTokenType.Comment:
                 writer.WriteCommentValue(reader.ValueSpan);
                 break;
@@ -63,6 +73,8 @@ internal static class Utf8JsonReaderExtensions
             case JsonTokenType.Null:
                 writer.WriteNullValue();
                 break;
+            default:
+                throw new JsonException($"Something is wrong, did not expect {reader.TokenType} here");
         }
     }
 }

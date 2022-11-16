@@ -15,11 +15,18 @@
       {
         "id": "gruppe1",
         "type": "Group",
-        "children": ["comp1", "comp2"],
+        "children": ["comp","comp1", "comp2"],
         "dataModelBindings": {
           "group": "some.data"
         },
         "hidden": ["notEquals", ["dataModel", "some.notRepeating"], "showGroup"]
+      },
+      {
+        "id": "comp",
+        "type": "Input",
+        "dataModelBindings": {
+          "simpleBinding": "some.data.binding"
+        }
       },
       {
         "id": "comp1",

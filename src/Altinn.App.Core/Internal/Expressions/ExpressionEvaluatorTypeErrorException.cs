@@ -1,6 +1,6 @@
 using System.Runtime.Serialization;
 
-namespace Altinn.App.Core.Expressions;
+namespace Altinn.App.Core.Internal.Expressions;
 
 /// <summary>
 /// Custom exception for <see cref="ExpressionEvaluator" /> to thow when expressions contains type errors.

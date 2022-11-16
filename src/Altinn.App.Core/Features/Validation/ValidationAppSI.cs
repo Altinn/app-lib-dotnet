@@ -1,8 +1,8 @@
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.AppModel;
+using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models.Validation;
-using Altinn.App.Core.Expressions;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -29,6 +29,7 @@ namespace Altinn.App.Core.Features.Validation
         private readonly IObjectModelValidator _objectModelValidator;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly GeneralSettings _generalSettings;
+        private readonly AppSettings _appSettings;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ValidationAppSI"/> class.
@@ -43,7 +44,8 @@ namespace Altinn.App.Core.Features.Validation
             IObjectModelValidator objectModelValidator,
             LayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer,
             IHttpContextAccessor httpContextAccessor,
-            IOptions<GeneralSettings> generalSettings)
+            IOptions<GeneralSettings> generalSettings,
+            IOptions<AppSettings> appSettings)
         {
             _logger = logger;
             _dataService = dataService;
@@ -55,6 +57,7 @@ namespace Altinn.App.Core.Features.Validation
             _layoutEvaluatorStateInitializer = layoutEvaluatorStateInitializer;
             _httpContextAccessor = httpContextAccessor;
             _generalSettings = generalSettings.Value;
+            _appSettings = appSettings.Value;
         }
 
         /// <summary>
@@ -190,16 +193,16 @@ namespace Altinn.App.Core.Features.Validation
                 object data = await _dataService.GetFormData(
                     instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, Guid.Parse(dataElement.Id));
 
-                var layoutSet = _appResourcesService.GetLayoutSetForTask(dataType.TaskId);
-                var evaluationState = await _layoutEvaluatorStateInitializer.Init(instance, data, layoutSet?.Id);
-                // Remove hidden data before validation
-                try
+                if (_appSettings.RemoveHiddenDataPreview)
                 {
+                    var layoutSet = _appResourcesService.GetLayoutSetForTask(dataType.TaskId);
+                    var evaluationState = await _layoutEvaluatorStateInitializer.Init(instance, data, layoutSet?.Id);
+                    // Remove hidden data before validation
                     LayoutEvaluator.RemoveHiddenData(evaluationState);
-                }
-                catch (Exception e)
-                {
-                    _logger.LogError(e, "Failed to remove hidden data");
+                    // Evaluate expressions in layout and validate that all required data is included and that maxLength
+                    // is respected on groups
+                    var layoutErrors = LayoutEvaluator.RunLayoutValidationsForRequired(evaluationState, dataElement.Id);
+                    messages.AddRange(layoutErrors);
                 }
 
                 // run Standard mvc validation using the System.ComponentModel.DataAnnotations
@@ -221,10 +224,6 @@ namespace Altinn.App.Core.Features.Validation
                     messages.AddRange(MapModelStateToIssueList(actionContext.ModelState, instance, dataElement.Id));
                 }
 
-                // Evaluate expressions in layout and validate that all required data is included and that maxLength
-                // is respected on groups
-                var layoutErrors = LayoutEvaluator.RunLayoutValidationsForRequired(evaluationState, dataElement.Id);
-                messages.AddRange(layoutErrors);
             }
 
             return messages;

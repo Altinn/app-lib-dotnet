@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Altinn.App.Core.Expressions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Implementation;
 using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.AppModel;
+using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;

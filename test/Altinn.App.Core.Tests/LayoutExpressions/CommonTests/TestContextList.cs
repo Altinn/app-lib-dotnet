@@ -2,7 +2,7 @@
 using System.Reflection;
 using System.Text.Json;
 
-using Altinn.App.Core.Expressions;
+using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Tests.Helpers;
 using FluentAssertions;
 using Xunit;

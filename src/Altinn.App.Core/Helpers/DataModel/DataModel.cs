@@ -82,12 +82,12 @@ public class DataModel : IDataModelAccessor
         }
 
         var elementAt = GetElementAt(childModelList, groupIndex.Value);
-        if(elementAt is null)
+        if (elementAt is null)
         {
             return null; // Error condition, no value at index
         }
+
         return GetModelDataRecursive(keys, index + 1, elementAt, indicies.Length > 0 ? indicies.Slice(1) : indicies);
-         
     }
 
     private static object? GetElementAt(System.Collections.IEnumerable enumerable, int index)
@@ -120,7 +120,7 @@ public class DataModel : IDataModelAccessor
 
     }
 
-    private static void AddIndiciesRecursive(List<string> ret, Type currentModelType, ReadOnlySpan<string> keys, string fullKey, ReadOnlySpan<int> indicies)
+    private static void AddIndiciesRecursive(List<string> ret, Type currentModelType, ReadOnlySpan<string> keys, string fullKey, ReadOnlySpan<int> indicies, ReadOnlySpan<int> originalIndicies)
     {
         if (keys.Length == 0)
         {
@@ -138,9 +138,8 @@ public class DataModel : IDataModelAccessor
         // Other enumerable types is treated as an collection
         if (childType != typeof(string) && childType.IsAssignableTo(typeof(System.Collections.IEnumerable)))
         {
-            var childTypeEnumerableParameter = childType.GetInterfaces()
-               .Where(t => t.IsGenericType && t.GetGenericTypeDefinition() == typeof(IEnumerable<>))
-               .Select(t => t.GetGenericArguments()[0]).FirstOrDefault();
+            // Hope the first generic argument is tied to the IEnumerable implementation
+            var childTypeEnumerableParameter = childType.GetGenericArguments().FirstOrDefault();
 
             if (childTypeEnumerableParameter is null)
             {
@@ -149,15 +148,21 @@ public class DataModel : IDataModelAccessor
 
             if (groupIndex is null)
             {
+                if (indicies.Length == 0)
+                {
+                    throw new DataModelException($"Missmatch in indicies in {fullKey} on key {key} and [{string.Join(", ", originalIndicies.ToArray())}]");
+                }
                 ret.Add($"{key}[{indicies[0]}]");
             }
             else
             {
                 ret.Add($"{key}[{groupIndex}]");
-                indicies = default;
+
+                // Ignore indexes after a literal index has been set
+                indicies = new int[] { groupIndex.Value };
             }
 
-            AddIndiciesRecursive(ret, childTypeEnumerableParameter, keys.Slice(1), fullKey, indicies.Slice(1));
+            AddIndiciesRecursive(ret, childTypeEnumerableParameter, keys.Slice(1), fullKey, indicies.Slice(1), originalIndicies);
         }
         else
         {
@@ -165,8 +170,9 @@ public class DataModel : IDataModelAccessor
             {
                 throw new DataModelException("Index on non indexable property");
             }
+
             ret.Add(key);
-            AddIndiciesRecursive(ret, childType, keys.Slice(1), fullKey, indicies);
+            AddIndiciesRecursive(ret, childType, keys.Slice(1), fullKey, indicies, originalIndicies);
         }
     }
 
@@ -179,7 +185,7 @@ public class DataModel : IDataModelAccessor
         }
 
         var ret = new List<string>();
-        AddIndiciesRecursive(ret, this._serviceModel.GetType(), key.Split('.'), key, indicies);
+        AddIndiciesRecursive(ret, this._serviceModel.GetType(), key.Split('.'), key, indicies, indicies);
         return string.Join('.', ret);
     }
 

@@ -1,6 +1,5 @@
 {
-    "name": "Not inverts true",
-    "expression": ["not", true],
-    "expects": false
-  }
-  
+  "name": "Not inverts true",
+  "expression": ["not", true],
+  "expects": false
+}

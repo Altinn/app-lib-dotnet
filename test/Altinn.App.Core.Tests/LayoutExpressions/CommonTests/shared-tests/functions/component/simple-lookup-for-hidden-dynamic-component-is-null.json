@@ -13,7 +13,7 @@
             "dataModelBindings": {
               "simpleBinding": "ComponentContent"
             },
-            "hidden": ["if", ["dataModel", "hidden.condition"] , true]
+            "hidden": ["if", ["dataModel", "hidden.condition"], true]
           },
           {
             "id": "current-component",
@@ -25,8 +25,9 @@
   },
   "dataModel": {
     "ComponentContent": "hello world",
-    "hidden":
-    {"condition": true}
+    "hidden": {
+      "condition": true
+    }
   },
   "context": {
     "component": "current-component",

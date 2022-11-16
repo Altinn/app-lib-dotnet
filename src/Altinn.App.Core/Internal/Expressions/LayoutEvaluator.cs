@@ -1,7 +1,7 @@
 using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Validation;
 
-namespace Altinn.App.Core.Expressions;
+namespace Altinn.App.Core.Internal.Expressions;
 
 /// <summary>
 /// Utilities for using the expression results to do tasks in backend

@@ -1,5 +1,5 @@
 using System.Text.Json.Serialization;
-using Altinn.App.Core.Expressions;
+using Altinn.App.Core.Internal.Expressions;
 
 namespace Altinn.App.Core.Models.Expressions;
 
