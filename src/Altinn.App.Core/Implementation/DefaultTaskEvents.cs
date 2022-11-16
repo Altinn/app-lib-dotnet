@@ -126,13 +126,9 @@ public class DefaultTaskEvents : ITaskEvents
     {
         Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
         List<DataType> dataTypesToLock = _appMetadata.DataTypes.FindAll(dt => dt.TaskId == endEvent);
-        try
+        if (_appSettings?.RemoveHiddenDataPreview == true)
         {
             await RemoveHiddenData(instance, instanceGuid, dataTypesToLock);
-        }
-        catch(Exception e)
-        {
-            _logger.LogError(e, "Failed to remove hidden data in task");
         }
 
         foreach (var taskEnd in _taskEnds)
@@ -190,10 +186,13 @@ public class DefaultTaskEvents : ITaskEvents
                 object data = await _dataClient.GetFormData(
                     instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, dataElementId);
 
-                // Remove hidden data before validation
-                var layoutSet = _appResources.GetLayoutSetForTask(dataType.TaskId);
-                var evaluationState = await _layoutEvaluatorStateInitializer.Init(instance, data, layoutSet?.Id);
-                LayoutEvaluator.RemoveHiddenData(evaluationState);
+                if (_appSettings?.RemoveHiddenDataPreview == true)
+                {
+                    // Remove hidden data before validation
+                    var layoutSet = _appResources.GetLayoutSetForTask(dataType.TaskId);
+                    var evaluationState = await _layoutEvaluatorStateInitializer.Init(instance, data, layoutSet?.Id);
+                    LayoutEvaluator.RemoveHiddenData(evaluationState);
+                }
 
                 // save the updated data if there are changes
                 await _dataClient.InsertFormData(data, instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, dataType.Id);
@@ -208,7 +207,7 @@ public class DefaultTaskEvents : ITaskEvents
         {
             await taskAbandon.Abandon(taskId, instance);
         }
-        
+
         _logger.LogInformation(
             $"OnAbandonProcessTask for {instance.Id}. Locking data elements connected to {taskId}");
         await Task.CompletedTask;
