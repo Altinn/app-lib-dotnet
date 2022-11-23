@@ -16,7 +16,9 @@ using Altinn.App.Core.Infrastructure.Clients.Profile;
 using Altinn.App.Core.Infrastructure.Clients.Register;
 using Altinn.App.Core.Infrastructure.Clients.Storage;
 using Altinn.App.Core.Interface;
+using Altinn.App.Core.Internal.AppFiles;
 using Altinn.App.Core.Internal.AppModel;
+using Altinn.App.Core.Internal.AppValidation;
 using Altinn.App.Core.Internal.Events;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Language;
@@ -119,7 +121,11 @@ namespace Altinn.App.Core.Extensions
             services.TryAddTransient<IValidation, ValidationAppSI>();
             services.TryAddTransient<IPrefill, PrefillSI>();
             services.TryAddTransient<ISigningCredentialsResolver, SigningCredentialsResolver>();
+            services.TryAddTransient<AppFilesLoader>();
             services.TryAddSingleton<IAppResources, AppResourcesSI>();
+            // services.TryAddSingleton<IAppResources, AppResourcesNew>();
+            services.TryAddTransient<AppValidator>();
+            services.AddHostedService<AppFilesSyncHostedService>();
             services.TryAddTransient<IAppEvents, DefaultAppEvents>();
             services.TryAddTransient<ITaskEvents, DefaultTaskEvents>();
             services.TryAddTransient<IPageOrder, DefaultPageOrder>();
@@ -148,6 +154,7 @@ namespace Altinn.App.Core.Extensions
             }
             else
             {
+                services.AddHostedService<AppFilesSyncHostedServiceDebug>();
                 services.TryAddSingleton<ISecrets, SecretsLocalClient>();
             }            
         }
