@@ -182,8 +182,8 @@ public class PageComponentConverter : JsonConverter<PageComponent>
         // Custom properties for Summary
         string? componentRef = null;
         string? pageRef = null;
-        // Custom properties for components with optionId or literal options
-        string? optionId = null;
+        // Custom properties for components with optionsId or literal options
+        string? optionsId = null;
         List<AppOption>? literalOptions = null;
         bool secure = false;
 
@@ -238,8 +238,8 @@ public class PageComponentConverter : JsonConverter<PageComponent>
                     pageRef = reader.GetString();
                     break;
                 // option
-                case "optionid":
-                    optionId = reader.GetString();
+                case "optionsid":
+                    optionsId = reader.GetString();
                     break;
                 case "options":
                     literalOptions = JsonSerializer.Deserialize<List<AppOption>>(ref reader, options);
@@ -281,24 +281,24 @@ public class PageComponentConverter : JsonConverter<PageComponent>
             case "checkboxes":
             case "radiobuttons":
             case "dropdown":
-                ValidateOptions(optionId, literalOptions, secure);
+                ValidateOptions(optionsId, literalOptions, secure);
 
-                return new OptionsComponent(id, type, dataModelBindings, hidden, required, readOnly, optionId, literalOptions, secure, additionalProperties);
+                return new OptionsComponent(id, type, dataModelBindings, hidden, required, readOnly, optionsId, literalOptions, secure, additionalProperties);
         }
 
         // Most compoents are handled as BaseComponent
         return new BaseComponent(id, type, dataModelBindings, hidden, required, readOnly, additionalProperties);
     }
 
-    private static void ValidateOptions(string? optionId, List<AppOption>? literalOptions, bool secure)
+    private static void ValidateOptions(string? optionsId, List<AppOption>? literalOptions, bool secure)
     {
-        if (optionId is null && literalOptions is null)
+        if (optionsId is null && literalOptions is null)
         {
-            throw new JsonException("\"optionId\" or \"options\" is required on checkboxes, radiobuttons and dropdowns");
+            throw new JsonException("\"optionsId\" or \"options\" is required on checkboxes, radiobuttons and dropdowns");
         }
-        if (optionId is not null && literalOptions is not null)
+        if (optionsId is not null && literalOptions is not null)
         {
-            throw new JsonException("\"optionId\" and \"options\" can't both be specified");
+            throw new JsonException("\"optionsId\" and \"options\" can't both be specified");
         }
         if (literalOptions is not null && secure)
         {
