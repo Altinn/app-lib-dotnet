@@ -12,8 +12,8 @@
   <ItemGroup>
     <Compile Remove="Implementation\AppBaseTests.cs" />
     <Content Include="LayoutExpressions/**/*.json" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
-    <Watch Include="LayoutExpressions/**/*.json"/>
-    <Watch Include="**/*.cs"/>
+    <Watch Include="LayoutExpressions/**/*.json" />
+    <Watch Include="**/*.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -55,6 +55,11 @@
     <Content Include="Internal\Process\TestData\**">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Watch Remove="Internal\Pdf\PdfServiceTests.cs" />
+    <Watch Remove="Mocks\RequestInterceptor.cs" />
   </ItemGroup>
 
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
