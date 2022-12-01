@@ -10,7 +10,8 @@ namespace Altinn.App.Core.Internal.Process;
 /// </summary>
 public class ProcessReader : IProcessReader
 {
-    private readonly Definitions _definitions;
+    private static Definitions _definitions = null;
+    private static object _lockObject = new();
 
     /// <summary>
     /// Create instance of ProcessReader where process stream is fetched from <see cref="IProcess"/>
@@ -19,10 +20,18 @@ public class ProcessReader : IProcessReader
     /// <exception cref="InvalidOperationException">If BPMN file could not be deserialized</exception>
     public ProcessReader(IProcess processService)
     {
-        XmlSerializer serializer = new XmlSerializer(typeof(Definitions));
-        Definitions? definitions = (Definitions?)serializer.Deserialize(processService.GetProcessDefinition());
-
-        _definitions = definitions ?? throw new InvalidOperationException("Failed to deserialize BPMN definitions. Definitions was null");
+        if (_definitions== null)
+        {
+            lock(_lockObject)
+            {
+                if (_definitions == null)
+                {
+                    XmlSerializer serializer = new XmlSerializer(typeof(Definitions));
+                    Definitions? definitions = (Definitions?)serializer.Deserialize(processService.GetProcessDefinition());
+                    _definitions = definitions ?? throw new InvalidOperationException("Failed to deserialize BPMN definitions. Definitions was null");
+                }
+            }
+        }
     }
 
     /// <inheritdoc />
