@@ -10,27 +10,33 @@ namespace Altinn.App.Core.Internal.Process;
 /// </summary>
 public class ProcessReader : IProcessReader
 {
-    private static Definitions _definitions = null;
-    private static object _lockObject = new();
+    private readonly Definitions _definitions = null;
+    private static Definitions _cachedDefinitions = null;
+    private static readonly object _lockObject = new();
 
     /// <summary>
     /// Create instance of ProcessReader where process stream is fetched from <see cref="IProcess"/>
     /// </summary>
     /// <param name="processService">Implementation of IProcess used to get stream of BPMN process</param>
+    /// <param name="useCache">Whether to cache process definitions. Used only for unit tests</param>
     /// <exception cref="InvalidOperationException">If BPMN file could not be deserialized</exception>
-    public ProcessReader(IProcess processService)
+    public ProcessReader(IProcess processService, bool useCache = true)
     {
-        if (_definitions== null)
+        if (!useCache)
         {
-            lock(_lockObject)
+            _definitions = GetDefinitions(processService);
+        }
+        else
+        {
+            if (_cachedDefinitions == null)
             {
-                if (_definitions == null)
+                lock(_lockObject)
                 {
-                    XmlSerializer serializer = new XmlSerializer(typeof(Definitions));
-                    Definitions? definitions = (Definitions?)serializer.Deserialize(processService.GetProcessDefinition());
-                    _definitions = definitions ?? throw new InvalidOperationException("Failed to deserialize BPMN definitions. Definitions was null");
+                    _cachedDefinitions ??= GetDefinitions(processService);
                 }
             }
+
+            _definitions = _cachedDefinitions;
         }
     }
 
@@ -238,5 +244,12 @@ public class ProcessReader : IProcessReader
     {
         if (argument == null)
             throw new ArgumentNullException(paramName);
+    }
+
+    private static Definitions GetDefinitions(IProcess processService)
+    {
+        XmlSerializer serializer = new XmlSerializer(typeof(Definitions));
+        Definitions? definitions = (Definitions?)serializer.Deserialize(processService.GetProcessDefinition());
+        return definitions ?? throw new InvalidOperationException("Failed to deserialize BPMN definitions. Definitions was null");
     }
 }

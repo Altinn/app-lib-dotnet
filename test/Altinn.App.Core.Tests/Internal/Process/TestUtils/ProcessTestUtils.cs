@@ -14,6 +14,6 @@ internal static class ProcessTestUtils
         Mock<IProcess> processServiceMock = new Mock<IProcess>();
         var s = new FileStream(Path.Combine(TestDataPath, bpmnfile), FileMode.Open, FileAccess.Read);
         processServiceMock.Setup(p => p.GetProcessDefinition()).Returns(s);
-        return new ProcessReader(processServiceMock.Object);
+        return new ProcessReader(processServiceMock.Object, false);
     }
 }
