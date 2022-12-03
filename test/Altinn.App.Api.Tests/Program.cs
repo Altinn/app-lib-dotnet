@@ -1,4 +1,5 @@
-﻿using Altinn.App.Api.Extensions;
+﻿using System.IO;
+using Altinn.App.Api.Extensions;
 using Altinn.App.Api.Tests.Mocks;
 using Altinn.App.Api.Tests.Mocks.Authentication;
 using Altinn.App.Api.Tests.Mocks.Event;
@@ -38,6 +39,12 @@ void ConfigureMockServices(IServiceCollection services, ConfigurationManager con
 {
     PlatformSettings platformSettings = new PlatformSettings() { ApiAuthorizationEndpoint = "http://localhost:5101/authorization/api/v1/" };
     services.AddSingleton<IOptions<PlatformSettings>>(Options.Create(platformSettings));
+
+    AppSettings appSettings = new(){
+        AppBasePath = Path.Join(Directory.GetCurrentDirectory(),"../../..","Data/apps/ttd/eformidling-app"),
+    };
+    services.AddSingleton<IOptions<AppSettings>>(Options.Create(appSettings));
+
     services.AddTransient<IAuthorization, AuthorizationMock>();
     services.AddTransient<IInstance, InstanceMockSI>();
     services.AddSingleton<Altinn.Common.PEP.Interfaces.IPDP, PepWithPDPAuthorizationMockSI>();
