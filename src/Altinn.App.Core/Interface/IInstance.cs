@@ -93,6 +93,37 @@ namespace Altinn.App.Core.Interface
         Task<Instance> UpdateDataValues(int instanceOwnerPartyId, Guid instanceGuid, DataValues dataValues);
 
         /// <summary>
+        /// Update data data values.
+        /// </summary>
+        /// <remarks>
+        /// The provided data value will be added with the existing collection of data values on the instance.
+        /// </remarks>
+        /// <param name="instance">The instance</param>
+        /// <param name="dataValues">The data value (null unsets the value)</param>
+        /// <returns>Returns the updated instance.</returns>
+        async Task<Instance> UpdateDataValues(Instance instance, Dictionary<string, string?> dataValues)
+        {
+            var instanceOwnerPartyId = int.Parse(instance.Id.Split("/")[0]);
+            var instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
+            return await UpdateDataValues(instanceOwnerPartyId, instanceGuid, new DataValues{Values = dataValues});
+        }
+
+        /// <summary>
+        /// Update single data value.
+        /// </summary>
+        /// <remarks>
+        /// The provided data value will be added with the existing collection of data values on the instance.
+        /// </remarks>
+        /// <param name="instance">The instance</param>
+        /// <param name="key">The key of the DataValues collection to be updated.</param>
+        /// <param name="value">The data value (null unsets the value)</param>
+        /// <returns>Returns the updated instance.</returns>
+        async Task<Instance> UpdateDataValue(Instance instance, string key, string? value)
+        {
+            return await UpdateDataValues(instance, new Dictionary<string, string?>{{key, value}});
+        }
+
+        /// <summary>
         /// Delete instance.
         /// </summary>
         /// <param name="instanceOwnerPartyId">The party id of the instance owner.</param>
