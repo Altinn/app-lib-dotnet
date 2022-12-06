@@ -8,14 +8,14 @@ namespace Altinn.App.Core.Internal.AppFiles;
 /// </summary>
 public class AppFilesLoader
 {
-    private static EnumerationOptions _getFilesEnumerationOptions = new EnumerationOptions
+    private static readonly EnumerationOptions _getFilesEnumerationOptions = new EnumerationOptions
     {
         MatchCasing = MatchCasing.CaseInsensitive,
         RecurseSubdirectories = true,
         ReturnSpecialDirectories = false,
     };
 
-    private static EnumerationOptions _getNonRecursiveEnumerationOptions = new EnumerationOptions
+    private static readonly EnumerationOptions _getNonRecursiveEnumerationOptions = new EnumerationOptions
     {
         MatchCasing = MatchCasing.CaseInsensitive,
         ReturnSpecialDirectories = false,

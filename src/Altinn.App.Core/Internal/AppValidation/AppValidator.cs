@@ -122,17 +122,15 @@ public class AppValidator
 
         if (settings?.Pages?.Order?.Count > 0)
         {
-            foreach (var pageOrderName in settings.Pages.Order)
+            foreach (var pageOrderName in settings.Pages.Order.Where(pageOrderName => !files.Pages.ContainsKey(pageOrderName)))
             {
-                if (!files.Pages.ContainsKey(pageOrderName))
+                errors.Add(new AppValidationError
                 {
-                    errors.Add(new AppValidationError
-                    {
-                        Message = $"Page \"{pageOrderName}\" was specified in \"{Path.Join("app", "ui", set?.Id, "settings.json")}\", but it does not exist in \"{Path.Join("app", "ui", set?.Id, "layouts", pageOrderName + ".json")}\"",
-                    });
-                }
+                    Message = $"Page \"{pageOrderName}\" was specified in \"{Path.Join("app", "ui", set?.Id, "settings.json")}\", but it does not exist in \"{Path.Join("app", "ui", set?.Id, "layouts", pageOrderName + ".json")}\"",
+                });
             }
         }
+
         var model = new LayoutModel();
         foreach (var (pageName, pageBytes) in files.Pages)
         {

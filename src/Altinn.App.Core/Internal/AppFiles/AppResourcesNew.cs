@@ -19,8 +19,8 @@ namespace Altinn.App.Core.Internal.AppFiles;
 /// </summary>
 public class AppResourcesNew : IAppResources
 {
-    private static JsonSerializerOptions JSON_OPTIONS = new JsonSerializerOptions(JsonSerializerDefaults.Web);
-    private static JsonDocumentOptions JSON_DOCUMENT_OPTIONS = new JsonDocumentOptions { AllowTrailingCommas = true, CommentHandling = JsonCommentHandling.Skip };
+    private static readonly JsonSerializerOptions JSON_OPTIONS = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+    private static readonly JsonDocumentOptions JSON_DOCUMENT_OPTIONS = new JsonDocumentOptions { AllowTrailingCommas = true, CommentHandling = JsonCommentHandling.Skip };
 
     private readonly AppSettings _settings;
     private readonly ILogger _logger;
@@ -129,14 +129,11 @@ public class AppResourcesNew : IAppResources
     {
         Application applicationMetadata = GetApplication();
 
-        string dataTypeId = string.Empty;
-        foreach (DataType data in applicationMetadata.DataTypes)
-        {
-            if (data.AppLogic != null && !string.IsNullOrEmpty(data.AppLogic.ClassRef))
-            {
-                dataTypeId = data.Id;
-            }
-        }
+        string dataTypeId = applicationMetadata
+            .DataTypes
+            .FirstOrDefault(data=>data.AppLogic != null && !string.IsNullOrEmpty(data.AppLogic.ClassRef))
+            ?.Id
+            ?? string.Empty;
 
         return GetModelJsonSchema(dataTypeId);
     }
@@ -284,7 +281,6 @@ public class AppResourcesNew : IAppResources
     /// <inheritdoc />
     public LayoutModel GetLayoutModel(string? layoutSetId = null)
     {
-        string folder = Path.Join(_settings.AppBasePath, _settings.UiFolder, layoutSetId);
         var order = GetLayoutSettingsForSet(layoutSetId)?.Pages?.Order;
         if (order is null)
         {
