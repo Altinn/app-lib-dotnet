@@ -221,7 +221,7 @@ namespace Altinn.App.Core.Features.Validation
                 // Add the validation messages from System.ComponentModel.DataAnnotations and IInstanceValidator to the return list
                 if (!validationResults.IsValid)
                 {
-                    messages.AddRange(MapModelStateToIssueList(actionContext.ModelState, instance, dataElement.Id));
+                    messages.AddRange(MapModelStateToIssueList(actionContext.ModelState, instance, dataElement.Id, data));
                 }
 
             }
@@ -232,7 +232,8 @@ namespace Altinn.App.Core.Features.Validation
         private List<ValidationIssue> MapModelStateToIssueList(
             ModelStateDictionary modelState,
             Instance instance,
-            string dataElementId)
+            string dataElementId,
+            object data)
         {
             List<ValidationIssue> validationIssues = new List<ValidationIssue>();
 
@@ -250,7 +251,7 @@ namespace Altinn.App.Core.Features.Validation
                             InstanceId = instance.Id,
                             DataElementId = dataElementId,
                             Code = severityAndMessage.Message,
-                            Field = modelKey,
+                            Field = ModelKeyToField(modelKey, data)!,
                             Severity = severityAndMessage.Severity,
                             Description = severityAndMessage.Message
                         });
@@ -259,6 +260,38 @@ namespace Altinn.App.Core.Features.Validation
             }
 
             return validationIssues;
+        }
+
+        // Will be obsolete when updating to net70 or higher and activating https://learn.microsoft.com/en-us/aspnet/core/mvc/models/validation?view=aspnetcore-7.0#use-json-property-names-in-validation-errors
+        private static string? ModelKeyToField(string? modelKey, object data)
+        {
+            var keyParts = modelKey?.Split('.', 2);
+            var key = keyParts?.ElementAtOrDefault(0);
+            var rest = keyParts?.ElementAtOrDefault(1);
+
+            var property = data?.GetType()?.GetProperties()?.FirstOrDefault(p=>p.Name == key);
+            var jsonPropertyName = property
+                ?.GetCustomAttributes(true)
+                .OfType<System.Text.Json.Serialization.JsonPropertyNameAttribute>()
+                .FirstOrDefault()
+                ?.Name;
+            if(jsonPropertyName is null)
+            {
+                jsonPropertyName = key;
+            }
+
+            if(rest is null)
+            {
+                return jsonPropertyName;
+            }
+            var child = property?.GetValue(data);
+
+            if(child is null)
+            {
+                return $"{jsonPropertyName}.{rest}";
+            }
+            return $"{jsonPropertyName}.{ModelKeyToField(rest, child)}";
+
         }
 
         private List<ValidationIssue> MapModelStateToIssueList(ModelStateDictionary modelState, Instance instance)
