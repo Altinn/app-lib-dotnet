@@ -262,7 +262,12 @@ namespace Altinn.App.Core.Features.Validation
             return validationIssues;
         }
 
-        // Will be obsolete when updating to net70 or higher and activating https://learn.microsoft.com/en-us/aspnet/core/mvc/models/validation?view=aspnetcore-7.0#use-json-property-names-in-validation-errors
+        /// <summary>
+        /// Translate the ModelKey from validation to a field that respects [JsonPropertyName] annotations
+        /// </summary>
+        /// <remarks>
+        ///  Will be obsolete when updating to net70 or higher and activating https://learn.microsoft.com/en-us/aspnet/core/mvc/models/validation?view=aspnetcore-7.0#use-json-property-names-in-validation-errors
+        /// </remarks>
         public static string? ModelKeyToField(string? modelKey, Type data)
         {
             var keyParts = modelKey?.Split('.', 2);
@@ -307,7 +312,6 @@ namespace Altinn.App.Core.Features.Validation
                 return $"{jsonPropertyName}.{rest}";
             }
             return $"{jsonPropertyName}.{ModelKeyToField(rest, childType)}";
-
         }
 
         private List<ValidationIssue> MapModelStateToIssueList(ModelStateDictionary modelState, Instance instance)
