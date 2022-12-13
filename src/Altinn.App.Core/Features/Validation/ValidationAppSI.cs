@@ -221,7 +221,7 @@ namespace Altinn.App.Core.Features.Validation
                 // Add the validation messages from System.ComponentModel.DataAnnotations and IInstanceValidator to the return list
                 if (!validationResults.IsValid)
                 {
-                    messages.AddRange(MapModelStateToIssueList(actionContext.ModelState, instance, dataElement.Id, data));
+                    messages.AddRange(MapModelStateToIssueList(actionContext.ModelState, instance, dataElement.Id, data.GetType()));
                 }
 
             }
@@ -233,7 +233,7 @@ namespace Altinn.App.Core.Features.Validation
             ModelStateDictionary modelState,
             Instance instance,
             string dataElementId,
-            object data)
+            Type modelType)
         {
             List<ValidationIssue> validationIssues = new List<ValidationIssue>();
 
@@ -251,7 +251,7 @@ namespace Altinn.App.Core.Features.Validation
                             InstanceId = instance.Id,
                             DataElementId = dataElementId,
                             Code = severityAndMessage.Message,
-                            Field = ModelKeyToField(modelKey, data.GetType())!,
+                            Field = ModelKeyToField(modelKey, modelType)!,
                             Severity = severityAndMessage.Severity,
                             Description = severityAndMessage.Message
                         });
