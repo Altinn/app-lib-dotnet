@@ -251,7 +251,7 @@ namespace Altinn.App.Core.Features.Validation
                             InstanceId = instance.Id,
                             DataElementId = dataElementId,
                             Code = severityAndMessage.Message,
-                            Field = ModelKeyToField(modelKey, data)!,
+                            Field = ModelKeyToField(modelKey, data.GetType())!,
                             Severity = severityAndMessage.Severity,
                             Description = severityAndMessage.Message
                         });
@@ -263,13 +263,15 @@ namespace Altinn.App.Core.Features.Validation
         }
 
         // Will be obsolete when updating to net70 or higher and activating https://learn.microsoft.com/en-us/aspnet/core/mvc/models/validation?view=aspnetcore-7.0#use-json-property-names-in-validation-errors
-        private static string? ModelKeyToField(string? modelKey, object data)
+        public static string? ModelKeyToField(string? modelKey, Type data)
         {
             var keyParts = modelKey?.Split('.', 2);
-            var key = keyParts?.ElementAtOrDefault(0);
+            var keyWithIndex = keyParts?.ElementAtOrDefault(0)?.Split('[', 2);
+            var key = keyWithIndex?.ElementAtOrDefault(0);
+            var index = keyWithIndex?.ElementAtOrDefault(1); // with traling ']', eg: "3]"
             var rest = keyParts?.ElementAtOrDefault(1);
 
-            var property = data?.GetType()?.GetProperties()?.FirstOrDefault(p=>p.Name == key);
+            var property = data?.GetProperties()?.FirstOrDefault(p=>p.Name == key);
             var jsonPropertyName = property
                 ?.GetCustomAttributes(true)
                 .OfType<System.Text.Json.Serialization.JsonPropertyNameAttribute>()
@@ -280,17 +282,31 @@ namespace Altinn.App.Core.Features.Validation
                 jsonPropertyName = key;
             }
 
+            if(index is not null)
+            {
+                jsonPropertyName = jsonPropertyName + '[' + index;
+            }
+
             if(rest is null)
             {
                 return jsonPropertyName;
             }
-            var child = property?.GetValue(data);
+            var childType = property?.PropertyType;
 
-            if(child is null)
+            // Get the Parameter of IEnumerable properties, if they are not string
+            if (childType is not null && childType != typeof(string) && childType.IsAssignableTo(typeof(System.Collections.IEnumerable)))
             {
+                childType = childType.GetInterfaces()
+                .Where(t => t.IsGenericType && t.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+                .Select(t => t.GetGenericArguments()[0]).FirstOrDefault();
+            }
+
+            if(childType is null)
+            {
+                // Give up and return rest, if the child type is not found.
                 return $"{jsonPropertyName}.{rest}";
             }
-            return $"{jsonPropertyName}.{ModelKeyToField(rest, child)}";
+            return $"{jsonPropertyName}.{ModelKeyToField(rest, childType)}";
 
         }
 
