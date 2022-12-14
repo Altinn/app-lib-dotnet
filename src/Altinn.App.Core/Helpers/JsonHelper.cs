@@ -1,5 +1,8 @@
 #nullable enable
 
+using Altinn.App.Core.Features;
+using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 
 namespace Altinn.App.Core.Helpers
@@ -9,6 +12,38 @@ namespace Altinn.App.Core.Helpers
     /// </summary>
     public static class JsonHelper
     {
+        /// <summary>
+        /// Run DataProcessWrite returning the dictionary of the changed fields.
+        /// </summary>
+        public static async Task<Dictionary<string, object?>?> ProcessDataWriteWithDiff(Instance instance, Guid dataGuid, object serviceModel, IDataProcessor dataProcessor, ILogger logger)
+        {
+            string serviceModelJsonString = System.Text.Json.JsonSerializer.Serialize(serviceModel);
+
+            bool changedByCalculation = await dataProcessor.ProcessDataWrite(instance, dataGuid, serviceModel);
+
+            Dictionary<string, object?>? changedFields = null;
+            if (changedByCalculation)
+            {
+                string updatedServiceModelString = System.Text.Json.JsonSerializer.Serialize(serviceModel);
+                try
+                {
+                    changedFields = FindChangedFields(serviceModelJsonString, updatedServiceModelString);
+                }
+                catch (Exception e)
+                {
+                    logger.LogError(e, "Unable to determine changed fields");
+                }
+            }
+
+            // TODO: Consider not bothering frontend with an empty changes list
+            // if(changedFields?.Count == 0)
+            // {
+            //     return null;
+            // }
+
+            return changedFields;
+        }
+
         /// <summary>
         /// Find changed fields between old and new json objects
         /// </summary>
