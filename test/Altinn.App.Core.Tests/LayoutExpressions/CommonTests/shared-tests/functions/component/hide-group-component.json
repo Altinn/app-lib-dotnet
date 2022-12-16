@@ -1,12 +1,19 @@
 {
-  "name": "Lookup for component inside repeating group where another is hidden",
-  "expression": ["component", "alder"],
-  "expects": 24,
+  "name": "Lookup for hidden component inside repeating group",
+  "expression": ["component", "single-top-component"],
+  "expects": "singleTopValue",
   "layouts": {
     "Page1": {
       "$schema": "https://altinncdn.no/schemas/json/layout/layout.schema.v1.json",
       "data": {
         "layout": [
+          {
+            "id": "single-top-component",
+            "type": "Input",
+            "dataModelBindings": {
+              "simpleBinding": "Single.Top"
+            }
+          },
           {
             "id": "bedrifter",
             "type": "Group",
@@ -45,7 +52,11 @@
             "dataModelBindings": {
               "simpleBinding": "Bedrifter.Ansatte.Alder"
             },
-            "hidden": ["if", ["dataModel", "Bedrifter.Ansatte.AlderSkjult"], true]
+            "hidden": [
+              "if",
+              ["dataModel", "Bedrifter.Ansatte.AlderSkjult"],
+              true
+            ]
           },
           {
             "id": "myndig",
@@ -59,6 +70,9 @@
     }
   },
   "dataModel": {
+    "Single": {
+      "Top": "singleTopValue"
+    },
     "Bedrifter": [
       {
         "Navn": "Hell og lykke AS",
@@ -78,20 +92,20 @@
         "Ansatte": [
           {
             "Navn": "Arne",
-            "Alder": 24
+            "Alder": 24,
+            "AlderSkjult": true
           },
           {
             "Navn": "Vidar",
-            "Alder": 14,
-            "AlderSkjult": true
+            "Alder": 14
           }
         ]
       }
     ]
   },
   "context": {
-    "component": "myndig",
+    "component": "ansatte",
     "currentLayout": "Page1",
-    "rowIndices": [1, 0]
+    "rowIndices": [1,0]
   }
 }

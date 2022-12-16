@@ -54,7 +54,7 @@ public static class ExpressionEvaluator
         var args = expr.Args.Select(a => EvaluateExpression(state, a, context)).ToArray();
         var ret = expr.Function switch
         {
-            ExpressionFunction.dataModel => state.GetModelData(args.First()?.ToString()!, context),
+            ExpressionFunction.dataModel => state.GetModelData(args.First()?.ToString(), context),
             ExpressionFunction.component => Component(args, context, state),
             ExpressionFunction.instanceContext => state.GetInstanceContext(args.First()?.ToString()!),
             ExpressionFunction.@if => IfImpl(args),
@@ -76,14 +76,18 @@ public static class ExpressionEvaluator
 
     private static object? Component(object?[] args, ComponentContext context, LayoutEvaluatorState state)
     {
-        var componentId = args.First()?.ToString()!;
-
-        if (context.Component is GroupComponent)
+        var componentId = args.First()?.ToString();
+        if (componentId is null)
         {
-            throw new NotImplementedException("Component lookup for components in groups not implemented");
+            throw new ArgumentException("Cannot lookup component null");
         }
 
         var targetContext = state.GetComponentContext(context.Component.PageId, componentId, context.RowIndices);
+
+        if (targetContext.Component is GroupComponent)
+        {
+            throw new NotImplementedException("Component lookup for components in groups not implemented");
+        }
 
         if (!targetContext.Component.DataModelBindings.TryGetValue("simpleBinding", out var binding))
         {
@@ -218,7 +222,7 @@ public static class ExpressionEvaluator
     private static readonly Regex numberRegex = new Regex(@"^-?\d+(\.\d+)?$");
     private static double? parseNumber(string s, bool throwException = true)
     {
-        if (numberRegex.IsMatch(s) && double.TryParse(s, out var d))
+        if (numberRegex.IsMatch(s) && double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var d))
         {
             return d;
         }
