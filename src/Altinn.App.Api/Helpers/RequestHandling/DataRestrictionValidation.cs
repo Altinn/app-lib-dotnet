@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Linq;
 using System.Net;
@@ -11,16 +12,19 @@ using Microsoft.Extensions.Primitives;
 
 namespace Altinn.App.Api.Helpers.RequestHandling
 {
+    /// <summary>
+    /// Check datarestrictions on http requests
+    /// </summary>
     public static class DataRestrictionValidation
     {
         /// <summary>
-        /// 
+        /// Check if a data post/put request complies with restrictions agreed upon for the DataController 
         /// </summary>
-        /// <param name="request"></param>
-        /// <param name="dataType"></param>
-        /// <param name="errorResponse"></param>
-        /// <returns></returns>
-        public static bool CompliesWithDataRestrictions(HttpRequest request, DataType dataType, out ActionResult errorResponse)
+        /// <param name="request">the original http request</param>
+        /// <param name="dataType">datatype the files is beeing uploaded to</param>
+        /// <param name="errorResponse">Null if validation passed, error response if not</param>
+        /// <returns>true with errorResponse = null if all is ok, false with errorResponse if not</returns>
+        public static bool CompliesWithDataRestrictions(HttpRequest request, DataType dataType, out ActionResult? errorResponse)
         {
             var errorBaseMessage = "Invalid data provided. Error:";
             errorResponse = null;
