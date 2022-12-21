@@ -1,12 +1,9 @@
 using System.Collections.Generic;
-using System.Net;
-using System.Net.Mime;
 using Altinn.App.Api.Helpers.RequestHandling;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Net.Http.Headers;
 using Xunit;
 
 namespace Altinn.App.Api.Tests.Helpers.RequestHandling;
@@ -17,10 +14,11 @@ public class DataRestrictionValidationTests
     public void CompliesWithDataRestrictions_returns_false_with_badrequest_if_contentdisposition_not_set()
     {
         var httpContext = new DefaultHttpContext();
-        bool valid = DataRestrictionValidation.CompliesWithDataRestrictions(httpContext.Request, new DataType(), out ActionResult errorResponse);
+        bool valid = DataRestrictionValidation.CompliesWithDataRestrictions(httpContext.Request, new DataType(), out ActionResult? errorResponse);
         valid.Should().BeFalse();
+        errorResponse.Should().NotBeNull();
         errorResponse.Should().BeOfType(typeof(BadRequestObjectResult));
-        ((BadRequestObjectResult)errorResponse).Value.Should().BeEquivalentTo("Invalid data provided. Error: The request must include a Content-Disposition header");
+        ((BadRequestObjectResult)errorResponse!).Value.Should().BeEquivalentTo("Invalid data provided. Error: The request must include a Content-Disposition header");
     }
     
     [Fact]
@@ -33,10 +31,11 @@ public class DataRestrictionValidationTests
         {
             MaxSize = 1
         };
-        bool valid = DataRestrictionValidation.CompliesWithDataRestrictions(httpContext.Request, dataType, out ActionResult errorResponse);
+        bool valid = DataRestrictionValidation.CompliesWithDataRestrictions(httpContext.Request, dataType, out ActionResult? errorResponse);
         valid.Should().BeFalse();
+        errorResponse.Should().NotBeNull();
         errorResponse.Should().BeOfType(typeof(ObjectResult));
-        ((ObjectResult)errorResponse).StatusCode.Should().Be(413);
+        ((ObjectResult)errorResponse!).StatusCode.Should().Be(413);
         ((ObjectResult)errorResponse).Value.Should().BeEquivalentTo("Invalid data provided. Error: Binary attachment exceeds limit of 1048576");
     }
     
@@ -50,10 +49,11 @@ public class DataRestrictionValidationTests
         {
             MaxSize = 1
         };
-        bool valid = DataRestrictionValidation.CompliesWithDataRestrictions(httpContext.Request, dataType, out ActionResult errorResponse);
+        bool valid = DataRestrictionValidation.CompliesWithDataRestrictions(httpContext.Request, dataType, out ActionResult? errorResponse);
         valid.Should().BeFalse();
+        errorResponse.Should().NotBeNull();
         errorResponse.Should().BeOfType(typeof(BadRequestObjectResult));
-        ((BadRequestObjectResult)errorResponse).Value.Should().BeEquivalentTo("Invalid data provided. Error: The Content-Disposition header must contain a filename");
+        ((BadRequestObjectResult)errorResponse!).Value.Should().BeEquivalentTo("Invalid data provided. Error: The Content-Disposition header must contain a filename");
     }
     
     [Fact]
@@ -66,10 +66,11 @@ public class DataRestrictionValidationTests
         {
             MaxSize = 1
         };
-        bool valid = DataRestrictionValidation.CompliesWithDataRestrictions(httpContext.Request, dataType, out ActionResult errorResponse);
+        bool valid = DataRestrictionValidation.CompliesWithDataRestrictions(httpContext.Request, dataType, out ActionResult? errorResponse);
         valid.Should().BeFalse();
+        errorResponse.Should().NotBeNull();
         errorResponse.Should().BeOfType(typeof(BadRequestObjectResult));
-        ((BadRequestObjectResult)errorResponse).Value.Should().BeEquivalentTo("Invalid data provided. Error: Invalid format for filename: test. Filename is expected to end with '.{filetype}'.");
+        ((BadRequestObjectResult)errorResponse!).Value.Should().BeEquivalentTo("Invalid data provided. Error: Invalid format for filename: test. Filename is expected to end with '.{filetype}'.");
     }
     
     [Fact]
@@ -82,7 +83,7 @@ public class DataRestrictionValidationTests
         {
             MaxSize = 1
         };
-        bool valid = DataRestrictionValidation.CompliesWithDataRestrictions(httpContext.Request, dataType, out ActionResult errorResponse);
+        bool valid = DataRestrictionValidation.CompliesWithDataRestrictions(httpContext.Request, dataType, out ActionResult? errorResponse);
         valid.Should().BeTrue();
         errorResponse.Should().BeNull();
     }
@@ -98,7 +99,7 @@ public class DataRestrictionValidationTests
             MaxSize = 1,
             AllowedContentTypes = new List<string>()
         };
-        bool valid = DataRestrictionValidation.CompliesWithDataRestrictions(httpContext.Request, dataType, out ActionResult errorResponse);
+        bool valid = DataRestrictionValidation.CompliesWithDataRestrictions(httpContext.Request, dataType, out ActionResult? errorResponse);
         valid.Should().BeTrue();
         errorResponse.Should().BeNull();
     }
@@ -114,10 +115,11 @@ public class DataRestrictionValidationTests
             MaxSize = 1,
             AllowedContentTypes = new List<string>(){"application/pdf"}
         };
-        bool valid = DataRestrictionValidation.CompliesWithDataRestrictions(httpContext.Request, dataType, out ActionResult errorResponse);
+        bool valid = DataRestrictionValidation.CompliesWithDataRestrictions(httpContext.Request, dataType, out ActionResult? errorResponse);
         valid.Should().BeFalse();
+        errorResponse.Should().NotBeNull();
         errorResponse.Should().BeOfType(typeof(BadRequestObjectResult));
-        ((BadRequestObjectResult)errorResponse).Value.Should().BeEquivalentTo("Invalid data provided. Error: Content-Type header must be included in request.");
+        ((BadRequestObjectResult)errorResponse!).Value.Should().BeEquivalentTo("Invalid data provided. Error: Content-Type header must be included in request.");
     }
     
     [Fact]
@@ -132,10 +134,11 @@ public class DataRestrictionValidationTests
             MaxSize = 1,
             AllowedContentTypes = new List<string>(){"application/pdf"}
         };
-        bool valid = DataRestrictionValidation.CompliesWithDataRestrictions(httpContext.Request, dataType, out ActionResult errorResponse);
+        bool valid = DataRestrictionValidation.CompliesWithDataRestrictions(httpContext.Request, dataType, out ActionResult? errorResponse);
         valid.Should().BeFalse();
+        errorResponse.Should().NotBeNull();
         errorResponse.Should().BeOfType(typeof(BadRequestObjectResult));
-        ((BadRequestObjectResult)errorResponse).Value.Should().BeEquivalentTo("Invalid data provided. Error: Invalid content type: application/json. Please try another file. Permitted content types include: application/pdf");
+        ((BadRequestObjectResult)errorResponse!).Value.Should().BeEquivalentTo("Invalid data provided. Error: Invalid content type: application/json. Please try another file. Permitted content types include: application/pdf");
     }
     
     [Fact]
@@ -150,10 +153,11 @@ public class DataRestrictionValidationTests
             MaxSize = 1,
             AllowedContentTypes = new List<string>(){"application/pdf", "application/json"}
         };
-        bool valid = DataRestrictionValidation.CompliesWithDataRestrictions(httpContext.Request, dataType, out ActionResult errorResponse);
+        bool valid = DataRestrictionValidation.CompliesWithDataRestrictions(httpContext.Request, dataType, out ActionResult? errorResponse);
         valid.Should().BeFalse();
+        errorResponse.Should().NotBeNull();
         errorResponse.Should().BeOfType(typeof(BadRequestObjectResult));
-        ((BadRequestObjectResult)errorResponse).Value.Should().BeEquivalentTo("Invalid data provided. Error: Content type header application/pdf does not match mime type application/json for uploaded file. Please fix header or upload another file.");
+        ((BadRequestObjectResult)errorResponse!).Value.Should().BeEquivalentTo("Invalid data provided. Error: Content type header application/pdf does not match mime type application/json for uploaded file. Please fix header or upload another file.");
     }
     
     [Fact]
@@ -168,7 +172,7 @@ public class DataRestrictionValidationTests
             MaxSize = 1,
             AllowedContentTypes = new List<string>(){"application/pdf", "application/json"}
         };
-        bool valid = DataRestrictionValidation.CompliesWithDataRestrictions(httpContext.Request, dataType, out ActionResult errorResponse);
+        bool valid = DataRestrictionValidation.CompliesWithDataRestrictions(httpContext.Request, dataType, out ActionResult? errorResponse);
         valid.Should().BeTrue();
         errorResponse.Should().BeNull();
     }
@@ -185,7 +189,7 @@ public class DataRestrictionValidationTests
             MaxSize = 1,
             AllowedContentTypes = new List<string>(){"application/pdf", "application/octet-stream"}
         };
-        bool valid = DataRestrictionValidation.CompliesWithDataRestrictions(httpContext.Request, dataType, out ActionResult errorResponse);
+        bool valid = DataRestrictionValidation.CompliesWithDataRestrictions(httpContext.Request, dataType, out ActionResult? errorResponse);
         valid.Should().BeTrue();
         errorResponse.Should().BeNull();
     }
@@ -202,7 +206,7 @@ public class DataRestrictionValidationTests
             MaxSize = 1,
             AllowedContentTypes = new List<string>(){"application/pdf", "application/octet-stream"}
         };
-        bool valid = DataRestrictionValidation.CompliesWithDataRestrictions(httpContext.Request, dataType, out ActionResult errorResponse);
+        bool valid = DataRestrictionValidation.CompliesWithDataRestrictions(httpContext.Request, dataType, out ActionResult? errorResponse);
         valid.Should().BeTrue();
         errorResponse.Should().BeNull();
     }

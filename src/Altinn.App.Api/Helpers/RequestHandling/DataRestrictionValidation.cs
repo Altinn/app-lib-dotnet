@@ -45,7 +45,7 @@ namespace Altinn.App.Api.Helpers.RequestHandling
             }
 
             ContentDispositionHeaderValue contentDisposition = ContentDispositionHeaderValue.Parse(headerValues);
-            string filename = contentDisposition.FileNameStar ?? contentDisposition.FileName;
+            string? filename = contentDisposition.FileNameStar ?? contentDisposition.FileName;
 
             if (string.IsNullOrEmpty(filename))
             {
