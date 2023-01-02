@@ -1,3 +1,4 @@
+using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Primitives;
 
@@ -103,9 +104,8 @@ namespace Altinn.App.Core.Interface
         /// <returns>Returns the updated instance.</returns>
         async Task<Instance> UpdateDataValues(Instance instance, Dictionary<string, string?> dataValues)
         {
-            var instanceOwnerPartyId = int.Parse(instance.Id.Split("/")[0]);
-            var instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
-            return await UpdateDataValues(instanceOwnerPartyId, instanceGuid, new DataValues{Values = dataValues});
+            var id = new InstanceIdentifier(instance);
+            return await UpdateDataValues(id.InstanceOwnerPartyId, id.InstanceGuid, new DataValues{Values = dataValues});
         }
 
         /// <summary>
