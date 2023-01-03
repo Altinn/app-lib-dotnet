@@ -175,10 +175,10 @@ public class LayoutEvaluatorState
             "instanceId" => _instanceContext.Id,
             "instanceOwnerPartyType" => 
             (
-                !string.IsNullOrWhiteSpace(_instanceContext.InstanceOwner.PersonNumber)
-                ? "person"
-                : !string.IsNullOrWhiteSpace(_instanceContext.InstanceOwner.OrganisationNumber)
+                !string.IsNullOrWhiteSpace(_instanceContext.InstanceOwner.OrganisationNumber)
                 ? "org"
+                : !string.IsNullOrWhiteSpace(_instanceContext.InstanceOwner.PersonNumber)
+                ? "person"
                 : !string.IsNullOrWhiteSpace(_instanceContext.InstanceOwner.Username)
                 ? "selfIdentified"
                 : "unknown"
