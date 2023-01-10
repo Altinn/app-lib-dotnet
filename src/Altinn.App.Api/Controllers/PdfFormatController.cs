@@ -30,7 +30,7 @@ namespace Altinn.App.Api.Controllers
         private readonly ILogger _logger;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="PagesController"/> class.
+        /// Initializes a new instance of the <see cref="PdfFormatController"/> class.
         /// </summary>
         /// <param name="instanceClient">The instance client</param>
         /// <param name="logger">A logger provided by the logging framework.</param>
@@ -44,7 +44,7 @@ namespace Altinn.App.Api.Controllers
             IAppResources resources,
             IAppModel appModel,
             IData dataClient,
-            ILogger<PagesController> logger)
+            ILogger<PdfFormatController> logger)
         {
             _instanceClient = instanceClient;
             _pdfFormatter = pdfFormatter;
@@ -69,19 +69,19 @@ namespace Altinn.App.Api.Controllers
             Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
             if (instance == null)
             {
-                return NotFound("No current instance");
+                return NotFound("Did not find instance");
             }
 
             string taskId = instance.Process?.CurrentTask?.ElementId;
             if (taskId == null)
             {
-                return BadRequest("No current task");
+                return Conflict("Instance does not have a valid currentTask");
             }
 
             DataElement dataElement = instance.Data.FirstOrDefault(d => d.Id == dataGuid.ToString());
             if (dataElement == null)
             {
-                return BadRequest("Invalid data-id");
+                return NotFound("Did not find data element");
             }
 
             string appModelclassRef = _resources.GetClassRefForLogicDataType(dataElement.DataType);
@@ -114,13 +114,13 @@ namespace Altinn.App.Api.Controllers
 
             object data = await _dataClient.GetFormData(instanceGuid, dataType, org, app, instanceOwnerPartyId, new Guid(dataElement.Id));
 
-            LayoutSettings formattedLayoutSettings = await _pdfFormatter.FormatPdf(layoutSettings, data);
+            layoutSettings = await _pdfFormatter.FormatPdf(layoutSettings, data);
 
             var result = new
             {
-                ExcludedPages = formattedLayoutSettings.Pages.ExcludeFromPdf,
-                ExcludedComponents = formattedLayoutSettings.Components.ExcludeFromPdf,
-                PageOrder = formattedLayoutSettings.Pages.Order,
+                ExcludedPages = layoutSettings.Pages.ExcludeFromPdf,
+                ExcludedComponents = layoutSettings.Components.ExcludeFromPdf,
+                PageOrder = layoutSettings.Pages.Order,
             };
             return Ok(result);
         }
