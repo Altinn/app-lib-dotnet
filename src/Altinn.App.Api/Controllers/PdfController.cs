@@ -81,12 +81,14 @@ namespace Altinn.App.Api.Controllers
             string appModelclassRef = _resources.GetClassRefForLogicDataType(dataElement.DataType);
             Type dataType = _appModel.GetModelType(appModelclassRef);
 
+            JsonSerializerOptions options = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
             string layoutSetsString = _resources.GetLayoutSets();
             LayoutSets layoutSets = null;
             LayoutSet layoutSet = null;
             if (!string.IsNullOrEmpty(layoutSetsString))
             {
-                layoutSets = JsonSerializer.Deserialize<LayoutSets>(layoutSetsString)!;
+                layoutSets = JsonSerializer.Deserialize<LayoutSets>(layoutSetsString, options);
                 layoutSet = layoutSets.Sets?.FirstOrDefault(t => t.DataType.Equals(dataElement.DataType) && t.Tasks.Contains(taskId));
             }
 
@@ -95,7 +97,7 @@ namespace Altinn.App.Api.Controllers
             LayoutSettings layoutSettings = null;
             if (!string.IsNullOrEmpty(layoutSettingsFileContent))
             {
-                layoutSettings = JsonSerializer.Deserialize<LayoutSettings>(layoutSettingsFileContent);
+                layoutSettings = JsonSerializer.Deserialize<LayoutSettings>(layoutSettingsFileContent, options);
             }
 
             // Ensure layoutsettings are initialized in FormatPdf
