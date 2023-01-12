@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Interface;
@@ -8,19 +9,16 @@ using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-
-using Newtonsoft.Json;
 
 namespace Altinn.App.Api.Controllers
 {
     /// <summary>
-    /// Handles pdf formatting
+    /// Handles PDF related operations
     /// </summary>
     [Authorize]
     [ApiController]
-    [Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/data/{dataGuid:guid}/pdfformat")]
-    public class PdfFormatController : ControllerBase
+    [Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/data/{dataGuid:guid}/pdf")]
+    public class PdfController : ControllerBase
     {
         private readonly IInstance _instanceClient;
         private readonly IPdfFormatter _pdfFormatter;
@@ -29,14 +27,14 @@ namespace Altinn.App.Api.Controllers
         private readonly IData _dataClient;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="PdfFormatController"/> class.
+        /// Initializes a new instance of the <see cref="PdfController"/> class.
         /// </summary>
         /// <param name="instanceClient">The instance client</param>
         /// <param name="pdfFormatter">The pdf formatter service</param>
         /// <param name="resources">The app resource service</param>
         /// <param name="appModel">The app model service</param>
         /// <param name="dataClient">The data client</param>
-        public PdfFormatController(
+        public PdfController(
             IInstance instanceClient,
             IPdfFormatter pdfFormatter,
             IAppResources resources,
@@ -54,7 +52,7 @@ namespace Altinn.App.Api.Controllers
         /// Get the pdf formatting
         /// </summary>
         /// <returns>The lists of pages/components to exclude from PDF</returns>
-        [HttpGet()]
+        [HttpGet("format")]
         public async Task<ActionResult> GetPdfFormat(
             [FromRoute] string org,
             [FromRoute] string app,
@@ -88,7 +86,7 @@ namespace Altinn.App.Api.Controllers
             LayoutSet layoutSet = null;
             if (!string.IsNullOrEmpty(layoutSetsString))
             {
-                layoutSets = JsonConvert.DeserializeObject<LayoutSets>(layoutSetsString)!;
+                layoutSets = JsonSerializer.Deserialize<LayoutSets>(layoutSetsString)!;
                 layoutSet = layoutSets.Sets?.FirstOrDefault(t => t.DataType.Equals(dataElement.DataType) && t.Tasks.Contains(taskId));
             }
 
@@ -97,7 +95,7 @@ namespace Altinn.App.Api.Controllers
             LayoutSettings layoutSettings = null;
             if (!string.IsNullOrEmpty(layoutSettingsFileContent))
             {
-                layoutSettings = JsonConvert.DeserializeObject<LayoutSettings>(layoutSettingsFileContent);
+                layoutSettings = JsonSerializer.Deserialize<LayoutSettings>(layoutSettingsFileContent);
             }
 
             // Ensure layoutsettings are initialized in FormatPdf
