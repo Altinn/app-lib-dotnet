@@ -27,13 +27,11 @@ namespace Altinn.App.Api.Controllers
         private readonly IAppResources _resources;
         private readonly IAppModel _appModel;
         private readonly IData _dataClient;
-        private readonly ILogger _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PdfFormatController"/> class.
         /// </summary>
         /// <param name="instanceClient">The instance client</param>
-        /// <param name="logger">A logger provided by the logging framework.</param>
         /// <param name="pdfFormatter">The pdf formatter service</param>
         /// <param name="resources">The app resource service</param>
         /// <param name="appModel">The app model service</param>
@@ -43,15 +41,13 @@ namespace Altinn.App.Api.Controllers
             IPdfFormatter pdfFormatter,
             IAppResources resources,
             IAppModel appModel,
-            IData dataClient,
-            ILogger<PdfFormatController> logger)
+            IData dataClient)
         {
             _instanceClient = instanceClient;
             _pdfFormatter = pdfFormatter;
             _resources = resources;
             _appModel = appModel;
             _dataClient = dataClient;
-            _logger = logger;
         }
 
         /// <summary>
