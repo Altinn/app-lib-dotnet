@@ -48,9 +48,12 @@ namespace Altinn.App.Api.Models
         /// </summary>        
         public void AddFileScanResult(DataElementFileScanResult dataElementFileScanResult)
         {
-            _dataElements.Add(dataElementFileScanResult);
+            if (dataElementFileScanResult.FileScanResult != FileScanResult.NotApplicable)
+            {
+                _dataElements.Add(dataElementFileScanResult);
 
-            RecalculateAggregatedStatus();
+                RecalculateAggregatedStatus();
+            }            
         }
 
         private void RecalculateAggregatedStatus()

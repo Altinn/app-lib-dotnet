@@ -10,11 +10,19 @@ namespace Altinn.App.Api.Tests.Models
     public class InstanceFileScanResultTests
     {
         //TODO: Add test for empty list and NotApplicable status
+        [Fact]
+        public void ZeroDataElement_AggregatedStatusShouldBeNotApplicable()
+        {
+            var instanceFileScanResult = new InstanceFileScanResult(new InstanceIdentifier(12345, Guid.NewGuid()));
+
+            instanceFileScanResult.FileScanResult.Should().Be(FileScanResult.NotApplicable);
+        }
 
         [Theory]
         [InlineData(FileScanResult.Pending)]
         [InlineData(FileScanResult.Infected)]
         [InlineData(FileScanResult.Clean)]
+        [InlineData(FileScanResult.NotApplicable)]
         public void OneDataElement_AggregatedStatusShouldBeSame(FileScanResult fileScanResult)
         {
             var instanceFileScanResult = new InstanceFileScanResult(new InstanceIdentifier(12345, Guid.NewGuid()));
@@ -28,6 +36,7 @@ namespace Altinn.App.Api.Tests.Models
         [InlineData(FileScanResult.Pending)]
         [InlineData(FileScanResult.Infected)]
         [InlineData(FileScanResult.Clean)]
+        [InlineData(FileScanResult.NotApplicable)]
         public void AtLeastOneDataElementInfected_AggregatedStatusShouldBeInfected(FileScanResult fileScanResult)
         {
             var instanceFileScanResult = new InstanceFileScanResult(new InstanceIdentifier(12345, Guid.NewGuid()));
@@ -79,6 +88,7 @@ namespace Altinn.App.Api.Tests.Models
             instanceFileScanResult.AddFileScanResult(new DataElementFileScanResult() { Id = Guid.NewGuid().ToString(), FileScanResult = FileScanResult.Infected });
             instanceFileScanResult.AddFileScanResult(new DataElementFileScanResult() { Id = Guid.NewGuid().ToString(), FileScanResult = FileScanResult.Pending });
             instanceFileScanResult.AddFileScanResult(new DataElementFileScanResult() { Id = Guid.NewGuid().ToString(), FileScanResult = FileScanResult.Clean });
+            instanceFileScanResult.AddFileScanResult(new DataElementFileScanResult() { Id = Guid.NewGuid().ToString(), FileScanResult = FileScanResult.NotApplicable });
 
             instanceFileScanResult.FileScanResult.Should().Be(FileScanResult.Infected);
         }
