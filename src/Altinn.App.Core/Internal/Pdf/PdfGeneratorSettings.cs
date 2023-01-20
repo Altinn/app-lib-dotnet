@@ -1,6 +1,4 @@
-﻿#nullable enable
-
-namespace Altinn.App.Core.Internal.Pdf;
+﻿namespace Altinn.App.Core.Internal.Pdf;
 
 /// <summary>
 /// Represents a set of settings and options used by the PDF generator client.

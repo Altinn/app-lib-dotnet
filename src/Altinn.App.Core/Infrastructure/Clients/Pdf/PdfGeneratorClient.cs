@@ -1,17 +1,12 @@
-﻿#nullable enable
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
 
 using Altinn.App.Core.Internal.Pdf;
 
 using Altinn.App.Core.Interface;
-using Altinn.App.Core.Internal.Pdf;
-using Altinn.App.Core.Models;
 
 using Microsoft.Extensions.Options;
-
-using System.Text;
-using System.Text.Json;
+using Altinn.App.Core.Models.Pdf;
 
 namespace Altinn.App.Core.Infrastructure.Clients.Pdf;
 
