@@ -46,9 +46,9 @@ namespace Altinn.App.Api.Tests.Controllers
 
         private static Mock<IInstance> CreateInstanceClientMock(string org, string app, int instanceOwnerPartyId, Guid instanceId)
         {
-            Instance instance = new Instance
+            var instance = new Instance
             {
-                Id = instanceOwnerPartyId.ToString() + "/" + instanceId.ToString(),
+                Id = instanceOwnerPartyId.ToString() + "/" + instanceId,
                 Process = null,
                 Data = new List<DataElement>()
                 {
@@ -59,7 +59,7 @@ namespace Altinn.App.Api.Tests.Controllers
             var instanceClientMock = new Mock<IInstance>();
             instanceClientMock
                 .Setup(e => e.GetInstance(app, org, instanceOwnerPartyId, instanceId))
-                .Returns(Task.FromResult<Instance>(instance));
+                .Returns(Task.FromResult(instance));
 
             return instanceClientMock;
         }
