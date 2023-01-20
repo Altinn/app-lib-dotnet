@@ -35,6 +35,7 @@ namespace Altinn.App.Api.Models
         /// Pending = If all or some are Pending and the rest are Clean
         /// </summary>
         [JsonPropertyName("fileScanResult")]
+        [JsonConverter(typeof(JsonStringEnumConverter))]
         public FileScanResult FileScanResult { get; private set; }
 
         /// <summary>

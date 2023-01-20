@@ -18,6 +18,7 @@ namespace Altinn.App.Api.Models
         /// Gets or sets the file scan result for the data element.        
         /// </summary>
         [JsonPropertyName("fileScanResult")]
+        [JsonConverter(typeof(JsonStringEnumConverter))]
         public FileScanResult FileScanResult { get; set; }
     }
 }
