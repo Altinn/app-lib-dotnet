@@ -48,7 +48,7 @@ namespace Altinn.App.Api.Tests.Controllers
         {
             var instance = new Instance
             {
-                Id = instanceOwnerPartyId.ToString() + "/" + instanceId,
+                Id = $"{instanceOwnerPartyId}/{instanceId}",
                 Process = null,
                 Data = new List<DataElement>()
                 {
