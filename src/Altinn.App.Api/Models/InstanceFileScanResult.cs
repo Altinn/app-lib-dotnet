@@ -63,14 +63,16 @@ namespace Altinn.App.Api.Models
 
         private void RecalculateAggregatedStatus()
         {
-            if (_dataElements.TrueForAll(dataElement => dataElement.FileScanResult == FileScanResult.Clean))
-            {
-                FileScanResult = FileScanResult.Clean;
-            }
-            else if (_dataElements.Any(dataElement => dataElement.FileScanResult == FileScanResult.Infected))
+            FileScanResult = FileScanResult.Clean;
+
+            if (_dataElements.Any(dataElement => dataElement.FileScanResult == FileScanResult.Infected))
             {
                 FileScanResult = FileScanResult.Infected;
             }
+
+            // This implicitly states that there are no infected files and that they
+            // either have to be clean or pending - so any pending would result in Pending status
+            // and if there are no Pending and no Infected they are all Clean.
             else if (_dataElements.Any(dataElement => dataElement.FileScanResult == FileScanResult.Pending))
             {
                 FileScanResult = FileScanResult.Pending;
