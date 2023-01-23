@@ -191,13 +191,28 @@ namespace Altinn.App.Core.Features.Validation
                 {
                     InstanceId = instance.Id,
                     DataElementId = dataElement.Id,
-                    Code = ValidationIssueCodes.DataElementCodes.DataElementFileScanPending,
+                    Code = ValidationIssueCodes.DataElementCodes.DataElementFileInfected,
                     Severity = ValidationIssueSeverity.Error,
-                    Description = ValidationIssueCodes.DataElementCodes.DataElementFileScanPending,
+                    Description = ValidationIssueCodes.DataElementCodes.DataElementFileInfected,
                     Field = dataType.Id
                 };
                 messages.Add(message);
             }
+
+            //TODO: Awaits new property on pending file scans
+            //if (dataType.EnableFileScan && dataElement.ValidationErrorOnPendingFileScan && dataElement.FileScanResult == FileScanResult.Pending)
+            //{
+            //    ValidationIssue message = new ValidationIssue()
+            //    {
+            //        InstanceId = instance.Id,
+            //        DataElementId = dataElement.Id,
+            //        Code = ValidationIssueCodes.DataElementCodes.DataElementFileScanPending,
+            //        Severity = ValidationIssueSeverity.Error,
+            //        Description = ValidationIssueCodes.DataElementCodes.DataElementFileScanPending,
+            //        Field = dataType.Id
+            //    };
+            //    messages.Add(message);
+            //}
 
             if (dataType.AppLogic?.ClassRef != null)
             {

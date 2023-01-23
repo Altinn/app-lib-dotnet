@@ -11,6 +11,7 @@ namespace Altinn.App.Api.Models
     /// </summary>
     public class InstanceFileScanResult
     {
+        private readonly InstanceIdentifier _instanceIdentifier;
         private readonly List<DataElementFileScanResult> _dataElements;
 
         /// <summary>
@@ -18,7 +19,7 @@ namespace Altinn.App.Api.Models
         /// </summary>
         public InstanceFileScanResult(InstanceIdentifier instanceIdentifier)
         {
-            Id = instanceIdentifier;
+            _instanceIdentifier = instanceIdentifier;
             _dataElements = new List<DataElementFileScanResult>();
         }
 
@@ -26,7 +27,10 @@ namespace Altinn.App.Api.Models
         /// Instance id
         /// </summary>
         [JsonPropertyName("id")]
-        public InstanceIdentifier Id { get; set; }
+        public string Id
+        {
+            get { return _instanceIdentifier.ToString(); }
+        }
 
         /// <summary>
         /// Contains the aggregated file scan result for an instance.
