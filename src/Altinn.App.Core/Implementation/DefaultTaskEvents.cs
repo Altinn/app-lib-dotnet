@@ -150,9 +150,7 @@ public class DefaultTaskEvents : ITaskEvents
 
                 if (generatePdf)
                 {
-                    Type dataElementType = _appModel.GetModelType(dataType.AppLogic.ClassRef);
-                    Task createPdf =
-                        _pdfService.GenerateAndStoreReceiptPDF(instance, endEvent, dataElement, dataElementType);
+                    Task createPdf = _pdfService.GenerateAndStorePdf(instance, CancellationToken.None);
                     await Task.WhenAll(updateData, createPdf);
                 }
                 else
