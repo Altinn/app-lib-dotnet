@@ -19,20 +19,19 @@ namespace Altinn.App.PlatformServices.Tests.Internal.Pdf
     {
         private const string HostName = "at22.altinn.cloud";
 
-        private readonly Mock<IPDF> _pdf = new();
         private readonly Mock<IAppResources> _appResources = new();
-        private readonly Mock<IPdfOptionsMapping> _pdfOptionsMapping = new();
         private readonly Mock<IData> _dataClient = new();
         private readonly Mock<IHttpContextAccessor> _httpContextAccessor = new();
         private readonly Mock<IPdfGeneratorClient> _pdfGeneratorClient = new();
         private readonly Mock<IProfile> _profile = new();
-        private readonly Mock<IRegister> _register = new();
-        private readonly Mock<IPdfFormatter> pdfFormatter = new();
         private readonly Mock<IOptions<PdfGeneratorSettings>> _pdfGeneratorSettingsOptions;
         private readonly Mock<IOptions<GeneralSettings>> _generalSettingsOptions;
 
         public PdfServiceTests()
         {
+            var resource = Task.FromResult(new TextResource() { Id = "digdir-not-really-an-app-nb", Language = "nb", Org = "digdir", Resources = new List<TextResourceElement>() });
+            _appResources.Setup(s => s.GetTexts(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Returns(resource);
+
             DefaultHttpContext httpContext = new();
             httpContext.Request.Protocol = "https";
             httpContext.Request.Host = new(HostName);
@@ -54,14 +53,10 @@ namespace Altinn.App.PlatformServices.Tests.Internal.Pdf
             _pdfGeneratorClient.Setup(s => s.GeneratePdf(It.IsAny<Uri>(), It.IsAny<CancellationToken>()));
 
             var target = new PdfService(
-                _pdf.Object,
                 _appResources.Object,
-                _pdfOptionsMapping.Object,
                 _dataClient.Object,
                 _httpContextAccessor.Object,
                 _profile.Object,
-                _register.Object,
-                pdfFormatter.Object,
                 _pdfGeneratorClient.Object,
                 _pdfGeneratorSettingsOptions.Object,
                 _generalSettingsOptions.Object);
@@ -92,7 +87,7 @@ namespace Altinn.App.PlatformServices.Tests.Internal.Pdf
                     It.Is<string>(s => s == instance.Id),
                     It.Is<string>(s => s == "ref-data-as-pdf"),
                     It.Is<string>(s => s == "application/pdf"),
-                    It.Is<string>(s => s == "experimental.pdf"),
+                    It.Is<string>(s => s == "not-really-an-app.pdf"),
                     It.IsAny<Stream>()),
                 Times.Once);
         }
