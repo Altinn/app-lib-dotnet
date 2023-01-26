@@ -72,7 +72,7 @@ public class DefaultTaskEvents : ITaskEvents
     /// <inheritdoc />
     public async Task OnStartProcessTask(string taskId, Instance instance, Dictionary<string, string> prefill)
     {
-        _logger.LogInformation($"OnStartProcessTask for {instance.Id}");
+        _logger.LogDebug("OnStartProcessTask for {instanceId}", instance.Id);
 
         foreach (var taskStart in _taskStarts)
         {
@@ -87,7 +87,7 @@ public class DefaultTaskEvents : ITaskEvents
             if (dataElement != null && dataElement.Locked)
             {
                 dataElement.Locked = false;
-                _logger.LogInformation($"Unlocking data element {dataElement.Id} of dataType {dataType.Id}.");
+                _logger.LogDebug("Unlocking data element {dataElementId} of dataType {dataTypeId}.", dataElement.Id, dataType.Id);
                 await _dataClient.Update(instance, dataElement);
             }
         }
@@ -95,7 +95,7 @@ public class DefaultTaskEvents : ITaskEvents
         foreach (DataType dataType in _appMetadata.DataTypes.Where(dt =>
                      dt.TaskId == taskId && dt.AppLogic?.AutoCreate == true))
         {
-            _logger.LogInformation($"Auto create data element: {dataType.Id}");
+            _logger.LogDebug("Auto create data element: {dataTypeId}", dataType.Id);
 
             DataElement? dataElement = instance.Data.Find(d => d.DataType == dataType.Id);
 
@@ -116,7 +116,7 @@ public class DefaultTaskEvents : ITaskEvents
                 await UpdatePresentationTextsOnInstance(instance, dataType.Id, data);
                 await UpdateDataValuesOnInstance(instance, dataType.Id, data);
 
-                _logger.LogInformation($"Created data element: {createdDataElement.Id}");
+                _logger.LogDebug("Created data element: {createdDataElementId}", createdDataElement.Id);
             }
         }
     }
@@ -136,7 +136,7 @@ public class DefaultTaskEvents : ITaskEvents
             await taskEnd.End(endEvent, instance);
         }
 
-        _logger.LogInformation($"OnEndProcessTask for {instance.Id}. Locking data elements connected to {endEvent} ===========");
+        _logger.LogDebug("OnEndProcessTask for {instanceId}. Locking data elements connected to {endEvent}", instance.Id, endEvent);
 
         foreach (DataType dataType in dataTypesToLock)
         {
@@ -145,7 +145,7 @@ public class DefaultTaskEvents : ITaskEvents
             foreach (DataElement dataElement in instance.Data.FindAll(de => de.DataType == dataType.Id))
             {
                 dataElement.Locked = true;
-                _logger.LogInformation($"Locking data element {dataElement.Id} of dataType {dataType.Id}.");
+                _logger.LogDebug("Locking data element {dataElementId} of dataType {dataTypeId}.", dataElement.Id, dataType.Id);
                 Task updateData = _dataClient.Update(instance, dataElement);
 
                 if (generatePdf)
@@ -206,8 +206,7 @@ public class DefaultTaskEvents : ITaskEvents
             await taskAbandon.Abandon(taskId, instance);
         }
 
-        _logger.LogInformation(
-            $"OnAbandonProcessTask for {instance.Id}. Locking data elements connected to {taskId}");
+        _logger.LogDebug("OnAbandonProcessTask for {instanceId}. Locking data elements connected to {taskId}", instance.Id, taskId);
         await Task.CompletedTask;
     }
 
