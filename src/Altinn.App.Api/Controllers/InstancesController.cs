@@ -692,25 +692,31 @@ namespace Altinn.App.Api.Controllers
                 return Ok(new List<SimpleInstance>());
             }
 
-            List<string> userAndOrgIds = activeInstances.Where(i => !string.IsNullOrWhiteSpace(i.LastChangedBy)).Select(i => i.LastChangedBy).Distinct().ToList();
+            var lastChangedByValues = activeInstances.Select(i => i.LastChangedBy).Distinct();
 
             Dictionary<string, string> userAndOrgLookup = new Dictionary<string, string>();
 
-            foreach (string userOrOrgId in userAndOrgIds)
+            foreach (string lastChangedBy in lastChangedByValues)
             {
-                if (userOrOrgId.Length == 9)
+                if (lastChangedBy?.Length == 9)
                 {
-                    Organization organization = await _registerClient.ER.GetOrganization(userOrOrgId);
-                    userAndOrgLookup.Add(userOrOrgId, organization.Name);
+                    Organization organization = await _registerClient.ER.GetOrganization(lastChangedBy);
+                    if(organization is not null && !string.IsNullOrEmpty(organization.Name))
+                    {
+                        userAndOrgLookup.Add(lastChangedBy, organization.Name);
+                    }
                 }
-                else
+                else if (int.TryParse(lastChangedBy, out int lastChangedByInt))
                 {
-                    UserProfile user = await _profileClientClient.GetUserProfile(int.Parse(userOrOrgId));
-                    userAndOrgLookup.Add(userOrOrgId, user.Party.Name);
+                    UserProfile user = await _profileClientClient.GetUserProfile(lastChangedByInt);
+                    if(user is not null && user.Party is not null && !string.IsNullOrEmpty(user.Party.Name))
+                    {
+                        userAndOrgLookup.Add(lastChangedBy, user.Party.Name);
+                    }
                 }
             }
 
-            return SimpleInstanceMapper.MapInstanceListToSimpleInstanceList(activeInstances, userAndOrgLookup);
+            return Ok(SimpleInstanceMapper.MapInstanceListToSimpleInstanceList(activeInstances, userAndOrgLookup));
         }
 
         private ActionResult ExceptionResponse(Exception exception, string message)
