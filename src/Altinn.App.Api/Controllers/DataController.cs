@@ -3,16 +3,15 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Altinn.App.Api.Helpers.RequestHandling;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
-using Altinn.App.Core.Helpers.Extensions;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.AppModel;
@@ -22,7 +21,6 @@ using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Primitives;
 
 namespace Altinn.App.Api.Controllers
 {
@@ -144,9 +142,9 @@ namespace Altinn.App.Api.Controllers
                 }
                 else
                 {
-                    if (!CompliesWithDataRestrictions(dataTypeFromMetadata, out string errorMessage))
+                    if (!DataRestrictionValidation.CompliesWithDataRestrictions(Request, dataTypeFromMetadata, out ActionResult errorResponse))
                     {
-                        return BadRequest($"Invalid data provided. Error: {errorMessage}");
+                        return errorResponse;
                     }
 
                     return await CreateBinaryData(org, app, instance, dataType);
@@ -267,9 +265,9 @@ namespace Altinn.App.Api.Controllers
                 }
 
                 DataType dataTypeFromMetadata = _appResourcesService.GetApplication().DataTypes.FirstOrDefault(e => e.Id.Equals(dataType, StringComparison.InvariantCultureIgnoreCase));
-                if (!CompliesWithDataRestrictions(dataTypeFromMetadata, out string errorMessage))
+                if (!DataRestrictionValidation.CompliesWithDataRestrictions(Request, dataTypeFromMetadata, out ActionResult errorResponse))
                 {
-                    return BadRequest($"Invalid data provided. Error: {errorMessage}");
+                    return errorResponse;
                 }
 
                 return await PutBinaryData(org, app, instanceOwnerPartyId, instanceGuid, dataGuid);
@@ -550,8 +548,7 @@ namespace Altinn.App.Api.Controllers
                 return BadRequest("No data found in content");
             }
 
-            string serviceModelJsonString = JsonSerializer.Serialize(serviceModel);
-            bool changedByCalculation = await _dataProcessor.ProcessDataWrite(instance, dataGuid, serviceModel);
+            Dictionary<string, object> changedFields = await JsonHelper.ProcessDataWriteWithDiff(instance, dataGuid, serviceModel, _dataProcessor, _logger);
 
             await UpdatePresentationTextsOnInstance(instance, dataType, serviceModel);
             await UpdateDataValuesOnInstance(instance, dataType, serviceModel);
@@ -569,21 +566,10 @@ namespace Altinn.App.Api.Controllers
             SelfLinkHelper.SetDataAppSelfLinks(instanceOwnerPartyId, instanceGuid, updatedDataElement, Request);
 
             string dataUrl = updatedDataElement.SelfLinks.Apps;
-
-            if (changedByCalculation)
+            if (changedFields is not null)
             {
-                string updatedServiceModelString = JsonSerializer.Serialize(serviceModel);
                 CalculationResult calculationResult = new CalculationResult(updatedDataElement);
-                try
-                {
-                    Dictionary<string, object> changedFields = JsonHelper.FindChangedFields(serviceModelJsonString, updatedServiceModelString);
-                    calculationResult.ChangedFields = changedFields;
-                }
-                catch (Exception e)
-                {
-                    _logger.LogError(e, "Unable to determine changed fields");
-                }
-
+                calculationResult.ChangedFields = changedFields;
                 return StatusCode((int)HttpStatusCode.SeeOther, calculationResult);
             }
 
@@ -688,67 +674,6 @@ namespace Altinn.App.Api.Controllers
             }
 
             return false;
-        }
-
-        private bool CompliesWithDataRestrictions(DataType dataType, out string errorMessage)
-        {
-            errorMessage = string.Empty;
-
-            if (!Request.Headers.TryGetValue("Content-Disposition", out StringValues headerValues))
-            {
-                errorMessage = "The request must include a Content-Disposition header";
-                return false;
-            }
-
-            ContentDispositionHeaderValue contentDisposition = ContentDispositionHeaderValue.Parse(headerValues);
-            string filename = contentDisposition.FileNameStar ?? contentDisposition.FileName;
-
-            if (string.IsNullOrEmpty(filename))
-            {
-                errorMessage = "The Content-Disposition header must contain a filename";
-                return false;
-            }
-
-            // We actively remove quotes because we don't want them replaced with '_'.
-            // Quotes around filename in Content-Disposition is valid, but not as part of the filename.
-            filename = filename.Trim('\"').AsFileName(false);
-            string[] splitFilename = filename.Split('.');
-
-            if (splitFilename.Length < 2)
-            {
-                errorMessage = $"Invalid format for filename: {filename}. Filename is expected to end with '.{{filetype}}'.";
-                return false;
-            }
-
-            if (dataType.AllowedContentTypes == null || dataType.AllowedContentTypes.Count == 0)
-            {
-                return true;
-            }
-
-            string filetype = splitFilename[splitFilename.Length - 1];
-            string mimeType = MimeTypeMap.GetMimeType(filetype);
-
-            if (!Request.Headers.TryGetValue("Content-Type", out StringValues contentType))
-            {
-                errorMessage = "Content-Type header must be included in request.";
-                return false;
-            }
-
-            // Verify that file mime type matches content type in request
-            if (!contentType.Equals("application/octet-stream") && !mimeType.Equals(contentType, StringComparison.InvariantCultureIgnoreCase))
-            {
-                errorMessage = $"Content type header {contentType} does not match mime type {mimeType} for uploaded file. Please fix header or upload another file.";
-                return false;
-            }
-
-            // Verify that file mime type is an allowed content-type
-            if (!dataType.AllowedContentTypes.Contains(mimeType, StringComparer.InvariantCultureIgnoreCase) && !dataType.AllowedContentTypes.Contains("application/octet-stream"))
-            {
-                errorMessage = $"Invalid content type: {mimeType}. Please try another file. Permitted content types include: {string.Join(", ", dataType.AllowedContentTypes)}";
-                return false;
-            }
-
-            return true;
         }
     }
 }

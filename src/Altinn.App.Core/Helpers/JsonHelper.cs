@@ -1,5 +1,9 @@
 #nullable enable
 
+using System.Numerics;
+using Altinn.App.Core.Features;
+using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 
 namespace Altinn.App.Core.Helpers
@@ -9,6 +13,38 @@ namespace Altinn.App.Core.Helpers
     /// </summary>
     public static class JsonHelper
     {
+        /// <summary>
+        /// Run DataProcessWrite returning the dictionary of the changed fields.
+        /// </summary>
+        public static async Task<Dictionary<string, object?>?> ProcessDataWriteWithDiff(Instance instance, Guid dataGuid, object serviceModel, IDataProcessor dataProcessor, ILogger logger)
+        {
+            string serviceModelJsonString = System.Text.Json.JsonSerializer.Serialize(serviceModel);
+
+            bool changedByCalculation = await dataProcessor.ProcessDataWrite(instance, dataGuid, serviceModel);
+
+            Dictionary<string, object?>? changedFields = null;
+            if (changedByCalculation)
+            {
+                string updatedServiceModelString = System.Text.Json.JsonSerializer.Serialize(serviceModel);
+                try
+                {
+                    changedFields = FindChangedFields(serviceModelJsonString, updatedServiceModelString);
+                }
+                catch (Exception e)
+                {
+                    logger.LogError(e, "Unable to determine changed fields");
+                }
+            }
+
+            // TODO: Consider not bothering frontend with an empty changes list
+            // if(changedFields?.Count == 0)
+            // {
+            //     return null;
+            // }
+
+            return changedFields;
+        }
+
         /// <summary>
         /// Find changed fields between old and new json objects
         /// </summary>
@@ -125,18 +161,18 @@ namespace Altinn.App.Core.Helpers
                     break;
 
                 case JTokenType.Null:
-                    if (oldObj != null)
+                    if (oldObj != null && old?.Type == JTokenType.Object)
                     {
                         foreach (string key in oldObj.Properties().Select(c => c.Name))
                         {
                             FindDiff(dict, oldObj[key], JValue.CreateNull(), Join(prefix, key));
                         }
                     }
-                    else if (old?.Type == JTokenType.Array)
+                    else if (oldArray != null && old?.Type == JTokenType.Array)
                     {
-                        for (index = 0; index < oldArray?.Count; index++)
+                        for (index = 0; index < oldArray.Count; index++)
                         {
-                            dict.Add($"{prefix}[{index}]", null);
+                            FindDiff(dict, oldArray[index], JValue.CreateNull(), $"{prefix}[{index}]");
                         }
                     }
                     else
@@ -147,7 +183,13 @@ namespace Altinn.App.Core.Helpers
                     break;
 
                 default:
-                    dict.Add(prefix, current == null ? null : ((JValue)current).Value);
+                    var convertedValue = (current as JValue)?.Value switch
+                    {
+                        // BigInteger is not supported in json, so try to reduce to decimal, if possible, or string if too big
+                        BigInteger bigInt => bigInt <= new BigInteger(decimal.MaxValue) ? (decimal)bigInt : bigInt.ToString(System.Globalization.NumberFormatInfo.InvariantInfo),
+                        _ => (current as JValue)?.Value
+                    };
+                    dict.Add(prefix, convertedValue);
                     break;
             }
         }
