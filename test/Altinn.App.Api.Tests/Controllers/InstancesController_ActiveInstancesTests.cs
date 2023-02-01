@@ -106,6 +106,7 @@ public class InstancesController_ActiveInstancesTest
             new()
             {
                 Id = $"{1234}/{Guid.NewGuid()}",
+                DueBefore = DateTime.Today.AddDays(20),
                 LastChanged = DateTime.Now,
                 LastChangedBy = "12345",
                 PresentationTexts = new()
