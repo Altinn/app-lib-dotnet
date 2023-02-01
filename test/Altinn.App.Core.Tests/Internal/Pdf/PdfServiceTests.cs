@@ -7,6 +7,7 @@ using Altinn.App.Core.Internal.Pdf;
 using Altinn.Platform.Storage.Interface.Models;
 
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Moq;
@@ -26,6 +27,7 @@ namespace Altinn.App.PlatformServices.Tests.Internal.Pdf
         private readonly Mock<IProfile> _profile = new();
         private readonly Mock<IOptions<PdfGeneratorSettings>> _pdfGeneratorSettingsOptions;
         private readonly Mock<IOptions<GeneralSettings>> _generalSettingsOptions;
+        private readonly Mock<ILogger<PdfService>> _logger = new();
 
         public PdfServiceTests()
         {
@@ -59,7 +61,8 @@ namespace Altinn.App.PlatformServices.Tests.Internal.Pdf
                 _profile.Object,
                 _pdfGeneratorClient.Object,
                 _pdfGeneratorSettingsOptions.Object,
-                _generalSettingsOptions.Object);
+                _generalSettingsOptions.Object,
+                _logger.Object);
 
             Instance instance = new()
             {

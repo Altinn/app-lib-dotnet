@@ -10,6 +10,7 @@ using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Storage.Interface.Models;
 
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Internal.Pdf;
@@ -27,6 +28,7 @@ public class PdfService : IPdfService
     private readonly IPdfGeneratorClient _pdfGeneratorClient;
     private readonly PdfGeneratorSettings _pdfGeneratorSettings;
     private readonly GeneralSettings _generalSettings;
+    private readonly ILogger _logger;
 
     private const string PdfElementType = "ref-data-as-pdf";
     private const string PdfContentType = "application/pdf";
@@ -41,6 +43,7 @@ public class PdfService : IPdfService
     /// <param name="pdfGeneratorClient">PDF generator client for the experimental PDF generator service</param>
     /// <param name="pdfGeneratorSettings">PDF generator related settings.</param>
     /// <param name="generalSettings">The app general settings.</param>
+    /// <param name="logger">Logger</param>
     public PdfService(
         IAppResources appResources,
         IData dataClient,
@@ -48,7 +51,9 @@ public class PdfService : IPdfService
         IProfile profileClient,
         IPdfGeneratorClient pdfGeneratorClient,
         IOptions<PdfGeneratorSettings> pdfGeneratorSettings,
-        IOptions<GeneralSettings> generalSettings)
+        IOptions<GeneralSettings> generalSettings,
+        ILogger<PdfService> logger
+        )
     {
         _resourceService = appResources;
         _dataClient = dataClient;
@@ -57,6 +62,7 @@ public class PdfService : IPdfService
         _pdfGeneratorClient = pdfGeneratorClient;
         _pdfGeneratorSettings = pdfGeneratorSettings.Value;
         _generalSettings = generalSettings.Value;
+        _logger = logger;
     }
 
 
@@ -70,7 +76,7 @@ public class PdfService : IPdfService
         address.Replace("{appid}", instance.AppId);
         address.Replace("{instanceid}", instance.Id);
 
-        var pdfContent = await _pdfGeneratorClient.GeneratePdf(new Uri(address.ToString()), ct);
+        Stream pdfContent = await _pdfGeneratorClient.GeneratePdf(new Uri(address.ToString()), ct);
 
         var appIdentifier = new AppIdentifier(instance.AppId);
         var language = await GetLanguage();

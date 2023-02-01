@@ -66,6 +66,17 @@ public class PdfGeneratorClient : IPdfGeneratorClient
             new StringContent(requestContent, Encoding.UTF8, "application/json"),
             ct);
 
+        if (!httpResponseMessage.IsSuccessStatusCode)
+        {
+            var content = await httpResponseMessage.Content.ReadAsStringAsync(ct);
+            var ex = new PdfGenerationException("Pdf generation failed");
+            ex.Data.Add("responseContent", content);
+            ex.Data.Add("responseStatusCode", httpResponseMessage.StatusCode.ToString());
+            ex.Data.Add("responseReasonPhrase", httpResponseMessage.ReasonPhrase);
+
+            throw ex;
+        }
+
         return await httpResponseMessage.Content.ReadAsStreamAsync(ct);
     }
 }
