@@ -117,6 +117,7 @@ public class InstancesController_ActiveInstancesTest
         var expected = instances.Select(i => new SimpleInstance()
         {
             Id = i.Id,
+            DueBefore = i.DueBefore,
             PresentationTexts = i.PresentationTexts,
             LastChanged = i.LastChanged,
             LastChangedBy = i.LastChangedBy switch
@@ -169,6 +170,7 @@ public class InstancesController_ActiveInstancesTest
         var expected = instances.Select(i => new SimpleInstance()
         {
             Id = i.Id,
+            DueBefore = i.DueBefore,
             PresentationTexts = i.PresentationTexts,
             LastChanged = i.LastChanged,
             LastChangedBy = i.LastChangedBy switch
@@ -216,6 +218,7 @@ public class InstancesController_ActiveInstancesTest
         var expected = instances.Select(i => new SimpleInstance()
         {
             Id = i.Id,
+            DueBefore = i.DueBefore,
             PresentationTexts = i.PresentationTexts,
             LastChanged = i.LastChanged,
             LastChangedBy = i.LastChangedBy switch
@@ -268,6 +271,7 @@ public class InstancesController_ActiveInstancesTest
         var expected = instances.Select(i => new SimpleInstance()
         {
             Id = i.Id,
+            DueBefore = i.DueBefore,
             PresentationTexts = i.PresentationTexts,
             LastChanged = i.LastChanged,
             LastChangedBy = i.LastChangedBy switch
@@ -315,6 +319,7 @@ public class InstancesController_ActiveInstancesTest
         var expected = instances.Select(i => new SimpleInstance()
         {
             Id = i.Id,
+            DueBefore = i.DueBefore,
             PresentationTexts = i.PresentationTexts,
             LastChanged = i.LastChanged,
             LastChangedBy = i.LastChangedBy switch
