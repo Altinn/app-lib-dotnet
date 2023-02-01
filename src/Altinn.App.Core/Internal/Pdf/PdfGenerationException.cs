@@ -8,22 +8,34 @@ namespace Altinn.App.Core.Internal.Pdf
     [Serializable]
     public class PdfGenerationException : Exception
     {
-        ///<inheritDoc/>
+        /// <summary>
+        /// Creates a new Exception of <see cref="PdfGenerationException"/>
+        /// Intended to be used when the generation of PDF fails.
+        /// </summary>
         public PdfGenerationException()
         {
         }
 
-        ///<inheritDoc/>
+        /// <summary>
+        /// Creates a new Exception of <see cref="PdfGenerationException"/>
+        /// Intended to be used when the generation of PDF fails.
+        /// </summary>
         public PdfGenerationException(string? message) : base(message)
         {
         }
 
-        ///<inheritDoc/>
+        /// <summary>
+        /// Creates a new Exception of <see cref="PdfGenerationException"/>
+        /// Intended to be used when the generation of PDF fails.
+        /// </summary>
         public PdfGenerationException(string? message, Exception? innerException) : base(message, innerException)
         {
         }
 
-        ///<inheritDoc/>
+        /// <summary>
+        /// Creates a new Exception of <see cref="PdfGenerationException"/>
+        /// Intended to be used when the generation of PDF fails.
+        /// </summary>
         protected PdfGenerationException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }

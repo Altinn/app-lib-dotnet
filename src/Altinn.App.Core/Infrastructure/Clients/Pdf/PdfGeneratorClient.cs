@@ -60,10 +60,10 @@ public class PdfGeneratorClient : IPdfGeneratorClient
         });
 
         string requestContent = JsonSerializer.Serialize(generatorRequest, _jsonSerializerOptions);
-
+        using StringContent stringContent = new(requestContent, Encoding.UTF8, "application/json");
         var httpResponseMessage = await _httpClient.PostAsync(
             _pdfGeneratorSettings.ServiceEndpointUri,
-            new StringContent(requestContent, Encoding.UTF8, "application/json"),
+            stringContent,
             ct);
 
         if (!httpResponseMessage.IsSuccessStatusCode)
