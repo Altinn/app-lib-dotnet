@@ -250,5 +250,19 @@ namespace Altinn.App.Api.Controllers
 
             return new FileContentResult(fileContent, MimeTypeMap.GetMimeType(".json"));
         }
+
+        /// <summary>
+        /// Get the footer layout
+        /// </summary>
+        /// <param name="org">The application owner short name</param>
+        /// <param name="app">The application name</param>
+        /// <returns>The footer layout in the form of a string.</returns>
+        [HttpGet]
+        [Route("{org}/{app}/api/footer")]
+        public ActionResult GetFooterLayout(string org, string app)
+        {
+            string layout = _appResourceService.GetFooter();
+            return Ok(layout);
+        }
     }
 }

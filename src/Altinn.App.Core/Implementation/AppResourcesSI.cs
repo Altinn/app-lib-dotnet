@@ -460,5 +460,18 @@ namespace Altinn.App.Core.Implementation
 
             return null;
         }
+
+        /// <inheritdoc />
+        public string GetFooter()
+        {
+            string filename = Path.Join(_settings.AppBasePath, _settings.UiFolder, _settings.FooterFileName);
+            string filedata = null;
+            if (File.Exists(filename))
+            {
+                filedata = File.ReadAllText(filename, Encoding.UTF8);
+            }
+
+            return filedata;
+        }
     }
 }
