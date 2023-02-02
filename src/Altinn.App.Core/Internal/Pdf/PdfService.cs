@@ -35,7 +35,6 @@ public class PdfService : IPdfService
     private readonly IPdfGeneratorClient _pdfGeneratorClient;
     private readonly PdfGeneratorSettings _pdfGeneratorSettings;
     private readonly GeneralSettings _generalSettings;
-    private readonly ILogger _logger;
 
     private const string PdfElementType = "ref-data-as-pdf";
     private const string PdfContentType = "application/pdf";
@@ -54,7 +53,6 @@ public class PdfService : IPdfService
     /// <param name="pdfGeneratorClient">PDF generator client for the experimental PDF generator service</param>
     /// <param name="pdfGeneratorSettings">PDF generator related settings.</param>
     /// <param name="generalSettings">The app general settings.</param>
-    /// <param name="logger">Logger</param>
     public PdfService(
         IPDF pdfClient,
         IAppResources appResources,
@@ -66,8 +64,7 @@ public class PdfService : IPdfService
         IPdfFormatter pdfFormatter,
         IPdfGeneratorClient pdfGeneratorClient,
         IOptions<PdfGeneratorSettings> pdfGeneratorSettings,
-        IOptions<GeneralSettings> generalSettings,
-        ILogger<PdfService> logger
+        IOptions<GeneralSettings> generalSettings
         )
     {
         _pdfClient = pdfClient;
@@ -81,7 +78,6 @@ public class PdfService : IPdfService
         _pdfGeneratorClient = pdfGeneratorClient;
         _pdfGeneratorSettings = pdfGeneratorSettings.Value;
         _generalSettings = generalSettings.Value;
-        _logger = logger;
     }
 
 
@@ -220,15 +216,8 @@ public class PdfService : IPdfService
             textResource.Resources.Find(textResourceElement => textResourceElement.Id.Equals("appName")) ??
             textResource.Resources.Find(textResourceElement => textResourceElement.Id.Equals("ServiceName"));
 
-        if (titleText != null && !string.IsNullOrEmpty(titleText.Value))
-        {
-            fileName = titleText.Value + ".pdf";
-        }
-        else
-        {
-            fileName = app + ".pdf";
-        }
-
+        fileName = (titleText != null && !string.IsNullOrEmpty(titleText.Value)) ? $"{titleText.Value}.pdf" : $"{app}.pdf";
+        
         fileName = GetValidFileName(fileName);
 
         return await _dataClient.InsertBinaryData(

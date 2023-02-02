@@ -69,8 +69,7 @@ namespace Altinn.App.PlatformServices.Tests.Internal.Pdf
                 pdfFormatter.Object,
                 _pdfGeneratorClient.Object,
                 _pdfGeneratorSettingsOptions.Object,
-                _generalSettingsOptions.Object,
-                _logger.Object);
+                _generalSettingsOptions.Object);
 
             Instance instance = new()
             {
