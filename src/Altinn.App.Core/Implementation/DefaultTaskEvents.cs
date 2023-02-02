@@ -10,6 +10,7 @@ using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.FeatureManagement;
 
 namespace Altinn.App.Core.Implementation;
 
@@ -33,6 +34,7 @@ public class DefaultTaskEvents : ITaskEvents
     private readonly IEFormidlingService? _eFormidlingService;
     private readonly AppSettings? _appSettings;
     private readonly LayoutEvaluatorStateInitializer _layoutEvaluatorStateInitializer;
+    private readonly IFeatureManager _featureManager;
 
     /// <summary>
     /// Constructor with services from DI
@@ -49,9 +51,11 @@ public class DefaultTaskEvents : ITaskEvents
         IEnumerable<IProcessTaskEnd> taskEnds,
         IEnumerable<IProcessTaskAbandon> taskAbandons,
         IPdfService pdfService,
+        IFeatureManager featureManager,
         LayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer,
         IOptions<AppSettings>? appSettings = null,
-        IEFormidlingService? eFormidlingService = null)
+        IEFormidlingService? eFormidlingService = null
+        )
     {
         _logger = logger;
         _appResources = resourceService;
@@ -68,6 +72,7 @@ public class DefaultTaskEvents : ITaskEvents
         _layoutEvaluatorStateInitializer = layoutEvaluatorStateInitializer;
         _eFormidlingService = eFormidlingService;
         _appSettings = appSettings?.Value;
+        _featureManager = featureManager;
     }
 
     /// <inheritdoc />
@@ -151,7 +156,17 @@ public class DefaultTaskEvents : ITaskEvents
 
                 if (generatePdf)
                 {
-                    Task createPdf = _pdfService.GenerateAndStorePdf(instance, CancellationToken.None);
+                    Task createPdf;
+                    if (await _featureManager.IsEnabledAsync(FeatureFlags.NewPdfGeneration))
+                    {
+                        createPdf = _pdfService.GenerateAndStorePdf(instance, CancellationToken.None);
+                    }
+                    else
+                    {
+                        Type dataElementType = _appModel.GetModelType(dataType.AppLogic.ClassRef);
+                        createPdf = _pdfService.GenerateAndStoreReceiptPDF(instance, endEvent, dataElement, dataElementType);
+                    }
+
                     await Task.WhenAll(updateData, createPdf);
                 }
                 else
