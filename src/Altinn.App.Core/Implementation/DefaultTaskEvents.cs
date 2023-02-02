@@ -80,10 +80,7 @@ public class DefaultTaskEvents : ITaskEvents
     {
         _logger.LogDebug("OnStartProcessTask for {instanceId}", instance.Id);
 
-        foreach (var taskStart in _taskStarts)
-        {
-            await taskStart.Start(taskId, instance, prefill);
-        }
+        await RunAppDefinedOnTaskStart(taskId, instance, prefill);
 
         // If this is a revisit to a previous task we need to unlock data
         foreach (DataType dataType in _appMetadata.DataTypes.Where(dt => dt.TaskId == taskId))
@@ -127,21 +124,49 @@ public class DefaultTaskEvents : ITaskEvents
         }
     }
 
+    private async Task RunAppDefinedOnTaskStart(string taskId, Instance instance, Dictionary<string, string> prefill)
+    {
+        foreach (var taskStart in _taskStarts)
+        {
+            await taskStart.Start(taskId, instance, prefill);
+        }
+    }
+
     /// <inheritdoc />
     public async Task OnEndProcessTask(string endEvent, Instance instance)
     {
         Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
         List<DataType> dataTypesToLock = _appMetadata.DataTypes.FindAll(dt => dt.TaskId == endEvent);
+
+        await RunRemoveHiddenData(instance, instanceGuid, dataTypesToLock);
+
+        await RunAppDefinedOnTaskEnd(endEvent, instance);
+
+        await RunLockDataAndGeneratePdf(endEvent, instance, dataTypesToLock);
+
+        await RunEformidling(endEvent, instance);
+
+        await RunAutoDeleteOnProcessEnd(instance, instanceGuid);
+    }
+
+    private async Task RunRemoveHiddenData(Instance instance, Guid instanceGuid, List<DataType> dataTypesToLock)
+    {
         if (_appSettings?.RemoveHiddenDataPreview == true)
         {
             await RemoveHiddenData(instance, instanceGuid, dataTypesToLock);
         }
+    }
 
+    private async Task RunAppDefinedOnTaskEnd(string endEvent, Instance instance)
+    {
         foreach (var taskEnd in _taskEnds)
         {
             await taskEnd.End(endEvent, instance);
         }
+    }
 
+    private async Task RunLockDataAndGeneratePdf(string endEvent, Instance instance, List<DataType> dataTypesToLock)
+    {
         _logger.LogDebug("OnEndProcessTask for {instanceId}. Locking data elements connected to {endEvent}", instance.Id, endEvent);
 
         foreach (DataType dataType in dataTypesToLock)
@@ -175,6 +200,19 @@ public class DefaultTaskEvents : ITaskEvents
                 }
             }
         }
+    }
+
+    private async Task RunAutoDeleteOnProcessEnd(Instance instance, Guid instanceGuid)
+    {
+        if (_appMetadata.AutoDeleteOnProcessEnd)
+        {
+            int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
+            await _instanceClient.DeleteInstance(instanceOwnerPartyId, instanceGuid, true);
+        }
+    }
+
+    private async Task RunEformidling(string endEvent, Instance instance)
+    {
         if (_appSettings?.EnableEFormidling == true && _appMetadata.EFormidling?.SendAfterTaskId == endEvent && _eFormidlingService != null)
         {
             // The code above updates data elements on the instance. To ensure
@@ -182,12 +220,6 @@ public class DefaultTaskEvents : ITaskEvents
             // we reload the instance before we pass it on to eFormidling.
             var updatedInstance = await _instanceClient.GetInstance(instance);
             await _eFormidlingService.SendEFormidlingShipment(updatedInstance);
-        }
-
-        if (_appMetadata.AutoDeleteOnProcessEnd)
-        {
-            int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
-            await _instanceClient.DeleteInstance(instanceOwnerPartyId, instanceGuid, true);
         }
     }
 
