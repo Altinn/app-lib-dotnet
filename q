@@ -1,0 +1,109 @@
+[1mdiff --git a/test/Altinn.App.Core.Tests/Internal/Pdf/PdfServiceTests.cs b/test/Altinn.App.Core.Tests/Internal/Pdf/PdfServiceTests.cs[m
+[1mindex 49fbe19..3c8c605 100644[m
+[1m--- a/test/Altinn.App.Core.Tests/Internal/Pdf/PdfServiceTests.cs[m
+[1m+++ b/test/Altinn.App.Core.Tests/Internal/Pdf/PdfServiceTests.cs[m
+[36m@@ -1,17 +1,19 @@[m
+ ﻿#nullable enable[m
+ [m
+[32m+[m[32musing System.Net;[m
+[32m+[m[32musing System.Net.Http.Json;[m
+ using Altinn.App.Core.Configuration;[m
+ using Altinn.App.Core.Features;[m
+[32m+[m[32musing Altinn.App.Core.Infrastructure.Clients.Pdf;[m
+ using Altinn.App.Core.Interface;[m
+ using Altinn.App.Core.Internal.Pdf;[m
+[32m+[m[32musing Altinn.App.PlatformServices.Tests.Helpers;[m
+[32m+[m[32musing Altinn.App.PlatformServices.Tests.Mocks;[m
+ using Altinn.Platform.Storage.Interface.Models;[m
+[31m-[m
+[32m+[m[32musing FluentAssertions;[m
+ using Microsoft.AspNetCore.Http;[m
+[31m-using Microsoft.Extensions.Logging;[m
+ using Microsoft.Extensions.Options;[m
+[31m-[m
+ using Moq;[m
+[31m-[m
+ using Xunit;[m
+ [m
+ namespace Altinn.App.PlatformServices.Tests.Internal.Pdf[m
+[36m@@ -29,9 +31,9 @@[m [mnamespace Altinn.App.PlatformServices.Tests.Internal.Pdf[m
+         private readonly Mock<IProfile> _profile = new();[m
+         private readonly Mock<IRegister> _register = new();[m
+         private readonly Mock<IPdfFormatter> pdfFormatter = new();[m
+[31m-        private readonly Mock<IOptions<PdfGeneratorSettings>> _pdfGeneratorSettingsOptions;[m
+[32m+[m[32m        private readonly IOptions<PdfGeneratorSettings> _pdfGeneratorSettingsOptions;[m
+         private readonly Mock<IOptions<GeneralSettings>> _generalSettingsOptions;[m
+[31m-        private readonly Mock<ILogger<PdfService>> _logger = new();[m
+[32m+[m[32m        private readonly Mock<IUserTokenProvider> _userTokenProvider;[m
+ [m
+         public PdfServiceTests()[m
+         {[m
+[36m@@ -44,12 +46,48 @@[m [mnamespace Altinn.App.PlatformServices.Tests.Internal.Pdf[m
+             _httpContextAccessor.Setup(s => s.HttpContext!).Returns(httpContext);[m
+ [m
+             PdfGeneratorSettings pdfGeneratorSettings = new() { ServiceEndpointUri = "http://real.domain.no" };[m
+[31m-            _pdfGeneratorSettingsOptions = new Mock<IOptions<PdfGeneratorSettings>>();[m
+[31m-            _pdfGeneratorSettingsOptions.Setup(s => s.Value).Returns(pdfGeneratorSettings);[m
+[32m+[m[32m            _pdfGeneratorSettingsOptions = Microsoft.Extensions.Options.Options.Create(pdfGeneratorSettings);[m
+ [m
+             GeneralSettings generalSettings = new() { HostName = HostName };[m
+             _generalSettingsOptions = new Mock<IOptions<GeneralSettings>>();[m
+             _generalSettingsOptions.Setup(s => s.Value).Returns(generalSettings);[m
+[32m+[m
+[32m+[m[32m            _userTokenProvider = new Mock<IUserTokenProvider>();[m
+[32m+[m[32m            _userTokenProvider.Setup(s => s.GetUserToken()).Returns("usertoken");[m
+[32m+[m[32m        }[m
+[32m+[m
+[32m+[m[32m        [Fact][m
+[32m+[m[32m        public async Task ValidRequest_ShouldReturnPdf()[m
+[32m+[m[32m        {[m
+[32m+[m[32m            DelegatingHandlerStub delegatingHandler = new(async (HttpRequestMessage request, CancellationToken token) =>[m
+[32m+[m[32m            {[m
+[32m+[m[32m                await Task.CompletedTask;[m
+[32m+[m[32m                return new HttpResponseMessage() { Content = new StreamContent(EmbeddedResource.LoadDataAsStream("Altinn.App.Core.Tests.Internal.Pdf.TestData.example.pdf")) };[m
+[32m+[m[32m            });[m
+[32m+[m
+[32m+[m[32m            var httpClient = new HttpClient(delegatingHandler);[m
+[32m+[m[32m            var pdfGeneratorClient = new PdfGeneratorClient(httpClient, _pdfGeneratorSettingsOptions, _userTokenProvider.Object);[m
+[32m+[m
+[32m+[m[32m            Stream pdf = await pdfGeneratorClient.GeneratePdf(new Uri(@"https://org.apps.hostName/appId/#/instance/instanceId"), CancellationToken.None);[m
+[32m+[m
+[32m+[m[32m            pdf.Length.Should().Be(17814L);[m
+[32m+[m[32m        }[m
+[32m+[m
+[32m+[m[32m        [Fact][m
+[32m+[m[32m        public async Task ValidRequest_PdfGenerationFails_ShouldThrowException()[m
+[32m+[m[32m        {[m
+[32m+[m[32m            DelegatingHandlerStub delegatingHandler = new(async (HttpRequestMessage request, CancellationToken token) =>[m
+[32m+[m[32m            {[m
+[32m+[m[32m                await Task.CompletedTask;[m
+[32m+[m[32m                return new HttpResponseMessage() { StatusCode = HttpStatusCode.RequestTimeout };[m
+[32m+[m[32m            });[m
+[32m+[m
+[32m+[m[32m            var httpClient = new HttpClient(delegatingHandler);[m
+[32m+[m[32m            var pdfGeneratorClient = new PdfGeneratorClient(httpClient, _pdfGeneratorSettingsOptions, _userTokenProvider.Object);[m
+[32m+[m
+[32m+[m[32m            var func = async () => await pdfGeneratorClient.GeneratePdf(new Uri(@"https://org.apps.hostName/appId/#/instance/instanceId"), CancellationToken.None);[m
+[32m+[m
+[32m+[m[32m            await func.Should().ThrowAsync<PdfGenerationException>();[m
+         }[m
+ [m
+         [Fact][m
+[36m@@ -68,7 +106,7 @@[m [mnamespace Altinn.App.PlatformServices.Tests.Internal.Pdf[m
+                 _register.Object,[m
+                 pdfFormatter.Object,[m
+                 _pdfGeneratorClient.Object,[m
+[31m-                _pdfGeneratorSettingsOptions.Object,[m
+[32m+[m[32m                _pdfGeneratorSettingsOptions,[m
+                 _generalSettingsOptions.Object);[m
+ [m
+             Instance instance = new()[m
+[36m@@ -80,7 +118,7 @@[m [mnamespace Altinn.App.PlatformServices.Tests.Internal.Pdf[m
+ [m
+             // Act[m
+             await target.GenerateAndStorePdf(instance, CancellationToken.None);[m
+[31m-[m
+[32m+[m[41m        [m
+             // Asserts[m
+             _pdfGeneratorClient.Verify([m
+                 s => s.GeneratePdf([m
