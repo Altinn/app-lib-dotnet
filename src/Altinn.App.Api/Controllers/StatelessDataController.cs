@@ -293,6 +293,7 @@ namespace Altinn.App.Api.Controllers
             var party = idPrefix switch
             {
                 PartyPrefix => await _registerClient.GetParty(int.TryParse(id, out var partyId) ? partyId : 0),
+
                 // Frontend seems to only use partyId, not orgnr or ssn.
                 PersonPrefix => await _registerClient.LookupParty(new PartyLookup { Ssn = id }),
                 OrgPrefix => await _registerClient.LookupParty(new PartyLookup { OrgNo = id }),
