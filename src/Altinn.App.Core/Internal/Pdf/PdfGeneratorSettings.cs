@@ -26,7 +26,7 @@ public class PdfGeneratorSettings
     /// <summary>
     /// The name of a DOM element to wait for before triggering PDF-generator.
     /// </summary>
-    public string WaitForSelector { get; set; } = string.Empty;
+    public string WaitForSelector { get; set; } = "#readyForPrint";
 
     /// <summary>
     /// The number of milliseconds the PDF-generator should wait for a page to render. Default is 5000.
