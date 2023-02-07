@@ -5,7 +5,7 @@
 
     <IsPackable>false</IsPackable>
 
-    <RootNamespace>Altinn.App.PlatformServices.Tests</RootNamespace>
+    <RootNamespace>Altinn.App.Core.Tests</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
@@ -61,6 +61,10 @@
   <ItemGroup>
     <Watch Remove="Internal\Pdf\PdfServiceTests.cs" />
     <Watch Remove="Mocks\RequestInterceptor.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Internal\Pdf\TestData\example.pdf" />
   </ItemGroup>
 
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
