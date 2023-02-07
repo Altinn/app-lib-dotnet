@@ -258,10 +258,15 @@ namespace Altinn.App.Api.Controllers
         /// <param name="app">The application name</param>
         /// <returns>The footer layout in the form of a string.</returns>
         [HttpGet]
-        [Route("{org}/{app}/api/footer")]
+        [Route("{org}/{app}/api/v1/footer")]
         public ActionResult GetFooterLayout(string org, string app)
         {
             string layout = _appResourceService.GetFooter();
+            if (layout is null)
+            {
+                return NoContent();
+            }
+            
             return Ok(layout);
         }
     }
