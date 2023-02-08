@@ -1,8 +1,4 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-
-using Altinn.Platform.Storage.Interface.Models;
+﻿using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Internal.Pdf
 {
@@ -11,6 +7,9 @@ namespace Altinn.App.Core.Internal.Pdf
     /// </summary>
     public interface IPdfService
     {
+        /// <summary>
+        /// Generates the PDF based on the current data and stores it
+        /// </summary>
         /// <param name="instance">The instance the PDF is based on.</param>
         /// <param name="taskId">The task id matching the </param>
         /// <param name="dataElement">Reference to the data element.</param>
