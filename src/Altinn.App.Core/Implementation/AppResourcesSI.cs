@@ -462,13 +462,13 @@ namespace Altinn.App.Core.Implementation
         }
 
         /// <inheritdoc />
-        public string? GetFooter()
+        public async Task<string?> GetFooter()
         {
             string filename = Path.Join(_settings.AppBasePath, _settings.UiFolder, _settings.FooterFileName);
-            string filedata = null;
+            string? filedata = null;
             if (File.Exists(filename))
             {
-                filedata = File.ReadAllText(filename, Encoding.UTF8);
+                filedata = await File.ReadAllTextAsync(filename, Encoding.UTF8);
             }
 
             return filedata;
