@@ -140,7 +140,7 @@ public class PdfService : IPdfService
 
         object data = await _dataClient.GetFormData(instanceGuid, dataElementModelType, org, app, instanceOwnerId, new Guid(dataElement.Id));
 
-        layoutSettings = await _pdfFormatter.FormatPdf(layoutSettings, data);
+        layoutSettings = await _pdfFormatter.FormatPdf(layoutSettings, data, instance);
         XmlSerializer serializer = new XmlSerializer(dataElementModelType);
         using MemoryStream stream = new MemoryStream();
 
