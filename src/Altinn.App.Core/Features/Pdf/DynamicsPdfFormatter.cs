@@ -27,28 +27,28 @@ public class DynamicsPdfFormatter : IPdfFormatter
     }
 
     /// <inheritdoc />
-    public async Task<LayoutSettings> FormatPdf(LayoutSettings layoutSettings, object data, Instance instance)
+    public async Task<LayoutSettings> FormatPdf(LayoutSettings layoutSettings, object data, Instance instance, LayoutSet? layoutSet)
     {
         layoutSettings.Pages ??= new();
         layoutSettings.Pages.ExcludeFromPdf ??= new();
         layoutSettings.Components ??= new();
         layoutSettings.Components.ExcludeFromPdf ??= new();
 
-        var state = await _layoutStateInit.Init(instance, data, layoutSetId:null);
-        foreach(var pageContext in state.GetComponentContexts())
+        var state = await _layoutStateInit.Init(instance, data, layoutSetId: layoutSet?.Id);
+        foreach (var pageContext in state.GetComponentContexts())
         {
             var pageHidden = ExpressionEvaluator.EvaluateBooleanExpression(state, pageContext, "hidden", false);
-            if(pageHidden)
+            if (pageHidden)
             {
                 layoutSettings.Pages.ExcludeFromPdf.Add(pageContext.Component.Id);
             }
             else
             {
                 //TODO: figure out how pdf reacts to groups one level down.
-                foreach(var componentContext in pageContext.ChildContexts)
+                foreach (var componentContext in pageContext.ChildContexts)
                 {
                     var componentHidden = ExpressionEvaluator.EvaluateBooleanExpression(state, componentContext, "hidden", false);
-                    if(componentHidden)
+                    if (componentHidden)
                     {
                         layoutSettings.Components.ExcludeFromPdf.Add(componentContext.Component.Id);
                     }

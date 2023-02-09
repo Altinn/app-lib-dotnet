@@ -108,7 +108,7 @@ namespace Altinn.App.Api.Controllers
 
             object data = await _dataClient.GetFormData(instanceGuid, dataType, org, app, instanceOwnerPartyId, new Guid(dataElement.Id));
 
-            layoutSettings = await _pdfFormatter.FormatPdf(layoutSettings, data, instance);
+            layoutSettings = await _pdfFormatter.FormatPdf(layoutSettings, data, instance, layoutSet);
 
             var result = new
             {

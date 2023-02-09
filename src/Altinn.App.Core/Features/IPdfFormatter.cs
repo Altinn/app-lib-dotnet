@@ -23,7 +23,7 @@ public interface IPdfFormatter
     /// <summary>
     /// Method to format the PDF dynamically (new version with the instance)
     /// </summary>
-    async Task<LayoutSettings> FormatPdf(LayoutSettings layoutSettings, object data, Instance instance)
+    async Task<LayoutSettings> FormatPdf(LayoutSettings layoutSettings, object data, Instance instance, LayoutSet? layoutSet)
     {
         return await FormatPdf(layoutSettings, data);
     }
