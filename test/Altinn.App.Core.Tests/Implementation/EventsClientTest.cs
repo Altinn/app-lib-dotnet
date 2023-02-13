@@ -24,7 +24,7 @@ namespace Altinn.App.PlatformServices.Tests.Implementation
 {
     public class EventsClientTest
     {
-        private readonly Mock<IOptions<PlatformSettings>> platformSettingsOptions;
+        private readonly IOptions<PlatformSettings> platformSettingsOptions;
         private readonly Mock<IOptionsMonitor<AppSettings>> appSettingsOptions;
         private readonly Mock<IOptions<GeneralSettings>> generalSettingsOptions;
         private readonly Mock<HttpMessageHandler> handlerMock;
@@ -34,7 +34,10 @@ namespace Altinn.App.PlatformServices.Tests.Implementation
 
         public EventsClientTest()
         {
-            platformSettingsOptions = new Mock<IOptions<PlatformSettings>>();
+            platformSettingsOptions = Microsoft.Extensions.Options.Options.Create<PlatformSettings>(new()
+            {
+                ExternalAppBaseUrl = "https://{org}.apps.{hostName}/{org}/{app}/"
+            });
             appSettingsOptions = new Mock<IOptionsMonitor<AppSettings>>();
             generalSettingsOptions = new Mock<IOptions<GeneralSettings>>();
             handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
@@ -71,7 +74,7 @@ namespace Altinn.App.PlatformServices.Tests.Implementation
             HttpClient httpClient = new HttpClient(handlerMock.Object);
 
             EventsClient target = new EventsClient(
-                platformSettingsOptions.Object,
+                platformSettingsOptions,
                 contextAccessor.Object,
                 httpClient,
                 accessTokenGeneratorMock.Object,
@@ -126,7 +129,7 @@ namespace Altinn.App.PlatformServices.Tests.Implementation
             HttpClient httpClient = new HttpClient(handlerMock.Object);
 
             EventsClient target = new EventsClient(
-                platformSettingsOptions.Object,
+                platformSettingsOptions,
                 contextAccessor.Object,
                 httpClient,
                 accessTokenGeneratorMock.Object,
@@ -160,6 +163,7 @@ namespace Altinn.App.PlatformServices.Tests.Implementation
             Instance instance = new Instance
             {
                 Org = "ttd",
+                AppId = "tdd/test",
                 InstanceOwner = new InstanceOwner { OrganisationNumber = "org" }
             };
 
@@ -176,7 +180,7 @@ namespace Altinn.App.PlatformServices.Tests.Implementation
             HttpClient httpClient = new HttpClient(handlerMock.Object);
 
             EventsClient target = new EventsClient(
-                platformSettingsOptions.Object,
+                platformSettingsOptions,
                 contextAccessor.Object,
                 httpClient,
                 accessTokenGeneratorMock.Object,
@@ -207,12 +211,8 @@ namespace Altinn.App.PlatformServices.Tests.Implementation
 
         private void InitializeMocks(HttpResponseMessage httpResponseMessage, Action<HttpRequestMessage> callback)
         {
-            PlatformSettings platformSettings = new PlatformSettings
-            {
-                ApiEventsEndpoint = "http://localhost:5101/events/api/v1/",
-                SubscriptionKey = "key"
-            };
-            platformSettingsOptions.Setup(s => s.Value).Returns(platformSettings);
+            platformSettingsOptions.Value.ApiEventsEndpoint = "http://localhost:5101/events/api/v1/";
+            platformSettingsOptions.Value.SubscriptionKey = "key";
 
             GeneralSettings generalSettings = new GeneralSettings
             {

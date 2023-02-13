@@ -33,6 +33,7 @@ public class PdfService : IPdfService
 
     private readonly IPdfGeneratorClient _pdfGeneratorClient;
     private readonly PdfGeneratorSettings _pdfGeneratorSettings;
+    private readonly PlatformSettings _platformSettings;
     private readonly GeneralSettings _generalSettings;
 
     private const string PdfElementType = "ref-data-as-pdf";
@@ -51,6 +52,7 @@ public class PdfService : IPdfService
     /// <param name="pdfFormatter">Class for customizing pdf formatting and layout.</param>
     /// <param name="pdfGeneratorClient">PDF generator client for the experimental PDF generator service</param>
     /// <param name="pdfGeneratorSettings">PDF generator related settings.</param>
+    /// <param name="platformSettings">Urls for platform services.</param>
     /// <param name="generalSettings">The app general settings.</param>
     public PdfService(
         IPDF pdfClient,
@@ -63,6 +65,7 @@ public class PdfService : IPdfService
         IPdfFormatter pdfFormatter,
         IPdfGeneratorClient pdfGeneratorClient,
         IOptions<PdfGeneratorSettings> pdfGeneratorSettings,
+        IOptions<PlatformSettings> platformSettings,
         IOptions<GeneralSettings> generalSettings
         )
     {
@@ -76,6 +79,7 @@ public class PdfService : IPdfService
         _pdfFormatter = pdfFormatter;
         _pdfGeneratorClient = pdfGeneratorClient;
         _pdfGeneratorSettings = pdfGeneratorSettings.Value;
+        _platformSettings = platformSettings.Value;
         _generalSettings = generalSettings.Value;
     }
 
@@ -83,16 +87,12 @@ public class PdfService : IPdfService
     /// <inheritdoc/>
     public async Task GenerateAndStorePdf(Instance instance, CancellationToken ct)
     {
-        StringBuilder address = new StringBuilder(_pdfGeneratorSettings.AppPdfPageUriTemplate.ToLower());
+        var baseUrl = _platformSettings.FormattedExternalAppBaseUrl(_generalSettings.HostName, new AppIdentifier(instance));
+        var pagePath = _pdfGeneratorSettings.AppPdfPagePathTemplate.ToLowerInvariant().Replace("{instanceid}", instance.Id);
 
-        address.Replace("{org}", instance.Org);
-        address.Replace("{hostname}", _generalSettings.HostName);
-        address.Replace("{appid}", instance.AppId);
-        address.Replace("{instanceid}", instance.Id);
+        Stream pdfContent = await _pdfGeneratorClient.GeneratePdf(new Uri(baseUrl + pagePath), ct);
 
-        Stream pdfContent = await _pdfGeneratorClient.GeneratePdf(new Uri(address.ToString()), ct);
-
-        var appIdentifier = new AppIdentifier(instance.AppId);
+        var appIdentifier = new AppIdentifier(instance);
         var language = await GetLanguage();
         TextResource? textResource = await GetTextResource(appIdentifier.App, appIdentifier.Org, language);
         string fileName = GetFileName(instance, textResource);
@@ -247,7 +247,7 @@ public class PdfService : IPdfService
         return language;
     }
 
-    private async Task<TextResource> GetTextResource(string app, string org, string language)
+    private async Task<TextResource?> GetTextResource(string app, string org, string language)
     {
         TextResource? textResource = await _resourceService.GetTexts(org, app, language);
 

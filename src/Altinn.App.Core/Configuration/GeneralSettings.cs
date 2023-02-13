@@ -6,19 +6,14 @@ namespace Altinn.App.Core.Configuration
     public class GeneralSettings
     {
         /// <summary>
-        /// Gets or sets the location to search for templates
-        /// </summary>
-        public string TemplateLocation { get; set; }
-
-        /// <summary>
         /// Gets or sets the soft validation prefix.
         /// </summary>
-        public string SoftValidationPrefix { get; set; }
+        public string SoftValidationPrefix { get; set; } = "*WARNING*";
 
         /// <summary>
         /// Gets or sets the fixed validation prefix.
         /// </summary>
-        public string FixedValidationPrefix { get; set; }
+        public string FixedValidationPrefix { get; set; } = "*FIXED*";
 
         /// <summary>
         /// Gets or sets the info validation prefix.
@@ -31,14 +26,15 @@ namespace Altinn.App.Core.Configuration
         public string SuccessValidationPrefix { get; set; } = "*SUCCESS*";
 
         /// <summary>
-        /// Gets or sets the host name.
+        /// Gets or sets the host name. This is used for cookes,
+        /// and might not be the full url you can access the app on.
         /// </summary>
-        public string HostName { get; set; }
+        public string HostName { get; set; } = "local.altinn.cloud";
 
         /// <summary>
         /// Gets or sets the AltinnParty cookie name.
         /// </summary>
-        public string AltinnPartyCookieName { get; set; }
+        public string AltinnPartyCookieName { get; set; } = "AltinnPartyId";
 
         /// <summary>
         /// Gets the altinn party cookie from kubernetes environment variables or appSettings if environment variable is missing.
