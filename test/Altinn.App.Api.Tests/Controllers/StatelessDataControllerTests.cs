@@ -118,7 +118,7 @@ public class StatelessDataControllerTests
         var client = factory.CreateClient();
         string token = PrincipalUtil.GetToken(1337);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        var request = new HttpRequestMessage(HttpMethod.Get, "/tdd/demo-app/v1/data?dataType=xml");
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/tdd/demo-app/v1/data?dataType=xml");
         request.Headers.Add("party", new string[]{"partyid:234", "partyid:234"}); // Double header
 
         factory.AppResourcesMoq.Setup(ar=>ar.GetClassRefForLogicDataType(It.IsAny<string>())).Returns("Not.In.Valid.Namespace.ClassRef");
@@ -145,7 +145,7 @@ public class StatelessDataControllerTests
         var client = factory.CreateClient();
         string token = PrincipalUtil.GetToken(1337);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        var request = new HttpRequestMessage(HttpMethod.Get, "/tdd/demo-app/v1/data?dataType=xml");
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/tdd/demo-app/v1/data?dataType=xml");
         request.Headers.Add("party", new string[]{"partyid:234"});
 
         factory.AppResourcesMoq.Setup(ar=>ar.GetClassRefForLogicDataType(It.IsAny<string>())).Returns("Not.In.Valid.Namespace.ClassRef");
@@ -157,7 +157,6 @@ public class StatelessDataControllerTests
 
         // Act
         var response = await client.SendAsync(request);
-        var responseText = await response.Content.ReadAsStringAsync();
 
         // Assert
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.Forbidden);
