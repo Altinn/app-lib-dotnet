@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -11,6 +12,7 @@ using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.FileAnalyzis;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Interface;
@@ -21,6 +23,7 @@ using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Primitives;
 
 namespace Altinn.App.Api.Controllers
 {
@@ -40,6 +43,7 @@ namespace Altinn.App.Api.Controllers
         private readonly IAppModel _appModel;
         private readonly IAppResources _appResourcesService;
         private readonly IPrefill _prefillService;
+        private readonly IEnumerable<IFileAnalyzer> _filesAnalyzers;
 
         private const long REQUEST_SIZE_LIMIT = 2000 * 1024 * 1024;
 
@@ -54,6 +58,7 @@ namespace Altinn.App.Api.Controllers
         /// <param name="appModel">Service for generating app model</param>
         /// <param name="appResourcesService">The apps resource service</param>
         /// <param name="prefillService">A service with prefill related logic.</param>
+        /// <param name="fileAnalyzers">A list of file analyzers.</param>
         public DataController(
             ILogger<DataController> logger,
             IInstance instanceClient,
@@ -62,7 +67,8 @@ namespace Altinn.App.Api.Controllers
             IDataProcessor dataProcessor,
             IAppModel appModel,
             IAppResources appResourcesService,
-            IPrefill prefillService)
+            IPrefill prefillService,
+            IEnumerable<IFileAnalyzer> fileAnalyzers)
         {
             _logger = logger;
 
@@ -73,6 +79,7 @@ namespace Altinn.App.Api.Controllers
             _appModel = appModel;
             _appResourcesService = appResourcesService;
             _prefillService = prefillService;
+            _filesAnalyzers = fileAnalyzers;
         }
 
         /// <summary>
@@ -147,6 +154,12 @@ namespace Altinn.App.Api.Controllers
                         return errorResponse;
                     }
 
+                    StreamContent streamContent = CreateContentStream(Request);
+                    foreach (var analyzer in _filesAnalyzers)
+                    {
+                        IDictionary<string, string> fileMetadata = analyzer.Analyze(streamContent);
+                    }
+
                     return await CreateBinaryData(org, app, instance, dataType);
                 }
             }
@@ -154,6 +167,19 @@ namespace Altinn.App.Api.Controllers
             {
                 return HandlePlatformHttpException(e, $"Cannot create data element of {dataType} for {instanceOwnerPartyId}/{instanceGuid}");
             }
+        }
+
+        private static StreamContent CreateContentStream(HttpRequest request)
+        {
+            StreamContent content = new StreamContent(request.Body);
+            content.Headers.ContentType = MediaTypeHeaderValue.Parse(request.ContentType);
+
+            if (request.Headers.TryGetValue("Content-Disposition", out StringValues headerValues))
+            {
+                content.Headers.ContentDisposition = ContentDispositionHeaderValue.Parse(headerValues.ToString());
+            }
+
+            return content;
         }
 
         /// <summary>
