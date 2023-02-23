@@ -8,10 +8,10 @@ namespace Altinn.App.Core.EFormidling.Implementation;
 /// <summary>
 /// Default implementation of <see cref="Altinn.App.Core.EFormidling.Interface.IEFormidlingReceivers"/>
 /// </summary>
-public class DefaultEFormidlingReceivers: IEFormidlingReceivers
+public class DefaultEFormidlingReceivers : IEFormidlingReceivers
 {
     private readonly Application _appMetadata;
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="DefaultEFormidlingReceivers"/> class.
     /// </summary>
@@ -20,7 +20,7 @@ public class DefaultEFormidlingReceivers: IEFormidlingReceivers
     {
         _appMetadata = resources.GetApplication();
     }
-    
+
     /// <inheritdoc />
     public async Task<List<Receiver>> GetEFormidlingReceivers(Instance instance)
     {

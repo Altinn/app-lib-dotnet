@@ -13,6 +13,7 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Interface;
+using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Validation;
@@ -23,12 +24,10 @@ using Altinn.Common.PEP.Models;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
-
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
-
 using Newtonsoft.Json;
 
 namespace Altinn.App.Api.Controllers
@@ -52,7 +51,7 @@ namespace Altinn.App.Api.Controllers
         private readonly IEvents _eventsService;
         private readonly IProfile _profileClientClient;
 
-        private readonly IAppResources _appResourcesService;
+        private readonly IAppMetadata _appMetadata;
         private readonly IAppModel _appModel;
         private readonly IInstantiationProcessor _instantiationProcessor;
         private readonly IInstantiationValidator _instantiationValidator;
@@ -71,7 +70,7 @@ namespace Altinn.App.Api.Controllers
             IRegister registerClient,
             IInstance instanceClient,
             IData dataClient,
-            IAppResources appResourcesService,
+            IAppMetadata appMetadata,
             IAppModel appModel,
             IInstantiationProcessor instantiationProcessor,
             IInstantiationValidator instantiationValidator,
@@ -85,7 +84,7 @@ namespace Altinn.App.Api.Controllers
             _logger = logger;
             _instanceClient = instanceClient;
             _dataClient = dataClient;
-            _appResourcesService = appResourcesService;
+            _appMetadata = appMetadata;
             _registerClient = registerClient;
             _appModel = appModel;
             _instantiationProcessor = instantiationProcessor;
@@ -175,7 +174,7 @@ namespace Altinn.App.Api.Controllers
                 return BadRequest("The path parameter 'app' cannot be empty");
             }
 
-            Application application = _appResourcesService.GetApplication();
+            Application? application = await _appMetadata.GetApplicationMetadata();
             if (application == null)
             {
                 return NotFound($"AppId {org}/{app} was not found");
@@ -332,9 +331,9 @@ namespace Altinn.App.Api.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [RequestSizeLimit(RequestSizeLimit)]
         public async Task<ActionResult<Instance>> PostSimplified(
-        [FromRoute] string org,
-        [FromRoute] string app,
-        [FromBody] InstansiationInstance instansiationInstance)
+            [FromRoute] string org,
+            [FromRoute] string app,
+            [FromBody] InstansiationInstance instansiationInstance)
         {
             if (string.IsNullOrEmpty(org))
             {
@@ -346,7 +345,7 @@ namespace Altinn.App.Api.Controllers
                 return BadRequest("The path parameter 'app' cannot be empty");
             }
 
-            Application application = _appResourcesService.GetApplication();
+            Application? application = await _appMetadata.GetApplicationMetadata();
             if (application == null)
             {
                 return NotFound($"AppId {org}/{app} was not found");

@@ -1,17 +1,13 @@
-using System.Collections.Generic;
+#nullable enable
 using System.Text.Json;
 using System.Web;
-
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Interface;
+using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
-
 using Microsoft.AspNetCore.Antiforgery;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Api.Controllers
@@ -26,6 +22,7 @@ namespace Altinn.App.Api.Controllers
         private readonly IWebHostEnvironment _env;
         private readonly AppSettings _appSettings;
         private readonly IAppResources _appResources;
+        private readonly IAppMetadata _appMetadata;
         private readonly List<string> _onEntryWithInstance = new List<string> { "new-instance", "select-instance" };
 
         /// <summary>
@@ -36,12 +33,14 @@ namespace Altinn.App.Api.Controllers
         /// <param name="env">The current environment.</param>
         /// <param name="appSettings">The application settings</param>
         /// <param name="appResources">The application resources service</param>
+        /// <param name="appMetadata">The application metadata service</param>
         public HomeController(
-          IAntiforgery antiforgery,
-          IOptions<PlatformSettings> platformSettings,
-          IWebHostEnvironment env,
-          IOptions<AppSettings> appSettings,
-          IAppResources appResources)
+            IAntiforgery antiforgery,
+            IOptions<PlatformSettings> platformSettings,
+            IWebHostEnvironment env,
+            IOptions<AppSettings> appSettings,
+            IAppResources appResources,
+            IAppMetadata appMetadata)
         {
             _antiforgery = antiforgery;
             _platformSettings = platformSettings.Value;
@@ -58,7 +57,7 @@ namespace Altinn.App.Api.Controllers
         /// <param name="dontChooseReportee">Parameter to indicate disabling of reportee selection in Altinn Portal.</param>
         [HttpGet]
         [Route("{org}/{app}/")]
-        public IActionResult Index(
+        public async Task<IActionResult> Index(
             [FromRoute] string org,
             [FromRoute] string app,
             [FromQuery] bool dontChooseReportee)
@@ -69,8 +68,8 @@ namespace Altinn.App.Api.Controllers
             {
                 HttpOnly = false // Make this cookie readable by Javascript.
             });
-            
-            if (ShouldShowAppView())
+
+            if (await ShouldShowAppView())
             {
                 ViewBag.org = org;
                 ViewBag.app = app;
@@ -95,15 +94,15 @@ namespace Altinn.App.Api.Controllers
             return Redirect(redirectUrl);
         }
 
-        private bool ShouldShowAppView()
+        private async Task<bool> ShouldShowAppView()
         {
             if (User.Identity.IsAuthenticated)
             {
                 return true;
             }
 
-            Application application = _appResources.GetApplication();
-            if (!IsStatelessApp(application)) 
+            Application? application = await _appMetadata.GetApplicationMetadata();
+            if (application == null || !IsStatelessApp(application))
             {
                 return false;
             }

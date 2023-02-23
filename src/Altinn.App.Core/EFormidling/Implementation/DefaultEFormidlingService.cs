@@ -1,7 +1,6 @@
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.EFormidling.Interface;
-using Altinn.App.Core.Infrastructure.Clients.Events;
 using Altinn.App.Core.Interface;
 using Altinn.Common.AccessTokenClient.Services;
 using Altinn.Common.EFormidlingClient;
@@ -199,7 +198,7 @@ public class DefaultEFormidlingService : IEFormidlingService
             using Stream stream = await _dataClient.GetBinaryData(_org, _app, instanceOwnerPartyId, instanceGuid,
                 new Guid(dataElement.Id));
 
-            bool successful = await _eFormidlingClient!.UploadAttachment(stream, instanceGuid.ToString(), fileName, requestHeaders);            
+            bool successful = await _eFormidlingClient!.UploadAttachment(stream, instanceGuid.ToString(), fileName, requestHeaders);
 
             if (!successful)
             {

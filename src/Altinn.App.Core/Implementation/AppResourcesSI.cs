@@ -23,6 +23,7 @@ namespace Altinn.App.Core.Implementation
         private readonly IWebHostEnvironment _hostingEnvironment;
         private readonly ILogger _logger;
         private Application? _application;
+
         private static readonly JsonSerializerOptions DESERIALIZER_OPTIONS = new()
         {
             AllowTrailingCommas = true,
@@ -119,7 +120,7 @@ namespace Altinn.App.Core.Implementation
                     filedata = File.ReadAllText(filename, Encoding.UTF8);
                 }
 
-                _application = JsonConvert.DeserializeObject<Application>(filedata)!;
+                _application = JsonConvert.DeserializeObject<ApplicationMetadata>(filedata)!;
                 return _application;
             }
             catch (Exception ex)
@@ -333,6 +334,7 @@ namespace Altinn.App.Core.Implementation
             {
                 return System.Text.Json.JsonSerializer.Deserialize<LayoutSets>(layoutSetsString, DESERIALIZER_OPTIONS);
             }
+
             return null;
         }
 

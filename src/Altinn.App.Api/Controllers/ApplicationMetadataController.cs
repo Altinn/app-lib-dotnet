@@ -1,6 +1,7 @@
-using Altinn.App.Core.Interface;
-using Altinn.Platform.Storage.Interface.Models;
+#nullable enable
 
+using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,15 +15,15 @@ namespace Altinn.App.Api.Controllers
     [ApiController]
     public class ApplicationMetadataController : ControllerBase
     {
-        private readonly IAppResources _appResources;
+        private readonly IAppMetadata _appMetadata;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ApplicationMetadataController"/> class
-        /// <param name="appResources">The app resources service</param>
+        /// <param name="appMetadata">The IAppMetadata service</param>
         /// </summary>
-        public ApplicationMetadataController(IAppResources appResources)
+        public ApplicationMetadataController(IAppMetadata appMetadata)
         {
-            _appResources = appResources;
+            _appMetadata = appMetadata;
         }
 
         /// <summary>
@@ -35,9 +36,9 @@ namespace Altinn.App.Api.Controllers
         /// <param name="checkOrgApp">Boolean get parameter to skip verification of correct org/app</param>
         /// <returns>Application metadata</returns>
         [HttpGet("{org}/{app}/api/v1/applicationmetadata")]
-        public IActionResult GetAction(string org, string app, [FromQuery] bool checkOrgApp = true)
+        public async Task<IActionResult> GetAction(string org, string app, [FromQuery] bool checkOrgApp = true)
         {
-            Application application = _appResources.GetApplication();
+            ApplicationMetadata? application = await _appMetadata.GetApplicationMetadata();
 
             if (application != null)
             {
@@ -63,10 +64,10 @@ namespace Altinn.App.Api.Controllers
         /// <param name="app">Application identifier which is unique within an organisation.</param>
         /// <returns>XACML policy file</returns>
         [HttpGet("{org}/{app}/api/v1/meta/authorizationpolicy")]
-        public IActionResult GetPolicy(string org, string app)
+        public async Task<IActionResult> GetPolicy(string org, string app)
         {
-            Application application = _appResources.GetApplication();
-            string policy = _appResources.GetApplicationXACMLPolicy();
+            ApplicationMetadata? application = await _appMetadata.GetApplicationMetadata();
+            string? policy = await _appMetadata.GetApplicationXACMLPolicy();
 
             if (application != null && policy != null)
             {
@@ -92,10 +93,10 @@ namespace Altinn.App.Api.Controllers
         /// <param name="app">Application identifier which is unique within an organisation.</param>
         /// <returns>BPMN process file</returns>
         [HttpGet("{org}/{app}/api/v1/meta/process")]
-        public IActionResult GetProcess(string org, string app)
+        public async Task<IActionResult> GetProcess(string org, string app)
         {
-            Application application = _appResources.GetApplication();
-            string process = _appResources.GetApplicationBPMNProcess();
+            ApplicationMetadata? application = await _appMetadata.GetApplicationMetadata();
+            string? process = await _appMetadata.GetApplicationBPMNProcess();
 
             if (application != null && process != null)
             {
