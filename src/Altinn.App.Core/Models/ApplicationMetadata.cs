@@ -15,5 +15,10 @@ namespace Altinn.App.Core.Models
         /// </summary>
         [JsonProperty(PropertyName = "features")]
         public Dictionary<string, bool>? Features { get; set; }
+
+        /// <summary>
+        /// Name of the application
+        /// </summary>
+        public string App { get; set; } = "";
     }
 }

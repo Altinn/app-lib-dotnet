@@ -2,6 +2,8 @@ using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.EFormidling.Interface;
 using Altinn.App.Core.Interface;
+using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Models;
 using Altinn.Common.AccessTokenClient.Services;
 using Altinn.Common.EFormidlingClient;
 using Altinn.Common.EFormidlingClient.Models.SBD;
@@ -25,7 +27,7 @@ public class DefaultEFormidlingService : IEFormidlingService
     private readonly PlatformSettings? _platformSettings;
     private readonly IEFormidlingClient? _eFormidlingClient;
     private readonly IEFormidlingMetadata? _eFormidlingMetadata;
-    private readonly Application _appMetadata;
+    private readonly IAppMetadata _appMetadata;
     private readonly IData _dataClient;
     private readonly IEFormidlingReceivers _eFormidlingReceivers;
     private readonly IEvents _eventClient;
@@ -38,7 +40,7 @@ public class DefaultEFormidlingService : IEFormidlingService
     public DefaultEFormidlingService(
         ILogger<DefaultEFormidlingService> logger,
         IHttpContextAccessor httpContextAccessor,
-        IAppResources appResources,
+        IAppMetadata appMetadata,
         IData dataClient,
         IEFormidlingReceivers eFormidlingReceivers,
         IEvents eventClient,
@@ -55,11 +57,9 @@ public class DefaultEFormidlingService : IEFormidlingService
         _platformSettings = platformSettings?.Value;
         _eFormidlingClient = eFormidlingClient;
         _eFormidlingMetadata = eFormidlingMetadata;
-        _appMetadata = appResources.GetApplication();
+        _appMetadata = appMetadata;
         _dataClient = dataClient;
         _eFormidlingReceivers = eFormidlingReceivers;
-        _org = _appMetadata.Org;
-        _app = _appMetadata.Id.Split("/")[1];
         _eventClient = eventClient;
     }
 
@@ -126,11 +126,12 @@ public class DefaultEFormidlingService : IEFormidlingService
         };
 
         List<Receiver> receivers = await _eFormidlingReceivers.GetEFormidlingReceivers(instance);
+        ApplicationMetadata? appMetadata = await _appMetadata.GetApplicationMetadata();
 
         Scope scope =
             new Scope
             {
-                Identifier = _appMetadata.EFormidling.Process,
+                Identifier = appMetadata?.EFormidling.Process,
                 InstanceIdentifier = Guid.NewGuid().ToString(),
                 Type = "ConversationId",
                 ScopeInformation = new List<ScopeInformation>
@@ -150,10 +151,10 @@ public class DefaultEFormidlingService : IEFormidlingService
         DocumentIdentification documentIdentification = new DocumentIdentification
         {
             InstanceIdentifier = instanceGuid,
-            Standard = _appMetadata.EFormidling.Standard,
-            TypeVersion = _appMetadata.EFormidling.TypeVersion,
+            Standard = appMetadata?.EFormidling.Standard,
+            TypeVersion = appMetadata?.EFormidling.TypeVersion,
             CreationDateAndTime = completedTime,
-            Type = _appMetadata.EFormidling.Type
+            Type = appMetadata?.EFormidling.Type
         };
 
         StandardBusinessDocumentHeader sbdHeader = new StandardBusinessDocumentHeader
@@ -168,12 +169,12 @@ public class DefaultEFormidlingService : IEFormidlingService
         StandardBusinessDocument sbd = new StandardBusinessDocument
         {
             StandardBusinessDocumentHeader = sbdHeader,
-            Arkivmelding = new Arkivmelding { Sikkerhetsnivaa = _appMetadata.EFormidling.SecurityLevel },
+            Arkivmelding = new Arkivmelding { Sikkerhetsnivaa = appMetadata.EFormidling.SecurityLevel },
         };
 
-        if (!string.IsNullOrEmpty(_appMetadata.EFormidling.DPFShipmentType))
+        if (!string.IsNullOrEmpty(appMetadata.EFormidling.DPFShipmentType))
         {
-            sbd.Arkivmelding.DPF = new() { ForsendelsesType = _appMetadata.EFormidling.DPFShipmentType };
+            sbd.Arkivmelding.DPF = new() { ForsendelsesType = appMetadata.EFormidling.DPFShipmentType };
         }
 
         return sbd;
@@ -183,16 +184,16 @@ public class DefaultEFormidlingService : IEFormidlingService
     {
         Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
         int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
-
+        ApplicationMetadata? appMetadata = await _appMetadata.GetApplicationMetadata();
         foreach (DataElement dataElement in instance.Data)
         {
-            if (!_appMetadata.EFormidling.DataTypes.Contains(dataElement.DataType))
+            if (!appMetadata.EFormidling.DataTypes.Contains(dataElement.DataType))
             {
                 continue;
             }
 
             bool appLogic =
-                _appMetadata.DataTypes.Any(d => d.Id == dataElement.DataType && d.AppLogic?.ClassRef != null);
+                appMetadata.DataTypes.Any(d => d.Id == dataElement.DataType && d.AppLogic?.ClassRef != null);
 
             string fileName = appLogic ? $"{dataElement.DataType}.xml" : dataElement.Filename;
             using Stream stream = await _dataClient.GetBinaryData(_org, _app, instanceOwnerPartyId, instanceGuid,
@@ -203,7 +204,7 @@ public class DefaultEFormidlingService : IEFormidlingService
             if (!successful)
             {
                 _logger.LogError(
-                    "// AppBase // SendInstanceData // DataElement {DataElementId} was not sent with shipment for instance {InstanceId} failed.",
+                    "// AppBase // SendInstanceData // DataElement {DataElementId} was not sent with shipment for instance {InstanceId} failed",
                     dataElement.Id, instance.Id);
             }
         }

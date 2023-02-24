@@ -13,7 +13,7 @@ namespace Altinn.App.Core.Tests.Internal.App
 {
     public class AppMedataTest
     {
-        private readonly string AppBasePath = Path.Combine("Internal", "App", "TestData") + Path.DirectorySeparatorChar;
+        private readonly string appBasePath = Path.Combine("Internal", "App", "TestData") + Path.DirectorySeparatorChar;
 
         [Fact]
         public async void GetApplicationMetadata_desrializes_file_from_disk()
@@ -24,6 +24,7 @@ namespace Altinn.App.Core.Tests.Internal.App
             {
                 Id = "tdd/bestilling",
                 Org = "tdd",
+                App = "bestilling",
                 Created = DateTime.Parse("2019-09-16T22:22:22"),
                 CreatedBy = "username",
                 Title = new Dictionary<string, string>()
@@ -79,6 +80,7 @@ namespace Altinn.App.Core.Tests.Internal.App
             {
                 Id = "tdd/bestilling",
                 Org = "tdd",
+                App = "bestilling",
                 Created = DateTime.Parse("2019-09-16T22:22:22"),
                 CreatedBy = "username",
                 Title = new Dictionary<string, string>()
@@ -187,10 +189,10 @@ namespace Altinn.App.Core.Tests.Internal.App
         {
             AppSettings appSettings = new AppSettings()
             {
-                AppBasePath = AppBasePath,
+                AppBasePath = appBasePath,
                 ConfigurationFolder = subfolder + Path.DirectorySeparatorChar,
-                AuthorizationFolder = "",
-                ProcessFolder = "",
+                AuthorizationFolder = string.Empty,
+                ProcessFolder = string.Empty,
                 ApplicationMetadataFileName = appMetadataFilename,
                 ProcessFileName = bpmnFilename,
                 ApplicationXACMLPolicyFileName = policyFilename

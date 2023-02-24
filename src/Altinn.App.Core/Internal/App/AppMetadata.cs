@@ -52,6 +52,7 @@ namespace Altinn.App.Core.Internal.App
                 }
 
                 _application = JsonConvert.DeserializeObject<ApplicationMetadata>(filedata)!;
+                _application.App = _application.Id.Split("/")[1];
                 _application.Features = await _appFeatures.GetEnabledFeatures();
 
                 return _application;
