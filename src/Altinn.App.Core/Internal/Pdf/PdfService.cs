@@ -260,7 +260,7 @@ public class PdfService : IPdfService
         return textResource;
     }
 
-    private static string GetFileName(Instance instance, TextResource textResource)
+    private static string GetFileName(Instance instance, TextResource? textResource)
     {
         string? fileName = null;
         string app = instance.AppId.Split("/")[1];
