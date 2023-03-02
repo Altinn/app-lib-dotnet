@@ -152,7 +152,7 @@ public class AppResourcesSITests
         var settings = Options.Create<AppSettings>(appSettings);
         IAppMetadata appMetadata = new AppMetadata(settings, new AppFeatures(), new NullLogger<AppMetadata>());
         IAppResources appResources = new AppResourcesSI(settings, appMetadata, null, new NullLogger<AppResourcesSI>());
-        string expected = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<root>policy</root>";
+        string expected = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" + Environment.NewLine + "<root>policy</root>";
         var actual = appResources.GetApplicationXACMLPolicy();
         actual.Should().BeEquivalentTo(expected);
     }
@@ -175,7 +175,7 @@ public class AppResourcesSITests
         var settings = Options.Create<AppSettings>(appSettings);
         IAppMetadata appMetadata = new AppMetadata(settings, new AppFeatures(), new NullLogger<AppMetadata>());
         IAppResources appResources = new AppResourcesSI(settings, appMetadata, null, new NullLogger<AppResourcesSI>());
-        string expected = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<root>process</root>";
+        string expected = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" + Environment.NewLine + "<root>process</root>";
         var actual = appResources.GetApplicationBPMNProcess();
         actual.Should().BeEquivalentTo(expected);
     }
