@@ -84,6 +84,10 @@ public class DefaultTaskEvents : ITaskEvents
 
         await RunAppDefinedOnTaskStart(taskId, instance, prefill);
         ApplicationMetadata? appMetadata = await _appMetadata.GetApplicationMetadata();
+        if (appMetadata == null)
+        {
+            return;
+        }
 
         // If this is a revisit to a previous task we need to unlock data
         foreach (DataType dataType in appMetadata.DataTypes.Where(dt => dt.TaskId == taskId))

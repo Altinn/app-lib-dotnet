@@ -66,7 +66,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Register
         {
             HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, $"persons");
 
-            AddAuthHeaders(request);
+            await AddAuthHeaders(request);
 
             request.Headers.Add("X-Ai-NationalIdentityNumber", nationalIdentityNumber);
             request.Headers.Add("X-Ai-LastName", ConvertToBase64(lastName));

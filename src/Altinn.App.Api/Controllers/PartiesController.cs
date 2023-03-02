@@ -61,7 +61,7 @@ namespace Altinn.App.Api.Controllers
             if (allowedToInstantiateFilter)
             {
                 Application? application = await _appMetadata.GetApplicationMetadata();
-                List<Party> validParties = InstantiationHelper.FilterPartiesByAllowedPartyTypes(partyList, application.PartyTypesAllowed);
+                List<Party> validParties = InstantiationHelper.FilterPartiesByAllowedPartyTypes(partyList, application?.PartyTypesAllowed);
                 return Ok(validParties);
             }
 
@@ -90,12 +90,12 @@ namespace Altinn.App.Api.Controllers
             }
 
             PartyTypesAllowed partyTypesAllowed = application.PartyTypesAllowed;
-            Party partyUserRepresents = null;
+            Party? partyUserRepresents = null;
 
             // Check if the user can represent the supplied partyId
             if (partyId != user.PartyId)
             {
-                Party represents = InstantiationHelper.GetPartyByPartyId(partyList, partyId);
+                Party? represents = InstantiationHelper.GetPartyByPartyId(partyList, partyId);
                 if (represents == null)
                 {
                     // the user does not represent the chosen party id, is not allowed to initiate

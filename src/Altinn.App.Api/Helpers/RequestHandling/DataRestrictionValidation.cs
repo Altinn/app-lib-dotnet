@@ -31,7 +31,7 @@ namespace Altinn.App.Api.Helpers.RequestHandling
                 return false;
             }
 
-            var maxSize = (long?)dataType.MaxSize * 1024 * 1024;
+            var maxSize = (long?)dataType?.MaxSize * 1024 * 1024;
             if (maxSize != null && request.ContentLength > maxSize)
             {
                 errorResponse = new ObjectResult($"{errorBaseMessage} Binary attachment exceeds limit of {maxSize}")
@@ -61,7 +61,7 @@ namespace Altinn.App.Api.Helpers.RequestHandling
                 return false;
             }
 
-            if (dataType.AllowedContentTypes == null || dataType.AllowedContentTypes.Count == 0)
+            if (dataType?.AllowedContentTypes == null || dataType.AllowedContentTypes.Count == 0)
             {
                 return true;
             }

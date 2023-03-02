@@ -31,8 +31,6 @@ public class DefaultEFormidlingService : IEFormidlingService
     private readonly IData _dataClient;
     private readonly IEFormidlingReceivers _eFormidlingReceivers;
     private readonly IEvents _eventClient;
-    private readonly string _org;
-    private readonly string _app;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DefaultEFormidlingService"/> class.
@@ -74,7 +72,13 @@ public class DefaultEFormidlingService : IEFormidlingService
                 "Ensure that IEformidlingClient and IAccessTokenGenerator are included in the base constructor.");
         }
 
-        string accessToken = _tokenGenerator.GenerateAccessToken(_org, _app);
+        ApplicationMetadata? applicationMetadata = await _appMetadata.GetApplicationMetadata();
+        if (applicationMetadata == null)
+        {
+            throw new EntryPointNotFoundException("Could not load applicationMetadata. Please confirm that it is present");
+        }
+
+        string accessToken = _tokenGenerator.GenerateAccessToken(applicationMetadata.Org, applicationMetadata.App);
         string authzToken = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _appSettings.RuntimeCookieName);
 
         var requestHeaders = new Dictionary<string, string>
@@ -105,7 +109,7 @@ public class DefaultEFormidlingService : IEFormidlingService
         }
         catch
         {
-            _logger.LogError("Shipment of instance {InstanceId} to Eformidling failed.", instance.Id);
+            _logger.LogError("Shipment of instance {InstanceId} to Eformidling failed", instance.Id);
             throw;
         }
     }
@@ -182,21 +186,25 @@ public class DefaultEFormidlingService : IEFormidlingService
 
     private async Task SendInstanceData(Instance instance, Dictionary<string, string> requestHeaders)
     {
+        ApplicationMetadata? applicationMetadata = await _appMetadata.GetApplicationMetadata();
+        if (applicationMetadata == null)
+        {
+            throw new EntryPointNotFoundException("Could not load applicationMetadata. Please confirm that it is present");
+        }
         Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
         int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
-        ApplicationMetadata? appMetadata = await _appMetadata.GetApplicationMetadata();
         foreach (DataElement dataElement in instance.Data)
         {
-            if (!appMetadata.EFormidling.DataTypes.Contains(dataElement.DataType))
+            if (!applicationMetadata.EFormidling.DataTypes.Contains(dataElement.DataType))
             {
                 continue;
             }
 
             bool appLogic =
-                appMetadata.DataTypes.Any(d => d.Id == dataElement.DataType && d.AppLogic?.ClassRef != null);
+                applicationMetadata.DataTypes.Any(d => d.Id == dataElement.DataType && d.AppLogic?.ClassRef != null);
 
             string fileName = appLogic ? $"{dataElement.DataType}.xml" : dataElement.Filename;
-            using Stream stream = await _dataClient.GetBinaryData(_org, _app, instanceOwnerPartyId, instanceGuid,
+            using Stream stream = await _dataClient.GetBinaryData(applicationMetadata.Org, applicationMetadata.App, instanceOwnerPartyId, instanceGuid,
                 new Guid(dataElement.Id));
 
             bool successful = await _eFormidlingClient!.UploadAttachment(stream, instanceGuid.ToString(), fileName, requestHeaders);

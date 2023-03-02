@@ -97,7 +97,7 @@ namespace Altinn.App.Api.Controllers
 
         private async Task<bool> ShouldShowAppView()
         {
-            if (User.Identity.IsAuthenticated)
+            if (User?.Identity?.IsAuthenticated == true)
             {
                 return true;
             }
@@ -108,7 +108,7 @@ namespace Altinn.App.Api.Controllers
                 return false;
             }
 
-            DataType dataType = GetStatelessDataType(application);
+            DataType? dataType = GetStatelessDataType(application);
 
             if (dataType != null && dataType.AppLogic.AllowAnonymousOnStateless)
             {
@@ -118,9 +118,9 @@ namespace Altinn.App.Api.Controllers
             return false;
         }
 
-        private bool IsStatelessApp(Application application)
+        private bool IsStatelessApp(Application? application)
         {
-            if (application.OnEntry == null)
+            if (application?.OnEntry == null)
             {
                 return false;
             }
@@ -128,7 +128,7 @@ namespace Altinn.App.Api.Controllers
             return !_onEntryWithInstance.Contains(application.OnEntry?.Show);
         }
 
-        private DataType GetStatelessDataType(Application application)
+        private DataType? GetStatelessDataType(Application application)
         {
             string layoutSetsString = _appResources.GetLayoutSets();
             JsonSerializerOptions options = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
@@ -136,8 +136,8 @@ namespace Altinn.App.Api.Controllers
             // Stateless apps only work with layousets
             if (!string.IsNullOrEmpty(layoutSetsString))
             {
-                LayoutSets layoutSets = JsonSerializer.Deserialize<LayoutSets>(layoutSetsString, options);
-                string dataTypeId = layoutSets.Sets.Find(set => set.Id == application.OnEntry?.Show).DataType;
+                LayoutSets? layoutSets = JsonSerializer.Deserialize<LayoutSets>(layoutSetsString, options);
+                string? dataTypeId = layoutSets?.Sets?.Find(set => set.Id == application.OnEntry?.Show)?.DataType;
                 return application.DataTypes.Find(d => d.Id == dataTypeId);
             }
 
