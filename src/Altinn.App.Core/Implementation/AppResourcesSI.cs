@@ -3,6 +3,7 @@ using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Interface;
+using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Models.Layout.Components;
@@ -20,9 +21,9 @@ namespace Altinn.App.Core.Implementation
     public class AppResourcesSI : IAppResources
     {
         private readonly AppSettings _settings;
+        private readonly IAppMetadata _appMetadata;
         private readonly IWebHostEnvironment _hostingEnvironment;
         private readonly ILogger _logger;
-        private Application? _application;
 
         private static readonly JsonSerializerOptions DESERIALIZER_OPTIONS = new()
         {
@@ -39,10 +40,12 @@ namespace Altinn.App.Core.Implementation
         /// <param name="logger">A logger from the built in logger factory.</param>
         public AppResourcesSI(
             IOptions<AppSettings> settings,
+            IAppMetadata appMetadata,
             IWebHostEnvironment hostingEnvironment,
             ILogger<AppResourcesSI> logger)
         {
             _settings = settings.Value;
+            _appMetadata = appMetadata;
             _hostingEnvironment = hostingEnvironment;
             _logger = logger;
         }
@@ -105,66 +108,42 @@ namespace Altinn.App.Core.Implementation
         /// <inheritdoc />
         public Application GetApplication()
         {
-            // Cache application metadata
-            if (_application != null)
+            var task = Task.Run<ApplicationMetadata?>(async () => await _appMetadata.GetApplicationMetadata());
+            task.Wait();
+            if (task.IsCompletedSuccessfully)
             {
-                return _application;
+                return task.Result;
             }
 
-            string filedata = string.Empty;
-            string filename = _settings.AppBasePath + _settings.ConfigurationFolder + _settings.ApplicationMetadataFileName;
-            try
-            {
-                if (File.Exists(filename))
-                {
-                    filedata = File.ReadAllText(filename, Encoding.UTF8);
-                }
-
-                _application = JsonConvert.DeserializeObject<ApplicationMetadata>(filedata)!;
-                return _application;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("Something went wrong when fetching application metadata. {0}", ex);
-                return null;
-            }
+            _logger.LogError(task.Exception, "Something went wrong fetching application metadata");
+            return null;
         }
 
         /// <inheritdoc/>
         public string? GetApplicationXACMLPolicy()
         {
-            string filename = _settings.AppBasePath + _settings.ConfigurationFolder + _settings.AuthorizationFolder + _settings.ApplicationXACMLPolicyFileName;
-            try
+            var task = Task.Run<string?>(async () => await _appMetadata.GetApplicationXACMLPolicy());
+            task.Wait();
+            if (task.IsCompletedSuccessfully)
             {
-                if (File.Exists(filename))
-                {
-                    return File.ReadAllText(filename, Encoding.UTF8);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("Something went wrong when fetching XACML Policy. {0}", ex);
+                return task.Result;
             }
 
+            _logger.LogError(task.Exception, "Something went wrong fetching application policy");
             return null;
         }
 
         /// <inheritdoc/>
         public string? GetApplicationBPMNProcess()
         {
-            string filename = _settings.AppBasePath + _settings.ConfigurationFolder + _settings.ProcessFolder + _settings.ProcessFileName;
-            try
+            var task = Task.Run<string?>(async () => await _appMetadata.GetApplicationBPMNProcess());
+            task.Wait();
+            if (task.IsCompletedSuccessfully)
             {
-                if (File.Exists(filename))
-                {
-                    return File.ReadAllText(filename, Encoding.UTF8);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("Something went wrong when fetching BPMNProcess. {0}", ex);
+                return task.Result;
             }
 
+            _logger.LogError(task.Exception, "Something went wrong fetching application policy");
             return null;
         }
 
