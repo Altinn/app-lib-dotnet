@@ -76,7 +76,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Register
             return await ReadResponse(response, ct);
         }
 
-        private async void AddAuthHeaders(HttpRequestMessage request)
+        private async Task AddAuthHeaders(HttpRequestMessage request)
         {
             Application? application = await _appMetadata.GetApplicationMetadata();
             string? issuer = application?.Org;
