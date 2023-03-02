@@ -47,6 +47,7 @@ namespace Altinn.App.Api.Controllers
             _env = env;
             _appSettings = appSettings.Value;
             _appResources = appResources;
+            _appMetadata = appMetadata;
         }
 
         /// <summary>

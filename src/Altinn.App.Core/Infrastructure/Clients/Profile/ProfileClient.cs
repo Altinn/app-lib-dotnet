@@ -23,7 +23,6 @@ namespace Altinn.App.Core.Infrastructure.Clients.Profile
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly AppSettings _settings;
         private readonly HttpClient _client;
-        private readonly IAppResources _appResources;
         private readonly IAppMetadata _appMetadata;
         private readonly IAccessTokenGenerator _accessTokenGenerator;
 
@@ -35,7 +34,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Profile
         /// <param name="httpContextAccessor">The http context accessor </param>
         /// <param name="settings">The application settings.</param>
         /// <param name="httpClient">A HttpClient provided by the HttpClientFactory.</param>
-        /// <param name="appResources">An instance of the AppResources service.</param>
+        /// <param name="appMetadata">An instance of the IAppMetadata service.</param>
         /// <param name="accessTokenGenerator">An instance of the AccessTokenGenerator service.</param>
         public ProfileClient(
             IOptions<PlatformSettings> platformSettings,
@@ -43,7 +42,6 @@ namespace Altinn.App.Core.Infrastructure.Clients.Profile
             IHttpContextAccessor httpContextAccessor,
             IOptionsMonitor<AppSettings> settings,
             HttpClient httpClient,
-            IAppResources appResources,
             IAppMetadata appMetadata,
             IAccessTokenGenerator accessTokenGenerator)
         {
@@ -54,7 +52,6 @@ namespace Altinn.App.Core.Infrastructure.Clients.Profile
             httpClient.DefaultRequestHeaders.Add(General.SubscriptionKeyHeaderName, platformSettings.Value.SubscriptionKey);
             httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             _client = httpClient;
-            _appResources = appResources;
             _appMetadata = appMetadata;
             _accessTokenGenerator = accessTokenGenerator;
         }

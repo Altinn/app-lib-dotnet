@@ -1,7 +1,7 @@
 namespace Altinn.App.Core.Internal.App
 {
     /// <summary>
-    /// Interface reporting features and their status
+    /// Interface reporting features needed by frontend and their status to support multiple versions of the backend
     /// </summary>
     public interface IAppFeatures
     {

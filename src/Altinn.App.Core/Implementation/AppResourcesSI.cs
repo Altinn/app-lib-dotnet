@@ -36,6 +36,7 @@ namespace Altinn.App.Core.Implementation
         /// Initializes a new instance of the <see cref="AppResourcesSI"/> class.
         /// </summary>
         /// <param name="settings">The app repository settings.</param>
+        /// <param name="appMetadata">App metadata service</param>
         /// <param name="hostingEnvironment">The hosting environment</param>
         /// <param name="logger">A logger from the built in logger factory.</param>
         public AppResourcesSI(
