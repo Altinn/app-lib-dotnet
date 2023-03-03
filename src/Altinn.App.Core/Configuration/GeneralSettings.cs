@@ -1,3 +1,6 @@
+using System.Text;
+using Altinn.App.Core.Models;
+
 namespace Altinn.App.Core.Configuration
 {
     /// <summary>
@@ -30,6 +33,30 @@ namespace Altinn.App.Core.Configuration
         /// and might not be the full url you can access the app on.
         /// </summary>
         public string HostName { get; set; } = "local.altinn.cloud";
+
+        /// <summary>
+        /// The externally accesible base url for the app with trailing /
+        /// </summary>
+        /// <remarks>
+        /// This setting offers the following replacemnts
+        /// <br />
+        /// {hostName}: GeneralSettings::Hostname<br />
+        /// {org}: Org from applicationmetadata.json<br />
+        /// {app}: App from applicationmetadata.json<br />
+        /// </remarks>
+        public string ExternalAppBaseUrl { get; set; } = "http://{hostName}/{org}/{app}/";
+
+        /// <summary>
+        /// Convenience method to get <see cref="ExternalAppBaseUrl" /> with segments replaced and trailing /
+        /// </summary>
+        public string FormattedExternalAppBaseUrl(AppIdentifier app)
+        {
+            var sb = new StringBuilder(ExternalAppBaseUrl.ToLowerInvariant());
+            sb.Replace("{hostname}", HostName);
+            sb.Replace("{org}", app.Org);
+            sb.Replace("{app}", app.App);
+            return sb.ToString();
+        }
 
         /// <summary>
         /// Gets or sets the AltinnParty cookie name.

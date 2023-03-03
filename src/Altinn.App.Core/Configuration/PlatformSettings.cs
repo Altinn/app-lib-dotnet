@@ -1,6 +1,3 @@
-using System.Text;
-using Altinn.App.Core.Models;
-
 namespace Altinn.App.Core.Configuration
 {
     /// <summary>
@@ -48,30 +45,6 @@ namespace Altinn.App.Core.Configuration
         /// Gets or sets tue url for the new browser based PDF API endpoint.
         /// </summary>
         public string BrowserPdfEndpoint { get; set; } = "http://localhost:5300/pdf";
-
-        /// <summary>
-        /// The externally accesible base url for the app with trailing /
-        /// </summary>
-        /// <remarks>
-        /// This setting offers the following replacemnts
-        /// <br />
-        /// {hostName}: GeneralSettings::Hostname<br />
-        /// {org}: Org from applicationmetadata.json<br />
-        /// {app}: App from applicationmetadata.json<br />
-        /// </remarks>
-        public string ExternalAppBaseUrl { get; set; } = "http://{hostName}/{org}/{app}/";
-
-        /// <summary>
-        /// Convenience method to get <see cref="ExternalAppBaseUrl" /> with segments replaced and trailing /
-        /// </summary>
-        public string FormattedExternalAppBaseUrl(string hostname, AppIdentifier app)
-        {
-            var sb = new StringBuilder(ExternalAppBaseUrl.ToLowerInvariant());
-            sb.Replace("{hostname}", hostname);
-            sb.Replace("{org}", app.Org);
-            sb.Replace("{app}", app.App);
-            return sb.ToString();
-        }
 
         /// <summary>
         /// Gets or sets the subscription key value to use in requests against the platform.

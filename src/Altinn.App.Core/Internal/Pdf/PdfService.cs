@@ -33,7 +33,6 @@ public class PdfService : IPdfService
 
     private readonly IPdfGeneratorClient _pdfGeneratorClient;
     private readonly PdfGeneratorSettings _pdfGeneratorSettings;
-    private readonly PlatformSettings _platformSettings;
     private readonly GeneralSettings _generalSettings;
 
     private const string PdfElementType = "ref-data-as-pdf";
@@ -52,7 +51,6 @@ public class PdfService : IPdfService
     /// <param name="pdfFormatter">Class for customizing pdf formatting and layout.</param>
     /// <param name="pdfGeneratorClient">PDF generator client for the experimental PDF generator service</param>
     /// <param name="pdfGeneratorSettings">PDF generator related settings.</param>
-    /// <param name="platformSettings">Urls for platform services.</param>
     /// <param name="generalSettings">The app general settings.</param>
     public PdfService(
         IPDF pdfClient,
@@ -65,7 +63,6 @@ public class PdfService : IPdfService
         IPdfFormatter pdfFormatter,
         IPdfGeneratorClient pdfGeneratorClient,
         IOptions<PdfGeneratorSettings> pdfGeneratorSettings,
-        IOptions<PlatformSettings> platformSettings,
         IOptions<GeneralSettings> generalSettings
         )
     {
@@ -79,7 +76,6 @@ public class PdfService : IPdfService
         _pdfFormatter = pdfFormatter;
         _pdfGeneratorClient = pdfGeneratorClient;
         _pdfGeneratorSettings = pdfGeneratorSettings.Value;
-        _platformSettings = platformSettings.Value;
         _generalSettings = generalSettings.Value;
     }
 
@@ -87,7 +83,7 @@ public class PdfService : IPdfService
     /// <inheritdoc/>
     public async Task GenerateAndStorePdf(Instance instance, CancellationToken ct)
     {
-        var baseUrl = _platformSettings.FormattedExternalAppBaseUrl(_generalSettings.HostName, new AppIdentifier(instance));
+        var baseUrl = _generalSettings.FormattedExternalAppBaseUrl(new AppIdentifier(instance));
         var pagePath = _pdfGeneratorSettings.AppPdfPagePathTemplate.ToLowerInvariant().Replace("{instanceid}", instance.Id);
 
         Stream pdfContent = await _pdfGeneratorClient.GeneratePdf(new Uri(baseUrl + pagePath), ct);

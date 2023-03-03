@@ -74,7 +74,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Events
                 alternativeSubject = $"/person/{instance.InstanceOwner.PersonNumber}";
             }
 
-            var baseUrl = _platformSettings.FormattedExternalAppBaseUrl(_generalSettings.HostName, new AppIdentifier(instance));
+            var baseUrl = _generalSettings.FormattedExternalAppBaseUrl(new AppIdentifier(instance));
 
             CloudEvent cloudEvent = new CloudEvent
             {

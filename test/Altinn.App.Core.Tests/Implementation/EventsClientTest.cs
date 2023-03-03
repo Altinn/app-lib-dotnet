@@ -26,7 +26,7 @@ namespace Altinn.App.PlatformServices.Tests.Implementation
     {
         private readonly IOptions<PlatformSettings> platformSettingsOptions;
         private readonly Mock<IOptionsMonitor<AppSettings>> appSettingsOptions;
-        private readonly Mock<IOptions<GeneralSettings>> generalSettingsOptions;
+        private readonly IOptions<GeneralSettings> generalSettingsOptions;
         private readonly Mock<HttpMessageHandler> handlerMock;
         private readonly Mock<IHttpContextAccessor> contextAccessor;
         private readonly Mock<IAccessTokenGenerator> accessTokenGeneratorMock;
@@ -34,12 +34,12 @@ namespace Altinn.App.PlatformServices.Tests.Implementation
 
         public EventsClientTest()
         {
-            platformSettingsOptions = Microsoft.Extensions.Options.Options.Create<PlatformSettings>(new()
+            platformSettingsOptions = Microsoft.Extensions.Options.Options.Create<PlatformSettings>(new());
+            appSettingsOptions = new Mock<IOptionsMonitor<AppSettings>>();
+            generalSettingsOptions = Microsoft.Extensions.Options.Options.Create<GeneralSettings>(new()
             {
                 ExternalAppBaseUrl = "https://{org}.apps.{hostName}/{org}/{app}/"
             });
-            appSettingsOptions = new Mock<IOptionsMonitor<AppSettings>>();
-            generalSettingsOptions = new Mock<IOptions<GeneralSettings>>();
             handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
             contextAccessor = new Mock<IHttpContextAccessor>();
             accessTokenGeneratorMock = new Mock<IAccessTokenGenerator>();
@@ -80,7 +80,7 @@ namespace Altinn.App.PlatformServices.Tests.Implementation
                 accessTokenGeneratorMock.Object,
                 appResourcesMock.Object,
                 appSettingsOptions.Object,
-                generalSettingsOptions.Object);
+                generalSettingsOptions);
 
             // Act
             await target.AddEvent("created", instance);
@@ -135,7 +135,7 @@ namespace Altinn.App.PlatformServices.Tests.Implementation
                 accessTokenGeneratorMock.Object,
                 appResourcesMock.Object,
                 appSettingsOptions.Object,
-                generalSettingsOptions.Object);
+                generalSettingsOptions);
 
             // Act
             await target.AddEvent("created", instance);
@@ -186,7 +186,7 @@ namespace Altinn.App.PlatformServices.Tests.Implementation
                 accessTokenGeneratorMock.Object,
                 appResourcesMock.Object,
                 appSettingsOptions.Object,
-                generalSettingsOptions.Object);
+                generalSettingsOptions);
 
             PlatformHttpException actual = null;
 
@@ -214,11 +214,7 @@ namespace Altinn.App.PlatformServices.Tests.Implementation
             platformSettingsOptions.Value.ApiEventsEndpoint = "http://localhost:5101/events/api/v1/";
             platformSettingsOptions.Value.SubscriptionKey = "key";
 
-            GeneralSettings generalSettings = new GeneralSettings
-            {
-                HostName = "at22.altinn.cloud"
-            };
-            generalSettingsOptions.Setup(s => s.Value).Returns(generalSettings);
+            generalSettingsOptions.Value.HostName = "at22.altinn.cloud";
 
             AppSettings appSettings = new AppSettings { RuntimeCookieName = "AltinnStudioRuntime" };
             appSettingsOptions.Setup(s => s.CurrentValue).Returns(appSettings);

@@ -51,7 +51,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Events
         /// <returns>The created <see cref="Subscription"/></returns>
         public async Task<Subscription> AddSubscription(string org, string app, string eventType)
         {
-            var appBaseUrl = _platformSettings.FormattedExternalAppBaseUrl(_generalSettings.HostName, new Models.AppIdentifier(org, app));
+            var appBaseUrl = _generalSettings.FormattedExternalAppBaseUrl(new Models.AppIdentifier(org, app));
 
             var subscriptionRequest = new SubscriptionRequest()
             {

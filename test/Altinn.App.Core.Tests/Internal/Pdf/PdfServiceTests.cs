@@ -94,7 +94,7 @@ namespace Altinn.App.PlatformServices.Tests.Internal.Pdf
         {
             // Arrange
             _pdfGeneratorClient.Setup(s => s.GeneratePdf(It.IsAny<Uri>(), It.IsAny<CancellationToken>()));
-            _platformSettingsOptions.Value.ExternalAppBaseUrl = "https://{org}.apps.{hostName}/{org}/{app}";
+            _generalSettingsOptions.Value.ExternalAppBaseUrl = "https://{org}.apps.{hostName}/{org}/{app}";
 
             var target = new PdfService(
                 _pdf.Object,
@@ -107,7 +107,6 @@ namespace Altinn.App.PlatformServices.Tests.Internal.Pdf
                 pdfFormatter.Object,
                 _pdfGeneratorClient.Object,
                 _pdfGeneratorSettingsOptions,
-                _platformSettingsOptions,
                 _generalSettingsOptions);
 
             Instance instance = new()
