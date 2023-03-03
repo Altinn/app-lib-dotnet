@@ -157,7 +157,7 @@ public class DefaultTaskEvents : ITaskEvents
         await RunAutoDeleteOnProcessEnd(instance, instanceGuid);
     }
 
-    private async Task RunRemoveHiddenData(Instance instance, Guid instanceGuid, List<DataType> dataTypesToLock)
+    private async Task RunRemoveHiddenData(Instance instance, Guid instanceGuid, List<DataType>? dataTypesToLock)
     {
         if (_appSettings?.RemoveHiddenDataPreview == true)
         {
@@ -233,9 +233,9 @@ public class DefaultTaskEvents : ITaskEvents
         }
     }
 
-    private async Task RemoveHiddenData(Instance instance, Guid instanceGuid, List<DataType> dataTypesToLock)
+    private async Task RemoveHiddenData(Instance instance, Guid instanceGuid, List<DataType>? dataTypesToLock)
     {
-        foreach (var dataType in dataTypesToLock.Where(dt => dt.AppLogic != null))
+        foreach (var dataType in dataTypesToLock?.Where(dt => dt.AppLogic != null) ?? Enumerable.Empty<DataType>())
         {
             foreach (Guid dataElementId in instance.Data.Where(de => de.DataType == dataType.Id).Select(dataElement => Guid.Parse(dataElement.Id)))
             {

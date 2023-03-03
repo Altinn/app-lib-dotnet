@@ -13,7 +13,6 @@ using Altinn.App.Core.Internal.App;
 using Altinn.Common.AccessTokenClient.Services;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
-
 using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Infrastructure.Clients.Register
@@ -64,16 +63,17 @@ namespace Altinn.App.Core.Infrastructure.Clients.Register
         /// <inheritdoc/>
         public async Task<Person?> GetPerson(string nationalIdentityNumber, string lastName, CancellationToken ct)
         {
-            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, $"persons");
+            using(var request = new HttpRequestMessage(HttpMethod.Get, $"persons"))
+            {
+                await AddAuthHeaders(request);
 
-            await AddAuthHeaders(request);
+                request.Headers.Add("X-Ai-NationalIdentityNumber", nationalIdentityNumber);
+                request.Headers.Add("X-Ai-LastName", ConvertToBase64(lastName));
 
-            request.Headers.Add("X-Ai-NationalIdentityNumber", nationalIdentityNumber);
-            request.Headers.Add("X-Ai-LastName", ConvertToBase64(lastName));
+                var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseContentRead, ct);
 
-            var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseContentRead, ct);
-
-            return await ReadResponse(response, ct);
+                return await ReadResponse(response, ct);
+            }
         }
 
         private async Task AddAuthHeaders(HttpRequestMessage request)

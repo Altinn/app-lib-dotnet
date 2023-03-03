@@ -83,7 +83,7 @@ namespace Altinn.App.Core.Features.Validation
 
             Application? application = await _appMetadata.GetApplicationMetadata();
 
-            foreach (DataType dataType in application.DataTypes.Where(et => et.TaskId == taskId))
+            foreach (DataType dataType in application?.DataTypes.Where(et => et.TaskId == taskId) ?? Enumerable.Empty<DataType>())
             {
                 List<DataElement> elements = instance.Data.Where(d => d.DataType == dataType.Id).ToList();
 
