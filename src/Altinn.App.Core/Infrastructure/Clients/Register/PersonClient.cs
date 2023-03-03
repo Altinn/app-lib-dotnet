@@ -63,8 +63,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Register
         /// <inheritdoc/>
         public async Task<Person?> GetPerson(string nationalIdentityNumber, string lastName, CancellationToken ct)
         {
-            using(var request = new HttpRequestMessage(HttpMethod.Get, $"persons"))
-            {
+            using var request = new HttpRequestMessage(HttpMethod.Get, $"persons");
                 await AddAuthHeaders(request);
 
                 request.Headers.Add("X-Ai-NationalIdentityNumber", nationalIdentityNumber);
