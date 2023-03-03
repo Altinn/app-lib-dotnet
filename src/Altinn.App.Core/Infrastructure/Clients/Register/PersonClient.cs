@@ -64,15 +64,14 @@ namespace Altinn.App.Core.Infrastructure.Clients.Register
         public async Task<Person?> GetPerson(string nationalIdentityNumber, string lastName, CancellationToken ct)
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, $"persons");
-                await AddAuthHeaders(request);
+            await AddAuthHeaders(request);
 
-                request.Headers.Add("X-Ai-NationalIdentityNumber", nationalIdentityNumber);
-                request.Headers.Add("X-Ai-LastName", ConvertToBase64(lastName));
+            request.Headers.Add("X-Ai-NationalIdentityNumber", nationalIdentityNumber);
+            request.Headers.Add("X-Ai-LastName", ConvertToBase64(lastName));
 
-                var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseContentRead, ct);
+            var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseContentRead, ct);
 
-                return await ReadResponse(response, ct);
-            }
+            return await ReadResponse(response, ct);
         }
 
         private async Task AddAuthHeaders(HttpRequestMessage request)
