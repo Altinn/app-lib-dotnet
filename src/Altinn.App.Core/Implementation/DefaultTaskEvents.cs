@@ -173,11 +173,11 @@ public class DefaultTaskEvents : ITaskEvents
         }
     }
 
-    private async Task RunLockDataAndGeneratePdf(string endEvent, Instance instance, List<DataType> dataTypesToLock)
+    private async Task RunLockDataAndGeneratePdf(string endEvent, Instance instance, List<DataType>? dataTypesToLock)
     {
         _logger.LogDebug("OnEndProcessTask for {instanceId}. Locking data elements connected to {endEvent}", instance.Id, endEvent);
 
-        foreach (DataType dataType in dataTypesToLock)
+        foreach (DataType dataType in dataTypesToLock ?? Enumerable.Empty<DataType>())
         {
             bool generatePdf = dataType.AppLogic?.ClassRef != null && dataType.EnablePdfCreation;
 
@@ -296,7 +296,7 @@ public class DefaultTaskEvents : ITaskEvents
     {
         ApplicationMetadata? appMetadata = await _appMetadata.GetApplicationMetadata();
         var updatedValues = DataHelper.GetUpdatedDataValues(
-            appMetadata.DataFields,
+            appMetadata?.DataFields,
             instance.DataValues,
             dataType,
             data);
