@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Models;
@@ -54,6 +55,76 @@ namespace Altinn.App.Core.Tests.Internal.App
                     Organisation = true,
                     Person = true,
                     SubUnit = true
+                },
+                OnEntry = new OnEntryConfig()
+                {
+                    Show = "select-instance"
+                },
+                Features = new Dictionary<string, bool>()
+                {
+                    { "footer", true }
+                }
+            };
+            var actual = await appMetadata.GetApplicationMetadata();
+            actual.Should().NotBeNull();
+            actual.Should().BeEquivalentTo(expected);
+        }
+        
+        [Fact]
+        public async void GetApplicationMetadata_eformidling_desrializes_file_from_disk()
+        {
+            AppSettings appSettings = GetAppSettings("AppMetadata", "eformid.applicationmetadata.json");
+            IAppMetadata appMetadata = new AppMetadata(Options.Create<AppSettings>(appSettings), new AppFeatures(), new NullLogger<AppMetadata>());
+            ApplicationMetadata expected = new ApplicationMetadata()
+            {
+                Id = "tdd/bestilling",
+                Org = "tdd",
+                App = "bestilling",
+                Created = DateTime.Parse("2019-09-16T22:22:22"),
+                CreatedBy = "username",
+                Title = new Dictionary<string, string>()
+                {
+                    { "nb", "Bestillingseksempelapp" }
+                },
+                DataTypes = new List<DataType>()
+                {
+                    new()
+                    {
+                        Id = "vedlegg",
+                        AllowedContentTypes = new List<string>() { "application/pdf", "image/png", "image/jpeg" },
+                        MinCount = 0,
+                        TaskId = "Task_1"
+                    },
+                    new()
+                    {
+                        Id = "ref-data-as-pdf",
+                        AllowedContentTypes = new List<string>() { "application/pdf" },
+                        MinCount = 1,
+                        TaskId = "Task_1"
+                    }
+                },
+                PartyTypesAllowed = new PartyTypesAllowed()
+                {
+                    BankruptcyEstate = true,
+                    Organisation = true,
+                    Person = true,
+                    SubUnit = true
+                },
+                EFormidling = new EFormidlingContract()
+                {
+                    ServiceId = "DPF",
+                    DPFShipmentType = "altinn3.skjema",
+                    Receiver = "910123456",
+                    SendAfterTaskId = "Task_1",
+                    Process = "urn:no:difi:profile:arkivmelding:administrasjon:ver1.0",
+                    Standard = "urn:no:difi:arkivmelding:xsd::arkivmelding",
+                    TypeVersion = "2.0",
+                    Type = "arkivmelding",
+                    SecurityLevel = 3,
+                    DataTypes = new List<string>()
+                    {
+                        "372c7af5-71e1-4e99-8e05-4716711a8b53",
+                    }
                 },
                 OnEntry = new OnEntryConfig()
                 {
@@ -130,21 +201,27 @@ namespace Altinn.App.Core.Tests.Internal.App
         }
 
         [Fact]
-        public async void GetApplicationMetadata_return_null_if_file_not_found()
+        public async void GetApplicationMetadata_throws_filenotfoundexception_if_file_not_found()
         {
             AppSettings appSettings = GetAppSettings("AppMetadata", "notfound.applicationmetadata.json");
             IAppMetadata appMetadata = new AppMetadata(Options.Create<AppSettings>(appSettings), new AppFeatures(), new NullLogger<AppMetadata>());
-            var actual = await appMetadata.GetApplicationMetadata();
-            actual.Should().BeNull();
+            await Assert.ThrowsAsync<FileNotFoundException>(async () => await appMetadata.GetApplicationMetadata());
         }
 
         [Fact]
-        public async void GetApplicationMetadata_return_null_if_deserialization_fails()
+        public async void GetApplicationMetadata_throw_jsonexception_if_deserialization_fails()
         {
             AppSettings appSettings = GetAppSettings("AppMetadata", "invalid.applicationmetadata.json");
             IAppMetadata appMetadata = new AppMetadata(Options.Create<AppSettings>(appSettings), new AppFeatures(), new NullLogger<AppMetadata>());
-            var actual = await appMetadata.GetApplicationMetadata();
-            actual.Should().BeNull();
+            await Assert.ThrowsAsync<JsonException>(async () => await appMetadata.GetApplicationMetadata());
+        }
+        
+        [Fact]
+        public async void GetApplicationMetadata_throws_jsonexception_if_deserialization_fails_due_to_string_in_int()
+        {
+            AppSettings appSettings = GetAppSettings("AppMetadata", "invalid-int.applicationmetadata.json");
+            IAppMetadata appMetadata = new AppMetadata(Options.Create<AppSettings>(appSettings), new AppFeatures(), new NullLogger<AppMetadata>());
+            await Assert.ThrowsAsync<JsonException>(async () => await appMetadata.GetApplicationMetadata());
         }
         
         [Fact]

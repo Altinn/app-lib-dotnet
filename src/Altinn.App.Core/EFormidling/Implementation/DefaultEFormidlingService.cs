@@ -72,11 +72,7 @@ public class DefaultEFormidlingService : IEFormidlingService
                 "Ensure that IEformidlingClient and IAccessTokenGenerator are included in the base constructor.");
         }
 
-        ApplicationMetadata? applicationMetadata = await _appMetadata.GetApplicationMetadata();
-        if (applicationMetadata == null)
-        {
-            throw new EntryPointNotFoundException("Could not load applicationMetadata. Please confirm that it is present");
-        }
+        ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
 
         string accessToken = _tokenGenerator.GenerateAccessToken(applicationMetadata.Org, applicationMetadata.App);
         string authzToken = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _appSettings.RuntimeCookieName);
@@ -130,12 +126,12 @@ public class DefaultEFormidlingService : IEFormidlingService
         };
 
         List<Receiver> receivers = await _eFormidlingReceivers.GetEFormidlingReceivers(instance);
-        ApplicationMetadata? appMetadata = await _appMetadata.GetApplicationMetadata();
+        ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
 
         Scope scope =
             new Scope
             {
-                Identifier = appMetadata?.EFormidling.Process,
+                Identifier = appMetadata.EFormidling.Process,
                 InstanceIdentifier = Guid.NewGuid().ToString(),
                 Type = "ConversationId",
                 ScopeInformation = new List<ScopeInformation>
@@ -155,10 +151,10 @@ public class DefaultEFormidlingService : IEFormidlingService
         DocumentIdentification documentIdentification = new DocumentIdentification
         {
             InstanceIdentifier = instanceGuid,
-            Standard = appMetadata?.EFormidling.Standard,
-            TypeVersion = appMetadata?.EFormidling.TypeVersion,
+            Standard = appMetadata.EFormidling.Standard,
+            TypeVersion = appMetadata.EFormidling.TypeVersion,
             CreationDateAndTime = completedTime,
-            Type = appMetadata?.EFormidling.Type
+            Type = appMetadata.EFormidling.Type
         };
 
         StandardBusinessDocumentHeader sbdHeader = new StandardBusinessDocumentHeader
@@ -186,11 +182,8 @@ public class DefaultEFormidlingService : IEFormidlingService
 
     private async Task SendInstanceData(Instance instance, Dictionary<string, string> requestHeaders)
     {
-        ApplicationMetadata? applicationMetadata = await _appMetadata.GetApplicationMetadata();
-        if (applicationMetadata == null)
-        {
-            throw new EntryPointNotFoundException("Could not load applicationMetadata. Please confirm that it is present");
-        }
+        ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
+        
         Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
         int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
         foreach (DataElement dataElement in instance.Data)

@@ -1,5 +1,4 @@
 using Altinn.App.Core.EFormidling.Interface;
-using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.App;
 using Altinn.Common.EFormidlingClient.Models.SBD;
 using Altinn.Platform.Storage.Interface.Models;
@@ -30,7 +29,7 @@ public class DefaultEFormidlingReceivers : IEFormidlingReceivers
         Identifier identifier = new Identifier
         {
             // 0192 prefix for all Norwegian organisations.
-            Value = $"0192:{(await _appMetadata.GetApplicationMetadata())?.EFormidling.Receiver.Trim()}",
+            Value = $"0192:{(await _appMetadata.GetApplicationMetadata()).EFormidling.Receiver.Trim()}",
             Authority = "iso6523-actorid-upis"
         };
 

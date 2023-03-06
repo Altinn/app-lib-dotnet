@@ -6,9 +6,9 @@ using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Models;
 using Altinn.Common.AccessTokenClient.Services;
 using Altinn.Platform.Register.Models;
-using Altinn.Platform.Storage.Interface.Models;
 using AltinnCore.Authentication.Utils;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -90,8 +90,8 @@ namespace Altinn.App.Core.Infrastructure.Clients.Register
 
             string endpointUrl = $"parties/{partyId}";
             string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
-            Application? application = await _appMetadata.GetApplicationMetadata();
-            HttpResponseMessage response = await _client.GetAsync(token, endpointUrl, _accessTokenGenerator.GenerateAccessToken(application?.Org, application?.Id.Split("/")[1]));
+            ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
+            HttpResponseMessage response = await _client.GetAsync(token, endpointUrl, _accessTokenGenerator.GenerateAccessToken(application.Org, application.App));
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 party = await response.Content.ReadAsAsync<Party>();
@@ -126,8 +126,8 @@ namespace Altinn.App.Core.Infrastructure.Clients.Register
             };
 
             request.Headers.Add("Authorization", "Bearer " + token);
-            Application? application = await _appMetadata.GetApplicationMetadata();
-            request.Headers.Add("PlatformAccessToken", _accessTokenGenerator.GenerateAccessToken(application?.Org, application?.Id.Split("/")[1]));
+            ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
+            request.Headers.Add("PlatformAccessToken", _accessTokenGenerator.GenerateAccessToken(application.Org, application.App));
 
             HttpResponseMessage response = await _client.SendAsync(request);
             if (response.StatusCode == HttpStatusCode.OK)

@@ -174,11 +174,7 @@ namespace Altinn.App.Api.Controllers
                 return BadRequest("The path parameter 'app' cannot be empty");
             }
 
-            Application? application = await _appMetadata.GetApplicationMetadata();
-            if (application == null)
-            {
-                return NotFound($"AppId {org}/{app} was not found");
-            }
+            ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
 
             MultipartRequestReader parsedRequest = new MultipartRequestReader(Request);
             await parsedRequest.Read();
@@ -345,11 +341,7 @@ namespace Altinn.App.Api.Controllers
                 return BadRequest("The path parameter 'app' cannot be empty");
             }
 
-            Application? application = await _appMetadata.GetApplicationMetadata();
-            if (application == null)
-            {
-                return NotFound($"AppId {org}/{app} was not found");
-            }
+            ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
 
             bool copySourceInstance = !string.IsNullOrEmpty(instansiationInstance.SourceInstanceId);
             if (copySourceInstance && application.CopyInstanceSettings?.Enabled != true)
@@ -483,10 +475,10 @@ namespace Altinn.App.Api.Controllers
             return Created(url, instance);
         }
 
-        private async Task CopyDataFromSourceInstance(Application application, Instance targetInstance, Instance sourceInstance)
+        private async Task CopyDataFromSourceInstance(ApplicationMetadata application, Instance targetInstance, Instance sourceInstance)
         {
             string org = application.Org;
-            string app = application.Id.Split("/")[1];
+            string app = application.App;
             int instanceOwnerPartyId = int.Parse(targetInstance.InstanceOwner.PartyId);
 
             string[] sourceSplit = sourceInstance.Id.Split("/");
@@ -792,7 +784,7 @@ namespace Altinn.App.Api.Controllers
             }
         }
 
-        private async Task StorePrefillParts(Instance instance, Application appInfo, List<RequestPart> parts)
+        private async Task StorePrefillParts(Instance instance, ApplicationMetadata appInfo, List<RequestPart> parts)
         {
             Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
             int instanceOwnerIdAsInt = int.Parse(instance.InstanceOwner.PartyId);

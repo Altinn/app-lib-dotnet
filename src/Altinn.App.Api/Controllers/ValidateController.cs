@@ -109,7 +109,7 @@ namespace Altinn.App.Api.Controllers
 
             Application application = await _appMetadata.GetApplicationMetadata();
 
-            DataType dataType = application?.DataTypes.FirstOrDefault(et => et.Id == element.DataType);
+            DataType dataType = application.DataTypes.FirstOrDefault(et => et.Id == element.DataType);
 
             if (dataType == null)
             {

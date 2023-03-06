@@ -73,7 +73,7 @@ namespace Altinn.App.Core.Helpers
         /// <param name="party">The party to check</param>
         /// <param name="partyTypesAllowed">The allowed party types</param>
         /// <returns>True or false</returns>
-        public static bool IsPartyAllowedToInstantiate(Party party, PartyTypesAllowed partyTypesAllowed)
+        public static bool IsPartyAllowedToInstantiate(Party? party, PartyTypesAllowed? partyTypesAllowed)
         {
             if (party == null)
             {

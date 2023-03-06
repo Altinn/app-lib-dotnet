@@ -32,7 +32,7 @@ namespace Altinn.App.Core.Tests.Implementation
 
             _appMetadata = new Mock<IAppMetadata>();
             _appMetadata.Setup(s => s.GetApplicationMetadata())
-                .ReturnsAsync(new ApplicationMetadata { Org = "ttd", Id = "ttd/app" });
+                .ReturnsAsync(new ApplicationMetadata { Org = "ttd", Id = "ttd/app", App = "app" });
 
             _accessTokenGenerator = new Mock<IAccessTokenGenerator>();
             _accessTokenGenerator

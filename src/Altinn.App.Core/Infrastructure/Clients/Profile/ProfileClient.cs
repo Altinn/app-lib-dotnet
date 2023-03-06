@@ -4,9 +4,9 @@ using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Models;
 using Altinn.Common.AccessTokenClient.Services;
 using Altinn.Platform.Profile.Models;
-using Altinn.Platform.Storage.Interface.Models;
 using AltinnCore.Authentication.Utils;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -64,8 +64,8 @@ namespace Altinn.App.Core.Infrastructure.Clients.Profile
             string endpointUrl = $"users/{userId}";
             string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
 
-            Application? applicationMetadata = await _appMetadata.GetApplicationMetadata();
-            HttpResponseMessage response = await _client.GetAsync(token, endpointUrl, _accessTokenGenerator.GenerateAccessToken(applicationMetadata?.Org, applicationMetadata?.Id.Split("/")[1]));
+            ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
+            HttpResponseMessage response = await _client.GetAsync(token, endpointUrl, _accessTokenGenerator.GenerateAccessToken(applicationMetadata.Org, applicationMetadata.App));
             if (response.StatusCode == System.Net.HttpStatusCode.OK)
             {
                 userProfile = await response.Content.ReadAsAsync<UserProfile>();

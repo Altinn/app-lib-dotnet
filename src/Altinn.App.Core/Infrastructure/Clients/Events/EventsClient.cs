@@ -81,7 +81,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Events
                 SpecVersion = "1.0",
                 Source = new Uri($"https://{instance.Org}.apps.{_generalSettings.HostName}/{instance.AppId}/instances/{instance.Id}")
             };
-            Application? app = await _appMetadata.GetApplicationMetadata();
+            Application app = await _appMetadata.GetApplicationMetadata();
             string accessToken = _accessTokenGenerator.GenerateAccessToken(app?.Org, app?.Id.Split("/")[1]);
 
             string token =

@@ -48,10 +48,10 @@ public class DefaultAppEvents: IAppEvents
     
     private async Task AutoDeleteDataElements(Instance instance)
     {
-        ApplicationMetadata? applicationMetadata = await _appMetadata.GetApplicationMetadata();
-        List<string>? typesToDelete = applicationMetadata?.DataTypes
+        ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
+        List<string> typesToDelete = applicationMetadata.DataTypes
             .Where(dt => dt?.AppLogic?.AutoDeleteOnProcessEnd == true).Select(dt => dt.Id).ToList();
-        if (applicationMetadata == null || typesToDelete == null || typesToDelete.Count == 0)
+        if (typesToDelete.Count == 0)
         {
             return;
         }

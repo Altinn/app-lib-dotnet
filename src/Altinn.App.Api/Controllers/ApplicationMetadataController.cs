@@ -38,21 +38,16 @@ namespace Altinn.App.Api.Controllers
         [HttpGet("{org}/{app}/api/v1/applicationmetadata")]
         public async Task<IActionResult> GetAction(string org, string app, [FromQuery] bool checkOrgApp = true)
         {
-            ApplicationMetadata? application = await _appMetadata.GetApplicationMetadata();
+            ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
 
-            if (application != null)
+            string wantedAppId = $"{org}/{app}";
+
+            if (!checkOrgApp || application.Id.Equals(wantedAppId))
             {
-                string wantedAppId = $"{org}/{app}";
-
-                if (!checkOrgApp || application.Id.Equals(wantedAppId))
-                {
-                    return Ok(application);
-                }
-
-                return Conflict($"This is {application.Id}, and not the app you are looking for: {wantedAppId}!");
+                return Ok(application);
             }
 
-            return NotFound();
+            return Conflict($"This is {application.Id}, and not the app you are looking for: {wantedAppId}!");
         }
 
         /// <summary>
@@ -66,10 +61,10 @@ namespace Altinn.App.Api.Controllers
         [HttpGet("{org}/{app}/api/v1/meta/authorizationpolicy")]
         public async Task<IActionResult> GetPolicy(string org, string app)
         {
-            ApplicationMetadata? application = await _appMetadata.GetApplicationMetadata();
+            ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
             string? policy = await _appMetadata.GetApplicationXACMLPolicy();
 
-            if (application != null && policy != null)
+            if (policy != null)
             {
                 string wantedAppId = $"{org}/{app}";
 
@@ -95,10 +90,10 @@ namespace Altinn.App.Api.Controllers
         [HttpGet("{org}/{app}/api/v1/meta/process")]
         public async Task<IActionResult> GetProcess(string org, string app)
         {
-            ApplicationMetadata? application = await _appMetadata.GetApplicationMetadata();
+            ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
             string? process = await _appMetadata.GetApplicationBPMNProcess();
 
-            if (application != null && process != null)
+            if (process != null)
             {
                 string wantedAppId = $"{org}/{app}";
 

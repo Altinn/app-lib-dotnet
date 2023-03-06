@@ -103,11 +103,7 @@ namespace Altinn.App.Api.Controllers
             try
             {
                 Application application = await _appMetadata.GetApplicationMetadata();
-                if (application == null)
-                {
-                    return NotFound($"AppId {org}/{app} was not found");
-                }
-
+                
                 DataType dataTypeFromMetadata = application.DataTypes.FirstOrDefault(e => e.Id.Equals(dataType, StringComparison.InvariantCultureIgnoreCase));
 
                 if (dataTypeFromMetadata == null)
@@ -261,7 +257,7 @@ namespace Altinn.App.Api.Controllers
                     return await PutFormData(org, app, instance, dataGuid, dataType);
                 }
 
-                DataType dataTypeFromMetadata = (await _appMetadata.GetApplicationMetadata())?.DataTypes.FirstOrDefault(e => e.Id.Equals(dataType, StringComparison.InvariantCultureIgnoreCase));
+                DataType dataTypeFromMetadata = (await _appMetadata.GetApplicationMetadata()).DataTypes.FirstOrDefault(e => e.Id.Equals(dataType, StringComparison.InvariantCultureIgnoreCase));
                 if (!DataRestrictionValidation.CompliesWithDataRestrictions(Request, dataTypeFromMetadata, out ActionResult errorResponse))
                 {
                     return errorResponse;
@@ -464,7 +460,7 @@ namespace Altinn.App.Api.Controllers
 
             try
             {
-                Application? application = await _appMetadata.GetApplicationMetadata();
+                Application application = await _appMetadata.GetApplicationMetadata();
                 appLogic = application?.DataTypes.Where(e => e.Id == dataType).Select(e => e.AppLogic?.ClassRef != null).First();
             }
             catch (Exception)
@@ -576,7 +572,7 @@ namespace Altinn.App.Api.Controllers
         private async Task UpdatePresentationTextsOnInstance(Instance instance, string dataType, object serviceModel)
         {
             var updatedValues = DataHelper.GetUpdatedDataValues(
-                (await _appMetadata.GetApplicationMetadata())?.PresentationFields,
+                (await _appMetadata.GetApplicationMetadata()).PresentationFields,
                 instance.PresentationTexts,
                 dataType,
                 serviceModel);
@@ -593,7 +589,7 @@ namespace Altinn.App.Api.Controllers
         private async Task UpdateDataValuesOnInstance(Instance instance, string dataType, object serviceModel)
         {
             var updatedValues = DataHelper.GetUpdatedDataValues(
-                (await _appMetadata.GetApplicationMetadata())?.DataFields,
+                (await _appMetadata.GetApplicationMetadata()).DataFields,
                 instance.DataValues,
                 dataType,
                 serviceModel);

@@ -1,9 +1,9 @@
 using System.Text;
+using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 
 namespace Altinn.App.Core.Internal.App
 {
@@ -34,7 +34,9 @@ namespace Altinn.App.Core.Internal.App
         }
 
         /// <inheritdoc />
-        public async Task<ApplicationMetadata?> GetApplicationMetadata()
+        /// <exception cref="System.Text.Json.JsonException">Thrown if deserialization fails</exception>
+        /// <exception cref="System.IO.FileNotFoundException">Thrown if applicationmetadata.json file not found</exception>
+        public async Task<ApplicationMetadata> GetApplicationMetadata()
         {
             // Cache application metadata
             if (_application != null)
@@ -42,25 +44,36 @@ namespace Altinn.App.Core.Internal.App
                 return _application;
             }
 
-            string filedata = string.Empty;
             string filename = _settings.AppBasePath + _settings.ConfigurationFolder + _settings.ApplicationMetadataFileName;
             try
             {
                 if (File.Exists(filename))
                 {
-                    filedata = await File.ReadAllTextAsync(filename, Encoding.UTF8);
+                    JsonSerializerOptions jsonSerializerOptions = new JsonSerializerOptions()
+                    {
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                        PropertyNameCaseInsensitive = true,
+                        AllowTrailingCommas = true
+                    };
+                    using FileStream fileStream = File.OpenRead(filename);
+                    var application = await JsonSerializer.DeserializeAsync<ApplicationMetadata>(fileStream, jsonSerializerOptions);
+                    if (application == null)
+                    {
+                        throw new JsonException($"Deserialization returned null, Could indicate problems with deserialization of {filename}");
+                    }
+                    application.App = application.Id.Split("/")[1];
+                    application.Features = await _appFeatures.GetEnabledFeatures();
+                    _application = application;
+
+                    return _application;
                 }
 
-                _application = JsonConvert.DeserializeObject<ApplicationMetadata>(filedata)!;
-                _application.App = _application.Id.Split("/")[1];
-                _application.Features = await _appFeatures.GetEnabledFeatures();
-
-                return _application;
+                throw new FileNotFoundException($"Unable to locate application metadata file: {filename}");
             }
-            catch (Exception ex)
+            catch (JsonException ex)
             {
-                _logger.LogError(ex, "Something went wrong when fetching application metadata");
-                return null;
+                _logger.LogError(ex, "Something went wrong when parsing application metadata");
+                throw new JsonException("Something went wrong when parsing application metadata", ex);
             }
         }
 

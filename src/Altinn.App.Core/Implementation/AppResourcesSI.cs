@@ -109,14 +109,21 @@ namespace Altinn.App.Core.Implementation
         /// <inheritdoc />
         public Application GetApplication()
         {
-            var task = Task.Run<ApplicationMetadata?>(async () => await _appMetadata.GetApplicationMetadata());
-            task.Wait();
-            if (task.IsCompletedSuccessfully)
+            try
             {
-                return task.Result;
+                var task = Task.Run(async () => await _appMetadata.GetApplicationMetadata());
+                task.Wait();
+                if (task.IsCompletedSuccessfully)
+                {
+                    return task.Result;
+                }
             }
-
-            _logger.LogError(task.Exception, "Something went wrong fetching application metadata");
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Something went wrong fetching application metadata");
+                return null;   
+            }
+            _logger.LogError("Something went wrong fetching application metadata");
             return null;
         }
 

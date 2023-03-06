@@ -83,11 +83,7 @@ public class DefaultTaskEvents : ITaskEvents
         _logger.LogDebug("OnStartProcessTask for {InstanceId}", instance.Id);
 
         await RunAppDefinedOnTaskStart(taskId, instance, prefill);
-        ApplicationMetadata? appMetadata = await _appMetadata.GetApplicationMetadata();
-        if (appMetadata == null)
-        {
-            return;
-        }
+        ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
 
         // If this is a revisit to a previous task we need to unlock data
         foreach (DataType dataType in appMetadata.DataTypes.Where(dt => dt.TaskId == taskId))
@@ -143,8 +139,8 @@ public class DefaultTaskEvents : ITaskEvents
     public async Task OnEndProcessTask(string endEvent, Instance instance)
     {
         Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
-        ApplicationMetadata? appMetadata = await _appMetadata.GetApplicationMetadata();
-        List<DataType>? dataTypesToLock = appMetadata?.DataTypes.FindAll(dt => dt.TaskId == endEvent);
+        ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
+        List<DataType> dataTypesToLock = appMetadata.DataTypes.FindAll(dt => dt.TaskId == endEvent);
 
         await RunRemoveHiddenData(instance, instanceGuid, dataTypesToLock);
 
@@ -212,8 +208,8 @@ public class DefaultTaskEvents : ITaskEvents
 
     private async Task RunAutoDeleteOnProcessEnd(Instance instance, Guid instanceGuid)
     {
-        ApplicationMetadata? appMetadata = await _appMetadata.GetApplicationMetadata();
-        if (appMetadata != null && appMetadata.AutoDeleteOnProcessEnd && instance.Process?.Ended != null)
+        ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
+        if (appMetadata.AutoDeleteOnProcessEnd && instance.Process?.Ended != null)
         {
             int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
             await _instanceClient.DeleteInstance(instanceOwnerPartyId, instanceGuid, true);
@@ -222,8 +218,8 @@ public class DefaultTaskEvents : ITaskEvents
 
     private async Task RunEformidling(string endEvent, Instance instance)
     {
-        ApplicationMetadata? appMetadata = await _appMetadata.GetApplicationMetadata();
-        if (_appSettings?.EnableEFormidling == true && appMetadata?.EFormidling?.SendAfterTaskId == endEvent && _eFormidlingService != null)
+        ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
+        if (_appSettings?.EnableEFormidling == true && appMetadata.EFormidling?.SendAfterTaskId == endEvent && _eFormidlingService != null)
         {
             // The code above updates data elements on the instance. To ensure
             // we have the latest instance with all the data elements including pdf,
@@ -274,7 +270,7 @@ public class DefaultTaskEvents : ITaskEvents
 
     private async Task UpdatePresentationTextsOnInstance(Instance instance, string dataType, dynamic data)
     {
-        ApplicationMetadata? appMetadata = await _appMetadata.GetApplicationMetadata();
+        ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
         var updatedValues = DataHelper.GetUpdatedDataValues(
             appMetadata?.PresentationFields,
             instance.PresentationTexts,
@@ -294,7 +290,7 @@ public class DefaultTaskEvents : ITaskEvents
 
     private async Task UpdateDataValuesOnInstance(Instance instance, string dataType, object data)
     {
-        ApplicationMetadata? appMetadata = await _appMetadata.GetApplicationMetadata();
+        ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
         var updatedValues = DataHelper.GetUpdatedDataValues(
             appMetadata?.DataFields,
             instance.DataValues,

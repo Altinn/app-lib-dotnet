@@ -10,9 +10,9 @@ using Altinn.App.Core.Constants;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Models;
 using Altinn.Common.AccessTokenClient.Services;
 using Altinn.Platform.Register.Models;
-using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Infrastructure.Clients.Register
@@ -76,9 +76,9 @@ namespace Altinn.App.Core.Infrastructure.Clients.Register
 
         private async Task AddAuthHeaders(HttpRequestMessage request)
         {
-            Application? application = await _appMetadata.GetApplicationMetadata();
-            string? issuer = application?.Org;
-            string? appName = application?.Id.Split("/")[1];
+            ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
+            string issuer = application.Org;
+            string appName = application.App;
             request.Headers.Add(
                 "PlatformAccessToken", _accessTokenGenerator.GenerateAccessToken(issuer, appName));
             request.Headers.Add(

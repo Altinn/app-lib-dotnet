@@ -11,7 +11,7 @@ namespace Altinn.App.Core.Internal.App
         /// Get Application metadata asynchronously
         /// </summary>
         /// <returns><see cref="ApplicationMetadata"/></returns>
-        public Task<ApplicationMetadata?> GetApplicationMetadata();
+        public Task<ApplicationMetadata> GetApplicationMetadata();
         
         /// <summary>
         /// Returns the application XACML policy for an application.

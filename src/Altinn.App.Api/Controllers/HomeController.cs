@@ -102,8 +102,8 @@ namespace Altinn.App.Api.Controllers
                 return true;
             }
 
-            Application? application = await _appMetadata.GetApplicationMetadata();
-            if (application == null || !IsStatelessApp(application))
+            Application application = await _appMetadata.GetApplicationMetadata();
+            if (!IsStatelessApp(application))
             {
                 return false;
             }

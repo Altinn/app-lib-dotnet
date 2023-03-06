@@ -60,8 +60,8 @@ namespace Altinn.App.Api.Controllers
 
             if (allowedToInstantiateFilter)
             {
-                Application? application = await _appMetadata.GetApplicationMetadata();
-                List<Party> validParties = InstantiationHelper.FilterPartiesByAllowedPartyTypes(partyList, application?.PartyTypesAllowed);
+                Application application = await _appMetadata.GetApplicationMetadata();
+                List<Party> validParties = InstantiationHelper.FilterPartiesByAllowedPartyTypes(partyList, application.PartyTypesAllowed);
                 return Ok(validParties);
             }
 
@@ -82,12 +82,7 @@ namespace Altinn.App.Api.Controllers
             UserContext userContext = await _userHelper.GetUserContext(HttpContext);
             UserProfile user = await _profileClient.GetUserProfile(userContext.UserId);
             List<Party>? partyList = await _authorizationClient.GetPartyList(userContext.UserId);
-            Application? application = await _appMetadata.GetApplicationMetadata();
-
-            if (application == null)
-            {
-                return NotFound("Application not found");
-            }
+            Application application = await _appMetadata.GetApplicationMetadata();
 
             PartyTypesAllowed partyTypesAllowed = application.PartyTypesAllowed;
             Party? partyUserRepresents = null;

@@ -81,9 +81,9 @@ namespace Altinn.App.Core.Features.Validation
             await _instanceValidator.ValidateTask(instance, taskId, validationResults);
             messages.AddRange(MapModelStateToIssueList(validationResults, instance));
 
-            Application? application = await _appMetadata.GetApplicationMetadata();
+            Application application = await _appMetadata.GetApplicationMetadata();
 
-            foreach (DataType dataType in application?.DataTypes.Where(et => et.TaskId == taskId) ?? Enumerable.Empty<DataType>())
+            foreach (DataType dataType in application.DataTypes.Where(et => et.TaskId == taskId))
             {
                 List<DataElement> elements = instance.Data.Where(d => d.DataType == dataType.Id).ToList();
 
