@@ -16,14 +16,16 @@ namespace Altinn.App.Api.Controllers
     public class ApplicationMetadataController : ControllerBase
     {
         private readonly IAppMetadata _appMetadata;
+        private readonly ILogger<ApplicationMetadataController> _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ApplicationMetadataController"/> class
         /// <param name="appMetadata">The IAppMetadata service</param>
         /// </summary>
-        public ApplicationMetadataController(IAppMetadata appMetadata)
+        public ApplicationMetadataController(IAppMetadata appMetadata, ILogger<ApplicationMetadataController> logger)
         {
             _appMetadata = appMetadata;
+            _logger = logger;
         }
 
         /// <summary>
@@ -91,21 +93,22 @@ namespace Altinn.App.Api.Controllers
         public async Task<IActionResult> GetProcess(string org, string app)
         {
             ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
-            string? process = await _appMetadata.GetApplicationBPMNProcess();
-
-            if (process != null)
+            string wantedAppId = $"{org}/{app}";
+            try
             {
-                string wantedAppId = $"{org}/{app}";
-
                 if (application.Id.Equals(wantedAppId))
                 {
+                    string process = await _appMetadata.GetApplicationBPMNProcess();
                     return Content(process, "text/xml", System.Text.Encoding.UTF8);
                 }
 
                 return Conflict($"This is {application.Id}, and not the app you are looking for: {wantedAppId}!");
             }
-
-            return NotFound();
+            catch (ApplicationConfigException ex)
+            {
+                _logger.LogError(ex, "Failed to read process from file for appId: ${WantedApp}", wantedAppId);
+                return NotFound();
+            }
         }
     }
 }

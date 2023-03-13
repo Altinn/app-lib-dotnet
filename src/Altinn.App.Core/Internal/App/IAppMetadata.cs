@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Altinn.App.Core.Models;
 
 namespace Altinn.App.Core.Internal.App
@@ -11,6 +12,7 @@ namespace Altinn.App.Core.Internal.App
         /// Get Application metadata asynchronously
         /// </summary>
         /// <returns><see cref="ApplicationMetadata"/></returns>
+        /// <exception cref="ApplicationConfigException"></exception>
         public Task<ApplicationMetadata> GetApplicationMetadata();
         
         /// <summary>
@@ -23,6 +25,7 @@ namespace Altinn.App.Core.Internal.App
         /// Returns the application BPMN process for an application.
         /// </summary>
         /// <returns>The application BPMN process.</returns>
-        public Task<string?> GetApplicationBPMNProcess();
+        /// <exception cref="ApplicationConfigException"></exception>
+        public Task<string> GetApplicationBPMNProcess();
     }
 }

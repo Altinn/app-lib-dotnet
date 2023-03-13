@@ -59,8 +59,9 @@ namespace Altinn.App.Core.Internal.App
                     var application = await JsonSerializer.DeserializeAsync<ApplicationMetadata>(fileStream, jsonSerializerOptions);
                     if (application == null)
                     {
-                        throw new JsonException($"Deserialization returned null, Could indicate problems with deserialization of {filename}");
+                        throw new ApplicationConfigException($"Deserialization returned null, Could indicate problems with deserialization of {filename}");
                     }
+
                     application.App = application.Id.Split("/")[1];
                     application.Features = await _frontendFeatures.GetFrontendFeatures();
                     _application = application;
@@ -68,12 +69,12 @@ namespace Altinn.App.Core.Internal.App
                     return _application;
                 }
 
-                throw new FileNotFoundException($"Unable to locate application metadata file: {filename}");
+                throw new ApplicationConfigException($"Unable to locate application metadata file: {filename}");
             }
             catch (JsonException ex)
             {
                 _logger.LogError(ex, "Something went wrong when parsing application metadata");
-                throw new JsonException("Something went wrong when parsing application metadata", ex);
+                throw new ApplicationConfigException("Something went wrong when parsing application metadata", ex);
             }
         }
 
@@ -97,22 +98,15 @@ namespace Altinn.App.Core.Internal.App
         }
 
         /// <inheritdoc />
-        public async Task<string?> GetApplicationBPMNProcess()
+        public async Task<string> GetApplicationBPMNProcess()
         {
             string filename = _settings.AppBasePath + _settings.ConfigurationFolder + _settings.ProcessFolder + _settings.ProcessFileName;
-            try
+            if (File.Exists(filename))
             {
-                if (File.Exists(filename))
-                {
-                    return await File.ReadAllTextAsync(filename, Encoding.UTF8);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Something went wrong when fetching BPMNProcess");
+                return await File.ReadAllTextAsync(filename, Encoding.UTF8);
             }
 
-            return null;
+            throw new ApplicationConfigException($"Unable to locate application process file: {filename}");
         }
     }
 }

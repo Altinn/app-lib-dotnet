@@ -113,18 +113,12 @@ namespace Altinn.App.Core.Implementation
             {
                 var task = Task.Run(async () => await _appMetadata.GetApplicationMetadata());
                 task.Wait();
-                if (task.IsCompletedSuccessfully)
-                {
-                    return task.Result;
-                }
+                return task.Result;
             }
-            catch (Exception ex)
+            catch (AggregateException ex)
             {
-                _logger.LogError(ex, "Something went wrong fetching application metadata");
-                return null;   
+                throw new ApplicationConfigException("Failed to read application metadata", ex.InnerException ?? ex);
             }
-            _logger.LogError("Something went wrong fetching application metadata");
-            return null;
         }
 
         /// <inheritdoc/>
@@ -144,15 +138,23 @@ namespace Altinn.App.Core.Implementation
         /// <inheritdoc/>
         public string? GetApplicationBPMNProcess()
         {
-            var task = Task.Run<string?>(async () => await _appMetadata.GetApplicationBPMNProcess());
-            task.Wait();
-            if (task.IsCompletedSuccessfully)
+            try
             {
-                return task.Result;
-            }
+                var task = Task.Run<string?>(async () => await _appMetadata.GetApplicationBPMNProcess());
+                task.Wait();
+                if (task.IsCompletedSuccessfully || task.Exception != null)
+                {
+                    return task.Result;
+                }
 
-            _logger.LogError(task.Exception, "Something went wrong fetching application policy");
-            return null;
+                _logger.LogError(task.Exception, "Something went wrong fetching application policy");
+                return null;
+            }
+            catch (AggregateException ex)
+            {
+                _logger.LogError(ex, "Something went wrong fetching application policy");
+                return null;
+            }
         }
 
         /// <inheritdoc/>

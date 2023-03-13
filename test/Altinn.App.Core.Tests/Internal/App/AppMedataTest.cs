@@ -69,7 +69,7 @@ namespace Altinn.App.Core.Tests.Internal.App
             actual.Should().NotBeNull();
             actual.Should().BeEquivalentTo(expected);
         }
-        
+
         [Fact]
         public async void GetApplicationMetadata_eformidling_desrializes_file_from_disk()
         {
@@ -201,65 +201,64 @@ namespace Altinn.App.Core.Tests.Internal.App
         }
 
         [Fact]
-        public async void GetApplicationMetadata_throws_filenotfoundexception_if_file_not_found()
+        public async void GetApplicationMetadata_throws_ApplicationConfigException_if_file_not_found()
         {
             AppSettings appSettings = GetAppSettings("AppMetadata", "notfound.applicationmetadata.json");
             IAppMetadata appMetadata = new AppMetadata(Options.Create<AppSettings>(appSettings), new FrontendFeatures(), new NullLogger<AppMetadata>());
-            await Assert.ThrowsAsync<FileNotFoundException>(async () => await appMetadata.GetApplicationMetadata());
+            await Assert.ThrowsAsync<ApplicationConfigException>(async () => await appMetadata.GetApplicationMetadata());
         }
 
         [Fact]
-        public async void GetApplicationMetadata_throw_jsonexception_if_deserialization_fails()
+        public async void GetApplicationMetadata_throw_ApplicationConfigException_if_deserialization_fails()
         {
             AppSettings appSettings = GetAppSettings("AppMetadata", "invalid.applicationmetadata.json");
             IAppMetadata appMetadata = new AppMetadata(Options.Create<AppSettings>(appSettings), new FrontendFeatures(), new NullLogger<AppMetadata>());
-            await Assert.ThrowsAsync<JsonException>(async () => await appMetadata.GetApplicationMetadata());
+            await Assert.ThrowsAsync<ApplicationConfigException>(async () => await appMetadata.GetApplicationMetadata());
         }
-        
+
         [Fact]
-        public async void GetApplicationMetadata_throws_jsonexception_if_deserialization_fails_due_to_string_in_int()
+        public async void GetApplicationMetadata_throws_ApplicationConfigException_if_deserialization_fails_due_to_string_in_int()
         {
             AppSettings appSettings = GetAppSettings("AppMetadata", "invalid-int.applicationmetadata.json");
             IAppMetadata appMetadata = new AppMetadata(Options.Create<AppSettings>(appSettings), new FrontendFeatures(), new NullLogger<AppMetadata>());
-            await Assert.ThrowsAsync<JsonException>(async () => await appMetadata.GetApplicationMetadata());
+            await Assert.ThrowsAsync<ApplicationConfigException>(async () => await appMetadata.GetApplicationMetadata());
         }
-        
+
         [Fact]
         public async void GetApplicationXACMLPolicy_return_policyfile_as_string()
         {
-            AppSettings appSettings = GetAppSettings(subfolder:"AppPolicy", policyFilename: "policy.xml");
+            AppSettings appSettings = GetAppSettings(subfolder: "AppPolicy", policyFilename: "policy.xml");
             IAppMetadata appMetadata = new AppMetadata(Options.Create<AppSettings>(appSettings), new FrontendFeatures(), new NullLogger<AppMetadata>());
             string expected = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" + Environment.NewLine + "<root>policy</root>";
             var actual = await appMetadata.GetApplicationXACMLPolicy();
             actual.Should().BeEquivalentTo(expected);
         }
-        
+
         [Fact]
         public async void GetApplicationXACMLPolicy_return_null_if_file_not_found()
         {
-            AppSettings appSettings = GetAppSettings(subfolder:"AppPolicy", policyFilename: "notfound.xml");
+            AppSettings appSettings = GetAppSettings(subfolder: "AppPolicy", policyFilename: "notfound.xml");
             IAppMetadata appMetadata = new AppMetadata(Options.Create<AppSettings>(appSettings), new FrontendFeatures(), new NullLogger<AppMetadata>());
             var actual = await appMetadata.GetApplicationXACMLPolicy();
             actual.Should().BeNull();
         }
-        
+
         [Fact]
         public async void GetApplicationBPMNProcess_return_process_as_string()
         {
-            AppSettings appSettings = GetAppSettings(subfolder:"AppProcess", bpmnFilename: "process.bpmn");
+            AppSettings appSettings = GetAppSettings(subfolder: "AppProcess", bpmnFilename: "process.bpmn");
             IAppMetadata appMetadata = new AppMetadata(Options.Create<AppSettings>(appSettings), new FrontendFeatures(), new NullLogger<AppMetadata>());
             string expected = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" + Environment.NewLine + "<root>process</root>";
             var actual = await appMetadata.GetApplicationBPMNProcess();
             actual.Should().BeEquivalentTo(expected);
         }
-        
+
         [Fact]
-        public async void GetApplicationBPMNProcess_return_null_if_file_not_found()
+        public async void GetApplicationBPMNProcess_throws_ApplicationConfigException_if_file_not_found()
         {
-            AppSettings appSettings = GetAppSettings(subfolder:"AppProcess", policyFilename: "notfound.xml");
+            AppSettings appSettings = GetAppSettings(subfolder: "AppProcess", policyFilename: "notfound.xml");
             IAppMetadata appMetadata = new AppMetadata(Options.Create<AppSettings>(appSettings), new FrontendFeatures(), new NullLogger<AppMetadata>());
-            var actual = await appMetadata.GetApplicationBPMNProcess();
-            actual.Should().BeNull();
+            await Assert.ThrowsAsync<ApplicationConfigException>(async () => await appMetadata.GetApplicationBPMNProcess());
         }
 
         private AppSettings GetAppSettings(string subfolder, string appMetadataFilename = "", string bpmnFilename = "", string policyFilename = "")

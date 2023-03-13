@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Implementation;
 using Altinn.App.Core.Interface;
@@ -124,25 +125,23 @@ public class AppResourcesSITests
     }
 
     [Fact]
-    public void GetApplicationMetadata_return_null_if_file_not_found()
+    public void GetApplicationMetadata_throws_ApplicationConfigException_if_file_not_found()
     {
         AppSettings appSettings = GetAppSettings("AppMetadata", "notfound.applicationmetadata.json");
         var settings = Options.Create<AppSettings>(appSettings);
         IAppMetadata appMetadata = new AppMetadata(settings, new FrontendFeatures(), new NullLogger<AppMetadata>());
         IAppResources appResources = new AppResourcesSI(settings, appMetadata, null, new NullLogger<AppResourcesSI>());
-        var actual = appResources.GetApplication();
-        actual.Should().BeNull();
+        Assert.Throws<ApplicationConfigException>(() => appResources.GetApplication());
     }
 
     [Fact]
-    public void GetApplicationMetadata_return_null_if_deserialization_fails()
+    public void GetApplicationMetadata_throws_ApplicationConfigException_if_deserialization_fails()
     {
         AppSettings appSettings = GetAppSettings("AppMetadata", "invalid.applicationmetadata.json");
         var settings = Options.Create<AppSettings>(appSettings);
         IAppMetadata appMetadata = new AppMetadata(settings, new FrontendFeatures(), new NullLogger<AppMetadata>());
         IAppResources appResources = new AppResourcesSI(settings, appMetadata, null, new NullLogger<AppResourcesSI>());
-        var actual = appResources.GetApplication();
-        actual.Should().BeNull();
+        Assert.Throws<ApplicationConfigException>(() => appResources.GetApplication());
     }
 
     [Fact]
