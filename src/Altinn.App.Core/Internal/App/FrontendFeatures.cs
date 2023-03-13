@@ -1,22 +1,22 @@
 namespace Altinn.App.Core.Internal.App
 {
     /// <summary>
-    /// Default implementation of IAppFeatures
+    /// Default implementation of IFrontendFeatures
     /// </summary>
-    public class AppFeatures : IAppFeatures
+    public class FrontendFeatures : IFrontendFeatures
     {
         private readonly Dictionary<string, bool> features = new();
 
         /// <summary>
-        /// Default implementation of IAppFeatures
+        /// Default implementation of IFrontendFeatures
         /// </summary>
-        public AppFeatures()
+        public FrontendFeatures()
         {
             features.Add("footer", true);
         }
 
         /// <inheritdoc />
-        public Task<Dictionary<string, bool>> GetEnabledFeatures()
+        public Task<Dictionary<string, bool>> GetFrontendFeatures()
         {
             return Task.FromResult(features);
         }

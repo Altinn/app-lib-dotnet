@@ -20,7 +20,7 @@ public class AppResourcesSITests
     {
         AppSettings appSettings = GetAppSettings("AppMetadata", "default.applicationmetadata.json");
         var settings = Options.Create<AppSettings>(appSettings);
-        IAppMetadata appMetadata = new AppMetadata(settings, new AppFeatures(), new NullLogger<AppMetadata>());
+        IAppMetadata appMetadata = new AppMetadata(settings, new FrontendFeatures(), new NullLogger<AppMetadata>());
         IAppResources appResources = new AppResourcesSI(settings, appMetadata, null, new NullLogger<AppResourcesSI>());
         Application expected = new Application()
         {
@@ -70,8 +70,8 @@ public class AppResourcesSITests
     public void GetApplication_second_read_from_cache()
     {
         AppSettings appSettings = GetAppSettings("AppMetadata", "default.applicationmetadata.json");
-        Mock<IAppFeatures> appFeaturesMock = new Mock<IAppFeatures>();
-        appFeaturesMock.Setup(af => af.GetEnabledFeatures()).ReturnsAsync(new Dictionary<string, bool>() { { "footer", true } });
+        Mock<IFrontendFeatures> appFeaturesMock = new Mock<IFrontendFeatures>();
+        appFeaturesMock.Setup(af => af.GetFrontendFeatures()).ReturnsAsync(new Dictionary<string, bool>() { { "footer", true } });
         var settings = Options.Create<AppSettings>(appSettings);
         IAppMetadata appMetadata = new AppMetadata(settings, appFeaturesMock.Object, new NullLogger<AppMetadata>());
         IAppResources appResources = new AppResourcesSI(settings, appMetadata, null, new NullLogger<AppResourcesSI>());
@@ -116,7 +116,7 @@ public class AppResourcesSITests
         };
         var actual = appResources.GetApplication();
         var actual2 = appResources.GetApplication();
-        appFeaturesMock.Verify(af => af.GetEnabledFeatures());
+        appFeaturesMock.Verify(af => af.GetFrontendFeatures());
         appFeaturesMock.VerifyAll();
         actual.Should().NotBeNull();
         actual.Should().BeEquivalentTo(expected);
@@ -128,7 +128,7 @@ public class AppResourcesSITests
     {
         AppSettings appSettings = GetAppSettings("AppMetadata", "notfound.applicationmetadata.json");
         var settings = Options.Create<AppSettings>(appSettings);
-        IAppMetadata appMetadata = new AppMetadata(settings, new AppFeatures(), new NullLogger<AppMetadata>());
+        IAppMetadata appMetadata = new AppMetadata(settings, new FrontendFeatures(), new NullLogger<AppMetadata>());
         IAppResources appResources = new AppResourcesSI(settings, appMetadata, null, new NullLogger<AppResourcesSI>());
         var actual = appResources.GetApplication();
         actual.Should().BeNull();
@@ -139,7 +139,7 @@ public class AppResourcesSITests
     {
         AppSettings appSettings = GetAppSettings("AppMetadata", "invalid.applicationmetadata.json");
         var settings = Options.Create<AppSettings>(appSettings);
-        IAppMetadata appMetadata = new AppMetadata(settings, new AppFeatures(), new NullLogger<AppMetadata>());
+        IAppMetadata appMetadata = new AppMetadata(settings, new FrontendFeatures(), new NullLogger<AppMetadata>());
         IAppResources appResources = new AppResourcesSI(settings, appMetadata, null, new NullLogger<AppResourcesSI>());
         var actual = appResources.GetApplication();
         actual.Should().BeNull();
@@ -150,7 +150,7 @@ public class AppResourcesSITests
     {
         AppSettings appSettings = GetAppSettings(subfolder: "AppPolicy", policyFilename: "policy.xml");
         var settings = Options.Create<AppSettings>(appSettings);
-        IAppMetadata appMetadata = new AppMetadata(settings, new AppFeatures(), new NullLogger<AppMetadata>());
+        IAppMetadata appMetadata = new AppMetadata(settings, new FrontendFeatures(), new NullLogger<AppMetadata>());
         IAppResources appResources = new AppResourcesSI(settings, appMetadata, null, new NullLogger<AppResourcesSI>());
         string expected = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" + Environment.NewLine + "<root>policy</root>";
         var actual = appResources.GetApplicationXACMLPolicy();
@@ -162,7 +162,7 @@ public class AppResourcesSITests
     {
         AppSettings appSettings = GetAppSettings(subfolder: "AppPolicy", policyFilename: "notfound.xml");
         var settings = Options.Create<AppSettings>(appSettings);
-        IAppMetadata appMetadata = new AppMetadata(settings, new AppFeatures(), new NullLogger<AppMetadata>());
+        IAppMetadata appMetadata = new AppMetadata(settings, new FrontendFeatures(), new NullLogger<AppMetadata>());
         IAppResources appResources = new AppResourcesSI(settings, appMetadata, null, new NullLogger<AppResourcesSI>());
         var actual = appResources.GetApplicationXACMLPolicy();
         actual.Should().BeNull();
@@ -173,7 +173,7 @@ public class AppResourcesSITests
     {
         AppSettings appSettings = GetAppSettings(subfolder: "AppProcess", bpmnFilename: "process.bpmn");
         var settings = Options.Create<AppSettings>(appSettings);
-        IAppMetadata appMetadata = new AppMetadata(settings, new AppFeatures(), new NullLogger<AppMetadata>());
+        IAppMetadata appMetadata = new AppMetadata(settings, new FrontendFeatures(), new NullLogger<AppMetadata>());
         IAppResources appResources = new AppResourcesSI(settings, appMetadata, null, new NullLogger<AppResourcesSI>());
         string expected = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" + Environment.NewLine + "<root>process</root>";
         var actual = appResources.GetApplicationBPMNProcess();
@@ -185,7 +185,7 @@ public class AppResourcesSITests
     {
         AppSettings appSettings = GetAppSettings(subfolder: "AppProcess", policyFilename: "notfound.xml");
         var settings = Options.Create<AppSettings>(appSettings);
-        IAppMetadata appMetadata = new AppMetadata(settings, new AppFeatures(), new NullLogger<AppMetadata>());
+        IAppMetadata appMetadata = new AppMetadata(settings, new FrontendFeatures(), new NullLogger<AppMetadata>());
         IAppResources appResources = new AppResourcesSI(settings, appMetadata, null, new NullLogger<AppResourcesSI>());
         var actual = appResources.GetApplicationBPMNProcess();
         actual.Should().BeNull();

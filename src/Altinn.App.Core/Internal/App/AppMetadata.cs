@@ -14,22 +14,22 @@ namespace Altinn.App.Core.Internal.App
     {
         private readonly ILogger<AppMetadata> _logger;
         private readonly AppSettings _settings;
-        private readonly IAppFeatures _appFeatures;
+        private readonly IFrontendFeatures _frontendFeatures;
         private ApplicationMetadata? _application;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AppMetadata"/> class.
         /// </summary>
         /// <param name="settings">The app repository settings.</param>
-        /// <param name="appFeatures">Application features service</param>
+        /// <param name="frontendFeatures">Application features service</param>
         /// <param name="logger">A logger from the built in logger factory.</param>
         public AppMetadata(
             IOptions<AppSettings> settings,
-            IAppFeatures appFeatures,
+            IFrontendFeatures frontendFeatures,
             ILogger<AppMetadata> logger)
         {
             _settings = settings.Value;
-            _appFeatures = appFeatures;
+            _frontendFeatures = frontendFeatures;
             _logger = logger;
         }
 
@@ -62,7 +62,7 @@ namespace Altinn.App.Core.Internal.App
                         throw new JsonException($"Deserialization returned null, Could indicate problems with deserialization of {filename}");
                     }
                     application.App = application.Id.Split("/")[1];
-                    application.Features = await _appFeatures.GetEnabledFeatures();
+                    application.Features = await _frontendFeatures.GetFrontendFeatures();
                     _application = application;
 
                     return _application;

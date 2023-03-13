@@ -4,7 +4,7 @@ using Xunit;
 
 namespace Altinn.App.Core.Tests.Internal.App
 {
-    public class AppFeaturesTest
+    public class FrontendFeaturesTest
     {
         [Fact]
         public async void GetFeatures_returns_list_of_enabled_features()
@@ -13,8 +13,8 @@ namespace Altinn.App.Core.Tests.Internal.App
             {
                 { "footer", true }
             };
-            IAppFeatures appFeatures = new AppFeatures();
-            var actual = await appFeatures.GetEnabledFeatures();
+            IFrontendFeatures frontendFeatures = new FrontendFeatures();
+            var actual = await frontendFeatures.GetFrontendFeatures();
             actual.Should().BeEquivalentTo(expected);
         }
     }

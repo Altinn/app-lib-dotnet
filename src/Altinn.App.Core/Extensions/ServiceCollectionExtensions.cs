@@ -121,7 +121,7 @@ namespace Altinn.App.Core.Extensions
             services.TryAddTransient<ISigningCredentialsResolver, SigningCredentialsResolver>();
             services.TryAddSingleton<IAppResources, AppResourcesSI>();
             services.TryAddSingleton<IAppMetadata, AppMetadata>();
-            services.TryAddSingleton<IAppFeatures, AppFeatures>();
+            services.TryAddSingleton<IFrontendFeatures, FrontendFeatures>();
             services.TryAddTransient<IAppEvents, DefaultAppEvents>();
             services.TryAddTransient<ITaskEvents, DefaultTaskEvents>();
             services.TryAddTransient<IPageOrder, DefaultPageOrder>();
