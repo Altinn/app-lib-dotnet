@@ -44,7 +44,7 @@ namespace Altinn.App.Core.Configuration
         /// <summary>
         /// Gets or sets tue url for the new browser based PDF API endpoint.
         /// </summary>
-        public string BrowserPdfEndpoint { get; set; } = "http://localhost:5300/pdf";
+        public string ApiPdf2Endpoint { get; set; } = "http://localhost:5300/pdf";
 
         /// <summary>
         /// Gets or sets the subscription key value to use in requests against the platform.
