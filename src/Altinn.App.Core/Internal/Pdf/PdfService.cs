@@ -72,7 +72,7 @@ public class PdfService : IPdfService
         _dataClient = dataClient;
         _httpContextAccessor = httpContextAccessor;
         _profileClient = profileClient;
-        _registerClient= registerClient;
+        _registerClient = registerClient;
         _pdfFormatter = pdfFormatter;
         _pdfGeneratorClient = pdfGeneratorClient;
         _pdfGeneratorSettings = pdfGeneratorSettings.Value;
@@ -83,16 +83,12 @@ public class PdfService : IPdfService
     /// <inheritdoc/>
     public async Task GenerateAndStorePdf(Instance instance, CancellationToken ct)
     {
-        StringBuilder address = new StringBuilder(_pdfGeneratorSettings.AppPdfPageUriTemplate.ToLower());
+        var baseUrl = _generalSettings.FormattedExternalAppBaseUrl(new AppIdentifier(instance));
+        var pagePath = _pdfGeneratorSettings.AppPdfPagePathTemplate.ToLowerInvariant().Replace("{instanceid}", instance.Id);
 
-        address.Replace("{org}", instance.Org);
-        address.Replace("{hostname}", _generalSettings.HostName);
-        address.Replace("{appid}", instance.AppId);
-        address.Replace("{instanceid}", instance.Id);
+        Stream pdfContent = await _pdfGeneratorClient.GeneratePdf(new Uri(baseUrl + pagePath), ct);
 
-        Stream pdfContent = await _pdfGeneratorClient.GeneratePdf(new Uri(address.ToString()), ct);
-
-        var appIdentifier = new AppIdentifier(instance.AppId);
+        var appIdentifier = new AppIdentifier(instance);
         var language = await GetLanguage();
         TextResource? textResource = await GetTextResource(appIdentifier.App, appIdentifier.Org, language);
         string fileName = GetFileName(instance, textResource);
@@ -140,7 +136,7 @@ public class PdfService : IPdfService
 
         object data = await _dataClient.GetFormData(instanceGuid, dataElementModelType, org, app, instanceOwnerId, new Guid(dataElement.Id));
 
-        layoutSettings = await _pdfFormatter.FormatPdf(layoutSettings, data);
+        layoutSettings = await _pdfFormatter.FormatPdf(layoutSettings, data, instance, layoutSet);
         XmlSerializer serializer = new XmlSerializer(dataElementModelType);
         using MemoryStream stream = new MemoryStream();
 
@@ -216,7 +212,7 @@ public class PdfService : IPdfService
             textResource.Resources.Find(textResourceElement => textResourceElement.Id.Equals("ServiceName"));
 
         fileName = (titleText != null && !string.IsNullOrEmpty(titleText.Value)) ? $"{titleText.Value}.pdf" : $"{app}.pdf";
-        
+
         fileName = GetValidFileName(fileName);
 
         return await _dataClient.InsertBinaryData(
@@ -247,7 +243,7 @@ public class PdfService : IPdfService
         return language;
     }
 
-    private async Task<TextResource> GetTextResource(string app, string org, string language)
+    private async Task<TextResource?> GetTextResource(string app, string org, string language)
     {
         TextResource? textResource = await _resourceService.GetTexts(org, app, language);
 
@@ -260,7 +256,7 @@ public class PdfService : IPdfService
         return textResource;
     }
 
-    private static string GetFileName(Instance instance, TextResource textResource)
+    private static string GetFileName(Instance instance, TextResource? textResource)
     {
         string? fileName = null;
         string app = instance.AppId.Split("/")[1];
@@ -280,7 +276,7 @@ public class PdfService : IPdfService
         {
             fileName = titleText.Value + ".pdf";
         }
-        
+
         return GetValidFileName(fileName);
     }
 
