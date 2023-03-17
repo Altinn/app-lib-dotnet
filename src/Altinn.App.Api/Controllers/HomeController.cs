@@ -65,10 +65,13 @@ namespace Altinn.App.Api.Controllers
         {
             // See comments in the configuration of Antiforgery in MvcConfiguration.cs.
             var tokens = _antiforgery.GetAndStoreTokens(HttpContext);
-            HttpContext.Response.Cookies.Append("XSRF-TOKEN", tokens.RequestToken, new CookieOptions
+            if (tokens.RequestToken != null)
             {
-                HttpOnly = false // Make this cookie readable by Javascript.
-            });
+                HttpContext.Response.Cookies.Append("XSRF-TOKEN", tokens.RequestToken, new CookieOptions
+                {
+                    HttpOnly = false // Make this cookie readable by Javascript.
+                });
+            }
 
             if (await ShouldShowAppView())
             {
@@ -118,14 +121,14 @@ namespace Altinn.App.Api.Controllers
             return false;
         }
 
-        private bool IsStatelessApp(Application? application)
+        private bool IsStatelessApp(Application application)
         {
             if (application?.OnEntry == null)
             {
                 return false;
             }
 
-            return !_onEntryWithInstance.Contains(application.OnEntry?.Show);
+            return !_onEntryWithInstance.Contains(application.OnEntry.Show);
         }
 
         private DataType? GetStatelessDataType(Application application)
