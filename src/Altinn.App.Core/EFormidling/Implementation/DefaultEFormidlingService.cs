@@ -74,7 +74,7 @@ public class DefaultEFormidlingService : IEFormidlingService
 
         ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
 
-        string accessToken = _tokenGenerator.GenerateAccessToken(applicationMetadata.Org, applicationMetadata.App);
+        string accessToken = _tokenGenerator.GenerateAccessToken(applicationMetadata.Org, applicationMetadata.AppIdentifier.App);
         string authzToken = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _appSettings.RuntimeCookieName);
 
         var requestHeaders = new Dictionary<string, string>
@@ -197,7 +197,7 @@ public class DefaultEFormidlingService : IEFormidlingService
                 applicationMetadata.DataTypes.Any(d => d.Id == dataElement.DataType && d.AppLogic?.ClassRef != null);
 
             string fileName = appLogic ? $"{dataElement.DataType}.xml" : dataElement.Filename;
-            using Stream stream = await _dataClient.GetBinaryData(applicationMetadata.Org, applicationMetadata.App, instanceOwnerPartyId, instanceGuid,
+            using Stream stream = await _dataClient.GetBinaryData(applicationMetadata.Org, applicationMetadata.AppIdentifier.App, instanceOwnerPartyId, instanceGuid,
                 new Guid(dataElement.Id));
 
             bool successful = await _eFormidlingClient!.UploadAttachment(stream, instanceGuid.ToString(), fileName, requestHeaders);

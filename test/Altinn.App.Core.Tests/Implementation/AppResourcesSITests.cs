@@ -204,7 +204,7 @@ public class AppResourcesSITests
         return appSettings;
     }
 
-    private IAppMetadata SetupAppMedata(IOptions<AppSettings> appsettings, IFrontendFeatures frontendFeatures = null)
+    private static IAppMetadata SetupAppMedata(IOptions<AppSettings> appsettings, IFrontendFeatures frontendFeatures = null)
     {
         if (frontendFeatures == null)
         {

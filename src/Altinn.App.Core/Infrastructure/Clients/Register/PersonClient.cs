@@ -78,7 +78,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Register
         {
             ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
             string issuer = application.Org;
-            string appName = application.App;
+            string appName = application.AppIdentifier.App;
             request.Headers.Add(
                 "PlatformAccessToken", _accessTokenGenerator.GenerateAccessToken(issuer, appName));
             request.Headers.Add(

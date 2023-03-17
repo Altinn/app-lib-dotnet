@@ -77,7 +77,7 @@ namespace Altinn.App.Api.Controllers
 
                 return Conflict($"This is {application.Id}, and not the app you are looking for: {wantedAppId}!");
             }
-            catch (FileNotFoundException ex)
+            catch (FileNotFoundException)
             {
                 return NotFound();
             }

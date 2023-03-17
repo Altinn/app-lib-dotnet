@@ -18,11 +18,10 @@ namespace Altinn.App.Core.Tests.Internal.App
         {
             AppSettings appSettings = GetAppSettings("AppMetadata", "default.applicationmetadata.json");
             IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
-            ApplicationMetadata expected = new ApplicationMetadata()
+            ApplicationMetadata expected = new ApplicationMetadata("tdd/bestilling")
             {
                 Id = "tdd/bestilling",
                 Org = "tdd",
-                App = "bestilling",
                 Created = DateTime.Parse("2019-09-16T22:22:22"),
                 CreatedBy = "username",
                 Title = new Dictionary<string, string>()
@@ -72,11 +71,10 @@ namespace Altinn.App.Core.Tests.Internal.App
         {
             AppSettings appSettings = GetAppSettings("AppMetadata", "eformid.applicationmetadata.json");
             IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
-            ApplicationMetadata expected = new ApplicationMetadata()
+            ApplicationMetadata expected = new ApplicationMetadata("tdd/bestilling")
             {
                 Id = "tdd/bestilling",
                 Org = "tdd",
-                App = "bestilling",
                 Created = DateTime.Parse("2019-09-16T22:22:22"),
                 CreatedBy = "username",
                 Title = new Dictionary<string, string>()
@@ -144,11 +142,10 @@ namespace Altinn.App.Core.Tests.Internal.App
             Mock<IFrontendFeatures> appFeaturesMock = new Mock<IFrontendFeatures>();
             appFeaturesMock.Setup(af => af.GetFrontendFeatures()).ReturnsAsync(new Dictionary<string, bool>() { { "footer", true } });
             IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings), appFeaturesMock.Object);
-            ApplicationMetadata expected = new ApplicationMetadata()
+            ApplicationMetadata expected = new ApplicationMetadata("tdd/bestilling")
             {
                 Id = "tdd/bestilling",
                 Org = "tdd",
-                App = "bestilling",
                 Created = DateTime.Parse("2019-09-16T22:22:22"),
                 CreatedBy = "username",
                 Title = new Dictionary<string, string>()
@@ -272,7 +269,7 @@ namespace Altinn.App.Core.Tests.Internal.App
             return appSettings;
         }
 
-        private IAppMetadata SetupAppMedata(IOptions<AppSettings> appsettings, IFrontendFeatures frontendFeatures = null)
+        private static IAppMetadata SetupAppMedata(IOptions<AppSettings> appsettings, IFrontendFeatures frontendFeatures = null)
         {
             if (frontendFeatures == null)
             {

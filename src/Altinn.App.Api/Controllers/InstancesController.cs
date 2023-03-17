@@ -478,7 +478,7 @@ namespace Altinn.App.Api.Controllers
         private async Task CopyDataFromSourceInstance(ApplicationMetadata application, Instance targetInstance, Instance sourceInstance)
         {
             string org = application.Org;
-            string app = application.App;
+            string app = application.AppIdentifier.App;
             int instanceOwnerPartyId = int.Parse(targetInstance.InstanceOwner.PartyId);
 
             string[] sourceSplit = sourceInstance.Id.Split("/");

@@ -38,7 +38,7 @@ public class DefaultTaskEventsTests: IDisposable
 
     public DefaultTaskEventsTests()
     {
-        _application = new ApplicationMetadata();
+        _application = new ApplicationMetadata("ttd/test");
         _resMock = new Mock<IAppResources>();
         _metaMock = new Mock<IAppMetadata>();
         _dataMock = new Mock<IData>();

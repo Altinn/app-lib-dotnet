@@ -77,7 +77,7 @@ public class TestScenariosData : IEnumerable<object[]>
                     }
                 }
             },
-            ReceivedApplication = new ApplicationMetadata()
+            ReceivedApplication = new ApplicationMetadata("ttd/test")
             {
                 DataTypes = new List<DataType>()
             },
@@ -105,7 +105,7 @@ public class TestScenariosData : IEnumerable<object[]>
                     }
                 }
             },
-            ReceivedApplication = new ApplicationMetadata()
+            ReceivedApplication = new ApplicationMetadata("ttd/test")
             {
                 DataTypes = new List<DataType>
                 {
@@ -154,7 +154,7 @@ public class TestScenariosData : IEnumerable<object[]>
                     }
                 }
             },
-            ReceivedApplication = new ApplicationMetadata()
+            ReceivedApplication = new ApplicationMetadata("ttd/test")
             {
                 DataTypes = new List<DataType>
                 {
@@ -231,7 +231,7 @@ public class ValidationControllerValidateDataTests
         }
     }
 
-    private ValidateController SetupController(string app, string org, int instanceOwnerId,
+    private static ValidateController SetupController(string app, string org, int instanceOwnerId,
         ValidateDataTestScenario testScenario)
     {
         (Mock<IInstance> instanceMock, Mock<IAppMetadata> appResourceMock, Mock<IValidation> validationMock) =
@@ -240,7 +240,7 @@ public class ValidationControllerValidateDataTests
         return new ValidateController(instanceMock.Object, validationMock.Object, appResourceMock.Object);
     }
 
-    private (Mock<IInstance>, Mock<IAppMetadata>, Mock<IValidation>) SetupMocks(string app, string org,
+    private static (Mock<IInstance>, Mock<IAppMetadata>, Mock<IValidation>) SetupMocks(string app, string org,
         int instanceOwnerId, ValidateDataTestScenario testScenario)
     {
         var instanceMock = new Mock<IInstance>();

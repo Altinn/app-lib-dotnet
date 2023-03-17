@@ -65,7 +65,7 @@ public class DefaultAppEvents: IAppEvents
             deleteTasks.Add(
                 _dataClient.DeleteData(
                     applicationMetadata.Org,
-                    applicationMetadata.App,
+                    applicationMetadata.AppIdentifier.App,
                     int.Parse(instance.InstanceOwner.PartyId),
                     Guid.Parse(item.InstanceGuid),
                     Guid.Parse(item.Id),
