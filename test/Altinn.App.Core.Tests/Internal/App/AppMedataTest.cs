@@ -1,14 +1,11 @@
-using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
-using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Altinn.App.Core.Tests.Internal.App
 {
@@ -20,7 +17,7 @@ namespace Altinn.App.Core.Tests.Internal.App
         public async void GetApplicationMetadata_desrializes_file_from_disk()
         {
             AppSettings appSettings = GetAppSettings("AppMetadata", "default.applicationmetadata.json");
-            IAppMetadata appMetadata = new AppMetadata(Options.Create<AppSettings>(appSettings), new FrontendFeatures(), new NullLogger<AppMetadata>());
+            IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
             ApplicationMetadata expected = new ApplicationMetadata()
             {
                 Id = "tdd/bestilling",
@@ -74,7 +71,7 @@ namespace Altinn.App.Core.Tests.Internal.App
         public async void GetApplicationMetadata_eformidling_desrializes_file_from_disk()
         {
             AppSettings appSettings = GetAppSettings("AppMetadata", "eformid.applicationmetadata.json");
-            IAppMetadata appMetadata = new AppMetadata(Options.Create<AppSettings>(appSettings), new FrontendFeatures(), new NullLogger<AppMetadata>());
+            IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
             ApplicationMetadata expected = new ApplicationMetadata()
             {
                 Id = "tdd/bestilling",
@@ -146,7 +143,7 @@ namespace Altinn.App.Core.Tests.Internal.App
             AppSettings appSettings = GetAppSettings("AppMetadata", "default.applicationmetadata.json");
             Mock<IFrontendFeatures> appFeaturesMock = new Mock<IFrontendFeatures>();
             appFeaturesMock.Setup(af => af.GetFrontendFeatures()).ReturnsAsync(new Dictionary<string, bool>() { { "footer", true } });
-            IAppMetadata appMetadata = new AppMetadata(Options.Create<AppSettings>(appSettings), appFeaturesMock.Object, new NullLogger<AppMetadata>());
+            IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings), appFeaturesMock.Object);
             ApplicationMetadata expected = new ApplicationMetadata()
             {
                 Id = "tdd/bestilling",
@@ -204,7 +201,7 @@ namespace Altinn.App.Core.Tests.Internal.App
         public async void GetApplicationMetadata_throws_ApplicationConfigException_if_file_not_found()
         {
             AppSettings appSettings = GetAppSettings("AppMetadata", "notfound.applicationmetadata.json");
-            IAppMetadata appMetadata = new AppMetadata(Options.Create<AppSettings>(appSettings), new FrontendFeatures(), new NullLogger<AppMetadata>());
+            IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
             await Assert.ThrowsAsync<ApplicationConfigException>(async () => await appMetadata.GetApplicationMetadata());
         }
 
@@ -212,7 +209,7 @@ namespace Altinn.App.Core.Tests.Internal.App
         public async void GetApplicationMetadata_throw_ApplicationConfigException_if_deserialization_fails()
         {
             AppSettings appSettings = GetAppSettings("AppMetadata", "invalid.applicationmetadata.json");
-            IAppMetadata appMetadata = new AppMetadata(Options.Create<AppSettings>(appSettings), new FrontendFeatures(), new NullLogger<AppMetadata>());
+            IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
             await Assert.ThrowsAsync<ApplicationConfigException>(async () => await appMetadata.GetApplicationMetadata());
         }
 
@@ -220,7 +217,7 @@ namespace Altinn.App.Core.Tests.Internal.App
         public async void GetApplicationMetadata_throws_ApplicationConfigException_if_deserialization_fails_due_to_string_in_int()
         {
             AppSettings appSettings = GetAppSettings("AppMetadata", "invalid-int.applicationmetadata.json");
-            IAppMetadata appMetadata = new AppMetadata(Options.Create<AppSettings>(appSettings), new FrontendFeatures(), new NullLogger<AppMetadata>());
+            IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
             await Assert.ThrowsAsync<ApplicationConfigException>(async () => await appMetadata.GetApplicationMetadata());
         }
 
@@ -228,26 +225,25 @@ namespace Altinn.App.Core.Tests.Internal.App
         public async void GetApplicationXACMLPolicy_return_policyfile_as_string()
         {
             AppSettings appSettings = GetAppSettings(subfolder: "AppPolicy", policyFilename: "policy.xml");
-            IAppMetadata appMetadata = new AppMetadata(Options.Create<AppSettings>(appSettings), new FrontendFeatures(), new NullLogger<AppMetadata>());
+            IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
             string expected = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" + Environment.NewLine + "<root>policy</root>";
             var actual = await appMetadata.GetApplicationXACMLPolicy();
             actual.Should().BeEquivalentTo(expected);
         }
 
         [Fact]
-        public async void GetApplicationXACMLPolicy_return_null_if_file_not_found()
+        public async void GetApplicationXACMLPolicy_throws_FileNotFoundException_if_file_not_found()
         {
             AppSettings appSettings = GetAppSettings(subfolder: "AppPolicy", policyFilename: "notfound.xml");
-            IAppMetadata appMetadata = new AppMetadata(Options.Create<AppSettings>(appSettings), new FrontendFeatures(), new NullLogger<AppMetadata>());
-            var actual = await appMetadata.GetApplicationXACMLPolicy();
-            actual.Should().BeNull();
+            IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
+            await Assert.ThrowsAsync<FileNotFoundException>(async () => await appMetadata.GetApplicationXACMLPolicy());
         }
 
         [Fact]
         public async void GetApplicationBPMNProcess_return_process_as_string()
         {
             AppSettings appSettings = GetAppSettings(subfolder: "AppProcess", bpmnFilename: "process.bpmn");
-            IAppMetadata appMetadata = new AppMetadata(Options.Create<AppSettings>(appSettings), new FrontendFeatures(), new NullLogger<AppMetadata>());
+            IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
             string expected = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" + Environment.NewLine + "<root>process</root>";
             var actual = await appMetadata.GetApplicationBPMNProcess();
             actual.Should().BeEquivalentTo(expected);
@@ -257,7 +253,7 @@ namespace Altinn.App.Core.Tests.Internal.App
         public async void GetApplicationBPMNProcess_throws_ApplicationConfigException_if_file_not_found()
         {
             AppSettings appSettings = GetAppSettings(subfolder: "AppProcess", policyFilename: "notfound.xml");
-            IAppMetadata appMetadata = new AppMetadata(Options.Create<AppSettings>(appSettings), new FrontendFeatures(), new NullLogger<AppMetadata>());
+            IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
             await Assert.ThrowsAsync<ApplicationConfigException>(async () => await appMetadata.GetApplicationBPMNProcess());
         }
 
@@ -274,6 +270,16 @@ namespace Altinn.App.Core.Tests.Internal.App
                 ApplicationXACMLPolicyFileName = policyFilename
             };
             return appSettings;
+        }
+
+        private IAppMetadata SetupAppMedata(IOptions<AppSettings> appsettings, IFrontendFeatures frontendFeatures = null)
+        {
+            if (frontendFeatures == null)
+            {
+                return new AppMetadata(appsettings, new FrontendFeatures());
+            }
+            
+            return new AppMetadata(appsettings, frontendFeatures);
         }
     }
 }

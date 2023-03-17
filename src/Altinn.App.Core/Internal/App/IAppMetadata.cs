@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Altinn.App.Core.Models;
 
 namespace Altinn.App.Core.Internal.App
@@ -19,7 +18,8 @@ namespace Altinn.App.Core.Internal.App
         /// Returns the application XACML policy for an application.
         /// </summary>
         /// <returns>The application  XACML policy for an application.</returns>
-        public Task<string?> GetApplicationXACMLPolicy();
+        /// <exception cref="FileNotFoundException"></exception>
+        public Task<string> GetApplicationXACMLPolicy();
         
         /// <summary>
         /// Returns the application BPMN process for an application.

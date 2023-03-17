@@ -124,15 +124,21 @@ namespace Altinn.App.Core.Implementation
         /// <inheritdoc/>
         public string? GetApplicationXACMLPolicy()
         {
-            var task = Task.Run<string?>(async () => await _appMetadata.GetApplicationXACMLPolicy());
-            task.Wait();
-            if (task.IsCompletedSuccessfully)
+            try
             {
-                return task.Result;
+                var task = Task.Run(async () => await _appMetadata.GetApplicationXACMLPolicy());
+                task.Wait();
+                if (task.IsCompletedSuccessfully)
+                {
+                    return task.Result;
+                }
+                return null;
             }
-
-            _logger.LogError(task.Exception, "Something went wrong fetching application policy");
-            return null;
+            catch (AggregateException ex)
+            {
+                _logger.LogError(ex, "Something went wrong fetching application policy");
+                return null;
+            }
         }
 
         /// <inheritdoc/>

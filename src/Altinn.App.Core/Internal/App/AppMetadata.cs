@@ -2,7 +2,6 @@ using System.Text;
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Models;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Internal.App
@@ -12,7 +11,6 @@ namespace Altinn.App.Core.Internal.App
     /// </summary>
     public class AppMetadata : IAppMetadata
     {
-        private readonly ILogger<AppMetadata> _logger;
         private readonly AppSettings _settings;
         private readonly IFrontendFeatures _frontendFeatures;
         private ApplicationMetadata? _application;
@@ -22,15 +20,12 @@ namespace Altinn.App.Core.Internal.App
         /// </summary>
         /// <param name="settings">The app repository settings.</param>
         /// <param name="frontendFeatures">Application features service</param>
-        /// <param name="logger">A logger from the built in logger factory.</param>
         public AppMetadata(
             IOptions<AppSettings> settings,
-            IFrontendFeatures frontendFeatures,
-            ILogger<AppMetadata> logger)
+            IFrontendFeatures frontendFeatures)
         {
             _settings = settings.Value;
             _frontendFeatures = frontendFeatures;
-            _logger = logger;
         }
 
         /// <inheritdoc />
@@ -44,7 +39,7 @@ namespace Altinn.App.Core.Internal.App
                 return _application;
             }
 
-            string filename = _settings.AppBasePath + _settings.ConfigurationFolder + _settings.ApplicationMetadataFileName;
+            string filename = Path.Join(_settings.AppBasePath, _settings.ConfigurationFolder, _settings.ApplicationMetadataFileName);
             try
             {
                 if (File.Exists(filename))
@@ -73,34 +68,26 @@ namespace Altinn.App.Core.Internal.App
             }
             catch (JsonException ex)
             {
-                _logger.LogError(ex, "Something went wrong when parsing application metadata");
-                throw new ApplicationConfigException("Something went wrong when parsing application metadata", ex);
+                throw new ApplicationConfigException($"Something went wrong when parsing application metadata file: {filename}", ex);
             }
         }
 
         /// <inheritdoc />
-        public async Task<string?> GetApplicationXACMLPolicy()
+        public async Task<string> GetApplicationXACMLPolicy()
         {
-            string filename = _settings.AppBasePath + _settings.ConfigurationFolder + _settings.AuthorizationFolder + _settings.ApplicationXACMLPolicyFileName;
-            try
+            string filename = Path.Join(_settings.AppBasePath, _settings.ConfigurationFolder, _settings.AuthorizationFolder, _settings.ApplicationXACMLPolicyFileName);
+            if (File.Exists(filename))
             {
-                if (File.Exists(filename))
-                {
-                    return await File.ReadAllTextAsync(filename, Encoding.UTF8);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Something went wrong when fetching XACML Policy");
+                return await File.ReadAllTextAsync(filename, Encoding.UTF8);
             }
 
-            return null;
+            throw new FileNotFoundException($"XACML file {filename} not found");
         }
 
         /// <inheritdoc />
         public async Task<string> GetApplicationBPMNProcess()
         {
-            string filename = _settings.AppBasePath + _settings.ConfigurationFolder + _settings.ProcessFolder + _settings.ProcessFileName;
+            string filename = Path.Join(_settings.AppBasePath, _settings.ConfigurationFolder, _settings.ProcessFolder, _settings.ProcessFileName);
             if (File.Exists(filename))
             {
                 return await File.ReadAllTextAsync(filename, Encoding.UTF8);

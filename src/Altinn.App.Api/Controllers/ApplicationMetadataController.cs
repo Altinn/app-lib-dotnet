@@ -65,10 +65,9 @@ namespace Altinn.App.Api.Controllers
         public async Task<IActionResult> GetPolicy(string org, string app)
         {
             ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
-            string? policy = await _appMetadata.GetApplicationXACMLPolicy();
-
-            if (policy != null)
+            try
             {
+                string policy = await _appMetadata.GetApplicationXACMLPolicy();
                 string wantedAppId = $"{org}/{app}";
 
                 if (application.Id.Equals(wantedAppId))
@@ -78,8 +77,10 @@ namespace Altinn.App.Api.Controllers
 
                 return Conflict($"This is {application.Id}, and not the app you are looking for: {wantedAppId}!");
             }
-
-            return NotFound();
+            catch (FileNotFoundException ex)
+            {
+                return NotFound();
+            }
         }
 
         /// <summary>

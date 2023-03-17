@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Implementation;
 using Altinn.App.Core.Interface;
@@ -21,7 +20,7 @@ public class AppResourcesSITests
     {
         AppSettings appSettings = GetAppSettings("AppMetadata", "default.applicationmetadata.json");
         var settings = Options.Create<AppSettings>(appSettings);
-        IAppMetadata appMetadata = new AppMetadata(settings, new FrontendFeatures(), new NullLogger<AppMetadata>());
+        IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
         IAppResources appResources = new AppResourcesSI(settings, appMetadata, null, new NullLogger<AppResourcesSI>());
         Application expected = new Application()
         {
@@ -74,7 +73,7 @@ public class AppResourcesSITests
         Mock<IFrontendFeatures> appFeaturesMock = new Mock<IFrontendFeatures>();
         appFeaturesMock.Setup(af => af.GetFrontendFeatures()).ReturnsAsync(new Dictionary<string, bool>() { { "footer", true } });
         var settings = Options.Create<AppSettings>(appSettings);
-        IAppMetadata appMetadata = new AppMetadata(settings, appFeaturesMock.Object, new NullLogger<AppMetadata>());
+        IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings), appFeaturesMock.Object);
         IAppResources appResources = new AppResourcesSI(settings, appMetadata, null, new NullLogger<AppResourcesSI>());
         Application expected = new Application()
         {
@@ -129,7 +128,7 @@ public class AppResourcesSITests
     {
         AppSettings appSettings = GetAppSettings("AppMetadata", "notfound.applicationmetadata.json");
         var settings = Options.Create<AppSettings>(appSettings);
-        IAppMetadata appMetadata = new AppMetadata(settings, new FrontendFeatures(), new NullLogger<AppMetadata>());
+        IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
         IAppResources appResources = new AppResourcesSI(settings, appMetadata, null, new NullLogger<AppResourcesSI>());
         Assert.Throws<ApplicationConfigException>(() => appResources.GetApplication());
     }
@@ -139,7 +138,7 @@ public class AppResourcesSITests
     {
         AppSettings appSettings = GetAppSettings("AppMetadata", "invalid.applicationmetadata.json");
         var settings = Options.Create<AppSettings>(appSettings);
-        IAppMetadata appMetadata = new AppMetadata(settings, new FrontendFeatures(), new NullLogger<AppMetadata>());
+        IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
         IAppResources appResources = new AppResourcesSI(settings, appMetadata, null, new NullLogger<AppResourcesSI>());
         Assert.Throws<ApplicationConfigException>(() => appResources.GetApplication());
     }
@@ -149,7 +148,7 @@ public class AppResourcesSITests
     {
         AppSettings appSettings = GetAppSettings(subfolder: "AppPolicy", policyFilename: "policy.xml");
         var settings = Options.Create<AppSettings>(appSettings);
-        IAppMetadata appMetadata = new AppMetadata(settings, new FrontendFeatures(), new NullLogger<AppMetadata>());
+        IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
         IAppResources appResources = new AppResourcesSI(settings, appMetadata, null, new NullLogger<AppResourcesSI>());
         string expected = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" + Environment.NewLine + "<root>policy</root>";
         var actual = appResources.GetApplicationXACMLPolicy();
@@ -161,7 +160,7 @@ public class AppResourcesSITests
     {
         AppSettings appSettings = GetAppSettings(subfolder: "AppPolicy", policyFilename: "notfound.xml");
         var settings = Options.Create<AppSettings>(appSettings);
-        IAppMetadata appMetadata = new AppMetadata(settings, new FrontendFeatures(), new NullLogger<AppMetadata>());
+        IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
         IAppResources appResources = new AppResourcesSI(settings, appMetadata, null, new NullLogger<AppResourcesSI>());
         var actual = appResources.GetApplicationXACMLPolicy();
         actual.Should().BeNull();
@@ -172,7 +171,7 @@ public class AppResourcesSITests
     {
         AppSettings appSettings = GetAppSettings(subfolder: "AppProcess", bpmnFilename: "process.bpmn");
         var settings = Options.Create<AppSettings>(appSettings);
-        IAppMetadata appMetadata = new AppMetadata(settings, new FrontendFeatures(), new NullLogger<AppMetadata>());
+        IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
         IAppResources appResources = new AppResourcesSI(settings, appMetadata, null, new NullLogger<AppResourcesSI>());
         string expected = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" + Environment.NewLine + "<root>process</root>";
         var actual = appResources.GetApplicationBPMNProcess();
@@ -184,7 +183,7 @@ public class AppResourcesSITests
     {
         AppSettings appSettings = GetAppSettings(subfolder: "AppProcess", policyFilename: "notfound.xml");
         var settings = Options.Create<AppSettings>(appSettings);
-        IAppMetadata appMetadata = new AppMetadata(settings, new FrontendFeatures(), new NullLogger<AppMetadata>());
+        IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
         IAppResources appResources = new AppResourcesSI(settings, appMetadata, null, new NullLogger<AppResourcesSI>());
         var actual = appResources.GetApplicationBPMNProcess();
         actual.Should().BeNull();
@@ -203,5 +202,15 @@ public class AppResourcesSITests
             ApplicationXACMLPolicyFileName = policyFilename
         };
         return appSettings;
+    }
+
+    private IAppMetadata SetupAppMedata(IOptions<AppSettings> appsettings, IFrontendFeatures frontendFeatures = null)
+    {
+        if (frontendFeatures == null)
+        {
+            return new AppMetadata(appsettings, new FrontendFeatures());
+        }
+
+        return new AppMetadata(appsettings, frontendFeatures);
     }
 }
