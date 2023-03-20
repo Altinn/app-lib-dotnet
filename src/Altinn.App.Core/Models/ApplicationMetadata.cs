@@ -27,8 +27,8 @@ namespace Altinn.App.Core.Models
             get { return base.Id; }
             set
             {
-                base.Id = value;
                 AppIdentifier = new AppIdentifier(value);
+                base.Id = value;
             }
         }
 
@@ -41,6 +41,7 @@ namespace Altinn.App.Core.Models
 
         /// <summary>
         /// Get AppIdentifier based on ApplicationMetadata.Id
+        /// Updated by setting ApplicationMetadata.Id
         /// </summary>
         [System.Text.Json.Serialization.JsonIgnore]
         [Newtonsoft.Json.JsonIgnore]

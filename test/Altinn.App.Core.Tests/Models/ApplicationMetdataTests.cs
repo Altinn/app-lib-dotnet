@@ -27,4 +27,15 @@ public class ApplicationMetdataTests
         AppIdentifier expectedUpdate = new AppIdentifier("ttd/updated");
         metadata.AppIdentifier.Should().BeEquivalentTo(expectedUpdate);
     }
+    
+    [Fact]
+    public void UpdatingIdFailsIfInvalidApplicationIdFormat()
+    {
+        ApplicationMetadata metadata = new ApplicationMetadata("ttd/test");
+        metadata.Id.Should().BeEquivalentTo("ttd/test");
+        AppIdentifier expected = new AppIdentifier("ttd/test");
+        metadata.AppIdentifier.Should().BeEquivalentTo(expected);
+        Assert.Throws<ArgumentOutOfRangeException>(() => metadata.Id = "invalid");
+        metadata.AppIdentifier.Should().BeEquivalentTo(expected);
+    }
 }
