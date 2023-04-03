@@ -73,14 +73,10 @@ public class InstancesController_CopyInstanceTests
     {
         _registrer.VerifyNoOtherCalls();
         _instanceClient.VerifyNoOtherCalls();
-        _data.VerifyNoOtherCalls();
         _appMetadata.VerifyNoOtherCalls();
-        _appModel.VerifyNoOtherCalls();
-        _instantiationProcessor.VerifyNoOtherCalls();
         _instantiationValidator.VerifyNoOtherCalls();
         _pdp.VerifyNoOtherCalls();
         _eventsService.VerifyNoOtherCalls();
-        _prefill.VerifyNoOtherCalls();
         _profile.VerifyNoOtherCalls();
         _processEngine.VerifyNoOtherCalls();
     }
@@ -256,7 +252,11 @@ public class InstancesController_CopyInstanceTests
             AppId = $"{Org}/{AppName}",
             InstanceOwner = new InstanceOwner() { PartyId = InstanceOwnerPartyId.ToString() },
             Status = new InstanceStatus() { IsArchived = true },
-            Data = new List<DataElement>()
+            Process = new ProcessState() { CurrentTask = new ProcessElementInfo() { ElementId = "First" } },
+            Data = new List<DataElement>
+            {
+                new DataElement { Id = Guid.NewGuid().ToString(), DataType = "data_type_1" }
+            }
         };
         InstantiationValidationResult? instantiationValidationResult = new() { Valid = true };
 
@@ -296,7 +296,18 @@ public class InstancesController_CopyInstanceTests
         return new(appId)
         {
             CopyInstanceSettings = new CopyInstanceSettings { Enabled = enableCopyInstance },
-            DataTypes = new List<DataType>()
+            DataTypes = new List<DataType> 
+            { 
+                new DataType 
+                { 
+                    Id = "data_type_1",
+                    AppLogic = new ApplicationLogic
+                    {
+                        ClassRef = "App.Models.Skjema",
+                    },
+                    TaskId = "First"
+                } 
+            }
         };
     }
 
