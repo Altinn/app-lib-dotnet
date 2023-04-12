@@ -10,7 +10,9 @@ namespace Altinn.App.Api.Tests.Data
         {
             var assemblyPath = new Uri(typeof(TestData).Assembly.Location).LocalPath;
 
-            return Path.Combine(assemblyPath, @".././../Data");
+            var assemblyFolder = Path.GetDirectoryName(assemblyPath);
+
+            return Path.Combine(assemblyFolder!, @"../../../Data/");
         }
 
         public static string GetTestDataInstancesFolder()
@@ -30,6 +32,18 @@ namespace Altinn.App.Api.Tests.Data
         {
             string testDataFolder = GetTestDataRootFolder();
             return Path.Combine(testDataFolder, "apps", org, app, "config", "authorization") + Path.DirectorySeparatorChar;
+        }
+
+        public static string GetApplicationPath(string org, string app)
+        {
+            string testDataFolder = GetTestDataRootFolder();
+            return Path.Combine(testDataFolder, "apps", org, app);
+        }
+
+        public static string GetApplicationMetadataPath(string org, string app)
+        {
+            string applicationPath = GetApplicationPath(org, app);
+            return Path.Combine(applicationPath, "config", "applicationmetadata.json");
         }
     }
 }

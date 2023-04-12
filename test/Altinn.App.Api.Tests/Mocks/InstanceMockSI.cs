@@ -7,12 +7,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
-using System.Threading.Tasks;
 
 namespace Altinn.App.Api.Tests.Mocks
 {
@@ -159,13 +153,14 @@ namespace Altinn.App.Api.Tests.Mocks
         private List<DataElement> GetDataElements(string org, string app, int instanceOwnerId, Guid instanceId)
         {
             string path = GetDataPath(org, app, instanceOwnerId, instanceId);
-            
-            if (!Directory.Exists(path))
-            {
-                throw new IOException($"Can't find data path {path} for instance {instanceId} in app {org}/{app}");
-            }
 
             List<DataElement> dataElements = new();
+
+            if (!Directory.Exists(path))
+            {
+                return dataElements;
+            }
+           
             foreach (string file in Directory.GetFiles(path))
             {
                 if (file.Contains(".pretest"))
