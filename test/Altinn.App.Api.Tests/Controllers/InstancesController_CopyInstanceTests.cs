@@ -281,6 +281,7 @@ public class InstancesController_CopyInstanceTests
         // Assert
         Assert.IsType<RedirectResult>(actual);
         RedirectResult objectResult = (RedirectResult)actual;
+        Assert.Contains($"/#/instance/{InstanceOwnerPartyId}/", objectResult.Url);
 
         _appMetadata.VerifyAll();
         _pdp.VerifyAll();
