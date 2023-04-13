@@ -15,6 +15,10 @@ namespace Altinn.App.Api.Tests
             _factory = factory;
         }
 
+        /// <summary>
+        /// Gets a client that adds appsettings from the specified org/app
+        /// test application under TestData/Apps to the service collection.
+        /// </summary>
         public HttpClient GetRootedClient(string org, string app)
         {
             string appRootPath = TestData.GetApplicationDirectory(org, app);

@@ -148,7 +148,7 @@ namespace Altinn.App.Api.Controllers
                         return errorResponse;
                     }
 
-                    StreamContent streamContent = CreateContentStream(Request);
+                    StreamContent streamContent = Request.CreateContentStream();
                     foreach (var analyzer in _filesAnalyzers)
                     {
                         IDictionary<string, string> fileMetadata = analyzer.Analyze(streamContent);
@@ -161,19 +161,6 @@ namespace Altinn.App.Api.Controllers
             {
                 return HandlePlatformHttpException(e, $"Cannot create data element of {dataType} for {instanceOwnerPartyId}/{instanceGuid}");
             }
-        }
-
-        private static StreamContent CreateContentStream(HttpRequest request)
-        {
-            StreamContent content = new StreamContent(request.Body);
-            content.Headers.ContentType = MediaTypeHeaderValue.Parse(request.ContentType);
-
-            if (request.Headers.TryGetValue("Content-Disposition", out StringValues headerValues))
-            {
-                content.Headers.ContentDisposition = ContentDispositionHeaderValue.Parse(headerValues.ToString());
-            }
-
-            return content;
         }
 
         /// <summary>

@@ -280,7 +280,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
             DataElement dataElement;
 
-            StreamContent content = CreateContentStream(request);
+            StreamContent content = request.CreateContentStream();
 
             HttpResponseMessage response = await _client.PostAsync(token, apiUrl, content);
 
@@ -335,7 +335,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             string apiUrl = $"{_platformSettings.ApiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}";
             string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
 
-            StreamContent content = CreateContentStream(request);
+            StreamContent content = request.CreateContentStream();
 
             HttpResponseMessage response = await _client.PutAsync(token, apiUrl, content);
 
@@ -349,19 +349,6 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
 
             _logger.LogError($"Updating attachment {dataGuid} for instance {instanceGuid} failed with status code {response.StatusCode}");
             throw await PlatformHttpException.CreateAsync(response);
-        }
-
-        private static StreamContent CreateContentStream(HttpRequest request)
-        {
-            StreamContent content = new StreamContent(request.Body);
-            content.Headers.ContentType = MediaTypeHeaderValue.Parse(request.ContentType);
-
-            if (request.Headers.TryGetValue("Content-Disposition", out StringValues headerValues))
-            {
-                content.Headers.ContentDisposition = ContentDispositionHeaderValue.Parse(headerValues.ToString());
-            }
-
-            return content;
         }
 
         /// <inheritdoc />
