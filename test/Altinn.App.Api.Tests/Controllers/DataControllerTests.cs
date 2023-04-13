@@ -1,50 +1,54 @@
 ﻿using Altinn.App.Api.Tests.Utils;
-using Altinn.App.Core.Internal.Events;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http.Headers;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 using Xunit;
+using System.Net.Http;
+using Altinn.App.Api.Tests.Data;
 
 namespace Altinn.App.Api.Tests.Controllers
 {
-    public class DataControllerTests : IClassFixture<WebApplicationFactory<Program>>
+    public class DataControllerTests : ApiTestBase, IClassFixture<WebApplicationFactory<Program>>
     {
-        private readonly WebApplicationFactory<Program> _factory;
-        public DataControllerTests(WebApplicationFactory<Program> factory)
+        public DataControllerTests(WebApplicationFactory<Program> factory) : base(factory)
         {
-            _factory = factory;
         }
 
         [Fact]
         public async Task CreateDataElement_BinaryPdf_AnalyzerShouldRun()
         {
-            var client = _factory.CreateClient();
-
+            string org = "tdd";
             string app = "contributer-restriction";
+            HttpClient client = GetRootedClient(org, app);
+
             Guid guid = new Guid("0fc98a23-fe31-4ef5-8fb9-dd3f479354cd");
-            TestDataUtil.DeleteInstance("tdd", app, 1337, guid);
-            TestDataUtil.PrepareInstance("tdd", app, 1337, guid);
+            TestDataUtil.DeleteInstance(org, app, 1337, guid);
+            TestDataUtil.PrepareInstance(org, app, 1337, guid);
             string token = PrincipalUtil.GetOrgToken("nav", "160694123");
-            string expectedMsg = "Invalid data provided. Error: The Content-Disposition header must contain a filename";
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            string url = $"/tdd/{app}/instances/1337/{guid}/data?dataType=specificFileType";
-            HttpContent content = new StringContent(string.Empty);
-            content.Headers.ContentDisposition = ContentDispositionHeaderValue.Parse("attachment");
+            string url = $"/{org}/{app}/instances/1337/{guid}/data?dataType=specificFileType";
+            //HttpContent content = new StringContent(string.Empty);
+            var request = new HttpRequestMessage(HttpMethod.Post, url);
+            //var content = new MultipartFormDataContent();
+            
+            var pdfFilePath = TestData.GetAppSpecificTestdataFile(org, app, "example.pdf");
+            var fileBytes = await File.ReadAllBytesAsync(pdfFilePath);
+            var fileContent = new ByteArrayContent(fileBytes);
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/pdf");
+            // Add the file content to the multipart request
+            
+            //content.Add(fileContent, "attachment", "example.pdf");
 
-            HttpResponseMessage response = await client.PostAsync(url, content);
-            string message = await response.Content.ReadAsStringAsync();
-            TestDataUtil.DeleteInstanceAndData("tdd", app, 1337, guid);
+            fileContent.Headers.ContentDisposition = ContentDispositionHeaderValue.Parse("attachment; filename=\"example.pdf\"; filename*=UTF-8''example.pdf");
+            request.Content = fileContent;
+            HttpResponseMessage response = await client.SendAsync(request);
+            var responseContent = await response.Content.ReadAsStringAsync();
+            
+            TestDataUtil.DeleteInstanceAndData(org, app, 1337, guid);
 
-            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-            Assert.Equal(expectedMsg, message);
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         }
     }
 }
