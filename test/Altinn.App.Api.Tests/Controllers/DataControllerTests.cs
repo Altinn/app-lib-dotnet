@@ -4,6 +4,8 @@ using System.Net.Http.Headers;
 using System.Net;
 using Xunit;
 using Altinn.App.Api.Tests.Data;
+using Altinn.App.Core.Features.FileAnalyzis;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Altinn.App.Api.Tests.Controllers
 {
@@ -11,11 +13,20 @@ namespace Altinn.App.Api.Tests.Controllers
     {
         public DataControllerTests(WebApplicationFactory<Program> factory) : base(factory)
         {
+            OverrideServicesAllTests = (services) =>
+            {
+                services.AddTransient<IFileAnalyzer, MimeTypeAnalyzer>();
+            };
         }
 
         [Fact]
         public async Task CreateDataElement_BinaryPdf_AnalyzerShouldRun()
         {
+            OverrideServicesForThisTest = (services) =>
+            {
+                services.AddTransient<IFileAnalyzer, MimeTypeAnalyzer>();
+            };
+
             // Setup test data
             string org = "tdd";
             string app = "contributer-restriction";
@@ -46,6 +57,15 @@ namespace Altinn.App.Api.Tests.Controllers
             TestDataUtil.DeleteInstanceAndData(org, app, 1337, guid);
 
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        }
+    }
+
+    public class MimeTypeAnalyzer : IFileAnalyzer
+    {
+        public IDictionary<string, string> Analyze(StreamContent streamContent)
+        {
+            var metadata = new Dictionary<string, string>();
+            return metadata;
         }
     }
 }

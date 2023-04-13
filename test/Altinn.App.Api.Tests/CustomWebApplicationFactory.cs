@@ -1,6 +1,7 @@
 ﻿using Altinn.App.Api.Tests.Data;
 using Altinn.App.Core.Configuration;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -34,10 +35,15 @@ namespace Altinn.App.Api.Tests
                 IConfigurationSection appSettingSection = configuration.GetSection("AppSettings");
 
                 builder.ConfigureServices(services => services.Configure<AppSettings>(appSettingSection));
-
+                builder.ConfigureTestServices(services => OverrideServicesAllTests(services));
+                builder.ConfigureTestServices(OverrideServicesForThisTest);
             }).CreateClient();
 
             return client;
         }
+
+        public Action<IServiceCollection> OverrideServicesAllTests { get; set; }
+
+        public Action<IServiceCollection> OverrideServicesForThisTest { get; set; }
     }
 }
