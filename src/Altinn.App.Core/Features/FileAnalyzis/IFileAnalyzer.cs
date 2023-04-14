@@ -8,7 +8,7 @@
         /// <summary>
         /// Analyses a stream with the intent to extract metadata.
         /// </summary>
-        /// <param name="stream">The stream to analyze.</param>
+        /// <param name="stream">The stream to analyze. One stream = one file.</param>
         public Task<IEnumerable<FileAnalyzeResult>> Analyze(Stream stream);
     }
 }

@@ -175,7 +175,7 @@ namespace Altinn.App.Api.Controllers
             var errorBaseMessage = "Invalid data provided. Error:";
 
             // Verify that file mime type is an allowed content-type
-            if (!dataType.AllowedContentTypes.Contains("x", StringComparer.InvariantCultureIgnoreCase) && !dataType.AllowedContentTypes.Contains("application/octet-stream"))
+            if (!dataType.AllowedContentTypes.Contains(fileAnalyzeResult.MimeType, StringComparer.InvariantCultureIgnoreCase) && !dataType.AllowedContentTypes.Contains("application/octet-stream"))
             {
                 errorResponse = new BadRequestObjectResult($"{errorBaseMessage} Invalid content type: {fileAnalyzeResult.MimeType}. Please try another file. Permitted content types include: {string.Join(", ", dataType.AllowedContentTypes)}");
                 return (false, errorResponse);
