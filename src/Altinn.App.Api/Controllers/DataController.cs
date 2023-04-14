@@ -1,6 +1,6 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Security.Claims;
+using Altinn.ApiClients.Maskinporten.Models;
 using Altinn.App.Api.Helpers.RequestHandling;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Core.Constants;
@@ -15,9 +15,8 @@ using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Primitives;
 
 namespace Altinn.App.Api.Controllers
 {
@@ -149,9 +148,16 @@ namespace Altinn.App.Api.Controllers
                     }
 
                     StreamContent streamContent = Request.CreateContentStream();
+                    IEnumerable<FileAnalyzeResult> fileAnalyzeResults = new List<FileAnalyzeResult>();
                     foreach (var analyzer in _filesAnalyzers)
                     {
-                        IDictionary<string, string> fileMetadata = analyzer.Analyze(streamContent);
+                        fileAnalyzeResults = await analyzer.Analyze(streamContent.ReadAsStream());
+                    }
+
+                    (bool success, ActionResult errors) = Validate(fileAnalyzeResults.FirstOrDefault(), dataTypeFromMetadata);
+                    if (!success)
+                    {
+                        return errors;
                     }
 
                     return await CreateBinaryData(org, app, instance, dataType);
@@ -161,6 +167,21 @@ namespace Altinn.App.Api.Controllers
             {
                 return HandlePlatformHttpException(e, $"Cannot create data element of {dataType} for {instanceOwnerPartyId}/{instanceGuid}");
             }
+        }
+
+        private (bool Success, ActionResult Errors) Validate(FileAnalyzeResult fileAnalyzeResult, DataType dataType)
+        {
+            ActionResult errorResponse;
+            var errorBaseMessage = "Invalid data provided. Error:";
+
+            // Verify that file mime type is an allowed content-type
+            if (!dataType.AllowedContentTypes.Contains("x", StringComparer.InvariantCultureIgnoreCase) && !dataType.AllowedContentTypes.Contains("application/octet-stream"))
+            {
+                errorResponse = new BadRequestObjectResult($"{errorBaseMessage} Invalid content type: {fileAnalyzeResult.MimeType}. Please try another file. Permitted content types include: {string.Join(", ", dataType.AllowedContentTypes)}");
+                return (false, errorResponse);
+            }
+
+            return (true, null);
         }
 
         /// <summary>

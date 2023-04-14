@@ -6,6 +6,7 @@ using Xunit;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Core.Features.FileAnalyzis;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 namespace Altinn.App.Api.Tests.Controllers
 {
@@ -13,10 +14,6 @@ namespace Altinn.App.Api.Tests.Controllers
     {
         public DataControllerTests(WebApplicationFactory<Program> factory) : base(factory)
         {
-            OverrideServicesAllTests = (services) =>
-            {
-                services.AddTransient<IFileAnalyzer, MimeTypeAnalyzer>();
-            };
         }
 
         [Fact]
@@ -57,15 +54,6 @@ namespace Altinn.App.Api.Tests.Controllers
             TestDataUtil.DeleteInstanceAndData(org, app, 1337, guid);
 
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        }
-    }
-
-    public class MimeTypeAnalyzer : IFileAnalyzer
-    {
-        public IDictionary<string, string> Analyze(StreamContent streamContent)
-        {
-            var metadata = new Dictionary<string, string>();
-            return metadata;
         }
     }
 }

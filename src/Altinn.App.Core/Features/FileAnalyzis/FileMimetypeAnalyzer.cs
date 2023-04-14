@@ -7,12 +7,12 @@
 public class FileMimeTypeAnalyzer : IFileAnalyzer
 {
     /// <summary>
-    /// Analyzes the content and returns any findings as name/value pairs.
+    /// Analyzes the content and returns any findings.
     /// </summary>
-    public IDictionary<string, string> Analyze(StreamContent streamContent)
+    public async Task<IEnumerable<FileAnalyzeResult>> Analyze(Stream stream)
     {
-        Dictionary<string, string> metadata = new Dictionary<string, string>();
+        var result = new List<FileAnalyzeResult>();
 
-        return metadata;
+        return result;
     }
 }
