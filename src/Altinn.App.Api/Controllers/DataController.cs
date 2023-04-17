@@ -147,11 +147,12 @@ namespace Altinn.App.Api.Controllers
                         return errorResponse;
                     }
 
+                    // TODO: Add check against enableFileAnalyze setting on DataType
                     StreamContent streamContent = Request.CreateContentStream();
-                    IEnumerable<FileAnalyzeResult> fileAnalyzeResults = new List<FileAnalyzeResult>();
+                    List<FileAnalyzeResult> fileAnalyzeResults = new List<FileAnalyzeResult>();
                     foreach (var analyzer in _filesAnalyzers)
                     {
-                        fileAnalyzeResults = await analyzer.Analyze(streamContent.ReadAsStream());
+                        fileAnalyzeResults.AddRange(await analyzer.Analyze(streamContent.ReadAsStream()));
                     }
 
                     (bool success, ActionResult errors) = Validate(fileAnalyzeResults.FirstOrDefault(), dataTypeFromMetadata);
