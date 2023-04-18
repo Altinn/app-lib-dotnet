@@ -21,6 +21,7 @@ using Microsoft.Extensions.Primitives;
 
 using Newtonsoft.Json;
 using System.Xml;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Altinn.App.Core.Infrastructure.Clients.Storage
 {
@@ -348,6 +349,30 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             }
 
             _logger.LogError($"Updating attachment {dataGuid} for instance {instanceGuid} failed with status code {response.StatusCode}");
+            throw await PlatformHttpException.CreateAsync(response);
+        }
+        
+        /// <inheritdoc />
+        public async Task<DataElement> UpdateBinaryData(InstanceIdentifier instanceIdentifier, string? contentType, string filename, Guid dataGuid, Stream stream)
+        {
+            string apiUrl = $"{_platformSettings.ApiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}";
+            string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
+            StreamContent content = new StreamContent(stream);
+            content.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
+            content.Headers.ContentDisposition = new ContentDispositionHeaderValue(DispositionTypeNames.Attachment)
+            {
+                FileName = filename,
+                FileNameStar = filename
+            };
+            HttpResponseMessage response = await _client.PutAsync(token, apiUrl, content);
+            _logger.LogInformation("Update binary data result: {ResultCode}", response.StatusCode);
+            if (response.IsSuccessStatusCode)
+            {
+                string instancedata = await response.Content.ReadAsStringAsync();
+                DataElement dataElement = JsonConvert.DeserializeObject<DataElement>(instancedata)!;
+
+                return dataElement;
+            }
             throw await PlatformHttpException.CreateAsync(response);
         }
 
