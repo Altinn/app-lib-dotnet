@@ -265,7 +265,7 @@ namespace Altinn.App.Api.Controllers
                     return errorResponse;
                 }
 
-                return await PutBinaryData(org, app, instanceOwnerPartyId, instanceGuid, dataGuid);
+                return await PutBinaryData(instanceOwnerPartyId, instanceGuid, dataGuid);
             }
             catch (PlatformHttpException e)
             {
@@ -515,7 +515,7 @@ namespace Altinn.App.Api.Controllers
             return Ok(appModel);
         }
 
-        private async Task<ActionResult> PutBinaryData(string org, string app, int instanceOwnerPartyId, Guid instanceGuid, Guid dataGuid)
+        private async Task<ActionResult> PutBinaryData(int instanceOwnerPartyId, Guid instanceGuid, Guid dataGuid)
         {
             if (Request.Headers.TryGetValue("Content-Disposition", out StringValues headerValues))
             {

@@ -48,10 +48,6 @@ public class DataClientTests
     public async Task UpdateBinaryData_returns_exception_when_put_to_storage_result_in_servererror()
     {
         Mock<HttpClient> httpClientMock;
-        var resultDataelement = new DataElement()
-        {
-            Id = "aaaa-bbbbb-cccc-dddd"
-        };
         IData dataClient = GetDataClientWithMocks(
             HttpStatusCode.InternalServerError,
             null,
@@ -70,10 +66,6 @@ public class DataClientTests
     public async Task UpdateBinaryData_returns_exception_when_put_to_storage_result_in_conflict()
     {
         Mock<HttpClient> httpClientMock;
-        var resultDataelement = new DataElement()
-        {
-            Id = "aaaa-bbbbb-cccc-dddd"
-        };
         IData dataClient = GetDataClientWithMocks(
             HttpStatusCode.Conflict,
             null,
@@ -116,7 +108,7 @@ public class DataClientTests
         return dataClient;
     }
 
-    private StreamContent GetStreamContent(DataElement dataElement)
+    private static StreamContent GetStreamContent(DataElement dataElement)
     {
         string de = JsonSerializer.Serialize(dataElement);
         var stream = new MemoryStream();
@@ -129,13 +121,13 @@ public class DataClientTests
 
     private bool IsExpectedHttpRequest(HttpRequestMessage actual, Uri expectedUri, string expectedFilename, string expectedContentType)
     {
-        IEnumerable<string>? actualContentType;
-        IEnumerable<string>? actualContentDisposition;
-        var contentTypeSet = actual.Content.Headers.TryGetValues("Content-Type", out actualContentType);
-        var contentDispositionSet = actual.Content.Headers.TryGetValues("Content-Disposition", out actualContentDisposition);
+        IEnumerable<string>? actualContentType = null;
+        IEnumerable<string>? actualContentDisposition = null;
+        var contentTypeSet = actual.Content?.Headers.TryGetValues("Content-Type", out actualContentType);
+        var contentDispositionSet = actual.Content?.Headers.TryGetValues("Content-Disposition", out actualContentDisposition);
         return Uri.Compare(actual.RequestUri, expectedUri, UriComponents.AbsoluteUri, UriFormat.SafeUnescaped, StringComparison.OrdinalIgnoreCase) == 0
-               && contentTypeSet && actualContentType.FirstOrDefault().Equals(expectedContentType)
-               && contentDispositionSet && ContentDispositionHeaderValue.Parse(actualContentDisposition.FirstOrDefault()).FileName.Equals(expectedFilename);
+               && contentTypeSet is true && actualContentType!.FirstOrDefault()!.Equals(expectedContentType)
+               && contentDispositionSet is true && ContentDispositionHeaderValue.Parse(actualContentDisposition!.FirstOrDefault()).FileName.Equals(expectedFilename);
     }
 }
 
