@@ -206,11 +206,11 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients
 
         private DataClient GetDataClient(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> handlerFunc)
         {
-            DelegatingHandlerStub dhStub = new(handlerFunc);
+            DelegatingHandlerStub delegatingHandlerStub = new(handlerFunc);
             return new DataClient(
                 platformSettingsOptions.Object,
                 logger,
-                new HttpClient(dhStub),
+                new HttpClient(delegatingHandlerStub),
                 userTokenProvide.Object);
         }
 
