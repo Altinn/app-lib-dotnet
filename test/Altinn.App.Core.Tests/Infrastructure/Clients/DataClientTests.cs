@@ -42,7 +42,7 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients
         public async Task InsertBinaryData_MethodProduceValidPlatformRequest()
         {
             // Arrange
-            HttpRequestMessage platformRequest = null;
+            HttpRequestMessage? platformRequest = null;
 
             var target = GetDataClient(async (HttpRequestMessage request, CancellationToken token) =>
             {
@@ -75,7 +75,7 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients
         public async Task GetFormData_MethodProduceValidPlatformRequest_ReturnedFormIsValid()
         {
             // Arrange
-            HttpRequestMessage platformRequest = null;
+            HttpRequestMessage? platformRequest = null;
 
             var target = GetDataClient(async (HttpRequestMessage request, CancellationToken token) =>
             {
@@ -106,8 +106,8 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients
             // Assert
             var actual = response as SkjemaWithNamespace; 
             Assert.NotNull(actual);
-            Assert.NotNull(actual.Foretakgrp8820);
-            Assert.NotNull(actual.Foretakgrp8820.EnhetNavnEndringdatadef31);
+            Assert.NotNull(actual!.Foretakgrp8820);
+            Assert.NotNull(actual!.Foretakgrp8820.EnhetNavnEndringdatadef31);
 
             Assert.NotNull(platformRequest);
             AssertHttpRequest(platformRequest, expectedUri, HttpMethod.Get, null, "application/xml");
@@ -117,11 +117,8 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients
         public async Task InsertBinaryData_PlatformRespondNotOk_ThrowsPlatformException()
         {
             // Arrange
-            HttpRequestMessage platformRequest = null;
             var target = GetDataClient(async (HttpRequestMessage request, CancellationToken token) =>
             {
-                platformRequest = request;
-
                 await Task.CompletedTask;
                 return new HttpResponseMessage() { StatusCode = HttpStatusCode.BadRequest };
             });
@@ -141,8 +138,8 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients
         {
             var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
             var dataGuid = new Guid("67a5ef12-6e38-41f8-8b42-f91249ebcec0");
-            HttpRequestMessage platformRequest = null;
-            int invokations = 0;
+            HttpRequestMessage? platformRequest = null;
+            int invocations = 0;
             DataElement expectedDataelement = new DataElement
             {
                 Id = instanceIdentifier.ToString(),
@@ -150,7 +147,7 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients
             };
             var dataClient = GetDataClient(async (HttpRequestMessage request, CancellationToken token) =>
             {
-                invokations++;
+                invocations++;
                 platformRequest = request;
                 
                 DataElement dataElement = new DataElement
@@ -163,8 +160,9 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients
             });
             Uri expectedUri = new Uri($"{apiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}", UriKind.RelativeOrAbsolute);
             var restult = await dataClient.UpdateBinaryData(instanceIdentifier, "application/json", "test.json", dataGuid, new MemoryStream());
-            invokations.Should().Be(1);
-            AssertHttpRequest(platformRequest, expectedUri, HttpMethod.Put, "test.json", "application/json");
+            invocations.Should().Be(1);
+            platformRequest.Should().NotBeNull();
+            AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Put, "test.json", "application/json");
             restult.Should().BeEquivalentTo(expectedDataelement);
         }
 
@@ -173,15 +171,16 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients
         {
             var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
             var dataGuid = new Guid("67a5ef12-6e38-41f8-8b42-f91249ebcec0");
-            int invokations = 0;
+            int invocations = 0;
             var dataClient = GetDataClient(async (HttpRequestMessage request, CancellationToken token) =>
             {
-                invokations++;
+                invocations++;
                 
                 await Task.CompletedTask;
                 return new HttpResponseMessage() { StatusCode = HttpStatusCode.InternalServerError };
             });
             var actual = await Assert.ThrowsAsync<PlatformHttpException>(async () => await dataClient.UpdateBinaryData(instanceIdentifier, "application/json", "test.json", dataGuid, new MemoryStream()));
+            invocations.Should().Be(1);
             actual.Should().NotBeNull();
             actual.Response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
         }
@@ -191,17 +190,95 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients
         {
             var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
             var dataGuid = new Guid("67a5ef12-6e38-41f8-8b42-f91249ebcec0");
-            int invokations = 0;
+            int invocations = 0;
             var dataClient = GetDataClient(async (HttpRequestMessage request, CancellationToken token) =>
             {
-                invokations++;
+                invocations++;
                 
                 await Task.CompletedTask;
                 return new HttpResponseMessage() { StatusCode = HttpStatusCode.Conflict };
             });
             var actual = await Assert.ThrowsAsync<PlatformHttpException>(async () => await dataClient.UpdateBinaryData(instanceIdentifier, "application/json", "test.json", dataGuid, new MemoryStream()));
+            invocations.Should().Be(1);
             actual.Should().NotBeNull();
             actual.Response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        }
+
+        [Fact]
+        public async Task GetBinaryData_returns_stream_of_binary_data()
+        {
+            var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
+            var dataGuid = new Guid("67a5ef12-6e38-41f8-8b42-f91249ebcec0");
+            HttpRequestMessage? platformRequest = null;
+            int invocations = 0;
+            var dataClient = GetDataClient(async (HttpRequestMessage request, CancellationToken token) =>
+            {
+                invocations++;
+                platformRequest = request;
+                
+                DataElement dataElement = new DataElement
+                {
+                    Id = instanceIdentifier.ToString(),
+                    InstanceGuid = instanceIdentifier.InstanceGuid.ToString()
+                };
+                await Task.CompletedTask;
+                return new HttpResponseMessage() { Content = new StringContent("hello worlds") };
+            });
+            var expectedUri = new Uri($"{apiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}", UriKind.RelativeOrAbsolute);
+            var response = await dataClient.GetBinaryData("ttd", "app", instanceIdentifier.InstanceOwnerPartyId, instanceIdentifier.InstanceGuid, dataGuid);
+            invocations.Should().Be(1);
+            platformRequest.Should().NotBeNull();
+            AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Get, null, null);
+            StreamReader streamReader = new StreamReader(response);
+            var responseString = await streamReader.ReadToEndAsync();
+            responseString.Should().BeEquivalentTo("hello worlds");
+        }
+        
+        [Fact]
+        public async Task GetBinaryData_returns_empty_stream_when_storage_returns_notfound()
+        {
+            var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
+            var dataGuid = new Guid("67a5ef12-6e38-41f8-8b42-f91249ebcec0");
+            HttpRequestMessage? platformRequest = null;
+            int invocations = 0;
+            var dataClient = GetDataClient(async (HttpRequestMessage request, CancellationToken token) =>
+            {
+                invocations++;
+                platformRequest = request;
+                
+                DataElement dataElement = new DataElement
+                {
+                    Id = instanceIdentifier.ToString(),
+                    InstanceGuid = instanceIdentifier.InstanceGuid.ToString()
+                };
+                await Task.CompletedTask;
+                return new HttpResponseMessage() { StatusCode = HttpStatusCode.NotFound };
+            });
+            var expectedUri = new Uri($"{apiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}", UriKind.RelativeOrAbsolute);
+            var response = await dataClient.GetBinaryData("ttd", "app", instanceIdentifier.InstanceOwnerPartyId, instanceIdentifier.InstanceGuid, dataGuid);
+            response.Should().BeNull();
+            invocations.Should().Be(1);
+            platformRequest.Should().NotBeNull();
+            AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Get, null, null);
+        }
+        
+        [Fact]
+        public async Task GetBinaryData_throws_PlatformHttpException_when_server_error_returned_from_storage()
+        {
+            var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
+            var dataGuid = new Guid("67a5ef12-6e38-41f8-8b42-f91249ebcec0");
+            int invocations = 0;
+            var dataClient = GetDataClient(async (HttpRequestMessage request, CancellationToken token) =>
+            {
+                invocations++;
+                
+                await Task.CompletedTask;
+                return new HttpResponseMessage() { StatusCode = HttpStatusCode.InternalServerError };
+            });
+            var actual = await Assert.ThrowsAsync<PlatformHttpException>(async () => await dataClient.GetBinaryData("ttd", "app", instanceIdentifier.InstanceOwnerPartyId, instanceIdentifier.InstanceGuid, dataGuid));
+            invocations.Should().Be(1);
+            actual.Should().NotBeNull();
+            actual.Response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
         }
 
         private DataClient GetDataClient(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> handlerFunc)
@@ -233,7 +310,7 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients
                 ContentDispositionHeaderValue.Parse(actualContentDisposition?.FirstOrDefault()).FileName?.Should().BeEquivalentTo(expectedFilename);
             }
 
-            authHeader.Parameter.Should().BeEquivalentTo("dummytesttoken");
+            authHeader?.Parameter.Should().BeEquivalentTo("dummytesttoken");
         }
     }
 }
