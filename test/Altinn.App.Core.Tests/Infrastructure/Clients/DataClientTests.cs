@@ -391,10 +391,10 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients
                 return new HttpResponseMessage() { StatusCode = HttpStatusCode.NotFound };
             });
             var expectedUri = new Uri($"{apiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}?delay=False", UriKind.RelativeOrAbsolute);
-            var actual = Assert.ThrowsAsync<PlatformHttpException>(async () => await dataClient.DeleteBinaryData("ttd", "app", instanceIdentifier.InstanceOwnerPartyId, instanceIdentifier.InstanceGuid, dataGuid));
+            var actual = await Assert.ThrowsAsync<PlatformHttpException>(async () => await dataClient.DeleteBinaryData("ttd", "app", instanceIdentifier.InstanceOwnerPartyId, instanceIdentifier.InstanceGuid, dataGuid));
             invocations.Should().Be(1);
             AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Delete);
-            actual.Result.Response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            actual.Response.StatusCode.Should().Be(HttpStatusCode.NotFound);
         }
         
         [Fact]
