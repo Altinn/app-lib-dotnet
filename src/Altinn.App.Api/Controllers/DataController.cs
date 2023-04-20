@@ -519,9 +519,9 @@ namespace Altinn.App.Api.Controllers
         {
             if (Request.Headers.TryGetValue("Content-Disposition", out StringValues headerValues))
             {
-                var cdHeader = ContentDispositionHeaderValue.Parse(headerValues.ToString());
+                var contentDispositionHeader = ContentDispositionHeaderValue.Parse(headerValues.ToString());
                 _logger.LogInformation("Content-Disposition: {ContentDisposition}", headerValues);
-                DataElement dataElement = await _dataClient.UpdateBinaryData(new InstanceIdentifier(instanceOwnerPartyId, instanceGuid), Request.ContentType, cdHeader.FileName.ToString(), dataGuid, Request.Body);
+                DataElement dataElement = await _dataClient.UpdateBinaryData(new InstanceIdentifier(instanceOwnerPartyId, instanceGuid), Request.ContentType, contentDispositionHeader.FileName.ToString(), dataGuid, Request.Body);
                 SelfLinkHelper.SetDataAppSelfLinks(instanceOwnerPartyId, instanceGuid, dataElement, Request);
 
                 return Created(dataElement.SelfLinks.Apps, dataElement);
