@@ -39,7 +39,8 @@
       "maxSize": 1,
       "maxCount": 1,
       "minCount": 0,
-      "allowedContentTypes": [ "application/pdf", "image/png", "application/json" ]
+      "allowedContentTypes": [ "application/pdf", "image/png", "application/json" ],
+      "enabledFileAnalysers":  ["mimeTypeAnalyser"]
     }
   ]
 }

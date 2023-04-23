@@ -27,7 +27,7 @@ namespace Altinn.App.Api.Tests.Controllers
         }
 
         /// <inheritDoc/>
-        public string Id { get; private set; } = "mimetypeAnalyser";
+        public string Id { get; private set; } = "mimeTypeAnalyser";
 
         /// <summary>
         /// Analyses the file to find it's mimetype

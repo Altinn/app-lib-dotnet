@@ -23,7 +23,7 @@ namespace Altinn.App.Core.Features.FileAnalyzis
         /// </summary>
         public IEnumerable<IFileAnalyser> GetFileAnalysers(IEnumerable<string> analyserIds)
         {
-            return _fileAnalysers;
+            return _fileAnalysers.Where(x => analyserIds.Contains(x.Id)).ToList();
         }
     }
 }
