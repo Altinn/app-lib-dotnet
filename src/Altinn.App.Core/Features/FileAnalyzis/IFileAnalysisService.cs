@@ -6,7 +6,7 @@ namespace Altinn.App.Core.Features.FileAnalyzis
     /// <summary>
     /// Interface for running all analysers registered on a data type.
     /// </summary>
-    public interface IFileAnalyserService
+    public interface IFileAnalysisService
     {
         /// <summary>
         /// Interface for doing file analysis of a file stream./>

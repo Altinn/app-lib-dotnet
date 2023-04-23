@@ -38,7 +38,7 @@ namespace Altinn.App.Api.Controllers
         private readonly IAppResources _appResourcesService;
         private readonly IAppMetadata _appMetadata;
         private readonly IPrefill _prefillService;
-        private readonly IFileAnalyserService _fileAnalyserService;
+        private readonly IFileAnalysisService _fileAnalyserService;
 
         private const long REQUEST_SIZE_LIMIT = 2000 * 1024 * 1024;
 
@@ -64,7 +64,7 @@ namespace Altinn.App.Api.Controllers
             IAppModel appModel,
             IAppResources appResourcesService,
             IPrefill prefillService,
-            IFileAnalyserService fileAnalyserService,
+            IFileAnalysisService fileAnalyserService,
             IAppMetadata appMetadata)
         {
             _logger = logger;
@@ -148,10 +148,14 @@ namespace Altinn.App.Api.Controllers
                         return errorResponse;
                     }
 
-                    StreamContent streamContent = Request.CreateContentStream();
-                    Stream fileStream = await streamContent.ReadAsStreamAsync();
+                    List<FileAnalysisResult> fileAnalysisResults = new();
+                    if (FileAnalysisEnabledForDataType(dataTypeFromMetadata))
+                    {
+                        StreamContent streamContent = Request.CreateContentStream();
+                        Stream fileStream = await streamContent.ReadAsStreamAsync();
 
-                    List<FileAnalysisResult> fileAnalysisResults = (List<FileAnalysisResult>)await _fileAnalyserService.Analyse(dataTypeFromMetadata, fileStream);
+                        fileAnalysisResults = (List<FileAnalysisResult>)await _fileAnalyserService.Analyse(dataTypeFromMetadata, fileStream);
+                    }
 
                     (bool success, ActionResult errors) = Validate(fileAnalysisResults.FirstOrDefault(), dataTypeFromMetadata);
                     if (!success)
@@ -166,6 +170,11 @@ namespace Altinn.App.Api.Controllers
             {
                 return HandlePlatformHttpException(e, $"Cannot create data element of {dataType} for {instanceOwnerPartyId}/{instanceGuid}");
             }
+        }
+
+        private static bool FileAnalysisEnabledForDataType(DataType dataTypeFromMetadata)
+        {
+            return dataTypeFromMetadata.EnabledFileAnalysers != null && dataTypeFromMetadata.EnabledFileAnalysers.Count > 0;
         }
 
         private (bool Success, ActionResult Errors) Validate(FileAnalysisResult fileAnalysisResult, DataType dataType)

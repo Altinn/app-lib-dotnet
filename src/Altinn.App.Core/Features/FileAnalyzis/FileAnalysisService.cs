@@ -6,14 +6,14 @@ namespace Altinn.App.Core.Features.FileAnalyzis
     /// <summary>
     /// Analyses a file using the registred analysers on the <see cref="DataType"/>
     /// </summary>
-    public class FileAnalyserService : IFileAnalyserService
+    public class FileAnalysisService : IFileAnalysisService
     {
         private readonly IFileAnalyserFactory _fileAnalyserFactory;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FileAnalyserService"/> class.
+        /// Initializes a new instance of the <see cref="FileAnalysisService"/> class.
         /// </summary>
-        public FileAnalyserService(IFileAnalyserFactory fileAnalyserFactory)
+        public FileAnalysisService(IFileAnalyserFactory fileAnalyserFactory)
         {
             _fileAnalyserFactory = fileAnalyserFactory;
         }

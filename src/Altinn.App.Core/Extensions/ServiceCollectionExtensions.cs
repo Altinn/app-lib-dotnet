@@ -228,7 +228,7 @@ namespace Altinn.App.Core.Extensions
 
         private static void AddFileAnalyserServices(IServiceCollection services)
         {
-            services.TryAddTransient<IFileAnalyserService, FileAnalyserService>();
+            services.TryAddTransient<IFileAnalysisService, FileAnalysisService>();
             services.TryAddTransient<IFileAnalyserFactory, FileAnalyserFactory>();
         }
     }
