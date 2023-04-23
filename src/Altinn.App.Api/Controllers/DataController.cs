@@ -7,6 +7,7 @@ using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.FileAnalysis;
+using Altinn.App.Core.Features.FileAnalyzis;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Interface;
@@ -37,7 +38,7 @@ namespace Altinn.App.Api.Controllers
         private readonly IAppResources _appResourcesService;
         private readonly IAppMetadata _appMetadata;
         private readonly IPrefill _prefillService;
-        private readonly IEnumerable<IFileAnalyser> _fileAnalysers;
+        private readonly IFileAnalyserService _fileAnalyserService;
 
         private const long REQUEST_SIZE_LIMIT = 2000 * 1024 * 1024;
 
@@ -53,7 +54,7 @@ namespace Altinn.App.Api.Controllers
         /// <param name="appResourcesService">The apps resource service</param>
         /// <param name="appMetadata">The app metadata service</param>
         /// <param name="prefillService">A service with prefill related logic.</param>
-        /// <param name="fileAnalysers">A list of file analysers.</param>
+        /// <param name="fileAnalyserService">Service used to analyse files uploaded.</param>
         public DataController(
             ILogger<DataController> logger,
             IInstance instanceClient,
@@ -63,7 +64,7 @@ namespace Altinn.App.Api.Controllers
             IAppModel appModel,
             IAppResources appResourcesService,
             IPrefill prefillService,
-            IEnumerable<IFileAnalyser> fileAnalysers,
+            IFileAnalyserService fileAnalyserService,
             IAppMetadata appMetadata)
         {
             _logger = logger;
@@ -76,7 +77,7 @@ namespace Altinn.App.Api.Controllers
             _appResourcesService = appResourcesService;
             _appMetadata = appMetadata;
             _prefillService = prefillService;
-            _fileAnalysers = fileAnalysers;
+            _fileAnalyserService = fileAnalyserService;
         }
 
         /// <summary>
@@ -147,13 +148,10 @@ namespace Altinn.App.Api.Controllers
                         return errorResponse;
                     }
 
-                    // TODO: Add check against enableFileAnalysis setting on DataType
                     StreamContent streamContent = Request.CreateContentStream();
-                    List<FileAnalysisResult> fileAnalysisResults = new List<FileAnalysisResult>();
-                    foreach (var analyser in _fileAnalysers)
-                    {
-                        fileAnalysisResults.AddRange(await analyser.Analyse(streamContent.ReadAsStream()));
-                    }
+                    Stream fileStream = await streamContent.ReadAsStreamAsync();
+
+                    List<FileAnalysisResult> fileAnalysisResults = (List<FileAnalysisResult>)await _fileAnalyserService.Analyse(dataTypeFromMetadata, fileStream);
 
                     (bool success, ActionResult errors) = Validate(fileAnalysisResults.FirstOrDefault(), dataTypeFromMetadata);
                     if (!success)

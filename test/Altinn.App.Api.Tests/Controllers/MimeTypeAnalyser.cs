@@ -10,6 +10,9 @@ namespace Altinn.App.Api.Tests.Controllers
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MimeTypeAnalyser"/> class.
+        /// </summary>
         public MimeTypeAnalyser(IHttpContextAccessor httpContextAccessor)
         {
             _httpContextAccessor = httpContextAccessor;
@@ -23,7 +26,13 @@ namespace Altinn.App.Api.Tests.Controllers
             }
         }
 
-        public async Task<IEnumerable<FileAnalysisResult>> Analyse(Stream stream, string? filename = null)
+        /// <inheritDoc/>
+        public string Id { get; private set; } = "mimetypeAnalyser";
+
+        /// <summary>
+        /// Analyses the file to find it's mimetype
+        /// </summary>
+        public async Task<FileAnalysisResult> Analyse(Stream stream, string? filename = null)
         {
             // TODO: Move to service registration as singleton
             var Inspector = new ContentInspectorBuilder()
@@ -51,7 +60,7 @@ namespace Altinn.App.Api.Tests.Controllers
                 fileAnalysisResult.MimeType = match.Definition.File.MimeType;
             }
             
-            return new List<FileAnalysisResult>() { fileAnalysisResult };
+            return fileAnalysisResult;
         }
     }
 }
