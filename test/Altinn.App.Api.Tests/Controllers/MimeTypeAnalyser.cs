@@ -53,7 +53,7 @@ namespace Altinn.App.Api.Tests.Controllers
             // We only care for the 100% match anything else is considered unsafe.
             var match = results.OrderByDescending(match => match.Points).FirstOrDefault(match => match.Percentage == 1);
 
-            var fileAnalysisResult = new FileAnalysisResult();
+            var fileAnalysisResult = new FileAnalysisResult(Id);
             if (match != null)
             {                
                 fileAnalysisResult.Extensions = match.Definition.File.Extensions.ToList();

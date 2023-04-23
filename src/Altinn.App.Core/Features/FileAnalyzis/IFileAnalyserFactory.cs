@@ -1,4 +1,5 @@
 ﻿using Altinn.App.Core.Features.FileAnalysis;
+using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Features.FileAnalyzis
 {

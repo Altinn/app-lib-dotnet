@@ -40,7 +40,8 @@
       "maxCount": 1,
       "minCount": 0,
       "allowedContentTypes": [ "application/pdf", "image/png", "application/json" ],
-      "enabledFileAnalysers":  ["mimeTypeAnalyser"]
+      "enabledFileAnalysers": [ "mimeTypeAnalyser" ],
+      "enabledFileValidators":  [ "mimeTypeValidator"]
     }
   ]
 }

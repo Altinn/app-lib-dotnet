@@ -21,14 +21,20 @@ namespace Altinn.App.Core.Features.FileAnalyzis
         /// <summary>
         /// Runs the specified file analysers against the stream provided.
         /// </summary>
-        public async Task<IEnumerable<FileAnalysisResult>> Analyse(DataType dataType, Stream fileStream, string? filename)
+        public async Task<IEnumerable<FileAnalysisResult>> Analyse(DataType dataType, Stream fileStream, string? filename = null)
         {
             List<IFileAnalyser> fileAnalysers = _fileAnalyserFactory.GetFileAnalysers(dataType.EnabledFileAnalysers).ToList();
 
             List<FileAnalysisResult> fileAnalysisResults = new();
             foreach (var analyser in fileAnalysers)
             {
-                fileAnalysisResults.Add(await analyser.Analyse(fileStream, filename));
+                if (fileStream.CanSeek)
+                {
+                    fileStream.Position = fileStream.Seek(0, SeekOrigin.Begin);
+                }
+                var result = await analyser.Analyse(fileStream, filename);
+                result.AnalyserId = analyser.Id;
+                fileAnalysisResults.Add(result);
             }
 
             return fileAnalysisResults;

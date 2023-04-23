@@ -146,6 +146,7 @@ namespace Altinn.App.Core.Extensions
             AddEventServices(services);
             AddProcessServices(services);
             AddFileAnalyserServices(services);
+            AddFileValidatorServices(services);
 
             if (!env.IsDevelopment())
             {
@@ -230,6 +231,12 @@ namespace Altinn.App.Core.Extensions
         {
             services.TryAddTransient<IFileAnalysisService, FileAnalysisService>();
             services.TryAddTransient<IFileAnalyserFactory, FileAnalyserFactory>();
+        }
+
+        private static void AddFileValidatorServices(IServiceCollection services)
+        {
+            services.TryAddTransient<IFileValidationService, FileValidationService>();
+            services.TryAddTransient<IFileValidatorFactory, FileValidatorFactory>();
         }
     }
 }

@@ -6,6 +6,7 @@ using Xunit;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Core.Features.FileAnalysis;
 using Microsoft.Extensions.DependencyInjection;
+using Altinn.App.Core.Features.Validation;
 
 namespace Altinn.App.Api.Tests.Controllers
 {
@@ -16,6 +17,7 @@ namespace Altinn.App.Api.Tests.Controllers
             OverrideServicesForAllTests = (services) =>
             {
                 services.AddTransient<IFileAnalyser, MimeTypeAnalyser>();
+                services.AddTransient<IFileValidator, MimeTypeValidator>();
             };
         }
 
@@ -80,7 +82,6 @@ namespace Altinn.App.Api.Tests.Controllers
             TestDataUtil.DeleteInstanceAndData(org, app, 1337, guid);
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-            Assert.Equal("Invalid data provided. Error: Invalid content type: image/jpeg. Please try another file. Permitted content types include: application/pdf, image/png, application/json", responseContent);
         }
 
         private static async Task<ByteArrayContent> CreateBinaryContent(string org, string app, string filename, string mediaType)

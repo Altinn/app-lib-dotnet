@@ -8,12 +8,14 @@ using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.FileAnalysis;
 using Altinn.App.Core.Features.FileAnalyzis;
+using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Features;
@@ -39,6 +41,7 @@ namespace Altinn.App.Api.Controllers
         private readonly IAppMetadata _appMetadata;
         private readonly IPrefill _prefillService;
         private readonly IFileAnalysisService _fileAnalyserService;
+        private readonly IFileValidationService _fileValidationService;
 
         private const long REQUEST_SIZE_LIMIT = 2000 * 1024 * 1024;
 
@@ -55,6 +58,7 @@ namespace Altinn.App.Api.Controllers
         /// <param name="appMetadata">The app metadata service</param>
         /// <param name="prefillService">A service with prefill related logic.</param>
         /// <param name="fileAnalyserService">Service used to analyse files uploaded.</param>
+        /// <param name="fileValidationService">Service used to validate files uploaded.</param>
         public DataController(
             ILogger<DataController> logger,
             IInstance instanceClient,
@@ -65,6 +69,7 @@ namespace Altinn.App.Api.Controllers
             IAppResources appResourcesService,
             IPrefill prefillService,
             IFileAnalysisService fileAnalyserService,
+            IFileValidationService fileValidationService,
             IAppMetadata appMetadata)
         {
             _logger = logger;
@@ -78,6 +83,7 @@ namespace Altinn.App.Api.Controllers
             _appMetadata = appMetadata;
             _prefillService = prefillService;
             _fileAnalyserService = fileAnalyserService;
+            _fileValidationService = fileValidationService;
         }
 
         /// <summary>
@@ -157,10 +163,16 @@ namespace Altinn.App.Api.Controllers
                         fileAnalysisResults = (List<FileAnalysisResult>)await _fileAnalyserService.Analyse(dataTypeFromMetadata, fileStream);
                     }
 
-                    (bool success, ActionResult errors) = Validate(fileAnalysisResults.FirstOrDefault(), dataTypeFromMetadata);
-                    if (!success)
+                    bool fileValidationSuccess = true;
+                    List<ValidationIssue> validationIssues = new();
+                    if (FileValidationEnabledForDataType(dataTypeFromMetadata))
                     {
-                        return errors;
+                        (fileValidationSuccess, validationIssues) = await _fileValidationService.Validate(dataTypeFromMetadata, fileAnalysisResults);
+                    }
+
+                    if (!fileValidationSuccess)
+                    {
+                        return new BadRequestObjectResult(validationIssues);
                     }
 
                     return await CreateBinaryData(org, app, instance, dataType);
@@ -177,19 +189,9 @@ namespace Altinn.App.Api.Controllers
             return dataTypeFromMetadata.EnabledFileAnalysers != null && dataTypeFromMetadata.EnabledFileAnalysers.Count > 0;
         }
 
-        private (bool Success, ActionResult Errors) Validate(FileAnalysisResult fileAnalysisResult, DataType dataType)
+        private bool FileValidationEnabledForDataType(DataType dataTypeFromMetadata)
         {
-            ActionResult errorResponse;
-            var errorBaseMessage = "Invalid data provided. Error:";
-
-            // Verify that file mime type is an allowed content-type
-            if (!dataType.AllowedContentTypes.Contains(fileAnalysisResult.MimeType, StringComparer.InvariantCultureIgnoreCase) && !dataType.AllowedContentTypes.Contains("application/octet-stream"))
-            {
-                errorResponse = new BadRequestObjectResult($"{errorBaseMessage} Invalid content type: {fileAnalysisResult.MimeType}. Please try another file. Permitted content types include: {string.Join(", ", dataType.AllowedContentTypes)}");
-                return (false, errorResponse);
-            }
-
-            return (true, null);
+            return dataTypeFromMetadata.EnabledFileValidators != null && dataTypeFromMetadata.EnabledFileValidators.Count > 0;
         }
 
         /// <summary>

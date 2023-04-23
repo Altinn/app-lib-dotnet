@@ -6,7 +6,20 @@
     public class FileAnalysisResult
     {
         /// <summary>
-        /// The name of the analysed file either filename or some other identifier.
+        /// Initializes a new instance of the <see cref="FileAnalysisService"/> class.
+        /// </summary>
+        public FileAnalysisResult(string analyserId)
+        {
+            AnalyserId = analyserId;
+        }
+
+        /// <summary>
+        /// The id of the analyser generating the result.
+        /// </summary>
+        public string AnalyserId { get; internal set; }
+
+        /// <summary>
+        /// The name of the analysed file.
         /// </summary>
         public string? Filename { get; set; }
 
@@ -22,9 +35,8 @@
         public string? MimeType { get; set; }
         
         /// <summary>
-        /// Key/Value pairs containg analyse findings. eg. mimetype | application/pdf
-        /// depending on the file analysed.
+        /// Key/Value pairs contaning fining from the analysis.
         /// </summary>
-        public IDictionary<string, string> Metadata { get; private set; } = new Dictionary<string, string>();
+        public IDictionary<string, string> Metadata { get; private set; } = new Dictionary<string, string>();        
     }
 }
