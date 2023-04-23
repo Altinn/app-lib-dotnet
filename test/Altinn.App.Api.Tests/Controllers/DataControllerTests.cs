@@ -4,9 +4,8 @@ using System.Net.Http.Headers;
 using System.Net;
 using Xunit;
 using Altinn.App.Api.Tests.Data;
-using Altinn.App.Core.Features.FileAnalyzis;
+using Altinn.App.Core.Features.FileAnalysis;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 namespace Altinn.App.Api.Tests.Controllers
 {
@@ -16,12 +15,12 @@ namespace Altinn.App.Api.Tests.Controllers
         {
             OverrideServicesForAllTests = (services) =>
             {
-                services.AddTransient<IFileAnalyzer, MimeTypeAnalyzer>();
+                services.AddTransient<IFileAnalyser, MimeTypeAnalyser>();
             };
         }
 
         [Fact]
-        public async Task CreateDataElement_BinaryPdf_AnalyzerShouldRunOk()
+        public async Task CreateDataElement_BinaryPdf_AnalyserShouldRunOk()
         {
             // Setup test data
             string org = "tdd";
@@ -52,7 +51,7 @@ namespace Altinn.App.Api.Tests.Controllers
         }
 
         [Fact]
-        public async Task CreateDataElement_JpgFakedAsPdf_AnalyzerShouldRunAndFail()
+        public async Task CreateDataElement_JpgFakedAsPdf_AnalyserShouldRunAndFail()
         {
             // Setup test data
             string org = "tdd";

@@ -6,7 +6,7 @@ using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
-using Altinn.App.Core.Features.FileAnalyzis;
+using Altinn.App.Core.Features.FileAnalysis;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Interface;
@@ -37,7 +37,7 @@ namespace Altinn.App.Api.Controllers
         private readonly IAppResources _appResourcesService;
         private readonly IAppMetadata _appMetadata;
         private readonly IPrefill _prefillService;
-        private readonly IEnumerable<IFileAnalyzer> _filesAnalyzers;
+        private readonly IEnumerable<IFileAnalyser> _fileAnalysers;
 
         private const long REQUEST_SIZE_LIMIT = 2000 * 1024 * 1024;
 
@@ -53,7 +53,7 @@ namespace Altinn.App.Api.Controllers
         /// <param name="appResourcesService">The apps resource service</param>
         /// <param name="appMetadata">The app metadata service</param>
         /// <param name="prefillService">A service with prefill related logic.</param>
-        /// <param name="fileAnalyzers">A list of file analyzers.</param>
+        /// <param name="fileAnalysers">A list of file analysers.</param>
         public DataController(
             ILogger<DataController> logger,
             IInstance instanceClient,
@@ -63,7 +63,7 @@ namespace Altinn.App.Api.Controllers
             IAppModel appModel,
             IAppResources appResourcesService,
             IPrefill prefillService,
-            IEnumerable<IFileAnalyzer> fileAnalyzers,
+            IEnumerable<IFileAnalyser> fileAnalysers,
             IAppMetadata appMetadata)
         {
             _logger = logger;
@@ -76,7 +76,7 @@ namespace Altinn.App.Api.Controllers
             _appResourcesService = appResourcesService;
             _appMetadata = appMetadata;
             _prefillService = prefillService;
-            _filesAnalyzers = fileAnalyzers;
+            _fileAnalysers = fileAnalysers;
         }
 
         /// <summary>
@@ -147,15 +147,15 @@ namespace Altinn.App.Api.Controllers
                         return errorResponse;
                     }
 
-                    // TODO: Add check against enableFileAnalyze setting on DataType
+                    // TODO: Add check against enableFileAnalysis setting on DataType
                     StreamContent streamContent = Request.CreateContentStream();
-                    List<FileAnalyzeResult> fileAnalyzeResults = new List<FileAnalyzeResult>();
-                    foreach (var analyzer in _filesAnalyzers)
+                    List<FileAnalysisResult> fileAnalysisResults = new List<FileAnalysisResult>();
+                    foreach (var analyser in _fileAnalysers)
                     {
-                        fileAnalyzeResults.AddRange(await analyzer.Analyze(streamContent.ReadAsStream()));
+                        fileAnalysisResults.AddRange(await analyser.Analyse(streamContent.ReadAsStream()));
                     }
 
-                    (bool success, ActionResult errors) = Validate(fileAnalyzeResults.FirstOrDefault(), dataTypeFromMetadata);
+                    (bool success, ActionResult errors) = Validate(fileAnalysisResults.FirstOrDefault(), dataTypeFromMetadata);
                     if (!success)
                     {
                         return errors;
@@ -170,15 +170,15 @@ namespace Altinn.App.Api.Controllers
             }
         }
 
-        private (bool Success, ActionResult Errors) Validate(FileAnalyzeResult fileAnalyzeResult, DataType dataType)
+        private (bool Success, ActionResult Errors) Validate(FileAnalysisResult fileAnalysisResult, DataType dataType)
         {
             ActionResult errorResponse;
             var errorBaseMessage = "Invalid data provided. Error:";
 
             // Verify that file mime type is an allowed content-type
-            if (!dataType.AllowedContentTypes.Contains(fileAnalyzeResult.MimeType, StringComparer.InvariantCultureIgnoreCase) && !dataType.AllowedContentTypes.Contains("application/octet-stream"))
+            if (!dataType.AllowedContentTypes.Contains(fileAnalysisResult.MimeType, StringComparer.InvariantCultureIgnoreCase) && !dataType.AllowedContentTypes.Contains("application/octet-stream"))
             {
-                errorResponse = new BadRequestObjectResult($"{errorBaseMessage} Invalid content type: {fileAnalyzeResult.MimeType}. Please try another file. Permitted content types include: {string.Join(", ", dataType.AllowedContentTypes)}");
+                errorResponse = new BadRequestObjectResult($"{errorBaseMessage} Invalid content type: {fileAnalysisResult.MimeType}. Please try another file. Permitted content types include: {string.Join(", ", dataType.AllowedContentTypes)}");
                 return (false, errorResponse);
             }
 

@@ -1,4 +1,4 @@
-﻿using Altinn.App.Core.Features.FileAnalyzis;
+﻿using Altinn.App.Core.Features.FileAnalysis;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using MimeDetective;
@@ -6,11 +6,11 @@ using MimeDetective;
 namespace Altinn.App.Api.Tests.Controllers
 {
     // TODO: Move to separate project?
-    public class MimeTypeAnalyzer : IFileAnalyzer
+    public class MimeTypeAnalyser : IFileAnalyser
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public MimeTypeAnalyzer(IHttpContextAccessor httpContextAccessor)
+        public MimeTypeAnalyser(IHttpContextAccessor httpContextAccessor)
         {
             _httpContextAccessor = httpContextAccessor;
 
@@ -23,7 +23,7 @@ namespace Altinn.App.Api.Tests.Controllers
             }
         }
 
-        public async Task<IEnumerable<FileAnalyzeResult>> Analyze(Stream stream)
+        public async Task<IEnumerable<FileAnalysisResult>> Analyse(Stream stream, string? filename = null)
         {
             // TODO: Move to service registration as singleton
             var Inspector = new ContentInspectorBuilder()
@@ -44,14 +44,14 @@ namespace Altinn.App.Api.Tests.Controllers
             // We only care for the 100% match anything else is considered unsafe.
             var match = results.OrderByDescending(match => match.Points).FirstOrDefault(match => match.Percentage == 1);
 
-            var fileAnalyzeResult = new FileAnalyzeResult();
+            var fileAnalysisResult = new FileAnalysisResult();
             if (match != null)
             {                
-                fileAnalyzeResult.Extensions = match.Definition.File.Extensions.ToList();
-                fileAnalyzeResult.MimeType = match.Definition.File.MimeType;
+                fileAnalysisResult.Extensions = match.Definition.File.Extensions.ToList();
+                fileAnalysisResult.MimeType = match.Definition.File.MimeType;
             }
             
-            return new List<FileAnalyzeResult>() { fileAnalyzeResult };
+            return new List<FileAnalysisResult>() { fileAnalysisResult };
         }
     }
 }

@@ -1,12 +1,12 @@
-﻿namespace Altinn.App.Core.Features.FileAnalyzis
+﻿namespace Altinn.App.Core.Features.FileAnalysis
 {
     /// <summary>
-    /// Results from a file analyzis done based the content of the file, ie. the binary data.
+    /// Results from a file analysis done based the content of the file, ie. the binary data.
     /// </summary>
-    public class FileAnalyzeResult
+    public class FileAnalysisResult
     {
         /// <summary>
-        /// The name of the analyzed file either filename or some other identifier.
+        /// The name of the analysed file either filename or some other identifier.
         /// </summary>
         public string? Filename { get; set; }
 
@@ -22,8 +22,8 @@
         public string? MimeType { get; set; }
         
         /// <summary>
-        /// Key/Value pairs containg analyzis findings. eg. mimetype | application/pdf
-        /// depending on the file analyzed.
+        /// Key/Value pairs containg analyse findings. eg. mimetype | application/pdf
+        /// depending on the file analysed.
         /// </summary>
         public IDictionary<string, string> Metadata { get; private set; } = new Dictionary<string, string>();
     }
