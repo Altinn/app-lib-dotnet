@@ -6,6 +6,7 @@ using System.Text;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Infrastructure.Clients.Storage;
+using Altinn.App.Core.Infrastructure.Clients.Storage.TestData;
 using Altinn.App.Core.Interface;
 using Altinn.App.Core.Models;
 using Altinn.App.PlatformServices.Tests.Data;
@@ -418,6 +419,84 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients
             platformRequest?.Should().NotBeNull();
             AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Delete);
             result.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task UpdateData_serializes_and_updates_formdata()
+        {
+            ExampleModel exampleModel = new ExampleModel()
+            {
+                Name = "Test",
+                Age = 22
+            };
+            var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
+            var dataGuid = new Guid("67a5ef12-6e38-41f8-8b42-f91249ebcec0");
+            HttpRequestMessage? platformRequest = null;
+            int invocations = 0;
+            var dataClient = GetDataClient(async (request, token) =>
+            {
+                invocations++;
+                platformRequest = request;
+                await Task.CompletedTask;
+                return new HttpResponseMessage() { StatusCode = HttpStatusCode.OK };
+            });
+            var expectedUri = new Uri($"{apiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}", UriKind.RelativeOrAbsolute);
+            var result = await dataClient.UpdateData(exampleModel, instanceIdentifier.InstanceGuid, exampleModel.GetType(), "ttd", "app", instanceIdentifier.InstanceOwnerPartyId, dataGuid);
+            invocations.Should().Be(1);
+            platformRequest.Should().NotBeNull();
+            AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Put, null, "application/xml");
+        }
+        
+        [Fact]
+        public async Task UpdateData_throws_error_if_serilization_fails()
+        {
+            object exampleModel = new ExampleModel()
+            {
+                Name = "Test",
+                Age = 22
+            };
+            var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
+            var dataGuid = new Guid("67a5ef12-6e38-41f8-8b42-f91249ebcec0");
+            HttpRequestMessage? platformRequest = null;
+            int invocations = 0;
+            var dataClient = GetDataClient(async (request, token) =>
+            {
+                invocations++;
+                platformRequest = request;
+                await Task.CompletedTask;
+                return new HttpResponseMessage() { StatusCode = HttpStatusCode.OK };
+            });
+            var expectedUri = new Uri($"{apiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}", UriKind.RelativeOrAbsolute);
+            await Assert.ThrowsAsync<InvalidOperationException>(async () => await dataClient.UpdateData(exampleModel, instanceIdentifier.InstanceGuid, typeof(DataElement), "ttd", "app", instanceIdentifier.InstanceOwnerPartyId, dataGuid));
+            invocations.Should().Be(0);
+            platformRequest.Should().BeNull();
+        }
+        
+        [Fact]
+        public async Task UpdateData_throws_platformhttpexception_if_platform_request_fails()
+        {
+            object exampleModel = new ExampleModel()
+            {
+                Name = "Test",
+                Age = 22
+            };
+            var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
+            var dataGuid = new Guid("67a5ef12-6e38-41f8-8b42-f91249ebcec0");
+            HttpRequestMessage? platformRequest = null;
+            int invocations = 0;
+            var dataClient = GetDataClient(async (request, token) =>
+            {
+                invocations++;
+                platformRequest = request;
+                await Task.CompletedTask;
+                return new HttpResponseMessage() { StatusCode = HttpStatusCode.InternalServerError };
+            });
+            var expectedUri = new Uri($"{apiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}", UriKind.RelativeOrAbsolute);
+            var result = await Assert.ThrowsAsync<PlatformHttpException>(async () => await dataClient.UpdateData(exampleModel, instanceIdentifier.InstanceGuid, typeof(ExampleModel), "ttd", "app", instanceIdentifier.InstanceOwnerPartyId, dataGuid));
+            invocations.Should().Be(1);
+            platformRequest.Should().NotBeNull();
+            AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Put, null, "application/xml");
+            result.Response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
         }
 
         private DataClient GetDataClient(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> handlerFunc)
