@@ -474,9 +474,10 @@ namespace Altinn.App.Api.Controllers
         /// <remarks>
         /// The endpoint will return a redirect to the new instance if the copy operation was successful.
         /// </remarks>
+        [Obsolete("This endpoint will be removed in a future release of the app template packages.")]
+        [ApiExplorerSettings(IgnoreApi = true)]
         [Authorize]
-        [HttpGet("{instanceOwnerPartyId:int}/{instanceGuid:guid}/copy")]
-        [Produces("application/json")]
+        [HttpGet("/{org}/{app}/legacy/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/copy")]
         [ProducesResponseType(typeof(Instance), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult> CopyInstance(
