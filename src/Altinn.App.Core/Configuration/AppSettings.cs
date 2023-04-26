@@ -217,5 +217,14 @@ namespace Altinn.App.Core.Configuration
         /// Enable the preview functionality to load layout in backend and remove data from hidden components before validation and task completion
         /// </summary>
         public bool RemoveHiddenDataPreview { get; set; } = false;
+
+        /// <summary>
+        /// Enable the preview functionality to load form data in backend and remove data from shadow field
+        public string? RemoveShadowFieldsWithPrefix { get; set; }
+
+        /// <summary>
+        /// Specifies data type to store "clean" data without shadow fields in
+        /// </summary>
+        public string? ShadowFieldCleanDataType { get; set; }
     }
 }
