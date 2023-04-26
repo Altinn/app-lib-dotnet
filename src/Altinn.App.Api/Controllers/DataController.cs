@@ -20,6 +20,8 @@ using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Primitives;
+using Microsoft.Net.Http.Headers;
 
 namespace Altinn.App.Api.Controllers
 {
@@ -308,7 +310,7 @@ namespace Altinn.App.Api.Controllers
                     return errorResponse;
                 }
 
-                return await PutBinaryData(org, app, instanceOwnerPartyId, instanceGuid, dataGuid);
+                return await PutBinaryData(instanceOwnerPartyId, instanceGuid, dataGuid);
             }
             catch (PlatformHttpException e)
             {
@@ -558,12 +560,19 @@ namespace Altinn.App.Api.Controllers
             return Ok(appModel);
         }
 
-        private async Task<ActionResult> PutBinaryData(string org, string app, int instanceOwnerPartyId, Guid instanceGuid, Guid dataGuid)
+        private async Task<ActionResult> PutBinaryData(int instanceOwnerPartyId, Guid instanceGuid, Guid dataGuid)
         {
-            DataElement dataElement = await _dataClient.UpdateBinaryData(org, app, instanceOwnerPartyId, instanceGuid, dataGuid, Request);
-            SelfLinkHelper.SetDataAppSelfLinks(instanceOwnerPartyId, instanceGuid, dataElement, Request);
+            if (Request.Headers.TryGetValue("Content-Disposition", out StringValues headerValues))
+            {
+                var contentDispositionHeader = ContentDispositionHeaderValue.Parse(headerValues.ToString());
+                _logger.LogInformation("Content-Disposition: {ContentDisposition}", headerValues);
+                DataElement dataElement = await _dataClient.UpdateBinaryData(new InstanceIdentifier(instanceOwnerPartyId, instanceGuid), Request.ContentType, contentDispositionHeader.FileName.ToString(), dataGuid, Request.Body);
+                SelfLinkHelper.SetDataAppSelfLinks(instanceOwnerPartyId, instanceGuid, dataElement, Request);
 
-            return Created(dataElement.SelfLinks.Apps, dataElement);
+                return Created(dataElement.SelfLinks.Apps, dataElement);
+            }
+
+            return BadRequest("Invalid data provided. Error:  The request must include a Content-Disposition header");
         }
 
         private async Task<ActionResult> PutFormData(string org, string app, Instance instance, Guid dataGuid, string dataType)
