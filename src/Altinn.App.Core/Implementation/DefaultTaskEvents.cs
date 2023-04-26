@@ -167,9 +167,9 @@ public class DefaultTaskEvents : ITaskEvents
     }
 
     private async Task RunRemoveShadowFields(Instance instance, Guid instanceGuid, List<DataType> dataTypesToLock) {
-        if (_appSettings?.RemoveShadowFieldsWithPrefix != null)
+        if (dataTypesToLock.Find(dt => dt.AppLogic?.ShadowFields?.Prefix != null) != null)
         {
-            await RemoveShadowFields(instance, instanceGuid, dataTypesToLock, _appSettings.RemoveShadowFieldsWithPrefix);
+            await RemoveShadowFields(instance, instanceGuid, dataTypesToLock);
         }
     }
 
@@ -268,9 +268,9 @@ public class DefaultTaskEvents : ITaskEvents
         }
     }
 
-    private async Task RemoveShadowFields(Instance instance, Guid instanceGuid, List<DataType> dataTypesToLock, string ignorePrefix)
+    private async Task RemoveShadowFields(Instance instance, Guid instanceGuid, List<DataType> dataTypesToLock)
     {
-        foreach (var dataType in dataTypesToLock.Where(dt => dt.AppLogic != null && dt.Id != _appSettings?.ShadowFieldCleanDataType))
+        foreach (var dataType in dataTypesToLock.Where(dt => dt.AppLogic?.ShadowFields != null))
         {
             foreach (Guid dataElementId in instance.Data.Where(de => de.DataType == dataType.Id).Select(dataElement => Guid.Parse(dataElement.Id)))
             {
@@ -280,7 +280,7 @@ public class DefaultTaskEvents : ITaskEvents
                 dynamic data = await _dataClient.GetFormData(
                     instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, dataElementId);
 
-                var modifier = new IgnorePropertiesWithPrefix(ignorePrefix);
+                var modifier = new IgnorePropertiesWithPrefix(dataType.AppLogic.ShadowFields.Prefix);
                 JsonSerializerOptions options = new ()
                 {
                     TypeInfoResolver = new DefaultJsonTypeInfoResolver
@@ -291,13 +291,15 @@ public class DefaultTaskEvents : ITaskEvents
                 };
                 
                 string serializedData = JsonSerializer.Serialize(data, options);
-                var updatedData = Newtonsoft.Json.JsonConvert.DeserializeObject(serializedData, modelType);
-
-                if (_appSettings?.ShadowFieldCleanDataType != null)
-                {
-                    await _dataClient.InsertFormData(updatedData, instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, _appSettings.ShadowFieldCleanDataType);
+                if (dataType.AppLogic.ShadowFields.SaveToDataType != null) {
+                    var saveToDataType = dataTypesToLock.Find(dt => dt.Id == dataType.AppLogic.ShadowFields.SaveToDataType);
+                    Type saveToModelType = _appModel.GetModelType(saveToDataType.AppLogic.ClassRef);
+                    var updatedData = Newtonsoft.Json.JsonConvert.DeserializeObject(serializedData, saveToModelType ?? modelType);
+                    await _dataClient.InsertFormData(updatedData, instanceGuid, saveToModelType ?? modelType, instance.Org, app, instanceOwnerPartyId, saveToDataType.Id);
                 }
-                else {
+                else
+                {
+                    var updatedData = Newtonsoft.Json.JsonConvert.DeserializeObject(serializedData, modelType);
                     await _dataClient.UpdateData(updatedData, instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, dataElementId);
                 }
             }
