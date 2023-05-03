@@ -8,19 +8,19 @@ namespace Altinn.App.Core.Interface
     /// </summary>
     public interface IProcessEngine
     {
-        /// <summary>
-        /// Method to start a new process
-        /// </summary>
-        Task<ProcessChangeContext> StartProcess(ProcessChangeContext processChange);
-
-        /// <summary>
-        /// Method to move process to next task/event
-        /// </summary>
-        Task<ProcessChangeContext> Next(ProcessChangeContext processChange);
-
-        /// <summary>
-        /// Method to Start Task
-        /// </summary>
-        Task<ProcessChangeContext> StartTask(ProcessChangeContext processChange);
+        // /// <summary>
+        // /// Method to start a new process
+        // /// </summary>
+        // Task<ProcessChangeContext> StartProcess(ProcessChangeContext processChange);
+        //
+        // /// <summary>
+        // /// Method to move process to next task/event
+        // /// </summary>
+        // Task<ProcessChangeContext> Next(ProcessChangeContext processChange);
+        //
+        // /// <summary>
+        // /// Method to Start Task
+        // /// </summary>
+        // Task<ProcessChangeContext> StartTask(ProcessChangeContext processChange);
     }
 }

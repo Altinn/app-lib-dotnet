@@ -23,6 +23,7 @@ using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Process;
+using Altinn.App.Core.Internal.Process.V2;
 using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
 using Altinn.Common.AccessTokenClient.Configuration;
@@ -36,6 +37,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json.Linq;
+using IProcessEngine = Altinn.App.Core.Internal.Process.V2.IProcessEngine;
+using IProcessReader = Altinn.App.Core.Internal.Process.V2.IProcessReader;
+using ProcessEngine = Altinn.App.Core.Internal.Process.V2.ProcessEngine;
+using ProcessReader = Altinn.App.Core.Internal.Process.V2.ProcessReader;
 
 namespace Altinn.App.Core.Extensions
 {
@@ -218,10 +223,9 @@ namespace Altinn.App.Core.Extensions
         private static void AddProcessServices(IServiceCollection services)
         {
             services.TryAddTransient<IProcessEngine, ProcessEngine>();
-            services.TryAddTransient<IProcessChangeHandler, ProcessChangeHandler>();
+            services.TryAddTransient<IProcessNavigator, ProcessNavigator>();
             services.TryAddSingleton<IProcessReader, ProcessReader>();
             services.TryAddTransient<ExclusiveGatewayFactory>();
-            services.TryAddTransient<IFlowHydration, FlowHydration>();
         }
     }
 }

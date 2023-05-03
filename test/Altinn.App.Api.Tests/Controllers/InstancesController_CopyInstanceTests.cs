@@ -5,6 +5,7 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
+using Altinn.App.Core.Internal.Process.V2;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Validation;
 
@@ -19,6 +20,7 @@ using Microsoft.Extensions.Options;
 
 using Moq;
 using Xunit;
+using IProcessEngine = Altinn.App.Core.Internal.Process.V2.IProcessEngine;
 
 namespace Altinn.App.Api.Tests.Controllers;
 
@@ -271,9 +273,9 @@ public class InstancesController_CopyInstanceTests
         _instanceClient.Setup(i => i.CreateInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Instance>())).ReturnsAsync(instance);
         _instanceClient.Setup(i => i.GetInstance(It.IsAny<Instance>())).ReturnsAsync(instance);
         _instantiationValidator.Setup(v => v.Validate(It.IsAny<Instance>())).ReturnsAsync(instantiationValidationResult);
-        _processEngine.Setup(p => p.StartProcess(It.IsAny<ProcessChangeContext>()))
-            .ReturnsAsync((ProcessChangeContext pcc) => { return pcc; });
-        _processEngine.Setup(p => p.StartTask(It.IsAny<ProcessChangeContext>()));
+        _processEngine.Setup(p => p.StartProcess(It.IsAny<ProcessStartRequest>()))
+            .ReturnsAsync(() => { return new ProcessChangeResult(){Success = true}; });
+        _processEngine.Setup(p => p.UpdateInstanceAndRerunEvents(It.IsAny<ProcessStartRequest>(), It.IsAny<List<InstanceEvent>>()));
 
         // Act
         ActionResult actual = await SUT.CopyInstance(Org, AppName, InstanceOwnerPartyId, instanceGuid);

@@ -84,7 +84,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         }
 
         /// <inheritdoc />
-        public async Task DispatchProcessEventsToStorage(Instance instance, List<InstanceEvent> events)
+        public async Task DispatchProcessEventsToStorage(Instance instance, List<InstanceEvent>? events)
         {
             string org = instance.Org;
             string app = instance.AppId.Split("/")[1];

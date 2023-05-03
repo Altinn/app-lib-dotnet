@@ -1,3 +1,4 @@
+using Altinn.App.Core.Models;
 using Altinn.Platform.Register.Models;
 
 namespace Altinn.App.Core.Interface

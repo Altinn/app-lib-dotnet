@@ -11,6 +11,7 @@ using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
+using Altinn.App.Core.Internal.Process.V2;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Authorization.ABAC.Xacml.JsonProfile;
@@ -24,6 +25,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
+using IProcessEngine = Altinn.App.Core.Internal.Process.V2.IProcessEngine;
+using IProcessReader = Altinn.App.Core.Internal.Process.V2.IProcessReader;
 
 namespace Altinn.App.Api.Controllers
 {
@@ -43,9 +46,8 @@ namespace Altinn.App.Api.Controllers
         private readonly IProcess _processService;
         private readonly IValidation _validationService;
         private readonly IPDP _pdp;
-        private readonly IProcessEngine _processEngine;
+        private readonly IProcessEngine _processEngineV2;
         private readonly IProcessReader _processReader;
-        private readonly IFlowHydration _flowHydration;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ProcessController"/>
@@ -56,18 +58,16 @@ namespace Altinn.App.Api.Controllers
             IProcess processService,
             IValidation validationService,
             IPDP pdp,
-            IProcessEngine processEngine,
             IProcessReader processReader,
-            IFlowHydration flowHydration)
+            IProcessEngine processEngineV2)
         {
             _logger = logger;
             _instanceClient = instanceClient;
             _processService = processService;
             _validationService = validationService;
             _pdp = pdp;
-            _processEngine = processEngine;
             _processReader = processReader;
-            _flowHydration = flowHydration;
+            _processEngineV2 = processEngineV2;
         }
 
         /// <summary>
@@ -133,15 +133,20 @@ namespace Altinn.App.Api.Controllers
             {
                 instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
 
-                ProcessChangeContext changeContext = new ProcessChangeContext(instance, User);
-                changeContext.RequestedProcessElementId = startEvent;
-                changeContext = await _processEngine.StartProcess(changeContext);
-                if (changeContext.FailedProcessChange)
+                var request = new ProcessStartRequest()
                 {
-                    return Conflict(changeContext.ProcessMessages[0].Message);
+                    Instance = instance,
+                    StartEventId = startEvent,
+                    User = User,
+                    Dryrun = false
+                };
+                var result = await _processEngineV2.StartProcess(request);
+                if (!result.Success)
+                {
+                    return Conflict(result.ErrorMessage);
                 }
 
-                return Ok(changeContext.Instance.Process);
+                return Ok(result.ProcessStateChange?.NewProcessState);
             }
             catch (PlatformHttpException e)
             {
@@ -192,8 +197,8 @@ namespace Altinn.App.Api.Controllers
                     return Conflict($"Instance does not have valid info about currentTask");
                 }
                 
-                List<ProcessElement> nextElements = await _flowHydration.NextFollowAndFilterGateways(instance, currentTaskId, false);
-
+                // List<ProcessElement> nextElements = await _flowHydration.NextFollowAndFilterGateways(instance, currentTaskId, false);
+                List<ProcessElement> nextElements = new List<ProcessElement>();
                 return Ok(nextElements.Select(e => e.Id).ToList());
             }
             catch (PlatformHttpException e)
@@ -235,8 +240,7 @@ namespace Altinn.App.Api.Controllers
         /// <param name="app">application identifier which is unique within an organisation</param>
         /// <param name="instanceOwnerPartyId">unique id of the party that is the owner of the instance</param>
         /// <param name="instanceGuid">unique id to identify the instance</param>
-        /// <param name="elementId">the id of the next element to move to. Query parameter is optional,
-        /// but must be specified if more than one element can be reached from the current process ellement.</param>
+        /// <param name="action">action performed</param>
         /// <param name="lang">Optional parameter to pass on the language used in the form if this differs from the profile language,
         /// which otherwise is used automatically. The language is picked up when generating the PDF when leaving a step, 
         /// and is not used for anything else.
@@ -250,7 +254,7 @@ namespace Altinn.App.Api.Controllers
             [FromRoute] string app,
             [FromRoute] int instanceOwnerPartyId,
             [FromRoute] Guid instanceGuid,
-            [FromQuery] string elementId = null,
+            [FromQuery] string action = null,
             [FromQuery] string lang = null)
         {
             try
@@ -267,15 +271,6 @@ namespace Altinn.App.Api.Controllers
                     return Conflict($"Process is ended.");
                 }
 
-                if (!string.IsNullOrEmpty(elementId))
-                {
-                    ElementInfo elemInfo = _processReader.GetElementInfo(elementId);
-                    if (elemInfo == null)
-                    {
-                        return BadRequest($"Requested element id {elementId} is not found in process definition");
-                    }
-                }
-
                 string altinnTaskType = instance.Process.CurrentTask?.AltinnTaskType;
 
                 if (altinnTaskType == null)
@@ -283,25 +278,16 @@ namespace Altinn.App.Api.Controllers
                     return Conflict($"Instance does not have current altinn task type information!");
                 }
 
-                ProcessSequenceFlowType processSequenceFlowType = ProcessSequenceFlowType.CompleteCurrentMoveToNext;
-                List<ProcessElement> possibleNextElements = await _flowHydration.NextFollowAndFilterGateways(instance, instance.Process.CurrentTask?.ElementId, elementId.IsNullOrEmpty());
-                string targetElement = ProcessHelper.GetValidNextElementOrError(elementId, possibleNextElements.Select(e => e.Id).ToList(), out ProcessError processError);
-
-                if (!string.IsNullOrEmpty(elementId) && processError == null)
-                {
-                    List<SequenceFlow> flows = _processReader.GetSequenceFlowsBetween(instance.Process.CurrentTask?.ElementId, targetElement);
-                    processSequenceFlowType = ProcessHelper.GetSequenceFlowType(flows);
-                }
-
                 bool authorized;
-                if (processSequenceFlowType.Equals(ProcessSequenceFlowType.CompleteCurrentMoveToNext))
+                string checkedAction = action;
+                if (action != null)
                 {
-                    authorized = await AuthorizeAction(altinnTaskType, org, app, instanceOwnerPartyId, instanceGuid);
+                    authorized = await AuthorizeAction(action, org, app, instanceOwnerPartyId, instanceGuid);
                 }
                 else
                 {
-                    ElementInfo elemInfo = _processReader.GetElementInfo(targetElement);
-                    authorized = await AuthorizeAction(elemInfo.AltinnTaskType, org, app, instanceOwnerPartyId, instanceGuid, elemInfo.Id);
+                    authorized = await AuthorizeAction(altinnTaskType, org, app, instanceOwnerPartyId, instanceGuid);
+                    checkedAction = altinnTaskType;
                 }
 
                 if (!authorized)
@@ -309,15 +295,19 @@ namespace Altinn.App.Api.Controllers
                     return Forbid();
                 }
 
-                ProcessChangeContext changeContext = new ProcessChangeContext(instance, User);
-                changeContext.RequestedProcessElementId = elementId;
-                changeContext = await _processEngine.Next(changeContext);
-                if (changeContext.FailedProcessChange)
+                var request = new ProcessNextRequest()
                 {
-                    return Conflict(changeContext.ProcessMessages[0].Message);
+                    Instance = instance,
+                    User = User,
+                    Action = checkedAction
+                };
+                var result = await _processEngineV2.Next(request);
+                if (!result.Success)
+                {
+                    return Conflict(result.ErrorMessage);
                 }
 
-                return Ok(changeContext.Instance.Process);
+                return Ok(result.ProcessStateChange?.NewProcessState);
             }
             catch (PlatformHttpException e)
             {
@@ -395,27 +385,22 @@ namespace Altinn.App.Api.Controllers
                     return Conflict($"Instance is not valid for task {currentTaskId}. Automatic completion of process is stopped");
                 }
 
-                List<ProcessElement> nextElements = await _flowHydration.NextFollowAndFilterGateways(instance, currentTaskId);
-
-                if (nextElements.Count > 1)
-                {
-                    return Conflict($"Cannot complete process. Multiple outgoing sequence flows detected from task {currentTaskId}. Please select manually among {nextElements}");
-                }
-
-                string nextElement = nextElements.First().Id;
-
                 try
                 {
-                    ProcessChangeContext processChange = new ProcessChangeContext(instance, User);
-                    processChange.RequestedProcessElementId = nextElement;
-                    processChange = await _processEngine.Next(processChange);
-
-                    if (processChange.FailedProcessChange)
+                    ProcessNextRequest request = new ProcessNextRequest()
                     {
-                        return Conflict(processChange.ProcessMessages[0].Message);
+                        Instance = instance,
+                        User = User,
+                        Action = altinnTaskType
+                    };
+                    var result = await _processEngineV2.Next(request);
+
+                    if (!result.Success)
+                    {
+                        return Conflict(result.ErrorMessage);
                     }
 
-                    currentTaskId = instance.Process.CurrentTask?.ElementId;
+                    currentTaskId = result.ProcessStateChange?.NewProcessState.CurrentTask.ElementId;
                 }
                 catch (Exception ex)
                 {
