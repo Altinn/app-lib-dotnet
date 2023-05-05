@@ -92,6 +92,9 @@ namespace Altinn.App.Api.Controllers
                         {
                             appProcessState.CurrentTask.Actions.Add(action.Id, await AuthorizeAction(action.Id, org, app, instanceOwnerPartyId, instanceGuid, flowElement.Id));
                         }
+                        
+                        appProcessState.CurrentTask.HasWriteAccess = await AuthorizeAction("write", org, app, instanceOwnerPartyId, instanceGuid, flowElement.Id);
+                        appProcessState.CurrentTask.HasReadAccess = await AuthorizeAction("read", org, app, instanceOwnerPartyId, instanceGuid, flowElement.Id);
                     }
                 }
                 
