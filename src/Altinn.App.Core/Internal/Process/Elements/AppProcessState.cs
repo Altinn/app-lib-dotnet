@@ -24,7 +24,10 @@ public class AppProcessState: ProcessState
     {
         Started = processState.Started;
         StartEvent = processState.StartEvent;
-        CurrentTask = new AppProcessElementInfo(processState.CurrentTask);
+        if (processState.CurrentTask != null)
+        {
+            CurrentTask = new AppProcessElementInfo(processState.CurrentTask);
+        }
         Ended = processState.Ended;
         EndEvent = processState.EndEvent;
     }
