@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Threading.Tasks;
 
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Core.Features.Validation;
@@ -10,8 +6,8 @@ using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
+using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Process.Elements.Base;
-using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Authorization.ABAC.Xacml.JsonProfile;
 using Altinn.Common.PEP.Helpers;
@@ -19,13 +15,8 @@ using Altinn.Common.PEP.Interfaces;
 using Altinn.Platform.Storage.Interface.Models;
 
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
-using IProcessEngine = Altinn.App.Core.Internal.Process.IProcessEngine;
-using IProcessReader = Altinn.App.Core.Internal.Process.IProcessReader;
 
 namespace Altinn.App.Api.Controllers
 {
@@ -45,7 +36,7 @@ namespace Altinn.App.Api.Controllers
         private readonly IProcess _processService;
         private readonly IValidation _validationService;
         private readonly IPDP _pdp;
-        private readonly IProcessEngine _processEngineV2;
+        private readonly IProcessEngine _processEngine;
         private readonly IProcessReader _processReader;
 
         /// <summary>
@@ -58,7 +49,7 @@ namespace Altinn.App.Api.Controllers
             IValidation validationService,
             IPDP pdp,
             IProcessReader processReader,
-            IProcessEngine processEngineV2)
+            IProcessEngine processEngine)
         {
             _logger = logger;
             _instanceClient = instanceClient;
@@ -66,7 +57,7 @@ namespace Altinn.App.Api.Controllers
             _validationService = validationService;
             _pdp = pdp;
             _processReader = processReader;
-            _processEngineV2 = processEngineV2;
+            _processEngine = processEngine;
         }
 
         /// <summary>
@@ -81,7 +72,7 @@ namespace Altinn.App.Api.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [Authorize(Policy = "InstanceRead")]
-        public async Task<ActionResult<ProcessState>> GetProcessState(
+        public async Task<ActionResult<AppProcessState>> GetProcessState(
             [FromRoute] string org,
             [FromRoute] string app,
             [FromRoute] int instanceOwnerPartyId,
@@ -90,9 +81,21 @@ namespace Altinn.App.Api.Controllers
             try
             {
                 Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
-                ProcessState processState = instance.Process;
-
-                return Ok(processState);
+                AppProcessState appProcessState = new AppProcessState(instance.Process);
+                if (appProcessState.CurrentTask?.ElementId != null)
+                {
+                    var flowElement = _processReader.GetFlowElement(appProcessState.CurrentTask.ElementId);
+                    if (flowElement is ProcessTask processTask)
+                    {
+                        appProcessState.CurrentTask.Actions = new Dictionary<string, bool>();
+                        foreach (AltinnAction action in processTask.ExtensionElements?.AltinnProperties.AltinnActions ?? new List<AltinnAction>())
+                        {
+                            appProcessState.CurrentTask.Actions.Add(action.Id, await AuthorizeAction(action.Id, org, app, instanceOwnerPartyId, instanceGuid, flowElement.Id));
+                        }
+                    }
+                }
+                
+                return Ok(appProcessState);
             }
             catch (PlatformHttpException e)
             {
@@ -139,7 +142,7 @@ namespace Altinn.App.Api.Controllers
                     User = User,
                     Dryrun = false
                 };
-                var result = await _processEngineV2.StartProcess(request);
+                var result = await _processEngine.StartProcess(request);
                 if (!result.Success)
                 {
                     return Conflict(result.ErrorMessage);
@@ -239,6 +242,7 @@ namespace Altinn.App.Api.Controllers
         /// <param name="app">application identifier which is unique within an organisation</param>
         /// <param name="instanceOwnerPartyId">unique id of the party that is the owner of the instance</param>
         /// <param name="instanceGuid">unique id to identify the instance</param>
+        /// <param name="elementId">obsolete: alias for action</param>
         /// <param name="action">action performed</param>
         /// <param name="lang">Optional parameter to pass on the language used in the form if this differs from the profile language,
         /// which otherwise is used automatically. The language is picked up when generating the PDF when leaving a step, 
@@ -253,6 +257,7 @@ namespace Altinn.App.Api.Controllers
             [FromRoute] string app,
             [FromRoute] int instanceOwnerPartyId,
             [FromRoute] Guid instanceGuid,
+            [FromQuery] string elementId = null,
             [FromQuery] string action = null,
             [FromQuery] string lang = null)
         {
@@ -300,7 +305,7 @@ namespace Altinn.App.Api.Controllers
                     User = User,
                     Action = checkedAction
                 };
-                var result = await _processEngineV2.Next(request);
+                var result = await _processEngine.Next(request);
                 if (!result.Success)
                 {
                     return Conflict(result.ErrorMessage);
@@ -392,7 +397,7 @@ namespace Altinn.App.Api.Controllers
                         User = User,
                         Action = altinnTaskType
                     };
-                    var result = await _processEngineV2.Next(request);
+                    var result = await _processEngine.Next(request);
 
                     if (!result.Success)
                     {
@@ -480,7 +485,8 @@ namespace Altinn.App.Api.Controllers
                     actionType = currentTaskType;
                     break;
             }
-
+            
+            _logger.LogInformation("About to authorize action {ActionType}", actionType);
             XacmlJsonRequestRoot request = DecisionHelper.CreateDecisionRequest(org, app, HttpContext.User, actionType, instanceOwnerPartyId, instanceGuid, taskId);
             XacmlJsonResponse response = await _pdp.GetDecisionForRequest(request);
             if (response?.Response == null)

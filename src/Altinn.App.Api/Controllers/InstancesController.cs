@@ -30,7 +30,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
-using IProcessEngine = Altinn.App.Core.Internal.Process.IProcessEngine;
 
 namespace Altinn.App.Api.Controllers
 {
@@ -60,7 +59,7 @@ namespace Altinn.App.Api.Controllers
         private readonly IPDP _pdp;
         private readonly IPrefill _prefillService;
         private readonly AppSettings _appSettings;
-        private readonly IProcessEngine _processEngineV2;
+        private readonly IProcessEngine _processEngine;
 
         private const long RequestSizeLimit = 2000 * 1024 * 1024;
 
@@ -81,7 +80,7 @@ namespace Altinn.App.Api.Controllers
             IOptions<AppSettings> appSettings,
             IPrefill prefillService,
             IProfile profileClient, 
-            IProcessEngine processEngineV2)
+            IProcessEngine processEngine)
         {
             _logger = logger;
             _instanceClient = instanceClient;
@@ -96,7 +95,7 @@ namespace Altinn.App.Api.Controllers
             _appSettings = appSettings.Value;
             _prefillService = prefillService;
             _profileClientClient = profileClient;
-            _processEngineV2 = processEngineV2;
+            _processEngine = processEngine;
         }
 
         /// <summary>
@@ -279,7 +278,7 @@ namespace Altinn.App.Api.Controllers
                     User = User,
                     Dryrun = true
                 };
-                var result = await _processEngineV2.StartProcess(processStartRequest);
+                var result = await _processEngine.StartProcess(processStartRequest);
                 change = result.ProcessStateChange;
 
                 // create the instance
@@ -305,7 +304,7 @@ namespace Altinn.App.Api.Controllers
                     Dryrun = false,
                 };
                 _logger.LogInformation("Events sent to process engine: {Events}", change?.Events);
-                await _processEngineV2.UpdateInstanceAndRerunEvents(request, change.Events);
+                await _processEngine.UpdateInstanceAndRerunEvents(request, change.Events);
             }
             catch (Exception exception)
             {
@@ -431,7 +430,7 @@ namespace Altinn.App.Api.Controllers
                     Prefill = instansiationInstance.Prefill
                 };
                 
-                processResult = await _processEngineV2.StartProcess(request);
+                processResult = await _processEngine.StartProcess(request);
 
                 Instance? source = null;
 
@@ -471,7 +470,7 @@ namespace Altinn.App.Api.Controllers
                     Dryrun = false,
                     Prefill = instansiationInstance.Prefill
                 };
-                await _processEngineV2.UpdateInstanceAndRerunEvents(updateRequest, processResult.ProcessStateChange.Events);
+                await _processEngine.UpdateInstanceAndRerunEvents(updateRequest, processResult.ProcessStateChange.Events);
             }
             catch (Exception exception)
             {
@@ -566,7 +565,7 @@ namespace Altinn.App.Api.Controllers
                 User = User,
                 Dryrun = true
             };
-            var startResult = await _processEngineV2.StartProcess(processStartRequest);
+            var startResult = await _processEngine.StartProcess(processStartRequest);
 
             targetInstance = await _instanceClient.CreateInstance(org, app, targetInstance);
 
@@ -580,7 +579,7 @@ namespace Altinn.App.Api.Controllers
                 Dryrun = false,
                 User = User
             };
-            await _processEngineV2.UpdateInstanceAndRerunEvents(rerunRequest, startResult.ProcessStateChange?.Events);
+            await _processEngine.UpdateInstanceAndRerunEvents(rerunRequest, startResult.ProcessStateChange?.Events);
 
             await RegisterEvent("app.instance.created", targetInstance);
 

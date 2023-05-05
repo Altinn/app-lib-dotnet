@@ -10,7 +10,27 @@ namespace Altinn.App.Core.Internal.Process.Elements;
 public class AppProcessState: ProcessState
 {
     /// <summary>
-    /// Actions that can be performed and if the user is allowed to perform them.
+    /// Default constructor
     /// </summary>
-    public Dictionary<string, bool>? Actions { get; set; }
+    public AppProcessState()
+    {
+    }
+
+    /// <summary>
+    /// Constructor that takes a ProcessState object and copies the values.
+    /// </summary>
+    /// <param name="processState"></param>
+    public AppProcessState(ProcessState processState)
+    {
+        Started = processState.Started;
+        StartEvent = processState.StartEvent;
+        CurrentTask = new AppProcessElementInfo(processState.CurrentTask);
+        Ended = processState.Ended;
+        EndEvent = processState.EndEvent;
+    }
+    
+    /// <summary>
+    /// Gets or sets a status object containing the task info of the currentTask of an ongoing process.
+    /// </summary>
+    public new AppProcessElementInfo CurrentTask { get; set; }
 }
