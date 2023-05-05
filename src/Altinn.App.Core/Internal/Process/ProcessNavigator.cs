@@ -3,7 +3,7 @@ using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Internal.Process.V2;
+namespace Altinn.App.Core.Internal.Process;
 
 /// <summary>
 /// Default implementation of <see cref="IProcessNavigator"/>
@@ -25,6 +25,7 @@ public class ProcessNavigator : IProcessNavigator
     }
 
 
+    /// <inheritdoc/>
     public async Task<ProcessElement?> GetNextTask(Instance instance, string currentElement, string? action)
     {
         List<ProcessElement> directFlowTargets = _processReader.GetNextElements(currentElement);

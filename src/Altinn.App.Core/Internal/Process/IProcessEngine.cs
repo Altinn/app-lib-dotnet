@@ -1,9 +1,7 @@
-using System.Security.Claims;
-using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Internal.Process.V2
+namespace Altinn.App.Core.Internal.Process
 {
     /// <summary>
     /// Process engine interface that defines the Altinn App process engine

@@ -5,7 +5,7 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
-using Altinn.App.Core.Internal.Process.V2;
+using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Validation;
 
@@ -20,7 +20,7 @@ using Microsoft.Extensions.Options;
 
 using Moq;
 using Xunit;
-using IProcessEngine = Altinn.App.Core.Internal.Process.V2.IProcessEngine;
+using IProcessEngine = Altinn.App.Core.Internal.Process.IProcessEngine;
 
 namespace Altinn.App.Api.Tests.Controllers;
 

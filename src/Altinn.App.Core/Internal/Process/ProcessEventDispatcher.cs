@@ -6,8 +6,11 @@ using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Altinn.App.Core.Internal.Process.V2;
+namespace Altinn.App.Core.Internal.Process;
 
+/// <summary>
+/// Default implementation of the process event dispatcher
+/// </summary>
 class ProcessEventDispatcher : IProcessEventDispatcher
 {
     private readonly IInstance _instanceService;
@@ -36,6 +39,7 @@ class ProcessEventDispatcher : IProcessEventDispatcher
         _logger = logger;
     }
 
+    /// <inheritdoc/>
     public async Task<Instance> UpdateProcessAndDispatchEvents(Instance instance, Dictionary<string, string>? prefill, List<InstanceEvent> events)
     {
         await HandleProcessChanges(instance, events, prefill);
@@ -50,6 +54,7 @@ class ProcessEventDispatcher : IProcessEventDispatcher
         return updatedInstance;
     }
 
+    /// <inheritdoc/>
     public async Task RegisterEventWithEventsComponent(Instance instance)
     {
         if (_registerWithEventSystem)

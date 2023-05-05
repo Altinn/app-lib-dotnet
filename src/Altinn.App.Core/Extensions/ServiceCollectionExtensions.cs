@@ -23,7 +23,6 @@ using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Process;
-using Altinn.App.Core.Internal.Process.V2;
 using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
 using Altinn.Common.AccessTokenClient.Configuration;
@@ -37,10 +36,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json.Linq;
-using IProcessEngine = Altinn.App.Core.Internal.Process.V2.IProcessEngine;
-using IProcessReader = Altinn.App.Core.Internal.Process.V2.IProcessReader;
-using ProcessEngine = Altinn.App.Core.Internal.Process.V2.ProcessEngine;
-using ProcessReader = Altinn.App.Core.Internal.Process.V2.ProcessReader;
+using IProcessEngine = Altinn.App.Core.Internal.Process.IProcessEngine;
+using IProcessReader = Altinn.App.Core.Internal.Process.IProcessReader;
+using ProcessEngine = Altinn.App.Core.Internal.Process.ProcessEngine;
+using ProcessReader = Altinn.App.Core.Internal.Process.ProcessReader;
 
 namespace Altinn.App.Core.Extensions
 {

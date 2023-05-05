@@ -1,5 +1,5 @@
 using Altinn.App.Core.Interface;
-using Altinn.App.Core.Internal.Process.V2;
+using Altinn.App.Core.Internal.Process;
 using Moq;
 
 namespace Altinn.App.Core.Tests.Internal.Process.TestUtils;

@@ -11,7 +11,6 @@ using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
-using Altinn.App.Core.Internal.Process.V2;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Authorization.ABAC.Xacml.JsonProfile;
@@ -25,8 +24,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
-using IProcessEngine = Altinn.App.Core.Internal.Process.V2.IProcessEngine;
-using IProcessReader = Altinn.App.Core.Internal.Process.V2.IProcessReader;
+using IProcessEngine = Altinn.App.Core.Internal.Process.IProcessEngine;
+using IProcessReader = Altinn.App.Core.Internal.Process.IProcessReader;
 
 namespace Altinn.App.Api.Controllers
 {
