@@ -29,11 +29,34 @@ public class ProcessNavigator : IProcessNavigator
     public async Task<ProcessElement?> GetNextTask(Instance instance, string currentElement, string? action)
     {
         List<ProcessElement> directFlowTargets = _processReader.GetNextElements(currentElement);
-        foreach (var directFlowTarget in directFlowTargets)
+        List<ProcessElement> filteredNext = await NextFollowAndFilterGateways(instance, directFlowTargets, action);
+        if (filteredNext.Count == 0)
         {
+            return null;
+        }
+
+        if (filteredNext.Count == 1)
+        {
+            return filteredNext[0];
+        }
+
+        throw new ProcessException($"Multiple next elements found from {currentElement}. Please supply action and filters or define a default flow.");
+    }
+
+    private async Task<List<ProcessElement>> NextFollowAndFilterGateways(Instance instance, List<ProcessElement?> originNextElements, string? action)
+    {
+        List<ProcessElement> filteredNext = new List<ProcessElement>();
+        foreach (var directFlowTarget in originNextElements)
+        {
+            if (directFlowTarget == null)
+            {
+                continue;
+            }
+
             if (!IsGateway(directFlowTarget))
             {
-                return directFlowTarget;
+                filteredNext.Add(directFlowTarget);
+                continue;
             }
 
             var gateway = (ExclusiveGateway)directFlowTarget;
@@ -49,19 +72,20 @@ public class ProcessNavigator : IProcessNavigator
                 filteredList = await gatewayFilter.FilterAsync(outgoingFlows, instance);
             }
 
-            if (filteredList.Count == 1)
-            {
-                return _processReader.GetFlowElement(filteredList[0].TargetRef);
-            }
-
             var defaultSequenceFlow = filteredList.Find(s => s.Id == gateway.Default);
             if (defaultSequenceFlow != null)
             {
-                return _processReader.GetFlowElement(defaultSequenceFlow.TargetRef);
+                var defaultTarget = _processReader.GetFlowElement(defaultSequenceFlow.TargetRef);
+                filteredNext.AddRange(await NextFollowAndFilterGateways(instance, new List<ProcessElement?> { defaultTarget }, action));
+            }
+            else
+            {
+                var filteredTargets = filteredList.Select(e => _processReader.GetFlowElement(e.TargetRef)).ToList();
+                filteredNext.AddRange(await NextFollowAndFilterGateways(instance, filteredTargets, action));
             }
         }
 
-        throw new Exception("No able to find next element");
+        return filteredNext;
     }
 
 
