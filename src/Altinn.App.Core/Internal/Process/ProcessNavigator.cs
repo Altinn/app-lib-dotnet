@@ -69,7 +69,7 @@ public class ProcessNavigator : IProcessNavigator
             }
             else
             {
-                filteredList = await gatewayFilter.FilterAsync(outgoingFlows, instance);
+                filteredList = await gatewayFilter.FilterAsync(outgoingFlows, instance, action);
             }
 
             var defaultSequenceFlow = filteredList.Find(s => s.Id == gateway.Default);
