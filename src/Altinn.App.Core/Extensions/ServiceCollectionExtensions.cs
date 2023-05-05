@@ -225,6 +225,7 @@ namespace Altinn.App.Core.Extensions
             services.TryAddTransient<IProcessEngine, ProcessEngine>();
             services.TryAddTransient<IProcessNavigator, ProcessNavigator>();
             services.TryAddSingleton<IProcessReader, ProcessReader>();
+            services.TryAddTransient<IProcessEventDispatcher, ProcessEventDispatcher>();
             services.TryAddTransient<ExclusiveGatewayFactory>();
         }
     }

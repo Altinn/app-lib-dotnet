@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Interface;
@@ -9,8 +8,6 @@ using Altinn.App.Core.Models;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Internal.Process.V2;
 
@@ -19,52 +16,28 @@ namespace Altinn.App.Core.Internal.Process.V2;
 /// </summary>
 public class ProcessEngine : IProcessEngine
 {
-    private readonly IInstance _instanceService;
     private readonly IProcessReader _processReader;
     private readonly IProfile _profileService;
-    private readonly IProcess _processClient;
-    private readonly IAppEvents _appEvents;
-    private readonly ITaskEvents _taskEvents;
     private readonly IProcessNavigator _processNavigator;
-    private readonly IEvents _eventsService;
-    private readonly ILogger<ProcessEngine> _logger;
-    private readonly bool _registerWithEventSystem;
+    private readonly IProcessEventDispatcher _processEventDispatcher;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessEngine"/> class
     /// </summary>
-    /// <param name="instanceService"></param>
     /// <param name="processReader"></param>
     /// <param name="profileService"></param>
-    /// <param name="processClient"></param>
-    /// <param name="appEvents"></param>
-    /// <param name="taskEvents"></param>
     /// <param name="processNavigator"></param>
-    /// <param name="eventsService"></param>
-    /// <param name="appSettings"></param>
-    /// <param name="logger"></param>
+    /// <param name="processEventDispatcher"></param>
     public ProcessEngine(
-        IInstance instanceService, 
         IProcessReader processReader,
-        IProfile profileService, 
-        IProcess processClient, 
-        IAppEvents appEvents, 
-        ITaskEvents taskEvents, 
-        IProcessNavigator processNavigator, 
-        IEvents eventsService, 
-        IOptions<AppSettings> appSettings, 
-        ILogger<ProcessEngine> logger)
+        IProfile profileService,
+        IProcessNavigator processNavigator,
+        IProcessEventDispatcher processEventDispatcher)
     {
-        _instanceService = instanceService;
         _processReader = processReader;
         _profileService = profileService;
-        _processClient = processClient;
-        _appEvents = appEvents;
-        _taskEvents = taskEvents;
         _processNavigator = processNavigator;
-        _eventsService = eventsService;
-        _registerWithEventSystem = appSettings.Value.RegisterEventsWithEventsComponent;
-        _logger = logger;
+        _processEventDispatcher = processEventDispatcher;
     }
 
     /// <inheritdoc/>
@@ -107,7 +80,7 @@ public class ProcessEngine : IProcessEngine
 
         if (!processStartRequest.Dryrun)
         {
-            await UpdateProcessAndDispatchEvents(processStartRequest.Instance, processStartRequest.Prefill, new List<InstanceEvent> { startEvent, goToNextEvent });
+            await _processEventDispatcher.UpdateProcessAndDispatchEvents(processStartRequest.Instance, processStartRequest.Prefill, new List<InstanceEvent> { startEvent, goToNextEvent });
         }
 
         return new ProcessChangeResult()
@@ -121,7 +94,7 @@ public class ProcessEngine : IProcessEngine
     public async Task<ProcessChangeResult> Next(ProcessNextRequest request)
     {
         var instance = request.Instance;
-        string? currentElementId = instance.Process.CurrentTask?.ElementId;
+        string? currentElementId = instance.Process?.CurrentTask?.ElementId;
 
         if (currentElementId == null)
         {
@@ -132,9 +105,6 @@ public class ProcessEngine : IProcessEngine
                 ErrorType = "Conflict"
             };
         }
-
-        // Find next valid element. Later this will be dynamic
-        ProcessElement nextElement = await _processNavigator.GetNextTask(instance, currentElementId, request.Action);
 
         var nextResult = await HandleMoveToNext(instance, request.User, request.Action);
 
@@ -148,7 +118,7 @@ public class ProcessEngine : IProcessEngine
     /// <inheritdoc/>
     public async Task<Instance> UpdateInstanceAndRerunEvents(ProcessStartRequest startRequest, List<InstanceEvent> events)
     {
-        return await UpdateProcessAndDispatchEvents(startRequest.Instance, startRequest.Prefill, events);
+        return await _processEventDispatcher.UpdateProcessAndDispatchEvents(startRequest.Instance, startRequest.Prefill, events);
     }
 
     /// <summary>
@@ -209,10 +179,7 @@ public class ProcessEngine : IProcessEngine
 
         return null;
     }
-
-    /// <summary>
-    /// Assumes that nextElementId is a valid task/state
-    /// </summary>
+    
     private async Task<List<InstanceEvent>> MoveProcessToNext(
         Instance instance,
         ClaimsPrincipal user,
@@ -226,9 +193,8 @@ public class ProcessEngine : IProcessEngine
 
         ProcessElement nextElement = await _processNavigator.GetNextTask(instance, instance.Process.CurrentTask.ElementId, action);
         DateTime now = DateTime.UtcNow;
-        bool previousIsProcessTask = _processReader.IsProcessTask(previousElementId);
         // ending previous element if task
-        if (previousIsProcessTask)
+        if (_processReader.IsProcessTask(previousElementId))
         {
             instance.Process = previousState;
             events.Add(await GenerateProcessChangeEvent(InstanceEventType.process_EndTask.ToString(), instance, now, user));
@@ -269,82 +235,6 @@ public class ProcessEngine : IProcessEngine
         return events;
     }
 
-    /// <summary>
-    /// This 
-    /// </summary>
-    private async Task<Instance> UpdateProcessAndDispatchEvents(Instance instance, Dictionary<string, string>? prefill, List<InstanceEvent> events)
-    {
-        await HandleProcessChanges(instance, events, prefill);
-
-        // need to update the instance process and then the instance in case appbase has changed it, e.g. endEvent sets status.archived
-        Instance updatedInstance = await _instanceService.UpdateProcess(instance);
-        await _processClient.DispatchProcessEventsToStorage(updatedInstance, events);
-
-        // remember to get the instance anew since AppBase can have updated a data element or stored something in the database.
-        updatedInstance = await _instanceService.GetInstance(updatedInstance);
-
-        return updatedInstance;
-    }
-
-    /// <summary>
-    /// Will for each process change trigger relevant Process Elements to perform the relevant change actions.
-    ///
-    /// Each implementation 
-    /// </summary>
-    private async Task HandleProcessChanges(Instance instance, List<InstanceEvent> events, Dictionary<string, string>? prefill)
-    {
-        foreach (InstanceEvent processEvent in events)
-        {
-            if (Enum.TryParse<InstanceEventType>(processEvent.EventType, true, out InstanceEventType eventType))
-            {
-                string? elementId = processEvent.ProcessInfo?.CurrentTask?.ElementId;
-                ITask task = GetProcessTask(processEvent.ProcessInfo?.CurrentTask?.AltinnTaskType);
-                switch (eventType)
-                {
-                    case InstanceEventType.process_StartEvent:
-                        break;
-                    case InstanceEventType.process_StartTask:
-                        await task.HandleTaskStart(elementId, instance, prefill);
-                        break;
-                    case InstanceEventType.process_EndTask:
-                        await task.HandleTaskComplete(elementId, instance);
-                        break;
-                    case InstanceEventType.process_AbandonTask:
-                        await task.HandleTaskAbandon(elementId, instance);
-                        await _instanceService.UpdateProcess(instance);
-                        break;
-                    case InstanceEventType.process_EndEvent:
-                        await _appEvents.OnEndAppEvent(processEvent.ProcessInfo?.EndEvent, instance);
-                        break;
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    /// Identify the correct task implementation
-    /// </summary>
-    /// <returns></returns>
-    private ITask GetProcessTask(string? altinnTaskType)
-    {
-        if (string.IsNullOrEmpty(altinnTaskType))
-        {
-            return new NullTask();
-        }
-
-        ITask task = new DataTask(_taskEvents);
-        if (altinnTaskType.Equals("confirmation"))
-        {
-            task = new ConfirmationTask(_taskEvents);
-        }
-        else if (altinnTaskType.Equals("feedback"))
-        {
-            task = new FeedbackTask(_taskEvents);
-        }
-
-        return task;
-    }
-
     private async Task<InstanceEvent> GenerateProcessChangeEvent(string eventType, Instance instance, DateTime now, ClaimsPrincipal user)
     {
         int? userId = user.GetUserIdAsInt();
@@ -377,33 +267,11 @@ public class ProcessEngine : IProcessEngine
         var processStateChange = await ProcessNext(instance, user, action);
         if (processStateChange != null)
         {
-            instance = await UpdateProcessAndDispatchEvents(instance, new Dictionary<string, string>(), processStateChange.Events);
+            instance = await _processEventDispatcher.UpdateProcessAndDispatchEvents(instance, new Dictionary<string, string>(), processStateChange.Events);
 
-            await RegisterEventWithEventsComponent(instance);
+            await _processEventDispatcher.RegisterEventWithEventsComponent(instance);
         }
 
         return processStateChange;
-    }
-    
-    private async Task RegisterEventWithEventsComponent(Instance instance)
-    {
-        if (_registerWithEventSystem)
-        {
-            try
-            {
-                if (!string.IsNullOrWhiteSpace(instance.Process.CurrentTask?.ElementId))
-                {
-                    await _eventsService.AddEvent($"app.instance.process.movedTo.{instance.Process.CurrentTask.ElementId}", instance);
-                }
-                else if (instance.Process.EndEvent != null)
-                {
-                    await _eventsService.AddEvent("app.instance.process.completed", instance);
-                }
-            }
-            catch (Exception exception)
-            {
-                _logger.LogWarning(exception, "Exception when sending event with the Events component");
-            }
-        }
     }
 }
