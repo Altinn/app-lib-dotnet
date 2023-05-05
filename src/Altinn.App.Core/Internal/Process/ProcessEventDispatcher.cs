@@ -19,7 +19,7 @@ class ProcessEventDispatcher : IProcessEventDispatcher
     private readonly IAppEvents _appEvents;
     private readonly IEvents _eventsService;
     private readonly bool _registerWithEventSystem;
-    private ILogger<ProcessEventDispatcher> _logger;
+    private readonly ILogger<ProcessEventDispatcher> _logger;
 
     public ProcessEventDispatcher(
         IInstance instanceService, 
