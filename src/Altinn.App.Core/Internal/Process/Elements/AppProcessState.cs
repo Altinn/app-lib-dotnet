@@ -35,5 +35,5 @@ public class AppProcessState: ProcessState
     /// <summary>
     /// Gets or sets a status object containing the task info of the currentTask of an ongoing process.
     /// </summary>
-    public new AppProcessElementInfo CurrentTask { get; set; }
+    public new AppProcessElementInfo? CurrentTask { get; set; }
 }
