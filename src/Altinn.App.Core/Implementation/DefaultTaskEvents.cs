@@ -166,7 +166,8 @@ public class DefaultTaskEvents : ITaskEvents
         }
     }
 
-    private async Task RunRemoveShadowFields(Instance instance, Guid instanceGuid, List<DataType> dataTypesToLock) {
+    private async Task RunRemoveShadowFields(Instance instance, Guid instanceGuid, List<DataType> dataTypesToLock)
+    {
         if (dataTypesToLock.Find(dt => dt.AppLogic?.ShadowFields?.Prefix != null) != null)
         {
             await RemoveShadowFields(instance, instanceGuid, dataTypesToLock);
