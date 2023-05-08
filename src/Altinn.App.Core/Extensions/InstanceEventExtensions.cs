@@ -44,10 +44,10 @@ public static class InstanceEventExtensions
             },
             User = new PlatformUser
             {
-                AuthenticationLevel = original.User?.AuthenticationLevel ?? 0,
-                EndUserSystemId = original.User?.EndUserSystemId,
-                OrgId = original.User?.OrgId,
-                UserId = original.User?.UserId,
+                AuthenticationLevel = original.User.AuthenticationLevel,
+                EndUserSystemId = original.User.EndUserSystemId,
+                OrgId = original.User.OrgId,
+                UserId = original.User.UserId,
                 NationalIdentityNumber = original.User?.NationalIdentityNumber
             }
         };
