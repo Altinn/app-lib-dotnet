@@ -88,7 +88,7 @@ namespace Altinn.App.Api.Controllers
                     if (flowElement is ProcessTask processTask)
                     {
                         appProcessState.CurrentTask.Actions = new Dictionary<string, bool>();
-                        foreach (AltinnAction action in processTask.ExtensionElements?.AltinnProperties.AltinnActions ?? new List<AltinnAction>())
+                        foreach (AltinnAction action in processTask.ExtensionElements?.AltinnProperties?.AltinnActions ?? new List<AltinnAction>())
                         {
                             appProcessState.CurrentTask.Actions.Add(action.Id, await AuthorizeAction(action.Id, org, app, instanceOwnerPartyId, instanceGuid, flowElement.Id));
                         }
@@ -177,6 +177,7 @@ namespace Altinn.App.Api.Controllers
         [HttpGet("next")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
+        [Obsolete("From v8 of nuget package navigation is done by sending performed action to the next api. Available actions are returned in the GET /process endpoint")]
         public async Task<ActionResult<List<string>>> GetNextElements(
             [FromRoute] string org,
             [FromRoute] string app,
@@ -202,9 +203,7 @@ namespace Altinn.App.Api.Controllers
                     return Conflict($"Instance does not have valid info about currentTask");
                 }
                 
-                // List<ProcessElement> nextElements = await _flowHydration.NextFollowAndFilterGateways(instance, currentTaskId, false);
-                List<ProcessElement> nextElements = new List<ProcessElement>();
-                return Ok(nextElements.Select(e => e.Id).ToList());
+                return Ok(new List<string>());
             }
             catch (PlatformHttpException e)
             {

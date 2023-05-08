@@ -7,6 +7,11 @@ namespace Altinn.App.Core.Extensions;
 /// </summary>
 public static class InstanceEventExtensions
 {
+    /// <summary>
+    /// Copies the values of the original <see cref="InstanceEvent"/> to a new instance.
+    /// </summary>
+    /// <param name="original">The original <see cref="InstanceEvent"/>.</param>
+    /// <returns>New object with copies of values form original</returns>
     public static InstanceEvent CopyValues(this InstanceEvent original)
     {
         return new InstanceEvent

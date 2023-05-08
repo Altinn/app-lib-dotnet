@@ -470,7 +470,7 @@ namespace Altinn.App.Api.Controllers
                     Dryrun = false,
                     Prefill = instansiationInstance.Prefill
                 };
-                await _processEngine.UpdateInstanceAndRerunEvents(updateRequest, processResult.ProcessStateChange.Events);
+                await _processEngine.UpdateInstanceAndRerunEvents(updateRequest, processResult.ProcessStateChange?.Events);
             }
             catch (Exception exception)
             {

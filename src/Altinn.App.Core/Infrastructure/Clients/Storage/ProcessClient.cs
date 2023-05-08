@@ -89,10 +89,13 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             string org = instance.Org;
             string app = instance.AppId.Split("/")[1];
 
-            foreach (InstanceEvent instanceEvent in events)
+            if (events != null)
             {
-                instanceEvent.InstanceId = instance.Id;
-                await _instanceEventClient.SaveInstanceEvent(instanceEvent, org, app);
+                foreach (InstanceEvent instanceEvent in events)
+                {
+                    instanceEvent.InstanceId = instance.Id;
+                    await _instanceEventClient.SaveInstanceEvent(instanceEvent, org, app);
+                }
             }
         }
     }

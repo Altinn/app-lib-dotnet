@@ -337,6 +337,129 @@ public class ProcessEngineTest : IDisposable
     }
     
     [Fact]
+    public async Task Next_moves_instance_to_next_task_and_produces_abandon_instanceevent_when_action_reject()
+    {
+        var expectedInstance = new Instance()
+        {
+            InstanceOwner = new InstanceOwner()
+            {
+                PartyId = "1337"
+            },
+            Process = new ProcessState()
+            {
+                CurrentTask = new ProcessElementInfo()
+                {
+                    ElementId = "Task_2",
+                    Flow = 3,
+                    AltinnTaskType = "confirmation",
+                    Name = "Bekreft"
+                },
+                StartEvent = "StartEvent_1"
+            }
+        };
+        IProcessEngine processEngine = GetProcessEngine(null, expectedInstance);
+        Instance instance = new Instance()
+        {
+            InstanceOwner = new()
+            {
+                PartyId = "1337"
+            },
+            Process = new ProcessState()
+            {
+                StartEvent = "StartEvent_1",
+                CurrentTask = new()
+                {
+                    ElementId = "Task_1",
+                    AltinnTaskType = "data",
+                    Flow = 2,
+                    Validated = new()
+                    {
+                        CanCompleteTask = true
+                    }
+                }
+            }
+        };
+        ProcessState originalProcessState = instance.Process.Copy();
+        ClaimsPrincipal user = new(new ClaimsIdentity(new List<Claim>()
+        {
+            new(AltinnCoreClaimTypes.UserId, "1337"),
+            new(AltinnCoreClaimTypes.AuthenticationLevel, "2"),
+            new(AltinnCoreClaimTypes.Org, "tdd"),
+        }));
+        ProcessNextRequest processNextRequest = new ProcessNextRequest() { Instance = instance, User = user, Action = "reject" };
+        ProcessChangeResult result = await processEngine.Next(processNextRequest);
+        _processReaderMock.Verify(r => r.IsProcessTask("Task_1"), Times.Once);
+        _processReaderMock.Verify(r => r.IsEndEvent("Task_2"), Times.Once);
+        _processReaderMock.Verify(r => r.IsProcessTask("Task_2"), Times.Once);
+        _processNavigatorMock.Verify(n => n.GetNextTask(It.IsAny<Instance>(), "Task_1", "reject"), Times.Once);
+
+        var expectedInstanceEvents = new List<InstanceEvent>()
+        {
+            new()
+            {
+                EventType = InstanceEventType.process_AbandonTask.ToString(),
+                InstanceOwnerPartyId = "1337",
+                User = new()
+                {
+                    UserId = 1337,
+                    OrgId = "tdd",
+                    AuthenticationLevel = 2
+                },
+                ProcessInfo = new()
+                {
+                    StartEvent = "StartEvent_1",
+                    CurrentTask = new()
+                    {
+                        ElementId = "Task_1",
+                        Flow = 2,
+                        AltinnTaskType = "data",
+                        Validated = new()
+                        {
+                            CanCompleteTask = true
+                        }
+                    }
+                }
+            },
+
+            new()
+            {
+                EventType = InstanceEventType.process_StartTask.ToString(),
+                InstanceOwnerPartyId = "1337",
+                User = new()
+                {
+                    UserId = 1337,
+                    OrgId = "tdd",
+                    AuthenticationLevel = 2,
+                },
+                ProcessInfo = new()
+                {
+                    StartEvent = "StartEvent_1",
+                    CurrentTask = new()
+                    {
+                        ElementId = "Task_2",
+                        Name = "Bekreft",
+                        AltinnTaskType = "confirmation",
+                        Flow = 3
+                    }
+                }
+            }
+        };
+        _processEventDispatcherMock.Verify(d => d.UpdateProcessAndDispatchEvents(
+            It.Is<Instance>(i => CompareInstance(expectedInstance, i)),
+            It.IsAny<Dictionary<string, string>?>(),
+            It.Is<List<InstanceEvent>>(l => CompareInstanceEvents(expectedInstanceEvents, l))));
+        _processEventDispatcherMock.Verify(d => d.RegisterEventWithEventsComponent(It.Is<Instance>(i => CompareInstance(expectedInstance, i))));
+        result.Success.Should().BeTrue();
+        result.ProcessStateChange.Should().BeEquivalentTo(
+            new ProcessStateChange()
+            {
+                Events = expectedInstanceEvents,
+                NewProcessState = expectedInstance.Process,
+                OldProcessState = originalProcessState
+            });
+    }
+    
+    [Fact]
     public async Task Next_moves_instance_to_end_event_and_ends_proces()
     {
         var expectedInstance = new Instance()

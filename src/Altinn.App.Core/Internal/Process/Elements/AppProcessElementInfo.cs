@@ -3,13 +3,23 @@ using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Internal.Process.Elements;
 
+/// <summary>
+/// Extended representation of a status object that holds the process state of an application instance.
+/// </summary>
 public class AppProcessElementInfo: ProcessElementInfo
 {
+    /// <summary>
+    /// Create a new instance of <see cref="AppProcessElementInfo"/> with no fields set.
+    /// </summary>
     public AppProcessElementInfo()
     {
         Actions = new Dictionary<string, bool>();
     }
     
+    /// <summary>
+    /// Create a new instance of <see cref="AppProcessElementInfo"/> with values copied from <see cref="ProcessElementInfo"/>.
+    /// </summary>
+    /// <param name="processElementInfo">The <see cref="ProcessElementInfo"/> to copy values from.</param>
     public AppProcessElementInfo(ProcessElementInfo processElementInfo)
     {
         Flow = processElementInfo.Flow;

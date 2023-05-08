@@ -67,9 +67,8 @@ public class ProcessEngine : IProcessEngine
         // start process
         ProcessStateChange? startChange = await ProcessStart(processStartRequest.Instance, validStartElement!, processStartRequest.User);
         InstanceEvent? startEvent = startChange?.Events?.First().CopyValues();
-        ProcessStateChange nextChange = await ProcessNext(processStartRequest.Instance, processStartRequest.User);
-        //ProcessChangeResult nextChange = await Next(processStartRequest.InstanceIdentifier, processStartRequest.User);
-        InstanceEvent? goToNextEvent = nextChange.Events?.First().CopyValues();
+        ProcessStateChange? nextChange = await ProcessNext(processStartRequest.Instance, processStartRequest.User);
+        InstanceEvent? goToNextEvent = nextChange?.Events?.First().CopyValues();
         List<InstanceEvent> events = new List<InstanceEvent>();
         if (startEvent is not null)
         {
@@ -82,13 +81,13 @@ public class ProcessEngine : IProcessEngine
         ProcessStateChange processStateChange = new ProcessStateChange
         {
             OldProcessState = startChange?.OldProcessState,
-            NewProcessState = nextChange.NewProcessState,
+            NewProcessState = nextChange?.NewProcessState,
             Events = events
         };
 
         if (!processStartRequest.Dryrun)
         {
-            await _processEventDispatcher.UpdateProcessAndDispatchEvents(processStartRequest.Instance, processStartRequest.Prefill, new List<InstanceEvent> { startEvent, goToNextEvent });
+            await _processEventDispatcher.UpdateProcessAndDispatchEvents(processStartRequest.Instance, processStartRequest.Prefill, events);
         }
 
         return new ProcessChangeResult()
@@ -166,7 +165,7 @@ public class ProcessEngine : IProcessEngine
     /// <summary>
     /// Moves instance's process to nextElement id. Returns the instance together with process events.
     /// </summary>
-    private async Task<ProcessStateChange> ProcessNext(Instance instance, ClaimsPrincipal userContext, string? action = null)
+    private async Task<ProcessStateChange?> ProcessNext(Instance instance, ClaimsPrincipal userContext, string? action = null)
     {
         if (instance.Process != null)
         {
@@ -205,7 +204,12 @@ public class ProcessEngine : IProcessEngine
         if (_processReader.IsProcessTask(previousElementId))
         {
             instance.Process = previousState;
-            events.Add(await GenerateProcessChangeEvent(InstanceEventType.process_EndTask.ToString(), instance, now, user));
+            string eventType = InstanceEventType.process_EndTask.ToString();
+            if (action is "reject")
+            {
+                eventType = InstanceEventType.process_AbandonTask.ToString();
+            }
+            events.Add(await GenerateProcessChangeEvent(eventType, instance, now, user));
             instance.Process = currentState;
         }
 
@@ -228,9 +232,9 @@ public class ProcessEngine : IProcessEngine
             {
                 Flow = currentState.CurrentTask?.Flow + 1,
                 ElementId = nextElement!.Id,
-                Name = nextElement?.Name,
+                Name = nextElement.Name,
                 Started = now,
-                AltinnTaskType = task?.ExtensionElements?.AltinnProperties.TaskType,
+                AltinnTaskType = task?.ExtensionElements?.AltinnProperties?.TaskType,
                 Validated = null,
             };
 

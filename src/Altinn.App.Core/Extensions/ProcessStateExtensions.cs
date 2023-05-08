@@ -7,6 +7,11 @@ namespace Altinn.App.Core.Extensions;
 /// </summary>
 public static class ProcessStateExtensions
 {
+    /// <summary>
+    /// Copies the values of the original <see cref="ProcessState"/> to a new instance.
+    /// </summary>
+    /// <param name="original">The original <see cref="ProcessState"/>.</param>
+    /// <returns>New object with copies of values form original</returns>
     public static ProcessState Copy(this ProcessState original)
     {
         ProcessState copyOfState = new ProcessState();

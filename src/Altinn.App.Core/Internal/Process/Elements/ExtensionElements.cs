@@ -12,6 +12,6 @@ namespace Altinn.App.Core.Internal.Process.Elements
         /// Gets or sets the altinn properties
         /// </summary>
         [XmlElement("properties", Namespace = "http://altinn.no")]
-        public AltinnProperties AltinnProperties { get; set; }
+        public AltinnProperties? AltinnProperties { get; set; }
     }
 }
