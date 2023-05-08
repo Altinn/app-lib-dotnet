@@ -66,16 +66,24 @@ public class ProcessEngine : IProcessEngine
 
         // start process
         ProcessStateChange? startChange = await ProcessStart(processStartRequest.Instance, validStartElement!, processStartRequest.User);
-        InstanceEvent? startEvent = startChange?.Events.First().CopyValues();
+        InstanceEvent? startEvent = startChange?.Events?.First().CopyValues();
         ProcessStateChange nextChange = await ProcessNext(processStartRequest.Instance, processStartRequest.User);
         //ProcessChangeResult nextChange = await Next(processStartRequest.InstanceIdentifier, processStartRequest.User);
-        InstanceEvent goToNextEvent = nextChange.Events.First().CopyValues();
-
+        InstanceEvent? goToNextEvent = nextChange.Events?.First().CopyValues();
+        List<InstanceEvent> events = new List<InstanceEvent>();
+        if (startEvent is not null)
+        {
+            events.Add(startEvent);
+        }
+        if (goToNextEvent is not null)
+        {
+            events.Add(goToNextEvent);
+        }
         ProcessStateChange processStateChange = new ProcessStateChange
         {
-            OldProcessState = startChange.OldProcessState,
+            OldProcessState = startChange?.OldProcessState,
             NewProcessState = nextChange.NewProcessState,
-            Events = new List<InstanceEvent> { startEvent, goToNextEvent }
+            Events = events
         };
 
         if (!processStartRequest.Dryrun)
@@ -116,7 +124,7 @@ public class ProcessEngine : IProcessEngine
     }
 
     /// <inheritdoc/>
-    public async Task<Instance> UpdateInstanceAndRerunEvents(ProcessStartRequest startRequest, List<InstanceEvent> events)
+    public async Task<Instance> UpdateInstanceAndRerunEvents(ProcessStartRequest startRequest, List<InstanceEvent>? events)
     {
         return await _processEventDispatcher.UpdateProcessAndDispatchEvents(startRequest.Instance, startRequest.Prefill, events);
     }
@@ -191,7 +199,7 @@ public class ProcessEngine : IProcessEngine
         ProcessState currentState = instance.Process;
         string? previousElementId = currentState.CurrentTask?.ElementId;
 
-        ProcessElement nextElement = await _processNavigator.GetNextTask(instance, instance.Process.CurrentTask.ElementId, action);
+        ProcessElement? nextElement = await _processNavigator.GetNextTask(instance, instance.Process.CurrentTask.ElementId, action);
         DateTime now = DateTime.UtcNow;
         // ending previous element if task
         if (_processReader.IsProcessTask(previousElementId))
@@ -202,24 +210,24 @@ public class ProcessEngine : IProcessEngine
         }
 
         // ending process if next element is end event
-        if (_processReader.IsEndEvent(nextElement.Id))
+        if (_processReader.IsEndEvent(nextElement?.Id))
         {
             currentState.CurrentTask = null;
             currentState.Ended = now;
-            currentState.EndEvent = nextElement.Id;
+            currentState.EndEvent = nextElement!.Id;
 
             events.Add(await GenerateProcessChangeEvent(InstanceEventType.process_EndEvent.ToString(), instance, now, user));
 
             // add submit event (to support Altinn2 SBL)
             events.Add(await GenerateProcessChangeEvent(InstanceEventType.Submited.ToString(), instance, now, user));
         }
-        else if (_processReader.IsProcessTask(nextElement.Id))
+        else if (_processReader.IsProcessTask(nextElement?.Id))
         {
             var task = nextElement as ProcessTask;
             currentState.CurrentTask = new ProcessElementInfo
             {
                 Flow = currentState.CurrentTask?.Flow + 1,
-                ElementId = nextElement.Id,
+                ElementId = nextElement!.Id,
                 Name = nextElement?.Name,
                 Started = now,
                 AltinnTaskType = task?.ExtensionElements?.AltinnProperties.TaskType,

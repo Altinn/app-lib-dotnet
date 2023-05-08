@@ -20,9 +20,9 @@ namespace Altinn.App.Core.Tests.Internal.Process;
 public class ProcessEngineTest : IDisposable
 {
     private Mock<IProcessReader> _processReaderMock;
-    private Mock<IProfile> _profileMock;
-    private Mock<IProcessNavigator> _processNavigatorMock;
-    private Mock<IProcessEventDispatcher> _processEventDispatcherMock;
+    private readonly Mock<IProfile> _profileMock;
+    private readonly Mock<IProcessNavigator> _processNavigatorMock;
+    private readonly Mock<IProcessEventDispatcher> _processEventDispatcherMock;
 
     public ProcessEngineTest()
     {

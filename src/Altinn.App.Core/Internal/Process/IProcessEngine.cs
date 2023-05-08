@@ -24,6 +24,6 @@ namespace Altinn.App.Core.Internal.Process
         /// <param name="startRequest"></param>
         /// <param name="events"></param>
         /// <returns></returns>
-        Task<Instance> UpdateInstanceAndRerunEvents(ProcessStartRequest startRequest, List<InstanceEvent> events);
+        Task<Instance> UpdateInstanceAndRerunEvents(ProcessStartRequest startRequest, List<InstanceEvent>? events);
     }
 }

@@ -40,7 +40,7 @@ class ProcessEventDispatcher : IProcessEventDispatcher
     }
 
     /// <inheritdoc/>
-    public async Task<Instance> UpdateProcessAndDispatchEvents(Instance instance, Dictionary<string, string>? prefill, List<InstanceEvent> events)
+    public async Task<Instance> UpdateProcessAndDispatchEvents(Instance instance, Dictionary<string, string>? prefill, List<InstanceEvent>? events)
     {
         await HandleProcessChanges(instance, events, prefill);
 
@@ -82,31 +82,34 @@ class ProcessEventDispatcher : IProcessEventDispatcher
     ///
     /// Each implementation 
     /// </summary>
-    private async Task HandleProcessChanges(Instance instance, List<InstanceEvent> events, Dictionary<string, string>? prefill)
+    private async Task HandleProcessChanges(Instance instance, List<InstanceEvent>? events, Dictionary<string, string>? prefill)
     {
-        foreach (InstanceEvent processEvent in events)
+        if (events != null)
         {
-            if (Enum.TryParse<InstanceEventType>(processEvent.EventType, true, out InstanceEventType eventType))
+            foreach (InstanceEvent processEvent in events)
             {
-                string? elementId = processEvent.ProcessInfo?.CurrentTask?.ElementId;
-                ITask task = GetProcessTask(processEvent.ProcessInfo?.CurrentTask?.AltinnTaskType);
-                switch (eventType)
+                if (Enum.TryParse<InstanceEventType>(processEvent.EventType, true, out InstanceEventType eventType))
                 {
-                    case InstanceEventType.process_StartEvent:
-                        break;
-                    case InstanceEventType.process_StartTask:
-                        await task.HandleTaskStart(elementId, instance, prefill);
-                        break;
-                    case InstanceEventType.process_EndTask:
-                        await task.HandleTaskComplete(elementId, instance);
-                        break;
-                    case InstanceEventType.process_AbandonTask:
-                        await task.HandleTaskAbandon(elementId, instance);
-                        await _instanceService.UpdateProcess(instance);
-                        break;
-                    case InstanceEventType.process_EndEvent:
-                        await _appEvents.OnEndAppEvent(processEvent.ProcessInfo?.EndEvent, instance);
-                        break;
+                    string? elementId = processEvent.ProcessInfo?.CurrentTask?.ElementId;
+                    ITask task = GetProcessTask(processEvent.ProcessInfo?.CurrentTask?.AltinnTaskType);
+                    switch (eventType)
+                    {
+                        case InstanceEventType.process_StartEvent:
+                            break;
+                        case InstanceEventType.process_StartTask:
+                            await task.HandleTaskStart(elementId, instance, prefill);
+                            break;
+                        case InstanceEventType.process_EndTask:
+                            await task.HandleTaskComplete(elementId, instance);
+                            break;
+                        case InstanceEventType.process_AbandonTask:
+                            await task.HandleTaskAbandon(elementId, instance);
+                            await _instanceService.UpdateProcess(instance);
+                            break;
+                        case InstanceEventType.process_EndEvent:
+                            await _appEvents.OnEndAppEvent(processEvent.ProcessInfo?.EndEvent, instance);
+                            break;
+                    }
                 }
             }
         }

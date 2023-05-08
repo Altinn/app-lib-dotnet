@@ -304,7 +304,7 @@ namespace Altinn.App.Api.Controllers
                     Dryrun = false,
                 };
                 _logger.LogInformation("Events sent to process engine: {Events}", change?.Events);
-                await _processEngine.UpdateInstanceAndRerunEvents(request, change.Events);
+                await _processEngine.UpdateInstanceAndRerunEvents(request, change?.Events);
             }
             catch (Exception exception)
             {
