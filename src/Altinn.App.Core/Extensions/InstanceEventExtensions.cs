@@ -27,12 +27,12 @@ public static class InstanceEventExtensions
                 Started = original.ProcessInfo?.Started,
                 CurrentTask = new ProcessElementInfo
                 {
-                    Flow = original.ProcessInfo?.CurrentTask.Flow,
-                    AltinnTaskType = original.ProcessInfo?.CurrentTask.AltinnTaskType,
-                    ElementId = original.ProcessInfo?.CurrentTask.ElementId,
-                    Name = original.ProcessInfo?.CurrentTask.Name,
-                    Started = original.ProcessInfo?.CurrentTask.Started,
-                    Ended = original.ProcessInfo?.CurrentTask.Ended,
+                    Flow = original.ProcessInfo?.CurrentTask?.Flow,
+                    AltinnTaskType = original.ProcessInfo?.CurrentTask?.AltinnTaskType,
+                    ElementId = original.ProcessInfo?.CurrentTask?.ElementId,
+                    Name = original.ProcessInfo?.CurrentTask?.Name,
+                    Started = original.ProcessInfo?.CurrentTask?.Started,
+                    Ended = original.ProcessInfo?.CurrentTask?.Ended,
                     Validated = new ValidationStatus
                     {
                         CanCompleteTask = original.ProcessInfo?.CurrentTask?.Validated?.CanCompleteTask ?? false,
@@ -44,10 +44,10 @@ public static class InstanceEventExtensions
             },
             User = new PlatformUser
             {
-                AuthenticationLevel = original.User.AuthenticationLevel,
-                EndUserSystemId = original.User.EndUserSystemId,
-                OrgId = original.User.OrgId,
-                UserId = original.User.UserId,
+                AuthenticationLevel = original.User?.AuthenticationLevel ?? 0,
+                EndUserSystemId = original.User?.EndUserSystemId,
+                OrgId = original.User?.OrgId,
+                UserId = original.User?.UserId,
                 NationalIdentityNumber = original.User?.NationalIdentityNumber
             }
         };
