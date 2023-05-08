@@ -232,7 +232,7 @@ public class ProcessEngine : IProcessEngine
             {
                 Flow = currentState.CurrentTask?.Flow + 1,
                 ElementId = nextElement!.Id,
-                Name = nextElement.Name,
+                Name = nextElement!.Name,
                 Started = now,
                 AltinnTaskType = task?.ExtensionElements?.AltinnProperties?.TaskType,
                 Validated = null,
