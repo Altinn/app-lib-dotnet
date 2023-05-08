@@ -13,6 +13,7 @@ namespace Altinn.App.Core.Internal.App
         public FrontendFeatures()
         {
             features.Add("footer", true);
+            features.Add("json_in_validation_errors", true);
         }
 
         /// <inheritdoc />

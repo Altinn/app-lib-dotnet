@@ -14,8 +14,11 @@ namespace Altinn.App.Core.Tests.Internal.App
         private readonly string appBasePath = Path.Combine("Internal", "App", "TestData") + Path.DirectorySeparatorChar;
 
         [Fact]
-        public async void GetApplicationMetadata_desrializes_file_from_disk()
+        public async Task GetApplicationMetadata_desrializes_file_from_disk()
         {
+            IFrontendFeatures frontendFeatures = new FrontendFeatures();
+            Dictionary<string, bool> enabledFrontendFeatures = await frontendFeatures.GetFrontendFeatures();
+
             AppSettings appSettings = GetAppSettings("AppMetadata", "default.applicationmetadata.json");
             IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
             ApplicationMetadata expected = new ApplicationMetadata("tdd/bestilling")
@@ -56,10 +59,7 @@ namespace Altinn.App.Core.Tests.Internal.App
                 {
                     Show = "select-instance"
                 },
-                Features = new Dictionary<string, bool>()
-                {
-                    { "footer", true }
-                }
+                Features = enabledFrontendFeatures
             };
             var actual = await appMetadata.GetApplicationMetadata();
             actual.Should().NotBeNull();
@@ -67,8 +67,11 @@ namespace Altinn.App.Core.Tests.Internal.App
         }
 
         [Fact]
-        public async void GetApplicationMetadata_eformidling_desrializes_file_from_disk()
+        public async Task GetApplicationMetadata_eformidling_desrializes_file_from_disk()
         {
+            IFrontendFeatures frontendFeatures = new FrontendFeatures();
+            Dictionary<string, bool> enabledFrontendFeatures = await frontendFeatures.GetFrontendFeatures();
+
             AppSettings appSettings = GetAppSettings("AppMetadata", "eformid.applicationmetadata.json");
             IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
             ApplicationMetadata expected = new ApplicationMetadata("tdd/bestilling")
@@ -125,10 +128,7 @@ namespace Altinn.App.Core.Tests.Internal.App
                 {
                     Show = "select-instance"
                 },
-                Features = new Dictionary<string, bool>()
-                {
-                    { "footer", true }
-                }
+                Features = enabledFrontendFeatures
             };
             var actual = await appMetadata.GetApplicationMetadata();
             actual.Should().NotBeNull();

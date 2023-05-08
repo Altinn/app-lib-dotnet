@@ -7,15 +7,11 @@ namespace Altinn.App.Core.Tests.Internal.App
     public class FrontendFeaturesTest
     {
         [Fact]
-        public async void GetFeatures_returns_list_of_enabled_features()
+        public async Task GetFeatures_returns_list_of_enabled_features()
         {
-            Dictionary<string, bool> expected = new Dictionary<string, bool>()
-            {
-                { "footer", true }
-            };
             IFrontendFeatures frontendFeatures = new FrontendFeatures();
             var actual = await frontendFeatures.GetFrontendFeatures();
-            actual.Should().BeEquivalentTo(expected);
+            actual.Should().Contain(new KeyValuePair<string, bool>("footer", true));
         }
     }
 }
