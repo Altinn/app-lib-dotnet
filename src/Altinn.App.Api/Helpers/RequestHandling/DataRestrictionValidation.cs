@@ -41,8 +41,7 @@ namespace Altinn.App.Api.Helpers.RequestHandling
                 return false;
             }
 
-            ContentDispositionHeaderValue contentDisposition = ContentDispositionHeaderValue.Parse(headerValues);
-            string? filename = contentDisposition.FileNameStar ?? contentDisposition.FileName;
+            string? filename = GetFileNameFromHeader(headerValues);
 
             if (string.IsNullOrEmpty(filename))
             {
@@ -50,9 +49,6 @@ namespace Altinn.App.Api.Helpers.RequestHandling
                 return false;
             }
 
-            // We actively remove quotes because we don't want them replaced with '_'.
-            // Quotes around filename in Content-Disposition is valid, but not as part of the filename.
-            filename = filename.Trim('\"').AsFileName(false);
             string[] splitFilename = filename.Split('.');
 
             if (splitFilename.Length < 2)
@@ -90,6 +86,21 @@ namespace Altinn.App.Api.Helpers.RequestHandling
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Uses the provided header to extract the filename
+        /// </summary>
+        public static string? GetFileNameFromHeader(StringValues headerValues)
+        {
+            ContentDispositionHeaderValue contentDisposition = ContentDispositionHeaderValue.Parse(headerValues);
+            string? filename = contentDisposition.FileNameStar ?? contentDisposition.FileName;
+            
+            // We actively remove quotes because we don't want them replaced with '_'.
+            // Quotes around filename in Content-Disposition is valid, but not as part of the filename.
+            filename = filename?.Trim('\"').AsFileName(false);
+
+            return filename;
         }
     }
 }

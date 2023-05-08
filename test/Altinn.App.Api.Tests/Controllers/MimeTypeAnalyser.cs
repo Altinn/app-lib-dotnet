@@ -58,6 +58,7 @@ namespace Altinn.App.Api.Tests.Controllers
             {                
                 fileAnalysisResult.Extensions = match.Definition.File.Extensions.ToList();
                 fileAnalysisResult.MimeType = match.Definition.File.MimeType;
+                fileAnalysisResult.Filename = filename;
             }
             
             return fileAnalysisResult;
