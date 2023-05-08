@@ -235,6 +235,48 @@ public class InstancesController_CopyInstanceTests
     }
 
     [Fact]
+    public async Task CopyInstance_PlatformReturnsError_ThrowsException()
+    {
+        // Arrange
+        const string Org = "ttd";
+        const string AppName = "copy-instance";
+        int instanceOwnerPartyId = 343234;
+        Guid instanceGuid = Guid.NewGuid();
+
+        // Simulate a BadGateway respons from Platform
+        PlatformHttpException platformHttpException =
+            await PlatformHttpException.CreateAsync(new HttpResponseMessage(System.Net.HttpStatusCode.BadGateway));
+
+        _httpContextMock.Setup(httpContext => httpContext.User).Returns(PrincipalUtil.GetUserPrincipal(1337));
+        _appMetadata.Setup(a => a.GetApplicationMetadata())
+            .ReturnsAsync(CreateApplicationMetadata($"{Org}/{AppName}", true));
+        _pdp.Setup<Task<XacmlJsonResponse>>(p => p.GetDecisionForRequest(It.IsAny<XacmlJsonRequestRoot>()))
+            .ReturnsAsync(CreateXacmlResponse("Permit"));
+        _instanceClient.Setup(i => i.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>()))
+            .ThrowsAsync(platformHttpException);
+
+        PlatformHttpException? actual = null;
+
+        // Act
+        try
+        {
+            await SUT.CopyInstance("ttd", "copy-instance", instanceOwnerPartyId, instanceGuid);
+        }
+        catch (PlatformHttpException phe)
+        {
+            actual = phe;
+        }
+
+        // Assert
+        Assert.NotNull(actual);
+
+        _appMetadata.VerifyAll();
+        _pdp.VerifyAll();
+        _instanceClient.VerifyAll();
+        VerifyNoOtherCalls();
+    }
+
+    [Fact]
     public async Task CopyInstance_InstantiationValidationFails_ReturnsForbidden()
     {
         // Arrange
