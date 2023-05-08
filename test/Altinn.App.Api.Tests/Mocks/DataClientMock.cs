@@ -1,9 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Text.Json;
-using System.Threading.Tasks;
 using System.Xml.Serialization;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Core.Extensions;
@@ -307,6 +302,11 @@ namespace App.IntegrationTests.Mocks.Services
             }
 
             return dataElements;
+        }
+
+        public Task<DataElement> UpdateBinaryData(InstanceIdentifier instanceIdentifier, string? contentType, string filename, Guid dataGuid, Stream stream)
+        {
+            throw new NotImplementedException();
         }
     }
 }
