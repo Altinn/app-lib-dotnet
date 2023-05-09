@@ -4,6 +4,7 @@ using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
+using Microsoft.FeatureManagement;
 using Moq;
 using Xunit;
 
@@ -16,7 +17,8 @@ namespace Altinn.App.Core.Tests.Internal.App
         [Fact]
         public async Task GetApplicationMetadata_desrializes_file_from_disk()
         {
-            IFrontendFeatures frontendFeatures = new FrontendFeatures();
+            var featureManagerMock = new Mock<IFeatureManager>();
+            IFrontendFeatures frontendFeatures = new FrontendFeatures(featureManagerMock.Object);
             Dictionary<string, bool> enabledFrontendFeatures = await frontendFeatures.GetFrontendFeatures();
 
             AppSettings appSettings = GetAppSettings("AppMetadata", "default.applicationmetadata.json");
@@ -69,7 +71,8 @@ namespace Altinn.App.Core.Tests.Internal.App
         [Fact]
         public async Task GetApplicationMetadata_eformidling_desrializes_file_from_disk()
         {
-            IFrontendFeatures frontendFeatures = new FrontendFeatures();
+            var featureManagerMock = new Mock<IFeatureManager>();
+            IFrontendFeatures frontendFeatures = new FrontendFeatures(featureManagerMock.Object);
             Dictionary<string, bool> enabledFrontendFeatures = await frontendFeatures.GetFrontendFeatures();
 
             AppSettings appSettings = GetAppSettings("AppMetadata", "eformid.applicationmetadata.json");
@@ -271,9 +274,11 @@ namespace Altinn.App.Core.Tests.Internal.App
 
         private static IAppMetadata SetupAppMedata(IOptions<AppSettings> appsettings, IFrontendFeatures frontendFeatures = null)
         {
+            var featureManagerMock = new Mock<IFeatureManager>();
+
             if (frontendFeatures == null)
             {
-                return new AppMetadata(appsettings, new FrontendFeatures());
+                return new AppMetadata(appsettings, new FrontendFeatures(featureManagerMock.Object));
             }
             
             return new AppMetadata(appsettings, frontendFeatures);

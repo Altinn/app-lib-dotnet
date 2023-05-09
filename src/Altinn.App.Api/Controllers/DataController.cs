@@ -1,6 +1,5 @@
 using System.Net;
 using System.Security.Claims;
-using Altinn.ApiClients.Maskinporten.Models;
 using Altinn.App.Api.Helpers.RequestHandling;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Core.Constants;
@@ -18,9 +17,9 @@ using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
+using Microsoft.FeatureManagement;
 using Microsoft.Net.Http.Headers;
 
 namespace Altinn.App.Api.Controllers
@@ -44,7 +43,7 @@ namespace Altinn.App.Api.Controllers
         private readonly IPrefill _prefillService;
         private readonly IFileAnalysisService _fileAnalyserService;
         private readonly IFileValidationService _fileValidationService;
-
+        private readonly IFeatureManager _featureManager;
         private const long REQUEST_SIZE_LIMIT = 2000 * 1024 * 1024;
 
         /// <summary>
@@ -58,6 +57,7 @@ namespace Altinn.App.Api.Controllers
         /// <param name="appModel">Service for generating app model</param>
         /// <param name="appResourcesService">The apps resource service</param>
         /// <param name="appMetadata">The app metadata service</param>
+        /// <param name="featureManager">The feature manager controlling enabled features.</param>
         /// <param name="prefillService">A service with prefill related logic.</param>
         /// <param name="fileAnalyserService">Service used to analyse files uploaded.</param>
         /// <param name="fileValidationService">Service used to validate files uploaded.</param>
@@ -72,7 +72,8 @@ namespace Altinn.App.Api.Controllers
             IPrefill prefillService,
             IFileAnalysisService fileAnalyserService,
             IFileValidationService fileValidationService,
-            IAppMetadata appMetadata)
+            IAppMetadata appMetadata,
+            IFeatureManager featureManager)
         {
             _logger = logger;
 
@@ -86,6 +87,7 @@ namespace Altinn.App.Api.Controllers
             _prefillService = prefillService;
             _fileAnalyserService = fileAnalyserService;
             _fileValidationService = fileValidationService;
+            _featureManager = featureManager;
         }
 
         /// <summary>
@@ -151,9 +153,10 @@ namespace Altinn.App.Api.Controllers
                 }
                 else
                 {
-                    if (!DataRestrictionValidation.CompliesWithDataRestrictions(Request, dataTypeFromMetadata, out ActionResult errorResponse))
+                    (bool validationRestrictionSuccess, List<ValidationIssue> errors) = DataRestrictionValidation.CompliesWithDataRestrictions(Request, dataTypeFromMetadata);
+                    if (!validationRestrictionSuccess)
                     {
-                        return errorResponse;
+                        return new BadRequestObjectResult(GetErrorDetails(errors));
                     }
 
                     List<FileAnalysisResult> fileAnalysisResults = new();
@@ -176,7 +179,7 @@ namespace Altinn.App.Api.Controllers
 
                     if (!fileValidationSuccess)
                     {
-                        return new BadRequestObjectResult(validationIssues);
+                        return new BadRequestObjectResult(errors);
                     }
 
                     return await CreateBinaryData(org, app, instance, dataType);
@@ -185,6 +188,26 @@ namespace Altinn.App.Api.Controllers
             catch (PlatformHttpException e)
             {
                 return HandlePlatformHttpException(e, $"Cannot create data element of {dataType} for {instanceOwnerPartyId}/{instanceGuid}");
+            }
+        }
+
+        /// <summary>
+        /// File validation requires json object in response and is introduced in the
+        /// the methods above validating files. In order to be consistent for the return types
+        /// of this controller, old methods are updated to return json object in response.
+        /// Since this is a breaking change, a feature flag is introduced to control the behaviour,
+        /// and the developer need to opt-in to the new behaviour. Json object are by default
+        /// returned as part of file validation which is a new feature.
+        /// </summary>
+        private async Task<object> GetErrorDetails(List<ValidationIssue> errors)
+        {
+            if (await _featureManager.IsEnabledAsync(FeatureFlags.JsonObjectInDataResponse))
+            {
+                return errors;
+            }
+            else
+            {
+                return errors.Select(x => x.Description);
             }
         }
 
@@ -307,9 +330,10 @@ namespace Altinn.App.Api.Controllers
                 }
 
                 DataType dataTypeFromMetadata = (await _appMetadata.GetApplicationMetadata()).DataTypes.FirstOrDefault(e => e.Id.Equals(dataType, StringComparison.InvariantCultureIgnoreCase));
-                if (!DataRestrictionValidation.CompliesWithDataRestrictions(Request, dataTypeFromMetadata, out ActionResult errorResponse))
+                (bool validationRestrictionSuccess, List<ValidationIssue> errors) = DataRestrictionValidation.CompliesWithDataRestrictions(Request, dataTypeFromMetadata);
+                if (!validationRestrictionSuccess)
                 {
-                    return errorResponse;
+                    return new BadRequestObjectResult(GetErrorDetails(errors));
                 }
 
                 return await PutBinaryData(instanceOwnerPartyId, instanceGuid, dataGuid);
