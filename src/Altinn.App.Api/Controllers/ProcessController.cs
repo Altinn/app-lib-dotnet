@@ -1,22 +1,21 @@
 using System.Net;
-
 using Altinn.App.Api.Infrastructure.Filters;
+using Altinn.App.Api.Models;
 using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
-using Altinn.App.Core.Internal.Process.Elements.Base;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Authorization.ABAC.Xacml.JsonProfile;
 using Altinn.Common.PEP.Helpers;
 using Altinn.Common.PEP.Interfaces;
 using Altinn.Platform.Storage.Interface.Models;
-
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using AppProcessState = Altinn.App.Core.Internal.Process.Elements.AppProcessState;
 
 namespace Altinn.App.Api.Controllers
 {
@@ -92,12 +91,12 @@ namespace Altinn.App.Api.Controllers
                         {
                             appProcessState.CurrentTask.Actions.Add(action.Id, await AuthorizeAction(action.Id, org, app, instanceOwnerPartyId, instanceGuid, flowElement.Id));
                         }
-                        
+
                         appProcessState.CurrentTask.HasWriteAccess = await AuthorizeAction("write", org, app, instanceOwnerPartyId, instanceGuid, flowElement.Id);
                         appProcessState.CurrentTask.HasReadAccess = await AuthorizeAction("read", org, app, instanceOwnerPartyId, instanceGuid, flowElement.Id);
                     }
                 }
-                
+
                 return Ok(appProcessState);
             }
             catch (PlatformHttpException e)
@@ -202,7 +201,7 @@ namespace Altinn.App.Api.Controllers
                 {
                     return Conflict($"Instance does not have valid info about currentTask");
                 }
-                
+
                 return Ok(new List<string>());
             }
             catch (PlatformHttpException e)
@@ -245,7 +244,6 @@ namespace Altinn.App.Api.Controllers
         /// <param name="instanceOwnerPartyId">unique id of the party that is the owner of the instance</param>
         /// <param name="instanceGuid">unique id to identify the instance</param>
         /// <param name="elementId">obsolete: alias for action</param>
-        /// <param name="action">action performed</param>
         /// <param name="lang">Optional parameter to pass on the language used in the form if this differs from the profile language,
         /// which otherwise is used automatically. The language is picked up when generating the PDF when leaving a step, 
         /// and is not used for anything else.
@@ -260,11 +258,16 @@ namespace Altinn.App.Api.Controllers
             [FromRoute] int instanceOwnerPartyId,
             [FromRoute] Guid instanceGuid,
             [FromQuery] string elementId = null,
-            [FromQuery] string action = null,
             [FromQuery] string lang = null)
         {
             try
             {
+                ProcessNext? processNext = null;
+                if (Request.Body != null && Request.Body.CanRead)
+                {
+                    processNext = await DeserializeFromStream<ProcessNext>(Request.Body);
+                }
+                
                 Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
 
                 if (instance.Process == null)
@@ -285,16 +288,8 @@ namespace Altinn.App.Api.Controllers
                 }
 
                 bool authorized;
-                string checkedAction = action;
-                if (action != null)
-                {
-                    authorized = await AuthorizeAction(action, org, app, instanceOwnerPartyId, instanceGuid);
-                }
-                else
-                {
-                    authorized = await AuthorizeAction(altinnTaskType, org, app, instanceOwnerPartyId, instanceGuid);
-                    checkedAction = altinnTaskType;
-                }
+                string checkedAction = processNext?.Action ?? altinnTaskType;
+                authorized = await AuthorizeAction(checkedAction, org, app, instanceOwnerPartyId, instanceGuid);
 
                 if (!authorized)
                 {
@@ -487,7 +482,7 @@ namespace Altinn.App.Api.Controllers
                     actionType = currentTaskType;
                     break;
             }
-            
+
             _logger.LogInformation("About to authorize action {ActionType}", actionType);
             XacmlJsonRequestRoot request = DecisionHelper.CreateDecisionRequest(org, app, HttpContext.User, actionType, instanceOwnerPartyId, instanceGuid, taskId);
             XacmlJsonResponse response = await _pdp.GetDecisionForRequest(request);
@@ -519,6 +514,13 @@ namespace Altinn.App.Api.Controllers
             {
                 return ExceptionResponse(e, defaultMessage);
             }
+        }
+        
+        private static async Task<T> DeserializeFromStream<T>(Stream stream)
+        {
+            StreamReader reader = new StreamReader(stream);
+            string text = await reader.ReadToEndAsync();
+            return JsonConvert.DeserializeObject<T>(text);
         }
     }
 }

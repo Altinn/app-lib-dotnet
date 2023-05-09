@@ -265,7 +265,6 @@ namespace Altinn.App.Api.Controllers
             ConditionallySetReadStatus(instanceTemplate);
 
             Instance instance;
-            ProcessStateChange processResult;
             instanceTemplate.Process = null;
             ProcessStateChange? change = null;
             
