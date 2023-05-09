@@ -518,7 +518,7 @@ namespace Altinn.App.Api.Controllers
         
         private static async Task<T> DeserializeFromStream<T>(Stream stream)
         {
-            StreamReader reader = new StreamReader(stream);
+            using StreamReader reader = new StreamReader(stream);
             string text = await reader.ReadToEndAsync();
             return JsonConvert.DeserializeObject<T>(text);
         }
