@@ -80,22 +80,7 @@ namespace Altinn.App.Api.Controllers
             try
             {
                 Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
-                AppProcessState appProcessState = new AppProcessState(instance.Process);
-                if (appProcessState.CurrentTask?.ElementId != null)
-                {
-                    var flowElement = _processReader.GetFlowElement(appProcessState.CurrentTask.ElementId);
-                    if (flowElement is ProcessTask processTask)
-                    {
-                        appProcessState.CurrentTask.Actions = new Dictionary<string, bool>();
-                        foreach (AltinnAction action in processTask.ExtensionElements?.AltinnProperties?.AltinnActions ?? new List<AltinnAction>())
-                        {
-                            appProcessState.CurrentTask.Actions.Add(action.Id, await AuthorizeAction(action.Id, org, app, instanceOwnerPartyId, instanceGuid, flowElement.Id));
-                        }
-
-                        appProcessState.CurrentTask.HasWriteAccess = await AuthorizeAction("write", org, app, instanceOwnerPartyId, instanceGuid, flowElement.Id);
-                        appProcessState.CurrentTask.HasReadAccess = await AuthorizeAction("read", org, app, instanceOwnerPartyId, instanceGuid, flowElement.Id);
-                    }
-                }
+                AppProcessState appProcessState = await ConvertAndAuthorizeActions(org, app, instanceOwnerPartyId, instanceGuid, instance.Process);
 
                 return Ok(appProcessState);
             }
@@ -124,7 +109,7 @@ namespace Altinn.App.Api.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
         [Authorize(Policy = "InstanceInstantiate")]
-        public async Task<ActionResult<ProcessState>> StartProcess(
+        public async Task<ActionResult<AppProcessState>> StartProcess(
             [FromRoute] string org,
             [FromRoute] string app,
             [FromRoute] int instanceOwnerPartyId,
@@ -149,8 +134,9 @@ namespace Altinn.App.Api.Controllers
                 {
                     return Conflict(result.ErrorMessage);
                 }
-
-                return Ok(result.ProcessStateChange?.NewProcessState);
+                
+                AppProcessState appProcessState = await ConvertAndAuthorizeActions(org, app, instanceOwnerPartyId, instanceGuid, result.ProcessStateChange?.NewProcessState);
+                return Ok(appProcessState);
             }
             catch (PlatformHttpException e)
             {
@@ -252,7 +238,7 @@ namespace Altinn.App.Api.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
-        public async Task<ActionResult<ProcessState>> NextElement(
+        public async Task<ActionResult<AppProcessState>> NextElement(
             [FromRoute] string org,
             [FromRoute] string app,
             [FromRoute] int instanceOwnerPartyId,
@@ -308,7 +294,9 @@ namespace Altinn.App.Api.Controllers
                     return Conflict(result.ErrorMessage);
                 }
 
-                return Ok(result.ProcessStateChange?.NewProcessState);
+                AppProcessState appProcessState = await ConvertAndAuthorizeActions(org, app, instanceOwnerPartyId, instanceGuid, result.ProcessStateChange?.NewProcessState);
+
+                return Ok(appProcessState);
             }
             catch (PlatformHttpException e)
             {
@@ -333,7 +321,7 @@ namespace Altinn.App.Api.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
-        public async Task<ActionResult<ProcessState>> CompleteProcess(
+        public async Task<ActionResult<AppProcessState>> CompleteProcess(
             [FromRoute] string org,
             [FromRoute] string app,
             [FromRoute] int instanceOwnerPartyId,
@@ -418,7 +406,8 @@ namespace Altinn.App.Api.Controllers
                 return StatusCode(500, $"More than {counter} iterations detected in process. Possible loop. Fix app process definition!");
             }
 
-            return Ok(instance.Process);
+            AppProcessState appProcessState = await ConvertAndAuthorizeActions(org, app, instanceOwnerPartyId, instanceGuid, instance.Process);
+            return Ok(appProcessState);
         }
 
         /// <summary>
@@ -445,6 +434,28 @@ namespace Altinn.App.Api.Controllers
                 _logger.LogError($"Unable to find retrieve process history for instance {instanceOwnerPartyId}/{instanceGuid}. Exception: {processException}");
                 return ExceptionResponse(processException, $"Unable to find retrieve process history for instance {instanceOwnerPartyId}/{instanceGuid}. Exception: {processException}");
             }
+        }
+        
+        private async Task<AppProcessState> ConvertAndAuthorizeActions(string org, string app, int instanceOwnerPartyId, Guid instanceGuid, ProcessState? processState)
+        {
+            AppProcessState appProcessState = new AppProcessState(processState);
+            if (appProcessState.CurrentTask?.ElementId != null)
+            {
+                var flowElement = _processReader.GetFlowElement(appProcessState.CurrentTask.ElementId);
+                if (flowElement is ProcessTask processTask)
+                {
+                    appProcessState.CurrentTask.Actions = new Dictionary<string, bool>();
+                    foreach (AltinnAction action in processTask.ExtensionElements?.AltinnProperties?.AltinnActions ?? new List<AltinnAction>())
+                    {
+                        appProcessState.CurrentTask.Actions.Add(action.Id, await AuthorizeAction(action.Id, org, app, instanceOwnerPartyId, instanceGuid, flowElement.Id));
+                    }
+
+                    appProcessState.CurrentTask.HasWriteAccess = await AuthorizeAction("write", org, app, instanceOwnerPartyId, instanceGuid, flowElement.Id);
+                    appProcessState.CurrentTask.HasReadAccess = await AuthorizeAction("read", org, app, instanceOwnerPartyId, instanceGuid, flowElement.Id);
+                }
+            }
+
+            return appProcessState;
         }
 
         private ActionResult ExceptionResponse(Exception exception, string message)

@@ -20,8 +20,13 @@ public class AppProcessState: ProcessState
     /// Constructor that takes a ProcessState object and copies the values.
     /// </summary>
     /// <param name="processState"></param>
-    public AppProcessState(ProcessState processState)
+    public AppProcessState(ProcessState? processState)
     {
+        if(processState == null)
+        {
+            return;
+        }
+        
         Started = processState.Started;
         StartEvent = processState.StartEvent;
         if (processState.CurrentTask != null)
