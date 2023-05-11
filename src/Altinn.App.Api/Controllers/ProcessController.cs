@@ -7,10 +7,8 @@ using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
+using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Validation;
-using Altinn.Authorization.ABAC.Xacml.JsonProfile;
-using Altinn.Common.PEP.Helpers;
-using Altinn.Common.PEP.Interfaces;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -34,7 +32,7 @@ namespace Altinn.App.Api.Controllers
         private readonly IInstance _instanceClient;
         private readonly IProcess _processService;
         private readonly IValidation _validationService;
-        private readonly IPDP _pdp;
+        private readonly IAuthorization _authorization;
         private readonly IProcessEngine _processEngine;
         private readonly IProcessReader _processReader;
 
@@ -46,7 +44,7 @@ namespace Altinn.App.Api.Controllers
             IInstance instanceClient,
             IProcess processService,
             IValidation validationService,
-            IPDP pdp,
+            IAuthorization authorization,
             IProcessReader processReader,
             IProcessEngine processEngine)
         {
@@ -54,7 +52,7 @@ namespace Altinn.App.Api.Controllers
             _instanceClient = instanceClient;
             _processService = processService;
             _validationService = validationService;
-            _pdp = pdp;
+            _authorization = authorization;
             _processReader = processReader;
             _processEngine = processEngine;
         }
@@ -274,7 +272,7 @@ namespace Altinn.App.Api.Controllers
                 }
 
                 bool authorized;
-                string checkedAction = processNext?.Action ?? altinnTaskType;
+                string checkedAction = EnsureActionNotTaskType(processNext?.Action ?? altinnTaskType);
                 authorized = await AuthorizeAction(checkedAction, org, app, instanceOwnerPartyId, instanceGuid);
 
                 if (!authorized)
@@ -361,7 +359,7 @@ namespace Altinn.App.Api.Controllers
             int counter = 0;
             do
             {
-                string altinnTaskType = instance.Process.CurrentTask?.AltinnTaskType;
+                string altinnTaskType = EnsureActionNotTaskType(instance.Process.CurrentTask?.AltinnTaskType);
 
                 bool authorized = await AuthorizeAction(altinnTaskType, org, app, instanceOwnerPartyId, instanceGuid);
                 if (!authorized)
@@ -476,35 +474,24 @@ namespace Altinn.App.Api.Controllers
             return StatusCode(500, $"{message}");
         }
 
-        private async Task<bool> AuthorizeAction(string currentTaskType, string org, string app, int instanceOwnerPartyId, Guid instanceGuid, string taskId = null)
+        private async Task<bool> AuthorizeAction(string action, string org, string app, int instanceOwnerPartyId, Guid instanceGuid, string taskId = null)
         {
-            string actionType;
+            return await _authorization.AuthorizeAction(new AppIdentifier(org, app), new InstanceIdentifier(instanceOwnerPartyId, instanceGuid), HttpContext.User, action, taskId);
+        }
 
-            switch (currentTaskType)
+        private static string EnsureActionNotTaskType(string actionOrTaskType)
+        {
+            switch (actionOrTaskType)
             {
                 case "data":
                 case "feedback":
-                    actionType = "write";
-                    break;
+                    return "write";
                 case "confirmation":
-                    actionType = "confirm";
-                    break;
+                    return "confirm";
                 default:
-                    actionType = currentTaskType;
-                    break;
+                    // Not any known task type, so assume it is an action type
+                    return actionOrTaskType;
             }
-
-            _logger.LogInformation("About to authorize action {ActionType}", actionType);
-            XacmlJsonRequestRoot request = DecisionHelper.CreateDecisionRequest(org, app, HttpContext.User, actionType, instanceOwnerPartyId, instanceGuid, taskId);
-            XacmlJsonResponse response = await _pdp.GetDecisionForRequest(request);
-            if (response?.Response == null)
-            {
-                _logger.LogInformation($"// Process Controller // Authorization of moving process forward failed with request: {JsonConvert.SerializeObject(request)}.");
-                return false;
-            }
-
-            bool authorized = DecisionHelper.ValidatePdpDecision(response.Response, HttpContext.User);
-            return authorized;
         }
 
         private ActionResult HandlePlatformHttpException(PlatformHttpException e, string defaultMessage)
@@ -513,18 +500,18 @@ namespace Altinn.App.Api.Controllers
             {
                 return Forbid();
             }
-            else if (e.Response.StatusCode == HttpStatusCode.NotFound)
+
+            if (e.Response.StatusCode == HttpStatusCode.NotFound)
             {
                 return NotFound();
             }
-            else if (e.Response.StatusCode == HttpStatusCode.Conflict)
+
+            if (e.Response.StatusCode == HttpStatusCode.Conflict)
             {
                 return Conflict();
             }
-            else
-            {
-                return ExceptionResponse(e, defaultMessage);
-            }
+
+            return ExceptionResponse(e, defaultMessage);
         }
         
         private static async Task<T> DeserializeFromStream<T>(Stream stream)
