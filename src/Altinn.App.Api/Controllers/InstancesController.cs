@@ -278,6 +278,11 @@ namespace Altinn.App.Api.Controllers
                     Dryrun = true
                 };
                 var result = await _processEngine.StartProcess(processStartRequest);
+                if (!result.Success)
+                {
+                    return Conflict(result.ErrorMessage);
+                }
+                
                 change = result.ProcessStateChange;
 
                 // create the instance

@@ -108,12 +108,11 @@ namespace Altinn.App.Core.Infrastructure.Clients.Authorization
         /// <inheritdoc />
         public async Task<bool> AuthorizeAction(AppIdentifier appIdentifier, InstanceIdentifier instanceIdentifier, ClaimsPrincipal user, string action, string? taskId = null)
         {
-            _logger.LogInformation("About to authorize action {Action}", action);
             XacmlJsonRequestRoot request = DecisionHelper.CreateDecisionRequest(appIdentifier.Org, appIdentifier.App, user, action, instanceIdentifier.InstanceOwnerPartyId, instanceIdentifier.InstanceGuid, taskId);
             XacmlJsonResponse response = await _pdp.GetDecisionForRequest(request);
             if (response?.Response == null)
             {
-                _logger.LogInformation("Failed to get decision from pdp: {SerializeObject}", JsonConvert.SerializeObject(request));
+                _logger.LogWarning("Failed to get decision from pdp: {SerializeObject}", JsonConvert.SerializeObject(request));
                 return false;
             }
 

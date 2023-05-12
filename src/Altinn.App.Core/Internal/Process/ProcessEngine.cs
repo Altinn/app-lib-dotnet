@@ -49,7 +49,7 @@ public class ProcessEngine : IProcessEngine
             {
                 Success = false,
                 ErrorMessage = "Process is already started. Use next.",
-                ErrorType = "Conflict"
+                ErrorType = ProcessErrorType.Conflict
             };
         }
 
@@ -60,7 +60,7 @@ public class ProcessEngine : IProcessEngine
             {
                 Success = false,
                 ErrorMessage = "No matching startevent",
-                ErrorType = "Conflict"
+                ErrorType = ProcessErrorType.Conflict
             };
         }
 
@@ -109,7 +109,7 @@ public class ProcessEngine : IProcessEngine
             {
                 Success = false,
                 ErrorMessage = $"Instance does not have current task information!",
-                ErrorType = "Conflict"
+                ErrorType = ProcessErrorType.Conflict
             };
         }
 

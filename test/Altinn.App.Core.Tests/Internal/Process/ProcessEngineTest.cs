@@ -41,7 +41,7 @@ public class ProcessEngineTest : IDisposable
         ProcessChangeResult result = await processEngine.StartProcess(processStartRequest);
         result.Success.Should().BeFalse();
         result.ErrorMessage.Should().Be("Process is already started. Use next.");
-        result.ErrorType.Should().Be("Conflict");
+        result.ErrorType.Should().Be(ProcessErrorType.Conflict);
     }
 
     [Fact]
@@ -56,7 +56,7 @@ public class ProcessEngineTest : IDisposable
         _processReaderMock.Verify(r => r.GetStartEventIds(), Times.Once);
         result.Success.Should().BeFalse();
         result.ErrorMessage.Should().Be("No matching startevent");
-        result.ErrorType.Should().Be("Conflict");
+        result.ErrorType.Should().Be(ProcessErrorType.Conflict);
     }
 
     [Fact]
@@ -190,6 +190,110 @@ public class ProcessEngineTest : IDisposable
     }
 
     [Fact]
+    public async Task StartProcess_starts_process_and_moves_to_first_task_with_prefill()
+    {
+        IProcessEngine processEngine = GetProcessEngine();
+        Instance instance = new Instance()
+        {
+            InstanceOwner = new InstanceOwner()
+            {
+                PartyId = "1337"
+            }
+        };
+        ClaimsPrincipal user = new(new ClaimsIdentity(new List<Claim>()
+        {
+            new(AltinnCoreClaimTypes.UserId, "1337"),
+            new(AltinnCoreClaimTypes.AuthenticationLevel, "2"),
+            new(AltinnCoreClaimTypes.Org, "tdd"),
+        }));
+        var prefill = new Dictionary<string, string>() { { "test", "test" } };
+        ProcessStartRequest processStartRequest = new ProcessStartRequest() { Instance = instance, User = user, Prefill = prefill };
+        ProcessChangeResult result = await processEngine.StartProcess(processStartRequest);
+        _processReaderMock.Verify(r => r.GetStartEventIds(), Times.Once);
+        _processReaderMock.Verify(r => r.IsProcessTask("StartEvent_1"), Times.Once);
+        _processReaderMock.Verify(r => r.IsEndEvent("Task_1"), Times.Once);
+        _processReaderMock.Verify(r => r.IsProcessTask("Task_1"), Times.Once);
+        _processNavigatorMock.Verify(n => n.GetNextTask(It.IsAny<Instance>(), "StartEvent_1", null), Times.Once);
+        var expectedInstance = new Instance()
+        {
+            InstanceOwner = new InstanceOwner()
+            {
+                PartyId = "1337"
+            },
+            Process = new ProcessState()
+            {
+                CurrentTask = new ProcessElementInfo()
+                {
+                    ElementId = "Task_1",
+                    Flow = 2,
+                    AltinnTaskType = "data",
+                    Name = "Utfylling"
+                },
+                StartEvent = "StartEvent_1"
+            }
+        };
+        var expectedInstanceEvents = new List<InstanceEvent>()
+        {
+            new()
+            {
+                EventType = InstanceEventType.process_StartEvent.ToString(),
+                InstanceOwnerPartyId = "1337",
+                User = new()
+                {
+                    UserId = 1337,
+                    OrgId = "tdd",
+                    AuthenticationLevel = 2
+                },
+                ProcessInfo = new()
+                {
+                    StartEvent = "StartEvent_1",
+                    CurrentTask = new()
+                    {
+                        ElementId = "StartEvent_1",
+                        Flow = 1,
+                        Validated = new()
+                        {
+                            CanCompleteTask = false
+                        }
+                    }
+                }
+            },
+
+            new()
+            {
+                EventType = InstanceEventType.process_StartTask.ToString(),
+                InstanceOwnerPartyId = "1337",
+                User = new()
+                {
+                    UserId = 1337,
+                    OrgId = "tdd",
+                    AuthenticationLevel = 2,
+                },
+                ProcessInfo = new()
+                {
+                    StartEvent = "StartEvent_1",
+                    CurrentTask = new()
+                    {
+                        ElementId = "Task_1",
+                        Name = "Utfylling",
+                        AltinnTaskType = "data",
+                        Flow = 2,
+                        Validated = new()
+                        {
+                            CanCompleteTask = false
+                        }
+                    }
+                }
+            }
+        };
+        _processEventDispatcherMock.Verify(d => d.UpdateProcessAndDispatchEvents(
+            It.Is<Instance>(i => CompareInstance(expectedInstance, i)),
+            prefill,
+            It.Is<List<InstanceEvent>>(l => CompareInstanceEvents(l, expectedInstanceEvents))));
+        result.Success.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task Next_returns_unsuccessful_when_process_null()
     {
         IProcessEngine processEngine = GetProcessEngine();
@@ -198,7 +302,7 @@ public class ProcessEngineTest : IDisposable
         ProcessChangeResult result = await processEngine.Next(processNextRequest);
         result.Success.Should().BeFalse();
         result.ErrorMessage.Should().Be("Instance does not have current task information!");
-        result.ErrorType.Should().Be("Conflict");
+        result.ErrorType.Should().Be(ProcessErrorType.Conflict);
     }
 
     [Fact]
@@ -210,7 +314,7 @@ public class ProcessEngineTest : IDisposable
         ProcessChangeResult result = await processEngine.Next(processNextRequest);
         result.Success.Should().BeFalse();
         result.ErrorMessage.Should().Be("Instance does not have current task information!");
-        result.ErrorType.Should().Be("Conflict");
+        result.ErrorType.Should().Be(ProcessErrorType.Conflict);
     }
 
     [Fact]
@@ -335,7 +439,7 @@ public class ProcessEngineTest : IDisposable
                 OldProcessState = originalProcessState
             });
     }
-    
+
     [Fact]
     public async Task Next_moves_instance_to_next_task_and_produces_abandon_instanceevent_when_action_reject()
     {
@@ -458,7 +562,7 @@ public class ProcessEngineTest : IDisposable
                 OldProcessState = originalProcessState
             });
     }
-    
+
     [Fact]
     public async Task Next_moves_instance_to_end_event_and_ends_proces()
     {
@@ -588,6 +692,75 @@ public class ProcessEngineTest : IDisposable
             });
     }
 
+    [Fact]
+    public async Task UpdateInstanceAndRerunEvents_sends_instance_and_events_to_eventdispatcher()
+    {
+        IProcessEngine processEngine = GetProcessEngine();
+        Instance instance = new Instance()
+        {
+            InstanceOwner = new InstanceOwner()
+            {
+                PartyId = "1337"
+            },
+            Process = new ProcessState()
+            {
+                StartEvent = "StartEvent_1",
+                CurrentTask = new ProcessElementInfo()
+                {
+                    ElementId = "Task_1",
+                    Flow = 3,
+                    AltinnTaskType = "confirmation",
+                    Validated = new()
+                    {
+                        CanCompleteTask = true
+                    }
+                }
+            }
+        };
+        Dictionary<string, string> prefill = new Dictionary<string, string>()
+        {
+            { "test", "test" }
+        };
+        List<InstanceEvent> events = new List<InstanceEvent>()
+        {
+            new()
+            {
+                EventType = InstanceEventType.process_AbandonTask.ToString(),
+                InstanceOwnerPartyId = "1337",
+                User = new()
+                {
+                    UserId = 1337,
+                    OrgId = "tdd",
+                    AuthenticationLevel = 2
+                },
+                ProcessInfo = new()
+                {
+                    StartEvent = "StartEvent_1",
+                    CurrentTask = new()
+                    {
+                        ElementId = "Task_1",
+                        Flow = 2,
+                        AltinnTaskType = "data",
+                        Validated = new()
+                        {
+                            CanCompleteTask = true
+                        }
+                    }
+                }
+            }
+        };
+        ProcessStartRequest processStartRequest = new ProcessStartRequest()
+        {
+            Instance = instance,
+            Prefill = prefill,
+        };
+        Instance result = await processEngine.UpdateInstanceAndRerunEvents(processStartRequest, events);
+        _processEventDispatcherMock.Verify(d => d.UpdateProcessAndDispatchEvents(
+            It.Is<Instance>(i => CompareInstance(instance, i)),
+            prefill,
+            It.Is<List<InstanceEvent>>(l => CompareInstanceEvents(events, l))));
+    }
+
     private IProcessEngine GetProcessEngine(Mock<IProcessReader>? processReaderMock = null, Instance? updatedInstance = null)
     {
         if (processReaderMock == null)
@@ -684,7 +857,7 @@ public class ProcessEngineTest : IDisposable
         {
             expected.Process.CurrentTask.Started = actual.Process.CurrentTask.Started;
         }
-        
+
         return JsonCompare(expected, actual);
     }
 
@@ -695,7 +868,7 @@ public class ProcessEngineTest : IDisposable
             expected[i].Created = actual[i].Created;
             expected[i].ProcessInfo.Started = actual[i].ProcessInfo.Started;
             expected[i].ProcessInfo.Ended = actual[i].ProcessInfo.Ended;
-            if(actual[i].ProcessInfo.CurrentTask != null)
+            if (actual[i].ProcessInfo.CurrentTask != null)
             {
                 expected[i].ProcessInfo.CurrentTask.Started = actual[i].ProcessInfo.CurrentTask.Started;
             }

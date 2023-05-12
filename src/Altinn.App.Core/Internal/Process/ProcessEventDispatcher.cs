@@ -14,7 +14,7 @@ namespace Altinn.App.Core.Internal.Process;
 class ProcessEventDispatcher : IProcessEventDispatcher
 {
     private readonly IInstance _instanceService;
-    private readonly IProcess _processClient;
+    private readonly IInstanceEvent _instanceEventClient;
     private readonly ITaskEvents _taskEvents;
     private readonly IAppEvents _appEvents;
     private readonly IEvents _eventsService;
@@ -23,7 +23,7 @@ class ProcessEventDispatcher : IProcessEventDispatcher
 
     public ProcessEventDispatcher(
         IInstance instanceService, 
-        IProcess processClient, 
+        IInstanceEvent instanceEventClient,
         ITaskEvents taskEvents, 
         IAppEvents appEvents, 
         IEvents eventsService, 
@@ -31,7 +31,7 @@ class ProcessEventDispatcher : IProcessEventDispatcher
         ILogger<ProcessEventDispatcher> logger)
     {
         _instanceService = instanceService;
-        _processClient = processClient;
+        _instanceEventClient = instanceEventClient;
         _taskEvents = taskEvents;
         _appEvents = appEvents;
         _eventsService = eventsService;
@@ -46,7 +46,7 @@ class ProcessEventDispatcher : IProcessEventDispatcher
 
         // need to update the instance process and then the instance in case appbase has changed it, e.g. endEvent sets status.archived
         Instance updatedInstance = await _instanceService.UpdateProcess(instance);
-        await _processClient.DispatchProcessEventsToStorage(updatedInstance, events);
+        await DispatchProcessEventsToStorage(updatedInstance, events);
 
         // remember to get the instance anew since AppBase can have updated a data element or stored something in the database.
         updatedInstance = await _instanceService.GetInstance(updatedInstance);
@@ -76,6 +76,22 @@ class ProcessEventDispatcher : IProcessEventDispatcher
             }
         }
     }
+    
+    
+    private async Task DispatchProcessEventsToStorage(Instance instance, List<InstanceEvent>? events)
+    {
+        string org = instance.Org;
+        string app = instance.AppId.Split("/")[1];
+
+        if (events != null)
+        {
+            foreach (InstanceEvent instanceEvent in events)
+            {
+                instanceEvent.InstanceId = instance.Id;
+                await _instanceEventClient.SaveInstanceEvent(instanceEvent, org, app);
+            }
+        }
+    }
 
     /// <summary>
     /// Will for each process change trigger relevant Process Elements to perform the relevant change actions.
@@ -86,12 +102,12 @@ class ProcessEventDispatcher : IProcessEventDispatcher
     {
         if (events != null)
         {
-            foreach (InstanceEvent processEvent in events)
+            foreach (InstanceEvent instanceEvent in events)
             {
-                if (Enum.TryParse<InstanceEventType>(processEvent.EventType, true, out InstanceEventType eventType))
+                if (Enum.TryParse<InstanceEventType>(instanceEvent.EventType, true, out InstanceEventType eventType))
                 {
-                    string? elementId = processEvent.ProcessInfo?.CurrentTask?.ElementId;
-                    ITask task = GetProcessTask(processEvent.ProcessInfo?.CurrentTask?.AltinnTaskType);
+                    string? elementId = instanceEvent.ProcessInfo?.CurrentTask?.ElementId;
+                    ITask task = GetProcessTask(instanceEvent.ProcessInfo?.CurrentTask?.AltinnTaskType);
                     switch (eventType)
                     {
                         case InstanceEventType.process_StartEvent:
@@ -107,7 +123,7 @@ class ProcessEventDispatcher : IProcessEventDispatcher
                             await _instanceService.UpdateProcess(instance);
                             break;
                         case InstanceEventType.process_EndEvent:
-                            await _appEvents.OnEndAppEvent(processEvent.ProcessInfo?.EndEvent, instance);
+                            await _appEvents.OnEndAppEvent(instanceEvent.ProcessInfo?.EndEvent, instance);
                             break;
                     }
                 }
