@@ -246,4 +246,9 @@ public class LayoutEvaluatorState
             GetModelErrorsForExpression(arg, component, errors);
         }
     }
+
+    public Instance GetInstance()
+    {
+        return _instanceContext;
+    }
 }

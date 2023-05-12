@@ -232,8 +232,7 @@ namespace Altinn.App.Core.Features.Validation
                     var evaluationState = await _layoutEvaluatorStateInitializer.Init(instance, data, layoutSet?.Id);
                     // Remove hidden data before validation
                     LayoutEvaluator.RemoveHiddenData(evaluationState);
-                    // Evaluate expressions in layout and validate that all required data is included and that maxLength
-                    // is respected on groups
+                    // Evaluate expressions in layout and validate that all required data is included
                     var layoutErrors = LayoutEvaluator.RunLayoutValidationsForRequired(evaluationState, dataElement.Id);
                     messages.AddRange(layoutErrors);
                 }

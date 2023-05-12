@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-
+using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models.Expressions;
 
 namespace Altinn.App.Core.Models.Layout.Components;
@@ -30,17 +30,47 @@ public class OptionsComponent : BaseComponent
     /// Is the component referencing a secure code list (uses security context of the instance)
     /// </summary>
     public bool Secure { get; }
+    /// <summary>
+    /// Does the component support multiple selected options at once
+    /// </summary>
+    public bool Multiple { get; }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public IReadOnlyDictionary<string, string> Mapping { get; }
 
     /// <summary>
     /// Constructor
     /// </summary>
-    public OptionsComponent(string id, string type, IReadOnlyDictionary<string, string>? dataModelBindings, Expression? hidden, Expression? required, Expression? readOnly, string? optionId, List<AppOption>? options, OptionsSource? optionsSource, bool secure, IReadOnlyDictionary<string, string>? additionalProperties) :
+    public OptionsComponent(string id, string type, IReadOnlyDictionary<string, string>? dataModelBindings, Expression? hidden, Expression? required, Expression? readOnly, string? optionId, List<AppOption>? options, OptionsSource? optionsSource, bool secure, bool multiple, IReadOnlyDictionary<string,string>? mapping, IReadOnlyDictionary<string, string>? additionalProperties) :
         base(id, type, dataModelBindings, hidden, required, readOnly, additionalProperties)
     {
         OptionId = optionId;
         Options = options;
         OptionsSource = optionsSource;
         Secure = secure;
+        Multiple = multiple;
+        Mapping = mapping ?? ImmutableDictionary<string, string>.Empty;
+    }
+
+    /// <summary>
+    /// Convenicence function to get a list of the selected
+    /// </summary>
+    public string[] GetSelectedValues(LayoutEvaluatorState state, ComponentContext context)
+    {
+        if (
+            DataModelBindings.TryGetValue("simpleBinding", out var dataModelBinding) &&
+            state.GetModelData(dataModelBinding, context) is string value
+        )
+        {
+            if (Multiple)
+            {
+                return value.Split(",");
+            }
+            return new string[] { value };
+        }
+        return new string[] { };
     }
 }
 

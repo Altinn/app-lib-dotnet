@@ -187,6 +187,7 @@ public class PageComponentConverter : JsonConverter<PageComponent>
         List<AppOption>? literalOptions = null;
         OptionsSource? optionsSource = null;
         bool secure = false;
+        Dictionary<string, string>? mapping = null;
 
         // extra properties that are not stored in a specific class.
         Dictionary<string, string> additionalProperties = new();
@@ -251,6 +252,9 @@ public class PageComponentConverter : JsonConverter<PageComponent>
                 case "secure":
                     secure = reader.TokenType == JsonTokenType.True;
                     break;
+                case "mapping":
+                    mapping = JsonSerializer.Deserialize<Dictionary<string,string>>(ref reader, options);
+                    break;
                 default:
                     // store extra fields as json
                     additionalProperties[propertyName] = reader.SkipReturnString();
@@ -283,11 +287,13 @@ public class PageComponentConverter : JsonConverter<PageComponent>
                 ValidateSummary(componentRef, pageRef);
                 return new SummaryComponent(id, type, hidden, componentRef, pageRef, additionalProperties);
             case "checkboxes":
+            case "multipleselect":
+                ValidateOptions(optionId, literalOptions, optionsSource, secure);
+                return new OptionsComponent(id, type, dataModelBindings, hidden, required, readOnly, optionId, literalOptions, optionsSource, secure, multiple:true, mapping, additionalProperties);
             case "radiobuttons":
             case "dropdown":
                 ValidateOptions(optionId, literalOptions, optionsSource, secure);
-
-                return new OptionsComponent(id, type, dataModelBindings, hidden, required, readOnly, optionId, literalOptions, optionsSource, secure, additionalProperties);
+                return new OptionsComponent(id, type, dataModelBindings, hidden, required, readOnly, optionId, literalOptions, optionsSource, secure, multiple:false, mapping, additionalProperties);
         }
 
         // Most compoents are handled as BaseComponent

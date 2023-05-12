@@ -223,8 +223,8 @@ namespace Altinn.App.Core.Tests.Internal.App
         {
             AppSettings appSettings = GetAppSettings(subfolder: "AppPolicy", policyFilename: "policy.xml");
             IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
-            string expected = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" + Environment.NewLine + "<root>policy</root>";
-            var actual = await appMetadata.GetApplicationXACMLPolicy();
+            string expected = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<root>policy</root>";
+            var actual = (await appMetadata.GetApplicationXACMLPolicy()).ReplaceLineEndings("\n");
             actual.Should().BeEquivalentTo(expected);
         }
 
@@ -241,9 +241,9 @@ namespace Altinn.App.Core.Tests.Internal.App
         {
             AppSettings appSettings = GetAppSettings(subfolder: "AppProcess", bpmnFilename: "process.bpmn");
             IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
-            string expected = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" + Environment.NewLine + "<root>process</root>";
+            string expected = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<root>process</root>";
             var actual = await appMetadata.GetApplicationBPMNProcess();
-            actual.Should().BeEquivalentTo(expected);
+            actual.ReplaceLineEndings("\n").Should().BeEquivalentTo(expected);
         }
 
         [Fact]
