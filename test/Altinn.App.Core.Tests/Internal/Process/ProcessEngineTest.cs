@@ -695,9 +695,30 @@ public class ProcessEngineTest : IDisposable
     [Fact]
     public async Task UpdateInstanceAndRerunEvents_sends_instance_and_events_to_eventdispatcher()
     {
-        IProcessEngine processEngine = GetProcessEngine();
         Instance instance = new Instance()
         {
+            InstanceOwner = new InstanceOwner()
+            {
+                PartyId = "1337"
+            },
+            Process = new ProcessState()
+            {
+                StartEvent = "StartEvent_1",
+                CurrentTask = new ProcessElementInfo()
+                {
+                    ElementId = "Task_1",
+                    Flow = 3,
+                    AltinnTaskType = "confirmation",
+                    Validated = new()
+                    {
+                        CanCompleteTask = true
+                    }
+                }
+            }
+        };
+        Instance updatedInstance = new Instance()
+        {
+            Org = "ttd",
             InstanceOwner = new InstanceOwner()
             {
                 PartyId = "1337"
@@ -749,6 +770,7 @@ public class ProcessEngineTest : IDisposable
                 }
             }
         };
+        IProcessEngine processEngine = GetProcessEngine(null, updatedInstance);
         ProcessStartRequest processStartRequest = new ProcessStartRequest()
         {
             Instance = instance,
@@ -759,6 +781,7 @@ public class ProcessEngineTest : IDisposable
             It.Is<Instance>(i => CompareInstance(instance, i)),
             prefill,
             It.Is<List<InstanceEvent>>(l => CompareInstanceEvents(events, l))));
+        result.Should().Be(updatedInstance);
     }
 
     private IProcessEngine GetProcessEngine(Mock<IProcessReader>? processReaderMock = null, Instance? updatedInstance = null)
