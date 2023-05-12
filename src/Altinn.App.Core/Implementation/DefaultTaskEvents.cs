@@ -294,13 +294,17 @@ public class DefaultTaskEvents : ITaskEvents
                 string serializedData = JsonSerializer.Serialize(data, options);
                 if (dataType.AppLogic.ShadowFields.SaveToDataType != null) {
                     var saveToDataType = dataTypesToLock.Find(dt => dt.Id == dataType.AppLogic.ShadowFields.SaveToDataType);
+                    if (saveToDataType == null) {
+                        throw new Exception($"SaveToDataType {dataType.AppLogic.ShadowFields.SaveToDataType} not found");
+                    }
+    
                     Type saveToModelType = _appModel.GetModelType(saveToDataType.AppLogic.ClassRef);
-                    var updatedData = Newtonsoft.Json.JsonConvert.DeserializeObject(serializedData, saveToModelType ?? modelType);
+                    var updatedData = JsonSerializer.Deserialize(serializedData, saveToModelType);
                     await _dataClient.InsertFormData(updatedData, instanceGuid, saveToModelType ?? modelType, instance.Org, app, instanceOwnerPartyId, saveToDataType.Id);
                 }
                 else
                 {
-                    var updatedData = Newtonsoft.Json.JsonConvert.DeserializeObject(serializedData, modelType);
+                    var updatedData = JsonSerializer.Deserialize(serializedData, modelType);
                     await _dataClient.UpdateData(updatedData, instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, dataElementId);
                 }
             }
