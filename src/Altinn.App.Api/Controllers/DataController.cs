@@ -179,7 +179,7 @@ namespace Altinn.App.Api.Controllers
 
                     if (!fileValidationSuccess)
                     {
-                        return new BadRequestObjectResult(errors);
+                        return new BadRequestObjectResult(GetErrorDetails(errors));
                     }
 
                     return await CreateBinaryData(org, app, instance, dataType);
