@@ -30,8 +30,8 @@ namespace Altinn.App.Api.Tests.Controllers
             HttpClient client = GetRootedClient(org, app);
  
             Guid guid = new Guid("0fc98a23-fe31-4ef5-8fb9-dd3f479354cd");
-            TestDataUtil.DeleteInstance(org, app, 1337, guid);
-            TestDataUtil.PrepareInstance(org, app, 1337, guid);
+            TestData.DeleteInstance(org, app, 1337, guid);
+            TestData.PrepareInstance(org, app, 1337, guid);
 
             // Setup the request
             string token = PrincipalUtil.GetOrgToken("nav", "160694123");
@@ -47,7 +47,7 @@ namespace Altinn.App.Api.Tests.Controllers
             HttpResponseMessage response = await client.SendAsync(request);
 
             // Cleanup testdata
-            TestDataUtil.DeleteInstanceAndData(org, app, 1337, guid);
+            TestData.DeleteInstanceAndData(org, app, 1337, guid);
 
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         }
@@ -61,8 +61,8 @@ namespace Altinn.App.Api.Tests.Controllers
             HttpClient client = GetRootedClient(org, app);
 
             Guid guid = new Guid("1fc98a23-fe31-4ef5-8fb9-dd3f479354ce");
-            TestDataUtil.DeleteInstance(org, app, 1337, guid);
-            TestDataUtil.PrepareInstance(org, app, 1337, guid);
+            TestData.DeleteInstance(org, app, 1337, guid);
+            TestData.PrepareInstance(org, app, 1337, guid);
 
             // Setup the request
             string token = PrincipalUtil.GetOrgToken("nav", "160694123");
@@ -79,7 +79,7 @@ namespace Altinn.App.Api.Tests.Controllers
             string responseContent = await response.Content.ReadAsStringAsync();
 
             // Cleanup testdata
-            TestDataUtil.DeleteInstanceAndData(org, app, 1337, guid);
+            TestData.DeleteInstanceAndData(org, app, 1337, guid);
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }

@@ -216,7 +216,7 @@ namespace Altinn.App.Api.Controllers
             return dataTypeFromMetadata.EnabledFileAnalysers != null && dataTypeFromMetadata.EnabledFileAnalysers.Count > 0;
         }
 
-        private bool FileValidationEnabledForDataType(DataType dataTypeFromMetadata)
+        private static bool FileValidationEnabledForDataType(DataType dataTypeFromMetadata)
         {
             return dataTypeFromMetadata.EnabledFileValidators != null && dataTypeFromMetadata.EnabledFileValidators.Count > 0;
         }

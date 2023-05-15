@@ -7,7 +7,6 @@ using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Options;
 
-using Newtonsoft.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Altinn.App.Api.Tests.Data;
@@ -37,14 +36,19 @@ namespace App.IntegrationTests.Mocks.Services
         }
 
         /// <inheritdoc />
-        /// <exception cref="System.Text.Json.JsonException">Thrown if deserialization fails</exception>
-        /// <exception cref="System.IO.FileNotFoundException">Thrown if applicationmetadata.json file not found</exception>
+        /// <exception cref="JsonException">Thrown if deserialization fails</exception>
+        /// <exception cref="FileNotFoundException">Thrown if applicationmetadata.json file not found</exception>
         public async Task<ApplicationMetadata> GetApplicationMetadata()
         {
             // Cache application metadata
             if (_application != null)
             {
                 return _application;
+            }
+
+            if (_contextAccessor.HttpContext == null)
+            {
+                throw new Exception("HttpContext is null");
             }
 
             AppIdentifier appIdentifier = AppIdentifier.CreateFromUrl(_contextAccessor.HttpContext.Request.GetDisplayUrl());
@@ -61,7 +65,7 @@ namespace App.IntegrationTests.Mocks.Services
                         AllowTrailingCommas = true
                     };
                     using FileStream fileStream = File.OpenRead(filename);
-                    var application = await System.Text.Json.JsonSerializer.DeserializeAsync<ApplicationMetadata>(fileStream, jsonSerializerOptions);
+                    var application = await JsonSerializer.DeserializeAsync<ApplicationMetadata>(fileStream, jsonSerializerOptions);
                     if (application == null)
                     {
                         throw new ApplicationConfigException($"Deserialization returned null, Could indicate problems with deserialization of {filename}");
@@ -75,7 +79,7 @@ namespace App.IntegrationTests.Mocks.Services
 
                 throw new ApplicationConfigException($"Unable to locate application metadata file: {filename}");
             }
-            catch (System.Text.Json.JsonException ex)
+            catch (JsonException ex)
             {
                 throw new ApplicationConfigException($"Something went wrong when parsing application metadata file: {filename}", ex);
             }
@@ -104,28 +108,35 @@ namespace App.IntegrationTests.Mocks.Services
 
             throw new ApplicationConfigException($"Unable to locate application process file: {filename}");
         }
-    
-    public Task<Application> GetApplication(string org, string app)
+
+        public static Task<Application> GetApplication(string org, string app)
         {
             return Task.FromResult(GetTestApplication(org, app));
         }
 
-        private Application GetTestApplication(string org, string app)
+        private static Application GetTestApplication(string org, string app)
         {
             string applicationPath = Path.Combine(GetMetadataPath(), org, app, "applicationmetadata.json");
             if (File.Exists(applicationPath))
             {
-                string content = System.IO.File.ReadAllText(applicationPath);
-                Application application = (Application)JsonConvert.DeserializeObject(content, typeof(Application));
+                string content = File.ReadAllText(applicationPath) ?? throw new Exception($"Unable to read application metadata file for {org}/{app}. Tried path: {applicationPath}");
+
+                if (JsonSerializer.Deserialize<Application>(content) is not Application application)
+                {
+                    throw new Exception($"Unable to deserialize application metadata file for {org}/{app}. Tried path: {applicationPath}");
+                }
+
                 return application;
             }
 
-            return null;
+            throw new Exception($"Unable to locate application metadata file for {org}/{app}. Tried path: {applicationPath}");
         }
 
-        private string GetMetadataPath()
+        private static string GetMetadataPath()
         {
-            string unitTestFolder = Path.GetDirectoryName(new Uri(typeof(InstanceMockSI).Assembly.Location).LocalPath);
+            var uri = new Uri(typeof(InstanceMockSI).Assembly.Location);
+            string unitTestFolder = Path.GetDirectoryName(uri.LocalPath) ?? throw new Exception($"Unable to locate path {uri.LocalPath}");
+
             return Path.Combine(unitTestFolder, @"../../../Data/Metadata");
         }
     }

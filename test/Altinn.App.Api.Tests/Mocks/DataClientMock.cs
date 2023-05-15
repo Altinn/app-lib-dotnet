@@ -3,26 +3,28 @@ using System.Xml.Serialization;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Interface;
+using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
+
 
 namespace App.IntegrationTests.Mocks.Services
 {
     public class DataClientMock : IData
     {
-        private readonly IAppResources _applicationService;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IAppMetadata _appMetadata;
         private static readonly JsonSerializerOptions _serializerOptions = new()
         {
             WriteIndented = true,
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         };
 
-        public DataClientMock(IAppResources application, IHttpContextAccessor httpContextAccessor)
+        public DataClientMock(IAppMetadata appMetadata, IHttpContextAccessor httpContextAccessor)
         {
-            _applicationService = application;
             _httpContextAccessor = httpContextAccessor;
+            _appMetadata = appMetadata;
         }
 
         public async Task<bool> DeleteBinaryData(string org, string app, int instanceOwnerPartyId, Guid instanceGuid, Guid dataGuid)
@@ -30,15 +32,25 @@ namespace App.IntegrationTests.Mocks.Services
             return await DeleteData(org, app, instanceOwnerPartyId, instanceGuid, dataGuid, false);
         }
 
-        public async Task<bool> DeleteData(string org, string app, int instanceOwnerPartyId, Guid instanceGuid, Guid dataGuid, bool delayed)
+        public async Task<bool> DeleteData(string org, string app, int instanceOwnerPartyId, Guid instanceGuid, Guid dataGuid, bool delay)
         {
             await Task.CompletedTask;
-            string dataElementPath = Altinn.App.Api.Tests.Utils.TestDataUtil.GetDataElementPath(org, app, instanceOwnerPartyId, instanceGuid, dataGuid);
+            string dataElementPath = TestData.GetDataElementPath(org, app, instanceOwnerPartyId, instanceGuid, dataGuid);
 
-            if (delayed)
+            if (delay)
             {
                 string fileContent = await File.ReadAllTextAsync(dataElementPath);
-                DataElement dataElement = JsonSerializer.Deserialize<DataElement>(fileContent, _serializerOptions);
+
+                if (fileContent == null)
+                {
+                    return false;
+
+                }
+
+                if (JsonSerializer.Deserialize<DataElement>(fileContent, _serializerOptions) is not DataElement dataElement)
+                {
+                    throw new Exception($"Unable to deserialize data element for org: {org}/{app} party: {instanceOwnerPartyId} instance: {instanceGuid} data: {dataGuid}. Tried path: {dataElementPath}");
+                }
 
                 dataElement.DeleteStatus = new()
                 {
@@ -115,42 +127,15 @@ namespace App.IntegrationTests.Mocks.Services
             {
                 using FileStream sourceStream = File.Open(dataPath, FileMode.OpenOrCreate);
 
-                return Task.FromResult(serializer.Deserialize(sourceStream));
+                var formData = serializer.Deserialize(sourceStream);
+                return formData != null ? Task.FromResult(formData) : throw new Exception("Unable to deserialize form data");
             }
             catch
             {
-                return Task.FromResult(Activator.CreateInstance(type));
+                var formData = Activator.CreateInstance(type);
+                if (formData != null) Task.FromResult(formData);
+                throw;
             }
-        }
-
-        public async Task<DataElement> InsertBinaryData(string org, string app, int instanceOwnerPartyId, Guid instanceGuid, string dataType, HttpRequest request)
-        {
-            Guid dataGuid = Guid.NewGuid();
-            string dataPath = TestData.GetDataDirectory(org, app, instanceOwnerPartyId, instanceGuid);
-            DataElement dataElement = new() { Id = dataGuid.ToString(), InstanceGuid = instanceGuid.ToString(), DataType = dataType, ContentType = request.ContentType };
-
-            if (!Directory.Exists(Path.GetDirectoryName(dataPath)))
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(dataPath));
-            }
-
-            Directory.CreateDirectory(dataPath + @"blob");
-
-            long filesize;
-
-            using (Stream streamToWriteTo = File.Open(dataPath + @"blob/" + dataGuid.ToString(), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
-            {
-                await request.Body.CopyToAsync(streamToWriteTo);
-                streamToWriteTo.Flush();
-                filesize = streamToWriteTo.Length;
-                streamToWriteTo.Close();
-            }
-
-            dataElement.Size = filesize;
-
-            WriteDataElementToFile(dataElement, org, app, instanceOwnerPartyId);
-
-            return dataElement;
         }
 
         public async Task<DataElement> InsertFormData<T>(Instance instance, string dataType, T dataToSerialize, Type type)
@@ -183,15 +168,12 @@ namespace App.IntegrationTests.Mocks.Services
                 WriteDataElementToFile(dataElement, org, app, instanceOwnerPartyId);
             }
             catch
+#pragma warning disable S108 // Nested blocks of code should not be left empty
             {
             }
+#pragma warning restore S108 // Nested blocks of code should not be left empty
 
             return Task.FromResult(dataElement);
-        }
-
-        public Task<DataElement> UpdateBinaryData(string org, string app, int instanceOwnerPartyId, Guid instanceGuid, Guid dataGuid, HttpRequest request)
-        {
-            throw new NotImplementedException();
         }
 
         public Task<DataElement> UpdateData<T>(T dataToSerialize, Guid instanceGuid, Type type, string org, string app, int instanceOwnerPartyId, Guid dataGuid)
@@ -214,9 +196,41 @@ namespace App.IntegrationTests.Mocks.Services
             return Task.FromResult(dataElement);
         }
 
+        public async Task<DataElement> InsertBinaryData(string org, string app, int instanceOwnerPartyId, Guid instanceGuid, string dataType, HttpRequest request)
+        {
+            Guid dataGuid = Guid.NewGuid();
+            string dataPath = TestData.GetDataDirectory(org, app, instanceOwnerPartyId, instanceGuid);
+            DataElement dataElement = new() { Id = dataGuid.ToString(), InstanceGuid = instanceGuid.ToString(), DataType = dataType, ContentType = request.ContentType };
+
+            if (!Directory.Exists(Path.GetDirectoryName(dataPath)))
+            {
+                var directory = Path.GetDirectoryName(dataPath) ?? throw new Exception($"Unable to get directory name from path {dataPath}");
+
+                Directory.CreateDirectory(directory);
+            }
+
+            Directory.CreateDirectory(dataPath + @"blob");
+
+            long filesize;
+
+            using (Stream streamToWriteTo = File.Open(dataPath + @"blob/" + dataGuid.ToString(), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
+            {
+                await request.Body.CopyToAsync(streamToWriteTo);
+                streamToWriteTo.Flush();
+                filesize = streamToWriteTo.Length;
+                streamToWriteTo.Close();
+            }
+
+            dataElement.Size = filesize;
+
+            WriteDataElementToFile(dataElement, org, app, instanceOwnerPartyId);
+
+            return dataElement;
+        }
+
         public async Task<DataElement> InsertBinaryData(string instanceId, string dataType, string contentType, string filename, Stream stream)
         {
-            Application application = _applicationService.GetApplication();
+            Application application = await _appMetadata.GetApplicationMetadata();
             var instanceIdParts = instanceId.Split("/");
 
             Guid dataGuid = Guid.NewGuid();
@@ -232,7 +246,8 @@ namespace App.IntegrationTests.Mocks.Services
 
             if (!Directory.Exists(Path.GetDirectoryName(dataPath)))
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(dataPath));
+                var directory = Path.GetDirectoryName(dataPath);
+                if (directory != null) Directory.CreateDirectory(directory);
             }
 
             Directory.CreateDirectory(dataPath + @"blob");
@@ -251,6 +266,16 @@ namespace App.IntegrationTests.Mocks.Services
             WriteDataElementToFile(dataElement, org, app, instanceOwnerId);
 
             return dataElement;
+        }
+
+        public Task<DataElement> UpdateBinaryData(InstanceIdentifier instanceIdentifier, string? contentType, string filename, Guid dataGuid, Stream stream)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<DataElement> UpdateBinaryData(string org, string app, int instanceOwnerPartyId, Guid instanceGuid, Guid dataGuid, HttpRequest request)
+        {
+            throw new NotImplementedException();
         }
 
         public Task<DataElement> Update(Instance instance, DataElement dataElement)
@@ -291,22 +316,20 @@ namespace App.IntegrationTests.Mocks.Services
             foreach (string file in files)
             {
                 string content = File.ReadAllText(Path.Combine(path, file));
-                DataElement dataElement = JsonSerializer.Deserialize<DataElement>(content, _serializerOptions);
+                DataElement? dataElement = JsonSerializer.Deserialize<DataElement>(content, _serializerOptions);
 
-                if (dataElement.DeleteStatus?.IsHardDeleted == true && string.IsNullOrEmpty(_httpContextAccessor.HttpContext.User.GetOrg()))
+                if (dataElement != null)
                 {
-                    continue;
-                }
+                    if (dataElement.DeleteStatus?.IsHardDeleted == true && string.IsNullOrEmpty(_httpContextAccessor.HttpContext?.User.GetOrg()))
+                    {
+                        continue;
+                    }
 
-                dataElements.Add(dataElement);
+                    dataElements.Add(dataElement);
+                }
             }
 
             return dataElements;
-        }
-
-        public Task<DataElement> UpdateBinaryData(InstanceIdentifier instanceIdentifier, string? contentType, string filename, Guid dataGuid, Stream stream)
-        {
-            throw new NotImplementedException();
         }
     }
 }

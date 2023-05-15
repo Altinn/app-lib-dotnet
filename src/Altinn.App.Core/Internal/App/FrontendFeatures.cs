@@ -9,18 +9,15 @@ namespace Altinn.App.Core.Internal.App
     public class FrontendFeatures : IFrontendFeatures
     {
         private readonly Dictionary<string, bool> features = new();
-        private readonly IFeatureManager _featureManager;
 
         /// <summary>
         /// Default implementation of IFrontendFeatures
         /// </summary>
         public FrontendFeatures(IFeatureManager featureManager)
         {
-            _featureManager = featureManager;
-
             features.Add("footer", true);
 
-            if (_featureManager.IsEnabledAsync(FeatureFlags.JsonObjectInDataResponse).Result)
+            if (featureManager.IsEnabledAsync(FeatureFlags.JsonObjectInDataResponse).Result)
             {
                 features.Add("json_object_in_data_response", true);
             }

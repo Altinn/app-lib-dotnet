@@ -1,4 +1,6 @@
-﻿namespace Altinn.App.Core.Features.FileAnalysis
+﻿using Altinn.App.Core.Features.FileAnalyzis;
+
+namespace Altinn.App.Core.Features.FileAnalysis
 {
     /// <summary>
     /// Results from a file analysis done based the content of the file, ie. the binary data.

@@ -5,7 +5,6 @@ using MimeDetective;
 
 namespace Altinn.App.Api.Tests.Controllers
 {
-    // TODO: Move to separate project?
     public class MimeTypeAnalyser : IFileAnalyser
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
@@ -32,7 +31,9 @@ namespace Altinn.App.Api.Tests.Controllers
         /// <summary>
         /// Analyses the file to find it's mimetype
         /// </summary>
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously. Suppressed because of the interface.
         public async Task<FileAnalysisResult> Analyse(Stream stream, string? filename = null)
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             // TODO: Move to service registration as singleton
             var Inspector = new ContentInspectorBuilder()

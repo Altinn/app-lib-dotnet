@@ -1,4 +1,3 @@
-using System;
 using Altinn.App.Core.Internal.AppModel;
 using Microsoft.Extensions.Logging;
 
@@ -23,10 +22,13 @@ namespace App.IntegrationTests.Mocks.Apps.Ttd.EFormidling
         /// <inheritdoc />
         public object Create(string classRef)
         {
-            _logger.LogInformation($"CreateNewAppModel {classRef}");
+            _logger.LogInformation("CreateNewAppModel {classRef}", classRef);
 
             Type? appType = Type.GetType(classRef);
+
+#pragma warning disable CS8603 // Possible null reference return.
             return Activator.CreateInstance(appType);
+#pragma warning restore CS8603 // Possible null reference return.
         }
 
         /// <inheritdoc />
@@ -34,7 +36,9 @@ namespace App.IntegrationTests.Mocks.Apps.Ttd.EFormidling
         {
             _logger.LogInformation($"GetAppModelType {classRef}");
 
+#pragma warning disable CS8603 // Possible null reference return.
             return Type.GetType(classRef);
+#pragma warning restore CS8603 // Possible null reference return.
         }
     }
 }
