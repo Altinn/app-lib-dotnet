@@ -93,7 +93,9 @@ namespace App.IntegrationTests.Mocks.Services
             return Task.FromResult(ms);
         }
 
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
         public async Task<List<AttachmentList>> GetBinaryDataList(string org, string app, int instanceOwnerPartyId, Guid instanceGuid)
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             var dataElements = GetDataElements(org, app, instanceOwnerPartyId, instanceGuid);
             List<AttachmentList> list = new List<AttachmentList>();
@@ -180,7 +182,12 @@ namespace App.IntegrationTests.Mocks.Services
         {
             string dataPath = TestData.GetDataDirectory(org, app, instanceOwnerPartyId, instanceGuid);
 
-            DataElement dataElement = GetDataElements(org, app, instanceOwnerPartyId, instanceGuid).FirstOrDefault(de => de.Id == dataGuid.ToString());
+            DataElement? dataElement = GetDataElements(org, app, instanceOwnerPartyId, instanceGuid).FirstOrDefault(de => de.Id == dataGuid.ToString());
+
+            if (dataElement == null)
+            {
+                throw new Exception($"Unable to find data element for org: {org}/{app} party: {instanceOwnerPartyId} instance: {instanceGuid} data: {dataGuid}");
+            }
 
             Directory.CreateDirectory(dataPath + @"blob");
 
@@ -308,7 +315,7 @@ namespace App.IntegrationTests.Mocks.Services
 
             if (!Directory.Exists(path))
             {
-                return null;
+                return new List<DataElement>();
             }
 
             string[] files = Directory.GetFiles(path);

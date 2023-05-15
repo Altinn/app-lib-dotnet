@@ -26,15 +26,19 @@ namespace App.IntegrationTests.Mocks.Apps.Ttd.EFormidling
 
             Type? appType = Type.GetType(classRef);
 
-#pragma warning disable CS8603 // Possible null reference return.
-            return Activator.CreateInstance(appType);
-#pragma warning restore CS8603 // Possible null reference return.
+            if (appType == null)
+            {
+                throw new ArgumentException($"Could not find type {classRef}");
+            }
+
+            object? appInstance =  Activator.CreateInstance(appType);
+            return appInstance ?? throw new ArgumentException($"Could not create instance of {classRef}");
         }
 
         /// <inheritdoc />
         public Type GetModelType(string classRef)
         {
-            _logger.LogInformation($"GetAppModelType {classRef}");
+            _logger.LogInformation("GetAppModelType {classRef}", classRef);
 
 #pragma warning disable CS8603 // Possible null reference return.
             return Type.GetType(classRef);
