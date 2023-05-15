@@ -99,7 +99,7 @@ public class ProcessEventDispatcherTests
         appEvents.VerifyNoOtherCalls();
         eventsService.VerifyNoOtherCalls();
     }
-    
+
     [Fact]
     public async Task UpdateProcessAndDispatchEvents_StartTask_instance_updated_and_events_sent_to_storage_nothing_sent_to_ITask_when_tasktype_missing()
     {
@@ -272,7 +272,7 @@ public class ProcessEventDispatcherTests
         appEvents.VerifyNoOtherCalls();
         eventsService.VerifyNoOtherCalls();
     }
-    
+
     [Fact]
     public async Task UpdateProcessAndDispatchEvents_EndTask_confirmation_instance_updated_and_events_sent_to_storage_and_trigger_ITask()
     {
@@ -361,7 +361,7 @@ public class ProcessEventDispatcherTests
         appEvents.VerifyNoOtherCalls();
         eventsService.VerifyNoOtherCalls();
     }
-    
+
     [Fact]
     public async Task UpdateProcessAndDispatchEvents_AbandonTask_feedback_instance_updated_and_events_sent_to_storage_and_trigger_ITask()
     {
@@ -450,7 +450,7 @@ public class ProcessEventDispatcherTests
         appEvents.VerifyNoOtherCalls();
         eventsService.VerifyNoOtherCalls();
     }
-    
+
     [Fact]
     public async Task UpdateProcessAndDispatchEvents_EndEvent_confirmation_instance_updated_and_events_sent_to_storage_and_trigger_ITask()
     {
@@ -538,8 +538,8 @@ public class ProcessEventDispatcherTests
         appEvents.VerifyNoOtherCalls();
         eventsService.VerifyNoOtherCalls();
     }
-    
-        [Fact]
+
+    [Fact]
     public async Task UpdateProcessAndDispatchEvents_EndEvent_confirmation_instance_updated_and_dispatches_no_events_when_events_null()
     {
         // Arrange
@@ -653,7 +653,7 @@ public class ProcessEventDispatcherTests
         appEvents.VerifyNoOtherCalls();
         eventsService.VerifyNoOtherCalls();
     }
-    
+
     [Fact]
     public async Task RegisterEventWithEventsComponent_sends_complete_event_to_events_system_when_currentTask_null_and_endevent_set()
     {
@@ -697,7 +697,7 @@ public class ProcessEventDispatcherTests
         appEvents.VerifyNoOtherCalls();
         eventsService.VerifyNoOtherCalls();
     }
-    
+
     [Fact]
     public async Task RegisterEventWithEventsComponent_sends_no_events_when_process_is_null()
     {
@@ -736,7 +736,7 @@ public class ProcessEventDispatcherTests
         appEvents.VerifyNoOtherCalls();
         eventsService.VerifyNoOtherCalls();
     }
-    
+
     [Fact]
     public async Task RegisterEventWithEventsComponent_sends_no_events_when_current_and_endevent_is_null()
     {
@@ -775,7 +775,7 @@ public class ProcessEventDispatcherTests
         appEvents.VerifyNoOtherCalls();
         eventsService.VerifyNoOtherCalls();
     }
-    
+
     [Fact]
     public async Task RegisterEventWithEventsComponent_sends_no_events_when_registereventswitheventscomponent_false()
     {

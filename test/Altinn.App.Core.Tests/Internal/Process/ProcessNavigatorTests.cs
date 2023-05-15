@@ -58,7 +58,7 @@ public class ProcessNavigatorTests
                           },
                           new()
                           {
-                              Id= "reject"
+                              Id = "reject"
                           }
                       }
                   }

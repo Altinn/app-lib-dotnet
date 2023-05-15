@@ -54,7 +54,7 @@ public class InstanceEventExtensionsTests
         copy.User.Should().NotBeSameAs(original.User);
         copy.Should().BeEquivalentTo(original);
     }
-    
+
     [Fact]
     public void CopyValues_returns_copy_of_instance_event_Validated_null()
     {
@@ -138,8 +138,8 @@ public class InstanceEventExtensionsTests
         copy.User.Should().NotBeSameAs(original.User);
         copy.Should().BeEquivalentTo(expected);
     }
-    
-        [Fact]
+
+    [Fact]
     public void CopyValues_returns_copy_of_instance_event_CurrentTask_null()
     {
         Guid id = Guid.NewGuid();
