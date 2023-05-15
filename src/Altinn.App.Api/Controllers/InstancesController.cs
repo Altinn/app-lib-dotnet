@@ -299,7 +299,6 @@ namespace Altinn.App.Api.Controllers
 
                 // get the updated instance
                 instance = await _instanceClient.GetInstance(app, org, int.Parse(instance.InstanceOwner.PartyId), Guid.Parse(instance.Id.Split("/")[1]));
-                
                 // notify app and store events
                 var request = new ProcessStartRequest()
                 {
