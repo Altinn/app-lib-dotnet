@@ -20,7 +20,6 @@ namespace Altinn.App.Core.Internal.Process
     {
         private readonly LayoutEvaluatorStateInitializer _layoutStateInit;
         private readonly IAppResources _resources;
-        private readonly ILogger<ExpressionsExclusiveGateway> _logger;
         private readonly IAppMetadata _appMetadata;
         private readonly IData _dataClient;
         private readonly IAppModel _appModel;
@@ -33,18 +32,15 @@ namespace Altinn.App.Core.Internal.Process
         /// <param name="appModel"></param>
         /// <param name="appMetadata"></param>
         /// <param name="dataClient"></param>
-        /// <param name="logger"></param>
         public ExpressionsExclusiveGateway(
             LayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer,
             IAppResources resources,
             IAppModel appModel,
             IAppMetadata appMetadata,
-            IData dataClient,
-            ILogger<ExpressionsExclusiveGateway> logger)
+            IData dataClient)
         {
             _layoutStateInit = layoutEvaluatorStateInitializer;
             _resources = resources;
-            _logger = logger;
             _appMetadata = appMetadata;
             _dataClient = dataClient;
             _appModel = appModel;
@@ -56,7 +52,6 @@ namespace Altinn.App.Core.Internal.Process
         /// <inheritdoc />
         public async Task<List<SequenceFlow>> FilterAsync(List<SequenceFlow> outgoingFlows, Instance instance, string? action)
         {
-            _logger.LogInformation("Entering FilterAsync");
             var state = await GetLayoutEvaluatorState(instance, action);
             List<SequenceFlow> filteredList = new();
             foreach (var outgoingFlow in outgoingFlows)
