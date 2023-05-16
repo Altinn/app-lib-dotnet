@@ -2,6 +2,7 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.Logging;
 
 namespace Altinn.App.Core.Internal.Process;
 
@@ -60,8 +61,15 @@ public class ProcessNavigator : IProcessNavigator
             }
 
             var gateway = (ExclusiveGateway)directFlowTarget;
-            IProcessExclusiveGateway? gatewayFilter = _gatewayFactory.GetProcessExclusiveGateway(directFlowTarget.Id);
             List<SequenceFlow> outgoingFlows = _processReader.GetOutgoingSequenceFlows(directFlowTarget);
+            IProcessExclusiveGateway? gatewayFilter = null;
+            if(outgoingFlows.Any(a => a.ConditionExpression != null))
+            {
+                gatewayFilter = _gatewayFactory.GetProcessExclusiveGateway("AltinnExpressionsExclusiveGateway");
+            } else
+            {
+                gatewayFilter = _gatewayFactory.GetProcessExclusiveGateway(directFlowTarget.Id);
+            }
             List<SequenceFlow> filteredList;
             if (gatewayFilter == null)
             {
@@ -71,7 +79,6 @@ public class ProcessNavigator : IProcessNavigator
             {
                 filteredList = await gatewayFilter.FilterAsync(outgoingFlows, instance, action);
             }
-
             var defaultSequenceFlow = filteredList.Find(s => s.Id == gateway.Default);
             if (defaultSequenceFlow != null)
             {
