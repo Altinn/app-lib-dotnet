@@ -79,6 +79,10 @@ public class TestFunctions
     [Theory]
     [SharedTest("or")]
     public void Or_Theory(ExpressionTestCaseRoot test) => RunTestCase(test);
+    
+    [Theory]
+    [SharedTest("gatewayAction")]
+    public void GatewayAction_Theory(ExpressionTestCaseRoot test) => RunTestCase(test);
 
     [Theory]
     [SharedTest("unknown")]
@@ -93,7 +97,8 @@ public class TestFunctions
             new JsonDataModel(test.DataModel),
             test.ComponentModel,
             test.FrontEndSettings ?? new(),
-            test.Instance ?? new());
+            test.Instance ?? new(),
+            test.GatewayAction);
 
         if (test.ExpectsFailure is not null)
         {
