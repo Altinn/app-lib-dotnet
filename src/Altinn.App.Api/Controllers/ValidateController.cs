@@ -61,7 +61,7 @@ namespace Altinn.App.Api.Controllers
                 throw new ValidationException("Unable to validate instance without a started process.");
             }
 
-            List<ValidationIssue> messages = new List<ValidationIssue>();
+            List<ValidationIssue> messages;
 
             try 
             {
