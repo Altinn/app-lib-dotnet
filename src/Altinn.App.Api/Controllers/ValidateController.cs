@@ -61,11 +61,10 @@ namespace Altinn.App.Api.Controllers
                 throw new ValidationException("Unable to validate instance without a started process.");
             }
 
-            List<ValidationIssue> messages;
-
             try 
             {
-                messages = await _validationService.ValidateAndUpdateProcess(instance, taskId);
+                List<ValidationIssue> messages = await _validationService.ValidateAndUpdateProcess(instance, taskId);
+                return Ok(messages);
             } 
             catch (PlatformHttpException exception) 
             {
@@ -76,8 +75,6 @@ namespace Altinn.App.Api.Controllers
 
                 throw;
             }
-
-            return Ok(messages);
         }
 
         /// <summary>
