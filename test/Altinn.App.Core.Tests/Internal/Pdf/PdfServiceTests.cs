@@ -34,7 +34,8 @@ namespace Altinn.App.PlatformServices.Tests.Internal.Pdf
 
         private readonly IOptions<GeneralSettings> _generalSettingsOptions = Microsoft.Extensions.Options.Options.Create<GeneralSettings>(new()
         {
-            HostName = HostName
+            HostName = HostName,
+            AltinnPartyCookieName = "AltinnPartyId"
         });
 
         private readonly IOptions<PlatformSettings> _platformSettingsOptions = Microsoft.Extensions.Options.Options.Create<PlatformSettings>(new() { });
@@ -65,9 +66,9 @@ namespace Altinn.App.PlatformServices.Tests.Internal.Pdf
             });
 
             var httpClient = new HttpClient(delegatingHandler);
-            var pdfGeneratorClient = new PdfGeneratorClient(httpClient, _pdfGeneratorSettingsOptions, _platformSettingsOptions, _userTokenProvider.Object);
+            var pdfGeneratorClient = new PdfGeneratorClient(httpClient, _pdfGeneratorSettingsOptions, _platformSettingsOptions, _userTokenProvider.Object, _generalSettingsOptions);
 
-            Stream pdf = await pdfGeneratorClient.GeneratePdf(new Uri(@"https://org.apps.hostName/appId/#/instance/instanceId"), CancellationToken.None);
+            Stream pdf = await pdfGeneratorClient.GeneratePdf(new Uri(@"https://org.apps.hostName/appId/#/instance/instanceId"), CancellationToken.None, "partyId");
 
             pdf.Length.Should().Be(17814L);
         }
@@ -82,9 +83,9 @@ namespace Altinn.App.PlatformServices.Tests.Internal.Pdf
             });
 
             var httpClient = new HttpClient(delegatingHandler);
-            var pdfGeneratorClient = new PdfGeneratorClient(httpClient, _pdfGeneratorSettingsOptions, _platformSettingsOptions, _userTokenProvider.Object);
+            var pdfGeneratorClient = new PdfGeneratorClient(httpClient, _pdfGeneratorSettingsOptions, _platformSettingsOptions, _userTokenProvider.Object, _generalSettingsOptions);
 
-            var func = async () => await pdfGeneratorClient.GeneratePdf(new Uri(@"https://org.apps.hostName/appId/#/instance/instanceId"), CancellationToken.None);
+            var func = async () => await pdfGeneratorClient.GeneratePdf(new Uri(@"https://org.apps.hostName/appId/#/instance/instanceId"), CancellationToken.None, "partyId");
 
             await func.Should().ThrowAsync<PdfGenerationException>();
         }
@@ -93,7 +94,7 @@ namespace Altinn.App.PlatformServices.Tests.Internal.Pdf
         public async Task GenerateAndStorePdf()
         {
             // Arrange
-            _pdfGeneratorClient.Setup(s => s.GeneratePdf(It.IsAny<Uri>(), It.IsAny<CancellationToken>()));
+            _pdfGeneratorClient.Setup(s => s.GeneratePdf(It.IsAny<Uri>(), It.IsAny<CancellationToken>(), It.IsAny<string>()));
             _generalSettingsOptions.Value.ExternalAppBaseUrl = "https://{org}.apps.{hostName}/{org}/{app}";
 
             var target = new PdfService(
@@ -112,6 +113,10 @@ namespace Altinn.App.PlatformServices.Tests.Internal.Pdf
             Instance instance = new()
             {
                 Id = $"509378/{Guid.NewGuid()}",
+                InstanceOwner = new InstanceOwner
+                {
+                    PartyId = "509378",
+                },
                 AppId = "digdir/not-really-an-app",
                 Org = "digdir"
             };
@@ -127,7 +132,8 @@ namespace Altinn.App.PlatformServices.Tests.Internal.Pdf
                         u.Host == $"{instance.Org}.apps.{HostName}" &&
                         u.AbsoluteUri.Contains(instance.AppId) &&
                         u.AbsoluteUri.Contains(instance.Id)),
-                    It.IsAny<CancellationToken>()),
+                    It.IsAny<CancellationToken>(),
+                    It.Is<string>(p => p == "509378")),
                 Times.Once);
 
             _dataClient.Verify(

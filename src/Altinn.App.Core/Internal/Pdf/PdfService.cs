@@ -94,7 +94,7 @@ public class PdfService : IPdfService
 
         Uri uri = BuildUri(baseUrl, pagePath, language);
 
-        Stream pdfContent = await _pdfGeneratorClient.GeneratePdf(uri, ct);
+        Stream pdfContent = await _pdfGeneratorClient.GeneratePdf(uri, ct, instance.InstanceOwner.PartyId); 
 
         var appIdentifier = new AppIdentifier(instance);
 

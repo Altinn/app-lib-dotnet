@@ -11,5 +11,5 @@ public interface IPdfGeneratorClient
     /// Generates a PDF.
     /// </summary>
     /// <returns>A stream with the binary content of the generated PDF</returns>
-    Task<Stream> GeneratePdf(Uri uri, CancellationToken ct);
+    Task<Stream> GeneratePdf(Uri uri, CancellationToken ct, string partyId);
 }

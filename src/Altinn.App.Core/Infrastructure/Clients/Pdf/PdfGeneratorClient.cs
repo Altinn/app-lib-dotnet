@@ -21,6 +21,7 @@ public class PdfGeneratorClient : IPdfGeneratorClient
     private readonly PdfGeneratorSettings _pdfGeneratorSettings;
     private readonly PlatformSettings _platformSettings;
     private readonly IUserTokenProvider _userTokenProvider;
+    private readonly GeneralSettings _generalSettings;
 
     private readonly JsonSerializerOptions _jsonSerializerOptions = new()
     {
@@ -36,20 +37,23 @@ public class PdfGeneratorClient : IPdfGeneratorClient
     /// </param>
     /// <param name="platformSettings">Links to platform services</param>
     /// <param name="userTokenProvider">A service able to identify the JWT for currently authenticated user.</param>
+    /// <param name="generalSettings">The app general settings.</param>
     public PdfGeneratorClient(
         HttpClient httpClient,
         IOptions<PdfGeneratorSettings> pdfGeneratorSettings,
         IOptions<PlatformSettings> platformSettings,
-        IUserTokenProvider userTokenProvider)
+        IUserTokenProvider userTokenProvider,
+        IOptions<GeneralSettings> generalSettings)
     {
         _httpClient = httpClient;
         _userTokenProvider = userTokenProvider;
         _pdfGeneratorSettings = pdfGeneratorSettings.Value;
         _platformSettings = platformSettings.Value;
+        _generalSettings = generalSettings.Value;
     }
 
     /// <inheritdoc/>
-    public async Task<Stream> GeneratePdf(Uri uri, CancellationToken ct)
+    public async Task<Stream> GeneratePdf(Uri uri, CancellationToken ct, string partyId)
     {
         bool hasWaitForSelector = !string.IsNullOrWhiteSpace(_pdfGeneratorSettings.WaitForSelector);
         PdfGeneratorRequest generatorRequest = new()
@@ -62,6 +66,13 @@ public class PdfGeneratorClient : IPdfGeneratorClient
         {
             Value = _userTokenProvider.GetUserToken(),
             Domain = uri.Host
+        });
+
+        generatorRequest.Cookies.Add(new PdfGeneratorCookieOptions
+        {
+            Name = _generalSettings.AltinnPartyCookieName,
+            Value = partyId,
+            Domain = uri.Host,
         });
 
         string requestContent = JsonSerializer.Serialize(generatorRequest, _jsonSerializerOptions);
