@@ -1,4 +1,5 @@
 using Altinn.App.Core.Internal.Process.Elements;
+using Altinn.App.Core.Models.Process;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Features;
@@ -18,7 +19,7 @@ public interface IProcessExclusiveGateway
     /// </summary>
     /// <param name="outgoingFlows">Complete list of defined flows out of gateway</param>
     /// <param name="instance">Instance where process is about to move next</param>
-    /// <param name="action">Action performed by the requester</param>
+    /// <param name="processGatewayInformation"></param>
     /// <returns></returns>
-    public Task<List<SequenceFlow>> FilterAsync(List<SequenceFlow> outgoingFlows, Instance instance, string? action);
+    public Task<List<SequenceFlow>> FilterAsync(List<SequenceFlow> outgoingFlows, Instance instance, ProcessGatewayInformation processGatewayInformation);
 }

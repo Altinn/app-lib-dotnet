@@ -8,8 +8,8 @@ using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Expressions;
+using Altinn.App.Core.Models.Process;
 using Altinn.Platform.Storage.Interface.Models;
-using Microsoft.Extensions.Logging;
 
 namespace Altinn.App.Core.Internal.Process
 {
@@ -50,13 +50,13 @@ namespace Altinn.App.Core.Internal.Process
         public string GatewayId { get; } = "AltinnExpressionsExclusiveGateway";
 
         /// <inheritdoc />
-        public async Task<List<SequenceFlow>> FilterAsync(List<SequenceFlow> outgoingFlows, Instance instance, string? action)
+        public async Task<List<SequenceFlow>> FilterAsync(List<SequenceFlow> outgoingFlows, Instance instance, ProcessGatewayInformation processGatewayInformation)
         {
-            var state = await GetLayoutEvaluatorState(instance, action);
+            var state = await GetLayoutEvaluatorState(instance, processGatewayInformation.Action, processGatewayInformation.DataTypeId);
             List<SequenceFlow> filteredList = new();
             foreach (var outgoingFlow in outgoingFlows)
             {
-                if(EvaluateSequenceFlow(state, outgoingFlow))
+                if (EvaluateSequenceFlow(state, outgoingFlow))
                 {
                     filteredList.Add(outgoingFlow);
                 }
@@ -65,16 +65,16 @@ namespace Altinn.App.Core.Internal.Process
             return filteredList;
         }
 
-        private async Task<LayoutEvaluatorState> GetLayoutEvaluatorState(Instance instance, string? action)
+        private async Task<LayoutEvaluatorState> GetLayoutEvaluatorState(Instance instance, string? action, string? dataTypeId)
         {
             var layoutSet = GetLayoutSet(instance);
-            var dataType = await GetDataType(instance, layoutSet);
+            var (checkedDataTypeId, dataType) = await GetDataType(instance, layoutSet, dataTypeId);
             object data = new object();
-            if (dataType != null)
+            if (checkedDataTypeId != null && dataType != null)
             {
                 InstanceIdentifier instanceIdentifier = new InstanceIdentifier(instance);
-                var dataGuid = GetDataId(instance, dataType.Item1);
-                Type dataElementType = dataType.Item2;
+                var dataGuid = GetDataId(instance, checkedDataTypeId);
+                Type dataElementType = dataType;
                 if (dataGuid != null)
                 {
                     data = await _dataClient.GetFormData(instanceIdentifier.InstanceGuid, dataElementType, instance.Org, instance.AppId.Split("/")[1], int.Parse(instance.InstanceOwner.PartyId), dataGuid.Value);
@@ -138,24 +138,28 @@ namespace Altinn.App.Core.Internal.Process
             return layoutSet;
         }
 
-        private async Task<Tuple<string, Type>?> GetDataType(Instance instance, LayoutSet? layoutSet)
+        private async Task<(string? DataTypeId, Type? DataTypeClassType)> GetDataType(Instance instance, LayoutSet? layoutSet, string? dataTypeId)
         {
-            DataType? dataTypeClassRef = null;
-            if (layoutSet != null)
+            DataType? dataType;
+            if (dataTypeId != null)
             {
-                dataTypeClassRef = (await _appMetadata.GetApplicationMetadata()).DataTypes.FirstOrDefault(d => d.Id == layoutSet.DataType && d.AppLogic != null);
+                dataType = (await _appMetadata.GetApplicationMetadata()).DataTypes.FirstOrDefault(d => d.Id == dataTypeId && d.AppLogic != null);
+            }
+            else if (layoutSet != null)
+            {
+                dataType = (await _appMetadata.GetApplicationMetadata()).DataTypes.FirstOrDefault(d => d.Id == layoutSet.DataType && d.AppLogic != null);
             }
             else
             {
-                dataTypeClassRef = (await _appMetadata.GetApplicationMetadata()).DataTypes.FirstOrDefault(d => d.TaskId == instance.Process.CurrentTask.ElementId && d.AppLogic != null);
+                dataType = (await _appMetadata.GetApplicationMetadata()).DataTypes.FirstOrDefault(d => d.TaskId == instance.Process.CurrentTask.ElementId && d.AppLogic != null);
             }
 
-            if (dataTypeClassRef != null)
+            if (dataType != null)
             {
-                return new Tuple<string, Type>(dataTypeClassRef.Id, _appModel.GetModelType(dataTypeClassRef.AppLogic.ClassRef));
+                return (dataType.Id, _appModel.GetModelType(dataType.AppLogic.ClassRef));
             }
 
-            return null;
+            return (null, null);
         }
 
         private static Guid? GetDataId(Instance instance, string dataType)
