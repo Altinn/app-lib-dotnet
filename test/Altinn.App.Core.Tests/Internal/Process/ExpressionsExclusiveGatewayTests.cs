@@ -338,7 +338,7 @@ public class ExpressionsExclusiveGatewayTests
         Assert.Equal("2", result[0].Id);
     }
     
-    private ExpressionsExclusiveGateway SetupExpressionsGateway(List<DataType> dataTypes, string? layoutSets = null, object? formData = null, Type? dataType = null)
+    private static ExpressionsExclusiveGateway SetupExpressionsGateway(List<DataType> dataTypes, string? layoutSets = null, object? formData = null, Type? dataType = null)
     {
         var resources = new Mock<IAppResources>();
         var appModel = new Mock<IAppModel>();

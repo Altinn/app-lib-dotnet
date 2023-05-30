@@ -53,16 +53,8 @@ namespace Altinn.App.Core.Internal.Process
         public async Task<List<SequenceFlow>> FilterAsync(List<SequenceFlow> outgoingFlows, Instance instance, ProcessGatewayInformation processGatewayInformation)
         {
             var state = await GetLayoutEvaluatorState(instance, processGatewayInformation.Action, processGatewayInformation.DataTypeId);
-            List<SequenceFlow> filteredList = new();
-            foreach (var outgoingFlow in outgoingFlows)
-            {
-                if (EvaluateSequenceFlow(state, outgoingFlow))
-                {
-                    filteredList.Add(outgoingFlow);
-                }
-            }
 
-            return filteredList;
+            return outgoingFlows.Where(outgoingFlow => EvaluateSequenceFlow(state, outgoingFlow)).ToList();
         }
 
         private async Task<LayoutEvaluatorState> GetLayoutEvaluatorState(Instance instance, string? action, string? dataTypeId)
@@ -107,7 +99,7 @@ namespace Altinn.App.Core.Internal.Process
             return false;
         }
 
-        private Expression GetExpressionFromCondition(string condition)
+        private static Expression GetExpressionFromCondition(string condition)
         {
             JsonSerializerOptions options = new()
             {

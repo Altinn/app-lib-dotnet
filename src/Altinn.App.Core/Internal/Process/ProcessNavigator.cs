@@ -21,6 +21,7 @@ public class ProcessNavigator : IProcessNavigator
     /// </summary>
     /// <param name="processReader">The process reader</param>
     /// <param name="gatewayFactory">Service to fetch wanted gateway filter implementation</param>
+    /// <param name="logger">The logger</param>
     public ProcessNavigator(IProcessReader processReader, ExclusiveGatewayFactory gatewayFactory, ILogger<ProcessNavigator> logger)
     {
         _processReader = processReader;
@@ -100,7 +101,7 @@ public class ProcessNavigator : IProcessNavigator
                 filteredNext.AddRange(await NextFollowAndFilterGateways(instance, filteredTargets, action));
             }
         }
-        _logger.LogDebug($"Filtered next elements: {string.Join(", ", filteredNext.Select(e => e.Id))}");
+        _logger.LogDebug("Filtered next elements: {FilteredNextElements}", string.Join(", ", filteredNext.Select(e => e.Id)));
         return filteredNext;
     }
 
