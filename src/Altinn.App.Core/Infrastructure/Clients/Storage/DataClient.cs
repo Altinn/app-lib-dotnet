@@ -403,5 +403,41 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
 
             throw await PlatformHttpException.CreateAsync(response);
         }
+
+        /// <inheritdoc />
+        public async Task<DataElement> LockDataElement(InstanceIdentifier instanceIdentifier, Guid dataGuid)
+        {
+            string apiUrl = $"{_platformSettings.ApiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}/lock";
+            string token = _userTokenProvider.GetUserToken();
+            _logger.LogDebug("Locking data element {DataGuid} for instance {InstanceIdentifier} URL: {Url}", dataGuid, instanceIdentifier, apiUrl);
+            HttpResponseMessage response = await _client.PutAsync(token, apiUrl, content: null);
+            if (response.IsSuccessStatusCode)
+            {
+                _logger.LogDebug("Lock data element result: {ResultCode}", response.StatusCode);
+                DataElement result = JsonConvert.DeserializeObject<DataElement>(await response.Content.ReadAsStringAsync())!;
+
+                return result;
+            }
+            _logger.LogError("Locking data element {DataGuid} for instance {InstanceIdentifier} failed with status code {StatusCode}", dataGuid, instanceIdentifier, response.StatusCode);
+            throw await PlatformHttpException.CreateAsync(response);
+        }
+
+        /// <inheritdoc />
+        public async Task<DataElement> UnlockDataElement(InstanceIdentifier instanceIdentifier, Guid dataGuid)
+        {
+            string apiUrl = $"{_platformSettings.ApiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}/lock";
+            string token = _userTokenProvider.GetUserToken();
+            _logger.LogDebug("Unlocking data element {DataGuid} for instance {InstanceIdentifier} URL: {Url}", dataGuid, instanceIdentifier, apiUrl);
+            HttpResponseMessage response = await _client.DeleteAsync(token, apiUrl);
+            if (response.IsSuccessStatusCode)
+            {
+                _logger.LogDebug("Unlocked data element {DataGuid} for instance {InstanceIdentifier} URL: {Url}", dataGuid, instanceIdentifier, apiUrl);
+                DataElement result = JsonConvert.DeserializeObject<DataElement>(await response.Content.ReadAsStringAsync())!;
+
+                return result;
+            }
+            _logger.LogError("Locking data element {DataGuid} for instance {InstanceIdentifier} failed with status code {StatusCode}", dataGuid, instanceIdentifier, response.StatusCode);
+            throw await PlatformHttpException.CreateAsync(response);
+        }
     }
 }

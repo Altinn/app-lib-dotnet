@@ -196,7 +196,7 @@ public class DefaultTaskEventsTests: IDisposable
         _metaMock.Verify(r => r.GetApplicationMetadata());
         _dataMock.Verify(r => r.InsertFormData<object>(It.IsAny<ModelWithShadowFields>(), instanceGuid, modelType, "ttd", "shadow-fields-test", 1000, "model-clean"));
         _dataMock.Verify(r => r.GetFormData(instanceGuid, modelType, "ttd", "shadow-fields-test", 1000, dataElementId));
-        _dataMock.Verify(r => r.Update(instance, instance.Data[0]));
+        _dataMock.Verify(r => r.LockDataElement(It.Is<InstanceIdentifier>(i => i.InstanceOwnerPartyId == 1337 && i.InstanceGuid == instanceGuid), new Guid(instance.Data[0].Id)));
     }
 
     [Fact]
@@ -251,7 +251,7 @@ public class DefaultTaskEventsTests: IDisposable
         _metaMock.Verify(r => r.GetApplicationMetadata());
         _dataMock.Verify(r => r.UpdateData<object>(It.IsAny<Altinn.App.Core.Tests.Implementation.TestData.AppDataModel.ModelWithShadowFields>(), instanceGuid, modelType, "ttd", "shadow-fields-test", 1000, dataElementId));
         _dataMock.Verify(r => r.GetFormData(instanceGuid, modelType, "ttd", "shadow-fields-test", 1000, dataElementId));
-        _dataMock.Verify(r => r.Update(instance, instance.Data[0]));
+        _dataMock.Verify(r => r.LockDataElement(It.Is<InstanceIdentifier>(i => i.InstanceOwnerPartyId == 1337 && i.InstanceGuid == instanceGuid), new Guid(instance.Data[0].Id)));
     }
 
     [Fact]

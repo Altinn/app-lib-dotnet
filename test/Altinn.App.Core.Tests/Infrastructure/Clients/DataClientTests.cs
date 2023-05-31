@@ -494,6 +494,102 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients
             AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Put, null, "application/xml");
             result.Response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
         }
+        
+        [Fact]
+        public async Task LockDataElement_calls_lock_endpoint_in_storage_and_returns_updated_DataElement()
+        {
+            var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
+            var dataGuid = new Guid("67a5ef12-6e38-41f8-8b42-f91249ebcec0");
+            HttpRequestMessage? platformRequest = null;
+            int invocations = 0;
+            DataElement dataElement = new ()
+            {
+                Id = "67a5ef12-6e38-41f8-8b42-f91249ebcec0",
+                Locked = true
+            };
+            var dataClient = GetDataClient(async (request, token) =>
+            {
+                invocations++;
+                platformRequest = request;
+                await Task.CompletedTask;
+                return new HttpResponseMessage() { StatusCode = HttpStatusCode.OK, Content = new StringContent("{\"id\":\"67a5ef12-6e38-41f8-8b42-f91249ebcec0\",\"locked\":true}")};
+            });
+            var expectedUri = new Uri($"{apiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}/lock", UriKind.RelativeOrAbsolute);
+            var response = await dataClient.LockDataElement(instanceIdentifier, dataGuid);
+            invocations.Should().Be(1);
+            platformRequest?.Should().NotBeNull();
+            response.Should().BeEquivalentTo(dataElement);
+            AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Put);
+        }
+        
+        [Fact]
+        public async Task LockDataElement_throws_platformhttpexception_if_platform_request_fails()
+        {
+            var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
+            var dataGuid = new Guid("67a5ef12-6e38-41f8-8b42-f91249ebcec0");
+            int invocations = 0;
+            HttpRequestMessage? platformRequest = null;
+            var dataClient = GetDataClient(async (request, token) =>
+            {
+                invocations++;
+                platformRequest = request;
+                await Task.CompletedTask;
+                return new HttpResponseMessage() { StatusCode = HttpStatusCode.InternalServerError };
+            });
+            var expectedUri = new Uri($"{apiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}/lock", UriKind.RelativeOrAbsolute);
+            var result = await Assert.ThrowsAsync<PlatformHttpException>(async () => await dataClient.LockDataElement(instanceIdentifier, dataGuid));
+            invocations.Should().Be(1);
+            AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Put);
+            result.Response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
+        }
+        
+        [Fact]
+        public async Task UnlockDataElement_calls_lock_endpoint_in_storage_and_returns_updated_DataElement()
+        {
+            var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
+            var dataGuid = new Guid("67a5ef12-6e38-41f8-8b42-f91249ebcec0");
+            HttpRequestMessage? platformRequest = null;
+            int invocations = 0;
+            DataElement dataElement = new ()
+            {
+                Id = "67a5ef12-6e38-41f8-8b42-f91249ebcec0",
+                Locked = true
+            };
+            var dataClient = GetDataClient(async (request, token) =>
+            {
+                invocations++;
+                platformRequest = request;
+                await Task.CompletedTask;
+                return new HttpResponseMessage() { StatusCode = HttpStatusCode.OK, Content = new StringContent("{\"id\":\"67a5ef12-6e38-41f8-8b42-f91249ebcec0\",\"locked\":true}")};
+            });
+            var expectedUri = new Uri($"{apiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}/lock", UriKind.RelativeOrAbsolute);
+            var response = await dataClient.UnlockDataElement(instanceIdentifier, dataGuid);
+            invocations.Should().Be(1);
+            platformRequest?.Should().NotBeNull();
+            response.Should().BeEquivalentTo(dataElement);
+            AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Delete);
+        }
+        
+        [Fact]
+        public async Task UnlockDataElement_throws_platformhttpexception_if_platform_request_fails()
+        {
+            var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
+            var dataGuid = new Guid("67a5ef12-6e38-41f8-8b42-f91249ebcec0");
+            int invocations = 0;
+            HttpRequestMessage? platformRequest = null;
+            var dataClient = GetDataClient(async (request, token) =>
+            {
+                invocations++;
+                platformRequest = request;
+                await Task.CompletedTask;
+                return new HttpResponseMessage() { StatusCode = HttpStatusCode.InternalServerError };
+            });
+            var expectedUri = new Uri($"{apiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}/lock", UriKind.RelativeOrAbsolute);
+            var result = await Assert.ThrowsAsync<PlatformHttpException>(async () => await dataClient.UnlockDataElement(instanceIdentifier, dataGuid));
+            invocations.Should().Be(1);
+            AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Delete);
+            result.Response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
+        }
 
         private DataClient GetDataClient(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> handlerFunc)
         {
@@ -513,6 +609,7 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients
             actual.Content?.Headers.TryGetValues("Content-Disposition", out actualContentDisposition);
             var authHeader = actual.Headers.Authorization;
             actual.RequestUri.Should().BeEquivalentTo(expectedUri);
+            actual.Method.Should().BeEquivalentTo(method);
             Uri.Compare(actual.RequestUri, expectedUri, UriComponents.HttpRequestUrl, UriFormat.SafeUnescaped, StringComparison.OrdinalIgnoreCase).Should().Be(0, "Actual request Uri did not match expected Uri");
             if (expectedContentType is not null)
             {
