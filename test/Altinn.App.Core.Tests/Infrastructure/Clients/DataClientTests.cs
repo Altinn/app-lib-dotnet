@@ -334,7 +334,7 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients
             };
             response.Should().BeEquivalentTo(expectedList);
         }
-        
+
         [Fact]
         public async Task GetBinaryDataList_throws_PlatformHttpException_if_non_ok_response()
         {
@@ -352,7 +352,7 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients
             actual.Should().NotBeNull();
             actual.Response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
         }
-        
+
         [Fact]
         public async Task DeleteBinaryData_returns_true_when_data_was_deleted()
         {
@@ -375,7 +375,7 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients
             AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Delete);
             result.Should().BeTrue();
         }
-        
+
         [Fact]
         public async Task DeleteBinaryData_throws_PlatformHttpException_when_dataelement_not_found()
         {
@@ -397,7 +397,7 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients
             AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Delete);
             actual.Response.StatusCode.Should().Be(HttpStatusCode.NotFound);
         }
-        
+
         [Fact]
         public async Task DeleteData_returns_true_when_data_was_deleted_with_delay_true()
         {
@@ -446,7 +446,7 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients
             platformRequest?.Should().NotBeNull();
             AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Put, null, "application/xml");
         }
-        
+
         [Fact]
         public async Task UpdateData_throws_error_if_serilization_fails()
         {
@@ -467,7 +467,7 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients
             await Assert.ThrowsAsync<InvalidOperationException>(async () => await dataClient.UpdateData(exampleModel, instanceIdentifier.InstanceGuid, typeof(DataElement), "ttd", "app", instanceIdentifier.InstanceOwnerPartyId, dataGuid));
             invocations.Should().Be(0);
         }
-        
+
         [Fact]
         public async Task UpdateData_throws_platformhttpexception_if_platform_request_fails()
         {
@@ -488,13 +488,14 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients
                 return new HttpResponseMessage() { StatusCode = HttpStatusCode.InternalServerError };
             });
             var expectedUri = new Uri($"{apiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}", UriKind.RelativeOrAbsolute);
-            var result = await Assert.ThrowsAsync<PlatformHttpException>(async () => await dataClient.UpdateData(exampleModel, instanceIdentifier.InstanceGuid, typeof(ExampleModel), "ttd", "app", instanceIdentifier.InstanceOwnerPartyId, dataGuid));
+            var result = await Assert.ThrowsAsync<PlatformHttpException>(async () =>
+                await dataClient.UpdateData(exampleModel, instanceIdentifier.InstanceGuid, typeof(ExampleModel), "ttd", "app", instanceIdentifier.InstanceOwnerPartyId, dataGuid));
             invocations.Should().Be(1);
             platformRequest?.Should().NotBeNull();
             AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Put, null, "application/xml");
             result.Response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
         }
-        
+
         [Fact]
         public async Task LockDataElement_calls_lock_endpoint_in_storage_and_returns_updated_DataElement()
         {
@@ -502,7 +503,7 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients
             var dataGuid = new Guid("67a5ef12-6e38-41f8-8b42-f91249ebcec0");
             HttpRequestMessage? platformRequest = null;
             int invocations = 0;
-            DataElement dataElement = new ()
+            DataElement dataElement = new()
             {
                 Id = "67a5ef12-6e38-41f8-8b42-f91249ebcec0",
                 Locked = true
@@ -512,7 +513,7 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients
                 invocations++;
                 platformRequest = request;
                 await Task.CompletedTask;
-                return new HttpResponseMessage() { StatusCode = HttpStatusCode.OK, Content = new StringContent("{\"id\":\"67a5ef12-6e38-41f8-8b42-f91249ebcec0\",\"locked\":true}")};
+                return new HttpResponseMessage() { StatusCode = HttpStatusCode.OK, Content = new StringContent("{\"id\":\"67a5ef12-6e38-41f8-8b42-f91249ebcec0\",\"locked\":true}") };
             });
             var expectedUri = new Uri($"{apiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}/lock", UriKind.RelativeOrAbsolute);
             var response = await dataClient.LockDataElement(instanceIdentifier, dataGuid);
@@ -521,7 +522,7 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients
             response.Should().BeEquivalentTo(dataElement);
             AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Put);
         }
-        
+
         [Fact]
         public async Task LockDataElement_throws_platformhttpexception_if_platform_request_fails()
         {
@@ -542,7 +543,7 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients
             AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Put);
             result.Response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
         }
-        
+
         [Fact]
         public async Task UnlockDataElement_calls_lock_endpoint_in_storage_and_returns_updated_DataElement()
         {
@@ -550,7 +551,7 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients
             var dataGuid = new Guid("67a5ef12-6e38-41f8-8b42-f91249ebcec0");
             HttpRequestMessage? platformRequest = null;
             int invocations = 0;
-            DataElement dataElement = new ()
+            DataElement dataElement = new()
             {
                 Id = "67a5ef12-6e38-41f8-8b42-f91249ebcec0",
                 Locked = true
@@ -560,7 +561,7 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients
                 invocations++;
                 platformRequest = request;
                 await Task.CompletedTask;
-                return new HttpResponseMessage() { StatusCode = HttpStatusCode.OK, Content = new StringContent("{\"id\":\"67a5ef12-6e38-41f8-8b42-f91249ebcec0\",\"locked\":true}")};
+                return new HttpResponseMessage() { StatusCode = HttpStatusCode.OK, Content = new StringContent("{\"id\":\"67a5ef12-6e38-41f8-8b42-f91249ebcec0\",\"locked\":true}") };
             });
             var expectedUri = new Uri($"{apiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}/lock", UriKind.RelativeOrAbsolute);
             var response = await dataClient.UnlockDataElement(instanceIdentifier, dataGuid);
@@ -569,7 +570,7 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients
             response.Should().BeEquivalentTo(dataElement);
             AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Delete);
         }
-        
+
         [Fact]
         public async Task UnlockDataElement_throws_platformhttpexception_if_platform_request_fails()
         {
