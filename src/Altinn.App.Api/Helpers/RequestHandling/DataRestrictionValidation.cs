@@ -18,7 +18,7 @@ namespace Altinn.App.Api.Helpers.RequestHandling
         /// </summary>
         /// <param name="request">the original http request</param>
         /// <param name="dataType">datatype the files is beeing uploaded to</param>
-        /// <returns>true with errorResponse = null if all is ok, false with errorResponse if not</returns>
+        /// <returns>true with errorResponse = empty list if all is ok, false with errorResponse including errors if not</returns>
         public static (bool Success, List<ValidationIssue> Errors) CompliesWithDataRestrictions(HttpRequest request, DataType? dataType)
         {
             List<ValidationIssue> errors = new();
