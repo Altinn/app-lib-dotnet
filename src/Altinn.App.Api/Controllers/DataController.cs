@@ -159,7 +159,7 @@ namespace Altinn.App.Api.Controllers
                         return new BadRequestObjectResult(GetErrorDetails(errors));
                     }
 
-                    List<FileAnalysisResult> fileAnalysisResults = new();
+                    IEnumerable<FileAnalysisResult> fileAnalysisResults = new List<FileAnalysisResult>();
                     if (FileAnalysisEnabledForDataType(dataTypeFromMetadata))
                     {
                         StreamContent streamContent = Request.CreateContentStream();
@@ -167,7 +167,7 @@ namespace Altinn.App.Api.Controllers
                         bool parseSuccess = Request.Headers.TryGetValue("Content-Disposition", out StringValues headerValues);
                         string fileName = parseSuccess ? DataRestrictionValidation.GetFileNameFromHeader(headerValues) : string.Empty;
 
-                        fileAnalysisResults = (List<FileAnalysisResult>)await _fileAnalyserService.Analyse(dataTypeFromMetadata, fileStream, fileName);
+                        fileAnalysisResults = await _fileAnalyserService.Analyse(dataTypeFromMetadata, fileStream, fileName);
                     }
 
                     bool fileValidationSuccess = true;

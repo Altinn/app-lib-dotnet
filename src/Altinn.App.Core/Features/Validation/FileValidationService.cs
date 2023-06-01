@@ -22,7 +22,7 @@ namespace Altinn.App.Core.Features.Validation
         /// <summary>
         /// Runs all registered validators on the specified <see cref="DataType"/>
         /// </summary>
-        public async Task<(bool Success, List<ValidationIssue> Errors)> Validate(DataType dataType, List<FileAnalysisResult> fileAnalysisResults)
+        public async Task<(bool Success, List<ValidationIssue> Errors)> Validate(DataType dataType, IEnumerable<FileAnalysisResult> fileAnalysisResults)
         {
             List<ValidationIssue> allErrors = new();
             bool allSuccess = true;
@@ -30,7 +30,7 @@ namespace Altinn.App.Core.Features.Validation
             List<IFileValidator> fileValidators = _fileValidatorFactory.GetFileValidators(dataType.EnabledFileValidators).ToList();
             foreach (IFileValidator fileValidator in fileValidators)
             {
-                (bool success, List<ValidationIssue> errors) = await fileValidator.Validate(dataType, fileAnalysisResults);
+                (bool success, IEnumerable<ValidationIssue> errors) = await fileValidator.Validate(dataType, fileAnalysisResults);
                 if (!success)
                 {
                     allSuccess = false;

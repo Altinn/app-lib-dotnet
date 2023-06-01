@@ -98,10 +98,10 @@ namespace App.IntegrationTests.Mocks.Services
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             var dataElements = GetDataElements(org, app, instanceOwnerPartyId, instanceGuid);
-            List<AttachmentList> list = new List<AttachmentList>();
+            List<AttachmentList> list = new();
             foreach (DataElement dataElement in dataElements)
             {
-                AttachmentList al = new AttachmentList()
+                AttachmentList al = new()
                 {
                     Type = dataElement.DataType,
                     Attachments = new List<Attachment>()
@@ -161,7 +161,7 @@ namespace App.IntegrationTests.Mocks.Services
             {
                 Directory.CreateDirectory(dataPath + @"blob");
 
-                using (Stream stream = File.Open(dataPath + @"blob/" + dataGuid.ToString(), FileMode.Create, FileAccess.ReadWrite))
+                using (Stream stream = File.Open(dataPath + @"blob/" + dataGuid, FileMode.Create, FileAccess.ReadWrite))
                 {
                     XmlSerializer serializer = new(type);
                     serializer.Serialize(stream, dataToSerialize);
@@ -191,7 +191,7 @@ namespace App.IntegrationTests.Mocks.Services
 
             Directory.CreateDirectory(dataPath + @"blob");
 
-            using (Stream stream = File.Open(dataPath + $@"blob{Path.DirectorySeparatorChar}" + dataGuid.ToString(), FileMode.Create, FileAccess.ReadWrite))
+            using (Stream stream = File.Open(dataPath + $@"blob{Path.DirectorySeparatorChar}" + dataGuid, FileMode.Create, FileAccess.ReadWrite))
             {
                 XmlSerializer serializer = new(type);
                 serializer.Serialize(stream, dataToSerialize);
@@ -220,7 +220,7 @@ namespace App.IntegrationTests.Mocks.Services
 
             long filesize;
 
-            using (Stream streamToWriteTo = File.Open(dataPath + @"blob/" + dataGuid.ToString(), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
+            using (Stream streamToWriteTo = File.Open(dataPath + @"blob/" + dataGuid, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
             {
                 await request.Body.CopyToAsync(streamToWriteTo);
                 streamToWriteTo.Flush();
@@ -261,7 +261,7 @@ namespace App.IntegrationTests.Mocks.Services
 
             long filesize;
 
-            using (Stream streamToWriteTo = File.Open(dataPath + @"blob/" + dataGuid.ToString(), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
+            using (Stream streamToWriteTo = File.Open(dataPath + @"blob/" + dataGuid, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
             {
                 stream.Seek(0, SeekOrigin.Begin);
                 await stream.CopyToAsync(streamToWriteTo);

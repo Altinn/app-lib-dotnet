@@ -142,7 +142,7 @@ namespace Altinn.App.Api.Tests.Mocks
 
         private static string GetInstancePath(string app, string org, int instanceOwnerId, Guid instanceId)
         {
-            return Path.Combine(TestData.GetInstancesDirectory(), org, app, instanceOwnerId.ToString(), instanceId.ToString() + ".json");
+            return Path.Combine(TestData.GetInstancesDirectory(), org, app, instanceOwnerId.ToString(), instanceId + ".json");
         }
 
         private static string GetDataPath(string org, string app, int instanceOwnerId, Guid instanceGuid)

@@ -10,7 +10,7 @@ namespace Altinn.App.Api.Tests.Controllers
         public string Id { get; private set; } = "mimeTypeValidator";
 
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously. Suppressed because of the interface.
-        public async Task<(bool Success, List<ValidationIssue> Errors)> Validate(DataType dataType, List<FileAnalysisResult> fileAnalysisResults)
+        public async Task<(bool Success, IEnumerable<ValidationIssue> Errors)> Validate(DataType dataType, IEnumerable<FileAnalysisResult> fileAnalysisResults)
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             List<ValidationIssue> errors = new();

@@ -17,6 +17,6 @@ namespace Altinn.App.Core.Features.Validation
         /// <summary>
         /// Validating a file based on analysis results.
         /// </summary>
-        Task<(bool Success, List<ValidationIssue> Errors)> Validate(DataType dataType, List<FileAnalysisResult> fileAnalysisResults);
+        Task<(bool Success, IEnumerable<ValidationIssue> Errors)> Validate(DataType dataType, IEnumerable<FileAnalysisResult> fileAnalysisResults);
     }
 }
