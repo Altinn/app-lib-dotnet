@@ -27,11 +27,11 @@ namespace Altinn.App.Core.Internal.Process
         /// <summary>
         /// Constructor for <see cref="ExpressionsExclusiveGateway" />
         /// </summary>
-        /// <param name="layoutEvaluatorStateInitializer"></param>
-        /// <param name="resources"></param>
-        /// <param name="appModel"></param>
-        /// <param name="appMetadata"></param>
-        /// <param name="dataClient"></param>
+        /// <param name="layoutEvaluatorStateInitializer">Expressions state initalizer used to create context for expression evaluation</param>
+        /// <param name="resources">Service for fetching app resources</param>
+        /// <param name="appModel">Service for fetching app model</param>
+        /// <param name="appMetadata">Service for fetching app metadata</param>
+        /// <param name="dataClient">Service for interacting with Platform Storage</param>
         public ExpressionsExclusiveGateway(
             LayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer,
             IAppResources resources,
@@ -130,6 +130,7 @@ namespace Altinn.App.Core.Internal.Process
             return layoutSet;
         }
 
+        //TODO: Find a better home for this method
         private async Task<(string? DataTypeId, Type? DataTypeClassType)> GetDataType(Instance instance, LayoutSet? layoutSet, string? dataTypeId)
         {
             DataType? dataType;
