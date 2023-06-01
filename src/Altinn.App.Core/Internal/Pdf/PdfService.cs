@@ -6,6 +6,7 @@ using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers.Extensions;
 using Altinn.App.Core.Interface;
+using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
@@ -25,6 +26,7 @@ namespace Altinn.App.Core.Internal.Pdf;
 public class PdfService : IPdfService
 {
     private readonly IPDF _pdfClient;
+    private readonly IAppMetadata _appMetadataService;
     private readonly IAppResources _resourceService;
     private readonly IPdfOptionsMapping _pdfOptionsMapping;
     private readonly IData _dataClient;
@@ -44,6 +46,7 @@ public class PdfService : IPdfService
     /// Initializes a new instance of the <see cref="PdfService"/> class.
     /// </summary>
     /// <param name="pdfClient">Client for communicating with the Platform PDF service.</param>
+    /// <param name="appMetadata"></param>
     /// <param name="appResources">The service giving access to local resources.</param>
     /// <param name="pdfOptionsMapping">The service responsible for mapping options.</param>
     /// <param name="dataClient">The data client.</param>
@@ -56,6 +59,7 @@ public class PdfService : IPdfService
     /// <param name="generalSettings">The app general settings.</param>
     public PdfService(
         IPDF pdfClient,
+        IAppMetadata appMetadata,
         IAppResources appResources,
         IPdfOptionsMapping pdfOptionsMapping,
         IData dataClient,
@@ -69,6 +73,7 @@ public class PdfService : IPdfService
         )
     {
         _pdfClient = pdfClient;
+        _appMetadataService = appMetadata;
         _resourceService = appResources;
         _pdfOptionsMapping = pdfOptionsMapping;
         _dataClient = dataClient;
@@ -325,5 +330,23 @@ public class PdfService : IPdfService
     {
         fileName = Uri.EscapeDataString(fileName.AsFileName(false));
         return fileName;
+    }
+
+    private async Task<List<DataElement>> GetDataElementsConnectedToCurrentTask(Instance instance)
+    {
+        var metadata = await _appMetadataService.GetApplicationMetadata();
+        var currentTask = instance.Process.CurrentTask.ElementId;
+        if (currentTask != null)
+        {
+            List<DataElement> dataElements = new List<DataElement>();
+            metadata.DataTypes.Where(d => d.TaskId == currentTask && d.EnablePdfCreation).ToList().ForEach(
+                de =>
+                {
+                    dataElements.AddRange(instance.Data.Where(d => d.DataType.Equals(de.Id)).ToList());
+                });
+            return dataElements;
+        }
+
+        return new List<DataElement>();
     }
 }

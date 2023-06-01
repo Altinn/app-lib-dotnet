@@ -436,7 +436,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
 
                 return result;
             }
-            _logger.LogError("Locking data element {DataGuid} for instance {InstanceIdentifier} failed with status code {StatusCode}", dataGuid, instanceIdentifier, response.StatusCode);
+            _logger.LogError("Unlocking data element {DataGuid} for instance {InstanceIdentifier} failed with status code {StatusCode}", dataGuid, instanceIdentifier, response.StatusCode);
             throw await PlatformHttpException.CreateAsync(response);
         }
     }
