@@ -1,4 +1,5 @@
 ﻿using Altinn.App.Api.Tests.Mocks;
+using System.Linq;
 
 namespace Altinn.App.Api.Tests.Data;
 
@@ -63,7 +64,7 @@ public static class TestData
     public static string GetTestDataRolesFolder(int userId, int resourcePartyId)
     {
         string testDataDirectory = GetTestDataRootDirectory();
-        return Path.Combine(testDataDirectory, @"authorization/Roles/User_" + userId.ToString(), "party_" + resourcePartyId, "roles.json");
+        return Path.Combine(testDataDirectory, @"authorization/Roles/User_" + userId, "party_" + resourcePartyId, "roles.json");
     }
 
     public static string GetAltinnAppsPolicyPath(string org, string app)
@@ -84,7 +85,7 @@ public static class TestData
     public static string GetInstancePath(string org, string app, int instanceOwnerId, Guid instanceGuid)
     {
         string instancesDirectory = GetInstancesDirectory();
-        return Path.Combine(instancesDirectory, org, app, instanceOwnerId.ToString(), instanceGuid.ToString() + @".json");
+        return Path.Combine(instancesDirectory, org, app, instanceOwnerId.ToString(), instanceGuid + @".json");
     }
 
     public static void PrepareInstance(string org, string app, int instanceOwnerId, Guid instanceGuid)
@@ -132,12 +133,9 @@ public static class TestData
 
         if (Directory.Exists(path))
         {
-            foreach (string filePath in Directory.GetFiles(path, "*.*", SearchOption.AllDirectories))
+            foreach (var filePath in Directory.GetFiles(path, "*.*", SearchOption.AllDirectories).Where(filePath => !filePath.Contains("pretest")))
             {
-                if (!filePath.Contains("pretest"))
-                {
-                    File.Delete(filePath);
-                }
+                File.Delete(filePath);
             }
 
             if (Directory.GetFiles(path).Length == 0)
