@@ -27,7 +27,7 @@ namespace Altinn.App.Core.Features.FileAnalysis
 
         /// <summary>
         /// The file extension(s) without the . i.e. pdf | png | docx
-        /// Some files might have multiple extensions.
+        /// Some mime types might have multiple extensions registered for ecample image/jpeg has both jpg and jpeg.
         /// </summary>
         public List<string> Extensions { get; set; } = new List<string>();
 

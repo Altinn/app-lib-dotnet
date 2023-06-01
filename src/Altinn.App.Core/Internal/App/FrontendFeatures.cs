@@ -19,7 +19,11 @@ namespace Altinn.App.Core.Internal.App
 
             if (featureManager.IsEnabledAsync(FeatureFlags.JsonObjectInDataResponse).Result)
             {
-                features.Add("json_object_in_data_response", true);
+                features.Add("jsonObjectInDataResponse", true);
+            }
+            else
+            {
+                features.Add("jsonObjectInDataResponse", false);
             }
         }
 
