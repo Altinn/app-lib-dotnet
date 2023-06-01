@@ -45,7 +45,6 @@ namespace Altinn.App.Api.Tests.Controllers
 
             // This is where it happens
             HttpResponseMessage response = await client.SendAsync(request);
-            request.Dispose();
 
             // Cleanup testdata
             TestData.DeleteInstanceAndData(org, app, 1337, guid);
@@ -78,7 +77,6 @@ namespace Altinn.App.Api.Tests.Controllers
             // This is where it happens
             HttpResponseMessage response = await client.SendAsync(request);
             string responseContent = await response.Content.ReadAsStringAsync();
-            request.Dispose();
 
             // Cleanup testdata
             TestData.DeleteInstanceAndData(org, app, 1337, guid);
