@@ -7,6 +7,8 @@ using Altinn.App.Api.Tests.Data;
 using Altinn.App.Core.Features.FileAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 using Altinn.App.Core.Features.Validation;
+using Altinn.App.Core.Models.Validation;
+using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Api.Tests.Controllers
 {
@@ -14,16 +16,17 @@ namespace Altinn.App.Api.Tests.Controllers
     {
         public DataControllerTests(WebApplicationFactory<Program> factory) : base(factory)
         {
-            OverrideServicesForAllTests = (services) =>
-            {
-                services.AddTransient<IFileAnalyser, MimeTypeAnalyser>();
-                services.AddTransient<IFileValidator, MimeTypeValidator>();
-            };
         }
 
         [Fact]
         public async Task CreateDataElement_BinaryPdf_AnalyserShouldRunOk()
         {
+            OverrideServicesForThisTest = (services) =>
+            {
+                services.AddTransient<IFileAnalyser, MimeTypeAnalyserSuccessStub>();
+                services.AddTransient<IFileValidator, MimeTypeValidatorStub>();
+            };
+
             // Setup test data
             string org = "tdd";
             string app = "contributer-restriction";
@@ -55,6 +58,12 @@ namespace Altinn.App.Api.Tests.Controllers
         [Fact]
         public async Task CreateDataElement_JpgFakedAsPdf_AnalyserShouldRunAndFail()
         {
+            OverrideServicesForThisTest = (services) =>
+            {
+                services.AddTransient<IFileAnalyser, MimeTypeAnalyserFailureStub>();
+                services.AddTransient<IFileValidator, MimeTypeValidatorStub>();
+            };
+
             // Setup test data
             string org = "tdd";
             string app = "contributer-restriction";
@@ -92,6 +101,77 @@ namespace Altinn.App.Api.Tests.Controllers
             fileContent.Headers.ContentType = new MediaTypeHeaderValue(mediaType);
             fileContent.Headers.ContentDisposition = ContentDispositionHeaderValue.Parse($"attachment; filename=\"{filename}\"; filename*=UTF-8''{filename}");
             return fileContent;
+        }
+    }
+
+    public class MimeTypeAnalyserSuccessStub : IFileAnalyser
+    {
+        public string Id { get; private set; } = "mimeTypeAnalyser";
+        public Task<IEnumerable<FileAnalysisResult>> Analyse(IEnumerable<HttpContent> httpContents)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<FileAnalysisResult> Analyse(Stream stream, string? filename = null)
+        {
+            return Task.FromResult(new FileAnalysisResult(Id)
+            {
+
+                MimeType = "application/pdf",
+                Filename = "example.pdf",
+                Extensions = new List<string>() { "pdf" }
+            });
+        }
+    }
+
+    public class MimeTypeAnalyserFailureStub : IFileAnalyser
+    {
+        public string Id { get; private set; } = "mimeTypeAnalyser";
+        public Task<IEnumerable<FileAnalysisResult>> Analyse(IEnumerable<HttpContent> httpContents)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<FileAnalysisResult> Analyse(Stream stream, string? filename = null)
+        {
+            return Task.FromResult(new FileAnalysisResult(Id)
+            {
+
+                MimeType = "application/jpeg",
+                Filename = "example.jpg.pdf",
+                Extensions = new List<string>() { "jpg" }
+            });
+        }
+    }
+
+    public class MimeTypeValidatorStub : IFileValidator
+    {
+        public string Id { get; private set; } = "mimeTypeValidator";
+
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously. Suppressed because of the interface.
+        public async Task<(bool Success, IEnumerable<ValidationIssue> Errors)> Validate(DataType dataType, IEnumerable<FileAnalysisResult> fileAnalysisResults)
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
+        {
+            List<ValidationIssue> errors = new();
+
+            var fileMimeTypeResult = fileAnalysisResults.FirstOrDefault(x => x.MimeType != null);
+
+            // Verify that file mime type is an allowed content-type
+            if (!dataType.AllowedContentTypes.Contains(fileMimeTypeResult?.MimeType, StringComparer.InvariantCultureIgnoreCase) && !dataType.AllowedContentTypes.Contains("application/octet-stream"))
+            {
+                ValidationIssue error = new()
+                {
+                    Code = ValidationIssueCodes.DataElementCodes.ContentTypeNotAllowed,
+                    Severity = ValidationIssueSeverity.Error,
+                    Description = $"The {fileMimeTypeResult?.Filename + " "}file does not appear to be of the allowed content type according to the configuration for data type {dataType.Id}. Allowed content types are {string.Join(", ", dataType.AllowedContentTypes)}"
+                };
+
+                errors.Add(error);
+
+                return (false, errors);
+            }
+
+            return (true, errors);
         }
     }
 }
