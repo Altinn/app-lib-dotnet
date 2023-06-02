@@ -53,7 +53,7 @@ public class PdfGeneratorClient : IPdfGeneratorClient
     }
 
     /// <inheritdoc/>
-    public async Task<Stream> GeneratePdf(Uri uri, CancellationToken ct, string partyId)
+    public async Task<Stream> GeneratePdf(Uri uri, CancellationToken ct, string? partyId)
     {
         bool hasWaitForSelector = !string.IsNullOrWhiteSpace(_pdfGeneratorSettings.WaitForSelector);
         PdfGeneratorRequest generatorRequest = new()
@@ -68,12 +68,15 @@ public class PdfGeneratorClient : IPdfGeneratorClient
             Domain = uri.Host
         });
 
-        generatorRequest.Cookies.Add(new PdfGeneratorCookieOptions
+        if (partyId != null)
         {
-            Name = _generalSettings.AltinnPartyCookieName,
-            Value = partyId,
-            Domain = uri.Host,
-        });
+            generatorRequest.Cookies.Add(new PdfGeneratorCookieOptions
+            {
+                Name = _generalSettings.AltinnPartyCookieName,
+                Value = partyId,
+                Domain = uri.Host,
+            });
+        }
 
         string requestContent = JsonSerializer.Serialize(generatorRequest, _jsonSerializerOptions);
         using StringContent stringContent = new(requestContent, Encoding.UTF8, "application/json");
