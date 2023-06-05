@@ -163,7 +163,8 @@ namespace Altinn.App.Api.Controllers
                     if (FileAnalysisEnabledForDataType(dataTypeFromMetadata))
                     {
                         StreamContent streamContent = Request.CreateContentStream();
-                        Stream fileStream = await streamContent.ReadAsStreamAsync();
+                        Stream fileStream = new MemoryStream(); 
+                        await streamContent.CopyToAsync(fileStream);
                         bool parseSuccess = Request.Headers.TryGetValue("Content-Disposition", out StringValues headerValues);
                         string fileName = parseSuccess ? DataRestrictionValidation.GetFileNameFromHeader(headerValues) : string.Empty;
 

@@ -34,6 +34,7 @@ namespace Altinn.App.Core.Features.FileAnalyzis
                 }
                 var result = await analyser.Analyse(fileStream, filename);
                 result.AnalyserId = analyser.Id;
+                result.Filename = filename;
                 fileAnalysisResults.Add(result);
             }
 
