@@ -1,5 +1,7 @@
 using System.Security.Claims;
 using Altinn.App.Core.Extensions;
+using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.Process.Elements;
@@ -20,24 +22,28 @@ public class ProcessEngine : IProcessEngine
     private readonly IProfile _profileService;
     private readonly IProcessNavigator _processNavigator;
     private readonly IProcessEventDispatcher _processEventDispatcher;
+    private readonly ActionHandlerFactory _actionHandlerFactory;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessEngine"/> class
     /// </summary>
-    /// <param name="processReader"></param>
-    /// <param name="profileService"></param>
-    /// <param name="processNavigator"></param>
-    /// <param name="processEventDispatcher"></param>
+    /// <param name="processReader">Process reader service</param>
+    /// <param name="profileService">The profile service</param>
+    /// <param name="processNavigator">The process navigator</param>
+    /// <param name="processEventDispatcher">The process event dispatcher</param>
+    /// <param name="actionHandlerFactory">The action handler factory</param>
     public ProcessEngine(
         IProcessReader processReader,
         IProfile profileService,
         IProcessNavigator processNavigator,
-        IProcessEventDispatcher processEventDispatcher)
+        IProcessEventDispatcher processEventDispatcher, 
+        ActionHandlerFactory actionHandlerFactory)
     {
         _processReader = processReader;
         _profileService = profileService;
         _processNavigator = processNavigator;
         _processEventDispatcher = processEventDispatcher;
+        _actionHandlerFactory = actionHandlerFactory;
     }
 
     /// <inheritdoc/>
@@ -113,6 +119,18 @@ public class ProcessEngine : IProcessEngine
             };
         }
 
+        var actionHandler = await _actionHandlerFactory.GetActionHandler(request.Action).HandleAction(request.Instance);
+        
+        if (!actionHandler)
+        {
+            return new ProcessChangeResult()
+            {
+                Success = false,
+                ErrorMessage = $"Action handler for action {request.Action} failed!",
+                ErrorType = ProcessErrorType.Internal
+            };
+        }
+        
         var nextResult = await HandleMoveToNext(instance, request.User, request.Action);
 
         return new ProcessChangeResult()

@@ -1,5 +1,6 @@
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Features.DataLists;
 using Altinn.App.Core.Features.DataProcessing;
 using Altinn.App.Core.Features.Options;
@@ -145,6 +146,7 @@ namespace Altinn.App.Core.Extensions
             services.Configure<FrontEndSettings>(configuration.GetSection(nameof(FrontEndSettings)));
             services.Configure<PdfGeneratorSettings>(configuration.GetSection(nameof(PdfGeneratorSettings)));
             AddAppOptions(services);
+            AddActionServices(services);
             AddPdfServices(services);
             AddEventServices(services);
             AddProcessServices(services);
@@ -227,6 +229,12 @@ namespace Altinn.App.Core.Extensions
             services.TryAddTransient<IProcessEventDispatcher, ProcessEventDispatcher>();
             services.AddTransient<IProcessExclusiveGateway, ExpressionsExclusiveGateway>();
             services.TryAddTransient<ExclusiveGatewayFactory>();
+        }
+
+        private static void AddActionServices(IServiceCollection services)
+        {
+            services.TryAddTransient<ActionHandlerFactory>();
+            services.AddTransient<IActionHandler, NullActionHandler>();
         }
     }
 }

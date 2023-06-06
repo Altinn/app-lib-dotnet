@@ -290,7 +290,13 @@ namespace Altinn.App.Api.Controllers
                 var result = await _processEngine.Next(request);
                 if (!result.Success)
                 {
-                    return Conflict(result.ErrorMessage);
+                    switch (result.ErrorType)
+                    {
+                        case ProcessErrorType.Conflict:
+                            return Conflict(result.ErrorMessage);
+                        case ProcessErrorType.Internal:
+                            return StatusCode(500, result.ErrorMessage);
+                    }
                 }
 
                 AppProcessState appProcessState = await ConvertAndAuthorizeActions(org, app, instanceOwnerPartyId, instanceGuid, result.ProcessStateChange?.NewProcessState);
@@ -385,7 +391,13 @@ namespace Altinn.App.Api.Controllers
 
                     if (!result.Success)
                     {
-                        return Conflict(result.ErrorMessage);
+                        switch (result.ErrorType)
+                        {
+                            case ProcessErrorType.Conflict:
+                                return Conflict(result.ErrorMessage);
+                            case ProcessErrorType.Internal:
+                                return StatusCode(500, result.ErrorMessage);
+                        }
                     }
 
                     currentTaskId = result.ProcessStateChange?.NewProcessState.CurrentTask.ElementId;
