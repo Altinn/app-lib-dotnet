@@ -233,8 +233,8 @@ namespace Altinn.App.Core.Extensions
 
         private static void AddActionServices(IServiceCollection services)
         {
-            services.TryAddTransient<ActionHandlerFactory>();
-            services.AddTransient<IActionHandler, NullActionHandler>();
+            services.TryAddTransient<UserActionFactory>();
+            services.AddTransient<IUserAction, NullUserAction>();
         }
     }
 }

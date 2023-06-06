@@ -1,6 +1,8 @@
 #nullable enable
 using System.Security.Claims;
 using Altinn.App.Core.Extensions;
+using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
@@ -861,7 +863,8 @@ public class ProcessEngineTest : IDisposable
             _processReaderMock.Object,
             _profileMock.Object,
             _processNavigatorMock.Object,
-            _processEventDispatcherMock.Object);
+            _processEventDispatcherMock.Object,
+            new UserActionFactory(new List<IUserAction>()));
     }
 
     public void Dispose()

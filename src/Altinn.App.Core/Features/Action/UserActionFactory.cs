@@ -1,28 +1,28 @@
 namespace Altinn.App.Core.Features.Action;
 
 /// <summary>
-/// Factory class for resolving <see cref="IActionHandler"/> implementations
+/// Factory class for resolving <see cref="IUserAction"/> implementations
 /// based on the id of the action.
 /// </summary>
-public class ActionHandlerFactory
+public class UserActionFactory
 {
-    private readonly IEnumerable<IActionHandler> _actionHandlers;
+    private readonly IEnumerable<IUserAction> _actionHandlers;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ActionHandlerFactory"/> class.
+    /// Initializes a new instance of the <see cref="UserActionFactory"/> class.
     /// </summary>
     /// <param name="actionHandlers">The list of action handlers to choose from.</param>
-    public ActionHandlerFactory(IEnumerable<IActionHandler> actionHandlers)
+    public UserActionFactory(IEnumerable<IUserAction> actionHandlers)
     {
         _actionHandlers = actionHandlers;
     }
 
     /// <summary>
-    /// Find the implementation of <see cref="IActionHandler"/> based on the actionId
+    /// Find the implementation of <see cref="IUserAction"/> based on the actionId
     /// </summary>
     /// <param name="actionId">The id of the action to handle.</param>
-    /// <returns>The first implementation of <see cref="IActionHandler"/> that matches the actionId. If no match <see cref="NullActionHandler"/> is returned</returns>
-    public IActionHandler GetActionHandler(string? actionId)
+    /// <returns>The first implementation of <see cref="IUserAction"/> that matches the actionId. If no match <see cref="NullUserAction"/> is returned</returns>
+    public IUserAction GetActionHandler(string? actionId)
     {
         if (actionId != null)
         {
@@ -35,6 +35,6 @@ public class ActionHandlerFactory
             }
         }
 
-        return new NullActionHandler();
+        return new NullUserAction();
     }
 }

@@ -7,6 +7,7 @@ using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
 using Altinn.App.Core.Models.Process;
+using Altinn.App.Core.Models.UserAction;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
@@ -22,7 +23,7 @@ public class ProcessEngine : IProcessEngine
     private readonly IProfile _profileService;
     private readonly IProcessNavigator _processNavigator;
     private readonly IProcessEventDispatcher _processEventDispatcher;
-    private readonly ActionHandlerFactory _actionHandlerFactory;
+    private readonly UserActionFactory _userActionFactory;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessEngine"/> class
@@ -31,19 +32,19 @@ public class ProcessEngine : IProcessEngine
     /// <param name="profileService">The profile service</param>
     /// <param name="processNavigator">The process navigator</param>
     /// <param name="processEventDispatcher">The process event dispatcher</param>
-    /// <param name="actionHandlerFactory">The action handler factory</param>
+    /// <param name="userActionFactory">The action handler factory</param>
     public ProcessEngine(
         IProcessReader processReader,
         IProfile profileService,
         IProcessNavigator processNavigator,
         IProcessEventDispatcher processEventDispatcher, 
-        ActionHandlerFactory actionHandlerFactory)
+        UserActionFactory userActionFactory)
     {
         _processReader = processReader;
         _profileService = profileService;
         _processNavigator = processNavigator;
         _processEventDispatcher = processEventDispatcher;
-        _actionHandlerFactory = actionHandlerFactory;
+        _userActionFactory = userActionFactory;
     }
 
     /// <inheritdoc/>
@@ -119,7 +120,7 @@ public class ProcessEngine : IProcessEngine
             };
         }
 
-        var actionHandler = await _actionHandlerFactory.GetActionHandler(request.Action).HandleAction(request.Instance);
+        var actionHandler = await _userActionFactory.GetActionHandler(request.Action).HandleAction(new UserActionContext(request.Instance));
         
         if (!actionHandler)
         {
