@@ -5,6 +5,7 @@ using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Infrastructure.Clients.Pdf;
 using Altinn.App.Core.Interface;
+using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.PlatformServices.Tests.Helpers;
 using Altinn.App.PlatformServices.Tests.Mocks;
@@ -30,6 +31,7 @@ namespace Altinn.App.PlatformServices.Tests.Internal.Pdf
         private readonly Mock<IProfile> _profile = new();
         private readonly Mock<IRegister> _register = new();
         private readonly Mock<IPdfFormatter> pdfFormatter = new();
+        private readonly Mock<IAppMetadata> _appMetadata = new();
         private readonly IOptions<PdfGeneratorSettings> _pdfGeneratorSettingsOptions = Microsoft.Extensions.Options.Options.Create<PdfGeneratorSettings>(new() { });
 
         private readonly IOptions<GeneralSettings> _generalSettingsOptions = Microsoft.Extensions.Options.Options.Create<GeneralSettings>(new()
@@ -98,6 +100,7 @@ namespace Altinn.App.PlatformServices.Tests.Internal.Pdf
 
             var target = new PdfService(
                 _pdf.Object,
+                _appMetadata.Object,
                 _appResources.Object,
                 _pdfOptionsMapping.Object,
                 _dataClient.Object,
