@@ -1,11 +1,10 @@
 using System.Security.Claims;
 using Altinn.App.Core.Extensions;
-using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Helpers;
-using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
+using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
 using Altinn.Platform.Profile.Models;
@@ -20,7 +19,7 @@ namespace Altinn.App.Core.Internal.Process;
 public class ProcessEngine : IProcessEngine
 {
     private readonly IProcessReader _processReader;
-    private readonly IProfile _profileService;
+    private readonly IProfileClient _profileClient;
     private readonly IProcessNavigator _processNavigator;
     private readonly IProcessEventDispatcher _processEventDispatcher;
     private readonly UserActionFactory _userActionFactory;
@@ -29,19 +28,19 @@ public class ProcessEngine : IProcessEngine
     /// Initializes a new instance of the <see cref="ProcessEngine"/> class
     /// </summary>
     /// <param name="processReader">Process reader service</param>
-    /// <param name="profileService">The profile service</param>
+    /// <param name="profileClient">The profile service</param>
     /// <param name="processNavigator">The process navigator</param>
     /// <param name="processEventDispatcher">The process event dispatcher</param>
     /// <param name="userActionFactory">The action handler factory</param>
     public ProcessEngine(
         IProcessReader processReader,
-        IProfile profileService,
+        IProfileClient profileClient,
         IProcessNavigator processNavigator,
         IProcessEventDispatcher processEventDispatcher, 
         UserActionFactory userActionFactory)
     {
         _processReader = processReader;
-        _profileService = profileService;
+        _profileClient = profileClient;
         _processNavigator = processNavigator;
         _processEventDispatcher = processEventDispatcher;
         _userActionFactory = userActionFactory;
@@ -286,7 +285,7 @@ public class ProcessEngine : IProcessEngine
 
         if (string.IsNullOrEmpty(instanceEvent.User.OrgId) && userId != null)
         {
-            UserProfile up = await _profileService.GetUserProfile((int)userId);
+            UserProfile up = await _profileClient.GetUserProfile((int)userId);
             instanceEvent.User.NationalIdentityNumber = up.Party.SSN;
         }
 

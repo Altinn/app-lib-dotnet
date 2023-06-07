@@ -1,11 +1,11 @@
 using Altinn.Platform.Profile.Models;
 
-namespace Altinn.App.Core.Interface
+namespace Altinn.App.Core.Internal.Profile
 {
     /// <summary>
     /// Interface for profile functionality
     /// </summary>
-    public interface IProfile
+    public interface IProfileClient
     {
         /// <summary>
         /// Method for getting the userprofile from a given user id

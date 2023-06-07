@@ -1,22 +1,12 @@
 using Altinn.Platform.Register.Models;
 
-namespace Altinn.App.Core.Interface
+namespace Altinn.App.Core.Internal.Registers
 {
     /// <summary>
     /// Interface for register functionality
     /// </summary>
-    public interface IRegister
+    public interface IAltinnPartyClient
     {
-        /// <summary>
-        /// The access to dsf methods through register
-        /// </summary>
-        IDSF DSF { get; }
-
-        /// <summary>
-        /// The access to er methods through register
-        /// </summary>
-        IER ER { get; }
-
         /// <summary>
         /// Returns party information
         /// </summary>

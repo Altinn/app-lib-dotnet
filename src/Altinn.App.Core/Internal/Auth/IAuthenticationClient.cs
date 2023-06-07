@@ -1,9 +1,9 @@
-namespace Altinn.App.Core.Interface
+namespace Altinn.App.Core.Internal.Auth
 {
     /// <summary>
     /// Authentication interface.
     /// </summary>
-    public interface IAuthentication
+    public interface IAuthenticationClient
     {
         /// <summary>
         /// Refreshes the AltinnStudioRuntime JwtToken.

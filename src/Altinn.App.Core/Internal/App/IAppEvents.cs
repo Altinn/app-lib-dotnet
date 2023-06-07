@@ -1,6 +1,6 @@
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Interface;
+namespace Altinn.App.Core.Internal.App;
 
 /// <summary>
 /// Interface for implementing a receiver handling instance events.

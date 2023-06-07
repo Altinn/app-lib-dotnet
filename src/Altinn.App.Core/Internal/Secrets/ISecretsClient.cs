@@ -1,12 +1,12 @@
 using Microsoft.Azure.KeyVault;
 using Microsoft.Azure.KeyVault.WebKey;
 
-namespace Altinn.App.Core.Interface
+namespace Altinn.App.Core.Internal.Secrets
 {
     /// <summary>
     /// Interface for secrets service
     /// </summary>
-    public interface ISecrets
+    public interface ISecretsClient
     {
         /// <summary>
         /// Gets the latest version of a key from key vault.

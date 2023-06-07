@@ -1,11 +1,11 @@
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Interface
+namespace Altinn.App.Core.Internal.Instances
 {
     /// <summary>
     /// Interface for handling instance event related operations
     /// </summary>
-    public interface IInstanceEvent
+    public interface IInstanceEventClient
     {
         /// <summary>
         /// Stores the instance event

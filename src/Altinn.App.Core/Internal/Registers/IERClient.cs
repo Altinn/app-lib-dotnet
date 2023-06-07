@@ -1,11 +1,11 @@
 using Altinn.Platform.Register.Models;
 
-namespace Altinn.App.Core.Interface
+namespace Altinn.App.Core.Internal.Registers
 {
     /// <summary>
     /// Interface for the entity registry (ER: Enhetsregisteret)
     /// </summary>
-    public interface IER
+    public interface IERClient
     {
         /// <summary>
         /// Method for getting an organization based on a organization nr

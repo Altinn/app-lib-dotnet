@@ -1,11 +1,11 @@
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Interface
+namespace Altinn.App.Core.Internal.Process
 {
     /// <summary>
     /// Process service that encapsulate reading of the BPMN process definition.
     /// </summary>
-    public interface IProcess
+    public interface IProcessClient
     {
         /// <summary>
         /// Returns a stream that contains the process definition.

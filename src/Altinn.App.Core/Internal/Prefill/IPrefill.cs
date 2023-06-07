@@ -1,4 +1,4 @@
-namespace Altinn.App.Core.Interface
+namespace Altinn.App.Core.Internal.Prefill
 {
     /// <summary>
     /// The prefill service

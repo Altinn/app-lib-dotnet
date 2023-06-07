@@ -2,7 +2,7 @@ using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Layout;
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Interface
+namespace Altinn.App.Core.Internal.App
 {
     /// <summary>
     /// Interface for execution functionality

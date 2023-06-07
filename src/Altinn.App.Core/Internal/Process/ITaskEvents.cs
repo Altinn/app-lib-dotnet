@@ -1,6 +1,6 @@
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Interface;
+namespace Altinn.App.Core.Internal.Process;
 
 /// <summary>
 /// Interface for implementing a receiver handling task process events.

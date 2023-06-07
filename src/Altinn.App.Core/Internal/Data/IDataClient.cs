@@ -2,12 +2,12 @@ using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
 
-namespace Altinn.App.Core.Interface
+namespace Altinn.App.Core.Internal.Data
 {
     /// <summary>
     /// Interface for data handling
     /// </summary>
-    public interface IData
+    public interface IDataClient
     {
         /// <summary>
         /// Stores the form model

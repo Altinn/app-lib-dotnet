@@ -1,4 +1,3 @@
-using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.Process;
 using Moq;
 
@@ -10,7 +9,7 @@ internal static class ProcessTestUtils
     
     internal static ProcessReader SetupProcessReader(string bpmnfile)
     {
-        Mock<IProcess> processServiceMock = new Mock<IProcess>();
+        Mock<IProcessClient> processServiceMock = new Mock<IProcessClient>();
         var s = new FileStream(Path.Combine(TestDataPath, bpmnfile), FileMode.Open, FileAccess.Read);
         processServiceMock.Setup(p => p.GetProcessDefinition()).Returns(s);
         return new ProcessReader(processServiceMock.Object);

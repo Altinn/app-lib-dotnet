@@ -1,11 +1,11 @@
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Interface
+namespace Altinn.App.Core.Internal.App
 {
     /// <summary>
     /// Interface for retrieving application metadata data related operations
     /// </summary>
-    public interface IApplication
+    public interface IApplicationClient
     {
         /// <summary>
         /// Gets the application metdata

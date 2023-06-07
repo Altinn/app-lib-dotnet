@@ -2,12 +2,12 @@ using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Primitives;
 
-namespace Altinn.App.Core.Interface
+namespace Altinn.App.Core.Internal.Instances
 {
     /// <summary>
     /// Interface for handling form data related operations
     /// </summary>
-    public interface IInstance
+    public interface IInstanceClient
     {
         /// <summary>
         /// Gets the instance

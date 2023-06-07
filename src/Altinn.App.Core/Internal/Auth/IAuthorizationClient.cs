@@ -2,12 +2,12 @@ using System.Security.Claims;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Register.Models;
 
-namespace Altinn.App.Core.Interface
+namespace Altinn.App.Core.Internal.Auth
 {
     /// <summary>
     /// Interface for authorization functionality.
     /// </summary>
-    public interface IAuthorization
+    public interface IAuthorizationClient
     {
         /// <summary>
         /// Returns the list of parties that user has any rights for.

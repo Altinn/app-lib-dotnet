@@ -2,12 +2,12 @@
 
 using Altinn.Platform.Register.Models;
 
-namespace Altinn.App.Core.Interface
+namespace Altinn.App.Core.Internal.Registers
 {
     /// <summary>
     /// Describes the required methods for an implementation of a person repository client.
     /// </summary>
-    public interface IPersonRetriever
+    public interface IPersonClient
     {
         /// <summary>
         /// Get the <see cref="Person"/> object for the person identified with the parameters.
