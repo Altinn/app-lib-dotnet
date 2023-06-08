@@ -34,7 +34,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Register
         /// </summary>
         /// <param name="platformSettings">The current platform settings.</param>
         /// <param name="dsf">The dsf</param>
-        /// <param name="er">The er</param>
+        /// <param name="organizationClient">The organizationClient</param>
         /// <param name="logger">The logger</param>
         /// <param name="httpContextAccessor">The http context accessor </param>
         /// <param name="settings">The application settings.</param>
@@ -43,7 +43,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Register
         /// <param name="accessTokenGenerator">The platform access token generator</param>
         public AltinnPartyClientClient(
             IOptions<PlatformSettings> platformSettings,
-            IERClient er,
+            IOrganizationClient organizationClient,
             ILogger<AltinnPartyClientClient> logger,
             IHttpContextAccessor httpContextAccessor,
             IOptionsMonitor<AppSettings> settings,

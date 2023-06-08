@@ -47,7 +47,7 @@ public class InstancesController_CopyInstanceTests
     private readonly Mock<IProfileClient> _profile = new();
     private readonly Mock<IProcessEngine> _processEngine = new();
     private readonly Mock<HttpContext> _httpContextMock = new();
-    private readonly Mock<IERClient> _er = new();
+    private readonly Mock<IOrganizationClient> _oarganizationClientMock = new();
 
     private readonly InstancesController SUT;
 
@@ -73,7 +73,7 @@ public class InstancesController_CopyInstanceTests
             _prefill.Object,
             _profile.Object,
             _processEngine.Object,
-            _er.Object)
+            _oarganizationClientMock.Object)
         { 
             ControllerContext = controllerContext
         };

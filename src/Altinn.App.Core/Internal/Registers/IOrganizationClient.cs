@@ -5,7 +5,7 @@ namespace Altinn.App.Core.Internal.Registers
     /// <summary>
     /// Interface for the entity registry (ER: Enhetsregisteret)
     /// </summary>
-    public interface IERClient
+    public interface IOrganizationClient
     {
         /// <summary>
         /// Method for getting an organization based on a organization nr

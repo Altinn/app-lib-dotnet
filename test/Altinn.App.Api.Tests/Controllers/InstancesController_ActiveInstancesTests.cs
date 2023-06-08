@@ -41,7 +41,7 @@ public class InstancesController_ActiveInstancesTest
     private readonly Mock<IPrefill> _prefill = new();
     private readonly Mock<IProfileClient> _profile = new();
     private readonly Mock<IProcessEngine> _processEngine = new();
-    private readonly Mock<IERClient> _er = new();
+    private readonly Mock<IOrganizationClient> _oarganizationClientMock = new();
 
     private InstancesController SUT => new InstancesController(
         _logger.Object,
@@ -58,7 +58,7 @@ public class InstancesController_ActiveInstancesTest
         _prefill.Object,
         _profile.Object,
         _processEngine.Object,
-        _er.Object);
+        _oarganizationClientMock.Object);
 
     private void VerifyNoOtherCalls()
     {
@@ -293,7 +293,7 @@ public class InstancesController_ActiveInstancesTest
         });
 
         _instanceClient.Setup(c => c.GetInstances(It.IsAny<Dictionary<string, StringValues>>())).ReturnsAsync(instances);
-        _er.Setup(er => er.GetOrganization("123456789")).ReturnsAsync(default(Organization));
+        _oarganizationClientMock.Setup(er => er.GetOrganization("123456789")).ReturnsAsync(default(Organization));
 
         // Act
         var controller = SUT;
@@ -307,7 +307,7 @@ public class InstancesController_ActiveInstancesTest
         _instanceClient.Verify(c => c.GetInstances(It.Is<Dictionary<string, StringValues>>(query =>
             query.ContainsKey("appId")
         )));
-        _er.Verify(er => er.GetOrganization("123456789"));
+        _oarganizationClientMock.Verify(er => er.GetOrganization("123456789"));
         VerifyNoOtherCalls();
     }
 
@@ -340,7 +340,7 @@ public class InstancesController_ActiveInstancesTest
         });
 
         _instanceClient.Setup(c => c.GetInstances(It.IsAny<Dictionary<string, StringValues>>())).ReturnsAsync(instances);
-        _er.Setup(er => er.GetOrganization("123456789")).ReturnsAsync(new Organization
+        _oarganizationClientMock.Setup(er => er.GetOrganization("123456789")).ReturnsAsync(new Organization
         {
             Name = "Testdepartementet"
         });
@@ -357,7 +357,7 @@ public class InstancesController_ActiveInstancesTest
         _instanceClient.Verify(c => c.GetInstances(It.Is<Dictionary<string, StringValues>>(query =>
             query.ContainsKey("appId")
         )));
-        _er.Verify(er => er.GetOrganization("123456789"));
+        _oarganizationClientMock.Verify(er => er.GetOrganization("123456789"));
         VerifyNoOtherCalls();
     }
 }

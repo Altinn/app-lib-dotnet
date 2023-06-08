@@ -66,7 +66,7 @@ namespace Altinn.App.Api.Controllers
         private readonly IPrefill _prefillService;
         private readonly AppSettings _appSettings;
         private readonly IProcessEngine _processEngine;
-        private readonly IERClient _orgClient;
+        private readonly IOrganizationClient _orgClient;
 
         private const long RequestSizeLimit = 2000 * 1024 * 1024;
 
@@ -88,7 +88,7 @@ namespace Altinn.App.Api.Controllers
             IPrefill prefillService,
             IProfileClient profileClient, 
             IProcessEngine processEngine, 
-            IERClient orgClient)
+            IOrganizationClient orgClient)
         {
             _logger = logger;
             _instanceClient = instanceClient;

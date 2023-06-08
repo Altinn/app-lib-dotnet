@@ -74,7 +74,7 @@ namespace Altinn.App.Core.Extensions
             services.AddHttpClient<IAuthenticationClient, AuthenticationClient>();
             services.AddHttpClient<IAuthorizationClient, AuthorizationClient>();
             services.AddHttpClient<IDataClient, DataClient>();
-            services.AddHttpClient<IERClient, RegisterERClient>();
+            services.AddHttpClient<IOrganizationClient, RegisterERClient>();
             services.AddHttpClient<IInstanceClient, InstanceClient>();
             services.AddHttpClient<IInstanceEventClient, InstanceEventClient>();
             services.AddHttpClient<IEventsClient, EventsClient>();
