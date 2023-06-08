@@ -3,7 +3,8 @@ using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Helpers;
-using Altinn.App.Core.Interface;
+using Altinn.App.Core.Internal.Auth;
+using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
@@ -30,10 +31,10 @@ namespace Altinn.App.Api.Controllers
         private const int MaxIterationsAllowed = 100;
 
         private readonly ILogger<ProcessController> _logger;
-        private readonly IInstance _instanceClient;
-        private readonly IProcess _processService;
+        private readonly IInstanceClient _instanceClient;
+        private readonly IProcessClient _processClient;
         private readonly IValidation _validationService;
-        private readonly IAuthorization _authorization;
+        private readonly IAuthorizationClient _authorization;
         private readonly IProcessEngine _processEngine;
         private readonly IProcessReader _processReader;
 
@@ -42,16 +43,16 @@ namespace Altinn.App.Api.Controllers
         /// </summary>
         public ProcessController(
             ILogger<ProcessController> logger,
-            IInstance instanceClient,
-            IProcess processService,
+            IInstanceClient instanceClient,
+            IProcessClient processClient,
             IValidation validationService,
-            IAuthorization authorization,
+            IAuthorizationClient authorization,
             IProcessReader processReader,
             IProcessEngine processEngine)
         {
             _logger = logger;
             _instanceClient = instanceClient;
-            _processService = processService;
+            _processClient = processClient;
             _validationService = validationService;
             _authorization = authorization;
             _processReader = processReader;
@@ -434,7 +435,7 @@ namespace Altinn.App.Api.Controllers
         {
             try
             {
-                return Ok(await _processService.GetProcessHistory(instanceGuid.ToString(), instanceOwnerPartyId.ToString()));
+                return Ok(await _processClient.GetProcessHistory(instanceGuid.ToString(), instanceOwnerPartyId.ToString()));
             }
             catch (PlatformHttpException e)
             {

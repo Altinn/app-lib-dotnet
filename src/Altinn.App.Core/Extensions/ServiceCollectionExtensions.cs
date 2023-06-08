@@ -16,14 +16,20 @@ using Altinn.App.Core.Infrastructure.Clients.Pdf;
 using Altinn.App.Core.Infrastructure.Clients.Profile;
 using Altinn.App.Core.Infrastructure.Clients.Register;
 using Altinn.App.Core.Infrastructure.Clients.Storage;
-using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
+using Altinn.App.Core.Internal.Auth;
+using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Events;
 using Altinn.App.Core.Internal.Expressions;
+using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Pdf;
+using Altinn.App.Core.Internal.Prefill;
 using Altinn.App.Core.Internal.Process;
+using Altinn.App.Core.Internal.Profile;
+using Altinn.App.Core.Internal.Registers;
+using Altinn.App.Core.Internal.Secrets;
 using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
 using Altinn.Common.AccessTokenClient.Configuration;
@@ -64,26 +70,24 @@ namespace Altinn.App.Core.Extensions
 
             AddApplicationIdentifier(services);
 
-            services.AddHttpClient<IApplication, ApplicationClient>();
-            services.AddHttpClient<IAuthentication, AuthenticationClient>();
-            services.AddHttpClient<IAuthorization, AuthorizationClient>();
-            services.AddHttpClient<IData, DataClient>();
-            services.AddHttpClient<IDSF, RegisterDSFClient>();
-            services.AddHttpClient<IER, RegisterERClient>();
-            services.AddHttpClient<IInstance, InstanceClient>();
-            services.AddHttpClient<IInstanceEvent, InstanceEventClient>();
-            services.AddHttpClient<IEvents, EventsClient>();
+            services.AddHttpClient<IApplicationClient, ApplicationClient>();
+            services.AddHttpClient<IAuthenticationClient, AuthenticationClient>();
+            services.AddHttpClient<IAuthorizationClient, AuthorizationClient>();
+            services.AddHttpClient<IDataClient, DataClient>();
+            services.AddHttpClient<IOrganizationClient, RegisterERClient>();
+            services.AddHttpClient<IInstanceClient, InstanceClient>();
+            services.AddHttpClient<IInstanceEventClient, InstanceEventClient>();
+            services.AddHttpClient<IEventsClient, EventsClient>();
             services.AddHttpClient<IPDF, PDFClient>();
-            services.AddHttpClient<IProfile, ProfileClient>();
-            services.Decorate<IProfile, ProfileClientCachingDecorator>();
-            services.AddHttpClient<IRegister, RegisterClient>();
+            services.AddHttpClient<IProfileClient, ProfileClient>();
+            services.Decorate<IProfileClient, ProfileClientCachingDecorator>();
+            services.AddHttpClient<IAltinnPartyClient, AltinnPartyClientClient>();
             services.AddHttpClient<IText, TextClient>();
-            services.AddHttpClient<IProcess, ProcessClient>();
-            services.AddHttpClient<IPersonRetriever, PersonClient>();
+            services.AddHttpClient<IProcessClient, ProcessClient>();
+            services.AddHttpClient<IPersonClient, PersonClient>();
 
             services.TryAddTransient<IUserTokenProvider, UserTokenProvider>();
             services.TryAddTransient<IAccessTokenGenerator, AccessTokenGenerator>();
-            services.TryAddTransient<IPersonLookup, PersonService>();
             services.TryAddTransient<IApplicationLanguage, Internal.Language.ApplicationLanguage>();
         }
 
@@ -153,12 +157,12 @@ namespace Altinn.App.Core.Extensions
 
             if (!env.IsDevelopment())
             {
-                services.TryAddSingleton<ISecrets, SecretsClient>();
+                services.TryAddSingleton<ISecretsClient, SecretsClient>();
                 services.Configure<KeyVaultSettings>(configuration.GetSection("kvSetting"));
             }
             else
             {
-                services.TryAddSingleton<ISecrets, SecretsLocalClient>();
+                services.TryAddSingleton<ISecretsClient, SecretsLocalClient>();
             }
         }
 
