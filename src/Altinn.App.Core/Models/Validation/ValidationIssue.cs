@@ -44,5 +44,17 @@ namespace Altinn.App.Core.Models.Validation
         /// </summary>
         [JsonProperty(PropertyName = "description")]
         public string? Description { get; set; }
+
+        /// <summary>
+        /// The validation source of the issue eg. File, Schema, Component
+        /// </summary>
+        [JsonProperty(PropertyName = "source")]
+        public string? Source { get; set; }
+
+        /// <summary>
+        /// The custom text key to use for the localized text in the frontend.
+        /// </summary>
+        [JsonProperty(PropertyName = "customTextKey")]
+        public string? CustomTextKey { get; set; }
     }
 }
