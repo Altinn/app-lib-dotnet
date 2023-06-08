@@ -235,6 +235,7 @@ namespace Altinn.App.Core.Extensions
         {
             services.TryAddTransient<UserActionFactory>();
             services.AddTransient<IUserAction, NullUserAction>();
+            services.AddTransient<IUserAction, SigningUserAction>();
         }
     }
 }
