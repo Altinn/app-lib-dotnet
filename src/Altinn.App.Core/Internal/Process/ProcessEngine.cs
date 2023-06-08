@@ -36,7 +36,7 @@ public class ProcessEngine : IProcessEngine
         IProcessReader processReader,
         IProfileClient profileClient,
         IProcessNavigator processNavigator,
-        IProcessEventDispatcher processEventDispatcher, 
+        IProcessEventDispatcher processEventDispatcher,
         UserActionFactory userActionFactory)
     {
         _processReader = processReader;
@@ -80,10 +80,12 @@ public class ProcessEngine : IProcessEngine
         {
             events.Add(startEvent);
         }
+
         if (goToNextEvent is not null)
         {
             events.Add(goToNextEvent);
         }
+
         ProcessStateChange processStateChange = new ProcessStateChange
         {
             OldProcessState = startChange?.OldProcessState,
@@ -102,7 +104,7 @@ public class ProcessEngine : IProcessEngine
             ProcessStateChange = processStateChange
         };
     }
-     
+
     /// <inheritdoc/>
     public async Task<ProcessChangeResult> Next(ProcessNextRequest request)
     {
@@ -119,8 +121,18 @@ public class ProcessEngine : IProcessEngine
             };
         }
 
-        var actionHandler = await _userActionFactory.GetActionHandler(request.Action).HandleAction(new UserActionContext(request.Instance));
-        
+        int? userId = request.User.GetUserIdAsInt();
+        if (userId == null)
+        {
+            return new ProcessChangeResult()
+            {
+                Success = false,
+                ErrorMessage = $"User does not have a valid user id!",
+                ErrorType = ProcessErrorType.Conflict
+            };
+        }
+        var actionHandler = await _userActionFactory.GetActionHandler(request.Action).HandleAction(new UserActionContext(request.Instance, userId.Value));
+
         if (!actionHandler)
         {
             return new ProcessChangeResult()
@@ -130,7 +142,7 @@ public class ProcessEngine : IProcessEngine
                 ErrorType = ProcessErrorType.Internal
             };
         }
-        
+
         var nextResult = await HandleMoveToNext(instance, request.User, request.Action);
 
         return new ProcessChangeResult()
@@ -159,7 +171,7 @@ public class ProcessEngine : IProcessEngine
             {
                 Started = now,
                 StartEvent = startEvent,
-                CurrentTask = new ProcessElementInfo { Flow = 1, ElementId = startEvent}
+                CurrentTask = new ProcessElementInfo { Flow = 1, ElementId = startEvent }
             };
 
             instance.Process = startState;
@@ -204,7 +216,7 @@ public class ProcessEngine : IProcessEngine
 
         return null;
     }
-    
+
     private async Task<List<InstanceEvent>> MoveProcessToNext(
         Instance instance,
         ClaimsPrincipal user,
@@ -227,6 +239,7 @@ public class ProcessEngine : IProcessEngine
             {
                 eventType = InstanceEventType.process_AbandonTask.ToString();
             }
+
             events.Add(await GenerateProcessChangeEvent(eventType, instance, now, user));
             instance.Process = currentState;
         }
@@ -252,7 +265,7 @@ public class ProcessEngine : IProcessEngine
                 ElementId = nextElement!.Id,
                 Name = nextElement!.Name,
                 Started = now,
-                AltinnTaskType = task?.ExtensionElements?.AltinnProperties?.TaskType,
+                AltinnTaskType = task?.ExtensionElements?.TaskExtension?.TaskType,
                 Validated = null,
             };
 
@@ -291,7 +304,7 @@ public class ProcessEngine : IProcessEngine
 
         return instanceEvent;
     }
-    
+
     private async Task<ProcessStateChange?> HandleMoveToNext(Instance instance, ClaimsPrincipal user, string? action)
     {
         var processStateChange = await ProcessNext(instance, user, action);

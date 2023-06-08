@@ -457,7 +457,7 @@ namespace Altinn.App.Api.Controllers
                 if (flowElement is ProcessTask processTask)
                 {
                     appProcessState.CurrentTask.Actions = new Dictionary<string, bool>();
-                    foreach (AltinnAction action in processTask.ExtensionElements?.AltinnProperties?.AltinnActions ?? new List<AltinnAction>())
+                    foreach (AltinnAction action in processTask.ExtensionElements?.TaskExtension?.AltinnActions ?? new List<AltinnAction>())
                     {
                         appProcessState.CurrentTask.Actions.Add(action.Id, await AuthorizeAction(action.Id, org, app, instanceOwnerPartyId, instanceGuid, flowElement.Id));
                     }

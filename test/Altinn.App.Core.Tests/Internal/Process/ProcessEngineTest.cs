@@ -824,7 +824,7 @@ public class ProcessEngineTest : IDisposable
                 Name = "Utfylling",
                 ExtensionElements = new()
                 {
-                    AltinnProperties = new()
+                    TaskExtension = new()
                     {
                         TaskType = "data"
                     }
@@ -840,7 +840,7 @@ public class ProcessEngineTest : IDisposable
                 Name = "Bekreft",
                 ExtensionElements = new()
                 {
-                    AltinnProperties = new()
+                    TaskExtension = new()
                     {
                         TaskType = "confirmation"
                     }

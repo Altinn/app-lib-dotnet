@@ -20,7 +20,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Register
     /// <summary>
     /// A client for retrieving register data from Altinn Platform.
     /// </summary>
-    public class AltinnPartyClientClient : IAltinnPartyClient
+    public class AltinnPartyClient : IAltinnPartyClient
     {
         private readonly ILogger _logger;
         private readonly IHttpContextAccessor _httpContextAccessor;
@@ -30,7 +30,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Register
         private readonly IAccessTokenGenerator _accessTokenGenerator;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="AltinnPartyClientClient"/> class
+        /// Initializes a new instance of the <see cref="AltinnPartyClient"/> class
         /// </summary>
         /// <param name="platformSettings">The current platform settings.</param>
         /// <param name="dsf">The dsf</param>
@@ -41,10 +41,10 @@ namespace Altinn.App.Core.Infrastructure.Clients.Register
         /// <param name="httpClient">The http client</param>
         /// <param name="appMetadata">The app metadata service</param>
         /// <param name="accessTokenGenerator">The platform access token generator</param>
-        public AltinnPartyClientClient(
+        public AltinnPartyClient(
             IOptions<PlatformSettings> platformSettings,
             IOrganizationClient organizationClient,
-            ILogger<AltinnPartyClientClient> logger,
+            ILogger<AltinnPartyClient> logger,
             IHttpContextAccessor httpContextAccessor,
             IOptionsMonitor<AppSettings> settings,
             HttpClient httpClient,

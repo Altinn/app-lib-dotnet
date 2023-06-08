@@ -30,6 +30,7 @@ using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Internal.Secrets;
+using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
 using Altinn.Common.AccessTokenClient.Configuration;
@@ -81,7 +82,7 @@ namespace Altinn.App.Core.Extensions
             services.AddHttpClient<IPDF, PDFClient>();
             services.AddHttpClient<IProfileClient, ProfileClient>();
             services.Decorate<IProfileClient, ProfileClientCachingDecorator>();
-            services.AddHttpClient<IAltinnPartyClient, AltinnPartyClientClient>();
+            services.AddHttpClient<IAltinnPartyClient, AltinnPartyClient>();
             services.AddHttpClient<IText, TextClient>();
             services.AddHttpClient<IProcessClient, ProcessClient>();
             services.AddHttpClient<IPersonClient, PersonClient>();
@@ -240,6 +241,7 @@ namespace Altinn.App.Core.Extensions
             services.TryAddTransient<UserActionFactory>();
             services.AddTransient<IUserAction, NullUserAction>();
             services.AddTransient<IUserAction, SigningUserAction>();
+            services.AddHttpClient<ISignClient, SignClient>();
         }
     }
 }

@@ -37,6 +37,11 @@ namespace Altinn.App.Core.Models.Process
         /// <summary>
         /// The process change lead to an internal error
         /// </summary>
-        Internal
+        Internal,
+        
+        /// <summary>
+        /// The user is not authorized to perform the process change
+        /// </summary>
+        Unauthorized
     }
 }
