@@ -4,7 +4,7 @@ using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Helpers;
-using Altinn.App.Core.Interface;
+using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Sign;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Options;

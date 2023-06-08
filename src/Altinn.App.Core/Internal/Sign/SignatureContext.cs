@@ -14,11 +14,11 @@ public class SignatureContext
     /// <param name="signatureDataTypeId">The id of the DataType where the signature should be stored</param>
     /// <param name="signee">The signee</param>
     /// <param name="dataElementSignature">The data element to sign <see cref="DataElementSignature"/></param>
-    public SignatureContext(InstanceIdentifier instanceIdentifier, string signatureDataTypeId, Signee signee, DataElementSignature dataElementSignature)
+    public SignatureContext(InstanceIdentifier instanceIdentifier, string signatureDataTypeId, Signee signee, params DataElementSignature[] dataElementSignature)
     {
         InstanceIdentifier = instanceIdentifier;
         SignatureDataTypeId = signatureDataTypeId;
-        DataElementSignatures = new() { dataElementSignature };
+        DataElementSignatures.AddRange(dataElementSignature);
         Signee = signee;
     }
     
@@ -46,11 +46,11 @@ public class SignatureContext
     /// Identifier for the instance containing the data elements to sign
     /// </summary>
     public InstanceIdentifier InstanceIdentifier { get; }
-    
+
     /// <summary>
     /// List of DataElements and whether they are signed or not <see cref="DataElementSignature"/>
     /// </summary>
-    public List<DataElementSignature> DataElementSignatures { get; set; }
+    public List<DataElementSignature> DataElementSignatures { get; set; } = new ();
     
     /// <summary>
     /// The user performing the signing <see cref="Signee"/>
