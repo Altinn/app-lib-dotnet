@@ -150,5 +150,21 @@ namespace Altinn.App.Core.Internal.Data
         /// <param name="dataElement">The data element with values to update</param>
         /// <returns>the updated data element</returns>
         Task<DataElement> Update(Instance instance, DataElement dataElement);
+        
+        /// <summary>
+        /// Lock data element in storage
+        /// </summary>
+        /// <param name="instanceIdentifier">InstanceIdentifier identifying the instance containing the DataElement to lock</param>
+        /// <param name="dataGuid">Id of the DataElement to lock</param>
+        /// <returns></returns>
+        Task<DataElement> LockDataElement(InstanceIdentifier instanceIdentifier, Guid dataGuid);
+        
+        /// <summary>
+        /// Unlock data element in storage
+        /// </summary>
+        /// <param name="instanceIdentifier">InstanceIdentifier identifying the instance containing the DataElement to unlock</param>
+        /// <param name="dataGuid">Id of the DataElement to unlock</param>
+        /// <returns></returns>
+        Task<DataElement> UnlockDataElement(InstanceIdentifier instanceIdentifier, Guid dataGuid);
     }
 }
