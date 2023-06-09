@@ -421,28 +421,11 @@ namespace Altinn.App.Api.Controllers
             return StatusCode(500, $"{message}");
         }
 
-        private async Task<ActionResult> CreateBinaryData(string org, string app, Instance instanceBefore, string dataType)
-        {
-            int instanceOwnerPartyId = int.Parse(instanceBefore.Id.Split("/")[0]);
-            Guid instanceGuid = Guid.Parse(instanceBefore.Id.Split("/")[1]);
-
-            DataElement dataElement = await _dataClient.InsertBinaryData(org, app, instanceOwnerPartyId, instanceGuid, dataType, Request);
-
-            if (Guid.Parse(dataElement.Id) == Guid.Empty)
-            {
-                return StatusCode(500, $"Cannot store form attachment on instance {instanceOwnerPartyId}/{instanceGuid}");
-            }
-
-            SelfLinkHelper.SetDataAppSelfLinks(instanceOwnerPartyId, instanceGuid, dataElement, Request);
-            return Created(dataElement.SelfLinks.Apps, dataElement);
-        }
-
         private async Task<ActionResult> CreateBinaryData(Instance instanceBefore, string dataType, string contentType, string filename, Stream fileStream)
         {
             int instanceOwnerPartyId = int.Parse(instanceBefore.Id.Split("/")[0]);
             Guid instanceGuid = Guid.Parse(instanceBefore.Id.Split("/")[1]);
 
-            //DataElement dataElement = await _dataClient.InsertBinaryData(org, app, instanceOwnerPartyId, instanceGuid, dataType, Request);
             DataElement dataElement = await _dataClient.InsertBinaryData(instanceBefore.Id, dataType, contentType, filename, fileStream);
 
             if (Guid.Parse(dataElement.Id) == Guid.Empty)
