@@ -202,7 +202,7 @@ public class DefaultTaskEvents : ITaskEvents
                     Task createPdf;
                     if (await _featureManager.IsEnabledAsync(FeatureFlags.NewPdfGeneration))
                     {
-                        createPdf = _pdfService.GenerateAndStorePdf(instance, CancellationToken.None);
+                        createPdf = _pdfService.GenerateAndStorePdf(instance, endEvent, CancellationToken.None);
                     }
                     else
                     {

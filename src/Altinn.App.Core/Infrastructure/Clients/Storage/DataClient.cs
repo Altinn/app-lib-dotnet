@@ -292,9 +292,14 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         }
 
         /// <inheritdoc />
-        public async Task<DataElement> InsertBinaryData(string instanceId, string dataType, string contentType, string filename, Stream stream)
+        public async Task<DataElement> InsertBinaryData(string instanceId, string dataType, string contentType, string filename, Stream stream, List<Guid>? generatedFrom = null)
         {
             string apiUrl = $"{_platformSettings.ApiStorageEndpoint}instances/{instanceId}/data?dataType={dataType}";
+            _logger.LogDebug("Generated from: {GeneratedFrom}", generatedFrom != null ? string.Join(", ", generatedFrom) : "null");
+            foreach (Guid dataGuid in generatedFrom ?? Enumerable.Empty<Guid>())
+            {
+                apiUrl += $"&generatedFrom={dataGuid}";
+            }
             string token = _userTokenProvider.GetUserToken();
             DataElement dataElement;
 

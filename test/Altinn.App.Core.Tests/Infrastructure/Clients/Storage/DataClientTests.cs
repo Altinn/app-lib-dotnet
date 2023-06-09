@@ -71,6 +71,46 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients.Storage
             Assert.NotNull(platformRequest);
             AssertHttpRequest(platformRequest, expectedUri, HttpMethod.Post, "\"a cats story.pdf\"", "application/pdf");
         }
+        
+        [Fact]
+        public async Task InsertBinaryData_MethodProduceValidPlatformRequest_with_generatedFrom_query_params()
+        {
+            // Arrange
+            HttpRequestMessage? platformRequest = null;
+
+            var target = GetDataClient(async (HttpRequestMessage request, CancellationToken token) =>
+            {
+                platformRequest = request;
+
+                DataElement dataElement = new DataElement
+                {
+                    Id = "DataElement.Id",
+                    InstanceGuid = "InstanceGuid"
+                };
+                await Task.CompletedTask;
+                return new HttpResponseMessage() { Content = JsonContent.Create(dataElement) };
+            });
+            Guid dataElement1 = Guid.NewGuid();
+            Guid dataElement2 = Guid.NewGuid();
+            List<Guid> generatedFrom = new()
+            {
+                dataElement1,
+                dataElement2
+            };
+
+            var stream = new MemoryStream(Encoding.UTF8.GetBytes("This is not a pdf, but no one here will care."));
+            var instanceIdentifier = new InstanceIdentifier(323413, Guid.NewGuid());
+            Uri expectedUri = new Uri($"{apiStorageEndpoint}instances/{instanceIdentifier}/data?dataType=catstories&generatedFrom={dataElement1}&generatedFrom={dataElement2}", UriKind.RelativeOrAbsolute);
+
+            // Act
+            DataElement actual = await target.InsertBinaryData(instanceIdentifier.ToString(), "catstories", "application/pdf", "a cats story.pdf", stream, generatedFrom);
+
+            // Assert
+            Assert.NotNull(actual);
+
+            Assert.NotNull(platformRequest);
+            AssertHttpRequest(platformRequest, expectedUri, HttpMethod.Post, "\"a cats story.pdf\"", "application/pdf");
+        }
 
         [Fact]
         public async Task GetFormData_MethodProduceValidPlatformRequest_ReturnedFormIsValid()

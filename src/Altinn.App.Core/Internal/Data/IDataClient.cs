@@ -141,7 +141,7 @@ namespace Altinn.App.Core.Internal.Data
         /// <param name="filename">filename</param>
         /// <param name="stream">the stream to stream</param>
         /// <returns></returns>
-        Task<DataElement> InsertBinaryData(string instanceId, string dataType, string contentType, string filename, Stream stream);
+        Task<DataElement> InsertBinaryData(string instanceId, string dataType, string contentType, string filename, Stream stream, List<Guid>? generatedFrom = null);
 
         /// <summary>
         /// Updates the data element metadata object.

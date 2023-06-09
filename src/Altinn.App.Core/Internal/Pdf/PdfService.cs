@@ -14,6 +14,7 @@ using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using Microsoft.IdentityModel.Tokens;
@@ -70,8 +71,7 @@ public class PdfService : IPdfService
         IPdfFormatter pdfFormatter,
         IPdfGeneratorClient pdfGeneratorClient,
         IOptions<PdfGeneratorSettings> pdfGeneratorSettings,
-        IOptions<GeneralSettings> generalSettings
-        )
+        IOptions<GeneralSettings> generalSettings)
     {
         _pdfClient = pdfClient;
         _appMetadataService = appMetadata;
@@ -89,7 +89,7 @@ public class PdfService : IPdfService
 
 
     /// <inheritdoc/>
-    public async Task GenerateAndStorePdf(Instance instance, CancellationToken ct)
+    public async Task GenerateAndStorePdf(Instance instance, string taskId, CancellationToken ct)
     {
         var baseUrl = _generalSettings.FormattedExternalAppBaseUrl(new AppIdentifier(instance));
         var pagePath = _pdfGeneratorSettings.AppPdfPagePathTemplate.ToLowerInvariant().Replace("{instanceid}", instance.Id);
@@ -106,13 +106,14 @@ public class PdfService : IPdfService
 
         TextResource? textResource = await GetTextResource(appIdentifier.App, appIdentifier.Org, language);
         string fileName = GetFileName(instance, textResource);
-
+        var generatedFrom = await GetGeneratedFromDataElementIds(instance.Data, taskId);
         await _dataClient.InsertBinaryData(
             instance.Id,
             PdfElementType,
             PdfContentType,
             fileName,
-            pdfContent);
+            pdfContent,
+            generatedFrom);
     }
 
     private static Uri BuildUri(string baseUrl, string pagePath, string language)
@@ -130,6 +131,18 @@ public class PdfService : IPdfService
         }
 
         return new Uri(url);
+    }
+
+    private async Task<List<Guid>?> GetGeneratedFromDataElementIds(List<DataElement>? data, string taskId)
+    {
+        if(data == null)
+        {
+            return null;
+        }
+        var appMetadata = await _appMetadataService.GetApplicationMetadata();
+        var dataTypes = appMetadata.DataTypes.Where(dt => dt.TaskId == taskId).Select(d => d.Id);
+        var dataElementIds = data.Where(d => dataTypes.Contains(d.DataType)).Select(de => Guid.Parse(de.Id)).ToList();
+        return dataElementIds;
     }
 
     /// <inheritdoc/>
@@ -229,11 +242,12 @@ public class PdfService : IPdfService
         };
 
         Stream pdfContent = await _pdfClient.GeneratePDF(pdfContext);
-        await StorePDF(pdfContent, instance, textResource);
+        var generatedFrom = await GetGeneratedFromDataElementIds(instance.Data, taskId);
+        await StorePDF(pdfContent, instance, textResource, generatedFrom);
         pdfContent.Dispose();
     }
 
-    private async Task<DataElement> StorePDF(Stream pdfStream, Instance instance, TextResource textResource)
+    private async Task<DataElement> StorePDF(Stream pdfStream, Instance instance, TextResource textResource, List<Guid>? generatedFrom)
     {
         string? fileName = null;
         string app = instance.AppId.Split("/")[1];
@@ -251,7 +265,8 @@ public class PdfService : IPdfService
             PdfElementType,
             PdfContentType,
             fileName,
-            pdfStream);
+            pdfStream,
+            generatedFrom);
     }
 
     private async Task<string> GetLanguage()
