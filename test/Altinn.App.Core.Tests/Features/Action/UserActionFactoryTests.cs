@@ -20,6 +20,17 @@ public class UserActionFactoryTests
     }
     
     [Fact]
+    public void GetActionHandler_should_return_first_DummyActionHandler_for_id_dummy_if_multiple()
+    {
+        var factory = new UserActionFactory(new List<IUserAction>() { new DummyUserAction(), new DummyUserAction2() });
+
+        IUserAction userAction = factory.GetActionHandler("dummy");
+
+        userAction.Should().BeOfType<DummyUserAction>();
+        userAction.Id.Should().Be("dummy");
+    }
+    
+    [Fact]
     public void GetActionHandler_should_return_NullActionHandler_if_id_not_found()
     {
         var factory = new UserActionFactory(new List<IUserAction>() { new DummyUserAction() });
@@ -42,6 +53,16 @@ public class UserActionFactoryTests
     }
     
     internal class DummyUserAction : IUserAction
+    {
+        public string Id { get; set; } = "dummy";
+
+        public Task<bool> HandleAction(UserActionContext context)
+        {
+            return Task.FromResult(true);
+        }
+    }
+    
+    internal class DummyUserAction2 : IUserAction
     {
         public string Id { get; set; } = "dummy";
 

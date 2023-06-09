@@ -26,13 +26,7 @@ public class UserActionFactory
     {
         if (actionId != null)
         {
-            foreach (var actionHandler in _actionHandlers)
-            {
-                if (actionHandler.Id.ToLower().Equals(actionId.ToLower()))
-                {
-                    return actionHandler;
-                }
-            }
+            return _actionHandlers.Where(ah => ah.Id.Equals(actionId, StringComparison.OrdinalIgnoreCase)).FirstOrDefault(new NullUserAction());
         }
 
         return new NullUserAction();
