@@ -50,30 +50,12 @@ public class SignatureContext
     /// <summary>
     /// List of DataElements and whether they are signed or not <see cref="DataElementSignature"/>
     /// </summary>
-    public List<DataElementSignature> DataElementSignatures { get; set; } = new ();
+    public List<DataElementSignature> DataElementSignatures { get; } = new ();
     
     /// <summary>
     /// The user performing the signing <see cref="Signee"/>
     /// </summary>
     public Signee Signee { get; }
-
-    /// <summary>
-    /// Add a new data element to the list of data elements to sign
-    /// </summary>
-    /// <param name="dataElementSignature"><see cref="DataElementSignature"/></param>
-    public void AddDataElementSignature(DataElementSignature dataElementSignature)
-    {
-        DataElementSignatures.Add(dataElementSignature);
-    }
-    
-    /// <summary>
-    /// Add a new data element id that should be signed to the list of data elements in the signature
-    /// </summary>
-    /// <param name="dataElementSignatureId">ID of the DataElement that should be included in the signature</param>
-    public void AddDataElementSignature(string dataElementSignatureId)
-    {
-        DataElementSignatures.Add(new DataElementSignature(dataElementSignatureId));
-    }
 }
 
 /// <summary>

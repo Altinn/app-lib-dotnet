@@ -65,7 +65,6 @@ public class SigningUserActionTests
         SignatureContext expected = new SignatureContext(new InstanceIdentifier(instance), "signature", new Signee() { UserId = "1337", PersonNumber = "12345678901" }, new DataElementSignature("a499c3ef-e88a-436b-8650-1c43e5037ada"));
         signClientMock.Verify(s => s.SignDataElements(It.Is<SignatureContext>(sc => AssertSigningContextAsExpected(sc, expected))), Times.Once);
         result.Should().BeTrue();
-        //Assert.Equal("ok", result);
     }
     
     private (SigningUserAction SigningUserAction, Mock<ISignClient> SignClientMock) CreateSigningUserAction(UserProfile userProfileToReturn = null, PlatformHttpException platformHttpExceptionToThrow = null)
@@ -86,6 +85,7 @@ public class SigningUserActionTests
         {
             signingClientMock.Setup(p => p.SignDataElements(It.IsAny<SignatureContext>())).ThrowsAsync(platformHttpExceptionToThrow);
         }
+        
         return (new SigningUserAction(processReader, new NullLogger<SigningUserAction>(), appMetadata, profileClientMock.Object, signingClientMock.Object), signingClientMock);
     }
 
