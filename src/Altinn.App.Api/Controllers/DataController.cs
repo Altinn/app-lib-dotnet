@@ -159,18 +159,18 @@ namespace Altinn.App.Api.Controllers
                         return new BadRequestObjectResult(GetErrorDetails(errors));
                     }
 
+                    StreamContent streamContent = Request.CreateContentStream();
+
+                    using Stream fileStream = new MemoryStream();
+                    await streamContent.CopyToAsync(fileStream);
+
+                    bool parseSuccess = Request.Headers.TryGetValue("Content-Disposition", out StringValues headerValues);
+                    string filename = parseSuccess ? DataRestrictionValidation.GetFileNameFromHeader(headerValues) : string.Empty;
+
                     IEnumerable<FileAnalysisResult> fileAnalysisResults = new List<FileAnalysisResult>();
                     if (FileAnalysisEnabledForDataType(dataTypeFromMetadata))
                     {
-                        StreamContent streamContent = Request.CreateContentStream();
-
-                        using Stream fileStream = new MemoryStream();
-                        await streamContent.CopyToAsync(fileStream);
-
-                        bool parseSuccess = Request.Headers.TryGetValue("Content-Disposition", out StringValues headerValues);
-                        string fileName = parseSuccess ? DataRestrictionValidation.GetFileNameFromHeader(headerValues) : string.Empty;
-
-                        fileAnalysisResults = await _fileAnalyserService.Analyse(dataTypeFromMetadata, fileStream, fileName);
+                        fileAnalysisResults = await _fileAnalyserService.Analyse(dataTypeFromMetadata, fileStream, filename);
                     }
 
                     bool fileValidationSuccess = true;
@@ -185,7 +185,8 @@ namespace Altinn.App.Api.Controllers
                         return new BadRequestObjectResult(GetErrorDetails(validationIssues));
                     }
 
-                    return await CreateBinaryData(org, app, instance, dataType);
+                    fileStream.Seek(0, SeekOrigin.Begin);
+                    return await CreateBinaryData(instance, dataType, streamContent.Headers.ContentType.ToString(), filename, fileStream);
                 }
             }
             catch (PlatformHttpException e)
@@ -426,6 +427,23 @@ namespace Altinn.App.Api.Controllers
             Guid instanceGuid = Guid.Parse(instanceBefore.Id.Split("/")[1]);
 
             DataElement dataElement = await _dataClient.InsertBinaryData(org, app, instanceOwnerPartyId, instanceGuid, dataType, Request);
+
+            if (Guid.Parse(dataElement.Id) == Guid.Empty)
+            {
+                return StatusCode(500, $"Cannot store form attachment on instance {instanceOwnerPartyId}/{instanceGuid}");
+            }
+
+            SelfLinkHelper.SetDataAppSelfLinks(instanceOwnerPartyId, instanceGuid, dataElement, Request);
+            return Created(dataElement.SelfLinks.Apps, dataElement);
+        }
+
+        private async Task<ActionResult> CreateBinaryData(Instance instanceBefore, string dataType, string contentType, string filename, Stream fileStream)
+        {
+            int instanceOwnerPartyId = int.Parse(instanceBefore.Id.Split("/")[0]);
+            Guid instanceGuid = Guid.Parse(instanceBefore.Id.Split("/")[1]);
+
+            //DataElement dataElement = await _dataClient.InsertBinaryData(org, app, instanceOwnerPartyId, instanceGuid, dataType, Request);
+            DataElement dataElement = await _dataClient.InsertBinaryData(instanceBefore.Id, dataType, contentType, filename, fileStream);
 
             if (Guid.Parse(dataElement.Id) == Guid.Empty)
             {
