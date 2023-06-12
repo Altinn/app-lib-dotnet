@@ -64,7 +64,7 @@ public class DefaultTaskEvents : ITaskEvents
         LayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer,
         IOptions<AppSettings>? appSettings = null,
         IEFormidlingService? eFormidlingService = null
-        )
+    )
     {
         _logger = logger;
         _appResources = appResources;
@@ -147,7 +147,7 @@ public class DefaultTaskEvents : ITaskEvents
         Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
         ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
         List<DataType> dataTypesToLock = appMetadata.DataTypes.FindAll(dt => dt.TaskId == endEvent);
-        
+
         await RunRemoveDataElementsGeneratedFromTask(instance, endEvent);
 
         await RunRemoveHiddenData(instance, instanceGuid, dataTypesToLock);
@@ -183,13 +183,9 @@ public class DefaultTaskEvents : ITaskEvents
     {
         AppIdentifier appIdentifier = new AppIdentifier(instance.AppId);
         InstanceIdentifier instanceIdentifier = new InstanceIdentifier(instance);
-        foreach (var dataElement in instance.Data?.Where(de => de.References != null) ?? Enumerable.Empty<DataElement>())
+        foreach (var dataElement in instance.Data?.Where(de => de.References != null && de.References.Any(r => r.ValueType == ReferenceType.Task && r.Value == endEvent)) ?? Enumerable.Empty<DataElement>())
         {
-            if (dataElement.References.Any(r => r.ValueType == ReferenceType.Task && r.Value == endEvent))
-            {
-                _logger.LogDebug("Removing DataElement {DataElement}", dataElement.Id);
-                await _dataClient.DeleteData(appIdentifier.Org, appIdentifier.App, instanceIdentifier.InstanceOwnerPartyId, instanceIdentifier.InstanceGuid, Guid.Parse(dataElement.Id), false);
-            }
+            await _dataClient.DeleteData(appIdentifier.Org, appIdentifier.App, instanceIdentifier.InstanceOwnerPartyId, instanceIdentifier.InstanceGuid, Guid.Parse(dataElement.Id), false);
         }
     }
 
@@ -300,7 +296,7 @@ public class DefaultTaskEvents : ITaskEvents
                     instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, dataElementId);
 
                 var modifier = new IgnorePropertiesWithPrefix(dataType.AppLogic.ShadowFields.Prefix);
-                JsonSerializerOptions options = new ()
+                JsonSerializerOptions options = new()
                 {
                     TypeInfoResolver = new DefaultJsonTypeInfoResolver
                     {
@@ -308,14 +304,16 @@ public class DefaultTaskEvents : ITaskEvents
                     },
                     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
                 };
-                
+
                 string serializedData = JsonSerializer.Serialize(data, options);
-                if (dataType.AppLogic.ShadowFields.SaveToDataType != null) {
+                if (dataType.AppLogic.ShadowFields.SaveToDataType != null)
+                {
                     var saveToDataType = dataTypesToLock.Find(dt => dt.Id == dataType.AppLogic.ShadowFields.SaveToDataType);
-                    if (saveToDataType == null) {
+                    if (saveToDataType == null)
+                    {
                         throw new Exception($"SaveToDataType {dataType.AppLogic.ShadowFields.SaveToDataType} not found");
                     }
-    
+
                     Type saveToModelType = _appModel.GetModelType(saveToDataType.AppLogic.ClassRef);
                     var updatedData = JsonSerializer.Deserialize(serializedData, saveToModelType);
                     await _dataClient.InsertFormData(updatedData, instanceGuid, saveToModelType ?? modelType, instance.Org, app, instanceOwnerPartyId, saveToDataType.Id);

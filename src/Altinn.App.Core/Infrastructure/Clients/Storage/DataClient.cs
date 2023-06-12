@@ -296,7 +296,6 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         public async Task<DataElement> InsertBinaryData(string instanceId, string dataType, string contentType, string filename, Stream stream, string? generatedFromTask = null)
         {
             string apiUrl = $"{_platformSettings.ApiStorageEndpoint}instances/{instanceId}/data?dataType={dataType}";
-            _logger.LogDebug("Generated from: {GeneratedFrom}", generatedFromTask);
             if(!generatedFromTask.IsNullOrEmpty())
             {
                 apiUrl += $"&generatedFromTask={generatedFromTask}";
