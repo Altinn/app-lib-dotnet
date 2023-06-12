@@ -183,7 +183,7 @@ public class DefaultTaskEvents : ITaskEvents
     {
         AppIdentifier appIdentifier = new AppIdentifier(instance.AppId);
         InstanceIdentifier instanceIdentifier = new InstanceIdentifier(instance);
-        foreach (var dataElement in instance.Data?.Where(de => de.References != null && de.References.Any(r => r.ValueType == ReferenceType.Task && r.Value == endEvent)) ?? Enumerable.Empty<DataElement>())
+        foreach (var dataElement in instance.Data?.Where(de => de.References != null && de.References.Exists(r => r.ValueType == ReferenceType.Task && r.Value == endEvent)) ?? Enumerable.Empty<DataElement>())
         {
             await _dataClient.DeleteData(appIdentifier.Org, appIdentifier.App, instanceIdentifier.InstanceOwnerPartyId, instanceIdentifier.InstanceGuid, Guid.Parse(dataElement.Id), false);
         }
