@@ -90,20 +90,13 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients.Storage
                 await Task.CompletedTask;
                 return new HttpResponseMessage() { Content = JsonContent.Create(dataElement) };
             });
-            Guid dataElement1 = Guid.NewGuid();
-            Guid dataElement2 = Guid.NewGuid();
-            List<Guid> generatedFrom = new()
-            {
-                dataElement1,
-                dataElement2
-            };
 
             var stream = new MemoryStream(Encoding.UTF8.GetBytes("This is not a pdf, but no one here will care."));
             var instanceIdentifier = new InstanceIdentifier(323413, Guid.NewGuid());
-            Uri expectedUri = new Uri($"{apiStorageEndpoint}instances/{instanceIdentifier}/data?dataType=catstories&generatedFrom={dataElement1}&generatedFrom={dataElement2}", UriKind.RelativeOrAbsolute);
+            Uri expectedUri = new Uri($"{apiStorageEndpoint}instances/{instanceIdentifier}/data?dataType=catstories&generatedFromTask=Task_1", UriKind.RelativeOrAbsolute);
 
             // Act
-            DataElement actual = await target.InsertBinaryData(instanceIdentifier.ToString(), "catstories", "application/pdf", "a cats story.pdf", stream, generatedFrom);
+            DataElement actual = await target.InsertBinaryData(instanceIdentifier.ToString(), "catstories", "application/pdf", "a cats story.pdf", stream, "Task_1");
 
             // Assert
             Assert.NotNull(actual);

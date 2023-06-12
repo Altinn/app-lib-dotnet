@@ -10,13 +10,11 @@ using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
-using Altinn.App.Core.Models;
 using Altinn.App.PlatformServices.Tests.Helpers;
 using Altinn.App.PlatformServices.Tests.Mocks;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
@@ -36,7 +34,6 @@ namespace Altinn.App.PlatformServices.Tests.Internal.Pdf
         private readonly Mock<IProfileClient> _profile = new();
         private readonly Mock<IAltinnPartyClient> _register = new();
         private readonly Mock<IPdfFormatter> pdfFormatter = new();
-        private readonly Mock<IAppMetadata> _appMetadata = new();
         private readonly IOptions<PdfGeneratorSettings> _pdfGeneratorSettingsOptions = Microsoft.Extensions.Options.Options.Create<PdfGeneratorSettings>(new() { });
 
         private readonly IOptions<GeneralSettings> _generalSettingsOptions = Microsoft.Extensions.Options.Options.Create<GeneralSettings>(new()
@@ -105,7 +102,6 @@ namespace Altinn.App.PlatformServices.Tests.Internal.Pdf
 
             var target = new PdfService(
                 _pdf.Object,
-                _appMetadata.Object,
                 _appResources.Object,
                 _pdfOptionsMapping.Object,
                 _dataClient.Object,
@@ -145,7 +141,7 @@ namespace Altinn.App.PlatformServices.Tests.Internal.Pdf
                     It.Is<string>(s => s == "application/pdf"),
                     It.Is<string>(s => s == "not-really-an-app.pdf"),
                     It.IsAny<Stream>(),
-                    null),
+                    It.Is<string>(s => s == "Task_1")),
                 Times.Once);
         }
 
@@ -154,28 +150,11 @@ namespace Altinn.App.PlatformServices.Tests.Internal.Pdf
         {
             // Arrange
             _pdfGeneratorClient.Setup(s => s.GeneratePdf(It.IsAny<Uri>(), It.IsAny<CancellationToken>()));
-            _appMetadata.Setup(a => a.GetApplicationMetadata()).ReturnsAsync(new ApplicationMetadata("digdir/not-really-an-app")
-            {
-                DataTypes = new()
-                {
-                    new()
-                    {
-                        Id = "Model",
-                        TaskId = "Task_1"
-                    },
-                    new()
-                    {
-                        Id = "attachment",
-                        TaskId = "Task_1"
-                    }
-                }
-            });
 
             _generalSettingsOptions.Value.ExternalAppBaseUrl = "https://{org}.apps.{hostName}/{org}/{app}";
 
             var target = new PdfService(
                 _pdf.Object,
-                _appMetadata.Object,
                 _appResources.Object,
                 _pdfOptionsMapping.Object,
                 _dataClient.Object,
@@ -238,7 +217,7 @@ namespace Altinn.App.PlatformServices.Tests.Internal.Pdf
                     It.Is<string>(s => s == "application/pdf"),
                     It.Is<string>(s => s == "not-really-an-app.pdf"),
                     It.IsAny<Stream>(),
-                    It.Is<List<Guid>>(l => l.Count == 2 && l.Contains(dataModelId) && l.Contains(attachmentId))),
+                    It.Is<string>(s => s == "Task_1")),
                 Times.Once);
         }
     }

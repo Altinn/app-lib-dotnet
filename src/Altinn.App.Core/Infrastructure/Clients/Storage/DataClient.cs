@@ -20,6 +20,7 @@ using Newtonsoft.Json;
 using System.Xml;
 using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Data;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Altinn.App.Core.Infrastructure.Clients.Storage
 {
@@ -292,13 +293,13 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         }
 
         /// <inheritdoc />
-        public async Task<DataElement> InsertBinaryData(string instanceId, string dataType, string contentType, string filename, Stream stream, List<Guid>? generatedFrom = null)
+        public async Task<DataElement> InsertBinaryData(string instanceId, string dataType, string contentType, string filename, Stream stream, string? generatedFromTask = null)
         {
             string apiUrl = $"{_platformSettings.ApiStorageEndpoint}instances/{instanceId}/data?dataType={dataType}";
-            _logger.LogDebug("Generated from: {GeneratedFrom}", generatedFrom != null ? string.Join(", ", generatedFrom) : "null");
-            foreach (Guid dataGuid in generatedFrom ?? Enumerable.Empty<Guid>())
+            _logger.LogDebug("Generated from: {GeneratedFrom}", generatedFromTask);
+            if(!generatedFromTask.IsNullOrEmpty())
             {
-                apiUrl += $"&generatedFrom={dataGuid}";
+                apiUrl += $"&generatedFromTask={generatedFromTask}";
             }
             string token = _userTokenProvider.GetUserToken();
             DataElement dataElement;

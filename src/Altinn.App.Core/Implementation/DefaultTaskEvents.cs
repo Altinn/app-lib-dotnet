@@ -14,6 +14,7 @@ using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Prefill;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Models;
+using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -146,6 +147,8 @@ public class DefaultTaskEvents : ITaskEvents
         Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
         ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
         List<DataType> dataTypesToLock = appMetadata.DataTypes.FindAll(dt => dt.TaskId == endEvent);
+        
+        await RunRemoveDataElementsGeneratedFromTask(instance, endEvent);
 
         await RunRemoveHiddenData(instance, instanceGuid, dataTypesToLock);
 
@@ -173,6 +176,20 @@ public class DefaultTaskEvents : ITaskEvents
         if (dataTypesToLock.Find(dt => dt.AppLogic?.ShadowFields?.Prefix != null) != null)
         {
             await RemoveShadowFields(instance, instanceGuid, dataTypesToLock);
+        }
+    }
+
+    private async Task RunRemoveDataElementsGeneratedFromTask(Instance instance, string endEvent)
+    {
+        AppIdentifier appIdentifier = new AppIdentifier(instance.AppId);
+        InstanceIdentifier instanceIdentifier = new InstanceIdentifier(instance);
+        foreach (var dataElement in instance.Data?.Where(de => de.References != null) ?? Enumerable.Empty<DataElement>())
+        {
+            if (dataElement.References.Any(r => r.ValueType == ReferenceType.Task && r.Value == endEvent))
+            {
+                _logger.LogDebug("Removing DataElement {DataElement}", dataElement.Id);
+                await _dataClient.DeleteData(appIdentifier.Org, appIdentifier.App, instanceIdentifier.InstanceOwnerPartyId, instanceIdentifier.InstanceGuid, Guid.Parse(dataElement.Id), false);
+            }
         }
     }
 
