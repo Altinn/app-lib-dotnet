@@ -100,7 +100,7 @@ public class DefaultTaskEvents : ITaskEvents
             if (dataElement != null && dataElement.Locked)
             {
                 _logger.LogDebug("Unlocking data element {DataElementId} of dataType {DataTypeId}", dataElement.Id, dataType.Id);
-                await _dataClient.UnlockDataElement(new InstanceIdentifier(instance), new Guid(dataElement.Id));
+                await _dataClient.UnlockDataElement(new InstanceIdentifier(instance), Guid.Parse(dataElement.Id));
             }
         }
 
@@ -208,7 +208,7 @@ public class DefaultTaskEvents : ITaskEvents
             foreach (DataElement dataElement in instance.Data.FindAll(de => de.DataType == dataType.Id))
             {
                 _logger.LogDebug("Locking data element {dataElementId} of dataType {dataTypeId}.", dataElement.Id, dataType.Id);
-                Task updateData = _dataClient.LockDataElement(new InstanceIdentifier(instance), new Guid(dataElement.Id));
+                Task updateData = _dataClient.LockDataElement(new InstanceIdentifier(instance), Guid.Parse(dataElement.Id));
 
                 if (generatePdf)
                 {

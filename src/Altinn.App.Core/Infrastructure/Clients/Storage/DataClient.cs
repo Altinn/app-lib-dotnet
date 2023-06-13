@@ -416,9 +416,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             HttpResponseMessage response = await _client.PutAsync(token, apiUrl, content: null);
             if (response.IsSuccessStatusCode)
             {
-                _logger.LogDebug("Lock data element result: {ResultCode}", response.StatusCode);
                 DataElement result = JsonConvert.DeserializeObject<DataElement>(await response.Content.ReadAsStringAsync())!;
-
                 return result;
             }
             _logger.LogError("Locking data element {DataGuid} for instance {InstanceIdentifier} failed with status code {StatusCode}", dataGuid, instanceIdentifier, response.StatusCode);
@@ -434,9 +432,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             HttpResponseMessage response = await _client.DeleteAsync(token, apiUrl);
             if (response.IsSuccessStatusCode)
             {
-                _logger.LogDebug("Unlocked data element {DataGuid} for instance {InstanceIdentifier} URL: {Url}", dataGuid, instanceIdentifier, apiUrl);
                 DataElement result = JsonConvert.DeserializeObject<DataElement>(await response.Content.ReadAsStringAsync())!;
-
                 return result;
             }
             _logger.LogError("Unlocking data element {DataGuid} for instance {InstanceIdentifier} failed with status code {StatusCode}", dataGuid, instanceIdentifier, response.StatusCode);
