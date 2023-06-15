@@ -60,7 +60,7 @@ namespace Altinn.App.PlatformServices.Tests.Options
         }
 
         [Fact]
-        public async Task GetOptionsProvider_CustomOptionsProviderWithUpperCase_ShouldReturnCustomType()
+        public void GetOptionsProvider_CustomOptionsProviderWithUpperCase_ShouldReturnCustomType()
         {
             var appOptionsFileHandler = new Mock<IAppOptionsFileHandler>();
             var factory = new AppOptionsFactory(new List<IAppOptionsProvider>() { new DefaultAppOptionsProvider(appOptionsFileHandler.Object), new CountryAppOptionsProvider() });
@@ -73,14 +73,14 @@ namespace Altinn.App.PlatformServices.Tests.Options
 
         [Fact]
         public async Task GetParameters_CustomOptionsProviderWithUpperCase_ShouldReturnCustomType()
-            {
-                var appOptionsFileHandler = new Mock<IAppOptionsFileHandler>();
-                var factory = new AppOptionsFactory(new List<IAppOptionsProvider>() { new DefaultAppOptionsProvider(appOptionsFileHandler.Object), new CountryAppOptionsProvider() });
+        {
+            var appOptionsFileHandler = new Mock<IAppOptionsFileHandler>();
+            var factory = new AppOptionsFactory(new List<IAppOptionsProvider>() { new DefaultAppOptionsProvider(appOptionsFileHandler.Object), new CountryAppOptionsProvider() });
 
-                IAppOptionsProvider optionsProvider = factory.GetOptionsProvider("Country");
+            IAppOptionsProvider optionsProvider = factory.GetOptionsProvider("Country");
 
-                AppOptions options = await optionsProvider.GetAppOptionsAsync("nb", new Dictionary<string, string>() { { "key", "value" } });
-                options.Parameters.First(x => x.Key == "key").Value.Should().Be("value");
+            AppOptions options = await optionsProvider.GetAppOptionsAsync("nb", new Dictionary<string, string>() { { "key", "value" } });
+            options.Parameters.First(x => x.Key == "key").Value.Should().Be("value");
         }
 
         internal class CountryAppOptionsProvider : IAppOptionsProvider
