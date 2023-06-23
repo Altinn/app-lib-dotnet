@@ -1,4 +1,3 @@
-#nullable enable
 using System.Security.Claims;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
@@ -21,7 +20,7 @@ public class AuthorizationServiceTests
         InstanceIdentifier instanceIdentifier = new InstanceIdentifier(instanceOwnerPartyId: 1337, instanceGuid: Guid.NewGuid());
         ClaimsPrincipal user = new ClaimsPrincipal();
         string action = "action";
-        string? taskId = "taskId";
+        string taskId = "taskId";
         
         // Arrange
         Mock<IAuthorizationClient> authorizationClientMock = new Mock<IAuthorizationClient>();
@@ -44,7 +43,7 @@ public class AuthorizationServiceTests
         InstanceIdentifier instanceIdentifier = new InstanceIdentifier(instanceOwnerPartyId: 1337, instanceGuid: Guid.NewGuid());
         ClaimsPrincipal user = new ClaimsPrincipal();
         string action = "action";
-        string? taskId = "taskId";
+        string taskId = "taskId";
         
         // Arrange
         Mock<IAuthorizationClient> authorizationClientMock = new Mock<IAuthorizationClient>();
@@ -67,7 +66,7 @@ public class AuthorizationServiceTests
         InstanceIdentifier instanceIdentifier = new InstanceIdentifier(instanceOwnerPartyId: 1337, instanceGuid: Guid.NewGuid());
         ClaimsPrincipal user = new ClaimsPrincipal();
         string action = "action";
-        string? taskId = "taskId";
+        string taskId = "taskId";
         
         // Arrange
         Mock<IAuthorizationClient> authorizationClientMock = new Mock<IAuthorizationClient>();
@@ -96,7 +95,7 @@ public class AuthorizationServiceTests
         InstanceIdentifier instanceIdentifier = new InstanceIdentifier(instanceOwnerPartyId: 1337, instanceGuid: Guid.NewGuid());
         ClaimsPrincipal user = new ClaimsPrincipal();
         string action = "action";
-        string? taskId = "taskId";
+        string taskId = "taskId";
         
         // Arrange
         Mock<IAuthorizationClient> authorizationClientMock = new Mock<IAuthorizationClient>();
@@ -125,7 +124,7 @@ public class AuthorizationServiceTests
         InstanceIdentifier instanceIdentifier = new InstanceIdentifier(instanceOwnerPartyId: 1337, instanceGuid: Guid.NewGuid());
         ClaimsPrincipal user = new ClaimsPrincipal();
         string action = "action";
-        string? taskId = "taskId";
+        string taskId = "taskId";
         
         // Arrange
         Mock<IAuthorizationClient> authorizationClientMock = new Mock<IAuthorizationClient>();
@@ -158,7 +157,7 @@ public class AuthorizationServiceTests
         InstanceIdentifier instanceIdentifier = new InstanceIdentifier(instanceOwnerPartyId: 1337, instanceGuid: Guid.NewGuid());
         ClaimsPrincipal user = new ClaimsPrincipal();
         string action = "action";
-        string? taskId = "taskId";
+        string taskId = "taskId";
         
         // Arrange
         Mock<IAuthorizationClient> authorizationClientMock = new Mock<IAuthorizationClient>();
@@ -197,7 +196,7 @@ public class AuthorizationServiceTests
         InstanceIdentifier instanceIdentifier = new InstanceIdentifier(instanceOwnerPartyId: 1337, instanceGuid: Guid.NewGuid());
         ClaimsPrincipal user = new ClaimsPrincipal();
         string action = "action";
-        string? taskId = "taskId";
+        string taskId = "taskId";
         
         // Arrange
         Mock<IAuthorizationClient> authorizationClientMock = new Mock<IAuthorizationClient>();
