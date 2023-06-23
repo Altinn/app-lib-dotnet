@@ -32,7 +32,7 @@ public class SigningUserActionTests
             UserId = 1337,
             Party = new Party() { SSN = "12345678901" }
         };
-        (var userAction, var signClientMock)= CreateSigningUserAction(userProfile);
+        (var userAction, var signClientMock) = CreateSigningUserAction(userProfile);
         var instance = new Instance()
         {
             Id = "500000/b194e9f5-02d0-41bc-8461-a0cbac8a6efc",
@@ -77,7 +77,7 @@ public class SigningUserActionTests
             UserId = 1337,
             Party = new Party() { SSN = "12345678901" }
         };
-        (var userAction, var signClientMock)= CreateSigningUserAction(userProfileToReturn: userProfile, testBpmnfilename: "signing-task-process-missing-config.bpmn");
+        (var userAction, var signClientMock) = CreateSigningUserAction(userProfileToReturn: userProfile, testBpmnfilename: "signing-task-process-missing-config.bpmn");
         var instance = new Instance()
         {
             Id = "500000/b194e9f5-02d0-41bc-8461-a0cbac8a6efc",
@@ -108,7 +108,7 @@ public class SigningUserActionTests
         signClientMock.VerifyNoOtherCalls();
     }
     
-    private (SigningUserAction SigningUserAction, Mock<ISignClient> SignClientMock) CreateSigningUserAction(UserProfile userProfileToReturn = null, PlatformHttpException platformHttpExceptionToThrow = null, string testBpmnfilename = "signing-task-process.bpmn")
+    private static (SigningUserAction SigningUserAction, Mock<ISignClient> SignClientMock) CreateSigningUserAction(UserProfile userProfileToReturn = null, PlatformHttpException platformHttpExceptionToThrow = null, string testBpmnfilename = "signing-task-process.bpmn")
     {
         IProcessReader processReader = ProcessTestUtils.SetupProcessReader(testBpmnfilename, Path.Combine("Features", "Action", "TestData"));
         AppSettings appSettings = new AppSettings()
