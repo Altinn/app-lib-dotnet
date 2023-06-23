@@ -1,9 +1,11 @@
+#nullable enable
 using System.Security.Claims;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Process.Action;
 using Altinn.App.Core.Models;
+using Altinn.Platform.Register.Models;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -12,6 +14,46 @@ namespace Altinn.App.Core.Tests.Internal.Auth;
 
 public class AuthorizationServiceTests
 {
+    [Fact]
+    public async Task GetPartyList_returns_party_list_from_AuthorizationClient()
+    {
+        // Input
+        int userId = 1337;
+        
+        // Arrange
+        Mock<IAuthorizationClient> authorizationClientMock = new Mock<IAuthorizationClient>();
+        List<Party> partyList = new List<Party>();
+        authorizationClientMock.Setup(a => a.GetPartyList(userId)).ReturnsAsync(partyList);
+        AuthorizationService authorizationService = new AuthorizationService(authorizationClientMock.Object, new List<IUserActinAuthorizerProvider>());
+        
+        // Act
+        List<Party>? result = await authorizationService.GetPartyList(userId);
+        
+        // Assert
+        result.Should().BeSameAs(partyList);
+        authorizationClientMock.Verify(a => a.GetPartyList(userId), Times.Once);
+    }
+    
+    [Fact]
+    public async Task ValidateSelectedParty_returns_validation_from_AuthorizationClient()
+    {
+        // Input
+        int userId = 1337;
+        int partyId = 1338;
+        
+        // Arrange
+        Mock<IAuthorizationClient> authorizationClientMock = new Mock<IAuthorizationClient>();
+        authorizationClientMock.Setup(a => a.ValidateSelectedParty(userId, partyId)).ReturnsAsync(true);
+        AuthorizationService authorizationService = new AuthorizationService(authorizationClientMock.Object, new List<IUserActinAuthorizerProvider>());
+        
+        // Act
+        bool? result = await authorizationService.ValidateSelectedParty(userId, partyId);
+        
+        // Assert
+        result.Should().BeTrue();
+        authorizationClientMock.Verify(a => a.ValidateSelectedParty(userId, partyId), Times.Once);
+    }
+    
     [Fact]
     public async Task AuthorizeAction_returns_true_when_AutorizationClient_true_and_no_IUserActinAuthorizerProvider_is_provided()
     {
