@@ -65,6 +65,7 @@ public class SigningUserActionTests
         SignatureContext expected = new SignatureContext(new InstanceIdentifier(instance), "signature", new Signee() { UserId = "1337", PersonNumber = "12345678901" }, new DataElementSignature("a499c3ef-e88a-436b-8650-1c43e5037ada"));
         signClientMock.Verify(s => s.SignDataElements(It.Is<SignatureContext>(sc => AssertSigningContextAsExpected(sc, expected))), Times.Once);
         result.Should().BeTrue();
+        signClientMock.VerifyNoOtherCalls();
     }
     
     [Fact]
@@ -104,6 +105,7 @@ public class SigningUserActionTests
 
         // Act
         await Assert.ThrowsAsync<ApplicationConfigException>(async () => await userAction.HandleAction(userActionContext));
+        signClientMock.VerifyNoOtherCalls();
     }
     
     private (SigningUserAction SigningUserAction, Mock<ISignClient> SignClientMock) CreateSigningUserAction(UserProfile userProfileToReturn = null, PlatformHttpException platformHttpExceptionToThrow = null, string testBpmnfilename = "signing-task-process.bpmn")
