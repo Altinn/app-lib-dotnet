@@ -2,6 +2,9 @@ using System.Xml.Serialization;
 
 namespace Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 
+/// <summary>
+/// Configuration properties for signatures in a process task
+/// </summary>
 public class AltinnSignatureConfiguration
 {
     /// <summary>
