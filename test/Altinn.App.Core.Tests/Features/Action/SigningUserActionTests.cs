@@ -67,9 +67,48 @@ public class SigningUserActionTests
         result.Should().BeTrue();
     }
     
-    private (SigningUserAction SigningUserAction, Mock<ISignClient> SignClientMock) CreateSigningUserAction(UserProfile userProfileToReturn = null, PlatformHttpException platformHttpExceptionToThrow = null)
+    [Fact]
+    public async void HandleAction_throws_ApplicationConfigException_if_SignatureDataType_is_null()
     {
-        IProcessReader processReader = ProcessTestUtils.SetupProcessReader("signing-task-process.bpmn", Path.Combine("Features", "Action", "TestData"));
+        // Arrange
+        UserProfile userProfile = new UserProfile()
+        {
+            UserId = 1337,
+            Party = new Party() { SSN = "12345678901" }
+        };
+        (var userAction, var signClientMock)= CreateSigningUserAction(userProfileToReturn: userProfile, testBpmnfilename: "signing-task-process-missing-config.bpmn");
+        var instance = new Instance()
+        {
+            Id = "500000/b194e9f5-02d0-41bc-8461-a0cbac8a6efc",
+            InstanceOwner = new()
+            {
+                PartyId = "5000",
+            },
+            Process = new()
+            {
+                CurrentTask = new()
+                {
+                    ElementId = "Task2"
+                }
+            },
+            Data = new()
+            {
+                new()
+                {
+                    Id = "a499c3ef-e88a-436b-8650-1c43e5037ada",
+                    DataType = "Model"
+                }
+            }
+        };
+        var userActionContext = new UserActionContext(instance, 1337);
+
+        // Act
+        await Assert.ThrowsAsync<ApplicationConfigException>(async () => await userAction.HandleAction(userActionContext));
+    }
+    
+    private (SigningUserAction SigningUserAction, Mock<ISignClient> SignClientMock) CreateSigningUserAction(UserProfile userProfileToReturn = null, PlatformHttpException platformHttpExceptionToThrow = null, string testBpmnfilename = "signing-task-process.bpmn")
+    {
+        IProcessReader processReader = ProcessTestUtils.SetupProcessReader(testBpmnfilename, Path.Combine("Features", "Action", "TestData"));
         AppSettings appSettings = new AppSettings()
         {
             AppBasePath = Path.Combine("Features", "Action"),
