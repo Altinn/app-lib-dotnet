@@ -24,7 +24,7 @@ public class AuthorizationServiceTests
         Mock<IAuthorizationClient> authorizationClientMock = new Mock<IAuthorizationClient>();
         List<Party> partyList = new List<Party>();
         authorizationClientMock.Setup(a => a.GetPartyList(userId)).ReturnsAsync(partyList);
-        AuthorizationService authorizationService = new AuthorizationService(authorizationClientMock.Object, new List<IUserActinAuthorizerProvider>());
+        AuthorizationService authorizationService = new AuthorizationService(authorizationClientMock.Object, new List<IUserActionAuthorizerProvider>());
         
         // Act
         List<Party>? result = await authorizationService.GetPartyList(userId);
@@ -44,7 +44,7 @@ public class AuthorizationServiceTests
         // Arrange
         Mock<IAuthorizationClient> authorizationClientMock = new Mock<IAuthorizationClient>();
         authorizationClientMock.Setup(a => a.ValidateSelectedParty(userId, partyId)).ReturnsAsync(true);
-        AuthorizationService authorizationService = new AuthorizationService(authorizationClientMock.Object, new List<IUserActinAuthorizerProvider>());
+        AuthorizationService authorizationService = new AuthorizationService(authorizationClientMock.Object, new List<IUserActionAuthorizerProvider>());
         
         // Act
         bool? result = await authorizationService.ValidateSelectedParty(userId, partyId);
@@ -67,7 +67,7 @@ public class AuthorizationServiceTests
         // Arrange
         Mock<IAuthorizationClient> authorizationClientMock = new Mock<IAuthorizationClient>();
         authorizationClientMock.Setup(a => a.AuthorizeAction(appIdentifier, instanceIdentifier, user, action, taskId)).ReturnsAsync(true);
-        AuthorizationService authorizationService = new AuthorizationService(authorizationClientMock.Object, new List<IUserActinAuthorizerProvider>());
+        AuthorizationService authorizationService = new AuthorizationService(authorizationClientMock.Object, new List<IUserActionAuthorizerProvider>());
         
         // Act
         bool result = await authorizationService.AuthorizeAction(appIdentifier, instanceIdentifier, user, action, taskId);
@@ -90,7 +90,7 @@ public class AuthorizationServiceTests
         // Arrange
         Mock<IAuthorizationClient> authorizationClientMock = new Mock<IAuthorizationClient>();
         authorizationClientMock.Setup(a => a.AuthorizeAction(appIdentifier, instanceIdentifier, user, action, taskId)).ReturnsAsync(false);
-        AuthorizationService authorizationService = new AuthorizationService(authorizationClientMock.Object, new List<IUserActinAuthorizerProvider>());
+        AuthorizationService authorizationService = new AuthorizationService(authorizationClientMock.Object, new List<IUserActionAuthorizerProvider>());
         
         // Act
         bool result = await authorizationService.AuthorizeAction(appIdentifier, instanceIdentifier, user, action, taskId);
@@ -116,9 +116,9 @@ public class AuthorizationServiceTests
         
         Mock<IUserActionAuthorizer> userActionAuthorizerMock = new Mock<IUserActionAuthorizer>();
         userActionAuthorizerMock.Setup(a => a.AuthorizeAction(It.IsAny<UserActionAuthorizerContext>())).ReturnsAsync(false);
-        IUserActinAuthorizerProvider userActinAuthorizerProvider = new UserActinAuthorizerProvider("taskId", "action", userActionAuthorizerMock.Object);
+        IUserActionAuthorizerProvider userActionAuthorizerProvider = new UserActionAuthorizerProvider("taskId", "action", userActionAuthorizerMock.Object);
         
-        AuthorizationService authorizationService = new AuthorizationService(authorizationClientMock.Object, new List<IUserActinAuthorizerProvider>() { userActinAuthorizerProvider });
+        AuthorizationService authorizationService = new AuthorizationService(authorizationClientMock.Object, new List<IUserActionAuthorizerProvider>() { userActionAuthorizerProvider });
         
         // Act
         bool result = await authorizationService.AuthorizeAction(appIdentifier, instanceIdentifier, user, action, taskId);
@@ -145,9 +145,9 @@ public class AuthorizationServiceTests
         
         Mock<IUserActionAuthorizer> userActionAuthorizerMock = new Mock<IUserActionAuthorizer>();
         userActionAuthorizerMock.Setup(a => a.AuthorizeAction(It.IsAny<UserActionAuthorizerContext>())).ReturnsAsync(true);
-        IUserActinAuthorizerProvider userActinAuthorizerProvider = new UserActinAuthorizerProvider("taskId", "action", userActionAuthorizerMock.Object);
+        IUserActionAuthorizerProvider userActionAuthorizerProvider = new UserActionAuthorizerProvider("taskId", "action", userActionAuthorizerMock.Object);
         
-        AuthorizationService authorizationService = new AuthorizationService(authorizationClientMock.Object, new List<IUserActinAuthorizerProvider>() { userActinAuthorizerProvider });
+        AuthorizationService authorizationService = new AuthorizationService(authorizationClientMock.Object, new List<IUserActionAuthorizerProvider>() { userActionAuthorizerProvider });
         
         // Act
         bool result = await authorizationService.AuthorizeAction(appIdentifier, instanceIdentifier, user, action, taskId);
@@ -174,12 +174,12 @@ public class AuthorizationServiceTests
         
         Mock<IUserActionAuthorizer> userActionAuthorizerOneMock = new Mock<IUserActionAuthorizer>();
         userActionAuthorizerOneMock.Setup(a => a.AuthorizeAction(It.IsAny<UserActionAuthorizerContext>())).ReturnsAsync(true);
-        IUserActinAuthorizerProvider userActinAuthorizerOneProvider = new UserActinAuthorizerProvider("taskId", "action", userActionAuthorizerOneMock.Object);
+        IUserActionAuthorizerProvider userActionAuthorizerOneProvider = new UserActionAuthorizerProvider("taskId", "action", userActionAuthorizerOneMock.Object);
         Mock<IUserActionAuthorizer> userActionAuthorizerTwoMock = new Mock<IUserActionAuthorizer>();
         userActionAuthorizerTwoMock.Setup(a => a.AuthorizeAction(It.IsAny<UserActionAuthorizerContext>())).ReturnsAsync(true);
-        IUserActinAuthorizerProvider userActinAuthorizerTwoProvider = new UserActinAuthorizerProvider("taskId", "action", userActionAuthorizerTwoMock.Object);
+        IUserActionAuthorizerProvider userActionAuthorizerTwoProvider = new UserActionAuthorizerProvider("taskId", "action", userActionAuthorizerTwoMock.Object);
         
-        AuthorizationService authorizationService = new AuthorizationService(authorizationClientMock.Object, new List<IUserActinAuthorizerProvider>() { userActinAuthorizerOneProvider, userActinAuthorizerTwoProvider });
+        AuthorizationService authorizationService = new AuthorizationService(authorizationClientMock.Object, new List<IUserActionAuthorizerProvider>() { userActionAuthorizerOneProvider, userActionAuthorizerTwoProvider });
         
         // Act
         bool result = await authorizationService.AuthorizeAction(appIdentifier, instanceIdentifier, user, action, taskId);
@@ -207,17 +207,17 @@ public class AuthorizationServiceTests
         
         Mock<IUserActionAuthorizer> userActionAuthorizerOneMock = new Mock<IUserActionAuthorizer>();
         userActionAuthorizerOneMock.Setup(a => a.AuthorizeAction(It.IsAny<UserActionAuthorizerContext>())).ReturnsAsync(false);
-        IUserActinAuthorizerProvider userActinAuthorizerOneProvider = new UserActinAuthorizerProvider("taskId", "action2", userActionAuthorizerOneMock.Object);
+        IUserActionAuthorizerProvider userActionAuthorizerOneProvider = new UserActionAuthorizerProvider("taskId", "action2", userActionAuthorizerOneMock.Object);
         
         Mock<IUserActionAuthorizer> userActionAuthorizerTwoMock = new Mock<IUserActionAuthorizer>();
         userActionAuthorizerTwoMock.Setup(a => a.AuthorizeAction(It.IsAny<UserActionAuthorizerContext>())).ReturnsAsync(false);
-        IUserActinAuthorizerProvider userActinAuthorizerTwoProvider = new UserActinAuthorizerProvider("taskId2", "action", userActionAuthorizerTwoMock.Object);
+        IUserActionAuthorizerProvider userActionAuthorizerTwoProvider = new UserActionAuthorizerProvider("taskId2", "action", userActionAuthorizerTwoMock.Object);
         
         Mock<IUserActionAuthorizer> userActionAuthorizerThreeMock = new Mock<IUserActionAuthorizer>();
         userActionAuthorizerThreeMock.Setup(a => a.AuthorizeAction(It.IsAny<UserActionAuthorizerContext>())).ReturnsAsync(false);
-        IUserActinAuthorizerProvider userActinAuthorizerThreeProvider = new UserActinAuthorizerProvider("taskId3", "action3", userActionAuthorizerThreeMock.Object);
+        IUserActionAuthorizerProvider userActionAuthorizerThreeProvider = new UserActionAuthorizerProvider("taskId3", "action3", userActionAuthorizerThreeMock.Object);
         
-        AuthorizationService authorizationService = new AuthorizationService(authorizationClientMock.Object, new List<IUserActinAuthorizerProvider>() { userActinAuthorizerOneProvider, userActinAuthorizerTwoProvider, userActinAuthorizerThreeProvider });
+        AuthorizationService authorizationService = new AuthorizationService(authorizationClientMock.Object, new List<IUserActionAuthorizerProvider>() { userActionAuthorizerOneProvider, userActionAuthorizerTwoProvider, userActionAuthorizerThreeProvider });
         
         // Act
         bool result = await authorizationService.AuthorizeAction(appIdentifier, instanceIdentifier, user, action, taskId);
@@ -246,17 +246,17 @@ public class AuthorizationServiceTests
         
         Mock<IUserActionAuthorizer> userActionAuthorizerOneMock = new Mock<IUserActionAuthorizer>();
         userActionAuthorizerOneMock.Setup(a => a.AuthorizeAction(It.IsAny<UserActionAuthorizerContext>())).ReturnsAsync(true);
-        IUserActinAuthorizerProvider userActinAuthorizerOneProvider = new UserActinAuthorizerProvider(null, "action", userActionAuthorizerOneMock.Object);
+        IUserActionAuthorizerProvider userActionAuthorizerOneProvider = new UserActionAuthorizerProvider(null, "action", userActionAuthorizerOneMock.Object);
         
         Mock<IUserActionAuthorizer> userActionAuthorizerTwoMock = new Mock<IUserActionAuthorizer>();
         userActionAuthorizerTwoMock.Setup(a => a.AuthorizeAction(It.IsAny<UserActionAuthorizerContext>())).ReturnsAsync(true);
-        IUserActinAuthorizerProvider userActinAuthorizerTwoProvider = new UserActinAuthorizerProvider("taskId", null, userActionAuthorizerTwoMock.Object);
+        IUserActionAuthorizerProvider userActionAuthorizerTwoProvider = new UserActionAuthorizerProvider("taskId", null, userActionAuthorizerTwoMock.Object);
         
         Mock<IUserActionAuthorizer> userActionAuthorizerThreeMock = new Mock<IUserActionAuthorizer>();
         userActionAuthorizerThreeMock.Setup(a => a.AuthorizeAction(It.IsAny<UserActionAuthorizerContext>())).ReturnsAsync(true);
-        IUserActinAuthorizerProvider userActinAuthorizerThreeProvider = new UserActinAuthorizerProvider(null, null, userActionAuthorizerThreeMock.Object);
+        IUserActionAuthorizerProvider userActionAuthorizerThreeProvider = new UserActionAuthorizerProvider(null, null, userActionAuthorizerThreeMock.Object);
         
-        AuthorizationService authorizationService = new AuthorizationService(authorizationClientMock.Object, new List<IUserActinAuthorizerProvider>() { userActinAuthorizerOneProvider, userActinAuthorizerTwoProvider, userActinAuthorizerThreeProvider });
+        AuthorizationService authorizationService = new AuthorizationService(authorizationClientMock.Object, new List<IUserActionAuthorizerProvider>() { userActionAuthorizerOneProvider, userActionAuthorizerTwoProvider, userActionAuthorizerThreeProvider });
         
         // Actπ
         bool result = await authorizationService.AuthorizeAction(appIdentifier, instanceIdentifier, user, action, taskId);

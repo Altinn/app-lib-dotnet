@@ -18,14 +18,14 @@ public class UserActionAuthorizerServiceCollectionExtensionTests
         IServiceCollection services = new ServiceCollection();
 
         // Act
-        services.IsAdded(typeof(IUserActinAuthorizerProvider)).Should().BeFalse();
+        services.IsAdded(typeof(IUserActionAuthorizerProvider)).Should().BeFalse();
         services.AddTransientUserActionAuthorizerForActionInTask<UserActionAuthorizerStub>(taskId, action);
 
         // Assert
-        services.IsAdded(typeof(IUserActinAuthorizerProvider)).Should().BeTrue();
+        services.IsAdded(typeof(IUserActionAuthorizerProvider)).Should().BeTrue();
         services.IsAdded(typeof(UserActionAuthorizerStub)).Should().BeTrue();
         var sp = services.BuildServiceProvider();
-        var provider = sp.GetService<IUserActinAuthorizerProvider>();
+        var provider = sp.GetService<IUserActionAuthorizerProvider>();
         provider.Should().NotBeNull();
         provider.TaskId.Should().Be(taskId);
         provider.Action.Should().Be(action);
@@ -42,22 +42,22 @@ public class UserActionAuthorizerServiceCollectionExtensionTests
         IServiceCollection services = new ServiceCollection();
 
         // Act
-        services.IsAdded(typeof(IUserActinAuthorizerProvider)).Should().BeFalse();
+        services.IsAdded(typeof(IUserActionAuthorizerProvider)).Should().BeFalse();
         services.AddTransientUserActionAuthorizerForActionInTask<UserActionAuthorizerStub>(taskId, action);
         services.AddTransientUserActionAuthorizerForActionInTask<UserActionAuthorizerStub>(taskId2, action);
 
         // Assert
-        services.IsAdded(typeof(IUserActinAuthorizerProvider)).Should().BeTrue();
+        services.IsAdded(typeof(IUserActionAuthorizerProvider)).Should().BeTrue();
         services.IsAdded(typeof(UserActionAuthorizerStub)).Should().BeTrue();
         var sp = services.BuildServiceProvider();
         var authorizer = sp.GetServices<UserActionAuthorizerStub>();
         authorizer.Should().NotBeNull();
         authorizer.Should().HaveCount(1);
-        var provider = sp.GetServices<IUserActinAuthorizerProvider>();
+        var provider = sp.GetServices<IUserActionAuthorizerProvider>();
         provider.Should().NotBeNull();
         provider.Should().HaveCount(2);
-        provider.Should().ContainEquivalentOf(new UserActinAuthorizerProvider(taskId, action, authorizer.First()));
-        provider.Should().ContainEquivalentOf(new UserActinAuthorizerProvider(taskId2, action, authorizer.First()));
+        provider.Should().ContainEquivalentOf(new UserActionAuthorizerProvider(taskId, action, authorizer.First()));
+        provider.Should().ContainEquivalentOf(new UserActionAuthorizerProvider(taskId2, action, authorizer.First()));
     }
 
     [Fact]
@@ -68,14 +68,14 @@ public class UserActionAuthorizerServiceCollectionExtensionTests
         IServiceCollection services = new ServiceCollection();
 
         // Act
-        services.IsAdded(typeof(IUserActinAuthorizerProvider)).Should().BeFalse();
+        services.IsAdded(typeof(IUserActionAuthorizerProvider)).Should().BeFalse();
         services.AddTransientUserActionAuthorizerForActionInAllTasks<UserActionAuthorizerStub>(action);
 
         // Assert
-        services.IsAdded(typeof(IUserActinAuthorizerProvider)).Should().BeTrue();
+        services.IsAdded(typeof(IUserActionAuthorizerProvider)).Should().BeTrue();
         services.IsAdded(typeof(UserActionAuthorizerStub)).Should().BeTrue();
         var sp = services.BuildServiceProvider();
-        var provider = sp.GetService<IUserActinAuthorizerProvider>();
+        var provider = sp.GetService<IUserActionAuthorizerProvider>();
         provider.Should().NotBeNull();
         provider.TaskId.Should().BeNull();
         provider.Action.Should().Be(action);
@@ -90,14 +90,14 @@ public class UserActionAuthorizerServiceCollectionExtensionTests
         IServiceCollection services = new ServiceCollection();
 
         // Act
-        services.IsAdded(typeof(IUserActinAuthorizerProvider)).Should().BeFalse();
+        services.IsAdded(typeof(IUserActionAuthorizerProvider)).Should().BeFalse();
         services.AddTransientUserActionAuthorizerForAllActionsInTask<UserActionAuthorizerStub>(taskId);
 
         // Assert
-        services.IsAdded(typeof(IUserActinAuthorizerProvider)).Should().BeTrue();
+        services.IsAdded(typeof(IUserActionAuthorizerProvider)).Should().BeTrue();
         services.IsAdded(typeof(UserActionAuthorizerStub)).Should().BeTrue();
         var sp = services.BuildServiceProvider();
-        var provider = sp.GetService<IUserActinAuthorizerProvider>();
+        var provider = sp.GetService<IUserActionAuthorizerProvider>();
         provider.Should().NotBeNull();
         provider.TaskId.Should().Be(taskId);
         provider.Action.Should().BeNull();
@@ -111,14 +111,14 @@ public class UserActionAuthorizerServiceCollectionExtensionTests
         IServiceCollection services = new ServiceCollection();
 
         // Act
-        services.IsAdded(typeof(IUserActinAuthorizerProvider)).Should().BeFalse();
+        services.IsAdded(typeof(IUserActionAuthorizerProvider)).Should().BeFalse();
         services.AddTransientUserActionAuthorizerForAllActionsInAllTasks<UserActionAuthorizerStub>();
 
         // Assert
-        services.IsAdded(typeof(IUserActinAuthorizerProvider)).Should().BeTrue();
+        services.IsAdded(typeof(IUserActionAuthorizerProvider)).Should().BeTrue();
         services.IsAdded(typeof(UserActionAuthorizerStub)).Should().BeTrue();
         var sp = services.BuildServiceProvider();
-        var provider = sp.GetService<IUserActinAuthorizerProvider>();
+        var provider = sp.GetService<IUserActionAuthorizerProvider>();
         provider.Should().NotBeNull();
         provider.TaskId.Should().BeNull();
         provider.Action.Should().BeNull();

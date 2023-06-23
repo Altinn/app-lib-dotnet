@@ -60,7 +60,7 @@ public static class UserActionAuthorizerServiceCollectionExtension
     private static IServiceCollection RegisterUserActionAuthorizer<T>(this IServiceCollection services, string? taskId, string? action) where T : class, IUserActionAuthorizer
     {
         services.TryAddTransient<T>();
-        services.AddTransient<IUserActinAuthorizerProvider>(sp => new UserActinAuthorizerProvider(taskId, action, sp.GetRequiredService<T>()));
+        services.AddTransient<IUserActionAuthorizerProvider>(sp => new UserActionAuthorizerProvider(taskId, action, sp.GetRequiredService<T>()));
         return services;
     }
 }

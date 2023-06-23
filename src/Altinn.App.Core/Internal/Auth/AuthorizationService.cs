@@ -12,14 +12,14 @@ namespace Altinn.App.Core.Internal.Auth;
 public class AuthorizationService : IAuthorizationService
 {
     private readonly IAuthorizationClient _authorizationClient;
-    private readonly IEnumerable<IUserActinAuthorizerProvider> _userActionAuthorizers;
+    private readonly IEnumerable<IUserActionAuthorizerProvider> _userActionAuthorizers;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AuthorizationService"/> class
     /// </summary>
     /// <param name="authorizationClient">The authorization client</param>
     /// <param name="userActionAuthorizers">The user action authorizers</param>
-    public AuthorizationService(IAuthorizationClient authorizationClient, IEnumerable<IUserActinAuthorizerProvider> userActionAuthorizers)
+    public AuthorizationService(IAuthorizationClient authorizationClient, IEnumerable<IUserActionAuthorizerProvider> userActionAuthorizers)
     {
         _authorizationClient = authorizationClient;
         _userActionAuthorizers = userActionAuthorizers;
@@ -57,7 +57,7 @@ public class AuthorizationService : IAuthorizationService
         return true;
     }
 
-    private static bool IsAuthorizerForTaskAndAction(IUserActinAuthorizerProvider authorizer, string? taskId, string action)
+    private static bool IsAuthorizerForTaskAndAction(IUserActionAuthorizerProvider authorizer, string? taskId, string action)
     {
         return (authorizer.TaskId == null && authorizer.Action == null)
                || (authorizer.TaskId == null && authorizer.Action == action)
