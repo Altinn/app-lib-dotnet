@@ -1,3 +1,4 @@
+#nullable enable
 using System.Security.Claims;
 using System.Text;
 using Altinn.App.Core.Features.Action;
@@ -41,7 +42,43 @@ public class UniqueSignatureAuthorizerTests : IDisposable
         _processReaderMock.Verify(p => p.GetFlowElement("Task_2"));
         result.Should().BeTrue();
     }
+    
+    [Fact]
+    public async Task AuthorizeAction_returns_true_if_uniqueFromSignaturesInDataTypes_null()
+    {
+        ProcessElement? processTask = null;
+        UniqueSignatureAuthorizer authorizer = CreateUniqueSignatureAuthorizer(processTask);
+        bool result = await authorizer.AuthorizeAction(new UserActionAuthorizerContext(new ClaimsPrincipal(), new InstanceIdentifier("500001/abba2e90-f86f-4881-b0e8-38334408bcb4"), "Task_2", "sign"));
+        _processReaderMock.Verify(p => p.GetFlowElement("Task_2"));
+        result.Should().BeTrue();
+    }
 
+    [Fact]
+    public async Task AuthorizeAction_returns_true_if_SignatureConfiguration_is_null()
+    {
+        ProcessElement processTask = new ProcessTask()
+        {
+            ExtensionElements = new()
+            {
+                TaskExtension = new()
+                {
+                    SignatureConfiguration = null
+                }
+            }
+        };
+        UniqueSignatureAuthorizer authorizer = CreateUniqueSignatureAuthorizer(processTask);
+        var user = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>()
+        {
+            new(AltinnCoreClaimTypes.UserId, "1000"),
+            new(AltinnCoreClaimTypes.AuthenticationLevel, "2"),
+            new(AltinnCoreClaimTypes.Org, "tdd")
+        }));
+
+        bool result = await authorizer.AuthorizeAction(new UserActionAuthorizerContext(user, new InstanceIdentifier("500001/abba2e90-f86f-4881-b0e8-38334408bcb4"), "Task_2", "sign"));
+        _processReaderMock.Verify(p => p.GetFlowElement("Task_2"));
+        result.Should().BeTrue();
+    }
+    
     [Fact]
     public async Task AuthorizeAction_returns_true_if_other_user_has_signed_previously()
     {
@@ -182,7 +219,7 @@ public class UniqueSignatureAuthorizerTests : IDisposable
         result.Should().BeTrue();
     }
 
-    private UniqueSignatureAuthorizer CreateUniqueSignatureAuthorizer(ProcessElement task, string signatureFileToRead = "signature.json")
+    private UniqueSignatureAuthorizer CreateUniqueSignatureAuthorizer(ProcessElement? task, string signatureFileToRead = "signature.json")
     {
         _processReaderMock.Setup(sr => sr.GetFlowElement(It.IsAny<string>())).Returns(task);
         _appMetadataMock.Setup(a => a.GetApplicationMetadata()).ReturnsAsync(new ApplicationMetadata("ttd/xunit-app"));

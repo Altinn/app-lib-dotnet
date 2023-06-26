@@ -43,7 +43,7 @@ public class UniqueSignatureAuthorizer : IUserActionAuthorizer
         {
             var appMetadata = await _appMetadata.GetApplicationMetadata();
             var instance = await _instanceClient.GetInstance(appMetadata.AppIdentifier.App, appMetadata.AppIdentifier.Org, context.InstanceIdentifier.InstanceOwnerPartyId, context.InstanceIdentifier.InstanceGuid);
-            var dataTypes = flowElement.ExtensionElements?.TaskExtension?.SignatureConfiguration?.UniqueFromSignaturesInDataTypes;
+            var dataTypes = flowElement.ExtensionElements!.TaskExtension!.SignatureConfiguration!.UniqueFromSignaturesInDataTypes;
             var signatureDataElements = instance.Data.Where(d => dataTypes.Contains(d.DataType)).ToList();
             foreach (var signatureDataElement in signatureDataElements)
             {
