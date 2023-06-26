@@ -80,6 +80,29 @@ public class UniqueSignatureAuthorizerTests : IDisposable
     }
     
     [Fact]
+    public async Task AuthorizeAction_returns_true_if_TaskExtension_is_null()
+    {
+        ProcessElement processTask = new ProcessTask()
+        {
+            ExtensionElements = new()
+            {
+                TaskExtension = null
+            }
+        };
+        UniqueSignatureAuthorizer authorizer = CreateUniqueSignatureAuthorizer(processTask);
+        var user = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>()
+        {
+            new(AltinnCoreClaimTypes.UserId, "1000"),
+            new(AltinnCoreClaimTypes.AuthenticationLevel, "2"),
+            new(AltinnCoreClaimTypes.Org, "tdd")
+        }));
+
+        bool result = await authorizer.AuthorizeAction(new UserActionAuthorizerContext(user, new InstanceIdentifier("500001/abba2e90-f86f-4881-b0e8-38334408bcb4"), "Task_2", "sign"));
+        _processReaderMock.Verify(p => p.GetFlowElement("Task_2"));
+        result.Should().BeTrue();
+    }
+    
+    [Fact]
     public async Task AuthorizeAction_returns_true_if_other_user_has_signed_previously()
     {
         ProcessElement processTask = new ProcessTask()
@@ -204,6 +227,76 @@ public class UniqueSignatureAuthorizerTests : IDisposable
             }
         };
         UniqueSignatureAuthorizer authorizer = CreateUniqueSignatureAuthorizer(processTask, "signature-missing-signee.json");
+        var user = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>()
+        {
+            new(AltinnCoreClaimTypes.UserId, "1337"),
+            new(AltinnCoreClaimTypes.AuthenticationLevel, "2"),
+            new(AltinnCoreClaimTypes.Org, "tdd")
+        }));
+
+        bool result = await authorizer.AuthorizeAction(new UserActionAuthorizerContext(user, new InstanceIdentifier("500001/abba2e90-f86f-4881-b0e8-38334408bcb4"), "Task_2", "sign"));
+        _processReaderMock.Verify(p => p.GetFlowElement("Task_2"));
+        _instanceClientMock.Verify(i => i.GetInstance("xunit-app", "ttd", 500001, Guid.Parse("abba2e90-f86f-4881-b0e8-38334408bcb4")));
+        _appMetadataMock.Verify(a => a.GetApplicationMetadata());
+        _dataClientMock.Verify(d => d.GetBinaryData("ttd", "xunit-app", 500001, Guid.Parse("abba2e90-f86f-4881-b0e8-38334408bcb4"), Guid.Parse("ca62613c-f058-4899-b962-89dd6496a751")));
+        result.Should().BeTrue();
+    }
+    
+    [Fact]
+    public async Task AuthorizeAction_returns_true_if_signdumcument_is_missing_signee_userid()
+    {
+        ProcessElement processTask = new ProcessTask()
+        {
+            ExtensionElements = new()
+            {
+                TaskExtension = new()
+                {
+                    SignatureConfiguration = new()
+                    {
+                        UniqueFromSignaturesInDataTypes = new()
+                        {
+                            "signature"
+                        }
+                    }
+                }
+            }
+        };
+        UniqueSignatureAuthorizer authorizer = CreateUniqueSignatureAuthorizer(processTask, "signature-missing-signee-userid.json");
+        var user = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>()
+        {
+            new(AltinnCoreClaimTypes.UserId, "1337"),
+            new(AltinnCoreClaimTypes.AuthenticationLevel, "2"),
+            new(AltinnCoreClaimTypes.Org, "tdd")
+        }));
+
+        bool result = await authorizer.AuthorizeAction(new UserActionAuthorizerContext(user, new InstanceIdentifier("500001/abba2e90-f86f-4881-b0e8-38334408bcb4"), "Task_2", "sign"));
+        _processReaderMock.Verify(p => p.GetFlowElement("Task_2"));
+        _instanceClientMock.Verify(i => i.GetInstance("xunit-app", "ttd", 500001, Guid.Parse("abba2e90-f86f-4881-b0e8-38334408bcb4")));
+        _appMetadataMock.Verify(a => a.GetApplicationMetadata());
+        _dataClientMock.Verify(d => d.GetBinaryData("ttd", "xunit-app", 500001, Guid.Parse("abba2e90-f86f-4881-b0e8-38334408bcb4"), Guid.Parse("ca62613c-f058-4899-b962-89dd6496a751")));
+        result.Should().BeTrue();
+    }
+    
+    [Fact]
+    public async Task AuthorizeAction_returns_true_if_signdumcument_signee_userid_is_null()
+    {
+        ProcessElement processTask = new ProcessTask()
+        {
+            ExtensionElements = new()
+            {
+                TaskExtension = new()
+                {
+                    SignatureConfiguration = new()
+                    {
+                        UniqueFromSignaturesInDataTypes = new()
+                        {
+                            "signature"
+                        }
+                    }
+                }
+            }
+        };
+        UniqueSignatureAuthorizer authorizer = CreateUniqueSignatureAuthorizer(processTask, "signature-signee-userid-null.json");
         var user = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>()
         {
             new(AltinnCoreClaimTypes.UserId, "1337"),
