@@ -15,4 +15,3 @@ namespace Altinn.App.Core.Models {
         public InstanceSelection? InstanceSelection { get; set; }
     }
 }
-
