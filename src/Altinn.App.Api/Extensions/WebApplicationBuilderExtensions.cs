@@ -24,11 +24,11 @@ public static class WebApplicationBuilderExtensions
         app.UseHttpMetrics();
         app.UseMetricServer();
         var appId = StartupHelper.GetApplicationId();
-        var version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+        var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString();
         Metrics.DefaultRegistry.SetStaticLabels(new Dictionary<string, string>()
         {
-            {"application_id", appId},
-            {"nuget_package_version", version}
+            { "application_id", appId },
+            { "nuget_package_version", version }
         });
         app.UseDefaultSecurityHeaders();
         app.UseRouting();

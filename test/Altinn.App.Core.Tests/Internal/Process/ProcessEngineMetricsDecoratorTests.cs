@@ -15,7 +15,7 @@ public class ProcessEngineMetricsDecoratorTests
     {
         Metrics.SuppressDefaultMetrics();
     }
-    
+
     [Fact]
     public async Task StartProcess_calls_decorated_service_and_increments_success_counter_when_successful()
     {
@@ -24,7 +24,7 @@ public class ProcessEngineMetricsDecoratorTests
         processEngine.Setup(p => p.StartProcess(It.IsAny<ProcessStartRequest>())).ReturnsAsync(new ProcessChangeResult { Success = true });
         var decorator = new ProcessEngineMetricsDecorator(processEngine.Object);
         (await ReadPrometheusMetricsToString()).Should().NotContain("altinn_app_process_start_count{result=\"success\"}");
-        
+
         var result = decorator.StartProcess(new ProcessStartRequest());
 
         (await ReadPrometheusMetricsToString()).Should().Contain("altinn_app_process_start_count{result=\"success\"} 1");
@@ -35,7 +35,7 @@ public class ProcessEngineMetricsDecoratorTests
         processEngine.Verify(p => p.StartProcess(It.IsAny<ProcessStartRequest>()), Times.Exactly(2));
         processEngine.VerifyNoOtherCalls();
     }
-    
+
     [Fact]
     public async Task StartProcess_calls_decorated_service_and_increments_failure_counter_when_unsuccessful()
     {
@@ -44,7 +44,7 @@ public class ProcessEngineMetricsDecoratorTests
         processEngine.Setup(p => p.StartProcess(It.IsAny<ProcessStartRequest>())).ReturnsAsync(new ProcessChangeResult { Success = false });
         var decorator = new ProcessEngineMetricsDecorator(processEngine.Object);
         (await ReadPrometheusMetricsToString()).Should().NotContain("altinn_app_process_start_count{result=\"failure\"}");
-        
+
         var result = decorator.StartProcess(new ProcessStartRequest());
 
         (await ReadPrometheusMetricsToString()).Should().Contain("altinn_app_process_start_count{result=\"failure\"} 1");
@@ -55,7 +55,7 @@ public class ProcessEngineMetricsDecoratorTests
         processEngine.Verify(p => p.StartProcess(It.IsAny<ProcessStartRequest>()), Times.Exactly(2));
         processEngine.VerifyNoOtherCalls();
     }
-    
+
     [Fact]
     public async Task Next_calls_decorated_service_and_increments_success_counter_when_successful()
     {
@@ -64,14 +64,14 @@ public class ProcessEngineMetricsDecoratorTests
         processEngine.Setup(p => p.Next(It.IsAny<ProcessNextRequest>())).ReturnsAsync(new ProcessChangeResult { Success = true });
         var decorator = new ProcessEngineMetricsDecorator(processEngine.Object);
         (await ReadPrometheusMetricsToString()).Should().NotContain("altinn_app_process_task_next_count{result=\"success\",action=\"write\",task=\"Task_1\"}");
-        
+
         var result = decorator.Next(new ProcessNextRequest()
         {
-            Instance = new ()
+            Instance = new()
             {
-                Process = new ()
+                Process = new()
                 {
-                    CurrentTask = new ()
+                    CurrentTask = new()
                     {
                         ElementId = "Task_1"
                     }
@@ -84,11 +84,11 @@ public class ProcessEngineMetricsDecoratorTests
         result.Result.Success.Should().BeTrue();
         result = decorator.Next(new ProcessNextRequest()
         {
-            Instance = new ()
+            Instance = new()
             {
-                Process = new ()
+                Process = new()
                 {
-                    CurrentTask = new ()
+                    CurrentTask = new()
                     {
                         ElementId = "Task_1"
                     }
@@ -102,7 +102,7 @@ public class ProcessEngineMetricsDecoratorTests
         processEngine.Verify(p => p.Next(It.IsAny<ProcessNextRequest>()), Times.Exactly(2));
         processEngine.VerifyNoOtherCalls();
     }
-    
+
     [Fact]
     public async Task Next_calls_decorated_service_and_increments_failure_counter_when_unsuccessful()
     {
@@ -111,14 +111,14 @@ public class ProcessEngineMetricsDecoratorTests
         processEngine.Setup(p => p.Next(It.IsAny<ProcessNextRequest>())).ReturnsAsync(new ProcessChangeResult { Success = false });
         var decorator = new ProcessEngineMetricsDecorator(processEngine.Object);
         (await ReadPrometheusMetricsToString()).Should().NotContain("altinn_app_process_task_next_count{result=\"failure\",action=\"write\",task=\"Task_1\"}");
-        
+
         var result = decorator.Next(new ProcessNextRequest()
         {
-            Instance = new ()
+            Instance = new()
             {
-                Process = new ()
+                Process = new()
                 {
-                    CurrentTask = new ()
+                    CurrentTask = new()
                     {
                         ElementId = "Task_1"
                     }
@@ -131,11 +131,11 @@ public class ProcessEngineMetricsDecoratorTests
         result.Result.Success.Should().BeFalse();
         result = decorator.Next(new ProcessNextRequest()
         {
-            Instance = new ()
+            Instance = new()
             {
-                Process = new ()
+                Process = new()
                 {
-                    CurrentTask = new ()
+                    CurrentTask = new()
                     {
                         ElementId = "Task_1"
                     }
@@ -149,7 +149,7 @@ public class ProcessEngineMetricsDecoratorTests
         processEngine.Verify(p => p.Next(It.IsAny<ProcessNextRequest>()), Times.Exactly(2));
         processEngine.VerifyNoOtherCalls();
     }
-    
+
     [Fact]
     public async Task Next_calls_decorated_service_and_increments_success_and_end_counters_when_successful_and_process_ended()
     {
@@ -160,9 +160,9 @@ public class ProcessEngineMetricsDecoratorTests
         processEngine.Setup(p => p.Next(It.IsAny<ProcessNextRequest>())).ReturnsAsync(new ProcessChangeResult
         {
             Success = true,
-            ProcessStateChange = new ()
+            ProcessStateChange = new()
             {
-                NewProcessState = new ()
+                NewProcessState = new()
                 {
                     Ended = ended,
                     Started = started
@@ -173,14 +173,14 @@ public class ProcessEngineMetricsDecoratorTests
         (await ReadPrometheusMetricsToString()).Should().NotContain("altinn_app_process_task_next_count{result=\"success\",action=\"confirm\",task=\"Task_2\"}");
         (await ReadPrometheusMetricsToString()).Should().NotContain("altinn_app_process_end_count{result=\"success\"}");
         (await ReadPrometheusMetricsToString()).Should().NotContain("altinn_app_process_end_time_total{result=\"success\"}");
-        
+
         var result = decorator.Next(new ProcessNextRequest()
         {
-            Instance = new ()
+            Instance = new()
             {
-                Process = new ()
+                Process = new()
                 {
-                    CurrentTask = new ()
+                    CurrentTask = new()
                     {
                         ElementId = "Task_2"
                     }
@@ -195,11 +195,11 @@ public class ProcessEngineMetricsDecoratorTests
         result.Result.Success.Should().BeTrue();
         result = decorator.Next(new ProcessNextRequest()
         {
-            Instance = new ()
+            Instance = new()
             {
-                Process = new ()
+                Process = new()
                 {
-                    CurrentTask = new ()
+                    CurrentTask = new()
                     {
                         ElementId = "Task_2"
                     }
@@ -215,7 +215,7 @@ public class ProcessEngineMetricsDecoratorTests
         processEngine.Verify(p => p.Next(It.IsAny<ProcessNextRequest>()), Times.Exactly(2));
         processEngine.VerifyNoOtherCalls();
     }
-    
+
     [Fact]
     public async Task Next_calls_decorated_service_and_increments_failure_and_end_counters_when_unsuccessful_and_process_ended_no_time_added_if_started_null()
     {
@@ -225,9 +225,9 @@ public class ProcessEngineMetricsDecoratorTests
         processEngine.Setup(p => p.Next(It.IsAny<ProcessNextRequest>())).ReturnsAsync(new ProcessChangeResult
         {
             Success = false,
-            ProcessStateChange = new ()
+            ProcessStateChange = new()
             {
-                NewProcessState = new ()
+                NewProcessState = new()
                 {
                     Ended = ended
                 }
@@ -238,14 +238,14 @@ public class ProcessEngineMetricsDecoratorTests
         prometheusMetricsToString.Should().NotContain("altinn_app_process_task_next_count{result=\"failure\",action=\"confirm\",task=\"Task_3\"}");
         prometheusMetricsToString.Should().NotContain("altinn_app_process_end_count{result=\"failure\"}");
         prometheusMetricsToString.Should().NotContain("altinn_app_process_end_time_total{result=\"failure\"}");
-        
+
         var result = decorator.Next(new ProcessNextRequest()
         {
-            Instance = new ()
+            Instance = new()
             {
-                Process = new ()
+                Process = new()
                 {
-                    CurrentTask = new ()
+                    CurrentTask = new()
                     {
                         ElementId = "Task_3"
                     }
@@ -253,7 +253,7 @@ public class ProcessEngineMetricsDecoratorTests
             },
             Action = "confirm"
         });
-        
+
         prometheusMetricsToString = await ReadPrometheusMetricsToString();
         prometheusMetricsToString.Should().Contain("altinn_app_process_task_next_count{result=\"failure\",action=\"confirm\",task=\"Task_3\"} 1");
         prometheusMetricsToString.Should().Contain("altinn_app_process_end_count{result=\"failure\"} 1");
@@ -261,11 +261,11 @@ public class ProcessEngineMetricsDecoratorTests
         result.Result.Success.Should().BeFalse();
         result = decorator.Next(new ProcessNextRequest()
         {
-            Instance = new ()
+            Instance = new()
             {
-                Process = new ()
+                Process = new()
                 {
-                    CurrentTask = new ()
+                    CurrentTask = new()
                     {
                         ElementId = "Task_3"
                     }
@@ -287,12 +287,12 @@ public class ProcessEngineMetricsDecoratorTests
     {
         // Arrange
         var processEngine = new Mock<IProcessEngine>();
-        processEngine.Setup(p => p.UpdateInstanceAndRerunEvents(It.IsAny<ProcessStartRequest>(), It.IsAny<List<InstanceEvent>?>())).ReturnsAsync(new Instance { });
+        processEngine.Setup(p => p.UpdateInstanceAndRerunEvents(It.IsAny<ProcessStartRequest>(), It.IsAny<List<InstanceEvent>>())).ReturnsAsync(new Instance { });
         var decorator = new ProcessEngineMetricsDecorator(processEngine.Object);
         (await ReadPrometheusMetricsToString()).Should().NotContain("altinn_app_process_start_count{result=\"success\"}");
-        
+
         await decorator.UpdateInstanceAndRerunEvents(new ProcessStartRequest(), new List<InstanceEvent>());
-        
+
         processEngine.Verify(p => p.UpdateInstanceAndRerunEvents(It.IsAny<ProcessStartRequest>(), It.IsAny<List<InstanceEvent>>()), Times.Once);
         processEngine.VerifyNoOtherCalls();
     }

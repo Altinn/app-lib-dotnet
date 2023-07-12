@@ -18,7 +18,7 @@ public class InstanceClientMetricsDecoratorTests
     {
         Metrics.SuppressDefaultMetrics();
     }
-    
+
     [Fact]
     public async Task CreateInstance_calls_decorated_service_and_update_on_success()
     {
@@ -31,7 +31,7 @@ public class InstanceClientMetricsDecoratorTests
         // Act
         await instanceClientMetricsDecorator.CreateInstance("org", "app", instanceTemplate);
         var postUpdateMetrics = await PrometheusTestHelper.ReadPrometheusMetricsToString();
-        
+
         // Assert
         var diff = GetDiff(preUpdateMetrics, postUpdateMetrics);
         diff.Should().HaveCount(1);
@@ -39,7 +39,7 @@ public class InstanceClientMetricsDecoratorTests
         instanceClient.Verify(i => i.CreateInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Instance>()));
         instanceClient.VerifyNoOtherCalls();
     }
-    
+
     [Fact]
     public async Task CreateInstance_calls_decorated_service_and_update_on_failure()
     {
@@ -55,7 +55,7 @@ public class InstanceClientMetricsDecoratorTests
         var ex = await Assert.ThrowsAsync<PlatformHttpException>(async () => await instanceClientMetricsDecorator.CreateInstance("org", "app", instanceTemplate));
         ex.Should().BeSameAs(platformHttpException);
         var postUpdateMetrics = await PrometheusTestHelper.ReadPrometheusMetricsToString();
-        
+
         // Assert
         var diff = GetDiff(preUpdateMetrics, postUpdateMetrics);
         diff.Should().HaveCount(1);
@@ -63,7 +63,7 @@ public class InstanceClientMetricsDecoratorTests
         instanceClient.Verify(i => i.CreateInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Instance>()));
         instanceClient.VerifyNoOtherCalls();
     }
-    
+
     [Fact]
     public async Task AddCompleteConfirmation_calls_decorated_service_and_update_on_success()
     {
@@ -75,7 +75,7 @@ public class InstanceClientMetricsDecoratorTests
         // Act
         await instanceClientMetricsDecorator.AddCompleteConfirmation(1337, Guid.NewGuid());
         var postUpdateMetrics = await PrometheusTestHelper.ReadPrometheusMetricsToString();
-        
+
         // Assert
         var diff = GetDiff(preUpdateMetrics, postUpdateMetrics);
         diff.Should().HaveCount(1);
@@ -83,7 +83,7 @@ public class InstanceClientMetricsDecoratorTests
         instanceClient.Verify(i => i.AddCompleteConfirmation(It.IsAny<int>(), It.IsAny<Guid>()));
         instanceClient.VerifyNoOtherCalls();
     }
-    
+
     [Fact]
     public async Task AddCompleteConfirmation_calls_decorated_service_and_update_on_failure()
     {
@@ -98,7 +98,7 @@ public class InstanceClientMetricsDecoratorTests
         var ex = await Assert.ThrowsAsync<PlatformHttpException>(async () => await instanceClientMetricsDecorator.AddCompleteConfirmation(1337, Guid.NewGuid()));
         ex.Should().BeSameAs(platformHttpException);
         var postUpdateMetrics = await PrometheusTestHelper.ReadPrometheusMetricsToString();
-        
+
         // Assert
         var diff = GetDiff(preUpdateMetrics, postUpdateMetrics);
         diff.Should().HaveCount(1);
@@ -106,7 +106,7 @@ public class InstanceClientMetricsDecoratorTests
         instanceClient.Verify(i => i.AddCompleteConfirmation(It.IsAny<int>(), It.IsAny<Guid>()));
         instanceClient.VerifyNoOtherCalls();
     }
-    
+
     [Fact]
     public async Task DeleteInstance_calls_decorated_service_and_update_on_success_soft_delete()
     {
@@ -118,7 +118,7 @@ public class InstanceClientMetricsDecoratorTests
         // Act
         await instanceClientMetricsDecorator.DeleteInstance(1337, Guid.NewGuid(), false);
         var postUpdateMetrics = await PrometheusTestHelper.ReadPrometheusMetricsToString();
-        
+
         // Assert
         var diff = GetDiff(preUpdateMetrics, postUpdateMetrics);
         diff.Should().HaveCount(1);
@@ -126,7 +126,7 @@ public class InstanceClientMetricsDecoratorTests
         instanceClient.Verify(i => i.DeleteInstance(It.IsAny<int>(), It.IsAny<Guid>(), It.IsAny<bool>()));
         instanceClient.VerifyNoOtherCalls();
     }
-    
+
     [Fact]
     public async Task DeleteInstance_calls_decorated_service_and_update_on_success_soft_hard()
     {
@@ -138,7 +138,7 @@ public class InstanceClientMetricsDecoratorTests
         // Act
         await instanceClientMetricsDecorator.DeleteInstance(1337, Guid.NewGuid(), true);
         var postUpdateMetrics = await PrometheusTestHelper.ReadPrometheusMetricsToString();
-        
+
         // Assert
         var diff = GetDiff(preUpdateMetrics, postUpdateMetrics);
         diff.Should().HaveCount(1);
@@ -161,7 +161,7 @@ public class InstanceClientMetricsDecoratorTests
         var ex = await Assert.ThrowsAsync<PlatformHttpException>(async () => await instanceClientMetricsDecorator.DeleteInstance(1337, Guid.NewGuid(), false));
         ex.Should().BeSameAs(platformHttpException);
         var postUpdateMetrics = await PrometheusTestHelper.ReadPrometheusMetricsToString();
-        
+
         // Assert
         var diff = GetDiff(preUpdateMetrics, postUpdateMetrics);
         diff.Should().HaveCount(1);
@@ -180,16 +180,16 @@ public class InstanceClientMetricsDecoratorTests
 
         // Act
         var instanceId = Guid.NewGuid();
-        await instanceClientMetricsDecorator.GetInstance("test-app", "ttd",1337, instanceId);
+        await instanceClientMetricsDecorator.GetInstance("test-app", "ttd", 1337, instanceId);
         var postUpdateMetrics = await PrometheusTestHelper.ReadPrometheusMetricsToString();
-        
+
         // Assert
         var diff = GetDiff(preUpdateMetrics, postUpdateMetrics);
         diff.Should().BeEmpty();
-        instanceClient.Verify(i => i.GetInstance("test-app", "ttd",1337, instanceId));
+        instanceClient.Verify(i => i.GetInstance("test-app", "ttd", 1337, instanceId));
         instanceClient.VerifyNoOtherCalls();
     }
-    
+
     [Fact]
     public async Task GetInstance_instance_calls_decorated_service()
     {
@@ -202,14 +202,14 @@ public class InstanceClientMetricsDecoratorTests
         // Act
         await instanceClientMetricsDecorator.GetInstance(instance);
         var postUpdateMetrics = await PrometheusTestHelper.ReadPrometheusMetricsToString();
-        
+
         // Assert
         var diff = GetDiff(preUpdateMetrics, postUpdateMetrics);
         diff.Should().BeEmpty();
         instanceClient.Verify(i => i.GetInstance(instance));
         instanceClient.VerifyNoOtherCalls();
     }
-    
+
     [Fact]
     public async Task GetInstances_calls_decorated_service()
     {
@@ -221,14 +221,14 @@ public class InstanceClientMetricsDecoratorTests
         // Act
         await instanceClientMetricsDecorator.GetInstances(new Dictionary<string, StringValues>());
         var postUpdateMetrics = await PrometheusTestHelper.ReadPrometheusMetricsToString();
-        
+
         // Assert
         var diff = GetDiff(preUpdateMetrics, postUpdateMetrics);
         diff.Should().BeEmpty();
         instanceClient.Verify(i => i.GetInstances(new Dictionary<string, StringValues>()));
         instanceClient.VerifyNoOtherCalls();
     }
-    
+
     [Fact]
     public async Task UpdateProcess_of_instance_owner_calls_decorated_service()
     {
@@ -241,7 +241,7 @@ public class InstanceClientMetricsDecoratorTests
         // Act
         await instanceClientMetricsDecorator.UpdateProcess(instance);
         var postUpdateMetrics = await PrometheusTestHelper.ReadPrometheusMetricsToString();
-        
+
         // Assert
         var diff = GetDiff(preUpdateMetrics, postUpdateMetrics);
         diff.Should().BeEmpty();
@@ -261,14 +261,14 @@ public class InstanceClientMetricsDecoratorTests
         // Act
         await instanceClientMetricsDecorator.UpdateReadStatus(1337, instanceGuid, "read");
         var postUpdateMetrics = await PrometheusTestHelper.ReadPrometheusMetricsToString();
-        
+
         // Assert
         var diff = GetDiff(preUpdateMetrics, postUpdateMetrics);
         diff.Should().BeEmpty();
         instanceClient.Verify(i => i.UpdateReadStatus(1337, instanceGuid, "read"));
         instanceClient.VerifyNoOtherCalls();
     }
-    
+
     [Fact]
     public async Task UpdateSubstatus_of_instance_owner_calls_decorated_service()
     {
@@ -282,14 +282,14 @@ public class InstanceClientMetricsDecoratorTests
         // Act
         await instanceClientMetricsDecorator.UpdateSubstatus(1337, instanceGuid, substatus);
         var postUpdateMetrics = await PrometheusTestHelper.ReadPrometheusMetricsToString();
-        
+
         // Assert
         var diff = GetDiff(preUpdateMetrics, postUpdateMetrics);
         diff.Should().BeEmpty();
         instanceClient.Verify(i => i.UpdateSubstatus(1337, instanceGuid, substatus));
         instanceClient.VerifyNoOtherCalls();
     }
-    
+
     [Fact]
     public async Task UpdatePresentationTexts_of_instance_owner_calls_decorated_service()
     {
@@ -303,14 +303,14 @@ public class InstanceClientMetricsDecoratorTests
         // Act
         await instanceClientMetricsDecorator.UpdatePresentationTexts(1337, instanceGuid, presentationTexts);
         var postUpdateMetrics = await PrometheusTestHelper.ReadPrometheusMetricsToString();
-        
+
         // Assert
         var diff = GetDiff(preUpdateMetrics, postUpdateMetrics);
         diff.Should().BeEmpty();
         instanceClient.Verify(i => i.UpdatePresentationTexts(1337, instanceGuid, presentationTexts));
         instanceClient.VerifyNoOtherCalls();
     }
-    
+
     [Fact]
     public async Task UpdateDataValues_of_instance_owner_calls_decorated_service()
     {
@@ -324,7 +324,7 @@ public class InstanceClientMetricsDecoratorTests
         // Act
         await instanceClientMetricsDecorator.UpdateDataValues(1337, instanceGuid, dataValues);
         var postUpdateMetrics = await PrometheusTestHelper.ReadPrometheusMetricsToString();
-        
+
         // Assert
         var diff = GetDiff(preUpdateMetrics, postUpdateMetrics);
         diff.Should().BeEmpty();
