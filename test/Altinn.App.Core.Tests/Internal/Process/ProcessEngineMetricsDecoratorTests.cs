@@ -222,7 +222,6 @@ public class ProcessEngineMetricsDecoratorTests
         // Arrange
         var processEngine = new Mock<IProcessEngine>();
         var ended = DateTime.Now;
-        var started = ended.AddSeconds(-20);
         processEngine.Setup(p => p.Next(It.IsAny<ProcessNextRequest>())).ReturnsAsync(new ProcessChangeResult
         {
             Success = false,
@@ -292,7 +291,7 @@ public class ProcessEngineMetricsDecoratorTests
         var decorator = new ProcessEngineMetricsDecorator(processEngine.Object);
         (await ReadPrometheusMetricsToString()).Should().NotContain("altinn_app_process_start_count{result=\"success\"}");
         
-        var result = decorator.UpdateInstanceAndRerunEvents(new ProcessStartRequest(), new List<InstanceEvent>());
+        await decorator.UpdateInstanceAndRerunEvents(new ProcessStartRequest(), new List<InstanceEvent>());
         
         processEngine.Verify(p => p.UpdateInstanceAndRerunEvents(It.IsAny<ProcessStartRequest>(), It.IsAny<List<InstanceEvent>>()), Times.Once);
         processEngine.VerifyNoOtherCalls();

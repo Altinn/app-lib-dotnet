@@ -338,14 +338,7 @@ public class InstanceClientMetricsDecoratorTests
         IEnumerable<string> set1 = s1.Split('\n').Distinct().Where(s => !s.StartsWith("#"));
         IEnumerable<string> set2 = s2.Split('\n').Distinct().Where(s => !s.StartsWith("#"));
 
-        if (set2.Count() > set1.Count())
-        {
-            diff = set2.Except(set1).ToList();
-        }
-        else
-        {
-            diff = set1.Except(set2).ToList();
-        }
+        diff = set2.Count() > set1.Count() ? set2.Except(set1).ToList() : set1.Except(set2).ToList();
 
         return diff;
     }
