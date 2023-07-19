@@ -192,8 +192,7 @@ public static class ExpressionEvaluator
             return false;
         }
         
-        IList<string> strings = stringOne.Split(",").Select(s => s.Trim()).ToList();
-        return strings.Contains(stringTwo, StringComparer.InvariantCulture);
+        return stringOne.Split(",").Select(s => s.Trim()).Contains(stringTwo, StringComparer.InvariantCulture);
     }
 
     private static int StringLength(object?[] args)
@@ -226,8 +225,7 @@ public static class ExpressionEvaluator
             precision = Convert.ToInt32(args[1]);
         }
 
-        var round = Math.Round(number.Value, Convert.ToInt32(precision));
-        return round.ToString($"N{precision}", CultureInfo.InvariantCulture);
+        return number.Value.ToString($"N{precision}", CultureInfo.InvariantCulture);
     }
 
     private static string? UpperCase(object?[] args)
