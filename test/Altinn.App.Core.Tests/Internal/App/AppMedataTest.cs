@@ -196,7 +196,7 @@ namespace Altinn.App.Core.Tests.Internal.App
             actual.Should().BeEquivalentTo(expected);
             actual2.Should().BeEquivalentTo(expected);
         }
-        
+
         [Fact]
         public async Task GetApplicationMetadata_onEntry_InstanceSelection_DefaultSelectedOption_read_legacy_value_if_new_not_set()
         {
@@ -243,7 +243,7 @@ namespace Altinn.App.Core.Tests.Internal.App
                 OnEntry = new OnEntry()
                 {
                     Show = "select-instance",
-                    InstanceSelection = new ()
+                    InstanceSelection = new()
                     {
                         SortDirection = "desc",
                         RowsPerPageOptions = new List<int>()
@@ -261,7 +261,7 @@ namespace Altinn.App.Core.Tests.Internal.App
             actual.Should().BeEquivalentTo(expected);
             actual.OnEntry?.InstanceSelection?.DefaultSelectedOption.Should().Be(1);
         }
-        
+
         [Fact]
         public async Task GetApplicationMetadata_onEntry_supports_new_option()
         {
@@ -308,7 +308,7 @@ namespace Altinn.App.Core.Tests.Internal.App
                 OnEntry = new OnEntry()
                 {
                     Show = "select-instance",
-                    InstanceSelection = new ()
+                    InstanceSelection = new()
                     {
                         SortDirection = "desc",
                         RowsPerPageOptions = new List<int>()
@@ -325,7 +325,7 @@ namespace Altinn.App.Core.Tests.Internal.App
             actual.Should().BeEquivalentTo(expected);
             actual.OnEntry?.InstanceSelection?.DefaultSelectedOption.Should().Be(2);
         }
-        
+
         [Fact]
         public async Task GetApplicationMetadata_onEntry_prefer_new_option()
         {
@@ -372,7 +372,7 @@ namespace Altinn.App.Core.Tests.Internal.App
                 OnEntry = new OnEntry()
                 {
                     Show = "select-instance",
-                    InstanceSelection = new ()
+                    InstanceSelection = new()
                     {
                         SortDirection = "desc",
                         RowsPerPageOptions = new List<int>()
@@ -474,7 +474,7 @@ namespace Altinn.App.Core.Tests.Internal.App
             {
                 return new AppMetadata(appsettings, new FrontendFeatures(featureManagerMock.Object));
             }
-            
+
             return new AppMetadata(appsettings, frontendFeatures);
         }
     }
