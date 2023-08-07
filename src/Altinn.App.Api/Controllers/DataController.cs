@@ -205,7 +205,7 @@ namespace Altinn.App.Api.Controllers
         /// </summary>
         private async Task<object> GetErrorDetails(List<ValidationIssue> errors)
         {
-            return await _featureManager.IsEnabledAsync(FeatureFlags.JsonObjectInDataResponse) ? errors : errors.Select(x => x.Description);
+            return await _featureManager.IsEnabledAsync(FeatureFlags.JsonObjectInDataResponse) ? errors : string.Join(";", errors.Select(x => x.Description));
         }
 
         private static bool FileAnalysisEnabledForDataType(DataType dataTypeFromMetadata)
