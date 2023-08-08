@@ -2,8 +2,8 @@ using System.Text.Json;
 using System.Xml.Serialization;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Core.Extensions;
-using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace App.IntegrationTests.Mocks.Services
 {
-    public class DataClientMock : IData
+    public class DataClientMock : IDataClient
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IAppMetadata _appMetadata;
@@ -280,6 +280,46 @@ namespace App.IntegrationTests.Mocks.Services
             throw new NotImplementedException();
         }
 
+        public async Task<DataElement> InsertBinaryData(string instanceId, string dataType, string contentType, string filename, Stream stream, string? generatedFromTask = null)
+        {
+            Application application = await _appMetadata.GetApplicationMetadata();
+            var instanceIdParts = instanceId.Split("/");
+
+            Guid dataGuid = Guid.NewGuid();
+
+            string org = application.Org;
+            string app = application.Id.Split("/")[1];
+            int instanceOwnerId = int.Parse(instanceIdParts[0]);
+            Guid instanceGuid = Guid.Parse(instanceIdParts[1]);
+
+            string dataPath = TestData.GetDataDirectory(org, app, instanceOwnerId, instanceGuid);
+
+            DataElement dataElement = new() { Id = dataGuid.ToString(), InstanceGuid = instanceGuid.ToString(), DataType = dataType, ContentType = contentType, };
+
+            if (!Directory.Exists(Path.GetDirectoryName(dataPath)))
+            {
+                var directory = Path.GetDirectoryName(dataPath);
+                if (directory != null) Directory.CreateDirectory(directory);
+            }
+
+            Directory.CreateDirectory(dataPath + @"blob");
+
+            long filesize;
+
+            using (Stream streamToWriteTo = File.Open(dataPath + @"blob/" + dataGuid, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
+            {
+                stream.Seek(0, SeekOrigin.Begin);
+                await stream.CopyToAsync(streamToWriteTo);
+                streamToWriteTo.Flush();
+                filesize = streamToWriteTo.Length;
+            }
+
+            dataElement.Size = filesize;
+            WriteDataElementToFile(dataElement, org, app, instanceOwnerId);
+
+            return dataElement;
+        }
+
         public Task<DataElement> UpdateBinaryData(string org, string app, int instanceOwnerPartyId, Guid instanceGuid, Guid dataGuid, HttpRequest request)
         {
             throw new NotImplementedException();
@@ -294,6 +334,16 @@ namespace App.IntegrationTests.Mocks.Services
             WriteDataElementToFile(dataElement, org, app, instanceOwnerId);
 
             return Task.FromResult(dataElement);
+        }
+
+        public async Task<DataElement> LockDataElement(InstanceIdentifier instanceIdentifier, Guid dataGuid)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<DataElement> UnlockDataElement(InstanceIdentifier instanceIdentifier, Guid dataGuid)
+        {
+            throw new NotImplementedException();
         }
 
         private static void WriteDataElementToFile(DataElement dataElement, string org, string app, int instanceOwnerPartyId)
