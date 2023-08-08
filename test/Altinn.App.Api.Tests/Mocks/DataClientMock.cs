@@ -336,12 +336,12 @@ namespace App.IntegrationTests.Mocks.Services
             return Task.FromResult(dataElement);
         }
 
-        public async Task<DataElement> LockDataElement(InstanceIdentifier instanceIdentifier, Guid dataGuid)
+        public Task<DataElement> LockDataElement(InstanceIdentifier instanceIdentifier, Guid dataGuid)
         {
             throw new NotImplementedException();
         }
 
-        public async Task<DataElement> UnlockDataElement(InstanceIdentifier instanceIdentifier, Guid dataGuid)
+        public Task<DataElement> UnlockDataElement(InstanceIdentifier instanceIdentifier, Guid dataGuid)
         {
             throw new NotImplementedException();
         }

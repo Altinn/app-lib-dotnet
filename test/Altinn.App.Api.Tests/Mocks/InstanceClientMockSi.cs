@@ -419,7 +419,7 @@ namespace Altinn.App.Api.Tests.Mocks
 
             if (queryParams.TryGetValue("appId", out StringValues appIdQueryVal) && appIdQueryVal.Count > 0)
             {
-                instancesPath += Path.DirectorySeparatorChar + appIdQueryVal.First().Replace('/', Path.DirectorySeparatorChar);
+                instancesPath += Path.DirectorySeparatorChar + appIdQueryVal.First()?.Replace('/', Path.DirectorySeparatorChar);
                 fileDepth -= 2;
 
                 if (queryParams.TryGetValue("instanceOwner.partyId", out StringValues partyIdQueryVal) && partyIdQueryVal.Count > 0)
