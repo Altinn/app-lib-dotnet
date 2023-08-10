@@ -25,6 +25,8 @@ namespace Altinn.App.Core.Internal.App
             {
                 features.Add("jsonObjectInDataResponse", false);
             }
+
+            features.Add("expressionValidation", true);
         }
 
         /// <inheritdoc />
