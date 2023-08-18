@@ -14,8 +14,9 @@ namespace Altinn.App.Core.Features.Validation
 
     public class RawExpressionValidation
     {
-        public string Message { get; set; }
-        public Expression Condition { get; set; }
-        public ValidationIssueSeverity? Severity { get; set; }
+        public string? Message { get; set; }
+        public Expression? Condition { get; set; }
+        public string? Severity { get; set; }
+        public string? Ref { get; set; }
     }
 }
