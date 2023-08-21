@@ -2,7 +2,7 @@ using System.Text;
 using System.Xml;
 using System.Xml.Linq;
 
-namespace altinn_app_upgrade_cli.v7Tov8.ProjectRewriters;
+namespace altinn_app_cli.v7Tov8.ProjectRewriters;
 
 public class ProjectFileRewriter
 {

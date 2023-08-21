@@ -1,7 +1,9 @@
 ﻿using System.CommandLine;
-using altinn_app_upgrade_cli.v7Tov8.CodeRewriters;
-using altinn_app_upgrade_cli.v7Tov8.ProcessRewriter;
-using altinn_app_upgrade_cli.v7Tov8.ProjectRewriters;
+using System.Reflection;
+using altinn_app_cli.v7Tov8.CodeRewriters;
+using altinn_app_cli.v7Tov8.ProcessRewriter;
+using altinn_app_cli.v7Tov8.ProjectChecks;
+using altinn_app_cli.v7Tov8.ProjectRewriters;
 using Microsoft.Build.Locator;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.MSBuild;
@@ -20,8 +22,8 @@ class Program
         var skipCsprojUpgradeOption = new Option<bool>(name: "--skip-csproj-upgrade", description: "Skip csproj file upgrade", getDefaultValue: () => false);
         var skipCodeUpgradeOption = new Option<bool>(name: "--skip-code-upgrade", description: "Skip code upgrade", getDefaultValue: () => false);
         var skipProcessUpgradeOption = new Option<bool>(name: "--skip-process-upgrade", description: "Skip process file upgrade", getDefaultValue: () => false);
-        var rootCommand = new RootCommand("Sample app for System.CommandLine");
-        var upgradeCommand = new Command("upgrade", "Upgrade an app")
+        var rootCommand = new RootCommand("Command line interface for working with Altinn 3 Applications");
+        var upgradeCommand = new Command("upgrade", "Upgrade an app from v7 to v8")
         {
             projectFolderOption,
             projectFileOption,
@@ -32,6 +34,8 @@ class Program
             skipProcessUpgradeOption,
         };
         rootCommand.AddCommand(upgradeCommand);
+        var versionCommand = new Command("version", "Print version of altinn-app-cli");
+        rootCommand.AddCommand(versionCommand);
 
         upgradeCommand.SetHandler(async (projectFolder, projectFile, processFile, targetVersion, skipCodeUpgrade, skipProcessUpgrade, skipCsprojUpgrade) =>
             {
@@ -42,7 +46,7 @@ class Program
 
                 if (File.Exists(projectFolder))
                 {
-                    Console.WriteLine($"Project folder {projectFolder} does not exist. Please supply location of project with --project-folder [path/to/project]");
+                    Console.WriteLine($"Project folder {projectFolder} does not exist. Please supply location of project with --folder [path/to/project]");
                     returnCode = 1;
                     return;
                 }
@@ -50,7 +54,7 @@ class Program
                 FileAttributes attr = File.GetAttributes(projectFolder);
                 if ((attr & FileAttributes.Directory) != FileAttributes.Directory)
                 {
-                    Console.WriteLine($"Project folder {projectFolder} is a file. Please supply location of project with --project-folder [path/to/project]");
+                    Console.WriteLine($"Project folder {projectFolder} is a file. Please supply location of project with --folder [path/to/project]");
                     returnCode = 1;
                     return;
                 }
@@ -66,6 +70,13 @@ class Program
                     processFile = Path.Combine(projectFolder, processFile);
                 }
 
+                var projectChecks = new ProjectChecks(projectFile);
+                if (!projectChecks.SupportedSourceVersion())
+                {
+                    Console.WriteLine($"Version(s) in project file {projectFile} is not supported. Please upgrade to version 7.0.0 or higher.");
+                    returnCode = 2;
+                    return;
+                }
                 if (!skipCsprojUpgrade)
                 {
                     returnCode = await UpgradeNugetVersions(projectFile, targetVersion);
@@ -91,7 +102,11 @@ class Program
                 }
             },
             projectFolderOption, projectFileOption, processFileOption, targetVersionOption, skipCodeUpgradeOption, skipProcessUpgradeOption, skipCsprojUpgradeOption);
-
+        versionCommand.SetHandler(() =>
+        {
+            var version = Assembly.GetEntryAssembly()?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "Unknown";
+            Console.WriteLine($"altinn-app-cli v{version}");
+        });
         await rootCommand.InvokeAsync(args);
         return returnCode;
     }
