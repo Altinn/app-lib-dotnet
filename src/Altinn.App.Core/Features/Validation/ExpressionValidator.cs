@@ -41,9 +41,10 @@ namespace Altinn.App.Core.Features.Validation
                 var validations = validationObject.Value;
                 foreach (var resolvedField in resolvedFields)
                 {
+                    var positionalArguments = new[] { resolvedField };
                     foreach (var validation in validations)
                     {
-                        var isInvalid = ExpressionEvaluator.EvaluateExpression(evaluatorState, validation.Condition, null);
+                        var isInvalid = ExpressionEvaluator.EvaluateExpression(evaluatorState, validation.Condition, null, positionalArguments);
                         if (isInvalid is not bool)
                         {
                             throw new ArgumentException($"Validation condition for {resolvedField} did not evaluate to a boolean");

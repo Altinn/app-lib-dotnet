@@ -46,7 +46,7 @@ public static class ExpressionEvaluator
     /// <summary>
     /// Evaluate a <see cref="Expression" /> from a given <see cref="LayoutEvaluatorState" /> in a <see cref="ComponentContext" />
     /// </summary>
-    public static object? EvaluateExpression(LayoutEvaluatorState state, Expression expr, ComponentContext? context)
+    public static object? EvaluateExpression(LayoutEvaluatorState state, Expression expr, ComponentContext? context, object[]? positionalArguments = null)
     {
         if (expr is null)
         {
@@ -57,7 +57,7 @@ public static class ExpressionEvaluator
             return expr.Value;
         }
 
-        var args = expr.Args.Select(a => EvaluateExpression(state, a, context)).ToArray();
+        var args = expr.Args.Select(a => EvaluateExpression(state, a, context, positionalArguments)).ToArray();
         var ret = expr.Function switch
         {
             ExpressionFunction.dataModel => state.GetModelData(args.First()?.ToString(), context),
@@ -84,6 +84,7 @@ public static class ExpressionEvaluator
             ExpressionFunction.round => Round(args),
             ExpressionFunction.upperCase => UpperCase(args),
             ExpressionFunction.lowerCase => LowerCase(args),
+            ExpressionFunction.argv => Argv(args, positionalArguments),
             _ => throw new ExpressionEvaluatorTypeErrorException($"Function \"{expr.Function}\" not implemented"),
         };
         return ret;
@@ -470,6 +471,31 @@ public static class ExpressionEvaluator
         }
 
         return string.Equals(ToStringForEquals(args[0]), ToStringForEquals(args[1]), StringComparison.InvariantCulture);
+    }
+
+    private static object Argv(object?[] args, object[]? positionalArguments)
+    {
+        if (args.Length != 1)
+        {
+            throw new ExpressionEvaluatorTypeErrorException($"Expected 1 argument(s), got {args.Length}");
+        }
+
+        var index = (int?)PrepareNumericArg(args[0]);
+        if (!index.HasValue)
+        {
+            throw new ExpressionEvaluatorTypeErrorException($"Expected number, got value \"{args[0]}\"");
+        }
+
+        if (positionalArguments == null)
+        {
+            throw new ExpressionEvaluatorTypeErrorException("No positional arguments available");
+        }
+        if (index < 0 || index >= positionalArguments.Length)
+        {
+            throw new ExpressionEvaluatorTypeErrorException($"Index {index} out of range");
+        }
+
+        return positionalArguments[index.Value];
     }
 }
 
