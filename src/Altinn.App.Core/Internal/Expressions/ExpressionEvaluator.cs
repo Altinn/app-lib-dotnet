@@ -37,7 +37,7 @@ public static class ExpressionEvaluator
                 _ => throw new ExpressionEvaluatorTypeErrorException($"Return was not boolean (value)")
             };
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             throw new ExpressionEvaluatorTypeErrorException($"Error while evaluating \"{property}\" on \"{context.Component.PageId}.{context.Component.Id}\"", e);
         }
@@ -46,7 +46,7 @@ public static class ExpressionEvaluator
     /// <summary>
     /// Evaluate a <see cref="Expression" /> from a given <see cref="LayoutEvaluatorState" /> in a <see cref="ComponentContext" />
     /// </summary>
-    public static object? EvaluateExpression(LayoutEvaluatorState state, Expression expr, ComponentContext context)
+    public static object? EvaluateExpression(LayoutEvaluatorState state, Expression expr, ComponentContext? context)
     {
         if (expr is null)
         {
@@ -89,12 +89,17 @@ public static class ExpressionEvaluator
         return ret;
     }
 
-    private static object? Component(object?[] args, ComponentContext context, LayoutEvaluatorState state)
+    private static object? Component(object?[] args, ComponentContext? context, LayoutEvaluatorState state)
     {
         var componentId = args.First()?.ToString();
         if (componentId is null)
         {
             throw new ArgumentException("Cannot lookup component null");
+        }
+
+        if (context is null)
+        {
+            throw new ArgumentException("The component expression requires a component context");
         }
 
         var targetContext = state.GetComponentContext(context.Component.PageId, componentId, context.RowIndices);
@@ -108,10 +113,10 @@ public static class ExpressionEvaluator
         {
             throw new ArgumentException("component lookup requires the target component to have a simpleBinding");
         }
-        ComponentContext? parent = targetContext; 
+        ComponentContext? parent = targetContext;
         while (parent is not null)
         {
-            if(EvaluateBooleanExpression(state, parent, "hidden", false))
+            if (EvaluateBooleanExpression(state, parent, "hidden", false))
             {
                 // Don't lookup data in hidden components
                 return null;
@@ -135,7 +140,7 @@ public static class ExpressionEvaluator
         }
         string? stringOne = ToStringForEquals(args[0]);
         string? stringTwo = ToStringForEquals(args[1]);
-        
+
         if (stringOne is null || stringTwo is null)
         {
             return false;
@@ -152,7 +157,7 @@ public static class ExpressionEvaluator
         }
         string? stringOne = ToStringForEquals(args[0]);
         string? stringTwo = ToStringForEquals(args[1]);
-        
+
         if (stringOne is null || stringTwo is null)
         {
             return false;
@@ -160,7 +165,7 @@ public static class ExpressionEvaluator
 
         return stringOne.EndsWith(stringTwo, StringComparison.InvariantCulture);
     }
-    
+
     private static bool StartsWith(object?[] args)
     {
         if (args.Length != 2)
@@ -169,7 +174,7 @@ public static class ExpressionEvaluator
         }
         string? stringOne = ToStringForEquals(args[0]);
         string? stringTwo = ToStringForEquals(args[1]);
-        
+
         if (stringOne is null || stringTwo is null)
         {
             return false;
@@ -186,12 +191,12 @@ public static class ExpressionEvaluator
         }
         string? stringOne = ToStringForEquals(args[0]);
         string? stringTwo = ToStringForEquals(args[1]);
-        
+
         if (stringOne is null || stringTwo is null)
         {
             return false;
         }
-        
+
         return stringOne.Split(",").Select(s => s.Trim()).Contains(stringTwo, StringComparer.InvariantCulture);
     }
 
@@ -207,18 +212,18 @@ public static class ExpressionEvaluator
 
     private static string Round(object?[] args)
     {
-        if (args.Length < 1 || args.Length> 2)
+        if (args.Length < 1 || args.Length > 2)
         {
             throw new ExpressionEvaluatorTypeErrorException($"Expected 1-2 argument(s), got {args.Length}");
         }
 
         var number = PrepareNumericArg(args[0]);
-        
-        if(number is null)
+
+        if (number is null)
         {
             number = 0;
         }
-        
+
         int precision = 0;
         if (args.Length == 2 && args[1] is not null)
         {
@@ -237,7 +242,7 @@ public static class ExpressionEvaluator
         string? stringOne = ToStringForEquals(args[0]);
         return stringOne?.ToUpperInvariant();
     }
-    
+
     private static string? LowerCase(object?[] args)
     {
         if (args.Length != 1)
@@ -247,7 +252,7 @@ public static class ExpressionEvaluator
         string? stringOne = ToStringForEquals(args[0]);
         return stringOne?.ToLowerInvariant();
     }
-    
+
     private static bool PrepareBooleanArg(object? arg)
     {
         return arg switch
@@ -303,7 +308,7 @@ public static class ExpressionEvaluator
 
     private static bool? Not(object?[] args)
     {
-        if(args.Length != 1)
+        if (args.Length != 1)
         {
             throw new ExpressionEvaluatorTypeErrorException($"Expected 1 argument(s), got {args.Length}");
         }
@@ -323,7 +328,7 @@ public static class ExpressionEvaluator
 
         return (a, b);
     }
-    
+
     private static double? PrepareNumericArg(object? arg)
     {
         return arg switch

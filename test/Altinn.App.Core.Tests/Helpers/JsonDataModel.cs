@@ -136,6 +136,12 @@ public class JsonDataModel : IDataModelAccessor
     }
 
     /// <inheritdoc />
+    public string[] GetResolvedKeys(string key)
+    {
+        throw new NotImplementedException("GetParsedKeys is not implemented for JsonDataModel");
+    }
+
+    /// <inheritdoc />
     public string AddIndicies(string key, ReadOnlySpan<int> indicies = default)
     {
         // We don't have a schema for the datamodel in Json

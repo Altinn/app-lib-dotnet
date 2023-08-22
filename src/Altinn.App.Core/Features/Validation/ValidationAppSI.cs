@@ -225,11 +225,11 @@ namespace Altinn.App.Core.Features.Validation
                 int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
                 object data = await _dataService.GetFormData(
                     instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, Guid.Parse(dataElement.Id));
+                var layoutSet = _appResourcesService.GetLayoutSetForTask(dataType.TaskId);
+                var evaluationState = await _layoutEvaluatorStateInitializer.Init(instance, data, layoutSet?.Id);
 
                 if (_appSettings.RemoveHiddenDataPreview)
                 {
-                    var layoutSet = _appResourcesService.GetLayoutSetForTask(dataType.TaskId);
-                    var evaluationState = await _layoutEvaluatorStateInitializer.Init(instance, data, layoutSet?.Id);
                     // Remove hidden data before validation
                     LayoutEvaluator.RemoveHiddenData(evaluationState);
                     // Evaluate expressions in layout and validate that all required data is included and that maxLength
@@ -256,6 +256,10 @@ namespace Altinn.App.Core.Features.Validation
                 {
                     messages.AddRange(MapModelStateToIssueList(actionContext.ModelState, instance, dataElement.Id, data.GetType()));
                 }
+
+                // Run expression validations
+                var expressionErrors = ExpressionValidator.Validate(dataType.Id, _appResourcesService, data, evaluationState, _logger);
+                messages.AddRange(expressionErrors);
             }
 
             return messages;

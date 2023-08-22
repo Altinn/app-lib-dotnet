@@ -90,6 +90,72 @@ public class DataModel : IDataModelAccessor
         return GetModelDataRecursive(keys, index + 1, elementAt, indicies.Length > 0 ? indicies.Slice(1) : indicies);
     }
 
+    /// <inheritdoc />
+    public string[] GetResolvedKeys(string key)
+    {
+        var keyParts = key.Split('.');
+        // Skjema.Addresser.Husholdning.Personer.Navn
+        // Skjema.Addresser[*].Husholdning.Personer[*].Navn
+        return GetResolvedKeysRecursive(keyParts, _serviceModel);
+    }
+
+    private string JoinFieldKeyParts(string? currentKey, string? key)
+    {
+        if (String.IsNullOrEmpty(currentKey))
+        {
+            return key ?? "";
+        }
+        if (String.IsNullOrEmpty(key))
+        {
+            return currentKey ?? "";
+        }
+
+        return currentKey + "." + key;
+    }
+
+    private string[] GetResolvedKeysRecursive(string[] keyParts, object currentModel, int currentIndex = 0, string currentKey = "")
+    {
+        if (currentIndex == keyParts.Length)
+        {
+            return new[] { currentKey };
+        }
+
+        var (key, groupIndex) = ParseKeyPart(keyParts[currentIndex]);
+        var prop = currentModel.GetType().GetProperties().FirstOrDefault(p => IsPropertyWithJsonName(p, key));
+        var childModel = prop?.GetValue(currentModel);
+        if (childModel is null)
+        {
+            return new string[0];
+        }
+
+        if (childModel is not string && childModel is System.Collections.IEnumerable childModelList)
+        {
+            // childModel is an array
+            if (groupIndex is null)
+            {
+                // Index not specified, recurse on all elements
+                int i = 0;
+                var resolvedKeys = new string[0];
+                foreach (var child in childModelList)
+                {
+                    var newResolvedKeys = GetResolvedKeysRecursive(keyParts, child, currentIndex + 1, JoinFieldKeyParts(currentKey, key + "[" + i + "]"));
+                    newResolvedKeys.CopyTo(resolvedKeys, resolvedKeys.Length);
+                    i++;
+                }
+                return resolvedKeys;
+            }
+            else
+            {
+                // Index specified, recurse on that element
+                return GetResolvedKeysRecursive(keyParts, childModel, currentIndex + 1, JoinFieldKeyParts(currentKey, key + "[" + groupIndex + "]"));
+            }
+        }
+
+        // Otherwise, just recurse
+        return GetResolvedKeysRecursive(keyParts, childModel, currentIndex + 1, JoinFieldKeyParts(currentKey, key));
+
+    }
+
     private static object? GetElementAt(System.Collections.IEnumerable enumerable, int index)
     {
         // Return the element with index = groupIndex (could not find anohter way to get the n'th element in non generic enumerable)

@@ -1,4 +1,6 @@
+using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Interface;
+using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models.Validation;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
@@ -9,24 +11,19 @@ namespace Altinn.App.Core.Features.Validation
     /// <summary>
     /// Validates form data against expression validations
     /// </summary>
-    public class ExpressionValidationService : IExpressionValidationService
+    public static class ExpressionValidator
     {
-        private readonly IAppResources _appResourceService;
-        private readonly ILogger _logger;
-
-        public ExpressionValidationService(IAppResources appResourcesService, ILogger logger)
-        {
-            _appResourceService = appResourcesService;
-            _logger = logger;
-        }
-
         /// <inheritdoc />
-        public Task<(bool Success, List<ValidationIssue> Errors)> Validate(string dataType)
+        public static IEnumerable<ValidationIssue> Validate(string dataType, IAppResources appResourceService, object data, LayoutEvaluatorState evaluatorState, ILogger logger)
         {
-            var rawValidationConfig = _appResourceService.GetValidationConfiguration(dataType);
+            var dataModel = new DataModel(data);
+            var validationIssues = new List<ValidationIssue>();
+
+            var rawValidationConfig = appResourceService.GetValidationConfiguration(dataType);
             if (rawValidationConfig == null)
             {
-                throw new ArgumentException($"Could not find validation configuration for data type {dataType}");
+                // No validation configuration exists for this data type
+                return validationIssues;
             }
 
             var validationConfig = JObject.Parse(rawValidationConfig);
@@ -35,11 +32,43 @@ namespace Altinn.App.Core.Features.Validation
                 throw new ArgumentException($"Could not parse validation configuration for data type {dataType}");
             }
 
-            var expressionValidations = ParseExpressionValidationConfig(validationConfig);
-            throw new NotImplementedException();
+            var expressionValidations = ParseExpressionValidationConfig(validationConfig, logger);
+
+            foreach (var validationObject in expressionValidations)
+            {
+                var baseField = validationObject.Key;
+                var resolvedFields = dataModel.GetResolvedKeys(baseField);
+                var validations = validationObject.Value;
+                foreach (var resolvedField in resolvedFields)
+                {
+                    foreach (var validation in validations)
+                    {
+                        var isInvalid = ExpressionEvaluator.EvaluateExpression(evaluatorState, validation.Condition, null);
+                        if (isInvalid is not bool)
+                        {
+                            throw new ArgumentException($"Validation condition for {resolvedField} did not evaluate to a boolean");
+                        }
+                        if ((bool)isInvalid)
+                        {
+                            var validationIssue = new ValidationIssue
+                            {
+                                Field = resolvedField,
+                                Severity = validation.Severity,
+                                CustomTextKey = validation.Message,
+                                Code = validation.Message,
+                                Source = "Expression" // TODO: Add source to ValidationIssueSources
+                            };
+                            validationIssues.Add(validationIssue);
+                        }
+                    }
+                }
+            }
+
+
+            return validationIssues;
         }
 
-        private ValidationIssueSeverity? MapSeverity(string? severity)
+        private static ValidationIssueSeverity? MapSeverity(string? severity)
         {
             switch (severity)
             {
@@ -56,13 +85,13 @@ namespace Altinn.App.Core.Features.Validation
             }
         }
 
-        private RawExpressionValidation? ResolveValidationDefinition(string name, JObject definition, Dictionary<string, RawExpressionValidation> resolvedDefinitions)
+        private static RawExpressionValidation? ResolveValidationDefinition(string name, JObject definition, Dictionary<string, RawExpressionValidation> resolvedDefinitions, ILogger logger)
         {
             var resolvedDefinition = new RawExpressionValidation();
             var rawDefinition = definition.ToObject<RawExpressionValidation>();
             if (rawDefinition == null)
             {
-                _logger.LogWarning($"Validation definition {name} could not be parsed");
+                logger.LogWarning($"Validation definition {name} could not be parsed");
                 return null;
             }
             if (rawDefinition.Ref != null)
@@ -70,7 +99,7 @@ namespace Altinn.App.Core.Features.Validation
                 RawExpressionValidation reference = resolvedDefinitions[rawDefinition.Ref];
                 if (reference == null)
                 {
-                    _logger.LogWarning($"Could not resolve reference {rawDefinition.Ref} for validation {name}");
+                    logger.LogWarning($"Could not resolve reference {rawDefinition.Ref} for validation {name}");
                     return null;
 
                 }
@@ -96,20 +125,20 @@ namespace Altinn.App.Core.Features.Validation
 
             if (resolvedDefinition.Message == null)
             {
-                _logger.LogWarning($"Validation {name} is missing message");
+                logger.LogWarning($"Validation {name} is missing message");
                 return null;
             }
 
             if (resolvedDefinition.Condition == null)
             {
-                _logger.LogWarning($"Validation {name} is missing condition");
+                logger.LogWarning($"Validation {name} is missing condition");
                 return null;
             }
 
             return resolvedDefinition;
         }
 
-        private ExpressionValidation? ResolveExpressionValidation(string field, JObject definition, Dictionary<string, RawExpressionValidation> resolvedDefinitions)
+        private static ExpressionValidation? ResolveExpressionValidation(string field, JObject definition, Dictionary<string, RawExpressionValidation> resolvedDefinitions, ILogger logger)
         {
 
             var rawExpressionValidatıon = new RawExpressionValidation();
@@ -120,7 +149,7 @@ namespace Altinn.App.Core.Features.Validation
                 var reference = resolvedDefinitions[stringReference];
                 if (reference == null)
                 {
-                    _logger.LogWarning($"Could not resolve reference {stringReference} for validation for field {field}");
+                    logger.LogWarning($"Could not resolve reference {stringReference} for validation for field {field}");
                     return null;
                 }
                 rawExpressionValidatıon.Message = reference.Message;
@@ -132,7 +161,7 @@ namespace Altinn.App.Core.Features.Validation
                 var expressionDefinition = definition.ToObject<RawExpressionValidation>();
                 if (expressionDefinition == null)
                 {
-                    _logger.LogWarning($"Validation for field {field} could not be parsed");
+                    logger.LogWarning($"Validation for field {field} could not be parsed");
                     return null;
                 }
 
@@ -141,7 +170,7 @@ namespace Altinn.App.Core.Features.Validation
                     RawExpressionValidation reference = resolvedDefinitions[expressionDefinition.Ref];
                     if (reference == null)
                     {
-                        _logger.LogWarning($"Could not resolve reference {expressionDefinition.Ref} for validation for field {field}");
+                        logger.LogWarning($"Could not resolve reference {expressionDefinition.Ref} for validation for field {field}");
                         return null;
 
                     }
@@ -168,13 +197,13 @@ namespace Altinn.App.Core.Features.Validation
 
             if (rawExpressionValidatıon.Message == null)
             {
-                _logger.LogWarning($"Validation for field {field} is missing message");
+                logger.LogWarning($"Validation for field {field} is missing message");
                 return null;
             }
 
             if (rawExpressionValidatıon.Condition == null)
             {
-                _logger.LogWarning($"Validation for field {field} is missing condition");
+                logger.LogWarning($"Validation for field {field} is missing condition");
                 return null;
             }
             if (rawExpressionValidatıon.Severity == null || MapSeverity(rawExpressionValidatıon.Severity) == null)
@@ -192,7 +221,7 @@ namespace Altinn.App.Core.Features.Validation
             return expressionValidation;
         }
 
-        private Dictionary<string, ExpressionValidation[]> ParseExpressionValidationConfig(JObject expressionValidationConfig)
+        private static Dictionary<string, ExpressionValidation[]> ParseExpressionValidationConfig(JObject expressionValidationConfig, ILogger logger)
         {
             var expressionValidationDefinitions = new Dictionary<string, RawExpressionValidation>();
             var definitionsObject = expressionValidationConfig["defintions"]?.ToObject<JObject>();
@@ -204,13 +233,13 @@ namespace Altinn.App.Core.Features.Validation
                     var definition = definitionObject.Value?.ToObject<JObject>();
                     if (definition == null)
                     {
-                        _logger.LogWarning($"Validation definition {name} is not an object");
+                        logger.LogWarning($"Validation definition {name} is not an object");
                         continue;
                     }
-                    var resolvedDefinition = ResolveValidationDefinition(name, definition, expressionValidationDefinitions);
+                    var resolvedDefinition = ResolveValidationDefinition(name, definition, expressionValidationDefinitions, logger);
                     if (resolvedDefinition == null)
                     {
-                        _logger.LogWarning($"Validation definition {name} could not be resolved");
+                        logger.LogWarning($"Validation definition {name} could not be resolved");
                         continue;
                     }
                     expressionValidationDefinitions[name] = resolvedDefinition;
@@ -226,7 +255,7 @@ namespace Altinn.App.Core.Features.Validation
                     var validations = validationArray.Value?.ToObject<JObject[]>();
                     if (validations == null)
                     {
-                        _logger.LogWarning($"Validation for field {field} is not an array");
+                        logger.LogWarning($"Validation for field {field} is not an array");
                         continue;
                     }
                     foreach (var validation in validations)
@@ -235,10 +264,10 @@ namespace Altinn.App.Core.Features.Validation
                         {
                             expressionValidations[field] = new ExpressionValidation[0];
                         }
-                        var resolvedExpressionValidation = ResolveExpressionValidation(field, validation, expressionValidationDefinitions);
+                        var resolvedExpressionValidation = ResolveExpressionValidation(field, validation, expressionValidationDefinitions, logger);
                         if (resolvedExpressionValidation == null)
                         {
-                            _logger.LogWarning($"Validation for field {field} could not be resolved");
+                            logger.LogWarning($"Validation for field {field} could not be resolved");
                             continue;
                         }
                         expressionValidations[field].Append(resolvedExpressionValidation);
