@@ -336,6 +336,7 @@ public static class ExpressionEvaluator
         {
             bool ab => throw new ExpressionEvaluatorTypeErrorException($"Expected number, got value {(ab ? "true" : "false")}"),
             string s => parseNumber(s),
+            int i => Convert.ToDouble(i),
             object o => o as double?, // assume all relevant numbers are representable as double (as in frontend)
             _ => null
         };

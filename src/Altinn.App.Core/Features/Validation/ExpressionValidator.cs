@@ -2,6 +2,7 @@ using System.Text.Json;
 using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.Expressions;
+using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Validation;
 using Microsoft.Extensions.Logging;
 
@@ -39,22 +40,34 @@ namespace Altinn.App.Core.Features.Validation
                     var positionalArguments = new[] { resolvedField };
                     foreach (var validation in validations)
                     {
-                        var isInvalid = ExpressionEvaluator.EvaluateExpression(evaluatorState, validation.Condition, null, positionalArguments);
-                        if (isInvalid is not bool)
+                        try
                         {
-                            throw new ArgumentException($"Validation condition for {resolvedField} did not evaluate to a boolean");
-                        }
-                        if ((bool)isInvalid)
-                        {
-                            var validationIssue = new ValidationIssue
+                            if (validation.Condition == null)
                             {
-                                Field = resolvedField,
-                                Severity = validation.Severity,
-                                CustomTextKey = validation.Message,
-                                Code = validation.Message,
-                                Source = "Expression" // TODO: Add source to ValidationIssueSources
-                            };
-                            validationIssues.Add(validationIssue);
+                                continue;
+                            }
+
+                            var isInvalid = ExpressionEvaluator.EvaluateExpression(evaluatorState, validation.Condition, null, positionalArguments);
+                            if (isInvalid is not bool)
+                            {
+                                throw new ArgumentException($"Validation condition for {resolvedField} did not evaluate to a boolean");
+                            }
+                            if ((bool)isInvalid)
+                            {
+                                var validationIssue = new ValidationIssue
+                                {
+                                    Field = resolvedField,
+                                    Severity = validation.Severity ?? ValidationIssueSeverity.Error,
+                                    CustomTextKey = validation.Message,
+                                    Code = validation.Message,
+                                    Source = "Expression" // TODO: Add source to ValidationIssueSources
+                                };
+                                validationIssues.Add(validationIssue);
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            logger.LogError($"Error while evaluating expression validation for {resolvedField}: {e}");
                         }
                     }
                 }
@@ -87,7 +100,7 @@ namespace Altinn.App.Core.Features.Validation
             var rawDefinition = definition.Deserialize<RawExpressionValidation>();
             if (rawDefinition == null)
             {
-                logger.LogWarning($"Validation definition {name} could not be parsed");
+                logger.LogError($"Validation definition {name} could not be parsed");
                 return null;
             }
             if (rawDefinition.Ref != null)
@@ -95,7 +108,7 @@ namespace Altinn.App.Core.Features.Validation
                 var reference = resolvedDefinitions.GetValueOrDefault(rawDefinition.Ref);
                 if (reference == null)
                 {
-                    logger.LogWarning($"Could not resolve reference {rawDefinition.Ref} for validation {name}");
+                    logger.LogError($"Could not resolve reference {rawDefinition.Ref} for validation {name}");
                     return null;
 
                 }
@@ -121,13 +134,13 @@ namespace Altinn.App.Core.Features.Validation
 
             if (resolvedDefinition.Message == null)
             {
-                logger.LogWarning($"Validation {name} is missing message");
+                logger.LogError($"Validation {name} is missing message");
                 return null;
             }
 
             if (resolvedDefinition.Condition == null)
             {
-                logger.LogWarning($"Validation {name} is missing condition");
+                logger.LogError($"Validation {name} is missing condition");
                 return null;
             }
 
@@ -142,10 +155,15 @@ namespace Altinn.App.Core.Features.Validation
             if (definition.ValueKind == JsonValueKind.String)
             {
                 var stringReference = definition.GetString();
+                if (stringReference == null)
+                {
+                    logger.LogError($"Could not resolve null reference for validation for field {field}");
+                    return null;
+                }
                 var reference = resolvedDefinitions.GetValueOrDefault(stringReference);
                 if (reference == null)
                 {
-                    logger.LogWarning($"Could not resolve reference {stringReference} for validation for field {field}");
+                    logger.LogError($"Could not resolve reference {stringReference} for validation for field {field}");
                     return null;
                 }
                 rawExpressionValidatıon.Message = reference.Message;
@@ -157,7 +175,7 @@ namespace Altinn.App.Core.Features.Validation
                 var expressionDefinition = definition.Deserialize<RawExpressionValidation>();
                 if (expressionDefinition == null)
                 {
-                    logger.LogWarning($"Validation for field {field} could not be parsed");
+                    logger.LogError($"Validation for field {field} could not be parsed");
                     return null;
                 }
 
@@ -166,7 +184,7 @@ namespace Altinn.App.Core.Features.Validation
                     var reference = resolvedDefinitions.GetValueOrDefault(expressionDefinition.Ref);
                     if (reference == null)
                     {
-                        logger.LogWarning($"Could not resolve reference {expressionDefinition.Ref} for validation for field {field}");
+                        logger.LogError($"Could not resolve reference {expressionDefinition.Ref} for validation for field {field}");
                         return null;
 
                     }
@@ -193,16 +211,16 @@ namespace Altinn.App.Core.Features.Validation
 
             if (rawExpressionValidatıon.Message == null)
             {
-                logger.LogWarning($"Validation for field {field} is missing message");
+                logger.LogError($"Validation for field {field} is missing message");
                 return null;
             }
 
             if (rawExpressionValidatıon.Condition == null)
             {
-                logger.LogWarning($"Validation for field {field} is missing condition");
+                logger.LogError($"Validation for field {field} is missing condition");
                 return null;
             }
-            if (rawExpressionValidatıon.Severity == null || MapSeverity(rawExpressionValidatıon.Severity) == null)
+            if (MapSeverity(rawExpressionValidatıon.Severity) == null)
             {
                 rawExpressionValidatıon.Severity = "errors";
             }
@@ -211,7 +229,7 @@ namespace Altinn.App.Core.Features.Validation
             {
                 Message = rawExpressionValidatıon.Message,
                 Condition = rawExpressionValidatıon.Condition,
-                Severity = (ValidationIssueSeverity)MapSeverity(rawExpressionValidatıon.Severity)
+                Severity = MapSeverity(rawExpressionValidatıon.Severity)
             };
 
             return expressionValidation;
@@ -231,7 +249,7 @@ namespace Altinn.App.Core.Features.Validation
                     var resolvedDefinition = ResolveValidationDefinition(name, definition, expressionValidationDefinitions, logger);
                     if (resolvedDefinition == null)
                     {
-                        logger.LogWarning($"Validation definition {name} could not be resolved");
+                        logger.LogError($"Validation definition {name} could not be resolved");
                         continue;
                     }
                     expressionValidationDefinitions[name] = resolvedDefinition;
@@ -255,7 +273,7 @@ namespace Altinn.App.Core.Features.Validation
                         var resolvedExpressionValidation = ResolveExpressionValidation(field, validation, expressionValidationDefinitions, logger);
                         if (resolvedExpressionValidation == null)
                         {
-                            logger.LogWarning($"Validation for field {field} could not be resolved");
+                            logger.LogError($"Validation for field {field} could not be resolved");
                             continue;
                         }
                         expressionValidations[field].Add(resolvedExpressionValidation);

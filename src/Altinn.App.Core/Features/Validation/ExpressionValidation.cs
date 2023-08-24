@@ -12,11 +12,11 @@ namespace Altinn.App.Core.Features.Validation
     public class ExpressionValidation
     {
         /// <inheritdoc/>
-        public string Message { get; set; }
+        public string? Message { get; set; }
         /// <inheritdoc/>
-        public Expression Condition { get; set; }
+        public Expression? Condition { get; set; }
         /// <inheritdoc/>
-        public ValidationIssueSeverity Severity { get; set; }
+        public ValidationIssueSeverity? Severity { get; set; }
     }
 
     /// <summary>
