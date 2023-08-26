@@ -59,7 +59,7 @@ public class MimeType
     /// </summary>
     /// <param name="other"></param>
     /// <returns></returns>
-    private bool Equals(MimeType? other)
+    private bool MimeTypeEquals(MimeType? other)
     {
         return other != null && Type == other.Type && Aliases.SequenceEqual(other.Aliases);
     }
@@ -84,7 +84,7 @@ public class MimeType
         {
             string s => IsMatch(s, comparisonType, comparer),
             StringValues s => IsMatch(s.ToString(), comparisonType, comparer),
-            MimeType m => Equals(m),
+            MimeType m => MimeTypeEquals(m),
             _ => false
         };
     }
