@@ -3,7 +3,7 @@ using Altinn.App.Core.Models;
 namespace Altinn.App.Core.Helpers
 {
     /// <summary>
-    /// MimeTypeMap from https://github.com/samuelneff/MimeTypeMap
+    /// MimeTypeMap based on https://github.com/samuelneff/MimeTypeMap
     /// </summary>
     public static class MimeTypeMap
     {
@@ -15,21 +15,6 @@ namespace Altinn.App.Core.Helpers
             {
                 #region Big freaking list of mime types
 
-                // maps both ways,
-                // extension -> mime type
-                //   and
-                // mime type -> extension
-                //
-                // any mime types on left side not pre-loaded on right side, are added automatically
-                // some mime types can map to multiple extensions, so to get a deterministic mapping,
-                // add those to the dictionary specifcially
-                //
-                // combination of values from Windows 7 Registry and
-                // from C:\Windows\System32\inetsrv\config\applicationHost.config
-                // some added, including .7z and .dat
-                //
-                // Some added based on http://www.iana.org/assignments/media-types/media-types.xhtml
-                // which lists mime types, but not extensions
                 { ".323", new("text/h323") },
                 { ".3g2", new("video/3gpp2") },
                 { ".3gp", new("video/3gpp", "audio/3gpp") },
