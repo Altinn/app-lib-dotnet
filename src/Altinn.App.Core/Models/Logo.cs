@@ -12,8 +12,8 @@ namespace Altinn.App.Core.Models
         /// <summary>
         /// A flag to specify that the form should display appOwner in header
         /// </summary>
-        [JsonProperty(PropertyName = "showAppOwnerInHeader")]
-        public bool ShowAppOwnerInHeader { get; set; }
+        [JsonProperty(PropertyName = "displayAppOwnerNameInHeader")]
+        public bool DisplayAppOwnerNameInHeader { get; set; }
 
         /// <summary>
         /// Specifies from where the logo url should be fetched
