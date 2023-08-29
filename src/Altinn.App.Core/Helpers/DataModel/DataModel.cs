@@ -94,12 +94,10 @@ public class DataModel : IDataModelAccessor
     public string[] GetResolvedKeys(string key)
     {
         var keyParts = key.Split('.');
-        // Skjema.Addresser.Husholdning.Personer.Navn
-        // Skjema.Addresser[*].Husholdning.Personer[*].Navn
         return GetResolvedKeysRecursive(keyParts, _serviceModel);
     }
 
-    private string JoinFieldKeyParts(string? currentKey, string? key)
+    internal static string JoinFieldKeyParts(string? currentKey, string? key)
     {
         if (String.IsNullOrEmpty(currentKey))
         {

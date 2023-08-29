@@ -138,7 +138,55 @@ public class JsonDataModel : IDataModelAccessor
     /// <inheritdoc />
     public string[] GetResolvedKeys(string key)
     {
-        throw new NotImplementedException("GetParsedKeys is not implemented for JsonDataModel");
+        if (_modelRoot is null)
+        {
+            return new string[0];
+        }
+
+        var keyParts = key.Split('.');
+        return GetResolvedKeysRecursive(keyParts, (JsonElement)_modelRoot);
+    }
+
+    private string[] GetResolvedKeysRecursive(string[] keyParts, JsonElement currentModel, int currentIndex = 0, string currentKey = "")
+    {
+        if (currentIndex == keyParts.Length)
+        {
+            return new[] { currentKey };
+        }
+
+        var (key, groupIndex) = DataModel.ParseKeyPart(keyParts[currentIndex]);
+        if (currentModel.ValueKind != JsonValueKind.Object || !currentModel.TryGetProperty(key, out JsonElement childModel))
+        {
+            return new string[0];
+        }
+
+        if (childModel.ValueKind == JsonValueKind.Array)
+        {
+            // childModel is an array
+            if (groupIndex is null)
+            {
+                // Index not specified, recurse on all elements
+                int i = 0;
+                var resolvedKeys = new string[0];
+                foreach (var child in childModel.EnumerateArray())
+                {
+                    var newResolvedKeys = GetResolvedKeysRecursive(keyParts, child, currentIndex + 1, DataModel.JoinFieldKeyParts(currentKey, key + "[" + i + "]"));
+                    newResolvedKeys.CopyTo(resolvedKeys, resolvedKeys.Length);
+                    i++;
+                }
+
+                return resolvedKeys;
+            }
+            else
+            {
+                // Index specified, recurse on that element
+                return GetResolvedKeysRecursive(keyParts, childModel, currentIndex + 1, DataModel.JoinFieldKeyParts(currentKey, key + "[" + groupIndex + "]"));
+            }
+        }
+
+        // Otherwise, just recurse
+        return GetResolvedKeysRecursive(keyParts, childModel, currentIndex + 1, DataModel.JoinFieldKeyParts(currentKey, key));
+
     }
 
     /// <inheritdoc />

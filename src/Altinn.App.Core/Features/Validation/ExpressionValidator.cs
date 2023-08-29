@@ -1,8 +1,8 @@
 using System.Text.Json;
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.Expressions;
-using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Validation;
 using Microsoft.Extensions.Logging;
 
@@ -15,21 +15,24 @@ namespace Altinn.App.Core.Features.Validation
     public static class ExpressionValidator
     {
         /// <inheritdoc />
-        public static IEnumerable<ValidationIssue> Validate(string dataType, IAppResources appResourceService, object data, LayoutEvaluatorState evaluatorState, ILogger logger)
+        public static IEnumerable<ValidationIssue> Validate(string dataType, IAppResources appResourceService, IDataModelAccessor dataModel, LayoutEvaluatorState evaluatorState, ILogger logger)
         {
-            var dataModel = new DataModel(data);
-            var validationIssues = new List<ValidationIssue>();
-
             var rawValidationConfig = appResourceService.GetValidationConfiguration(dataType);
             if (rawValidationConfig == null)
             {
                 // No validation configuration exists for this data type
-                return validationIssues;
+                return new List<ValidationIssue>();
             }
 
             var validationConfig = JsonDocument.Parse(rawValidationConfig).RootElement;
-            var expressionValidations = ParseExpressionValidationConfig(validationConfig, logger);
+            return Validate(validationConfig, dataModel, evaluatorState, logger);
+        }
 
+        /// <inheritdoc />
+        public static IEnumerable<ValidationIssue> Validate(JsonElement validationConfig, IDataModelAccessor dataModel, LayoutEvaluatorState evaluatorState, ILogger logger)
+        {
+            var validationIssues = new List<ValidationIssue>();
+            var expressionValidations = ParseExpressionValidationConfig(validationConfig, logger);
             foreach (var validationObject in expressionValidations)
             {
                 var baseField = validationObject.Key;
@@ -77,7 +80,7 @@ namespace Altinn.App.Core.Features.Validation
             return validationIssues;
         }
 
-        private static ValidationIssueSeverity? MapSeverity(string? severity)
+        internal static ValidationIssueSeverity? MapSeverity(string? severity)
         {
             switch (severity)
             {
@@ -97,7 +100,11 @@ namespace Altinn.App.Core.Features.Validation
         private static RawExpressionValidation? ResolveValidationDefinition(string name, JsonElement definition, Dictionary<string, RawExpressionValidation> resolvedDefinitions, ILogger logger)
         {
             var resolvedDefinition = new RawExpressionValidation();
-            var rawDefinition = definition.Deserialize<RawExpressionValidation>();
+            var rawDefinition = definition.Deserialize<RawExpressionValidation>(new JsonSerializerOptions
+            {
+                ReadCommentHandling = JsonCommentHandling.Skip,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            });
             if (rawDefinition == null)
             {
                 logger.LogError($"Validation definition {name} could not be parsed");
@@ -172,7 +179,11 @@ namespace Altinn.App.Core.Features.Validation
             }
             else
             {
-                var expressionDefinition = definition.Deserialize<RawExpressionValidation>();
+                var expressionDefinition = definition.Deserialize<RawExpressionValidation>(new JsonSerializerOptions
+                {
+                    ReadCommentHandling = JsonCommentHandling.Skip,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                });
                 if (expressionDefinition == null)
                 {
                     logger.LogError($"Validation for field {field} could not be parsed");

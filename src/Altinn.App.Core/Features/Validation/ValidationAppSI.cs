@@ -1,4 +1,5 @@
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
@@ -258,7 +259,7 @@ namespace Altinn.App.Core.Features.Validation
                 }
 
                 // Run expression validations
-                var expressionErrors = ExpressionValidator.Validate(dataType.Id, _appResourcesService, data, evaluationState, _logger);
+                var expressionErrors = ExpressionValidator.Validate(dataType.Id, _appResourcesService, new DataModel(data), evaluationState, _logger);
                 messages.AddRange(expressionErrors);
             }
 
