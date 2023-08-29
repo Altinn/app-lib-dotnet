@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models.Layout;
+using Altinn.App.Core.Models.Validation;
 using Altinn.App.Core.Tests.Helpers;
 using Altinn.App.Core.Tests.LayoutExpressions;
 using FluentAssertions;
@@ -17,26 +18,29 @@ namespace Altinn.App.Core.Tests.Features.Validators;
 public class ExpressionValidationTests
 {
     [Theory]
-    [ExpressionTest()]
-    public void RunExpressionValidationTest(ExpressionValidationModel testCase)
+    [ExpressionTest]
+    public void RunExpressionValidationTest(ExpressionValidationTestModel testCase)
     {
         var logger = Mock.Of<ILogger<ValidationAppSI>>();
         var dataModel = new JsonDataModel(testCase.FormData);
         var evaluatorState = new LayoutEvaluatorState(dataModel, testCase.Layouts, new(), new());
-
         var validationIssues = ExpressionValidator.Validate(testCase.ValidationConfig, dataModel, evaluatorState, logger).ToArray();
 
-        validationIssues.Length.Should().Be(testCase.Expects.Length);
-        foreach (var validationIssue in validationIssues)
+        var result = validationIssues.Select(i => new
         {
-            var expected = testCase.Expects.FirstOrDefault(e =>
-                e.Message == validationIssue.CustomTextKey &&
+            Message = i.CustomTextKey,
+            Severity = i.Severity,
+            Field = i.Field,
+        });
 
-                // e.Severity == validationIssue.Severity &&
-                e.Field == validationIssue.Field);
+        var expected = testCase.Expects.Select(e => new
+        {
+            Message = e.Message,
+            Severity = e.Severity,
+            Field = e.Field,
+        });
 
-            expected.Should().NotBeNull();
-        }
+        result.Should().BeEquivalentTo(expected);
     }
 }
 
@@ -49,7 +53,7 @@ public class ExpressionTestAttribute : DataAttribute
         foreach (var file in files)
         {
             var data = File.ReadAllText(file);
-            ExpressionValidationModel testCase = JsonSerializer.Deserialize<ExpressionValidationModel>(
+            ExpressionValidationTestModel testCase = JsonSerializer.Deserialize<ExpressionValidationTestModel>(
                 data,
                 new JsonSerializerOptions
                 {
@@ -61,7 +65,7 @@ public class ExpressionTestAttribute : DataAttribute
     }
 }
 
-public class ExpressionValidationModel
+public class ExpressionValidationTestModel
 {
     public string Name { get; set; }
 
@@ -78,7 +82,8 @@ public class ExpressionValidationModel
     {
         public string Message { get; set; }
 
-        public string Severity { get; set; }
+        [JsonConverter(typeof(FrontendSeverityConverter))]
+        public ValidationIssueSeverity Severity { get; set; }
 
         public string Field { get; set; }
 

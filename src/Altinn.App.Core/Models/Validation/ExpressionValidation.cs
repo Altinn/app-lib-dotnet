@@ -1,8 +1,8 @@
+using System.Text.Json.Serialization;
 using Altinn.App.Core.Models.Expressions;
-using Altinn.App.Core.Models.Validation;
 
 
-namespace Altinn.App.Core.Features.Validation
+namespace Altinn.App.Core.Models.Validation
 {
 
     /// <summary>
@@ -12,8 +12,10 @@ namespace Altinn.App.Core.Features.Validation
     {
         /// <inheritdoc/>
         public string? Message { get; set; }
+
         /// <inheritdoc/>
         public Expression? Condition { get; set; }
+
         /// <inheritdoc/>
         public ValidationIssueSeverity? Severity { get; set; }
     }
@@ -25,10 +27,14 @@ namespace Altinn.App.Core.Features.Validation
     {
         /// <inheritdoc/>
         public string? Message { get; set; }
+
         /// <inheritdoc/>
         public Expression? Condition { get; set; }
+
         /// <inheritdoc/>
-        public string? Severity { get; set; }
+        [JsonConverter(typeof(FrontendSeverityConverter))]
+        public ValidationIssueSeverity? Severity { get; set; }
+
         /// <inheritdoc/>
         public string? Ref { get; set; }
     }

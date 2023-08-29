@@ -80,23 +80,6 @@ namespace Altinn.App.Core.Features.Validation
             return validationIssues;
         }
 
-        internal static ValidationIssueSeverity? MapSeverity(string? severity)
-        {
-            switch (severity)
-            {
-                case "errors":
-                    return ValidationIssueSeverity.Error;
-                case "warnings":
-                    return ValidationIssueSeverity.Warning;
-                case "info":
-                    return ValidationIssueSeverity.Informational;
-                case "success":
-                    return ValidationIssueSeverity.Success;
-                default:
-                    return null;
-            }
-        }
-
         private static RawExpressionValidation? ResolveValidationDefinition(string name, JsonElement definition, Dictionary<string, RawExpressionValidation> resolvedDefinitions, ILogger logger)
         {
             var resolvedDefinition = new RawExpressionValidation();
@@ -231,16 +214,12 @@ namespace Altinn.App.Core.Features.Validation
                 logger.LogError($"Validation for field {field} is missing condition");
                 return null;
             }
-            if (MapSeverity(rawExpressionValidatıon.Severity) == null)
-            {
-                rawExpressionValidatıon.Severity = "errors";
-            }
 
             var expressionValidation = new ExpressionValidation
             {
                 Message = rawExpressionValidatıon.Message,
                 Condition = rawExpressionValidatıon.Condition,
-                Severity = MapSeverity(rawExpressionValidatıon.Severity)
+                Severity = rawExpressionValidatıon.Severity ?? ValidationIssueSeverity.Error,
             };
 
             return expressionValidation;
