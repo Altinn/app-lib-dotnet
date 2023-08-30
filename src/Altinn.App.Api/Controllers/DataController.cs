@@ -163,7 +163,18 @@ namespace Altinn.App.Api.Controllers
 
                     using Stream fileStream = new MemoryStream();
                     await streamContent.CopyToAsync(fileStream);
-
+                    if (fileStream.Length == 0)
+                    {
+                        var error = new ValidationIssue
+                        {
+                            Code = ValidationIssueCodes.DataElementCodes.ContentTypeNotAllowed,
+                            Severity = ValidationIssueSeverity.Error,
+                            Description = $"Invalid data provided. Error: The file is zero bytes."
+                        };
+                        _logger.LogError(error.Description);
+                        return new BadRequestObjectResult(await GetErrorDetails(new List<ValidationIssue> { error }));
+                    }
+                    
                     bool parseSuccess = Request.Headers.TryGetValue("Content-Disposition", out StringValues headerValues);
                     string filename = parseSuccess ? DataRestrictionValidation.GetFileNameFromHeader(headerValues) : string.Empty;
 
