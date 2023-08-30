@@ -6,6 +6,8 @@ using Altinn.App.Core.Models.Layout.Components;
 using Altinn.App.Core.Models.Expressions;
 using System.Runtime.CompilerServices;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.RegularExpressions;
+
 
 namespace Altinn.App.Core.Models.Layout;
 /// <summary>
@@ -342,11 +344,16 @@ public class PageComponentConverter : JsonConverter<PageComponent>
     }
 
 
+    private static readonly Regex MultiPageIndexRegex = new Regex(@"^(\d+:)?(\w+)$");
     private List<BaseComponent> ReadChildren(ref Utf8JsonReader reader, string parentId, List<string> childIds, JsonSerializerOptions options)
     {
         var ret = new List<BaseComponent>();
-        foreach (var childId in childIds)
+        foreach (var _childId in childIds)
         {
+            // Ignore multiPage index if exists
+            var match = MultiPageIndexRegex.Match(_childId);
+            var childId = match.Groups[2].Value;
+
             reader.Read();
             if (reader.TokenType != JsonTokenType.StartObject)
             {
