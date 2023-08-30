@@ -165,13 +165,14 @@ namespace Altinn.App.Api.Controllers
                     await streamContent.CopyToAsync(fileStream);
                     if (fileStream.Length == 0)
                     {
+                        const string errorMessage = "Invalid data provided. Error: The file is zero bytes.";
                         var error = new ValidationIssue
                         {
                             Code = ValidationIssueCodes.DataElementCodes.ContentTypeNotAllowed,
                             Severity = ValidationIssueSeverity.Error,
-                            Description = $"Invalid data provided. Error: The file is zero bytes."
+                            Description = errorMessage
                         };
-                        _logger.LogError(error.Description);
+                        _logger.LogError(errorMessage);
                         return new BadRequestObjectResult(await GetErrorDetails(new List<ValidationIssue> { error }));
                     }
                     
