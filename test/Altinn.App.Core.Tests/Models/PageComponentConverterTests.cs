@@ -1,3 +1,5 @@
+#nullable enable
+
 using System.Reflection;
 using System.Text.Json;
 using Altinn.App.Core.Models.Layout.Components;
@@ -18,10 +20,41 @@ public class PageComponentConverterTests
         if (testCase.Valid)
         {
             exception.Should().BeNull();
+            if (testCase.ExpectedHierarchy is not null)
+            {
+                var page = JsonSerializer.Deserialize<PageComponent>(testCase.Layout)!;
+                CompareChildren(testCase.ExpectedHierarchy, page.Children.ToArray());
+            }
         }
         else
         {
             exception.Should().NotBeNull();
+        }
+    }
+
+    private void ComparePageComponent(ExpectedHierarchyModel expected, BaseComponent component)
+    {
+        component.Id.Should().Be(expected.Id);
+
+        if (expected.Children is null)
+        {
+            (component is GroupComponent).Should().BeFalse();
+        }
+        else
+        {
+            (component is GroupComponent).Should().BeTrue();
+            CompareChildren(expected.Children, ((GroupComponent)component).Children.ToArray());
+        }
+
+    }
+
+    private void CompareChildren(ExpectedHierarchyModel[] expectedChildren, BaseComponent[] children)
+    {
+        children.Length.Should().Be(expectedChildren.Length);
+
+        for (int i = 0; i < expectedChildren.Length; i++)
+        {
+            ComparePageComponent(expectedChildren[i], children[i]);
         }
     }
 }
@@ -46,4 +79,14 @@ public class PageComponentConverterTestModel
     public bool Valid { get; set; }
 
     public JsonElement Layout { get; set; }
+
+    public ExpectedHierarchyModel[]? ExpectedHierarchy { get; set; }
+
+}
+
+public class ExpectedHierarchyModel
+{
+    public string Id { get; set; } = string.Empty;
+
+    public ExpectedHierarchyModel[]? Children { get; set; }
 }
