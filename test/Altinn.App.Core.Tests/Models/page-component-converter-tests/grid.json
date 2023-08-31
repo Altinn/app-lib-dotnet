@@ -1,5 +1,95 @@
 {
   "valid": true,
+  "expectedHierarchy": [
+    {
+      "id": "page3-navbar"
+    },
+    {
+      "id": "gjeld"
+    },
+    {
+      "id": "has-credit-card"
+    },
+    {
+      "id": "page3-grid",
+      "children": [
+        {
+          "id": "fordeling-bolig"
+        },
+        {
+          "id": "belop-bolig"
+        },
+        {
+          "id": "innhentet-bolig"
+        },
+        {
+          "id": "fordeling-studie"
+        },
+        {
+          "id": "belop-studie"
+        },
+        {
+          "id": "innhentet-studie"
+        },
+        {
+          "id": "fordeling-kredittkort"
+        },
+        {
+          "id": "belop-kredittkort"
+        },
+        {
+          "id": "innhentet-kredittkort"
+        },
+        {
+          "id": "fordeling-total"
+        }
+      ]
+    },
+    {
+      "id": "show-all-components"
+    },
+    {
+      "id": "all-grid-components",
+      "children": [
+        {
+          "id": "grid-example-button"
+        },
+        {
+          "id": "grid-example-print-button"
+        },
+        {
+          "id": "grid-example-instantiation-button"
+        },
+        {
+          "id": "grid-example-header"
+        },
+        {
+          "id": "grid-example-paragraph"
+        },
+        {
+          "id": "grid-example-image"
+        },
+        {
+          "id": "grid-example-datepicker"
+        },
+        {
+          "id": "grid-example-dropdown"
+        },
+        {
+          "id": "grid-example-multiple-select"
+        },
+        {
+          "id": "grid-example-text-area"
+        }
+      ]
+    },
+    {
+      "id": "page3-navbtns"
+    },
+    {
+      "id": "sendInButton"
+    }
+  ],
   "layout": {
     "$schema": "https://altinncdn.no/schemas/json/layout/layout.schema.v1.json",
     "data": {

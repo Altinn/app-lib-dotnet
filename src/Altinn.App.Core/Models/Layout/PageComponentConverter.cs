@@ -250,6 +250,9 @@ public class PageComponentConverter : JsonConverter<PageComponent>
                 case "children":
                     children = JsonSerializer.Deserialize<List<string>>(ref reader, options);
                     break;
+                case "rows":
+                    children = GridConfig.ReadGridChildren(ref reader, options);
+                    break;
                 case "maxcount":
                     maxCount = reader.GetInt32();
                     break;
@@ -313,6 +316,10 @@ public class PageComponentConverter : JsonConverter<PageComponent>
                     AddChildrenToMapping(groupComponent, children, childToGroupMapping);
                     return groupComponent;
                 }
+            case "grid":
+                var gridComponent = new GridComponent(id, type, dataModelBindings, new List<BaseComponent>(), hidden, required, readOnly, additionalProperties);
+                AddChildrenToMapping(gridComponent, children!, childToGroupMapping);
+                return gridComponent;
             case "summary":
                 ValidateSummary(componentRef, pageRef);
                 return new SummaryComponent(id, type, hidden, componentRef, pageRef, additionalProperties);
