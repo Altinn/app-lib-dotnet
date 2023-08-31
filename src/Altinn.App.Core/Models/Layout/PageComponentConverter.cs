@@ -179,7 +179,7 @@ public class PageComponentConverter : JsonConverter<PageComponent>
         componentLookup[component.Id] = component;
     }
 
-    private static readonly Regex MultiPageIndexRegex = new Regex(@"^(\d+:)?(\w+)$");
+    private static readonly Regex MultiPageIndexRegex = new Regex(@"^(\d+:)?([^\s:]+)$");
     private static void AddChildrenToMapping(GroupComponent component, List<string> children, Dictionary<string, (GroupComponent, int)> childToGroupMapping)
     {
         for (var index = 0; index < children.Count; index++)

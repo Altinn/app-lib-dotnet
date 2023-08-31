@@ -23,7 +23,9 @@ public class PageComponentConverterTests
             if (testCase.ExpectedHierarchy is not null)
             {
                 var page = JsonSerializer.Deserialize<PageComponent>(testCase.Layout)!;
-                CompareChildren(testCase.ExpectedHierarchy, page.Children.ToArray());
+
+                var hierarchy = GenerateTestHierarchy(page);
+                hierarchy.Should().BeEquivalentTo(testCase.ExpectedHierarchy);
             }
         }
         else
@@ -32,30 +34,22 @@ public class PageComponentConverterTests
         }
     }
 
-    private void ComparePageComponent(ExpectedHierarchyModel expected, BaseComponent component)
+    private HierarchyTestModel[] GenerateTestHierarchy(GroupComponent group)
     {
-        component.Id.Should().Be(expected.Id);
-
-        if (expected.Children is null)
+        var children = new List<HierarchyTestModel>();
+        foreach (var child in group.Children)
         {
-            (component is GroupComponent).Should().BeFalse();
-        }
-        else
-        {
-            (component is GroupComponent).Should().BeTrue();
-            CompareChildren(expected.Children, ((GroupComponent)component).Children.ToArray());
+            if (child is GroupComponent childGroup)
+            {
+                children.Add(new HierarchyTestModel { Id = childGroup.Id, Children = GenerateTestHierarchy(childGroup) });
+            }
+            else
+            {
+                children.Add(new HierarchyTestModel { Id = child.Id });
+            }
         }
 
-    }
-
-    private void CompareChildren(ExpectedHierarchyModel[] expectedChildren, BaseComponent[] children)
-    {
-        children.Length.Should().Be(expectedChildren.Length);
-
-        for (int i = 0; i < expectedChildren.Length; i++)
-        {
-            ComparePageComponent(expectedChildren[i], children[i]);
-        }
+        return children.ToArray();
     }
 }
 
@@ -80,13 +74,13 @@ public class PageComponentConverterTestModel
 
     public JsonElement Layout { get; set; }
 
-    public ExpectedHierarchyModel[]? ExpectedHierarchy { get; set; }
+    public HierarchyTestModel[]? ExpectedHierarchy { get; set; }
 
 }
 
-public class ExpectedHierarchyModel
+public class HierarchyTestModel
 {
     public string Id { get; set; } = string.Empty;
 
-    public ExpectedHierarchyModel[]? Children { get; set; }
+    public HierarchyTestModel[]? Children { get; set; }
 }
