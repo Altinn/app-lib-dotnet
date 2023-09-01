@@ -12,8 +12,8 @@ public class GridComponent : GroupComponent
     /// <summary>
     /// Constructor for RepeatingGroupComponent
     /// </summary>
-    public GridComponent(string id, string type, IReadOnlyDictionary<string, string>? dataModelBindings, IEnumerable<BaseComponent> children, Expression? hidden, Expression? required, Expression? readOnly, IReadOnlyDictionary<string, string>? additionalProperties) :
-        base(id, type, dataModelBindings, children, hidden, required, readOnly, additionalProperties)
+    public GridComponent(string id, string type, IReadOnlyDictionary<string, string>? dataModelBindings, IEnumerable<BaseComponent> children, IEnumerable<string>? childIDs, Expression? hidden, Expression? required, Expression? readOnly, IReadOnlyDictionary<string, string>? additionalProperties) :
+        base(id, type, dataModelBindings, children, childIDs, hidden, required, readOnly, additionalProperties)
     { }
 }
 
