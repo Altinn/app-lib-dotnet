@@ -50,38 +50,4 @@ public class GroupComponent : BaseComponent
         child.Parent = this;
         this.Children = this.Children.Append(child);
     }
-
-    /// <summary>
-    /// Validates that the children in this group matches the child IDs and orders the children according to the child IDs
-    /// </summary>
-    public void ValidateChildren()
-    {
-        var childIDs = this.ChildIDs.ToList();
-
-        foreach (var childID in childIDs)
-        {
-            if (!this.Children.Select(c => c.Id).Contains(childID))
-            {
-                throw new ArgumentException($"Child with id {childID} could not be found for the group {this.Id}");
-            }
-        }
-
-        var childIDCount = childIDs.Count;
-        var childCount = this.Children.Count();
-
-        if (childCount != childIDCount)
-        {
-            throw new ArgumentException($"The number of children ({childCount}) in group {this.Id} does not match the number of child IDs provided ({childIDCount})");
-        }
-
-        this.Children = this.Children.OrderBy(c => childIDs.IndexOf(c.Id));
-
-        foreach (var child in this.Children)
-        {
-            if (child is GroupComponent group)
-            {
-                group.ValidateChildren();
-            }
-        }
-    }
 }
