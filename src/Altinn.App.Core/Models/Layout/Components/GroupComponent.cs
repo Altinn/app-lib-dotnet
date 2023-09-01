@@ -41,11 +41,11 @@ public class GroupComponent : BaseComponent
     {
         if (!this.ChildIDs.Contains(child.Id))
         {
-            throw new ArgumentException($"Child with id {child.Id} is not defined in the child IDs of this group");
+            throw new ArgumentException($"Attempted to add child with id {child.Id} to group {this.Id}, but this child is not included in its list of child IDs");
         }
         if (this.Children.FirstOrDefault(c => c.Id == child.Id) != null)
         {
-            throw new ArgumentException($"Child with id {child.Id} is already added to this group");
+            throw new ArgumentException($"Attempted to add child with id {child.Id} to group {this.Id}, but a child with this id has already been added");
         }
         child.Parent = this;
         this.Children = this.Children.Append(child);
