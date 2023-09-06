@@ -1,4 +1,5 @@
 using Altinn.App.Core.Models.Expressions;
+using Altinn.App.Core.Models.Layout.Components;
 using Altinn.App.Core.Models.Validation;
 
 namespace Altinn.App.Core.Internal.Expressions;
@@ -18,7 +19,7 @@ public static class LayoutEvaluator
 
         foreach (var context in state.GetComponentContexts())
         {
-            HiddenFieldsForRemovalReucrs(state, hiddenModelBindings, nonHiddenModelBindings, context, parentHidden: false);
+            HiddenFieldsForRemovalRecurs(state, hiddenModelBindings, nonHiddenModelBindings, context, parentHidden: false);
         }
 
         var forRemoval = hiddenModelBindings.Except(nonHiddenModelBindings);
@@ -26,13 +27,30 @@ public static class LayoutEvaluator
         return existsForRemoval.ToList();
     }
 
-    private static void HiddenFieldsForRemovalReucrs(LayoutEvaluatorState state, HashSet<string> hiddenModelBindings, HashSet<string> nonHiddenModelBindings, ComponentContext context, bool parentHidden)
+    private static void HiddenFieldsForRemovalRecurs(LayoutEvaluatorState state, HashSet<string> hiddenModelBindings, HashSet<string> nonHiddenModelBindings, ComponentContext context, bool parentHidden)
     {
         var hidden = parentHidden || ExpressionEvaluator.EvaluateBooleanExpression(state, context, "hidden", false);
 
+        // Hidden row for repeating group
+        var hiddenRow = new Dictionary<int, bool>();
+        if (context.Component is RepeatingGroupComponent && context.RowLength is not null)
+        {
+            foreach (var index in Enumerable.Range(0, context.RowLength.Value))
+            {
+                var rowIndices = context.RowIndices?.Append(index).ToArray() ?? new[] { index };
+                var childContexts = context.ChildContexts.Where(c => c.RowIndices?.Last() == index);
+                var rowContext = new ComponentContext(context.Component, rowIndices, null, childContexts);
+                var rowHidden = ExpressionEvaluator.EvaluateBooleanExpression(state, rowContext, "hiddenRow", false);
+                hiddenRow.Add(index, rowHidden);
+            }
+
+        }
+
         foreach (var childContext in context.ChildContexts)
         {
-            HiddenFieldsForRemovalReucrs(state, hiddenModelBindings, nonHiddenModelBindings, childContext, hidden);
+            var currentRow = childContext.RowIndices?.Last();
+            var rowIsHidden = currentRow is not null && hiddenRow.GetValueOrDefault(currentRow.Value) == true;
+            HiddenFieldsForRemovalRecurs(state, hiddenModelBindings, nonHiddenModelBindings, childContext, hidden || rowIsHidden);
         }
 
         foreach (var (bindingName, binding) in context.Component.DataModelBindings)

@@ -43,6 +43,7 @@ public class LayoutEvaluatorState
             (
                 page,
                 null,
+                null,
                 page.Children.Select(c => GetComponentContextsRecurs(c, _dataModel, Array.Empty<int>())).ToArray()
             );
 
@@ -50,13 +51,14 @@ public class LayoutEvaluatorState
     private static ComponentContext GetComponentContextsRecurs(BaseComponent component, IDataModelAccessor dataModel, ReadOnlySpan<int> indexes)
     {
         var children = new List<ComponentContext>();
+        int? rowLength = null;
 
-        if(component is RepeatingGroupComponent repeatingGroupComponent)
+        if (component is RepeatingGroupComponent repeatingGroupComponent)
         {
             if (repeatingGroupComponent.DataModelBindings.TryGetValue("group", out var groupBinding))
             {
-                var rowLength = dataModel.GetModelDataCount(groupBinding, indexes.ToArray()) ?? 0;
-                foreach (var index in Enumerable.Range(0, rowLength))
+                rowLength = dataModel.GetModelDataCount(groupBinding, indexes.ToArray()) ?? 0;
+                foreach (var index in Enumerable.Range(0, rowLength.Value))
                 {
                     foreach (var child in repeatingGroupComponent.Children)
                     {
@@ -70,7 +72,7 @@ public class LayoutEvaluatorState
                 }
             }
         }
-        else if (component is GroupComponent groupComponent )
+        else if (component is GroupComponent groupComponent)
         {
             foreach (var child in groupComponent.Children)
             {
@@ -78,7 +80,7 @@ public class LayoutEvaluatorState
             }
         }
 
-        return new ComponentContext(component, ToArrayOrNullForEmpty(indexes), children);
+        return new ComponentContext(component, ToArrayOrNullForEmpty(indexes), rowLength, children);
     }
 
     private static T[]? ToArrayOrNullForEmpty<T>(ReadOnlySpan<T> span)
@@ -115,7 +117,7 @@ public class LayoutEvaluatorState
                             context =>
                                 context.Component.Id == componentId &&
                                 (context.RowIndices?.Zip(rowIndicies ?? Enumerable.Empty<int>()).All((i) => i.First == i.Second) ?? true)).ToArray();
-        if(matches.Length == 1)
+        if (matches.Length == 1)
         {
             return matches[0];
         }
@@ -127,11 +129,11 @@ public class LayoutEvaluatorState
         // If no components was found on the same page, look for component on all pages
         var contexts = GetComponentContexts();
         // Find all decendent contexts that matches componentId and all the given rowIndicies
-        matches = contexts.SelectMany(p=>p.Decendants.Where(
+        matches = contexts.SelectMany(p => p.Decendants.Where(
                             context =>
                                 context.Component.Id == componentId &&
                                 (context.RowIndices?.Zip(rowIndicies ?? Enumerable.Empty<int>()).All((i) => i.First == i.Second) ?? true))).ToArray();
-        if(matches.Length != 1)
+        if (matches.Length != 1)
         {
             throw new ArgumentException("Expected 1 matching component context for [\"component\"] lookup. Found " + matches.Length);
         }
@@ -170,7 +172,7 @@ public class LayoutEvaluatorState
             "instanceOwnerPartyId" => _instanceContext.InstanceOwner.PartyId,
             "appId" => _instanceContext.AppId,
             "instanceId" => _instanceContext.Id,
-            "instanceOwnerPartyType" => 
+            "instanceOwnerPartyType" =>
             (
                 !string.IsNullOrWhiteSpace(_instanceContext.InstanceOwner.OrganisationNumber)
                 ? "org"
