@@ -53,28 +53,12 @@ public class GridConfig
     /// <inheritdoc/>
     public List<String> Children()
     {
-        List<String> gridChildren = new List<String>();
-
-        if (this.Rows is null)
-        {
-            return gridChildren;
-        }
-
-        foreach (var row in this.Rows)
-        {
-            if (row.Cells is null)
-            {
-                continue;
-            }
-
-            foreach (var cell in row.Cells)
-            {
-                if (cell.ComponentId is not null)
-                {
-                    gridChildren.Add(cell.ComponentId);
-                }
-            }
-        }
-        return gridChildren;
+        return this.Rows?
+            .Where(r => r.Cells is not null)
+            .SelectMany(r => r.Cells!)
+            .Where(c => c.ComponentId is not null)
+            .Select(c => c.ComponentId!)
+            .ToList()
+            ?? new List<String>();
     }
 }
