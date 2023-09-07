@@ -281,7 +281,7 @@ public class PageComponentConverter : JsonConverter<PageComponent>
                 case "hidden":
                     hidden = ExpressionConverter.ReadNotNull(ref reader, options);
                     break;
-                case "hiddenRow":
+                case "hiddenrow":
                     hiddenRow = ExpressionConverter.ReadNotNull(ref reader, options);
                     break;
                 case "required":
