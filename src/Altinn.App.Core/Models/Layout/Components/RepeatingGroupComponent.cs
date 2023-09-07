@@ -14,7 +14,7 @@ public class RepeatingGroupComponent : GroupComponent
         base(id, type, dataModelBindings, children, childIDs, hidden, required, readOnly, additionalProperties)
     {
         MaxCount = maxCount;
-        HiddenRow = hidden;
+        HiddenRow = hiddenRow;
     }
 
     /// <summary>

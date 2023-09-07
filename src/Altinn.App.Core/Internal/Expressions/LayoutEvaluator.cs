@@ -43,7 +43,6 @@ public static class LayoutEvaluator
                 var rowHidden = ExpressionEvaluator.EvaluateBooleanExpression(state, rowContext, "hiddenRow", false);
                 hiddenRow.Add(index, rowHidden);
             }
-
         }
 
         foreach (var childContext in context.ChildContexts)

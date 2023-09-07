@@ -12,11 +12,11 @@ public sealed class ComponentContext
     /// <summary>
     /// Constructor for ComponentContext
     /// </summary>
-    public ComponentContext(BaseComponent component, int[]? RowIndicies, int? RowLength, IEnumerable<ComponentContext>? childContexts = null)
+    public ComponentContext(BaseComponent component, int[]? rowIndices, int? rowLength, IEnumerable<ComponentContext>? childContexts = null)
     {
         Component = component;
-        RowIndices = RowIndicies;
-        RowLength = RowLength;
+        RowIndices = rowIndices;
+        RowLength = rowLength;
         ChildContexts = childContexts ?? Enumerable.Empty<ComponentContext>();
         foreach (var child in ChildContexts)
         {
