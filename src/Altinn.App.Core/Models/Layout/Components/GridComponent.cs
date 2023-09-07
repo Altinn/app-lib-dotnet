@@ -18,7 +18,9 @@ public class GridComponent : GroupComponent
 }
 
 
-/// <inheritdoc/>
+/// <summary>
+/// Class for parsing a Grid component's rows and cells and extracting the child component IDs
+/// </summary>
 public class GridConfig
 {
 

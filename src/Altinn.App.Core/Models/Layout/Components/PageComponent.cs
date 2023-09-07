@@ -25,10 +25,10 @@ public class PageComponent : GroupComponent
     public Dictionary<string, BaseComponent> ComponentLookup { get; }
 
     /// <summary>
-    /// AddChild is not needed for PageComponent
+    /// AddChild is not needed for PageComponent, and the base implementation would not work as intended.
     /// </summary>
     public override void AddChild(BaseComponent child)
     {
-        throw new NotImplementedException();
+
     }
 }
