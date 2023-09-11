@@ -315,11 +315,9 @@ public class TestDataModel
         // Don't add indicies if they are specified in input
         modelHelper.AddIndicies("friends[3]", new int[] { 0 }).Should().Be("friends[3]");
 
-        // Seccond index is ignored if the first is explicit
-        modelHelper.Invoking(m => m.AddIndicies("friends[0].friends", new int[] { 0, 3 }))
-            .Should()
-            .Throw<DataModelException>()
-            .WithMessage("Missmatch*");
+        // First index is ignored if it is explicit
+        modelHelper.AddIndicies("friends[0].friends", new int[] { 2, 3 }).Should().Be("friends[0].friends[3]");
+
     }
 
     [Fact]
