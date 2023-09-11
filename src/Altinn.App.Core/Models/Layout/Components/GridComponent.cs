@@ -24,7 +24,12 @@ public class GridComponent : GroupComponent
 public class GridConfig
 {
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Reads the Grid component's rows and returns the child component IDs
+    /// </summary>
+    /// <param name="reader"></param>
+    /// <param name="options"></param>
+    /// <returns></returns>
     public static List<string> ReadGridChildren(ref Utf8JsonReader reader, JsonSerializerOptions options)
     {
         var rows = JsonSerializer.Deserialize<GridRow[]>(ref reader, options);
@@ -32,27 +37,40 @@ public class GridConfig
         return gridConfig.Children();
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Rows in the grid
+    /// </summary>
     [JsonPropertyName("rows")]
     public GridRow[]? Rows { get; set; }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Defines a row in a grid
+    /// </summary>
     public class GridRow
     {
-        /// <inheritdoc/>
+        /// <summary>
+        /// Cells in the row
+        /// </summary>
         [JsonPropertyName("cells")]
         public GridCell[]? Cells { get; set; }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Defines a cell in a grid
+        /// </summary>
         public class GridCell
         {
-            /// <inheritdoc/>
+            /// <summary>
+            /// The component ID of the cell
+            /// </summary>
             [JsonPropertyName("component")]
             public string? ComponentId { get; set; }
         }
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Returns the child component IDs
+    /// </summary>
+    /// <returns></returns>
     public List<String> Children()
     {
         return this.Rows?
