@@ -213,18 +213,13 @@ public class DataModel : IDataModelAccessor
         var keys = keys_split[0..^1];
         var (lastKey, lastGroupIndex) = ParseKeyPart(keys_split[^1]);
 
-        if (lastGroupIndex is not null)
-        {
-            // TODO: Consider implementing. Would be required for rowHidden on groups
-            throw new NotImplementedException($"Deleting elements in List is not implemented {key}");
-        }
-
         var containingObject = GetModelDataRecursive(keys, 0, _serviceModel, default);
         if (containingObject is null)
         {
             // Already empty field
             return;
         }
+
 
         if (containingObject is System.Collections.IEnumerable)
         {
@@ -238,9 +233,23 @@ public class DataModel : IDataModelAccessor
             return;
         }
 
-        var nullValue = property.PropertyType.GetTypeInfo().IsValueType ? Activator.CreateInstance(property.PropertyType) : null;
+        if (lastGroupIndex is not null)
+        {
+            // Remove row from list
+            var propertyValue = property.GetValue(containingObject);
+            if (propertyValue is not System.Collections.IList listValue)
+            {
+                throw new ArgumentException($"Tried to remove row {key}, ended in a non-list ({propertyValue?.GetType().ToString()})");
+            }
 
-        property.SetValue(containingObject, nullValue);
+            listValue.RemoveAt(lastGroupIndex.Value);
+        }
+        else
+        {
+            // Set property to null
+            var nullValue = property.PropertyType.GetTypeInfo().IsValueType ? Activator.CreateInstance(property.PropertyType) : null;
+            property.SetValue(containingObject, nullValue);
+        }
     }
 
     /// <inheritdoc />

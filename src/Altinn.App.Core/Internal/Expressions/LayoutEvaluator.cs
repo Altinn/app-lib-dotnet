@@ -33,7 +33,7 @@ public static class LayoutEvaluator
 
         // Hidden row for repeating group
         var hiddenRow = new Dictionary<int, bool>();
-        if (context.Component is RepeatingGroupComponent && context.RowLength is not null)
+        if (context.Component is RepeatingGroupComponent repGroup && context.RowLength is not null && repGroup.HiddenRow is not null)
         {
             foreach (var index in Enumerable.Range(0, context.RowLength.Value))
             {
@@ -42,14 +42,33 @@ public static class LayoutEvaluator
                 var rowContext = new ComponentContext(context.Component, rowIndices, null, childContexts);
                 var rowHidden = ExpressionEvaluator.EvaluateBooleanExpression(state, rowContext, "hiddenRow", false);
                 hiddenRow.Add(index, rowHidden);
+
+                var indexedBinding = state.AddInidicies(repGroup.DataModelBindings["group"], rowContext);
+                if (rowHidden)
+                {
+                    hiddenModelBindings.Add(indexedBinding);
+                }
+                else
+                {
+                    nonHiddenModelBindings.Add(indexedBinding);
+                }
             }
         }
 
         foreach (var childContext in context.ChildContexts)
         {
-            var currentRow = childContext.RowIndices?.Last();
-            var rowIsHidden = currentRow is not null && hiddenRow.GetValueOrDefault(currentRow.Value) == true;
-            HiddenFieldsForRemovalRecurs(state, hiddenModelBindings, nonHiddenModelBindings, childContext, hidden || rowIsHidden);
+            // Check if row is already hidden
+            if (context.Component is RepeatingGroupComponent)
+            {
+                var currentRow = childContext.RowIndices?.Last();
+                var rowIsHidden = currentRow is not null && hiddenRow.GetValueOrDefault(currentRow.Value) == true;
+                if (rowIsHidden)
+                {
+                    continue;
+                }
+            }
+
+            HiddenFieldsForRemovalRecurs(state, hiddenModelBindings, nonHiddenModelBindings, childContext, hidden);
         }
 
         foreach (var (bindingName, binding) in context.Component.DataModelBindings)
