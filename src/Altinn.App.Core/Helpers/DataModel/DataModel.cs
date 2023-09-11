@@ -133,14 +133,14 @@ public class DataModel : IDataModelAccessor
             {
                 // Index not specified, recurse on all elements
                 int i = 0;
-                var resolvedKeys = new string[0];
+                var resolvedKeys = new List<string>();
                 foreach (var child in childModelList)
                 {
                     var newResolvedKeys = GetResolvedKeysRecursive(keyParts, child, currentIndex + 1, JoinFieldKeyParts(currentKey, key + "[" + i + "]"));
-                    newResolvedKeys.CopyTo(resolvedKeys, resolvedKeys.Length);
+                    resolvedKeys.AddRange(newResolvedKeys);
                     i++;
                 }
-                return resolvedKeys;
+                return resolvedKeys.ToArray();
             }
             else
             {
