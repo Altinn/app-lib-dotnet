@@ -239,7 +239,7 @@ public class DataModel : IDataModelAccessor
             var propertyValue = property.GetValue(containingObject);
             if (propertyValue is not System.Collections.IList listValue)
             {
-                throw new ArgumentException($"Tried to remove row {key}, ended in a non-list ({propertyValue?.GetType().ToString()})");
+                throw new ArgumentException($"Tried to remove row {key}, ended in a non-list ({propertyValue?.GetType()})");
             }
 
             listValue.RemoveAt(lastGroupIndex.Value);

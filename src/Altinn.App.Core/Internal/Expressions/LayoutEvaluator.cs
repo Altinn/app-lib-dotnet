@@ -61,7 +61,7 @@ public static class LayoutEvaluator
             if (context.Component is RepeatingGroupComponent)
             {
                 var currentRow = childContext.RowIndices?.Last();
-                var rowIsHidden = currentRow is not null && hiddenRow.GetValueOrDefault(currentRow.Value) == true;
+                var rowIsHidden = currentRow is not null && hiddenRow.GetValueOrDefault(currentRow.Value);
                 if (rowIsHidden)
                 {
                     continue;
