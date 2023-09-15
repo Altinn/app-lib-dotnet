@@ -94,12 +94,12 @@ public static class LayoutEvaluator
     /// <summary>
     /// Remove fields that are only refrenced from hidden fields from the data object in the state.
     /// </summary>
-    public static void RemoveHiddenData(LayoutEvaluatorState state)
+    public static void RemoveHiddenData(LayoutEvaluatorState state, bool deleteRows = false)
     {
         var fields = GetHiddenFieldsForRemoval(state);
         foreach (var field in fields)
         {
-            state.RemoveDataField(field);
+            state.RemoveDataField(field, deleteRows);
         }
     }
 

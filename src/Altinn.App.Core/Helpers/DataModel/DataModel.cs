@@ -207,7 +207,7 @@ public class DataModel : IDataModelAccessor
     }
 
     /// <inheritdoc />
-    public void RemoveField(string key)
+    public void RemoveField(string key, bool deleteRows = false)
     {
         var keys_split = key.Split('.');
         var keys = keys_split[0..^1];
@@ -242,7 +242,17 @@ public class DataModel : IDataModelAccessor
                 throw new ArgumentException($"Tried to remove row {key}, ended in a non-list ({propertyValue?.GetType()})");
             }
 
-            listValue.RemoveAt(lastGroupIndex.Value);
+            if (deleteRows)
+            {
+                listValue.RemoveAt(lastGroupIndex.Value);
+            }
+            else
+            {
+
+                var genericType = listValue.GetType().GetGenericArguments().FirstOrDefault();
+                var nullValue = genericType?.IsValueType == true ? Activator.CreateInstance(genericType) : null;
+                listValue[lastGroupIndex.Value] = nullValue;
+            }
         }
         else
         {

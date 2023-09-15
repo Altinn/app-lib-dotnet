@@ -156,9 +156,9 @@ public class LayoutEvaluatorState
     /// <summary>
     /// Set the value of a field to null.
     /// </summary>
-    public void RemoveDataField(string key)
+    public void RemoveDataField(string key, bool deleteRows = false)
     {
-        _dataModel.RemoveField(key);
+        _dataModel.RemoveField(key, deleteRows);
     }
 
     /// <summary>
