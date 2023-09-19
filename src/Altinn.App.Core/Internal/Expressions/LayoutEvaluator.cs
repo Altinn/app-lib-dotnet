@@ -35,7 +35,7 @@ public static class LayoutEvaluator
         var hiddenRow = new Dictionary<int, bool>();
         if (context.Component is RepeatingGroupComponent repGroup && context.RowLength is not null && repGroup.HiddenRow is not null)
         {
-            foreach (var index in Enumerable.Range(0, context.RowLength.Value))
+            foreach (var index in Enumerable.Range(0, context.RowLength.Value).Reverse())
             {
                 var rowIndices = context.RowIndices?.Append(index).ToArray() ?? new[] { index };
                 var childContexts = context.ChildContexts.Where(c => c.RowIndices?.Last() == index);
@@ -94,12 +94,12 @@ public static class LayoutEvaluator
     /// <summary>
     /// Remove fields that are only refrenced from hidden fields from the data object in the state.
     /// </summary>
-    public static void RemoveHiddenData(LayoutEvaluatorState state)
+    public static void RemoveHiddenData(LayoutEvaluatorState state, bool deleteRows = false)
     {
         var fields = GetHiddenFieldsForRemoval(state);
         foreach (var field in fields)
         {
-            state.RemoveDataField(field);
+            state.RemoveDataField(field, deleteRows);
         }
     }
 
