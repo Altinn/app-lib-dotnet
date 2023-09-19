@@ -39,6 +39,12 @@ public class AppProcessElementInfo: ProcessElementInfo
     public Dictionary<string, bool>? Actions { get; set; }
     
     /// <summary>
+    /// List of available actions for a task, both user and process tasks
+    /// </summary>
+    [JsonPropertyName(name:"userActions")]
+    public List<UserAction> UserActions { get; set; }
+    
+    /// <summary>
     /// Indicates if the user has read access to the task.
     /// </summary>
     [JsonPropertyName(name:"read")]

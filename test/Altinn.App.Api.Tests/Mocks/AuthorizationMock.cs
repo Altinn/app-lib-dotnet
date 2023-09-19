@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Models;
+using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Api.Tests.Mocks
 {
@@ -20,6 +21,11 @@ namespace Altinn.App.Api.Tests.Mocks
         }
 
         public async Task<bool> AuthorizeAction(AppIdentifier appIdentifier, InstanceIdentifier instanceIdentifier, ClaimsPrincipal user, string action, string? taskId = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<Dictionary<string, bool>> AuthorizeActions(Instance instance, ClaimsPrincipal user, List<string> actions, string? taskId = null)
         {
             throw new NotImplementedException();
         }

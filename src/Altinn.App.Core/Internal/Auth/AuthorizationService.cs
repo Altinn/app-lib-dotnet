@@ -1,8 +1,11 @@
 using System.Security.Claims;
 using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Internal.Process.Action;
+using Altinn.App.Core.Internal.Process.Elements;
+using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Register.Models;
+using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Internal.Auth;
 
@@ -57,11 +60,38 @@ public class AuthorizationService : IAuthorizationService
         return true;
     }
 
+    /// <inheritdoc />
+    public async Task<List<UserAction>> AuthorizeActions(Instance instance, ClaimsPrincipal user, List<AltinnAction> actions, string? taskId = null)
+    {
+        var authDecisions = await _authorizationClient.AuthorizeActions(instance, user, actions.Select(a => a.Value).ToList(), taskId);
+        List<UserAction> authorizedActions = new();
+        foreach (var action in actions)
+        {
+            authorizedActions.Add(new UserAction()
+            {
+               Id = action.Value,
+               Authorized = authDecisions[action.Value],
+               ActionType = action.ActionType
+            });
+            
+        }
+
+        return authorizedActions;
+    }
+
     private static bool IsAuthorizerForTaskAndAction(IUserActionAuthorizerProvider authorizer, string? taskId, string action)
     {
         return (authorizer.TaskId == null && authorizer.Action == null)
                || (authorizer.TaskId == null && authorizer.Action == action)
                || (authorizer.TaskId == taskId && authorizer.Action == null)
                || (authorizer.TaskId == taskId && authorizer.Action == action);
+    }
+
+    private static bool IsAuthorizerForTaskAndActions(IUserActionAuthorizerProvider authorizer, string? taskId, List<string> actions)
+    {
+        return (authorizer.TaskId == null && authorizer.Action == null)
+               || (authorizer.TaskId == taskId && authorizer.Action == null)
+               || (authorizer.TaskId == null && actions.Contains(authorizer.Action!))
+               || (authorizer.TaskId == taskId && actions.Contains(authorizer.Action!));
     }
 }
