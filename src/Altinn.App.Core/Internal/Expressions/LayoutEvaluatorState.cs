@@ -16,7 +16,7 @@ public class LayoutEvaluatorState
     private readonly LayoutModel _componentModel;
     private readonly FrontEndSettings _frontEndSettings;
     private readonly Instance _instanceContext;
-    private ComponentContext[]? _pageContexts;
+    private readonly ComponentContext[]? _pageContexts;
 
     /// <summary>
     /// Constructor for LayoutEvaluatorState. Usually called via <see cref="LayoutEvaluatorStateInitializer" /> that can be fetched from dependency injection.
