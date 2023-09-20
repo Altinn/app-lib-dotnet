@@ -40,6 +40,16 @@ public sealed class ComponentContext
     public int? RowLength { get; }
 
     /// <summary>
+    /// Whether or not the component is hidden
+    /// </summary>
+    public bool? IsHidden { get; set; }
+
+    /// <summary>
+    /// Hidden rows for repeating group
+    /// </summary>
+    public int[]? HiddenRows { get; set; }
+
+    /// <summary>
     /// Contexts that logically belongs under this context (eg cell => row => group=> page)
     /// </summary>
     public IEnumerable<ComponentContext> ChildContexts { get; }
