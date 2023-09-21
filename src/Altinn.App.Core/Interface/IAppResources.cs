@@ -7,6 +7,7 @@ namespace Altinn.App.Core.Interface
     /// <summary>
     /// Interface for execution functionality
     /// </summary>
+    [Obsolete(message: "Use Altinn.App.Core.Internal.App.IAppResources instead", error: true)]
     public interface IAppResources
     {
         /// <summary>
@@ -170,11 +171,5 @@ namespace Altinn.App.Core.Interface
         /// </summary>
         /// <returns>The layout settings</returns>
         byte[] GetRuleHandlerForSet(string id);
-
-        /// <summary>
-        /// Gets the the rule handler for a layoutset
-        /// </summary>
-        /// <returns>The layout settings</returns>
-        string? GetValidationConfiguration(string modelId);
     }
 }

@@ -1,7 +1,6 @@
 using System.Text.Json;
 using Altinn.App.Core.Helpers;
-using Altinn.App.Core.Helpers.DataModel;
-using Altinn.App.Core.Interface;
+using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models.Validation;
 using Microsoft.Extensions.Logging;

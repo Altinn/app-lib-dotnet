@@ -2,8 +2,8 @@ using System.Net;
 using Altinn.App.Api.Controllers;
 using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Helpers;
-using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
@@ -19,7 +19,7 @@ public class ValidateControllerTests
     public async Task ValidateInstance_returns_NotFound_when_GetInstance_returns_null()
     {
         // Arrange
-        var instanceMock = new Mock<IInstance>();
+        var instanceMock = new Mock<IInstanceClient>();
         var appMetadataMock = new Mock<IAppMetadata>();
         var validationMock = new Mock<IValidation>();
 
@@ -43,7 +43,7 @@ public class ValidateControllerTests
     public async Task ValidateInstance_throws_ValidationException_when_Instance_Process_is_null()
     {
         // Arrange
-        var instanceMock = new Mock<IInstance>();
+        var instanceMock = new Mock<IInstanceClient>();
         var appMetadataMock = new Mock<IAppMetadata>();
         var validationMock = new Mock<IValidation>();
 
@@ -75,7 +75,7 @@ public class ValidateControllerTests
     public async Task ValidateInstance_throws_ValidationException_when_Instance_Process_CurrentTask_is_null()
     {
         // Arrange
-        var instanceMock = new Mock<IInstance>();
+        var instanceMock = new Mock<IInstanceClient>();
         var appMetadataMock = new Mock<IAppMetadata>();
         var validationMock = new Mock<IValidation>();
 
@@ -110,7 +110,7 @@ public class ValidateControllerTests
     public async Task ValidateInstance_returns_OK_with_messages()
     {
         // Arrange
-        var instanceMock = new Mock<IInstance>();
+        var instanceMock = new Mock<IInstanceClient>();
         var appMetadataMock = new Mock<IAppMetadata>();
         var validationMock = new Mock<IValidation>();
 
@@ -159,7 +159,7 @@ public class ValidateControllerTests
     public async Task ValidateInstance_returns_403_when_not_authorized()
     {
         // Arrange
-        var instanceMock = new Mock<IInstance>();
+        var instanceMock = new Mock<IInstanceClient>();
         var appMetadataMock = new Mock<IAppMetadata>();
         var validationMock = new Mock<IValidation>();
 
@@ -202,7 +202,7 @@ public class ValidateControllerTests
     public async Task ValidateInstance_throws_PlatformHttpException_when_not_403()
     {
         // Arrange
-        var instanceMock = new Mock<IInstance>();
+        var instanceMock = new Mock<IInstanceClient>();
         var appMetadataMock = new Mock<IAppMetadata>();
         var validationMock = new Mock<IValidation>();
 

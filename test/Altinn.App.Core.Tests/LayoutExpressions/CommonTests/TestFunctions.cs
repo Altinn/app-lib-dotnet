@@ -95,7 +95,7 @@ public class TestFunctions
     [Theory]
     [SharedTest("or")]
     public void Or_Theory(ExpressionTestCaseRoot test) => RunTestCase(test);
-
+    
     [Theory]
     [SharedTest("unknown")]
     public void Unknown_Theory(ExpressionTestCaseRoot test) => RunTestCase(test);

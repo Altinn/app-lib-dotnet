@@ -10,9 +10,11 @@ using Altinn.App.Core.Features.FileAnalyzis;
 using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.Serialization;
-using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
+using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.Instances;
+using Altinn.App.Core.Internal.Prefill;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
@@ -33,9 +35,9 @@ namespace Altinn.App.Api.Controllers
     public class DataController : ControllerBase
     {
         private readonly ILogger<DataController> _logger;
-        private readonly IData _dataClient;
+        private readonly IDataClient _dataClient;
         private readonly IDataProcessor _dataProcessor;
-        private readonly IInstance _instanceClient;
+        private readonly IInstanceClient _instanceClient;
         private readonly IInstantiationProcessor _instantiationProcessor;
         private readonly IAppModel _appModel;
         private readonly IAppResources _appResourcesService;
@@ -63,9 +65,9 @@ namespace Altinn.App.Api.Controllers
         /// <param name="fileValidationService">Service used to validate files uploaded.</param>
         public DataController(
             ILogger<DataController> logger,
-            IInstance instanceClient,
+            IInstanceClient instanceClient,
             IInstantiationProcessor instantiationProcessor,
-            IData dataClient,
+            IDataClient dataClient,
             IDataProcessor dataProcessor,
             IAppModel appModel,
             IAppResources appResourcesService,
@@ -163,7 +165,19 @@ namespace Altinn.App.Api.Controllers
 
                     using Stream fileStream = new MemoryStream();
                     await streamContent.CopyToAsync(fileStream);
-
+                    if (fileStream.Length == 0)
+                    {
+                        const string errorMessage = "Invalid data provided. Error: The file is zero bytes.";
+                        var error = new ValidationIssue
+                        {
+                            Code = ValidationIssueCodes.DataElementCodes.ContentTypeNotAllowed,
+                            Severity = ValidationIssueSeverity.Error,
+                            Description = errorMessage
+                        };
+                        _logger.LogError(errorMessage);
+                        return new BadRequestObjectResult(await GetErrorDetails(new List<ValidationIssue> { error }));
+                    }
+                    
                     bool parseSuccess = Request.Headers.TryGetValue("Content-Disposition", out StringValues headerValues);
                     string filename = parseSuccess ? DataRestrictionValidation.GetFileNameFromHeader(headerValues) : string.Empty;
 

@@ -53,6 +53,9 @@ public class ExpressionTestCaseRoot
 
     [JsonPropertyName("instance")]
     public Instance? Instance { get; set; }
+    
+    [JsonPropertyName("gatewayAction")]
+    public string? GatewayAction { get; set; }
 
     public override string ToString()
     {
@@ -76,7 +79,7 @@ public class ComponentContextForTestSpec
 
     public ComponentContext ToContext(LayoutModel model)
     {
-        return new ComponentContext(model.GetComponent(CurrentPageName, ComponentId), RowIndices);
+        return new ComponentContext(model.GetComponent(CurrentPageName, ComponentId), RowIndices, null);
     }
 
     public static ComponentContextForTestSpec FromContext(ComponentContext context)

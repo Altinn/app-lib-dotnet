@@ -1,10 +1,8 @@
 #nullable enable
-using System;
 using System.Globalization;
-using System.IO;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Helpers;
-using Altinn.App.Core.Interface;
+using Altinn.App.Core.Internal.App;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
@@ -50,7 +48,7 @@ namespace Altinn.App.Api.Controllers
 
             if (fileContent != null)
             {
-                return new FileContentResult(fileContent, MimeTypeMap.GetMimeType(Path.GetExtension(id).ToLower()));
+                return new FileContentResult(fileContent, MimeTypeMap.GetMimeType(Path.GetExtension(id).ToLower()).ToString());
             }
 
             if (id == _appSettings.RuleConfigurationJSONFileName || id == _appSettings.RuleHandlerFileName)
@@ -75,7 +73,7 @@ namespace Altinn.App.Api.Controllers
 
             if (fileContent != null)
             {
-                return new FileContentResult(fileContent, MimeTypeMap.GetMimeType(Path.GetExtension(id).ToLower()));
+                return new FileContentResult(fileContent, MimeTypeMap.GetMimeType(Path.GetExtension(id).ToLower()).ToString());
             }
 
             return StatusCode(404);
@@ -99,14 +97,14 @@ namespace Altinn.App.Api.Controllers
             byte[] fileContent = _appResourceService.GetText(org, app, id);
             if (fileContent != null)
             {
-                return new FileContentResult(fileContent, MimeTypeMap.GetMimeType(Path.GetExtension(id).ToLower()));
+                return new FileContentResult(fileContent, MimeTypeMap.GetMimeType(Path.GetExtension(id).ToLower()).ToString());
             }
 
             id = $"resource.{defaultLang}.json";
             fileContent = _appResourceService.GetText(org, app, id);
             if (fileContent != null)
             {
-                return new FileContentResult(fileContent, MimeTypeMap.GetMimeType(Path.GetExtension(id).ToLower()));
+                return new FileContentResult(fileContent, MimeTypeMap.GetMimeType(Path.GetExtension(id).ToLower()).ToString());
             }
 
             return StatusCode(404);
@@ -226,7 +224,7 @@ namespace Altinn.App.Api.Controllers
             byte[] fileContent = _appResourceService.GetRuleHandlerForSet(id);
             if (fileContent != null)
             {
-                return new FileContentResult(fileContent, MimeTypeMap.GetMimeType(".ts"));
+                return new FileContentResult(fileContent, MimeTypeMap.GetMimeType(".ts").ToString());
             }
 
             return NoContent();
@@ -249,7 +247,7 @@ namespace Altinn.App.Api.Controllers
                 return NoContent();
             }
 
-            return new FileContentResult(fileContent, MimeTypeMap.GetMimeType(".json"));
+            return new FileContentResult(fileContent, MimeTypeMap.GetMimeType(".json").ToString());
         }
 
         /// <summary>

@@ -1,7 +1,3 @@
-using System.Collections.Immutable;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-
 using Altinn.App.Core.Models.Expressions;
 
 namespace Altinn.App.Core.Models.Layout.Components;
@@ -14,14 +10,20 @@ public class RepeatingGroupComponent : GroupComponent
     /// <summary>
     /// Constructor for RepeatingGroupComponent
     /// </summary>
-    public RepeatingGroupComponent(string id, string type, IReadOnlyDictionary<string, string>? dataModelBindings, IEnumerable<BaseComponent> children, int maxCount, Expression? hidden, Expression? required, Expression? readOnly, IReadOnlyDictionary<string, string>? additionalProperties) :
-        base(id, type, dataModelBindings, children, hidden, required, readOnly, additionalProperties)
+    public RepeatingGroupComponent(string id, string type, IReadOnlyDictionary<string, string>? dataModelBindings, IEnumerable<BaseComponent> children, IEnumerable<string>? childIDs, int maxCount, Expression? hidden, Expression? hiddenRow, Expression? required, Expression? readOnly, IReadOnlyDictionary<string, string>? additionalProperties) :
+        base(id, type, dataModelBindings, children, childIDs, hidden, required, readOnly, additionalProperties)
     {
         MaxCount = maxCount;
+        HiddenRow = hiddenRow;
     }
 
     /// <summary>
     /// Maximum number of repeatitions of this repating group
     /// </summary>
     public int MaxCount { get; }
+
+    /// <summary>
+    /// Layout Expression that can be evaluated to see if row should be hidden
+    /// </summary>
+    public Expression? HiddenRow { get; }
 }

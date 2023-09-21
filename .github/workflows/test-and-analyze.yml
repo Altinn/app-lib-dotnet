@@ -1,9 +1,9 @@
 name: Code test and analysis
 on:
   push:
-    branches: [ main ]
+    branches: [ main, v8 ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, v8 ]
     types: [opened, synchronize, reopened]
   workflow_dispatch:
 jobs:
@@ -26,7 +26,7 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: 17
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
       - name: Cache SonarCloud packages

@@ -5,12 +5,16 @@ using Altinn.App.Core.Configuration;
 using Altinn.App.Core.EFormidling.Interface;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
-using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
+using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Expressions;
+using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Pdf;
+using Altinn.App.Core.Internal.Prefill;
+using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Models;
+using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -26,11 +30,11 @@ public class DefaultTaskEvents : ITaskEvents
     private readonly ILogger<DefaultTaskEvents> _logger;
     private readonly IAppResources _appResources;
     private readonly IAppMetadata _appMetadata;
-    private readonly IData _dataClient;
+    private readonly IDataClient _dataClient;
     private readonly IPrefill _prefillService;
     private readonly IAppModel _appModel;
     private readonly IInstantiationProcessor _instantiationProcessor;
-    private readonly IInstance _instanceClient;
+    private readonly IInstanceClient _instanceClient;
     private readonly IEnumerable<IProcessTaskStart> _taskStarts;
     private readonly IEnumerable<IProcessTaskEnd> _taskEnds;
     private readonly IEnumerable<IProcessTaskAbandon> _taskAbandons;
@@ -47,11 +51,11 @@ public class DefaultTaskEvents : ITaskEvents
         ILogger<DefaultTaskEvents> logger,
         IAppResources appResources,
         IAppMetadata appMetadata,
-        IData dataClient,
+        IDataClient dataClient,
         IPrefill prefillService,
         IAppModel appModel,
         IInstantiationProcessor instantiationProcessor,
-        IInstance instanceClient,
+        IInstanceClient instanceClient,
         IEnumerable<IProcessTaskStart> taskStarts,
         IEnumerable<IProcessTaskEnd> taskEnds,
         IEnumerable<IProcessTaskAbandon> taskAbandons,
@@ -60,7 +64,7 @@ public class DefaultTaskEvents : ITaskEvents
         LayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer,
         IOptions<AppSettings>? appSettings = null,
         IEFormidlingService? eFormidlingService = null
-        )
+    )
     {
         _logger = logger;
         _appResources = appResources;
@@ -95,9 +99,8 @@ public class DefaultTaskEvents : ITaskEvents
 
             if (dataElement != null && dataElement.Locked)
             {
-                dataElement.Locked = false;
                 _logger.LogDebug("Unlocking data element {DataElementId} of dataType {DataTypeId}", dataElement.Id, dataType.Id);
-                await _dataClient.Update(instance, dataElement);
+                await _dataClient.UnlockDataElement(new InstanceIdentifier(instance), Guid.Parse(dataElement.Id));
             }
         }
 
@@ -145,6 +148,8 @@ public class DefaultTaskEvents : ITaskEvents
         ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
         List<DataType> dataTypesToLock = appMetadata.DataTypes.FindAll(dt => dt.TaskId == endEvent);
 
+        await RunRemoveDataElementsGeneratedFromTask(instance, endEvent);
+
         await RunRemoveHiddenData(instance, instanceGuid, dataTypesToLock);
 
         await RunRemoveShadowFields(instance, instanceGuid, dataTypesToLock);
@@ -174,6 +179,16 @@ public class DefaultTaskEvents : ITaskEvents
         }
     }
 
+    private async Task RunRemoveDataElementsGeneratedFromTask(Instance instance, string endEvent)
+    {
+        AppIdentifier appIdentifier = new AppIdentifier(instance.AppId);
+        InstanceIdentifier instanceIdentifier = new InstanceIdentifier(instance);
+        foreach (var dataElement in instance.Data?.Where(de => de.References != null && de.References.Exists(r => r.ValueType == ReferenceType.Task && r.Value == endEvent)) ?? Enumerable.Empty<DataElement>())
+        {
+            await _dataClient.DeleteData(appIdentifier.Org, appIdentifier.App, instanceIdentifier.InstanceOwnerPartyId, instanceIdentifier.InstanceGuid, Guid.Parse(dataElement.Id), false);
+        }
+    }
+
     private async Task RunAppDefinedOnTaskEnd(string endEvent, Instance instance)
     {
         foreach (var taskEnd in _taskEnds)
@@ -192,16 +207,15 @@ public class DefaultTaskEvents : ITaskEvents
 
             foreach (DataElement dataElement in instance.Data.FindAll(de => de.DataType == dataType.Id))
             {
-                dataElement.Locked = true;
                 _logger.LogDebug("Locking data element {dataElementId} of dataType {dataTypeId}.", dataElement.Id, dataType.Id);
-                Task updateData = _dataClient.Update(instance, dataElement);
+                Task updateData = _dataClient.LockDataElement(new InstanceIdentifier(instance), Guid.Parse(dataElement.Id));
 
                 if (generatePdf)
                 {
                     Task createPdf;
                     if (await _featureManager.IsEnabledAsync(FeatureFlags.NewPdfGeneration))
                     {
-                        createPdf = _pdfService.GenerateAndStorePdf(instance, CancellationToken.None);
+                        createPdf = _pdfService.GenerateAndStorePdf(instance, endEvent, CancellationToken.None);
                     }
                     else
                     {
@@ -260,7 +274,7 @@ public class DefaultTaskEvents : ITaskEvents
                     // Remove hidden data before validation
                     var layoutSet = _appResources.GetLayoutSetForTask(dataType.TaskId);
                     var evaluationState = await _layoutEvaluatorStateInitializer.Init(instance, data, layoutSet?.Id);
-                    LayoutEvaluator.RemoveHiddenData(evaluationState);
+                    LayoutEvaluator.RemoveHiddenData(evaluationState, true);
                 }
 
                 // save the updated data if there are changes
@@ -282,7 +296,7 @@ public class DefaultTaskEvents : ITaskEvents
                     instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, dataElementId);
 
                 var modifier = new IgnorePropertiesWithPrefix(dataType.AppLogic.ShadowFields.Prefix);
-                JsonSerializerOptions options = new ()
+                JsonSerializerOptions options = new()
                 {
                     TypeInfoResolver = new DefaultJsonTypeInfoResolver
                     {
@@ -290,14 +304,16 @@ public class DefaultTaskEvents : ITaskEvents
                     },
                     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
                 };
-                
+
                 string serializedData = JsonSerializer.Serialize(data, options);
-                if (dataType.AppLogic.ShadowFields.SaveToDataType != null) {
+                if (dataType.AppLogic.ShadowFields.SaveToDataType != null)
+                {
                     var saveToDataType = dataTypesToLock.Find(dt => dt.Id == dataType.AppLogic.ShadowFields.SaveToDataType);
-                    if (saveToDataType == null) {
+                    if (saveToDataType == null)
+                    {
                         throw new Exception($"SaveToDataType {dataType.AppLogic.ShadowFields.SaveToDataType} not found");
                     }
-    
+
                     Type saveToModelType = _appModel.GetModelType(saveToDataType.AppLogic.ClassRef);
                     var updatedData = JsonSerializer.Deserialize(serializedData, saveToModelType);
                     await _dataClient.InsertFormData(updatedData, instanceGuid, saveToModelType ?? modelType, instance.Org, app, instanceOwnerPartyId, saveToDataType.Id);

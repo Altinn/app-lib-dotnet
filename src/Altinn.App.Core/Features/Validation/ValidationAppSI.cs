@@ -1,9 +1,10 @@
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Helpers.DataModel;
-using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
+using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Expressions;
+using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
@@ -23,8 +24,8 @@ namespace Altinn.App.Core.Features.Validation
     public class ValidationAppSI : IValidation
     {
         private readonly ILogger _logger;
-        private readonly IData _dataService;
-        private readonly IInstance _instanceService;
+        private readonly IDataClient _dataClient;
+        private readonly IInstanceClient _instanceClient;
         private readonly IInstanceValidator _instanceValidator;
         private readonly IAppModel _appModel;
         private readonly IAppResources _appResourcesService;
@@ -40,8 +41,8 @@ namespace Altinn.App.Core.Features.Validation
         /// </summary>
         public ValidationAppSI(
             ILogger<ValidationAppSI> logger,
-            IData dataService,
-            IInstance instanceService,
+            IDataClient dataClient,
+            IInstanceClient instanceClient,
             IInstanceValidator instanceValidator,
             IAppModel appModel,
             IAppResources appResourcesService,
@@ -53,8 +54,8 @@ namespace Altinn.App.Core.Features.Validation
             IOptions<AppSettings> appSettings)
         {
             _logger = logger;
-            _dataService = dataService;
-            _instanceService = instanceService;
+            _dataClient = dataClient;
+            _instanceClient = instanceClient;
             _instanceValidator = instanceValidator;
             _appModel = appModel;
             _appResourcesService = appResourcesService;
@@ -128,7 +129,7 @@ namespace Altinn.App.Core.Features.Validation
                 Timestamp = DateTime.Now
             };
 
-            await _instanceService.UpdateProcess(instance);
+            await _instanceClient.UpdateProcess(instance);
             return messages;
         }
 
@@ -224,7 +225,7 @@ namespace Altinn.App.Core.Features.Validation
                 Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
                 string app = instance.AppId.Split("/")[1];
                 int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
-                object data = await _dataService.GetFormData(
+                object data = await _dataClient.GetFormData(
                     instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, Guid.Parse(dataElement.Id));
                 var layoutSet = _appResourcesService.GetLayoutSetForTask(dataType.TaskId);
                 var evaluationState = await _layoutEvaluatorStateInitializer.Init(instance, data, layoutSet?.Id);
@@ -287,6 +288,7 @@ namespace Altinn.App.Core.Features.Validation
                         {
                             InstanceId = instance.Id,
                             DataElementId = dataElementId,
+                            Source = ValidationIssueSources.ModelState,
                             Code = severityAndMessage.Message,
                             Field = ModelKeyToField(modelKey, modelType)!,
                             Severity = severityAndMessage.Severity,

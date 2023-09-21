@@ -4,13 +4,14 @@ using Altinn.App.Api.Tests.Mocks.Authentication;
 using Altinn.App.Api.Tests.Mocks.Event;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
-using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Auth;
+using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Events;
+using Altinn.App.Core.Internal.Instances;
 using AltinnCore.Authentication.JwtCookie;
 using App.IntegrationTests.Mocks.Services;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -23,6 +24,7 @@ using Microsoft.Extensions.Options;
 // external api's etc. should be mocked.
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(new WebApplicationOptions() { ApplicationName = "Altinn.App.Api.Tests" });
+builder.Configuration.GetSection("MetricsSettings:Enabled").Value = "false";
 ConfigureServices(builder.Services, builder.Configuration);
 ConfigureMockServices(builder.Services, builder.Configuration);
 
@@ -40,8 +42,8 @@ void ConfigureMockServices(IServiceCollection services, ConfigurationManager con
 {
     PlatformSettings platformSettings = new PlatformSettings() { ApiAuthorizationEndpoint = "http://localhost:5101/authorization/api/v1/" };
     services.AddSingleton<IOptions<PlatformSettings>>(Options.Create(platformSettings));
-    services.AddTransient<IAuthorization, AuthorizationMock>();
-    services.AddTransient<IInstance, InstanceMockSI>();
+    services.AddTransient<IAuthorizationClient, AuthorizationMock>();
+    services.AddTransient<IInstanceClient, InstanceClientMockSi>();
     services.AddSingleton<Altinn.Common.PEP.Interfaces.IPDP, PepWithPDPAuthorizationMockSI>();
     services.AddSingleton<ISigningKeysRetriever, SigningKeysRetrieverStub>();
     services.AddSingleton<IPostConfigureOptions<JwtCookieOptions>, JwtCookiePostConfigureOptionsStub>();
@@ -50,27 +52,12 @@ void ConfigureMockServices(IServiceCollection services, ConfigurationManager con
     services.AddTransient<IEventHandler, DummyFailureEventHandler>();
     services.AddTransient<IEventHandler, DummySuccessEventHandler>();
     services.AddTransient<IAppMetadata, AppMetadataMock>();
-    services.AddTransient<IData, DataClientMock>();
+    services.AddTransient<IDataClient, DataClientMock>();
 }
 
 void Configure()
 {
-    if (app.Environment.IsDevelopment())
-    {
-        app.UseDeveloperExceptionPage();
-    }
-
-    app.UseDefaultSecurityHeaders();
-    app.UseRouting();
-    app.UseStaticFiles();
-    app.UseAuthentication();
-    app.UseAuthorization();
-
-    app.UseEndpoints(endpoints =>
-    {
-        endpoints.MapControllers();
-    });
-    app.UseHealthChecks("/health");
+    app.UseAltinnAppCommonConfiguration();
 }
 
 // This "hack" (documentet by Microsoft) is done to

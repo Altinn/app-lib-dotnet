@@ -21,6 +21,7 @@ public static class ExpressionEvaluator
             var expr = property switch
             {
                 "hidden" => context.Component.Hidden,
+                "hiddenRow" => context.Component is RepeatingGroupComponent repeatingGroup ? repeatingGroup.HiddenRow : null,
                 "required" => context.Component.Required,
                 _ => throw new ExpressionEvaluatorTypeErrorException($"unknown boolean expression property {property}")
             };
@@ -85,6 +86,7 @@ public static class ExpressionEvaluator
             ExpressionFunction.upperCase => UpperCase(args),
             ExpressionFunction.lowerCase => LowerCase(args),
             ExpressionFunction.argv => Argv(args, positionalArguments),
+            ExpressionFunction.gatewayAction => state.GetGatewayAction(),
             _ => throw new ExpressionEvaluatorTypeErrorException($"Function \"{expr.Function}\" not implemented"),
         };
         return ret;
@@ -337,6 +339,7 @@ public static class ExpressionEvaluator
             bool ab => throw new ExpressionEvaluatorTypeErrorException($"Expected number, got value {(ab ? "true" : "false")}"),
             string s => parseNumber(s),
             int i => Convert.ToDouble(i),
+            decimal d => Convert.ToDouble(d),
             object o => o as double?, // assume all relevant numbers are representable as double (as in frontend)
             _ => null
         };
