@@ -224,8 +224,18 @@ namespace Altinn.App.Core.Configuration
         public string AppVersion { get; set; }
 
         /// <summary>
-        /// Enable the preview functionality to load layout in backend and remove data from hidden components before validation and task completion
+        /// Enable the functionality to load layout in backend and remove data from hidden components before task completion
         /// </summary>
-        public bool RemoveHiddenDataPreview { get; set; } = false;
+        public bool RemoveHiddenData { get; set; } = false;
+
+        /// <summary>
+        /// Enable the functionality to load layout in backend and validate required fields as defined in the layout
+        /// </summary>
+        public bool RequiredValidation { get; set; } = false;
+
+        /// <summary>
+        /// Enable the functionality to run expression validation in backend
+        /// </summary>
+        public bool ExpressionValidation { get; set; } = false;
     }
 }

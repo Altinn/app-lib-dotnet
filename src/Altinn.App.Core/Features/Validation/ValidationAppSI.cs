@@ -228,19 +228,29 @@ namespace Altinn.App.Core.Features.Validation
                 object data = await _dataClient.GetFormData(
                     instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, Guid.Parse(dataElement.Id));
 
-                if (_appSettings.RemoveHiddenDataPreview)
-                {
-                    var layoutSet = _appResourcesService.GetLayoutSetForTask(dataType.TaskId);
-                    var evaluationState = await _layoutEvaluatorStateInitializer.Init(instance, data, layoutSet?.Id);
-                    // Remove hidden data before validation
-                    LayoutEvaluator.RemoveHiddenData(evaluationState);
-                    // Evaluate expressions in layout and validate that all required data is included and that maxLength
-                    // is respected on groups
-                    var layoutErrors = LayoutEvaluator.RunLayoutValidationsForRequired(evaluationState, dataElement.Id);
-                    messages.AddRange(layoutErrors);
+                LayoutEvaluatorState? evaluationState = null;
 
-                    // Run expression validations
-                    var expressionErrors = ExpressionValidator.Validate(dataType.Id, _appResourcesService, new DataModel(data), evaluationState, _logger);
+                // Remove hidden data before validation
+                if (_appSettings.RequiredValidation || _appSettings.ExpressionValidation)
+                {
+
+                    var layoutSet = _appResourcesService.GetLayoutSetForTask(dataType.TaskId);
+                    evaluationState = await _layoutEvaluatorStateInitializer.Init(instance, data, layoutSet?.Id);
+                    LayoutEvaluator.RemoveHiddenData(evaluationState);
+                }
+
+                // Evaluate expressions in layout and validate that all required data is included and that maxLength
+                // is respected on groups
+                if (_appSettings.RequiredValidation)
+                {
+                    var layoutErrors = LayoutEvaluator.RunLayoutValidationsForRequired(evaluationState!, dataElement.Id);
+                    messages.AddRange(layoutErrors);
+                }
+
+                // Run expression validations
+                if (_appSettings.ExpressionValidation)
+                {
+                    var expressionErrors = ExpressionValidator.Validate(dataType.Id, _appResourcesService, new DataModel(data), evaluationState!, _logger);
                     messages.AddRange(expressionErrors);
                 }
 
