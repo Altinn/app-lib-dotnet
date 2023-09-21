@@ -93,6 +93,11 @@ public class DataModel : IDataModelAccessor
     /// <inheritdoc />
     public string[] GetResolvedKeys(string key)
     {
+        if (_serviceModel is null)
+        {
+            return new string[0];
+        }
+
         var keyParts = key.Split('.');
         return GetResolvedKeysRecursive(keyParts, _serviceModel);
     }
@@ -113,13 +118,18 @@ public class DataModel : IDataModelAccessor
 
     private string[] GetResolvedKeysRecursive(string[] keyParts, object currentModel, int currentIndex = 0, string currentKey = "")
     {
+        if (currentModel is null)
+        {
+            return new string[0];
+        }
+
         if (currentIndex == keyParts.Length)
         {
             return new[] { currentKey };
         }
 
         var (key, groupIndex) = ParseKeyPart(keyParts[currentIndex]);
-        var prop = currentModel.GetType().GetProperties().FirstOrDefault(p => IsPropertyWithJsonName(p, key));
+        var prop = currentModel?.GetType().GetProperties().FirstOrDefault(p => IsPropertyWithJsonName(p, key));
         var childModel = prop?.GetValue(currentModel);
         if (childModel is null)
         {

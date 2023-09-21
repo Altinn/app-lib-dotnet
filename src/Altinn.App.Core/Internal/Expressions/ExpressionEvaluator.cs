@@ -61,7 +61,7 @@ public static class ExpressionEvaluator
         var args = expr.Args.Select(a => EvaluateExpression(state, a, context, positionalArguments)).ToArray();
         var ret = expr.Function switch
         {
-            ExpressionFunction.dataModel => state.GetModelData(args.First()?.ToString(), context),
+            ExpressionFunction.dataModel => DataModel(args.First()?.ToString(), context, state),
             ExpressionFunction.component => Component(args, context, state),
             ExpressionFunction.instanceContext => state.GetInstanceContext(args.First()?.ToString()!),
             ExpressionFunction.@if => IfImpl(args),
@@ -90,6 +90,19 @@ public static class ExpressionEvaluator
             _ => throw new ExpressionEvaluatorTypeErrorException($"Function \"{expr.Function}\" not implemented"),
         };
         return ret;
+    }
+
+    private static object? DataModel(string? key, ComponentContext? context, LayoutEvaluatorState state)
+    {
+        var data = state.GetModelData(key, context);
+
+        // Only allow IConvertible types to be returned from data model
+        // Objects and arrays should return null
+        return data switch
+        {
+            IConvertible c => c,
+            _ => null,
+        };
     }
 
     private static object? Component(object?[] args, ComponentContext? context, LayoutEvaluatorState state)
@@ -127,7 +140,7 @@ public static class ExpressionEvaluator
             parent = parent.Parent;
         }
 
-        return state.GetModelData(binding, context);
+        return DataModel(binding, context, state);
     }
 
     private static string? Concat(object?[] args)
@@ -338,9 +351,7 @@ public static class ExpressionEvaluator
         {
             bool ab => throw new ExpressionEvaluatorTypeErrorException($"Expected number, got value {(ab ? "true" : "false")}"),
             string s => parseNumber(s),
-            int i => Convert.ToDouble(i),
-            decimal d => Convert.ToDouble(d),
-            object o => o as double?, // assume all relevant numbers are representable as double (as in frontend)
+            IConvertible c => Convert.ToDouble(c),
             _ => null
         };
     }
