@@ -61,9 +61,9 @@ public class AuthorizationService : IAuthorizationService
     }
 
     /// <inheritdoc />
-    public async Task<List<UserAction>> AuthorizeActions(Instance instance, ClaimsPrincipal user, List<AltinnAction> actions, string? taskId = null)
+    public async Task<List<UserAction>> AuthorizeActions(Instance instance, ClaimsPrincipal user, List<AltinnAction> actions)
     {
-        var authDecisions = await _authorizationClient.AuthorizeActions(instance, user, actions.Select(a => a.Value).ToList(), taskId);
+        var authDecisions = await _authorizationClient.AuthorizeActions(instance, user, actions.Select(a => a.Value).ToList());
         List<UserAction> authorizedActions = new();
         foreach (var action in actions)
         {

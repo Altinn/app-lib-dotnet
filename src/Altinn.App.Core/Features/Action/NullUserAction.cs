@@ -11,8 +11,8 @@ public class NullUserAction: IUserAction
     public string Id => "null";
 
     /// <inheritdoc />
-    public Task<bool> HandleAction(UserActionContext context)
+    public Task<UserActionResult> HandleAction(UserActionContext context)
     {
-        return Task.FromResult(true);
+        return Task.FromResult(UserActionResult.SuccessResult());
     }
 }

@@ -133,7 +133,7 @@ public class ProcessEngine : IProcessEngine
         }
         var actionHandler = await _userActionFactory.GetActionHandler(request.Action).HandleAction(new UserActionContext(request.Instance, userId.Value));
 
-        if (!actionHandler)
+        if (!actionHandler.Success)
         {
             return new ProcessChangeResult()
             {

@@ -47,6 +47,6 @@ namespace Altinn.App.Core.Internal.Auth
         /// <param name="actions"></param>
         /// <param name="taskId"></param>
         /// <returns></returns>
-        Task<Dictionary<string, bool>> AuthorizeActions(Instance instance, ClaimsPrincipal user, List<string> actions, string? taskId = null);
+        Task<Dictionary<string, bool>> AuthorizeActions(Instance instance, ClaimsPrincipal user, List<string> actions);
     }
 }

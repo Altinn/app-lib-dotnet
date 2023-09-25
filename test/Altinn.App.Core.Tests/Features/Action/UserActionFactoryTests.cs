@@ -56,9 +56,9 @@ public class UserActionFactoryTests
     {
         public string Id { get; set; } = "dummy";
 
-        public Task<bool> HandleAction(UserActionContext context)
+        public Task<UserActionResult> HandleAction(UserActionContext context)
         {
-            return Task.FromResult(true);
+            return Task.FromResult(UserActionResult.SuccessResult());
         }
     }
     
@@ -66,9 +66,9 @@ public class UserActionFactoryTests
     {
         public string Id { get; set; } = "dummy";
 
-        public Task<bool> HandleAction(UserActionContext context)
+        public Task<UserActionResult> HandleAction(UserActionContext context)
         {
-            return Task.FromResult(true);
+            return Task.FromResult(UserActionResult.SuccessResult());
         }
     }
 }

@@ -120,9 +120,8 @@ namespace Altinn.App.Core.Infrastructure.Clients.Authorization
         }
 
         /// <inheritdoc />
-        public async Task<Dictionary<string, bool>> AuthorizeActions(Instance instance, ClaimsPrincipal user, List<string> actions, string? taskId = null)
+        public async Task<Dictionary<string, bool>> AuthorizeActions(Instance instance, ClaimsPrincipal user, List<string> actions)
         {
-            // XacmlJsonRequestRoot request = CreateMultiActionDecisionRequest(appIdentifier.Org, appIdentifier.App, user, actions, instanceIdentifier.InstanceOwnerPartyId, instanceIdentifier.InstanceGuid, taskId);
             XacmlJsonRequestRoot request = MultiDecisionHelper.CreateMultiDecisionRequest(user, instance, actions);
             XacmlJsonResponse response = await _pdp.GetDecisionForRequest(request);
             if (response?.Response == null)
