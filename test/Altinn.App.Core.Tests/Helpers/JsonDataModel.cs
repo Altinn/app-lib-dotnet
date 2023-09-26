@@ -262,44 +262,33 @@ public class JsonDataModel : IDataModelAccessor
         var keys = keys_split[0..^1];
         var (lastKey, lastGroupIndex) = DataModel.ParseKeyPart(keys_split[^1]);
 
-        JsonNode? currentModel = _modelRoot;
-        foreach (var keyPart in keys)
+        object? modelData = GetModelDataRecursive(keys, 0, _modelRoot, default);
+        if (modelData is not JsonObject containingObject)
         {
-            var (currentKey, groupIndex) = DataModel.ParseKeyPart(keyPart);
-            if (currentModel is not JsonObject || !currentModel.AsObject().TryGetPropertyValue(currentKey, out JsonNode? childModel))
+            return;
+        }
+
+        if (lastGroupIndex is not null)
+        {
+            // Remove row from list
+            if (!(containingObject.TryGetPropertyValue(lastKey, out JsonNode? childModel) && childModel is JsonArray childArray))
             {
-                return;
+                throw new ArgumentException($"Tried to remove row {key}, ended in a non-list");
             }
 
-            if (childModel is JsonArray childArray)
+            if (deleteRows)
             {
-                if (groupIndex is null)
-                {
-                    return; // Error index for collection not specified
-                }
-
-                currentModel = childArray.ElementAtOrDefault((int)groupIndex);
+                childArray.RemoveAt((int)lastGroupIndex);
             }
             else
             {
-                currentModel = childModel;
-            }
-        }
-
-        if (lastGroupIndex is null)
-        {
-            if (currentModel is JsonObject currentObject)
-            {
-                currentObject.Remove(lastKey);
+                childArray[(int)lastGroupIndex] = null;
             }
         }
         else
         {
-            if (currentModel is JsonObject currentObject && currentObject.TryGetPropertyValue(lastKey, out JsonNode? childModel) && childModel is JsonArray childArray)
-            {
-                // childArray.RemoveAt((int)lastGroupIndex);
-                childArray[(int)lastGroupIndex] = null;
-            }
+            // Set the property to null
+            containingObject[lastKey] = null;
         }
 
     }
