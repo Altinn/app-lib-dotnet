@@ -4,12 +4,19 @@ using System.Text.Json.Nodes;
 
 namespace altinn_app_cli.v7Tov8.AppSettingsRewriter;
 
+
 /// <summary>
 /// Rewrites the appsettings.*.json files
 /// </summary>
 public class AppSettingsRewriter
 {
+    /// <summary>
+    /// The pattern used to search for appsettings.*.json files
+    /// </summary>
+    public static readonly string APP_SETTINGS_FILE_PATTERN = "appsettings*.json";
+
     private Dictionary<string, JsonObject> appSettingsJsonCollection;
+
     private readonly IList<string> warnings = new List<string>();
 
     /// <summary>
@@ -18,7 +25,7 @@ public class AppSettingsRewriter
     public AppSettingsRewriter(string appSettingsFolder)
     {
         appSettingsJsonCollection = new Dictionary<string, JsonObject>();
-        foreach (var file in Directory.GetFiles(appSettingsFolder, "appsettings.*.json"))
+        foreach (var file in Directory.GetFiles(appSettingsFolder, APP_SETTINGS_FILE_PATTERN))
         {
             var json = File.ReadAllText(file);
             var appSettingsJson = JsonNode.Parse(json);

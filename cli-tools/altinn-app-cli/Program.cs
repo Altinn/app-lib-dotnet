@@ -1,4 +1,5 @@
 ﻿using System.CommandLine;
+using System.CommandLine.Invocation;
 using System.Reflection;
 using altinn_app_cli.v7Tov8.AppSettingsRewriter;
 using altinn_app_cli.v7Tov8.CodeRewriters;
@@ -43,8 +44,18 @@ class Program
         rootCommand.AddCommand(versionCommand);
 
         upgradeCommand.SetHandler(
-            async (projectFolder, projectFile, processFile, appSettingsFolder, targetVersion, skipCodeUpgrade, skipProcessUpgrade, skipCsprojUpgrade, skipAppSettingsUpgrade) =>
+            async (InvocationContext context) =>
             {
+                var projectFolder = context.ParseResult.GetValueForOption(projectFolderOption)!;
+                var projectFile = context.ParseResult.GetValueForOption(projectFileOption)!;
+                var processFile = context.ParseResult.GetValueForOption(processFileOption)!;
+                var appSettingsFolder = context.ParseResult.GetValueForOption(appSettingsFolderOption)!;
+                var targetVersion = context.ParseResult.GetValueForOption(targetVersionOption)!;
+                var skipCodeUpgrade = context.ParseResult.GetValueForOption(skipCodeUpgradeOption)!;
+                var skipProcessUpgrade = context.ParseResult.GetValueForOption(skipProcessUpgradeOption)!;
+                var skipCsprojUpgrade = context.ParseResult.GetValueForOption(skipCsprojUpgradeOption)!;
+                var skipAppSettingsUpgrade = context.ParseResult.GetValueForOption(skipAppSettingsUpgradeOption)!;
+
                 if (projectFolder == "CurrentDirectory")
                 {
                     projectFolder = Directory.GetCurrentDirectory();
@@ -114,16 +125,7 @@ class Program
                 {
                     Console.WriteLine("Upgrade completed with errors. Please check for errors in the log above.");
                 }
-            },
-            projectFolderOption,
-            projectFileOption,
-            processFileOption,
-            appSettingsFolderOption,
-            targetVersionOption,
-            skipCodeUpgradeOption,
-            skipProcessUpgradeOption,
-            skipCsprojUpgradeOption,
-            skipAppSettingsUpgradeOption
+            }
         );
 
         versionCommand.SetHandler(() =>
@@ -221,13 +223,13 @@ class Program
             return 1;
         }
 
-        if (Directory.GetFiles(appSettingsFolder, "appsettings.*.json").Count() == 0)
+        if (Directory.GetFiles(appSettingsFolder, AppSettingsRewriter.APP_SETTINGS_FILE_PATTERN).Count() == 0)
         {
-            Console.WriteLine($"No appsettings.*.json files found in {appSettingsFolder}");
+            Console.WriteLine($"No appsettings*.json files found in {appSettingsFolder}");
             return 1;
         }
 
-        Console.WriteLine("Trying to upgrade appsettings.*.json files");
+        Console.WriteLine("Trying to upgrade appsettings*.json files");
         AppSettingsRewriter rewriter = new(appSettingsFolder);
         rewriter.Upgrade();
         await rewriter.Write();
