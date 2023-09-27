@@ -256,7 +256,7 @@ public class JsonDataModel : IDataModelAccessor
     }
 
     /// <inheritdoc />
-    public void RemoveField(string key, bool deleteRows = false)
+    public void RemoveField(string key, RowRemovalOption rowRemovalOption)
     {
         var keys_split = key.Split('.');
         var keys = keys_split[0..^1];
@@ -276,13 +276,16 @@ public class JsonDataModel : IDataModelAccessor
                 throw new ArgumentException($"Tried to remove row {key}, ended in a non-list");
             }
 
-            if (deleteRows)
+            switch (rowRemovalOption)
             {
-                childArray.RemoveAt((int)lastGroupIndex);
-            }
-            else
-            {
-                childArray[(int)lastGroupIndex] = null;
+                case RowRemovalOption.DeleteRow:
+                    childArray.RemoveAt((int)lastGroupIndex);
+                    break;
+                case RowRemovalOption.SetToNull:
+                    childArray[(int)lastGroupIndex] = null;
+                    break;
+                case RowRemovalOption.Ignore:
+                    return;
             }
         }
         else

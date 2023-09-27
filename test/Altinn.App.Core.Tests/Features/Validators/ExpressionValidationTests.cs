@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Features.Validation;
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Models.Validation;
@@ -26,7 +27,7 @@ public class ExpressionValidationTests
         var dataModel = new JsonDataModel(testCase.FormData);
         var evaluatorState = new LayoutEvaluatorState(dataModel, testCase.Layouts, new(), new());
 
-        LayoutEvaluator.RemoveHiddenData(evaluatorState);
+        LayoutEvaluator.RemoveHiddenData(evaluatorState, RowRemovalOption.SetToNull);
         var validationIssues = ExpressionValidator.Validate(testCase.ValidationConfig, dataModel, evaluatorState, logger).ToArray();
 
         var result = validationIssues.Select(i => new
