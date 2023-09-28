@@ -15,9 +15,6 @@ namespace Altinn.App.Core.Internal.App
         /// </summary>
         public FrontendFeatures(IFeatureManager featureManager)
         {
-            features.Add("footer", true);
-            features.Add("processActions", true);
-
             if (featureManager.IsEnabledAsync(FeatureFlags.JsonObjectInDataResponse).Result)
             {
                 features.Add("jsonObjectInDataResponse", true);
