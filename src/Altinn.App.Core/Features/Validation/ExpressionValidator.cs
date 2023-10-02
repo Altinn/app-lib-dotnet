@@ -62,14 +62,15 @@ namespace Altinn.App.Core.Features.Validation
                                     Severity = validation.Severity ?? ValidationIssueSeverity.Error,
                                     CustomTextKey = validation.Message,
                                     Code = validation.Message,
-                                    Source = "Expression" // TODO: Add source to ValidationIssueSources
+                                    Source = ValidationIssueSources.Expression,
                                 };
                                 validationIssues.Add(validationIssue);
                             }
                         }
-                        catch (Exception e)
+                        catch
                         {
-                            logger.LogError($"Error while evaluating expression validation for {resolvedField}: {e}");
+                            logger.LogError($"Error while evaluating expression validation for {resolvedField}");
+                            throw;
                         }
                     }
                 }
