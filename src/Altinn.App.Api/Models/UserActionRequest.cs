@@ -14,6 +14,11 @@ public class UserActionRequest
     public string? Action { get; set; }
     
     /// <summary>
+    /// The id of the button that was clicked
+    /// </summary>
+    public string? ButtonId { get; set; }
+    
+    /// <summary>
     /// Additional metadata for the action
     /// </summary>
     [JsonPropertyName("metadata")]

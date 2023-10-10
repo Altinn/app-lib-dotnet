@@ -11,6 +11,11 @@ public interface IUserAction
     /// The id of the user action
     /// </summary>
     string Id { get; }
+    
+    /// <summary>
+    /// Validation issues group. Used to share ownership of validation issues between actions and data validation 
+    /// </summary>
+    public string? ValidationGroup => null;
         
     /// <summary>
     /// Method for handling the user action

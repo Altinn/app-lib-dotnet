@@ -1,3 +1,6 @@
+#nullable enable
+using Altinn.App.Core.Models.Validation;
+
 namespace Altinn.App.Api.Models;
 
 /// <summary>
@@ -14,4 +17,9 @@ public class UserActionResponse
     /// Actions frontend should perform after action has been performed backend
     /// </summary>
     public List<string>? FrontendActions { get; set; }
+    
+    /// <summary>
+    /// Validation issues that occured when processing action
+    /// </summary>
+    public List<ValidationIssue>? ValidationIssues { get; set; }
 }
