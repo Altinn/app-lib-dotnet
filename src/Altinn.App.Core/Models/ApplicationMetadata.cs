@@ -15,21 +15,7 @@ namespace Altinn.App.Core.Models
         /// <param name="id"></param>
         public ApplicationMetadata(string id)
         {
-            base.Id = id;
-            AppIdentifier = new AppIdentifier(id);
-        }
-
-        /// <summary>
-        /// Override Id from base to ensure AppIdentifier is set
-        /// </summary>
-        public new string Id
-        {
-            get { return base.Id; }
-            set
-            {
-                AppIdentifier = new AppIdentifier(value);
-                base.Id = value;
-            }
+            Id = id;
         }
 
 
@@ -51,7 +37,7 @@ namespace Altinn.App.Core.Models
         /// </summary>
         [System.Text.Json.Serialization.JsonIgnore]
         [Newtonsoft.Json.JsonIgnore]
-        public AppIdentifier AppIdentifier { get; private set; }
+        public AppIdentifier AppIdentifier => new (Id);
 
         /// <summary>
         /// Configure options for setting organisation logo
