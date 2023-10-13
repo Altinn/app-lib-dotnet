@@ -461,23 +461,19 @@ namespace Altinn.App.Core.Tests.Internal.App
             actual.Should().NotBeNull();
             actual.Should().BeEquivalentTo(expected);
         }
-        
-         [Fact]
+
+        [Fact]
         public async Task GetApplicationMetadata_deserializes_unmapped_properties()
         {
-            var featureManagerMock = new Mock<IFeatureManager>();
-            IFrontendFeatures frontendFeatures = new FrontendFeatures(featureManagerMock.Object);
-            Dictionary<string, bool> enabledFrontendFeatures = await frontendFeatures.GetFrontendFeatures();
-
             AppSettings appSettings = GetAppSettings("AppMetadata", "unmapped-properties.applicationmetadata.json");
-            IAppMetadata appMetadata = SetupAppMedata(Microsoft.Extensions.Options.Options.Create(appSettings));
+            IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
             var actual = await appMetadata.GetApplicationMetadata();
             actual.Should().NotBeNull();
             actual.UnmappedProperties.Should().NotBeNull();
             actual.UnmappedProperties!["foo"].Should().BeOfType<JsonElement>();
             ((JsonElement)actual.UnmappedProperties["foo"]).GetProperty("bar").GetString().Should().Be("baz");
         }
-        
+
         [Fact]
         public async void GetApplicationMetadata_throws_ApplicationConfigException_if_file_not_found()
         {
