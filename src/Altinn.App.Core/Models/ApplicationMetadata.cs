@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using Altinn.Platform.Storage.Interface.Models;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Altinn.App.Core.Models
 {
@@ -58,5 +59,12 @@ namespace Altinn.App.Core.Models
         /// </summary>
         [JsonProperty(PropertyName = "logo")]
         public Logo? Logo { get; set; }
+        
+        /// <summary>
+        /// Holds properties that are not mapped to other properties
+        /// </summary>
+        [Newtonsoft.Json.JsonExtensionData]
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public Dictionary<string, object>? UnmappedProperties { get; set; }
     }
 }
