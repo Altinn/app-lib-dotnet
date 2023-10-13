@@ -7,7 +7,9 @@ using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Microsoft.FeatureManagement;
 using Moq;
+using Newtonsoft.Json;
 using Xunit;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Altinn.App.Core.Tests.Internal.App
 {
@@ -472,6 +474,17 @@ namespace Altinn.App.Core.Tests.Internal.App
             actual.UnmappedProperties.Should().NotBeNull();
             actual.UnmappedProperties!["foo"].Should().BeOfType<JsonElement>();
             ((JsonElement)actual.UnmappedProperties["foo"]).GetProperty("bar").GetString().Should().Be("baz");
+        }
+        
+        [Fact]
+        public async Task GetApplicationMetadata_deserialize_serialize_unmapped_properties()
+        {
+            AppSettings appSettings = GetAppSettings("AppMetadata", "unmapped-properties.applicationmetadata.json");
+            IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
+            var appMetadataObj = await appMetadata.GetApplicationMetadata();
+            string serialized = JsonSerializer.Serialize(appMetadataObj, new JsonSerializerOptions { WriteIndented = true });
+            string expected = File.ReadAllText(Path.Join(appBasePath, "AppMetadata", "unmapped-properties.applicationmetadata.expected.json"));
+            serialized.Should().Be(expected);
         }
 
         [Fact]
