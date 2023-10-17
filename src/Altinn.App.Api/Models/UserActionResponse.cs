@@ -1,4 +1,5 @@
 #nullable enable
+using System.Runtime.Serialization;
 using Altinn.App.Core.Models.Validation;
 
 namespace Altinn.App.Api.Models;
@@ -9,9 +10,9 @@ namespace Altinn.App.Api.Models;
 public class UserActionResponse
 {
     /// <summary>
-    /// Fields that have changed
+    /// Data models that have been updated
     /// </summary>
-    public List<string>? FieldsChanged { get; set; }
+    public Dictionary<string, object?>? UpdatedDataModels { get; set; }
     
     /// <summary>
     /// Actions frontend should perform after action has been performed backend
@@ -21,5 +22,5 @@ public class UserActionResponse
     /// <summary>
     /// Validation issues that occured when processing action
     /// </summary>
-    public List<ValidationIssue>? ValidationIssues { get; set; }
+    public Dictionary<string, List<ValidationIssue>>? ValidationIssues { get; set; }
 }

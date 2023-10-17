@@ -14,5 +14,5 @@ public interface IUserActionService
     /// <param name="userActionContext">The context of the action</param>
     /// <param name="actionId"></param>
     /// <returns>The result of the action</returns>
-    public Task<UserActionResult> HandleAction(UserActionContext userActionContext, string actionId);
+    public Task<UserActionServiceResult> HandleAction(UserActionContext userActionContext, string actionId);
 }

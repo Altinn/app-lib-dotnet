@@ -20,9 +20,10 @@ public class UserActionService: IUserActionService
 
 
     /// <inheritdoc />
-    public async Task<UserActionResult> HandleAction(UserActionContext userActionContext, string actionId)
+    public async Task<UserActionServiceResult> HandleAction(UserActionContext userActionContext, string actionId)
     {
         var actionHandler = _userActionFactory.GetActionHandler(actionId);
-        return await actionHandler.HandleAction(userActionContext);
+        string validationGroup = actionHandler.ValidationGroup ?? actionHandler.GetType().ToString();
+        return new UserActionServiceResult(await actionHandler.HandleAction(userActionContext), validationGroup);
     }
 }

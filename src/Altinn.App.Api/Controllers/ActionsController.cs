@@ -16,7 +16,7 @@ namespace Altinn.App.Api.Controllers;
 /// </summary>
 [AutoValidateAntiforgeryTokenIfAuthCookie]
 [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-[Microsoft.AspNetCore.Components.Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/actions")]
+[Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/actions")]
 public class ActionsController: ControllerBase
 {
     private readonly ILogger<ProcessController> _logger;
@@ -101,10 +101,9 @@ public class ActionsController: ControllerBase
 
         if (!result.Success)
         {
-            Response.StatusCode = (int)result.StatusCode;
+            Response.StatusCode = HttpContext.Response.StatusCode = 400;
             return new UserActionResponse()
             {
-                FieldsChanged = result.FieldsChanged,
                 FrontendActions = result.FrontendActions,
                 ValidationIssues = result.ValidationIssues
             };
@@ -112,9 +111,9 @@ public class ActionsController: ControllerBase
 
         return new OkObjectResult(new UserActionResponse()
         {
-            FieldsChanged = result.FieldsChanged,
             FrontendActions = result.FrontendActions,
-            ValidationIssues = result.ValidationIssues
+            ValidationIssues = result.ValidationIssues,
+            UpdatedDataModels = result.UpdatedDataModels
         });
     }
 }
