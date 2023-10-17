@@ -218,7 +218,7 @@ namespace Altinn.App.Api.Controllers
                 // create minimum instance template
                 instanceTemplate = new Instance
                 {
-                    InstanceOwner = new InstanceOwner { PartyId = instanceOwnerPartyId.Value.ToString() }
+                    InstanceOwner = new InstanceOwner { PartyId = instanceOwnerPartyId!.Value.ToString() }
                 };
             }
 
@@ -469,7 +469,7 @@ namespace Altinn.App.Api.Controllers
 
                 instance = await _instanceClient.CreateInstance(org, app, instanceTemplate);
 
-                if (copySourceInstance)
+                if (copySourceInstance && source is not null)
                 {
                     await CopyDataFromSourceInstance(application, instance, source);
                 }
@@ -973,7 +973,7 @@ namespace Altinn.App.Api.Controllers
                     ModelDeserializer deserializer = new ModelDeserializer(_logger, type);
                     object? data = await deserializer.DeserializeAsync(part.Stream, part.ContentType);
 
-                    if (!string.IsNullOrEmpty(deserializer.Error))
+                    if (!string.IsNullOrEmpty(deserializer.Error) || data is null)
                     {
                         throw new InvalidOperationException(deserializer.Error);
                     }
