@@ -37,6 +37,7 @@
     <Content Update="Implementation\TestData\AppProcess\process.bpmn">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="secrets.json" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
   </ItemGroup>
 
   <ItemGroup>
