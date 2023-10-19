@@ -1,11 +1,13 @@
 #nullable enable
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
+using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.UserAction;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using IAuthorizationService = Altinn.App.Core.Internal.Auth.IAuthorizationService;
 
@@ -40,7 +42,7 @@ public class ActionsController: ControllerBase
     }
     
     /// <summary>
-    /// The method that performs the user action
+    /// Perform a task action on an instance
     /// </summary>
     /// <param name="org">unique identfier of the organisation responsible for the app</param>
     /// <param name="app">application identifier which is unique within an organisation</param>
@@ -49,6 +51,7 @@ public class ActionsController: ControllerBase
     /// <param name="actionRequest">user action request</param>
     /// <returns><see cref="UserActionResponse"/></returns>
     [HttpPost]
+    [Authorize(Policy = AuthzConstants.POLICY_INSTANCE_READ)]
     [ProducesResponseType(typeof(UserActionResponse), 200)]
     [ProducesResponseType(typeof(ProblemDetails), 400)]
     [ProducesResponseType(401)]
