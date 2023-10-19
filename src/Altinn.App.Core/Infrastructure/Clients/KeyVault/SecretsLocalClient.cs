@@ -23,17 +23,17 @@ namespace Altinn.App.Core.Infrastructure.Clients.KeyVault
         }
 
         /// <inheritdoc />
-        public Task<byte[]> GetCertificateAsync(string certificateId)
+        public Task<byte[]> GetCertificateAsync(string certificateName)
         {
-            string token = GetTokenFromSecrets(certificateId);
+            string token = GetTokenFromSecrets(certificateName);
             byte[] localCertBytes = Convert.FromBase64String(token);
             return Task.FromResult(localCertBytes);
         }
 
         /// <inheritdoc />
-        public Task<JsonWebKey> GetKeyAsync(string keyId)
+        public Task<JsonWebKey> GetKeyAsync(string keyName)
         {
-            string token = GetTokenFromSecrets(keyId);
+            string token = GetTokenFromSecrets(keyName);
             JsonWebKey key = JsonSerializer.Deserialize<JsonWebKey>(token)!;
             return Task.FromResult(key);
         }
