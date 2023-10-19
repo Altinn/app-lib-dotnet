@@ -1,3 +1,5 @@
+using Altinn.App.Core.Internal;
+
 namespace Altinn.App.Core.Features.Action;
 
 /// <summary>
@@ -21,14 +23,30 @@ public class UserActionFactory
     /// Find the implementation of <see cref="IUserAction"/> based on the actionId
     /// </summary>
     /// <param name="actionId">The id of the action to handle.</param>
-    /// <returns>The first implementation of <see cref="IUserAction"/> that matches the actionId. If no match <see cref="NullUserAction"/> is returned</returns>
-    public IUserAction GetActionHandler(string? actionId)
+    /// <returns>The first implementation of <see cref="IUserAction"/> that matches the actionId. If no match null is returned</returns>
+    public IUserAction? GetActionHandlerOrDefault(string? actionId)
     {
         if (actionId != null)
         {
-            return _actionHandlers.Where(ah => ah.Id.Equals(actionId, StringComparison.OrdinalIgnoreCase)).FirstOrDefault(new NullUserAction());
+            return _actionHandlers.FirstOrDefault(ah => ah.Id.Equals(actionId, StringComparison.OrdinalIgnoreCase));
         }
 
-        return new NullUserAction();
+        return null;
+    }
+
+    /// <summary>
+    /// Find the implementation of <see cref="IUserAction"/> based on the actionId
+    /// </summary>
+    /// <param name="actionId">The id of the action to handle.</param>
+    /// <param name="defaultAction">The default action to return if non is found</param>
+    /// <returns>The first implementation of <see cref="IUserAction"/> that matches the actionId. If no match provided default is returned</returns>
+    public IUserAction GetActionHandlerOrDefault(string? actionId, IUserAction defaultAction)
+    {
+        if (actionId != null)
+        {
+            return _actionHandlers.Where(ah => ah.Id.Equals(actionId, StringComparison.OrdinalIgnoreCase)).FirstOrDefault(defaultAction);
+        }
+
+        return defaultAction;
     }
 }

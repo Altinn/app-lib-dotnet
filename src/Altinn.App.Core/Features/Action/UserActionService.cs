@@ -1,3 +1,5 @@
+using Altinn.App.Core.Internal;
+using Altinn.App.Core.Internal.Exceptions;
 using Altinn.App.Core.Models.UserAction;
 
 namespace Altinn.App.Core.Features.Action;
@@ -20,9 +22,14 @@ public class UserActionService: IUserActionService
 
 
     /// <inheritdoc />
+    /// <exception cref="NotFoundException">Thrown if no Handler for the actionId is found</exception>
     public async Task<UserActionServiceResult> HandleAction(UserActionContext userActionContext, string actionId)
     {
-        var actionHandler = _userActionFactory.GetActionHandler(actionId);
+        var actionHandler = _userActionFactory.GetActionHandlerOrDefault(actionId);
+        if (actionHandler == null)
+        {
+            throw new NotFoundException($"Action handler for action {actionId} not found");
+        }
         string validationGroup = actionHandler.ValidationGroup ?? actionHandler.GetType().ToString();
         return new UserActionServiceResult(await actionHandler.HandleAction(userActionContext), validationGroup);
     }

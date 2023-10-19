@@ -1,3 +1,4 @@
+#nullable enable
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Models.UserAction;
@@ -9,44 +10,66 @@ namespace Altinn.App.Core.Tests.Features.Action;
 public class UserActionFactoryTests
 {
     [Fact]
-    public void GetActionHandler_should_return_DummyActionHandler_for_id_dummy()
+    public void GetActionHandlerOrDefault_should_return_DummyActionHandler_for_id_dummy()
     {
         var factory = new UserActionFactory(new List<IUserAction>() { new DummyUserAction() });
 
-        IUserAction userAction = factory.GetActionHandler("dummy");
+        IUserAction? userAction = factory.GetActionHandlerOrDefault("dummy");
 
+        userAction.Should().NotBeNull();
         userAction.Should().BeOfType<DummyUserAction>();
-        userAction.Id.Should().Be("dummy");
+        userAction!.Id.Should().Be("dummy");
     }
     
     [Fact]
-    public void GetActionHandler_should_return_first_DummyActionHandler_for_id_dummy_if_multiple()
+    public void GetActionHandlerOrDefault_should_return_first_DummyActionHandler_for_id_dummy_if_multiple()
     {
         var factory = new UserActionFactory(new List<IUserAction>() { new DummyUserAction(), new DummyUserAction2() });
 
-        IUserAction userAction = factory.GetActionHandler("dummy");
+        IUserAction? userAction = factory.GetActionHandlerOrDefault("dummy");
 
+        userAction.Should().NotBeNull();
         userAction.Should().BeOfType<DummyUserAction>();
-        userAction.Id.Should().Be("dummy");
+        userAction!.Id.Should().Be("dummy");
     }
     
     [Fact]
-    public void GetActionHandler_should_return_NullActionHandler_if_id_not_found()
+    public void GetActionHandlerOrDefault_should_return_null_if_id_not_found_and_default_not_set()
     {
         var factory = new UserActionFactory(new List<IUserAction>() { new DummyUserAction() });
 
-        IUserAction userAction = factory.GetActionHandler("nonexisting");
+        IUserAction? userAction = factory.GetActionHandlerOrDefault("nonexisting");
+
+        userAction.Should().BeNull();
+    }
+    
+    [Fact]
+    public void GetActionHandlerOrDefault_should_return_null_if_id_is_null_and_default_not_set()
+    {
+        var factory = new UserActionFactory(new List<IUserAction>() { new DummyUserAction() });
+
+        IUserAction? userAction = factory.GetActionHandlerOrDefault(null);
+
+        userAction.Should().BeNull();
+    }
+    
+    [Fact]
+    public void GetActionHandlerOrDefault_should_return_NullActionHandler_if_id_not_found_and_default_set()
+    {
+        var factory = new UserActionFactory(new List<IUserAction>() { new DummyUserAction() });
+
+        IUserAction userAction = factory.GetActionHandlerOrDefault("nonexisting", new NullUserAction());
 
         userAction.Should().BeOfType<NullUserAction>();
         userAction.Id.Should().Be("null");
     }
     
     [Fact]
-    public void GetActionHandler_should_return_NullActionHandler_if_id_is_null()
+    public void GetActionHandlerOrDefault_should_return_NullActionHandler_if_id_is_null_and_default_set()
     {
         var factory = new UserActionFactory(new List<IUserAction>() { new DummyUserAction() });
 
-        IUserAction userAction = factory.GetActionHandler(null);
+        IUserAction userAction = factory.GetActionHandlerOrDefault(null, new NullUserAction());
 
         userAction.Should().BeOfType<NullUserAction>();
         userAction.Id.Should().Be("null");
