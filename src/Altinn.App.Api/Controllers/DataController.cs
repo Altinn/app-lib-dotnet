@@ -32,6 +32,7 @@ namespace Altinn.App.Api.Controllers
     /// The data controller handles creation, update, validation and calculation of data elements.
     /// </summary>
     [AutoValidateAntiforgeryTokenIfAuthCookie]
+    [ApiController]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     [Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/data")]
     public class DataController : ControllerBase
@@ -329,10 +330,10 @@ namespace Altinn.App.Api.Controllers
 
                 if (appLogic == null)
                 {
-                    _logger.LogError($"Could not determine if {dataType} requires app logic for application {org}/{app}");
+                    _logger.LogError("Could not determine if {dataType} requires app logic for application {org}/{app}", dataType, org, app);
                     return BadRequest($"Could not determine if data type {dataType} requires application logic.");
                 }
-                else if ((bool)appLogic)
+                else if (appLogic == true)
                 {
                     return await PutFormData(org, app, instance, dataGuid, dataType);
                 }
