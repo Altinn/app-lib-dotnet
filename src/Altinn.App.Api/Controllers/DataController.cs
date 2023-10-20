@@ -466,12 +466,14 @@ namespace Altinn.App.Api.Controllers
             else
             {
                 ModelDeserializer deserializer = new ModelDeserializer(_logger, _appModel.GetModelType(classRef));
-                appModel = await deserializer.DeserializeAsync(Request.Body, Request.ContentType);
+                ModelDeserializerResult deserializerResult = await deserializer.DeserializeAsync(Request.Body, Request.ContentType);
 
-                if (!string.IsNullOrEmpty(deserializer.Error) || appModel is null)
+                if (deserializerResult.HasError)
                 {
-                    return BadRequest(deserializer.Error);
+                    return BadRequest(deserializerResult.Error);
                 }
+
+                appModel = deserializerResult.Model;
             }
 
             // runs prefill from repo configuration if config exists
@@ -616,26 +618,30 @@ namespace Altinn.App.Api.Controllers
             Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
 
             ModelDeserializer deserializer = new ModelDeserializer(_logger, _appModel.GetModelType(classRef));
-            object? serviceModel = await deserializer.DeserializeAsync(Request.Body, Request.ContentType);
+            ModelDeserializerResult deserializerResult = await deserializer.DeserializeAsync(Request.Body, Request.ContentType);
 
-            if (!string.IsNullOrEmpty(deserializer.Error))
+            if (deserializerResult.HasError)
             {
-                return BadRequest(deserializer.Error);
+                return BadRequest(deserializerResult.Error);
             }
 
-            if (serviceModel == null)
+            Dictionary<string, object?>? changedFields = null;
+            if (deserializerResult.ReportedChanges is not null)
             {
-                return BadRequest("No data found in content");
+                //TODO: call new and old dataProcessors
+                changedFields = await JsonHelper.ProcessDataWriteWithDiff(instance, dataGuid, deserializerResult.Model, _dataProcessor, _logger);
+            }
+            else
+            {
+                changedFields = await JsonHelper.ProcessDataWriteWithDiff(instance, dataGuid, deserializerResult.Model, _dataProcessor, _logger);
             }
 
-            Dictionary<string, object?>? changedFields = await JsonHelper.ProcessDataWriteWithDiff(instance, dataGuid, serviceModel, _dataProcessor, _logger);
-
-            await UpdatePresentationTextsOnInstance(instance, dataType, serviceModel);
-            await UpdateDataValuesOnInstance(instance, dataType, serviceModel);
+            await UpdatePresentationTextsOnInstance(instance, dataType, deserializerResult.Model);
+            await UpdateDataValuesOnInstance(instance, dataType, deserializerResult.Model);
 
             // Save Formdata to database
             DataElement updatedDataElement = await _dataClient.UpdateData(
-                serviceModel,
+                deserializerResult.Model,
                 instanceGuid,
                 _appModel.GetModelType(classRef),
                 org,

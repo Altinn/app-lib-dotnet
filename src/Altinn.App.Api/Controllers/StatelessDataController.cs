@@ -203,12 +203,14 @@ namespace Altinn.App.Api.Controllers
             }
 
             ModelDeserializer deserializer = new ModelDeserializer(_logger, _appModel.GetModelType(classRef));
-            object? appModel = await deserializer.DeserializeAsync(Request.Body, Request.ContentType);
+            ModelDeserializerResult deserializerResult = await deserializer.DeserializeAsync(Request.Body, Request.ContentType);
 
-            if (!string.IsNullOrEmpty(deserializer.Error) || appModel is null)
+            if (deserializerResult.HasError)
             {
-                return BadRequest(deserializer.Error);
+                return BadRequest(deserializerResult.Error);
             }
+
+            object appModel = deserializerResult.Model;
 
             // runs prefill from repo configuration if config exists
             await _prefillService.PrefillDataModel(owner.PartyId, dataType, appModel);
@@ -246,17 +248,17 @@ namespace Altinn.App.Api.Controllers
             }
 
             ModelDeserializer deserializer = new ModelDeserializer(_logger, _appModel.GetModelType(classRef));
-            object? appModel = await deserializer.DeserializeAsync(Request.Body, Request.ContentType);
+            ModelDeserializerResult deserializerResult = await deserializer.DeserializeAsync(Request.Body, Request.ContentType);
 
-            if (!string.IsNullOrEmpty(deserializer.Error) || appModel is null)
+            if (deserializerResult.HasError)
             {
-                return BadRequest(deserializer.Error);
+                return BadRequest(deserializerResult.Error);
             }
 
             Instance virutalInstance = new Instance();
-            await _dataProcessor.ProcessDataRead(virutalInstance, null, appModel);
+            await _dataProcessor.ProcessDataRead(virutalInstance, null, deserializerResult.Model);
 
-            return Ok(appModel);
+            return Ok(deserializerResult.Model);
         }
 
         private async Task<InstanceOwner?> GetInstanceOwner(string partyFromHeader)

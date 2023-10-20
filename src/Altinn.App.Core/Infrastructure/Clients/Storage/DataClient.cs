@@ -171,15 +171,15 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             {
                 using Stream stream = await response.Content.ReadAsStreamAsync();
                 ModelDeserializer deserializer = new ModelDeserializer(_logger, type);
-                object? model = await deserializer.DeserializeAsync(stream, "application/xml");
+                ModelDeserializerResult deserializerResult = await deserializer.DeserializeAsync(stream, "application/xml");
 
-                if (deserializer.Error != null || model is null)
+                if (deserializerResult.Error is not null || deserializerResult.Model is null )
                 {
-                    _logger.LogError($"Cannot deserialize XML form data read from storage: {deserializer.Error}");
-                    throw new ServiceException(HttpStatusCode.Conflict, $"Cannot deserialize XML form data from storage {deserializer.Error}");
+                    _logger.LogError($"Cannot deserialize XML form data read from storage: {deserializerResult.Error}");
+                    throw new ServiceException(HttpStatusCode.Conflict, $"Cannot deserialize XML form data from storage {deserializerResult.Error}");
                 }
 
-                return model;
+                return deserializerResult.Model;
             }
 
             throw await PlatformHttpException.CreateAsync(response);
@@ -206,7 +206,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
                 return attachmentList;
             }
 
-            _logger.Log(LogLevel.Error, "Unable to fetch attachment list {0}", response.StatusCode);
+            _logger.Log(LogLevel.Error, "Unable to fetch attachment list {statusCode}", response.StatusCode);
 
             throw await PlatformHttpException.CreateAsync(response);
         }
@@ -214,7 +214,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         private static void ExtractAttachments(List<DataElement> dataList, List<AttachmentList> attachmentList)
         {
             List<Attachment>? attachments = null;
-            IEnumerable<DataElement> attachmentTypes = dataList.GroupBy(m => m.DataType).Select(m => m.FirstOrDefault());
+            IEnumerable<DataElement> attachmentTypes = dataList.GroupBy(m => m.DataType).Select(m => m.First());
 
             foreach (DataElement attachmentType in attachmentTypes)
             {
