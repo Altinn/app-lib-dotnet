@@ -20,11 +20,6 @@ namespace Altinn.App.Core.Helpers.Serialization
         private readonly Type _modelType;
 
         /// <summary>
-        /// Gets the error message describing what it was that went wrong if there was an issue during deserialization.
-        /// </summary>
-        public string? Error { get; private set; }
-
-        /// <summary>
         /// Initialize a new instance of <see cref="ModelDeserializer"/> with a logger and the Type the deserializer should target.
         /// </summary>
         /// <param name="logger">A logger that can be used to write log information.</param>
@@ -41,14 +36,12 @@ namespace Altinn.App.Core.Helpers.Serialization
         /// <param name="stream">The data stream to deserialize.</param>
         /// <param name="contentType">The content type of the stream.</param>
         /// <returns>An instance of the initialized type if deserializing succeed.</returns>
-        public async Task<object?> DeserializeAsync(Stream stream, string? contentType)
+        public async Task<ModelDeserializerResult> DeserializeAsync(Stream stream, string? contentType)
         {
-            Error = null;
 
             if (contentType == null)
             {
-                Error = $"Unknown content type \"null\". Cannot read the data.";
-                return null;
+                return ModelDeserializerResult.FromError($"Unknown content type \"null\". Cannot read the data.");
             }
 
             if (contentType.Contains("application/json"))
@@ -60,51 +53,41 @@ namespace Altinn.App.Core.Helpers.Serialization
             {
                 return await DeserializeXmlAsync(stream);
             }
-
-            Error = $"Unknown content type {contentType}. Cannot read the data.";
-            return null;
+            return ModelDeserializerResult.FromError($"Unknown content type {contentType}. Cannot read the data.");
         }
 
-        private async Task<object?> DeserializeJsonAsync(Stream stream)
+        private async Task<ModelDeserializerResult> DeserializeJsonAsync(Stream stream)
         {
-            Error = null;
-
             try
             {
                 using StreamReader reader = new StreamReader(stream, Encoding.UTF8);
                 string content = await reader.ReadToEndAsync();
-                return JsonConvert.DeserializeObject(content, _modelType)!;
+                return ModelDeserializerResult.FromSuccess(JsonConvert.DeserializeObject(content, _modelType));
             }
             catch (JsonReaderException jsonReaderException)
             {
-                Error = jsonReaderException.Message;
-                return null;
+                return ModelDeserializerResult.FromError(jsonReaderException.Message);
             }
             catch (Exception ex)
             {
-                string message = $"Unexpected exception when attempting to deserialize JSON into '{_modelType}'";
-                _logger.LogError(ex, message);
-                Error = message;
-                return null;
-            }
+                _logger.LogError(ex, "Unexpected exception when attempting to deserialize JSON into '{modelType}'", _modelType);
+                return ModelDeserializerResult.FromError($"Unexpected exception when attempting to deserialize JSON into '{_modelType}'");
+            };
+
         }
 
-        private async Task<object?> DeserializeXmlAsync(Stream stream)
+        private async Task<ModelDeserializerResult> DeserializeXmlAsync(Stream stream)
         {
-            Error = null;
-
-            string streamContent = null;
+            // In this first try block we assume that the namespace is the same in the model
+            // and in the XML. This includes no namespace in both.
+            using StreamReader reader = new StreamReader(stream, Encoding.UTF8);
+            string? streamContent = await reader.ReadToEndAsync();
             try
             {
-                // In this first try block we assume that the namespace is the same in the model
-                // and in the XML. This includes no namespace in both.
-                using StreamReader reader = new StreamReader(stream, Encoding.UTF8);
-                streamContent = await reader.ReadToEndAsync();
-
                 using XmlTextReader xmlTextReader = new XmlTextReader(new StringReader(streamContent));
                 XmlSerializer serializer = new XmlSerializer(_modelType);
 
-                return serializer.Deserialize(xmlTextReader);
+                return ModelDeserializerResult.FromSuccess(serializer.Deserialize(xmlTextReader));
             }
             catch (InvalidOperationException)
             {
@@ -122,21 +105,18 @@ namespace Altinn.App.Core.Helpers.Serialization
                     using XmlTextReader xmlTextReader = new XmlTextReader(new StringReader(streamContent));
                     XmlSerializer serializer = new XmlSerializer(_modelType, attributeOverrides);
 
-                    return serializer.Deserialize(xmlTextReader);
+                    return ModelDeserializerResult.FromSuccess(serializer.Deserialize(xmlTextReader));
                 }
                 catch (InvalidOperationException invalidOperationException)
                 {
                     // One possible fail condition is if the XML has a namespace, but the model does not, or that the namespaces are different.
-                    Error = $"{invalidOperationException.Message} {invalidOperationException?.InnerException.Message}";
-                    return null;
+                    return ModelDeserializerResult.FromError($"{invalidOperationException.Message} {invalidOperationException?.InnerException?.Message}");
                 }
             }
             catch (Exception ex)
             {
-                string message = $"Unexpected exception when attempting to deserialize XML into '{_modelType}'";
-                _logger.LogError(ex, message);
-                Error = message;
-                return null;
+                _logger.LogError(ex, "Unexpected exception when attempting to deserialize XML into '{modelType}'", _modelType);
+                return ModelDeserializerResult.FromError($"Unexpected exception when attempting to deserialize XML into '{_modelType}'");
             }
         }
 
@@ -157,3 +137,4 @@ namespace Altinn.App.Core.Helpers.Serialization
         }
     }
 }
+
