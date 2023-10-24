@@ -16,19 +16,27 @@ namespace Altinn.App.Core.Helpers
         /// <summary>
         /// Run DataProcessWrite returning the dictionary of the changed fields.
         /// </summary>
-        public static async Task<Dictionary<string, object?>?> ProcessDataWriteWithDiff(Instance instance, Guid dataGuid, object serviceModel, IDataProcessor dataProcessor, ILogger logger)
+        public static async Task<Dictionary<string, object?>?> ProcessDataWriteWithDiff(Instance instance, Guid dataGuid, object serviceModel, IEnumerable<IDataProcessor> dataProcessors, ILogger logger)
         {
+            if (!dataProcessors.Any())
+            {
+                return null;
+            }
+
             string serviceModelJsonString = System.Text.Json.JsonSerializer.Serialize(serviceModel);
+            bool changedByCalculation = false;
+            foreach (var dataProcessor in dataProcessors)
+            {
+                logger.LogInformation("ProcessDataRead for {modelType} using {dataProcesor}", serviceModel.GetType().Name, dataProcessor.GetType().Name);
+                changedByCalculation |= await dataProcessor.ProcessDataWrite(instance, dataGuid, serviceModel);
+            }
 
-            bool changedByCalculation = await dataProcessor.ProcessDataWrite(instance, dataGuid, serviceModel);
-
-            Dictionary<string, object?>? changedFields = null;
             if (changedByCalculation)
             {
                 string updatedServiceModelString = System.Text.Json.JsonSerializer.Serialize(serviceModel);
                 try
                 {
-                    changedFields = FindChangedFields(serviceModelJsonString, updatedServiceModelString);
+                    return FindChangedFields(serviceModelJsonString, updatedServiceModelString);
                 }
                 catch (Exception e)
                 {
@@ -36,13 +44,7 @@ namespace Altinn.App.Core.Helpers
                 }
             }
 
-            // TODO: Consider not bothering frontend with an empty changes list
-            // if(changedFields?.Count == 0)
-            // {
-            //     return null;
-            // }
-
-            return changedFields;
+            return null;
         }
 
         /// <summary>

@@ -39,7 +39,7 @@ namespace Altinn.App.Api.Controllers
     {
         private readonly ILogger<DataController> _logger;
         private readonly IDataClient _dataClient;
-        private readonly IDataProcessor _dataProcessor;
+        private readonly IEnumerable<IDataProcessor> _dataProcessors;
         private readonly IInstanceClient _instanceClient;
         private readonly IInstantiationProcessor _instantiationProcessor;
         private readonly IAppModel _appModel;
@@ -58,7 +58,7 @@ namespace Altinn.App.Api.Controllers
         /// <param name="instanceClient">instance service to store instances</param>
         /// <param name="instantiationProcessor">Instantiation processor</param>
         /// <param name="dataClient">A service with access to data storage.</param>
-        /// <param name="dataProcessor">Serive implemnting logic during data read/write</param>
+        /// <param name="dataProcessors">Serive implemnting logic during data read/write</param>
         /// <param name="appModel">Service for generating app model</param>
         /// <param name="appResourcesService">The apps resource service</param>
         /// <param name="appMetadata">The app metadata service</param>
@@ -71,7 +71,7 @@ namespace Altinn.App.Api.Controllers
             IInstanceClient instanceClient,
             IInstantiationProcessor instantiationProcessor,
             IDataClient dataClient,
-            IDataProcessor dataProcessor,
+            IEnumerable<IDataProcessor> dataProcessors,
             IAppModel appModel,
             IAppResources appResourcesService,
             IPrefill prefillService,
@@ -85,7 +85,7 @@ namespace Altinn.App.Api.Controllers
             _instanceClient = instanceClient;
             _instantiationProcessor = instantiationProcessor;
             _dataClient = dataClient;
-            _dataProcessor = dataProcessor;
+            _dataProcessors = dataProcessors;
             _appModel = appModel;
             _appResourcesService = appResourcesService;
             _appMetadata = appMetadata;
@@ -175,7 +175,7 @@ namespace Altinn.App.Api.Controllers
                         _logger.LogError(errorMessage);
                         return BadRequest(await GetErrorDetails(new List<ValidationIssue> { error }));
                     }
-                    
+
                     bool parseSuccess = Request.Headers.TryGetValue("Content-Disposition", out StringValues headerValues);
                     string? filename = parseSuccess ? DataRestrictionValidation.GetFileNameFromHeader(headerValues) : null;
 
@@ -584,7 +584,11 @@ namespace Altinn.App.Api.Controllers
                 return BadRequest($"Did not find form data for data element {dataGuid}");
             }
 
-            await _dataProcessor.ProcessDataRead(instance, dataGuid, appModel);
+            foreach (var dataProcessor in _dataProcessors)
+            {
+                _logger.LogInformation("ProcessDataRead for {modelType} using {dataProcesor}", appModel.GetType().Name, dataProcessor.GetType().Name);
+                await dataProcessor.ProcessDataRead(instance, dataGuid, appModel);
+            }
 
             string? userOrgClaim = User.GetOrg();
             if (userOrgClaim == null || !org.Equals(userOrgClaim, StringComparison.InvariantCultureIgnoreCase))
@@ -628,12 +632,12 @@ namespace Altinn.App.Api.Controllers
             Dictionary<string, object?>? changedFields = null;
             if (deserializerResult.ReportedChanges is not null)
             {
-                //TODO: call new and old dataProcessors
-                changedFields = await JsonHelper.ProcessDataWriteWithDiff(instance, dataGuid, deserializerResult.Model, _dataProcessor, _logger);
+                // TODO: call new and old dataProcessors
+                changedFields = await JsonHelper.ProcessDataWriteWithDiff(instance, dataGuid, deserializerResult.Model, _dataProcessors, _logger);
             }
             else
             {
-                changedFields = await JsonHelper.ProcessDataWriteWithDiff(instance, dataGuid, deserializerResult.Model, _dataProcessor, _logger);
+                changedFields = await JsonHelper.ProcessDataWriteWithDiff(instance, dataGuid, deserializerResult.Model, _dataProcessors, _logger);
             }
 
             await UpdatePresentationTextsOnInstance(instance, dataType, deserializerResult.Model);

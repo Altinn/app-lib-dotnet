@@ -28,7 +28,7 @@ public class JsonHelperTests
             .Setup((d) => d.ProcessDataWrite(It.IsAny<Instance>(), It.IsAny<Guid>(), It.IsAny<object>()))
             .Returns(dataProcessWrite);
 
-        return await JsonHelper.ProcessDataWriteWithDiff(instance, guid, model, dataProcessorMock.Object, logger);
+        return await JsonHelper.ProcessDataWriteWithDiff(instance, guid, model, new IDataProcessor[] { dataProcessorMock.Object }, logger);
     }
 
     public class TestModel
