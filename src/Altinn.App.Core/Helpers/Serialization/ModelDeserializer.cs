@@ -1,10 +1,9 @@
-using System;
-using System.IO;
+
 using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
-
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Net.Http.Headers;
 using Microsoft.Extensions.Logging;
 
 using Newtonsoft.Json;
@@ -44,6 +43,11 @@ namespace Altinn.App.Core.Helpers.Serialization
                 return ModelDeserializerResult.FromError($"Unknown content type \"null\". Cannot read the data.");
             }
 
+            if (contentType.Contains("multipart/form-data"))
+            {
+                return await DeserializeMultipartAsync(stream, contentType);
+            }
+
             if (contentType.Contains("application/json"))
             {
                 return await DeserializeJsonAsync(stream);
@@ -53,7 +57,41 @@ namespace Altinn.App.Core.Helpers.Serialization
             {
                 return await DeserializeXmlAsync(stream);
             }
+
             return ModelDeserializerResult.FromError($"Unknown content type {contentType}. Cannot read the data.");
+        }
+
+        private async Task<ModelDeserializerResult> DeserializeMultipartAsync(Stream stream, string contentType)
+        {
+            MediaTypeHeaderValue mediaType = MediaTypeHeaderValue.Parse(contentType);
+            string boundary = mediaType.Boundary.Value!.Trim('"');
+            var reader = new MultipartReader(boundary, stream);
+            MultipartSection? firstSection = await reader.ReadNextSectionAsync();
+            if (firstSection?.ContentDisposition?.Contains("name=\"dataModel\"") != true)
+            {
+                return ModelDeserializerResult.FromError("First entry in mulipart serialization must have name=\"dataModel\"");
+            }
+            var modelResult = await DeserializeJsonAsync(firstSection.Body);
+            if (modelResult.HasError)
+            {
+                return modelResult;
+            }
+
+            MultipartSection? secondSection = await reader.ReadNextSectionAsync();
+            Dictionary<string, string?>? reportedChanges = null;
+            if (secondSection is not null)
+            {
+                if (secondSection?.ContentDisposition?.Contains("name=\"previousValues\"") != true)
+                {
+                    return ModelDeserializerResult.FromError("First entry in mulipart serialization must have name=\"dataModel\"");
+                }
+                reportedChanges = await System.Text.Json.JsonSerializer.DeserializeAsync<Dictionary<string, string?>>(secondSection.Body);
+                if (await reader.ReadNextSectionAsync() != null)
+                {
+                    return ModelDeserializerResult.FromError("Multipart request had more than 2 elements");
+                }
+            }
+            return ModelDeserializerResult.FromSuccess(modelResult.Model, reportedChanges);
         }
 
         private async Task<ModelDeserializerResult> DeserializeJsonAsync(Stream stream)

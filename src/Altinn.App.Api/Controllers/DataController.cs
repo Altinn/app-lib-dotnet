@@ -630,10 +630,13 @@ namespace Altinn.App.Api.Controllers
             }
 
             Dictionary<string, object?>? changedFields = null;
+            var appModel = deserializerResult.Model;
             if (deserializerResult.ReportedChanges is not null)
             {
-                // TODO: call new and old dataProcessors
-                changedFields = await JsonHelper.ProcessDataWriteWithDiff(instance, dataGuid, deserializerResult.Model, _dataProcessors, _logger);
+                foreach (var dataProcesor in _dataProcessors)
+                {
+                    await dataProcesor.ProcessDataWrite(instance, dataGuid, appModel, deserializerResult.ReportedChanges);
+                }
             }
             else
             {
@@ -663,6 +666,11 @@ namespace Altinn.App.Api.Controllers
                     ChangedFields = changedFields
                 };
                 return StatusCode((int)HttpStatusCode.SeeOther, calculationResult);
+            }
+
+            if (deserializerResult.ReportedChanges is not null)
+            {
+                return Ok(appModel);
             }
 
             return Created(dataUrl, updatedDataElement);
