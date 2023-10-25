@@ -11,7 +11,7 @@ public class ModelDeserializerResult
     /// Static factory method to make an object that represents a successfull deserialization
     /// If the model is null, set default error message instead (eg: json string "null", deserialize valid to null without exception)
     /// </summary>
-    public static ModelDeserializerResult FromSuccess(object? model, Dictionary<string, string>? reportedChanges = null) => new()
+    public static ModelDeserializerResult FromSuccess(object? model, Dictionary<string, string?>? reportedChanges = null) => new()
     {
         Error = model is null ? "Model deserialzied to \"null\"" : null,
         Model = model,
@@ -59,6 +59,6 @@ public class ModelDeserializerResult
     /// <summary>
     /// Dictionary with fields and their changed parts
     /// </summary>
-    public Dictionary<string, string>? ReportedChanges { get; set; }
+    public Dictionary<string, string?>? ReportedChanges { get; set; }
 
 }

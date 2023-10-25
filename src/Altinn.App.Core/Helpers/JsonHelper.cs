@@ -24,27 +24,23 @@ namespace Altinn.App.Core.Helpers
             }
 
             string serviceModelJsonString = System.Text.Json.JsonSerializer.Serialize(serviceModel);
-            bool changedByCalculation = false;
             foreach (var dataProcessor in dataProcessors)
             {
                 logger.LogInformation("ProcessDataRead for {modelType} using {dataProcesor}", serviceModel.GetType().Name, dataProcessor.GetType().Name);
-                changedByCalculation |= await dataProcessor.ProcessDataWrite(instance, dataGuid, serviceModel);
+                await dataProcessor.ProcessDataWrite(instance, dataGuid, serviceModel, null);
             }
 
-            if (changedByCalculation)
+            string updatedServiceModelString = System.Text.Json.JsonSerializer.Serialize(serviceModel);
+            try
             {
-                string updatedServiceModelString = System.Text.Json.JsonSerializer.Serialize(serviceModel);
-                try
-                {
-                    return FindChangedFields(serviceModelJsonString, updatedServiceModelString);
-                }
-                catch (Exception e)
-                {
-                    logger.LogError(e, "Unable to determine changed fields");
-                }
+                var changed = FindChangedFields(serviceModelJsonString, updatedServiceModelString);
+                return changed.Any() ? changed : null;
             }
-
-            return null;
+            catch (Exception e)
+            {
+                logger.LogError(e, "Unable to determine changed fields");
+                return null;
+            }
         }
 
         /// <summary>
