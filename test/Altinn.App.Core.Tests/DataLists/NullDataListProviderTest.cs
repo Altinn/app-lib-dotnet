@@ -17,7 +17,7 @@ namespace Altinn.App.PlatformServices.Tests.DataLists
             var provider = new NullDataListProvider();
 
             provider.Id.Should().Be(string.Empty);
-            provider.GetDataListAsync("nb", new Dictionary<string, string>()).Result.ListItems.Should().BeNull();
+            provider.GetDataListAsync("nb", new Dictionary<string, string>()).Result.Should().BeNull();
         }
     }
 }

@@ -24,15 +24,19 @@ namespace Altinn.App.Core.Features.Options
         public string Id { get; internal set; } = "default";
 
         /// <inheritdoc/>
-        public async Task<AppOptions> GetAppOptionsAsync(string language, Dictionary<string, string> keyValuePairs)
+        public async Task<AppOptions?> GetAppOptionsAsync(string language, Dictionary<string, string> keyValuePairs)
         {
             // This will get static options if it exists
-            var appOptions = new AppOptions
+            var options = await _appOptionsFileHandler.ReadOptionsFromFileAsync(Id);
+            if (options is null)
             {
-                Options = await _appOptionsFileHandler.ReadOptionsFromFileAsync(Id)
-            };
+                return null;
+            }
 
-            return appOptions;
+            return new AppOptions
+            {
+                Options = options
+            };
         }
 
         /// <summary>

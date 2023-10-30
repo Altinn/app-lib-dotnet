@@ -107,6 +107,9 @@ class Program
                 {
                     returnCode = await UpgradeCode(projectFile, new List<CSharpSyntaxRewriter>()
                     {
+                        new ReturnTypeRewriter("IAppOptionsProvider", "GetAppOptionsAsync", "Task<AppOptions>", "Task<AppOptions?>"),
+                        new ReturnTypeRewriter("IInstanceAppOptionsProvider", "GetInstanceAppOptionsAsync", "Task<AppOptions>", "Task<AppOptions?>"),
+                        new ReturnTypeRewriter("IDataListProvider", "GetDataListAsync", "Task<DataList>", "Task<DataList?>"),
                         new TypesRewriter(),
                         new UsingRewriter(),
                         new IDataProcessorRewriter(),

@@ -21,7 +21,7 @@ namespace Altinn.App.Core.Features.Options
         }
 
         /// <inheritdoc/>
-        public async Task<List<AppOption>> ReadOptionsFromFileAsync(string optionId)
+        public async Task<List<AppOption>?> ReadOptionsFromFileAsync(string optionId)
         {
             string legalPath = _settings.AppBasePath + _settings.OptionsFolder;
             string filename = legalPath + optionId + ".json";
@@ -34,7 +34,7 @@ namespace Altinn.App.Core.Features.Options
                 return options;
             }
 
-            return new List<AppOption>();
+            return null;
         }
     }
 }

@@ -79,7 +79,7 @@ namespace Altinn.App.Core.Features.Options.Altinn2Provider
         }
 
         /// <inheritdoc/>
-        public async Task<AppOptions> GetAppOptionsAsync(string language, Dictionary<string, string> keyValuePairs)
+        public async Task<AppOptions?> GetAppOptionsAsync(string language, Dictionary<string, string> keyValuePairs)
         {
             var codelist = await GetRawAltinn2CodelistAsync(language);
 

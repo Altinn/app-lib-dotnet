@@ -55,23 +55,27 @@ public class PdfOptionsMapping : IPdfOptionsMapping
         var instanceIdentifier = new InstanceIdentifier(instanceId);
         if (mappings.IsNullOrEmpty())
         {
-            AppOptions appOptions = await GetOptions(isSecureOptions, instanceIdentifier, optionsId, language, new Dictionary<string, string>());
-            AppendOptionsToDictionary(dictionary[optionsId], appOptions.Options);
-            return;
+            AppOptions? appOptions = await GetOptions(isSecureOptions, instanceIdentifier, optionsId, language, new Dictionary<string, string>());
+            if(appOptions is not null){
+                AppendOptionsToDictionary(dictionary[optionsId], appOptions.Options);
+                return;
+            }
         }
 
         foreach (var pair in mappings)
         {
             foreach (var value in pair.Value)
             {
-                AppOptions appOptions = await GetOptions(isSecureOptions, instanceIdentifier, optionsId, language, new Dictionary<string, string>() { { pair.Key, value } });
-
-                AppendOptionsToDictionary(dictionary[optionsId], appOptions.Options);
+                AppOptions? appOptions = await GetOptions(isSecureOptions, instanceIdentifier, optionsId, language, new Dictionary<string, string>() { { pair.Key, value } });
+                if(appOptions is not null)
+                {
+                    AppendOptionsToDictionary(dictionary[optionsId], appOptions.Options);
+                }
             }
         }
     }
 
-    private async Task<AppOptions> GetOptions(bool isSecure, InstanceIdentifier instanceIdentifier, string optionsId, string language, Dictionary<string, string> mappings)
+    private async Task<AppOptions?> GetOptions(bool isSecure, InstanceIdentifier instanceIdentifier, string optionsId, string language, Dictionary<string, string> mappings)
     {
         if (isSecure)
         {
