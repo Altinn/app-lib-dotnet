@@ -4,9 +4,11 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace altinn_app_cli.v7Tov8.CodeRewriters;
 
-public class TypesRewriter: CSharpSyntaxRewriter
+public class TypesRewriter: CSharpSyntaxRewriter , ISemanticModelInjector
 {
-    private readonly SemanticModel semanticModel;
+    /// <inheritdoc />
+    public SemanticModel InjectedSemanticModel { get; set; } = null!;
+
     private readonly Dictionary<string, TypeSyntax> fieldDescendantsMapping = new Dictionary<string, TypeSyntax>()
     {
         {"Altinn.App.Core.Interface.IAppEvents", SyntaxFactory.IdentifierName("IAppEvents")},
@@ -42,11 +44,6 @@ public class TypesRewriter: CSharpSyntaxRewriter
         "app.UseAltinnAppCommonConfiguration();"
     };
 
-    public TypesRewriter(SemanticModel semanticModel)
-    {
-        this.semanticModel = semanticModel;
-    }
-
     public override SyntaxNode? VisitFieldDeclaration(FieldDeclarationSyntax node)
     {
         return UpdateField(node);
@@ -59,7 +56,7 @@ public class TypesRewriter: CSharpSyntaxRewriter
         {
             return node;
         }
-        var parameterType = (ITypeSymbol?)semanticModel.GetSymbolInfo(parameterTypeName).Symbol;
+        var parameterType = (ITypeSymbol?)InjectedSemanticModel.GetSymbolInfo(parameterTypeName).Symbol;
         if(parameterType?.ToString() != null && fieldDescendantsMapping.TryGetValue(parameterType.ToString()!, out var newType))
         {
             var newTypeName = newType.WithLeadingTrivia(parameterTypeName.GetLeadingTrivia()).WithTrailingTrivia(parameterTypeName.GetTrailingTrivia());
@@ -123,7 +120,7 @@ public class TypesRewriter: CSharpSyntaxRewriter
     private FieldDeclarationSyntax UpdateField(FieldDeclarationSyntax node)
     {
         var variableTypeName = node.Declaration.Type;
-        var variableType = (ITypeSymbol?)semanticModel.GetSymbolInfo(variableTypeName).Symbol;
+        var variableType = (ITypeSymbol?)InjectedSemanticModel.GetSymbolInfo(variableTypeName).Symbol;
         if(variableType?.ToString() != null && fieldDescendantsMapping.TryGetValue(variableType.ToString()!, out var newType))
         {
             var newTypeName = newType.WithLeadingTrivia(variableTypeName.GetLeadingTrivia()).WithTrailingTrivia(variableTypeName.GetTrailingTrivia());

@@ -26,12 +26,13 @@ public class ProjectFileRewriter
         var altinnAppApiElements = GetAltinnAppApiElement();
         altinnAppApiElements?.ForEach(a => a.Attribute("Version")?.SetValue(targetVersion));
 
-        IgnoreWarnings("1591", "1998"); // Require xml doc and await in async methods
+        AddIgnoreWarnings("1591", "1998"); // Require xml doc and await in async methods
+        EnableImplicitUsings();
 
         await Save();
     }
 
-    private void IgnoreWarnings(params string[] warnings)
+    private void AddIgnoreWarnings(params string[] warnings)
     {
         var noWarn = doc.Root?.Elements("PropertyGroup").Elements("NoWarn").ToList();
         switch (noWarn?.Count)
@@ -51,6 +52,14 @@ public class ProjectFileRewriter
                 }
 
                 break;
+        }
+    }
+
+    private void EnableImplicitUsings()
+    {
+        if (doc.Root?.Elements("PropertyGroup").Elements("ImplicitUsings").Count() == 0)
+        {
+            doc.Root!.Elements("PropertyGroup").First().Add(new XElement("ImplicitUsings", "enable"));
         }
     }
 

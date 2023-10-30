@@ -8,6 +8,7 @@ using altinn_app_cli.v7Tov8.ProjectChecks;
 using altinn_app_cli.v7Tov8.ProjectRewriters;
 using Microsoft.Build.Locator;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.MSBuild;
 
 namespace altinn_app_upgrade_cli;
@@ -104,7 +105,12 @@ class Program
 
                 if (!skipCodeUpgrade && returnCode == 0)
                 {
-                    returnCode = await UpgradeCode(projectFile);
+                    returnCode = await UpgradeCode(projectFile, new List<CSharpSyntaxRewriter>()
+                    {
+                        new TypesRewriter(),
+                        new UsingRewriter(),
+                        new IDataProcessorRewriter(),
+                    });
                 }
 
                 if (!skipProcessUpgrade && returnCode == 0)
@@ -152,7 +158,7 @@ class Program
         return 0;
     }
 
-    static async Task<int> UpgradeCode(string projectFile)
+    static async Task<int> UpgradeCode(string projectFile, List<CSharpSyntaxRewriter> rewriters)
     {
         if (!File.Exists(projectFile))
         {
@@ -173,26 +179,20 @@ class Program
         }
         foreach (var sourceTree in comp.SyntaxTrees)
         {
-            SemanticModel sm = comp.GetSemanticModel(sourceTree);
-            TypesRewriter rewriter = new(sm);
-            SyntaxNode newSource = rewriter.Visit(await sourceTree.GetRootAsync());
-            if (newSource != await sourceTree.GetRootAsync())
+            SyntaxNode node = await sourceTree.GetRootAsync();
+            foreach (var rewriter in rewriters)
             {
-                await File.WriteAllTextAsync(sourceTree.FilePath, newSource.ToFullString());
-            }
-
-            UsingRewriter usingRewriter = new();
-            var newUsingSource = usingRewriter.Visit(newSource);
-            if (newUsingSource != newSource)
-            {
-                await File.WriteAllTextAsync(sourceTree.FilePath, newUsingSource.ToFullString());
-            }
-
-            DataProcessorRewriter dataProcessorRewriter = new(sm);
-            var dataProcessorSource = dataProcessorRewriter.Visit(newUsingSource);
-            if (dataProcessorSource != newUsingSource)
-            {
-                await File.WriteAllTextAsync(sourceTree.FilePath, dataProcessorSource.ToFullString());
+                var prevNode = node;
+                if (rewriter is ISemanticModelInjector sm)
+                {
+                    sm.InjectedSemanticModel = comp.GetSemanticModel(sourceTree);
+                }
+                node = rewriter.Visit(node);
+                if (prevNode != node)
+                {
+                    await File.WriteAllTextAsync(sourceTree.FilePath, node.ToFullString());
+                    Console.WriteLine($"Updated {sourceTree.FilePath} using {rewriter.GetType()}");
+                }
             }
         }
 
