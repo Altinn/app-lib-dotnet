@@ -2,178 +2,197 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace altinn_app_cli.v7Tov8.CodeRewriters
+namespace altinn_app_cli.v7Tov8.CodeRewriters;
+public class IDataProcessorRewriter : CSharpSyntaxRewriter
 {
-    public class DataProcessorRewriter : CSharpSyntaxRewriter
+    public override SyntaxNode? VisitClassDeclaration(ClassDeclarationSyntax node)
     {
-        private readonly SemanticModel semanticModel;
-
-        public DataProcessorRewriter(SemanticModel semanticModel)
+        // Ignore any classes that don't implement `IDataProcessor` (consider using semantic model to ensure correct reference)
+        if (node.BaseList?.Types.Any(t => t.Type.ToString() == "IDataProcessor") == true)
         {
-            this.semanticModel = semanticModel;
-        }
-
-        public override SyntaxNode? VisitClassDeclaration(ClassDeclarationSyntax node)
-        {
-            // Ignore any classes that don't implement `IDataProcessor` (consider using semantic model to ensure correct reference)
-            if (node.BaseList?.Types.Any(t => t.Type.ToString() == "IDataProcessor") == true)
+            var processDataWrite = node.Members.OfType<MethodDeclarationSyntax>()
+                .FirstOrDefault(m => m.Identifier.ValueText == "ProcessDataWrite");
+            if (processDataWrite is not null)
             {
-                var processDataWrite = node.Members.OfType<MethodDeclarationSyntax>()
-                    .FirstOrDefault(m => m.Identifier.ValueText == "ProcessDataWrite");
-                if (processDataWrite is not null)
-                {
-                    node = node.ReplaceNode(processDataWrite, Update_DataProcessWrite(processDataWrite));
-                }
-
-                var processDataRead = node.Members.OfType<MethodDeclarationSyntax>()
-                    .FirstOrDefault(m => m.Identifier.ValueText == "ProcessDataRead");
-                if (processDataRead is not null)
-                {
-                    node = node.ReplaceNode(processDataRead, Update_DataProcessRead(processDataRead));
-                }
+                node = node.ReplaceNode(processDataWrite, Update_DataProcessWrite(processDataWrite));
             }
 
-            return base.VisitClassDeclaration(node);
-        }
-
-        private MethodDeclarationSyntax Update_DataProcessRead(MethodDeclarationSyntax processDataRead)
-        {
-            if (processDataRead.ParameterList.Parameters.Count == 3 &&
-                processDataRead.ReturnType.ToString() == "Task<bool>")
+            var processDataRead = node.Members.OfType<MethodDeclarationSyntax>()
+                .FirstOrDefault(m => m.Identifier.ValueText == "ProcessDataRead");
+            if (processDataRead is not null)
             {
-                processDataRead = ChangeReturnType_FromTaskBool_ToTask(processDataRead);
+                node = node.ReplaceNode(processDataRead, Update_DataProcessRead(processDataRead));
             }
-
-            return processDataRead;
         }
 
-        private MethodDeclarationSyntax Update_DataProcessWrite(MethodDeclarationSyntax processDataWrite)
-        {
-            if (processDataWrite.ParameterList.Parameters.Count == 3 &&
-                processDataWrite.ReturnType.ToString() == "Task<bool>")
-            {
-                processDataWrite = AddParameter_ChangedFields(processDataWrite);
-                processDataWrite = ChangeReturnType_FromTaskBool_ToTask(processDataWrite);
-            }
-
-            return processDataWrite;
-        }
-
-        private MethodDeclarationSyntax AddParameter_ChangedFields(MethodDeclarationSyntax method)
-        {
-            return method.ReplaceNode(method.ParameterList,
-                method.ParameterList.AddParameters(SyntaxFactory.Parameter(SyntaxFactory.Identifier("changedFields"))
-                    .WithLeadingTrivia(SyntaxFactory.Space)
-                    .WithType(SyntaxFactory.ParseTypeName("System.Collections.Generic.Dictionary<string, string?>?"))
-                    .WithLeadingTrivia(SyntaxFactory.Space)));
-        }
-
-        private MethodDeclarationSyntax ChangeReturnType_FromTaskBool_ToTask(MethodDeclarationSyntax method)
-        {
-            if (method.ReturnType.ToString() == "Task<bool>")
-            {
-                var returnTypeRewriter = new ReturnTypeTaskBooleanRewriter();
-                method = (MethodDeclarationSyntax)returnTypeRewriter.Visit(method)!;
-            }
-
-            return method;
-
-        }
+        return base.VisitClassDeclaration(node);
     }
 
-    public class ReturnTypeTaskBooleanRewriter : CSharpSyntaxRewriter
+    private MethodDeclarationSyntax Update_DataProcessRead(MethodDeclarationSyntax processDataRead)
     {
-        public override SyntaxNode? VisitMethodDeclaration(MethodDeclarationSyntax node)
+        if (processDataRead.ParameterList.Parameters.Count == 3 &&
+            processDataRead.ReturnType.ToString() == "Task<bool>")
         {
-            if (node.ReturnType.ToString() == "Task<bool>")
-            {
-                // Change return type
-                node = node.WithReturnType(
-                    SyntaxFactory.ParseTypeName("Task").WithTrailingTrivia(SyntaxFactory.Space));
-            }
-            return base.VisitMethodDeclaration(node);
+            processDataRead = ChangeReturnType_FromTaskBool_ToTask(processDataRead);
         }
 
-        public override SyntaxNode? VisitBlock(BlockSyntax node)
+        return processDataRead;
+    }
+
+    private MethodDeclarationSyntax Update_DataProcessWrite(MethodDeclarationSyntax processDataWrite)
+    {
+        if (processDataWrite.ParameterList.Parameters.Count == 3 &&
+            processDataWrite.ReturnType.ToString() == "Task<bool>")
         {
-            foreach (var returnStatementSyntax in node.Statements.OfType<ReturnStatementSyntax>())
+            processDataWrite = AddParameter_ChangedFields(processDataWrite);
+            processDataWrite = ChangeReturnType_FromTaskBool_ToTask(processDataWrite);
+        }
+
+        return processDataWrite;
+    }
+
+    private MethodDeclarationSyntax AddParameter_ChangedFields(MethodDeclarationSyntax method)
+    {
+        return method.ReplaceNode(method.ParameterList,
+            method.ParameterList.AddParameters(SyntaxFactory.Parameter(SyntaxFactory.Identifier("changedFields"))
+                .WithLeadingTrivia(SyntaxFactory.Space)
+                .WithType(SyntaxFactory.ParseTypeName("Dictionary<string, string?>?"))// Assume implicit usings is enabled by upgrade
+                .WithLeadingTrivia(SyntaxFactory.Space)));
+    }
+
+    private MethodDeclarationSyntax ChangeReturnType_FromTaskBool_ToTask(MethodDeclarationSyntax method)
+    {
+        if (method.ReturnType.ToString() == "Task<bool>")
+        {
+            var returnTypeRewriter = new ReturnTypeTaskBooleanRewriter();
+            method = (MethodDeclarationSyntax)returnTypeRewriter.Visit(method)!;
+        }
+
+        return method;
+
+    }
+}
+
+public class ReturnTypeTaskBooleanRewriter : CSharpSyntaxRewriter
+{
+    public override SyntaxNode? VisitMethodDeclaration(MethodDeclarationSyntax node)
+    {
+        if (node.ReturnType.ToString() == "Task<bool>")
+        {
+            // Change return type
+            node = node.WithReturnType(
+                SyntaxFactory.ParseTypeName("Task").WithTrailingTrivia(SyntaxFactory.Space));
+        }
+        return base.VisitMethodDeclaration(node);
+    }
+
+    public override SyntaxNode? VisitBlock(BlockSyntax node)
+    {
+        foreach (var returnStatementSyntax in node.Statements.OfType<ReturnStatementSyntax>())
+        {
+            var leadingTrivia = returnStatementSyntax.GetLeadingTrivia();
+            var trailingTrivia = returnStatementSyntax.GetTrailingTrivia();
+            // When we add multiple lines of code, we need the indentation and a newline
+            var leadingTriviaMiddle = leadingTrivia.LastOrDefault(t => t.IsKind(SyntaxKind.WhitespaceTrivia));
+            var trailingTriviaMiddle = trailingTrivia.FirstOrDefault(t => t.IsKind(SyntaxKind.EndOfLineTrivia));
+            // If we don't find a correct newline, just guess that LF is used. Will likely work anyway.
+            if (trailingTriviaMiddle == default) trailingTriviaMiddle = SyntaxFactory.LineFeed;
+            
+            
+            switch (returnStatementSyntax.Expression) // Testing complex pattern matching
             {
-                var leadingTrivia = returnStatementSyntax.GetLeadingTrivia();
-                var trailingTrivia = returnStatementSyntax.GetTrailingTrivia();
-                // When we add multiple lines of code, we need the indentation and a newline
-                var leadingTriviaMiddle = leadingTrivia.LastOrDefault(t => t.IsKind(SyntaxKind.WhitespaceTrivia));
-                var trailingTriviaMiddle = trailingTrivia.FirstOrDefault(t => t.IsKind(SyntaxKind.EndOfLineTrivia));
-                // If we don't find a newline, just guess that LF is used. Will likely work anyway.
-                if (trailingTriviaMiddle == default) trailingTriviaMiddle = SyntaxFactory.LineFeed; 
-                
-                
-                switch (returnStatementSyntax.Expression)
+                // return true/false/variableName
+                case IdentifierNameSyntax:
+                case LiteralExpressionSyntax:
+                case null:
+                    node = node.ReplaceNode(returnStatementSyntax,
+                        SyntaxFactory.ReturnStatement()
+                            .WithLeadingTrivia(leadingTrivia).WithTrailingTrivia(trailingTrivia));
+                    break;
+                // case "Task.FromResult([Identifier or literal])": (non async method)
+                // TODO: consider rewriting to async method if CS1998 is disabled
+                case InvocationExpressionSyntax
                 {
-                    // return true/false/variableName
-                    case IdentifierNameSyntax:
-                    case LiteralExpressionSyntax:
-                    case null:
-                        node = node.ReplaceNode(returnStatementSyntax,
-                            SyntaxFactory.ReturnStatement()
-                                .WithLeadingTrivia(leadingTrivia).WithTrailingTrivia(trailingTrivia));
-                        break;
-                    // case "Task.FromResult(...)":
-                    case InvocationExpressionSyntax
+                    Expression: MemberAccessExpressionSyntax
+                    {
+                        Expression: IdentifierNameSyntax { Identifier: {Text: "Task" } },
+                        Name: { Identifier: {Text: "FromResult"}}
+                    },
+                    ArgumentList: { Arguments: [{ Expression: IdentifierNameSyntax or LiteralExpressionSyntax }] }
+                }:
+                    node = node.ReplaceNode(returnStatementSyntax,
+                        SyntaxFactory.ReturnStatement(SyntaxFactory.ParseExpression(" Task.CompletedTask"))
+                            .WithLeadingTrivia(leadingTrivia).WithTrailingTrivia(trailingTrivia));
+                    break;
+                // case "Task.FromResult(anything else)": (non async method)
+                // TODO: consider rewriting to async method if CS1998 is disabled
+                case InvocationExpressionSyntax
+                {
+                    Expression: MemberAccessExpressionSyntax
+                    {
+                        Expression: IdentifierNameSyntax { Identifier: {Text: "Task" } },
+                        Name: { Identifier: {Text: "FromResult"}}
+                    },
+                    ArgumentList: { Arguments: {Count: 1} } 
+                }:
+                    node = node.WithStatements(node.Statements.ReplaceRange(returnStatementSyntax,
+                        new StatementSyntax[]
+                    {
+                        SyntaxFactory.ExpressionStatement((returnStatementSyntax.Expression as InvocationExpressionSyntax)!.ArgumentList.Arguments.First().Expression)
+                            .WithLeadingTrivia(leadingTrivia).WithTrailingTrivia(trailingTriviaMiddle),
+
+                        SyntaxFactory.ReturnStatement(SyntaxFactory.ParseExpression(" Task.CompletedTask"))
+                            .WithLeadingTrivia(leadingTriviaMiddle).WithTrailingTrivia(trailingTrivia),
+                    }));
+                    break;
+                // case "await Task.FromResult(...)":
+                // Assume we need an await to silence CS1998 and rewrite to 
+                // await Task.CompletedTask; return;
+                // Could be dropped if we ignore CS1998
+                case AwaitExpressionSyntax
+                {
+                    Expression: InvocationExpressionSyntax
                     {
                         Expression: MemberAccessExpressionSyntax
                         {
                             Expression: IdentifierNameSyntax { Identifier: {Text: "Task" } },
                             Name: { Identifier: {Text: "FromResult"}}
                         },
-                        ArgumentList: { Arguments: { Count: 1 } }
-                    }:
-                        node = node.ReplaceNode(returnStatementSyntax,
-                            SyntaxFactory.ReturnStatement(SyntaxFactory.ParseExpression(" Task.CompletedTask"))
-                                .WithLeadingTrivia(leadingTrivia).WithTrailingTrivia(trailingTrivia));
-                        break;
-                    // case "await Task.FromResult(...)":
-                    // Assume we need an await to silence CS1998 and rewrite to 
-                    // await Task.CompletedTask; return;
-                    // Could be dropped if we ignore CS1998
-                    case AwaitExpressionSyntax
+                        ArgumentList: { Arguments:  [{Expression: IdentifierNameSyntax or LiteralExpressionSyntax}]}
+                    }
+                }:
+                    node = node.WithStatements(node.Statements.ReplaceRange(returnStatementSyntax, new StatementSyntax[]
+                    { 
+                        // Uncomment if cs1998 isn't disabled
+                        // SyntaxFactory.ParseStatement("await Task.CompletedTask;")
+                        //     .WithLeadingTrivia(leadingTrivia).WithTrailingTrivia(trailingTriviaMiddle),
+                        // SyntaxFactory.ReturnStatement()
+                        //     .WithLeadingTrivia(leadingTriviaMiddle).WithTrailingTrivia(trailingTrivia),
+
+                        SyntaxFactory.ReturnStatement()
+                            .WithLeadingTrivia(leadingTrivia).WithTrailingTrivia(trailingTrivia),
+
+                    }));
+                    break;
+                // If nothing matches, just move the return; statement after the existing return value
+                // eg: return await FunctionCall();
+                // => 
+                // await FunctionCall();
+                // return;
+                default:
+                    node = node.WithStatements(node.Statements.ReplaceRange(returnStatementSyntax,
+                        new StatementSyntax[]
                     {
-                        Expression: InvocationExpressionSyntax
-                        {
-                            Expression: MemberAccessExpressionSyntax
-                            {
-                                Expression: IdentifierNameSyntax { Identifier: {Text: "Task" } },
-                                Name: { Identifier: {Text: "FromResult"}}
-                            },
-                            ArgumentList: { Arguments:  [{Expression: IdentifierNameSyntax or LiteralExpressionSyntax}]}
-                        }
-                    }:
-                        node = node.WithStatements(node.Statements.ReplaceRange(returnStatementSyntax, new StatementSyntax[]
-                        { 
-                            // Uncomment if cs1998 isn't disabled
-                            // SyntaxFactory.ParseStatement("await Task.CompletedTask;")
-                            //     .WithLeadingTrivia(leadingTrivia).WithTrailingTrivia(trailingTriviaMiddle),
+                        SyntaxFactory.ExpressionStatement(returnStatementSyntax.Expression)
+                            .WithLeadingTrivia(leadingTrivia).WithTrailingTrivia(trailingTriviaMiddle),
 
-                            SyntaxFactory.ReturnStatement()
-                                .WithLeadingTrivia(leadingTriviaMiddle).WithTrailingTrivia(trailingTrivia),
-
-                        }));
-                        break;
-                    // Just add move the return; statement after the existing return value
-                    default:
-                        node = node.WithStatements(node.Statements.ReplaceRange(returnStatementSyntax,
-                            new StatementSyntax[]
-                        {
-                            SyntaxFactory.ExpressionStatement(returnStatementSyntax.Expression)
-                                .WithLeadingTrivia(leadingTrivia).WithTrailingTrivia(trailingTriviaMiddle),
-
-                            SyntaxFactory.ReturnStatement()
-                                .WithLeadingTrivia(leadingTriviaMiddle).WithTrailingTrivia(trailingTrivia),
-                        }));
-                        break;
-                }
+                        SyntaxFactory.ReturnStatement()
+                            .WithLeadingTrivia(leadingTriviaMiddle).WithTrailingTrivia(trailingTrivia),
+                    }));
+                    break;
             }
-
-            return base.VisitBlock(node);
         }
+
+        return base.VisitBlock(node);
     }
 }
