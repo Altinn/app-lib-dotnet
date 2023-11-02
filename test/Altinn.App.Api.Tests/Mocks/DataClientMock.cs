@@ -280,7 +280,7 @@ namespace App.IntegrationTests.Mocks.Services
             throw new NotImplementedException();
         }
 
-        public async Task<DataElement> InsertBinaryData(string instanceId, string dataType, string contentType, string filename, Stream stream, string? generatedFromTask = null)
+        public async Task<DataElement> InsertBinaryData(string instanceId, string dataType, string contentType, string? filename, Stream stream, string? generatedFromTask = null)
         {
             Application application = await _appMetadata.GetApplicationMetadata();
             var instanceIdParts = instanceId.Split("/");

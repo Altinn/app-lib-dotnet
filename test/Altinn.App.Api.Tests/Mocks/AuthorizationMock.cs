@@ -19,9 +19,9 @@ namespace Altinn.App.Api.Tests.Mocks
             return Task.FromResult(isvalid);
         }
 
-        public async Task<bool> AuthorizeAction(AppIdentifier appIdentifier, InstanceIdentifier instanceIdentifier, ClaimsPrincipal user, string action, string? taskId = null)
+        public Task<bool> AuthorizeAction(AppIdentifier appIdentifier, InstanceIdentifier instanceIdentifier, ClaimsPrincipal user, string action, string? taskId = null)
         {
-            throw new NotImplementedException();
+            return Task.FromException<bool>(new NotImplementedException());
         }
     }
 }

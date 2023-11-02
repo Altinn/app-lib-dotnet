@@ -40,11 +40,7 @@ public class StatelessPagesControllerTests
                     layoutSetId,
                     currentpage,
                     dataTypeId,
-                    new DummyModel()
-                    {
-                        Name = "test",
-                        Age = 20
-                    }
+                    It.Is<DummyModel>(m => m.Age == 20 && m.Name == "test")
                 ))
             .Returns(
                 Task.FromResult(
