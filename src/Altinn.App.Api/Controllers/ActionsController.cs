@@ -1,7 +1,6 @@
 #nullable enable
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
-using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Internal.Instances;
@@ -51,7 +50,7 @@ public class ActionsController: ControllerBase
     /// <param name="actionRequest">user action request</param>
     /// <returns><see cref="UserActionResponse"/></returns>
     [HttpPost]
-    [Authorize(Policy = AuthzConstants.POLICY_INSTANCE_READ)]
+    [Authorize]
     [ProducesResponseType(typeof(UserActionResponse), 200)]
     [ProducesResponseType(typeof(ProblemDetails), 400)]
     [ProducesResponseType(401)]
@@ -95,7 +94,7 @@ public class ActionsController: ControllerBase
         var authorized = await _authorization.AuthorizeAction(new AppIdentifier(org, app), new InstanceIdentifier(instanceOwnerPartyId, instanceGuid), HttpContext.User, action, instance.Process?.CurrentTask?.ElementId);
         if (!authorized)
         {
-            return Unauthorized();
+            return Forbid();
         }
 
         UserActionContext userActionContext = new UserActionContext(instance, userId.Value, actionRequest.ButtonId, actionRequest.Metadata);
