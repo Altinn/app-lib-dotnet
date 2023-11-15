@@ -116,13 +116,21 @@ namespace Altinn.App.Api.Controllers
             await _prefillService.PrefillDataModel(owner.PartyId, dataType, appModel);
 
             Instance virtualInstance = new Instance() { InstanceOwner = owner };
-            foreach (var dataProcessor in _dataProcessors)
-            {
-                _logger.LogInformation("ProcessDataRead for {modelType} using {dataProcesor}", appModel.GetType().Name, dataProcessor.GetType().Name);
-                await dataProcessor.ProcessDataRead(virtualInstance, null, appModel);
-            }
+            await ProcessAllDataWrite(virtualInstance, appModel);
 
             return Ok(appModel);
+        }
+
+        private async Task ProcessAllDataWrite(Instance virtualInstance, object appModel)
+        {
+            foreach (var dataProcessor in _dataProcessors)
+            {
+                _logger.LogInformation(
+                    "ProcessDataRead for {modelType} using {dataProcesor}", 
+                    appModel.GetType().Name,
+                    dataProcessor.GetType().Name);
+                await dataProcessor.ProcessDataRead(virtualInstance, null, appModel);
+            }
         }
 
         /// <summary>
@@ -152,14 +160,8 @@ namespace Altinn.App.Api.Controllers
             }
 
             object appModel = _appModel.Create(classRef);
-
             var virtualInstance = new Instance();
-
-            foreach (var dataProcessor in _dataProcessors)
-            {
-                _logger.LogInformation("ProcessDataRead for {modelType} using {dataProcesor}", appModel.GetType().Name, dataProcessor.GetType().Name);
-                await dataProcessor.ProcessDataRead(virtualInstance, null, appModel);
-            }
+            await ProcessAllDataWrite(virtualInstance, appModel);
 
             return Ok(appModel);
         }

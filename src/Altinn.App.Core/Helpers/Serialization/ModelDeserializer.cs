@@ -69,7 +69,7 @@ namespace Altinn.App.Core.Helpers.Serialization
             MultipartSection? firstSection = await reader.ReadNextSectionAsync();
             if (firstSection?.ContentDisposition?.Contains("name=\"dataModel\"") != true)
             {
-                return ModelDeserializerResult.FromError("First entry in mulipart serialization must have name=\"dataModel\"");
+                return ModelDeserializerResult.FromError("First entry in multipart serialization must have name=\"dataModel\"");
             }
             var modelResult = await DeserializeJsonAsync(firstSection.Body);
             if (modelResult.HasError)
@@ -83,12 +83,12 @@ namespace Altinn.App.Core.Helpers.Serialization
             {
                 if (secondSection?.ContentDisposition?.Contains("name=\"previousValues\"") != true)
                 {
-                    return ModelDeserializerResult.FromError("First entry in mulipart serialization must have name=\"dataModel\"");
+                    return ModelDeserializerResult.FromError("Second entry in multipart serialization must have name=\"previousValues\"");
                 }
                 reportedChanges = await System.Text.Json.JsonSerializer.DeserializeAsync<Dictionary<string, string?>>(secondSection.Body);
                 if (await reader.ReadNextSectionAsync() != null)
                 {
-                    return ModelDeserializerResult.FromError("Multipart request had more than 2 elements");
+                    return ModelDeserializerResult.FromError("Multipart request had more than 2 elements. Only \"dataModel\" and the optional \"previousValues\" are supported.");
                 }
             }
             return ModelDeserializerResult.FromSuccess(modelResult.Model, reportedChanges);
