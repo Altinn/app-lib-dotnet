@@ -110,7 +110,7 @@ namespace Altinn.App.Core.Helpers.Serialization
             {
                 _logger.LogError(ex, "Unexpected exception when attempting to deserialize JSON into '{modelType}'", _modelType);
                 return ModelDeserializerResult.FromError($"Unexpected exception when attempting to deserialize JSON into '{_modelType}'");
-            };
+            }
 
         }
 
