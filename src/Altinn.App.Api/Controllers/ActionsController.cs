@@ -103,12 +103,11 @@ public class ActionsController: ControllerBase
 
         if (!result.Success)
         {
-            Response.StatusCode = HttpContext.Response.StatusCode = 400;
-            return new UserActionResponse()
+            return  new BadRequestObjectResult(new UserActionResponse()
             {
                 FrontendActions = result.FrontendActions,
                 ValidationIssues = result.ValidationIssues
-            };
+            });
         }
 
         return new OkObjectResult(new UserActionResponse()
