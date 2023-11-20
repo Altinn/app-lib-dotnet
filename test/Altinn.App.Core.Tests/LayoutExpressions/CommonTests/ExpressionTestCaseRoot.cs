@@ -1,5 +1,6 @@
 #nullable enable
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
 using Altinn.App.Core.Configuration;
@@ -46,7 +47,7 @@ public class ExpressionTestCaseRoot
     public LayoutModel ComponentModel { get; set; } = default!;
 
     [JsonPropertyName("dataModel")]
-    public JsonElement? DataModel { get; set; }
+    public JsonObject? DataModel { get; set; }
 
     [JsonPropertyName("frontendSettings")]
     public FrontEndSettings? FrontEndSettings { get; set; }
@@ -79,7 +80,7 @@ public class ComponentContextForTestSpec
 
     public ComponentContext ToContext(LayoutModel model)
     {
-        return new ComponentContext(model.GetComponent(CurrentPageName, ComponentId), RowIndices);
+        return new ComponentContext(model.GetComponent(CurrentPageName, ComponentId), RowIndices, null);
     }
 
     public static ComponentContextForTestSpec FromContext(ComponentContext context)

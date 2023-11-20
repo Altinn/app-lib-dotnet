@@ -27,6 +27,11 @@ public interface IDataModelAccessor
     int? GetModelDataCount(string key, ReadOnlySpan<int> indicies = default);
 
     /// <summary>
+    /// Get all of the resoved keys (including all possible indexes) from a data model key
+    /// </summary>
+    string[] GetResolvedKeys(string key);
+
+    /// <summary>
     /// Return a full dataModelBiding from a context aware binding by adding indicies
     /// </summary>
     /// <example>
@@ -39,12 +44,33 @@ public interface IDataModelAccessor
     /// <summary>
     /// Remove a value from the wrapped datamodel
     /// </summary>
-    void RemoveField(string key);
+    void RemoveField(string key, RowRemovalOption rowRemovalOption);
 
     /// <summary>
     /// Verify that a Key is a valid lookup for the datamodel 
     /// </summary>
     bool VerifyKey(string key);
+}
+
+/// <summary>
+/// Option for how to handle row removal
+/// </summary>
+public enum RowRemovalOption
+{
+    /// <summary>
+    /// Remove the row from the data model
+    /// </summary>
+    DeleteRow,
+
+    /// <summary>
+    /// Set the row to null, used to preserve row indices
+    /// </summary>
+    SetToNull,
+
+    /// <summary>
+    /// Ignore row removal
+    /// </summary>
+    Ignore
 }
 
 

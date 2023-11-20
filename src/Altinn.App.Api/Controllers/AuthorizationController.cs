@@ -1,3 +1,5 @@
+#nullable enable
+
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Auth;
@@ -37,6 +39,7 @@ namespace Altinn.App.Api.Controllers
         /// Gets current party by reading cookie value and validating.
         /// </summary>
         /// <returns>Party id for selected party. If invalid, partyId for logged in user is returned.</returns>
+        [Authorize]
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         [HttpGet("{org}/{app}/api/authorization/parties/current")]
         public async Task<ActionResult> GetCurrentParty(bool returnPartyObject = false)
@@ -70,7 +73,7 @@ namespace Altinn.App.Api.Controllers
                 }
             }
 
-            string cookieValue = Request.Cookies[_settings.GetAltinnPartyCookieName];
+            string? cookieValue = Request.Cookies[_settings.GetAltinnPartyCookieName];
             if (!int.TryParse(cookieValue, out int partyIdFromCookie))
             {
                 partyIdFromCookie = 0;

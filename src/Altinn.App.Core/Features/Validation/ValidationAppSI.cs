@@ -1,4 +1,6 @@
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Helpers.DataModel;
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
@@ -227,36 +229,56 @@ namespace Altinn.App.Core.Features.Validation
                 object data = await _dataClient.GetFormData(
                     instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, Guid.Parse(dataElement.Id));
 
-                if (_appSettings.RemoveHiddenDataPreview)
+                LayoutEvaluatorState? evaluationState = null;
+
+                // Remove hidden data before validation
+                if (_appSettings.RequiredValidation || _appSettings.ExpressionValidation)
                 {
+
                     var layoutSet = _appResourcesService.GetLayoutSetForTask(dataType.TaskId);
-                    var evaluationState = await _layoutEvaluatorStateInitializer.Init(instance, data, layoutSet?.Id);
-                    // Remove hidden data before validation
-                    LayoutEvaluator.RemoveHiddenData(evaluationState);
-                    // Evaluate expressions in layout and validate that all required data is included and that maxLength
-                    // is respected on groups
-                    var layoutErrors = LayoutEvaluator.RunLayoutValidationsForRequired(evaluationState, dataElement.Id);
+                    evaluationState = await _layoutEvaluatorStateInitializer.Init(instance, data, layoutSet?.Id);
+                    LayoutEvaluator.RemoveHiddenData(evaluationState, RowRemovalOption.SetToNull);
+                }
+
+                // Evaluate expressions in layout and validate that all required data is included and that maxLength
+                // is respected on groups
+                if (_appSettings.RequiredValidation)
+                {
+                    var layoutErrors = LayoutEvaluator.RunLayoutValidationsForRequired(evaluationState!, dataElement.Id);
                     messages.AddRange(layoutErrors);
                 }
 
-                // run Standard mvc validation using the System.ComponentModel.DataAnnotations
-                ModelStateDictionary validationResults = new ModelStateDictionary();
+                // Run expression validations
+                if (_appSettings.ExpressionValidation)
+                {
+                    var expressionErrors = ExpressionValidator.Validate(dataType.Id, _appResourcesService, new DataModel(data), evaluationState!, _logger);
+                    messages.AddRange(expressionErrors);
+                }
+
+                // Run Standard mvc validation using the System.ComponentModel.DataAnnotations
+                ModelStateDictionary dataModelValidationResults = new ModelStateDictionary();
                 var actionContext = new ActionContext(
                     _httpContextAccessor.HttpContext,
                     new Microsoft.AspNetCore.Routing.RouteData(),
                     new ActionDescriptor(),
-                    validationResults);
+                    dataModelValidationResults);
                 ValidationStateDictionary validationState = new ValidationStateDictionary();
                 _objectModelValidator.Validate(actionContext, validationState, null, data);
 
-                // Call custom validation from the IInstanceValidator
-                await _instanceValidator.ValidateData(data, validationResults);
-
-                // Add the validation messages from System.ComponentModel.DataAnnotations and IInstanceValidator to the return list
-                if (!validationResults.IsValid)
+                if (!dataModelValidationResults.IsValid)
                 {
-                    messages.AddRange(MapModelStateToIssueList(actionContext.ModelState, instance, dataElement.Id, data.GetType()));
+                    messages.AddRange(MapModelStateToIssueList(actionContext.ModelState, ValidationIssueSources.ModelState, instance, dataElement.Id, data.GetType()));
                 }
+
+                // Call custom validation from the IInstanceValidator
+                ModelStateDictionary customValidationResults = new ModelStateDictionary();
+                await _instanceValidator.ValidateData(data, customValidationResults);
+
+                if (!customValidationResults.IsValid)
+                {
+                    messages.AddRange(MapModelStateToIssueList(customValidationResults, ValidationIssueSources.Custom, instance, dataElement.Id, data.GetType()));
+                }
+
             }
 
             return messages;
@@ -264,6 +286,7 @@ namespace Altinn.App.Core.Features.Validation
 
         private List<ValidationIssue> MapModelStateToIssueList(
             ModelStateDictionary modelState,
+            string source,
             Instance instance,
             string dataElementId,
             Type modelType)
@@ -283,7 +306,7 @@ namespace Altinn.App.Core.Features.Validation
                         {
                             InstanceId = instance.Id,
                             DataElementId = dataElementId,
-                            Source = ValidationIssueSources.ModelState,
+                            Source = source,
                             Code = severityAndMessage.Message,
                             Field = ModelKeyToField(modelKey, modelType)!,
                             Severity = severityAndMessage.Severity,

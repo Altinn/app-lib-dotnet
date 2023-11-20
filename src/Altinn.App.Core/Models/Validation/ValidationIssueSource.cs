@@ -20,5 +20,15 @@ namespace Altinn.App.Core.Models.Validation
         /// Required field validation
         /// </summary>
         public static readonly string Required = nameof(Required);
+
+        /// <summary>
+        /// Required field validation
+        /// </summary>
+        public static readonly string Custom = nameof(Custom);
+
+        /// <summary>
+        /// Expression validation
+        /// </summary>
+        public static readonly string Expression = nameof(Expression);
     }
 }

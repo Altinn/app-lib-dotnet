@@ -1,5 +1,6 @@
 #nullable enable
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.DataModel;
@@ -8,6 +9,7 @@ using FluentAssertions;
 
 using Newtonsoft.Json;
 using Xunit;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Altinn.App.Core.Tests.LayoutExpressions.CSharpTests;
 
@@ -96,8 +98,8 @@ public class TestDataModel
         modelHelper.GetModelData("friends.name.value", new int[] { 1 }).Should().Be("Dolly Duck");
 
         // Run the same tests with JsonDataModel
-        using var doc = JsonDocument.Parse(System.Text.Json.JsonSerializer.Serialize(model));
-        modelHelper = new JsonDataModel(doc.RootElement);
+        var doc = JsonSerializer.Deserialize<JsonObject>(JsonSerializer.Serialize(model));
+        modelHelper = new JsonDataModel(doc);
         modelHelper.GetModelData("friends.name.value", default).Should().BeNull();
         modelHelper.GetModelData("friends[0].name.value", default).Should().Be("Donald Duck");
         modelHelper.GetModelData("friends.name.value", new int[] { 0 }).Should().Be("Donald Duck");
@@ -176,8 +178,8 @@ public class TestDataModel
         modelHelper.GetModelDataCount("friends.friends", new int[] { 1 }).Should().Be(1);
 
         // Run the same tests with JsonDataModel
-        using var doc = JsonDocument.Parse(System.Text.Json.JsonSerializer.Serialize(model));
-        modelHelper = new JsonDataModel(doc.RootElement);
+        var doc = JsonSerializer.Deserialize<JsonObject>(JsonSerializer.Serialize(model));
+        modelHelper = new JsonDataModel(doc);
         modelHelper.GetModelData("friends[1].friends[0].name.value", default).Should().Be("Onkel Skrue");
         modelHelper.GetModelData("friends[1].friends.name.value", new int[] { 0, 0 }).Should().BeNull();
         modelHelper.GetModelData("friends[1].friends.name.value", new int[] { 1, 0 }).Should().BeNull("context indexes should not be used after literal index is used");
@@ -226,23 +228,139 @@ public class TestDataModel
         };
         IDataModelAccessor modelHelper = new DataModel(model);
         model.Id.Should().Be(2);
-        modelHelper.RemoveField("id");
+        modelHelper.RemoveField("id", RowRemovalOption.SetToNull);
         model.Id.Should().Be(default);
 
         model.Name.Value.Should().Be("Ivar");
-        modelHelper.RemoveField("name");
+        modelHelper.RemoveField("name", RowRemovalOption.SetToNull);
         model.Name.Should().BeNull();
 
         model.Friends.First().Name!.Value.Should().Be("Første venn");
-        modelHelper.RemoveField("friends[0].name.value");
+        modelHelper.RemoveField("friends[0].name.value", RowRemovalOption.SetToNull);
         model.Friends.First().Name!.Value.Should().BeNull();
-        modelHelper.RemoveField("friends[0].name");
+        modelHelper.RemoveField("friends[0].name", RowRemovalOption.SetToNull);
         model.Friends.First().Name.Should().BeNull();
         model.Friends.First().Age.Should().Be(1235);
 
         model.Friends.First().Friends!.First().Age.Should().Be(233);
-        modelHelper.RemoveField("friends[0].friends");
+        modelHelper.RemoveField("friends[0].friends", RowRemovalOption.SetToNull);
         model.Friends.First().Friends.Should().BeNull();
+    }
+
+    [Fact]
+    public void TestRemoveRows()
+    {
+        var model = new Model()
+        {
+            Id = 2,
+            Name = new()
+            {
+                Value = "Per"
+            },
+            Friends = new List<Friend>
+            {
+                new()
+                {
+                    Name = new()
+                    {
+                        Value = "Første venn"
+                    },
+                    Age = 1235,
+                    Friends = new List<Friend>
+                    {
+                        new()
+                        {
+                            Name = new()
+                            {
+                                Value = "Første venn sin første venn",
+                            },
+                            Age = 233
+                        },
+                        new()
+                        {
+                            Name = new()
+                            {
+                                Value = "Første venn sin andre venn",
+                            },
+                            Age = 233
+                        },
+                        new()
+                        {
+                            Name = new()
+                            {
+                                Value = "Første venn sin tredje venn",
+                            },
+                            Age = 233
+                        }
+                    }
+                },
+                new()
+                {
+                    Name = new()
+                    {
+                        Value = "Andre venn"
+                    },
+                    Age = 1235,
+                    Friends = new List<Friend>
+                    {
+                        new()
+                        {
+                            Name = new()
+                            {
+                                Value = "Andre venn sin venn",
+                            },
+                            Age = 233
+                        }
+                    }
+                },
+                new()
+                {
+                    Name = new()
+                    {
+                        Value = "Tredje venn"
+                    },
+                    Age = 1235,
+                    Friends = new List<Friend>
+                    {
+                        new()
+                        {
+                            Name = new()
+                            {
+                                Value = "Tredje venn sin venn",
+                            },
+                            Age = 233
+                        }
+                    }
+                }
+            }
+        };
+        var serializedModel = System.Text.Json.JsonSerializer.Serialize(model);
+
+        // deleteRows = false
+        var model1 = System.Text.Json.JsonSerializer.Deserialize<Model>(serializedModel)!;
+        IDataModelAccessor modelHelper1 = new DataModel(model1);
+
+        modelHelper1.RemoveField("friends[0].friends[0]", RowRemovalOption.SetToNull);
+        model1.Friends![0].Friends![0].Should().BeNull();
+        model1.Friends![0].Friends!.Count.Should().Be(3);
+        model1.Friends[0].Friends![1].Name!.Value.Should().Be("Første venn sin andre venn");
+
+        modelHelper1.RemoveField("friends[1]", RowRemovalOption.SetToNull);
+        model1.Friends[1].Should().BeNull();
+        model1.Friends.Count.Should().Be(3);
+        model1.Friends[2].Name!.Value.Should().Be("Tredje venn");
+
+        // deleteRows = true
+        var model2 = System.Text.Json.JsonSerializer.Deserialize<Model>(serializedModel)!;
+        IDataModelAccessor modelHelper2 = new DataModel(model2);
+
+        modelHelper2.RemoveField("friends[0].friends[0]", RowRemovalOption.DeleteRow);
+        model2.Friends![0].Friends!.Count.Should().Be(2);
+        model2.Friends[0].Friends![0].Name!.Value.Should().Be("Første venn sin andre venn");
+
+        modelHelper2.RemoveField("friends[1]", RowRemovalOption.DeleteRow);
+        model2.Friends.Count.Should().Be(2);
+        model2.Friends[1].Name!.Value.Should().Be("Tredje venn");
     }
 
     [Fact]
@@ -315,11 +433,9 @@ public class TestDataModel
         // Don't add indicies if they are specified in input
         modelHelper.AddIndicies("friends[3]", new int[] { 0 }).Should().Be("friends[3]");
 
-        // Seccond index is ignored if the first is explicit
-        modelHelper.Invoking(m => m.AddIndicies("friends[0].friends", new int[] { 0, 3 }))
-            .Should()
-            .Throw<DataModelException>()
-            .WithMessage("Missmatch*");
+        // First index is ignored if it is explicit
+        modelHelper.AddIndicies("friends[0].friends", new int[] { 2, 3 }).Should().Be("friends[0].friends[3]");
+
     }
 
     [Fact]
@@ -340,16 +456,16 @@ public class TestDataModel
         var modelHelper = new DataModel(new Model());
 
         // real fields works, no error
-        modelHelper.RemoveField("id");
+        modelHelper.RemoveField("id", RowRemovalOption.SetToNull);
 
         // non-existant-fields works, no error
-        modelHelper.RemoveField("doesNotExist");
+        modelHelper.RemoveField("doesNotExist", RowRemovalOption.SetToNull);
 
         // non-existant-fields in subfield works, no error
-        modelHelper.RemoveField("friends.doesNotExist");
+        modelHelper.RemoveField("friends.doesNotExist", RowRemovalOption.SetToNull);
 
         // non-existant-fields in subfield works, no error
-        modelHelper.RemoveField("friends[0].doesNotExist");
+        modelHelper.RemoveField("friends[0].doesNotExist", RowRemovalOption.SetToNull);
     }
 }
 
@@ -376,7 +492,7 @@ public class Model
 
     [JsonProperty("friends")]
     [JsonPropertyName("friends")]
-    public IEnumerable<Friend>? Friends { get; set; }
+    public IList<Friend>? Friends { get; set; }
 }
 
 public class Name
@@ -399,5 +515,5 @@ public class Friend
     // Infinite recursion. Simple way for testing
     [JsonProperty("friends")]
     [JsonPropertyName("friends")]
-    public IEnumerable<Friend>? Friends { get; set; }
+    public IList<Friend>? Friends { get; set; }
 }

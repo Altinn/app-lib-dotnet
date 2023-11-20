@@ -90,6 +90,80 @@ public class DataModel : IDataModelAccessor
         return GetModelDataRecursive(keys, index + 1, elementAt, indicies.Length > 0 ? indicies.Slice(1) : indicies);
     }
 
+    /// <inheritdoc />
+    public string[] GetResolvedKeys(string key)
+    {
+        if (_serviceModel is null)
+        {
+            return new string[0];
+        }
+
+        var keyParts = key.Split('.');
+        return GetResolvedKeysRecursive(keyParts, _serviceModel);
+    }
+
+    internal static string JoinFieldKeyParts(string? currentKey, string? key)
+    {
+        if (String.IsNullOrEmpty(currentKey))
+        {
+            return key ?? "";
+        }
+        if (String.IsNullOrEmpty(key))
+        {
+            return currentKey ?? "";
+        }
+
+        return currentKey + "." + key;
+    }
+
+    private string[] GetResolvedKeysRecursive(string[] keyParts, object currentModel, int currentIndex = 0, string currentKey = "")
+    {
+        if (currentModel is null)
+        {
+            return new string[0];
+        }
+
+        if (currentIndex == keyParts.Length)
+        {
+            return new[] { currentKey };
+        }
+
+        var (key, groupIndex) = ParseKeyPart(keyParts[currentIndex]);
+        var prop = currentModel?.GetType().GetProperties().FirstOrDefault(p => IsPropertyWithJsonName(p, key));
+        var childModel = prop?.GetValue(currentModel);
+        if (childModel is null)
+        {
+            return new string[0];
+        }
+
+        if (childModel is not string && childModel is System.Collections.IEnumerable childModelList)
+        {
+            // childModel is an array
+            if (groupIndex is null)
+            {
+                // Index not specified, recurse on all elements
+                int i = 0;
+                var resolvedKeys = new List<string>();
+                foreach (var child in childModelList)
+                {
+                    var newResolvedKeys = GetResolvedKeysRecursive(keyParts, child, currentIndex + 1, JoinFieldKeyParts(currentKey, key + "[" + i + "]"));
+                    resolvedKeys.AddRange(newResolvedKeys);
+                    i++;
+                }
+                return resolvedKeys.ToArray();
+            }
+            else
+            {
+                // Index specified, recurse on that element
+                return GetResolvedKeysRecursive(keyParts, childModel, currentIndex + 1, JoinFieldKeyParts(currentKey, key + "[" + groupIndex + "]"));
+            }
+        }
+
+        // Otherwise, just recurse
+        return GetResolvedKeysRecursive(keyParts, childModel, currentIndex + 1, JoinFieldKeyParts(currentKey, key));
+
+    }
+
     private static object? GetElementAt(System.Collections.IEnumerable enumerable, int index)
     {
         // Return the element with index = groupIndex (could not find anohter way to get the n'th element in non generic enumerable)
@@ -104,7 +178,7 @@ public class DataModel : IDataModelAccessor
         return null;
     }
 
-    private static readonly Regex KeyPartRegex = new Regex(@"^(\w+)\[(\d+)\]?$");
+    private static readonly Regex KeyPartRegex = new Regex(@"^([^\s\[\]\.]+)\[(\d+)\]?$");
     internal static (string key, int? index) ParseKeyPart(string keypart)
     {
         if (keypart.Length == 0)
@@ -130,13 +204,15 @@ public class DataModel : IDataModelAccessor
         var prop = currentModelType.GetProperties().FirstOrDefault(p => IsPropertyWithJsonName(p, key));
         if (prop is null)
         {
-            throw new DataModelException($"Unknown model property {key} in {fullKey}");
+            throw new DataModelException($"Unknown model property {key} in {string.Join(".", ret)}.{key}");
         }
+
+        var currentIndex = groupIndex ?? (indicies.Length > 0 ? indicies[0] : null);
 
         var childType = prop.PropertyType;
         // Strings are enumerable in C#
         // Other enumerable types is treated as an collection
-        if (childType != typeof(string) && childType.IsAssignableTo(typeof(System.Collections.IEnumerable)))
+        if (childType != typeof(string) && childType.IsAssignableTo(typeof(System.Collections.IEnumerable)) && currentIndex is not null)
         {
             // Hope the first generic argument is tied to the IEnumerable implementation
             var childTypeEnumerableParameter = childType.GetGenericArguments().FirstOrDefault();
@@ -146,23 +222,13 @@ public class DataModel : IDataModelAccessor
                 throw new DataModelException("DataModels must have generic IEnumerable<> implementation for list");
             }
 
-            if (groupIndex is null)
+            ret.Add($"{key}[{currentIndex}]");
+            if (indicies.Length > 0)
             {
-                if (indicies.Length == 0)
-                {
-                    throw new DataModelException($"Missmatch in indicies in {fullKey} on key {key} and [{string.Join(", ", originalIndicies.ToArray())}]");
-                }
-                ret.Add($"{key}[{indicies[0]}]");
-            }
-            else
-            {
-                ret.Add($"{key}[{groupIndex}]");
-
-                // Ignore indexes after a literal index has been set
-                indicies = new int[] { groupIndex.Value };
+                indicies = indicies.Slice(1);
             }
 
-            AddIndiciesRecursive(ret, childTypeEnumerableParameter, keys.Slice(1), fullKey, indicies.Slice(1), originalIndicies);
+            AddIndiciesRecursive(ret, childTypeEnumerableParameter, keys.Slice(1), fullKey, indicies, originalIndicies);
         }
         else
         {
@@ -215,17 +281,11 @@ public class DataModel : IDataModelAccessor
     }
 
     /// <inheritdoc />
-    public void RemoveField(string key)
+    public void RemoveField(string key, RowRemovalOption rowRemovalOption)
     {
         var keys_split = key.Split('.');
         var keys = keys_split[0..^1];
         var (lastKey, lastGroupIndex) = ParseKeyPart(keys_split[^1]);
-
-        if (lastGroupIndex is not null)
-        {
-            // TODO: Consider implementing. Would be required for rowHidden on groups
-            throw new NotImplementedException($"Deleting elements in List is not implemented {key}");
-        }
 
         var containingObject = GetModelDataRecursive(keys, 0, _serviceModel, default);
         if (containingObject is null)
@@ -233,6 +293,7 @@ public class DataModel : IDataModelAccessor
             // Already empty field
             return;
         }
+
 
         if (containingObject is System.Collections.IEnumerable)
         {
@@ -246,9 +307,35 @@ public class DataModel : IDataModelAccessor
             return;
         }
 
-        var nullValue = property.PropertyType.GetTypeInfo().IsValueType ? Activator.CreateInstance(property.PropertyType) : null;
+        if (lastGroupIndex is not null)
+        {
+            // Remove row from list
+            var propertyValue = property.GetValue(containingObject);
+            if (propertyValue is not System.Collections.IList listValue)
+            {
+                throw new ArgumentException($"Tried to remove row {key}, ended in a non-list ({propertyValue?.GetType()})");
+            }
 
-        property.SetValue(containingObject, nullValue);
+            switch (rowRemovalOption)
+            {
+                case RowRemovalOption.DeleteRow:
+                    listValue.RemoveAt(lastGroupIndex.Value);
+                    break;
+                case RowRemovalOption.SetToNull:
+                    var genericType = listValue.GetType().GetGenericArguments().FirstOrDefault();
+                    var nullValue = genericType?.IsValueType == true ? Activator.CreateInstance(genericType) : null;
+                    listValue[lastGroupIndex.Value] = nullValue;
+                    break;
+                case RowRemovalOption.Ignore:
+                    return;
+            }
+        }
+        else
+        {
+            // Set property to null
+            var nullValue = property.PropertyType.GetTypeInfo().IsValueType ? Activator.CreateInstance(property.PropertyType) : null;
+            property.SetValue(containingObject, nullValue);
+        }
     }
 
     /// <inheritdoc />
