@@ -179,6 +179,6 @@ public class LookupAction : IUserAction
             return UserActionResult.SuccessResult();
         }
 
-        return UserActionResult.FailureResult();
+        return UserActionResult.FailureResult(new ActionError());
     }
 }

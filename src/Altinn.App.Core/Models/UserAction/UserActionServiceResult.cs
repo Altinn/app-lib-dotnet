@@ -21,12 +21,12 @@ namespace Altinn.App.Core.Models.UserAction
         /// <summary>
         /// Actions frontend should perform after action has been performed backend
         /// </summary>
-        public List<string>? FrontendActions { get; set; }
+        public List<FrontendAction>? FrontendActions { get; set; }
     
         /// <summary>
-        /// Validation issues that occured when processing action grouped by validation group
+        /// Error that occured when processing action
         /// </summary>
-        public Dictionary<string, List<ValidationIssue>> ValidationIssues { get; set; }
+        public ActionError? Error { get; set; }
 
         /// <summary>
         /// Creates a new instance of <see cref="UserActionServiceResult"/> with the provided parameters
@@ -38,10 +38,7 @@ namespace Altinn.App.Core.Models.UserAction
             Success = actionResult.Success;
             UpdatedDataModels = actionResult.UpdatedDataModels;
             FrontendActions = actionResult.FrontendActions;
-            ValidationIssues = new Dictionary<string, List<ValidationIssue>>()
-            {
-                { validationGroup, actionResult.ValidationIssues ?? new List<ValidationIssue>() }
-            };
+            Error = actionResult.Error;
         }
     }
 }

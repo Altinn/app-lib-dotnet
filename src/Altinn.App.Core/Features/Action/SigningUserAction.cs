@@ -59,7 +59,11 @@ public class SigningUserAction: IUserAction
             throw new ApplicationConfigException("Missing configuration for signing. Check that the task has a signature configuration and that the data types to sign are defined.");
         }
 
-        return UserActionResult.FailureResult();
+        return UserActionResult.FailureResult(new ActionError()
+        {
+            Code = "NoProcessTask",
+            Message = "Current task is not a process task."
+        });
     }
 
     private static List<DataElementSignature> GetDataElementSignatures(List<DataElement> dataElements, List<string> dataTypesToSign)

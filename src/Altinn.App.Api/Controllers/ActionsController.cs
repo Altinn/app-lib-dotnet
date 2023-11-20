@@ -103,17 +103,16 @@ public class ActionsController: ControllerBase
 
         if (!result.Success)
         {
-            return  new BadRequestObjectResult(new UserActionResponse()
+            return new BadRequestObjectResult(new UserActionResponse()
             {
                 FrontendActions = result.FrontendActions,
-                ValidationIssues = result.ValidationIssues
+                Error = result.Error
             });
         }
 
         return new OkObjectResult(new UserActionResponse()
         {
             FrontendActions = result.FrontendActions,
-            ValidationIssues = result.ValidationIssues,
             UpdatedDataModels = result.UpdatedDataModels
         });
     }

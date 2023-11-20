@@ -19,12 +19,12 @@ public class UserActionResult
     /// <summary>
     /// Actions for the frontend to perform after the user action has been handled
     /// </summary>
-    public List<string>? FrontendActions { get; set; }
+    public List<FrontendAction>? FrontendActions { get; set; }
     
     /// <summary>
     /// Validation issues that should be displayed to the user
     /// </summary>
-    public List<ValidationIssue>? ValidationIssues { get; set; }
+    public ActionError? Error { get; set; }
     
     /// <summary>
     /// Creates a success result
@@ -32,13 +32,12 @@ public class UserActionResult
     /// <param name="frontendActions"></param>
     /// <param name="validationIssues"></param>
     /// <returns></returns>
-    public static UserActionResult SuccessResult(List<string>? frontendActions = null, List<ValidationIssue>? validationIssues = null)
+    public static UserActionResult SuccessResult(List<FrontendAction>? frontendActions = null)
     {
         var userActionResult = new UserActionResult
         {
             Success = true,
-            FrontendActions = frontendActions,
-            ValidationIssues = validationIssues
+            FrontendActions = frontendActions
         };
         return userActionResult;
     }
@@ -49,13 +48,13 @@ public class UserActionResult
     /// <param name="frontendActions"></param>
     /// <param name="validationIssues"></param>
     /// <returns></returns>
-    public static UserActionResult FailureResult(List<string>? frontendActions = null, List<ValidationIssue>? validationIssues = null)
+    public static UserActionResult FailureResult(ActionError error, List<FrontendAction>? frontendActions = null)
     {
         return new UserActionResult
         {
             Success = false,
             FrontendActions = frontendActions,
-            ValidationIssues = validationIssues
+            Error = error
         };
     }
     
