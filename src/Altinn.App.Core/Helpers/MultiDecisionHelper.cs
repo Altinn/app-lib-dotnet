@@ -6,7 +6,10 @@ using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Helpers;
 
-public class MultiDecisionHelper
+/// <summary>
+/// Helper class for multi decision requests.
+/// </summary>
+public static class MultiDecisionHelper
 {
     private const string XacmlResourceTaskId = "urn:altinn:task";
     private const string XacmlResourceEndId = "urn:altinn:end-event";
@@ -42,6 +45,14 @@ public class MultiDecisionHelper
         return jsonRequest;
     }
     
+    /// <summary>
+    /// Validate a multi decision result and returns a dictionary with the actions and the result.
+    /// </summary>
+    /// <param name="actions"></param>
+    /// <param name="results"></param>
+    /// <param name="user"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentNullException"></exception>
     public static Dictionary<string, bool> ValidatePdpMultiDecision(Dictionary<string, bool> actions, List<XacmlJsonResult> results, ClaimsPrincipal user)
     {
         if (results == null)
@@ -125,11 +136,11 @@ public class MultiDecisionHelper
         return resourcesCategories;
     }
 
-    private static (string InstanceId, string InstanceGuid, string Task, string InstanceOwnerPartyId, string Org, string App) GetInstanceProperties(Instance instance)
+    private static (string? InstanceId, string InstanceGuid, string? Task, string InstanceOwnerPartyId, string Org, string App) GetInstanceProperties(Instance instance)
     {
-        string instanceId = instance.Id.Contains('/') ? instance.Id : null;
+        string? instanceId = instance.Id.Contains('/') ? instance.Id : null;
         string instanceGuid = instance.Id.Contains('/') ? instance.Id.Split("/")[1] : instance.Id;
-        string task = instance.Process?.CurrentTask?.ElementId;
+        string? task = instance.Process?.CurrentTask?.ElementId;
         string instanceOwnerPartyId = instance.InstanceOwner.PartyId;
         string org = instance.Org;
         string app = instance.AppId.Split("/")[1];
@@ -176,6 +187,5 @@ public class MultiDecisionHelper
 
         return references;
     }
-    
     
 }
