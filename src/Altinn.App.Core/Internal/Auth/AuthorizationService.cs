@@ -86,12 +86,4 @@ public class AuthorizationService : IAuthorizationService
                || (authorizer.TaskId == taskId && authorizer.Action == null)
                || (authorizer.TaskId == taskId && authorizer.Action == action);
     }
-
-    private static bool IsAuthorizerForTaskAndActions(IUserActionAuthorizerProvider authorizer, string? taskId, List<string> actions)
-    {
-        return (authorizer.TaskId == null && authorizer.Action == null)
-               || (authorizer.TaskId == taskId && authorizer.Action == null)
-               || (authorizer.TaskId == null && actions.Contains(authorizer.Action!))
-               || (authorizer.TaskId == taskId && actions.Contains(authorizer.Action!));
-    }
 }

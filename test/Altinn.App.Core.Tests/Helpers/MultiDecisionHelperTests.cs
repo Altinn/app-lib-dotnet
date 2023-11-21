@@ -145,7 +145,7 @@ public class MultiDecisionHelperTests
             "reject"
         };
         Action act = () => MultiDecisionHelper.CreateMultiDecisionRequest(null, instance, actions);
-        act.Should().Throw<ArgumentNullException>();
+        act.Should().Throw<ArgumentNullException>().WithMessage("Value cannot be null. (Parameter 'user')");
     }
 
     [Fact]
@@ -190,6 +190,35 @@ public class MultiDecisionHelperTests
         };
         var result = MultiDecisionHelper.ValidatePdpMultiDecision(actions, response, GetClaims("501337"));
         result.Should().BeEquivalentTo(expected);
+    }
+    
+    [Fact]
+    public void ValidateDecisionResult_throws_ArgumentNullException_if_response_is_null()
+    {
+        var actions = new Dictionary<string, bool>()
+        {
+            { "read", false },
+            { "write", false },
+            { "complete", false },
+            { "lookup", false }
+        };
+        Action act = () => MultiDecisionHelper.ValidatePdpMultiDecision(actions, null, GetClaims("501337"));
+        act.Should().Throw<ArgumentNullException>().WithMessage("Value cannot be null. (Parameter 'results')");
+    }
+    
+    [Fact]
+    public void ValidateDecisionResult_throws_ArgumentNullException_if_user_is_null()
+    {
+        var response = GetXacmlJsonRespons("one-action-denied");
+        var actions = new Dictionary<string, bool>()
+        {
+            { "read", false },
+            { "write", false },
+            { "complete", false },
+            { "lookup", false }
+        };
+        Action act = () => MultiDecisionHelper.ValidatePdpMultiDecision(actions, response, null);
+        act.Should().Throw<ArgumentNullException>().WithMessage("Value cannot be null. (Parameter 'user')");
     }
 
     private ClaimsPrincipal GetClaims(string partyId)

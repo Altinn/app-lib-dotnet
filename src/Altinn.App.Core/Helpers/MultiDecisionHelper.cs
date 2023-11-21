@@ -25,10 +25,7 @@ public static class MultiDecisionHelper
     /// </summary>
     public static XacmlJsonRequestRoot CreateMultiDecisionRequest(ClaimsPrincipal user, Instance instance, List<string> actionTypes)
     {
-        if (user == null)
-        {
-            throw new ArgumentNullException(nameof(user));
-        }
+        ArgumentNullException.ThrowIfNull(user);
 
         XacmlJsonRequest request = new()
         {
@@ -55,10 +52,8 @@ public static class MultiDecisionHelper
     /// <exception cref="ArgumentNullException"></exception>
     public static Dictionary<string, bool> ValidatePdpMultiDecision(Dictionary<string, bool> actions, List<XacmlJsonResult> results, ClaimsPrincipal user)
     {
-        if (results == null)
-            throw new ArgumentNullException(nameof(results));
-        if (user == null)
-            throw new ArgumentNullException(nameof(user));
+        ArgumentNullException.ThrowIfNull(results);
+        ArgumentNullException.ThrowIfNull(user);
         foreach (XacmlJsonResult result in results.Where(r => DecisionHelper.ValidateDecisionResult(r, user)))
         {
             foreach (var attributes in result.Category.Select(c => c.Attribute))

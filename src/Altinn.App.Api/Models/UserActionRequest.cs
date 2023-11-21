@@ -1,3 +1,4 @@
+#nullable enable
 using System.Text.Json.Serialization;
 
 namespace Altinn.App.Api.Models;
@@ -22,5 +23,5 @@ public class UserActionRequest
     /// Additional metadata for the action
     /// </summary>
     [JsonPropertyName("metadata")]
-    public Dictionary<string, string> Metadata { get; set; }
+    public Dictionary<string, string>? Metadata { get; set; }
 }

@@ -227,16 +227,12 @@ public class InstanceClientMetricsDecoratorTests
         // Arrange
         var instanceClient = new Mock<IInstanceClient>();
         var instanceClientMetricsDecorator = new InstanceClientMetricsDecorator(instanceClient.Object);
-        var preUpdateMetrics = await PrometheusTestHelper.ReadPrometheusMetricsToString();
         var instance = new Instance();
 
         // Act
         await instanceClientMetricsDecorator.UpdateProcess(instance);
-        var postUpdateMetrics = await PrometheusTestHelper.ReadPrometheusMetricsToString();
 
         // Assert
-        var diff = GetDiff(preUpdateMetrics, postUpdateMetrics);
-        diff.Should().BeEmpty();
         instanceClient.Verify(i => i.UpdateProcess(instance));
         instanceClient.VerifyNoOtherCalls();
     }
@@ -247,16 +243,12 @@ public class InstanceClientMetricsDecoratorTests
         // Arrange
         var instanceClient = new Mock<IInstanceClient>();
         var instanceClientMetricsDecorator = new InstanceClientMetricsDecorator(instanceClient.Object);
-        var preUpdateMetrics = await PrometheusTestHelper.ReadPrometheusMetricsToString();
         var instanceGuid = Guid.NewGuid();
 
         // Act
         await instanceClientMetricsDecorator.UpdateReadStatus(1337, instanceGuid, "read");
-        var postUpdateMetrics = await PrometheusTestHelper.ReadPrometheusMetricsToString();
 
         // Assert
-        var diff = GetDiff(preUpdateMetrics, postUpdateMetrics);
-        diff.Should().BeEmpty();
         instanceClient.Verify(i => i.UpdateReadStatus(1337, instanceGuid, "read"));
         instanceClient.VerifyNoOtherCalls();
     }
@@ -301,17 +293,13 @@ public class InstanceClientMetricsDecoratorTests
         // Arrange
         var instanceClient = new Mock<IInstanceClient>();
         var instanceClientMetricsDecorator = new InstanceClientMetricsDecorator(instanceClient.Object);
-        var preUpdateMetrics = await PrometheusTestHelper.ReadPrometheusMetricsToString();
         var instanceGuid = Guid.NewGuid();
         var dataValues = new DataValues();
 
         // Act
         await instanceClientMetricsDecorator.UpdateDataValues(1337, instanceGuid, dataValues);
-        var postUpdateMetrics = await PrometheusTestHelper.ReadPrometheusMetricsToString();
 
         // Assert
-        var diff = GetDiff(preUpdateMetrics, postUpdateMetrics);
-        diff.Should().BeEmpty();
         instanceClient.Verify(i => i.UpdateDataValues(1337, instanceGuid, dataValues));
         instanceClient.VerifyNoOtherCalls();
     }

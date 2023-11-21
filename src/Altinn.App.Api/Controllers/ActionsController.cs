@@ -20,7 +20,6 @@ namespace Altinn.App.Api.Controllers;
 [Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/actions")]
 public class ActionsController: ControllerBase
 {
-    private readonly ILogger<ProcessController> _logger;
     private readonly IAuthorizationService _authorization;
     private readonly IInstanceClient _instanceClient;
     private readonly IUserActionService _userActionService;
@@ -32,9 +31,8 @@ public class ActionsController: ControllerBase
     /// <param name="authorization">The authorization service</param>
     /// <param name="instanceClient">The instance client</param>
     /// <param name="userActionService">The user action service</param>
-    public ActionsController(ILogger<ProcessController> logger, IAuthorizationService authorization, IInstanceClient instanceClient, IUserActionService userActionService)
+    public ActionsController(IAuthorizationService authorization, IInstanceClient instanceClient, IUserActionService userActionService)
     {
-        _logger = logger;
         _authorization = authorization;
         _instanceClient = instanceClient;
         _userActionService = userActionService;

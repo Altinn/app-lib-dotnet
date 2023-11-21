@@ -467,7 +467,7 @@ namespace Altinn.App.Api.Controllers
                     appProcessState.CurrentTask.Actions = new Dictionary<string, bool>();
                     List<AltinnAction> actions = new List<AltinnAction>() { new("read"), new("write") };
                     actions.AddRange(processTask.ExtensionElements?.TaskExtension?.AltinnActions ?? new List<AltinnAction>());
-                    var authDecisions = await AuthorizeActions(actions, instance, flowElement.Id);
+                    var authDecisions = await AuthorizeActions(actions, instance);
                     appProcessState.CurrentTask.Actions = authDecisions.Where(a => a.ActionType == ActionType.ProcessAction).ToDictionary(a => a.Id, a => a.Authorized);
                     appProcessState.CurrentTask.HasReadAccess = authDecisions.Single(a => a.Id == "read").Authorized;
                     appProcessState.CurrentTask.HasWriteAccess = authDecisions.Single(a => a.Id == "write").Authorized;
@@ -499,7 +499,7 @@ namespace Altinn.App.Api.Controllers
             return await _authorization.AuthorizeAction(new AppIdentifier(org, app), new InstanceIdentifier(instanceOwnerPartyId, instanceGuid), HttpContext.User, action, taskId);
         }
 
-        private async Task<List<UserAction>> AuthorizeActions(List<AltinnAction> actions, Instance instance, string? taskId = null)
+        private async Task<List<UserAction>> AuthorizeActions(List<AltinnAction> actions, Instance instance)
         {
             return await _authorization.AuthorizeActions(instance, HttpContext.User, actions);
         }

@@ -4,8 +4,11 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Process.Action;
+using Altinn.App.Core.Internal.Process.Elements;
+using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Register.Models;
+using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -267,5 +270,68 @@ public class AuthorizationServiceTests
         userActionAuthorizerOneMock.Verify(a => a.AuthorizeAction(It.IsAny<UserActionAuthorizerContext>()), Times.Once);
         userActionAuthorizerTwoMock.Verify(a => a.AuthorizeAction(It.IsAny<UserActionAuthorizerContext>()), Times.Once);
         userActionAuthorizerThreeMock.Verify(a => a.AuthorizeAction(It.IsAny<UserActionAuthorizerContext>()), Times.Once);
+    }
+
+    [Fact]
+    private async Task AuthorizeActions_returns_list_of_UserActions_with_auth_decisions()
+    {
+        // Input
+        Instance instance = new Instance();
+        ClaimsPrincipal user = new ClaimsPrincipal();
+        List<AltinnAction> actions = new List<AltinnAction>()
+        {
+            new AltinnAction("read"),
+            new AltinnAction("write"),
+            new AltinnAction("brew-coffee"),
+            new AltinnAction("drink-coffee", ActionType.UserAction),
+        };
+        var actionsStrings = new List<string>() { "read", "write", "brew-coffee", "drink-coffee" };
+        
+        // Arrange
+        Mock<IAuthorizationClient> authorizationClientMock = new Mock<IAuthorizationClient>();
+        authorizationClientMock.Setup(a => a.AuthorizeActions(instance, user, actionsStrings)).ReturnsAsync(new Dictionary<string, bool>()
+        {
+            {"read", true},
+            {"write", true},
+            {"brew-coffee", true},
+            {"drink-coffee", false}
+        });
+        
+        AuthorizationService authorizationService = new AuthorizationService(authorizationClientMock.Object, new List<IUserActionAuthorizerProvider>());
+        
+        // Act
+        List<UserAction> result = await authorizationService.AuthorizeActions(instance, user, actions);
+
+        List<UserAction> expected = new List<UserAction>()
+        {
+            new UserAction()
+            {
+                Id = "read",
+                ActionType = ActionType.ProcessAction,
+                Authorized = true
+            },
+            new UserAction()
+            {
+                Id = "write",
+                ActionType = ActionType.ProcessAction,
+                Authorized = true
+            },
+            new UserAction()
+            {
+                Id = "brew-coffee",
+                ActionType = ActionType.ProcessAction,
+                Authorized = true
+            },
+            new UserAction()
+            {
+                Id = "drink-coffee",
+                ActionType = ActionType.UserAction,
+                Authorized = false
+            }
+        };
+        // Assert
+        result.Should().BeEquivalentTo(expected);
+        authorizationClientMock.Verify(a => a.AuthorizeActions(instance, user, actionsStrings), Times.Once);
+        authorizationClientMock.VerifyNoOtherCalls();
     }
 }
