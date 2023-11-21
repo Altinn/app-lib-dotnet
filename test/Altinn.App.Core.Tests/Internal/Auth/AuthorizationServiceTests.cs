@@ -329,6 +329,7 @@ public class AuthorizationServiceTests
                 Authorized = false
             }
         };
+        
         // Assert
         result.Should().BeEquivalentTo(expected);
         authorizationClientMock.Verify(a => a.AuthorizeActions(instance, user, actionsStrings), Times.Once);
