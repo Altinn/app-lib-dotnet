@@ -240,7 +240,6 @@ public class MultiDecisionHelperTests
 
     private static string XacmlJsonRequestRootToString(XacmlJsonRequestRoot request)
     {
-        
         return JsonSerializer.Serialize(request, SerializerOptions);
     }
 
