@@ -220,8 +220,7 @@ public class AuthorizationServiceTests
         userActionAuthorizerThreeMock.Setup(a => a.AuthorizeAction(It.IsAny<UserActionAuthorizerContext>())).ReturnsAsync(false);
         IUserActionAuthorizerProvider userActionAuthorizerThreeProvider = new UserActionAuthorizerProvider("taskId3", "action3", userActionAuthorizerThreeMock.Object);
 
-        AuthorizationService authorizationService = new AuthorizationService(authorizationClientMock.Object,
-            new List<IUserActionAuthorizerProvider>() { userActionAuthorizerOneProvider, userActionAuthorizerTwoProvider, userActionAuthorizerThreeProvider });
+        AuthorizationService authorizationService = new AuthorizationService(authorizationClientMock.Object, new List<IUserActionAuthorizerProvider>() { userActionAuthorizerOneProvider, userActionAuthorizerTwoProvider, userActionAuthorizerThreeProvider });
 
         // Act
         bool result = await authorizationService.AuthorizeAction(appIdentifier, instanceIdentifier, user, action, taskId);
@@ -260,8 +259,7 @@ public class AuthorizationServiceTests
         userActionAuthorizerThreeMock.Setup(a => a.AuthorizeAction(It.IsAny<UserActionAuthorizerContext>())).ReturnsAsync(true);
         IUserActionAuthorizerProvider userActionAuthorizerThreeProvider = new UserActionAuthorizerProvider(null, null, userActionAuthorizerThreeMock.Object);
 
-        AuthorizationService authorizationService = new AuthorizationService(authorizationClientMock.Object,
-            new List<IUserActionAuthorizerProvider>() { userActionAuthorizerOneProvider, userActionAuthorizerTwoProvider, userActionAuthorizerThreeProvider });
+        AuthorizationService authorizationService = new AuthorizationService(authorizationClientMock.Object, new List<IUserActionAuthorizerProvider>() { userActionAuthorizerOneProvider, userActionAuthorizerTwoProvider, userActionAuthorizerThreeProvider });
 
         // Actπ
         bool result = await authorizationService.AuthorizeAction(appIdentifier, instanceIdentifier, user, action, taskId);
