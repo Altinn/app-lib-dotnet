@@ -4,6 +4,9 @@ using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 
 namespace Altinn.App.Core.Internal.Process.Elements
 {
+    /// <summary>
+    /// Defines an altinn action for a task
+    /// </summary>
     public class UserAction
     {
         /// <summary>

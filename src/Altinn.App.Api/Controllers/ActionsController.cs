@@ -27,7 +27,6 @@ public class ActionsController: ControllerBase
     /// <summary>
     /// Create new instance of the <see cref="ActionsController"/> class
     /// </summary>
-    /// <param name="logger"><see cref="ILogger{TCategoryName}"/> used for logging errors</param>
     /// <param name="authorization">The authorization service</param>
     /// <param name="instanceClient">The instance client</param>
     /// <param name="userActionService">The user action service</param>

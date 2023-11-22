@@ -8,15 +8,15 @@ public class ActionError
     /// <summary>
     /// Machine readable error code
     /// </summary>
-    public string Code { get; set; }
-    
+    public string Code { get; set; } = string.Empty;
+
     /// <summary>
     /// Human readable error message or text key
     /// </summary>
-    public string Message { get; set; }
+    public string Message { get; set; } = string.Empty;
     
     /// <summary>
     /// Error metadata
     /// </summary>
-    public Dictionary<string, string> Metadata { get; set; }
+    public Dictionary<string, string>? Metadata { get; set; }
 }

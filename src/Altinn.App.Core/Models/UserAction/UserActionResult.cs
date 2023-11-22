@@ -4,6 +4,9 @@ using Altinn.App.Core.Models.Validation;
 
 namespace Altinn.App.Core.Models.UserAction;
 
+/// <summary>
+/// Represents the result of a user action
+/// </summary>
 public class UserActionResult
 {
     /// <summary>
@@ -30,7 +33,6 @@ public class UserActionResult
     /// Creates a success result
     /// </summary>
     /// <param name="frontendActions"></param>
-    /// <param name="validationIssues"></param>
     /// <returns></returns>
     public static UserActionResult SuccessResult(List<FrontendAction>? frontendActions = null)
     {
@@ -45,8 +47,8 @@ public class UserActionResult
     /// <summary>
     /// Creates a failure result
     /// </summary>
+    /// <param name="error"></param>
     /// <param name="frontendActions"></param>
-    /// <param name="validationIssues"></param>
     /// <returns></returns>
     public static UserActionResult FailureResult(ActionError error, List<FrontendAction>? frontendActions = null)
     {

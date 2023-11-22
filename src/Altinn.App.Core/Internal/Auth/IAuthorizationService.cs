@@ -41,11 +41,9 @@ namespace Altinn.App.Core.Internal.Auth
         /// <summary>
         /// Check if the user is authorized to perform the given actions on the given instance.
         /// </summary>
-        /// <param name="appIdentifier"></param>
-        /// <param name="instanceIdentifier"></param>
+        /// <param name="instance"></param>
         /// <param name="user"></param>
         /// <param name="actions"></param>
-        /// <param name="taskId"></param>
         /// <returns>Dictionary with actions and the auth decision</returns>
         Task<List<UserAction>> AuthorizeActions(Instance instance, ClaimsPrincipal user, List<AltinnAction> actions);
     }

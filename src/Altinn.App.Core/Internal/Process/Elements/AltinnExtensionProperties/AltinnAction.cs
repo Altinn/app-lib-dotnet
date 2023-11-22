@@ -14,6 +14,7 @@ namespace Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties
         /// </summary>
         public AltinnAction()
         {
+            Value = string.Empty;
             ActionType = ActionType.ProcessAction;
         }
         /// <summary>
@@ -47,7 +48,7 @@ namespace Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties
         /// Gets or sets the type of action
         /// </summary>
         [XmlAttribute("type", Namespace = "http://altinn.no/process")]
-        public ActionType ActionType { get; set; } = ActionType.ProcessAction;
+        public ActionType ActionType { get; set; }
     }
     
     /// <summary>

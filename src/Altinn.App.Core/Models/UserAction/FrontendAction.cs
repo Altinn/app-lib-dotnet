@@ -8,12 +8,12 @@ public class FrontendAction
     /// <summary>
     /// Name of the action
     /// </summary>
-    public string Name { get; set; }
+    public string Name { get; set; } = string.Empty;
 
     /// <summary>
     /// Metadata for the action
     /// </summary>
-    public Dictionary<string, object> Metadata { get; set; }
+    public Dictionary<string, object>? Metadata { get; set; }
     
     /// <summary>
     /// Creates a gotoPage action

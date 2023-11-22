@@ -174,6 +174,7 @@ public class LookupAction : IUserAction
     public string Id => "lookup";
     public async Task<UserActionResult> HandleAction(UserActionContext context)
     {
+        await Task.CompletedTask;
         if (context.UserId == 1000)
         {
             return UserActionResult.SuccessResult();

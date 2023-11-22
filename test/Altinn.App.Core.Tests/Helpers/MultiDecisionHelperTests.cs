@@ -221,7 +221,7 @@ public class MultiDecisionHelperTests
         act.Should().Throw<ArgumentNullException>().WithMessage("Value cannot be null. (Parameter 'user')");
     }
 
-    private ClaimsPrincipal GetClaims(string partyId)
+    private static ClaimsPrincipal GetClaims(string partyId)
     {
         return new ClaimsPrincipal(new List<ClaimsIdentity>()
         {
@@ -233,7 +233,7 @@ public class MultiDecisionHelperTests
         });
     }
 
-    private string XacmlJsonRequestRootToString(XacmlJsonRequestRoot request)
+    private static string XacmlJsonRequestRootToString(XacmlJsonRequestRoot request)
     {
         var options = new JsonSerializerOptions
         {

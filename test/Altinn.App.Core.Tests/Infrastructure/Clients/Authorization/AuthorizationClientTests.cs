@@ -112,7 +112,7 @@ public class AuthorizationClientTests
         actual.Should().BeEquivalentTo(expected);
     }
     
-    private ClaimsPrincipal GetClaims(string partyId)
+    private static ClaimsPrincipal GetClaims(string partyId)
     {
         return new ClaimsPrincipal(new List<ClaimsIdentity>()
         {
@@ -124,7 +124,7 @@ public class AuthorizationClientTests
         });
     }
     
-    private XacmlJsonResponse GetXacmlJsonRespons(string filename)
+    private static XacmlJsonResponse GetXacmlJsonRespons(string filename)
     {
         var xacmlJesonRespons = File.ReadAllText(Path.Join("Infrastructure", "Clients", "Authorization", "TestData", $"{filename}.json"));
         return JsonSerializer.Deserialize<XacmlJsonResponse>(xacmlJesonRespons);
