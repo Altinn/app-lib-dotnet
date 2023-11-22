@@ -41,7 +41,7 @@ namespace Altinn.App.Api.Tests.Mocks
             return true;
         }
 
-        public async Task<Dictionary<string, bool>> AuthorizeActions(Instance instance, ClaimsPrincipal user, List<string> actions)
+        public Task<Dictionary<string, bool>> AuthorizeActions(Instance instance, ClaimsPrincipal user, List<string> actions)
         {
             throw new NotImplementedException();
         }

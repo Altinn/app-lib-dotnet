@@ -10,6 +10,11 @@ namespace Altinn.App.Core.Tests.Helpers;
 
 public class MultiDecisionHelperTests
 {
+    private static readonly JsonSerializerOptions SerializerOptions = new() 
+    {
+        WriteIndented = true
+    };
+    
     [Fact]
     public void CreateMultiDecisionRequest_generates_multidecisionrequest_with_all_actions_current_task_elemtnId()
     {
@@ -235,14 +240,11 @@ public class MultiDecisionHelperTests
 
     private static string XacmlJsonRequestRootToString(XacmlJsonRequestRoot request)
     {
-        var options = new JsonSerializerOptions
-        {
-            WriteIndented = true
-        };
-        return JsonSerializer.Serialize(request, options);
+        
+        return JsonSerializer.Serialize(request, SerializerOptions);
     }
 
-    private void CompareWithOrUpdateGoldenFile(string testId, XacmlJsonRequestRoot xacmlJsonRequestRoot)
+    private static void CompareWithOrUpdateGoldenFile(string testId, XacmlJsonRequestRoot xacmlJsonRequestRoot)
     {
         bool updateGoldeFiles = Environment.GetEnvironmentVariable("UpdateGoldenFiles") == "true";
         string goldenFilePath = Path.Join("Helpers", "TestData", "MultiDecisionHelper", testId + ".golden.json");
@@ -256,7 +258,7 @@ public class MultiDecisionHelperTests
         Assert.Equal(goldenFileContent, xacmlJsonRequestRootAsString);
     }
 
-    private List<XacmlJsonResult> GetXacmlJsonRespons(string filename)
+    private static List<XacmlJsonResult> GetXacmlJsonRespons(string filename)
     {
         var xacmlJesonRespons = File.ReadAllText(Path.Join("Helpers", "TestData", "MultiDecisionHelper", filename + ".json"));
         return JsonSerializer.Deserialize<List<XacmlJsonResult>>(xacmlJesonRespons);

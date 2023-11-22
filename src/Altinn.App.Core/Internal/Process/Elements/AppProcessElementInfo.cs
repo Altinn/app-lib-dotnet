@@ -14,6 +14,7 @@ public class AppProcessElementInfo: ProcessElementInfo
     public AppProcessElementInfo()
     {
         Actions = new Dictionary<string, bool>();
+        UserActions = new List<UserAction>();
     }
     
     /// <summary>
@@ -31,6 +32,7 @@ public class AppProcessElementInfo: ProcessElementInfo
         Validated = processElementInfo.Validated;
         FlowType = processElementInfo.FlowType;
         Actions = new Dictionary<string, bool>();
+        UserActions = new List<UserAction>();
     }
     /// <summary>
     /// Actions that can be performed and if the user is allowed to perform them.
