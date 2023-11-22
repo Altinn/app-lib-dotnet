@@ -157,14 +157,7 @@ public class ProcessReader : IProcessReader
 
         return GetSequenceFlows().FindAll(sf => flowElement.Outgoing.Contains(sf.Id)).ToList();
     }
-    
-    private static void EnsureArgumentNotNull(object? argument, string paramName)
-    {
-        if (argument == null)
-            throw new ArgumentNullException(paramName);
-    }
-    
-    private List<ProcessElement> GetAllFlowElements()
+    public List<ProcessElement> GetAllFlowElements()
     {
         List<ProcessElement> flowElements = new List<ProcessElement>();
         flowElements.AddRange(GetStartEvents());
@@ -172,5 +165,11 @@ public class ProcessReader : IProcessReader
         flowElements.AddRange(GetExclusiveGateways());
         flowElements.AddRange(GetEndEvents());
         return flowElements;
+    }
+
+    private static void EnsureArgumentNotNull(object? argument, string paramName)
+    {
+        if (argument == null)
+            throw new ArgumentNullException(paramName);
     }
 }
