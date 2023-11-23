@@ -83,21 +83,6 @@ namespace Altinn.App.Api.Controllers
                 Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
                 AppProcessState appProcessState = await ConvertAndAuthorizeActions(instance, instance.Process);
 
-                var processTasks = new List<AppProcessTaskTypeInfo>();
-                foreach (var processElement in _processReader.GetAllFlowElements())
-                {
-                    if (processElement is ProcessTask processTask)
-                    {
-                        processTasks.Add(new AppProcessTaskTypeInfo
-                        {
-                            ElementId = processTask.Id,
-                            AltinnTaskType = processTask.ExtensionElements?.TaskExtension?.TaskType
-                        });
-                    }
-                }
-
-                appProcessState.ProcessTasks = processTasks;
-
                 return Ok(appProcessState);
             }
             catch (PlatformHttpException e)
@@ -489,6 +474,21 @@ namespace Altinn.App.Api.Controllers
                     appProcessState.CurrentTask.UserActions = authDecisions;
                 }
             }
+            
+            var processTasks = new List<AppProcessTaskTypeInfo>();
+            foreach (var processElement in _processReader.GetAllFlowElements())
+            {
+                if (processElement is ProcessTask processTask)
+                {
+                    processTasks.Add(new AppProcessTaskTypeInfo
+                    {
+                        ElementId = processTask.Id,
+                        AltinnTaskType = processTask.ExtensionElements?.TaskExtension?.TaskType
+                    });
+                }
+            }
+
+            appProcessState.ProcessTasks = processTasks;
 
             return appProcessState;
         }

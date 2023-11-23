@@ -169,7 +169,6 @@ public class ProcessReader : IProcessReader
 
     private static void EnsureArgumentNotNull(object? argument, string paramName)
     {
-        if (argument == null)
-            throw new ArgumentNullException(paramName);
+        ArgumentNullException.ThrowIfNull(argument, paramName);
     }
 }

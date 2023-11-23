@@ -1,6 +1,6 @@
 #nullable enable
 using System.Xml.Serialization;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace Altinn.App.Core.Internal.Process.Elements;
 
@@ -11,13 +11,6 @@ namespace Altinn.App.Core.Internal.Process.Elements;
 public class AppProcessTaskTypeInfo
 {
     /// <summary>
-    /// Default constructor
-    /// </summary>
-    public AppProcessTaskTypeInfo()
-    {
-    }
-
-    /// <summary>
     /// Gets or sets the task type
     /// </summary>
     [XmlElement("altinnTaskType", Namespace = "http://altinn.no/process")]
@@ -27,6 +20,6 @@ public class AppProcessTaskTypeInfo
     /// <summary>
     /// Gets or sets a reference to the current task/event element id as given in the process definition.
     /// </summary>
-    [JsonProperty(PropertyName = "elementId")]
+    [JsonPropertyName(name: "elementId")]
     public string? ElementId { get; set; }
 }
