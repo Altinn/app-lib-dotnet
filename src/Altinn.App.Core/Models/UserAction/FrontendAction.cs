@@ -16,18 +16,15 @@ public class FrontendAction
     public Dictionary<string, object>? Metadata { get; set; }
     
     /// <summary>
-    /// Creates a gotoPage action
+    /// Creates a nextPage frontend action
     /// </summary>
-    /// <param name="frontendPage"></param>
     /// <returns></returns>
-    public static FrontendAction GotoPage(string frontendPage)
+    public static FrontendAction NextPage()
     {
         var frontendAction = new FrontendAction()
         {
-            Name = "gotoPage",
-            Metadata = new Dictionary<string, object>()
+            Name = "nextPage"
         };
-        frontendAction.Metadata.Add("page", frontendPage);
         return frontendAction;
     }
 }

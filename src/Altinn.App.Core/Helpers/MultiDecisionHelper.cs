@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Altinn.App.Core.Models;
 using Altinn.Authorization.ABAC.Xacml.JsonProfile;
 using Altinn.Common.PEP.Constants;
 using Altinn.Common.PEP.Helpers;
@@ -123,24 +124,22 @@ public static class MultiDecisionHelper
         }
 
         resourceCategory.Attribute.Add(DecisionHelper.CreateXacmlJsonAttribute(AltinnXacmlUrns.PartyId, instanceProps.InstanceOwnerPartyId, DefaultType, DefaultIssuer));
-        resourceCategory.Attribute.Add(DecisionHelper.CreateXacmlJsonAttribute(AltinnXacmlUrns.OrgId, instanceProps.Org, DefaultType, DefaultIssuer));
-        resourceCategory.Attribute.Add(DecisionHelper.CreateXacmlJsonAttribute(AltinnXacmlUrns.AppId, instanceProps.App, DefaultType, DefaultIssuer));
+        resourceCategory.Attribute.Add(DecisionHelper.CreateXacmlJsonAttribute(AltinnXacmlUrns.OrgId, instanceProps.appIdentifier.Org, DefaultType, DefaultIssuer));
+        resourceCategory.Attribute.Add(DecisionHelper.CreateXacmlJsonAttribute(AltinnXacmlUrns.AppId, instanceProps.appIdentifier.App, DefaultType, DefaultIssuer));
         resourceCategory.Id = ResourceId + counter;
         resourcesCategories.Add(resourceCategory);
 
         return resourcesCategories;
     }
 
-    private static (string? InstanceId, string InstanceGuid, string? Task, string InstanceOwnerPartyId, string Org, string App) GetInstanceProperties(Instance instance)
+    private static (string? InstanceId, string InstanceGuid, string? Task, string InstanceOwnerPartyId, AppIdentifier appIdentifier) GetInstanceProperties(Instance instance)
     {
         string? instanceId = instance.Id.Contains('/') ? instance.Id : null;
         string instanceGuid = instance.Id.Contains('/') ? instance.Id.Split("/")[1] : instance.Id;
         string? task = instance.Process?.CurrentTask?.ElementId;
         string instanceOwnerPartyId = instance.InstanceOwner.PartyId;
-        string org = instance.Org;
-        string app = instance.AppId.Split("/")[1];
-
-        return (instanceId, instanceGuid, task, instanceOwnerPartyId, org, app);
+        AppIdentifier appIdentifier = new(instance);
+        return (instanceId, instanceGuid, task, instanceOwnerPartyId, appIdentifier);
     }
 
     private static XacmlJsonMultiRequests CreateMultiRequestsCategory(List<XacmlJsonCategory> subjects, List<XacmlJsonCategory> actions, List<XacmlJsonCategory> resources)

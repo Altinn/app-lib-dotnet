@@ -3,6 +3,7 @@ using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features.Action;
+using Altinn.App.Core.Internal.Exceptions;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.UserAction;
@@ -95,22 +96,35 @@ public class ActionsController: ControllerBase
         }
 
         UserActionContext userActionContext = new UserActionContext(instance, userId.Value, actionRequest.ButtonId, actionRequest.Metadata);
-        
-        var result = await _userActionService.HandleAction(userActionContext, action);
-
-        if (!result.Success)
+        try
         {
-            return new BadRequestObjectResult(new UserActionResponse()
+            var result = await _userActionService.HandleAction(userActionContext, action);
+
+            if (!result.Success)
+            {
+                return new BadRequestObjectResult(new UserActionResponse()
+                {
+                    FrontendActions = result.FrontendActions,
+                    Error = result.Error
+                });
+            }
+
+            return new OkObjectResult(new UserActionResponse()
             {
                 FrontendActions = result.FrontendActions,
-                Error = result.Error
+                UpdatedDataModels = result.UpdatedDataModels
             });
         }
-
-        return new OkObjectResult(new UserActionResponse()
+        catch (NotFoundException)
         {
-            FrontendActions = result.FrontendActions,
-            UpdatedDataModels = result.UpdatedDataModels
-        });
+            return new NotFoundObjectResult(new UserActionResponse()
+            {
+                Error = new ActionError()
+                {
+                    Code = "ActionNotFound",
+                    Message = $"Action handler with id {action} not found",
+                }
+            });
+        }
     }
 }

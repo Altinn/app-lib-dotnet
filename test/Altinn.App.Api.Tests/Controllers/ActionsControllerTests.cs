@@ -167,6 +167,28 @@ public class ActionsControllerTests: ApiTestBase, IClassFixture<WebApplicationFa
         
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
+    
+    [Fact]
+    public async Task Perform_returns_404_if_action_implementation_not_found()
+    {
+        OverrideServicesForThisTest = (services) =>
+        {
+            services.AddTransient<IUserAction, LookupAction>();
+        };
+        var org = "tdd";
+        var app = "task-action";
+        HttpClient client = GetRootedClient(org, app);
+        Guid guid = new Guid("b1135209-628e-4a6e-9efd-e4282068ef41");
+        TestData.DeleteInstance(org, app, 1337, guid);
+        TestData.PrepareInstance(org, app, 1337, guid);
+        string token = PrincipalUtil.GetToken(1001, 3);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        HttpResponseMessage response = await client.PostAsync($"/{org}/{app}/instances/1337/{guid}/actions", new StringContent("{\"action\":\"notfound\"}", Encoding.UTF8, "application/json"));
+        // Cleanup testdata
+        TestData.DeleteInstanceAndData(org, app, 1337, guid);
+        
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
 }
 
 public class LookupAction : IUserAction
