@@ -57,6 +57,23 @@ namespace Altinn.App.Api.Tests.Utils
             ClaimsPrincipal principal = new ClaimsPrincipal(identity);
             return principal;
         }
+        
+        public static ClaimsPrincipal GetUserPrincipal(int userId, int partyId, int authenticationLevel = 2)
+        {
+            List<Claim> claims = new List<Claim>();
+            string issuer = "www.altinn.no";
+            claims.Add(new Claim(ClaimTypes.NameIdentifier, userId.ToString(), ClaimValueTypes.String, issuer));
+            claims.Add(new Claim(AltinnCoreClaimTypes.UserId, userId.ToString(), ClaimValueTypes.String, issuer));
+            claims.Add(new Claim(AltinnCoreClaimTypes.UserName, "UserOne", ClaimValueTypes.String, issuer));
+            claims.Add(new Claim(AltinnCoreClaimTypes.PartyID, partyId.ToString(), ClaimValueTypes.Integer32, issuer));
+            claims.Add(new Claim(AltinnCoreClaimTypes.AuthenticateMethod, "Mock", ClaimValueTypes.String, issuer));
+            claims.Add(new Claim(AltinnCoreClaimTypes.AuthenticationLevel, authenticationLevel.ToString(), ClaimValueTypes.Integer32, issuer));
+
+            ClaimsIdentity identity = new ClaimsIdentity("mock");
+            identity.AddClaims(claims);
+            ClaimsPrincipal principal = new ClaimsPrincipal(identity);
+            return principal;
+        }
 
         public static ClaimsPrincipal GetOrgPrincipal(string org, int authenticationLevel = 3)
         {
