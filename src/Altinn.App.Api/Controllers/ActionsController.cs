@@ -96,7 +96,7 @@ public class ActionsController : ControllerBase
         }
 
         UserActionContext userActionContext = new UserActionContext(instance, userId.Value, actionRequest.ButtonId, actionRequest.Metadata);
-        var actionHandler = _userActionService.GetActionHandlerOrDefault(action);
+        var actionHandler = _userActionService.GetActionHandler(action);
         if (actionHandler == null)
         {
             return new NotFoundObjectResult(new UserActionResponse()

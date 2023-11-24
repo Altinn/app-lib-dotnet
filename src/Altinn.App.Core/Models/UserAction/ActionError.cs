@@ -11,7 +11,7 @@ public class ActionError
     /// Machine readable error code
     /// </summary>
     [JsonPropertyName("code")]
-    public string Code { get; set; } = string.Empty;
+    public string? Code { get; set; }
 
     /// <summary>
     /// Human readable error message or text key

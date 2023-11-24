@@ -24,7 +24,7 @@ public class UserActionService
     /// </summary>
     /// <param name="actionId">The id of the action to handle.</param>
     /// <returns>The first implementation of <see cref="IUserAction"/> that matches the actionId. If no match null is returned</returns>
-    public IUserAction? GetActionHandlerOrDefault(string? actionId)
+    public IUserAction? GetActionHandler(string? actionId)
     {
         if (actionId != null)
         {
@@ -32,21 +32,5 @@ public class UserActionService
         }
 
         return null;
-    }
-
-    /// <summary>
-    /// Find the implementation of <see cref="IUserAction"/> based on the actionId
-    /// </summary>
-    /// <param name="actionId">The id of the action to handle.</param>
-    /// <param name="defaultAction">The default action to return if non is found</param>
-    /// <returns>The first implementation of <see cref="IUserAction"/> that matches the actionId. If no match provided default is returned</returns>
-    public IUserAction GetActionHandlerOrDefault(string? actionId, IUserAction defaultAction)
-    {
-        if (actionId != null)
-        {
-            return _actionHandlers.Where(ah => ah.Id.Equals(actionId, StringComparison.OrdinalIgnoreCase)).FirstOrDefault(defaultAction);
-        }
-
-        return defaultAction;
     }
 }

@@ -131,9 +131,11 @@ public class ProcessEngine : IProcessEngine
                 ErrorType = ProcessErrorType.Conflict
             };
         }
-        var actionHandler = await _userActionService.GetActionHandlerOrDefault(request.Action, new NullUserAction()).HandleAction(new UserActionContext(request.Instance, userId.Value));
 
-        if (!actionHandler.Success)
+        var actionHandler = _userActionService.GetActionHandler(request.Action);
+        var actionResult = actionHandler is null ? UserActionResult.SuccessResult() : await actionHandler.HandleAction(new UserActionContext(request.Instance, userId.Value));
+        
+        if (!actionResult.Success)
         {
             return new ProcessChangeResult()
             {

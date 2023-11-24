@@ -14,7 +14,7 @@ public class UserActionServiceTests
     {
         var factory = new UserActionService(new List<IUserAction>() { new DummyUserAction() });
 
-        IUserAction? userAction = factory.GetActionHandlerOrDefault("dummy");
+        IUserAction? userAction = factory.GetActionHandler("dummy");
 
         userAction.Should().NotBeNull();
         userAction.Should().BeOfType<DummyUserAction>();
@@ -26,7 +26,7 @@ public class UserActionServiceTests
     {
         var factory = new UserActionService(new List<IUserAction>() { new DummyUserAction(), new DummyUserAction2() });
 
-        IUserAction? userAction = factory.GetActionHandlerOrDefault("dummy");
+        IUserAction? userAction = factory.GetActionHandler("dummy");
 
         userAction.Should().NotBeNull();
         userAction.Should().BeOfType<DummyUserAction>();
@@ -38,7 +38,7 @@ public class UserActionServiceTests
     {
         var factory = new UserActionService(new List<IUserAction>() { new DummyUserAction() });
 
-        IUserAction? userAction = factory.GetActionHandlerOrDefault("nonexisting");
+        IUserAction? userAction = factory.GetActionHandler("nonexisting");
 
         userAction.Should().BeNull();
     }
@@ -48,31 +48,9 @@ public class UserActionServiceTests
     {
         var factory = new UserActionService(new List<IUserAction>() { new DummyUserAction() });
 
-        IUserAction? userAction = factory.GetActionHandlerOrDefault(null);
+        IUserAction? userAction = factory.GetActionHandler(null);
 
         userAction.Should().BeNull();
-    }
-    
-    [Fact]
-    public void GetActionHandlerOrDefault_should_return_NullActionHandler_if_id_not_found_and_default_set()
-    {
-        var factory = new UserActionService(new List<IUserAction>() { new DummyUserAction() });
-
-        IUserAction userAction = factory.GetActionHandlerOrDefault("nonexisting", new NullUserAction());
-
-        userAction.Should().BeOfType<NullUserAction>();
-        userAction.Id.Should().Be("null");
-    }
-    
-    [Fact]
-    public void GetActionHandlerOrDefault_should_return_NullActionHandler_if_id_is_null_and_default_set()
-    {
-        var factory = new UserActionService(new List<IUserAction>() { new DummyUserAction() });
-
-        IUserAction userAction = factory.GetActionHandlerOrDefault(null, new NullUserAction());
-
-        userAction.Should().BeOfType<NullUserAction>();
-        userAction.Id.Should().Be("null");
     }
     
     internal class DummyUserAction : IUserAction
