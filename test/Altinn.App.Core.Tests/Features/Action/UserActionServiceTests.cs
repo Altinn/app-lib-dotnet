@@ -77,7 +77,7 @@ public class UserActionServiceTests
     
     internal class DummyUserAction : IUserAction
     {
-        public string Id { get; set; } = "dummy";
+        public string Id => "dummy";
 
         public Task<UserActionResult> HandleAction(UserActionContext context)
         {
@@ -87,7 +87,7 @@ public class UserActionServiceTests
     
     internal class DummyUserAction2 : IUserAction
     {
-        public string Id { get; set; } = "dummy";
+        public string Id => "dummy";
 
         public Task<UserActionResult> HandleAction(UserActionContext context)
         {

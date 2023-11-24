@@ -13,7 +13,7 @@ namespace Altinn.App.Core.Internal.Process.Elements
         /// Gets or sets the ID of the action
         /// </summary>
         [JsonPropertyName("id")]
-        public string Id { get; set; }
+        public required string Id { get; set; }
         
         /// <summary>
         /// Gets or sets if the user is authorized to perform the action
