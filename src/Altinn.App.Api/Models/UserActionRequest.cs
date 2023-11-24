@@ -17,6 +17,7 @@ public class UserActionRequest
     /// <summary>
     /// The id of the button that was clicked
     /// </summary>
+    [JsonPropertyName("buttonId")]
     public string? ButtonId { get; set; }
     
     /// <summary>

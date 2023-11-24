@@ -19,7 +19,7 @@ using Newtonsoft.Json;
 
 namespace Altinn.App.Core.Infrastructure.Clients.Authorization
 {
-        /// <summary>
+    /// <summary>
     /// Client for handling authorization actions in Altinn Platform.
     /// </summary>
     public class AuthorizationClient : IAuthorizationClient
