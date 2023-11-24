@@ -19,11 +19,11 @@ namespace Altinn.App.Api.Controllers;
 [AutoValidateAntiforgeryTokenIfAuthCookie]
 [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
 [Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/actions")]
-public class ActionsController: ControllerBase
+public class ActionsController : ControllerBase
 {
     private readonly IAuthorizationService _authorization;
     private readonly IInstanceClient _instanceClient;
-    private readonly IUserActionService _userActionService;
+    private readonly UserActionService _userActionService;
 
     /// <summary>
     /// Create new instance of the <see cref="ActionsController"/> class
@@ -31,13 +31,13 @@ public class ActionsController: ControllerBase
     /// <param name="authorization">The authorization service</param>
     /// <param name="instanceClient">The instance client</param>
     /// <param name="userActionService">The user action service</param>
-    public ActionsController(IAuthorizationService authorization, IInstanceClient instanceClient, IUserActionService userActionService)
+    public ActionsController(IAuthorizationService authorization, IInstanceClient instanceClient, UserActionService userActionService)
     {
         _authorization = authorization;
         _instanceClient = instanceClient;
         _userActionService = userActionService;
     }
-    
+
     /// <summary>
     /// Perform a task action on an instance
     /// </summary>
@@ -70,25 +70,25 @@ public class ActionsController: ControllerBase
                 Detail = "Action is missing in the request"
             });
         }
-        
+
         var instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
-        
+
         if (instance?.Process == null)
         {
             return Conflict($"Process is not started.");
         }
-        
+
         if (instance.Process.Ended.HasValue)
         {
             return Conflict($"Process is ended.");
         }
-        
+
         var userId = HttpContext.User.GetUserIdAsInt();
         if (userId == null)
         {
             return Unauthorized();
         }
-        
+
         var authorized = await _authorization.AuthorizeAction(new AppIdentifier(org, app), new InstanceIdentifier(instanceOwnerPartyId, instanceGuid), HttpContext.User, action, instance.Process?.CurrentTask?.ElementId);
         if (!authorized)
         {
@@ -96,26 +96,8 @@ public class ActionsController: ControllerBase
         }
 
         UserActionContext userActionContext = new UserActionContext(instance, userId.Value, actionRequest.ButtonId, actionRequest.Metadata);
-        try
-        {
-            var result = await _userActionService.HandleAction(userActionContext, action);
-
-            if (!result.Success)
-            {
-                return new BadRequestObjectResult(new UserActionResponse()
-                {
-                    FrontendActions = result.FrontendActions,
-                    Error = result.Error
-                });
-            }
-
-            return new OkObjectResult(new UserActionResponse()
-            {
-                FrontendActions = result.FrontendActions,
-                UpdatedDataModels = result.UpdatedDataModels
-            });
-        }
-        catch (NotFoundException)
+        var actionHandler = _userActionService.GetActionHandlerOrDefault(action);
+        if (actionHandler == null)
         {
             return new NotFoundObjectResult(new UserActionResponse()
             {
@@ -126,5 +108,22 @@ public class ActionsController: ControllerBase
                 }
             });
         }
+
+        var result = await actionHandler.HandleAction(userActionContext);
+
+        if (!result.Success)
+        {
+            return new BadRequestObjectResult(new UserActionResponse()
+            {
+                FrontendActions = result.FrontendActions,
+                Error = result.Error
+            });
+        }
+
+        return new OkObjectResult(new UserActionResponse()
+        {
+            FrontendActions = result.FrontendActions,
+            UpdatedDataModels = result.UpdatedDataModels
+        });
     }
 }

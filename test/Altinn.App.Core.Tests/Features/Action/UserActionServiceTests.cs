@@ -1,9 +1,7 @@
+#nullable enable
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
-using Altinn.App.Core.Internal;
-using Altinn.App.Core.Internal.Exceptions;
 using Altinn.App.Core.Models.UserAction;
-using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Xunit;
 
@@ -12,46 +10,84 @@ namespace Altinn.App.Core.Tests.Features.Action;
 public class UserActionServiceTests
 {
     [Fact]
-    public async Task HandleAction_throws_NotFoundException_if_no_handler_found()
+    public void GetActionHandlerOrDefault_should_return_DummyActionHandler_for_id_dummy()
     {
-        UserActionService userActionService = new UserActionService(new UserActionFactory(new List<IUserAction>()));
-        Func<Task> act = async () => { await userActionService.HandleAction(new UserActionContext(new Instance(), 0), "notFound"); };
-        await act.Should().ThrowAsync<NotFoundException>();
+        var factory = new UserActionService(new List<IUserAction>() { new DummyUserAction() });
+
+        IUserAction? userAction = factory.GetActionHandlerOrDefault("dummy");
+
+        userAction.Should().NotBeNull();
+        userAction.Should().BeOfType<DummyUserAction>();
+        userAction!.Id.Should().Be("dummy");
     }
     
     [Fact]
-    public async Task HandleAction_returns_result_with_validationgroup_set_to_type_as_validation_grouping_key()
+    public void GetActionHandlerOrDefault_should_return_first_DummyActionHandler_for_id_dummy_if_multiple()
     {
-        UserActionService userActionService = new UserActionService(new UserActionFactory(new List<IUserAction>() { new DummyUserAction(), new DummyUserActionWithValidationGroup() }));
-        var expected = new UserActionServiceResult(UserActionResult.SuccessResult(), typeof(DummyUserAction).ToString());
-        var actual = await userActionService.HandleAction(new UserActionContext(new Instance(), 0), "dummy");
-        actual.Should().BeEquivalentTo(expected);
+        var factory = new UserActionService(new List<IUserAction>() { new DummyUserAction(), new DummyUserAction2() });
+
+        IUserAction? userAction = factory.GetActionHandlerOrDefault("dummy");
+
+        userAction.Should().NotBeNull();
+        userAction.Should().BeOfType<DummyUserAction>();
+        userAction!.Id.Should().Be("dummy");
     }
     
     [Fact]
-    public async Task HandleAction_returns_result_with_validationgroup_set_to_value_of_ValidationGroup_when_set()
+    public void GetActionHandlerOrDefault_should_return_null_if_id_not_found_and_default_not_set()
     {
-        UserActionService userActionService = new UserActionService(new UserActionFactory(new List<IUserAction>() { new DummyUserAction(), new DummyUserActionWithValidationGroup() }));
-        var expected = new UserActionServiceResult(UserActionResult.SuccessResult(), "MyCustomGroup");
-        var actual = await userActionService.HandleAction(new UserActionContext(new Instance(), 0), "dummyWithGroup");
-        actual.Should().BeEquivalentTo(expected);
+        var factory = new UserActionService(new List<IUserAction>() { new DummyUserAction() });
+
+        IUserAction? userAction = factory.GetActionHandlerOrDefault("nonexisting");
+
+        userAction.Should().BeNull();
     }
     
-    private class DummyUserAction : IUserAction
+    [Fact]
+    public void GetActionHandlerOrDefault_should_return_null_if_id_is_null_and_default_not_set()
     {
-        public string Id => "dummy";
+        var factory = new UserActionService(new List<IUserAction>() { new DummyUserAction() });
+
+        IUserAction? userAction = factory.GetActionHandlerOrDefault(null);
+
+        userAction.Should().BeNull();
+    }
+    
+    [Fact]
+    public void GetActionHandlerOrDefault_should_return_NullActionHandler_if_id_not_found_and_default_set()
+    {
+        var factory = new UserActionService(new List<IUserAction>() { new DummyUserAction() });
+
+        IUserAction userAction = factory.GetActionHandlerOrDefault("nonexisting", new NullUserAction());
+
+        userAction.Should().BeOfType<NullUserAction>();
+        userAction.Id.Should().Be("null");
+    }
+    
+    [Fact]
+    public void GetActionHandlerOrDefault_should_return_NullActionHandler_if_id_is_null_and_default_set()
+    {
+        var factory = new UserActionService(new List<IUserAction>() { new DummyUserAction() });
+
+        IUserAction userAction = factory.GetActionHandlerOrDefault(null, new NullUserAction());
+
+        userAction.Should().BeOfType<NullUserAction>();
+        userAction.Id.Should().Be("null");
+    }
+    
+    internal class DummyUserAction : IUserAction
+    {
+        public string Id { get; set; } = "dummy";
 
         public Task<UserActionResult> HandleAction(UserActionContext context)
         {
             return Task.FromResult(UserActionResult.SuccessResult());
         }
     }
-
-    private class DummyUserActionWithValidationGroup : IUserAction
+    
+    internal class DummyUserAction2 : IUserAction
     {
-        public string Id => "dummyWithGroup";
-
-        public string ValidationGroup => "MyCustomGroup";
+        public string Id { get; set; } = "dummy";
 
         public Task<UserActionResult> HandleAction(UserActionContext context)
         {

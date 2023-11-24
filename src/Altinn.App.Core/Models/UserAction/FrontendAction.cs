@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Altinn.App.Core.Models.UserAction;
 
 /// <summary>
@@ -8,11 +10,13 @@ public class FrontendAction
     /// <summary>
     /// Name of the action
     /// </summary>
+    [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
     /// Metadata for the action
     /// </summary>
+    [JsonPropertyName("metadata")]
     public Dictionary<string, object>? Metadata { get; set; }
     
     /// <summary>

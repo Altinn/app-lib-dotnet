@@ -1,36 +1,52 @@
 using Altinn.App.Core.Internal;
-using Altinn.App.Core.Internal.Exceptions;
-using Altinn.App.Core.Models.UserAction;
 
 namespace Altinn.App.Core.Features.Action;
 
 /// <summary>
-/// Service for handling user actions
+/// Factory class for resolving <see cref="IUserAction"/> implementations
+/// based on the id of the action.
 /// </summary>
-public class UserActionService: IUserActionService
+public class UserActionService
 {
-    private readonly UserActionFactory _userActionFactory;
+    private readonly IEnumerable<IUserAction> _actionHandlers;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="UserActionService"/> class.
     /// </summary>
-    /// <param name="userActionFactory"></param>
-    public UserActionService(UserActionFactory userActionFactory)
+    /// <param name="actionHandlers">The list of action handlers to choose from.</param>
+    public UserActionService(IEnumerable<IUserAction> actionHandlers)
     {
-        _userActionFactory = userActionFactory;
+        _actionHandlers = actionHandlers;
     }
 
-
-    /// <inheritdoc />
-    /// <exception cref="NotFoundException">Thrown if no Handler for the actionId is found</exception>
-    public async Task<UserActionServiceResult> HandleAction(UserActionContext userActionContext, string actionId)
+    /// <summary>
+    /// Find the implementation of <see cref="IUserAction"/> based on the actionId
+    /// </summary>
+    /// <param name="actionId">The id of the action to handle.</param>
+    /// <returns>The first implementation of <see cref="IUserAction"/> that matches the actionId. If no match null is returned</returns>
+    public IUserAction? GetActionHandlerOrDefault(string? actionId)
     {
-        var actionHandler = _userActionFactory.GetActionHandlerOrDefault(actionId);
-        if (actionHandler == null)
+        if (actionId != null)
         {
-            throw new NotFoundException($"Action handler for action {actionId} not found");
+            return _actionHandlers.FirstOrDefault(ah => ah.Id.Equals(actionId, StringComparison.OrdinalIgnoreCase));
         }
-        string validationGroup = actionHandler.ValidationGroup ?? actionHandler.GetType().ToString();
-        return new UserActionServiceResult(await actionHandler.HandleAction(userActionContext), validationGroup);
+
+        return null;
+    }
+
+    /// <summary>
+    /// Find the implementation of <see cref="IUserAction"/> based on the actionId
+    /// </summary>
+    /// <param name="actionId">The id of the action to handle.</param>
+    /// <param name="defaultAction">The default action to return if non is found</param>
+    /// <returns>The first implementation of <see cref="IUserAction"/> that matches the actionId. If no match provided default is returned</returns>
+    public IUserAction GetActionHandlerOrDefault(string? actionId, IUserAction defaultAction)
+    {
+        if (actionId != null)
+        {
+            return _actionHandlers.Where(ah => ah.Id.Equals(actionId, StringComparison.OrdinalIgnoreCase)).FirstOrDefault(defaultAction);
+        }
+
+        return defaultAction;
     }
 }

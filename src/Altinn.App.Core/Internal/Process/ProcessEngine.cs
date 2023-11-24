@@ -22,7 +22,7 @@ public class ProcessEngine : IProcessEngine
     private readonly IProfileClient _profileClient;
     private readonly IProcessNavigator _processNavigator;
     private readonly IProcessEventDispatcher _processEventDispatcher;
-    private readonly UserActionFactory _userActionFactory;
+    private readonly UserActionService _userActionService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessEngine"/> class
@@ -31,19 +31,19 @@ public class ProcessEngine : IProcessEngine
     /// <param name="profileClient">The profile service</param>
     /// <param name="processNavigator">The process navigator</param>
     /// <param name="processEventDispatcher">The process event dispatcher</param>
-    /// <param name="userActionFactory">The action handler factory</param>
+    /// <param name="userActionService">The action handler factory</param>
     public ProcessEngine(
         IProcessReader processReader,
         IProfileClient profileClient,
         IProcessNavigator processNavigator,
         IProcessEventDispatcher processEventDispatcher,
-        UserActionFactory userActionFactory)
+        UserActionService userActionService)
     {
         _processReader = processReader;
         _profileClient = profileClient;
         _processNavigator = processNavigator;
         _processEventDispatcher = processEventDispatcher;
-        _userActionFactory = userActionFactory;
+        _userActionService = userActionService;
     }
 
     /// <inheritdoc/>
@@ -131,7 +131,7 @@ public class ProcessEngine : IProcessEngine
                 ErrorType = ProcessErrorType.Conflict
             };
         }
-        var actionHandler = await _userActionFactory.GetActionHandlerOrDefault(request.Action, new NullUserAction()).HandleAction(new UserActionContext(request.Instance, userId.Value));
+        var actionHandler = await _userActionService.GetActionHandlerOrDefault(request.Action, new NullUserAction()).HandleAction(new UserActionContext(request.Instance, userId.Value));
 
         if (!actionHandler.Success)
         {
