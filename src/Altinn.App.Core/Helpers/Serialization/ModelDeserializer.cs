@@ -67,7 +67,7 @@ namespace Altinn.App.Core.Helpers.Serialization
             string boundary = mediaType.Boundary.Value!.Trim('"');
             var reader = new MultipartReader(boundary, stream);
             MultipartSection? firstSection = await reader.ReadNextSectionAsync();
-            if (firstSection?.ContentDisposition?.Contains("name=\"dataModel\"") != true)
+            if (firstSection?.ContentDisposition?.Contains("name=dataModel") != true)
             {
                 return ModelDeserializerResult.FromError("First entry in multipart serialization must have name=\"dataModel\"");
             }
@@ -81,7 +81,7 @@ namespace Altinn.App.Core.Helpers.Serialization
             Dictionary<string, string?>? reportedChanges = null;
             if (secondSection is not null)
             {
-                if (secondSection?.ContentDisposition?.Contains("name=\"previousValues\"") != true)
+                if (secondSection?.ContentDisposition?.Contains("name=previousValues") != true)
                 {
                     return ModelDeserializerResult.FromError("Second entry in multipart serialization must have name=\"previousValues\"");
                 }
