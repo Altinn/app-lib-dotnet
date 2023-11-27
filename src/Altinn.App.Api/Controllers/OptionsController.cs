@@ -43,13 +43,13 @@ namespace Altinn.App.Api.Controllers
             [FromQuery] string? language,
             [FromQuery] Dictionary<string, string> queryParams)
         {
-            AppOptions appOptions = await _appOptionsService.GetOptionsAsync(optionsId, language ?? "nb", queryParams);
-            if (appOptions.Options == null)
+            AppOptions? appOptions = await _appOptionsService.GetOptionsAsync(optionsId, language ?? "nb", queryParams);
+            if (appOptions == null)
             {
                 return NotFound();
             }
 
-            HttpContext.Response.Headers.Add("Altinn-DownstreamParameters", appOptions.Parameters.ToNameValueString(','));
+            HttpContext.Response.Headers["Altinn-DownstreamParameters"] = appOptions.Parameters.ToNameValueString(',');
 
             return Ok(appOptions.Options);
         }
@@ -81,16 +81,16 @@ namespace Altinn.App.Api.Controllers
         {
             var instanceIdentifier = new InstanceIdentifier(instanceOwnerPartyId, instanceGuid);
 
-            AppOptions appOptions = await _appOptionsService.GetOptionsAsync(instanceIdentifier, optionsId, language ?? "nb", queryParams);
+            AppOptions? appOptions = await _appOptionsService.GetOptionsAsync(instanceIdentifier, optionsId, language ?? "nb", queryParams);
 
             // Only return NotFound if we can't find an options provider.
             // If we find the options provider, but it doesnt' have values, return empty list.
-            if (appOptions.Options == null)
+            if (appOptions == null)
             {
                 return NotFound();
             }
 
-            HttpContext.Response.Headers.Add("Altinn-DownstreamParameters", appOptions.Parameters.ToNameValueString(','));
+            HttpContext.Response.Headers["Altinn-DownstreamParameters"] = appOptions.Parameters.ToNameValueString(',');
 
             return Ok(appOptions.Options);
         }

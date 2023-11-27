@@ -25,6 +25,8 @@ namespace Altinn.App.PlatformServices.Tests.Options.Altinn2Provider
             services.AddSingleton<Altinn2MetadataApiClientHttpMessageHandlerMoq>();
             httpClient.ConfigurePrimaryHttpMessageHandler<Altinn2MetadataApiClientHttpMessageHandlerMoq>();
 
+            services.AddTransient<AppOptionsFactory>();
+
             return services;
         }
 
@@ -53,12 +55,13 @@ namespace Altinn.App.PlatformServices.Tests.Options.Altinn2Provider
             // Do two fetches of ASF_Land and see that only one call gets passed to the messageHandler
             using (var scope = sp.CreateScope())
             {
-                var providers = scope.ServiceProvider.GetRequiredService<IEnumerable<IAppOptionsProvider>>();
+                var factory = scope.ServiceProvider.GetRequiredService<AppOptionsFactory>();
                 var messageHandler = scope.ServiceProvider.GetRequiredService<Altinn2MetadataApiClientHttpMessageHandlerMoq>();
                 messageHandler.CallCounter.Should().Be(0);
-                providers.Count().Should().Be(3);
-                var optionsProvider = providers.SingleOrDefault(p => p.Id == "ASF_Land3");
-                await optionsProvider.GetAppOptionsAsync("nb", new Dictionary<string, string>());
+                
+                var optionsProvider = factory.GetOptionsProvider("ASF_Land3");
+                optionsProvider.Should().NotBeNull();
+                await optionsProvider!.GetAppOptionsAsync("nb", new Dictionary<string, string>());
                 await Task.Delay(5);
                 messageHandler.CallCounter.Should().Be(1);
 
@@ -70,10 +73,11 @@ namespace Altinn.App.PlatformServices.Tests.Options.Altinn2Provider
             // Repeat the process in another scope
             using (var scope = sp.CreateScope())
             {
-                var providers = scope.ServiceProvider.GetRequiredService<IEnumerable<IAppOptionsProvider>>();
+                var factory = scope.ServiceProvider.GetRequiredService<AppOptionsFactory>();
                 var messageHandler = scope.ServiceProvider.GetRequiredService<Altinn2MetadataApiClientHttpMessageHandlerMoq>();
-                var optionsProvider = providers.SingleOrDefault(p => p.Id == "ASF_Land3");
-                await optionsProvider.GetAppOptionsAsync("nb", new Dictionary<string, string>());
+                var optionsProvider = factory.GetOptionsProvider("ASF_Land3");
+                optionsProvider.Should().NotBeNull();
+                await optionsProvider!.GetAppOptionsAsync("nb", new Dictionary<string, string>());
                 await Task.Delay(5);
                 messageHandler.CallCounter.Should().Be(1);
 
@@ -85,10 +89,11 @@ namespace Altinn.App.PlatformServices.Tests.Options.Altinn2Provider
             // Try another request that uses ASF_Fylker instead, and see that another call is made
             using (var scope = sp.CreateScope())
             {
-                var providers = scope.ServiceProvider.GetRequiredService<IEnumerable<IAppOptionsProvider>>();
+                var factory = scope.ServiceProvider.GetRequiredService<AppOptionsFactory>();
                 var messageHandler = scope.ServiceProvider.GetRequiredService<Altinn2MetadataApiClientHttpMessageHandlerMoq>();
-                var optionsProvider = providers.SingleOrDefault(p => p.Id == "ASF_Fylker");
-                await optionsProvider.GetAppOptionsAsync("nb", new Dictionary<string, string>());
+                var optionsProvider = factory.GetOptionsProvider("ASF_Fylker");
+                optionsProvider.Should().NotBeNull();
+                await optionsProvider!.GetAppOptionsAsync("nb", new Dictionary<string, string>());
                 await Task.Delay(5);
                 messageHandler.CallCounter.Should().Be(2);
 

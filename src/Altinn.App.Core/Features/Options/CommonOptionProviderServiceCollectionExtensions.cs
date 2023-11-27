@@ -40,7 +40,7 @@ namespace Altinn.App.Core.Features.Options
                 serviceCollection.AddHttpClient<Altinn2MetadataApiClient>();
             }
 
-            serviceCollection.AddTransient<IAppOptionsProvider>(sp => new Altinn2CodeListProvider(sp.GetRequiredService<IMemoryCache>(), sp.GetRequiredService<Altinn2MetadataApiClient>(), id, transform, filter, metadataApiId, codeListVersion));
+            serviceCollection.AddKeyedTransient<IAppOptionsProvider>(id, (sp, key) => new Altinn2CodeListProvider(sp.GetRequiredService<IMemoryCache>(), sp.GetRequiredService<Altinn2MetadataApiClient>(), id, transform, filter, metadataApiId, codeListVersion));
             return serviceCollection;
         }
     }

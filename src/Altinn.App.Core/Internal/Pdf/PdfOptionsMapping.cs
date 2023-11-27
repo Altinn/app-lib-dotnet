@@ -75,11 +75,11 @@ public class PdfOptionsMapping : IPdfOptionsMapping
     {
         if (isSecure)
         {
-            return await _appOptionsService.GetOptionsAsync(instanceIdentifier, optionsId, language, mappings);
+            return (await _appOptionsService.GetOptionsAsync(instanceIdentifier, optionsId, language, mappings))!;
         }
         else
         {
-            return await _appOptionsService.GetOptionsAsync(optionsId, language, mappings);
+            return (await _appOptionsService.GetOptionsAsync(optionsId, language, mappings))!;
         }
     }
 

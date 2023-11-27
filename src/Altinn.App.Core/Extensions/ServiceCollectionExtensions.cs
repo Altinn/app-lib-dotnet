@@ -231,11 +231,6 @@ namespace Altinn.App.Core.Extensions
 
             // Services related to application options
             services.TryAddTransient<AppOptionsFactory>();
-            services.AddTransient<IAppOptionsProvider, DefaultAppOptionsProvider>();
-            services.TryAddTransient<IAppOptionsFileHandler, AppOptionsFileHandler>();
-
-            // Services related to instance aware and secure app options
-            services.TryAddTransient<InstanceAppOptionsFactory>();
         }
 
         private static void AddProcessServices(IServiceCollection services)
