@@ -7,20 +7,14 @@ namespace Altinn.App.Api.Tests.Utils
 {
     public static class PrincipalUtil
     {
-        public static string GetToken(int? userId, int authenticationLevel = 2)
-        {
-            ClaimsPrincipal principal = GetUserPrincipal(userId, authenticationLevel);
-            string token = JwtTokenMock.GenerateToken(principal, new TimeSpan(1, 1, 1));
-            return token;
-        }
-        public static string GetToken(int userId, int partyId, int authenticationLevel = 2)
+        public static string GetToken(int? userId, int? partyId = null, int authenticationLevel = 2)
         {
             ClaimsPrincipal principal = GetUserPrincipal(userId, partyId, authenticationLevel);
             string token = JwtTokenMock.GenerateToken(principal, new TimeSpan(1, 1, 1));
             return token;
         }
 
-        public static ClaimsPrincipal GetUserPrincipal(int? userId, int authenticationLevel = 2)
+        public static ClaimsPrincipal GetUserPrincipal(int? userId, int? partyId = null, int authenticationLevel = 2)
         {
             List<Claim> claims = new List<Claim>();
             string issuer = "www.altinn.no";
@@ -28,44 +22,14 @@ namespace Altinn.App.Api.Tests.Utils
             {
                 claims.Add(new Claim(ClaimTypes.NameIdentifier, userId.ToString()!, ClaimValueTypes.String, issuer));
                 claims.Add(new Claim(AltinnCoreClaimTypes.UserId, userId.ToString()!, ClaimValueTypes.String, issuer));
-                claims.Add(new Claim(AltinnCoreClaimTypes.PartyID, userId.ToString()!, ClaimValueTypes.Integer32, issuer));
+            }
+
+            if (partyId != null)
+            {
+                claims.Add(new Claim(AltinnCoreClaimTypes.PartyID, partyId.ToString()!, ClaimValueTypes.Integer32, issuer));
             }
 
             claims.Add(new Claim(AltinnCoreClaimTypes.UserName, "UserOne", ClaimValueTypes.String, issuer));
-            claims.Add(new Claim(AltinnCoreClaimTypes.AuthenticateMethod, "Mock", ClaimValueTypes.String, issuer));
-            claims.Add(new Claim(AltinnCoreClaimTypes.AuthenticationLevel, authenticationLevel.ToString(), ClaimValueTypes.Integer32, issuer));
-
-            ClaimsIdentity identity = new ClaimsIdentity("mock");
-            identity.AddClaims(claims);
-            ClaimsPrincipal principal = new ClaimsPrincipal(identity);
-            return principal;
-        }
-        
-        public static ClaimsPrincipal GetUserPrincipal(int userId, int partyId, int authenticationLevel = 2)
-        {
-            List<Claim> claims = new List<Claim>();
-            string issuer = "www.altinn.no";
-            claims.Add(new Claim(ClaimTypes.NameIdentifier, userId.ToString(), ClaimValueTypes.String, issuer));
-            claims.Add(new Claim(AltinnCoreClaimTypes.UserId, userId.ToString(), ClaimValueTypes.String, issuer));
-            claims.Add(new Claim(AltinnCoreClaimTypes.UserName, "UserOne", ClaimValueTypes.String, issuer));
-            claims.Add(new Claim(AltinnCoreClaimTypes.PartyID, partyId.ToString(), ClaimValueTypes.Integer32, issuer));
-            claims.Add(new Claim(AltinnCoreClaimTypes.AuthenticateMethod, "Mock", ClaimValueTypes.String, issuer));
-            claims.Add(new Claim(AltinnCoreClaimTypes.AuthenticationLevel, authenticationLevel.ToString(), ClaimValueTypes.Integer32, issuer));
-
-            ClaimsIdentity identity = new ClaimsIdentity("mock");
-            identity.AddClaims(claims);
-            ClaimsPrincipal principal = new ClaimsPrincipal(identity);
-            return principal;
-        }
-        
-        public static ClaimsPrincipal GetUserPrincipal(int userId, int partyId, int authenticationLevel = 2)
-        {
-            List<Claim> claims = new List<Claim>();
-            string issuer = "www.altinn.no";
-            claims.Add(new Claim(ClaimTypes.NameIdentifier, userId.ToString(), ClaimValueTypes.String, issuer));
-            claims.Add(new Claim(AltinnCoreClaimTypes.UserId, userId.ToString(), ClaimValueTypes.String, issuer));
-            claims.Add(new Claim(AltinnCoreClaimTypes.UserName, "UserOne", ClaimValueTypes.String, issuer));
-            claims.Add(new Claim(AltinnCoreClaimTypes.PartyID, partyId.ToString(), ClaimValueTypes.Integer32, issuer));
             claims.Add(new Claim(AltinnCoreClaimTypes.AuthenticateMethod, "Mock", ClaimValueTypes.String, issuer));
             claims.Add(new Claim(AltinnCoreClaimTypes.AuthenticationLevel, authenticationLevel.ToString(), ClaimValueTypes.Integer32, issuer));
 

@@ -3,7 +3,6 @@ using System.Net.Http.Headers;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Api.Tests.Utils;
 using FluentAssertions;
-using Microsoft.AspNetCore.Components.Sections;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit;
 
@@ -33,56 +32,55 @@ namespace Altinn.App.Api.Tests.Controllers
             string url = $"/{org}/{app}/instances/{partyId}/{instanceId}/process";
             HttpResponseMessage response = await client.GetAsync(url);
             TestData.DeleteInstance(org, app, partyId, instanceId);
-            var content = await response.Content.ReadAsStringAsync();
-
+            
             response.StatusCode.Should().Be(HttpStatusCode.OK);
-            content.Should().BeEquivalentTo(""" 
-                {
-                  "currentTask": {
-                    "actions": {},
-                    "read": true,
-                    "write": true,
-                    "flow": 2,
-                    "started": "2023-11-23T13:36:56.678338Z",
-                    "elementId": "Task_1",
-                    "name": "Utfylling (message)",
-                    "altinnTaskType": "data",
-                    "ended": null,
-                    "validated": null,
-                    "flowType": "CompleteCurrentMoveToNext"
+            var content = await response.Content.ReadAsStringAsync();
+            content.Should().BeEquivalentTo("""
+            {
+              "currentTask": {
+                "actions": {
+                  "read": true,
+                  "write": true
+                },
+                "userActions": [
+                  {
+                    "id": "read",
+                    "authorized": true,
+                    "type": "ProcessAction"
                   },
-                  "processTasks": [
-                    {
-                      "altinnTaskType": "data",
-                      "elementId": "Task_1"
-                    },
-                    {
-                      "altinnTaskType": "data",
-                      "elementId": "Task_2"
-                    },
-                    {
-                      "altinnTaskType": "data",
-                      "elementId": "Task_3"
-                    },
-                    {
-                      "altinnTaskType": "data",
-                      "elementId": "Task_4"
-                    },
-                    {
-                      "altinnTaskType": "data",
-                      "elementId": "Task_5"
-                    },
-                    {
-                      "altinnTaskType": "confirmation",
-                      "elementId": "Task_6"
-                    }
-                  ],
-                  "started": "2023-11-23T13:36:56.6782592Z",
-                  "startEvent": "StartEvent_1",
-                  "ended": null,
-                  "endEvent": null
+                  {
+                    "id": "write",
+                    "authorized": true,
+                    "type": "ProcessAction"
+                  }
+                ],
+                "read": true,
+                "write": true,
+                "flow": 2,
+                "started": "2019-12-05T13:24: 34.9196661Z",
+                "elementId": "Task_1",
+                "name": "Utfylling",
+                "altinnTaskType": "data",
+                "ended": null,
+                "validated": {
+                  "timestamp": "2020-02-07T10: 46: 36.985894+01:00",
+                  "canCompleteTask": false
+                },
+                "flowType": null
+              },
+              "processTasks": [
+                {
+                  "altinnTaskType": "data",
+                  "elementId": "Task_1"
                 }
-            """);
+              ],
+              "started": "2019-12-05T13:24: 34.8412179Z",
+              "startEvent": "StartEvent_1",
+              "ended": null,
+              "endEvent": null
+            }
+            """.Replace("\n", "").Replace(" ", "").Replace("\t", "").Replace("\r", "")); 
+            //TODO: replace this assertion with a proper one once fluentassertions has a json compare feature scheduled for v7 https://github.com/fluentassertions/fluentassertions/issues/2205
         }
     }
 }
