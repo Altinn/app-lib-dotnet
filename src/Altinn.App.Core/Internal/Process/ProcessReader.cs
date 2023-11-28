@@ -105,7 +105,7 @@ public class ProcessReader : IProcessReader
     /// <inheritdoc />
     public ProcessElement? GetFlowElement(string? elementId)
     {
-        EnsureArgumentNotNull(elementId, nameof(elementId));
+        ArgumentNullException.ThrowIfNull(elementId);
 
         ProcessTask? task = _definitions.Process.Tasks.Find(t => t.Id == elementId);
         if (task != null)
@@ -131,7 +131,7 @@ public class ProcessReader : IProcessReader
     /// <inheritdoc />
     public List<ProcessElement> GetNextElements(string? currentElementId)
     {
-        EnsureArgumentNotNull(currentElementId, nameof(currentElementId));
+        ArgumentNullException.ThrowIfNull(currentElementId);
         List<ProcessElement> nextElements = new List<ProcessElement>();
         List<ProcessElement> allElements = GetAllFlowElements();
         if (!allElements.Exists(e => e.Id == currentElementId))
@@ -165,10 +165,5 @@ public class ProcessReader : IProcessReader
         flowElements.AddRange(GetExclusiveGateways());
         flowElements.AddRange(GetEndEvents());
         return flowElements;
-    }
-
-    private static void EnsureArgumentNotNull(object? argument, string paramName)
-    {
-        ArgumentNullException.ThrowIfNull(argument, paramName);
     }
 }
