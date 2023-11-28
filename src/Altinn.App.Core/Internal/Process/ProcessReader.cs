@@ -157,6 +157,8 @@ public class ProcessReader : IProcessReader
 
         return GetSequenceFlows().FindAll(sf => flowElement.Outgoing.Contains(sf.Id)).ToList();
     }
+    
+    /// <inheritdoc />
     public List<ProcessElement> GetAllFlowElements()
     {
         List<ProcessElement> flowElements = new List<ProcessElement>();

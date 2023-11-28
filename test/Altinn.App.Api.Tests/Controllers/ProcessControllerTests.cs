@@ -87,7 +87,7 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
     
     
     //TODO: replace this assertion with a proper one once fluentassertions has a json compare feature scheduled for v7 https://github.com/fluentassertions/fluentassertions/issues/2205
-    private void CompareResult<T>(string expectedString, string actualString)
+    private static void CompareResult<T>(string expectedString, string actualString)
     {
         T? expected = JsonSerializer.Deserialize<T>(expectedString);
         T? actual = JsonSerializer.Deserialize<T>(actualString);
