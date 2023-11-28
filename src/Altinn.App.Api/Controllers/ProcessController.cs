@@ -476,16 +476,13 @@ namespace Altinn.App.Api.Controllers
             }
             
             var processTasks = new List<AppProcessTaskTypeInfo>();
-            foreach (var processElement in _processReader.GetAllFlowElements())
+            foreach (var processElement in _processReader.GetAllFlowElements().OfType<ProcessTask>())
             {
-                if (processElement is ProcessTask processTask)
-                {
-                    processTasks.Add(new AppProcessTaskTypeInfo
+                processTasks.Add(new AppProcessTaskTypeInfo
                     {
-                        ElementId = processTask.Id,
-                        AltinnTaskType = processTask.ExtensionElements?.TaskExtension?.TaskType
+                        ElementId = processElement.Id,
+                        AltinnTaskType = processElement.ExtensionElements?.TaskExtension?.TaskType
                     });
-                }
             }
 
             appProcessState.ProcessTasks = processTasks;
