@@ -631,7 +631,7 @@ namespace Altinn.App.Api.Controllers
 
             var appModel = deserializerResult.Model;
 
-            Dictionary<string, object?>? changedFields = await JsonHelper.ProcessDataWriteWithDiff(instance, dataGuid, deserializerResult.Model, _dataProcessors, deserializerResult.ReportedChanges _logger);
+            Dictionary<string, object?>? changedFields = await JsonHelper.ProcessDataWriteWithDiff(instance, dataGuid, deserializerResult.Model, _dataProcessors, deserializerResult.ReportedChanges, _logger);
 
             await UpdatePresentationTextsOnInstance(instance, dataType, deserializerResult.Model);
             await UpdateDataValuesOnInstance(instance, dataType, deserializerResult.Model);
