@@ -629,19 +629,9 @@ namespace Altinn.App.Api.Controllers
                 return BadRequest(deserializerResult.Error);
             }
 
-            Dictionary<string, object?>? changedFields = null;
             var appModel = deserializerResult.Model;
-            if (deserializerResult.ReportedChanges is not null)
-            {
-                foreach (var dataProcesor in _dataProcessors)
-                {
-                    await dataProcesor.ProcessDataWrite(instance, dataGuid, appModel, deserializerResult.ReportedChanges);
-                }
-            }
-            else
-            {
-                changedFields = await JsonHelper.ProcessDataWriteWithDiff(instance, dataGuid, deserializerResult.Model, _dataProcessors, _logger);
-            }
+
+            Dictionary<string, object?>? changedFields = await JsonHelper.ProcessDataWriteWithDiff(instance, dataGuid, deserializerResult.Model, _dataProcessors, deserializerResult.ReportedChanges _logger);
 
             await UpdatePresentationTextsOnInstance(instance, dataType, deserializerResult.Model);
             await UpdateDataValuesOnInstance(instance, dataType, deserializerResult.Model);
@@ -666,11 +656,6 @@ namespace Altinn.App.Api.Controllers
                     ChangedFields = changedFields
                 };
                 return StatusCode((int)HttpStatusCode.SeeOther, calculationResult);
-            }
-
-            if (deserializerResult.ReportedChanges is not null)
-            {
-                return Ok(appModel);
             }
 
             return Created(dataUrl, updatedDataElement);
