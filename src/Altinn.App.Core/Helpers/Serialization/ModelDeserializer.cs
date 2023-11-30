@@ -66,26 +66,26 @@ namespace Altinn.App.Core.Helpers.Serialization
             MediaTypeHeaderValue mediaType = MediaTypeHeaderValue.Parse(contentType);
             string boundary = mediaType.Boundary.Value!.Trim('"');
             var reader = new MultipartReader(boundary, stream);
-            MultipartSection? firstSection = await reader.ReadNextSectionAsync();
-            if (firstSection?.ContentDisposition?.Contains("name=dataModel") != true)
+            FormMultipartSection? firstSection = (await reader.ReadNextSectionAsync())?.AsFormDataSection();
+            if (firstSection?.Name != "dataModel")
             {
                 return ModelDeserializerResult.FromError("First entry in multipart serialization must have name=\"dataModel\"");
             }
-            var modelResult = await DeserializeJsonAsync(firstSection.Body);
+            var modelResult = await DeserializeJsonAsync(firstSection.Section.Body);
             if (modelResult.HasError)
             {
                 return modelResult;
             }
 
-            MultipartSection? secondSection = await reader.ReadNextSectionAsync();
+            FormMultipartSection? secondSection = (await reader.ReadNextSectionAsync())?.AsFormDataSection();
             Dictionary<string, string?>? reportedChanges = null;
             if (secondSection is not null)
             {
-                if (secondSection?.ContentDisposition?.Contains("name=previousValues") != true)
+                if (secondSection.Name != "previousValues")
                 {
                     return ModelDeserializerResult.FromError("Second entry in multipart serialization must have name=\"previousValues\"");
                 }
-                reportedChanges = await System.Text.Json.JsonSerializer.DeserializeAsync<Dictionary<string, string?>>(secondSection.Body);
+                reportedChanges = await System.Text.Json.JsonSerializer.DeserializeAsync<Dictionary<string, string?>>(secondSection.Section.Body);
                 if (await reader.ReadNextSectionAsync() != null)
                 {
                     return ModelDeserializerResult.FromError("Multipart request had more than 2 elements. Only \"dataModel\" and the optional \"previousValues\" are supported.");

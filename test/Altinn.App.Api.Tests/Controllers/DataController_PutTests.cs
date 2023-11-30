@@ -204,9 +204,9 @@ public class DataController_PutTests : ApiTestBase, IClassFixture<WebApplication
         // Update data element
         using var updateDataElementContent = new MultipartFormDataContent();
         updateDataElementContent.Add(new StringContent("""{"melding":{"name": "Ivar Nesje"}}""", System.Text.Encoding.UTF8,
-            "application/json"), "dataModel");
+            "application/json"), "\"dataModel\"");
         updateDataElementContent.Add(new StringContent("""{"melding.name":"Ivar"}""", System.Text.Encoding.UTF8,
-            "application/json"), "previousValues");
+            "application/json"), "\"previousValues\"");
 
         var response = await client.PutAsync($"/{org}/{app}/instances/{instanceId}/data/{dataGuid}", updateDataElementContent);
         var responseContent = await response.Content.ReadAsStringAsync();
