@@ -147,13 +147,14 @@ public class DataController_PutTests : ApiTestBase, IClassFixture<WebApplication
     public async Task PutDataElement_TestMultiPartUpdateWithCustomDataProcessor_ReturnsOk()
     {
         // Run the previous test with a custom data processor
-        _dataProcessor.Setup(d => d.ProcessDataWrite(It.IsAny<Instance>(), It.IsAny<Guid>(), It.IsAny<object>(), It.IsAny<Dictionary<string, string?>>()))
-            .Returns((Instance instance, Guid dataGuid, object data, Dictionary<string, string?> previousValues) =>
+        _dataProcessor.Setup(d => d.ProcessDataWrite(It.IsAny<Instance>(), It.IsAny<Guid>(), It.IsAny<object>(), It.IsAny<Dictionary<string, string?>?>()))
+            .Returns((Instance instance, Guid dataGuid, object data, Dictionary<string, string?>? previousValues) =>
             {
                 if (data is Skjema skjema)
                 {
                     skjema.Melding.Toggle = true;
                 }
+
                 return Task.CompletedTask;
             });
         
@@ -210,7 +211,7 @@ public class DataController_PutTests : ApiTestBase, IClassFixture<WebApplication
 
         var response = await client.PutAsync($"/{org}/{app}/instances/{instanceId}/data/{dataGuid}", updateDataElementContent);
         var responseContent = await response.Content.ReadAsStringAsync();
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        response.StatusCode.Should().Be(HttpStatusCode.SeeOther);
 
         // Verify stored data
         var readDataElementResponse = await client.GetAsync($"/{org}/{app}/instances/{instanceId}/data/{dataGuid}");

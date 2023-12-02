@@ -629,8 +629,6 @@ namespace Altinn.App.Api.Controllers
                 return BadRequest(deserializerResult.Error);
             }
 
-            var appModel = deserializerResult.Model;
-
             Dictionary<string, object?>? changedFields = await JsonHelper.ProcessDataWriteWithDiff(instance, dataGuid, deserializerResult.Model, _dataProcessors, deserializerResult.ReportedChanges, _logger);
 
             await UpdatePresentationTextsOnInstance(instance, dataType, deserializerResult.Model);
