@@ -36,7 +36,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Create instance data
-        var content = new MultipartFormDataContent();
+        using var content = new MultipartFormDataContent();
         content.Add(new StringContent($$$"""<Skjema><melding><name>{{{testName}}}</name></melding></Skjema>""", System.Text.Encoding.UTF8, "application/xml"), "default");
 
         // Create instance
@@ -64,4 +64,52 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         readDataElementResponseParsed.Melding.Name.Should().Be(testName);
     }
 
+    [Fact]
+    public async Task PostNewInstanceWithInvalidData_EnsureInvalidResponse()
+    {
+        // Should probably be BadRequest, but this is what the current implementation returns
+        // Setup test data
+        string org = "tdd";
+        string app = "contributer-restriction";
+        int instanceOwnerPartyId = 501337;
+        HttpClient client = GetRootedClient(org, app);
+        string token = PrincipalUtil.GetToken(1337, null);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        // Create instance data
+        using var content = new MultipartFormDataContent();
+        content.Add(new StringContent("INVALID XML", System.Text.Encoding.UTF8, "application/xml"), "default");
+
+        // Create instance
+        var createResponse =
+            await client.PostAsync($"{org}/{app}/instances/?instanceOwnerPartyId={instanceOwnerPartyId}", content);
+        var createResponseContent = await createResponse.Content.ReadAsStringAsync();
+        createResponse.StatusCode.Should().Be(HttpStatusCode.InternalServerError, createResponseContent);
+        createResponseContent.Should().Contain("Instantiation of data elements failed");
+    }
+
+
+    [Fact]
+    public async Task PostNewInstanceWithWrong_EnsureBadRequest()
+    {
+        // Setup test data
+        string testName = nameof(PostNewInstanceWithWrong_EnsureBadRequest);
+        string org = "tdd";
+        string app = "contributer-restriction";
+        int instanceOwnerPartyId = 501337;
+        HttpClient client = GetRootedClient(org, app);
+        string token = PrincipalUtil.GetToken(1337, null);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        // Create instance data
+        using var content = new MultipartFormDataContent();
+        content.Add(new StringContent($$$"""<Skjema><melding><name>{{{testName}}}</name></melding></Skjema>""", System.Text.Encoding.UTF8, "application/xml"), "wrongName");
+
+        // Create instance
+        var createResponse =
+            await client.PostAsync($"{org}/{app}/instances/?instanceOwnerPartyId={instanceOwnerPartyId}", content);
+        var createResponseContent = await createResponse.Content.ReadAsStringAsync();
+        createResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest, createResponseContent);
+        createResponseContent.Should().Contain("Multipart section named, 'wrongName' does not correspond to an element");
+    }
 }
