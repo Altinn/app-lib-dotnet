@@ -1,0 +1,67 @@
+using System.Net;
+using System.Net.Http.Headers;
+using System.Text.Json;
+using Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models;
+using Altinn.App.Api.Tests.Utils;
+using Altinn.App.Core.Features;
+using Altinn.Platform.Storage.Interface.Models;
+using FluentAssertions;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
+using Moq;
+using Xunit;
+
+namespace Altinn.App.Api.Tests.Controllers;
+
+public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixture<WebApplicationFactory<Program>>
+{
+    private readonly Mock<IDataProcessor> _dataProcessor = new();
+    public InstancesController_PostNewInstanceTests(WebApplicationFactory<Program> factory) : base(factory)
+    {
+        OverrideServicesForAllTests = (services) =>
+        {
+            services.AddSingleton(_dataProcessor.Object);
+        };
+    }
+    [Fact]
+    public async Task PostNewInstanceWithContent_EnsureDataIsPresent()
+    {
+        // Setup test data
+        string testName = nameof(PostNewInstanceWithContent_EnsureDataIsPresent);
+        string org = "tdd";
+        string app = "contributer-restriction";
+        int instanceOwnerPartyId = 501337;
+        HttpClient client = GetRootedClient(org, app);
+        string token = PrincipalUtil.GetToken(1337, null);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        // Create instance data
+        var content = new MultipartFormDataContent();
+        content.Add(new StringContent($$$"""<Skjema><melding><name>{{{testName}}}</name></melding></Skjema>""", System.Text.Encoding.UTF8, "application/xml"), "default");
+
+        // Create instance
+        var createResponse =
+            await client.PostAsync($"{org}/{app}/instances/?instanceOwnerPartyId={instanceOwnerPartyId}", content);
+        var createResponseContent = await createResponse.Content.ReadAsStringAsync();
+        createResponse.StatusCode.Should().Be(HttpStatusCode.Created, createResponseContent);
+        var createResponseParsed = JsonSerializer.Deserialize<Instance>(createResponseContent, new JsonSerializerOptions()
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        })!;
+
+        // Verify Data id
+        var instanceId = createResponseParsed.Id;
+        createResponseParsed.Data.Should().HaveCount(1, "Create instance should create a data element");
+        var dataGuid = createResponseParsed.Data.First().Id;
+
+
+        // Verify stored data
+        var readDataElementResponse = await client.GetAsync($"/{org}/{app}/instances/{instanceId}/data/{dataGuid}");
+        readDataElementResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var readDataElementResponseContent = await readDataElementResponse.Content.ReadAsStringAsync();
+        var readDataElementResponseParsed =
+            JsonSerializer.Deserialize<Skjema>(readDataElementResponseContent)!;
+        readDataElementResponseParsed.Melding.Name.Should().Be(testName);
+    }
+
+}
