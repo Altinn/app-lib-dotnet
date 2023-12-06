@@ -58,7 +58,7 @@ namespace Altinn.App.Api.Controllers
         /// <param name="instanceClient">instance service to store instances</param>
         /// <param name="instantiationProcessor">Instantiation processor</param>
         /// <param name="dataClient">A service with access to data storage.</param>
-        /// <param name="dataProcessors">Serive implemnting logic during data read/write</param>
+        /// <param name="dataProcessors">Services implementing logic during data read/write</param>
         /// <param name="appModel">Service for generating app model</param>
         /// <param name="appResourcesService">The apps resource service</param>
         /// <param name="appMetadata">The app metadata service</param>
