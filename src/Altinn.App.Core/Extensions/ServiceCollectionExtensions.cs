@@ -133,7 +133,7 @@ namespace Altinn.App.Core.Extensions
         {
             // Services for Altinn App
             services.TryAddTransient<IPDP, PDPAppSI>();
-            services.TryAddTransient<IValidation, ValidationAppSI>();
+            services.TryAddTransient<IValidationService, ValidationService>();
             services.TryAddTransient<IPrefill, PrefillSI>();
             services.TryAddTransient<ISigningCredentialsResolver, SigningCredentialsResolver>();
             services.TryAddSingleton<IAppResources, AppResourcesSI>();
@@ -146,7 +146,6 @@ namespace Altinn.App.Core.Extensions
 #pragma warning restore CS0618, CS0612 // Type or member is obsolete
             services.TryAddTransient<IInstantiationProcessor, NullInstantiationProcessor>();
             services.TryAddTransient<IInstantiationValidator, NullInstantiationValidator>();
-            services.TryAddTransient<IInstanceValidator, NullInstanceValidator>();
             services.TryAddTransient<IAppModel, DefaultAppModel>();
             services.TryAddTransient<DataListsFactory>();
             services.TryAddTransient<InstanceDataListsFactory>();

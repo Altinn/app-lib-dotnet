@@ -2,6 +2,7 @@
 using System.Net;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Instances;
@@ -34,7 +35,7 @@ namespace Altinn.App.Api.Controllers
         private readonly ILogger<ProcessController> _logger;
         private readonly IInstanceClient _instanceClient;
         private readonly IProcessClient _processClient;
-        private readonly IValidation _validationService;
+        private readonly IValidationService _validationService;
         private readonly IAuthorizationService _authorization;
         private readonly IProcessEngine _processEngine;
         private readonly IProcessReader _processReader;
@@ -46,7 +47,7 @@ namespace Altinn.App.Api.Controllers
             ILogger<ProcessController> logger,
             IInstanceClient instanceClient,
             IProcessClient processClient,
-            IValidation validationService,
+            IValidationService validationService,
             IAuthorizationService authorization,
             IProcessReader processReader,
             IProcessEngine processEngine)
@@ -202,7 +203,7 @@ namespace Altinn.App.Api.Controllers
             }
         }
 
-        private async Task<bool> CanTaskBeEnded(Instance instance, string currentElementId)
+        private async Task<bool> CanTaskBeEnded(Instance instance, string currentTaskId)
         {
             List<ValidationIssue> validationIssues = new List<ValidationIssue>();
 
@@ -210,7 +211,7 @@ namespace Altinn.App.Api.Controllers
 
             if (instance.Process?.CurrentTask?.Validated == null || !instance.Process.CurrentTask.Validated.CanCompleteTask)
             {
-                validationIssues = await _validationService.ValidateAndUpdateProcess(instance, currentElementId);
+                validationIssues = await _validationService.ValidateInstanceAtTask(instance, currentTaskId);
 
                 canEndTask = await ProcessHelper.CanEndProcessTask(instance, validationIssues);
             }

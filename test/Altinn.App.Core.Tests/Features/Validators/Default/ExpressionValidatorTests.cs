@@ -2,34 +2,61 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Features.Validation.Default;
 using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Models.Validation;
 using Altinn.App.Core.Tests.Helpers;
 using Altinn.App.Core.Tests.LayoutExpressions;
+using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
 using Xunit.Sdk;
 
-namespace Altinn.App.Core.Tests.Features.Validators;
+namespace Altinn.App.Core.Tests.Features.Validators.Default;
 
-public class ExpressionValidationTests
+public class ExpressionValidatorTests
 {
+    private const string DataType = "default";
+    private readonly ExpressionValidator _validator;
+    private readonly Mock<ILogger<ExpressionValidator>> _logger = new();
+    private readonly Mock<IAppResources> _appResources = new(MockBehavior.Strict);
+    private readonly IOptions<FrontEndSettings> _frontendSettings = Options.Create(new FrontEndSettings());
+    private readonly Mock<LayoutEvaluatorStateInitializer> _layoutInitializer;
+
+    public ExpressionValidatorTests()
+    {
+        _layoutInitializer = new(MockBehavior.Strict, _appResources.Object, _frontendSettings) { CallBase = false };
+        _validator =
+            new ExpressionValidator(DataType, _logger.Object, _appResources.Object, _layoutInitializer.Object);
+    }
+
     [Theory]
     [ExpressionTest]
-    public void RunExpressionValidationTest(ExpressionValidationTestModel testCase)
+    public async Task RunExpressionValidationTest(ExpressionValidationTestModel testCase)
     {
-        var logger = Mock.Of<ILogger<ValidationService>>();
+        var instance = new Instance();
+        var dataElement = new DataElement();
+
         var dataModel = new JsonDataModel(testCase.FormData);
-        var evaluatorState = new LayoutEvaluatorState(dataModel, testCase.Layouts, new(), new());
+
+        var evaluatorState = new LayoutEvaluatorState(dataModel, testCase.Layouts, _frontendSettings.Value, instance);
+        _layoutInitializer
+            .Setup(init => init.Init(It.Is<Instance>(i => i == instance), It.IsAny<object>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(evaluatorState);
+        _appResources
+            .Setup(ar => ar.GetValidationConfiguration(null))
+            .Returns(JsonSerializer.Serialize(testCase.ValidationConfig));
 
         LayoutEvaluator.RemoveHiddenData(evaluatorState, RowRemovalOption.SetToNull);
-        var validationIssues = ExpressionValidator.Validate(testCase.ValidationConfig, evaluatorState, logger).ToArray();
+        var validationIssues = await _validator.ValidateFormData(instance, dataElement, null!);
 
         var result = validationIssues.Select(i => new
         {

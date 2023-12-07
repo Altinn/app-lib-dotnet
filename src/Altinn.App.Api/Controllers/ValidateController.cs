@@ -1,5 +1,6 @@
 #nullable enable
 
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Infrastructure.Clients;
@@ -21,14 +22,14 @@ namespace Altinn.App.Api.Controllers
     {
         private readonly IInstanceClient _instanceClient;
         private readonly IAppMetadata _appMetadata;
-        private readonly IValidation _validationService;
+        private readonly IValidationService _validationService;
 
         /// <summary>
         /// Initialises a new instance of the <see cref="ValidateController"/> class
         /// </summary>
         public ValidateController(
             IInstanceClient instanceClient,
-            IValidation validationService,
+            IValidationService validationService,
             IAppMetadata appMetadata)
         {
             _instanceClient = instanceClient;
@@ -66,7 +67,7 @@ namespace Altinn.App.Api.Controllers
 
             try 
             {
-                List<ValidationIssue> messages = await _validationService.ValidateAndUpdateProcess(instance, taskId);
+                List<ValidationIssue> messages = await _validationService.ValidateInstanceAtTask(instance, taskId);
                 return Ok(messages);
             } 
             catch (PlatformHttpException exception) 
@@ -130,9 +131,11 @@ namespace Altinn.App.Api.Controllers
                 throw new ValidationException("Unknown element type.");
             }
 
-            messages.AddRange(await _validationService.ValidateDataElement(instance, dataType, element));
+            messages.AddRange(await _validationService.ValidateDataElement(instance, element, dataType));
 
             string taskId = instance.Process.CurrentTask.ElementId;
+
+            // Should this be a BadRequest instead?
             if (!dataType.TaskId.Equals(taskId, StringComparison.OrdinalIgnoreCase))
             {
                 ValidationIssue message = new ValidationIssue

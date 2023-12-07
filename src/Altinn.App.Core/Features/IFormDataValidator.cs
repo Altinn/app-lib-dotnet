@@ -1,0 +1,49 @@
+using Altinn.App.Core.Models.Validation;
+using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Altinn.App.Core.Features;
+
+/// <summary>
+/// Interface for handling validation of form data. 
+/// (i.e. dataElements with AppLogic defined 
+/// </summary>
+public interface IFormDataValidator
+{
+    /// <summary>
+    /// The data type this validator is for. Typically either hard coded by implementation or
+    /// or set by constructor using a <see cref="ServiceKeyAttribute" /> and a keyed service.
+    /// </summary>
+    string DataType { get; }
+
+    /// <summary>
+    /// Extension point if the validator should run for multiple data types.
+    /// Typical users will just set the <see cref="DataType"/> property.
+    /// </summary>
+    /// <param name="dataType">The ID of the data type that might be validated</param>
+    bool CanValidateDataType(string dataType) => DataType == dataType;
+
+    /// <summary>
+    /// Used for partial validation to ensure that the validator only runs when relevant fields have changed.
+    /// </summary>
+    /// <param name="changedFields">List of the json path to all changed fields for incremental validation</param>
+    bool ShouldRunForIncrementalValidation(List<string>? changedFields = null);
+
+    /// <summary>
+    /// Returns the group id of the validator. This is used to run partial validations on the backend.
+    /// </summary>
+    /// <remarks>
+    /// The default implementation should work for most cases.
+    /// </remarks>
+    public string? Code => $"{this.GetType().FullName}-{DataType}";
+
+    /// <summary>
+    ///
+    /// </summary>
+    /// <param name="instance"></param>
+    /// <param name="dataElement"></param>
+    /// <param name="data"></param>
+    /// <param name="changedFields"></param>
+    /// <returns>List of validation issues</returns>
+    Task<List<ValidationIssue>> ValidateFormData(Instance instance, DataElement dataElement, object data, List<string>? changedFields = null);
+}
