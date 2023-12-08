@@ -148,7 +148,7 @@ namespace Altinn.App.Core.Helpers.Serialization
                 catch (InvalidOperationException invalidOperationException)
                 {
                     // One possible fail condition is if the XML has a namespace, but the model does not, or that the namespaces are different.
-                    return ModelDeserializerResult.FromError($"{invalidOperationException.Message} {invalidOperationException?.InnerException?.Message}");
+                    return ModelDeserializerResult.FromError($"{invalidOperationException.Message} {invalidOperationException.InnerException?.Message}");
                 }
             }
             catch (Exception ex)

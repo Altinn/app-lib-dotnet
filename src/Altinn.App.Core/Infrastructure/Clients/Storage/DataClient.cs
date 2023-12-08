@@ -14,13 +14,11 @@ using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Primitives;
 
 using Newtonsoft.Json;
 using System.Xml;
 using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Data;
-using Microsoft.IdentityModel.Tokens;
 
 namespace Altinn.App.Core.Infrastructure.Clients.Storage
 {
@@ -175,7 +173,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
 
                 if (deserializerResult.HasError)
                 {
-                    _logger.LogError($"Cannot deserialize XML form data read from storage: {deserializerResult.Error}");
+                    _logger.LogError("Cannot deserialize XML form data read from storage: {deserializerError}", deserializerResult.Error);
                     throw new ServiceException(HttpStatusCode.Conflict, $"Cannot deserialize XML form data from storage {deserializerResult.Error}");
                 }
 

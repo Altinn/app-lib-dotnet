@@ -16,6 +16,12 @@ namespace Altinn.App.Api.Tests.Controllers;
 public class DataController_PutTests : ApiTestBase, IClassFixture<WebApplicationFactory<Program>>
 {
     private readonly Mock<IDataProcessor> _dataProcessor = new();
+
+    private static readonly JsonSerializerOptions JsonSerializerOptions = new ()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    };
+
     public DataController_PutTests(WebApplicationFactory<Program> factory) : base(factory)
     {
         OverrideServicesForAllTests = (services) =>
@@ -40,10 +46,7 @@ public class DataController_PutTests : ApiTestBase, IClassFixture<WebApplication
             await client.PostAsync($"{org}/{app}/instances/?instanceOwnerPartyId={instanceOwnerPartyId}", null);
         var createResponseContent = await createResponse.Content.ReadAsStringAsync();
         createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
-        var createResponseParsed = JsonSerializer.Deserialize<Instance>(createResponseContent, new JsonSerializerOptions()
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        })!;
+        var createResponseParsed = JsonSerializer.Deserialize<Instance>(createResponseContent, JsonSerializerOptions)!;
         var instanceId = createResponseParsed.Id;
 
         // Create data element (not sure why it isn't created when the instance is created, autoCreate is true)
@@ -54,10 +57,7 @@ public class DataController_PutTests : ApiTestBase, IClassFixture<WebApplication
         var createDataElementResponseContent = await createDataElementResponse.Content.ReadAsStringAsync();
         createDataElementResponse.StatusCode.Should().Be(HttpStatusCode.Created);
         var createDataElementResponseParsed =
-            JsonSerializer.Deserialize<DataElement>(createDataElementResponseContent, new JsonSerializerOptions()
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            })!;
+            JsonSerializer.Deserialize<DataElement>(createDataElementResponseContent, JsonSerializerOptions)!;
         var dataGuid = createDataElementResponseParsed.Id;
         
         // Update data element
@@ -95,11 +95,7 @@ public class DataController_PutTests : ApiTestBase, IClassFixture<WebApplication
             await client.PostAsync($"{org}/{app}/instances/?instanceOwnerPartyId={instanceOwnerPartyId}", null);
         var createResponseContent = await createResponse.Content.ReadAsStringAsync();
         createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
-        var createResponseParsed = JsonSerializer.Deserialize<Instance>(createResponseContent,
-            new JsonSerializerOptions()
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            })!;
+        var createResponseParsed = JsonSerializer.Deserialize<Instance>(createResponseContent, JsonSerializerOptions)!;
         var instanceId = createResponseParsed.Id;
 
         // Create data element (not sure why it isn't created when the instance is created, autoCreate is true)
@@ -111,10 +107,7 @@ public class DataController_PutTests : ApiTestBase, IClassFixture<WebApplication
         var createDataElementResponseContent = await createDataElementResponse.Content.ReadAsStringAsync();
         createDataElementResponse.StatusCode.Should().Be(HttpStatusCode.Created);
         var createDataElementResponseParsed =
-            JsonSerializer.Deserialize<DataElement>(createDataElementResponseContent, new JsonSerializerOptions()
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            })!;
+            JsonSerializer.Deserialize<DataElement>(createDataElementResponseContent, JsonSerializerOptions)!;
         var dataGuid = createDataElementResponseParsed.Id;
 
         // Update data element
@@ -172,11 +165,7 @@ public class DataController_PutTests : ApiTestBase, IClassFixture<WebApplication
             await client.PostAsync($"{org}/{app}/instances/?instanceOwnerPartyId={instanceOwnerPartyId}", null);
         var createResponseContent = await createResponse.Content.ReadAsStringAsync();
         createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
-        var createResponseParsed = JsonSerializer.Deserialize<Instance>(createResponseContent,
-            new JsonSerializerOptions()
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            })!;
+        var createResponseParsed = JsonSerializer.Deserialize<Instance>(createResponseContent, JsonSerializerOptions)!;
         var instanceId = createResponseParsed.Id;
 
         // Create data element (not sure why it isn't created when the instance is created, autoCreate is true)
@@ -188,10 +177,7 @@ public class DataController_PutTests : ApiTestBase, IClassFixture<WebApplication
         var createDataElementResponseContent = await createDataElementResponse.Content.ReadAsStringAsync();
         createDataElementResponse.StatusCode.Should().Be(HttpStatusCode.Created);
         var createDataElementResponseParsed =
-            JsonSerializer.Deserialize<DataElement>(createDataElementResponseContent, new JsonSerializerOptions()
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            })!;
+            JsonSerializer.Deserialize<DataElement>(createDataElementResponseContent, JsonSerializerOptions)!;
         var dataGuid = createDataElementResponseParsed.Id;
         
         // Verify stored data

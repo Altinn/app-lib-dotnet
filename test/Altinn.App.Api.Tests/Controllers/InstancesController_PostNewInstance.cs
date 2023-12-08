@@ -16,6 +16,12 @@ namespace Altinn.App.Api.Tests.Controllers;
 public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixture<WebApplicationFactory<Program>>
 {
     private readonly Mock<IDataProcessor> _dataProcessor = new();
+
+    private static readonly JsonSerializerOptions JsonSerializerOptions = new JsonSerializerOptions()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    };
+
     public InstancesController_PostNewInstanceTests(WebApplicationFactory<Program> factory) : base(factory)
     {
         OverrideServicesForAllTests = (services) =>
@@ -44,10 +50,8 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
             await client.PostAsync($"{org}/{app}/instances/?instanceOwnerPartyId={instanceOwnerPartyId}", content);
         var createResponseContent = await createResponse.Content.ReadAsStringAsync();
         createResponse.StatusCode.Should().Be(HttpStatusCode.Created, createResponseContent);
-        var createResponseParsed = JsonSerializer.Deserialize<Instance>(createResponseContent, new JsonSerializerOptions()
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        })!;
+
+        var createResponseParsed = JsonSerializer.Deserialize<Instance>(createResponseContent, JsonSerializerOptions)!;
 
         // Verify Data id
         var instanceId = createResponseParsed.Id;
