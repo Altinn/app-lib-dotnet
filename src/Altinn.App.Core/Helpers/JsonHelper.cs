@@ -34,7 +34,7 @@ namespace Altinn.App.Core.Helpers
             try
             {
                 var changed = FindChangedFields(serviceModelJsonString, updatedServiceModelString);
-                return changed.Count == 0 ? changed : null;
+                return changed.Count == 0 ? null : changed;
             }
             catch (Exception e)
             {

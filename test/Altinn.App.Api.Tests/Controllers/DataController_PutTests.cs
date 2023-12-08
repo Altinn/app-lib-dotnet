@@ -64,7 +64,7 @@ public class DataController_PutTests : ApiTestBase, IClassFixture<WebApplication
         using var updateDataElementContent =
             new StringContent("""{"melding":{"name": "Ivar Nesje"}}""", System.Text.Encoding.UTF8, "application/json");
         var response = await client.PutAsync($"/{org}/{app}/instances/{instanceId}/data/{dataGuid}", updateDataElementContent);
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        response.StatusCode.Should().Be(HttpStatusCode.SeeOther);
 
         // Verify stored data
         var readDataElementResponse = await client.GetAsync($"/{org}/{app}/instances/{instanceId}/data/{dataGuid}");
@@ -119,7 +119,7 @@ public class DataController_PutTests : ApiTestBase, IClassFixture<WebApplication
 
         var response = await client.PutAsync($"/{org}/{app}/instances/{instanceId}/data/{dataGuid}", updateDataElementContent);
         var responseContent = await response.Content.ReadAsStringAsync();
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        response.StatusCode.Should().Be(HttpStatusCode.SeeOther);
 
         // Verify stored data
         var readDataElementResponse = await client.GetAsync($"/{org}/{app}/instances/{instanceId}/data/{dataGuid}");
@@ -197,7 +197,7 @@ public class DataController_PutTests : ApiTestBase, IClassFixture<WebApplication
 
         var response = await client.PutAsync($"/{org}/{app}/instances/{instanceId}/data/{dataGuid}", updateDataElementContent);
         var responseContent = await response.Content.ReadAsStringAsync();
-        response.StatusCode.Should().Be(HttpStatusCode.SeeOther);
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         // Verify stored data
         var readDataElementResponse = await client.GetAsync($"/{org}/{app}/instances/{instanceId}/data/{dataGuid}");
