@@ -94,10 +94,10 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
 
 
     [Fact]
-    public async Task PostNewInstanceWithWrong_EnsureBadRequest()
+    public async Task PostNewInstanceWithWrongPartname_EnsureBadRequest()
     {
         // Setup test data
-        string testName = nameof(PostNewInstanceWithWrong_EnsureBadRequest);
+        string testName = nameof(PostNewInstanceWithWrongPartname_EnsureBadRequest);
         string org = "tdd";
         string app = "contributer-restriction";
         int instanceOwnerPartyId = 501337;

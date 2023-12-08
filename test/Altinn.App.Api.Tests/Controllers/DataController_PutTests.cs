@@ -207,9 +207,6 @@ public class DataController_PutTests : ApiTestBase, IClassFixture<WebApplication
         readDataElementResponseParsed.Melding.Name.Should().Be("Ivar Nesje");
         readDataElementResponseParsed.Melding.Toggle.Should().BeTrue();
 
-        // Verify that update response equals the following read response
-        // responseContent.Should().Be(readDataElementResponseContent);
-
         _dataProcessor.Verify(p=>p.ProcessDataRead(It.IsAny<Instance>(), It.Is<Guid>(dataId => dataId == Guid.Parse(dataGuid)), It.IsAny<Skjema>()), Times.Exactly(2));
         _dataProcessor.Verify(p => p.ProcessDataWrite(It.IsAny<Instance>(), It.Is<Guid>(dataId => dataId == Guid.Parse(dataGuid)), It.IsAny<Skjema>(), It.Is<Dictionary<string, string?>>(d => d.ContainsKey("melding.name"))), Times.Exactly(1)); // TODO: Shouldn't this be 2 because of the first write?
         _dataProcessor.VerifyNoOtherCalls();
