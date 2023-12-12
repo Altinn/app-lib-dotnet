@@ -1,3 +1,4 @@
+using Altinn.App.Core.Features.FileAnalysis;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
@@ -151,6 +152,85 @@ public class ValidationService : IValidationService
         }));
 
         return dataValidators.Zip(issuesLists).ToDictionary(kv => kv.First.ValidationSource, kv => kv.Second);
+    }
+
+
+    /// <inheritdoc/>
+    public async Task<List<ValidationIssue>> ValidateFileUpload(Instance instance, DataType dataType, byte[] fileBytes, string? fileName = null)
+    {
+        var fileAnalysisResults = new List<FileAnalysisResult>();
+        if (FileAnalysisEnabledForDataType(dataType))
+        {
+            using var fileStream = new MemoryStream(fileBytes);
+            fileAnalysisResults = await Analyse(dataType, fileStream, fileName);
+        }
+
+        bool fileValidationSuccess = true;
+        List<ValidationIssue> validationIssues = new();
+        if (FileValidationEnabledForDataType(dataType))
+        {
+            (fileValidationSuccess, validationIssues) = await Validate(dataType, fileAnalysisResults);
+        }
+
+        return validationIssues;
+    }
+
+    private static bool FileAnalysisEnabledForDataType(DataType dataTypeFromMetadata)
+    {
+        return dataTypeFromMetadata.EnabledFileAnalysers != null && dataTypeFromMetadata.EnabledFileAnalysers.Count > 0;
+    }
+
+    private static bool FileValidationEnabledForDataType(DataType dataTypeFromMetadata)
+    {
+        return dataTypeFromMetadata.EnabledFileValidators != null && dataTypeFromMetadata.EnabledFileValidators.Count > 0;
+    }
+
+    private async Task<(bool Success, List<ValidationIssue> Errors)> Validate(DataType dataType, List<FileAnalysisResult> fileAnalysisResults)
+    {
+        List<ValidationIssue> allErrors = new();
+        bool allSuccess = true;
+
+        var fileValidators = _serviceProvider.GetServices<IFileValidator>()
+            .Where(fv => dataType.EnabledFileValidators.Contains(fv.Id))
+            .Concat(_serviceProvider.GetKeyedServices<IFileValidator>(dataType.Id))
+            .ToList();
+
+        foreach (IFileValidator fileValidator in fileValidators)
+        {
+            (bool success, IEnumerable<ValidationIssue> errors) = await fileValidator.Validate(dataType, fileAnalysisResults);
+            if (!success)
+            {
+                allSuccess = false;
+                allErrors.AddRange(errors);
+            }
+        }
+
+        return (allSuccess, allErrors);
+    }
+
+    /// <summary>
+    /// Runs the specified file analysers against the stream provided.
+    /// </summary>
+    private async Task<List<FileAnalysisResult>> Analyse(DataType dataType, Stream fileStream, string? filename = null)
+    {
+        var fileAnalysers = _serviceProvider.GetServices<IFileAnalyser>()
+            .Where(fa => dataType.EnabledFileAnalysers.Contains(fa.Id))
+            .Concat(_serviceProvider.GetKeyedServices<IFileAnalyser>(dataType.Id));
+
+        List<FileAnalysisResult> fileAnalysisResults = new();
+        foreach (var analyser in fileAnalysers)
+        {
+            if (fileStream.CanSeek)
+            {
+                fileStream.Position = fileStream.Seek(0, SeekOrigin.Begin);
+            }
+            var result = await analyser.Analyse(fileStream, filename);
+            result.AnalyserId = analyser.Id;
+            result.Filename = filename;
+            fileAnalysisResults.Add(result);
+        }
+
+        return fileAnalysisResults;
     }
 
 }

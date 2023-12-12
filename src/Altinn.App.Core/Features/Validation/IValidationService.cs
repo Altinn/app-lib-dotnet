@@ -51,4 +51,14 @@ public interface IValidationService
     /// <param name="previousData">The previous data so that validators can know if they need to run again with <see cref="IFormDataValidator.HasRelevantChanges"/></param>
     /// <param name="ignoredValidators">List validators that should not be run (for incremental validation). Typically known validators that frontend knows how to replicate</param>
     Task<Dictionary<string, List<ValidationIssue>>> ValidateFormData(Instance instance, DataElement dataElement, DataType dataType, object data, object? previousData = null, List<string>? ignoredValidators = null);
+
+    /// <summary>
+    /// Validate file uploads. This method executes validations for <see cref="IFileAnalyzer"/> and <see cref="IFileValidator"/>
+    /// </summary>
+    /// <param name="instance">The instance the file will be uploaded to</param>
+    /// <param name="dataType">The data type of the file to be uploaded</param>
+    /// <param name="fileContent">The actual bytes of the file</param>
+    /// <param name="fileName">The file name sent with the file</param>
+    /// <returns></returns>
+    Task<List<ValidationIssue>> ValidateFileUpload(Instance instance, DataType dataType, byte[] fileContent, string? fileName = null);
 }

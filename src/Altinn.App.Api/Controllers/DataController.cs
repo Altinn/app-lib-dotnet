@@ -13,8 +13,6 @@ using Altinn.App.Api.Models;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
-using Altinn.App.Core.Features.FileAnalysis;
-using Altinn.App.Core.Features.FileAnalyzis;
 using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.Serialization;
@@ -54,8 +52,6 @@ namespace Altinn.App.Api.Controllers
         private readonly IAppMetadata _appMetadata;
         private readonly IPrefill _prefillService;
         private readonly IValidationService _validationService;
-        private readonly IFileAnalysisService _fileAnalyserService;
-        private readonly IFileValidationService _fileValidationService;
         private readonly IFeatureManager _featureManager;
 
         private static readonly JsonSerializerOptions JsonSerializerOptions = new()
@@ -80,8 +76,6 @@ namespace Altinn.App.Api.Controllers
         /// <param name="featureManager">The feature manager controlling enabled features.</param>
         /// <param name="prefillService">A service with prefill related logic.</param>
         /// <param name="validationService">The service used to validate data</param>
-        /// <param name="fileAnalyserService">Service used to analyse files uploaded.</param>
-        /// <param name="fileValidationService">Service used to validate files uploaded.</param>
         public DataController(
             ILogger<DataController> logger,
             IInstanceClient instanceClient,
@@ -91,11 +85,9 @@ namespace Altinn.App.Api.Controllers
             IAppModel appModel,
             IAppResources appResourcesService,
             IPrefill prefillService,
-            IValidationService validationService,
-            IFileAnalysisService fileAnalyserService,
-            IFileValidationService fileValidationService,
             IAppMetadata appMetadata,
-            IFeatureManager featureManager)
+            IFeatureManager featureManager,
+            IValidationService validationService)
         {
             _logger = logger;
 
@@ -107,10 +99,8 @@ namespace Altinn.App.Api.Controllers
             _appResourcesService = appResourcesService;
             _appMetadata = appMetadata;
             _prefillService = prefillService;
-            _validationService = validationService;
-            _fileAnalyserService = fileAnalyserService;
-            _fileValidationService = fileValidationService;
             _featureManager = featureManager;
+            _validationService = validationService;
         }
 
         /// <summary>
@@ -179,9 +169,8 @@ namespace Altinn.App.Api.Controllers
 
                     StreamContent streamContent = Request.CreateContentStream();
 
-                    using Stream fileStream = new MemoryStream();
-                    await streamContent.CopyToAsync(fileStream);
-                    if (fileStream.Length == 0)
+                    var fileBytes = await streamContent.ReadAsByteArrayAsync();
+                    if (fileBytes.Length == 0)
                     {
                         const string errorMessage = "Invalid data provided. Error: The file is zero bytes.";
                         var error = new ValidationIssue
@@ -197,25 +186,14 @@ namespace Altinn.App.Api.Controllers
                     bool parseSuccess = Request.Headers.TryGetValue("Content-Disposition", out StringValues headerValues);
                     string? filename = parseSuccess ? DataRestrictionValidation.GetFileNameFromHeader(headerValues) : null;
 
-                    IEnumerable<FileAnalysisResult> fileAnalysisResults = new List<FileAnalysisResult>();
-                    if (FileAnalysisEnabledForDataType(dataTypeFromMetadata))
+                    var fileAnalysisResults = await _validationService.ValidateFileUpload(instance, dataTypeFromMetadata, fileBytes, filename);
+
+                    if (!fileAnalysisResults.All(r => r.Severity is ValidationIssueSeverity.Informational or ValidationIssueSeverity.Fixed))
                     {
-                        fileAnalysisResults = await _fileAnalyserService.Analyse(dataTypeFromMetadata, fileStream, filename);
+                        return BadRequest(await GetErrorDetails(fileAnalysisResults));
                     }
 
-                    bool fileValidationSuccess = true;
-                    List<ValidationIssue> validationIssues = new();
-                    if (FileValidationEnabledForDataType(dataTypeFromMetadata))
-                    {
-                        (fileValidationSuccess, validationIssues) = await _fileValidationService.Validate(dataTypeFromMetadata, fileAnalysisResults);
-                    }
-
-                    if (!fileValidationSuccess)
-                    {
-                        return BadRequest(await GetErrorDetails(validationIssues));
-                    }
-
-                    fileStream.Seek(0, SeekOrigin.Begin);
+                    using var fileStream = new MemoryStream(fileBytes);
                     return await CreateBinaryData(instance, dataType, streamContent.Headers.ContentType.ToString(), filename, fileStream);
                 }
             }
@@ -236,16 +214,6 @@ namespace Altinn.App.Api.Controllers
         private async Task<object> GetErrorDetails(List<ValidationIssue> errors)
         {
             return await _featureManager.IsEnabledAsync(FeatureFlags.JsonObjectInDataResponse) ? errors : string.Join(";", errors.Select(x => x.Description));
-        }
-
-        private static bool FileAnalysisEnabledForDataType(DataType dataTypeFromMetadata)
-        {
-            return dataTypeFromMetadata.EnabledFileAnalysers != null && dataTypeFromMetadata.EnabledFileAnalysers.Count > 0;
-        }
-
-        private static bool FileValidationEnabledForDataType(DataType dataTypeFromMetadata)
-        {
-            return dataTypeFromMetadata.EnabledFileValidators != null && dataTypeFromMetadata.EnabledFileValidators.Count > 0;
         }
 
         /// <summary>
@@ -312,6 +280,8 @@ namespace Altinn.App.Api.Controllers
         /// <param name="dataGuid">unique id to identify the data element to update</param>
         /// <returns>The updated data element, including the changed fields in the event of a calculation that changed data.</returns>
         [Authorize(Policy = AuthzConstants.POLICY_INSTANCE_WRITE)]
+
+        // "{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/data/form/{dataGuid:guid}"
         [HttpPut("{dataGuid:guid}")]
         [DisableFormValueModelBinding]
         [RequestSizeLimit(REQUEST_SIZE_LIMIT)]
