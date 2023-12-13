@@ -1,3 +1,4 @@
+using Altinn.App.Core.Features.FileAnalysis;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 
@@ -53,7 +54,7 @@ public interface IValidationService
     Task<Dictionary<string, List<ValidationIssue>>> ValidateFormData(Instance instance, DataElement dataElement, DataType dataType, object data, object? previousData = null, List<string>? ignoredValidators = null);
 
     /// <summary>
-    /// Validate file uploads. This method executes validations for <see cref="IFileAnalyzer"/> and <see cref="IFileValidator"/>
+    /// Validate file uploads. This method executes validations for <see cref="IFileAnalyser"/> and <see cref="IFileValidator"/>
     /// </summary>
     /// <param name="instance">The instance the file will be uploaded to</param>
     /// <param name="dataType">The data type of the file to be uploaded</param>
