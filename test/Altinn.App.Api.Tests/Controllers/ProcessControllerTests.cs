@@ -4,6 +4,7 @@ using System.Text.Json;
 using Altinn.App.Api.Models;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Api.Tests.Utils;
+using Altinn.App.TestUtils.JsonCompare;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit;
@@ -82,15 +83,7 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
                                "endEvent": null
                              }
                              """;
-        CompareResult<AppProcessState>(expectedString, content);
+        content.Should().BeJsonEquivalentTo(expectedString);
     }
-    
-    
-    //TODO: replace this assertion with a proper one once fluentassertions has a json compare feature scheduled for v7 https://github.com/fluentassertions/fluentassertions/issues/2205
-    private static void CompareResult<T>(string expectedString, string actualString)
-    {
-        T? expected = JsonSerializer.Deserialize<T>(expectedString);
-        T? actual = JsonSerializer.Deserialize<T>(actualString);
-        actual.Should().BeEquivalentTo(expected);
-    }
+
 }
