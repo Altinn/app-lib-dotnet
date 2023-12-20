@@ -2,8 +2,11 @@
 
 using System.Net;
 using System.Security.Claims;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Altinn.App.Api.Helpers.RequestHandling;
 using Altinn.App.Api.Infrastructure.Filters;
+using Altinn.App.Api.Models;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
@@ -20,6 +23,7 @@ using Altinn.App.Core.Internal.Prefill;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
+using Json.Patch;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
@@ -351,6 +355,115 @@ namespace Altinn.App.Api.Controllers
             {
                 return HandlePlatformHttpException(e, $"Unable to update data element {dataGuid} for instance {instanceOwnerPartyId}/{instanceGuid}");
             }
+        }
+
+        /// <summary>
+        /// Updates an existing form data element with a patch of changes.
+        /// </summary>
+        /// <param name="org">unique identfier of the organisation responsible for the app</param>
+        /// <param name="app">application identifier which is unique within an organisation</param>
+        /// <param name="instanceOwnerPartyId">unique id of the party that is the owner of the instance</param>
+        /// <param name="instanceGuid">unique id to identify the instance</param>
+        /// <param name="dataGuid">unique id to identify the data element to update</param>
+        /// <param name="dataPatchRequest">Container object for the <see cref="JsonPatch"/> and list of ignored validators</param>
+        /// <returns>A response object with the new full model and validation issues from all the groups that run</returns>
+        [Authorize(Policy = AuthzConstants.POLICY_INSTANCE_WRITE)]
+        [HttpPatch("{dataGuid:guid}")]
+        public async Task<ActionResult<DataPatchResponse>> PatchFormData(
+            [FromRoute] string org,
+            [FromRoute] string app,
+            [FromRoute] int instanceOwnerPartyId,
+            [FromRoute] Guid instanceGuid,
+            [FromRoute] Guid dataGuid,
+            [FromBody] DataPatchRequest dataPatchRequest)
+        {
+            try
+            {
+                Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
+
+                if (!InstanceIsActive(instance))
+                {
+                    return Conflict($"Cannot update data element of archived or deleted instance {instanceOwnerPartyId}/{instanceGuid}");
+                }
+
+                DataElement? dataElement = instance.Data.FirstOrDefault(m => m.Id.Equals(dataGuid.ToString()));
+
+                if (dataElement == null)
+                {
+                    return NotFound("Did not find data element");
+                }
+
+                string dataType = dataElement.DataType;
+
+                bool? appLogic = await RequiresAppLogic(dataType);
+
+                if (appLogic != true)
+                {
+                    _logger.LogError("Could not determine if {dataType} requires app logic for application {org}/{app}", dataType, org, app);
+                    return BadRequest($"Could not determine if data type {dataType} requires application logic.");
+                }
+
+                Type modelType = _appModel.GetModelType(_appResourcesService.GetClassRefForLogicDataType(dataType));
+
+                var oldModel = await _dataClient.GetFormData(instanceGuid, modelType, org, app, instanceOwnerPartyId, dataGuid);
+
+                var response = await PatchFormDataImplementation(dataGuid, dataPatchRequest, oldModel, instance, _dataProcessors);
+
+                await UpdatePresentationTextsOnInstance(instance, dataType, response.NewDataModel);
+                await UpdateDataValuesOnInstance(instance, dataType, response.NewDataModel);
+
+                // Save Formdata to database
+                DataElement updatedDataElement = await _dataClient.UpdateData(
+                    response.NewDataModel,
+                    instanceGuid,
+                    modelType,
+                    org,
+                    app,
+                    instanceOwnerPartyId,
+                    dataGuid);
+
+                return Ok(response);
+
+            }
+            catch (PlatformHttpException e)
+            {
+                return HandlePlatformHttpException(e, $"Unable to update data element {dataGuid} for instance {instanceOwnerPartyId}/{instanceGuid}");
+            }
+        }
+
+        /// <summary>
+        /// Part of <see cref="PatchFormData"/> that is separated out for testing purposes.
+        /// </summary>
+        /// <param name="dataGuid">unique id to identify the data element to update</param>
+        /// <param name="dataPatchRequest">Container object for the <see cref="JsonPatch"/> and list of ignored validators</param>
+        /// <param name="oldModel">The old state of the form data</param>
+        /// <param name="instance">The instance</param>
+        /// <param name="dataProcessors">The data processors to run</param>
+        /// <returns>DataPatchResponse after this patch operation</returns>
+        public static async Task<DataPatchResponse> PatchFormDataImplementation(Guid dataGuid, DataPatchRequest dataPatchRequest, object oldModel, Instance instance, IEnumerable<IDataProcessor> dataProcessors)
+        {
+            var oldModelNode = JsonSerializer.SerializeToNode(oldModel, oldModel.GetType());
+            var patchResult = dataPatchRequest.Patch.Apply(oldModelNode);
+            if(!patchResult.IsSuccess)
+            {
+                throw new Exception(patchResult.Error); // TODO: Let DataPatchResponse have an error state
+            }
+
+            var model = patchResult.Result.Deserialize(oldModel.GetType())!;
+
+            // Run processDataWrite
+            foreach (var dataProcessor in dataProcessors)
+            {
+                await dataProcessor.ProcessDataWrite(instance, dataGuid, model); // TODO: add old model to interface
+            }
+
+            var validationIssues = new Dictionary<string, List<ValidationIssue>>(); // TODO: Run validation
+            var response = new DataPatchResponse
+            {
+                NewDataModel = model,
+                ValidationIssues = validationIssues
+            };
+            return response;
         }
 
         /// <summary>
