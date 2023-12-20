@@ -126,7 +126,7 @@ namespace Altinn.App.Api.Controllers
             {
                 Application application = await _appMetadata.GetApplicationMetadata();
 
-                DataType? dataTypeFromMetadata = application.DataTypes.FirstOrDefault(e => e.Id.Equals(dataType, StringComparison.InvariantCultureIgnoreCase));
+                DataType? dataTypeFromMetadata = application.DataTypes.First(e => e.Id.Equals(dataType, StringComparison.InvariantCultureIgnoreCase));
 
                 if (dataTypeFromMetadata == null)
                 {
@@ -260,7 +260,7 @@ namespace Altinn.App.Api.Controllers
                     return NotFound($"Did not find instance {instance}");
                 }
 
-                DataElement? dataElement = instance.Data.FirstOrDefault(m => m.Id.Equals(dataGuid.ToString()));
+                DataElement? dataElement = instance.Data.First(m => m.Id.Equals(dataGuid.ToString()));
 
                 if (dataElement == null)
                 {
@@ -321,7 +321,7 @@ namespace Altinn.App.Api.Controllers
                     return Conflict($"Cannot update data element of archived or deleted instance {instanceOwnerPartyId}/{instanceGuid}");
                 }
 
-                DataElement? dataElement = instance.Data.FirstOrDefault(m => m.Id.Equals(dataGuid.ToString()));
+                DataElement? dataElement = instance.Data.First(m => m.Id.Equals(dataGuid.ToString()));
 
                 if (dataElement == null)
                 {
@@ -342,7 +342,7 @@ namespace Altinn.App.Api.Controllers
                     return await PutFormData(org, app, instance, dataGuid, dataType);
                 }
 
-                DataType? dataTypeFromMetadata = (await _appMetadata.GetApplicationMetadata()).DataTypes.FirstOrDefault(e => e.Id.Equals(dataType, StringComparison.InvariantCultureIgnoreCase));
+                DataType? dataTypeFromMetadata = (await _appMetadata.GetApplicationMetadata()).DataTypes.First(e => e.Id.Equals(dataType, StringComparison.InvariantCultureIgnoreCase));
                 (bool validationRestrictionSuccess, List<ValidationIssue> errors) = DataRestrictionValidation.CompliesWithDataRestrictions(Request, dataTypeFromMetadata);
                 if (!validationRestrictionSuccess)
                 {
@@ -365,7 +365,7 @@ namespace Altinn.App.Api.Controllers
         /// <param name="instanceOwnerPartyId">unique id of the party that is the owner of the instance</param>
         /// <param name="instanceGuid">unique id to identify the instance</param>
         /// <param name="dataGuid">unique id to identify the data element to update</param>
-        /// <param name="dataPatchRequest">Container object for the <see cref="JsonPatch"/> and list of ignored validators</param>
+        /// <param name="dataPatchRequest">Container object for the <see cref="JsonPatch" /> and list of ignored validators</param>
         /// <returns>A response object with the new full model and validation issues from all the groups that run</returns>
         [Authorize(Policy = AuthzConstants.POLICY_INSTANCE_WRITE)]
         [HttpPatch("{dataGuid:guid}")]
@@ -379,41 +379,48 @@ namespace Altinn.App.Api.Controllers
         {
             try
             {
-                Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
+                var instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
 
                 if (!InstanceIsActive(instance))
                 {
-                    return Conflict($"Cannot update data element of archived or deleted instance {instanceOwnerPartyId}/{instanceGuid}");
+                    return Conflict(
+                        $"Cannot update data element of archived or deleted instance {instanceOwnerPartyId}/{instanceGuid}");
                 }
 
-                DataElement? dataElement = instance.Data.FirstOrDefault(m => m.Id.Equals(dataGuid.ToString()));
+                var dataElement = instance.Data.First(m => m.Id.Equals(dataGuid.ToString()));
 
                 if (dataElement == null)
                 {
                     return NotFound("Did not find data element");
                 }
 
-                string dataType = dataElement.DataType;
+                var dataType = dataElement.DataType;
 
-                bool? appLogic = await RequiresAppLogic(dataType);
+                var appLogic = await RequiresAppLogic(dataType);
 
                 if (appLogic != true)
                 {
-                    _logger.LogError("Could not determine if {dataType} requires app logic for application {org}/{app}", dataType, org, app);
+                    _logger.LogError(
+                        "Could not determine if {dataType} requires app logic for application {org}/{app}",
+                        dataType,
+                        org,
+                        app);
                     return BadRequest($"Could not determine if data type {dataType} requires application logic.");
                 }
 
-                Type modelType = _appModel.GetModelType(_appResourcesService.GetClassRefForLogicDataType(dataType));
+                var modelType = _appModel.GetModelType(_appResourcesService.GetClassRefForLogicDataType(dataType));
 
-                var oldModel = await _dataClient.GetFormData(instanceGuid, modelType, org, app, instanceOwnerPartyId, dataGuid);
+                var oldModel =
+                    await _dataClient.GetFormData(instanceGuid, modelType, org, app, instanceOwnerPartyId, dataGuid);
 
-                var response = await PatchFormDataImplementation(dataGuid, dataPatchRequest, oldModel, instance, _dataProcessors);
+                var response =
+                    await PatchFormDataImplementation(dataGuid, dataPatchRequest, oldModel, instance, _dataProcessors);
 
                 await UpdatePresentationTextsOnInstance(instance, dataType, response.NewDataModel);
                 await UpdateDataValuesOnInstance(instance, dataType, response.NewDataModel);
 
                 // Save Formdata to database
-                DataElement updatedDataElement = await _dataClient.UpdateData(
+                await _dataClient.UpdateData(
                     response.NewDataModel,
                     instanceGuid,
                     modelType,
@@ -423,19 +430,18 @@ namespace Altinn.App.Api.Controllers
                     dataGuid);
 
                 return Ok(response);
-
             }
             catch (PlatformHttpException e)
             {
-                return HandlePlatformHttpException(e, $"Unable to update data element {dataGuid} for instance {instanceOwnerPartyId}/{instanceGuid}");
+                return HandlePlatformHttpException(e,$"Unable to update data element {dataGuid} for instance {instanceOwnerPartyId}/{instanceGuid}");
             }
         }
 
         /// <summary>
-        /// Part of <see cref="PatchFormData"/> that is separated out for testing purposes.
+        /// Part of <see cref="PatchFormData" /> that is separated out for testing purposes.
         /// </summary>
         /// <param name="dataGuid">unique id to identify the data element to update</param>
-        /// <param name="dataPatchRequest">Container object for the <see cref="JsonPatch"/> and list of ignored validators</param>
+        /// <param name="dataPatchRequest">Container object for the <see cref="JsonPatch" /> and list of ignored validators</param>
         /// <param name="oldModel">The old state of the form data</param>
         /// <param name="instance">The instance</param>
         /// <param name="dataProcessors">The data processors to run</param>
@@ -444,7 +450,7 @@ namespace Altinn.App.Api.Controllers
         {
             var oldModelNode = JsonSerializer.SerializeToNode(oldModel, oldModel.GetType());
             var patchResult = dataPatchRequest.Patch.Apply(oldModelNode);
-            if(!patchResult.IsSuccess)
+            if (!patchResult.IsSuccess)
             {
                 throw new Exception(patchResult.Error); // TODO: Let DataPatchResponse have an error state
             }

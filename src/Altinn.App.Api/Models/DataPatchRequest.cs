@@ -1,5 +1,6 @@
 #nullable enable
 using System.Text.Json.Serialization;
+using Altinn.App.Api.Controllers;
 using Json.Patch;
 
 namespace Altinn.App.Api.Models;
@@ -13,12 +14,12 @@ public class DataPatchRequest
     /// The Patch operation to perform.
     /// </summary>
     [JsonPropertyName("patch")]
-    public required JsonPatch Patch { get; set; }
+    public required JsonPatch Patch { get; init; }
     
     /// <summary>
     /// List of validators to ignore during the patch operation.
     /// Issues from these validators will not be run during the save operation, but the validator will run on process/next
     /// </summary>
     [JsonPropertyName("ignoredValidators")]
-    public required List<string>? IgnoredValidators { get; set; }
+    public required List<string>? IgnoredValidators { get; init; }
 }
