@@ -96,7 +96,7 @@ public class ValidationAppSITests
     {
         const string taskId = "Task_1";
         
-        //Mock setup
+        // Mock setup
         var appMetadataMock = new Mock<IAppMetadata>();
         var appMetadata = new ApplicationMetadata("ttd/test-app")
         {
@@ -113,7 +113,7 @@ public class ValidationAppSITests
         appMetadataMock.Setup(a => a.GetApplicationMetadata()).ReturnsAsync(appMetadata);
         ValidationAppSI validationAppSI = ConfigureMockServicesForValidation(appMetadataMock.Object);
         
-        //Testdata
+        // Testdata
         var instance = new Instance
         {
             Data =
@@ -144,7 +144,7 @@ public class ValidationAppSITests
     {
         const string taskId = "Task_1";
         
-        //Mock setup
+        // Mock setup
         var appMetadataMock = new Mock<IAppMetadata>();
         var appMetadata = new ApplicationMetadata("ttd/test-app")
         {
@@ -161,7 +161,7 @@ public class ValidationAppSITests
         appMetadataMock.Setup(a => a.GetApplicationMetadata()).ReturnsAsync(appMetadata);
         ValidationAppSI validationAppSI = ConfigureMockServicesForValidation(appMetadataMock.Object);
         
-        //Testdata
+        // Testdata
         var instance = new Instance
         {
             Data =
