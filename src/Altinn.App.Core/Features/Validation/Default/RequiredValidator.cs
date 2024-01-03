@@ -6,12 +6,18 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Altinn.App.Core.Features.Validation.Default;
 
+/// <summary>
+/// Validator that runs the required rules in the layout
+/// </summary>
 public class RequiredLayoutValidator : IFormDataValidator
 {
     private readonly LayoutEvaluatorStateInitializer _layoutEvaluatorStateInitializer;
     private readonly IAppResources _appResourcesService;
     private readonly IAppMetadata _appMetadata;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="RequiredLayoutValidator"/> class.
+    /// </summary>
     public RequiredLayoutValidator([ServiceKey] string dataType, LayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer, IAppResources appResourcesService, IAppMetadata appMetadata)
     {
         DataType = dataType;

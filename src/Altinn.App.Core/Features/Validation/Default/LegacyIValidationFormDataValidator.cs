@@ -27,14 +27,14 @@ public class LegacyIValidationFormDataValidator : IFormDataValidator
     }
 
     /// <summary>
-    ///
+    /// The legacy validator should run for all data types
     /// </summary>
-    public string DataType { get; } = "AnyType";
+    public string DataType { get; } = "*";
 
     /// <summary>
     /// Always run for incremental validation
     /// </summary>
-    public bool ShouldRunForIncrementalValidation(List<string>? changedFields = null) => true;
+    public bool ShouldRunForIncrementalValidation(List<string>? changedFields = null) => _instanceValidator is not null;
 
 
     /// <inheritdoc />

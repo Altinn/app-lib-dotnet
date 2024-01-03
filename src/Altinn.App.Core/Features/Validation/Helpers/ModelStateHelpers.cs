@@ -1,14 +1,28 @@
 using System.Collections;
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Features.Validation.Default;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace Altinn.App.Core.Features.Validation.Helpers;
 
+/// <summary>
+/// Static helpers to make map from <see cref="ModelStateDictionary"/> to list of <see cref="ValidationIssue"/>
+/// </summary>
 public static class ModelStateHelpers
 {
+    /// <summary>
+    /// Get a list of issues from a <see cref="ModelStateDictionary" />
+    /// </summary>
+    /// <param name="modelState"></param>
+    /// <param name="instance">The instance used for populating issue.InstanceId</param>
+    /// <param name="dataElement">Data element for populating issue.DataElementId</param>
+    /// <param name="generalSettings">General settings to get *Fixed* prefixes</param>
+    /// <param name="objectType">Type of the object to map ModelStateDictionary key to the json path field (might be different)</param>
+    /// <param name="source">issue.Source</param>
+    /// <returns>A list of the issues as our standard ValidationIssue</returns>
     public static List<ValidationIssue> ModelStateToIssueList(ModelStateDictionary modelState, Instance instance,
         DataElement dataElement, GeneralSettings generalSettings, Type objectType, string source)
     {
@@ -49,8 +63,7 @@ public static class ModelStateHelpers
                 originalMessage.Remove(0, generalSettings.SoftValidationPrefix.Length));
         }
 
-        if (generalSettings.FixedValidationPrefix != null
-            && originalMessage.StartsWith(generalSettings.FixedValidationPrefix))
+        if (originalMessage.StartsWith(generalSettings.FixedValidationPrefix))
         {
             return (ValidationIssueSeverity.Fixed,
                 originalMessage.Remove(0, generalSettings.FixedValidationPrefix.Length));
@@ -126,6 +139,10 @@ public static class ModelStateHelpers
         return $"{jsonPropertyName}.{ModelKeyToField(rest, childType)}";
     }
 
+    /// <summary>
+    /// Same as <see cref="ModelStateToIssueList"/>, but without information about a specific field
+    /// used by <see cref="LegacyIValidationTaskValidator"/>
+    /// </summary>
     public static List<ValidationIssue> MapModelStateToIssueList(ModelStateDictionary modelState, Instance instance,
         GeneralSettings generalSettings)
     {

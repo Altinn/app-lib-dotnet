@@ -13,6 +13,9 @@ public class DefaultTaskValidator : ITaskValidator
 {
     private readonly IAppMetadata _appMetadata;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DefaultTaskValidator"/> class.
+    /// </summary>
     public DefaultTaskValidator([ServiceKey] string taskId, IAppMetadata appMetadata)
     {
         TaskId = taskId;
@@ -22,6 +25,7 @@ public class DefaultTaskValidator : ITaskValidator
     /// <inheritdoc />
     public string TaskId { get; }
 
+    /// <inheritdoc />
     public async Task<List<ValidationIssue>> ValidateTask(Instance instance)
     {
         var messages = new List<ValidationIssue>();

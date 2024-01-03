@@ -9,13 +9,15 @@ namespace Altinn.App.Core.Features.Validation.Default;
 /// </summary>
 public class DefaultDataElementValidation : IDataElementValidator
 {
-    public string DataType { get; }
+    /// <inheritdoc />
+    public string DataType { get; } = "*";
 
     /// <summary>
     /// Runs on all data elements to validate metadata and file scan results.
     /// </summary>
     public bool CanValidateDataType(DataType dataType) => true;
 
+    /// <inheritdoc />
     public Task<List<ValidationIssue>> ValidateDataElement(Instance instance, DataElement dataElement, DataType dataType)
     {
         var issues = new List<ValidationIssue>();
@@ -35,7 +37,7 @@ public class DefaultDataElementValidation : IDataElementValidator
             var contentTypeWithoutEncoding = dataElement.ContentType.Split(";")[0];
 
             if (dataType.AllowedContentTypes != null && dataType.AllowedContentTypes.Count > 0 &&
-                dataType.AllowedContentTypes.All(ct =>
+                dataType.AllowedContentTypes.TrueForAll(ct =>
                     !ct.Equals(contentTypeWithoutEncoding, StringComparison.OrdinalIgnoreCase)))
             {
                 issues.Add( new ValidationIssue

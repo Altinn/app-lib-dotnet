@@ -38,8 +38,6 @@ public class ValidationService : IValidationService
         ArgumentNullException.ThrowIfNull(instance);
         ArgumentNullException.ThrowIfNull(taskId);
 
-        var issues = new List<ValidationIssue>();
-
         // Run task validations
         var taskValidators = _serviceProvider.GetServices<ITaskValidator>()
             .Where(tv => tv.TaskId == taskId)
@@ -130,11 +128,6 @@ public class ValidationService : IValidationService
             .Concat(_serviceProvider.GetKeyedServices<IFormDataValidator>(dataElement.DataType))
             .Where(dv => dv.ShouldRunForIncrementalValidation(changedFields))
             .ToArray();
-
-        if (dataValidators.Length > 0)
-        {
-            // TODO: Remove hidden data before validation
-        }
 
         var issuesLists = await Task.WhenAll(dataValidators.Select(async (v) =>
         {

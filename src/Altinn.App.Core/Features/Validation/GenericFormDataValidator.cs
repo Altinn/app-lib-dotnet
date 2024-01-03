@@ -71,10 +71,13 @@ public abstract class GenericFormDataValidator<TModel> : IFormDataValidator
         _runForPrefixes.Add(LinqExpressionHelpers.GetJsonPath(selector));
     }
 
+    /// <summary>
+    /// Convenience method to create a validation issue for a field using a linq expression instead of a key
+    /// </summary>
     protected void CreateValidationIssue<T>(Expression<Func<TModel,T>> selector, string textKey, ValidationIssueSeverity severity = ValidationIssueSeverity.Error)
     {
         Debug.Assert(ValidationIssues.Value is not null);
-        ValidationIssues.Value.Add( new ValidationIssue
+        AddValidationIssue(new ValidationIssue
         {
             Field = LinqExpressionHelpers.GetJsonPath(selector),
             CustomTextKey = textKey,
@@ -82,12 +85,19 @@ public abstract class GenericFormDataValidator<TModel> : IFormDataValidator
         });
     }
 
+    /// <summary>
+    /// Allows inheriting classes to add validation issues.
+    /// </summary>
     protected void AddValidationIssue(ValidationIssue issue)
     {
         Debug.Assert(ValidationIssues.Value is not null);
         ValidationIssues.Value.Add(issue);
     }
 
+    /// <summary>
+    /// Implementation of the generic <see cref="IFormDataValidator"/> interface to call the corretly typed
+    /// validation method implemented by the inheriting class.
+    /// </summary>
     public async Task<List<ValidationIssue>> ValidateFormData(Instance instance, DataElement dataElement, object data, List<string>? changedFields = null)
     {
         if (data is not TModel model)
@@ -95,7 +105,7 @@ public abstract class GenericFormDataValidator<TModel> : IFormDataValidator
             throw new ArgumentException($"Data is not of type {typeof(TModel)}");
         }
 
-        ValidationIssues.Value = new List<ValidationIssue>();;
+        ValidationIssues.Value = new List<ValidationIssue>();
         await ValidateFormData(instance, dataElement, model);
         return ValidationIssues.Value;
 

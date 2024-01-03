@@ -33,7 +33,7 @@ namespace Altinn.App.Core.Tests.Features.Validators.Default
             var changedFields = new List<string>();
 
             var validator = new LegacyIValidationFormDataValidator(null, Options.Create(new GeneralSettings()));
-            validator.ShouldRunForIncrementalValidation(changedFields).Should().BeTrue();
+            validator.ShouldRunForIncrementalValidation(changedFields).Should().BeFalse();
 
             // Act
             var result = await validator.ValidateFormData(new Instance(), new DataElement(), data, changedFields);

@@ -53,20 +53,22 @@ public class ExpressionTestAttribute : DataAttribute
 {
     public override IEnumerable<object[]> GetData(MethodInfo methodInfo)
     {
-        var files = Directory.GetFiles(Path.Join("Features", "Validators", "shared-expression-validation-tests"));
-
-        foreach (var file in files)
-        {
-            var data = File.ReadAllText(file);
-            ExpressionValidationTestModel testCase = JsonSerializer.Deserialize<ExpressionValidationTestModel>(
-                data,
-                new JsonSerializerOptions
+        return Directory
+            .GetFiles(Path.Join("Features", "Validators", "shared-expression-validation-tests"))
+            .Select(file =>
+            {
+                var data = File.ReadAllText(file);
+                return new object[]
                 {
-                    ReadCommentHandling = JsonCommentHandling.Skip,
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                })!;
-            yield return new object[] { testCase };
-        }
+                    JsonSerializer.Deserialize<ExpressionValidationTestModel>(
+                        data,
+                        new JsonSerializerOptions
+                        {
+                            ReadCommentHandling = JsonCommentHandling.Skip,
+                            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                        })!
+                };
+            });
     }
 }
 

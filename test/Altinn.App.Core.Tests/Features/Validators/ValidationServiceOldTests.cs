@@ -32,7 +32,7 @@ public class ValidationServiceOldTests
     private readonly Mock<IAppMetadata> _appMetadataMock = new();
     private readonly ServiceCollection _serviceCollection = new();
 
-    private ApplicationMetadata _applicationMetadata = new("tdd/test")
+    private readonly ApplicationMetadata _applicationMetadata = new("tdd/test")
     {
         DataTypes = new List<DataType>()
         {
