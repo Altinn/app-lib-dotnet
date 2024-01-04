@@ -50,16 +50,6 @@ public class DataAnnotationValidatorTests : IClassFixture<DataAnnotationsTestFix
     }
 
     [Fact]
-    public void CanValidateDataType()
-    {
-        // Act
-        var result = _validator.CanValidateDataType(DataAnnotationsTestFixture.DataType);
-
-        // Assert
-        Assert.True(result);
-    }
-
-    [Fact]
     public void ShouldRunForIncrementalValidation()
     {
         // Act

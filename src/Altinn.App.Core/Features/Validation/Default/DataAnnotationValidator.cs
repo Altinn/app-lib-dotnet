@@ -32,14 +32,9 @@ public class DataAnnotationValidator : IFormDataValidator
     }
 
     /// <summary>
-    /// Dummy implementation to satisfy interface, We use <see cref="CanValidateDataType" /> instead
+    /// Run Data annotation validation on all data types with app logic
     /// </summary>
     public string DataType => "*";
-
-    /// <summary>
-    /// Run validator for all data types.
-    /// </summary>
-    public bool CanValidateDataType(string dataType) => true;
 
     /// <summary>
     /// Disable incremental validation for this validator.

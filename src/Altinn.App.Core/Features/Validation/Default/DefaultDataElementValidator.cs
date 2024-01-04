@@ -9,13 +9,10 @@ namespace Altinn.App.Core.Features.Validation.Default;
 /// </summary>
 public class DefaultDataElementValidator : IDataElementValidator
 {
-    /// <inheritdoc />
-    public string DataType => "*";
-
     /// <summary>
-    /// Runs on all data elements to validate metadata and file scan results.
+    /// Run validations on all data elements
     /// </summary>
-    public bool CanValidateDataType(DataType dataType) => true;
+    public string DataType => "*";
 
     /// <inheritdoc />
     public Task<List<ValidationIssue>> ValidateDataElement(Instance instance, DataElement dataElement, DataType dataType)
