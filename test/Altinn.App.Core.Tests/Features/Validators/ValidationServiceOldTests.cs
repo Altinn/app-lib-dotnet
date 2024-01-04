@@ -53,7 +53,7 @@ public class ValidationServiceOldTests
         _serviceCollection.AddSingleton<IValidationService, ValidationService>();
         _serviceCollection.AddSingleton(_appModelMock.Object);
         _serviceCollection.AddSingleton(_appMetadataMock.Object);
-        _serviceCollection.AddSingleton<IDataElementValidator, DefaultDataElementValidation>();
+        _serviceCollection.AddSingleton<IDataElementValidator, DefaultDataElementValidator>();
         _appMetadataMock.Setup(am => am.GetApplicationMetadata()).ReturnsAsync(_applicationMetadata);
     }
 

@@ -12,7 +12,7 @@ namespace Altinn.App.Core.Features.Validation.Default;
 /// <summary>
 ///
 /// </summary>
-public class LegacyIValidationFormDataValidator : IFormDataValidator
+public class LegacyIInstanceValidatorFormDataValidator : IFormDataValidator
 {
     private readonly IInstanceValidator? _instanceValidator;
     private readonly GeneralSettings _generalSettings;
@@ -20,7 +20,7 @@ public class LegacyIValidationFormDataValidator : IFormDataValidator
     /// <summary>
     /// constructor
     /// </summary>
-    public LegacyIValidationFormDataValidator(IInstanceValidator? instanceValidator, IOptions<GeneralSettings> generalSettings)
+    public LegacyIInstanceValidatorFormDataValidator(IInstanceValidator? instanceValidator, IOptions<GeneralSettings> generalSettings)
     {
         _instanceValidator = instanceValidator;
         _generalSettings = generalSettings.Value;

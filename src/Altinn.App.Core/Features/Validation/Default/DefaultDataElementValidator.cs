@@ -7,7 +7,7 @@ namespace Altinn.App.Core.Features.Validation.Default;
 /// <summary>
 /// Default validations that run on all data elements to validate metadata and file scan results.
 /// </summary>
-public class DefaultDataElementValidation : IDataElementValidator
+public class DefaultDataElementValidator : IDataElementValidator
 {
     /// <inheritdoc />
     public string DataType { get; } = "*";

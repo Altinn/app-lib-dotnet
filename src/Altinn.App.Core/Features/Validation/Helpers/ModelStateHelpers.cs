@@ -141,7 +141,7 @@ public static class ModelStateHelpers
 
     /// <summary>
     /// Same as <see cref="ModelStateToIssueList"/>, but without information about a specific field
-    /// used by <see cref="LegacyIValidationTaskValidator"/>
+    /// used by <see cref="LegacyIInstanceValidatorTaskValidator"/>
     /// </summary>
     public static List<ValidationIssue> MapModelStateToIssueList(ModelStateDictionary modelState, Instance instance,
         GeneralSettings generalSettings)

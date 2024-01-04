@@ -12,7 +12,7 @@ namespace Altinn.App.Core.Features.Validation.Default;
 /// <summary>
 /// Ensures that the old <see cref="IInstanceValidator.ValidateTask(Instance, string, ModelStateDictionary)"/> extention hook is still supported.
 /// </summary>
-public class LegacyIValidationTaskValidator : ITaskValidator
+public class LegacyIInstanceValidatorTaskValidator : ITaskValidator
 {
     private readonly IInstanceValidator? _instanceValidator;
     private readonly GeneralSettings _generalSettings;
@@ -20,7 +20,7 @@ public class LegacyIValidationTaskValidator : ITaskValidator
     /// <summary>
     /// Constructor
     /// </summary>
-    public LegacyIValidationTaskValidator([ServiceKey] string taskId, IInstanceValidator? instanceValidator, IOptions<GeneralSettings> generalSettings)
+    public LegacyIInstanceValidatorTaskValidator([ServiceKey] string taskId, IInstanceValidator? instanceValidator, IOptions<GeneralSettings> generalSettings)
     {
         TaskId = taskId;
         _instanceValidator = instanceValidator;

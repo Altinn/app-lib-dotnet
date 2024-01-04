@@ -15,14 +15,14 @@ namespace Altinn.App.Core.Tests.Features.Validators.Default
 {
     public class LegacyIValidationFormDataTests
     {
-        private readonly LegacyIValidationFormDataValidator _validator;
+        private readonly LegacyIInstanceValidatorFormDataValidator _validator;
         private readonly Mock<IInstanceValidator> _instanceValidator = new();
 
         public LegacyIValidationFormDataTests()
         {
             var generalSettings = new GeneralSettings();
             _validator =
-                new LegacyIValidationFormDataValidator(_instanceValidator.Object, Options.Create(generalSettings));
+                new LegacyIInstanceValidatorFormDataValidator(_instanceValidator.Object, Options.Create(generalSettings));
         }
 
         [Fact]
@@ -32,7 +32,7 @@ namespace Altinn.App.Core.Tests.Features.Validators.Default
             var data = new object();
             var changedFields = new List<string>();
 
-            var validator = new LegacyIValidationFormDataValidator(null, Options.Create(new GeneralSettings()));
+            var validator = new LegacyIInstanceValidatorFormDataValidator(null, Options.Create(new GeneralSettings()));
             validator.ShouldRunForIncrementalValidation(changedFields).Should().BeFalse();
 
             // Act
