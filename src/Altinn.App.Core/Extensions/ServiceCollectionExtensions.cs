@@ -9,6 +9,7 @@ using Altinn.App.Core.Features.Options;
 using Altinn.App.Core.Features.PageOrder;
 using Altinn.App.Core.Features.Pdf;
 using Altinn.App.Core.Features.Validation;
+using Altinn.App.Core.Features.Validation.Default;
 using Altinn.App.Core.Implementation;
 using Altinn.App.Core.Infrastructure.Clients.Authentication;
 using Altinn.App.Core.Infrastructure.Clients.Authorization;
@@ -133,7 +134,7 @@ namespace Altinn.App.Core.Extensions
         {
             // Services for Altinn App
             services.TryAddTransient<IPDP, PDPAppSI>();
-            services.TryAddTransient<IValidationService, ValidationService>();
+            AddValidationServices(services);
             services.TryAddTransient<IPrefill, PrefillSI>();
             services.TryAddTransient<ISigningCredentialsResolver, SigningCredentialsResolver>();
             services.TryAddSingleton<IAppResources, AppResourcesSI>();
@@ -175,6 +176,18 @@ namespace Altinn.App.Core.Extensions
             {
                 services.TryAddSingleton<ISecretsClient, SecretsLocalClient>();
             }
+        }
+
+        private static void AddValidationServices(IServiceCollection services)
+        {
+            services.TryAddTransient<IValidationService, ValidationService>();
+            services.TryAddTransient<IFormDataValidator, RequiredLayoutValidator>();
+            services.TryAddTransient<IFormDataValidator, ExpressionValidator>();
+            services.TryAddTransient<IFormDataValidator, DataAnnotationValidator>();
+            services.TryAddTransient<IFormDataValidator, LegacyIInstanceValidatorFormDataValidator>();
+            services.TryAddTransient<IDataElementValidator, DefaultDataElementValidator>();
+            services.TryAddTransient<ITaskValidator, LegacyIInstanceValidatorTaskValidator>();
+            services.TryAddTransient<ITaskValidator, DefaultTaskValidator>();
         }
 
         /// <summary>
