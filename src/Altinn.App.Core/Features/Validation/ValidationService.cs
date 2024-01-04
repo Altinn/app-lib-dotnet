@@ -60,8 +60,8 @@ public class ValidationService : IValidationService
 
         // Run validations for single data elements
         var application = await _appMetadata.GetApplicationMetadata();
-        var dataTypesForTask = application.DataTypes.Where(dt => dt.TaskId == taskId).ToArray();
-        var dataElementsToValidate = instance.Data.Where(de => dataTypesForTask.Any(dt => dt.Id == de.DataType)).ToArray();
+        var dataTypesForTask = application.DataTypes.Where(dt => dt.TaskId == taskId).ToList();
+        var dataElementsToValidate = instance.Data.Where(de => dataTypesForTask.Exists(dt => dt.Id == de.DataType)).ToArray();
         var dataIssuesTask = Task.WhenAll(dataElementsToValidate.Select(dataElement=>ValidateDataElement(instance, dataElement, dataTypesForTask.First(dt=>dt.Id == dataElement.DataType) )));
 
         return (await Task.WhenAll(taskIssuesTask, dataIssuesTask)).SelectMany(x=>x.SelectMany(y=>y)).ToList();
@@ -109,7 +109,7 @@ public class ValidationService : IValidationService
             return (await dataElementsIssuesTask).SelectMany(x=>x)
                 .Concat(formDataIssuesDictionary.SelectMany(kv=>kv.Value))
                 .ToList();
-        };
+        }
 
         return (await dataElementsIssuesTask).SelectMany(x=>x).ToList();
     }
