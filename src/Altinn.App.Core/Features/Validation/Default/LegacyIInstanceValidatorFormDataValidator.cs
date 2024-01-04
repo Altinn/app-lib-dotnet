@@ -29,7 +29,7 @@ public class LegacyIInstanceValidatorFormDataValidator : IFormDataValidator
     /// <summary>
     /// The legacy validator should run for all data types
     /// </summary>
-    public string DataType { get; } = "*";
+    public string DataType => "*";
 
     /// <summary>
     /// Always run for incremental validation

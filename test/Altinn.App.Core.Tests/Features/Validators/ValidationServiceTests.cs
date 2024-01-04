@@ -31,6 +31,11 @@ public class ValidationServiceTests
         DataType = "MyType",
     };
 
+    private static readonly DataType DefaultDataType = new()
+    {
+        Id = "MyType",
+    };
+
     private readonly Mock<ILogger<ValidationService>> _loggerMock = new();
     private readonly Mock<IDataClient> _dataClientMock = new();
     private readonly Mock<IAppModel> _appModelMock = new();
@@ -69,7 +74,7 @@ public class ValidationServiceTests
 
         var validatorService = serviceProvider.GetRequiredService<IValidationService>();
         var data = new MyModel { Name = "Ola" };
-        var result = await validatorService.ValidateFormData(new Instance(), DefaultDataElement, null!, data);
+        var result = await validatorService.ValidateFormData(new Instance(), DefaultDataElement, DefaultDataType, data);
         result.Should().BeEmpty();
     }
 
@@ -81,7 +86,7 @@ public class ValidationServiceTests
 
         var validatorService = serviceProvider.GetRequiredService<IValidationService>();
         var data = new MyModel { Name = "Ola" };
-        var result = await validatorService.ValidateFormData(new Instance(), DefaultDataElement, null!, data);
+        var result = await validatorService.ValidateFormData(new Instance(), DefaultDataElement, DefaultDataType, data);
         result.Should().ContainKey("Altinn.App.Core.Tests.Features.Validators.ValidationServiceTests+MyNameValidator-MyType").WhoseValue.Should().HaveCount(0);
         result.Should().HaveCount(1);
     }
@@ -94,7 +99,7 @@ public class ValidationServiceTests
 
         var validatorService = serviceProvider.GetRequiredService<IValidationService>();
         var data = new MyModel { Name = "Kari" };
-        var result = await validatorService.ValidateFormData(new Instance(), DefaultDataElement, null!, data);
+        var result = await validatorService.ValidateFormData(new Instance(), DefaultDataElement, DefaultDataType, data);
         result.Should().ContainKey("Altinn.App.Core.Tests.Features.Validators.ValidationServiceTests+MyNameValidator-MyType").WhoseValue.Should().ContainSingle().Which.CustomTextKey.Should().Be("NameNotOla");
         result.Should().HaveCount(1);
     }
@@ -107,7 +112,7 @@ public class ValidationServiceTests
 
         var validatorService = serviceProvider.GetRequiredService<IValidationService>();
         var data = new MyModel { Name = "Kari" };
-        var result = await validatorService.ValidateFormData(new Instance(), DefaultDataElement, null!, data, new List<string> { "age" });
+        var result = await validatorService.ValidateFormData(new Instance(), DefaultDataElement, DefaultDataType, data, new List<string> { "age" });
         result.Should()
             .NotContainKey("Altinn.App.Core.Tests.Features.Validators.ValidationServiceTests+MyNameValidator");
         result.Should().HaveCount(0);

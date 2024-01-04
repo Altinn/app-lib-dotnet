@@ -21,7 +21,7 @@ public class ValidationService : IValidationService
     private readonly ILogger<ValidationService> _logger;
 
     /// <summary>
-    /// Constructor with DI serivces
+    /// Constructor with DI services
     /// </summary>
     public ValidationService(IServiceProvider serviceProvider, IDataClient dataClient, IAppModel appModel, IAppMetadata appMetadata, ILogger<ValidationService> logger)
     {
@@ -40,8 +40,8 @@ public class ValidationService : IValidationService
 
         // Run task validations
         var taskValidators = _serviceProvider.GetServices<ITaskValidator>()
-            .Where(tv => tv.TaskId == taskId)
-            .Concat(_serviceProvider.GetKeyedServices<ITaskValidator>(taskId))
+            .Where(tv => tv.TaskId == "*" || tv.TaskId == taskId)
+            // .Concat(_serviceProvider.GetKeyedServices<ITaskValidator>(taskId))
             .ToArray();
 
         var taskIssuesTask = Task.WhenAll(taskValidators.Select(tv =>
@@ -77,8 +77,9 @@ public class ValidationService : IValidationService
 
         // Get both keyed and non-keyed validators for the data type
         var validators = _serviceProvider.GetServices<IDataElementValidator>()
-            .Concat(_serviceProvider.GetKeyedServices<IDataElementValidator>(dataElement.DataType))
-            .Where(v => v.CanValidateDataType(dataType));
+            .Where(v => v.DataType == "*" || v.DataType == dataType.Id)
+            // .Concat(_serviceProvider.GetKeyedServices<IDataElementValidator>(dataElement.DataType))
+            .ToArray();
 
         var dataElementsIssuesTask = Task.WhenAll(validators.Select(async v =>
         {
@@ -124,8 +125,8 @@ public class ValidationService : IValidationService
 
         // Locate the relevant data validator services from normal and keyed services
         var dataValidators = _serviceProvider.GetServices<IFormDataValidator>()
-            .Where(dv => dv.CanValidateDataType(dataElement.DataType))
-            .Concat(_serviceProvider.GetKeyedServices<IFormDataValidator>(dataElement.DataType))
+            .Where(dv => dv.DataType == "*" || dv.DataType == dataType.Id)
+            // .Concat(_serviceProvider.GetKeyedServices<IFormDataValidator>(dataElement.DataType))
             .Where(dv => dv.ShouldRunForIncrementalValidation(changedFields))
             .ToArray();
 

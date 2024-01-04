@@ -24,7 +24,6 @@ namespace Altinn.App.Core.Tests.Features.Validators.Default;
 
 public class ExpressionValidatorTests
 {
-    private const string DataType = "default";
     private readonly ExpressionValidator _validator;
     private readonly Mock<ILogger<ExpressionValidator>> _logger = new();
     private readonly Mock<IAppResources> _appResources = new(MockBehavior.Strict);
@@ -35,7 +34,7 @@ public class ExpressionValidatorTests
     {
         _layoutInitializer = new(MockBehavior.Strict, _appResources.Object, _frontendSettings) { CallBase = false };
         _validator =
-            new ExpressionValidator(DataType, _logger.Object, _appResources.Object, _layoutInitializer.Object);
+            new ExpressionValidator(_logger.Object, _appResources.Object, _layoutInitializer.Object);
     }
 
     [Theory]

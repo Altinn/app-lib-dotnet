@@ -20,17 +20,16 @@ public class LegacyIInstanceValidatorTaskValidator : ITaskValidator
     /// <summary>
     /// Constructor
     /// </summary>
-    public LegacyIInstanceValidatorTaskValidator([ServiceKey] string taskId, IInstanceValidator? instanceValidator, IOptions<GeneralSettings> generalSettings)
+    public LegacyIInstanceValidatorTaskValidator(IInstanceValidator? instanceValidator, IOptions<GeneralSettings> generalSettings)
     {
-        TaskId = taskId;
         _instanceValidator = instanceValidator;
         _generalSettings = generalSettings.Value;
     }
 
     /// <summary>
-    /// The task id this validator is registrered for.
+    /// Run the legacy validator for all tasks
     /// </summary>
-    public string TaskId { get; }
+    public string TaskId => "*";
 
     /// <inheritdoc />
     public async Task<List<ValidationIssue>> ValidateTask(Instance instance)

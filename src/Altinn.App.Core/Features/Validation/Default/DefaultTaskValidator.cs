@@ -16,14 +16,13 @@ public class DefaultTaskValidator : ITaskValidator
     /// <summary>
     /// Initializes a new instance of the <see cref="DefaultTaskValidator"/> class.
     /// </summary>
-    public DefaultTaskValidator([ServiceKey] string taskId, IAppMetadata appMetadata)
+    public DefaultTaskValidator(IAppMetadata appMetadata)
     {
-        TaskId = taskId;
         _appMetadata = appMetadata;
     }
 
     /// <inheritdoc />
-    public string TaskId { get; }
+    public string TaskId => "*";
 
     /// <inheritdoc />
     public async Task<List<ValidationIssue>> ValidateTask(Instance instance)

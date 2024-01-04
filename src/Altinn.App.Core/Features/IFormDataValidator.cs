@@ -13,15 +13,10 @@ public interface IFormDataValidator
     /// <summary>
     /// The data type this validator is for. Typically either hard coded by implementation or
     /// or set by constructor using a <see cref="ServiceKeyAttribute" /> and a keyed service.
+    ///
+    /// To validate all types, just use a "*" as value
     /// </summary>
     string DataType { get; }
-
-    /// <summary>
-    /// Extension point if the validator should run for multiple data types.
-    /// Typical users will just set the <see cref="DataType"/> property.
-    /// </summary>
-    /// <param name="dataType">The ID of the data type that might be validated</param>
-    bool CanValidateDataType(string dataType) => DataType == dataType;
 
     /// <summary>
     /// Used for partial validation to ensure that the validator only runs when relevant fields have changed.
@@ -45,5 +40,6 @@ public interface IFormDataValidator
     /// <param name="data"></param>
     /// <param name="changedFields"></param>
     /// <returns>List of validation issues</returns>
-    Task<List<ValidationIssue>> ValidateFormData(Instance instance, DataElement dataElement, object data, List<string>? changedFields = null);
+    Task<List<ValidationIssue>> ValidateFormData(Instance instance, DataElement dataElement, object data,
+        List<string>? changedFields = null);
 }

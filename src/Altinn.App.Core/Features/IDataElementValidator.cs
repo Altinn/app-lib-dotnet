@@ -15,17 +15,9 @@ public interface IDataElementValidator
     /// The data type that this validator should run for. This is the id of the data type from applicationmetadata.json
     /// </summary>
     /// <remarks>
-    /// Used by default in <see cref="CanValidateDataType"/>. Overrides might ignore this.
+    ///
     /// </remarks>
     string DataType { get; }
-
-    /// <summary>
-    /// Override this method to customize what data elements this validator should run for.
-    /// </summary>
-    bool CanValidateDataType(DataType dataType)
-    {
-        return DataType == dataType.Id;
-    }
 
     /// <summary>
     /// Run validations for a data element. This is supposed to run quickly

@@ -24,9 +24,8 @@ public class DataAnnotationValidator : IFormDataValidator
     /// <summary>
     /// Constructor
     /// </summary>
-    public DataAnnotationValidator([ServiceKey] string dataType, IHttpContextAccessor httpContextAccessor, IObjectModelValidator objectModelValidator, IOptions<GeneralSettings> generalSettings)
+    public DataAnnotationValidator(IHttpContextAccessor httpContextAccessor, IObjectModelValidator objectModelValidator, IOptions<GeneralSettings> generalSettings)
     {
-        DataType = dataType;
         _httpContextAccessor = httpContextAccessor;
         _objectModelValidator = objectModelValidator;
         _generalSettings = generalSettings.Value;
@@ -35,7 +34,7 @@ public class DataAnnotationValidator : IFormDataValidator
     /// <summary>
     /// Dummy implementation to satisfy interface, We use <see cref="CanValidateDataType" /> instead
     /// </summary>
-    public string DataType { get; }
+    public string DataType => "*";
 
     /// <summary>
     /// Run validator for all data types.

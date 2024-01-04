@@ -28,16 +28,16 @@ public class ExpressionValidator : IFormDataValidator
     /// <summary>
     /// Constructor for the expression validator
     /// </summary>
-    public ExpressionValidator([ServiceKey] string dataType, ILogger<ExpressionValidator> logger, IAppResources appResourceService, LayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer)
+    public ExpressionValidator(ILogger<ExpressionValidator> logger, IAppResources appResourceService, LayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer)
     {
-        DataType = dataType;
         _logger = logger;
         _appResourceService = appResourceService;
         _layoutEvaluatorStateInitializer = layoutEvaluatorStateInitializer;
     }
 
     /// <inheritdoc />
-    public string DataType { get; }
+    public string DataType => "*";
+
     /// <summary>
     /// Expression validations should always run (they're likely quicker to run than to figure out if relevant fields changed)
     /// </summary>

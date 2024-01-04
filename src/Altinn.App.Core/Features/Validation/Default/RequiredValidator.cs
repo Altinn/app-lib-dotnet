@@ -18,15 +18,17 @@ public class RequiredLayoutValidator : IFormDataValidator
     /// <summary>
     /// Initializes a new instance of the <see cref="RequiredLayoutValidator"/> class.
     /// </summary>
-    public RequiredLayoutValidator([ServiceKey] string dataType, LayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer, IAppResources appResourcesService, IAppMetadata appMetadata)
+    public RequiredLayoutValidator(LayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer, IAppResources appResourcesService, IAppMetadata appMetadata)
     {
-        DataType = dataType;
         _layoutEvaluatorStateInitializer = layoutEvaluatorStateInitializer;
         _appResourcesService = appResourcesService;
         _appMetadata = appMetadata;
     }
-    /// <inheritdoc />
-    public string DataType { get; }
+
+    /// <summary>
+    /// Run for all data types
+    /// </summary>
+    public string DataType => "*";
 
     /// <summary>
     /// Required validator should always run for incremental validation, as they're almost quicker to run than to verify.
