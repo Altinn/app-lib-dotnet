@@ -50,28 +50,17 @@ public class DataAnnotationValidatorTests : IClassFixture<DataAnnotationsTestFix
     }
 
     [Fact]
-    public void ShouldRunForIncrementalValidation()
-    {
-        // Act
-        var result = _validator.ShouldRunForIncrementalValidation();
-
-        // Assert
-        Assert.False(result);
-    }
-
-    [Fact]
     public async Task ValidateFormData()
     {
         // Arrange
         var instance = new Instance();
         var dataElement = new DataElement();
         var data = new object();
-        var changedFields = new List<string>();
 
         // Prepare
 
         // Act
-        var result = await _validator.ValidateFormData(instance, dataElement, data, changedFields);
+        var result = await _validator.ValidateFormData(instance, dataElement, data);
 
         // Assert
         Assert.NotNull(result);
@@ -102,7 +91,7 @@ public class DataAnnotationValidatorTests : IClassFixture<DataAnnotationsTestFix
         var changedFields = new List<string>();
 
         // Act
-        var result = await _validator.ValidateFormData(instance, dataElement, data, changedFields);
+        var result = await _validator.ValidateFormData(instance, dataElement, data);
 
         // Assert
         Assert.NotNull(result);
@@ -122,7 +111,7 @@ public class DataAnnotationValidatorTests : IClassFixture<DataAnnotationsTestFix
         var changedFields = new List<string>();
 
         // Act
-        var result = await _validator.ValidateFormData(instance, dataElement, data, changedFields);
+        var result = await _validator.ValidateFormData(instance, dataElement, data);
 
         // Assert
         result.Should().NotBeNull();

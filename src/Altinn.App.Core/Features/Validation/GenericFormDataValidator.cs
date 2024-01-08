@@ -95,10 +95,10 @@ public abstract class GenericFormDataValidator<TModel> : IFormDataValidator
     }
 
     /// <summary>
-    /// Implementation of the generic <see cref="IFormDataValidator"/> interface to call the corretly typed
+    /// Implementation of the generic <see cref="IFormDataValidator"/> interface to call the correctly typed
     /// validation method implemented by the inheriting class.
     /// </summary>
-    public async Task<List<ValidationIssue>> ValidateFormData(Instance instance, DataElement dataElement, object data, List<string>? changedFields = null)
+    public async Task<List<ValidationIssue>> ValidateFormData(Instance instance, DataElement dataElement, object data)
     {
         if (data is not TModel model)
         {
@@ -114,5 +114,5 @@ public abstract class GenericFormDataValidator<TModel> : IFormDataValidator
     /// <summary>
     /// Implement this method to validate the data.
     /// </summary>
-    protected abstract Task ValidateFormData(Instance instance, DataElement dataElement, TModel data, List<string>? changedFields = null);
+    protected abstract Task ValidateFormData(Instance instance, DataElement dataElement, TModel data);
 }

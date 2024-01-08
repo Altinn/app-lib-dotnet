@@ -36,7 +36,7 @@ public class GenericValidatorTests
             RunFor(selector);
         }
 
-        protected override Task ValidateFormData(Instance instance, DataElement dataElement, MyModel data, List<string>? changedFields = null)
+        protected override Task ValidateFormData(Instance instance, DataElement dataElement, MyModel data)
         {
             throw new NotImplementedException();
         }

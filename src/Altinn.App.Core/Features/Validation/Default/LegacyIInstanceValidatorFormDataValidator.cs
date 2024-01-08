@@ -4,13 +4,12 @@ using Altinn.App.Core.Features.Validation.Helpers;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Features.Validation.Default;
 
 /// <summary>
-///
+/// This validator is used to run the legacy IInstanceValidator.ValidateData method
 /// </summary>
 public class LegacyIInstanceValidatorFormDataValidator : IFormDataValidator
 {
@@ -38,7 +37,7 @@ public class LegacyIInstanceValidatorFormDataValidator : IFormDataValidator
 
 
     /// <inheritdoc />
-    public async Task<List<ValidationIssue>> ValidateFormData(Instance instance, DataElement dataElement, object data, List<string>? changedFields = null)
+    public async Task<List<ValidationIssue>> ValidateFormData(Instance instance, DataElement dataElement, object data)
     {
         if (_instanceValidator is null)
         {

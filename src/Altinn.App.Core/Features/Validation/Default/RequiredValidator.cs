@@ -2,7 +2,6 @@ using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Altinn.App.Core.Features.Validation.Default;
 
@@ -31,14 +30,19 @@ public class RequiredLayoutValidator : IFormDataValidator
     public string DataType => "*";
 
     /// <summary>
-    /// Required validator should always run for incremental validation, as they're almost quicker to run than to verify.
+    /// This validator has the code "required" and this is known by the frontend, who requests this validator to not run for incremental validation.
     /// </summary>
-    public bool ShouldRunForIncrementalValidation(List<string>? changedFields = null) => true;
+    public string Code => "required";
+
+    /// <summary>
+    /// Always run for incremental validation
+    /// </summary>
+    public bool ShouldRunForIncrementalValidation(List<string> changedFields) => true;
 
     /// <summary>
     /// Validate the form data against the required rules in the layout
     /// </summary>
-    public async Task<List<ValidationIssue>> ValidateFormData(Instance instance, DataElement dataElement, object data, List<string>? changedFields = null)
+    public async Task<List<ValidationIssue>> ValidateFormData(Instance instance, DataElement dataElement, object data)
     {
         var appMetadata = await _appMetadata.GetApplicationMetadata();
         var layoutSet = _appResourcesService.GetLayoutSetForTask(appMetadata.DataTypes.First(dt=>dt.Id == dataElement.DataType).TaskId);

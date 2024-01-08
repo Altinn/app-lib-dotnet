@@ -3,7 +3,6 @@
 using System.Net;
 using System.Security.Claims;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using Altinn.App.Api.Helpers.RequestHandling;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
@@ -50,6 +49,7 @@ namespace Altinn.App.Api.Controllers
         private readonly IAppResources _appResourcesService;
         private readonly IAppMetadata _appMetadata;
         private readonly IPrefill _prefillService;
+        private readonly IValidationService _validationService;
         private readonly IFileAnalysisService _fileAnalyserService;
         private readonly IFileValidationService _fileValidationService;
         private readonly IFeatureManager _featureManager;
@@ -68,6 +68,7 @@ namespace Altinn.App.Api.Controllers
         /// <param name="appMetadata">The app metadata service</param>
         /// <param name="featureManager">The feature manager controlling enabled features.</param>
         /// <param name="prefillService">A service with prefill related logic.</param>
+        /// <param name="validationService">The service used to validate data</param>
         /// <param name="fileAnalyserService">Service used to analyse files uploaded.</param>
         /// <param name="fileValidationService">Service used to validate files uploaded.</param>
         public DataController(
@@ -79,6 +80,7 @@ namespace Altinn.App.Api.Controllers
             IAppModel appModel,
             IAppResources appResourcesService,
             IPrefill prefillService,
+            IValidationService validationService,
             IFileAnalysisService fileAnalyserService,
             IFileValidationService fileValidationService,
             IAppMetadata appMetadata,
@@ -94,6 +96,7 @@ namespace Altinn.App.Api.Controllers
             _appResourcesService = appResourcesService;
             _appMetadata = appMetadata;
             _prefillService = prefillService;
+            _validationService = validationService;
             _fileAnalyserService = fileAnalyserService;
             _fileValidationService = fileValidationService;
             _featureManager = featureManager;
@@ -267,17 +270,15 @@ namespace Altinn.App.Api.Controllers
                     return NotFound("Did not find data element");
                 }
 
-                string dataType = dataElement.DataType;
+                DataType? dataType = await GetDataType(dataElement);
 
-                bool? appLogic = await RequiresAppLogic(dataType);
-
-                if (appLogic == null)
+                if (dataType is null)
                 {
                     string error = $"Could not determine if {dataType} requires app logic for application {org}/{app}";
                     _logger.LogError(error);
                     return BadRequest(error);
                 }
-                else if ((bool)appLogic)
+                else if (dataType?.AppLogic?.ClassRef is not null)
                 {
                     return await GetFormData(org, app, instanceOwnerPartyId, instanceGuid, dataGuid, dataType, instance);
                 }
@@ -328,22 +329,19 @@ namespace Altinn.App.Api.Controllers
                     return NotFound("Did not find data element");
                 }
 
-                string dataType = dataElement.DataType;
+                DataType? dataType = await GetDataType(dataElement);
 
-                bool? appLogic = await RequiresAppLogic(dataType);
-
-                if (appLogic == null)
+                if (dataType is null)
                 {
                     _logger.LogError("Could not determine if {dataType} requires app logic for application {org}/{app}", dataType, org, app);
                     return BadRequest($"Could not determine if data type {dataType} requires application logic.");
                 }
-                else if (appLogic == true)
+                else if (dataType.AppLogic?.ClassRef is not null)
                 {
                     return await PutFormData(org, app, instance, dataGuid, dataType);
                 }
 
-                DataType? dataTypeFromMetadata = (await _appMetadata.GetApplicationMetadata()).DataTypes.First(e => e.Id.Equals(dataType, StringComparison.InvariantCultureIgnoreCase));
-                (bool validationRestrictionSuccess, List<ValidationIssue> errors) = DataRestrictionValidation.CompliesWithDataRestrictions(Request, dataTypeFromMetadata);
+                (bool validationRestrictionSuccess, List<ValidationIssue> errors) = DataRestrictionValidation.CompliesWithDataRestrictions(Request, dataType);
                 if (!validationRestrictionSuccess)
                 {
                     return BadRequest(await GetErrorDetails(errors));
@@ -394,11 +392,9 @@ namespace Altinn.App.Api.Controllers
                     return NotFound("Did not find data element");
                 }
 
-                var dataType = dataElement.DataType;
+                var dataType = await GetDataType(dataElement);
 
-                var appLogic = await RequiresAppLogic(dataType);
-
-                if (appLogic != true)
+                if (dataType?.AppLogic?.ClassRef is null)
                 {
                     _logger.LogError(
                         "Could not determine if {dataType} requires app logic for application {org}/{app}",
@@ -408,16 +404,16 @@ namespace Altinn.App.Api.Controllers
                     return BadRequest($"Could not determine if data type {dataType} requires application logic.");
                 }
 
-                var modelType = _appModel.GetModelType(_appResourcesService.GetClassRefForLogicDataType(dataType));
+                var modelType = _appModel.GetModelType(dataType.AppLogic.ClassRef);
 
                 var oldModel =
                     await _dataClient.GetFormData(instanceGuid, modelType, org, app, instanceOwnerPartyId, dataGuid);
 
                 var response =
-                    await PatchFormDataImplementation(dataGuid, dataPatchRequest, oldModel, instance, _dataProcessors);
+                    await PatchFormDataImplementation(dataType, dataElement, dataPatchRequest, oldModel, instance);
 
-                await UpdatePresentationTextsOnInstance(instance, dataType, response.NewDataModel);
-                await UpdateDataValuesOnInstance(instance, dataType, response.NewDataModel);
+                await UpdatePresentationTextsOnInstance(instance, dataType.Id, response.NewDataModel);
+                await UpdateDataValuesOnInstance(instance, dataType.Id, response.NewDataModel);
 
                 // Save Formdata to database
                 await _dataClient.UpdateData(
@@ -440,13 +436,13 @@ namespace Altinn.App.Api.Controllers
         /// <summary>
         /// Part of <see cref="PatchFormData" /> that is separated out for testing purposes.
         /// </summary>
-        /// <param name="dataGuid">unique id to identify the data element to update</param>
+        /// <param name="dataType">The type of the data element</param>
+        /// <param name="dataElement">The data element</param>
         /// <param name="dataPatchRequest">Container object for the <see cref="JsonPatch" /> and list of ignored validators</param>
         /// <param name="oldModel">The old state of the form data</param>
         /// <param name="instance">The instance</param>
-        /// <param name="dataProcessors">The data processors to run</param>
         /// <returns>DataPatchResponse after this patch operation</returns>
-        public static async Task<DataPatchResponse> PatchFormDataImplementation(Guid dataGuid, DataPatchRequest dataPatchRequest, object oldModel, Instance instance, IEnumerable<IDataProcessor> dataProcessors)
+        internal async Task<DataPatchResponse> PatchFormDataImplementation(DataType dataType, DataElement dataElement, DataPatchRequest dataPatchRequest, object oldModel, Instance instance)
         {
             var oldModelNode = JsonSerializer.SerializeToNode(oldModel, oldModel.GetType());
             var patchResult = dataPatchRequest.Patch.Apply(oldModelNode);
@@ -457,13 +453,14 @@ namespace Altinn.App.Api.Controllers
 
             var model = patchResult.Result.Deserialize(oldModel.GetType())!;
 
-            // Run processDataWrite
-            foreach (var dataProcessor in dataProcessors)
+            foreach (var dataProcessor in _dataProcessors)
             {
-                await dataProcessor.ProcessDataWrite(instance, dataGuid, model); // TODO: add old model to interface
+                await dataProcessor.ProcessDataWrite(instance, Guid.Parse(dataElement.Id), model); // TODO: add old model to interface
             }
 
-            var validationIssues = new Dictionary<string, List<ValidationIssue>>(); // TODO: Run validation
+            var changedFields = dataPatchRequest.Patch.Operations.Select(o => o.Path.ToString()).ToList();
+
+            var validationIssues = await _validationService.ValidateFormData(instance, dataElement, dataType, model, changedFields, dataPatchRequest.IgnoredValidators );
             var response = new DataPatchResponse
             {
                 NewDataModel = model,
@@ -510,17 +507,15 @@ namespace Altinn.App.Api.Controllers
                     return NotFound("Did not find data element");
                 }
 
-                string dataType = dataElement.DataType;
+                DataType? dataType = await GetDataType(dataElement);
 
-                bool? appLogic = await RequiresAppLogic(dataType);
-
-                if (appLogic == null)
+                if (dataType == null)
                 {
-                    string errorMsg = $"Could not determine if {dataType} requires app logic for application {org}/{app}";
+                    string errorMsg = $"Could not determine if {dataElement.DataType} requires app logic for application {org}/{app}";
                     _logger.LogError(errorMsg);
                     return BadRequest(errorMsg);
                 }
-                else if ((bool)appLogic)
+                else if (dataType.AppLogic.ClassRef is not null)
                 {
                     // trying deleting a form element
                     return BadRequest("Deleting form data is not possible at this moment.");
@@ -653,21 +648,10 @@ namespace Altinn.App.Api.Controllers
             }
         }
 
-        private async Task<bool?> RequiresAppLogic(string dataType)
+        private async Task<DataType?> GetDataType(DataElement element)
         {
-            bool? appLogic = false;
-
-            try
-            {
-                Application application = await _appMetadata.GetApplicationMetadata();
-                appLogic = application?.DataTypes.Where(e => e.Id == dataType).Select(e => e.AppLogic?.ClassRef != null).First();
-            }
-            catch (Exception)
-            {
-                appLogic = null;
-            }
-
-            return appLogic;
+            Application application = await _appMetadata.GetApplicationMetadata();
+            return application?.DataTypes.Find(e => e.Id == element.DataType);
         }
 
         /// <summary>
@@ -682,15 +666,13 @@ namespace Altinn.App.Api.Controllers
             int instanceOwnerId,
             Guid instanceGuid,
             Guid dataGuid,
-            string dataType,
+            DataType dataType,
             Instance instance)
         {
-            string appModelclassRef = _appResourcesService.GetClassRefForLogicDataType(dataType);
-
             // Get Form Data from data service. Assumes that the data element is form data.
             object appModel = await _dataClient.GetFormData(
                 instanceGuid,
-                _appModel.GetModelType(appModelclassRef),
+                _appModel.GetModelType(dataType.AppLogic.ClassRef),
                 org,
                 app,
                 instanceOwnerId,
@@ -731,11 +713,11 @@ namespace Altinn.App.Api.Controllers
             return BadRequest("Invalid data provided. Error:  The request must include a Content-Disposition header");
         }
 
-        private async Task<ActionResult> PutFormData(string org, string app, Instance instance, Guid dataGuid, string dataType)
+        private async Task<ActionResult> PutFormData(string org, string app, Instance instance, Guid dataGuid, DataType dataType)
         {
             int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
 
-            string classRef = _appResourcesService.GetClassRefForLogicDataType(dataType);
+            string classRef = dataType.AppLogic.ClassRef;
             Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
 
             ModelDeserializer deserializer = new ModelDeserializer(_logger, _appModel.GetModelType(classRef));
@@ -753,8 +735,8 @@ namespace Altinn.App.Api.Controllers
 
             Dictionary<string, object?>? changedFields = await JsonHelper.ProcessDataWriteWithDiff(instance, dataGuid, serviceModel, _dataProcessors, _logger);
 
-            await UpdatePresentationTextsOnInstance(instance, dataType, serviceModel);
-            await UpdateDataValuesOnInstance(instance, dataType, serviceModel);
+            await UpdatePresentationTextsOnInstance(instance, dataType.Id, serviceModel);
+            await UpdateDataValuesOnInstance(instance, dataType.Id, serviceModel);
 
             // Save Formdata to database
             DataElement updatedDataElement = await _dataClient.UpdateData(

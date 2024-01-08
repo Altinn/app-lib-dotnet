@@ -36,7 +36,7 @@ namespace Altinn.App.Core.Tests.Features.Validators.Default
             validator.ShouldRunForIncrementalValidation(changedFields).Should().BeFalse();
 
             // Act
-            var result = await validator.ValidateFormData(new Instance(), new DataElement(), data, changedFields);
+            var result = await validator.ValidateFormData(new Instance(), new DataElement(), data);
 
             // Assert
             Assert.Empty(result);
@@ -47,7 +47,6 @@ namespace Altinn.App.Core.Tests.Features.Validators.Default
         {
             // Arrange
             var data = new object();
-            var changedFields = new List<string>();
 
             _instanceValidator
                 .Setup(iv => iv.ValidateData(It.IsAny<object>(), It.IsAny<ModelStateDictionary>()))
@@ -58,7 +57,7 @@ namespace Altinn.App.Core.Tests.Features.Validators.Default
                 });
 
             // Act
-            var result = await _validator.ValidateFormData(new Instance(), new DataElement(), data, changedFields);
+            var result = await _validator.ValidateFormData(new Instance(), new DataElement(), data);
 
             // Assert
             result.Should().BeEquivalentTo(
@@ -123,7 +122,7 @@ namespace Altinn.App.Core.Tests.Features.Validators.Default
                 });
 
             // Act
-            var result = await _validator.ValidateFormData(new Instance(), new DataElement(), data, changedFields);
+            var result = await _validator.ValidateFormData(new Instance(), new DataElement(), data);
 
             // Assert
             result.Should().HaveCount(2);

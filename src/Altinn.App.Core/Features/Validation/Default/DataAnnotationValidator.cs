@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Features.Validation.Default;
@@ -37,12 +36,17 @@ public class DataAnnotationValidator : IFormDataValidator
     public string DataType => "*";
 
     /// <summary>
-    /// Disable incremental validation for this validator.
+    /// This validator has the code "dataannotations" and this is known by the frontend, who requests this validator to not run for incremental validation.
     /// </summary>
-    public bool ShouldRunForIncrementalValidation(List<string>? changedFields = null) => false;
+    public string Code => "dataannotations";
+
+    /// <summary>
+    /// We don't know which fields are relevant for data annotation validation, so we always run it.
+    /// </summary>
+    public bool ShouldRunForIncrementalValidation(List<string> changedFields) => true;
 
     /// <inheritdoc />
-    public Task<List<ValidationIssue>> ValidateFormData(Instance instance, DataElement dataElement, object data, List<string>? changedFields = null)
+    public Task<List<ValidationIssue>> ValidateFormData(Instance instance, DataElement dataElement, object data)
     {
         try
         {

@@ -1,11 +1,8 @@
 using System.Text.Json;
-using Altinn.App.Core.Helpers;
-using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Altinn.App.Core.Features.Validation.Default;
@@ -39,12 +36,17 @@ public class ExpressionValidator : IFormDataValidator
     public string DataType => "*";
 
     /// <summary>
-    /// Expression validations should always run (they're likely quicker to run than to figure out if relevant fields changed)
+    /// This validator has the code "expression" and this is known by the frontend, who requests this validator to not run for incremental validation.
     /// </summary>
-    public bool ShouldRunForIncrementalValidation(List<string>? changedFields = null) => true;
+    public string Code => "expression";
+
+    /// <summary>
+    /// Expression validations should always run (it is way to complex to figure out if it should run or not)
+    /// </summary>
+    public bool ShouldRunForIncrementalValidation(List<string> changedFields) => true;
 
     /// <inheritdoc />
-    public async Task<List<ValidationIssue>> ValidateFormData(Instance instance, DataElement dataElement, object data, List<string>? changedFields = null)
+    public async Task<List<ValidationIssue>> ValidateFormData(Instance instance, DataElement dataElement, object data)
     {
         var rawValidationConfig = _appResourceService.GetValidationConfiguration(dataElement.DataType);
         if (rawValidationConfig == null)

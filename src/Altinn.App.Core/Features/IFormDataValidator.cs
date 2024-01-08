@@ -22,7 +22,7 @@ public interface IFormDataValidator
     /// Used for partial validation to ensure that the validator only runs when relevant fields have changed.
     /// </summary>
     /// <param name="changedFields">List of the json path to all changed fields for incremental validation</param>
-    bool ShouldRunForIncrementalValidation(List<string>? changedFields = null);
+    bool ShouldRunForIncrementalValidation(List<string> changedFields);
 
     /// <summary>
     /// Returns the group id of the validator. This is used to run partial validations on the backend.
@@ -30,16 +30,14 @@ public interface IFormDataValidator
     /// <remarks>
     /// The default implementation should work for most cases.
     /// </remarks>
-    public string? Code => $"{this.GetType().FullName}-{DataType}";
+    public string Code => $"{this.GetType().FullName}-{DataType}";
 
     /// <summary>
-    ///
+    /// The actual validation function
     /// </summary>
     /// <param name="instance"></param>
     /// <param name="dataElement"></param>
     /// <param name="data"></param>
-    /// <param name="changedFields"></param>
     /// <returns>List of validation issues</returns>
-    Task<List<ValidationIssue>> ValidateFormData(Instance instance, DataElement dataElement, object data,
-        List<string>? changedFields = null);
+    Task<List<ValidationIssue>> ValidateFormData(Instance instance, DataElement dataElement, object data);
 }

@@ -58,7 +58,7 @@ public class ValidationServiceTests
             RunFor(m => m.Name);
         }
 
-        protected override async Task ValidateFormData(Instance instance, DataElement dataElement, MyModel data, List<string>? changedFields = null)
+        protected override async Task ValidateFormData(Instance instance, DataElement dataElement, MyModel data)
         {
             if (data.Name != "Ola")
             {

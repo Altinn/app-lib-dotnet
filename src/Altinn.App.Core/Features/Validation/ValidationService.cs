@@ -114,8 +114,8 @@ public class ValidationService : IValidationService
     }
 
     /// <inheritdoc/>
-    public async Task<Dictionary<string, List<ValidationIssue>>> ValidateFormData(Instance instance,
-        DataElement dataElement, DataType dataType, object data, List<string>? changedFields = null)
+    public async Task<Dictionary<string, List<ValidationIssue>>> ValidateFormData(Instance instance, DataElement dataElement, DataType dataType, object data,
+        List<string>? changedFields = null, List<string>? ignoredValidators = null)
     {
         ArgumentNullException.ThrowIfNull(instance);
         ArgumentNullException.ThrowIfNull(dataElement);
@@ -126,7 +126,8 @@ public class ValidationService : IValidationService
         var dataValidators = _serviceProvider.GetServices<IFormDataValidator>()
             .Where(dv => dv.DataType == "*" || dv.DataType == dataType.Id)
             // .Concat(_serviceProvider.GetKeyedServices<IFormDataValidator>(dataElement.DataType))
-            .Where(dv => dv.ShouldRunForIncrementalValidation(changedFields))
+            .Where(dv => ignoredValidators?.Contains(dv.Code) != true)
+            .Where(dv => changedFields is null ? true : dv.ShouldRunForIncrementalValidation(changedFields))
             .ToArray();
 
         var issuesLists = await Task.WhenAll(dataValidators.Select(async (v) =>
@@ -134,11 +135,8 @@ public class ValidationService : IValidationService
             try
             {
                 _logger.LogDebug("Start running validator {validatorName} on {dataType} for data element {dataElementId} in instance {instanceId}", v.GetType().Name, dataElement.DataType, dataElement.Id, instance.Id);
-                var issues = await v.ValidateFormData(instance, dataElement, data, changedFields);
-                if (v.Code is not null)
-                {
-                    issues.ForEach(i=>i.Code = v.Code);// Ensure that the code is set to the validator code
-                }
+                var issues = await v.ValidateFormData(instance, dataElement, data);
+                issues.ForEach(i => i.Code = v.Code);// Ensure that the code is set to the validator code
                 return issues;
             }
             catch (Exception e)
@@ -148,7 +146,7 @@ public class ValidationService : IValidationService
             }
         }));
 
-        return dataValidators.Zip(issuesLists).ToDictionary(kv => kv.First.Code ?? string.Empty, kv => kv.Second);
+        return dataValidators.Zip(issuesLists).ToDictionary(kv => kv.First.Code, kv => kv.Second);
     }
 
 }
