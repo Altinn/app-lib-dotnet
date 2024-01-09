@@ -14,7 +14,7 @@ public interface IFormDataValidator
     /// The data type this validator is for. Typically either hard coded by implementation or
     /// or set by constructor using a <see cref="ServiceKeyAttribute" /> and a keyed service.
     ///
-    /// To validate all types, just use a "*" as value
+    /// To validate all types with form data, just use a "*" as value
     /// </summary>
     string DataType { get; }
 

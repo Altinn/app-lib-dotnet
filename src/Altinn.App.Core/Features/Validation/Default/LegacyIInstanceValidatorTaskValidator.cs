@@ -32,7 +32,7 @@ public class LegacyIInstanceValidatorTaskValidator : ITaskValidator
     public string TaskId => "*";
 
     /// <inheritdoc />
-    public async Task<List<ValidationIssue>> ValidateTask(Instance instance)
+    public async Task<List<ValidationIssue>> ValidateTask(Instance instance, string taskId)
     {
         if (_instanceValidator is null)
         {
@@ -40,7 +40,7 @@ public class LegacyIInstanceValidatorTaskValidator : ITaskValidator
         }
 
         var modelState = new ModelStateDictionary();
-        await _instanceValidator.ValidateTask(instance, TaskId, modelState);
+        await _instanceValidator.ValidateTask(instance, taskId, modelState);
         return ModelStateHelpers.MapModelStateToIssueList(modelState, instance, _generalSettings);
     }
 }

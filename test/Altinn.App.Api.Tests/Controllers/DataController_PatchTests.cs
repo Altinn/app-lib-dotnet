@@ -90,7 +90,7 @@ public class DataController_PatchTests : ApiTestBase, IClassFixture<WebApplicati
         readDataElementResponseParsed.Melding.Name.Should().Be("Ivar Nesje");
 
         _dataProcessor.Verify(p => p.ProcessDataRead(It.IsAny<Instance>(), It.Is<Guid>(dataId => dataId == Guid.Parse(dataGuid)), It.IsAny<Skjema>()), Times.Exactly(1));
-        _dataProcessor.Verify(p => p.ProcessDataWrite(It.IsAny<Instance>(), It.Is<Guid>(dataId => dataId == Guid.Parse(dataGuid)), It.IsAny<Skjema>()), Times.Exactly(1)); // TODO: Shouldn't this be 2 because of the first write?
+        _dataProcessor.Verify(p => p.ProcessDataWrite(It.IsAny<Instance>(), It.Is<Guid>(dataId => dataId == Guid.Parse(dataGuid)), It.IsAny<Skjema>(), It.IsAny<Skjema?>()), Times.Exactly(1)); // TODO: Shouldn't this be 2 because of the first write?
         _dataProcessor.VerifyNoOtherCalls();
     }
 }

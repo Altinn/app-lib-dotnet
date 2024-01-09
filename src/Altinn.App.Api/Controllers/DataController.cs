@@ -278,7 +278,7 @@ namespace Altinn.App.Api.Controllers
                     _logger.LogError(error);
                     return BadRequest(error);
                 }
-                else if (dataType?.AppLogic?.ClassRef is not null)
+                else if (dataType.AppLogic?.ClassRef is not null)
                 {
                     return await GetFormData(org, app, instanceOwnerPartyId, instanceGuid, dataGuid, dataType, instance);
                 }
@@ -429,7 +429,7 @@ namespace Altinn.App.Api.Controllers
             }
             catch (PlatformHttpException e)
             {
-                return HandlePlatformHttpException(e,$"Unable to update data element {dataGuid} for instance {instanceOwnerPartyId}/{instanceGuid}");
+                return HandlePlatformHttpException(e, $"Unable to update data element {dataGuid} for instance {instanceOwnerPartyId}/{instanceGuid}");
             }
         }
 
@@ -455,12 +455,12 @@ namespace Altinn.App.Api.Controllers
 
             foreach (var dataProcessor in _dataProcessors)
             {
-                await dataProcessor.ProcessDataWrite(instance, Guid.Parse(dataElement.Id), model); // TODO: add old model to interface
+                await dataProcessor.ProcessDataWrite(instance, Guid.Parse(dataElement.Id), model, oldModel);
             }
 
             var changedFields = dataPatchRequest.Patch.Operations.Select(o => o.Path.ToString()).ToList();
 
-            var validationIssues = await _validationService.ValidateFormData(instance, dataElement, dataType, model, changedFields, dataPatchRequest.IgnoredValidators );
+            var validationIssues = await _validationService.ValidateFormData(instance, dataElement, dataType, model, changedFields, dataPatchRequest.IgnoredValidators);
             var response = new DataPatchResponse
             {
                 NewDataModel = model,

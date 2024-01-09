@@ -26,14 +26,10 @@ public interface ITaskValidator
     string TaskId { get; }
 
     /// <summary>
-    /// Unique code for the validator. Used to run partial validations on the backend.
-    /// </summary>
-    public string Code => this.GetType().FullName ?? string.Empty;
-
-    /// <summary>
     /// Actual validation logic for the task
     /// </summary>
     /// <param name="instance">The instance to validate</param>
+    /// <param name="taskId">current task to run validations for</param>
     /// <returns>List of validation issues to add to this task validation</returns>
-    Task<List<ValidationIssue>> ValidateTask(Instance instance);
+    Task<List<ValidationIssue>> ValidateTask(Instance instance, string taskId);
 }

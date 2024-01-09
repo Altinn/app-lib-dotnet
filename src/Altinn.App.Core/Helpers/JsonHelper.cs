@@ -27,7 +27,7 @@ namespace Altinn.App.Core.Helpers
             foreach (var dataProcessor in dataProcessors)
             {
                 logger.LogInformation("ProcessDataRead for {modelType} using {dataProcesor}", serviceModel.GetType().Name, dataProcessor.GetType().Name);
-                await dataProcessor.ProcessDataWrite(instance, dataGuid, serviceModel);
+                await dataProcessor.ProcessDataWrite(instance, dataGuid, serviceModel, null);
             }
 
             string updatedServiceModelString = System.Text.Json.JsonSerializer.Serialize(serviceModel);

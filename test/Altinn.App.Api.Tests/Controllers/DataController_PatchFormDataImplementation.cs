@@ -133,7 +133,7 @@ public class DataController_PatchFormDataImplementation : IAsyncDisposable
             }
         };
 
-        _dataProcessorMock.Setup(d => d.ProcessDataWrite(It.IsAny<Instance>(), It.IsAny<Guid>(), It.IsAny<MyModel>())).Returns((Instance i, Guid j, MyModel data) => Task.CompletedTask);
+        _dataProcessorMock.Setup(d => d.ProcessDataWrite(It.IsAny<Instance>(), It.IsAny<Guid>(), It.IsAny<MyModel>(), It.IsAny<MyModel?>())).Returns((Instance i, Guid j, MyModel data, MyModel? oldData) => Task.CompletedTask);
         _formDataValidator.Setup(fdv => fdv.ValidateFormData(
             It.Is<Instance>(i => i == _instance),
             It.Is<DataElement>(de=>de == _dataElement),
@@ -150,7 +150,7 @@ public class DataController_PatchFormDataImplementation : IAsyncDisposable
         validator.Key.Should().Be("formDataValidator");
         var issue = validator.Value.Should().ContainSingle().Which;
         issue.Description.Should().Be("First error");
-        _dataProcessorMock.Verify(d => d.ProcessDataWrite(It.IsAny<Instance>(), It.IsAny<Guid>(), It.IsAny<MyModel>()));
+        _dataProcessorMock.Verify(d => d.ProcessDataWrite(It.IsAny<Instance>(), It.IsAny<Guid>(), It.IsAny<MyModel>(), It.IsAny<MyModel?>()));
     }
 
     public async ValueTask DisposeAsync()

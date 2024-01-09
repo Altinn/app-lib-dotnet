@@ -25,12 +25,12 @@ public class DefaultTaskValidator : ITaskValidator
     public string TaskId => "*";
 
     /// <inheritdoc />
-    public async Task<List<ValidationIssue>> ValidateTask(Instance instance)
+    public async Task<List<ValidationIssue>> ValidateTask(Instance instance, string taskId)
     {
         var messages = new List<ValidationIssue>();
         var application = await _appMetadata.GetApplicationMetadata();
 
-        foreach (var dataType in application.DataTypes.Where(et => et.TaskId == TaskId))
+        foreach (var dataType in application.DataTypes.Where(et => et.TaskId == taskId))
         {
             List<DataElement> elements = instance.Data.Where(d => d.DataType == dataType.Id).ToList();
 

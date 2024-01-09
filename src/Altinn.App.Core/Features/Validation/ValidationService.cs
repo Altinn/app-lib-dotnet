@@ -48,7 +48,7 @@ public class ValidationService : IValidationService
             try
             {
                 _logger.LogDebug("Start running validator {validatorName} on task {taskId} in instance {instanceId}", tv.GetType().Name, taskId, instance.Id);
-                return tv.ValidateTask(instance);
+                return tv.ValidateTask(instance, taskId);
             }
             catch (Exception e)
             {
