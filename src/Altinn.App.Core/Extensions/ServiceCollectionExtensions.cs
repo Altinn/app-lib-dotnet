@@ -31,6 +31,8 @@ using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Prefill;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Action;
+using Altinn.App.Core.Internal.Process.ServiceTasks;
+using Altinn.App.Core.Internal.Process.TaskTypes;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Internal.Secrets;
@@ -140,7 +142,15 @@ namespace Altinn.App.Core.Extensions
             services.TryAddSingleton<IAppMetadata, AppMetadata>();
             services.TryAddSingleton<IFrontendFeatures, FrontendFeatures>();
             services.TryAddTransient<IAppEvents, DefaultAppEvents>();
-            services.TryAddTransient<ITaskEvents, DefaultTaskEvents>();
+            services.AddTransient<IProcessTaskType, DataProcessTaskType>();
+            services.AddTransient<IProcessTaskType, ConfirmationProcessTaskType>();
+            services.AddTransient<IProcessTaskType, FeedbackProcessTaskType>();
+            services.AddTransient<IProcessTaskType, NullProcessTaskType>();
+            services.AddTransient<ProcessTaskEndCommonLogic>();
+            services.AddTransient<ProcessTaskStartCommonLogic>();
+            services.AddTransient<ProcessTaskLockingCommonLogic>();
+            services.AddTransient<PdfServiceTask>();
+            services.AddTransient<EformidlingServiceTask>();
 #pragma warning disable CS0618, CS0612 // Type or member is obsolete
             services.TryAddTransient<IPageOrder, DefaultPageOrder>();
 #pragma warning restore CS0618, CS0612 // Type or member is obsolete

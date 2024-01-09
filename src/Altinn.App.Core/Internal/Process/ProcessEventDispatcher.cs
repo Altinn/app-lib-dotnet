@@ -1,8 +1,12 @@
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Events;
 using Altinn.App.Core.Internal.Instances;
-using Altinn.App.Core.Internal.Process.Elements;
+using Altinn.App.Core.Internal.Pdf;
+using Altinn.App.Core.Internal.Process.ServiceTasks;
+using Altinn.App.Core.Internal.Process.TaskTypes;
+using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
@@ -17,32 +21,59 @@ class ProcessEventDispatcher : IProcessEventDispatcher
 {
     private readonly IInstanceClient _instanceClient;
     private readonly IInstanceEventClient _instanceEventClient;
-    private readonly ITaskEvents _taskEvents;
     private readonly IAppEvents _appEvents;
     private readonly IEventsClient _eventsClient;
     private readonly bool _registerWithEventSystem;
+    private readonly IEnumerable<IProcessTaskType> _processTaskTypes;
+    private readonly IEnumerable<IProcessTaskStart> _taskStarts;
+    private readonly IEnumerable<IProcessTaskEnd> _taskEnds;
+    private readonly IEnumerable<IProcessTaskAbandon> _taskAbandons;
+    private readonly ProcessTaskStartCommonLogic _startCommonLogic;
+    private readonly ProcessTaskEndCommonLogic _endCommonLogic;
+    private readonly ProcessTaskLockingCommonLogic _lockingCommonLogic;
     private readonly ILogger<ProcessEventDispatcher> _logger;
+    private readonly PdfServiceTask _pdfServiceTask;
+    private readonly EformidlingServiceTask _eformidlingServiceTask;
+    private readonly IAppMetadata _appMetadata;
 
     public ProcessEventDispatcher(
-        IInstanceClient instanceClient, 
+        IInstanceClient instanceClient,
         IInstanceEventClient instanceEventClient,
-        ITaskEvents taskEvents, 
-        IAppEvents appEvents, 
-        IEventsClient eventsClient, 
+        IAppEvents appEvents,
+        IEventsClient eventsClient,
         IOptions<AppSettings> appSettings,
-        ILogger<ProcessEventDispatcher> logger)
+        IEnumerable<IProcessTaskType> processTaskTypes,
+        ILogger<ProcessEventDispatcher> logger,
+        IEnumerable<IProcessTaskStart> taskStarts,
+        IEnumerable<IProcessTaskEnd> taskEnds,
+        IEnumerable<IProcessTaskAbandon> taskAbandons,
+        PdfServiceTask pdfServiceTask,
+        EformidlingServiceTask eformidlingServiceTask,
+        ProcessTaskStartCommonLogic startCommonLogic,
+        ProcessTaskEndCommonLogic endCommonLogic,
+        ProcessTaskLockingCommonLogic lockingCommonLogic, IAppMetadata appMetadata)
     {
         _instanceClient = instanceClient;
         _instanceEventClient = instanceEventClient;
-        _taskEvents = taskEvents;
         _appEvents = appEvents;
         _eventsClient = eventsClient;
         _registerWithEventSystem = appSettings.Value.RegisterEventsWithEventsComponent;
         _logger = logger;
+        _taskStarts = taskStarts;
+        _taskEnds = taskEnds;
+        _taskAbandons = taskAbandons;
+        _pdfServiceTask = pdfServiceTask;
+        _eformidlingServiceTask = eformidlingServiceTask;
+        _startCommonLogic = startCommonLogic;
+        _endCommonLogic = endCommonLogic;
+        _lockingCommonLogic = lockingCommonLogic;
+        _appMetadata = appMetadata;
+        _processTaskTypes = processTaskTypes;
     }
 
     /// <inheritdoc/>
-    public async Task<Instance> UpdateProcessAndDispatchEvents(Instance instance, Dictionary<string, string>? prefill, List<InstanceEvent>? events)
+    public async Task<Instance> UpdateProcessAndDispatchEvents(Instance instance, Dictionary<string, string>? prefill,
+        List<InstanceEvent>? events)
     {
         await HandleProcessChanges(instance, events, prefill);
 
@@ -65,7 +96,8 @@ class ProcessEventDispatcher : IProcessEventDispatcher
             {
                 if (!string.IsNullOrWhiteSpace(instance.Process.CurrentTask?.ElementId))
                 {
-                    await _eventsClient.AddEvent($"app.instance.process.movedTo.{instance.Process.CurrentTask.ElementId}", instance);
+                    await _eventsClient.AddEvent(
+                        $"app.instance.process.movedTo.{instance.Process.CurrentTask.ElementId}", instance);
                 }
                 else if (instance.Process.EndEvent != null)
                 {
@@ -78,8 +110,8 @@ class ProcessEventDispatcher : IProcessEventDispatcher
             }
         }
     }
-    
-    
+
+
     private async Task DispatchProcessEventsToStorage(Instance instance, List<InstanceEvent>? events)
     {
         string org = instance.Org;
@@ -100,7 +132,8 @@ class ProcessEventDispatcher : IProcessEventDispatcher
     ///
     /// Each implementation 
     /// </summary>
-    private async Task HandleProcessChanges(Instance instance, List<InstanceEvent>? events, Dictionary<string, string>? prefill)
+    private async Task HandleProcessChanges(Instance instance, List<InstanceEvent>? events,
+        Dictionary<string, string>? prefill)
     {
         if (events != null)
         {
@@ -109,22 +142,34 @@ class ProcessEventDispatcher : IProcessEventDispatcher
                 if (Enum.TryParse<InstanceEventType>(instanceEvent.EventType, true, out InstanceEventType eventType))
                 {
                     string? elementId = instanceEvent.ProcessInfo?.CurrentTask?.ElementId;
-                    ITask task = GetProcessTask(instanceEvent.ProcessInfo?.CurrentTask?.AltinnTaskType);
+                    IProcessTaskType processTaskType =
+                        GetProcessTask(instanceEvent.ProcessInfo?.CurrentTask?.AltinnTaskType);
                     switch (eventType)
                     {
                         case InstanceEventType.process_StartEvent:
                             break;
                         case InstanceEventType.process_StartTask:
-                            await task.HandleTaskStart(elementId, instance, prefill);
+                            await _lockingCommonLogic.UnlockConnectedDataTypes(elementId, instance);
+                            await RunAppDefinedOnTaskStart(elementId, instance, prefill);
+                            await _startCommonLogic.Start(elementId, instance, prefill);
+                            await processTaskType.HandleTaskStart(elementId, instance, prefill);
                             break;
                         case InstanceEventType.process_EndTask:
-                            await task.HandleTaskComplete(elementId, instance);
+                            await processTaskType.HandleTaskComplete(elementId, instance);
+                            await _endCommonLogic.End(elementId, instance);
+                            await RunAppDefinedOnTaskEnd(elementId, instance);
+                            await _lockingCommonLogic.LockConnectedDataTypes(elementId, instance);
+                            //These two services are scheduled to be removed and replaced by services tasks defined in the processfile.
+                            await _pdfServiceTask.Execute(elementId, instance);
+                            await _eformidlingServiceTask.Execute(elementId, instance);
                             break;
                         case InstanceEventType.process_AbandonTask:
-                            await task.HandleTaskAbandon(elementId, instance);
+                            await processTaskType.HandleTaskAbandon(elementId, instance);
+                            await RunAppDefinedOnTaskAbandon(elementId, instance);
                             break;
                         case InstanceEventType.process_EndEvent:
                             await _appEvents.OnEndAppEvent(instanceEvent.ProcessInfo?.EndEvent, instance);
+                            await RunAutoDeleteOnProcessEnd(instance);
                             break;
                     }
                 }
@@ -136,23 +181,57 @@ class ProcessEventDispatcher : IProcessEventDispatcher
     /// Identify the correct task implementation
     /// </summary>
     /// <returns></returns>
-    private ITask GetProcessTask(string? altinnTaskType)
+    private IProcessTaskType GetProcessTask(string? altinnTaskType)
     {
-        if (string.IsNullOrEmpty(altinnTaskType))
+        altinnTaskType ??= "NullType";
+        foreach (var processTaskType in _processTaskTypes)
         {
-            return new NullTask();
+            if (processTaskType.Key == altinnTaskType)
+            {
+                return processTaskType;
+            }
         }
 
-        ITask task = new DataTask(_taskEvents);
-        if (altinnTaskType.Equals("confirmation"))
+        throw new ArgumentException($"No process task type found for {altinnTaskType}");
+    }
+
+    private async Task RunAppDefinedOnTaskStart(string taskId, Instance instance,
+        Dictionary<string, string> prefill)
+    {
+        foreach (var taskStart in _taskStarts)
         {
-            task = new ConfirmationTask(_taskEvents);
+            await taskStart.Start(taskId, instance, prefill);
         }
-        else if (altinnTaskType.Equals("feedback"))
+    }
+
+    private async Task RunAppDefinedOnTaskEnd(string endEvent, Instance instance)
+    {
+        foreach (var taskEnd in _taskEnds)
         {
-            task = new FeedbackTask(_taskEvents);
+            await taskEnd.End(endEvent, instance);
+        }
+    }
+
+    private async Task RunAppDefinedOnTaskAbandon(string taskId, Instance instance)
+    {
+        foreach (var taskAbandon in _taskAbandons)
+        {
+            await taskAbandon.Abandon(taskId, instance);
         }
 
-        return task;
+        _logger.LogDebug("OnAbandonProcessTask for {instanceId}. Locking data elements connected to {taskId}",
+            instance.Id, taskId);
+        await Task.CompletedTask;
+    }
+    
+    private async Task RunAutoDeleteOnProcessEnd(Instance instance)
+    {
+        var instanceIdentifier = new InstanceIdentifier(instance);
+        ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
+        if (appMetadata.AutoDeleteOnProcessEnd && instance.Process?.Ended != null)
+        {
+            int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
+            await _instanceClient.DeleteInstance(instanceOwnerPartyId, instanceIdentifier.InstanceGuid, true);
+        }
     }
 }

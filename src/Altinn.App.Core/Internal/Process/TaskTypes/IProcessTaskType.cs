@@ -1,13 +1,13 @@
-using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Internal.Process.Elements
+namespace Altinn.App.Core.Internal.Process.TaskTypes
 {
     /// <summary>
     /// Interface desbring the basic task
     /// </summary>
-    public interface ITask
+    public interface IProcessTaskType
     {
+        string Key { get; }
         /// <summary>
         /// This operations triggers process logic needed to start the current task. The logic depend on the different types of task
         /// </summary>
