@@ -9,6 +9,7 @@ using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Instances;
+using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Enums;
@@ -18,7 +19,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
 
@@ -54,6 +54,7 @@ public class ValidationServiceOldTests
         _serviceCollection.AddSingleton(_appModelMock.Object);
         _serviceCollection.AddSingleton(_appMetadataMock.Object);
         _serviceCollection.AddSingleton<IDataElementValidator, DefaultDataElementValidator>();
+        _serviceCollection.AddSingleton<ITaskValidator, DefaultTaskValidator>();
         _appMetadataMock.Setup(am => am.GetApplicationMetadata()).ReturnsAsync(_applicationMetadata);
     }
 
@@ -135,6 +136,114 @@ public class ValidationServiceOldTests
 
         validationIssues.FirstOrDefault(vi => vi.Code == "DataElementFileInfected").Should().BeNull();
         validationIssues.FirstOrDefault(vi => vi.Code == "DataElementFileScanPending").Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ValidateAndUpdateProcess_set_canComplete_validationstatus_and_return_empty_list()
+    {
+        const string taskId = "Task_1";
+
+        // Mock setup
+        var appMetadata = new ApplicationMetadata("ttd/test-app")
+        {
+            DataTypes = new List<DataType>
+            {
+                new DataType
+                {
+                    Id = "data",
+                    TaskId = taskId,
+                    MaxCount = 0,
+                }
+            }
+        };
+        _appMetadataMock.Setup(a => a.GetApplicationMetadata()).ReturnsAsync(appMetadata);
+
+        await using var serviceProvider = _serviceCollection.BuildServiceProvider();
+        IValidationService validationService = serviceProvider.GetRequiredService<IValidationService>();
+
+        // Testdata
+        var instance = new Instance
+        {
+            Data = new List<DataElement>()
+            {
+                new()
+                {
+                    DataType = "data",
+                    ContentType = "application/json"
+                },
+            },
+            Process = new ProcessState
+            {
+                CurrentTask = new ProcessElementInfo
+                {
+                    Name = "Task_1"
+                }
+            }
+        };
+
+        var issues = await validationService.ValidateInstanceAtTask(instance, taskId);
+        issues.Should().BeEmpty();
+
+        // instance.Process?.CurrentTask?.Validated.CanCompleteTask.Should().BeTrue();
+        // instance.Process?.CurrentTask?.Validated.Timestamp.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task ValidateAndUpdateProcess_set_canComplete_false_validationstatus_and_return_list_of_issues()
+    {
+        const string taskId = "Task_1";
+
+        // Mock setup
+        var appMetadata = new ApplicationMetadata("ttd/test-app")
+        {
+            DataTypes = new List<DataType>
+            {
+                new DataType
+                {
+                    Id = "data",
+                    TaskId = taskId,
+                    MaxCount = 1,
+                }
+            }
+        };
+        _appMetadataMock.Setup(a => a.GetApplicationMetadata()).ReturnsAsync(appMetadata);
+
+        await using var serviceProvider = _serviceCollection.BuildServiceProvider();
+        IValidationService validationService = serviceProvider.GetRequiredService<IValidationService>();
+
+        // Testdata
+        var instance = new Instance
+        {
+            Data = new List<DataElement>()
+            {
+                new()
+                {
+                    Id = "3C8B52A9-9602-4B2E-A217-B4E816ED8DEB",
+                    DataType = "data",
+                    ContentType = "application/json"
+                },
+                new()
+                {
+                    Id = "3C8B52A9-9602-4B2E-A217-B4E816ED8DEC",
+                    DataType = "data",
+                    ContentType = "application/json"
+                },
+            },
+            Process = new ProcessState
+            {
+                CurrentTask = new ProcessElementInfo
+                {
+                    Name = "Task_1"
+                }
+            }
+        };
+
+        var issues = await validationService.ValidateInstanceAtTask(instance, taskId);
+        issues.Should().HaveCount(1);
+        issues.Should().ContainSingle(i => i.Code == ValidationIssueCodes.InstanceCodes.TooManyDataElementsOfType);
+
+        // instance.Process?.CurrentTask?.Validated.CanCompleteTask.Should().BeFalse();
+        // instance.Process?.CurrentTask?.Validated.Timestamp.Should().NotBeNull();
     }
 
     [Fact]
