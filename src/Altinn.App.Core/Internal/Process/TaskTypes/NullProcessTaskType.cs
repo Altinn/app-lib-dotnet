@@ -1,13 +1,16 @@
-using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Internal.Process.Elements;
+namespace Altinn.App.Core.Internal.Process.TaskTypes;
 
 /// <summary>
-/// Null implementation. Used when no other <see cref="ITask"/> can be found
+/// Null implementation. Used when no other <see cref="IProcessTaskType"/> can be found
 /// </summary>
-public class NullTask: ITask
+public class NullProcessTaskType: IProcessTaskType
 {
+    
+    /// <inheritdoc/>
+    public string Key => "NullType";
+    
     /// <inheritdoc/>
     public async Task HandleTaskStart(string elementId, Instance instance, Dictionary<string, string> prefill)
     {
