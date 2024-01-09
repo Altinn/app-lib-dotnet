@@ -321,10 +321,11 @@ public class PageComponentConverter : JsonConverter<PageComponent>
 
         switch (type.ToLowerInvariant())
         {
+            case "repeatinggroup":
             case "group":
                 ThrowJsonExceptionIfNull(children, "Component with \"type\": \"Group\" requires a \"children\" property");
 
-                if (maxCount > 1)
+                if (maxCount > 1 || type.ToLowerInvariant() == "repeatinggroup")
                 {
                     if (!(dataModelBindings?.ContainsKey("group") ?? false))
                     {
