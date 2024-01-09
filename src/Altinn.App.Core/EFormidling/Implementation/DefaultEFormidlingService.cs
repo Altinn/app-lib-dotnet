@@ -65,7 +65,7 @@ public class DefaultEFormidlingService : IEFormidlingService
     public async Task SendEFormidlingShipment(Instance instance)
     {
         if (_eFormidlingClient == null || _tokenGenerator == null || _eFormidlingMetadata == null ||
-            _appSettings == null || _platformSettings == null || _userTokenProvider == null)
+            _appSettings == null || _platformSettings == null)
         {
             throw new EntryPointNotFoundException(
                 "eFormidling support has not been correctly configured in App.cs. " +
