@@ -33,7 +33,7 @@ public class LegacyIInstanceValidatorFormDataValidator : IFormDataValidator
     /// <summary>
     /// Always run for incremental validation
     /// </summary>
-    public bool ShouldRunForIncrementalValidation(List<string>? changedFields = null) => _instanceValidator is not null;
+    public bool ShouldRun(List<string>? changedFields = null) => _instanceValidator is not null;
 
 
     /// <inheritdoc />

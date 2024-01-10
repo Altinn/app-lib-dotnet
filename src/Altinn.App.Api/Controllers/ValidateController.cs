@@ -141,7 +141,6 @@ namespace Altinn.App.Api.Controllers
                 ValidationIssue message = new ValidationIssue
                 {
                     Code = ValidationIssueCodes.DataElementCodes.DataElementValidatedAtWrongTask,
-                    InstanceId = instance.Id,
                     Severity = ValidationIssueSeverity.Warning,
                     DataElementId = element.Id,
                     Description = AppTextHelper.GetAppText(

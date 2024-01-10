@@ -125,7 +125,6 @@ public class TestScenariosData : IEnumerable<object[]>
                 new ValidationIssue
                 {
                     Code = ValidationIssueCodes.DataElementCodes.DataElementValidatedAtWrongTask,
-                    InstanceId = "0fc98a23-fe31-4ef5-8fb9-dd3f479354ef",
                     Severity = ValidationIssueSeverity.Warning,
                     DataElementId = "0fc98a23-fe31-4ef5-8fb9-dd3f479354cd",
                     Description = AppTextHelper.GetAppText(

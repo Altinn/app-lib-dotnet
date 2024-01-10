@@ -39,7 +39,6 @@ public static class ModelStateHelpers
                     var severityAndMessage = GetSeverityFromMessage(error.ErrorMessage, generalSettings);
                     validationIssues.Add(new ValidationIssue
                     {
-                        InstanceId = instance.Id,
                         DataElementId = dataElement.Id,
                         Source = source,
                         Code = severityAndMessage.Message,
@@ -159,7 +158,6 @@ public static class ModelStateHelpers
                     var severityAndMessage = GetSeverityFromMessage(error.ErrorMessage, generalSettings);
                     validationIssues.Add(new ValidationIssue
                     {
-                        InstanceId = instance.Id,
                         Code = severityAndMessage.Message,
                         Severity = severityAndMessage.Severity,
                         Description = severityAndMessage.Message

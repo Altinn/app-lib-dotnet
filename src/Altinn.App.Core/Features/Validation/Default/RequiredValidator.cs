@@ -32,12 +32,12 @@ public class RequiredLayoutValidator : IFormDataValidator
     /// <summary>
     /// This validator has the code "required" and this is known by the frontend, who requests this validator to not run for incremental validation.
     /// </summary>
-    public string Code => "required";
+    public string ValidationSource => "required";
 
     /// <summary>
     /// Always run for incremental validation
     /// </summary>
-    public bool ShouldRunForIncrementalValidation(List<string> changedFields) => true;
+    public bool ShouldRun(List<string> changedFields) => true;
 
     /// <summary>
     /// Validate the form data against the required rules in the layout

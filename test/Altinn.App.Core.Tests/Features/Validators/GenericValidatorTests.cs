@@ -47,9 +47,9 @@ public class GenericValidatorTests
     {
         var testValidator = new TestValidator();
         testValidator.RunForExternal(m => m.Name);
-        testValidator.ShouldRunForIncrementalValidation().Should().BeTrue();
-        testValidator.ShouldRunForIncrementalValidation(new List<string>() { "name" }).Should().BeTrue();
-        testValidator.ShouldRunForIncrementalValidation(new List<string>() { "age" }).Should().BeFalse();
+        testValidator.ShouldRun().Should().BeTrue();
+        testValidator.ShouldRun(new List<string>() { "name" }).Should().BeTrue();
+        testValidator.ShouldRun(new List<string>() { "age" }).Should().BeFalse();
     }
 
     [Theory]
@@ -63,7 +63,7 @@ public class GenericValidatorTests
     {
         var testValidator = new TestValidator();
         testValidator.RunForExternal(m => m.Children![0].Name);
-        testValidator.ShouldRunForIncrementalValidation(new List<string>() { changedField }).Should().Be(shouldBe);
+        testValidator.ShouldRun(new List<string>() { changedField }).Should().Be(shouldBe);
     }
 
     [Theory]
@@ -78,6 +78,6 @@ public class GenericValidatorTests
     {
         var testValidator = new TestValidator();
         testValidator.RunForExternal(m => m.Children!.Select(c => c.Name));
-        testValidator.ShouldRunForIncrementalValidation(new List<string>() { changedField }).Should().Be(shouldBe);
+        testValidator.ShouldRun(new List<string>() { changedField }).Should().Be(shouldBe);
     }
 }

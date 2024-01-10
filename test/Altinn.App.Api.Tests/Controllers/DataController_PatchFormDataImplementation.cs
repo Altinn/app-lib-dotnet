@@ -60,8 +60,8 @@ public class DataController_PatchFormDataImplementation : IAsyncDisposable
     public DataController_PatchFormDataImplementation()
     {
         _formDataValidator.Setup(fdv => fdv.DataType).Returns(_dataType.Id);
-        _formDataValidator.Setup(fdv => fdv.Code).Returns("formDataValidator");
-        _formDataValidator.Setup(fdv => fdv.ShouldRunForIncrementalValidation(It.IsAny<List<string>>())).Returns(true);
+        _formDataValidator.Setup(fdv => fdv.ValidationSource).Returns("formDataValidator");
+        _formDataValidator.Setup(fdv => fdv.ShouldRun(It.IsAny<List<string>>())).Returns(true);
         // _dataElementValidator.Setup(ev => ev.DataType).Returns(_dataType.Id);
         _serviceCollection.AddSingleton(_formDataValidator.Object);
         _serviceCollection.AddSingleton(_dataElementValidator);
@@ -129,6 +129,7 @@ public class DataController_PatchFormDataImplementation : IAsyncDisposable
         {
             new ()
             {
+                Severity = ValidationIssueSeverity.Error,
                 Description = "First error",
             }
         };
@@ -141,7 +142,7 @@ public class DataController_PatchFormDataImplementation : IAsyncDisposable
             .ReturnsAsync(validationIssues);
 
         // Act
-        var response = await _dataController.PatchFormDataImplementation(_dataType, _dataElement , request, oldModel, _instance);
+        var (response, problemDetails) = await _dataController.PatchFormDataImplementation(_dataType, _dataElement , request, oldModel, _instance);
 
         // Assert
         response.Should().NotBeNull();

@@ -38,7 +38,6 @@ public class DefaultTaskValidator : ITaskValidator
             {
                 var message = new ValidationIssue
                 {
-                    InstanceId = instance.Id,
                     Code = ValidationIssueCodes.InstanceCodes.TooManyDataElementsOfType,
                     Severity = ValidationIssueSeverity.Error,
                     Description = ValidationIssueCodes.InstanceCodes.TooManyDataElementsOfType,
@@ -51,7 +50,6 @@ public class DefaultTaskValidator : ITaskValidator
             {
                 var message = new ValidationIssue
                 {
-                    InstanceId = instance.Id,
                     Code = ValidationIssueCodes.InstanceCodes.TooFewDataElementsOfType,
                     Severity = ValidationIssueSeverity.Error,
                     Description = ValidationIssueCodes.InstanceCodes.TooFewDataElementsOfType,

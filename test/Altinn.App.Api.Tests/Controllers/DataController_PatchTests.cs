@@ -3,94 +3,150 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using System.Net.Http.Headers;
 using System.Net;
 using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
+using Altinn.App.Api.Models;
+using Altinn.App.Api.Tests.Data;
 using Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models;
 using Altinn.App.Core.Features;
 using Xunit;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
+using Json.Patch;
+using Json.Pointer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
+using Xunit.Abstractions;
 
 namespace Altinn.App.Api.Tests.Controllers;
 
-public class DataController_PatchTests : ApiTestBase, IClassFixture<WebApplicationFactory<Program>>
+public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicationFactory<Program>>
 {
-    private readonly Mock<IDataProcessor> _dataProcessor = new();
+    private const string Org = "tdd";
+    private const string App = "contributer-restriction";
+    private const int InstanceOwnerPartyId = 500600;
+    private static readonly Guid InstanceGuid = new("0fc98a23-fe31-4ef5-8fb9-dd3f479354cd");
+    private static readonly string InstanceId = $"{InstanceOwnerPartyId}/{InstanceGuid}";
+    private static readonly Guid DataGuid = new("fc121812-0336-45fb-a75c-490df3ad5109");
+
+    private readonly Mock<IDataProcessor> _dataProcessorMock = new();
+    private readonly Mock<IFormDataValidator> _formDataValidatorMock = new();
 
     private static readonly JsonSerializerOptions JsonSerializerOptions = new ()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = true,
+        UnknownTypeHandling = JsonUnknownTypeHandling.JsonElement,
     };
 
-    public DataController_PatchTests(WebApplicationFactory<Program> factory) : base(factory)
+    private readonly ITestOutputHelper _outputHelper;
+
+    public DataControllerPatchTests(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper) : base(factory)
     {
+        _formDataValidatorMock.Setup(v => v.DataType).Returns("Not a valid data type");
+        _outputHelper = outputHelper;
         OverrideServicesForAllTests = (services) =>
         {
-            services.AddSingleton(_dataProcessor.Object);
+            services.AddSingleton(_dataProcessorMock.Object);
+            services.AddSingleton(_formDataValidatorMock.Object);
         };
+        TestData.DeleteInstanceAndData(Org, App, InstanceOwnerPartyId, InstanceGuid);
+        TestData.PrepareInstance(Org, App, InstanceOwnerPartyId, InstanceGuid);
+    }
+
+    private async Task<HttpResponseMessage> CallPatchApi(JsonPatch patch, List<string>? ignoredValidators)
+    {
+        using var httpClient = GetRootedClient(Org, App);
+        string token = PrincipalUtil.GetToken(1337, null);
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        using var updateDataElementContent =
+            new StringContent(
+                JsonSerializer.Serialize(new DataPatchRequest()
+                {
+                    Patch = patch,
+                    IgnoredValidators = ignoredValidators,
+                }, JsonSerializerOptions), System.Text.Encoding.UTF8, "application/json");
+        return await httpClient.PatchAsync($"/{Org}/{App}/instances/{InstanceId}/data/{DataGuid}", updateDataElementContent);
+    }
+
+    private async Task<string> LogResponse(HttpResponseMessage response)
+    {
+        var responseString = await response.Content.ReadAsStringAsync();
+        using var responseParsedRaw = JsonDocument.Parse(responseString);
+        _outputHelper.WriteLine(JsonSerializer.Serialize(responseParsedRaw, JsonSerializerOptions));
+        return responseString;
+
+    }
+    private TResponse ParseResponse<TResponse>(string responseString)
+    {
+        return JsonSerializer.Deserialize<TResponse>(responseString, JsonSerializerOptions)!;
     }
 
     [Fact]
-    public async Task PutDataElement_TestSinglePartUpdate_ReturnsOk()
+    public async Task PatchDataElement_ValidName_ReturnsOk()
     {
-        // Setup test data
-        string org = "tdd";
-        string app = "contributer-restriction";
-        int instanceOwnerPartyId = 501337;
-        HttpClient client = GetRootedClient(org, app);
-        string token = PrincipalUtil.GetToken(1337, null);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        // Create instance
-        var createResponse = await client.PostAsync($"{org}/{app}/instances/?instanceOwnerPartyId={instanceOwnerPartyId}", null);
-        var createResponseContent = await createResponse.Content.ReadAsStringAsync();
-        createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
-        var createResponseParsed = JsonSerializer.Deserialize<Instance>(createResponseContent, JsonSerializerOptions)!;
-        var instanceId = createResponseParsed.Id;
-
-        // Create data element (not sure why it isn't created when the instance is created, autoCreate is true)
-        using var createDataElementContent =
-            new StringContent("""{"melding":{"name": "Ivar"}}""", System.Text.Encoding.UTF8, "application/json");
-        var createDataElementResponse =
-            await client.PostAsync($"/{org}/{app}/instances/{instanceId}/data?dataType=default", createDataElementContent);
-        var createDataElementResponseContent = await createDataElementResponse.Content.ReadAsStringAsync();
-        createDataElementResponse.StatusCode.Should().Be(HttpStatusCode.Created);
-        var createDataElementResponseParsed =
-            JsonSerializer.Deserialize<DataElement>(createDataElementResponseContent, JsonSerializerOptions)!;
-        var dataGuid = createDataElementResponseParsed.Id;
-
         // Update data element
-        using var updateDataElementContent =
-            new StringContent(
-                """
-                {
-                    "patch": [
-                        {
-                            "op": "replace",
-                            "path": "/melding/name",
-                            "value": "Ivar Nesje"
-                        }
-                    ],
-                    "ignoredValidators": [
-                        "required"
-                    ]
-                } 
-                """, System.Text.Encoding.UTF8, "application/json");
-        var response = await client.PatchAsync($"/{org}/{app}/instances/{instanceId}/data/{dataGuid}", updateDataElementContent);
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var responseString = await response.Content.ReadAsStringAsync();
-        responseString.Should().Be("""{"validationIssues":{},"newDataModel":{"melding":{"name":"Ivar Nesje","random":null,"tags":null,"simple_list":null,"nested_list":[],"toggle":false}}}""");
+        var patch = new JsonPatch(
+            PatchOperation.Replace(JsonPointer.Create("melding", "name"), JsonNode.Parse("\"Ivar Nesje\"")));
 
-        // Verify stored data
-        var readDataElementResponse = await client.GetAsync($"/{org}/{app}/instances/{instanceId}/data/{dataGuid}");
-        readDataElementResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var readDataElementResponseContent = await readDataElementResponse.Content.ReadAsStringAsync();
-        var readDataElementResponseParsed =
-            JsonSerializer.Deserialize<Skjema>(readDataElementResponseContent)!;
-        readDataElementResponseParsed.Melding.Name.Should().Be("Ivar Nesje");
+        var response = await CallPatchApi(patch, null);
+        var responseString = await LogResponse(response);
 
-        _dataProcessor.Verify(p => p.ProcessDataRead(It.IsAny<Instance>(), It.Is<Guid>(dataId => dataId == Guid.Parse(dataGuid)), It.IsAny<Skjema>()), Times.Exactly(1));
-        _dataProcessor.Verify(p => p.ProcessDataWrite(It.IsAny<Instance>(), It.Is<Guid>(dataId => dataId == Guid.Parse(dataGuid)), It.IsAny<Skjema>(), It.IsAny<Skjema?>()), Times.Exactly(1)); // TODO: Shouldn't this be 2 because of the first write?
-        _dataProcessor.VerifyNoOtherCalls();
+        response.Should().HaveStatusCode(HttpStatusCode.OK);
+        var parsedResponse = ParseResponse<DataPatchResponse>(responseString);
+        parsedResponse.ValidationIssues.Should().ContainKey("required").WhoseValue.Should().BeEmpty();
+
+        var newModelElement = parsedResponse.NewDataModel.Should().BeOfType<JsonElement>().Which;
+        var newModel = newModelElement.Deserialize<Skjema>()!;
+        newModel.Melding.Name.Should().Be("Ivar Nesje");
+
+        _dataProcessorMock.Verify(p => p.ProcessDataWrite(It.IsAny<Instance>(), It.Is<Guid>(dataId => dataId == DataGuid), It.IsAny<Skjema>(), It.IsAny<Skjema?>()), Times.Exactly(1));
+        _dataProcessorMock.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task PatchDataElement_NullName_ReturnsOkAndValidationError()
+    {
+        // Update data element
+        var patch = new JsonPatch(
+            PatchOperation.Test(JsonPointer.Create("melding", "name"), JsonNode.Parse("null")),
+            PatchOperation.Replace(JsonPointer.Create("melding", "name"), JsonNode.Parse("null")));
+
+        var response = await CallPatchApi(patch, null);
+        var responseString = await LogResponse(response);
+
+        response.Should().HaveStatusCode(HttpStatusCode.OK);
+        var parsedResponse = ParseResponse<DataPatchResponse>(responseString);
+        var requiredList = parsedResponse.ValidationIssues.Should().ContainKey("required").WhoseValue;
+        var requiredName = requiredList.Should().ContainSingle().Which;
+        requiredName.Field.Should().Be("melding.name");
+        requiredName.Description.Should().Be("melding.name is required in component with id name");
+
+        var newModelElement = parsedResponse.NewDataModel.Should().BeOfType<JsonElement>().Which;
+        var newModel = newModelElement.Deserialize<Skjema>()!;
+        newModel.Melding.Name.Should().BeNull();
+
+        _dataProcessorMock.Verify(p => p.ProcessDataWrite(It.IsAny<Instance>(), It.Is<Guid>(dataId => dataId == DataGuid), It.IsAny<Skjema>(), It.IsAny<Skjema?>()), Times.Exactly(1));
+        _dataProcessorMock.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task PatchDataElement_InvalidTest_ReturnsPreconditionFailed()
+    {
+        // Update data element
+        var patch = new JsonPatch(
+            PatchOperation.Test(JsonPointer.Create("melding", "name"), JsonNode.Parse("\"Not correct previous value\"")),
+            PatchOperation.Replace(JsonPointer.Create("melding", "name"), JsonNode.Parse("null")));
+
+        var response = await CallPatchApi(patch, null);
+
+        var responseString = await LogResponse(response);
+        response.Should().HaveStatusCode(HttpStatusCode.PreconditionFailed);
+
+        var parsedResponse = ParseResponse<ProblemDetails>(responseString);
+        parsedResponse.Detail.Should().Be("Path `/melding/name` is not equal to the indicated value.");
+
+        _dataProcessorMock.VerifyNoOtherCalls();
     }
 }

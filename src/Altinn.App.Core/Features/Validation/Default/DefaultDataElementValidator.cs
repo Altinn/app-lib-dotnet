@@ -22,7 +22,6 @@ public class DefaultDataElementValidator : IDataElementValidator
         {
             issues.Add( new ValidationIssue
             {
-                InstanceId = instance.Id,
                 Code = ValidationIssueCodes.DataElementCodes.MissingContentType,
                 DataElementId = dataElement.Id,
                 Severity = ValidationIssueSeverity.Error,
@@ -39,7 +38,6 @@ public class DefaultDataElementValidator : IDataElementValidator
             {
                 issues.Add( new ValidationIssue
                 {
-                    InstanceId = instance.Id,
                     DataElementId = dataElement.Id,
                     Code = ValidationIssueCodes.DataElementCodes.ContentTypeNotAllowed,
                     Severity = ValidationIssueSeverity.Error,
@@ -54,7 +52,6 @@ public class DefaultDataElementValidator : IDataElementValidator
         {
             issues.Add( new ValidationIssue
             {
-                InstanceId = instance.Id,
                 DataElementId = dataElement.Id,
                 Code = ValidationIssueCodes.DataElementCodes.DataElementTooLarge,
                 Severity = ValidationIssueSeverity.Error,
@@ -67,7 +64,6 @@ public class DefaultDataElementValidator : IDataElementValidator
         {
             issues.Add( new ValidationIssue
             {
-                InstanceId = instance.Id,
                 DataElementId = dataElement.Id,
                 Code = ValidationIssueCodes.DataElementCodes.DataElementFileInfected,
                 Severity = ValidationIssueSeverity.Error,
@@ -81,7 +77,6 @@ public class DefaultDataElementValidator : IDataElementValidator
         {
             issues.Add( new ValidationIssue
             {
-                InstanceId = instance.Id,
                 DataElementId = dataElement.Id,
                 Code = ValidationIssueCodes.DataElementCodes.DataElementFileScanPending,
                 Severity = ValidationIssueSeverity.Error,

@@ -30,7 +30,7 @@ public abstract class GenericFormDataValidator<TModel> : IFormDataValidator
     /// <summary>
     /// Default implementation that respects the runFor prefixes.
     /// </summary>
-    public bool ShouldRunForIncrementalValidation(List<string>? changedFields = null)
+    public bool ShouldRun(List<string>? changedFields = null)
     {
         if (changedFields == null)
         {
@@ -62,7 +62,7 @@ public abstract class GenericFormDataValidator<TModel> : IFormDataValidator
     }
 
     /// <summary>
-    /// Easy way to configure <see cref="ShouldRunForIncrementalValidation"/> to only run for fields that start with the given prefix.
+    /// Easy way to configure <see cref="ShouldRun"/> to only run for fields that start with the given prefix.
     /// </summary>
     /// <param name="selector">A selector that will be translated into a prefix</param>
     /// <typeparam name="T1">The type of the selected element (only for making the compiler happy)</typeparam>
@@ -80,6 +80,8 @@ public abstract class GenericFormDataValidator<TModel> : IFormDataValidator
         AddValidationIssue(new ValidationIssue
         {
             Field = LinqExpressionHelpers.GetJsonPath(selector),
+            Description = textKey,
+            Code = textKey,
             CustomTextKey = textKey,
             Severity = severity
         });

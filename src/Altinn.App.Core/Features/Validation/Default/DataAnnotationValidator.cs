@@ -38,12 +38,12 @@ public class DataAnnotationValidator : IFormDataValidator
     /// <summary>
     /// This validator has the code "dataannotations" and this is known by the frontend, who requests this validator to not run for incremental validation.
     /// </summary>
-    public string Code => "dataannotations";
+    public string ValidationSource => "dataannotations";
 
     /// <summary>
     /// We don't know which fields are relevant for data annotation validation, so we always run it.
     /// </summary>
-    public bool ShouldRunForIncrementalValidation(List<string> changedFields) => true;
+    public bool ShouldRun(List<string> changedFields) => true;
 
     /// <inheritdoc />
     public Task<List<ValidationIssue>> ValidateFormData(Instance instance, DataElement dataElement, object data)

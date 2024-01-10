@@ -367,6 +367,9 @@ namespace Altinn.App.Api.Controllers
         /// <returns>A response object with the new full model and validation issues from all the groups that run</returns>
         [Authorize(Policy = AuthzConstants.POLICY_INSTANCE_WRITE)]
         [HttpPatch("{dataGuid:guid}")]
+        [ProducesResponseType(typeof(DataPatchResponse), 200)]
+        [ProducesResponseType(typeof(ProblemDetails), 412)]
+        [ProducesResponseType(typeof(ProblemDetails), 422)]
         public async Task<ActionResult<DataPatchResponse>> PatchFormData(
             [FromRoute] string org,
             [FromRoute] string app,
@@ -409,8 +412,13 @@ namespace Altinn.App.Api.Controllers
                 var oldModel =
                     await _dataClient.GetFormData(instanceGuid, modelType, org, app, instanceOwnerPartyId, dataGuid);
 
-                var response =
+                var (response, problemDetails) =
                     await PatchFormDataImplementation(dataType, dataElement, dataPatchRequest, oldModel, instance);
+
+                if (problemDetails is not null)
+                {
+                    return StatusCode(problemDetails.Status ?? 500, problemDetails);
+                }
 
                 await UpdatePresentationTextsOnInstance(instance, dataType.Id, response.NewDataModel);
                 await UpdateDataValuesOnInstance(instance, dataType.Id, response.NewDataModel);
@@ -442,13 +450,20 @@ namespace Altinn.App.Api.Controllers
         /// <param name="oldModel">The old state of the form data</param>
         /// <param name="instance">The instance</param>
         /// <returns>DataPatchResponse after this patch operation</returns>
-        internal async Task<DataPatchResponse> PatchFormDataImplementation(DataType dataType, DataElement dataElement, DataPatchRequest dataPatchRequest, object oldModel, Instance instance)
+        internal async Task<(DataPatchResponse, ProblemDetails?)> PatchFormDataImplementation(DataType dataType, DataElement dataElement, DataPatchRequest dataPatchRequest, object oldModel, Instance instance)
         {
             var oldModelNode = JsonSerializer.SerializeToNode(oldModel, oldModel.GetType());
             var patchResult = dataPatchRequest.Patch.Apply(oldModelNode);
             if (!patchResult.IsSuccess)
             {
-                throw new Exception(patchResult.Error); // TODO: Let DataPatchResponse have an error state
+                bool testOperationFailed = dataPatchRequest.Patch.Operations[patchResult.Operation].Op == OperationType.Test;
+                return (null!, new ProblemDetails()
+                {
+                    Title = testOperationFailed ? "Precondition in patch failed": "PatchOperationFailed",
+                    Detail = patchResult.Error,
+                    Type = "https://datatracker.ietf.org/doc/html/rfc6902/",
+                    Status = testOperationFailed ? (int)HttpStatusCode.PreconditionFailed : (int)HttpStatusCode.UnprocessableContent,
+                });
             }
 
             var model = patchResult.Result.Deserialize(oldModel.GetType())!;
@@ -466,7 +481,7 @@ namespace Altinn.App.Api.Controllers
                 NewDataModel = model,
                 ValidationIssues = validationIssues
             };
-            return response;
+            return (response, null);
         }
 
         /// <summary>

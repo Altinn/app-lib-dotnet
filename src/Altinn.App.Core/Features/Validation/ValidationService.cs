@@ -43,12 +43,14 @@ public class ValidationService : IValidationService
             // .Concat(_serviceProvider.GetKeyedServices<ITaskValidator>(taskId))
             .ToArray();
 
-        var taskIssuesTask = Task.WhenAll(taskValidators.Select(tv =>
+        var taskIssuesTask = Task.WhenAll(taskValidators.Select(async tv =>
         {
             try
             {
                 _logger.LogDebug("Start running validator {validatorName} on task {taskId} in instance {instanceId}", tv.GetType().Name, taskId, instance.Id);
-                return tv.ValidateTask(instance, taskId);
+                var issues = await tv.ValidateTask(instance, taskId);
+                issues.ForEach(i => i.Source = tv.ValidationSource); // Ensure that the source is set to the validator source
+                return issues;
             }
             catch (Exception e)
             {
@@ -85,7 +87,9 @@ public class ValidationService : IValidationService
             try
             {
                 _logger.LogDebug("Start running validator {validatorName} on {dataType} for data element {dataElementId} in instance {instanceId}", v.GetType().Name, dataElement.DataType, dataElement.Id, instance.Id);
-                return await v.ValidateDataElement(instance, dataElement, dataType);
+                var issues = await v.ValidateDataElement(instance, dataElement, dataType);
+                issues.ForEach(i => i.Source = v.ValidationSource); // Ensure that the source is set to the validator source
+                return issues;
             }
             catch (Exception e)
             {
@@ -126,8 +130,8 @@ public class ValidationService : IValidationService
         var dataValidators = _serviceProvider.GetServices<IFormDataValidator>()
             .Where(dv => dv.DataType == "*" || dv.DataType == dataType.Id)
             // .Concat(_serviceProvider.GetKeyedServices<IFormDataValidator>(dataElement.DataType))
-            .Where(dv => ignoredValidators?.Contains(dv.Code) != true)
-            .Where(dv => changedFields is null ? true : dv.ShouldRunForIncrementalValidation(changedFields))
+            .Where(dv => ignoredValidators?.Contains(dv.ValidationSource) != true)
+            .Where(dv => changedFields is null ? true : dv.ShouldRun(changedFields))
             .ToArray();
 
         var issuesLists = await Task.WhenAll(dataValidators.Select(async (v) =>
@@ -136,7 +140,7 @@ public class ValidationService : IValidationService
             {
                 _logger.LogDebug("Start running validator {validatorName} on {dataType} for data element {dataElementId} in instance {instanceId}", v.GetType().Name, dataElement.DataType, dataElement.Id, instance.Id);
                 var issues = await v.ValidateFormData(instance, dataElement, data);
-                issues.ForEach(i => i.Code = v.Code);// Ensure that the code is set to the validator code
+                issues.ForEach(i => i.Source = v.ValidationSource);// Ensure that the code is set to the validator code
                 return issues;
             }
             catch (Exception e)
@@ -146,7 +150,7 @@ public class ValidationService : IValidationService
             }
         }));
 
-        return dataValidators.Zip(issuesLists).ToDictionary(kv => kv.First.Code, kv => kv.Second);
+        return dataValidators.Zip(issuesLists).ToDictionary(kv => kv.First.ValidationSource, kv => kv.Second);
     }
 
 }

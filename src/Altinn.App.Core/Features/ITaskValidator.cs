@@ -26,6 +26,11 @@ public interface ITaskValidator
     string TaskId { get; }
 
     /// <summary>
+    /// Override this if you want a different name for the validation source
+    /// </summary>
+    string ValidationSource => $"{this.GetType().FullName}-{TaskId}";
+
+    /// <summary>
     /// Actual validation logic for the task
     /// </summary>
     /// <param name="instance">The instance to validate</param>

@@ -9,6 +9,14 @@
         "textResourceBindings": {
           "title": "Brukeropp-side-overskrift"
         }
+      },
+      {
+        "id": "name",
+        "type": "Input",
+        "required": true,
+        "dataModelBindings": {
+          "simpleBinding": "melding.name"
+        }
       }
     ]
   }

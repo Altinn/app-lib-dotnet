@@ -134,7 +134,6 @@ public static class LayoutEvaluator
                         validationIssues.Add(new ValidationIssue()
                         {
                             Severity = ValidationIssueSeverity.Error,
-                            InstanceId = state.GetInstanceContext("instanceId").ToString(),
                             DataElementId = dataElementId,
                             Field = field,
                             Description = $"{field} is required in component with id {context.Component.Id}",

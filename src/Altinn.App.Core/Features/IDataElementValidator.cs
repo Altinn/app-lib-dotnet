@@ -21,6 +21,11 @@ public interface IDataElementValidator
     string DataType { get; }
 
     /// <summary>
+    /// Override this if you want a different name for the validation source
+    /// </summary>
+    string ValidationSource => $"{this.GetType().FullName}-{DataType}";
+
+    /// <summary>
     /// Run validations for a data element. This is supposed to run quickly
     /// </summary>
     /// <param name="instance">The instance to validate</param>
