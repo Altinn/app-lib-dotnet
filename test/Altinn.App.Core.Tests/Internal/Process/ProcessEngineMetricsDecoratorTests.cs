@@ -21,18 +21,18 @@ public class ProcessEngineMetricsDecoratorTests
     {
         // Arrange
         var processEngine = new Mock<IProcessEngine>();
-        processEngine.Setup(p => p.StartProcess(It.IsAny<ProcessStartRequest>())).ReturnsAsync(new ProcessChangeResult { Success = true });
+        processEngine.Setup(p => p.GenerateProcessStartEvents(It.IsAny<ProcessStartRequest>())).ReturnsAsync(new ProcessChangeResult { Success = true });
         var decorator = new ProcessEngineMetricsDecorator(processEngine.Object);
         (await ReadPrometheusMetricsToString()).Should().NotContain("altinn_app_process_start_count{result=\"success\"}");
 
-        var result = decorator.StartProcess(new ProcessStartRequest());
+        var result = decorator.GenerateProcessStartEvents(new ProcessStartRequest());
 
         (await ReadPrometheusMetricsToString()).Should().Contain("altinn_app_process_start_count{result=\"success\"} 1");
         result.Result.Success.Should().BeTrue();
-        result = decorator.StartProcess(new ProcessStartRequest());
+        result = decorator.GenerateProcessStartEvents(new ProcessStartRequest());
         (await ReadPrometheusMetricsToString()).Should().Contain("altinn_app_process_start_count{result=\"success\"} 2");
         result.Result.Success.Should().BeTrue();
-        processEngine.Verify(p => p.StartProcess(It.IsAny<ProcessStartRequest>()), Times.Exactly(2));
+        processEngine.Verify(p => p.GenerateProcessStartEvents(It.IsAny<ProcessStartRequest>()), Times.Exactly(2));
         processEngine.VerifyNoOtherCalls();
     }
 
@@ -41,18 +41,18 @@ public class ProcessEngineMetricsDecoratorTests
     {
         // Arrange
         var processEngine = new Mock<IProcessEngine>();
-        processEngine.Setup(p => p.StartProcess(It.IsAny<ProcessStartRequest>())).ReturnsAsync(new ProcessChangeResult { Success = false });
+        processEngine.Setup(p => p.GenerateProcessStartEvents(It.IsAny<ProcessStartRequest>())).ReturnsAsync(new ProcessChangeResult { Success = false });
         var decorator = new ProcessEngineMetricsDecorator(processEngine.Object);
         (await ReadPrometheusMetricsToString()).Should().NotContain("altinn_app_process_start_count{result=\"failure\"}");
 
-        var result = decorator.StartProcess(new ProcessStartRequest());
+        var result = decorator.GenerateProcessStartEvents(new ProcessStartRequest());
 
         (await ReadPrometheusMetricsToString()).Should().Contain("altinn_app_process_start_count{result=\"failure\"} 1");
         result.Result.Success.Should().BeFalse();
-        result = decorator.StartProcess(new ProcessStartRequest());
+        result = decorator.GenerateProcessStartEvents(new ProcessStartRequest());
         (await ReadPrometheusMetricsToString()).Should().Contain("altinn_app_process_start_count{result=\"failure\"} 2");
         result.Result.Success.Should().BeFalse();
-        processEngine.Verify(p => p.StartProcess(It.IsAny<ProcessStartRequest>()), Times.Exactly(2));
+        processEngine.Verify(p => p.GenerateProcessStartEvents(It.IsAny<ProcessStartRequest>()), Times.Exactly(2));
         processEngine.VerifyNoOtherCalls();
     }
 

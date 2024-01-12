@@ -11,7 +11,7 @@ namespace Altinn.App.Core.Internal.Process
         /// <summary>
         /// Method to start a new process
         /// </summary>
-        Task<ProcessChangeResult> StartProcess(ProcessStartRequest processStartRequest);
+        Task<ProcessChangeResult> GenerateProcessStartEvents(ProcessStartRequest processStartRequest);
 
         /// <summary>
         /// Method to move process to next task/event

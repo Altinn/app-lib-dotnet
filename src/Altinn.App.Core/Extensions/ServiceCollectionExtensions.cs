@@ -272,6 +272,8 @@ namespace Altinn.App.Core.Extensions
             services.AddTransient<IProcessTask, DataProcessTask>();
             services.AddTransient<IProcessTask, ConfirmationProcessTask>();
             services.AddTransient<IProcessTask, FeedbackProcessTask>();
+            services.AddTransient<IProcessTask, SigningProcessTask>();
+            services.AddTransient<IProcessTask, PaymentProcessTask>();
             services.AddTransient<IProcessTask, NullTypeProcessTask>();
 
             //SERVICE TASKS

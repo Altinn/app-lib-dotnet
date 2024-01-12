@@ -283,10 +283,9 @@ namespace Altinn.App.Api.Controllers
                 ProcessStartRequest processStartRequest = new ProcessStartRequest
                 {
                     Instance = instanceTemplate,
-                    User = User,
-                    Dryrun = true
+                    User = User
                 };
-                var result = await _processEngine.StartProcess(processStartRequest);
+                var result = await _processEngine.GenerateProcessStartEvents(processStartRequest);
                 if (!result.Success)
                 {
                     return Conflict(result.ErrorMessage);
@@ -433,11 +432,10 @@ namespace Altinn.App.Api.Controllers
                 {
                     Instance = instanceTemplate,
                     User = User,
-                    Dryrun = true,
                     Prefill = instansiationInstance.Prefill
                 };
 
-                processResult = await _processEngine.StartProcess(request);
+                processResult = await _processEngine.GenerateProcessStartEvents(request);
 
                 Instance? source = null;
 
@@ -561,11 +559,10 @@ namespace Altinn.App.Api.Controllers
             ProcessStartRequest processStartRequest = new()
             {
                 Instance = targetInstance,
-                User = User,
-                Dryrun = true
+                User = User
             };
 
-            var startResult = await _processEngine.StartProcess(processStartRequest);
+            var startResult = await _processEngine.GenerateProcessStartEvents(processStartRequest);
 
             targetInstance = await _instanceClient.CreateInstance(org, app, targetInstance);
 
