@@ -338,12 +338,12 @@ namespace App.IntegrationTests.Mocks.Services
 
         public Task<DataElement> LockDataElement(InstanceIdentifier instanceIdentifier, Guid dataGuid)
         {
-            throw new NotImplementedException();
+            return Task.FromResult(new DataElement());
         }
 
         public Task<DataElement> UnlockDataElement(InstanceIdentifier instanceIdentifier, Guid dataGuid)
         {
-            throw new NotImplementedException();
+            return Task.FromResult(new DataElement());
         }
 
         private static void WriteDataElementToFile(DataElement dataElement, string org, string app, int instanceOwnerPartyId)

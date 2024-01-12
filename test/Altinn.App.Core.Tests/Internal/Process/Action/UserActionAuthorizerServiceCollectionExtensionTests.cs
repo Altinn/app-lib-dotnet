@@ -1,5 +1,5 @@
 using Altinn.App.Core.Extensions;
-using Altinn.App.Core.Internal.Process.Action;
+using Altinn.App.Core.Internal.Process.Authorization;
 using Altinn.App.Core.Tests.Internal.Process.Action.TestData;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
@@ -103,7 +103,7 @@ public class UserActionAuthorizerServiceCollectionExtensionTests
         provider.Action.Should().BeNull();
         provider.Authorizer.Should().BeOfType<UserActionAuthorizerStub>();
     }
-    
+
     [Fact]
     public void AddTransientUserActionAuthorizerForAllActionsInAllTasks_adds_IUserActinAuthorizerProvider_without_task_and_action_set()
     {

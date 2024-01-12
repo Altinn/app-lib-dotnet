@@ -9,37 +9,30 @@ using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Internal.Process.ServiceTasks;
 
-public class EformidlingServiceTask: IServiceTask
+/// <summary>
+/// Service task that sends eFormidling shipment, if EFormidling is enabled in config and EFormidling.SendAfterTaskId matches the current task.
+/// </summary>
+public class EformidlingServiceTask(ILogger<EformidlingServiceTask> logger, IAppMetadata appMetadata, IInstanceClient instanceClient, IEFormidlingService? eFormidlingService = null, IOptions<AppSettings>? appSettings = null) : IServiceTask
 {
-    private readonly ILogger<EformidlingServiceTask> _logger;
-    private readonly IAppMetadata _appMetadata;
-    private readonly IEFormidlingService? _eFormidlingService;
-    private readonly IInstanceClient _instanceClient;
-    private readonly AppSettings? _appSettings;
-
-    public EformidlingServiceTask(ILogger<EformidlingServiceTask> logger, IAppMetadata appMetadata, IInstanceClient instanceClient, IEFormidlingService? eFormidlingService = null, IOptions<AppSettings>? appSettings = null)
-    {
-        _logger = logger;
-        _appMetadata = appMetadata;
-        _eFormidlingService = eFormidlingService;
-        _instanceClient = instanceClient;
-        _appSettings = appSettings?.Value;
-    }
-
-
+    /// <summary>
+    /// Executes the service task.
+    /// </summary>
+    /// <param name="taskId"></param>
+    /// <param name="instance"></param>
+    /// <returns></returns>
     public async Task Execute(string taskId, Instance instance)
     {
-        ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
-        if (_appSettings?.EnableEFormidling == true && appMetadata.EFormidling?.SendAfterTaskId == taskId && _eFormidlingService != null)
+        ApplicationMetadata applicationMetadata = await appMetadata.GetApplicationMetadata();
+        if (appSettings?.Value?.EnableEFormidling == true && applicationMetadata.EFormidling?.SendAfterTaskId == taskId && eFormidlingService != null)
         {
-            if (_eFormidlingService != null)
+            if (eFormidlingService != null)
             {
-                var updatedInstance = await _instanceClient.GetInstance(instance);
-                await _eFormidlingService.SendEFormidlingShipment(updatedInstance);
+                var updatedInstance = await instanceClient.GetInstance(instance);
+                await eFormidlingService.SendEFormidlingShipment(updatedInstance);
             }
             else
             {
-                _logger.LogError("EformidlingService is not configured. No eFormidling shipment will be sent.");
+                logger.LogError("EformidlingService is not configured. No eFormidling shipment will be sent.");
             }
         }
     }

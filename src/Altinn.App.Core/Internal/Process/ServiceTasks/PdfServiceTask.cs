@@ -4,27 +4,27 @@ using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
-using Microsoft.Extensions.Logging;
 using Microsoft.FeatureManagement;
 
 namespace Altinn.App.Core.Internal.Process.ServiceTasks;
 
-public class PdfServiceTask: IServiceTask
+/// <summary>
+/// Service task that generates PDFs for all connected datatypes that have the EnablePdfCreation flag set to true.
+/// </summary>
+/// <param name="appMetadata"></param>
+/// <param name="featureManager"></param>
+/// <param name="pdfService"></param>
+/// <param name="appModel"></param>
+public class PdfServiceTask(IAppMetadata appMetadata, IFeatureManager featureManager, IPdfService pdfService, IAppModel appModel) : IServiceTask
 {
-    private readonly IAppMetadata _appMetadata;
-    private readonly IFeatureManager _featureManager;
-    private readonly IPdfService _pdfService;
-    private readonly IAppModel _appModel;
+    private readonly IAppMetadata _appMetadata = appMetadata;
 
-    public PdfServiceTask(IAppMetadata appMetadata, IFeatureManager featureManager, IPdfService pdfService, IAppModel appModel)
-    {
-        _appMetadata = appMetadata;
-        _featureManager = featureManager;
-        _pdfService = pdfService;
-        _appModel = appModel;
-    }
-
-
+    /// <summary>
+    /// Executes the service task.
+    /// </summary>
+    /// <param name="taskId"></param>
+    /// <param name="instance"></param>
+    /// <returns></returns>
     public async Task Execute(string taskId, Instance instance)
     {
         ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
@@ -37,14 +37,14 @@ public class PdfServiceTask: IServiceTask
             {
                 if (generatePdf)
                 {
-                    if (await _featureManager.IsEnabledAsync(FeatureFlags.NewPdfGeneration))
+                    if (await featureManager.IsEnabledAsync(FeatureFlags.NewPdfGeneration))
                     {
-                        await _pdfService.GenerateAndStorePdf(instance, taskId, CancellationToken.None);
+                        await pdfService.GenerateAndStorePdf(instance, taskId, CancellationToken.None);
                     }
                     else
                     {
-                        Type dataElementType = _appModel.GetModelType(dataType.AppLogic.ClassRef);
-                        await _pdfService.GenerateAndStoreReceiptPDF(instance, taskId, dataElement, dataElementType);
+                        Type dataElementType = appModel.GetModelType(dataType.AppLogic.ClassRef);
+                        await pdfService.GenerateAndStoreReceiptPDF(instance, taskId, dataElement, dataElementType);
                     }
                 }
             }

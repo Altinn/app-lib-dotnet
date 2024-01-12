@@ -86,8 +86,8 @@ namespace Altinn.App.Api.Controllers
             IEventsClient eventsClient,
             IOptions<AppSettings> appSettings,
             IPrefill prefillService,
-            IProfileClient profileClient, 
-            IProcessEngine processEngine, 
+            IProfileClient profileClient,
+            IProcessEngine processEngine,
             IOrganizationClient orgClient)
         {
             _logger = logger;
@@ -276,7 +276,7 @@ namespace Altinn.App.Api.Controllers
             Instance instance;
             instanceTemplate.Process = null;
             ProcessStateChange? change = null;
-            
+
             try
             {
                 // start process and goto next task
@@ -291,7 +291,7 @@ namespace Altinn.App.Api.Controllers
                 {
                     return Conflict(result.ErrorMessage);
                 }
-                
+
                 change = result.ProcessStateChange;
 
                 // create the instance
@@ -310,14 +310,8 @@ namespace Altinn.App.Api.Controllers
                 instance = await _instanceClient.GetInstance(app, org, int.Parse(instance.InstanceOwner.PartyId), Guid.Parse(instance.Id.Split("/")[1]));
 
                 // notify app and store events
-                var request = new ProcessStartRequest()
-                {
-                    Instance = instance,
-                    User = User,
-                    Dryrun = false,
-                };
                 _logger.LogInformation("Events sent to process engine: {Events}", change?.Events);
-                await _processEngine.UpdateInstanceAndRerunEvents(request, change?.Events);
+                await _processEngine.HandleEventsAndUpdateStorage(instance, null, change?.Events);
             }
             catch (Exception exception)
             {
@@ -442,7 +436,7 @@ namespace Altinn.App.Api.Controllers
                     Dryrun = true,
                     Prefill = instansiationInstance.Prefill
                 };
-                
+
                 processResult = await _processEngine.StartProcess(request);
 
                 Instance? source = null;
@@ -475,15 +469,7 @@ namespace Altinn.App.Api.Controllers
                 }
 
                 instance = await _instanceClient.GetInstance(instance);
-
-                var updateRequest = new ProcessStartRequest()
-                {
-                    Instance = instance,
-                    User = User,
-                    Dryrun = false,
-                    Prefill = instansiationInstance.Prefill
-                };
-                await _processEngine.UpdateInstanceAndRerunEvents(updateRequest, processResult.ProcessStateChange?.Events);
+                await _processEngine.HandleEventsAndUpdateStorage(instance, instansiationInstance.Prefill, processResult.ProcessStateChange?.Events);
             }
             catch (Exception exception)
             {
@@ -571,13 +557,14 @@ namespace Altinn.App.Api.Controllers
             {
                 return StatusCode((int)HttpStatusCode.Forbidden, validationResult);
             }
-            
+
             ProcessStartRequest processStartRequest = new()
             {
                 Instance = targetInstance,
                 User = User,
                 Dryrun = true
             };
+
             var startResult = await _processEngine.StartProcess(processStartRequest);
 
             targetInstance = await _instanceClient.CreateInstance(org, app, targetInstance);
@@ -586,13 +573,7 @@ namespace Altinn.App.Api.Controllers
 
             targetInstance = await _instanceClient.GetInstance(targetInstance);
 
-            ProcessStartRequest rerunRequest = new()
-            {
-                Instance = targetInstance,
-                Dryrun = false,
-                User = User
-            };
-            await _processEngine.UpdateInstanceAndRerunEvents(rerunRequest, startResult.ProcessStateChange?.Events);
+            await _processEngine.HandleEventsAndUpdateStorage(targetInstance, null, startResult.ProcessStateChange?.Events);
 
             await RegisterEvent("app.instance.created", targetInstance);
 

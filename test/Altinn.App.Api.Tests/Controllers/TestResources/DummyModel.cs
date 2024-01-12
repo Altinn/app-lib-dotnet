@@ -1,7 +1,9 @@
 namespace Altinn.App.Api.Tests.Controllers.TestResources;
 
+#pragma warning disable CS0659 // Type overrides Object.Equals(object o) but does not override Object.GetHashCode()
 public class DummyModel
-{ 
+#pragma warning restore CS0659 // Type overrides Object.Equals(object o) but does not override Object.GetHashCode()
+{
     public string Name { get; set; }
     public int Age { get; set; }
 

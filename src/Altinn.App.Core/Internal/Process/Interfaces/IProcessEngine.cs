@@ -19,11 +19,11 @@ namespace Altinn.App.Core.Internal.Process
         Task<ProcessChangeResult> Next(ProcessNextRequest request);
 
         /// <summary>
-        /// Update Instance and rerun instance events
+        /// Handle process events and update storage
         /// </summary>
         /// <param name="startRequest"></param>
         /// <param name="events"></param>
         /// <returns></returns>
-        Task<Instance> UpdateInstanceAndRerunEvents(ProcessStartRequest startRequest, List<InstanceEvent>? events);
+        Task<Instance> HandleEventsAndUpdateStorage(Instance instance, Dictionary<string, string>? prefill, List<InstanceEvent>? events);
     }
 }

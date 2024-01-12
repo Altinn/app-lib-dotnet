@@ -1,6 +1,6 @@
 using System.Security.Claims;
 using Altinn.App.Core.Features.Action;
-using Altinn.App.Core.Internal.Process.Action;
+using Altinn.App.Core.Internal.Process.Authorization;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models;
@@ -69,11 +69,11 @@ public class AuthorizationService : IAuthorizationService
         {
             authorizedActions.Add(new UserAction()
             {
-               Id = action.Value,
-               Authorized = authDecisions[action.Value],
-               ActionType = action.ActionType
+                Id = action.Value,
+                Authorized = authDecisions[action.Value],
+                ActionType = action.ActionType
             });
-            
+
         }
 
         return authorizedActions;
