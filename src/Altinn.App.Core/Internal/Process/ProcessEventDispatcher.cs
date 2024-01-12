@@ -10,24 +10,39 @@ namespace Altinn.App.Core.Internal.Process;
 /// <summary>
 /// Default implementation of the process event dispatcher
 /// </summary>
-class ProcessEventDispatcher(
-    IInstanceClient instanceClient,
-    IInstanceEventClient instanceEventClient,
-    IEventsClient eventsClient,
-    IOptions<AppSettings> appSettings,
-    ILogger<ProcessEventDispatcher> logger
-) : IProcessEventDispatcher
+class ProcessEventDispatcher : IProcessEventDispatcher
 {
+    private readonly IInstanceClient _instanceClient;
+    private readonly IInstanceEventClient _instanceEventClient;
+    private readonly IEventsClient _eventsClient;
+    private readonly IOptions<AppSettings> _appSettings;
+    private readonly ILogger<ProcessEventDispatcher> _logger;
+
+    /// <summary>
+    /// Default implementation of the process event dispatcher
+    /// </summary>
+    public ProcessEventDispatcher(IInstanceClient instanceClient,
+        IInstanceEventClient instanceEventClient,
+        IEventsClient eventsClient,
+        IOptions<AppSettings> appSettings,
+        ILogger<ProcessEventDispatcher> logger)
+    {
+        _instanceClient = instanceClient;
+        _instanceEventClient = instanceEventClient;
+        _eventsClient = eventsClient;
+        _appSettings = appSettings;
+        _logger = logger;
+    }
 
     /// <inheritdoc/>
     public async Task<Instance> DispatchToStorage(Instance instance, List<InstanceEvent>? events)
     {
         // need to update the instance process and then the instance in case appbase has changed it, e.g. endEvent sets status.archived
-        Instance updatedInstance = await instanceClient.UpdateProcess(instance);
+        Instance updatedInstance = await _instanceClient.UpdateProcess(instance);
         await DispatchProcessEventsToStorage(updatedInstance, events);
 
         // remember to get the instance anew since AppBase can have updated a data element or stored something in the database.
-        updatedInstance = await instanceClient.GetInstance(updatedInstance);
+        updatedInstance = await _instanceClient.GetInstance(updatedInstance);
 
         return updatedInstance;
     }
@@ -35,23 +50,23 @@ class ProcessEventDispatcher(
     /// <inheritdoc/>
     public async Task RegisterEventWithEventsComponent(Instance instance)
     {
-        if (appSettings.Value.RegisterEventsWithEventsComponent)
+        if (_appSettings.Value.RegisterEventsWithEventsComponent)
         {
             try
             {
                 if (!string.IsNullOrWhiteSpace(instance.Process.CurrentTask?.ElementId))
                 {
-                    await eventsClient.AddEvent(
+                    await _eventsClient.AddEvent(
                         $"app.instance.process.movedTo.{instance.Process.CurrentTask.ElementId}", instance);
                 }
                 else if (instance.Process.EndEvent != null)
                 {
-                    await eventsClient.AddEvent("app.instance.process.completed", instance);
+                    await _eventsClient.AddEvent("app.instance.process.completed", instance);
                 }
             }
             catch (Exception exception)
             {
-                logger.LogWarning(exception, "Exception when sending event with the Events component");
+                _logger.LogWarning(exception, "Exception when sending event with the Events component");
             }
         }
     }
@@ -66,7 +81,7 @@ class ProcessEventDispatcher(
             foreach (InstanceEvent instanceEvent in events)
             {
                 instanceEvent.InstanceId = instance.Id;
-                await instanceEventClient.SaveInstanceEvent(instanceEvent, org, app);
+                await _instanceEventClient.SaveInstanceEvent(instanceEvent, org, app);
             }
         }
     }

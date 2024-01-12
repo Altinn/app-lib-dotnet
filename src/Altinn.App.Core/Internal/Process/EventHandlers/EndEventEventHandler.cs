@@ -8,8 +8,22 @@ namespace Altinn.App.Core.Internal.Process.EventHandlers
     /// <summary>
     /// This event handler is responsible for handling the end event for a process.
     /// </summary>
-    public class EndEventEventHandler(IAppEvents appEvents, IInstanceClient instanceClient, IAppMetadata appMetadata) : IEndEventEventHandler
+    public class EndEventEventHandler : IEndEventEventHandler
     {
+        private readonly IAppEvents _appEvents;
+        private readonly IInstanceClient _instanceClient;
+        private readonly IAppMetadata _appMetadata;
+
+        /// <summary>
+        /// This event handler is responsible for handling the end event for a process.
+        /// </summary>
+        public EndEventEventHandler(IAppEvents appEvents, IInstanceClient instanceClient, IAppMetadata appMetadata)
+        {
+            _appEvents = appEvents;
+            _instanceClient = instanceClient;
+            _appMetadata = appMetadata;
+        }
+
         /// <summary>
         /// Execute the event handler logic.
         /// </summary>
@@ -26,18 +40,18 @@ namespace Altinn.App.Core.Internal.Process.EventHandlers
                 throw new ArgumentException($"End event is not set for instance event {instanceEvent.EventType} {instanceEvent.Id} on instance {instance.Id}.");
             }
 
-            await appEvents.OnEndAppEvent(endEvent, instance);
+            await _appEvents.OnEndAppEvent(endEvent, instance);
             await AutoDeleteOnProcessEndIfEnabled(instance);
         }
 
         private async Task AutoDeleteOnProcessEndIfEnabled(Instance instance)
         {
             var instanceIdentifier = new InstanceIdentifier(instance);
-            ApplicationMetadata applicationMetadata = await appMetadata.GetApplicationMetadata();
+            ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
             if (applicationMetadata.AutoDeleteOnProcessEnd && instance.Process?.Ended != null)
             {
                 int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
-                await instanceClient.DeleteInstance(instanceOwnerPartyId, instanceIdentifier.InstanceGuid, true);
+                await _instanceClient.DeleteInstance(instanceOwnerPartyId, instanceIdentifier.InstanceGuid, true);
             }
         }
     }

@@ -1,7 +1,7 @@
 ﻿using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Internal.Process.EventHandlers
+namespace Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask
 {
     /// <summary>
     /// Interface for abandon task event handlers, which are executed when a process abandon task event is triggered.

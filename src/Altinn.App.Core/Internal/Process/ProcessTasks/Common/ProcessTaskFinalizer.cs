@@ -17,15 +17,33 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks;
 /// <summary>
 /// Contains common logic for ending a task
 /// </summary>
-public class ProcessTaskFinalizer(
-    IAppMetadata appMetadata,
-    IDataClient dataClient,
-    IAppModel appModel,
-    IAppResources appResources,
-    LayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer,
-    IOptions<AppSettings>? appSettings = null
-    )
+public class ProcessTaskFinalizer : IProcessTaskFinalizer
 {
+    private readonly IAppMetadata _appMetadata;
+    private readonly IDataClient _dataClient;
+    private readonly IAppModel _appModel;
+    private readonly IAppResources _appResources;
+    private readonly LayoutEvaluatorStateInitializer _layoutEvaluatorStateInitializer;
+    private readonly IOptions<AppSettings>? _appSettings;
+
+    /// <summary>
+    /// Contains common logic for ending a task
+    /// </summary>
+    public ProcessTaskFinalizer(IAppMetadata appMetadata,
+        IDataClient dataClient,
+        IAppModel appModel,
+        IAppResources appResources,
+        LayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer,
+        IOptions<AppSettings>? appSettings = null)
+    {
+        _appMetadata = appMetadata;
+        _dataClient = dataClient;
+        _appModel = appModel;
+        _appResources = appResources;
+        _layoutEvaluatorStateInitializer = layoutEvaluatorStateInitializer;
+        _appSettings = appSettings;
+    }
+
     /// <summary>
     /// Runs common finalization logic for process tasks for a given task ID and instance. This method removes data elements generated from the task, removes hidden data and shadow fields.
     /// </summary>
@@ -35,7 +53,7 @@ public class ProcessTaskFinalizer(
     public async Task Finalize(string taskId, Instance instance)
     {
         Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
-        ApplicationMetadata applicationMetadata = await appMetadata.GetApplicationMetadata();
+        ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
         List<DataType> dataTypesToLock = applicationMetadata.DataTypes.FindAll(dt => dt.TaskId == taskId);
 
         await RemoveDataElementsGeneratedFromTask(instance, taskId);
@@ -43,7 +61,7 @@ public class ProcessTaskFinalizer(
         await RemoveShadowFields(instance, instanceGuid, dataTypesToLock);
     }
 
-    private async Task RemoveDataElementsGeneratedFromTask(Instance instance, string endEvent)
+    public async Task RemoveDataElementsGeneratedFromTask(Instance instance, string endEvent)
     {
         AppIdentifier appIdentifier = new AppIdentifier(instance.AppId);
         InstanceIdentifier instanceIdentifier = new InstanceIdentifier(instance);
@@ -53,14 +71,14 @@ public class ProcessTaskFinalizer(
                                             r.ValueType == ReferenceType.Task && r.Value == endEvent)) ??
                                     Enumerable.Empty<DataElement>())
         {
-            await dataClient.DeleteData(appIdentifier.Org, appIdentifier.App, instanceIdentifier.InstanceOwnerPartyId,
+            await _dataClient.DeleteData(appIdentifier.Org, appIdentifier.App, instanceIdentifier.InstanceOwnerPartyId,
                 instanceIdentifier.InstanceGuid, Guid.Parse(dataElement.Id), false);
         }
     }
 
-    private async Task RemoveHiddenData(Instance instance, Guid instanceGuid, List<DataType>? connectedDataTypes)
+    public async Task RemoveHiddenData(Instance instance, Guid instanceGuid, List<DataType>? connectedDataTypes)
     {
-        if ((appSettings?.Value?.RemoveHiddenData) != true)
+        if ((_appSettings?.Value?.RemoveHiddenData) != true)
         {
             return;
         }
@@ -71,28 +89,28 @@ public class ProcessTaskFinalizer(
                          .Select(dataElement => Guid.Parse(dataElement.Id)))
             {
                 // Delete hidden data in datamodel
-                Type modelType = appModel.GetModelType(dataType.AppLogic.ClassRef);
+                Type modelType = _appModel.GetModelType(dataType.AppLogic.ClassRef);
                 string app = instance.AppId.Split("/")[1];
                 int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
-                object data = await dataClient.GetFormData(
+                object data = await _dataClient.GetFormData(
                     instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, dataElementId);
 
-                if (appSettings?.Value?.RemoveHiddenData == true)
+                if (_appSettings?.Value?.RemoveHiddenData == true)
                 {
                     // Remove hidden data before validation, ignore hidden rows. TODO: Determine how hidden rows should be handled going forward.
-                    var layoutSet = appResources.GetLayoutSetForTask(dataType.TaskId);
-                    var evaluationState = await layoutEvaluatorStateInitializer.Init(instance, data, layoutSet?.Id);
+                    var layoutSet = _appResources.GetLayoutSetForTask(dataType.TaskId);
+                    var evaluationState = await _layoutEvaluatorStateInitializer.Init(instance, data, layoutSet?.Id);
                     LayoutEvaluator.RemoveHiddenData(evaluationState, RowRemovalOption.Ignore);
                 }
 
                 // save the updated data if there are changes
-                await dataClient.UpdateData(data, instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId,
+                await _dataClient.UpdateData(data, instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId,
                     dataElementId);
             }
         }
     }
 
-    private async Task RemoveShadowFields(Instance instance, Guid instanceGuid, List<DataType> connectedDataTypes)
+    public async Task RemoveShadowFields(Instance instance, Guid instanceGuid, List<DataType> connectedDataTypes)
     {
         if (connectedDataTypes.Find(dt => dt.AppLogic?.ShadowFields?.Prefix != null) == null)
         {
@@ -104,10 +122,10 @@ public class ProcessTaskFinalizer(
             foreach (Guid dataElementId in instance.Data.Where(de => de.DataType == dataType.Id)
                          .Select(dataElement => Guid.Parse(dataElement.Id)))
             {
-                Type modelType = appModel.GetModelType(dataType.AppLogic.ClassRef);
+                Type modelType = _appModel.GetModelType(dataType.AppLogic.ClassRef);
                 string app = instance.AppId.Split("/")[1];
                 int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
-                dynamic data = await dataClient.GetFormData(
+                dynamic data = await _dataClient.GetFormData(
                     instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, dataElementId);
 
                 var modifier = new IgnorePropertiesWithPrefix(dataType.AppLogic.ShadowFields.Prefix);
@@ -131,15 +149,15 @@ public class ProcessTaskFinalizer(
                             $"SaveToDataType {dataType.AppLogic.ShadowFields.SaveToDataType} not found");
                     }
 
-                    Type saveToModelType = appModel.GetModelType(saveToDataType.AppLogic.ClassRef);
+                    Type saveToModelType = _appModel.GetModelType(saveToDataType.AppLogic.ClassRef);
                     var updatedData = JsonSerializer.Deserialize(serializedData, saveToModelType);
-                    await dataClient.InsertFormData(updatedData, instanceGuid, saveToModelType ?? modelType,
+                    await _dataClient.InsertFormData(updatedData, instanceGuid, saveToModelType ?? modelType,
                         instance.Org, app, instanceOwnerPartyId, saveToDataType.Id);
                 }
                 else
                 {
                     var updatedData = JsonSerializer.Deserialize(serializedData, modelType);
-                    await dataClient.UpdateData(updatedData, instanceGuid, modelType, instance.Org, app,
+                    await _dataClient.UpdateData(updatedData, instanceGuid, modelType, instance.Org, app,
                         instanceOwnerPartyId, dataElementId);
                 }
             }

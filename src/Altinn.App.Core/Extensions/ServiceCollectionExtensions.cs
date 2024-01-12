@@ -31,6 +31,7 @@ using Altinn.App.Core.Internal.Prefill;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Authorization;
 using Altinn.App.Core.Internal.Process.EventHandlers;
+using Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.App.Core.Internal.Process.ServiceTasks;
 using Altinn.App.Core.Internal.Profile;
@@ -248,9 +249,9 @@ namespace Altinn.App.Core.Extensions
             services.AddTransient<IProcessExclusiveGateway, ExpressionsExclusiveGateway>();
             services.TryAddTransient<ExclusiveGatewayFactory>();
 
-            services.AddTransient<ProcessTaskInitializer>();
-            services.AddTransient<ProcessTaskFinalizer>();
-            services.AddTransient<ProcessTaskDataLocker>();
+            services.AddTransient<IProcessTaskInitializer, ProcessTaskInitializer>();
+            services.AddTransient<IProcessTaskFinalizer, ProcessTaskFinalizer>();
+            services.AddTransient<IProcessTaskDataLocker, ProcessTaskDataLocker>();
             services.AddTransient<IStartTaskEventHandler, StartTaskEventHandler>();
             services.AddTransient<IEndTaskEventHandler, EndTaskEventHandler>();
             services.AddTransient<IAbandonTaskEventHandler, AbandonTaskEventHandler>();
@@ -265,8 +266,8 @@ namespace Altinn.App.Core.Extensions
             services.AddTransient<IProcessTask, NullTypeProcessTask>();
 
             //SERVICE TASKS
-            services.AddTransient<PdfServiceTask>();
-            services.AddTransient<EformidlingServiceTask>();
+            services.AddKeyedTransient<IServiceTask, PdfServiceTask>("pdfService");
+            services.AddKeyedTransient<IServiceTask, EformidlingServiceTask>("eFormidlingService");
         }
 
         private static void AddActionServices(IServiceCollection services)

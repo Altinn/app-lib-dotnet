@@ -2,14 +2,24 @@
 using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Internal.Process.EventHandlers
+namespace Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask
 {
     /// <summary>
     /// This event handler is responsible for handling the abandon event for a process task.
     /// </summary>
-    /// <param name="processTaskAbondons"></param>
-    public class AbandonTaskEventHandler(IEnumerable<IProcessTaskAbandon> processTaskAbondons) : IAbandonTaskEventHandler
+    public class AbandonTaskEventHandler : IAbandonTaskEventHandler
     {
+        private readonly IEnumerable<IProcessTaskAbandon> _processTaskAbondons;
+
+        /// <summary>
+        /// This event handler is responsible for handling the abandon event for a process task.
+        /// </summary>
+        /// <param name="processTaskAbondons"></param>
+        public AbandonTaskEventHandler(IEnumerable<IProcessTaskAbandon> processTaskAbondons)
+        {
+            _processTaskAbondons = processTaskAbondons;
+        }
+
         /// <summary>
         /// Handles the abandon event for a process task.
         /// </summary>
@@ -31,7 +41,7 @@ namespace Altinn.App.Core.Internal.Process.EventHandlers
         /// <returns></returns>
         private async Task RunAppDefinedProcessTaskAbandonHandlers(string taskId, Instance instance)
         {
-            foreach (var taskAbandon in processTaskAbondons)
+            foreach (var taskAbandon in _processTaskAbondons)
             {
                 await taskAbandon.Abandon(taskId, instance);
             }
