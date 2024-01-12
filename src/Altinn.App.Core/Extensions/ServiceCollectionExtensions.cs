@@ -30,9 +30,10 @@ using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Prefill;
 using Altinn.App.Core.Internal.Process;
-using Altinn.App.Core.Internal.Process.Action;
+using Altinn.App.Core.Internal.Process.Authorization;
+using Altinn.App.Core.Internal.Process.EventHandlers;
+using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.App.Core.Internal.Process.ServiceTasks;
-using Altinn.App.Core.Internal.Process.TaskTypes;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Internal.Secrets;
@@ -50,7 +51,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json.Linq;
-using Prometheus;
 using IProcessEngine = Altinn.App.Core.Internal.Process.IProcessEngine;
 using IProcessReader = Altinn.App.Core.Internal.Process.IProcessReader;
 using ProcessEngine = Altinn.App.Core.Internal.Process.ProcessEngine;
@@ -142,15 +142,6 @@ namespace Altinn.App.Core.Extensions
             services.TryAddSingleton<IAppMetadata, AppMetadata>();
             services.TryAddSingleton<IFrontendFeatures, FrontendFeatures>();
             services.TryAddTransient<IAppEvents, DefaultAppEvents>();
-            services.AddTransient<IProcessTaskType, DataProcessTaskType>();
-            services.AddTransient<IProcessTaskType, ConfirmationProcessTaskType>();
-            services.AddTransient<IProcessTaskType, FeedbackProcessTaskType>();
-            services.AddTransient<IProcessTaskType, NullProcessTaskType>();
-            services.AddTransient<ProcessTaskEndCommonLogic>();
-            services.AddTransient<ProcessTaskStartCommonLogic>();
-            services.AddTransient<ProcessTaskLockingCommonLogic>();
-            services.AddTransient<PdfServiceTask>();
-            services.AddTransient<EformidlingServiceTask>();
 #pragma warning disable CS0618, CS0612 // Type or member is obsolete
             services.TryAddTransient<IPageOrder, DefaultPageOrder>();
 #pragma warning restore CS0618, CS0612 // Type or member is obsolete
@@ -264,9 +255,28 @@ namespace Altinn.App.Core.Extensions
             services.TryAddTransient<IProcessEngine, ProcessEngine>();
             services.TryAddTransient<IProcessNavigator, ProcessNavigator>();
             services.TryAddSingleton<IProcessReader, ProcessReader>();
+            services.TryAddSingleton<IProcessEventHandlingDelegator, ProcessEventHandlingDelegator>();
             services.TryAddTransient<IProcessEventDispatcher, ProcessEventDispatcher>();
             services.AddTransient<IProcessExclusiveGateway, ExpressionsExclusiveGateway>();
             services.TryAddTransient<ExclusiveGatewayFactory>();
+
+            services.AddTransient<ProcessTaskInitializer>();
+            services.AddTransient<ProcessTaskFinalizer>();
+            services.AddTransient<ProcessTaskDataLocker>();
+            services.AddTransient<IStartTaskEventHandler, StartTaskEventHandler>();
+            services.AddTransient<IEndTaskEventHandler, EndTaskEventHandler>();
+            services.AddTransient<IAbandonTaskEventHandler, AbandonTaskEventHandler>();
+            services.AddTransient<IEndEventEventHandler, EndEventEventHandler>();
+
+            //PROCESS TASKS
+            services.AddTransient<IProcessTask, DataProcessTask>();
+            services.AddTransient<IProcessTask, ConfirmationProcessTask>();
+            services.AddTransient<IProcessTask, FeedbackProcessTask>();
+            services.AddTransient<IProcessTask, NullTypeProcessTask>();
+
+            //SERVICE TASKS
+            services.AddTransient<PdfServiceTask>();
+            services.AddTransient<EformidlingServiceTask>();
         }
 
         private static void AddActionServices(IServiceCollection services)

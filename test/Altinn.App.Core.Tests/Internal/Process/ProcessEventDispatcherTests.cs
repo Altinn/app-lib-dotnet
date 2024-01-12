@@ -3,6 +3,9 @@ using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Events;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
+using Altinn.App.Core.Internal.Process.EventHandlers;
+using Altinn.App.Core.Internal.Process.ProcessTasks;
+using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
@@ -15,25 +18,44 @@ namespace Altinn.App.Core.Tests.Internal.Process;
 
 public class ProcessEventDispatcherTests
 {
+    private readonly List<IProcessTask> processTasks =
+    [
+        new Mock<DataProcessTask>().Object,
+        new Mock<ConfirmationProcessTask>().Object,
+        new Mock<FeedbackProcessTask>().Object,
+        new Mock<NullTypeProcessTask>().Object,
+    ];
+
     [Fact]
     public async Task UpdateProcessAndDispatchEvents_StartEvent_instance_updated_and_events_sent_to_storage_nothing_sent_to_ITask()
     {
         // Arrange
         var instanceService = new Mock<IInstanceClient>();
         var instanceEvent = new Mock<IInstanceEventClient>();
-        var taskEvents = new Mock<ITaskEvents>();
         var appEvents = new Mock<IAppEvents>();
         var eventsService = new Mock<IEventsClient>();
         var appSettings = Options.Create(new AppSettings());
         var logger = new NullLogger<ProcessEventDispatcher>();
+        var startTaskEventHandler = new Mock<IStartTaskEventHandler>();
+        var endTaskEventHandler = new Mock<IEndTaskEventHandler>();
+        var abandonTaskEventHandler = new Mock<IAbandonTaskEventHandler>();
+        var endEventHandler = new Mock<IEndEventEventHandler>();
+
+        IProcessEventHandlingDelegator delegator = new ProcessEventHandlingDelegator(
+            new NullLogger<ProcessEventHandlingDelegator>(),
+            startTaskEventHandler.Object,
+            endTaskEventHandler.Object,
+            abandonTaskEventHandler.Object,
+            endEventHandler.Object,
+            processTasks);
+
         IProcessEventDispatcher dispatcher = new ProcessEventDispatcher(
             instanceService.Object,
             instanceEvent.Object,
-            taskEvents.Object,
-            appEvents.Object,
             eventsService.Object,
             appSettings,
             logger);
+
         Instance instance = new Instance()
         {
             Id = Guid.NewGuid().ToString(),
@@ -88,7 +110,8 @@ public class ProcessEventDispatcherTests
         Dictionary<string, string> prefill = new Dictionary<string, string>();
 
         // Act
-        var result = await dispatcher.UpdateProcessAndDispatchEvents(instance, prefill, events);
+        await delegator.HandleEvents(instance, prefill, events);
+        var result = await dispatcher.DispatchToStorage(instance, events);
 
         // Assert
         result.Should().Be(getInstanceResponse);
@@ -97,7 +120,6 @@ public class ProcessEventDispatcherTests
         instanceEvent.Verify(p => p.SaveInstanceEvent(events[0], instance.Org, "test-app"), Times.Once);
         instanceService.VerifyNoOtherCalls();
         instanceEvent.VerifyNoOtherCalls();
-        taskEvents.VerifyNoOtherCalls();
         appEvents.VerifyNoOtherCalls();
         eventsService.VerifyNoOtherCalls();
     }
@@ -108,19 +130,30 @@ public class ProcessEventDispatcherTests
         // Arrange
         var instanceService = new Mock<IInstanceClient>();
         var instanceEvent = new Mock<IInstanceEventClient>();
-        var taskEvents = new Mock<ITaskEvents>();
         var appEvents = new Mock<IAppEvents>();
         var eventsService = new Mock<IEventsClient>();
         var appSettings = Options.Create(new AppSettings());
         var logger = new NullLogger<ProcessEventDispatcher>();
+        var startTaskEventHandler = new Mock<IStartTaskEventHandler>();
+        var endTaskEventHandler = new Mock<IEndTaskEventHandler>();
+        var abandonTaskEventHandler = new Mock<IAbandonTaskEventHandler>();
+        var endEventHandler = new Mock<IEndEventEventHandler>();
+
+        IProcessEventHandlingDelegator delegator = new ProcessEventHandlingDelegator(
+            new NullLogger<ProcessEventHandlingDelegator>(),
+            startTaskEventHandler.Object,
+            endTaskEventHandler.Object,
+            abandonTaskEventHandler.Object,
+            endEventHandler.Object,
+            processTasks);
+
         IProcessEventDispatcher dispatcher = new ProcessEventDispatcher(
             instanceService.Object,
             instanceEvent.Object,
-            taskEvents.Object,
-            appEvents.Object,
             eventsService.Object,
             appSettings,
             logger);
+
         Instance instance = new Instance()
         {
             Id = Guid.NewGuid().ToString(),
@@ -172,7 +205,8 @@ public class ProcessEventDispatcherTests
         Dictionary<string, string> prefill = new Dictionary<string, string>();
 
         // Act
-        var result = await dispatcher.UpdateProcessAndDispatchEvents(instance, prefill, events);
+        await delegator.HandleEvents(instance, prefill, events);
+        var result = await dispatcher.DispatchToStorage(instance, events);
 
         // Assert
         result.Should().Be(getInstanceResponse);
@@ -181,7 +215,6 @@ public class ProcessEventDispatcherTests
         instanceEvent.Verify(p => p.SaveInstanceEvent(events[0], instance.Org, "test-app"), Times.Once);
         instanceService.VerifyNoOtherCalls();
         instanceEvent.VerifyNoOtherCalls();
-        taskEvents.VerifyNoOtherCalls();
         appEvents.VerifyNoOtherCalls();
         eventsService.VerifyNoOtherCalls();
     }
@@ -192,19 +225,30 @@ public class ProcessEventDispatcherTests
         // Arrange
         var instanceService = new Mock<IInstanceClient>();
         var instanceEvent = new Mock<IInstanceEventClient>();
-        var taskEvents = new Mock<ITaskEvents>();
         var appEvents = new Mock<IAppEvents>();
         var eventsService = new Mock<IEventsClient>();
         var appSettings = Options.Create(new AppSettings());
         var logger = new NullLogger<ProcessEventDispatcher>();
+        var startTaskEventHandler = new Mock<IStartTaskEventHandler>();
+        var endTaskEventHandler = new Mock<IEndTaskEventHandler>();
+        var abandonTaskEventHandler = new Mock<IAbandonTaskEventHandler>();
+        var endEventHandler = new Mock<IEndEventEventHandler>();
+
+        IProcessEventHandlingDelegator delegator = new ProcessEventHandlingDelegator(
+            new NullLogger<ProcessEventHandlingDelegator>(),
+            startTaskEventHandler.Object,
+            endTaskEventHandler.Object,
+            abandonTaskEventHandler.Object,
+            endEventHandler.Object,
+            processTasks);
+
         IProcessEventDispatcher dispatcher = new ProcessEventDispatcher(
             instanceService.Object,
             instanceEvent.Object,
-            taskEvents.Object,
-            appEvents.Object,
             eventsService.Object,
             appSettings,
             logger);
+
         Instance instance = new Instance()
         {
             Id = Guid.NewGuid().ToString(),
@@ -260,17 +304,16 @@ public class ProcessEventDispatcherTests
         Dictionary<string, string> prefill = new Dictionary<string, string>();
 
         // Act
-        var result = await dispatcher.UpdateProcessAndDispatchEvents(instance, prefill, events);
+        await delegator.HandleEvents(instance, prefill, events);
+        var result = await dispatcher.DispatchToStorage(instance, events);
 
         // Assert
         result.Should().Be(getInstanceResponse);
-        taskEvents.Verify(t => t.OnStartProcessTask("Task_1", instance, prefill), Times.Once);
         instanceService.Verify(i => i.UpdateProcess(instance), Times.Once);
         instanceService.Verify(i => i.GetInstance(updateInstanceResponse), Times.Once);
         instanceEvent.Verify(p => p.SaveInstanceEvent(events[0], instance.Org, "test-app"), Times.Once);
         instanceService.VerifyNoOtherCalls();
         instanceEvent.VerifyNoOtherCalls();
-        taskEvents.VerifyNoOtherCalls();
         appEvents.VerifyNoOtherCalls();
         eventsService.VerifyNoOtherCalls();
     }
@@ -281,19 +324,30 @@ public class ProcessEventDispatcherTests
         // Arrange
         var instanceService = new Mock<IInstanceClient>();
         var instanceEvent = new Mock<IInstanceEventClient>();
-        var taskEvents = new Mock<ITaskEvents>();
         var appEvents = new Mock<IAppEvents>();
         var eventsService = new Mock<IEventsClient>();
         var appSettings = Options.Create(new AppSettings());
         var logger = new NullLogger<ProcessEventDispatcher>();
+        var startTaskEventHandler = new Mock<IStartTaskEventHandler>();
+        var endTaskEventHandler = new Mock<IEndTaskEventHandler>();
+        var abandonTaskEventHandler = new Mock<IAbandonTaskEventHandler>();
+        var endEventHandler = new Mock<IEndEventEventHandler>();
+
+        IProcessEventHandlingDelegator delegator = new ProcessEventHandlingDelegator(
+            new NullLogger<ProcessEventHandlingDelegator>(),
+            startTaskEventHandler.Object,
+            endTaskEventHandler.Object,
+            abandonTaskEventHandler.Object,
+            endEventHandler.Object,
+            processTasks);
+
         IProcessEventDispatcher dispatcher = new ProcessEventDispatcher(
             instanceService.Object,
             instanceEvent.Object,
-            taskEvents.Object,
-            appEvents.Object,
             eventsService.Object,
             appSettings,
             logger);
+
         Instance instance = new Instance()
         {
             Id = Guid.NewGuid().ToString(),
@@ -349,17 +403,16 @@ public class ProcessEventDispatcherTests
         Dictionary<string, string> prefill = new Dictionary<string, string>();
 
         // Act
-        var result = await dispatcher.UpdateProcessAndDispatchEvents(instance, prefill, events);
+        await delegator.HandleEvents(instance, prefill, events);
+        var result = await dispatcher.DispatchToStorage(instance, events);
 
         // Assert
         result.Should().Be(getInstanceResponse);
-        taskEvents.Verify(t => t.OnEndProcessTask("Task_2", instance), Times.Once);
         instanceService.Verify(i => i.UpdateProcess(instance), Times.Once);
         instanceService.Verify(i => i.GetInstance(updateInstanceResponse), Times.Once);
         instanceEvent.Verify(p => p.SaveInstanceEvent(events[0], instance.Org, "test-app"), Times.Once);
         instanceService.VerifyNoOtherCalls();
         instanceEvent.VerifyNoOtherCalls();
-        taskEvents.VerifyNoOtherCalls();
         appEvents.VerifyNoOtherCalls();
         eventsService.VerifyNoOtherCalls();
     }
@@ -370,19 +423,30 @@ public class ProcessEventDispatcherTests
         // Arrange
         var instanceService = new Mock<IInstanceClient>();
         var instanceEvent = new Mock<IInstanceEventClient>();
-        var taskEvents = new Mock<ITaskEvents>();
         var appEvents = new Mock<IAppEvents>();
         var eventsService = new Mock<IEventsClient>();
         var appSettings = Options.Create(new AppSettings());
         var logger = new NullLogger<ProcessEventDispatcher>();
+        var startTaskEventHandler = new Mock<IStartTaskEventHandler>();
+        var endTaskEventHandler = new Mock<IEndTaskEventHandler>();
+        var abandonTaskEventHandler = new Mock<IAbandonTaskEventHandler>();
+        var endEventHandler = new Mock<IEndEventEventHandler>();
+
+        IProcessEventHandlingDelegator delegator = new ProcessEventHandlingDelegator(
+            new NullLogger<ProcessEventHandlingDelegator>(),
+            startTaskEventHandler.Object,
+            endTaskEventHandler.Object,
+            abandonTaskEventHandler.Object,
+            endEventHandler.Object,
+            processTasks);
+
         IProcessEventDispatcher dispatcher = new ProcessEventDispatcher(
             instanceService.Object,
             instanceEvent.Object,
-            taskEvents.Object,
-            appEvents.Object,
             eventsService.Object,
             appSettings,
             logger);
+
         Instance instance = new Instance()
         {
             Id = Guid.NewGuid().ToString(),
@@ -438,17 +502,16 @@ public class ProcessEventDispatcherTests
         Dictionary<string, string> prefill = new Dictionary<string, string>();
 
         // Act
-        var result = await dispatcher.UpdateProcessAndDispatchEvents(instance, prefill, events);
+        await delegator.HandleEvents(instance, prefill, events);
+        var result = await dispatcher.DispatchToStorage(instance, events);
 
         // Assert
         result.Should().Be(getInstanceResponse);
-        taskEvents.Verify(t => t.OnAbandonProcessTask("Task_2", instance), Times.Once);
         instanceService.Verify(i => i.UpdateProcess(instance), Times.Once);
         instanceService.Verify(i => i.GetInstance(updateInstanceResponse), Times.Once);
         instanceEvent.Verify(p => p.SaveInstanceEvent(events[0], instance.Org, "test-app"), Times.Once);
         instanceService.VerifyNoOtherCalls();
         instanceEvent.VerifyNoOtherCalls();
-        taskEvents.VerifyNoOtherCalls();
         appEvents.VerifyNoOtherCalls();
         eventsService.VerifyNoOtherCalls();
     }
@@ -459,22 +522,34 @@ public class ProcessEventDispatcherTests
         // Arrange
         var instanceService = new Mock<IInstanceClient>();
         var instanceEvent = new Mock<IInstanceEventClient>();
-        var taskEvents = new Mock<ITaskEvents>();
+        var appMetadata = new Mock<IAppMetadata>();
         var appEvents = new Mock<IAppEvents>();
         var eventsService = new Mock<IEventsClient>();
         var appSettings = Options.Create(new AppSettings());
         var logger = new NullLogger<ProcessEventDispatcher>();
+        var startTaskEventHandler = new Mock<IStartTaskEventHandler>();
+        var endTaskEventHandler = new Mock<IEndTaskEventHandler>();
+        var abandonTaskEventHandler = new Mock<IAbandonTaskEventHandler>();
+        var endEventHandler = new EndEventEventHandler(appEvents.Object, instanceService.Object, appMetadata.Object);
+
+        IProcessEventHandlingDelegator delegator = new ProcessEventHandlingDelegator(
+            new NullLogger<ProcessEventHandlingDelegator>(),
+            startTaskEventHandler.Object,
+            endTaskEventHandler.Object,
+            abandonTaskEventHandler.Object,
+            endEventHandler,
+            processTasks);
+
         IProcessEventDispatcher dispatcher = new ProcessEventDispatcher(
             instanceService.Object,
             instanceEvent.Object,
-            taskEvents.Object,
-            appEvents.Object,
             eventsService.Object,
             appSettings,
             logger);
+
         Instance instance = new Instance()
         {
-            Id = Guid.NewGuid().ToString(),
+            Id = $"{1234}/{Guid.NewGuid()}",
             Org = "ttd",
             AppId = "ttd/test-app",
         };
@@ -521,12 +596,33 @@ public class ProcessEventDispatcherTests
                 }
             }
         };
+
+        var applicationMetadata = new ApplicationMetadata(instance.AppId)
+        {
+            CopyInstanceSettings = new CopyInstanceSettings { Enabled = true },
+            DataTypes = new List<DataType>
+            {
+                new DataType
+                {
+                    Id = "data_type_1",
+                    AppLogic = new ApplicationLogic
+                    {
+                        ClassRef = "App.Models.Skjema",
+                    },
+                    TaskId = "First"
+                }
+            }
+        };
+
+        appMetadata.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(applicationMetadata);
+
         instanceService.Setup(i => i.UpdateProcess(instance)).ReturnsAsync(updateInstanceResponse);
         instanceService.Setup(i => i.GetInstance(updateInstanceResponse)).ReturnsAsync(getInstanceResponse);
         Dictionary<string, string> prefill = new Dictionary<string, string>();
 
         // Act
-        var result = await dispatcher.UpdateProcessAndDispatchEvents(instance, prefill, events);
+        await delegator.HandleEvents(instance, prefill, events);
+        var result = await dispatcher.DispatchToStorage(instance, events);
 
         // Assert
         result.Should().Be(getInstanceResponse);
@@ -536,7 +632,6 @@ public class ProcessEventDispatcherTests
         instanceEvent.Verify(p => p.SaveInstanceEvent(events[0], instance.Org, "test-app"), Times.Once);
         instanceService.VerifyNoOtherCalls();
         instanceEvent.VerifyNoOtherCalls();
-        taskEvents.VerifyNoOtherCalls();
         appEvents.VerifyNoOtherCalls();
         eventsService.VerifyNoOtherCalls();
     }
@@ -547,19 +642,30 @@ public class ProcessEventDispatcherTests
         // Arrange
         var instanceService = new Mock<IInstanceClient>();
         var instanceEvent = new Mock<IInstanceEventClient>();
-        var taskEvents = new Mock<ITaskEvents>();
         var appEvents = new Mock<IAppEvents>();
         var eventsService = new Mock<IEventsClient>();
         var appSettings = Options.Create(new AppSettings());
         var logger = new NullLogger<ProcessEventDispatcher>();
+        var startTaskEventHandler = new Mock<IStartTaskEventHandler>();
+        var endTaskEventHandler = new Mock<IEndTaskEventHandler>();
+        var abandonTaskEventHandler = new Mock<IAbandonTaskEventHandler>();
+        var endEventHandler = new Mock<IEndEventEventHandler>();
+
+        IProcessEventHandlingDelegator delegator = new ProcessEventHandlingDelegator(
+            new NullLogger<ProcessEventHandlingDelegator>(),
+            startTaskEventHandler.Object,
+            endTaskEventHandler.Object,
+            abandonTaskEventHandler.Object,
+            endEventHandler.Object,
+            processTasks);
+
         IProcessEventDispatcher dispatcher = new ProcessEventDispatcher(
             instanceService.Object,
             instanceEvent.Object,
-            taskEvents.Object,
-            appEvents.Object,
             eventsService.Object,
             appSettings,
             logger);
+
         Instance instance = new Instance()
         {
             Id = Guid.NewGuid().ToString(),
@@ -597,7 +703,8 @@ public class ProcessEventDispatcherTests
         Dictionary<string, string> prefill = new Dictionary<string, string>();
 
         // Act
-        var result = await dispatcher.UpdateProcessAndDispatchEvents(instance, prefill, events);
+        await delegator.HandleEvents(instance, prefill, events);
+        var result = await dispatcher.DispatchToStorage(instance, events);
 
         // Assert
         result.Should().Be(getInstanceResponse);
@@ -605,7 +712,6 @@ public class ProcessEventDispatcherTests
         instanceService.Verify(i => i.GetInstance(updateInstanceResponse), Times.Once);
         instanceService.VerifyNoOtherCalls();
         instanceEvent.VerifyNoOtherCalls();
-        taskEvents.VerifyNoOtherCalls();
         appEvents.VerifyNoOtherCalls();
         eventsService.VerifyNoOtherCalls();
     }
@@ -616,7 +722,6 @@ public class ProcessEventDispatcherTests
         // Arrange
         var instanceService = new Mock<IInstanceClient>();
         var instanceEvent = new Mock<IInstanceEventClient>();
-        var taskEvents = new Mock<ITaskEvents>();
         var appEvents = new Mock<IAppEvents>();
         var eventsService = new Mock<IEventsClient>();
         var appSettings = Options.Create(new AppSettings()
@@ -624,14 +729,14 @@ public class ProcessEventDispatcherTests
             RegisterEventsWithEventsComponent = true
         });
         var logger = new NullLogger<ProcessEventDispatcher>();
+
         IProcessEventDispatcher dispatcher = new ProcessEventDispatcher(
             instanceService.Object,
             instanceEvent.Object,
-            taskEvents.Object,
-            appEvents.Object,
             eventsService.Object,
             appSettings,
             logger);
+
         Instance instance = new Instance()
         {
             Id = Guid.NewGuid().ToString(),
@@ -651,7 +756,6 @@ public class ProcessEventDispatcherTests
         eventsService.Verify(e => e.AddEvent("app.instance.process.movedTo.Task_1", instance), Times.Once);
         instanceService.VerifyNoOtherCalls();
         instanceEvent.VerifyNoOtherCalls();
-        taskEvents.VerifyNoOtherCalls();
         appEvents.VerifyNoOtherCalls();
         eventsService.VerifyNoOtherCalls();
     }
@@ -662,7 +766,6 @@ public class ProcessEventDispatcherTests
         // Arrange
         var instanceService = new Mock<IInstanceClient>();
         var instanceEvent = new Mock<IInstanceEventClient>();
-        var taskEvents = new Mock<ITaskEvents>();
         var appEvents = new Mock<IAppEvents>();
         var eventsService = new Mock<IEventsClient>();
         var appSettings = Options.Create(new AppSettings()
@@ -670,14 +773,14 @@ public class ProcessEventDispatcherTests
             RegisterEventsWithEventsComponent = true
         });
         var logger = new NullLogger<ProcessEventDispatcher>();
+
         IProcessEventDispatcher dispatcher = new ProcessEventDispatcher(
             instanceService.Object,
             instanceEvent.Object,
-            taskEvents.Object,
-            appEvents.Object,
             eventsService.Object,
             appSettings,
             logger);
+
         Instance instance = new Instance()
         {
             Id = Guid.NewGuid().ToString(),
@@ -695,7 +798,6 @@ public class ProcessEventDispatcherTests
         eventsService.Verify(e => e.AddEvent("app.instance.process.completed", instance), Times.Once);
         instanceService.VerifyNoOtherCalls();
         instanceEvent.VerifyNoOtherCalls();
-        taskEvents.VerifyNoOtherCalls();
         appEvents.VerifyNoOtherCalls();
         eventsService.VerifyNoOtherCalls();
     }
@@ -706,7 +808,6 @@ public class ProcessEventDispatcherTests
         // Arrange
         var instanceService = new Mock<IInstanceClient>();
         var instanceEvent = new Mock<IInstanceEventClient>();
-        var taskEvents = new Mock<ITaskEvents>();
         var appEvents = new Mock<IAppEvents>();
         var eventsService = new Mock<IEventsClient>();
         var appSettings = Options.Create(new AppSettings()
@@ -714,14 +815,14 @@ public class ProcessEventDispatcherTests
             RegisterEventsWithEventsComponent = true
         });
         var logger = new NullLogger<ProcessEventDispatcher>();
+
         IProcessEventDispatcher dispatcher = new ProcessEventDispatcher(
             instanceService.Object,
             instanceEvent.Object,
-            taskEvents.Object,
-            appEvents.Object,
             eventsService.Object,
             appSettings,
             logger);
+
         Instance instance = new Instance()
         {
             Id = Guid.NewGuid().ToString(),
@@ -734,7 +835,6 @@ public class ProcessEventDispatcherTests
         // Assert
         instanceService.VerifyNoOtherCalls();
         instanceEvent.VerifyNoOtherCalls();
-        taskEvents.VerifyNoOtherCalls();
         appEvents.VerifyNoOtherCalls();
         eventsService.VerifyNoOtherCalls();
     }
@@ -745,7 +845,6 @@ public class ProcessEventDispatcherTests
         // Arrange
         var instanceService = new Mock<IInstanceClient>();
         var instanceEvent = new Mock<IInstanceEventClient>();
-        var taskEvents = new Mock<ITaskEvents>();
         var appEvents = new Mock<IAppEvents>();
         var eventsService = new Mock<IEventsClient>();
         var appSettings = Options.Create(new AppSettings()
@@ -753,14 +852,14 @@ public class ProcessEventDispatcherTests
             RegisterEventsWithEventsComponent = true
         });
         var logger = new NullLogger<ProcessEventDispatcher>();
+
         IProcessEventDispatcher dispatcher = new ProcessEventDispatcher(
             instanceService.Object,
             instanceEvent.Object,
-            taskEvents.Object,
-            appEvents.Object,
             eventsService.Object,
             appSettings,
             logger);
+
         Instance instance = new Instance()
         {
             Id = Guid.NewGuid().ToString(),
@@ -773,7 +872,6 @@ public class ProcessEventDispatcherTests
         // Assert
         instanceService.VerifyNoOtherCalls();
         instanceEvent.VerifyNoOtherCalls();
-        taskEvents.VerifyNoOtherCalls();
         appEvents.VerifyNoOtherCalls();
         eventsService.VerifyNoOtherCalls();
     }
@@ -784,7 +882,6 @@ public class ProcessEventDispatcherTests
         // Arrange
         var instanceService = new Mock<IInstanceClient>();
         var instanceEvent = new Mock<IInstanceEventClient>();
-        var taskEvents = new Mock<ITaskEvents>();
         var appEvents = new Mock<IAppEvents>();
         var eventsService = new Mock<IEventsClient>();
         var appSettings = Options.Create(new AppSettings()
@@ -792,14 +889,14 @@ public class ProcessEventDispatcherTests
             RegisterEventsWithEventsComponent = false
         });
         var logger = new NullLogger<ProcessEventDispatcher>();
+
         IProcessEventDispatcher dispatcher = new ProcessEventDispatcher(
             instanceService.Object,
             instanceEvent.Object,
-            taskEvents.Object,
-            appEvents.Object,
             eventsService.Object,
             appSettings,
             logger);
+
         Instance instance = new Instance()
         {
             Id = Guid.NewGuid().ToString(),
@@ -818,7 +915,6 @@ public class ProcessEventDispatcherTests
         // Assert
         instanceService.VerifyNoOtherCalls();
         instanceEvent.VerifyNoOtherCalls();
-        taskEvents.VerifyNoOtherCalls();
         appEvents.VerifyNoOtherCalls();
         eventsService.VerifyNoOtherCalls();
     }

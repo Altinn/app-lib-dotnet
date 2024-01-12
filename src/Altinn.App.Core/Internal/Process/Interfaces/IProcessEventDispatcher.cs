@@ -11,10 +11,9 @@ public interface IProcessEventDispatcher
     /// Updates the instance process in storage and dispatches instance events
     /// </summary>
     /// <param name="instance">The instance with updated process</param>
-    /// <param name="prefill">Prefill data</param>
     /// <param name="events">Events that should be dispatched</param>
     /// <returns>Instance from storage after update</returns>
-    Task<Instance> UpdateProcessAndDispatchEvents(Instance instance, Dictionary<string, string>? prefill, List<InstanceEvent>? events);
+    Task<Instance> DispatchToStorage(Instance instance, List<InstanceEvent>? events);
     /// <summary>
     /// Dispatch events for instance to the events system if AppSettings.RegisterEventsWithEventsComponent is true
     /// </summary>

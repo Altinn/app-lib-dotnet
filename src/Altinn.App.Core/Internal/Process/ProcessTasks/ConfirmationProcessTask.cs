@@ -1,29 +1,29 @@
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Internal.Process.TaskTypes
+namespace Altinn.App.Core.Internal.Process.ProcessTasks
 {
     /// <summary>
     /// Represents the process task responsible for collecting user confirmation.
     /// </summary>
-    public class ConfirmationProcessTaskType : IProcessTaskType
+    public class ConfirmationProcessTask : IProcessTask
     {
         /// <inheritdoc/>
-        public string Key => "confirmation";
+        public string Type => "confirmation";
 
         /// <inheritdoc/>
-        public async Task HandleTaskAbandon(string elementId, Instance instance)
+        public async Task Abandon(string elementId, Instance instance)
         {
             await Task.CompletedTask;
         }
 
         /// <inheritdoc/>
-        public async Task HandleTaskComplete(string elementId, Instance instance)
+        public async Task End(string elementId, Instance instance)
         {
             await Task.CompletedTask;
         }
 
         /// <inheritdoc/>
-        public async Task HandleTaskStart(string elementId, Instance instance, Dictionary<string, string> prefill)
+        public async Task Start(string elementId, Instance instance, Dictionary<string, string> prefill)
         {
             await Task.CompletedTask;
         }

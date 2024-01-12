@@ -287,13 +287,13 @@ public class ProcessEngineMetricsDecoratorTests
     {
         // Arrange
         var processEngine = new Mock<IProcessEngine>();
-        processEngine.Setup(p => p.UpdateInstanceAndRerunEvents(It.IsAny<ProcessStartRequest>(), It.IsAny<List<InstanceEvent>>())).ReturnsAsync(new Instance { });
+        processEngine.Setup(p => p.HandleEventsAndUpdateStorage(It.IsAny<Instance>(), It.IsAny<Dictionary<string, string>>(), It.IsAny<List<InstanceEvent>>())).ReturnsAsync(new Instance { });
         var decorator = new ProcessEngineMetricsDecorator(processEngine.Object);
         (await ReadPrometheusMetricsToString()).Should().NotContain("altinn_app_process_start_count{result=\"success\"}");
 
-        await decorator.UpdateInstanceAndRerunEvents(new ProcessStartRequest(), new List<InstanceEvent>());
+        await decorator.HandleEventsAndUpdateStorage(It.IsAny<Instance>(), It.IsAny<Dictionary<string, string>>(), new List<InstanceEvent>());
 
-        processEngine.Verify(p => p.UpdateInstanceAndRerunEvents(It.IsAny<ProcessStartRequest>(), It.IsAny<List<InstanceEvent>>()), Times.Once);
+        processEngine.Verify(p => p.HandleEventsAndUpdateStorage(It.IsAny<Instance>(), It.IsAny<Dictionary<string, string>>(), It.IsAny<List<InstanceEvent>>()), Times.Once);
         processEngine.VerifyNoOtherCalls();
     }
 
