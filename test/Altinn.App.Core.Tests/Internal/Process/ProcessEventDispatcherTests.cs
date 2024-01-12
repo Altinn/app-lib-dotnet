@@ -4,6 +4,7 @@ using Altinn.App.Core.Internal.Events;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.EventHandlers;
+using Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Enums;

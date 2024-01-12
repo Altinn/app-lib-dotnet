@@ -2,15 +2,39 @@
 using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.App.Core.Internal.Process.ServiceTasks;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.DependencyInjection;
 
-namespace Altinn.App.Core.Internal.Process.EventHandlers
+namespace Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask
 {
     /// <summary>
     /// This event handler is responsible for handling the end event for a process task.
     /// </summary>
-    public class EndTaskEventHandler(ProcessTaskDataLocker processTaskDataLocker, ProcessTaskFinalizer processTaskFinisher, PdfServiceTask pdfServiceTask,
-    EformidlingServiceTask eformidlingServiceTask, IEnumerable<IProcessTaskEnd> processTaskEnds) : IEndTaskEventHandler
+    public class EndTaskEventHandler : IEndTaskEventHandler
     {
+        private readonly IProcessTaskDataLocker _processTaskDataLocker;
+        private readonly IProcessTaskFinalizer _processTaskFinisher;
+        private readonly IServiceTask _pdfServiceTask;
+        private readonly IServiceTask _eformidlingServiceTask;
+        private readonly IEnumerable<IProcessTaskEnd> _processTaskEnds;
+
+        /// <summary>
+        /// This event handler is responsible for handling the end event for a process task.
+        /// </summary>
+        public EndTaskEventHandler(
+            IProcessTaskDataLocker processTaskDataLocker,
+            IProcessTaskFinalizer processTaskFinisher,
+            [FromKeyedServices("pdfService")]IServiceTask pdfServiceTask,
+            [FromKeyedServices("eFormidlingService")]IServiceTask eformidlingServiceTask,
+            IEnumerable<IProcessTaskEnd> processTaskEnds
+        )
+        {
+            _processTaskDataLocker = processTaskDataLocker;
+            _processTaskFinisher = processTaskFinisher;
+            _pdfServiceTask = pdfServiceTask;
+            _eformidlingServiceTask = eformidlingServiceTask;
+            _processTaskEnds = processTaskEnds;
+        }
+
         /// <summary>
         /// Execute the event handler logic.
         /// </summary>
@@ -21,13 +45,13 @@ namespace Altinn.App.Core.Internal.Process.EventHandlers
         public async Task Execute(IProcessTask processTask, string taskId, Instance instance)
         {
             await processTask.End(taskId, instance);
-            await processTaskFinisher.Finalize(taskId, instance);
+            await _processTaskFinisher.Finalize(taskId, instance);
             await RunAppDefinedProcessTaskEndHandlers(taskId, instance);
-            await processTaskDataLocker.Lock(taskId, instance);
+            await _processTaskDataLocker.Lock(taskId, instance);
 
             //These two services are scheduled to be removed and replaced by services tasks defined in the processfile.
-            await pdfServiceTask.Execute(taskId, instance);
-            await eformidlingServiceTask.Execute(taskId, instance);
+            await _pdfServiceTask.Execute(taskId, instance);
+            await _eformidlingServiceTask.Execute(taskId, instance);
         }
 
         /// <summary>
@@ -38,7 +62,7 @@ namespace Altinn.App.Core.Internal.Process.EventHandlers
         /// <returns></returns>
         private async Task RunAppDefinedProcessTaskEndHandlers(string endEvent, Instance instance)
         {
-            foreach (var taskEnd in processTaskEnds)
+            foreach (var taskEnd in _processTaskEnds)
             {
                 await taskEnd.End(endEvent, instance);
             }

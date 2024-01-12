@@ -11,13 +11,28 @@ namespace Altinn.App.Core.Internal.Process.ServiceTasks;
 /// <summary>
 /// Service task that generates PDFs for all connected datatypes that have the EnablePdfCreation flag set to true.
 /// </summary>
-/// <param name="appMetadata"></param>
-/// <param name="featureManager"></param>
-/// <param name="pdfService"></param>
-/// <param name="appModel"></param>
-public class PdfServiceTask(IAppMetadata appMetadata, IFeatureManager featureManager, IPdfService pdfService, IAppModel appModel) : IServiceTask
+public class PdfServiceTask : IServiceTask
 {
-    private readonly IAppMetadata _appMetadata = appMetadata;
+    private readonly IAppMetadata _appMetadata;
+    private readonly IFeatureManager _featureManager;
+    private readonly IPdfService _pdfService;
+    private readonly IAppModel _appModel;
+
+    /// <summary>
+    /// Service task that generates PDFs for all connected datatypes that have the EnablePdfCreation flag set to true.
+    /// </summary>
+    /// <param name="appMetadata"></param>
+    /// <param name="featureManager"></param>
+    /// <param name="pdfService"></param>
+    /// <param name="appModel"></param>
+    public PdfServiceTask(IAppMetadata appMetadata, IFeatureManager featureManager, IPdfService pdfService,
+        IAppModel appModel)
+    {
+        _featureManager = featureManager;
+        _pdfService = pdfService;
+        _appModel = appModel;
+        _appMetadata = appMetadata;
+    }
 
     /// <summary>
     /// Executes the service task.
@@ -29,23 +44,22 @@ public class PdfServiceTask(IAppMetadata appMetadata, IFeatureManager featureMan
     {
         ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
         List<DataType> connectedDataTypes = appMetadata.DataTypes.FindAll(dt => dt.TaskId == taskId);
+        var newPdfServiceEnabled = _featureManager.IsEnabledAsync(FeatureFlags.NewPdfGeneration);
         foreach (DataType dataType in connectedDataTypes)
         {
             bool generatePdf = dataType.AppLogic?.ClassRef != null && dataType.EnablePdfCreation;
+            if (generatePdf && await newPdfServiceEnabled && instance.Data.Exists(de => de.DataType == dataType.Id))
+            {
+                await _pdfService.GenerateAndStorePdf(instance, taskId, CancellationToken.None);
+                return;
+            }
 
             foreach (DataElement dataElement in instance.Data.FindAll(de => de.DataType == dataType.Id))
             {
                 if (generatePdf)
                 {
-                    if (await featureManager.IsEnabledAsync(FeatureFlags.NewPdfGeneration))
-                    {
-                        await pdfService.GenerateAndStorePdf(instance, taskId, CancellationToken.None);
-                    }
-                    else
-                    {
-                        Type dataElementType = appModel.GetModelType(dataType.AppLogic.ClassRef);
-                        await pdfService.GenerateAndStoreReceiptPDF(instance, taskId, dataElement, dataElementType);
-                    }
+                    Type dataElementType = _appModel.GetModelType(dataType.AppLogic.ClassRef);
+                    await _pdfService.GenerateAndStoreReceiptPDF(instance, taskId, dataElement, dataElementType);
                 }
             }
         }

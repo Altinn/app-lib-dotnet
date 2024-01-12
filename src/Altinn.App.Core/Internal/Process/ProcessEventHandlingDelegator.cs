@@ -1,4 +1,5 @@
 ﻿using Altinn.App.Core.Internal.Process.EventHandlers;
+using Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
@@ -9,14 +10,33 @@ namespace Altinn.App.Core.Internal.Process
     /// <summary>
     /// This class is responsible for delegating process events to the correct event handler.
     /// </summary>
-    public class ProcessEventHandlingDelegator(
-        ILogger<ProcessEventHandlingDelegator> logger,
-        IStartTaskEventHandler startTaskEventHandler,
-        IEndTaskEventHandler endTaskEventHandler,
-        IAbandonTaskEventHandler abandonTaskEventHandler,
-        IEndEventEventHandler endEventHandler,
-        IEnumerable<IProcessTask> processTasks) : IProcessEventHandlingDelegator
+    public class ProcessEventHandlingDelegator : IProcessEventHandlingDelegator
     {
+        private readonly ILogger<ProcessEventHandlingDelegator> _logger;
+        private readonly IStartTaskEventHandler _startTaskEventHandler;
+        private readonly IEndTaskEventHandler _endTaskEventHandler;
+        private readonly IAbandonTaskEventHandler _abandonTaskEventHandler;
+        private readonly IEndEventEventHandler _endEventHandler;
+        private readonly IEnumerable<IProcessTask> _processTasks;
+
+        /// <summary>
+        /// This class is responsible for delegating process events to the correct event handler.
+        /// </summary>
+        public ProcessEventHandlingDelegator(ILogger<ProcessEventHandlingDelegator> logger,
+            IStartTaskEventHandler startTaskEventHandler,
+            IEndTaskEventHandler endTaskEventHandler,
+            IAbandonTaskEventHandler abandonTaskEventHandler,
+            IEndEventEventHandler endEventHandler,
+            IEnumerable<IProcessTask> processTasks)
+        {
+            _logger = logger;
+            _startTaskEventHandler = startTaskEventHandler;
+            _endTaskEventHandler = endTaskEventHandler;
+            _abandonTaskEventHandler = abandonTaskEventHandler;
+            _endEventHandler = endEventHandler;
+            _processTasks = processTasks;
+        }
+
         /// <summary>
         /// Loops through all events and delegates the event to the correct event handler.
         /// </summary>
@@ -43,22 +63,22 @@ namespace Altinn.App.Core.Internal.Process
                         case InstanceEventType.process_StartEvent:
                             break;
                         case InstanceEventType.process_StartTask:
-                            await startTaskEventHandler.Execute(GetProcessTaskInstance(altinnTaskType), taskId, instance, prefill ?? []);
+                            await _startTaskEventHandler.Execute(GetProcessTaskInstance(altinnTaskType), taskId, instance, prefill ?? []);
                             break;
                         case InstanceEventType.process_EndTask:
-                            await endTaskEventHandler.Execute(GetProcessTaskInstance(altinnTaskType), taskId, instance);
+                            await _endTaskEventHandler.Execute(GetProcessTaskInstance(altinnTaskType), taskId, instance);
                             break;
                         case InstanceEventType.process_AbandonTask:
-                            await abandonTaskEventHandler.Execute(GetProcessTaskInstance(altinnTaskType), taskId, instance);
+                            await _abandonTaskEventHandler.Execute(GetProcessTaskInstance(altinnTaskType), taskId, instance);
                             break;
                         case InstanceEventType.process_EndEvent:
-                            await endEventHandler.Execute(instanceEvent, instance);
+                            await _endEventHandler.Execute(instanceEvent, instance);
                             break;
                     }
                 }
                 else
                 {
-                    logger.LogError("Unable to parse instanceEvent eventType {EventType}", instanceEvent.EventType);
+                    _logger.LogError("Unable to parse instanceEvent eventType {EventType}", instanceEvent.EventType);
                 }
             }
         }
@@ -70,7 +90,7 @@ namespace Altinn.App.Core.Internal.Process
         private IProcessTask GetProcessTaskInstance(string? altinnTaskType)
         {
             altinnTaskType ??= "NullType";
-            foreach (var processTaskType in processTasks)
+            foreach (var processTaskType in _processTasks)
             {
                 if (processTaskType.Type == altinnTaskType)
                 {
