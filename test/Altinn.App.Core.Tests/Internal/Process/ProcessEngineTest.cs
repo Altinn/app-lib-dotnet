@@ -42,7 +42,7 @@ public class ProcessEngineTest : IDisposable
         IProcessEngine processEngine = GetProcessEngine();
         Instance instance = new Instance() { Process = new ProcessState() { CurrentTask = new ProcessElementInfo() { ElementId = "Task_1" } } };
         ProcessStartRequest processStartRequest = new ProcessStartRequest() { Instance = instance };
-        ProcessChangeResult result = await processEngine.StartProcess(processStartRequest);
+        ProcessChangeResult result = await processEngine.GenerateProcessStartEvents(processStartRequest);
         result.Success.Should().BeFalse();
         result.ErrorMessage.Should().Be("Process is already started. Use next.");
         result.ErrorType.Should().Be(ProcessErrorType.Conflict);
@@ -56,7 +56,7 @@ public class ProcessEngineTest : IDisposable
         IProcessEngine processEngine = GetProcessEngine(processReaderMock);
         Instance instance = new Instance();
         ProcessStartRequest processStartRequest = new ProcessStartRequest() { Instance = instance, StartEventId = "NotTheStartEventYouAreLookingFor" };
-        ProcessChangeResult result = await processEngine.StartProcess(processStartRequest);
+        ProcessChangeResult result = await processEngine.GenerateProcessStartEvents(processStartRequest);
         _processReaderMock.Verify(r => r.GetStartEventIds(), Times.Once);
         result.Success.Should().BeFalse();
         result.ErrorMessage.Should().Be("No matching startevent");
@@ -80,8 +80,8 @@ public class ProcessEngineTest : IDisposable
             new(AltinnCoreClaimTypes.AuthenticationLevel, "2"),
             new(AltinnCoreClaimTypes.Org, "tdd"),
         }));
-        ProcessStartRequest processStartRequest = new ProcessStartRequest() { Instance = instance, User = user, Dryrun = true };
-        ProcessChangeResult result = await processEngine.StartProcess(processStartRequest);
+        ProcessStartRequest processStartRequest = new ProcessStartRequest() { Instance = instance, User = user };
+        ProcessChangeResult result = await processEngine.GenerateProcessStartEvents(processStartRequest);
         _processReaderMock.Verify(r => r.GetStartEventIds(), Times.Once);
         _processReaderMock.Verify(r => r.IsProcessTask("StartEvent_1"), Times.Once);
         _processReaderMock.Verify(r => r.IsEndEvent("Task_1"), Times.Once);
@@ -108,7 +108,8 @@ public class ProcessEngineTest : IDisposable
             new(AltinnCoreClaimTypes.Org, "tdd"),
         }));
         ProcessStartRequest processStartRequest = new ProcessStartRequest() { Instance = instance, User = user };
-        ProcessChangeResult result = await processEngine.StartProcess(processStartRequest);
+        ProcessChangeResult result = await processEngine.GenerateProcessStartEvents(processStartRequest);
+        await processEngine.HandleEventsAndUpdateStorage(instance, null, result.ProcessStateChange?.Events);
         _processReaderMock.Verify(r => r.GetStartEventIds(), Times.Once);
         _processReaderMock.Verify(r => r.IsProcessTask("StartEvent_1"), Times.Once);
         _processReaderMock.Verify(r => r.IsEndEvent("Task_1"), Times.Once);
@@ -219,7 +220,8 @@ public class ProcessEngineTest : IDisposable
         }));
         var prefill = new Dictionary<string, string>() { { "test", "test" } };
         ProcessStartRequest processStartRequest = new ProcessStartRequest() { Instance = instance, User = user, Prefill = prefill };
-        ProcessChangeResult result = await processEngine.StartProcess(processStartRequest);
+        ProcessChangeResult result = await processEngine.GenerateProcessStartEvents(processStartRequest);
+        await processEngine.HandleEventsAndUpdateStorage(instance, prefill, result.ProcessStateChange?.Events);
         _processReaderMock.Verify(r => r.GetStartEventIds(), Times.Once);
         _processReaderMock.Verify(r => r.IsProcessTask("StartEvent_1"), Times.Once);
         _processReaderMock.Verify(r => r.IsEndEvent("Task_1"), Times.Once);

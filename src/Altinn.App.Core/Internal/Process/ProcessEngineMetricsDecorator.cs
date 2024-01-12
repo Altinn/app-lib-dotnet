@@ -25,9 +25,9 @@ public class ProcessEngineMetricsDecorator : IProcessEngine
     }
 
     /// <inheritdoc/>
-    public async Task<ProcessChangeResult> StartProcess(ProcessStartRequest processStartRequest)
+    public async Task<ProcessChangeResult> GenerateProcessStartEvents(ProcessStartRequest processStartRequest)
     {
-        var result = await _processEngine.StartProcess(processStartRequest);
+        var result = await _processEngine.GenerateProcessStartEvents(processStartRequest);
         ProcessTaskStartCounter.WithLabels(result.Success ? "success" : "failure").Inc();
         return result;
     }

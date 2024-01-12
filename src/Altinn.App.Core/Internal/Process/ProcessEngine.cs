@@ -51,7 +51,7 @@ public class ProcessEngine : IProcessEngine
     }
 
     /// <inheritdoc/>
-    public async Task<ProcessChangeResult> StartProcess(ProcessStartRequest processStartRequest)
+    public async Task<ProcessChangeResult> GenerateProcessStartEvents(ProcessStartRequest processStartRequest)
     {
         if (processStartRequest.Instance.Process != null)
         {
@@ -96,11 +96,6 @@ public class ProcessEngine : IProcessEngine
             NewProcessState = nextChange?.NewProcessState,
             Events = events
         };
-
-        if (!processStartRequest.Dryrun)
-        {
-            await HandleEventsAndUpdateStorage(processStartRequest.Instance, processStartRequest.Prefill, events);
-        }
 
         return new ProcessChangeResult()
         {
