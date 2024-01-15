@@ -1,5 +1,4 @@
 using Altinn.App.Core.Features;
-using Altinn.App.Core.Implementation;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
@@ -19,7 +18,7 @@ using Xunit;
 
 namespace Altinn.App.PlatformServices.Tests.Implementation;
 
-public class DefaultTaskEventsTests: IDisposable
+public class DefaultTaskEventsTests : IDisposable
 {
     private readonly ILogger<DefaultTaskEvents> _logger = NullLogger<DefaultTaskEvents>.Instance;
     private readonly Mock<IAppResources> _resMock;
@@ -103,7 +102,7 @@ public class DefaultTaskEventsTests: IDisposable
             AppId = "ttd/shadow-fields-test",
             Data = new List<DataElement>()
             {
-                { 
+                {
                     new()
                     {
                         DataType = "model",
@@ -158,7 +157,7 @@ public class DefaultTaskEventsTests: IDisposable
             AppId = "ttd/shadow-fields-test",
             Data = new List<DataElement>()
             {
-                { 
+                {
                     new()
                     {
                         DataType = "model",
@@ -213,7 +212,7 @@ public class DefaultTaskEventsTests: IDisposable
             AppId = "ttd/shadow-fields-test",
             Data = new List<DataElement>()
             {
-                { 
+                {
                     new()
                     {
                         DataType = "model",
@@ -462,7 +461,7 @@ public class DefaultTaskEventsTests: IDisposable
         var instance = new Instance()
         {
             Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d",
-            AppId = "ttd/test",            
+            AppId = "ttd/test",
             InstanceOwner = new()
             {
                 PartyId = "1000"
@@ -594,7 +593,7 @@ public class DefaultTaskEventsTests: IDisposable
 
     private ModelWithShadowFields GetDataElementForShadowFields()
     {
-            return new ModelWithShadowFields()
+        return new ModelWithShadowFields()
         {
             AltinnSF_hello = "hello",
             AltinnSF_test = "test",

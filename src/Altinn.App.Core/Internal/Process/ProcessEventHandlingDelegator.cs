@@ -10,7 +10,7 @@ namespace Altinn.App.Core.Internal.Process
     /// <summary>
     /// This class is responsible for delegating process events to the correct event handler.
     /// </summary>
-    public class ProcessEventHandlingDelegator : IProcessEventHandlingDelegator
+    public class ProcessEventHandlingDelegator : IProcessEventHandlerDelegator
     {
         private readonly ILogger<ProcessEventHandlingDelegator> _logger;
         private readonly IStartTaskEventHandler _startTaskEventHandler;

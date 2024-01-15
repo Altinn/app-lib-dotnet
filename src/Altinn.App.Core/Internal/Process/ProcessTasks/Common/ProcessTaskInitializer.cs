@@ -11,9 +11,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Altinn.App.Core.Internal.Process.ProcessTasks;
 
-/// <summary>
-/// Contains common logic for starting a process task
-/// </summary>
+/// <inheritdoc/>
 public class ProcessTaskInitializer : IProcessTaskInitializer
 {
     private readonly ILogger<ProcessTaskInitializer> _logger;
@@ -24,9 +22,7 @@ public class ProcessTaskInitializer : IProcessTaskInitializer
     private readonly IInstantiationProcessor _instantiationProcessor;
     private readonly IInstanceClient _instanceClient;
 
-    /// <summary>
-    /// Contains common logic for starting a process task
-    /// </summary>
+    /// <inheritdoc/>
     public ProcessTaskInitializer(ILogger<ProcessTaskInitializer> logger,
         IAppMetadata appMetadata,
         IDataClient dataClient,
@@ -44,12 +40,7 @@ public class ProcessTaskInitializer : IProcessTaskInitializer
         _instanceClient = instanceClient;
     }
 
-    /// <summary>
-    /// Runs common "start" logic for process tasks for a given task ID and instance. This method initializes the data elements for the instance based on application metadata and prefill configurations. Also updates presentation texts and data values on the instance.
-    /// </summary>
-    /// <param name="taskId"></param>
-    /// <param name="instance"></param>
-    /// <param name="prefill"></param>
+    /// <inheritdoc/>
     public async Task Initialize(string taskId, Instance instance, Dictionary<string, string> prefill)
     {
         _logger.LogDebug("OnStartProcessTask for {InstanceId}", instance.Id);
@@ -124,6 +115,4 @@ public class ProcessTaskInitializer : IProcessTaskInitializer
             instance.DataValues = updatedInstance.DataValues;
         }
     }
-
-
 }

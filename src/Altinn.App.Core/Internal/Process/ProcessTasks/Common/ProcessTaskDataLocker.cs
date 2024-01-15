@@ -5,29 +5,20 @@ using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Internal.Process.ProcessTasks;
 
-/// <summary>
-/// Can be used to lock data elements connected to a specific task
-/// </summary>
+/// <inheritdoc/>
 public class ProcessTaskDataLocker : IProcessTaskDataLocker
 {
     private readonly IAppMetadata _appMetadata;
     private readonly IDataClient _dataClient;
 
-    /// <summary>
-    /// Can be used to lock data elements connected to a specific task
-    /// </summary>
+    /// <inheritdoc/>
     public ProcessTaskDataLocker(IAppMetadata appMetadata, IDataClient dataClient)
     {
         _appMetadata = appMetadata;
         _dataClient = dataClient;
     }
 
-    /// <summary>
-    /// Unlock data elements connected to a specific task
-    /// </summary>
-    /// <param name="taskId"></param>
-    /// <param name="instance"></param>
-    /// <returns></returns>
+    /// <inheritdoc/>
     public async Task Unlock(string taskId, Instance instance)
     {
         var applicationMetadata = await _appMetadata.GetApplicationMetadata();
@@ -43,12 +34,7 @@ public class ProcessTaskDataLocker : IProcessTaskDataLocker
         }
     }
 
-    /// <summary>
-    /// Lock data elements connected to a specific task
-    /// </summary>
-    /// <param name="taskId"></param>
-    /// <param name="instance"></param>
-    /// <returns></returns>
+    /// <inheritdoc/>
     public async Task Lock(string taskId, Instance instance)
     {
         var applicationMetadata = await _appMetadata.GetApplicationMetadata();
