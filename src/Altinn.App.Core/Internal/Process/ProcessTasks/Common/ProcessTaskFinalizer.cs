@@ -14,9 +14,7 @@ using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Internal.Process.ProcessTasks;
 
-/// <summary>
-/// Contains common logic for ending a task
-/// </summary>
+/// <inheritdoc/>
 public class ProcessTaskFinalizer : IProcessTaskFinalizer
 {
     private readonly IAppMetadata _appMetadata;
@@ -26,9 +24,7 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
     private readonly LayoutEvaluatorStateInitializer _layoutEvaluatorStateInitializer;
     private readonly IOptions<AppSettings>? _appSettings;
 
-    /// <summary>
-    /// Contains common logic for ending a task
-    /// </summary>
+    /// <inheritdoc/>
     public ProcessTaskFinalizer(IAppMetadata appMetadata,
         IDataClient dataClient,
         IAppModel appModel,
@@ -44,27 +40,22 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
         _appSettings = appSettings;
     }
 
-    /// <summary>
-    /// Runs common finalization logic for process tasks for a given task ID and instance. This method removes data elements generated from the task, removes hidden data and shadow fields.
-    /// </summary>
-    /// <param name="taskId"></param>
-    /// <param name="instance"></param>
-    /// <returns></returns>
+    /// <inheritdoc/>
     public async Task Finalize(string taskId, Instance instance)
     {
         Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
         ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
-        List<DataType> dataTypesToLock = applicationMetadata.DataTypes.FindAll(dt => dt.TaskId == taskId);
+        List<DataType> connectedDataTypes = applicationMetadata.DataTypes.FindAll(dt => dt.TaskId == taskId);
 
         await RemoveDataElementsGeneratedFromTask(instance, taskId);
-        await RemoveHiddenData(instance, instanceGuid, dataTypesToLock);
-        await RemoveShadowFields(instance, instanceGuid, dataTypesToLock);
+        await RemoveHiddenData(instance, instanceGuid, connectedDataTypes);
+        await RemoveShadowFields(instance, instanceGuid, connectedDataTypes);
     }
 
     public async Task RemoveDataElementsGeneratedFromTask(Instance instance, string endEvent)
     {
-        AppIdentifier appIdentifier = new AppIdentifier(instance.AppId);
-        InstanceIdentifier instanceIdentifier = new InstanceIdentifier(instance);
+        var appIdentifier = new AppIdentifier(instance.AppId);
+        var instanceIdentifier = new InstanceIdentifier(instance);
         foreach (var dataElement in instance.Data?.Where(de =>
                                         de.References != null &&
                                         de.References.Exists(r =>

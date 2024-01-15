@@ -24,7 +24,7 @@ public class ProcessEngineTest : IDisposable
     private Mock<IProcessReader> _processReaderMock;
     private readonly Mock<IProfileClient> _profileMock;
     private readonly Mock<IProcessNavigator> _processNavigatorMock;
-    private readonly Mock<IProcessEventHandlingDelegator> _processEventHandlingDelegatorMock;
+    private readonly Mock<IProcessEventHandlerDelegator> _processEventHandlingDelegatorMock;
     private readonly Mock<IProcessEventDispatcher> _processEventDispatcherMock;
 
     public ProcessEngineTest()

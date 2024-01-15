@@ -21,7 +21,7 @@ public class ProcessEngine : IProcessEngine
     private readonly IProcessReader _processReader;
     private readonly IProfileClient _profileClient;
     private readonly IProcessNavigator _processNavigator;
-    private readonly IProcessEventHandlingDelegator _processEventsDelegator;
+    private readonly IProcessEventHandlerDelegator _processEventHandlerDelegator;
     private readonly IProcessEventDispatcher _processEventDispatcher;
     private readonly UserActionService _userActionService;
 
@@ -38,14 +38,14 @@ public class ProcessEngine : IProcessEngine
         IProcessReader processReader,
         IProfileClient profileClient,
         IProcessNavigator processNavigator,
-        IProcessEventHandlingDelegator processEventsDelegator,
+        IProcessEventHandlerDelegator processEventsDelegator,
         IProcessEventDispatcher processEventDispatcher,
         UserActionService userActionService)
     {
         _processReader = processReader;
         _profileClient = profileClient;
         _processNavigator = processNavigator;
-        _processEventsDelegator = processEventsDelegator;
+        _processEventHandlerDelegator = processEventsDelegator;
         _processEventDispatcher = processEventDispatcher;
         _userActionService = userActionService;
     }
@@ -156,7 +156,7 @@ public class ProcessEngine : IProcessEngine
     /// <inheritdoc/>
     public async Task<Instance> HandleEventsAndUpdateStorage(Instance instance, Dictionary<string, string>? prefill, List<InstanceEvent>? events)
     {
-        await _processEventsDelegator.HandleEvents(instance, prefill, events);
+        await _processEventHandlerDelegator.HandleEvents(instance, prefill, events);
         return await _processEventDispatcher.DispatchToStorage(instance, events);
     }
 

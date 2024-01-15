@@ -42,7 +42,7 @@ public class ProcessEventDispatcherTests
         var abandonTaskEventHandler = new Mock<IAbandonTaskEventHandler>();
         var endEventHandler = new Mock<IEndEventEventHandler>();
 
-        IProcessEventHandlingDelegator delegator = new ProcessEventHandlingDelegator(
+        IProcessEventHandlerDelegator delegator = new ProcessEventHandlingDelegator(
             new NullLogger<ProcessEventHandlingDelegator>(),
             startTaskEventHandler.Object,
             endTaskEventHandler.Object,
@@ -140,7 +140,7 @@ public class ProcessEventDispatcherTests
         var abandonTaskEventHandler = new Mock<IAbandonTaskEventHandler>();
         var endEventHandler = new Mock<IEndEventEventHandler>();
 
-        IProcessEventHandlingDelegator delegator = new ProcessEventHandlingDelegator(
+        IProcessEventHandlerDelegator delegator = new ProcessEventHandlingDelegator(
             new NullLogger<ProcessEventHandlingDelegator>(),
             startTaskEventHandler.Object,
             endTaskEventHandler.Object,
@@ -235,7 +235,7 @@ public class ProcessEventDispatcherTests
         var abandonTaskEventHandler = new Mock<IAbandonTaskEventHandler>();
         var endEventHandler = new Mock<IEndEventEventHandler>();
 
-        IProcessEventHandlingDelegator delegator = new ProcessEventHandlingDelegator(
+        IProcessEventHandlerDelegator delegator = new ProcessEventHandlingDelegator(
             new NullLogger<ProcessEventHandlingDelegator>(),
             startTaskEventHandler.Object,
             endTaskEventHandler.Object,
@@ -334,7 +334,7 @@ public class ProcessEventDispatcherTests
         var abandonTaskEventHandler = new Mock<IAbandonTaskEventHandler>();
         var endEventHandler = new Mock<IEndEventEventHandler>();
 
-        IProcessEventHandlingDelegator delegator = new ProcessEventHandlingDelegator(
+        IProcessEventHandlerDelegator delegator = new ProcessEventHandlingDelegator(
             new NullLogger<ProcessEventHandlingDelegator>(),
             startTaskEventHandler.Object,
             endTaskEventHandler.Object,
@@ -433,7 +433,7 @@ public class ProcessEventDispatcherTests
         var abandonTaskEventHandler = new Mock<IAbandonTaskEventHandler>();
         var endEventHandler = new Mock<IEndEventEventHandler>();
 
-        IProcessEventHandlingDelegator delegator = new ProcessEventHandlingDelegator(
+        IProcessEventHandlerDelegator delegator = new ProcessEventHandlingDelegator(
             new NullLogger<ProcessEventHandlingDelegator>(),
             startTaskEventHandler.Object,
             endTaskEventHandler.Object,
@@ -533,7 +533,7 @@ public class ProcessEventDispatcherTests
         var abandonTaskEventHandler = new Mock<IAbandonTaskEventHandler>();
         var endEventHandler = new EndEventEventHandler(appEvents.Object, instanceService.Object, appMetadata.Object);
 
-        IProcessEventHandlingDelegator delegator = new ProcessEventHandlingDelegator(
+        IProcessEventHandlerDelegator delegator = new ProcessEventHandlingDelegator(
             new NullLogger<ProcessEventHandlingDelegator>(),
             startTaskEventHandler.Object,
             endTaskEventHandler.Object,
@@ -652,7 +652,7 @@ public class ProcessEventDispatcherTests
         var abandonTaskEventHandler = new Mock<IAbandonTaskEventHandler>();
         var endEventHandler = new Mock<IEndEventEventHandler>();
 
-        IProcessEventHandlingDelegator delegator = new ProcessEventHandlingDelegator(
+        IProcessEventHandlerDelegator delegator = new ProcessEventHandlingDelegator(
             new NullLogger<ProcessEventHandlingDelegator>(),
             startTaskEventHandler.Object,
             endTaskEventHandler.Object,

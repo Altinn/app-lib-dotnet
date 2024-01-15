@@ -2,6 +2,9 @@ using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Internal.Process.ProcessTasks
 {
+    /// <summary>
+    /// Contains common logic for ending a process task.
+    /// </summary>
     public interface IProcessTaskFinalizer
     {
         /// <summary>
