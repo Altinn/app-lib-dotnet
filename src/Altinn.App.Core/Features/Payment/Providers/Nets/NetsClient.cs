@@ -1,11 +1,12 @@
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using Altinn.App.Core.Features.Payment.Providers.Nets.Models;
 using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Features.Payment.Providers.Nets;
 
 
-public class NetsClient
+public class NetsClient : INetsClient
 {
     private readonly HttpClient _httpClient;
     private readonly NetsPaymentSettings _settings;
@@ -18,7 +19,7 @@ public class NetsClient
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(_settings.SecretApiKey);
         // _httpClient.DefaultRequestHeaders.Add("CommercePlatformTag", "Altinn 3");
     }
-    
+
     /// <summary>
     /// Initializes a new payment object that becomes the object used throughout the checkout flow for a particular customer and order. Creating a payment object is the first step when you intend to accept a payment from your customer. Entering the amount 100 corresponds to 1 unit of the currency entered, such as e.g. 1 NOK. Typically you provide the following information:
     /// The order details including order items, total amount, and currency.

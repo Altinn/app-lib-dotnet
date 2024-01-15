@@ -3,8 +3,10 @@ using Altinn.App.Api.Tests.Data;
 using Altinn.App.Api.Tests.Mocks;
 using Altinn.App.Api.Tests.Mocks.Authentication;
 using Altinn.App.Api.Tests.Mocks.Event;
+using Altinn.App.Api.Tests.Mocks.Services;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Payment.Providers.Nets;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Auth;
@@ -18,7 +20,6 @@ using App.IntegrationTests.Mocks.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 // This file should be as close to the Program.cs file in the app template
@@ -63,6 +64,7 @@ void ConfigureMockServices(IServiceCollection services, ConfigurationManager con
     services.AddTransient<IProfileClient, ProfileClientMock>();
     services.AddTransient<IInstanceEventClient, InstanceEventClientMock>();
     services.AddTransient<IAppModel, AppModelMock>();
+    services.AddTransient<INetsClient, NetsClientMock>();
 }
 
 void Configure()
@@ -73,4 +75,4 @@ void Configure()
 // This "hack" (documentet by Microsoft) is done to
 // make the Program class public and available for
 // integration tests.
-public partial class Program {}
+public partial class Program { }

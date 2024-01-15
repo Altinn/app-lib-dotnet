@@ -1,7 +1,6 @@
 namespace Altinn.App.Core.Features.Payment;
 
 using Altinn.App.Core.Features.Payment.Models;
-using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 
 /// <summary>

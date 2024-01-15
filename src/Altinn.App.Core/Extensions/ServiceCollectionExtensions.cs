@@ -7,6 +7,9 @@ using Altinn.App.Core.Features.DataProcessing;
 using Altinn.App.Core.Features.FileAnalyzis;
 using Altinn.App.Core.Features.Options;
 using Altinn.App.Core.Features.PageOrder;
+using Altinn.App.Core.Features.Payment.Providers.Nets;
+using Altinn.App.Core.Features.Payment.Providers;
+using Altinn.App.Core.Features.Payment.Services;
 using Altinn.App.Core.Features.Pdf;
 using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Features.Validation.Default;
@@ -30,7 +33,6 @@ using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Prefill;
 using Altinn.App.Core.Internal.Process;
-using Altinn.App.Core.Internal.Process.Authorization;
 using Altinn.App.Core.Internal.Process.EventHandlers;
 using Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
@@ -38,7 +40,6 @@ using Altinn.App.Core.Internal.Process.ServiceTasks;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Internal.Secrets;
-using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
 using Altinn.Common.AccessTokenClient.Configuration;
@@ -56,6 +57,8 @@ using IProcessEngine = Altinn.App.Core.Internal.Process.IProcessEngine;
 using IProcessReader = Altinn.App.Core.Internal.Process.IProcessReader;
 using ProcessEngine = Altinn.App.Core.Internal.Process.ProcessEngine;
 using ProcessReader = Altinn.App.Core.Internal.Process.ProcessReader;
+using Altinn.App.Core.Internal.Sign;
+using Altinn.App.Core.Internal.Process.Authorization;
 
 namespace Altinn.App.Core.Extensions
 {
@@ -161,6 +164,8 @@ namespace Altinn.App.Core.Extensions
             AddAppOptions(services);
             AddActionServices(services);
             AddPdfServices(services);
+            AddPaymentServices(services);
+            AddSignatureServices(services);
             AddEventServices(services);
             AddProcessServices(services);
             AddFileAnalyserServices(services);
@@ -237,6 +242,18 @@ namespace Altinn.App.Core.Extensions
 #pragma warning restore CS0618 // Type or member is obsolete
         }
 
+        private static void AddPaymentServices(IServiceCollection services)
+        {
+            services.AddTransient<IPaymentService, PaymentService>();
+            services.AddTransient<IPaymentProcessor, NetsPaymentProcessor>();
+            services.AddTransient<INetsClient, NetsClient>();
+        }
+
+        private static void AddSignatureServices(IServiceCollection services)
+        {
+            services.AddHttpClient<ISignClient, SignClient>();
+        }
+
         private static void AddAppOptions(IServiceCollection services)
         {
             // Main service for interacting with options
@@ -285,8 +302,8 @@ namespace Altinn.App.Core.Extensions
         private static void AddActionServices(IServiceCollection services)
         {
             services.TryAddTransient<UserActionService>();
+            services.AddTransient<IUserAction, PaymentUserAction>();
             services.AddTransient<IUserAction, SigningUserAction>();
-            services.AddHttpClient<ISignClient, SignClient>();
             services.AddTransientUserActionAuthorizerForActionInAllTasks<UniqueSignatureAuthorizer>("sign");
         }
 
