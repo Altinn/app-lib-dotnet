@@ -530,7 +530,7 @@ namespace Altinn.App.Api.Controllers
                     _logger.LogError(errorMsg);
                     return BadRequest(errorMsg);
                 }
-                else if (dataType.AppLogic.ClassRef is not null)
+                else if (dataType.AppLogic is not null && dataType.AppLogic.ClassRef is not null)
                 {
                     // trying deleting a form element
                     return BadRequest("Deleting form data is not possible at this moment.");
