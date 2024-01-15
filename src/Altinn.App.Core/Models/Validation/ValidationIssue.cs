@@ -1,7 +1,7 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Features.Validation;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 
 namespace Altinn.App.Core.Models.Validation
 {
@@ -13,10 +13,17 @@ namespace Altinn.App.Core.Models.Validation
         /// <summary>
         /// The seriousness of the identified issue.
         /// </summary>
+        /// <remarks>
+        /// This property is serialized in json as a number
+        /// 1: Error (something needs to be fixed)
+        /// 2: Warning (does not prevent submission)
+        /// 3: Information (hint shown to the user)
+        /// 4: Fixed (obsolete, only used for v3 of frontend)
+        /// 5: Success (Inform the user that something was completed with success)
+        /// </remarks>
         [JsonProperty(PropertyName = "severity")]
-        [Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
         [JsonPropertyName("severity")]
-        [System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
+        [System.Text.Json.Serialization.JsonConverter(typeof(JsonNumberEnumConverter<ValidationIssueSeverity>))]
         public required ValidationIssueSeverity Severity { get; set; }
 
         /// <summary>
@@ -43,6 +50,7 @@ namespace Altinn.App.Core.Models.Validation
 
         /// <summary>
         /// A system readable identification of the type of issue.
+        /// Eg:
         /// </summary>
         [JsonProperty(PropertyName = "code")]
         [JsonPropertyName("code")]
@@ -73,8 +81,13 @@ namespace Altinn.App.Core.Models.Validation
         public string? CustomTextKey { get; set; }
 
         /// <summary>
-        /// The custom text key to use for the localized text in the frontend.
+        /// <see cref="CustomTextKey"/> might include some parameters (typically the field value, or some derived value)
+        /// that should be included in error message.
         /// </summary>
+        /// <example>
+        /// The localized text for the key might be "Date must be between {0} and {1}"
+        /// and the param will provide the dynamical range of allowable dates (eg teh reporting period)
+        /// </example>
         [JsonProperty(PropertyName = "customTextParams")]
         [JsonPropertyName("customTextParams")]
         public List<string>? CustomTextParams { get; set; }

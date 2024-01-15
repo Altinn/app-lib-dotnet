@@ -62,7 +62,7 @@ public class DataController_PutTests : ApiTestBase, IClassFixture<WebApplication
         
         // Update data element
         using var updateDataElementContent =
-            new StringContent("""{"melding":{"name": "Ivar Nesje"}}""", System.Text.Encoding.UTF8, "application/json");
+            new StringContent("""{"melding":{"name": "Ola Olsen"}}""", System.Text.Encoding.UTF8, "application/json");
         var response = await client.PutAsync($"/{org}/{app}/instances/{instanceId}/data/{dataGuid}", updateDataElementContent);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
@@ -72,7 +72,7 @@ public class DataController_PutTests : ApiTestBase, IClassFixture<WebApplication
         var readDataElementResponseContent = await readDataElementResponse.Content.ReadAsStringAsync();
         var readDataElementResponseParsed =
             JsonSerializer.Deserialize<Skjema>(readDataElementResponseContent)!;
-        readDataElementResponseParsed.Melding.Name.Should().Be("Ivar Nesje");
+        readDataElementResponseParsed.Melding.Name.Should().Be("Ola Olsen");
 
         _dataProcessor.Verify(p => p.ProcessDataRead(It.IsAny<Instance>(), It.Is<Guid>(dataId => dataId == Guid.Parse(dataGuid)), It.IsAny<Skjema>()), Times.Exactly(1));
         _dataProcessor.Verify(p => p.ProcessDataWrite(It.IsAny<Instance>(), It.Is<Guid>(dataId => dataId == Guid.Parse(dataGuid)), It.IsAny<Skjema>(), It.IsAny<Skjema?>()), Times.Exactly(1)); // TODO: Shouldn't this be 2 because of the first write?
@@ -133,7 +133,7 @@ public class DataController_PutTests : ApiTestBase, IClassFixture<WebApplication
 
         // Update data element
         using var updateDataElementContent =
-            new StringContent("""{"melding":{"name": "Ivar Nesje"}}""", System.Text.Encoding.UTF8, "application/json");
+            new StringContent("""{"melding":{"name": "Ola Olsen"}}""", System.Text.Encoding.UTF8, "application/json");
         var response = await client.PutAsync($"/{org}/{app}/instances/{instanceId}/data/{dataGuid}", updateDataElementContent);
         response.StatusCode.Should().Be(HttpStatusCode.SeeOther);
 
@@ -143,7 +143,7 @@ public class DataController_PutTests : ApiTestBase, IClassFixture<WebApplication
         var readDataElementResponseContent = await readDataElementResponse.Content.ReadAsStringAsync();
         var readDataElementResponseParsed =
             JsonSerializer.Deserialize<Skjema>(readDataElementResponseContent)!;
-        readDataElementResponseParsed.Melding.Name.Should().Be("Ivar Nesje");
+        readDataElementResponseParsed.Melding.Name.Should().Be("Ola Olsen");
         readDataElementResponseParsed.Melding.Toggle.Should().BeTrue();
 
         _dataProcessor.Verify(p=>p.ProcessDataRead(It.IsAny<Instance>(), It.Is<Guid>(dataId => dataId == Guid.Parse(dataGuid)), It.IsAny<Skjema>()), Times.Exactly(2));

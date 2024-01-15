@@ -3,6 +3,7 @@
 using System.Net;
 using System.Security.Claims;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Altinn.App.Api.Helpers.RequestHandling;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
@@ -53,6 +54,13 @@ namespace Altinn.App.Api.Controllers
         private readonly IFileAnalysisService _fileAnalyserService;
         private readonly IFileValidationService _fileValidationService;
         private readonly IFeatureManager _featureManager;
+
+        private static readonly JsonSerializerOptions JsonSerializerOptions = new()
+        {
+            UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
+            PropertyNameCaseInsensitive = true,
+        };
+
         private const long REQUEST_SIZE_LIMIT = 2000 * 1024 * 1024;
 
         /// <summary>
@@ -404,7 +412,7 @@ namespace Altinn.App.Api.Controllers
                         dataType,
                         org,
                         app);
-                    return BadRequest($"Could not determine if data type {dataType} requires application logic.");
+                    return BadRequest($"Could not determine if data type {dataType?.Id} requires application logic.");
                 }
 
                 var modelType = _appModel.GetModelType(dataType.AppLogic.ClassRef);
@@ -452,21 +460,31 @@ namespace Altinn.App.Api.Controllers
         /// <returns>DataPatchResponse after this patch operation</returns>
         internal async Task<(DataPatchResponse, ProblemDetails?)> PatchFormDataImplementation(DataType dataType, DataElement dataElement, DataPatchRequest dataPatchRequest, object oldModel, Instance instance)
         {
-            var oldModelNode = JsonSerializer.SerializeToNode(oldModel, oldModel.GetType());
+            var oldModelNode = JsonSerializer.SerializeToNode(oldModel);
             var patchResult = dataPatchRequest.Patch.Apply(oldModelNode);
             if (!patchResult.IsSuccess)
             {
-                bool testOperationFailed = dataPatchRequest.Patch.Operations[patchResult.Operation].Op == OperationType.Test;
+                bool testOperationFailed = patchResult.Error!.Contains("is not equal to the indicated value.");
                 return (null!, new ProblemDetails()
                 {
-                    Title = testOperationFailed ? "Precondition in patch failed": "PatchOperationFailed",
+                    Title = testOperationFailed ? "Precondition in patch failed" : "Patch Operation Failed",
                     Detail = patchResult.Error,
                     Type = "https://datatracker.ietf.org/doc/html/rfc6902/",
                     Status = testOperationFailed ? (int)HttpStatusCode.PreconditionFailed : (int)HttpStatusCode.UnprocessableContent,
                 });
             }
 
-            var model = patchResult.Result.Deserialize(oldModel.GetType())!;
+            var (model, problem) = DeserializeModel(oldModel.GetType(), patchResult);
+            if (problem is not null)
+            {
+                return (null!, new ProblemDetails()
+                {
+                    Title = "Patch operation did not deserialize",
+                    Detail = problem,
+                    Type = "https://datatracker.ietf.org/doc/html/rfc6902/",
+                    Status = (int)HttpStatusCode.UnprocessableContent,
+                });
+            }
 
             foreach (var dataProcessor in _dataProcessors)
             {
@@ -482,6 +500,25 @@ namespace Altinn.App.Api.Controllers
                 ValidationIssues = validationIssues
             };
             return (response, null);
+        }
+
+        private static (object model, string? error) DeserializeModel(Type type, PatchResult patchResult)
+        {
+            try
+            {
+                var model = patchResult.Result.Deserialize(type, JsonSerializerOptions);
+                if (model is null)
+                {
+                    return (null!, "Deserialize patched model returned null");
+                }
+
+                return (model, null);
+            }
+            catch (JsonException e) when (e.Message.Contains("could not be mapped to any .NET member contained in type"))
+            {
+                // Give better feedback when the issue is that the patch contains a path that does not exist in the model
+                return (null!, e.Message);
+            }
         }
 
         /// <summary>
@@ -530,7 +567,7 @@ namespace Altinn.App.Api.Controllers
                     _logger.LogError(errorMsg);
                     return BadRequest(errorMsg);
                 }
-                else if (dataType.AppLogic is not null && dataType.AppLogic.ClassRef is not null)
+                else if (dataType.AppLogic?.ClassRef is not null)
                 {
                     // trying deleting a form element
                     return BadRequest("Deleting form data is not possible at this moment.");

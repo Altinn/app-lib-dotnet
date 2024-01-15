@@ -64,7 +64,7 @@ namespace Altinn.App.Core.Tests.Features.Validators.Default
                 JsonSerializer.Deserialize<List<ValidationIssue>>("""
                 [
                     {
-                        "severity": "Fixed",
+                        "severity": 4,
                         "instanceId": null,
                         "dataElementId": null,
                         "field": "ddd",
@@ -74,7 +74,7 @@ namespace Altinn.App.Core.Tests.Features.Validators.Default
                         "customTextKey": null
                     },
                     {
-                        "severity": "Error",
+                        "severity": 1,
                         "instanceId": null,
                         "dataElementId": null,
                         "field": "test",

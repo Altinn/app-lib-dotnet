@@ -2,6 +2,7 @@ using Altinn.App.Api.Tests.Utils;
 using Microsoft.AspNetCore.Mvc.Testing;
 using System.Net.Http.Headers;
 using System.Net;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -38,6 +39,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = true,
         UnknownTypeHandling = JsonUnknownTypeHandling.JsonElement,
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
 
     private readonly ITestOutputHelper _outputHelper;
@@ -84,11 +86,11 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
     }
 
     [Fact]
-    public async Task PatchDataElement_ValidName_ReturnsOk()
+    public async Task ValidName_ReturnsOk()
     {
         // Update data element
         var patch = new JsonPatch(
-            PatchOperation.Replace(JsonPointer.Create("melding", "name"), JsonNode.Parse("\"Ivar Nesje\"")));
+            PatchOperation.Replace(JsonPointer.Create("melding", "name"), JsonNode.Parse("\"Ola Olsen\"")));
 
         var response = await CallPatchApi(patch, null);
         var responseString = await LogResponse(response);
@@ -99,14 +101,14 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
 
         var newModelElement = parsedResponse.NewDataModel.Should().BeOfType<JsonElement>().Which;
         var newModel = newModelElement.Deserialize<Skjema>()!;
-        newModel.Melding.Name.Should().Be("Ivar Nesje");
+        newModel.Melding.Name.Should().Be("Ola Olsen");
 
         _dataProcessorMock.Verify(p => p.ProcessDataWrite(It.IsAny<Instance>(), It.Is<Guid>(dataId => dataId == DataGuid), It.IsAny<Skjema>(), It.IsAny<Skjema?>()), Times.Exactly(1));
         _dataProcessorMock.VerifyNoOtherCalls();
     }
 
     [Fact]
-    public async Task PatchDataElement_NullName_ReturnsOkAndValidationError()
+    public async Task NullName_ReturnsOkAndValidationError()
     {
         // Update data element
         var patch = new JsonPatch(
@@ -132,7 +134,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
     }
 
     [Fact]
-    public async Task PatchDataElement_InvalidTest_ReturnsPreconditionFailed()
+    public async Task InvalidTestValue_ReturnsPreconditionFailed()
     {
         // Update data element
         var patch = new JsonPatch(
@@ -148,5 +150,128 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
         parsedResponse.Detail.Should().Be("Path `/melding/name` is not equal to the indicated value.");
 
         _dataProcessorMock.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task InvalidTestPath_ReturnsPreconditionFailed()
+    {
+        // Update data element
+        var patch = new JsonPatch(
+            PatchOperation.Test(JsonPointer.Create("melding", "name-error"), JsonNode.Parse("null")),
+            PatchOperation.Replace(JsonPointer.Create("melding", "name"), JsonNode.Parse("null")));
+
+        var response = await CallPatchApi(patch, null);
+
+        var responseString = await LogResponse(response);
+        response.Should().HaveStatusCode(HttpStatusCode.UnprocessableContent);
+
+        var parsedResponse = ParseResponse<ProblemDetails>(responseString);
+        parsedResponse.Detail.Should().Be("Path `/melding/name-error` could not be reached.");
+
+        _dataProcessorMock.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task InvalidJsonPointer_ReturnsUnprocessableContent()
+    {
+        // Update data element
+        var pointer = JsonPointer.Create("not", "a pointer");
+        var patch = new JsonPatch(
+            PatchOperation.Test(pointer, JsonNode.Parse("null")),
+            PatchOperation.Replace(pointer, JsonNode.Parse("\"Ivar\"")));
+
+        var response = await CallPatchApi(patch, null);
+
+        var responseString = await LogResponse(response);
+        response.Should().HaveStatusCode(HttpStatusCode.UnprocessableContent);
+
+        var parsedResponse = ParseResponse<ProblemDetails>(responseString);
+        parsedResponse.Detail.Should().Be("Path `/not/a pointer` could not be reached.");
+
+        _dataProcessorMock.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task TestEmptyListAndInsertElement_ReturnsNewModel()
+    {
+        // Update data element
+        var pointer = JsonPointer.Create("melding", "nested_list");
+        var patch = new JsonPatch(
+            PatchOperation.Test(pointer, JsonNode.Parse("""[]""")),
+            PatchOperation.Add(pointer, JsonNode.Parse("""[{"key": "newKey"}]""")));
+
+        var response = await CallPatchApi(patch, null);
+
+        var responseString = await LogResponse(response);
+        response.Should().HaveStatusCode(HttpStatusCode.OK);
+
+        var parsedResponse = ParseResponse<DataPatchResponse>(responseString);
+        var newModel = parsedResponse.NewDataModel.Should().BeOfType<JsonElement>().Which.Deserialize<Skjema>()!;
+        var listItem = newModel.Melding.NestedList.Should().ContainSingle().Which;
+        listItem.Key.Should().Be("newKey");
+
+        parsedResponse.ValidationIssues
+            .Should().ContainKey("required").WhoseValue
+            .Should().Contain(i => i.Field == "melding.name");
+
+        _dataProcessorMock.Verify(
+            p => p.ProcessDataWrite(
+                It.IsAny<Instance>(),
+                It.Is<Guid>(dataId => dataId == DataGuid),
+                It.Is<Skjema>(s=>s.Melding.NestedList.Count == 1),
+                It.Is<Skjema?>(s=> s!.Melding.NestedList.Count == 0)
+                ), Times.Exactly(1));
+        _dataProcessorMock.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task AddItemToNonInitializedList_ReturnsUnprocessableEntity()
+    {
+        // This test fails to initialize the list, thus creating an error
+        // Added this test to ensure that a change in behaviour (when changing json patch library)
+        // is detected
+        var pointer = JsonPointer.Create("melding", "nested_list", 0, "newKey");
+        var patch = new JsonPatch(
+            PatchOperation.Add(pointer, JsonNode.Parse("\"newValue\"")));
+
+        var response = await CallPatchApi(patch, null);
+
+        var responseString = await LogResponse(response);
+        response.Should().HaveStatusCode(HttpStatusCode.UnprocessableEntity);
+
+        var parsedResponse = ParseResponse<ProblemDetails>(responseString);
+        parsedResponse.Detail.Should().Contain("/melding/nested_list/0/newKey");
+
+        _dataProcessorMock.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task InsertNonExistingFieldWithoutTest_ReturnsUnprocessableContent()
+    {
+        // Update data element
+        var pointer = JsonPointer.Create("melding", "non_existing_field");
+        var patch = new JsonPatch(
+            PatchOperation.Add(pointer, JsonNode.Parse("""[{"key": "newKey"}]""")));
+
+        var response = await CallPatchApi(patch, null);
+
+        var responseString = await LogResponse(response);
+        response.Should().HaveStatusCode(HttpStatusCode.UnprocessableContent);
+
+        var parsedResponse = ParseResponse<ProblemDetails>(responseString);
+        parsedResponse.Detail.Should().Contain("The JSON property 'non_existing_field' could not be mapped to any .NET member contained in type");
+
+        _dataProcessorMock.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task ValidationIssueSeverity_IsSerializedNumeric()
+    {
+        var patch = new JsonPatch();
+        var response = await CallPatchApi(patch, null);
+        var responseString = await LogResponse(response);
+        response.Should().HaveStatusCode(HttpStatusCode.OK);
+
+        responseString.Should().Contain("\"severity\":1");
     }
 }

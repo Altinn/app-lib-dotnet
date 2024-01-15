@@ -82,8 +82,7 @@ namespace Altinn.App.Api.Controllers
         }
 
         /// <summary>
-        /// Validate an app instance. This will validate all individual data elements, both the binary elements and the elements bound
-        /// to a model, and then finally the state of the instance.
+        /// Validate an app instance. This will validate a single data element
         /// </summary>
         /// <param name="org">Unique identifier of the organisation responsible for the app.</param>
         /// <param name="app">Application identifier which is unique within an organisation</param>
@@ -143,8 +142,9 @@ namespace Altinn.App.Api.Controllers
                     Code = ValidationIssueCodes.DataElementCodes.DataElementValidatedAtWrongTask,
                     Severity = ValidationIssueSeverity.Warning,
                     DataElementId = element.Id,
-                    Description = AppTextHelper.GetAppText(
-                        ValidationIssueCodes.DataElementCodes.DataElementValidatedAtWrongTask, serviceText, null, "nb")
+                    Description = $"Data element tilhørende task {dataType.TaskId} validert mens instansen står på task {taskId}",
+                    CustomTextKey = ValidationIssueCodes.DataElementCodes.DataElementValidatedAtWrongTask,
+                    CustomTextParams = new List<string>(){dataType.TaskId, taskId},
                 };
                 messages.Add(message);
             }

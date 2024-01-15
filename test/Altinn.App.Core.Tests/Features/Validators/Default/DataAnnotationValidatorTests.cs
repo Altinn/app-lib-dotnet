@@ -88,7 +88,6 @@ public class DataAnnotationValidatorTests : IClassFixture<DataAnnotationsTestFix
                 StringLengthProperty = "12345",
             }
         };
-        var changedFields = new List<string>();
 
         // Act
         var result = await _validator.ValidateFormData(instance, dataElement, data);
@@ -108,7 +107,6 @@ public class DataAnnotationValidatorTests : IClassFixture<DataAnnotationsTestFix
         {
             NestedProperty = new(),
         };
-        var changedFields = new List<string>();
 
         // Act
         var result = await _validator.ValidateFormData(instance, dataElement, data);
@@ -118,7 +116,7 @@ public class DataAnnotationValidatorTests : IClassFixture<DataAnnotationsTestFix
         result.Should().BeEquivalentTo(JsonSerializer.Deserialize<List<ValidationIssue>>("""
             [
               {
-                "severity": "Error",
+                "severity": 1,
                 "instanceId": null,
                 "dataElementId": null,
                 "field": "range",
@@ -128,7 +126,7 @@ public class DataAnnotationValidatorTests : IClassFixture<DataAnnotationsTestFix
                 "customTextKey": null
               },
               {
-                "severity": "Error",
+                "severity": 1,
                 "instanceId": null,
                 "dataElementId": null,
                 "field": "requiredProperty",
@@ -138,7 +136,7 @@ public class DataAnnotationValidatorTests : IClassFixture<DataAnnotationsTestFix
                 "customTextKey": null
               },
               {
-                "severity": "Error",
+                "severity": 1,
                 "instanceId": null,
                 "dataElementId": null,
                 "field": "NestedProperty.range",
@@ -148,7 +146,7 @@ public class DataAnnotationValidatorTests : IClassFixture<DataAnnotationsTestFix
                 "customTextKey": null
               },
               {
-                "severity": "Error",
+                "severity": 1,
                 "instanceId": null,
                 "dataElementId": null,
                 "field": "NestedProperty.requiredProperty",

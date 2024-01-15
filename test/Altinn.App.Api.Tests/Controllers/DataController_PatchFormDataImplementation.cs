@@ -25,13 +25,8 @@ namespace Altinn.App.Api.Tests.Controllers;
 public class DataController_PatchFormDataImplementation : IAsyncDisposable
 {
     // Test data
-    static Guid DataGuid = new ("12345678-1234-1234-1234-123456789123");
-    static Guid InstanceGuid = new ("12345678-1234-1234-1234-123456789124");
-    const string Org = "ttd";
-    const string App = "endring-av-navn";
-    const int InstanceOwnerPartyId = 4766;
-    const string InstanceOwnerId = "4766";
-    private Instance _instance = new ();
+    static readonly Guid DataGuid = new("12345678-1234-1234-1234-123456789123");
+    private readonly Instance _instance = new();
 
     // Service mocks
     private readonly Mock<ILogger<DataController>> _dLoggerMock = new(MockBehavior.Loose);
@@ -142,7 +137,7 @@ public class DataController_PatchFormDataImplementation : IAsyncDisposable
             .ReturnsAsync(validationIssues);
 
         // Act
-        var (response, problemDetails) = await _dataController.PatchFormDataImplementation(_dataType, _dataElement , request, oldModel, _instance);
+        var (response, _) = await _dataController.PatchFormDataImplementation(_dataType, _dataElement, request, oldModel, _instance);
 
         // Assert
         response.Should().NotBeNull();
