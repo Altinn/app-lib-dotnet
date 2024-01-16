@@ -5,6 +5,7 @@ using System.Net;
 using System.Reflection;
 using System.Security.Claims;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Altinn.App.Api.Helpers.RequestHandling;
 using Altinn.App.Api.Infrastructure.Filters;
@@ -476,7 +477,7 @@ namespace Altinn.App.Api.Controllers
                 });
             }
 
-            var (model, problem) = DeserializeModel(oldModel.GetType(), patchResult);
+            var (model, problem) = DeserializeModel(oldModel.GetType(), patchResult.Result!);
             if (problem is not null)
             {
                 return (null!, new ProblemDetails()
@@ -493,7 +494,8 @@ namespace Altinn.App.Api.Controllers
                 await dataProcessor.ProcessDataWrite(instance, Guid.Parse(dataElement.Id), model, oldModel);
             }
 
-            InitializeListsRecursively(model);
+            // Ensure that all lists are changed from null to empty list.
+            ObjectUtils.InitializeListsRecursively(model);
 
             var changedFields = dataPatchRequest.Patch.Operations.Select(o => o.Path.ToString()).ToList();
 
@@ -506,11 +508,11 @@ namespace Altinn.App.Api.Controllers
             return (response, null);
         }
 
-        private static (object model, string? error) DeserializeModel(Type type, PatchResult patchResult)
+        private static (object model, string? error) DeserializeModel(Type type, JsonNode patchResult)
         {
             try
             {
-                var model = patchResult.Result.Deserialize(type, JsonSerializerOptions);
+                var model = patchResult.Deserialize(type, JsonSerializerOptions);
                 if (model is null)
                 {
                     return (null!, "Deserialize patched model returned null");
@@ -522,35 +524,6 @@ namespace Altinn.App.Api.Controllers
             {
                 // Give better feedback when the issue is that the patch contains a path that does not exist in the model
                 return (null!, e.Message);
-            }
-        }
-
-        private static void InitializeListsRecursively(object model)
-        {
-            foreach (var prop in model.GetType().GetProperties(BindingFlags.Public).Where(p=>p.GetIndexParameters().Length == 0))
-            {
-                var value = prop.GetValue(model);
-                if (typeof(IList).IsAssignableFrom(prop.PropertyType))
-                {
-                    if (value is null)
-                    {
-                        // Initialize IList with null value
-                        prop.SetValue(model, Activator.CreateInstance(prop.PropertyType));
-                    }
-                    else
-                    {
-                        foreach (var item in (IList)value)
-                        {
-                            // Recurse into values of a list
-                            InitializeListsRecursively(item);
-                        }
-                    }
-                }
-                else if (value is not null)
-                {
-                    // continue recursion over all properties
-                    InitializeListsRecursively(value);
-                }
             }
         }
 
