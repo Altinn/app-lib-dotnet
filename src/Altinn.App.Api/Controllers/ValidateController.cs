@@ -104,9 +104,6 @@ namespace Altinn.App.Api.Controllers
                 return NotFound();
             }
 
-            // Todo. Figure out where to get this from
-            Dictionary<string, Dictionary<string, string>> serviceText = new Dictionary<string, Dictionary<string, string>>();
-
             if (instance.Process?.CurrentTask?.ElementId == null)
             {
                 throw new ValidationException("Unable to validate instance without a started process.");
@@ -142,7 +139,7 @@ namespace Altinn.App.Api.Controllers
                     Code = ValidationIssueCodes.DataElementCodes.DataElementValidatedAtWrongTask,
                     Severity = ValidationIssueSeverity.Warning,
                     DataElementId = element.Id,
-                    Description = $"Data element tilhørende task {dataType.TaskId} validert mens instansen står på task {taskId}",
+                    Description = $"Data element for task {dataType.TaskId} validated while currentTask is {taskId}",
                     CustomTextKey = ValidationIssueCodes.DataElementCodes.DataElementValidatedAtWrongTask,
                     CustomTextParams = new List<string>(){dataType.TaskId, taskId},
                 };

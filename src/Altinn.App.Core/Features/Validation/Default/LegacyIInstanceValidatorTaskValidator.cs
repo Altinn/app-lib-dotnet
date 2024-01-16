@@ -20,7 +20,7 @@ public class LegacyIInstanceValidatorTaskValidator : ITaskValidator
     /// <summary>
     /// Constructor
     /// </summary>
-    public LegacyIInstanceValidatorTaskValidator(IInstanceValidator? instanceValidator, IOptions<GeneralSettings> generalSettings)
+    public LegacyIInstanceValidatorTaskValidator(IOptions<GeneralSettings> generalSettings, IInstanceValidator? instanceValidator = null)
     {
         _instanceValidator = instanceValidator;
         _generalSettings = generalSettings.Value;
@@ -30,6 +30,9 @@ public class LegacyIInstanceValidatorTaskValidator : ITaskValidator
     /// Run the legacy validator for all tasks
     /// </summary>
     public string TaskId => "*";
+
+    /// <inheritdoc />
+    public string ValidationSource => _instanceValidator?.GetType().FullName ?? GetType().FullName!;
 
     /// <inheritdoc />
     public async Task<List<ValidationIssue>> ValidateTask(Instance instance, string taskId)

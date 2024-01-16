@@ -1,6 +1,8 @@
 #nullable enable
 
+using System.Collections;
 using System.Net;
+using System.Reflection;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -491,6 +493,8 @@ namespace Altinn.App.Api.Controllers
                 await dataProcessor.ProcessDataWrite(instance, Guid.Parse(dataElement.Id), model, oldModel);
             }
 
+            InitializeListsRecursively(model);
+
             var changedFields = dataPatchRequest.Patch.Operations.Select(o => o.Path.ToString()).ToList();
 
             var validationIssues = await _validationService.ValidateFormData(instance, dataElement, dataType, model, changedFields, dataPatchRequest.IgnoredValidators);
@@ -518,6 +522,35 @@ namespace Altinn.App.Api.Controllers
             {
                 // Give better feedback when the issue is that the patch contains a path that does not exist in the model
                 return (null!, e.Message);
+            }
+        }
+
+        private static void InitializeListsRecursively(object model)
+        {
+            foreach (var prop in model.GetType().GetProperties(BindingFlags.Public).Where(p=>p.GetIndexParameters().Length == 0))
+            {
+                var value = prop.GetValue(model);
+                if (typeof(IList).IsAssignableFrom(prop.PropertyType))
+                {
+                    if (value is null)
+                    {
+                        // Initialize IList with null value
+                        prop.SetValue(model, Activator.CreateInstance(prop.PropertyType));
+                    }
+                    else
+                    {
+                        foreach (var item in (IList)value)
+                        {
+                            // Recurse into values of a list
+                            InitializeListsRecursively(item);
+                        }
+                    }
+                }
+                else if (value is not null)
+                {
+                    // continue recursion over all properties
+                    InitializeListsRecursively(value);
+                }
             }
         }
 
