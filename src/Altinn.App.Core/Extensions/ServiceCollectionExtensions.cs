@@ -134,7 +134,7 @@ namespace Altinn.App.Core.Extensions
         {
             // Services for Altinn App
             services.TryAddTransient<IPDP, PDPAppSI>();
-            AddValidationServices(services);
+            AddValidationServices(services, configuration);
             services.TryAddTransient<IPrefill, PrefillSI>();
             services.TryAddTransient<ISigningCredentialsResolver, SigningCredentialsResolver>();
             services.TryAddSingleton<IAppResources, AppResourcesSI>();
@@ -178,11 +178,18 @@ namespace Altinn.App.Core.Extensions
             }
         }
 
-        private static void AddValidationServices(IServiceCollection services)
+        private static void AddValidationServices(IServiceCollection services, IConfiguration configuration)
         {
             services.TryAddTransient<IValidationService, ValidationService>();
-            services.TryAddTransient<IFormDataValidator, RequiredLayoutValidator>();
-            services.TryAddTransient<IFormDataValidator, ExpressionValidator>();
+            if (configuration.GetSection("AppSettings").Get<AppSettings>()?.RequiredValidation == true)
+            {
+                services.TryAddTransient<IFormDataValidator, RequiredLayoutValidator>();
+            }
+
+            if (configuration.GetSection("AppSettings").Get<AppSettings>()?.ExpressionValidation == true)
+            {
+                services.TryAddTransient<IFormDataValidator, ExpressionValidator>();
+            }
             services.TryAddTransient<IFormDataValidator, DataAnnotationValidator>();
             services.TryAddTransient<IFormDataValidator, LegacyIInstanceValidatorFormDataValidator>();
             services.TryAddTransient<IDataElementValidator, DefaultDataElementValidator>();
