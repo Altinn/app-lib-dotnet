@@ -13,6 +13,7 @@ using Altinn.App.Core.Features;
 using Xunit;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
+using Json.More;
 using Json.Patch;
 using Json.Pointer;
 using Microsoft.AspNetCore.Mvc;
@@ -245,8 +246,15 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
         var (_, _, firstResponse) = await CallPatchApi<DataPatchResponse>(createFirstElementPatch, null, HttpStatusCode.OK);
 
         var firstData = firstResponse.NewDataModel.Should().BeOfType<JsonElement>().Which;
-        firstData.GetProperty("melding").GetProperty("nested_list").EnumerateArray().First().GetProperty("values")
-            .GetArrayLength().Should().Be(0);
+        var firstListItem = firstData.GetProperty("melding").GetProperty("nested_list").EnumerateArray().First();
+        firstListItem.GetProperty("values").GetArrayLength().Should().Be(0);
+
+        var addValuePatch = new JsonPatch(
+            PatchOperation.Test(pointer.Combine("0"), firstListItem.AsNode()),
+            PatchOperation.Remove(pointer.Combine("0")));
+        var (_, _, secondResponse) = await CallPatchApi<DataPatchResponse>(addValuePatch, null, HttpStatusCode.OK);
+        var secondData = secondResponse.NewDataModel.Should().BeOfType<JsonElement>().Which;
+        secondData.GetProperty("melding").GetProperty("nested_list").GetArrayLength().Should().Be(0);
     }
 
     [Fact]
