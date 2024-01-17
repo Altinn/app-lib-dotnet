@@ -6,6 +6,7 @@ using Altinn.App.Api.Tests.Mocks.Event;
 using Altinn.App.Api.Tests.Mocks.Services;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Payment;
 using Altinn.App.Core.Features.Payment.Providers.Nets;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
@@ -65,6 +66,7 @@ void ConfigureMockServices(IServiceCollection services, ConfigurationManager con
     services.AddTransient<IInstanceEventClient, InstanceEventClientMock>();
     services.AddTransient<IAppModel, AppModelMock>();
     services.AddTransient<INetsClient, NetsClientMock>();
+    services.AddTransient<IOrderDetailsFormatter, OrderDetailsFormatterMock>();
 }
 
 void Configure()

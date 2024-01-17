@@ -1,9 +1,10 @@
 #nullable enable
 
+using Altinn.App.Core.Features.Payment;
 using Altinn.App.Core.Features.Payment.Models;
 using Altinn.App.Core.Features.Payment.Providers;
 using Altinn.App.Core.Features.Payment.Services;
-using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.Payment;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Moq;
@@ -15,17 +16,17 @@ public class PaymentServiceTests
 {
     private readonly PaymentService _paymentService;
     private readonly Mock<IPaymentProcessor> _paymentProcessor = new();
-    private readonly Mock<IDataClient> _dataClient = new();
+    private readonly Mock<IOrderDetailsFormatter> _orderDetailsFormatter = new();
 
     public PaymentServiceTests()
     {
-        _paymentService = new PaymentService(_paymentProcessor.Object, _dataClient.Object);
+        _paymentService = new PaymentService(_paymentProcessor.Object, _orderDetailsFormatter.Object);
     }
 
     private void VerifyNoOtherCalls()
     {
         _paymentProcessor.VerifyNoOtherCalls();
-        _dataClient.VerifyNoOtherCalls();
+        _orderDetailsFormatter.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -33,7 +34,7 @@ public class PaymentServiceTests
     {
         // Arrange
         Instance instance = new Instance();
-        PaymentOrder order = new PaymentOrder()
+        OrderDetails order = new OrderDetails()
         {
             Currency = "NOK",
             OrderLines = new List<PaymentOrderLine>
@@ -47,22 +48,29 @@ public class PaymentServiceTests
                 }
             }
         };
-        PaymentStartResult reference = new()
+
+        var paymentReference = "124";
+        var redirectUrl = "https://example.com";
+
+        PaymentInformation paymentInformation = new()
         {
-            PaymentReference = "124",
-            RedirectUrl = "https://example.com",
+            PaymentReference = paymentReference,
+            RedirectUrl = redirectUrl,
+            OrderDetails = order
         };
-        _paymentProcessor.Setup(p => p.StartPayment(instance)).ReturnsAsync(reference);
+
+        _orderDetailsFormatter.Setup(p => p.GetOrderDetails(instance)).ReturnsAsync(order);
+        _paymentProcessor.Setup(p => p.StartPayment(instance, order)).ReturnsAsync(paymentInformation);
 
         // Act
-        var result = await _paymentService.StartPayment(instance);
+        PaymentInformation paymentInformationResult = await _paymentService.StartPayment(instance);
 
         // Assert
-        result.RedirectUrl.Should().Be(reference.RedirectUrl);
+        paymentInformationResult.RedirectUrl.Should().Be(paymentInformationResult.RedirectUrl);
 
         // Verify calls
-        _paymentProcessor.Verify(p => p.StartPayment(instance), Times.Once);
-        _dataClient.Verify(d => d.InsertBinaryData(It.IsAny<string>(), "payment-reference", "application/text", "payment-reference", It.IsAny<Stream>(), It.IsAny<string?>()), Times.Once);
+        _paymentProcessor.Verify(p => p.StartPayment(instance, order), Times.Once);
+        _orderDetailsFormatter.Verify(p => p.GetOrderDetails(instance), Times.Once);
         VerifyNoOtherCalls();
     }
 }

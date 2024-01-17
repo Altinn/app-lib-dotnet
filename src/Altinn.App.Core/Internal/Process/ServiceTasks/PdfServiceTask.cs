@@ -43,25 +43,16 @@ public class PdfServiceTask : IServiceTask
     public async Task Execute(string taskId, Instance instance)
     {
         ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
-        List<DataType> connectedDataTypes = appMetadata.DataTypes.FindAll(dt => dt.TaskId == taskId);
-        var newPdfServiceEnabled = _featureManager.IsEnabledAsync(FeatureFlags.NewPdfGeneration);
-        foreach (DataType dataType in connectedDataTypes)
-        {
-            bool generatePdf = dataType.AppLogic?.ClassRef != null && dataType.EnablePdfCreation;
-            if (generatePdf && await newPdfServiceEnabled && instance.Data.Exists(de => de.DataType == dataType.Id))
-            {
-                await _pdfService.GenerateAndStorePdf(instance, taskId, CancellationToken.None);
-                return;
-            }
+        bool pdfEnabled = appMetadata.DataTypes.Any(dt =>
+            dt.TaskId == taskId && 
+            dt.AppLogic?.ClassRef != null && 
+            dt.EnablePdfCreation);
 
-            foreach (DataElement dataElement in instance.Data.FindAll(de => de.DataType == dataType.Id))
-            {
-                if (generatePdf)
-                {
-                    Type dataElementType = _appModel.GetModelType(dataType.AppLogic.ClassRef);
-                    await _pdfService.GenerateAndStoreReceiptPDF(instance, taskId, dataElement, dataElementType);
-                }
-            }
+        if (!pdfEnabled)
+        {
+            return;
         }
+
+        await _pdfService.GenerateAndStorePdf(instance, taskId, CancellationToken.None);
     }
 }

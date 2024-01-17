@@ -14,16 +14,16 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks
         /// <summary>
         /// Any logic to be executed when a task is started should be put in this method.
         /// </summary>
-        Task Start(string elementId, Instance instance, Dictionary<string, string> prefill);
+        Task Start(string taskId, Instance instance, Dictionary<string, string> prefill);
 
         /// <summary>
         /// Any logic to be executed when a task is ended should be put in this method.
         /// </summary>
-        Task End(string elementId, Instance instance);
+        Task End(string taskId, Instance instance);
 
         /// <summary>
         /// Any logic to be executed when a task is abandoned should be put in this method.
         /// </summary>
-        Task Abandon(string elementId, Instance instance);
+        Task Abandon(string taskId, Instance instance);
     }
 }

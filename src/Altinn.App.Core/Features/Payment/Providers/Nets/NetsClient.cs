@@ -5,19 +5,27 @@ using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Features.Payment.Providers.Nets;
 
-
+/// <summary>
+/// Http client for Nets API
+/// </summary>
 public class NetsClient : INetsClient
 {
     private readonly HttpClient _httpClient;
     private readonly NetsPaymentSettings _settings;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NetsClient"/> class.
+    /// </summary>
+    /// <param name="httpClient"></param>
+    /// <param name="settings"></param>
     public NetsClient(HttpClient httpClient, IOptions<NetsPaymentSettings> settings)
     {
-        _httpClient = httpClient;
         _settings = settings.Value;
+
+        _httpClient = httpClient;
         _httpClient.BaseAddress = new Uri(_settings.BaseUrl);
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(_settings.SecretApiKey);
-        // _httpClient.DefaultRequestHeaders.Add("CommercePlatformTag", "Altinn 3");
+        _httpClient.DefaultRequestHeaders.Add("CommercePlatformTag", "Altinn 3");
     }
 
     /// <summary>
@@ -38,9 +46,17 @@ public class NetsClient : INetsClient
         return await HttpApiResult<NetsPaymentSuccess>.FromHttpResponse(response);
     }
 
+    /// <inheritdoc/>
     public async Task<HttpApiResult<NetsPaymentFull>> RetrievePayment(string paymentId)
     {
         var response = await _httpClient.GetAsync($"/v1/payments/{paymentId}");
         return await HttpApiResult<NetsPaymentFull>.FromHttpResponse(response);
+    }
+
+    /// <inheritdoc/>
+    public async Task<HttpApiResult<bool>> CancelPayment(string paymentId)
+    {
+        var response = await _httpClient.PostAsync($"v1/payments/{paymentId}/cancels", null);
+        return await HttpApiResult<bool>.FromHttpResponse(response);
     }
 }

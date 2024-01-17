@@ -20,12 +20,18 @@ namespace Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties
         //[XmlElement(ElementName = "taskType", Namespace = "http://altinn.no/process/task", IsNullable = true)]
         [XmlElement("taskType", Namespace = "http://altinn.no/process")]
         public string? TaskType { get; set; }
-        
-        
+
+
         /// <summary>
         /// Gets or sets the configuration for signature
         /// </summary>
         [XmlElement("signatureConfig", Namespace = "http://altinn.no/process")]
         public AltinnSignatureConfiguration? SignatureConfiguration { get; set; } = new AltinnSignatureConfiguration();
+
+        /// <summary>
+        /// Gets or sets the configuration for signature
+        /// </summary>
+        [XmlElement("paymentConfig", Namespace = "http://altinn.no/process")]
+        public AltinnPaymentConfiguration? PaymentConfiguration { get; set; } = new AltinnPaymentConfiguration();
     }
 }

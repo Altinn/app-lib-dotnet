@@ -18,5 +18,5 @@ public interface IOrderDetailsFormatter
     /// </remarks>
     /// <param name="instance"></param>
     /// <returns>The Payment order that contains information about the requested payment</returns>
-    Task<PaymentOrder> GetOrderDetails(Instance instance);
+    Task<OrderDetails> GetOrderDetails(Instance instance);
 }

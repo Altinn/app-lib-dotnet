@@ -3,7 +3,7 @@ namespace Altinn.App.Core.Features.Payment.Models;
 /// <summary>
 /// Wrapping class to represent a payment order
 /// </summary>
-public class PaymentOrder
+public class OrderDetails
 {
     /// <summary>
     /// Optional reference to the order. Could be used by other systems to identify the order

@@ -1,4 +1,6 @@
+using Altinn.App.Core.Features.Payment.Models;
 using Altinn.App.Core.Features.Payment.Providers.Nets.Models;
+using Altinn.App.Core.Internal.Payment;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
@@ -6,7 +8,7 @@ using Microsoft.Extensions.Options;
 namespace Altinn.App.Core.Features.Payment.Providers.Nets;
 
 /// <summary>
-/// 
+/// Implementation of IPaymentProcessor for Nets.
 /// </summary>
 public class NetsPaymentProcessor : IPaymentProcessor
 {
@@ -15,7 +17,7 @@ public class NetsPaymentProcessor : IPaymentProcessor
     private readonly IOrderDetailsFormatter? _orderDetailsFormatter;
 
     /// <summary>
-    /// 
+    /// Implementation of IPaymentProcessor for Nets.
     /// </summary>
     /// <param name="settings"></param>
     /// <param name="netsClient"></param>
@@ -28,14 +30,13 @@ public class NetsPaymentProcessor : IPaymentProcessor
     }
 
     /// <inheritdoc />
-    public async Task<PaymentStartResult> StartPayment(Instance instance)
+    public async Task<PaymentInformation> StartPayment(Instance instance, OrderDetails orderDetails)
     {
         if (_orderDetailsFormatter == null)
         {
-            throw new Exception("No IOrderDetailsFormatter implementation found. Implement the interface and add it as a transient service in Program.cs");
+            throw new InvalidOperationException("No IOrderDetailsFormatter implementation found. Implement the interface and add it as a transient service in Program.cs");
         }
 
-        var orderDetails = await _orderDetailsFormatter.GetOrderDetails(instance);
         var org = instance.Org;
         var app = instance.AppId.Split('/')[1];
         var payment = new NetsCreatePayment()
@@ -65,8 +66,8 @@ public class NetsPaymentProcessor : IPaymentProcessor
             {
                 IntegrationType = _settings.Value.IntegrationType,
                 TermsUrl = _settings.Value.TermsUrl,
-                ReturnUrl = $"https://{org}.apps.altinn.no/{org}/{app}/api/v1/paymentCallback",
-                CancelUrl = $"https://{org}.apps.altinn.no/{org}/{app}/api/v1/paymentCallback",
+                ReturnUrl = $"https://{org}.apps.altinn.no/{org}/{app}/api/v1/payments/callback",
+                CancelUrl = $"https://{org}.apps.altinn.no/{org}/{app}/api/v1/payments/callback",
                 Appearance = new()
                 {
                     DisplayOptions = new()
@@ -85,7 +86,7 @@ public class NetsPaymentProcessor : IPaymentProcessor
                     {
                         EventName = "payment.checkout.completed",
                         Authorization = "myAuthddd",
-                        Url = $"https://{org}.apps.altinn.no/{org}/{app}/api/v1/paymentCallback",
+                        Url = $"https://{org}.apps.altinn.no/{org}/{app}/api/v1/payments/callback",
                     }
                 ]
             }
@@ -93,21 +94,28 @@ public class NetsPaymentProcessor : IPaymentProcessor
         var paymentCreateResult = await _netsClient.CreatePayment(payment);
         if (!paymentCreateResult.IsSuccess || paymentCreateResult.Success.HostedPaymentPageUrl is null)
         {
-            throw new Exception("Failed to create payment\n" + paymentCreateResult.RawError);
+            throw new InvalidOperationException("Failed to create payment\n" + paymentCreateResult.RawError);
         }
 
-        var url = paymentCreateResult.Success.HostedPaymentPageUrl; // TODO: Return url also
+        var url = paymentCreateResult.Success.HostedPaymentPageUrl;
         var paymentId = paymentCreateResult.Success.PaymentId;
 
-        return new PaymentStartResult
+        return new PaymentInformation
         {
-            RedirectUrl = url,
             PaymentReference = paymentId,
+            RedirectUrl = url,
+            OrderDetails = orderDetails
         };
     }
 
     /// <inheritdoc />
-    public async Task<string> HandleCallback(HttpRequest request)
+    public async Task CancelPayment(Instance instance, string paymentReference)
+    {
+        await _netsClient.CancelPayment(paymentReference);
+    }
+
+    /// <inheritdoc />
+    public Task<string> HandleCallback(HttpRequest request)
     {
         throw new NotImplementedException();
     }

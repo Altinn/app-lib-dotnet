@@ -1,8 +1,11 @@
-using System.Net;
-using System.Runtime.Serialization;
-using Altinn.App.Core.Models.Validation;
-
 namespace Altinn.App.Core.Models.UserAction;
+
+public enum ResultType
+{
+    Success,
+    Failure,
+    Redirect
+}
 
 /// <summary>
 /// Represents the result of a user action
@@ -12,23 +15,28 @@ public class UserActionResult
     /// <summary>
     /// Gets or sets a value indicating whether the user action was a success
     /// </summary>
-    public bool Success { get; set; }
-    
+    public ResultType ResultType { get; set; }
+
     /// <summary>
     /// Gets or sets a dictionary of updated data models. Key should be dataTypeId
     /// </summary>
-    public Dictionary<string, object?>? UpdatedDataModels { get; set; } 
-    
+    public Dictionary<string, object?>? UpdatedDataModels { get; set; }
+
     /// <summary>
     /// Actions for the client to perform after the user action has been handled
     /// </summary>
     public List<ClientAction>? ClientActions { get; set; }
-    
+
     /// <summary>
     /// Validation issues that should be displayed to the user
     /// </summary>
     public ActionError? Error { get; set; }
-    
+
+    /// <summary>
+    /// If this is set, the client should redirect to this url
+    /// </summary>
+    public string? RedirectUrl { get; set; }
+
     /// <summary>
     /// Creates a success result
     /// </summary>
@@ -38,12 +46,12 @@ public class UserActionResult
     {
         var userActionResult = new UserActionResult
         {
-            Success = true,
+            ResultType = ResultType.Success,
             ClientActions = clientActions
         };
         return userActionResult;
     }
-    
+
     /// <summary>
     /// Creates a failure result
     /// </summary>
@@ -54,12 +62,26 @@ public class UserActionResult
     {
         return new UserActionResult
         {
-            Success = false,
+            ResultType = ResultType.Failure,
             ClientActions = clientActions,
             Error = error
         };
     }
-    
+
+    /// <summary>
+    /// Creates a redirect result
+    /// </summary>
+    /// <param name="redirectUrl"></param>
+    /// <returns></returns>
+    public static UserActionResult RedirectResult(string redirectUrl)
+    {
+        return new UserActionResult
+        {
+            ResultType = ResultType.Redirect,
+            RedirectUrl = redirectUrl
+        };
+    }
+
     /// <summary>
     /// Adds an updated data model to the result
     /// </summary>

@@ -18,7 +18,7 @@ public class HttpApiResult<T>
 
     [MemberNotNullWhen(true, nameof(Success))]
     public bool IsSuccess => Success is not null;
-    public  T? Success { get; init; }
+    public T? Success { get; init; }
     public HttpStatusCode Status { get; set; }
     public string? RawError { get; init; }
 
@@ -26,6 +26,15 @@ public class HttpApiResult<T>
     {
         if (response.IsSuccessStatusCode)
         {
+            if (response.StatusCode == HttpStatusCode.NoContent)
+            {
+                return new HttpApiResult<T>
+                {
+                    Status = response.StatusCode,
+                    Success = default,
+                };
+            }
+
             try
             {
                 return new HttpApiResult<T>
@@ -45,9 +54,9 @@ public class HttpApiResult<T>
         }
 
         return new()
-            {
-                Status = response.StatusCode,
-                RawError = await response.Content.ReadAsStringAsync(),
+        {
+            Status = response.StatusCode,
+            RawError = await response.Content.ReadAsStringAsync(),
         };
     }
 }

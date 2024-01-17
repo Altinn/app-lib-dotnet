@@ -1,6 +1,5 @@
-using System.Text.Json;
-using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Features.Payment.Providers;
+using Altinn.App.Core.Internal.Payment;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
 
@@ -12,24 +11,27 @@ namespace Altinn.App.Core.Features.Payment.Services;
 public class PaymentService : IPaymentService
 {
     private readonly IPaymentProcessor _paymentProcessor;
-    private readonly IDataClient _dataClient;
+    private readonly IOrderDetailsFormatter _orderDetailsFormatter;
 
     /// <inheritdoc/>
-    public PaymentService(IPaymentProcessor paymentProcessor, IDataClient dataClient)
+    public PaymentService(IPaymentProcessor paymentProcessor, IOrderDetailsFormatter orderDetailsFormatter)
     {
         _paymentProcessor = paymentProcessor;
-        _dataClient = dataClient;
+        _orderDetailsFormatter = orderDetailsFormatter;
     }
 
     /// <inheritdoc/>
-    public async Task<PaymentStartResult> StartPayment(Instance instance)
+    public async Task<PaymentInformation> StartPayment(Instance instance)
     {
-        var reference = await _paymentProcessor.StartPayment(instance);
-        using var referenceStream = new MemoryStream();
-        await JsonSerializer.SerializeAsync(referenceStream, reference, new JsonSerializerOptions(JsonSerializerDefaults.Web));
-        referenceStream.Position = 0;
-        await _dataClient.InsertBinaryData(instance.Id, "payment-reference", "application/text", "payment-reference", referenceStream);
-        return reference;
+        var orderDetails = await _orderDetailsFormatter.GetOrderDetails(instance);
+
+        return await _paymentProcessor.StartPayment(instance, orderDetails);
+    }
+
+    /// <inheritdoc/>
+    public async Task CancelPayment(Instance instance, PaymentInformation paymentInformation)
+    {
+        await _paymentProcessor.CancelPayment(instance, paymentInformation.PaymentReference);
     }
 
     /// <inheritdoc/>

@@ -3,8 +3,8 @@ using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features.Action;
-using Altinn.App.Core.Internal.Exceptions;
 using Altinn.App.Core.Internal.Instances;
+using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.UserAction;
 using Microsoft.AspNetCore.Authorization;
@@ -51,6 +51,7 @@ public class ActionsController : ControllerBase
     [Authorize]
     [ProducesResponseType(typeof(UserActionResponse), 200)]
     [ProducesResponseType(typeof(ProblemDetails), 400)]
+    [ProducesResponseType(typeof(RedirectResult), 302)]
     [ProducesResponseType(401)]
     public async Task<ActionResult<UserActionResponse>> Perform(
         [FromRoute] string org,
@@ -111,7 +112,11 @@ public class ActionsController : ControllerBase
 
         var result = await actionHandler.HandleAction(userActionContext);
 
-        if (!result.Success)
+        if (result.ResultType == ResultType.Redirect)
+        {
+            return new RedirectResult(result.RedirectUrl ?? throw new ProcessException("Redirect URL missing"));
+        }
+        else if (result.ResultType != ResultType.Success)
         {
             return new BadRequestObjectResult(new UserActionResponse()
             {
