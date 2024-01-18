@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Reflection;
 
 namespace Altinn.App.Core.Helpers;
 
@@ -36,6 +35,12 @@ public static class ObjectUtils
             else if (prop.GetIndexParameters().Length == 0)
             {
                 var value = prop.GetValue(model);
+
+                if (value is "")
+                {
+                    // Initialize string with null value (xml serialization does not always preserve "")
+                    prop.SetValue(model, null);
+                }
 
                 // continue recursion over all properties
                 if (value is not null)

@@ -474,6 +474,11 @@ namespace Altinn.App.Api.Controllers
                     Detail = patchResult.Error,
                     Type = "https://datatracker.ietf.org/doc/html/rfc6902/",
                     Status = testOperationFailed ? (int)HttpStatusCode.PreconditionFailed : (int)HttpStatusCode.UnprocessableContent,
+                    Extensions = new Dictionary<string, object?>()
+                    {
+                        { "previousModel", oldModel },
+                        { "patchOperationIndex", patchResult.Operation },
+                    }
                 });
             }
 

@@ -64,19 +64,22 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
     // Helper method to call the API
     private async Task<(HttpResponseMessage response, string responseString, TResponse parsedResponse)> CallPatchApi<TResponse>(JsonPatch patch, List<string>? ignoredValidators, HttpStatusCode expectedStatus)
     {
+        _outputHelper.WriteLine($"Calling PATCH /{Org}/{App}/instances/{InstanceId}/data/{DataGuid}");
         using var httpClient = GetRootedClient(Org, App);
         string token = PrincipalUtil.GetToken(1337, null);
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var serializedPatch = JsonSerializer.Serialize(new DataPatchRequest()
+        {
+            Patch = patch,
+            IgnoredValidators = ignoredValidators,
+        }, JsonSerializerOptions);
+        _outputHelper.WriteLine(serializedPatch);
         using var updateDataElementContent =
-            new StringContent(
-                JsonSerializer.Serialize(new DataPatchRequest()
-                {
-                    Patch = patch,
-                    IgnoredValidators = ignoredValidators,
-                }, JsonSerializerOptions), System.Text.Encoding.UTF8, "application/json");
+            new StringContent(serializedPatch, System.Text.Encoding.UTF8, "application/json");
         var response =  await httpClient.PatchAsync($"/{Org}/{App}/instances/{InstanceId}/data/{DataGuid}", updateDataElementContent);
         var responseString = await response.Content.ReadAsStringAsync();
         using var responseParsedRaw = JsonDocument.Parse(responseString);
+        _outputHelper.WriteLine("\nResponse:");
         _outputHelper.WriteLine(JsonSerializer.Serialize(responseParsedRaw, JsonSerializerOptions));
         response.Should().HaveStatusCode(expectedStatus);
         var responseObject = JsonSerializer.Deserialize<TResponse>(responseString, JsonSerializerOptions)!;
@@ -236,7 +239,6 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
     [Fact]
     public async Task UpdateContainerWithListProperty_ReturnsCorrectDataModel()
     {
-        var model = new Skjema();
         var pointer = JsonPointer.Create("melding", "nested_list");
         var createFirstElementPatch = new JsonPatch(
             PatchOperation.Test(pointer, JsonNode.Parse("[]")),
@@ -255,6 +257,82 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
         var (_, _, secondResponse) = await CallPatchApi<DataPatchResponse>(addValuePatch, null, HttpStatusCode.OK);
         var secondData = secondResponse.NewDataModel.Should().BeOfType<JsonElement>().Which;
         secondData.GetProperty("melding").GetProperty("nested_list").GetArrayLength().Should().Be(0);
+    }
+
+    [Fact]
+    public async Task RemoveStringProperty_ReturnsCorrectDataModel()
+    {
+        var model = new Skjema();
+        var pointer = JsonPointer.Create("melding", "name");
+        var createFirstElementPatch = new JsonPatch(
+            PatchOperation.Test(pointer, JsonNode.Parse("null")),
+            PatchOperation.Add(pointer, JsonNode.Parse("\"myValue\"")),
+            PatchOperation.Remove(pointer)
+        );
+
+        var (_, _, firstResponse) = await CallPatchApi<DataPatchResponse>(createFirstElementPatch, null, HttpStatusCode.OK);
+
+        var firstData = firstResponse.NewDataModel.Should().BeOfType<JsonElement>().Which;
+        var firstListItem = firstData.GetProperty("melding").GetProperty("name");
+        firstListItem.ValueKind.Should().Be(JsonValueKind.Null);
+
+        var addValuePatch = new JsonPatch(
+            PatchOperation.Test(pointer, firstListItem.AsNode()),
+            PatchOperation.Replace(pointer, JsonNode.Parse("\"mySecondValue\"")));
+        var (_, _, secondResponse) = await CallPatchApi<DataPatchResponse>(addValuePatch, null, HttpStatusCode.OK);
+        var secondData = secondResponse.NewDataModel.Should().BeOfType<JsonElement>().Which;
+        var secondValue = secondData.GetProperty("melding").GetProperty("name");
+        secondValue.GetString().Should().Be("mySecondValue");
+    }
+
+    [Fact]
+    public async Task SetStringPropertyToEmtpy_ReturnsCorrectDataModel()
+    {
+        var model = new Skjema();
+        var pointer = JsonPointer.Create("melding", "name");
+        var createFirstElementPatch = new JsonPatch(
+            PatchOperation.Test(pointer, JsonNode.Parse("null")),
+            PatchOperation.Add(pointer, JsonNode.Parse("\"\""))
+        );
+
+        var (_, _, firstResponse) = await CallPatchApi<DataPatchResponse>(createFirstElementPatch, null, HttpStatusCode.OK);
+
+        var firstData = firstResponse.NewDataModel.Should().BeOfType<JsonElement>().Which;
+        var firstListItem = firstData.GetProperty("melding").GetProperty("name");
+        firstListItem.ValueKind.Should().Be(JsonValueKind.Null);;
+
+        var addValuePatch = new JsonPatch(
+            PatchOperation.Test(pointer, firstListItem.AsNode()),
+            PatchOperation.Replace(pointer, JsonNode.Parse("\"mySecondValue\"")));
+        var (_, _, secondResponse) = await CallPatchApi<DataPatchResponse>(addValuePatch, null, HttpStatusCode.OK);
+        var secondData = secondResponse.NewDataModel.Should().BeOfType<JsonElement>().Which;
+        var secondValue = secondData.GetProperty("melding").GetProperty("name");
+        secondValue.GetString().Should().Be("mySecondValue");
+    }
+
+    [Fact]
+    public async Task SetAttributeTagPropertyToEmtpy_ReturnsCorrectDataModel()
+    {
+        var model = new Skjema();
+        var pointer = JsonPointer.Create("melding", "tag-with-attribute");
+        var createFirstElementPatch = new JsonPatch(
+            PatchOperation.Test(pointer, JsonNode.Parse("null")),
+            PatchOperation.Add(pointer, JsonNode.Parse("""{"value": "" }"""))
+        );
+
+        var (_, _, firstResponse) = await CallPatchApi<DataPatchResponse>(createFirstElementPatch, null, HttpStatusCode.OK);
+
+        var firstData = firstResponse.NewDataModel.Should().BeOfType<JsonElement>().Which;
+        var firstListItem = firstData.GetProperty("melding").GetProperty("tag-with-attribute");
+        firstListItem.GetProperty("value").ValueKind.Should().Be(JsonValueKind.Null);
+
+        var addValuePatch = new JsonPatch(
+            PatchOperation.Test(pointer, firstListItem.AsNode()),
+            PatchOperation.Replace(pointer.Combine("value"), JsonNode.Parse("null")));
+        var (_, _, secondResponse) = await CallPatchApi<DataPatchResponse>(addValuePatch, null, HttpStatusCode.OK);
+        var secondData = secondResponse.NewDataModel.Should().BeOfType<JsonElement>().Which;
+        var secondValue = secondData.GetProperty("melding").GetProperty("name");
+        secondValue.ValueKind.Should().Be(JsonValueKind.Null);
     }
 
     [Fact]
