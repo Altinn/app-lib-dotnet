@@ -180,7 +180,7 @@ public class LayoutEvaluatorState
     }
 
     /// <summary>
-    /// Get all of the resoved keys (including all possible indexes) from a data model key
+    /// Get all of the resolved keys (including all possible indexes) from a data model key
     /// </summary>
     public string[] GetResolvedKeys(string key)
     {

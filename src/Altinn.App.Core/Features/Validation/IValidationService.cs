@@ -9,7 +9,7 @@ namespace Altinn.App.Core.Features.Validation;
 public interface IValidationService
 {
     /// <summary>
-    /// Validates the instance with all data elements on the current task and ensures that the instance is read for process next.
+    /// Validates the instance with all data elements on the current task and ensures that the instance is ready for process next.
     /// </summary>
     /// <remarks>
     /// This method executes validations in the following interfaces

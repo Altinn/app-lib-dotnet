@@ -107,7 +107,7 @@ public class ValidationService : IValidationService
             string app = instance.AppId.Split("/")[1];
             int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
             var data = await _dataClient.GetFormData(instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, Guid.Parse(dataElement.Id)); // TODO: Add method that accepts instance and dataElement
-            var formDataIssuesDictionary = await ValidateFormData(instance, dataElement, dataType, data, null);
+            var formDataIssuesDictionary = await ValidateFormData(instance, dataElement, dataType, data);
 
             return (await dataElementsIssuesTask).SelectMany(x=>x)
                 .Concat(formDataIssuesDictionary.SelectMany(kv=>kv.Value))
@@ -131,7 +131,7 @@ public class ValidationService : IValidationService
             .Where(dv => dv.DataType == "*" || dv.DataType == dataType.Id)
             // .Concat(_serviceProvider.GetKeyedServices<IFormDataValidator>(dataElement.DataType))
             .Where(dv => ignoredValidators?.Contains(dv.ValidationSource) != true)
-            .Where(dv => changedFields is null ? true : dv.ShouldRun(changedFields))
+            .Where(dv => changedFields is null || dv.ShouldRun(changedFields))
             .ToArray();
 
         var issuesLists = await Task.WhenAll(dataValidators.Select(async (v) =>
