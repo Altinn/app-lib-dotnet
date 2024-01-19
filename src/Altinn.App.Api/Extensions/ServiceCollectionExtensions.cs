@@ -2,6 +2,7 @@
 using System;
 using Altinn.App.Api.Configuration;
 using Altinn.App.Api.Controllers;
+using Altinn.App.Api.Controllers.Services;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Infrastructure.Health;
 using Altinn.App.Api.Infrastructure.Telemetry;
@@ -78,6 +79,7 @@ namespace Altinn.App.Api.Extensions
 
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddMetricsServer(config);
+            services.AddTransient<PatchHelperService>();
         }
 
         private static void AddApplicationInsights(IServiceCollection services, IConfiguration config, IWebHostEnvironment env)

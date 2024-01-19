@@ -1,12 +1,8 @@
 #nullable enable
 
-using System.Collections;
 using System.Net;
-using System.Reflection;
 using System.Security.Claims;
-using System.Text.Json;
-using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
+using Altinn.App.Api.Controllers.Services;
 using Altinn.App.Api.Helpers.RequestHandling;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
@@ -26,7 +22,6 @@ using Altinn.App.Core.Internal.Prefill;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
-using Json.Patch;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
@@ -53,16 +48,10 @@ namespace Altinn.App.Api.Controllers
         private readonly IAppResources _appResourcesService;
         private readonly IAppMetadata _appMetadata;
         private readonly IPrefill _prefillService;
-        private readonly IValidationService _validationService;
+        private readonly PatchHelperService _patchHelperService;
         private readonly IFileAnalysisService _fileAnalyserService;
         private readonly IFileValidationService _fileValidationService;
         private readonly IFeatureManager _featureManager;
-
-        private static readonly JsonSerializerOptions JsonSerializerOptions = new()
-        {
-            UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
-            PropertyNameCaseInsensitive = true,
-        };
 
         private const long REQUEST_SIZE_LIMIT = 2000 * 1024 * 1024;
 
@@ -79,7 +68,7 @@ namespace Altinn.App.Api.Controllers
         /// <param name="appMetadata">The app metadata service</param>
         /// <param name="featureManager">The feature manager controlling enabled features.</param>
         /// <param name="prefillService">A service with prefill related logic.</param>
-        /// <param name="validationService">The service used to validate data</param>
+        /// <param name="patchHelperService">This controller is too big</param>
         /// <param name="fileAnalyserService">Service used to analyse files uploaded.</param>
         /// <param name="fileValidationService">Service used to validate files uploaded.</param>
         public DataController(
@@ -91,7 +80,7 @@ namespace Altinn.App.Api.Controllers
             IAppModel appModel,
             IAppResources appResourcesService,
             IPrefill prefillService,
-            IValidationService validationService,
+            PatchHelperService patchHelperService,
             IFileAnalysisService fileAnalyserService,
             IFileValidationService fileValidationService,
             IAppMetadata appMetadata,
@@ -107,7 +96,7 @@ namespace Altinn.App.Api.Controllers
             _appResourcesService = appResourcesService;
             _appMetadata = appMetadata;
             _prefillService = prefillService;
-            _validationService = validationService;
+            _patchHelperService = patchHelperService;
             _fileAnalyserService = fileAnalyserService;
             _fileValidationService = fileValidationService;
             _featureManager = featureManager;
@@ -424,7 +413,7 @@ namespace Altinn.App.Api.Controllers
                     await _dataClient.GetFormData(instanceGuid, modelType, org, app, instanceOwnerPartyId, dataGuid);
 
                 var (response, problemDetails) =
-                    await PatchFormDataImplementation(dataType, dataElement, dataPatchRequest, oldModel, instance);
+                    await _patchHelperService.PatchFormDataImplementation(dataType, dataElement, dataPatchRequest, oldModel, instance);
 
                 if (problemDetails is not null)
                 {
@@ -449,86 +438,6 @@ namespace Altinn.App.Api.Controllers
             catch (PlatformHttpException e)
             {
                 return HandlePlatformHttpException(e, $"Unable to update data element {dataGuid} for instance {instanceOwnerPartyId}/{instanceGuid}");
-            }
-        }
-
-        /// <summary>
-        /// Part of <see cref="PatchFormData" /> that is separated out for testing purposes.
-        /// </summary>
-        /// <param name="dataType">The type of the data element</param>
-        /// <param name="dataElement">The data element</param>
-        /// <param name="dataPatchRequest">Container object for the <see cref="JsonPatch" /> and list of ignored validators</param>
-        /// <param name="oldModel">The old state of the form data</param>
-        /// <param name="instance">The instance</param>
-        /// <returns>DataPatchResponse after this patch operation</returns>
-        internal async Task<(DataPatchResponse, ProblemDetails?)> PatchFormDataImplementation(DataType dataType, DataElement dataElement, DataPatchRequest dataPatchRequest, object oldModel, Instance instance)
-        {
-            var oldModelNode = JsonSerializer.SerializeToNode(oldModel);
-            var patchResult = dataPatchRequest.Patch.Apply(oldModelNode);
-            if (!patchResult.IsSuccess)
-            {
-                bool testOperationFailed = patchResult.Error!.Contains("is not equal to the indicated value.");
-                return (null!, new ProblemDetails()
-                {
-                    Title = testOperationFailed ? "Precondition in patch failed" : "Patch Operation Failed",
-                    Detail = patchResult.Error,
-                    Type = "https://datatracker.ietf.org/doc/html/rfc6902/",
-                    Status = testOperationFailed ? (int)HttpStatusCode.PreconditionFailed : (int)HttpStatusCode.UnprocessableContent,
-                    Extensions = new Dictionary<string, object?>()
-                    {
-                        { "previousModel", oldModel },
-                        { "patchOperationIndex", patchResult.Operation },
-                    }
-                });
-            }
-
-            var (model, problem) = DeserializeModel(oldModel.GetType(), patchResult.Result!);
-            if (problem is not null)
-            {
-                return (null!, new ProblemDetails()
-                {
-                    Title = "Patch operation did not deserialize",
-                    Detail = problem,
-                    Type = "https://datatracker.ietf.org/doc/html/rfc6902/",
-                    Status = (int)HttpStatusCode.UnprocessableContent,
-                });
-            }
-
-            foreach (var dataProcessor in _dataProcessors)
-            {
-                await dataProcessor.ProcessDataWrite(instance, Guid.Parse(dataElement.Id), model, oldModel);
-            }
-
-            // Ensure that all lists are changed from null to empty list.
-            ObjectUtils.InitializeListsRecursively(model);
-
-            var changedFields = dataPatchRequest.Patch.Operations.Select(o => o.Path.ToString()).ToList();
-
-            var validationIssues = await _validationService.ValidateFormData(instance, dataElement, dataType, model, changedFields, dataPatchRequest.IgnoredValidators);
-            var response = new DataPatchResponse
-            {
-                NewDataModel = model,
-                ValidationIssues = validationIssues
-            };
-            return (response, null);
-        }
-
-        private static (object model, string? error) DeserializeModel(Type type, JsonNode patchResult)
-        {
-            try
-            {
-                var model = patchResult.Deserialize(type, JsonSerializerOptions);
-                if (model is null)
-                {
-                    return (null!, "Deserialize patched model returned null");
-                }
-
-                return (model, null);
-            }
-            catch (JsonException e) when (e.Message.Contains("could not be mapped to any .NET member contained in type"))
-            {
-                // Give better feedback when the issue is that the patch contains a path that does not exist in the model
-                return (null!, e.Message);
             }
         }
 
