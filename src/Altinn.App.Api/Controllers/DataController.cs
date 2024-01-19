@@ -500,7 +500,7 @@ namespace Altinn.App.Api.Controllers
             }
 
             // Ensure that all lists are changed from null to empty list.
-            ObjectUtils.InitializeListsRecursively(model);
+            ObjectUtils.InitializeListsAndNullEmptyStrings(model);
 
             var changedFields = dataPatchRequest.Patch.Operations.Select(o => o.Path.ToString()).ToList();
 

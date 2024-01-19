@@ -62,11 +62,13 @@ public static class ModelStateHelpers
                 originalMessage.Remove(0, generalSettings.SoftValidationPrefix.Length));
         }
 
+#pragma warning disable CS0618 // Type or member is obsolete
         if (originalMessage.StartsWith(generalSettings.FixedValidationPrefix))
         {
             return (ValidationIssueSeverity.Fixed,
                 originalMessage.Remove(0, generalSettings.FixedValidationPrefix.Length));
         }
+#pragma warning restore CS0618 // Type or member is obsolete
 
         if (originalMessage.StartsWith(generalSettings.InfoValidationPrefix))
         {
@@ -98,7 +100,8 @@ public static class ModelStateHelpers
         var index = keyWithIndex?.ElementAtOrDefault(1); // with traling ']', eg: "3]"
         var rest = keyParts?.ElementAtOrDefault(1);
 
-        var property = data?.GetProperties()?.FirstOrDefault(p => p.Name == key);
+        var properties = data?.GetProperties();
+        var property = properties is not null ? Array.Find(properties,p => p.Name == key) : null;
         var jsonPropertyName = property
             ?.GetCustomAttributes(true)
             .OfType<JsonPropertyNameAttribute>()

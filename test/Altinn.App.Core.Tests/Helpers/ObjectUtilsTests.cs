@@ -26,7 +26,7 @@ public class ObjectUtilsTests
         var test = new TestClass();
         test.Children.Should().BeNull();
 
-        ObjectUtils.InitializeListsRecursively(test);
+        ObjectUtils.InitializeListsAndNullEmptyStrings(test);
 
         test.Children.Should().BeEmpty();
     }
@@ -40,7 +40,7 @@ public class ObjectUtilsTests
         };
         test.Children.Should().BeNull();
 
-        ObjectUtils.InitializeListsRecursively(test);
+        ObjectUtils.InitializeListsAndNullEmptyStrings(test);
 
         test.Children.Should().BeEmpty();
         test.StringValue.Should().Be("some");
@@ -55,7 +55,7 @@ public class ObjectUtilsTests
         };
         test.Children.Should().BeEmpty();
 
-        ObjectUtils.InitializeListsRecursively(test);
+        ObjectUtils.InitializeListsAndNullEmptyStrings(test);
 
         test.Children.Should().BeEmpty();
     }
@@ -91,7 +91,7 @@ public class ObjectUtilsTests
         subChild.Child!.Children.Should().BeNull();
 
         // Act
-        ObjectUtils.InitializeListsRecursively(test);
+        ObjectUtils.InitializeListsAndNullEmptyStrings(test);
 
         // Assert
         test.Children.Should().BeEmpty();
@@ -101,7 +101,5 @@ public class ObjectUtilsTests
         subChild.Children.Should().BeEmpty();
         subChild.Child.Should().NotBeNull();
         subChild.Child!.Children.Should().BeEmpty();
-
     }
-
 }

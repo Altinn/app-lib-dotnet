@@ -65,7 +65,6 @@ public class ValidationServiceTests
 
         var validatorService = serviceProvider.GetRequiredService<IValidationService>();
         var data = new MyModel { Name = "Ola" };
-        var previousData = new MyModel { Name = "Ola" };
         var result = await validatorService.ValidateFormData(new Instance(), DefaultDataElement, DefaultDataType, data);
         result.Should().BeEmpty();
     }

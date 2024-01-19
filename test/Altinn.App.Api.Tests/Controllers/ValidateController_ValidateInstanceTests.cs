@@ -85,7 +85,7 @@ public class ValidateControllerValidateInstanceTests : ApiTestBase, IClassFixtur
         return responseString;
 
     }
-    private TResponse ParseResponse<TResponse>(string responseString)
+    private static TResponse ParseResponse<TResponse>(string responseString)
     {
         return JsonSerializer.Deserialize<TResponse>(responseString, JsonSerializerOptions)!;
     }

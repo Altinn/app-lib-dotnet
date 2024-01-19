@@ -77,6 +77,12 @@ public class ExpressionValidatorTests
 
 public class ExpressionTestAttribute : DataAttribute
 {
+    private static readonly JsonSerializerOptions JsonSerializerOptions = new JsonSerializerOptions
+    {
+        ReadCommentHandling = JsonCommentHandling.Skip,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    };
+
     public override IEnumerable<object[]> GetData(MethodInfo methodInfo)
     {
         var files = Directory.GetFiles(Path.Join("Features", "Validators", "shared-expression-validation-tests"));
@@ -86,11 +92,7 @@ public class ExpressionTestAttribute : DataAttribute
             var data = File.ReadAllText(file);
             ExpressionValidationTestModel testCase = JsonSerializer.Deserialize<ExpressionValidationTestModel>(
                 data,
-                new JsonSerializerOptions
-                {
-                    ReadCommentHandling = JsonCommentHandling.Skip,
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                })!;
+                JsonSerializerOptions)!;
             yield return new object[] { testCase };
         }
     }

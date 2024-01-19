@@ -262,7 +262,6 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
     [Fact]
     public async Task RemoveStringProperty_ReturnsCorrectDataModel()
     {
-        var model = new Skjema();
         var pointer = JsonPointer.Create("melding", "name");
         var createFirstElementPatch = new JsonPatch(
             PatchOperation.Test(pointer, JsonNode.Parse("null")),
@@ -288,7 +287,6 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
     [Fact]
     public async Task SetStringPropertyToEmtpy_ReturnsCorrectDataModel()
     {
-        var model = new Skjema();
         var pointer = JsonPointer.Create("melding", "name");
         var createFirstElementPatch = new JsonPatch(
             PatchOperation.Test(pointer, JsonNode.Parse("null")),
@@ -313,7 +311,6 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
     [Fact]
     public async Task SetAttributeTagPropertyToEmtpy_ReturnsCorrectDataModel()
     {
-        var model = new Skjema();
         var pointer = JsonPointer.Create("melding", "tag-with-attribute");
         var createFirstElementPatch = new JsonPatch(
             PatchOperation.Test(pointer, JsonNode.Parse("null")),

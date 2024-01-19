@@ -9,9 +9,10 @@ public static class ObjectUtils
 {
     /// <summary>
     /// Recursively initialize all <see cref="List{T}"/> properties on the object that are currently null
+    /// Also ensure that all string properties that are empty are set to null
     /// </summary>
-    /// <param name="model"></param>
-    public static void InitializeListsRecursively(object model)
+    /// <param name="model">The object to mutate</param>
+    public static void InitializeListsAndNullEmptyStrings(object model)
     {
         foreach (var prop in model.GetType().GetProperties())
         {
@@ -28,7 +29,7 @@ public static class ObjectUtils
                     foreach (var item in (IList)value)
                     {
                         // Recurse into values of a list
-                        InitializeListsRecursively(item);
+                        InitializeListsAndNullEmptyStrings(item);
                     }
                 }
             }
@@ -45,7 +46,7 @@ public static class ObjectUtils
                 // continue recursion over all properties
                 if (value is not null)
                 {
-                    InitializeListsRecursively(value);
+                    InitializeListsAndNullEmptyStrings(value);
                 }
             }
         }
