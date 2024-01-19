@@ -26,7 +26,8 @@ public interface ITaskValidator
     string TaskId { get; }
 
     /// <summary>
-    /// Override this if you want a different name for the validation source
+    /// Returns the group id of the validator.
+    /// The default is based on the FullName and TaskId fields, and should not need customization
     /// </summary>
     string ValidationSource => $"{this.GetType().FullName}-{TaskId}";
 

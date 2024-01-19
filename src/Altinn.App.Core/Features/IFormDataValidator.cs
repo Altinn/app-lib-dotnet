@@ -26,10 +26,8 @@ public interface IFormDataValidator
 
     /// <summary>
     /// Returns the group id of the validator. This is used to run partial validations on the backend.
+    /// The default is based on the FullName and DataType fields, and should not need customization
     /// </summary>
-    /// <remarks>
-    /// The default implementation should work for most cases.
-    /// </remarks>
     public string ValidationSource => $"{this.GetType().FullName}-{DataType}";
 
     /// <summary>
