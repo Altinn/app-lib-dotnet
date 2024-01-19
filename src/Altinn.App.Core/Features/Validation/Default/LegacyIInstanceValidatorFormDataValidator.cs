@@ -31,9 +31,9 @@ public class LegacyIInstanceValidatorFormDataValidator : IFormDataValidator
     public string DataType => "*";
 
     /// <summary>
-    /// Always run for incremental validation
+    /// Always run for incremental validation (if it exists)
     /// </summary>
-    public bool ShouldRun(List<string>? changedFields = null) => _instanceValidator is not null;
+    public bool HasRelevantChanges(object current, object previous) => _instanceValidator is not null;
 
 
     /// <inheritdoc />

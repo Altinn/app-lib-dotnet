@@ -21,8 +21,9 @@ public interface IFormDataValidator
     /// <summary>
     /// Used for partial validation to ensure that the validator only runs when relevant fields have changed.
     /// </summary>
-    /// <param name="changedFields">List of the json path to all changed fields for incremental validation</param>
-    bool ShouldRun(List<string> changedFields);
+    /// <param name="current">The current state of the form data</param>
+    /// <param name="previous">The previous state of the form data</param>
+    bool HasRelevantChanges(object current, object previous);
 
     /// <summary>
     /// Returns the group id of the validator. This is used to run partial validations on the backend.

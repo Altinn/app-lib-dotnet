@@ -47,7 +47,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
 
     private readonly ITestOutputHelper _outputHelper;
 
-    // Constructor wtih common setup
+    // Constructor with common setup
     public DataControllerPatchTests(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper) : base(factory)
     {
         _formDataValidatorMock.Setup(v => v.DataType).Returns("Not a valid data type");

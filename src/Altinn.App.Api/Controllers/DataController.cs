@@ -461,7 +461,7 @@ namespace Altinn.App.Api.Controllers
         /// <param name="oldModel">The old state of the form data</param>
         /// <param name="instance">The instance</param>
         /// <returns>DataPatchResponse after this patch operation</returns>
-        internal async Task<(DataPatchResponse, ProblemDetails?)> PatchFormDataImplementation(DataType dataType, DataElement dataElement, DataPatchRequest dataPatchRequest, object oldModel, Instance instance)
+        internal async Task<(DataPatchResponse Response, ProblemDetails? Error)> PatchFormDataImplementation(DataType dataType, DataElement dataElement, DataPatchRequest dataPatchRequest, object oldModel, Instance instance)
         {
             var oldModelNode = JsonSerializer.SerializeToNode(oldModel);
             var patchResult = dataPatchRequest.Patch.Apply(oldModelNode);
@@ -482,13 +482,13 @@ namespace Altinn.App.Api.Controllers
                 });
             }
 
-            var (model, problem) = DeserializeModel(oldModel.GetType(), patchResult.Result!);
-            if (problem is not null)
+            var (model, error) = DeserializeModel(oldModel.GetType(), patchResult.Result!);
+            if (error is not null)
             {
                 return (null!, new ProblemDetails()
                 {
                     Title = "Patch operation did not deserialize",
-                    Detail = problem,
+                    Detail = error,
                     Type = "https://datatracker.ietf.org/doc/html/rfc6902/",
                     Status = (int)HttpStatusCode.UnprocessableContent,
                 });
@@ -513,7 +513,7 @@ namespace Altinn.App.Api.Controllers
             return (response, null);
         }
 
-        private static (object model, string? error) DeserializeModel(Type type, JsonNode patchResult)
+        private static (object Model, string? Error) DeserializeModel(Type type, JsonNode patchResult)
         {
             try
             {

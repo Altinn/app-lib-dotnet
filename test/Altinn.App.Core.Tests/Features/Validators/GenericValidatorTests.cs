@@ -1,11 +1,9 @@
 #nullable enable
-using System.Diagnostics.CodeAnalysis;
-using System.Linq.Expressions;
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Features.Validation;
+using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
-using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace Altinn.App.Core.Tests.Features.Validators;
@@ -30,54 +28,47 @@ public class GenericValidatorTests
         {
         }
 
-        // Custom method to make the protected RunFor possible to call from the test
-        public void RunForExternal(Expression<Func<MyModel, object?>> selector)
+        protected override bool HasRelevantChanges(MyModel current, MyModel previous)
         {
-            RunFor(selector);
+            throw new NotImplementedException();
         }
 
         protected override Task ValidateFormData(Instance instance, DataElement dataElement, MyModel data)
         {
-            throw new NotImplementedException();
+            AddValidationIssue(new ValidationIssue()
+            {
+                Severity = ValidationIssueSeverity.Informational,
+                Description = "Test info",
+            });
+
+            CreateValidationIssue(c => c.Name, "Test warning", severity: ValidationIssueSeverity.Warning);
+            var childIndex = 4;
+            CreateValidationIssue(c => c.Children![childIndex].Children![0].Name, "childrenError", severity: ValidationIssueSeverity.Error);
+
+            return Task.CompletedTask;
         }
     }
 
     [Fact]
-    public void TestShouldRun()
+    public async Task VerifyTestValidator()
     {
         var testValidator = new TestValidator();
-        testValidator.RunForExternal(m => m.Name);
-        testValidator.ShouldRun().Should().BeTrue();
-        testValidator.ShouldRun(new List<string>() { "name" }).Should().BeTrue();
-        testValidator.ShouldRun(new List<string>() { "age" }).Should().BeFalse();
-    }
+        var instance = new Instance();
+        var dataElement = new DataElement();
+        var data = new MyModel();
 
-    [Theory]
-    [InlineData("name", false)]
-    [InlineData("age", false)]
-    [InlineData("children", true)]
-    [InlineData("children[0]", true)]
-    [InlineData("children[0].age", false)]
-    [InlineData("children[2]", false)]
-    public void TestShouldRunWithIndexedRow(string changedField, bool shouldBe)
-    {
-        var testValidator = new TestValidator();
-        testValidator.RunForExternal(m => m.Children![0].Name);
-        testValidator.ShouldRun(new List<string>() { changedField }).Should().Be(shouldBe);
-    }
+        var validationIssues = await testValidator.ValidateFormData(instance, dataElement, data);
+        validationIssues.Should().HaveCount(3);
 
-    [Theory]
-    [InlineData("name", false)]
-    [InlineData("age", false)]
-    [InlineData("children", true)]
+        var info = validationIssues.Should().ContainSingle(c => c.Severity == ValidationIssueSeverity.Informational).Which;
+        info.Description.Should().Be("Test info");
 
-    // [InlineData("children[0]", true)] //TODO:Fix
-    [InlineData("children[0].age", false)]
-    [InlineData("children[2]", false)]
-    public void TestShouldRunWithSelectAllRow(string changedField, bool shouldBe)
-    {
-        var testValidator = new TestValidator();
-        testValidator.RunForExternal(m => m.Children!.Select(c => c.Name));
-        testValidator.ShouldRun(new List<string>() { changedField }).Should().Be(shouldBe);
+        var warning = validationIssues.Should().ContainSingle(c => c.Severity == ValidationIssueSeverity.Warning).Which;
+        warning.Description.Should().Be("Test warning");
+        warning.Field.Should().Be("name");
+
+        var error = validationIssues.Should().ContainSingle(c => c.Severity == ValidationIssueSeverity.Error).Which;
+        error.Description.Should().Be("childrenError");
+        error.Field.Should().Be("children[4].children[0].name");
     }
 }

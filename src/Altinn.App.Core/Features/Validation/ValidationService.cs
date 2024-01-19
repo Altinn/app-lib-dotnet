@@ -119,7 +119,7 @@ public class ValidationService : IValidationService
 
     /// <inheritdoc/>
     public async Task<Dictionary<string, List<ValidationIssue>>> ValidateFormData(Instance instance, DataElement dataElement, DataType dataType, object data,
-        List<string>? changedFields = null, List<string>? ignoredValidators = null)
+        object? previousData = null, List<string>? ignoredValidators = null)
     {
         ArgumentNullException.ThrowIfNull(instance);
         ArgumentNullException.ThrowIfNull(dataElement);
@@ -131,7 +131,7 @@ public class ValidationService : IValidationService
             .Where(dv => dv.DataType == "*" || dv.DataType == dataType.Id)
             // .Concat(_serviceProvider.GetKeyedServices<IFormDataValidator>(dataElement.DataType))
             .Where(dv => ignoredValidators?.Contains(dv.ValidationSource) != true)
-            .Where(dv => changedFields is null || dv.ShouldRun(changedFields))
+            .Where(dv => previousData is null || dv.HasRelevantChanges(data, previousData))
             .ToArray();
 
         var issuesLists = await Task.WhenAll(dataValidators.Select(async (v) =>

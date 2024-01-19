@@ -62,7 +62,7 @@ public class TagWithAttribute
     [MinLength(1)]
     [MaxLength(60)]
     [XmlText()]
-    public string value { get; set; }
+    public string? value { get; set; }
 }
 
 public class ValuesList

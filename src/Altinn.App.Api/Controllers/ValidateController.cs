@@ -3,7 +3,6 @@
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Helpers;
-using Altinn.App.Core.Infrastructure.Clients;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Models.Validation;
@@ -141,7 +140,7 @@ namespace Altinn.App.Api.Controllers
                     DataElementId = element.Id,
                     Description = $"Data element for task {dataType.TaskId} validated while currentTask is {taskId}",
                     CustomTextKey = ValidationIssueCodes.DataElementCodes.DataElementValidatedAtWrongTask,
-                    CustomTextParams = new List<string>(){dataType.TaskId, taskId},
+                    CustomTextParams = new List<string>() { dataType.TaskId, taskId },
                 };
                 messages.Add(message);
             }

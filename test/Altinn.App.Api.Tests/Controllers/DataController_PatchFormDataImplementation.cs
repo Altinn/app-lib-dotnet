@@ -56,7 +56,7 @@ public class DataController_PatchFormDataImplementation : IAsyncDisposable
     {
         _formDataValidator.Setup(fdv => fdv.DataType).Returns(_dataType.Id);
         _formDataValidator.Setup(fdv => fdv.ValidationSource).Returns("formDataValidator");
-        _formDataValidator.Setup(fdv => fdv.ShouldRun(It.IsAny<List<string>>())).Returns(true);
+        _formDataValidator.Setup(fdv => fdv.HasRelevantChanges(It.IsAny<object>(), It.IsAny<object>())).Returns(true);
         // _dataElementValidator.Setup(ev => ev.DataType).Returns(_dataType.Id);
         _serviceCollection.AddSingleton(_formDataValidator.Object);
         _serviceCollection.AddSingleton(_dataElementValidator);

@@ -30,10 +30,9 @@ namespace Altinn.App.Core.Tests.Features.Validators.Default
         {
             // Arrange
             var data = new object();
-            var changedFields = new List<string>();
 
             var validator = new LegacyIInstanceValidatorFormDataValidator(null, Options.Create(new GeneralSettings()));
-            validator.ShouldRun(changedFields).Should().BeFalse();
+            validator.HasRelevantChanges(data, data).Should().BeFalse();
 
             // Act
             var result = await validator.ValidateFormData(new Instance(), new DataElement(), data);
@@ -111,7 +110,6 @@ namespace Altinn.App.Core.Tests.Features.Validators.Default
         {
             // Arrange
             var data = new TestModel();
-            var changedFields = new List<string>();
 
             _instanceValidator
                 .Setup(iv => iv.ValidateData(It.IsAny<object>(), It.IsAny<ModelStateDictionary>()))

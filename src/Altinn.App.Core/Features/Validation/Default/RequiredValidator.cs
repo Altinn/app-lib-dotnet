@@ -37,7 +37,7 @@ public class RequiredLayoutValidator : IFormDataValidator
     /// <summary>
     /// Always run for incremental validation
     /// </summary>
-    public bool ShouldRun(List<string> changedFields) => true;
+    public bool HasRelevantChanges(object current, object previous) => true;
 
     /// <summary>
     /// Validate the form data against the required rules in the layout

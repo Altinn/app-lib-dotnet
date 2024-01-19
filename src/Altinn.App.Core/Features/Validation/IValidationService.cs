@@ -48,7 +48,7 @@ public interface IValidationService
     /// <param name="dataElement">The data element to run validations for</param>
     /// <param name="dataType">The type of the data element</param>
     /// <param name="data">The data deserialized to the strongly typed object that represents the form data</param>
-    /// <param name="changedFields">List of json paths for the fields that have changed (used for incremental validation)</param>
+    /// <param name="previousData">The previous data so that validators can know if they need to run again with <see cref="IFormDataValidator.HasRelevantChanges"/></param>
     /// <param name="ignoredValidators">List validators that should not be run (for incremental validation). Typically known validators that frontend knows how to replicate</param>
-    Task<Dictionary<string, List<ValidationIssue>>> ValidateFormData(Instance instance, DataElement dataElement, DataType dataType, object data, List<string>? changedFields = null, List<string>? ignoredValidators = null);
+    Task<Dictionary<string, List<ValidationIssue>>> ValidateFormData(Instance instance, DataElement dataElement, DataType dataType, object data, object? previousData = null, List<string>? ignoredValidators = null);
 }

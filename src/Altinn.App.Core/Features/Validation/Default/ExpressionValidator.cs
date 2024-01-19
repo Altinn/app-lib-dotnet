@@ -43,7 +43,7 @@ public class ExpressionValidator : IFormDataValidator
     /// <summary>
     /// Expression validations should always run (it is way to complex to figure out if it should run or not)
     /// </summary>
-    public bool ShouldRun(List<string> changedFields) => true;
+    public bool HasRelevantChanges(object current, object previous) => true;
 
     /// <inheritdoc />
     public async Task<List<ValidationIssue>> ValidateFormData(Instance instance, DataElement dataElement, object data)

@@ -43,7 +43,7 @@ public class DataAnnotationValidator : IFormDataValidator
     /// <summary>
     /// We don't know which fields are relevant for data annotation validation, so we always run it.
     /// </summary>
-    public bool ShouldRun(List<string> changedFields) => true;
+    public bool HasRelevantChanges(object current, object previous) => true;
 
     /// <inheritdoc />
     public Task<List<ValidationIssue>> ValidateFormData(Instance instance, DataElement dataElement, object data)

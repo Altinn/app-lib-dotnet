@@ -9,6 +9,7 @@ using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
@@ -37,9 +38,10 @@ public class ValidationServiceTests
     };
 
     private readonly Mock<ILogger<ValidationService>> _loggerMock = new();
-    private readonly Mock<IDataClient> _dataClientMock = new();
-    private readonly Mock<IAppModel> _appModelMock = new();
-    private readonly Mock<IAppMetadata> _appMetadataMock = new();
+    private readonly Mock<IDataClient> _dataClientMock = new(MockBehavior.Strict);
+    private readonly Mock<IAppModel> _appModelMock = new(MockBehavior.Strict);
+    private readonly Mock<IAppMetadata> _appMetadataMock = new(MockBehavior.Strict);
+    private readonly Mock<IFormDataValidator> _formDataValidatorMock = new(MockBehavior.Strict);
     private readonly ServiceCollection _serviceCollection = new();
 
     public ValidationServiceTests()
@@ -49,31 +51,21 @@ public class ValidationServiceTests
         _serviceCollection.AddSingleton<IValidationService, ValidationService>();
         _serviceCollection.AddSingleton(_appModelMock.Object);
         _serviceCollection.AddSingleton(_appMetadataMock.Object);
-    }
-
-    private class MyNameValidator : GenericFormDataValidator<MyModel>
-    {
-        public MyNameValidator() : base(DefaultDataElement.DataType)
-        {
-            RunFor(m => m.Name);
-        }
-
-        protected override async Task ValidateFormData(Instance instance, DataElement dataElement, MyModel data)
-        {
-            if (data.Name != "Ola")
-            {
-                CreateValidationIssue(m => m.Name, "NameNotOla");
-            }
-        }
+        _serviceCollection.AddSingleton(_formDataValidatorMock.Object);
+        _formDataValidatorMock.Setup(v => v.DataType).Returns(DefaultDataType.Id);
+        _formDataValidatorMock.Setup(v => v.ValidationSource).Returns("MyNameValidator");
     }
 
     [Fact]
     public async Task ValidateFormData_WithNoValidators_ReturnsNoErrors()
     {
+        _serviceCollection.RemoveAll(typeof(IFormDataValidator));
+
         await using var serviceProvider = _serviceCollection.BuildServiceProvider();
 
         var validatorService = serviceProvider.GetRequiredService<IValidationService>();
         var data = new MyModel { Name = "Ola" };
+        var previousData = new MyModel { Name = "Ola" };
         var result = await validatorService.ValidateFormData(new Instance(), DefaultDataElement, DefaultDataType, data);
         result.Should().BeEmpty();
     }
@@ -81,40 +73,45 @@ public class ValidationServiceTests
     [Fact]
     public async Task ValidateFormData_WithMyNameValidator_ReturnsNoErrorsWhenNameIsOla()
     {
-        _serviceCollection.AddSingleton<IFormDataValidator, MyNameValidator>();
+        _formDataValidatorMock.Setup(v => v.HasRelevantChanges(It.IsAny<object>(), It.IsAny<object>())).Returns(false);
+        _formDataValidatorMock.Setup(v => v.ValidateFormData(It.IsAny<Instance>(), It.IsAny<DataElement>(), It.IsAny<object>())).ReturnsAsync((Instance instance, DataElement dataElement, object data) =>
+        {
+            if (data is MyModel model && model.Name != "Ola")
+            {
+                return new List<ValidationIssue> { { new() { Severity = ValidationIssueSeverity.Error, CustomTextKey = "NameNotOla" } } };
+            }
+
+            return new List<ValidationIssue>();
+        });
+
         await using var serviceProvider = _serviceCollection.BuildServiceProvider();
 
         var validatorService = serviceProvider.GetRequiredService<IValidationService>();
         var data = new MyModel { Name = "Ola" };
         var result = await validatorService.ValidateFormData(new Instance(), DefaultDataElement, DefaultDataType, data);
-        result.Should().ContainKey("Altinn.App.Core.Tests.Features.Validators.ValidationServiceTests+MyNameValidator-MyType").WhoseValue.Should().HaveCount(0);
+        result.Should().ContainKey("MyNameValidator").WhoseValue.Should().HaveCount(0);
         result.Should().HaveCount(1);
     }
 
     [Fact]
     public async Task ValidateFormData_WithMyNameValidator_ReturnsErrorsWhenNameIsKari()
     {
-        _serviceCollection.AddSingleton<IFormDataValidator, MyNameValidator>();
+        _formDataValidatorMock.Setup(v => v.ValidateFormData(It.IsAny<Instance>(), It.IsAny<DataElement>(), It.IsAny<object>())).ReturnsAsync((Instance instance, DataElement dataElement, object data) =>
+        {
+            if (data is MyModel model && model.Name != "Ola")
+            {
+                return new List<ValidationIssue> { { new() { Severity = ValidationIssueSeverity.Error, CustomTextKey = "NameNotOla" } } };
+            }
+
+            return new List<ValidationIssue>();
+        });
+
         await using var serviceProvider = _serviceCollection.BuildServiceProvider();
 
         var validatorService = serviceProvider.GetRequiredService<IValidationService>();
         var data = new MyModel { Name = "Kari" };
         var result = await validatorService.ValidateFormData(new Instance(), DefaultDataElement, DefaultDataType, data);
-        result.Should().ContainKey("Altinn.App.Core.Tests.Features.Validators.ValidationServiceTests+MyNameValidator-MyType").WhoseValue.Should().ContainSingle().Which.CustomTextKey.Should().Be("NameNotOla");
+        result.Should().ContainKey("MyNameValidator").WhoseValue.Should().ContainSingle().Which.CustomTextKey.Should().Be("NameNotOla");
         result.Should().HaveCount(1);
-    }
-
-    [Fact]
-    public async Task ValidateFormData_WithMyNameValidator_ReturnsNoErrorsWhenOnlyAgeIsSoupposedlyChanged()
-    {
-        _serviceCollection.AddSingleton<IFormDataValidator, MyNameValidator>();
-        await using var serviceProvider = _serviceCollection.BuildServiceProvider();
-
-        var validatorService = serviceProvider.GetRequiredService<IValidationService>();
-        var data = new MyModel { Name = "Kari" };
-        var result = await validatorService.ValidateFormData(new Instance(), DefaultDataElement, DefaultDataType, data, new List<string> { "age" });
-        result.Should()
-            .NotContainKey("Altinn.App.Core.Tests.Features.Validators.ValidationServiceTests+MyNameValidator");
-        result.Should().HaveCount(0);
     }
 }
