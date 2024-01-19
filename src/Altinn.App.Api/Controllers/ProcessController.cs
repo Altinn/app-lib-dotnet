@@ -205,22 +205,9 @@ namespace Altinn.App.Api.Controllers
 
         private async Task<bool> CanTaskBeEnded(Instance instance, string currentTaskId)
         {
-            List<ValidationIssue> validationIssues = new List<ValidationIssue>();
+            var validationIssues = await _validationService.ValidateInstanceAtTask(instance, currentTaskId);
 
-            bool canEndTask;
-
-            if (instance.Process?.CurrentTask?.Validated == null || !instance.Process.CurrentTask.Validated.CanCompleteTask)
-            {
-                validationIssues = await _validationService.ValidateInstanceAtTask(instance, currentTaskId);
-
-                canEndTask = await ProcessHelper.CanEndProcessTask(instance, validationIssues);
-            }
-            else
-            {
-                canEndTask = await ProcessHelper.CanEndProcessTask(instance, validationIssues);
-            }
-
-            return canEndTask;
+            return await ProcessHelper.CanEndProcessTask(instance, validationIssues);
         }
 
         /// <summary>
