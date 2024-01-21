@@ -96,7 +96,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
 
         var (_, _, parsedResponse) = await CallPatchApi<DataPatchResponse>(patch, null, HttpStatusCode.OK);
 
-        parsedResponse.ValidationIssues.Should().ContainKey("required").WhoseValue.Should().BeEmpty();
+        parsedResponse.ValidationIssues.Should().ContainKey("Required").WhoseValue.Should().BeEmpty();
 
         var newModelElement = parsedResponse.NewDataModel.Should().BeOfType<JsonElement>().Which;
         var newModel = newModelElement.Deserialize<Skjema>()!;
@@ -116,7 +116,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
 
         var (_, _, parsedResponse) = await CallPatchApi<DataPatchResponse>(patch, null, HttpStatusCode.OK);
 
-        var requiredList = parsedResponse.ValidationIssues.Should().ContainKey("required").WhoseValue;
+        var requiredList = parsedResponse.ValidationIssues.Should().ContainKey("Required").WhoseValue;
         var requiredName = requiredList.Should().ContainSingle().Which;
         requiredName.Field.Should().Be("melding.name");
         requiredName.Description.Should().Be("melding.name is required in component with id name");
@@ -191,7 +191,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
         listItem.Key.Should().Be("newKey");
 
         parsedResponse.ValidationIssues
-            .Should().ContainKey("required").WhoseValue
+            .Should().ContainKey("Required").WhoseValue
             .Should().Contain(i => i.Field == "melding.name");
 
         _dataProcessorMock.Verify(
