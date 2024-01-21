@@ -36,9 +36,9 @@ public class ExpressionValidator : IFormDataValidator
     public string DataType => "*";
 
     /// <summary>
-    /// This validator has the code "expression" and this is known by the frontend, who requests this validator to not run for incremental validation.
+    /// This validator has the code "Expression" and this is known by the frontend, who may request this validator to not run for incremental validation.
     /// </summary>
-    public string ValidationSource => "expression";
+    public string ValidationSource => "Expression";
 
     /// <summary>
     /// Expression validations should always run (it is way to complex to figure out if it should run or not)

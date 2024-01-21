@@ -36,9 +36,9 @@ public class DataAnnotationValidator : IFormDataValidator
     public string DataType => "*";
 
     /// <summary>
-    /// This validator has the code "dataannotations" and this is known by the frontend, who requests this validator to not run for incremental validation.
+    /// This validator has the code "DataAnnotations" and this is known by the frontend, who may request this validator to not run for incremental validation.
     /// </summary>
-    public string ValidationSource => "dataannotations";
+    public string ValidationSource => "DataAnnotations";
 
     /// <summary>
     /// We don't know which fields are relevant for data annotation validation, so we always run it.
