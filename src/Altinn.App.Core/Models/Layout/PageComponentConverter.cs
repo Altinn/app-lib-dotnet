@@ -317,6 +317,17 @@ public class PageComponentConverter : JsonConverter<PageComponent>
 
         switch (type.ToLowerInvariant())
         {
+            case "repeatinggroup":
+                ThrowJsonExceptionIfNull(children, "Component with \"type\": \"Group\" requires a \"children\" property");
+                if (!(dataModelBindings?.ContainsKey("group") ?? false))
+                {
+                    throw new JsonException($"A repeating group id:\"{id}\" does not have a \"group\" dataModelBinding");
+                }
+
+                var directRepComponent = new RepeatingGroupComponent(id, type, dataModelBindings, new List<BaseComponent>(), children, maxCount, hidden, hiddenRow, required, readOnly, additionalProperties);
+                return directRepComponent;
+
+
             case "group":
                 ThrowJsonExceptionIfNull(children, "Component with \"type\": \"Group\" requires a \"children\" property");
 
