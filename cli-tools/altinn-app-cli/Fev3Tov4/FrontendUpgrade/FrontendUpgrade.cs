@@ -1,6 +1,7 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using altinn_app_cli.fev3tov4.LayoutSetRewriter;
+using altinn_app_cli.fev3tov4.IndexFileRewriter;
 
 namespace altinn_app_cli.fev3tov4.FrontendUpgrade;
 
@@ -10,18 +11,24 @@ class FrontendUpgrade
     {
 
         var projectFolderOption = new Option<string>(name: "--folder", description: "The project folder to read", getDefaultValue: () => "CurrentDirectory");
+        var targetVersionOption = new Option<string>(name: "--target-version", description: "The target version to upgrade to", getDefaultValue: () => "4.0.0-rc1");
+        var indexFileOption = new Option<string>(name: "--index-file", description: "The name of the Index.cshtml file relative to --folder", getDefaultValue: () => "App/views/Home/Index.cshtml");
+        var skipIndexFileUpgradeOption = new Option<bool>(name: "--skip-index-file-upgrade", description: "Skip Index.cshtml upgrade", getDefaultValue: () => false);
         var uiFolderOption = new Option<string>(name: "--ui-folder", description: "The folder containing layout files relative to --folder", getDefaultValue: () => "App/ui/");
+        var layoutSetNameOption = new Option<string>(name: "--layout-set-name", description: "The name of the layout set to be created", getDefaultValue: () => "form");
         var applicationMetadataFileOption = new Option<string>(name: "--application-metadata", description: "The path of the applicationmetadata.json file relative to --folder", getDefaultValue: () => "App/config/applicationmetadata.json");
         var skipLayoutSetUpgradeOption = new Option<bool>(name: "--skip-layout-set-upgrade", description: "Skip layout set upgrade", getDefaultValue: () => false);
-        var layoutSetNameOption = new Option<string>(name: "--layout-set-name", description: "The name of the layout set to be created", getDefaultValue: () => "form");
 
         var upgradeCommand = new Command("frontend-upgrade", "Upgrade an app from using App-Frontend v3 to v4")
         {
             projectFolderOption,
+            targetVersionOption,
+            indexFileOption,
+            skipIndexFileUpgradeOption,
             uiFolderOption,
-            skipLayoutSetUpgradeOption,
             layoutSetNameOption,
-            applicationMetadataFileOption
+            applicationMetadataFileOption,
+            skipLayoutSetUpgradeOption,
         };
 
         upgradeCommand.SetHandler(
@@ -29,6 +36,7 @@ class FrontendUpgrade
             {
                 var returnCode = 0;
 
+                var skipIndexFileUpgrade = context.ParseResult.GetValueForOption(skipIndexFileUpgradeOption)!;
                 var skipLayoutSetUpgrade = context.ParseResult.GetValueForOption(skipLayoutSetUpgradeOption)!;
                 var layoutSetName = context.ParseResult.GetValueForOption(layoutSetNameOption)!;
 
@@ -44,11 +52,26 @@ class FrontendUpgrade
                     return;
                 }
 
+                var targetVersion = context.ParseResult.GetValueForOption(targetVersionOption)!;
+                var indexFile = context.ParseResult.GetValueForOption(indexFileOption)!;
+                indexFile = Path.Combine(projectFolder, indexFile);
+                if (!File.Exists(indexFile))
+                {
+                    Console.WriteLine($"Index.cshtml file {indexFile} does not exist. Please supply location of project with --index-file [path/to/Index.cshtml]");
+                    returnCode = 1;
+                    return;
+                }
+
+                if (!skipIndexFileUpgrade && returnCode == 0)
+                {
+                    returnCode = await IndexFileUpgrade(indexFile, targetVersion);
+                }
+
                 var applicationMetadataFile = context.ParseResult.GetValueForOption(applicationMetadataFileOption)!;
                 applicationMetadataFile = Path.Combine(projectFolder, applicationMetadataFile);
                 if (!File.Exists(applicationMetadataFile))
                 {
-                    Console.WriteLine($"Application metadata file {applicationMetadataFile} does not exist. Please supply location of project with --folder [path/to/applicationmetadata.json]");
+                    Console.WriteLine($"Application metadata file {applicationMetadataFile} does not exist. Please supply location of project with --application-metadata [path/to/applicationmetadata.json]");
                     returnCode = 1;
                     return;
                 }
@@ -65,6 +88,20 @@ class FrontendUpgrade
         );
 
         return upgradeCommand;
+    }
+
+    private static async Task<int> IndexFileUpgrade(string indexFile, string targetVersion)
+    {
+        var rewriter = new IndexFileUpgrader(indexFile, targetVersion);
+        rewriter.Upgrade();
+        await rewriter.Write();
+        var warnings = rewriter.GetWarnings();
+        foreach (var warning in warnings)
+        {
+            Console.WriteLine(warning);
+        }
+        Console.WriteLine(warnings.Any() ? "Index.cshtml upgraded with warnings. Review the warnings above." : "Index.cshtml upgraded");
+        return 0;
     }
 
     private static async Task<int> LayoutSetUpgrade(string uiFolder, string layoutSetName, string applicationMetadataFile)
