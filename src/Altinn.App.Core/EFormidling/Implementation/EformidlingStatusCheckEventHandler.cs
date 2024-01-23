@@ -6,22 +6,16 @@ using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
-using Altinn.App.Core.Infrastructure.Clients.Maskinporten;
 using Altinn.App.Core.Infrastructure.Clients.Storage;
-using Altinn.App.Core.Interface;
 using Altinn.App.Core.Models;
 using Altinn.Common.EFormidlingClient;
 using Altinn.Common.EFormidlingClient.Models;
 using Altinn.Platform.Storage.Interface.Models;
-using AltinnCore.Authentication.Utils;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using System;
 using System.Net;
 using System.Net.Http.Headers;
-using System.Runtime;
-using System.Security.Cryptography.X509Certificates;
 
 namespace Altinn.App.Core.EFormidling.Implementation
 {
@@ -35,9 +29,9 @@ namespace Altinn.App.Core.EFormidling.Implementation
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IMaskinportenService _maskinportenService;
         private readonly MaskinportenSettings _maskinportenSettings;
-        private readonly IX509CertificateProvider _x509CertificateProvider;
         private readonly PlatformSettings _platformSettings;
         private readonly GeneralSettings _generalSettings;
+        private readonly IClientDefinition _clientDefinition;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EformidlingStatusCheckEventHandler"/> class.
@@ -47,20 +41,19 @@ namespace Altinn.App.Core.EFormidling.Implementation
             IHttpClientFactory httpClientFactory,
             ILogger<EformidlingStatusCheckEventHandler> logger,
             IMaskinportenService maskinportenService,
-            IOptions<MaskinportenSettings> maskinportenSettings,
-            IX509CertificateProvider x509CertificateProvider,
             IOptions<PlatformSettings> platformSettings,
-            IOptions<GeneralSettings> generalSettings
-            )
+            IOptions<GeneralSettings> generalSettings,
+            IClientDefinition clientDefinition
+        )
         {
             _eFormidlingClient = eFormidlingClient;
             _logger = logger;
             _httpClientFactory = httpClientFactory;
             _maskinportenService = maskinportenService;
-            _maskinportenSettings = maskinportenSettings.Value;
-            _x509CertificateProvider = x509CertificateProvider;
+            _maskinportenSettings = clientDefinition.ClientSettings;
             _platformSettings = platformSettings.Value;
             _generalSettings = generalSettings.Value;
+            _clientDefinition = clientDefinition;
         }
 
         /// <inheritDoc/>
@@ -163,8 +156,18 @@ namespace Altinn.App.Core.EFormidling.Implementation
 
         private async Task<TokenResponse> GetOrganizationToken()
         {
-            X509Certificate2 x509cert = await _x509CertificateProvider.GetCertificate();
-            var maskinportenToken = await _maskinportenService.GetToken(x509cert, _maskinportenSettings.Environment, _maskinportenSettings.ClientId, "altinn:serviceowner/instances.read altinn:serviceowner/instances.write", string.Empty);
+            var environment = _clientDefinition.ClientSettings.Environment;
+            var clientId = _clientDefinition.ClientSettings.ClientId;
+            var scopes = "altinn:serviceowner/instances.read altinn:serviceowner/instances.write";
+            var resource = string.Empty;
+            var clientSecrets = await _clientDefinition.GetClientSecrets();
+            var jwk = clientSecrets.ClientKey;
+            var cert = clientSecrets.ClientCertificate;
+            var maskinportenToken = jwk != null ?
+                    await _maskinportenService.GetToken(jwk, environment, clientId, scopes,resource) :
+                    await _maskinportenService.GetToken(cert, environment, clientId, scopes,resource) 
+                ;
+            
             var altinnToken = await _maskinportenService.ExchangeToAltinnToken(maskinportenToken, _maskinportenSettings.Environment);
 
             return altinnToken;
