@@ -2,6 +2,7 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using altinn_app_cli.fev3tov4.LayoutSetRewriter;
 using altinn_app_cli.fev3tov4.IndexFileRewriter;
+using altinn_app_cli.fev3tov4.LayoutRewriter;
 
 namespace altinn_app_cli.fev3tov4.FrontendUpgrade;
 
@@ -18,6 +19,7 @@ class FrontendUpgrade
         var layoutSetNameOption = new Option<string>(name: "--layout-set-name", description: "The name of the layout set to be created", getDefaultValue: () => "form");
         var applicationMetadataFileOption = new Option<string>(name: "--application-metadata", description: "The path of the applicationmetadata.json file relative to --folder", getDefaultValue: () => "App/config/applicationmetadata.json");
         var skipLayoutSetUpgradeOption = new Option<bool>(name: "--skip-layout-set-upgrade", description: "Skip layout set upgrade", getDefaultValue: () => false);
+        var skipLayoutUpgradeOption = new Option<bool>(name: "--skip-layout-upgrade", description: "Skip layout files upgrade", getDefaultValue: () => false);
 
         var upgradeCommand = new Command("frontend-upgrade", "Upgrade an app from using App-Frontend v3 to v4")
         {
@@ -29,6 +31,7 @@ class FrontendUpgrade
             layoutSetNameOption,
             applicationMetadataFileOption,
             skipLayoutSetUpgradeOption,
+            skipLayoutUpgradeOption,
         };
 
         upgradeCommand.SetHandler(
@@ -38,6 +41,7 @@ class FrontendUpgrade
 
                 var skipIndexFileUpgrade = context.ParseResult.GetValueForOption(skipIndexFileUpgradeOption)!;
                 var skipLayoutSetUpgrade = context.ParseResult.GetValueForOption(skipLayoutSetUpgradeOption)!;
+                var skipLayoutUpgrade = context.ParseResult.GetValueForOption(skipLayoutUpgradeOption)!;
                 var layoutSetName = context.ParseResult.GetValueForOption(layoutSetNameOption)!;
 
                 var projectFolder = context.ParseResult.GetValueForOption(projectFolderOption)!;
@@ -84,6 +88,12 @@ class FrontendUpgrade
 
                     returnCode = await LayoutSetUpgrade(uiFolder, layoutSetName, applicationMetadataFile);
                 }
+
+                if (!skipLayoutUpgrade && returnCode == 0)
+                {
+
+                    returnCode = await LayoutUpgrade(uiFolder);
+                }
             }
         );
 
@@ -128,6 +138,33 @@ class FrontendUpgrade
             Console.WriteLine(warning);
         }
         Console.WriteLine(warnings.Any() ? "Layout-sets upgraded with warnings. Review the warnings above." : "Layout sets upgraded");
+        return 0;
+    }
+
+    private static async Task<int> LayoutUpgrade(string uiFolder)
+    {
+        if (!Directory.Exists(uiFolder))
+        {
+            Console.WriteLine($"Ui folder {uiFolder} does not exist. Please supply location of project with --ui-folder [path/to/ui/]");
+            return 1;
+        }
+
+        if (!File.Exists(Path.Combine(uiFolder, "layout-sets.json")))
+        {
+            Console.WriteLine("Converting to layout sets is required before upgrading layouts. Skipping layout upgrade.");
+            return 1;
+        }
+
+
+        var rewriter = new LayoutUpgrader(uiFolder);
+        rewriter.Upgrade();
+        await rewriter.Write();
+        var warnings = rewriter.GetWarnings();
+        foreach (var warning in warnings)
+        {
+            Console.WriteLine(warning);
+        }
+        Console.WriteLine(warnings.Any() ? "Layout files upgraded with warnings. Review the warnings above." : "Layout files upgraded");
         return 0;
     }
 }

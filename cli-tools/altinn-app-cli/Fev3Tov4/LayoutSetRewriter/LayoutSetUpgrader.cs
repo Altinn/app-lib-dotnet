@@ -1,3 +1,4 @@
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -148,6 +149,7 @@ class LayoutSetUpgrader
         JsonSerializerOptions options = new JsonSerializerOptions
         {
             WriteIndented = true,
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
         };
         await File.WriteAllTextAsync(Path.Combine(uiFolder, "layout-sets.json"), layoutSetsJson.ToJsonString(options));
     }
