@@ -24,6 +24,7 @@ class LayoutUpgrader
         layoutMutator.Mutate(new LikertMutator());
         layoutMutator.Mutate(new RepeatingGroupMutator());
         layoutMutator.Mutate(new GroupMutator());
+        layoutMutator.Mutate(new TriggerMutator());
     }
 
     public async Task Write()
