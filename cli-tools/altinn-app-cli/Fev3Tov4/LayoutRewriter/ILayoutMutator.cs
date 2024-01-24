@@ -6,7 +6,10 @@ abstract class IMutationResult { }
 
 class SkipResult : IMutationResult { }
 
-class DeleteResult : IMutationResult { }
+class DeleteResult : IMutationResult
+{
+    public List<string> Warnings { get; set; } = new List<string>();
+}
 
 class ErrorResult : IMutationResult
 {

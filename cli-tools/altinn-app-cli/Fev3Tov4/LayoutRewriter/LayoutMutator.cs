@@ -112,8 +112,12 @@ class LayoutMutator
                     continue;
                 }
 
-                if (result is DeleteResult)
+                if (result is DeleteResult deleteResult)
                 {
+                    if (deleteResult.Warnings.Count > 0)
+                    {
+                        warnings.Add($"Updating component {component["id"]} in {filePath} resulted in the following warnings: {string.Join(", ", deleteResult.Warnings)}");
+                    }
                     layoutArray.Remove(component);
                     continue;
                 }
