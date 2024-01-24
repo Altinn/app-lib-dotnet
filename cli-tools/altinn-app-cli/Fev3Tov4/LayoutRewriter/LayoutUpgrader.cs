@@ -22,6 +22,7 @@ class LayoutUpgrader
     {
         layoutMutator.ReadAllLayoutFiles();
         layoutMutator.Mutate(new LikertMutator());
+        layoutMutator.Mutate(new RepeatingGroupMutator());
     }
 
     public async Task Write()

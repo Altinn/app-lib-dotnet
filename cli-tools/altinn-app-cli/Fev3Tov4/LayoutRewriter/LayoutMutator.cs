@@ -89,6 +89,11 @@ class LayoutMutator
 
                 var id = idValue.GetValue<string>();
 
+                if (componentLookup.ContainsKey(id)) {
+                    warnings.Add($"Duplicate id {id} in {filePath}, skipping upgrade of component");
+                    continue;
+                }
+
                 components.Add(componentObject);
                 componentLookup.Add(id, componentObject);
             }
@@ -103,7 +108,7 @@ class LayoutMutator
 
                 if (result is ErrorResult errorResult)
                 {
-                    warnings.Add($"Updating component {component.ToJsonString()} in {filePath} failed with the message: {errorResult.Message}");
+                    warnings.Add($"Updating component {component["id"]} in {filePath} failed with the message: {errorResult.Message}");
                     continue;
                 }
 
@@ -115,6 +120,10 @@ class LayoutMutator
 
                 if (result is ReplaceResult replaceResult)
                 {
+                    if (replaceResult.Warnings.Count > 0)
+                    {
+                        warnings.Add($"Updating component {component["id"]} in {filePath} resulted in the following warnings: {string.Join(", ", replaceResult.Warnings)}");
+                    }
                     var index = layoutArray.IndexOf(component);
                     layoutArray.RemoveAt(index);
                     layoutArray.Insert(index, replaceResult.Component);

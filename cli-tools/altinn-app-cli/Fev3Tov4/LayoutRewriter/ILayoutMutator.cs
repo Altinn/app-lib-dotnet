@@ -16,6 +16,7 @@ class ErrorResult : IMutationResult
 class ReplaceResult : IMutationResult
 {
     public required JsonObject Component { get; set; }
+    public List<string> Warnings { get; set; } = new List<string>();
 }
 
 /**
