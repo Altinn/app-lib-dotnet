@@ -28,7 +28,7 @@ class GroupMutator : ILayoutMutator
         {
             if (component.TryGetPropertyValue("panel", out var panelNode)) {
                 // if panel has reference, delete the entire component and log warning
-                if (panelNode is JsonObject panelObject && panelObject.TryGetPropertyValue("groupReference", out var groupRefNode)) {
+                if (panelNode is JsonObject panelObject && panelObject.ContainsKey("groupReference")) {
                     return new DeleteResult() { Warnings = new List<string>() {"Group with panel and groupReference is not supported in v4, deleting component"} };
                 }
 

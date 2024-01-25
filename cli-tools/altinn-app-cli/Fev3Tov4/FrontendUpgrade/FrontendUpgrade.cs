@@ -21,6 +21,7 @@ class FrontendUpgrade
         var skipLayoutSetUpgradeOption = new Option<bool>(name: "--skip-layout-set-upgrade", description: "Skip layout set upgrade", getDefaultValue: () => false);
         var skipLayoutUpgradeOption = new Option<bool>(name: "--skip-layout-upgrade", description: "Skip layout files upgrade", getDefaultValue: () => false);
         var preserveDefaultTriggersOption = new Option<bool>(name: "--preserve-default-triggers", description: "Preserve default schema and component validation triggers", getDefaultValue: () => false);
+        var convertGroupTitlesOption = new Option<bool>(name: "--convert-group-titles", description: "Convert 'title' in repeating groups to 'summaryTitle'", getDefaultValue: () => false);
 
         var upgradeCommand = new Command("frontend-upgrade", "Upgrade an app from using App-Frontend v3 to v4")
         {
@@ -34,6 +35,7 @@ class FrontendUpgrade
             skipLayoutSetUpgradeOption,
             skipLayoutUpgradeOption,
             preserveDefaultTriggersOption,
+            convertGroupTitlesOption,
         };
 
         upgradeCommand.SetHandler(
@@ -46,6 +48,7 @@ class FrontendUpgrade
                 var skipLayoutUpgrade = context.ParseResult.GetValueForOption(skipLayoutUpgradeOption)!;
                 var layoutSetName = context.ParseResult.GetValueForOption(layoutSetNameOption)!;
                 var preserveDefaultTriggers = context.ParseResult.GetValueForOption(preserveDefaultTriggersOption)!;
+                var convertGroupTitles = context.ParseResult.GetValueForOption(convertGroupTitlesOption)!;
 
                 var projectFolder = context.ParseResult.GetValueForOption(projectFolderOption)!;
                 if (projectFolder == "CurrentDirectory")
@@ -95,7 +98,7 @@ class FrontendUpgrade
                 if (!skipLayoutUpgrade && returnCode == 0)
                 {
 
-                    returnCode = await LayoutUpgrade(uiFolder, preserveDefaultTriggers);
+                    returnCode = await LayoutUpgrade(uiFolder, preserveDefaultTriggers, convertGroupTitles);
                 }
             }
         );
@@ -144,7 +147,7 @@ class FrontendUpgrade
         return 0;
     }
 
-    private static async Task<int> LayoutUpgrade(string uiFolder, bool preserveDefaultTriggers)
+    private static async Task<int> LayoutUpgrade(string uiFolder, bool preserveDefaultTriggers, bool convertGroupTitles)
     {
         if (!Directory.Exists(uiFolder))
         {
@@ -159,7 +162,7 @@ class FrontendUpgrade
         }
 
 
-        var rewriter = new LayoutUpgrader(uiFolder, preserveDefaultTriggers);
+        var rewriter = new LayoutUpgrader(uiFolder, preserveDefaultTriggers, convertGroupTitles);
         rewriter.Upgrade();
         await rewriter.Write();
         var warnings = rewriter.GetWarnings();

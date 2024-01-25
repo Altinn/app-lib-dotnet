@@ -66,7 +66,7 @@ class LayoutSetUpgrader
                 continue;
             }
 
-            if (!appLogicObject.TryGetPropertyValue("classRef", out var classRef))
+            if (!appLogicObject.ContainsKey("classRef"))
             {
                 continue;
             }
