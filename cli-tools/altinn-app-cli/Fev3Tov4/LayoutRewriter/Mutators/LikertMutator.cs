@@ -128,7 +128,7 @@ class LikertMutator : ILayoutMutator
                     Message = "Likert is missing dataModelBindings.simpleBinding"
                 };
             }
-            groupDmbObject.Add("simpleBinding", simpleBindingNode?.DeepClone());
+            groupDmbObject.Add("answer", simpleBindingNode?.DeepClone());
 
             // Move standard properties from likert to group
             if (likertComponent.TryGetPropertyValue("options", out var optionsNode))
