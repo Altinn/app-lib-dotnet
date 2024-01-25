@@ -4,10 +4,12 @@ class LayoutUpgrader
 {
     private readonly IList<string> warnings = new List<string>();
     private readonly LayoutMutator layoutMutator;
+    private readonly bool preserveDefaultTriggers;
 
-    public LayoutUpgrader(string uiFolder)
+    public LayoutUpgrader(string uiFolder, bool preserveDefaultTriggers)
     {
         this.layoutMutator = new LayoutMutator(uiFolder);
+        this.preserveDefaultTriggers = preserveDefaultTriggers;
     }
 
     public IList<string> GetWarnings()
@@ -24,7 +26,7 @@ class LayoutUpgrader
         layoutMutator.Mutate(new LikertMutator());
         layoutMutator.Mutate(new RepeatingGroupMutator());
         layoutMutator.Mutate(new GroupMutator());
-        layoutMutator.Mutate(new TriggerMutator());
+        layoutMutator.Mutate(new TriggerMutator(preserveDefaultTriggers));
     }
 
     public async Task Write()

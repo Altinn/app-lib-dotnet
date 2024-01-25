@@ -20,6 +20,7 @@ class FrontendUpgrade
         var applicationMetadataFileOption = new Option<string>(name: "--application-metadata", description: "The path of the applicationmetadata.json file relative to --folder", getDefaultValue: () => "App/config/applicationmetadata.json");
         var skipLayoutSetUpgradeOption = new Option<bool>(name: "--skip-layout-set-upgrade", description: "Skip layout set upgrade", getDefaultValue: () => false);
         var skipLayoutUpgradeOption = new Option<bool>(name: "--skip-layout-upgrade", description: "Skip layout files upgrade", getDefaultValue: () => false);
+        var preserveDefaultTriggersOption = new Option<bool>(name: "--preserve-default-triggers", description: "Preserve default schema and component validation triggers", getDefaultValue: () => false);
 
         var upgradeCommand = new Command("frontend-upgrade", "Upgrade an app from using App-Frontend v3 to v4")
         {
@@ -32,6 +33,7 @@ class FrontendUpgrade
             applicationMetadataFileOption,
             skipLayoutSetUpgradeOption,
             skipLayoutUpgradeOption,
+            preserveDefaultTriggersOption,
         };
 
         upgradeCommand.SetHandler(
@@ -43,6 +45,7 @@ class FrontendUpgrade
                 var skipLayoutSetUpgrade = context.ParseResult.GetValueForOption(skipLayoutSetUpgradeOption)!;
                 var skipLayoutUpgrade = context.ParseResult.GetValueForOption(skipLayoutUpgradeOption)!;
                 var layoutSetName = context.ParseResult.GetValueForOption(layoutSetNameOption)!;
+                var preserveDefaultTriggers = context.ParseResult.GetValueForOption(preserveDefaultTriggersOption)!;
 
                 var projectFolder = context.ParseResult.GetValueForOption(projectFolderOption)!;
                 if (projectFolder == "CurrentDirectory")
@@ -92,7 +95,7 @@ class FrontendUpgrade
                 if (!skipLayoutUpgrade && returnCode == 0)
                 {
 
-                    returnCode = await LayoutUpgrade(uiFolder);
+                    returnCode = await LayoutUpgrade(uiFolder, preserveDefaultTriggers);
                 }
             }
         );
@@ -141,7 +144,7 @@ class FrontendUpgrade
         return 0;
     }
 
-    private static async Task<int> LayoutUpgrade(string uiFolder)
+    private static async Task<int> LayoutUpgrade(string uiFolder, bool preserveDefaultTriggers)
     {
         if (!Directory.Exists(uiFolder))
         {
@@ -156,7 +159,7 @@ class FrontendUpgrade
         }
 
 
-        var rewriter = new LayoutUpgrader(uiFolder);
+        var rewriter = new LayoutUpgrader(uiFolder, preserveDefaultTriggers);
         rewriter.Upgrade();
         await rewriter.Write();
         var warnings = rewriter.GetWarnings();

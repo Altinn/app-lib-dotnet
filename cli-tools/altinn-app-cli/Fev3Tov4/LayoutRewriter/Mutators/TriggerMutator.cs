@@ -9,6 +9,12 @@ namespace altinn_app_cli.fev3tov4.LayoutRewriter;
 /// </summary>
 class TriggerMutator : ILayoutMutator
 {
+    private readonly bool preserveDefaultTriggers;
+
+    public TriggerMutator(bool preserveDefaultTriggers) {
+        this.preserveDefaultTriggers = preserveDefaultTriggers;
+    }
+
     public override IMutationResult Mutate(
         JsonObject component,
         Dictionary<string, JsonObject> componentLookup
@@ -46,8 +52,11 @@ class TriggerMutator : ILayoutMutator
                     return new ReplaceResult() { Component = component };
                 }
             }
-            component.Add("showValidations", JsonNode.Parse(@"[""Schema"", ""Component""]"));
-            return new ReplaceResult() { Component = component };
+            if (this.preserveDefaultTriggers)
+            {
+                component.Add("showValidations", JsonNode.Parse(@"[""Schema"", ""Component""]"));
+                return new ReplaceResult() { Component = component };
+            }
         }
 
         if (type == "RepeatingGroup") 
