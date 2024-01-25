@@ -52,20 +52,21 @@ class LayoutMutator
     {
         foreach ((var filePath, var layoutJson) in layoutCollection)
         {
+            var compactFilePath = string.Join(Path.DirectorySeparatorChar, filePath.Split(Path.DirectorySeparatorChar)[^3..]);
             var components = new List<JsonObject>();
             var componentLookup = new Dictionary<string, JsonObject>();
 
             layoutJson.TryGetPropertyValue("data", out var dataNode);
             if (dataNode is not JsonObject dataObject)
             {
-                warnings.Add($"Unable to parse data node in {filePath}, expected an object");
+                warnings.Add($"Unable to parse data node in {compactFilePath}, expected an object");
                 continue;
             }
 
             dataObject.TryGetPropertyValue("layout", out var layoutNode);
             if (layoutNode is not JsonArray layoutArray)
             {
-                warnings.Add($"Unable to parse layout node in {filePath}, expected an array");
+                warnings.Add($"Unable to parse layout node in {compactFilePath}, expected an array");
                 continue;
             }
 
@@ -73,7 +74,7 @@ class LayoutMutator
             {
                 if (componentNode is not JsonObject componentObject)
                 {
-                    warnings.Add($"Unable to parse component {componentNode?.ToJsonString()} in {filePath}, expected an object");
+                    warnings.Add($"Unable to parse component {componentNode?.ToJsonString()} in {compactFilePath}, expected an object");
                     continue;
                 }
 
@@ -83,14 +84,14 @@ class LayoutMutator
                     || idValue.GetValueKind() != JsonValueKind.String
                 )
                 {
-                    warnings.Add($"Unable to parse id {idNode?.ToJsonString()} in {filePath}, expected a string");
+                    warnings.Add($"Unable to parse id {idNode?.ToJsonString()} in {compactFilePath}, expected a string");
                     continue;
                 }
 
                 var id = idValue.GetValue<string>();
 
                 if (componentLookup.ContainsKey(id)) {
-                    warnings.Add($"Duplicate id {id} in {filePath}, skipping upgrade of component");
+                    warnings.Add($"Duplicate id {id} in {compactFilePath}, skipping upgrade of component");
                     continue;
                 }
 
@@ -108,7 +109,7 @@ class LayoutMutator
 
                 if (result is ErrorResult errorResult)
                 {
-                    warnings.Add($"Updating component {component["id"]} in {filePath} failed with the message: {errorResult.Message}");
+                    warnings.Add($"Updating component {component["id"]} in {compactFilePath} failed with the message: {errorResult.Message}");
                     continue;
                 }
 
@@ -116,7 +117,7 @@ class LayoutMutator
                 {
                     if (deleteResult.Warnings.Count > 0)
                     {
-                        warnings.Add($"Updating component {component["id"]} in {filePath} resulted in the following warnings: {string.Join(", ", deleteResult.Warnings)}");
+                        warnings.Add($"Updating component {component["id"]} in {compactFilePath} resulted in the following warnings: {string.Join(", ", deleteResult.Warnings)}");
                     }
                     layoutArray.Remove(component);
                     continue;
@@ -126,7 +127,7 @@ class LayoutMutator
                 {
                     if (replaceResult.Warnings.Count > 0)
                     {
-                        warnings.Add($"Updating component {component["id"]} in {filePath} resulted in the following warnings: {string.Join(", ", replaceResult.Warnings)}");
+                        warnings.Add($"Updating component {component["id"]} in {compactFilePath} resulted in the following warnings: {string.Join(", ", replaceResult.Warnings)}");
                     }
                     var index = layoutArray.IndexOf(component);
                     layoutArray.RemoveAt(index);

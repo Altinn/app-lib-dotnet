@@ -16,8 +16,7 @@ class LayoutUpgrader
 
     public IList<string> GetWarnings()
     {
-        // TODO: Since multiple mutators can add identical warnings, we should probably deduplicate them
-        return warnings.Concat(layoutMutator.GetWarnings()).ToList();
+        return warnings.Concat(layoutMutator.GetWarnings()).Distinct().ToList();
     }
 
     /**
