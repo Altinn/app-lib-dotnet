@@ -4,6 +4,7 @@ using altinn_app_cli.fev3tov4.LayoutSetRewriter;
 using altinn_app_cli.fev3tov4.IndexFileRewriter;
 using altinn_app_cli.fev3tov4.LayoutRewriter;
 using altinn_app_cli.fev3tov4.SchemaRefRewriter;
+using altinn_app_cli.fev3tov4.FooterRewriter;
 
 namespace altinn_app_cli.fev3tov4.FrontendUpgrade;
 
@@ -25,6 +26,7 @@ class FrontendUpgrade
         var preserveDefaultTriggersOption = new Option<bool>(name: "--preserve-default-triggers", description: "Preserve default schema and component validation triggers", getDefaultValue: () => false);
         var convertGroupTitlesOption = new Option<bool>(name: "--convert-group-titles", description: "Convert 'title' in repeating groups to 'summaryTitle'", getDefaultValue: () => false);
         var skipSchemaRefUpgradeOption = new Option<bool>(name: "--skip-schema-ref-upgrade", description: "Skip schema reference upgrade", getDefaultValue: () => false);
+        var skipFooterUpgradeOption = new Option<bool>(name: "--skip-footer-upgrade", description: "Skip footer upgrade", getDefaultValue: () => false);
 
         var upgradeCommand = new Command("frontend-upgrade", "Upgrade an app from using App-Frontend v3 to v4")
         {
@@ -41,6 +43,7 @@ class FrontendUpgrade
             preserveDefaultTriggersOption,
             convertGroupTitlesOption,
             skipSchemaRefUpgradeOption,
+            skipFooterUpgradeOption,
         };
 
         upgradeCommand.SetHandler(
@@ -53,6 +56,7 @@ class FrontendUpgrade
                 var skipLayoutSetUpgrade = context.ParseResult.GetValueForOption(skipLayoutSetUpgradeOption)!;
                 var skipLayoutUpgrade = context.ParseResult.GetValueForOption(skipLayoutUpgradeOption)!;
                 var skipSchemaRefUpgrade = context.ParseResult.GetValueForOption(skipSchemaRefUpgradeOption)!;
+                var skipFooterUpgrade = context.ParseResult.GetValueForOption(skipFooterUpgradeOption)!;
                 var layoutSetName = context.ParseResult.GetValueForOption(layoutSetNameOption)!;
                 var preserveDefaultTriggers = context.ParseResult.GetValueForOption(preserveDefaultTriggersOption)!;
                 var convertGroupTitles = context.ParseResult.GetValueForOption(convertGroupTitlesOption)!;
@@ -98,6 +102,11 @@ class FrontendUpgrade
                 {
 
                     returnCode = await LayoutUpgrade(uiFolder, preserveDefaultTriggers, convertGroupTitles);
+                }
+
+                if (!skipFooterUpgrade && returnCode == 0)
+                {
+                    returnCode = await FooterUpgrade(uiFolder);
                 }
 
                 if (!skipSchemaRefUpgrade && returnCode == 0)
@@ -188,6 +197,26 @@ class FrontendUpgrade
             Console.WriteLine(warning);
         }
         Console.WriteLine(warnings.Any() ? "Layout files upgraded with warnings. Review the warnings above." : "Layout files upgraded");
+        return 0;
+    }
+
+    private static async Task<int> FooterUpgrade(string uiFolder)
+    {
+        if (!Directory.Exists(uiFolder))
+        {
+            Console.WriteLine($"Ui folder {uiFolder} does not exist. Please supply location of project with --ui-folder [path/to/ui/]");
+            return 1;
+        }
+
+        var rewriter = new FooterUpgrader(uiFolder);
+        rewriter.Upgrade();
+        await rewriter.Write();
+        var warnings = rewriter.GetWarnings();
+        foreach (var warning in warnings)
+        {
+            Console.WriteLine(warning);
+        }
+        Console.WriteLine(warnings.Any() ? "Footer upgraded with warnings. Review the warnings above." : "Footer upgraded");
         return 0;
     }
 
