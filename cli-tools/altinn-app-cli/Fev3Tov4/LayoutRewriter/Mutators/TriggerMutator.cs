@@ -33,7 +33,14 @@ class TriggerMutator : ILayoutMutator
             {
                 component.Remove("triggers");
 
-                if (triggersNode is JsonArray triggersArray && triggersArray.ToList().Exists(x => x is JsonValue v && v.GetValueKind() == JsonValueKind.String && v.GetValue<string>() == "validation"))
+                if (
+                    triggersNode is JsonArray triggersArray
+                    && triggersArray
+                        .Where(x => x is JsonValue && x.GetValueKind() == JsonValueKind.String)
+                        .Select(x => x?.GetValue<string>())
+                        is var triggers
+                    && triggers.Contains("validation")
+                )
                 {
                     component.Add("showValidations", JsonNode.Parse(@"[""AllExceptRequired""]"));
                     return new ReplaceResult() { Component = component };
@@ -49,11 +56,13 @@ class TriggerMutator : ILayoutMutator
             {
                 component.Remove("triggers");
 
-                if (triggersNode is JsonArray triggersArray && 
-                    (
-                        triggersArray.ToList().Exists(x => x is JsonValue v && v.GetValueKind() == JsonValueKind.String && v.GetValue<string>() == "validation")
-                        || triggersArray.ToList().Exists(x => x is JsonValue v && v.GetValueKind() == JsonValueKind.String && v.GetValue<string>() == "validateRow") 
-                    )
+                if (
+                    triggersNode is JsonArray triggersArray
+                    && triggersArray
+                        .Where(x => x is JsonValue && x.GetValueKind() == JsonValueKind.String)
+                        .Select(x => x?.GetValue<string>())
+                        is var triggers
+                    && (triggers.Contains("validation") || triggers.Contains("validateRow"))
                 )
                 {
                     component.Add("validateOnSaveRow", JsonNode.Parse(@"[""All""]"));
@@ -68,19 +77,31 @@ class TriggerMutator : ILayoutMutator
             {
                 component.Remove("triggers");
 
-                if (triggersNode is JsonArray triggersArray1 && triggersArray1.ToList().Exists(x => x is JsonValue v && v.GetValueKind() == JsonValueKind.String && v.GetValue<string>() == "validatePage")) {
-                    component.Add("validateOnNext", JsonNode.Parse(@"{""page"": ""current"", ""show"": [""All""]}"));
-                    return new ReplaceResult() { Component = component };
-                }
+                if (
+                    triggersNode is JsonArray triggersArray
+                    && triggersArray
+                        .Where(x => x is JsonValue && x.GetValueKind() == JsonValueKind.String)
+                        .Select(x => x?.GetValue<string>())
+                        is var triggers
+                )
+                {
+                    if (triggers.Contains("validatePage"))
+                    {
+                        component.Add("validateOnNext", JsonNode.Parse(@"{""page"": ""current"", ""show"": [""All""]}"));
+                        return new ReplaceResult() { Component = component };
+                    }
 
-                if (triggersNode is JsonArray triggersArray2 && triggersArray2.ToList().Exists(x => x is JsonValue v && v.GetValueKind() == JsonValueKind.String && v.GetValue<string>() == "validateAllPages")) {
-                    component.Add("validateOnNext", JsonNode.Parse(@"{""page"": ""all"", ""show"": [""All""]}"));
-                    return new ReplaceResult() { Component = component };
-                }
+                    if (triggers.Contains("validateAllPages"))
+                    {
+                        component.Add("validateOnNext", JsonNode.Parse(@"{""page"": ""all"", ""show"": [""All""]}"));
+                        return new ReplaceResult() { Component = component };
+                    }
 
-                if (triggersNode is JsonArray triggersArray3 && triggersArray3.ToList().Exists(x => x is JsonValue v && v.GetValueKind() == JsonValueKind.String && v.GetValue<string>() == "validateCurrentAndPreviousPages")) {
-                    component.Add("validateOnNext", JsonNode.Parse(@"{""page"": ""currentAndPrevious"", ""show"": [""All""]}"));
-                    return new ReplaceResult() { Component = component };
+                    if (triggers.Contains("validateCurrentAndPreviousPages"))
+                    {
+                        component.Add("validateOnNext", JsonNode.Parse(@"{""page"": ""currentAndPrevious"", ""show"": [""All""]}"));
+                        return new ReplaceResult() { Component = component };
+                    }
                 }
             }
         }
@@ -91,19 +112,31 @@ class TriggerMutator : ILayoutMutator
             {
                 component.Remove("triggers");
 
-                if (triggersNode is JsonArray triggersArray1 && triggersArray1.ToList().Exists(x => x is JsonValue v && v.GetValueKind() == JsonValueKind.String && v.GetValue<string>() == "validatePage")) {
-                    component.Add("validateOnForward", JsonNode.Parse(@"{""page"": ""current"", ""show"": [""All""]}"));
-                    return new ReplaceResult() { Component = component };
-                }
+                if (
+                    triggersNode is JsonArray triggersArray
+                    && triggersArray
+                        .Where(x => x is JsonValue && x.GetValueKind() == JsonValueKind.String)
+                        .Select(x => x?.GetValue<string>())
+                        is var triggers
+                )
+                {
+                    if (triggers.Contains("validatePage"))
+                    {
+                        component.Add("validateOnForward", JsonNode.Parse(@"{""page"": ""current"", ""show"": [""All""]}"));
+                        return new ReplaceResult() { Component = component };
+                    }
 
-                if (triggersNode is JsonArray triggersArray2 && triggersArray2.ToList().Exists(x => x is JsonValue v && v.GetValueKind() == JsonValueKind.String && v.GetValue<string>() == "validateAllPages")) {
-                    component.Add("validateOnForward", JsonNode.Parse(@"{""page"": ""all"", ""show"": [""All""]}"));
-                    return new ReplaceResult() { Component = component };
-                }
+                    if (triggers.Contains("validateAllPages"))
+                    {
+                        component.Add("validateOnForward", JsonNode.Parse(@"{""page"": ""all"", ""show"": [""All""]}"));
+                        return new ReplaceResult() { Component = component };
+                    }
 
-                if (triggersNode is JsonArray triggersArray3 && triggersArray3.ToList().Exists(x => x is JsonValue v && v.GetValueKind() == JsonValueKind.String && v.GetValue<string>() == "validateCurrentAndPreviousPages")) {
-                    component.Add("validateOnForward", JsonNode.Parse(@"{""page"": ""currentAndPrevious"", ""show"": [""All""]}"));
-                    return new ReplaceResult() { Component = component };
+                    if (triggers.Contains("validateCurrentAndPreviousPages"))
+                    {
+                        component.Add("validateOnForward", JsonNode.Parse(@"{""page"": ""currentAndPrevious"", ""show"": [""All""]}"));
+                        return new ReplaceResult() { Component = component };
+                    }
                 }
             }
         }

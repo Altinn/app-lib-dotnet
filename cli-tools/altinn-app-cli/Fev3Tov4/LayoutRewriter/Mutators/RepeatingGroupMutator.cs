@@ -46,7 +46,7 @@ class RepeatingGroupMutator : ILayoutMutator
             {
                 editObject.Remove("filter");
 
-                if (!component.TryGetPropertyValue("hiddenRow", out var hiddenRowNode))
+                if (!component.ContainsKey("hiddenRow"))
                 {
                     // Convert filter to hiddenRow
                     if (filterNode is JsonArray filterArray && filterArray.Count > 0)

@@ -24,7 +24,7 @@ class GroupMutator : ILayoutMutator
         }
 
         // Convert group + likert to new likert component
-        if (type == "Group" && !component.TryGetPropertyValue("maxCount", out var maxCountNode))
+        if (type == "Group" && !component.ContainsKey("maxCount"))
         {
             if (component.TryGetPropertyValue("panel", out var panelNode)) {
                 // if panel has reference, delete the entire component and log warning
