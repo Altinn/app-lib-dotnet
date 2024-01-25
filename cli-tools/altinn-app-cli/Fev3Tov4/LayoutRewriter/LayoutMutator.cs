@@ -11,13 +11,12 @@ namespace altinn_app_cli.fev3tov4.LayoutRewriter;
 class LayoutMutator
 {
     private readonly IList<string> warnings = new List<string>();
-    private Dictionary<string, JsonObject> layoutCollection;
+    private Dictionary<string, JsonObject> layoutCollection = new Dictionary<string, JsonObject>();
     private readonly string uiFolder;
 
     public LayoutMutator(string uiFolder)
     {
         this.uiFolder = uiFolder;
-        this.layoutCollection = new Dictionary<string, JsonObject>();
     }
 
     public IList<string> GetWarnings()
@@ -30,8 +29,7 @@ class LayoutMutator
         var layoutSets = Directory.GetDirectories(uiFolder);
         foreach (var layoutSet in layoutSets)
         {
-            var layoutFilesPath = Path.Join(layoutSet, "layouts");
-            var layoutFiles = Directory.GetFiles(layoutFilesPath, "*.json");
+            var layoutFiles = Directory.GetFiles(Path.Join(layoutSet, "layouts"), "*.json");
             foreach (var layoutFile in layoutFiles)
             {
                 var layoutText = File.ReadAllText(layoutFile);
