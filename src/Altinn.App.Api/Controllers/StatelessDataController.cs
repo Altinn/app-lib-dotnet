@@ -231,11 +231,7 @@ namespace Altinn.App.Api.Controllers
             await _prefillService.PrefillDataModel(owner.PartyId, dataType, appModel);
 
             Instance virtualInstance = new Instance() { InstanceOwner = owner };
-            foreach (var dataProcessor in _dataProcessors)
-            {
-                _logger.LogInformation("ProcessDataRead for {modelType} using {dataProcesor}", appModel.GetType().Name, dataProcessor.GetType().Name);
-                await dataProcessor.ProcessDataRead(virtualInstance, null, appModel, language);
-            }
+            await ProcessAllDataRead(virtualInstance, appModel, language);
 
             return Ok(appModel);
         }
@@ -278,11 +274,7 @@ namespace Altinn.App.Api.Controllers
             }
 
             Instance virtualInstance = new Instance();
-            foreach (var dataProcessor in _dataProcessors)
-            {
-                _logger.LogInformation("ProcessDataRead for {modelType} using {dataProcesor}", appModel.GetType().Name, dataProcessor.GetType().Name);
-                await dataProcessor.ProcessDataRead(virtualInstance, null, appModel, language);
-            }
+            await ProcessAllDataRead(virtualInstance, appModel, language);
 
             return Ok(appModel);
         }
