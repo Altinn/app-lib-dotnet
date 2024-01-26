@@ -5,6 +5,7 @@ using altinn_app_cli.fev3tov4.IndexFileRewriter;
 using altinn_app_cli.fev3tov4.LayoutRewriter;
 using altinn_app_cli.fev3tov4.SchemaRefRewriter;
 using altinn_app_cli.fev3tov4.FooterRewriter;
+using altinn_app_cli.fev3tov4.Checks;
 
 namespace altinn_app_cli.fev3tov4.FrontendUpgrade;
 
@@ -27,6 +28,7 @@ class FrontendUpgrade
         var convertGroupTitlesOption = new Option<bool>(name: "--convert-group-titles", description: "Convert 'title' in repeating groups to 'summaryTitle'", getDefaultValue: () => false);
         var skipSchemaRefUpgradeOption = new Option<bool>(name: "--skip-schema-ref-upgrade", description: "Skip schema reference upgrade", getDefaultValue: () => false);
         var skipFooterUpgradeOption = new Option<bool>(name: "--skip-footer-upgrade", description: "Skip footer upgrade", getDefaultValue: () => false);
+        var skipChecksOption = new Option<bool>(name: "--skip-checks", description: "Skip checks", getDefaultValue: () => false);
 
         var upgradeCommand = new Command("frontend-upgrade", "Upgrade an app from using App-Frontend v3 to v4")
         {
@@ -44,6 +46,7 @@ class FrontendUpgrade
             convertGroupTitlesOption,
             skipSchemaRefUpgradeOption,
             skipFooterUpgradeOption,
+            skipChecksOption
         };
 
         upgradeCommand.SetHandler(
@@ -57,6 +60,7 @@ class FrontendUpgrade
                 var skipLayoutUpgrade = context.ParseResult.GetValueForOption(skipLayoutUpgradeOption)!;
                 var skipSchemaRefUpgrade = context.ParseResult.GetValueForOption(skipSchemaRefUpgradeOption)!;
                 var skipFooterUpgrade = context.ParseResult.GetValueForOption(skipFooterUpgradeOption)!;
+                var skipChecks = context.ParseResult.GetValueForOption(skipChecksOption)!;
                 var layoutSetName = context.ParseResult.GetValueForOption(layoutSetNameOption)!;
                 var preserveDefaultTriggers = context.ParseResult.GetValueForOption(preserveDefaultTriggersOption)!;
                 var convertGroupTitles = context.ParseResult.GetValueForOption(convertGroupTitlesOption)!;
@@ -113,6 +117,11 @@ class FrontendUpgrade
                 {
 
                     returnCode = await SchemaRefUpgrade(targetVersion, uiFolder, applicationMetadataFile, textsFolder);
+                }
+
+                if (!skipChecks && returnCode == 0)
+                {
+                    returnCode = RunChecks(textsFolder);
                 }
             }
         );
@@ -254,6 +263,27 @@ class FrontendUpgrade
             Console.WriteLine(warning);
         }
         Console.WriteLine(warnings.Any() ? "Schema references upgraded with warnings. Review the warnings above." : "Schema references upgraded");
+        return 0;
+    }
+
+    private static int RunChecks(string textsFolder) {
+        if (!Directory.Exists(textsFolder))
+        {
+            Console.WriteLine($"Texts folder {textsFolder} does not exist. Please supply location of project with --texts-folder [path/to/texts/]");
+            return 1;
+        }
+
+        Console.WriteLine("Running checks...");
+        var checker = new Checker(textsFolder);
+
+        checker.CheckTextDataModelReferences();
+
+        var warnings = checker.GetWarnings();
+        foreach (var warning in warnings)
+        {
+            Console.WriteLine(warning);
+        }
+        Console.WriteLine(warnings.Any() ? "Checks finished with warnings. Review the warnings above." : "Checks finished without warnings");
         return 0;
     }
 }
