@@ -123,6 +123,8 @@ class FrontendUpgrade
                 {
                     returnCode = RunChecks(textsFolder);
                 }
+
+                Environment.Exit(returnCode);
             }
         );
 
