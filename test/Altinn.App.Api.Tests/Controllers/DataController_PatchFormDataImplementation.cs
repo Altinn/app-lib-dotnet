@@ -3,7 +3,6 @@ using System.Text.Json;
 using Altinn.App.Api.Controllers;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Features;
-using Altinn.App.Core.Features.FileAnalyzis;
 using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
@@ -37,9 +36,7 @@ public class DataController_PatchFormDataImplementation : IAsyncDisposable
     private readonly Mock<IDataProcessor> _dataProcessorMock = new(MockBehavior.Strict);
     private readonly Mock<IAppModel> _appModelMock = new (MockBehavior.Strict);
     private readonly Mock<IAppResources> _appResourcesServiceMock = new (MockBehavior.Strict);
-    private readonly Mock<IPrefill> _prefillServiceMock = new (MockBehavior.Strict);
-    private readonly Mock<IFileAnalysisService> _fileAnalyserServiceMock = new (MockBehavior.Strict);
-    private readonly Mock<IFileValidationService> _fileValidationServiceMock = new (MockBehavior.Strict);
+    private readonly Mock<IPrefill> _prefillServiceMock = new(MockBehavior.Strict);
     private readonly Mock<IAppMetadata> _appMetadataMock = new (MockBehavior.Strict);
     private readonly Mock<IFeatureManager> _featureManageMock = new (MockBehavior.Strict);
 
@@ -77,11 +74,9 @@ public class DataController_PatchFormDataImplementation : IAsyncDisposable
             _appModelMock.Object,
             _appResourcesServiceMock.Object,
             _prefillServiceMock.Object,
-            validationService,
-            _fileAnalyserServiceMock.Object,
-            _fileValidationServiceMock.Object,
             _appMetadataMock.Object,
-            _featureManageMock.Object
+            _featureManageMock.Object,
+            validationService
             );
     }
 
