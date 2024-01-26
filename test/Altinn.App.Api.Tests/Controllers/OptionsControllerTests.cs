@@ -64,11 +64,11 @@ namespace Altinn.App.Api.Tests.Controllers
     {
         public string Id => "test";
 
-        public Task<AppOptions> GetAppOptionsAsync(string language, Dictionary<string, string> keyValuePairs)
+        public Task<AppOptions> GetAppOptionsAsync(string? language, Dictionary<string, string> keyValuePairs)
         {
             AppOptions appOptions = new AppOptions()
             {
-                Parameters = new Dictionary<string, string>()
+                Parameters = new()
                 {
                     { "lang", language }
                 }
