@@ -33,6 +33,24 @@ class PropertyCleanupMutator : ILayoutMutator
             changed = true;
         }
 
+        if (component.ContainsKey("textResourceId"))
+        {
+            component.Remove("textResourceId");
+            changed = true;
+        }
+
+        if (component.ContainsKey("customType"))
+        {
+            component.Remove("customType");
+            changed = true;
+        }
+
+        if (component.ContainsKey("description"))
+        {
+            component.Remove("description");
+            changed = true;
+        }
+
         if (type == "Summary" && component.ContainsKey("pageRef"))
         {
             component.Remove("pageRef");

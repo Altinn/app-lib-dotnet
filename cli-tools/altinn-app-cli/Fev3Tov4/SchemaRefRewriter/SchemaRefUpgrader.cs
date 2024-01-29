@@ -49,7 +49,7 @@ class SchemaRefUpgrader
     public void Upgrade() 
     {
         // Application metadata
-        var appMetaJson = JsonNode.Parse(File.ReadAllText(applicationMetadataFile));
+        var appMetaJson = JsonNode.Parse(File.ReadAllText(applicationMetadataFile), null, new JsonDocumentOptions() { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
         if (appMetaJson is JsonObject appMetaJsonObject)
         {
             appMetaJsonObject["$schema"] = JsonValue.Create(applicationMetadataSchemaUri);
@@ -64,7 +64,7 @@ class SchemaRefUpgrader
         var textResourceFiles = Directory.GetFiles(textsFolder, "*.json");
         foreach (var textResourceFile in textResourceFiles)
         {
-            var textResourceJson = JsonNode.Parse(File.ReadAllText(textResourceFile));
+            var textResourceJson = JsonNode.Parse(File.ReadAllText(textResourceFile), null, new JsonDocumentOptions() { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
             if (textResourceJson is JsonObject textResourceJsonObject)
             {
                 textResourceJsonObject["$schema"] = JsonValue.Create(textResourcesSchemaUri);
@@ -81,7 +81,7 @@ class SchemaRefUpgrader
         var footerFile = Path.Join(uiFolder, "footer.json");
         if (File.Exists(footerFile))
         {
-            var footerJson = JsonNode.Parse(File.ReadAllText(footerFile));
+            var footerJson = JsonNode.Parse(File.ReadAllText(footerFile), null, new JsonDocumentOptions() { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
             if (footerJson is JsonObject footerJsonObject)
             {
                 footerJsonObject["$schema"] = JsonValue.Create(footerSchemaUri);
@@ -95,7 +95,7 @@ class SchemaRefUpgrader
 
         // Layout sets
         var layoutSetsFile = Path.Combine(uiFolder, "layout-sets.json");
-        var layoutSetsJson = JsonNode.Parse(File.ReadAllText(layoutSetsFile));
+        var layoutSetsJson = JsonNode.Parse(File.ReadAllText(layoutSetsFile), null, new JsonDocumentOptions() { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
         if (layoutSetsJson is JsonObject layoutSetsJsonObject)
         {
             layoutSetsJsonObject["$schema"] = JsonValue.Create(layoutSetsSchemaUri);
@@ -114,7 +114,7 @@ class SchemaRefUpgrader
             var layoutSettingsFile = Path.Join(layoutSet, "Settings.json");
             var compactSettingsFilePath = string.Join(Path.DirectorySeparatorChar, layoutSettingsFile.Split(Path.DirectorySeparatorChar)[^2..]);
             if (File.Exists(layoutSettingsFile)) {
-                var layoutSettingsJson = JsonNode.Parse(File.ReadAllText(layoutSettingsFile));
+                var layoutSettingsJson = JsonNode.Parse(File.ReadAllText(layoutSettingsFile), null, new JsonDocumentOptions() { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
                 if (layoutSettingsJson is JsonObject layoutSettingsJsonObject)
                 {
                     layoutSettingsJsonObject["$schema"] = JsonValue.Create(layoutSettingsSchemaUri);
@@ -134,7 +134,7 @@ class SchemaRefUpgrader
             var layoutFiles = Directory.GetFiles(Path.Join(layoutSet, "layouts"), "*.json");
             foreach (var layoutFile in layoutFiles)
             {
-                var layoutJson = JsonNode.Parse(File.ReadAllText(layoutFile));
+                var layoutJson = JsonNode.Parse(File.ReadAllText(layoutFile), null, new JsonDocumentOptions() { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
                 if (layoutJson is JsonObject layoutJsonObject)
                 {
                     layoutJsonObject["$schema"] = JsonValue.Create(layoutSchemaUri);

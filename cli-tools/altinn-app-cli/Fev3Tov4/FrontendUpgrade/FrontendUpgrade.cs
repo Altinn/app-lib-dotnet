@@ -11,6 +11,20 @@ namespace altinn_app_cli.fev3tov4.FrontendUpgrade;
 
 class FrontendUpgrade
 {
+    private static void PrintError(string message)
+    {
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine(message);
+        Console.ResetColor();
+    }
+
+    private static void PrintWarning(string message)
+    {
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine(message);
+        Console.ResetColor();
+    }
+
     public static Command GetUpgradeCommand()
     {
 
@@ -71,9 +85,13 @@ class FrontendUpgrade
                 {
                     projectFolder = Directory.GetCurrentDirectory();
                 }
+                if (!Path.IsPathRooted(projectFolder))
+                {
+                    projectFolder = Path.Combine(Directory.GetCurrentDirectory(), projectFolder);
+                }
                 if (File.Exists(projectFolder))
                 {
-                    Console.WriteLine($"Project folder {projectFolder} does not exist. Please supply location of project with --folder [path/to/project]");
+                    PrintError($"Project folder {projectFolder} does not exist. Please supply location of project with --folder [path/to/project]");
                     returnCode = 1;
                     return;
                 }
@@ -135,18 +153,20 @@ class FrontendUpgrade
     {
         if (!File.Exists(indexFile))
         {
-            Console.WriteLine($"Index.cshtml file {indexFile} does not exist. Please supply location of project with --index-file [path/to/Index.cshtml]");
+            PrintError($"Index.cshtml file {indexFile} does not exist. Please supply location of project with --index-file [path/to/Index.cshtml]");
             return 1;
         }
 
         var rewriter = new IndexFileUpgrader(indexFile, targetVersion);
         rewriter.Upgrade();
         await rewriter.Write();
+
         var warnings = rewriter.GetWarnings();
         foreach (var warning in warnings)
         {
-            Console.WriteLine(warning);
+            PrintWarning(warning);
         }
+
         Console.WriteLine(warnings.Any() ? "Index.cshtml upgraded with warnings. Review the warnings above." : "Index.cshtml upgraded");
         return 0;
     }
@@ -162,23 +182,30 @@ class FrontendUpgrade
 
         if (!Directory.Exists(uiFolder))
         {
-            Console.WriteLine($"Ui folder {uiFolder} does not exist. Please supply location of project with --ui-folder [path/to/ui/]");
+            PrintError($"Ui folder {uiFolder} does not exist. Please supply location of project with --ui-folder [path/to/ui/]");
+            return 1;
+        }
+
+        if(!Directory.Exists(Path.Combine(uiFolder, "layouts")) && !File.Exists(Path.Combine(uiFolder, "FormLayout.json")))
+        {
+            PrintError($"No layout files found in {uiFolder}, skipping layout sets upgrade.");
             return 1;
         }
 
         if (!File.Exists(applicationMetadataFile))
         {
-            Console.WriteLine($"Application metadata file {applicationMetadataFile} does not exist. Please supply location of project with --application-metadata [path/to/applicationmetadata.json]");
+            PrintError($"Application metadata file {applicationMetadataFile} does not exist. Please supply location of project with --application-metadata [path/to/applicationmetadata.json]");
             return 1;
         }
 
         var rewriter = new LayoutSetUpgrader(uiFolder, layoutSetName, applicationMetadataFile);
         rewriter.Upgrade();
         await rewriter.Write();
+
         var warnings = rewriter.GetWarnings();
         foreach (var warning in warnings)
         {
-            Console.WriteLine(warning);
+            PrintWarning(warning);
         }
         Console.WriteLine(warnings.Any() ? "Layout-sets upgraded with warnings. Review the warnings above." : "Layout sets upgraded");
         return 0;
@@ -188,13 +215,13 @@ class FrontendUpgrade
     {
         if (!Directory.Exists(uiFolder))
         {
-            Console.WriteLine($"Ui folder {uiFolder} does not exist. Please supply location of project with --ui-folder [path/to/ui/]");
+            PrintError($"Ui folder {uiFolder} does not exist. Please supply location of project with --ui-folder [path/to/ui/]");
             return 1;
         }
 
         if (!File.Exists(Path.Combine(uiFolder, "layout-sets.json")))
         {
-            Console.WriteLine("Converting to layout sets is required before upgrading layouts. Skipping layout upgrade.");
+            PrintError("Converting to layout sets is required before upgrading layouts. Skipping layout upgrade.");
             return 1;
         }
 
@@ -202,11 +229,13 @@ class FrontendUpgrade
         var rewriter = new LayoutUpgrader(uiFolder, preserveDefaultTriggers, convertGroupTitles);
         rewriter.Upgrade();
         await rewriter.Write();
+
         var warnings = rewriter.GetWarnings();
         foreach (var warning in warnings)
         {
-            Console.WriteLine(warning);
+            PrintWarning(warning);
         }
+        
         Console.WriteLine(warnings.Any() ? "Layout files upgraded with warnings. Review the warnings above." : "Layout files upgraded");
         return 0;
     }
@@ -215,18 +244,20 @@ class FrontendUpgrade
     {
         if (!Directory.Exists(uiFolder))
         {
-            Console.WriteLine($"Ui folder {uiFolder} does not exist. Please supply location of project with --ui-folder [path/to/ui/]");
+            PrintError($"Ui folder {uiFolder} does not exist. Please supply location of project with --ui-folder [path/to/ui/]");
             return 1;
         }
 
         var rewriter = new FooterUpgrader(uiFolder);
         rewriter.Upgrade();
         await rewriter.Write();
+
         var warnings = rewriter.GetWarnings();
         foreach (var warning in warnings)
         {
-            Console.WriteLine(warning);
+            PrintWarning(warning);
         }
+
         Console.WriteLine(warnings.Any() ? "Footer upgraded with warnings. Review the warnings above." : "Footer upgraded");
         return 0;
     }
@@ -234,36 +265,38 @@ class FrontendUpgrade
     private static async Task<int> SchemaRefUpgrade(string targetVersion, string uiFolder, string applicationMetadataFile, string textsFolder) {
         if (!Directory.Exists(uiFolder))
         {
-            Console.WriteLine($"Ui folder {uiFolder} does not exist. Please supply location of project with --ui-folder [path/to/ui/]");
+            PrintError($"Ui folder {uiFolder} does not exist. Please supply location of project with --ui-folder [path/to/ui/]");
             return 1;
         }
 
         if (!Directory.Exists(textsFolder))
         {
-            Console.WriteLine($"Texts folder {textsFolder} does not exist. Please supply location of project with --texts-folder [path/to/texts/]");
+            PrintError($"Texts folder {textsFolder} does not exist. Please supply location of project with --texts-folder [path/to/texts/]");
             return 1;
         }
 
         if (!File.Exists(Path.Combine(uiFolder, "layout-sets.json")))
         {
-            Console.WriteLine("Converting to layout sets is required before upgrading schema refereces. Skipping schema reference upgrade.");
+            PrintError("Converting to layout sets is required before upgrading schema refereces. Skipping schema reference upgrade.");
             return 1;
         }
 
         if (!File.Exists(applicationMetadataFile))
         {
-            Console.WriteLine($"Application metadata file {applicationMetadataFile} does not exist. Please supply location of project with --application-metadata [path/to/applicationmetadata.json]");
+            PrintError($"Application metadata file {applicationMetadataFile} does not exist. Please supply location of project with --application-metadata [path/to/applicationmetadata.json]");
             return 1;
         }
 
         var rewriter = new SchemaRefUpgrader(targetVersion, uiFolder, applicationMetadataFile, textsFolder);
         rewriter.Upgrade();
         await rewriter.Write();
+
         var warnings = rewriter.GetWarnings();
         foreach (var warning in warnings)
         {
-            Console.WriteLine(warning);
+            PrintWarning(warning);
         }
+
         Console.WriteLine(warnings.Any() ? "Schema references upgraded with warnings. Review the warnings above." : "Schema references upgraded");
         return 0;
     }
@@ -271,7 +304,7 @@ class FrontendUpgrade
     private static int RunChecks(string textsFolder) {
         if (!Directory.Exists(textsFolder))
         {
-            Console.WriteLine($"Texts folder {textsFolder} does not exist. Please supply location of project with --texts-folder [path/to/texts/]");
+            PrintError($"Texts folder {textsFolder} does not exist. Please supply location of project with --texts-folder [path/to/texts/]");
             return 1;
         }
 
@@ -283,8 +316,9 @@ class FrontendUpgrade
         var warnings = checker.GetWarnings();
         foreach (var warning in warnings)
         {
-            Console.WriteLine(warning);
+            PrintWarning(warning);
         }
+
         Console.WriteLine(warnings.Any() ? "Checks finished with warnings. Review the warnings above." : "Checks finished without warnings");
         return 0;
     }

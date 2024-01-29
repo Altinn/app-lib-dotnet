@@ -33,7 +33,7 @@ class LayoutMutator
             foreach (var layoutFile in layoutFiles)
             {
                 var layoutText = File.ReadAllText(layoutFile);
-                var layoutJson = JsonNode.Parse(layoutText);
+                var layoutJson = JsonNode.Parse(layoutText, null, new JsonDocumentOptions() { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
 
                 if (layoutJson is not JsonObject layoutJsonObject)
                 {
@@ -61,7 +61,20 @@ class LayoutMutator
                 continue;
             }
 
-            dataObject.TryGetPropertyValue("layout", out var layoutNode);
+            JsonNode? layoutNode;
+            try
+            {
+                dataObject.TryGetPropertyValue("layout", out layoutNode);
+            }
+            catch (Exception e)
+            {
+                // Duplicate keys in the object will throw an exception here
+                warnings.Add(
+                    $"Unable to parse layout array in {compactFilePath}, error: {e.Message}"
+                );
+                continue;
+            }
+
             if (layoutNode is not JsonArray layoutArray)
             {
                 warnings.Add($"Unable to parse layout node in {compactFilePath}, expected an array");
@@ -76,7 +89,20 @@ class LayoutMutator
                     continue;
                 }
 
-                var componentId = componentObject.TryGetPropertyValue("id", out var idNode);
+                JsonNode? idNode;
+                try
+                {
+                    var componentId = componentObject.TryGetPropertyValue("id", out idNode);
+                }
+                catch (Exception e)
+                {
+                    // Duplicate keys in the object will throw an exception here
+                    warnings.Add(
+                        $"Unable to parse component {componentNode?.ToJsonString()} in {compactFilePath}, error: {e.Message}"
+                    );
+                    continue;
+                }
+
                 if (
                     idNode is not JsonValue idValue
                     || idValue.GetValueKind() != JsonValueKind.String

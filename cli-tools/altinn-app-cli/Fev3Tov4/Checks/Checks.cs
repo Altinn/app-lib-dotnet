@@ -22,7 +22,7 @@ class Checker
         foreach (var textResourceFile in textResourceFiles)
         {
             var compactFilePath = string.Join(Path.DirectorySeparatorChar, textResourceFile.Split(Path.DirectorySeparatorChar)[^2..]);
-            var textResourceNode = JsonNode.Parse(File.ReadAllText(textResourceFile));
+            var textResourceNode = JsonNode.Parse(File.ReadAllText(textResourceFile), null, new JsonDocumentOptions() { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
             if (
                 textResourceNode is JsonObject textResourceObject
                 && textResourceObject.TryGetPropertyValue("resources", out var resourcesNode)

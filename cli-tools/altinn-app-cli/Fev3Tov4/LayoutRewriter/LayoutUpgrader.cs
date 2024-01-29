@@ -31,7 +31,7 @@ class LayoutUpgrader
         layoutMutator.Mutate(new TriggerMutator(this.preserveDefaultTriggers));
         layoutMutator.Mutate(new TrbMutator(this.convertGroupTitles));
         layoutMutator.Mutate(new AttachmentListMutator());
-        layoutMutator.Mutate(new PropertyCleanupMutator());
+        // layoutMutator.Mutate(new PropertyCleanupMutator());
     }
 
     public async Task Write()

@@ -29,7 +29,7 @@ class FooterUpgrader
         var footerFile = Path.Join(uiFolder, "footer.json");
         if (File.Exists(footerFile))
         {
-            var footerJson = JsonNode.Parse(File.ReadAllText(footerFile));
+            var footerJson = JsonNode.Parse(File.ReadAllText(footerFile), null, new JsonDocumentOptions() { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
             if (footerJson is JsonObject footerJsonObject && footerJsonObject.TryGetPropertyValue("footer", out var footerNode) && footerNode is JsonArray footerArray)
             {
                 foreach (var footerItem in footerArray)
