@@ -5,6 +5,7 @@ using Xunit;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Models;
 using FluentAssertions;
+using Moq;
 
 namespace Altinn.App.Api.Tests.Controllers
 {
@@ -37,7 +38,7 @@ namespace Altinn.App.Api.Tests.Controllers
         }
 
         [Fact]
-        public async Task Get_ShouldDefaultToNbLanguage()
+        public async Task Get_ShouldNotDefaultToNbLanguage()
         {
             OverrideServicesForThisTest = (services) =>
             {
@@ -55,7 +56,7 @@ namespace Altinn.App.Api.Tests.Controllers
 
             var headerValue = response.Headers.GetValues("Altinn-DownstreamParameters");
             response.StatusCode.Should().Be(HttpStatusCode.OK);
-            headerValue.Should().Contain("lang=nb");
+            headerValue.Should().NotContain("nb");
         }
     }
 
@@ -63,15 +64,14 @@ namespace Altinn.App.Api.Tests.Controllers
     {
         public string Id => "test";
 
-        public Task<AppOptions> GetAppOptionsAsync(string language, Dictionary<string, string> keyValuePairs)
+        public Task<AppOptions> GetAppOptionsAsync(string? language, Dictionary<string, string> keyValuePairs)
         {
             AppOptions appOptions = new AppOptions()
             {
-                Parameters = new Dictionary<string, string>()
+                Parameters = new()
                 {
                     { "lang", language }
-                },
-
+                }
             };
 
             return Task.FromResult(appOptions);

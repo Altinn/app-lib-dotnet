@@ -34,22 +34,22 @@ namespace Altinn.App.Api.Controllers
         /// Api that exposes app related options
         /// </summary>
         /// <param name="optionsId">The optionsId</param>
+        /// <param name="queryParams">Query parameters supplied</param>
         /// <param name="language">The language selected by the user.</param>
-        /// <param name="queryParams">Query parameteres supplied</param>
         /// <returns>The options list</returns>
         [HttpGet("{optionsId}")]
         public async Task<IActionResult> Get(
             [FromRoute] string optionsId,
-            [FromQuery] string? language,
-            [FromQuery] Dictionary<string, string> queryParams)
+            [FromQuery] Dictionary<string, string> queryParams,
+            [FromQuery] string? language = null)
         {
-            AppOptions appOptions = await _appOptionsService.GetOptionsAsync(optionsId, language ?? "nb", queryParams);
+            AppOptions appOptions = await _appOptionsService.GetOptionsAsync(optionsId, language, queryParams);
             if (appOptions.Options == null)
             {
                 return NotFound();
             }
 
-            HttpContext.Response.Headers.Add("Altinn-DownstreamParameters", appOptions.Parameters.ToNameValueString(','));
+            HttpContext.Response.Headers.Append("Altinn-DownstreamParameters", appOptions.Parameters.ToUrlEncodedNameValueString(','));
 
             return Ok(appOptions.Options);
         }
@@ -90,7 +90,7 @@ namespace Altinn.App.Api.Controllers
                 return NotFound();
             }
 
-            HttpContext.Response.Headers.Add("Altinn-DownstreamParameters", appOptions.Parameters.ToNameValueString(','));
+            HttpContext.Response.Headers.Append("Altinn-DownstreamParameters", appOptions.Parameters.ToUrlEncodedNameValueString(','));
 
             return Ok(appOptions.Options);
         }
