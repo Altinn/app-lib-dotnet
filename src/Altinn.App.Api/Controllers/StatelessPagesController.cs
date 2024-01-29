@@ -5,7 +5,6 @@ using Altinn.App.Core.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-using Newtonsoft.Json;
 
 namespace Altinn.App.Api.Controllers
 {

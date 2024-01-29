@@ -16,8 +16,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 
-using Newtonsoft.Json;
-
 namespace Altinn.App.Core.Infrastructure.Clients.Storage
 {
     /// <summary>

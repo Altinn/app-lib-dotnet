@@ -1,4 +1,4 @@
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace Altinn.App.Core.Models
 {
@@ -12,19 +12,19 @@ namespace Altinn.App.Core.Models
         /// <summary>
         /// A list of selectable options for amount of rows per page to show for pagination
         /// </summary>
-        [JsonProperty(PropertyName = "rowsPerPageOptions")]
+        [JsonPropertyName("rowsPerPageOptions")]
         public List<int>? RowsPerPageOptions { get; set; }
 
         /// <summary>
         /// The default amount of rows per page to show for pagination
         /// </summary>
-        [JsonProperty(PropertyName = "defaultRowsPerPage")]
+        [JsonPropertyName("defaultRowsPerPage")]
         public int? DefaultRowsPerPage { get; set; }
 
         /// <summary>
         /// The default selected option for rows per page to show for pagination
         /// </summary>
-        [JsonProperty(PropertyName = "defaultSelectedOption")]
+        [JsonPropertyName("defaultSelectedOption")]
         public int? DefaultSelectedOption
         {
             get { return _defaultSelectedOption ?? DefaultRowsPerPage; }
@@ -34,7 +34,7 @@ namespace Altinn.App.Core.Models
         /// <summary>
         /// The direction of sorting the list of instances, asc or desc
         /// </summary>
-        [JsonProperty(PropertyName = "sortDirection")]
+        [JsonPropertyName("sortDirection")]
         public string? SortDirection { get; set; }
     }
 }

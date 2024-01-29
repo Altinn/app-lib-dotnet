@@ -1,6 +1,4 @@
-using Altinn.Platform.Storage.Interface.Models;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using System.Text.Json.Serialization;
 
 namespace Altinn.App.Core.Models
 {
@@ -12,20 +10,20 @@ namespace Altinn.App.Core.Models
         /// <summary>
         /// A flag to specify that the form should display appOwner in header
         /// </summary>
-        [JsonProperty(PropertyName = "displayAppOwnerNameInHeader")]
+        [JsonPropertyName("displayAppOwnerNameInHeader")]
         public bool DisplayAppOwnerNameInHeader { get; set; }
 
         /// <summary>
         /// Specifies from where the logo url should be fetched
         /// </summary>
-        [JsonProperty(PropertyName = "source")]
+        [JsonPropertyName("source")]
         public string? Source { get; set; }
 
         /// <summary>
         /// Specifies the size of the logo. Can have the values
         /// 'small', 'medium', or 'large'
         /// </summary>
-        [JsonProperty(PropertyName = "size")]
+        [JsonPropertyName("size")]
         public string Size { get; set; } = "small";
     }
 }

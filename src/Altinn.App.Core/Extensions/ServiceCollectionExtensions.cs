@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Altinn.App.Api.Configuration;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
@@ -47,8 +48,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
-using Newtonsoft.Json.Linq;
-using Prometheus;
 using IProcessEngine = Altinn.App.Core.Internal.Process.IProcessEngine;
 using IProcessReader = Altinn.App.Core.Internal.Process.IProcessReader;
 using ProcessEngine = Altinn.App.Core.Internal.Process.ProcessEngine;
@@ -110,17 +109,14 @@ namespace Altinn.App.Core.Extensions
 
         private static string GetApplicationId()
         {
-            string appMetaDataString = File.ReadAllText("config/applicationmetadata.json");
-            JObject appMetadataJObject = JObject.Parse(appMetaDataString);
+            using var document = JsonDocument.Parse(File.ReadAllText("config/applicationmetadata.json"));
 
-            var id = appMetadataJObject?.SelectToken("id")?.Value<string>();
-
-            if (id == null)
+            if (document.RootElement.TryGetProperty("id", out var idElement) && idElement.ValueKind == JsonValueKind.String)
             {
-                throw new KeyNotFoundException("Could not find id in applicationmetadata.json. Please ensure applicationmeta.json is well formed and contains a key for id.");
+                return idElement.GetString()!;
             }
 
-            return id;
+            throw new KeyNotFoundException("Could not find id in applicationmetadata.json. Please ensure applicationmeta.json is well formed and contains a key for id.");
         }
 
         /// <summary>

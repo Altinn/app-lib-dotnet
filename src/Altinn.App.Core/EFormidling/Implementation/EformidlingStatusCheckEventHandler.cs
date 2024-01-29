@@ -14,10 +14,10 @@ using Altinn.Common.EFormidlingClient.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Security.Cryptography.X509Certificates;
+using System.Text.Json;
 
 namespace Altinn.App.Core.EFormidling.Implementation
 {
@@ -34,6 +34,8 @@ namespace Altinn.App.Core.EFormidling.Implementation
         private readonly IX509CertificateProvider _x509CertificateProvider;
         private readonly PlatformSettings _platformSettings;
         private readonly GeneralSettings _generalSettings;
+
+        private static readonly JsonSerializerOptions JSON_SERIALIZER_OPTIONS = new (JsonSerializerDefaults.Web);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EformidlingStatusCheckEventHandler"/> class.
@@ -150,7 +152,7 @@ namespace Altinn.App.Core.EFormidling.Implementation
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 string instanceData = await response.Content.ReadAsStringAsync();
-                Instance instance = JsonConvert.DeserializeObject<Instance>(instanceData)!;
+                Instance instance = JsonSerializer.Deserialize<Instance>(instanceData, JSON_SERIALIZER_OPTIONS)!;
                 return instance;
             }
 

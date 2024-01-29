@@ -1,6 +1,7 @@
 using System.Reflection;
+using System.Text.Json.Serialization;
 using Altinn.Platform.Storage.Interface.Models;
-using Newtonsoft.Json;
+
 
 namespace Altinn.App.Core.Models
 {
@@ -36,39 +37,38 @@ namespace Altinn.App.Core.Models
         /// <summary>
         /// List of features and status (enabled/disabled)
         /// </summary>
-        [JsonProperty(PropertyName = "features")]
+        [JsonPropertyName("features")]
         public Dictionary<string, bool>? Features { get; set; }
 
         /// <summary>
         /// Configure options for handling what happens when entering the application
         /// </summary>
-        [JsonProperty(PropertyName = "onEntry")]
+        [JsonPropertyName("onEntry")]
         public new OnEntry? OnEntry { get; set; }
 
         /// <summary>
         /// Get AppIdentifier based on ApplicationMetadata.Id
         /// Updated by setting ApplicationMetadata.Id
         /// </summary>
-        [System.Text.Json.Serialization.JsonIgnore]
-        [Newtonsoft.Json.JsonIgnore]
+        [JsonIgnore]
         public AppIdentifier AppIdentifier { get; private set; }
 
         /// <summary>
         /// Configure options for setting organisation logo
         /// </summary>
-        [JsonProperty(PropertyName = "logo")]
+        [JsonPropertyName("logo")]
         public Logo? Logo { get; set; }
 
         /// <summary>
         /// Frontend sometimes need to have knowledge of the nuget package version for backwards compatibility
         /// </summary>
-        [JsonProperty(PropertyName = "altinnNugetVersion")]
+        [JsonPropertyName("altinnNugetVersion")]
         public string AltinnNugetVersion { get; set; } = typeof(ApplicationMetadata).Assembly!.GetName().Version!.ToString();
 
         /// <summary>
         /// Holds properties that are not mapped to other properties
         /// </summary>
-        [System.Text.Json.Serialization.JsonExtensionData]
+        [JsonExtensionData]
         public Dictionary<string, object>? UnmappedProperties { get; set; }
     }
 }

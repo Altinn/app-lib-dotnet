@@ -11,7 +11,6 @@ using AltinnCore.Authentication.Utils;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 
 namespace Altinn.App.Core.Infrastructure.Clients.Storage
 {

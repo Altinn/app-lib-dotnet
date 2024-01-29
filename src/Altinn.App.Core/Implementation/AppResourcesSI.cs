@@ -10,7 +10,6 @@ using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 
 namespace Altinn.App.Core.Implementation
 {
@@ -24,11 +23,10 @@ namespace Altinn.App.Core.Implementation
         private readonly IWebHostEnvironment _hostingEnvironment;
         private readonly ILogger _logger;
 
-        private static readonly JsonSerializerOptions DESERIALIZER_OPTIONS = new()
+        private static readonly JsonSerializerOptions DESERIALIZER_OPTIONS = new(JsonSerializerDefaults.Web)
         {
             AllowTrailingCommas = true,
             ReadCommentHandling = JsonCommentHandling.Skip,
-            PropertyNameCaseInsensitive = true,
         };
 
         /// <summary>
@@ -250,7 +248,7 @@ namespace Altinn.App.Core.Implementation
             if (File.Exists(filename))
             {
                 var filedata = File.ReadAllText(filename, Encoding.UTF8);
-                LayoutSettings layoutSettings = JsonConvert.DeserializeObject<LayoutSettings>(filedata)!;
+                LayoutSettings layoutSettings = JsonSerializer.Deserialize<LayoutSettings>(filedata, DESERIALIZER_OPTIONS)!;
                 return layoutSettings;
             }
 
@@ -320,7 +318,7 @@ namespace Altinn.App.Core.Implementation
             string? layoutSetsString = GetLayoutSets();
             if (layoutSetsString is not null)
             {
-                return System.Text.Json.JsonSerializer.Deserialize<LayoutSets>(layoutSetsString, DESERIALIZER_OPTIONS);
+                return JsonSerializer.Deserialize<LayoutSets>(layoutSetsString, DESERIALIZER_OPTIONS);
             }
 
             return null;
@@ -336,7 +334,7 @@ namespace Altinn.App.Core.Implementation
         /// <inheritdoc />
         public string GetLayoutsForSet(string layoutSetId)
         {
-            Dictionary<string, object> layouts = new Dictionary<string, object>();
+            Dictionary<string, JsonDocument> layouts = new Dictionary<string, JsonDocument>();
 
             string layoutsPath = _settings.AppBasePath + _settings.UiFolder + layoutSetId + "/layouts/";
             if (Directory.Exists(layoutsPath))
@@ -345,11 +343,11 @@ namespace Altinn.App.Core.Implementation
                 {
                     string data = File.ReadAllText(file, Encoding.UTF8);
                     string name = file.Replace(layoutsPath, string.Empty).Replace(".json", string.Empty);
-                    layouts.Add(name, JsonConvert.DeserializeObject<object>(data)!);
+                    layouts.Add(name, JsonDocument.Parse(data));
                 }
             }
 
-            return JsonConvert.SerializeObject(layouts);
+            return JsonSerializer.Serialize(layouts);
         }
 
         /// <inheritdoc />
@@ -395,7 +393,7 @@ namespace Altinn.App.Core.Implementation
             {
                 string? filedata = null;
                 filedata = File.ReadAllText(filename, Encoding.UTF8);
-                LayoutSettings? layoutSettings = JsonConvert.DeserializeObject<LayoutSettings>(filedata);
+                LayoutSettings? layoutSettings = JsonSerializer.Deserialize<LayoutSettings>(filedata, DESERIALIZER_OPTIONS);
                 return layoutSettings;
             }
 

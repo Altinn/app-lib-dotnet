@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using System.Security.Claims;
+using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
@@ -15,7 +16,6 @@ using AltinnCore.Authentication.Utils;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 
 namespace Altinn.App.Core.Infrastructure.Clients.Authorization
 {
@@ -29,6 +29,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Authorization
         private readonly HttpClient _client;
         private readonly IPDP _pdp;
         private readonly ILogger _logger;
+        private static JsonSerializerOptions JSON_SERIALIZER_OPTIONS = new(JsonSerializerDefaults.Web);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AuthorizationClient"/> class
@@ -70,7 +71,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Authorization
                 if (response.StatusCode == System.Net.HttpStatusCode.OK)
                 {
                     string partyListData = await response.Content.ReadAsStringAsync();
-                    partyList = JsonConvert.DeserializeObject<List<Party>>(partyListData);
+                    partyList = JsonSerializer.Deserialize<List<Party>>(partyListData, JSON_SERIALIZER_OPTIONS);
                 }
             }
             catch (Exception e)
@@ -93,7 +94,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Authorization
             if (response.StatusCode == System.Net.HttpStatusCode.OK)
             {
                 string responseData = await response.Content.ReadAsStringAsync();
-                result = JsonConvert.DeserializeObject<bool>(responseData);
+                result = JsonSerializer.Deserialize<bool>(responseData, JSON_SERIALIZER_OPTIONS);
             }
             else
             {
@@ -111,7 +112,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Authorization
             XacmlJsonResponse response = await _pdp.GetDecisionForRequest(request);
             if (response?.Response == null)
             {
-                _logger.LogWarning("Failed to get decision from pdp: {SerializeObject}", JsonConvert.SerializeObject(request));
+                _logger.LogWarning("Failed to get decision from pdp: {SerializeObject}", JsonSerializer.Serialize(request));
                 return false;
             }
 
@@ -126,7 +127,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Authorization
             XacmlJsonResponse response = await _pdp.GetDecisionForRequest(request);
             if (response?.Response == null)
             {
-                _logger.LogWarning("Failed to get decision from pdp: {SerializeObject}", JsonConvert.SerializeObject(request));
+                _logger.LogWarning("Failed to get decision from pdp: {SerializeObject}", JsonSerializer.Serialize(request));
                 return new Dictionary<string, bool>();
             }
             Dictionary<string, bool> actionsResult = new Dictionary<string, bool>();

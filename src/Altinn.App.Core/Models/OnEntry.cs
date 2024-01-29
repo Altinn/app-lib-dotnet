@@ -1,5 +1,5 @@
+using System.Text.Json.Serialization;
 using Altinn.Platform.Storage.Interface.Models;
-using Newtonsoft.Json;
 
 namespace Altinn.App.Core.Models {
     
@@ -11,7 +11,7 @@ namespace Altinn.App.Core.Models {
         /// <summary>
         /// Options for displaying the instance selection component
         /// </summary>
-        [JsonProperty(PropertyName = "instanceSelection")]
+        [JsonPropertyName("instanceSelection")]
         public InstanceSelection? InstanceSelection { get; set; }
     }
 }

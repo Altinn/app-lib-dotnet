@@ -1,13 +1,9 @@
-using System;
-using System.IO;
 using System.Text;
-using System.Threading.Tasks;
+using System.Text.Json;
 using System.Xml;
 using System.Xml.Serialization;
 
 using Microsoft.Extensions.Logging;
-
-using Newtonsoft.Json;
 
 namespace Altinn.App.Core.Helpers.Serialization
 {
@@ -73,9 +69,9 @@ namespace Altinn.App.Core.Helpers.Serialization
             {
                 using StreamReader reader = new StreamReader(stream, Encoding.UTF8);
                 string content = await reader.ReadToEndAsync();
-                return JsonConvert.DeserializeObject(content, _modelType)!;
+                return JsonSerializer.Deserialize(content, _modelType)!;
             }
-            catch (JsonReaderException jsonReaderException)
+            catch (JsonException jsonReaderException)
             {
                 Error = jsonReaderException.Message;
                 return null;

@@ -1,4 +1,4 @@
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace Altinn.App.Core.Models
 {
@@ -10,26 +10,26 @@ namespace Altinn.App.Core.Models
         /// <summary>
         /// The number of items in this response.
         /// </summary>
-        [JsonProperty(PropertyName = "count")]
+        [JsonPropertyName("count")]
 
         public long Count { get; set; }
 
         /// <summary>
         /// The current query.
         /// </summary>
-        [JsonProperty(PropertyName = "self")]
+        [JsonPropertyName("self")]
         public string Self { get; set; }
 
         /// <summary>
         /// A link to the next page.
         /// </summary>
-        [JsonProperty(PropertyName = "next")]
+        [JsonPropertyName("next")]
         public string Next { get; set; }
 
         /// <summary>
         /// The metadata.
         /// </summary>
-        [JsonProperty(PropertyName = "instances")]
+        [JsonPropertyName("instances")]
         public List<T> Instances { get; set; }
     }
 }

@@ -15,7 +15,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using Newtonsoft.Json;
 using System.Xml;
 using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Data;

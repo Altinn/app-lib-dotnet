@@ -1,7 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Features.Validation;
-using Newtonsoft.Json;
 
 namespace Altinn.App.Core.Models.Validation
 {
@@ -21,30 +20,26 @@ namespace Altinn.App.Core.Models.Validation
         /// 4: Fixed (obsolete, only used for v3 of frontend)
         /// 5: Success (Inform the user that something was completed with success)
         /// </remarks>
-        [JsonProperty(PropertyName = "severity")]
         [JsonPropertyName("severity")]
-        [System.Text.Json.Serialization.JsonConverter(typeof(JsonNumberEnumConverter<ValidationIssueSeverity>))]
+        [JsonConverter(typeof(JsonNumberEnumConverter<ValidationIssueSeverity>))]
         public required ValidationIssueSeverity Severity { get; set; }
 
         /// <summary>
         /// The unique id of the specific element with the identified issue.
         /// </summary>
         [System.Text.Json.Serialization.JsonIgnore]
-        [Newtonsoft.Json.JsonIgnore]
         [Obsolete("Not in use", error: true)]
         public string? InstanceId { get; set; }
 
         /// <summary>
         /// The unique id of the data element of a given instance with the identified issue.
         /// </summary>
-        [JsonProperty(PropertyName = "dataElementId")]
         [JsonPropertyName("dataElementId")]
         public string? DataElementId { get; set; }
 
         /// <summary>
         /// A reference to a property the issue is about.
         /// </summary>
-        [JsonProperty(PropertyName = "field")]
         [JsonPropertyName("field")]
         public string? Field { get; set; }
 
@@ -52,14 +47,12 @@ namespace Altinn.App.Core.Models.Validation
         /// A system readable identification of the type of issue.
         /// Eg:
         /// </summary>
-        [JsonProperty(PropertyName = "code")]
         [JsonPropertyName("code")]
         public string? Code { get; set; }
 
         /// <summary>
         /// A human readable description of the issue.
         /// </summary>
-        [JsonProperty(PropertyName = "description")]
         [JsonPropertyName("description")]
         public string? Description { get; set; }
 
@@ -69,14 +62,12 @@ namespace Altinn.App.Core.Models.Validation
         /// <remarks>
         /// Intentionally not marked as "required", because it is set in <see cref="ValidationService"/>
         /// </remarks>
-        [JsonProperty(PropertyName = "source")]
         [JsonPropertyName("source")]
         public string Source { get; set; } = default!;
 
         /// <summary>
         /// The custom text key to use for the localized text in the frontend.
         /// </summary>
-        [JsonProperty(PropertyName = "customTextKey")]
         [JsonPropertyName("customTextKey")]
         public string? CustomTextKey { get; set; }
 
@@ -88,7 +79,6 @@ namespace Altinn.App.Core.Models.Validation
         /// The localized text for the key might be "Date must be between {0} and {1}"
         /// and the param will provide the dynamical range of allowable dates (eg teh reporting period)
         /// </example>
-        [JsonProperty(PropertyName = "customTextParams")]
         [JsonPropertyName("customTextParams")]
         public List<string>? CustomTextParams { get; set; }
     }

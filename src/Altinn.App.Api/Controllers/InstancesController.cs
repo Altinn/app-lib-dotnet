@@ -2,6 +2,7 @@
 
 using System.Net;
 using System.Text;
+using System.Text.Json;
 using Altinn.App.Api.Helpers.RequestHandling;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Mappers;
@@ -35,7 +36,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
-using Newtonsoft.Json;
 
 namespace Altinn.App.Api.Controllers
 {
@@ -67,6 +67,7 @@ namespace Altinn.App.Api.Controllers
         private readonly AppSettings _appSettings;
         private readonly IProcessEngine _processEngine;
         private readonly IOrganizationClient _orgClient;
+        private static JsonSerializerOptions JSON_SERIALIZER_OPTIONS = new(JsonSerializerDefaults.Web);
 
         private const long RequestSizeLimit = 2000 * 1024 * 1024;
 
@@ -189,7 +190,7 @@ namespace Altinn.App.Api.Controllers
 
             if (parsedRequest.Errors.Any())
             {
-                return BadRequest($"Error when reading content: {JsonConvert.SerializeObject(parsedRequest.Errors)}");
+                return BadRequest($"Error when reading content: {JsonSerializer.Serialize(parsedRequest.Errors)}");
             }
 
             Instance? instanceTemplate = await ExtractInstanceTemplate(parsedRequest);
@@ -656,7 +657,7 @@ namespace Altinn.App.Api.Controllers
         {
             if (substatus == null || string.IsNullOrEmpty(substatus.Label))
             {
-                return BadRequest($"Invalid sub status: {JsonConvert.SerializeObject(substatus)}. Substatus must be defined and include a label.");
+                return BadRequest($"Invalid sub status: {JsonSerializer.Serialize(substatus)}. Substatus must be defined and include a label.");
             }
 
             Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
@@ -892,7 +893,7 @@ namespace Altinn.App.Api.Controllers
 
             if (response?.Response == null)
             {
-                string serializedRequest = JsonConvert.SerializeObject(request);
+                string serializedRequest = JsonSerializer.Serialize(request);
                 _logger.LogInformation("// Instances Controller // Authorization of action {action} failed with request: {serializedRequest}.", action, serializedRequest);
                 return enforcementResult;
             }
@@ -1030,7 +1031,7 @@ namespace Altinn.App.Api.Controllers
                 using StreamReader streamReader = new StreamReader(instancePart.Stream, Encoding.UTF8);
                 string content = await streamReader.ReadToEndAsync();
 
-                instanceTemplate = JsonConvert.DeserializeObject<Instance>(content);
+                instanceTemplate = JsonSerializer.Deserialize<Instance>(content, JSON_SERIALIZER_OPTIONS);
             }
 
             return instanceTemplate;

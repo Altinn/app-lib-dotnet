@@ -1,4 +1,5 @@
 using System.Net.Http.Headers;
+using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
@@ -9,7 +10,6 @@ using AltinnCore.Authentication.Utils;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 
 namespace Altinn.App.Core.Infrastructure.Clients.Storage
 {
@@ -22,6 +22,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         private readonly ILogger<ProcessClient> _logger;
         private readonly HttpClient _client;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private JsonSerializerOptions JSON_SERIALIZER_OPTIONS = new(JsonSerializerDefaults.Web);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ProcessClient"/> class.
@@ -72,7 +73,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             if (response.IsSuccessStatusCode)
             {
                 string eventData = await response.Content.ReadAsStringAsync();
-                ProcessHistoryList processHistoryList = JsonConvert.DeserializeObject<ProcessHistoryList>(eventData)!;
+                ProcessHistoryList processHistoryList = JsonSerializer.Deserialize<ProcessHistoryList>(eventData, JSON_SERIALIZER_OPTIONS)!;
 
                 return processHistoryList;
             }

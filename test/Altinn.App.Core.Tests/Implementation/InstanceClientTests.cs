@@ -19,8 +19,6 @@ using Microsoft.Extensions.Primitives;
 using Moq;
 using Moq.Protected;
 
-using Newtonsoft.Json;
-
 using Xunit;
 
 namespace Altinn.App.PlatformServices.Tests.Implementation
