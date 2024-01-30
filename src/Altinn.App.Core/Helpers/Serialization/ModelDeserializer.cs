@@ -1,8 +1,13 @@
+using System;
+using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
 
 using Microsoft.Extensions.Logging;
+
+using Newtonsoft.Json;
 
 namespace Altinn.App.Core.Helpers.Serialization
 {
