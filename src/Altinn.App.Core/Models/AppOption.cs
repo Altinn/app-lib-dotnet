@@ -99,7 +99,7 @@ namespace Altinn.App.Core.Models
                         case "description":
                             description = reader.GetString();
                             break;
-                        case "helpText":
+                        case "helptext":
                             helpText = reader.GetString();
                             break;
                         default:
