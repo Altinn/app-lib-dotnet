@@ -41,14 +41,10 @@ public class PdfService : IPdfService
     /// <summary>
     /// Initializes a new instance of the <see cref="PdfService"/> class.
     /// </summary>
-    /// <param name="pdfClient">Client for communicating with the Platform PDF service.</param>
     /// <param name="appResources">The service giving access to local resources.</param>
-    /// <param name="pdfOptionsMapping">The service responsible for mapping options.</param>
     /// <param name="dataClient">The data client.</param>
     /// <param name="httpContextAccessor">The httpContextAccessor</param>
     /// <param name="profileClient">The profile client</param>
-    /// <param name="altinnPartyClientClient">The register client</param>
-    /// <param name="pdfFormatter">Class for customizing pdf formatting and layout.</param>
     /// <param name="pdfGeneratorClient">PDF generator client for the experimental PDF generator service</param>
     /// <param name="pdfGeneratorSettings">PDF generator related settings.</param>
     /// <param name="generalSettings">The app general settings.</param>

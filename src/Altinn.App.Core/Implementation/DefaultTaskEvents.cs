@@ -42,7 +42,6 @@ public class DefaultTaskEvents : ITaskEvents
     private readonly IEFormidlingService? _eFormidlingService;
     private readonly AppSettings? _appSettings;
     private readonly LayoutEvaluatorStateInitializer _layoutEvaluatorStateInitializer;
-    private readonly IFeatureManager _featureManager;
 
     /// <summary>
     /// Constructor with services from DI
@@ -60,7 +59,6 @@ public class DefaultTaskEvents : ITaskEvents
         IEnumerable<IProcessTaskEnd> taskEnds,
         IEnumerable<IProcessTaskAbandon> taskAbandons,
         IPdfService pdfService,
-        IFeatureManager featureManager,
         LayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer,
         IOptions<AppSettings>? appSettings = null,
         IEFormidlingService? eFormidlingService = null
@@ -81,7 +79,6 @@ public class DefaultTaskEvents : ITaskEvents
         _layoutEvaluatorStateInitializer = layoutEvaluatorStateInitializer;
         _eFormidlingService = eFormidlingService;
         _appSettings = appSettings?.Value;
-        _featureManager = featureManager;
     }
 
     /// <inheritdoc />
