@@ -13,26 +13,34 @@ namespace Altinn.App.Core.Models
         /// <summary>
         /// The value of a given option
         /// </summary>
+        [JsonPropertyName("value")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.Never)]
         public required string? Value { get; set; }
 
         /// <summary>
         /// The type of the value for Json serialization
         /// </summary>
+        [JsonIgnore]
         public AppOptionValueType ValueType { get; set; }
 
         /// <summary>
         /// The label of a given option
         /// </summary>
+        [JsonPropertyName("label")]
         public required string Label { get; set; }
 
         /// <summary>
         /// The description of a given option
         /// </summary>
+        [JsonPropertyName("description")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? Description { get; set; }
 
         /// <summary>
         /// The help text of a given option
         /// </summary>
+        [JsonPropertyName("helpText")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? HelpText { get; set; }
     }
 
@@ -60,6 +68,10 @@ namespace Altinn.App.Core.Models
         Null,
     }
 
+    /// <summary>
+    /// A converter for AppOption that can handle the different value types
+    /// This will override [JsonPropertyName] annotatinos, but I keep them for documentation purposes
+    /// </summary>
     internal class AppOptionConverter : JsonConverter<AppOption>
     {
         public override AppOption Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -76,7 +88,7 @@ namespace Altinn.App.Core.Models
                 {
                     var propertyName = reader.GetString();
                     reader.Read();
-                    switch (propertyName)
+                    switch (propertyName.ToLowerInvariant())
                     {
                         case "value":
                             switch (reader.TokenType)
@@ -160,6 +172,9 @@ namespace Altinn.App.Core.Models
                 default:
                     throw new JsonException($"Unknown value type {value.ValueType} on AppOption");
             }
+
+            writer.WriteString("label", value.Label);
+
             if (!string.IsNullOrEmpty(value.Description))
             {
                 writer.WriteString("description", value.Description);
