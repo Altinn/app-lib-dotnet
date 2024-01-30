@@ -27,7 +27,9 @@
           },
           {
             "label": "boolean",
-            "value": true
+            "value": true,
+            "description": "boolean description",
+            "helpText": "boolean help text"
           }
         ]
       },

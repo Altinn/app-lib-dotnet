@@ -88,31 +88,10 @@ namespace Altinn.App.Core.Models
                 {
                     var propertyName = reader.GetString();
                     reader.Read();
-                    switch (propertyName.ToLowerInvariant())
+                    switch (propertyName?.ToLowerInvariant())
                     {
                         case "value":
-                            switch (reader.TokenType)
-                            {
-                                case JsonTokenType.String:
-                                    value = reader.GetString();
-                                    valueType = AppOptionValueType.String;
-                                    break;
-                                case JsonTokenType.Number:
-                                    value = reader.GetDouble().ToString(CultureInfo.InvariantCulture);
-                                    valueType = AppOptionValueType.Number;
-                                    break;
-                                case JsonTokenType.True:
-                                case JsonTokenType.False:
-                                    value = reader.GetBoolean() ? "true" : "false";
-                                    valueType = AppOptionValueType.Boolean;
-                                    break;
-                                case JsonTokenType.Null:
-                                    value = null;
-                                    valueType = AppOptionValueType.Null;
-                                    break;
-                                default:
-                                    throw new JsonException($"Unexpected token type {reader.TokenType} for property 'value' on AppOption");
-                            }
+                            ReadValue(ref reader, out value, out valueType);
                             break;
                         case "label":
                             label = reader.GetString();
@@ -137,6 +116,32 @@ namespace Altinn.App.Core.Models
                 Description = description,
                 HelpText = helpText,
             };
+        }
+
+        private static void ReadValue(ref Utf8JsonReader reader, out string? value, out AppOptionValueType valueType)
+        {
+            switch (reader.TokenType)
+            {
+                case JsonTokenType.String:
+                    value = reader.GetString();
+                    valueType = AppOptionValueType.String;
+                    break;
+                case JsonTokenType.Number:
+                    value = reader.GetDouble().ToString(CultureInfo.InvariantCulture);
+                    valueType = AppOptionValueType.Number;
+                    break;
+                case JsonTokenType.True:
+                case JsonTokenType.False:
+                    value = reader.GetBoolean() ? "true" : "false";
+                    valueType = AppOptionValueType.Boolean;
+                    break;
+                case JsonTokenType.Null:
+                    value = null;
+                    valueType = AppOptionValueType.Null;
+                    break;
+                default:
+                    throw new JsonException($"Unexpected token type {reader.TokenType} for property 'value' on AppOption");
+            }
         }
 
         public override void Write(Utf8JsonWriter writer, AppOption value, JsonSerializerOptions options)
