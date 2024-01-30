@@ -230,7 +230,9 @@ namespace Altinn.App.Core.Extensions
         {
             services.TryAddTransient<IPdfGeneratorClient, PdfGeneratorClient>();
             services.TryAddTransient<IPdfService, PdfService>();
+#pragma warning disable CS0618 // Type or member is obsolete
             services.TryAddTransient<IPdfFormatter, NullPdfFormatter>();
+#pragma warning restore CS0618 // Type or member is obsolete
         }
 
         private static void AddAppOptions(IServiceCollection services)
