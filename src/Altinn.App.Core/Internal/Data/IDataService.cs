@@ -1,4 +1,5 @@
-﻿using Altinn.Platform.Storage.Interface.Models;
+﻿using Altinn.App.Core.Models;
+using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Internal.Data
 {
@@ -32,7 +33,7 @@ namespace Altinn.App.Core.Internal.Data
         /// <param name="dataTypeId"></param>
         /// <param name="data"></param>
         /// <returns></returns>
-        Task<DataElement> InsertObjectAsJson(Instance instance, string dataTypeId, object data);
+        Task<DataElement> InsertObjectAsJson(InstanceIdentifier instance, string dataTypeId, object data);
 
         /// <summary>
         /// Deletes a data element by its ID.

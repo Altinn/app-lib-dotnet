@@ -44,15 +44,12 @@ namespace Altinn.App.Core.Internal.Data
         }
 
         /// <inheritdoc/>
-        public async Task<DataElement> InsertObjectAsJson(Instance instance, string dataTypeId, object data)
+        public async Task<DataElement> InsertObjectAsJson(InstanceIdentifier instanceIdentifier, string dataTypeId, object data)
         {
-            var instanceIdentifier = new InstanceIdentifier(instance);
-
             using var referenceStream = new MemoryStream();
             await JsonSerializer.SerializeAsync(referenceStream, data, new JsonSerializerOptions(JsonSerializerDefaults.Web));
             referenceStream.Position = 0;
-
-            return await _dataClient.InsertBinaryData(instanceIdentifier.InstanceGuid.ToString(), dataTypeId, "application/json", dataTypeId + ".json", referenceStream);
+            return await _dataClient.InsertBinaryData(instanceIdentifier.ToString(), dataTypeId, "application/json", dataTypeId + ".json", referenceStream);
             //return await _dataClient.InsertFormData<PaymentInformation>(instance, dataTypeId, data as PaymentInformation, typeof(PaymentInformation));
         }
 

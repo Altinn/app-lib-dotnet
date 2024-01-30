@@ -57,7 +57,7 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks
             }
 
             paymentInformation = await _paymentService.StartPayment(instance);
-            await _dataService.InsertObjectAsJson(instance, dataTypeId, paymentInformation);
+            await _dataService.InsertObjectAsJson(new InstanceIdentifier(instance), dataTypeId, paymentInformation);
         }
 
         /// <inheritdoc/>
