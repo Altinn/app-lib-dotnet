@@ -212,16 +212,7 @@ public class DefaultTaskEvents : ITaskEvents
 
                 if (generatePdf)
                 {
-                    Task createPdf;
-                    if (await _featureManager.IsEnabledAsync(FeatureFlags.NewPdfGeneration))
-                    {
-                        createPdf = _pdfService.GenerateAndStorePdf(instance, endEvent, CancellationToken.None);
-                    }
-                    else
-                    {
-                        Type dataElementType = _appModel.GetModelType(dataType.AppLogic.ClassRef);
-                        createPdf = _pdfService.GenerateAndStoreReceiptPDF(instance, endEvent, dataElement, dataElementType);
-                    }
+                    Task createPdf = _pdfService.GenerateAndStorePdf(instance, endEvent, CancellationToken.None);
 
                     await Task.WhenAll(updateData, createPdf);
                 }
