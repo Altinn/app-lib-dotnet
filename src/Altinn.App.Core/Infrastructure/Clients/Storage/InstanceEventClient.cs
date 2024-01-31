@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
@@ -22,6 +23,9 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly AppSettings _settings;
         private readonly HttpClient _client;
+
+        private static JsonSerializerOptions JSON_SERIALIZER_OPTIONS =
+            new JsonSerializerOptions(JsonSerializerDefaults.Web);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="InstanceEventClient"/> class.
@@ -74,7 +78,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             if (response.IsSuccessStatusCode)
             {
                 string eventData = await response.Content.ReadAsStringAsync();
-                InstanceEventList instanceEvents = JsonConvert.DeserializeObject<InstanceEventList>(eventData)!;
+                InstanceEventList instanceEvents = JsonSerializer.Deserialize<InstanceEventList>(eventData, JSON_SERIALIZER_OPTIONS)!;
 
                 return instanceEvents.InstanceEvents;
             }
@@ -95,7 +99,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             if (response.IsSuccessStatusCode)
             {
                 string eventData = await response.Content.ReadAsStringAsync();
-                InstanceEvent result = JsonConvert.DeserializeObject<InstanceEvent>(eventData)!;
+                InstanceEvent result = JsonSerializer.Deserialize<InstanceEvent>(eventData)!;
                 return result.Id.ToString();
             }
 

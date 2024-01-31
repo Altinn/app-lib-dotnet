@@ -274,29 +274,39 @@ namespace Altinn.App.Core.Implementation
         /// <inheritdoc />
         public string GetLayouts()
         {
-            Dictionary<string, object> layouts = new Dictionary<string, object>();
-
-            // Get FormLayout.json if it exists and return it (for backwards compatibility)
-            string fileName = _settings.AppBasePath + _settings.UiFolder + "FormLayout.json";
-            if (File.Exists(fileName))
+            Dictionary<string, JsonDocument> layouts = new Dictionary<string, JsonDocument>();
+            try
             {
-                string fileData = File.ReadAllText(fileName, Encoding.UTF8);
-                layouts.Add("FormLayout", JsonConvert.DeserializeObject<object>(fileData)!);
-                return JsonConvert.SerializeObject(layouts);
-            }
 
-            string layoutsPath = _settings.AppBasePath + _settings.UiFolder + "layouts/";
-            if (Directory.Exists(layoutsPath))
-            {
-                foreach (string file in Directory.GetFiles(layoutsPath))
+                // Get FormLayout.json if it exists and return it (for backwards compatibility)
+                string fileName = _settings.AppBasePath + _settings.UiFolder + "FormLayout.json";
+                if (File.Exists(fileName))
                 {
-                    string data = File.ReadAllText(file, Encoding.UTF8);
-                    string name = file.Replace(layoutsPath, string.Empty).Replace(".json", string.Empty);
-                    layouts.Add(name, JsonConvert.DeserializeObject<object>(data)!);
+                    string fileData = File.ReadAllText(fileName, Encoding.UTF8);
+                    layouts.Add("FormLayout", JsonDocument.Parse(fileData));
+                    return JsonSerializer.Serialize(layouts);
+                }
+
+                string layoutsPath = _settings.AppBasePath + _settings.UiFolder + "layouts/";
+                if (Directory.Exists(layoutsPath))
+                {
+                    foreach (string file in Directory.GetFiles(layoutsPath))
+                    {
+                        string data = File.ReadAllText(file, Encoding.UTF8);
+                        string name = file.Replace(layoutsPath, string.Empty).Replace(".json", string.Empty);
+                        layouts.Add(name, JsonDocument.Parse(data));
+                    }
+                }
+
+                return JsonSerializer.Serialize(layouts);
+            }
+            finally
+            {
+                foreach (var doc in layouts.Values)
+                {
+                    doc.Dispose();
                 }
             }
-
-            return JsonConvert.SerializeObject(layouts);
         }
 
         /// <inheritdoc />

@@ -4,7 +4,7 @@ using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-
+using Newtonsoft.Json;
 
 namespace Altinn.App.Api.Controllers
 {
@@ -57,6 +57,7 @@ namespace Altinn.App.Api.Controllers
 
             string classRef = _resources.GetClassRefForLogicDataType(dataTypeId);
 
+            // This is [Obsolete], so we don't change this right now.
             object data = JsonConvert.DeserializeObject(formData.ToString(), _appModel.GetModelType(classRef));
             return await _pageOrder.GetPageOrder(new AppIdentifier(org, app), InstanceIdentifier.NoInstance, layoutSetId, currentPage, dataTypeId, data);
         }

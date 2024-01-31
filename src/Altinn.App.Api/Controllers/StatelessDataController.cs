@@ -1,6 +1,6 @@
 #nullable enable
 using System.Net;
-
+using System.Text.Json;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
@@ -42,6 +42,8 @@ namespace Altinn.App.Api.Controllers
         private const string PartyPrefix = "partyid";
         private const string PersonPrefix = "person";
         private const string OrgPrefix = "org";
+
+        private static readonly JsonSerializerOptions JSON_SERIALIZER_OPTIONS = new(JsonSerializerDefaults.Web);
 
         /// <summary>
         /// The stateless data controller is responsible for creating and updating stateless data elements.
@@ -336,7 +338,7 @@ namespace Altinn.App.Api.Controllers
 
             if (response?.Response == null)
             {
-                _logger.LogInformation($"// Instances Controller // Authorization of action {action} failed with request: {JsonConvert.SerializeObject(request)}.");
+                _logger.LogInformation($"// Instances Controller // Authorization of action {action} failed with request: {JsonSerializer.Serialize(request, JSON_SERIALIZER_OPTIONS)}.");
                 return enforcementResult;
             }
 

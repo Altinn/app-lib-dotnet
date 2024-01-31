@@ -4,6 +4,7 @@ using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 
 namespace Altinn.App.Api.Controllers
 {
@@ -62,6 +63,8 @@ namespace Altinn.App.Api.Controllers
 
             string classRef = _resources.GetClassRefForLogicDataType(dataTypeId);
 
+            // This uses Newtonsoft.Json instead of System.Text.Json because the controller uses dynamic formData´
+            // and as this class is [Obsolete] it is not worth the effort to change it to System.Text.Json
             object data = JsonConvert.DeserializeObject(formData.ToString(), _appModel.GetModelType(classRef));
             return await _pageOrder.GetPageOrder(new AppIdentifier(org, app), new InstanceIdentifier(instanceOwnerPartyId, instanceGuid), layoutSetId, currentPage, dataTypeId, data);
         }

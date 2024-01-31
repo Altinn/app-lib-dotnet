@@ -31,15 +31,4 @@ public static class StartupHelper
             // Swagger documentation not generated
         }
     }
-
-    /// <summary>
-    /// Read application Id from config/applicationmetadata.json
-    /// </summary>
-    /// <returns>ApplicationId</returns>
-    public static string GetApplicationId()
-    {
-        string appMetaDataString = File.ReadAllText("config/applicationmetadata.json");
-        JObject appMetadataJObject = JObject.Parse(appMetaDataString);
-        return appMetadataJObject.SelectToken("id")?.Value<string>() ?? throw new Exception("config/applicationmetadata.json does not contain an \"id\" property");
-    }
 }

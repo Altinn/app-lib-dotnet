@@ -1,6 +1,8 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
@@ -53,6 +55,11 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             _client = httpClient;
         }
 
+        private static readonly JsonSerializerOptions JSON_SERIALIZER_OPTIONS = new(JsonSerializerDefaults.Web)
+        {
+            Converters = { new JsonStringEnumConverter<ReadStatus>() }
+        };
+
         /// <inheritdoc />
         public async Task<Instance> GetInstance(string app, string org, int instanceOwnerPartyId, Guid instanceGuid)
         {
@@ -65,7 +72,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 string instanceData = await response.Content.ReadAsStringAsync();
-                Instance instance = JsonConvert.DeserializeObject<Instance>(instanceData)!;
+                Instance instance = JsonSerializer.Deserialize<Instance>(instanceData, JSON_SERIALIZER_OPTIONS)!;
                 return instance;
             }
             else
@@ -127,7 +134,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 string responseString = await response.Content.ReadAsStringAsync();
-                QueryResponse<Instance> queryResponse = JsonConvert.DeserializeObject<QueryResponse<Instance>>(responseString)!;
+                QueryResponse<Instance> queryResponse = JsonSerializer.Deserialize<QueryResponse<Instance>>(responseString, JSON_SERIALIZER_OPTIONS)!;
                 return queryResponse;
             }
             else
@@ -145,7 +152,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             string apiUrl = $"instances/{instance.Id}/process";
             string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
 
-            string processStateString = JsonConvert.SerializeObject(processState);
+            string processStateString = JsonSerializer.Serialize(processState, JSON_SERIALIZER_OPTIONS);
             _logger.LogInformation($"update process state: {processStateString}");
 
             StringContent httpContent = new StringContent(processStateString, Encoding.UTF8, "application/json");
@@ -153,7 +160,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 string instanceData = await response.Content.ReadAsStringAsync();
-                Instance updatedInstance = JsonConvert.DeserializeObject<Instance>(instanceData)!;
+                Instance updatedInstance = JsonSerializer.Deserialize<Instance>(instanceData, JSON_SERIALIZER_OPTIONS)!;
 
                 return updatedInstance;
             }
@@ -170,12 +177,12 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             string apiUrl = $"instances?appId={org}/{app}";
             string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
 
-            StringContent content = new StringContent(JsonConvert.SerializeObject(instanceTemplate), Encoding.UTF8, "application/json");
+            StringContent content = new StringContent(JsonSerializer.Serialize(instanceTemplate, JSON_SERIALIZER_OPTIONS), Encoding.UTF8, "application/json");
             HttpResponseMessage response = await _client.PostAsync(token, apiUrl, content);
 
             if (response.IsSuccessStatusCode)
             {
-                Instance createdInstance = JsonConvert.DeserializeObject<Instance>(await response.Content.ReadAsStringAsync())!;
+                Instance createdInstance = JsonSerializer.Deserialize<Instance>(await response.Content.ReadAsStringAsync(), JSON_SERIALIZER_OPTIONS)!;
 
                 return createdInstance;
             }
@@ -195,7 +202,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 string instanceData = await response.Content.ReadAsStringAsync();
-                Instance instance = JsonConvert.DeserializeObject<Instance>(instanceData)!;
+                Instance instance = JsonSerializer.Deserialize<Instance>(instanceData, JSON_SERIALIZER_OPTIONS)!;
                 return instance;
             }
 
@@ -213,7 +220,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 string instanceData = await response.Content.ReadAsStringAsync();
-                Instance instance = JsonConvert.DeserializeObject<Instance>(instanceData)!;
+                Instance instance = JsonSerializer.Deserialize<Instance>(instanceData, JSON_SERIALIZER_OPTIONS)!;
                 return instance;
             }
 
@@ -227,12 +234,12 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}/substatus";
             string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
 
-            HttpResponseMessage response = await _client.PutAsync(token, apiUrl, new StringContent(JsonConvert.SerializeObject(substatus), Encoding.UTF8, "application/json"));
+            HttpResponseMessage response = await _client.PutAsync(token, apiUrl, new StringContent(JsonSerializer.Serialize(substatus, JSON_SERIALIZER_OPTIONS), Encoding.UTF8, "application/json"));
 
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 string instanceData = await response.Content.ReadAsStringAsync();
-                Instance instance = JsonConvert.DeserializeObject<Instance>(instanceData)!;
+                Instance instance = JsonSerializer.Deserialize<Instance>(instanceData, JSON_SERIALIZER_OPTIONS)!;
                 return instance;
             }
 
@@ -245,12 +252,12 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}/presentationtexts";
             string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
 
-            HttpResponseMessage response = await _client.PutAsync(token, apiUrl, new StringContent(JsonConvert.SerializeObject(presentationTexts), Encoding.UTF8, "application/json"));
+            HttpResponseMessage response = await _client.PutAsync(token, apiUrl, new StringContent(JsonSerializer.Serialize(presentationTexts, JSON_SERIALIZER_OPTIONS), Encoding.UTF8, "application/json"));
 
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 string instanceData = await response.Content.ReadAsStringAsync();
-                Instance instance = JsonConvert.DeserializeObject<Instance>(instanceData)!;
+                Instance instance = JsonSerializer.Deserialize<Instance>(instanceData, JSON_SERIALIZER_OPTIONS)!;
                 return instance;
             }
 
@@ -263,12 +270,12 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}/datavalues";
             string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
 
-            HttpResponseMessage response = await _client.PutAsync(token, apiUrl, new StringContent(JsonConvert.SerializeObject(dataValues), Encoding.UTF8, "application/json"));
+            HttpResponseMessage response = await _client.PutAsync(token, apiUrl, new StringContent(JsonSerializer.Serialize(dataValues, JSON_SERIALIZER_OPTIONS), Encoding.UTF8, "application/json"));
 
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 string instanceData = await response.Content.ReadAsStringAsync();
-                Instance instance = JsonConvert.DeserializeObject<Instance>(instanceData)!;
+                Instance instance = JsonSerializer.Deserialize<Instance>(instanceData, JSON_SERIALIZER_OPTIONS)!;
                 return instance;
             }
 
@@ -286,7 +293,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 string instanceData = await response.Content.ReadAsStringAsync();
-                Instance instance = JsonConvert.DeserializeObject<Instance>(instanceData)!;
+                Instance instance = JsonSerializer.Deserialize<Instance>(instanceData, JSON_SERIALIZER_OPTIONS)!;
                 return instance;
             }
 

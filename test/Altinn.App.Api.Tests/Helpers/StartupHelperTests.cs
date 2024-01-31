@@ -1,4 +1,4 @@
-using System;
+using Altinn.App.Core.Extensions;
 using Altinn.App.Api.Helpers;
 using Altinn.App.Api.Tests.TestStubs;
 using FluentAssertions;
@@ -11,7 +11,7 @@ public class StartupHelperTests
     [Fact]
     public void GetApplicationId_returns_id_from_applicaitonmetadata()
     {
-        var appId = StartupHelper.GetApplicationId();
+        var appId = ServiceCollectionExtensions.GetApplicationId();
         appId.Should().Be("xunit/test-app");
     }
 

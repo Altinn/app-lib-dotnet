@@ -107,7 +107,10 @@ namespace Altinn.App.Core.Extensions
             });
         }
 
-        private static string GetApplicationId()
+        /// <summary>
+        /// Gets the application id from the applicationmetadata.json file.
+        /// </summary>
+        public static string GetApplicationId()
         {
             using var document = JsonDocument.Parse(File.ReadAllText("config/applicationmetadata.json"));
 

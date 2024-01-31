@@ -67,7 +67,7 @@ namespace Altinn.App.Api.Controllers
         private readonly AppSettings _appSettings;
         private readonly IProcessEngine _processEngine;
         private readonly IOrganizationClient _orgClient;
-        private static JsonSerializerOptions JSON_SERIALIZER_OPTIONS = new(JsonSerializerDefaults.Web);
+        private static readonly JsonSerializerOptions JSON_SERIALIZER_OPTIONS = new(JsonSerializerDefaults.Web);
 
         private const long RequestSizeLimit = 2000 * 1024 * 1024;
 

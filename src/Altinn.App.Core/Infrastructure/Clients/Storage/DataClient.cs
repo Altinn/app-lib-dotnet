@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Mime;
 using System.Text;
+using System.Text.Json;
 using System.Xml.Serialization;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
@@ -30,6 +31,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         private readonly ILogger _logger;
         private readonly IUserTokenProvider _userTokenProvider;
         private readonly HttpClient _client;
+        private static readonly JsonSerializerOptions JSON_SERIALIZER_OPTIONS = new(JsonSerializerDefaults.Web);
 
         /// <summary>
         /// Initializes a new data of the <see cref="DataClient"/> class.
@@ -84,7 +86,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             if (response.IsSuccessStatusCode)
             {
                 string instanceData = await response.Content.ReadAsStringAsync();
-                dataElement = JsonConvert.DeserializeObject<DataElement>(instanceData)!;
+                dataElement = JsonSerializer.Deserialize<DataElement>(instanceData, JSON_SERIALIZER_OPTIONS)!;
 
                 return dataElement;
             }
@@ -113,7 +115,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             if (response.IsSuccessStatusCode)
             {
                 string instanceData = await response.Content.ReadAsStringAsync();
-                DataElement dataElement = JsonConvert.DeserializeObject<DataElement>(instanceData)!;
+                DataElement dataElement = JsonSerializer.Deserialize<DataElement>(instanceData, JSON_SERIALIZER_OPTIONS)!;
                 return dataElement;
             }
 
@@ -196,7 +198,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 string instanceData = await response.Content.ReadAsStringAsync();
-                dataList = JsonConvert.DeserializeObject<DataElementList>(instanceData)!;
+                dataList = JsonSerializer.Deserialize<DataElementList>(instanceData, JSON_SERIALIZER_OPTIONS)!;
 
                 ExtractAttachments(dataList.DataElements, attachmentList);
 
@@ -280,7 +282,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             if (response.IsSuccessStatusCode)
             {
                 string instancedata = await response.Content.ReadAsStringAsync();
-                dataElement = JsonConvert.DeserializeObject<DataElement>(instancedata)!;
+                dataElement = JsonSerializer.Deserialize<DataElement>(instancedata, JSON_SERIALIZER_OPTIONS)!;
 
                 return dataElement;
             }
@@ -316,7 +318,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             if (response.IsSuccessStatusCode)
             {
                 string instancedata = await response.Content.ReadAsStringAsync();
-                dataElement = JsonConvert.DeserializeObject<DataElement>(instancedata)!;
+                dataElement = JsonSerializer.Deserialize<DataElement>(instancedata, JSON_SERIALIZER_OPTIONS)!;
 
                 return dataElement;
             }
@@ -339,7 +341,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             if (response.IsSuccessStatusCode)
             {
                 string instancedata = await response.Content.ReadAsStringAsync();
-                DataElement dataElement = JsonConvert.DeserializeObject<DataElement>(instancedata)!;
+                DataElement dataElement = JsonSerializer.Deserialize<DataElement>(instancedata, JSON_SERIALIZER_OPTIONS)!;
 
                 return dataElement;
             }
@@ -365,7 +367,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             if (response.IsSuccessStatusCode)
             {
                 string instancedata = await response.Content.ReadAsStringAsync();
-                DataElement dataElement = JsonConvert.DeserializeObject<DataElement>(instancedata)!;
+                DataElement dataElement = JsonSerializer.Deserialize<DataElement>(instancedata, JSON_SERIALIZER_OPTIONS)!;
 
                 return dataElement;
             }
@@ -378,12 +380,12 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             string apiUrl = $"{_platformSettings.ApiStorageEndpoint}instances/{instance.Id}/dataelements/{dataElement.Id}";
             string token = _userTokenProvider.GetUserToken();
 
-            StringContent jsonString = new StringContent(JsonConvert.SerializeObject(dataElement), Encoding.UTF8, "application/json");
+            StringContent jsonString = new StringContent(JsonSerializer.Serialize(dataElement, JSON_SERIALIZER_OPTIONS), Encoding.UTF8, "application/json");
             HttpResponseMessage response = await _client.PutAsync(token, apiUrl, jsonString);
 
             if (response.IsSuccessStatusCode)
             {
-                DataElement result = JsonConvert.DeserializeObject<DataElement>(await response.Content.ReadAsStringAsync())!;
+                DataElement result = JsonSerializer.Deserialize<DataElement>(await response.Content.ReadAsStringAsync(), JSON_SERIALIZER_OPTIONS)!;
 
                 return result;
             }
@@ -400,7 +402,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             HttpResponseMessage response = await _client.PutAsync(token, apiUrl, content: null);
             if (response.IsSuccessStatusCode)
             {
-                DataElement result = JsonConvert.DeserializeObject<DataElement>(await response.Content.ReadAsStringAsync())!;
+                DataElement result = JsonSerializer.Deserialize<DataElement>(await response.Content.ReadAsStringAsync(), JSON_SERIALIZER_OPTIONS)!;
                 return result;
             }
             _logger.LogError("Locking data element {DataGuid} for instance {InstanceIdentifier} failed with status code {StatusCode}", dataGuid, instanceIdentifier, response.StatusCode);
@@ -416,7 +418,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             HttpResponseMessage response = await _client.DeleteAsync(token, apiUrl);
             if (response.IsSuccessStatusCode)
             {
-                DataElement result = JsonConvert.DeserializeObject<DataElement>(await response.Content.ReadAsStringAsync())!;
+                DataElement result = JsonSerializer.Deserialize<DataElement>(await response.Content.ReadAsStringAsync(), JSON_SERIALIZER_OPTIONS)!;
                 return result;
             }
             _logger.LogError("Unlocking data element {DataGuid} for instance {InstanceIdentifier} failed with status code {StatusCode}", dataGuid, instanceIdentifier, response.StatusCode);
