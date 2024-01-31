@@ -50,31 +50,6 @@ namespace Altinn.App.Core.Implementation
             _logger = logger;
         }
 
-        /// <inheritdoc/>
-        public byte[] GetAppResource(string org, string app, string resource)
-        {
-            byte[] fileContent;
-
-            if (resource == _settings.RuleHandlerFileName)
-            {
-                fileContent = ReadFileContentsFromLegalPath(_settings.AppBasePath + _settings.UiFolder, resource);
-            }
-            else if (resource == _settings.FormLayoutJSONFileName)
-            {
-                fileContent = ReadFileContentsFromLegalPath(_settings.AppBasePath + _settings.UiFolder, resource);
-            }
-            else if (resource == _settings.RuleConfigurationJSONFileName)
-            {
-                fileContent = ReadFileContentsFromLegalPath(_settings.AppBasePath + _settings.UiFolder, resource);
-            }
-            else
-            {
-                fileContent = ReadFileContentsFromLegalPath(_settings.AppBasePath + _settings.GetResourceFolder(), resource);
-            }
-
-            return fileContent;
-        }
-
         /// <inheritdoc />
         public byte[] GetText(string org, string app, string textResource)
         {
@@ -154,26 +129,6 @@ namespace Altinn.App.Core.Implementation
                 _logger.LogError(ex, "Something went wrong fetching application policy");
                 return null;
             }
-        }
-
-        /// <inheritdoc/>
-        public string GetModelMetaDataJSON(string org, string app)
-        {
-            Application applicationMetadata = GetApplication();
-
-            string dataTypeId = string.Empty;
-            foreach (DataType data in applicationMetadata.DataTypes)
-            {
-                if (data.AppLogic != null && !string.IsNullOrEmpty(data.AppLogic.ClassRef))
-                {
-                    dataTypeId = data.Id;
-                }
-            }
-
-            string filename = _settings.AppBasePath + _settings.ModelsFolder + dataTypeId + "." + _settings.ServiceMetadataFileName;
-            string filedata = File.ReadAllText(filename, Encoding.UTF8);
-
-            return filedata;
         }
 
         /// <inheritdoc/>
