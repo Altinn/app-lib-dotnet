@@ -60,26 +60,6 @@ namespace Altinn.App.Api.Controllers
         }
 
         /// <summary>
-        /// Method to retrieve the runtime resources
-        /// </summary>
-        /// <returns>File content with content type set</returns>
-        /// TODO: Figure out if this can be deleted
-        [HttpGet]
-        [Route("{org}/{app}/api/runtimeresources/{id}/")]
-        [HttpGet]
-        public IActionResult GetRuntimeResource(string id)
-        {
-            byte[]? fileContent = _appResourceService.GetRuntimeResource(id);
-
-            if (fileContent != null)
-            {
-                return new FileContentResult(fileContent, MimeTypeMap.GetMimeType(Path.GetExtension(id).ToLower()).ToString());
-            }
-
-            return StatusCode(404);
-        }
-
-        /// <summary>
         /// Method to retrieve textresources
         /// </summary>
         /// <param name="org">Unique identifier of the organisation responsible for the app.</param>

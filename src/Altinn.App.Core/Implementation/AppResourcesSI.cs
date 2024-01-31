@@ -188,32 +188,6 @@ namespace Altinn.App.Core.Implementation
             return filedata;
         }
 
-        /// <inheritdoc/>
-        public byte[]? GetRuntimeResource(string resource)
-        {
-            byte[]? fileContent = null;
-            string path;
-            if (resource == _settings.RuntimeAppFileName)
-            {
-                path = Path.Combine(_hostingEnvironment.WebRootPath, "runtime", "js", "react", _settings.RuntimeAppFileName);
-            }
-            else if (resource == _settings.ServiceStylesConfigFileName)
-            {
-                return Encoding.UTF8.GetBytes(_settings.GetStylesConfig());
-            }
-            else
-            {
-                path = Path.Combine(_hostingEnvironment.WebRootPath, "runtime", "css", "react", _settings.RuntimeCssFileName);
-            }
-
-            if (File.Exists(path))
-            {
-                fileContent = File.ReadAllBytes(path);
-            }
-
-            return fileContent;
-        }
-
         /// <inheritdoc />
         public string? GetPrefillJson(string dataModelName = "ServiceModel")
         {

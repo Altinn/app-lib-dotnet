@@ -174,18 +174,6 @@ namespace Altinn.App.Core.Configuration
         public bool DisableCsrfCheck { get; set; }
 
         /// <summary>
-        /// Gets the styles config element
-        /// </summary>
-        public string GetStylesConfig()
-        {
-            StylesConfig stylesConfig = new StylesConfig();
-            stylesConfig.InternalStyles.Add(RuntimeCssFileName);
-            stylesConfig.ExternalStyles.Add(DefaultBootstrapUrl);
-
-            return JsonConvert.SerializeObject(stylesConfig);
-        }
-
-        /// <summary>
         /// Get Resource Folder name
         /// </summary>
         /// <returns>The resource folder</returns>

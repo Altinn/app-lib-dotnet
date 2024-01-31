@@ -53,13 +53,6 @@ namespace Altinn.App.Core.Internal.App
         string GetModelJsonSchema(string modelId);
 
         /// <summary>
-        /// Method that fetches the runtime resources stored in wwwroot
-        /// </summary>
-        /// <param name="resource">the resource</param>
-        /// <returns>The filestream for the resource file</returns>
-        byte[]? GetRuntimeResource(string resource);
-
-        /// <summary>
         /// Returns the application metadata for an application.
         /// </summary>
         /// <returns>The application  metadata for an application.</returns>
