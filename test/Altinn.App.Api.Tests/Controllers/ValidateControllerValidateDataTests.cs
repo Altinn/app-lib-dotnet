@@ -264,7 +264,8 @@ public class ValidationControllerValidateDataTests
             validationMock.Setup(v => v.ValidateDataElement(
                     testScenario.ReceivedInstance,
                     testScenario.ReceivedInstance.Data.First(),
-                    testScenario.ReceivedApplication.DataTypes.First()))
+                    testScenario.ReceivedApplication.DataTypes.First(),
+                    null))
                 .Returns(Task.FromResult<List<ValidationIssue>>(testScenario.ReceivedValidationIssues));
         }
 

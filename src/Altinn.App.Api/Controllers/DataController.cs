@@ -507,7 +507,7 @@ namespace Altinn.App.Api.Controllers
             // Ensure that all lists are changed from null to empty list.
             ObjectUtils.InitializeListsAndNullEmptyStrings(model);
 
-            var validationIssues = await _validationService.ValidateFormData(instance, dataElement, dataType, model, oldModel, dataPatchRequest.IgnoredValidators);
+            var validationIssues = await _validationService.ValidateFormData(instance, dataElement, dataType, model, oldModel, dataPatchRequest.IgnoredValidators, language);
             var response = new DataPatchResponse
             {
                 NewDataModel = model,

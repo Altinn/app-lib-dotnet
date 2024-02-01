@@ -133,7 +133,8 @@ public class DataController_PatchFormDataImplementation : IAsyncDisposable
         _formDataValidator.Setup(fdv => fdv.ValidateFormData(
             It.Is<Instance>(i => i == _instance),
             It.Is<DataElement>(de=>de == _dataElement),
-            It.IsAny<MyModel>()))
+            It.IsAny<MyModel>(),
+            null))
             .ReturnsAsync(validationIssues);
 
         // Act

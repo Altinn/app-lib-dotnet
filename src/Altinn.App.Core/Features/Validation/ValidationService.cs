@@ -32,7 +32,7 @@ public class ValidationService : IValidationService
     }
 
     /// <inheritdoc/>
-    public async Task<List<ValidationIssue>> ValidateInstanceAtTask(Instance instance, string taskId)
+    public async Task<List<ValidationIssue>> ValidateInstanceAtTask(Instance instance, string taskId, string? language)
     {
         ArgumentNullException.ThrowIfNull(instance);
         ArgumentNullException.ThrowIfNull(taskId);
@@ -48,7 +48,7 @@ public class ValidationService : IValidationService
             try
             {
                 _logger.LogDebug("Start running validator {validatorName} on task {taskId} in instance {instanceId}", tv.GetType().Name, taskId, instance.Id);
-                var issues = await tv.ValidateTask(instance, taskId);
+                var issues = await tv.ValidateTask(instance, taskId, language);
                 issues.ForEach(i => i.Source = tv.ValidationSource); // Ensure that the source is set to the validator source
                 return issues;
             }
@@ -63,14 +63,14 @@ public class ValidationService : IValidationService
         var application = await _appMetadata.GetApplicationMetadata();
         var dataTypesForTask = application.DataTypes.Where(dt => dt.TaskId == taskId).ToList();
         var dataElementsToValidate = instance.Data.Where(de => dataTypesForTask.Exists(dt => dt.Id == de.DataType)).ToArray();
-        var dataIssuesTask = Task.WhenAll(dataElementsToValidate.Select(dataElement=>ValidateDataElement(instance, dataElement, dataTypesForTask.First(dt=>dt.Id == dataElement.DataType) )));
+        var dataIssuesTask = Task.WhenAll(dataElementsToValidate.Select(dataElement => ValidateDataElement(instance, dataElement, dataTypesForTask.First(dt => dt.Id == dataElement.DataType), language)));
 
-        return (await Task.WhenAll(taskIssuesTask, dataIssuesTask)).SelectMany(x=>x.SelectMany(y=>y)).ToList();
+        return (await Task.WhenAll(taskIssuesTask, dataIssuesTask)).SelectMany(x => x.SelectMany(y => y)).ToList();
     }
 
 
     /// <inheritdoc/>
-    public async Task<List<ValidationIssue>> ValidateDataElement(Instance instance, DataElement dataElement, DataType dataType)
+    public async Task<List<ValidationIssue>> ValidateDataElement(Instance instance, DataElement dataElement, DataType dataType, string? language)
     {
         ArgumentNullException.ThrowIfNull(instance);
         ArgumentNullException.ThrowIfNull(dataElement);
@@ -87,7 +87,7 @@ public class ValidationService : IValidationService
             try
             {
                 _logger.LogDebug("Start running validator {validatorName} on {dataType} for data element {dataElementId} in instance {instanceId}", v.GetType().Name, dataElement.DataType, dataElement.Id, instance.Id);
-                var issues = await v.ValidateDataElement(instance, dataElement, dataType);
+                var issues = await v.ValidateDataElement(instance, dataElement, dataType, language);
                 issues.ForEach(i => i.Source = v.ValidationSource); // Ensure that the source is set to the validator source
                 return issues;
             }
@@ -99,7 +99,7 @@ public class ValidationService : IValidationService
         }));
 
         // Run extra validation on form data elements with app logic
-        if(dataType.AppLogic?.ClassRef is not null)
+        if (dataType.AppLogic?.ClassRef is not null)
         {
             Type modelType = _appModel.GetModelType(dataType.AppLogic.ClassRef);
 
@@ -107,19 +107,19 @@ public class ValidationService : IValidationService
             string app = instance.AppId.Split("/")[1];
             int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
             var data = await _dataClient.GetFormData(instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, Guid.Parse(dataElement.Id)); // TODO: Add method that accepts instance and dataElement
-            var formDataIssuesDictionary = await ValidateFormData(instance, dataElement, dataType, data);
+            var formDataIssuesDictionary = await ValidateFormData(instance, dataElement, dataType, data, previousData: null, ignoredValidators: null, language);
 
-            return (await dataElementsIssuesTask).SelectMany(x=>x)
-                .Concat(formDataIssuesDictionary.SelectMany(kv=>kv.Value))
+            return (await dataElementsIssuesTask).SelectMany(x => x)
+                .Concat(formDataIssuesDictionary.SelectMany(kv => kv.Value))
                 .ToList();
         }
 
-        return (await dataElementsIssuesTask).SelectMany(x=>x).ToList();
+        return (await dataElementsIssuesTask).SelectMany(x => x).ToList();
     }
 
     /// <inheritdoc/>
     public async Task<Dictionary<string, List<ValidationIssue>>> ValidateFormData(Instance instance, DataElement dataElement, DataType dataType, object data,
-        object? previousData = null, List<string>? ignoredValidators = null)
+        object? previousData, List<string>? ignoredValidators, string? language)
     {
         ArgumentNullException.ThrowIfNull(instance);
         ArgumentNullException.ThrowIfNull(dataElement);
@@ -139,7 +139,7 @@ public class ValidationService : IValidationService
             try
             {
                 _logger.LogDebug("Start running validator {validatorName} on {dataType} for data element {dataElementId} in instance {instanceId}", v.GetType().Name, dataElement.DataType, dataElement.Id, instance.Id);
-                var issues = await v.ValidateFormData(instance, dataElement, data);
+                var issues = await v.ValidateFormData(instance, dataElement, data, language);
                 issues.ForEach(i => i.Source = v.ValidationSource); // Ensure that the Source is set to the ValidatorSource
                 return issues;
             }

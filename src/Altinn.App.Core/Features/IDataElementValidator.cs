@@ -32,6 +32,7 @@ public interface IDataElementValidator
     /// <param name="instance">The instance to validate</param>
     /// <param name="dataElement"></param>
     /// <param name="dataType"></param>
+    /// <param name="language">The currently used language by the user (or null if not available)</param>
     /// <returns></returns>
-    public Task<List<ValidationIssue>> ValidateDataElement(Instance instance, DataElement dataElement, DataType dataType);
+    public Task<List<ValidationIssue>> ValidateDataElement(Instance instance, DataElement dataElement, DataType dataType, string? language);
 }

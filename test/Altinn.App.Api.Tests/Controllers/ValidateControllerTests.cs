@@ -144,7 +144,7 @@ public class ValidateControllerTests
         instanceMock.Setup(i => i.GetInstance(app, org, instanceOwnerPartyId, instanceId))
             .Returns(Task.FromResult<Instance>(instance));
 
-        validationMock.Setup(v => v.ValidateInstanceAtTask(instance, "dummy"))
+        validationMock.Setup(v => v.ValidateInstanceAtTask(instance, "dummy", null))
             .Returns(Task.FromResult(validationResult));
 
         // Act
@@ -187,7 +187,7 @@ public class ValidateControllerTests
         instanceMock.Setup(i => i.GetInstance(app, org, instanceOwnerPartyId, instanceId))
             .Returns(Task.FromResult<Instance>(instance));
 
-        validationMock.Setup(v => v.ValidateInstanceAtTask(instance, "dummy"))
+        validationMock.Setup(v => v.ValidateInstanceAtTask(instance, "dummy", null))
             .Throws(exception);
 
         // Act
@@ -230,7 +230,7 @@ public class ValidateControllerTests
         instanceMock.Setup(i => i.GetInstance(app, org, instanceOwnerPartyId, instanceId))
             .Returns(Task.FromResult<Instance>(instance));
 
-        validationMock.Setup(v => v.ValidateInstanceAtTask(instance, "dummy"))
+        validationMock.Setup(v => v.ValidateInstanceAtTask(instance, "dummy", null))
             .Throws(exception);
 
         // Act
