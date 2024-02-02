@@ -1,7 +1,8 @@
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Features.Validation;
+namespace Altinn.App.Core.Internal.Validation;
 
 /// <summary>
 /// Core interface for validation of instances. Only a single implementation of this interface should exist in the app.

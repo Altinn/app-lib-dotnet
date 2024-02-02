@@ -1,10 +1,9 @@
 using System.Net;
 using Altinn.App.Api.Controllers;
-using Altinn.App.Core.Features;
-using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Instances;
+using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;

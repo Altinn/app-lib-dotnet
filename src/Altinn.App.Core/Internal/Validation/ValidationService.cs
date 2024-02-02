@@ -1,19 +1,19 @@
+using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace Altinn.App.Core.Features.Validation;
+namespace Altinn.App.Core.Internal.Validation;
 
 /// <summary>
 /// Main validation service that encapsulates all validation logic
 /// </summary>
 public class ValidationService : IValidationService
 {
-    private readonly IServiceProvider _serviceProvider;
+    private readonly IValidatorFactory _validatorFactory;
     private readonly IDataClient _dataClient;
     private readonly IAppModel _appModel;
     private readonly IAppMetadata _appMetadata;
@@ -22,9 +22,9 @@ public class ValidationService : IValidationService
     /// <summary>
     /// Constructor with DI services
     /// </summary>
-    public ValidationService(IServiceProvider serviceProvider, IDataClient dataClient, IAppModel appModel, IAppMetadata appMetadata, ILogger<ValidationService> logger)
+    public ValidationService(IValidatorFactory validatorFactory, IDataClient dataClient, IAppModel appModel, IAppMetadata appMetadata, ILogger<ValidationService> logger)
     {
-        _serviceProvider = serviceProvider;
+        _validatorFactory = validatorFactory;
         _dataClient = dataClient;
         _appModel = appModel;
         _appMetadata = appMetadata;
@@ -37,13 +37,26 @@ public class ValidationService : IValidationService
         ArgumentNullException.ThrowIfNull(instance);
         ArgumentNullException.ThrowIfNull(taskId);
 
-        // Run task validations
-        var taskValidators = _serviceProvider.GetServices<ITaskValidator>()
-            .Where(tv => tv.TaskId == "*" || tv.TaskId == taskId)
-            // .Concat(_serviceProvider.GetKeyedServices<ITaskValidator>(taskId))
-            .ToArray();
+        // Run task validations (but don't await yet)
+        Task<List<ValidationIssue>[]> taskIssuesTask = RunTaskValidators(instance, taskId, language);
 
-        var taskIssuesTask = Task.WhenAll(taskValidators.Select(async tv =>
+        // Get list of data elements for the task
+        var application = await _appMetadata.GetApplicationMetadata();
+        var dataTypesForTask = application.DataTypes.Where(dt => dt.TaskId == taskId).ToList();
+        var dataElementsToValidate = instance.Data.Where(de => dataTypesForTask.Exists(dt => dt.Id == de.DataType)).ToArray();
+        // Run ValidateDataElement for each data element (but don't await yet)
+        var dataIssuesTask = Task.WhenAll(dataElementsToValidate.Select(dataElement => ValidateDataElement(instance, dataElement, dataTypesForTask.First(dt => dt.Id == dataElement.DataType), language)));
+
+        List<ValidationIssue>[][] lists = await Task.WhenAll(taskIssuesTask, dataIssuesTask);
+        // Flatten the list of lists to a single list of issues
+        return lists.SelectMany(x => x.SelectMany(y => y)).ToList();
+    }
+
+    private Task<List<ValidationIssue>[]> RunTaskValidators(Instance instance, string taskId, string? language)
+    {
+        var taskValidators = _validatorFactory.GetTaskValidators(taskId);
+
+        return Task.WhenAll(taskValidators.Select(async tv =>
         {
             try
             {
@@ -58,14 +71,6 @@ public class ValidationService : IValidationService
                 throw;
             }
         }));
-
-        // Run validations for single data elements
-        var application = await _appMetadata.GetApplicationMetadata();
-        var dataTypesForTask = application.DataTypes.Where(dt => dt.TaskId == taskId).ToList();
-        var dataElementsToValidate = instance.Data.Where(de => dataTypesForTask.Exists(dt => dt.Id == de.DataType)).ToArray();
-        var dataIssuesTask = Task.WhenAll(dataElementsToValidate.Select(dataElement => ValidateDataElement(instance, dataElement, dataTypesForTask.First(dt => dt.Id == dataElement.DataType), language)));
-
-        return (await Task.WhenAll(taskIssuesTask, dataIssuesTask)).SelectMany(x => x.SelectMany(y => y)).ToList();
     }
 
 
@@ -77,10 +82,31 @@ public class ValidationService : IValidationService
         ArgumentNullException.ThrowIfNull(dataElement.DataType);
 
         // Get both keyed and non-keyed validators for the data type
-        var validators = _serviceProvider.GetServices<IDataElementValidator>()
-            .Where(v => v.DataType == "*" || v.DataType == dataType.Id)
-            // .Concat(_serviceProvider.GetKeyedServices<IDataElementValidator>(dataElement.DataType))
-            .ToArray();
+        Task<List<ValidationIssue>[]> dataElementsIssuesTask = RunDataElementValidators(instance, dataElement, dataType, language);
+
+        // Run extra validation on form data elements with app logic
+        if (dataType.AppLogic?.ClassRef is not null)
+        {
+            Type modelType = _appModel.GetModelType(dataType.AppLogic.ClassRef);
+
+            Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
+            string app = instance.AppId.Split("/")[1];
+            int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
+            var data = await _dataClient.GetFormData(instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, Guid.Parse(dataElement.Id)); // TODO: Add method that accepts instance and dataElement
+            var formDataIssuesDictionary = await ValidateFormData(instance, dataElement, dataType, data, previousData: null, ignoredValidators: null, language);
+
+            return (await dataElementsIssuesTask).SelectMany(x => x)
+                .Concat(formDataIssuesDictionary.SelectMany(kv => kv.Value))
+                .ToList();
+
+        }
+
+        return (await dataElementsIssuesTask).SelectMany(x => x).ToList();
+    }
+
+    private Task<List<ValidationIssue>[]> RunDataElementValidators(Instance instance, DataElement dataElement, DataType dataType, string? language)
+    {
+        var validators = _validatorFactory.GetDataElementValidators(dataElement.Id);
 
         var dataElementsIssuesTask = Task.WhenAll(validators.Select(async v =>
         {
@@ -98,23 +124,7 @@ public class ValidationService : IValidationService
             }
         }));
 
-        // Run extra validation on form data elements with app logic
-        if (dataType.AppLogic?.ClassRef is not null)
-        {
-            Type modelType = _appModel.GetModelType(dataType.AppLogic.ClassRef);
-
-            Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
-            string app = instance.AppId.Split("/")[1];
-            int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
-            var data = await _dataClient.GetFormData(instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, Guid.Parse(dataElement.Id)); // TODO: Add method that accepts instance and dataElement
-            var formDataIssuesDictionary = await ValidateFormData(instance, dataElement, dataType, data, previousData: null, ignoredValidators: null, language);
-
-            return (await dataElementsIssuesTask).SelectMany(x => x)
-                .Concat(formDataIssuesDictionary.SelectMany(kv => kv.Value))
-                .ToList();
-        }
-
-        return (await dataElementsIssuesTask).SelectMany(x => x).ToList();
+        return dataElementsIssuesTask;
     }
 
     /// <inheritdoc/>
@@ -127,10 +137,7 @@ public class ValidationService : IValidationService
         ArgumentNullException.ThrowIfNull(data);
 
         // Locate the relevant data validator services from normal and keyed services
-        var dataValidators = _serviceProvider.GetServices<IFormDataValidator>()
-            .Where(dv => dv.DataType == "*" || dv.DataType == dataType.Id)
-            // .Concat(_serviceProvider.GetKeyedServices<IFormDataValidator>(dataElement.DataType))
-            .Where(dv => ignoredValidators?.Contains(dv.ValidationSource) != true)
+        var dataValidators = _validatorFactory.GetFormDataValidators(dataType.Id)
             .Where(dv => previousData is null || dv.HasRelevantChanges(data, previousData))
             .ToArray();
 

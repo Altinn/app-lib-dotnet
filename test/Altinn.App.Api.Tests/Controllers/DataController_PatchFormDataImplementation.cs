@@ -4,12 +4,12 @@ using Altinn.App.Api.Controllers;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.FileAnalyzis;
-using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Prefill;
+using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
@@ -62,7 +62,7 @@ public class DataController_PatchFormDataImplementation : IAsyncDisposable
         _serviceCollection.AddSingleton(_dataElementValidator);
         _serviceProvider = _serviceCollection.BuildServiceProvider();
         var validationService = new ValidationService(
-            _serviceProvider,
+            new ValidatorFactory(_serviceProvider.GetServices<ITaskValidator>(), _serviceProvider.GetServices<IDataElementValidator>(), _serviceProvider.GetServices<IFormDataValidator>()),
             _dataClientMock.Object,
             _appModelMock.Object,
             _appMetadataMock.Object,

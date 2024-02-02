@@ -36,6 +36,7 @@ using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Internal.Secrets;
 using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Internal.Texts;
+using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models;
 using Altinn.Common.AccessTokenClient.Configuration;
 using Altinn.Common.AccessTokenClient.Services;
@@ -48,7 +49,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json.Linq;
-using Prometheus;
 using IProcessEngine = Altinn.App.Core.Internal.Process.IProcessEngine;
 using IProcessReader = Altinn.App.Core.Internal.Process.IProcessReader;
 using ProcessEngine = Altinn.App.Core.Internal.Process.ProcessEngine;
@@ -178,6 +178,7 @@ namespace Altinn.App.Core.Extensions
 
         private static void AddValidationServices(IServiceCollection services, IConfiguration configuration)
         {
+            services.AddTransient<IValidatorFactory, ValidatorFactory>();
             services.TryAddTransient<IValidationService, ValidationService>();
             if (configuration.GetSection("AppSettings").Get<AppSettings>()?.RequiredValidation == true)
             {
