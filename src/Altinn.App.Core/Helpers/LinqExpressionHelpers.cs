@@ -65,7 +65,7 @@ public static class LinqExpressionHelpers
                 case MethodCallExpression
                 {
                     Method.Name: "Select", Arguments: [{ } root, { } selectorFunction]
-                } methodCallExpression:
+                }:
                     path.Add(GetJsonPath_internal(selectorFunction));
                     current = root;
                     break;
