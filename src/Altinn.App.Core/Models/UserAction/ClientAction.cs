@@ -8,7 +8,8 @@ namespace Altinn.App.Core.Models.UserAction;
 public class ClientAction
 {
     /// <summary>
-    /// Id of the action
+    /// Id of the action. This is used in the frontend to identify
+    /// which action to run. 
     /// </summary>
     [JsonPropertyName("id")]
     public string Id { get; set; } = string.Empty;
