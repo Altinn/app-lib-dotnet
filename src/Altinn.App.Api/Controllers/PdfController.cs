@@ -62,6 +62,7 @@ namespace Altinn.App.Api.Controllers
         /// <summary>
         /// Generate a preview of the PDF for the current task
         /// </summary>
+        [ApiExplorerSettings(IgnoreApi = true)]
         [HttpGet("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/pdf/preview")]
         public async Task<ActionResult> GetPdfPreview(
             [FromRoute] string org,
