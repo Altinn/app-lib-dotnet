@@ -71,8 +71,7 @@ public class PdfGeneratorClient : IPdfGeneratorClient
 
         if (uri.Host.Contains("local.altinn.cloud"))
         {
-            var frontendVersion = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, "frontendVersion");
-            if (frontendVersion != null)
+            if (_httpContextAccessor.HttpContext?.Request.Cookies.TryGetValue("frontendVersion", out var frontendVersion) == true && !string.IsNullOrEmpty(frontendVersion))
             {
                 frontendVersion = frontendVersion.Replace("localhost", "host.containers.internal");
                 generatorRequest.Cookies.Insert(0,
