@@ -40,10 +40,10 @@ public class NetsClient : INetsClient
     /// 
     /// On success, this method returns a paymentId that can be used in subsequent requests to refer to the newly created payment object. Optionally, the response object will also contain a hostedPaymentPageUrl, which is the URL you should redirect to if using a hosted pre-built checkout page.
     /// </summary>
-    public async Task<HttpApiResult<NetsPaymentSuccess>> CreatePayment(NetsCreatePayment payment)
+    public async Task<HttpApiResult<NetsCreatePaymentSuccess>> CreatePayment(NetsCreatePayment payment)
     {
         var response = await _httpClient.PostAsJsonAsync("/v1/payments", payment);
-        return await HttpApiResult<NetsPaymentSuccess>.FromHttpResponse(response);
+        return await HttpApiResult<NetsCreatePaymentSuccess>.FromHttpResponse(response);
     }
 
     /// <inheritdoc/>

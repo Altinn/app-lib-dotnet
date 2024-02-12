@@ -6,6 +6,7 @@ using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
+using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Moq;
 using Xunit;
@@ -22,6 +23,11 @@ namespace Altinn.App.Core.Tests.Internal.Process.ProcessTasks
             var processReader = new Mock<IProcessReader>();
             var paymentService = new Mock<IPaymentService>();
             var dataService = new Mock<IDataService>();
+            
+            AltinnPaymentConfiguration paymentConfiguration = new()
+            {
+                PaymentDataType = "paymentInformation"
+            };
 
             orderDetailsFormatter.Setup(odf => odf.GetOrderDetails(It.IsAny<Instance>())).ReturnsAsync(new OrderDetails { Currency = "NOK", OrderLines = [] });
 
@@ -31,15 +37,12 @@ namespace Altinn.App.Core.Tests.Internal.Process.ProcessTasks
                 {
                     TaskExtension = new AltinnTaskExtension
                     {
-                        PaymentConfiguration = new AltinnPaymentConfiguration
-                        {
-                            PaymentDataType = "payment"
-                        }
+                        PaymentConfiguration = paymentConfiguration
                     }
                 }
             };
 
-            processReader.Setup(odf => odf.GetFlowElement(It.IsAny<string>())).Returns(processTask);
+            processReader.Setup(odf => odf.GetAltinnTaskExtension(It.IsAny<string>())).Returns(processTask.ExtensionElements.TaskExtension);
 
             var paymentProcessTask = new PaymentProcessTask(processReader.Object, paymentService.Object, dataService.Object, orderDetailsFormatter.Object);
             var instance = new Instance()
@@ -60,13 +63,8 @@ namespace Altinn.App.Core.Tests.Internal.Process.ProcessTasks
             await paymentProcessTask.Start("Task_1", instance, null);
 
             // Assert
-            paymentService.Verify(ps => ps.StartPayment(instance));
+            paymentService.Verify(ps => ps.StartPayment(instance, paymentConfiguration));
             paymentService.VerifyNoOtherCalls();
-
-            dataService.Verify(dc => dc.InsertObjectAsJson(
-                It.IsAny<Instance>(),
-                processTask.ExtensionElements.TaskExtension.PaymentConfiguration.PaymentDataType,
-                It.IsAny<object>()));
         }
     }
 }

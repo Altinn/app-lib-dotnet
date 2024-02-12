@@ -12,7 +12,7 @@ namespace Altinn.App.Core.Features.Payment.Providers.Nets
         /// </summary>
         /// <param name="payment">The payment details.</param>
         /// <returns></returns>
-        Task<HttpApiResult<NetsPaymentSuccess>> CreatePayment(NetsCreatePayment payment);
+        Task<HttpApiResult<NetsCreatePaymentSuccess>> CreatePayment(NetsCreatePayment payment);
 
         /// <summary>
         /// Retrieve existing payment.

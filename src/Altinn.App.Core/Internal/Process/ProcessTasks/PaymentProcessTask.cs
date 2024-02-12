@@ -1,13 +1,10 @@
-﻿using Altinn.App.Core.Extensions;
-using Altinn.App.Core.Features.Payment;
+﻿using Altinn.App.Core.Features.Payment;
+using Altinn.App.Core.Features.Payment.Exceptions;
 using Altinn.App.Core.Features.Payment.Services;
 using Altinn.App.Core.Internal.Data;
-using Altinn.App.Core.Internal.Payment;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
-using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
-using System.Text.Json;
 
 namespace Altinn.App.Core.Internal.Process.ProcessTasks
 {
@@ -45,19 +42,11 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks
             if (_orderDetailsFormatter == null)
                 throw new ProcessException("No IOrderDetailsFormatter implementation found for generating the order lines. Implement the interface and add it as a transient service in Program.cs");
 
-            AltinnPaymentConfiguration? paymentConfiguration = GetPaymentConfiguration(GetCurrentTask(instance));
-            string dataTypeId = paymentConfiguration.PaymentDataType;
-
-            (Guid dataElementId, PaymentInformation? paymentInformation) = await _dataService.GetByType<PaymentInformation>(instance, dataTypeId);
-
-            if (paymentInformation != null && paymentInformation.Status != PaymentStatus.Paid)
-            {
-                await _paymentService.CancelPayment(instance, paymentInformation!);
-                await _dataService.DeleteById(instance, dataElementId);
-            }
-
-            paymentInformation = await _paymentService.StartPayment(instance);
-            await _dataService.InsertObjectAsJson(new InstanceIdentifier(instance), dataTypeId, paymentInformation);
+            AltinnPaymentConfiguration? paymentConfiguration = _processReader.GetAltinnTaskExtension(instance.Process.CurrentTask.ElementId)?.PaymentConfiguration;
+            if(paymentConfiguration == null)
+                throw new PaymentException("PaymentConfiguration not found in AltinnTaskExtension");
+            
+            await _paymentService.StartPayment(instance, paymentConfiguration);
         }
 
         /// <inheritdoc/>
@@ -69,35 +58,11 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks
         /// <inheritdoc/>
         public async Task Abandon(string taskId, Instance instance)
         {
-            AltinnPaymentConfiguration? paymentConfiguration = GetPaymentConfiguration(GetCurrentTask(instance));
-            string dataTypeId = paymentConfiguration.PaymentDataType;
-
-            (Guid dataElementId, PaymentInformation paymentInformation) = await _dataService.GetByType<PaymentInformation>(instance, dataTypeId);
-
-            if (paymentInformation.Status == PaymentStatus.Paid)
-                return;
-
-            await _paymentService.CancelPayment(instance, paymentInformation);
-            await _dataService.DeleteById(instance, dataElementId);
-        }
-
-        private ProcessTask GetCurrentTask(Instance instance)
-        {
-            if (_processReader.GetFlowElement(instance.Process.CurrentTask.ElementId) is ProcessTask currentTask)
-            {
-                return currentTask;
-            }
-
-            throw new ProcessException("Current task could not be cast to ProcessTask.");
-        }
-
-        private static AltinnPaymentConfiguration GetPaymentConfiguration(ProcessTask currentTask)
-        {
-            AltinnPaymentConfiguration? paymentConfiguration = currentTask.ExtensionElements?.TaskExtension?.PaymentConfiguration;
-            if (paymentConfiguration == null)
-                throw new ProcessException("No payment configuration found on payment process task. Add payment configuration to task.");
-
-            return paymentConfiguration;
+            AltinnPaymentConfiguration? paymentConfiguration = _processReader.GetAltinnTaskExtension(instance.Process.CurrentTask.ElementId)?.PaymentConfiguration;
+            if(paymentConfiguration == null)
+                throw new PaymentException("PaymentConfiguration not found in AltinnTaskExtension");
+            
+            await _paymentService.CancelPayment(instance, paymentConfiguration);
         }
     }
 }

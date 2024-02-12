@@ -11,6 +11,6 @@ namespace Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties
         /// Set what dataTypeId that should be used for storing the payment
         /// </summary>
         [XmlElement("paymentDataType", Namespace = "http://altinn.no/process")]
-        public string PaymentDataType { get; set; }
+        public string? PaymentDataType { get; set; }
     }
 }

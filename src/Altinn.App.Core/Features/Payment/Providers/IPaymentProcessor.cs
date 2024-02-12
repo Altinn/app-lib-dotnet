@@ -29,7 +29,8 @@ public interface IPaymentProcessor
     /// <summary>
     /// Handles the callback from the payment provider.
     /// </summary>
+    /// <param name="instance"></param>
     /// <param name="request">The HTTP request containing the callback data.</param>
     /// <returns>A task representing the asynchronous operation. The task result contains the response from the payment provider.</returns>
-    public Task<string> HandleCallback(HttpRequest request);
+    public Task<PaymentStatus?> HandleCallback(Instance instance, HttpRequest request);
 }

@@ -1,6 +1,8 @@
+using Altinn.App.Core.Features.Payment.Exceptions;
 using Altinn.App.Core.Features.Payment.Models;
 using Altinn.App.Core.Features.Payment.Providers.Nets.Models;
 using Altinn.App.Core.Internal.Payment;
+using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
@@ -37,6 +39,7 @@ public class NetsPaymentProcessor : IPaymentProcessor
             throw new InvalidOperationException("No IOrderDetailsFormatter implementation found. Implement the interface and add it as a transient service in Program.cs");
         }
 
+        var instanceIdentifier = new InstanceIdentifier(instance);
         var org = instance.Org;
         var app = instance.AppId.Split('/')[1];
         var payment = new NetsCreatePayment()
@@ -66,8 +69,8 @@ public class NetsPaymentProcessor : IPaymentProcessor
             {
                 IntegrationType = _settings.Value.IntegrationType,
                 TermsUrl = _settings.Value.TermsUrl,
-                ReturnUrl = $"https://{org}.apps.altinn.no/{org}/{app}/api/v1/payments/callback",
-                CancelUrl = $"https://{org}.apps.altinn.no/{org}/{app}/api/v1/payments/callback",
+                ReturnUrl = $"https://{org}.apps.altinn.no/{org}/{app}/api/v1/instances/{instanceIdentifier}/payment/redirect",
+                CancelUrl = $"https://{org}.apps.altinn.no/{org}/{app}/api/v1/instances/{instanceIdentifier}/payment/redirect",
                 Appearance = new()
                 {
                     DisplayOptions = new()
@@ -86,8 +89,8 @@ public class NetsPaymentProcessor : IPaymentProcessor
                     {
                         EventName = "payment.checkout.completed",
                         Authorization = "myAuthddd",
-                        Url = $"https://{org}.apps.altinn.no/{org}/{app}/api/v1/payments/callback",
-                    }
+                        Url = $"https://{org}.apps.altinn.no/{org}/{app}/api/v1/instances/{instanceIdentifier}/payment/callback",
+                    },
                 ]
             }
         };
@@ -115,8 +118,33 @@ public class NetsPaymentProcessor : IPaymentProcessor
     }
 
     /// <inheritdoc />
-    public Task<string> HandleCallback(HttpRequest request)
+    public async Task<PaymentStatus?> HandleCallback(Instance instance, HttpRequest request)
     {
-        throw new NotImplementedException();
+        var body = await request.ReadFromJsonAsync<NetsWebhookEvent>();
+        if (body == null)
+        {
+            throw new PaymentException("Unable to read NetsWebhookEvent from the request body");
+        }
+        
+        string eventName = body.Event;
+        var failedEvents = new[] { "payment.reservation.failed", "payment.cancel.failed"};
+        var cancelledEvents = new[] { "payment.charge.failed", };
+         
+        if(eventName == "payment.checkout.completed")
+        {
+            return (PaymentStatus.Paid);
+        }
+
+        if (cancelledEvents.Contains(eventName))
+        {
+            return PaymentStatus.Cancelled;
+        }
+
+        if (failedEvents.Contains(eventName))
+        {
+            return (PaymentStatus.Failed);
+        }
+
+        return null;
     }
 }

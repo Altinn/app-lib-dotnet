@@ -29,18 +29,28 @@ namespace Altinn.App.Core.Internal.Data
         /// <summary>
         /// Inserts a data element for the instance.
         /// </summary>
-        /// <param name="instance"></param>
+        /// <param name="instanceIdentifier"></param>
         /// <param name="dataTypeId"></param>
         /// <param name="data"></param>
         /// <returns></returns>
-        Task<DataElement> InsertObjectAsJson(InstanceIdentifier instance, string dataTypeId, object data);
+        Task<DataElement> InsertJsonObject(InstanceIdentifier instanceIdentifier, string dataTypeId, object data);
+
+        /// <summary>
+        /// Updates a data element for the instance.
+        /// </summary>
+        /// <param name="instanceIdentifier"></param>
+        /// <param name="dataTypeId"></param>
+        /// <param name="dataElementId"></param>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        Task<DataElement> UpdateJsonObject(InstanceIdentifier instanceIdentifier, string dataTypeId, Guid dataElementId, object data);
 
         /// <summary>
         /// Deletes a data element by its ID.
         /// </summary>
-        /// <param name="instance">The instance associated with the object.</param>
+        /// <param name="instanceIdentifier">The instance associated with the object.</param>
         /// <param name="dataElementId">The ID of the data element to delete.</param>
         /// <returns>A boolean indicating success/failure.</returns>
-        Task<bool> DeleteById(Instance instance, Guid dataElementId);
+        Task<bool> DeleteById(InstanceIdentifier instanceIdentifier, Guid dataElementId);
     }
 }

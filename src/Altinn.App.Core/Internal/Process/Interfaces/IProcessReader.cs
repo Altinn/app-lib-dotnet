@@ -1,4 +1,5 @@
 using Altinn.App.Core.Internal.Process.Elements;
+using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Process.Elements.Base;
 
 namespace Altinn.App.Core.Internal.Process;
@@ -115,4 +116,6 @@ public interface IProcessReader
     /// </summary>
     /// <returns><see cref="ProcessElement"/></returns>
     public List<ProcessElement> GetAllFlowElements();
+
+    public AltinnTaskExtension? GetAltinnTaskExtension(string elementId);
 }

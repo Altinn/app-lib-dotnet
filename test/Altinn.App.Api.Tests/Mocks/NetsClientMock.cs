@@ -5,7 +5,7 @@ namespace Altinn.App.Api.Tests.Mocks.Services
 {
     public class NetsClientMock : INetsClient
     {
-        public Task<HttpApiResult<NetsPaymentSuccess>> CreatePayment(NetsCreatePayment payment)
+        public Task<HttpApiResult<NetsCreatePaymentSuccess>> CreatePayment(NetsCreatePayment payment)
         {
             throw new NotImplementedException();
         }
