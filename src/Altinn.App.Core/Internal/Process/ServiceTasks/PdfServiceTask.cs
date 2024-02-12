@@ -1,10 +1,8 @@
-using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
-using Microsoft.FeatureManagement;
 
 namespace Altinn.App.Core.Internal.Process.ServiceTasks;
 
@@ -14,9 +12,7 @@ namespace Altinn.App.Core.Internal.Process.ServiceTasks;
 public class PdfServiceTask : IServiceTask
 {
     private readonly IAppMetadata _appMetadata;
-    private readonly IFeatureManager _featureManager;
     private readonly IPdfService _pdfService;
-    private readonly IAppModel _appModel;
 
     /// <summary>
     /// Service task that generates PDFs for all connected datatypes that have the EnablePdfCreation flag set to true.
@@ -25,15 +21,13 @@ public class PdfServiceTask : IServiceTask
     /// <param name="featureManager"></param>
     /// <param name="pdfService"></param>
     /// <param name="appModel"></param>
-    public PdfServiceTask(IAppMetadata appMetadata, IFeatureManager featureManager, IPdfService pdfService,
+    public PdfServiceTask(IAppMetadata appMetadata, IPdfService pdfService,
         IAppModel appModel)
     {
-        _featureManager = featureManager;
         _pdfService = pdfService;
-        _appModel = appModel;
         _appMetadata = appMetadata;
     }
-
+    
     /// <summary>
     /// Executes the service task.
     /// </summary>
@@ -42,17 +36,18 @@ public class PdfServiceTask : IServiceTask
     /// <returns></returns>
     public async Task Execute(string taskId, Instance instance)
     {
+        ArgumentNullException.ThrowIfNull(taskId);
+        ArgumentNullException.ThrowIfNull(instance);
+
         ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
-        bool pdfEnabled = appMetadata.DataTypes.Any(dt =>
+        List<DataType> dataTypesWithPdf = appMetadata.DataTypes.FindAll(dt =>
             dt.TaskId == taskId && 
             dt.AppLogic?.ClassRef != null && 
             dt.EnablePdfCreation);
 
-        if (!pdfEnabled)
+        if(instance.Data.Any(dataElement => dataTypesWithPdf.Any(dataType => dataType.Id == dataElement.DataType)))
         {
-            return;
+            await _pdfService.GenerateAndStorePdf(instance, taskId, CancellationToken.None);
         }
-
-        await _pdfService.GenerateAndStorePdf(instance, taskId, CancellationToken.None);
     }
 }
