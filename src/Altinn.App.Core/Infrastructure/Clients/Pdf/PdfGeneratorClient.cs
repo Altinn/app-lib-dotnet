@@ -69,20 +69,21 @@ public class PdfGeneratorClient : IPdfGeneratorClient
             Domain = uri.Host
         });
 
-        if (uri.Host.Contains("local.altinn.cloud"))
+        if (
+            uri.Host.Contains("local.altinn.cloud")
+            && _httpContextAccessor.HttpContext?.Request.Cookies.TryGetValue("frontendVersion", out var frontendVersion) == true
+            && !string.IsNullOrEmpty(frontendVersion)
+        )
         {
-            if (_httpContextAccessor.HttpContext?.Request.Cookies.TryGetValue("frontendVersion", out var frontendVersion) == true && !string.IsNullOrEmpty(frontendVersion))
-            {
-                frontendVersion = frontendVersion.Replace("localhost", "host.containers.internal");
-                generatorRequest.Cookies.Insert(0,
-                    new PdfGeneratorCookieOptions
-                    {
-                        Name = "frontendVersion",
-                        Domain = uri.Host,
-                        Value = frontendVersion,
-                    }
-                );
-            }
+            frontendVersion = frontendVersion.Replace("localhost", "host.containers.internal");
+            generatorRequest.Cookies.Insert(0,
+                new PdfGeneratorCookieOptions
+                {
+                    Name = "frontendVersion",
+                    Domain = uri.Host,
+                    Value = frontendVersion,
+                }
+            );
         }
 
         string requestContent = JsonSerializer.Serialize(generatorRequest, _jsonSerializerOptions);
