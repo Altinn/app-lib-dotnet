@@ -6,6 +6,7 @@ using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Altinn.App.Api.Controllers;
@@ -13,6 +14,7 @@ namespace Altinn.App.Api.Controllers;
 /// <summary>
 /// TODO: Describe controller
 /// </summary>
+[AllowAnonymous]
 [AutoValidateAntiforgeryTokenIfAuthCookie]
 [ApiController]
 [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
@@ -46,12 +48,7 @@ public class PaymentController : Controller
             throw new PaymentException("Payment configuration not found in AltinnTaskExtension");
         }
         
-        string? redirectUrl = await _paymentService.HandleCallback(instance, paymentConfiguration, Request);
-        if (!string.IsNullOrEmpty(redirectUrl))
-        {
-            return Redirect(redirectUrl);
-        }
-        
+        await _paymentService.HandleCallback(instance, paymentConfiguration, Request);
         return Ok();
     }
 

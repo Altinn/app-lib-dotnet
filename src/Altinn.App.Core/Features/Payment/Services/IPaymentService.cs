@@ -33,8 +33,7 @@ namespace Altinn.App.Core.Features.Payment.Services
         /// <param name="instance"></param>
         /// <param name="paymentConfiguration"></param>
         /// <param name="request"></param>
-        /// <returns>URL to redirect to</returns>
-        Task<string?> HandleCallback(Instance instance, AltinnPaymentConfiguration paymentConfiguration, HttpRequest request);
+        Task HandleCallback(Instance instance, AltinnPaymentConfiguration paymentConfiguration, HttpRequest request);
 
         /// <summary>
         /// Handle return redirect from payment provider.

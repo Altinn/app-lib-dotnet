@@ -67,13 +67,13 @@ public class PaymentService : IPaymentService
     }
 
     /// <inheritdoc/>
-    public async Task<string?> HandleCallback(Instance instance, AltinnPaymentConfiguration paymentConfiguration, HttpRequest request)
+    public async Task HandleCallback(Instance instance, AltinnPaymentConfiguration paymentConfiguration, HttpRequest request)
     {
         string dataTypeId = paymentConfiguration.PaymentDataType ?? throw new PaymentException("PaymentDataType not found in paymentConfiguration");
         PaymentStatus? paymentStatus = await _paymentProcessor.HandleCallback(instance, request);
 
         if (paymentStatus == null)
-            return null;
+            return;
         
         (Guid dataElementId, PaymentInformation? paymentInformation) = await _dataService.GetByType<PaymentInformation>(instance, dataTypeId);
 
@@ -84,9 +84,6 @@ public class PaymentService : IPaymentService
         
         paymentInformation.Status = paymentStatus.Value;
         await _dataService.UpdateJsonObject(new InstanceIdentifier(instance), dataTypeId, dataElementId, paymentInformation);
-
-        //TODO: Handle local/test/production environment
-        return $"http://local.altinn.cloud/{instance.Org}/{instance.AppId}/#/instance/{instance.Id}";
     }
 
     /// <inheritdoc/>
