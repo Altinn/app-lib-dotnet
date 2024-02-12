@@ -88,20 +88,14 @@ namespace Altinn.App.Api.Tests.Controllers
         [Fact]
         public async Task Request_In_Dev_Should_Generate()
         {
-            string? requestContent = null;
             var handler = new Mock<HttpMessageHandler>();
+            string? requestBody = null;
+            var mockResponse = new HttpResponseMessage() { StatusCode = System.Net.HttpStatusCode.OK, Content = new StringContent("PDF") };
             handler.Protected().Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage()
-                {
-                    StatusCode = System.Net.HttpStatusCode.OK,
-                    Content = new StringContent("PDF")
-                })
-                .Callback<HttpRequestMessage, CancellationToken>((m, c) =>
-                {
-                    requestContent = m.Content!.ReadAsStringAsync().Result;
-                });
-
+                .Callback<HttpRequestMessage, CancellationToken>((m, c) => requestBody = m.Content!.ReadAsStringAsync().Result)
+                .ReturnsAsync(mockResponse);
             var httpClient = new HttpClient(handler.Object);
+
             var httpContextAccessor = new Mock<IHttpContextAccessor>();
             httpContextAccessor.Setup(x => x.HttpContext!.Request!.Query["lang"]).Returns("nb");
             string? frontendVersion = null;
@@ -118,29 +112,24 @@ namespace Altinn.App.Api.Tests.Controllers
             var pdfController = new PdfController(_instanceClient.Object, _pdfFormatter.Object, _appResources.Object, _appModel.Object, _dataClient.Object, env.Object, pdfService);
 
             var result = await pdfController.GetPdfPreview(org, app, partyId, instanceId);
+            mockResponse.Dispose();
             
             result.Should().BeOfType(typeof(FileStreamResult));
-            requestContent.Should().Contain(@"url"":""http://local.altinn.cloud/org/app/#/instance/12345/e11e3e0b-a45c-48fb-a968-8d4ddf868c80?pdf=1");
-            requestContent.Should().NotContain(@"name"":""frontendVersion");
+            requestBody.Should().Contain(@"url"":""http://local.altinn.cloud/org/app/#/instance/12345/e11e3e0b-a45c-48fb-a968-8d4ddf868c80?pdf=1");
+            requestBody.Should().NotContain(@"name"":""frontendVersion");
         }
 
         [Fact]
         public async Task Request_In_Dev_Should_Include_Frontend_Version()
         {
-            string? requestContent = null;
             var handler = new Mock<HttpMessageHandler>();
+            string? requestBody = null;
+            var mockResponse = new HttpResponseMessage() { StatusCode = System.Net.HttpStatusCode.OK, Content = new StringContent("PDF") };
             handler.Protected().Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage()
-                {
-                    StatusCode = System.Net.HttpStatusCode.OK,
-                    Content = new StringContent("PDF")
-                })
-                .Callback<HttpRequestMessage, CancellationToken>((m, c) =>
-                {
-                    requestContent = m.Content!.ReadAsStringAsync().Result;
-                });
-
+                .Callback<HttpRequestMessage, CancellationToken>((m, c) => requestBody = m.Content!.ReadAsStringAsync().Result)
+                .ReturnsAsync(mockResponse);
             var httpClient = new HttpClient(handler.Object);
+
             var httpContextAccessor = new Mock<IHttpContextAccessor>();
             httpContextAccessor.Setup(x => x.HttpContext!.Request!.Query["lang"]).Returns("nb");
             string? frontendVersion = "https://altinncdn.no/toolkits/altinn-app-frontend/3/";
@@ -157,29 +146,24 @@ namespace Altinn.App.Api.Tests.Controllers
             var pdfController = new PdfController(_instanceClient.Object, _pdfFormatter.Object, _appResources.Object, _appModel.Object, _dataClient.Object, env.Object, pdfService);
 
             var result = await pdfController.GetPdfPreview(org, app, partyId, instanceId);
-            
+            mockResponse.Dispose();
+
             result.Should().BeOfType(typeof(FileStreamResult));
-            requestContent.Should().Contain(@"url"":""http://local.altinn.cloud/org/app/#/instance/12345/e11e3e0b-a45c-48fb-a968-8d4ddf868c80?pdf=1");
-            requestContent.Should().Contain(@"name"":""frontendVersion"",""value"":""https://altinncdn.no/toolkits/altinn-app-frontend/3/""");
+            requestBody.Should().Contain(@"url"":""http://local.altinn.cloud/org/app/#/instance/12345/e11e3e0b-a45c-48fb-a968-8d4ddf868c80?pdf=1");
+            requestBody.Should().Contain(@"name"":""frontendVersion"",""value"":""https://altinncdn.no/toolkits/altinn-app-frontend/3/""");
         }
 
         [Fact]
         public async Task Request_In_TT02_Should_Ignore_Frontend_Version()
         {
-            string? requestContent = null;
             var handler = new Mock<HttpMessageHandler>();
+            string? requestBody = null;
+            var mockResponse = new HttpResponseMessage() { StatusCode = System.Net.HttpStatusCode.OK, Content = new StringContent("PDF") };
             handler.Protected().Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage()
-                {
-                    StatusCode = System.Net.HttpStatusCode.OK,
-                    Content = new StringContent("PDF")
-                })
-                .Callback<HttpRequestMessage, CancellationToken>((m, c) =>
-                {
-                    requestContent = m.Content!.ReadAsStringAsync().Result;
-                });
-
+                .Callback<HttpRequestMessage, CancellationToken>((m, c) => requestBody = m.Content!.ReadAsStringAsync().Result)
+                .ReturnsAsync(mockResponse);
             var httpClient = new HttpClient(handler.Object);
+
             var httpContextAccessor = new Mock<IHttpContextAccessor>();
             httpContextAccessor.Setup(x => x.HttpContext!.Request!.Query["lang"]).Returns("nb");
             string? frontendVersion = "https://altinncdn.no/toolkits/altinn-app-frontend/3/";
@@ -196,10 +180,11 @@ namespace Altinn.App.Api.Tests.Controllers
             var pdfController = new PdfController(_instanceClient.Object, _pdfFormatter.Object, _appResources.Object, _appModel.Object, _dataClient.Object, env.Object, pdfService);
 
             var result = await pdfController.GetPdfPreview(org, app, partyId, instanceId);
+            mockResponse.Dispose();
             
             result.Should().BeOfType(typeof(FileStreamResult));
-            requestContent.Should().Contain(@"url"":""http://org.apps.tt02.altinn.no/org/app/#/instance/12345/e11e3e0b-a45c-48fb-a968-8d4ddf868c80?pdf=1");
-            requestContent.Should().NotContain(@"name"":""frontendVersion");
+            requestBody.Should().Contain(@"url"":""http://org.apps.tt02.altinn.no/org/app/#/instance/12345/e11e3e0b-a45c-48fb-a968-8d4ddf868c80?pdf=1");
+            requestBody.Should().NotContain(@"name"":""frontendVersion");
         }
     }
 }
