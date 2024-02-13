@@ -37,7 +37,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
     private readonly Mock<IDataProcessor> _dataProcessorMock = new(MockBehavior.Strict);
     private readonly Mock<IFormDataValidator> _formDataValidatorMock = new(MockBehavior.Strict);
 
-    private static readonly JsonSerializerOptions JsonSerializerOptions = new ()
+    private static readonly JsonSerializerOptions JsonSerializerOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = true,
@@ -211,8 +211,8 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
             p => p.ProcessDataWrite(
                 It.IsAny<Instance>(),
                 It.Is<Guid>(dataId => dataId == DataGuid),
-                It.Is<Skjema>(s=>s.Melding.NestedList.Count == 1),
-                It.Is<Skjema?>(s => s!.Melding.NestedList.Count == 0),
+                It.Is<Skjema>(s => s.Melding!.NestedList!.Count == 1),
+                It.Is<Skjema?>(s => s!.Melding!.NestedList!.Count == 0),
                 null
                 ), Times.Exactly(1));
         _dataProcessorMock.VerifyNoOtherCalls();
@@ -320,7 +320,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
 
         var firstData = firstResponse.NewDataModel.Should().BeOfType<JsonElement>().Which;
         var firstListItem = firstData.GetProperty("melding").GetProperty("name");
-        firstListItem.ValueKind.Should().Be(JsonValueKind.Null);;
+        firstListItem.ValueKind.Should().Be(JsonValueKind.Null);
 
         var addValuePatch = new JsonPatch(
             PatchOperation.Test(pointer, firstListItem.AsNode()),
@@ -358,6 +358,61 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
         secondValue.ValueKind.Should().Be(JsonValueKind.Null);
     }
 
+    [Fact]
+    public async Task RowId_GetsAddedAutomatically()
+    {
+        var rowIdServer = Guid.Empty;
+        var rowIdClinet = Guid.Empty;
+        _dataProcessorMock
+            .Setup(p => p.ProcessDataWrite(It.IsAny<Instance>(), It.IsAny<Guid?>(), It.IsAny<object>(), It.IsAny<object?>(), null))
+            .Returns((Instance instance, Guid? dataGuid, object data, object? existingData, string language) =>
+            {
+                var model = (Skjema)data;
+                model.Melding ??= new();
+                model.Melding.SimpleList ??= new();
+                model.Melding.SimpleList.SimpleKeyvalues ??= new();
+                model.Melding.SimpleList.SimpleKeyvalues.Add(new SimpleKeyvalues()
+                {
+                    Key = "KeyFromServer",
+                    IntValue = 321,
+                    AltinnRowId = rowIdServer,
+                });
+                // Save the rowId from the server to compare 
+                rowIdClinet = model.Melding.SimpleList.SimpleKeyvalues[0].AltinnRowId;
+                rowIdServer = model.Melding.SimpleList.SimpleKeyvalues[1].AltinnRowId;
+                return Task.CompletedTask;
+            })
+            .Verifiable(Times.Once);
+        var patch = new JsonPatch(
+            PatchOperation.Add(
+                JsonPointer.Create("melding", "simple_list"),
+                JsonNode.Parse($$"""{"simple_keyvalues":[{"key": "KeyFromClient", "intValue": 123, "altinnRowId": "{{rowIdClinet}}"}]}""")));
+
+        var (_, _, parsedResponse) = await CallPatchApi<DataPatchResponse>(patch, null, HttpStatusCode.OK);
+
+        rowIdClinet.Should().NotBeEmpty();
+        rowIdServer.Should().NotBeEmpty();
+        var newModelElement = parsedResponse.NewDataModel.Should().BeOfType<JsonElement>().Which;
+        var newModel = newModelElement.Deserialize<Skjema>()!;
+        newModel.Melding!.SimpleList!.SimpleKeyvalues.Should().BeEquivalentTo(new List<SimpleKeyvalues>{
+            new()
+            {
+                Key = "KeyFromClient",
+                IntValue = 123,
+                AltinnRowId = rowIdClinet
+            },
+            new()
+            {
+                Key = "KeyFromServer",
+                IntValue = 321,
+                AltinnRowId = rowIdServer
+            }
+        });
+
+        _dataProcessorMock.Verify();
+
+    }
+
 
     [Fact]
     public async Task DataReadChanges_IsPreservedWhenCallingPatch()
@@ -371,7 +426,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
             })
             .Verifiable(Times.Exactly(1));
         _dataProcessorMock
-            .Setup(p=>p.ProcessDataWrite(It.IsAny<Instance>(), It.IsAny<Guid?>(), It.IsAny<object>(), It.IsAny<object?>(), null))
+            .Setup(p => p.ProcessDataWrite(It.IsAny<Instance>(), It.IsAny<Guid?>(), It.IsAny<object>(), It.IsAny<object?>(), null))
             .Returns((Instance instance, Guid? dataGuid, object data, object? previousData, string language) => Task.CompletedTask)
             .Verifiable(Times.Exactly(1));
 
@@ -389,7 +444,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
         response.Should().HaveStatusCode(HttpStatusCode.OK);
         var responseObject = JsonSerializer.Deserialize<Skjema>(responseString, JsonSerializerOptions)!;
 
-        responseObject.Melding.Random.Should().Be("randomFromDataRead");
+        responseObject.Melding!.Random.Should().Be("randomFromDataRead");
 
         // Run a patch operation
         var patch = new JsonPatch(
@@ -400,7 +455,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
         // Verify that the patch operation preserves the changes made by ProcessDataRead
         var newModelElement = parsedResponsePatch.NewDataModel.Should().BeOfType<JsonElement>().Which;
         var newModel = newModelElement.Deserialize<Skjema>()!;
-        newModel.Melding.Random.Should().Be("randomFromDataRead");
+        newModel.Melding!.Random.Should().Be("randomFromDataRead");
 
         _dataProcessorMock.Verify();
     }
