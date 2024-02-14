@@ -59,6 +59,7 @@ namespace Altinn.App.Core.Internal.Data
             return await _dataClient.InsertBinaryData(instanceIdentifier.ToString(), dataTypeId, "application/json", dataTypeId + ".json", referenceStream);
         }
         
+        /// <inheritdoc/>
         public async Task<DataElement> UpdateJsonObject(InstanceIdentifier instanceIdentifier, string dataTypeId, Guid dataElementId, object data)
         {
             using var referenceStream = new MemoryStream();
@@ -79,12 +80,12 @@ namespace Altinn.App.Core.Internal.Data
         {
             ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
 
-            object data = await _dataClient.GetFormData(instanceIdentifier.InstanceGuid, typeof(T), applicationMetadata.AppIdentifier.Org, applicationMetadata.AppIdentifier.App, instanceIdentifier.InstanceOwnerPartyId,
-                new Guid(dataElement.Id));
-
-            if (data is T model)
+            Stream dataStream = await _dataClient.GetBinaryData(applicationMetadata.AppIdentifier.Org, applicationMetadata.AppIdentifier.App, instanceIdentifier.InstanceOwnerPartyId, instanceIdentifier.InstanceGuid, new Guid(dataElement.Id));
+            var data = await JsonSerializer.DeserializeAsync<T>(dataStream, _jsonSerializerOptions);
+            
+            if (data != null)
             {
-                return model;
+                return data;
             }
 
             throw new ArgumentException($"Failed to locate data element of type {nameof(T)}");

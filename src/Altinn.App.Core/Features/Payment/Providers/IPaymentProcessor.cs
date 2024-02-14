@@ -1,7 +1,6 @@
 using Altinn.App.Core.Features.Payment.Models;
 using Altinn.App.Core.Internal.Payment;
 using Altinn.Platform.Storage.Interface.Models;
-using Microsoft.AspNetCore.Http;
 
 namespace Altinn.App.Core.Features.Payment.Providers;
 
@@ -27,10 +26,11 @@ public interface IPaymentProcessor
     public Task CancelPayment(Instance instance, string paymentReference);
 
     /// <summary>
-    /// Handles the callback from the payment provider.
+    /// Gets the payment status for the specified instance and payment reference.
     /// </summary>
     /// <param name="instance"></param>
-    /// <param name="request">The HTTP request containing the callback data.</param>
+    /// <param name="paymentReference"></param>
+    /// <param name="expectedTotalIncVat"></param>
     /// <returns>A task representing the asynchronous operation. The task result contains the response from the payment provider.</returns>
-    public Task<PaymentStatus?> HandleCallback(Instance instance, HttpRequest request);
+    public Task<PaymentStatus?> GetPaymentStatus(Instance instance, string paymentReference, decimal expectedTotalIncVat);
 }

@@ -16,9 +16,9 @@ public class HttpApiResult<T>
         PropertyNameCaseInsensitive = true,
     };
 
-    [MemberNotNullWhen(true, nameof(Success))]
-    public bool IsSuccess => Success is not null;
-    public T? Success { get; init; }
+    [MemberNotNullWhen(true, nameof(Result))]
+    public bool IsSuccess => Result is not null;
+    public T? Result { get; init; }
     public HttpStatusCode Status { get; set; }
     public string? RawError { get; init; }
 
@@ -31,7 +31,7 @@ public class HttpApiResult<T>
                 return new HttpApiResult<T>
                 {
                     Status = response.StatusCode,
-                    Success = default,
+                    Result = default,
                 };
             }
 
@@ -40,7 +40,7 @@ public class HttpApiResult<T>
                 return new HttpApiResult<T>
                 {
                     Status = response.StatusCode,
-                    Success = await response.Content.ReadFromJsonAsync<T>(JSON_OPTIONS) ?? throw new JsonException("Could not deserialize response"),
+                    Result = await response.Content.ReadFromJsonAsync<T>(JSON_OPTIONS) ?? throw new JsonException("Could not deserialize response"),
                 };
             }
             catch (JsonException e)
@@ -53,7 +53,7 @@ public class HttpApiResult<T>
             }
         }
 
-        return new()
+        return new HttpApiResult<T>
         {
             Status = response.StatusCode,
             RawError = await response.Content.ReadAsStringAsync(),

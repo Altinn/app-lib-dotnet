@@ -3,22 +3,21 @@ using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Core.Features.Payment.Exceptions;
 using Altinn.App.Core.Features.Payment.Services;
 using Altinn.App.Core.Internal.Instances;
+using Altinn.App.Core.Internal.Payment;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.Platform.Storage.Interface.Models;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Altinn.App.Api.Controllers;
 
 /// <summary>
-/// TODO: Describe controller
+/// Controller for handling payment operations.
 /// </summary>
-[AllowAnonymous]
 [AutoValidateAntiforgeryTokenIfAuthCookie]
 [ApiController]
 [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-[Route("{org}/{app}/api/v1/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/payment")]
+[Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/payment")]
 public class PaymentController : Controller
 {
     private readonly IPaymentService _paymentService;
@@ -36,10 +35,15 @@ public class PaymentController : Controller
     }
 
     /// <summary>
-    /// Handles webhook callback from the payment provider and updates payment status in storage.
+    /// Get updated payment information for the instance.
     /// </summary>
-    [HttpGet("callback")]
-    public async Task<IActionResult> Callback(string app, string org, int instanceOwnerPartyId, Guid instanceGuid)
+    /// <param name="org">unique identifier of the organisation responsible for the app</param>
+    /// <param name="app">application identifier which is unique within an organisation</param>
+    /// <param name="instanceOwnerPartyId">unique id of the party that this the owner of the instance</param>
+    /// <param name="instanceGuid">unique id to identify the instance</param>
+    /// <returns>An object containing updated payment information</returns>
+    [HttpGet]
+    public async Task<IActionResult> GetPaymentInformation(string org, string app, int instanceOwnerPartyId, Guid instanceGuid)
     {
         Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
         AltinnPaymentConfiguration? paymentConfiguration = _processReader.GetAltinnTaskExtension(instance.Process.CurrentTask.ElementId)?.PaymentConfiguration;
@@ -47,20 +51,8 @@ public class PaymentController : Controller
         {
             throw new PaymentException("Payment configuration not found in AltinnTaskExtension");
         }
-        
-        await _paymentService.HandleCallback(instance, paymentConfiguration, Request);
-        return Ok();
-    }
 
-    /// <summary>
-    /// Handles the redirect back from payment provider. Does any necessary processing and redirects to the correct frontend page.
-    /// </summary>
-    [HttpGet("redirect")]
-    public async Task<IActionResult> ReturnCallback(string app, string org, int instanceOwnerPartyId, Guid instanceGuid)
-    {
-        Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
-        
-        string redirectUrl = await _paymentService.HandleRedirect(instance, Request);
-        return Redirect(redirectUrl);
+        PaymentInformation? paymentInformation = await _paymentService.CheckAndStorePaymentInformation(instance, paymentConfiguration);
+        return paymentInformation != null ? Ok(paymentInformation) : NotFound();
     }
 }

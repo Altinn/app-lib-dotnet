@@ -1,11 +1,11 @@
+using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features.Payment.Exceptions;
-using Altinn.App.Core.Features.Payment.Models;
-using Altinn.App.Core.Features.Payment.Providers.Nets.Models;
 using Altinn.App.Core.Internal.Payment;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
+using OrderDetails = Altinn.App.Core.Features.Payment.Models.OrderDetails;
+using Altinn.App.Core.Features.Payment.Providers.Nets.Models;
 
 namespace Altinn.App.Core.Features.Payment.Providers.Nets;
 
@@ -14,20 +14,23 @@ namespace Altinn.App.Core.Features.Payment.Providers.Nets;
 /// </summary>
 public class NetsPaymentProcessor : IPaymentProcessor
 {
-    private readonly IOptions<NetsPaymentSettings> _settings;
+    private readonly NetsPaymentSettings _settings;
+    private readonly GeneralSettings _generalSettings;
     private readonly INetsClient _netsClient;
     private readonly IOrderDetailsFormatter? _orderDetailsFormatter;
 
     /// <summary>
     /// Implementation of IPaymentProcessor for Nets.
     /// </summary>
-    /// <param name="settings"></param>
     /// <param name="netsClient"></param>
+    /// <param name="settings"></param>
+    /// <param name="generalSettings"></param>
     /// <param name="orderDetailsFormatter"></param>
-    public NetsPaymentProcessor(IOptions<NetsPaymentSettings> settings, INetsClient netsClient, IOrderDetailsFormatter? orderDetailsFormatter = null)
+    public NetsPaymentProcessor(INetsClient netsClient, IOptions<NetsPaymentSettings> settings, IOptions<GeneralSettings> generalSettings, IOrderDetailsFormatter? orderDetailsFormatter = null)
     {
-        _settings = settings;
         _netsClient = netsClient;
+        _settings = settings.Value;
+        _generalSettings = generalSettings.Value;
         _orderDetailsFormatter = orderDetailsFormatter;
     }
 
@@ -36,22 +39,23 @@ public class NetsPaymentProcessor : IPaymentProcessor
     {
         if (_orderDetailsFormatter == null)
         {
-            throw new InvalidOperationException("No IOrderDetailsFormatter implementation found. Implement the interface and add it as a transient service in Program.cs");
+            throw new PaymentException("No IOrderDetailsFormatter implementation found. Implement the interface and add it as a transient service in Program.cs");
         }
 
         var instanceIdentifier = new InstanceIdentifier(instance);
-        var org = instance.Org;
-        var app = instance.AppId.Split('/')[1];
+        string baseUrl = _generalSettings.FormattedExternalAppBaseUrl(new AppIdentifier(instance));
+        var altinnAppUrl = $"{baseUrl}#/instance/{instanceIdentifier}";
+        
         var payment = new NetsCreatePayment()
         {
-            Order = new()
+            Order = new NetsOrder
             {
                 Amount = (int)(orderDetails.TotalPriceIncVat * 100),
                 Currency = orderDetails.Currency,
                 Reference = orderDetails.OrderReference,
                 Items = orderDetails.OrderLines.Select(l => new NetsOrderItem()
                 {
-                    Reference = l.Id ?? string.Empty,
+                    Reference = l.Id,
                     Name = l.Name,
                     Quantity = l.Quantity,
                     Unit = l.Unit,
@@ -67,46 +71,35 @@ public class NetsPaymentProcessor : IPaymentProcessor
             MyReference = instance.Id.Split('/')[1],
             Checkout = new NetsCheckout
             {
-                IntegrationType = _settings.Value.IntegrationType,
-                TermsUrl = _settings.Value.TermsUrl,
-                ReturnUrl = $"https://{org}.apps.altinn.no/{org}/{app}/api/v1/instances/{instanceIdentifier}/payment/redirect",
-                CancelUrl = $"https://{org}.apps.altinn.no/{org}/{app}/api/v1/instances/{instanceIdentifier}/payment/redirect",
-                Appearance = new()
+                IntegrationType = _settings.IntegrationType,
+                TermsUrl = _settings.TermsUrl,
+                ReturnUrl = altinnAppUrl,
+                CancelUrl = altinnAppUrl,
+                Appearance = new NetsApparence
                 {
-                    DisplayOptions = new()
+                    DisplayOptions = new NetsApparence.NetsDisplayOptions
                     {
-                        ShowOrderSummary = _settings.Value.ShowOrderSummary,
-                        ShowMerchantName = _settings.Value.ShowMerchantName,
+                        ShowOrderSummary = _settings.ShowOrderSummary,
+                        ShowMerchantName = _settings.ShowMerchantName,
                     },
                 },
-
+                Charge = true
             },
-            Notifications = new NetsNotifications
-            {
-                WebHooks =
-                [
-                    new NetsWebHook
-                    {
-                        EventName = "payment.checkout.completed",
-                        Authorization = "myAuthddd",
-                        Url = $"https://{org}.apps.altinn.no/{org}/{app}/api/v1/instances/{instanceIdentifier}/payment/callback",
-                    },
-                ]
-            }
         };
-        var paymentCreateResult = await _netsClient.CreatePayment(payment);
-        if (!paymentCreateResult.IsSuccess || paymentCreateResult.Success.HostedPaymentPageUrl is null)
+        
+        HttpApiResult<NetsCreatePaymentSuccess> httpApiResult = await _netsClient.CreatePayment(payment);
+        if (!httpApiResult.IsSuccess || httpApiResult.Result.HostedPaymentPageUrl is null)
         {
-            throw new InvalidOperationException("Failed to create payment\n" + paymentCreateResult.RawError);
+            throw new PaymentException("Failed to create payment\n" + httpApiResult.Status + " - " + httpApiResult.RawError);
         }
 
-        var url = paymentCreateResult.Success.HostedPaymentPageUrl;
-        var paymentId = paymentCreateResult.Success.PaymentId;
+        string hostedPaymentPageUrl = httpApiResult.Result.HostedPaymentPageUrl;
+        string paymentId = httpApiResult.Result.PaymentId;
 
         return new PaymentInformation
         {
             PaymentReference = paymentId,
-            RedirectUrl = url,
+            RedirectUrl = hostedPaymentPageUrl,
             OrderDetails = orderDetails
         };
     }
@@ -118,33 +111,19 @@ public class NetsPaymentProcessor : IPaymentProcessor
     }
 
     /// <inheritdoc />
-    public async Task<PaymentStatus?> HandleCallback(Instance instance, HttpRequest request)
+    public async Task<PaymentStatus?> GetPaymentStatus(Instance instance, string paymentReference, decimal expectedTotalIncVat)
     {
-        var body = await request.ReadFromJsonAsync<NetsWebhookEvent>();
-        if (body == null)
+        HttpApiResult<NetsPaymentFull> httpApiResult = await _netsClient.RetrievePayment(paymentReference);
+        if (!httpApiResult.IsSuccess || httpApiResult.Result.Payment is null)
         {
-            throw new PaymentException("Unable to read NetsWebhookEvent from the request body");
+            throw new PaymentException("Failed to retrieve payment\n" + httpApiResult.Status + " - " + httpApiResult.RawError);
         }
         
-        string eventName = body.Event;
-        var failedEvents = new[] { "payment.reservation.failed", "payment.cancel.failed"};
-        var cancelledEvents = new[] { "payment.charge.failed", };
-         
-        if(eventName == "payment.checkout.completed")
-        {
-            return (PaymentStatus.Paid);
-        }
+        decimal? chargedAmount = httpApiResult.Result?.Payment?.Summary?.ChargedAmount;
 
-        if (cancelledEvents.Contains(eventName))
-        {
-            return PaymentStatus.Cancelled;
-        }
-
-        if (failedEvents.Contains(eventName))
-        {
-            return (PaymentStatus.Failed);
-        }
-
-        return null;
+        if (chargedAmount is null or 0)
+            return PaymentStatus.Created;
+        
+        return chargedAmount == expectedTotalIncVat ? PaymentStatus.Paid : PaymentStatus.Failed;
     }
 }

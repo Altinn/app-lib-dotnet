@@ -1,11 +1,12 @@
-﻿using Altinn.App.Core.Features.Payment.Models;
+﻿using System.Text.Json.Serialization;
+using Altinn.App.Core.Features.Payment.Models;
 
 namespace Altinn.App.Core.Internal.Payment
 {
     /// <summary>
     /// Represents the status of a payment.
     /// </summary>
-    public enum PaymentStatus { Created, Paid, Failed, Cancelled }
+    public enum PaymentStatus { Created, Paid, Failed }
 
 
     /// <summary>
@@ -26,8 +27,9 @@ namespace Altinn.App.Core.Internal.Payment
         /// <summary>
         /// Gets or sets the status of the payment.
         /// </summary>
+        [JsonConverter(typeof(JsonStringEnumConverter))]
         public PaymentStatus Status { get; set; }
-
+        
         /// <summary>
         /// Gets or sets the order details for the transaction.
         /// </summary>

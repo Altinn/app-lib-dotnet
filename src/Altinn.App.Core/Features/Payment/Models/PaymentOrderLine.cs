@@ -28,7 +28,7 @@ public class PaymentOrderLine
     /// Value added tax percent. Defaults to 0 (no VAT). Gets automatically added to the price.
     /// </summary>
     /// <remarks>
-    /// The value added tax percent is a decimal number. 25% VAT is represented as 25.00M
+    /// The value added tax percent is a decimal number. 25% VAT is represented as 25.00M.
     /// </remarks>
     public required decimal VatPercent { get; set; }
 

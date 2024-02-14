@@ -1,17 +1,16 @@
 #nullable enable
 
 using Altinn.App.Core.Features.Payment;
+using Altinn.App.Core.Features.Payment.Exceptions;
 using Altinn.App.Core.Features.Payment.Models;
 using Altinn.App.Core.Features.Payment.Providers;
 using Altinn.App.Core.Features.Payment.Services;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Payment;
-using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
-using Microsoft.AspNetCore.Authentication;
 using Moq;
 using Xunit;
 
@@ -20,27 +19,189 @@ namespace Altinn.App.Core.Tests.Features.Payment;
 public class PaymentServiceTests
 {
     private readonly PaymentService _paymentService;
-    private readonly Mock<IPaymentProcessor> _paymentProcessor = new();
-    private readonly Mock<IOrderDetailsFormatter> _orderDetailsFormatter = new();
-    private readonly Mock<IDataService> _dataService = new();
-    private readonly Mock<IProcessReader> _processReader = new();
+    private readonly Mock<IPaymentProcessor> _paymentProcessor = new(MockBehavior.Strict);
+    private readonly Mock<IOrderDetailsFormatter> _orderDetailsFormatter = new(MockBehavior.Strict);
+    private readonly Mock<IDataService> _dataService = new(MockBehavior.Strict);
 
     public PaymentServiceTests()
     {
-        _paymentService = new PaymentService(_paymentProcessor.Object, _orderDetailsFormatter.Object, _dataService.Object, _processReader.Object);
-    }
-
-    private void VerifyNoOtherCalls()
-    {
-        _paymentProcessor.VerifyNoOtherCalls();
-        _orderDetailsFormatter.VerifyNoOtherCalls();
+        _paymentService =
+            new PaymentService(_paymentProcessor.Object, _orderDetailsFormatter.Object, _dataService.Object);
     }
 
     [Fact]
-    public async Task StartPayment_StartsPayment()
+    public async Task StartPayment_ReturnsRedirectUrl_WhenPaymentStartedSuccessfully()
     {
-        // Arrange
-        var instance = new Instance()
+        Instance instance = CreateInstance();
+        OrderDetails order = CreateOrderDetails();
+        AltinnPaymentConfiguration paymentConfiguration = CreatePaymentConfiguration();
+        PaymentInformation paymentInformation = CreatePaymentInformation();
+
+        _orderDetailsFormatter.Setup(p => p.GetOrderDetails(instance)).ReturnsAsync(order);
+        _dataService.Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
+            .ReturnsAsync((Guid.Empty, null));
+        _dataService.Setup(ds =>
+                ds.InsertJsonObject(It.IsAny<InstanceIdentifier>(), It.IsAny<string>(), It.IsAny<object>()))
+            .ReturnsAsync(new DataElement());
+        _paymentProcessor.Setup(p => p.StartPayment(instance, order)).ReturnsAsync(paymentInformation);
+
+        // Act
+        PaymentInformation paymentInformationResult =
+            await _paymentService.StartPayment(instance, paymentConfiguration);
+
+        // Assert
+        paymentInformationResult.RedirectUrl.Should().Be(paymentInformationResult.RedirectUrl);
+
+        // Verify calls
+        _orderDetailsFormatter.Verify(p => p.GetOrderDetails(instance), Times.Once);
+        _paymentProcessor.Verify(p => p.StartPayment(instance, order), Times.Once);
+        _dataService.Verify(dc => dc.InsertJsonObject(
+            It.IsAny<InstanceIdentifier>(),
+            paymentConfiguration.PaymentDataType!,
+            It.IsAny<object>()));
+    }
+
+    [Fact]
+    public async Task StartPayment_ThrowsException_WhenOrderDetailsCannotBeRetrieved()
+    {
+        Instance instance = CreateInstance();
+        AltinnPaymentConfiguration paymentConfiguration = CreatePaymentConfiguration();
+
+        _dataService.Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
+            .ReturnsAsync((Guid.Empty, null));
+        
+        _orderDetailsFormatter.Setup(p => p.GetOrderDetails(instance)).ThrowsAsync(new Exception());
+
+        // Act & Assert
+        await Assert.ThrowsAsync<Exception>(() =>
+            _paymentService.StartPayment(instance, paymentConfiguration));
+    }
+
+    [Fact]
+    public async Task StartPayment_ThrowsException_WhenPaymentCannotBeStarted()
+    {
+        Instance instance = CreateInstance();
+        OrderDetails order = CreateOrderDetails();
+        AltinnPaymentConfiguration paymentConfiguration = CreatePaymentConfiguration();
+
+        _dataService.Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
+            .ReturnsAsync((Guid.Empty, null));
+        _orderDetailsFormatter.Setup(p => p.GetOrderDetails(instance)).ReturnsAsync(order);
+        _paymentProcessor.Setup(p => p.StartPayment(instance, order)).ThrowsAsync(new Exception());
+
+        // Act & Assert
+        await Assert.ThrowsAsync<Exception>(() =>
+            _paymentService.StartPayment(instance, paymentConfiguration));
+    }
+
+    [Fact]
+    public async Task StartPayment_ThrowsException_WhenPaymentInformationCannotBeStored()
+    {
+        Instance instance = CreateInstance();
+        OrderDetails order = CreateOrderDetails();
+        AltinnPaymentConfiguration paymentConfiguration = CreatePaymentConfiguration();
+        PaymentInformation paymentInformation = CreatePaymentInformation();
+
+        _orderDetailsFormatter.Setup(p => p.GetOrderDetails(instance)).ReturnsAsync(order);
+        _dataService.Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
+            .ReturnsAsync((Guid.Empty, null));
+        _dataService.Setup(ds =>
+                ds.InsertJsonObject(It.IsAny<InstanceIdentifier>(), It.IsAny<string>(), It.IsAny<object>()))
+            .ThrowsAsync(new Exception());
+        _paymentProcessor.Setup(p => p.StartPayment(instance, order)).ReturnsAsync(paymentInformation);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<Exception>(() =>
+            _paymentService.StartPayment(instance, paymentConfiguration));
+    }
+
+    [Fact]
+    public async Task CheckAndStorePaymentInformation_ReturnsNull_WhenNoPaymentInformationFound()
+    {
+        Instance instance = CreateInstance();
+
+        var paymentConfiguration = new AltinnPaymentConfiguration { PaymentDataType = "paymentInformation" };
+
+        _dataService.Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
+            .ReturnsAsync((Guid.Empty, null));
+
+        // Act
+        PaymentInformation? result =
+            await _paymentService.CheckAndStorePaymentInformation(instance, paymentConfiguration);
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task CheckAndStorePaymentInformation_ThrowsException_WhenUnableToCheckPaymentStatus()
+    {
+        Instance instance = CreateInstance();
+        OrderDetails order = CreateOrderDetails();
+        AltinnPaymentConfiguration paymentConfiguration = CreatePaymentConfiguration();
+        PaymentInformation paymentInformation = CreatePaymentInformation();
+
+        _orderDetailsFormatter.Setup(p => p.GetOrderDetails(instance)).ReturnsAsync(order);
+
+        _dataService.Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
+            .ReturnsAsync((Guid.NewGuid(), paymentInformation));
+        _paymentProcessor.Setup(pp =>
+                pp.GetPaymentStatus(It.IsAny<Instance>(), It.IsAny<string>(), It.IsAny<decimal>()))
+            .ReturnsAsync((PaymentStatus?)null);
+
+        var paymentService =
+            new PaymentService(_paymentProcessor.Object, _orderDetailsFormatter.Object, _dataService.Object);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<PaymentException>(() =>
+            paymentService.CheckAndStorePaymentInformation(instance, paymentConfiguration));
+    }
+
+    [Fact]
+    public async Task CheckAndStorePaymentInformation_ReturnsPaymentInformation_WhenPaymentStatusCheckedSuccessfully()
+    {
+        Instance instance = CreateInstance();
+        OrderDetails order = CreateOrderDetails();
+        AltinnPaymentConfiguration paymentConfiguration = CreatePaymentConfiguration();
+        PaymentInformation paymentInformation = CreatePaymentInformation();
+
+        _orderDetailsFormatter.Setup(p => p.GetOrderDetails(instance)).ReturnsAsync(order);
+
+        _dataService.Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
+            .ReturnsAsync((Guid.NewGuid(), paymentInformation));
+
+        _dataService.Setup(ds =>
+            ds.UpdateJsonObject(It.IsAny<InstanceIdentifier>(), It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<object>())).ReturnsAsync(new DataElement());
+
+        _paymentProcessor.Setup(pp =>
+                pp.GetPaymentStatus(It.IsAny<Instance>(), It.IsAny<string>(), It.IsAny<decimal>()))
+            .ReturnsAsync(PaymentStatus.Paid);
+
+        var paymentService =
+            new PaymentService(_paymentProcessor.Object, _orderDetailsFormatter.Object, _dataService.Object);
+
+        // Act
+        PaymentInformation? result =
+            await paymentService.CheckAndStorePaymentInformation(instance, paymentConfiguration);
+
+        // // Assert
+        Assert.NotNull(result);
+        Assert.Equal(PaymentStatus.Paid, result.Status);
+    }
+
+    private static PaymentInformation CreatePaymentInformation()
+    {
+        return new PaymentInformation
+        {
+            RedirectUrl = "Redirect URL",
+            PaymentReference = "PaymentReference",
+            Status = PaymentStatus.Created
+        };
+    }
+
+    private static Instance CreateInstance()
+    {
+        return new Instance()
         {
             Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d",
             AppId = "ttd/test",
@@ -53,54 +214,28 @@ public class PaymentServiceTests
                 },
             },
         };
-        
-        OrderDetails order = new OrderDetails()
+    }
+
+    private static OrderDetails CreateOrderDetails()
+    {
+        return new OrderDetails()
         {
             Currency = "NOK",
-            OrderLines = new List<PaymentOrderLine>
-            {
-                new()
+            OrderLines =
+            [
+                new PaymentOrderLine
                 {
                     Id = "001",
                     Name = "Fee",
                     PriceExVat = 1000,
                     VatPercent = 25,
                 }
-            }
+            ]
         };
+    }
 
-        var paymentReference = "124";
-        var redirectUrl = "https://example.com";
-        
-        AltinnPaymentConfiguration paymentConfiguration = new()
-        {
-            PaymentDataType = "paymentInformation"
-        };
-
-        PaymentInformation paymentInformation = new()
-        {
-            PaymentReference = paymentReference,
-            RedirectUrl = redirectUrl,
-            OrderDetails = order
-        };
-
-        _orderDetailsFormatter.Setup(p => p.GetOrderDetails(instance)).ReturnsAsync(order);
-        _paymentProcessor.Setup(p => p.StartPayment(instance, order)).ReturnsAsync(paymentInformation);
-
-        // Act
-        PaymentInformation paymentInformationResult = await _paymentService.StartPayment(instance, paymentConfiguration);
-
-        // Assert
-        paymentInformationResult.RedirectUrl.Should().Be(paymentInformationResult.RedirectUrl);
-
-        // Verify calls
-        _orderDetailsFormatter.Verify(p => p.GetOrderDetails(instance), Times.Once);
-        _paymentProcessor.Verify(p => p.StartPayment(instance, order), Times.Once);
-        _dataService.Verify(dc => dc.InsertJsonObject(
-            It.IsAny<InstanceIdentifier>(),
-            paymentConfiguration.PaymentDataType,
-            It.IsAny<object>()));
-        
-        VerifyNoOtherCalls();
+    private static AltinnPaymentConfiguration CreatePaymentConfiguration()
+    {
+        return new AltinnPaymentConfiguration { PaymentDataType = "paymentInformation" };
     }
 }
