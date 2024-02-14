@@ -22,7 +22,7 @@ using DataType = Altinn.Platform.Storage.Interface.Models.DataType;
 
 namespace Altinn.App.Api.Tests.Controllers;
 
-public class DataController_PatchFormDataImplementation : IAsyncDisposable
+public class DataController_PatchFormDataImplementation
 {
     // Test data
     static readonly Guid DataGuid = new("12345678-1234-1234-1234-123456789123");
@@ -48,26 +48,33 @@ public class DataController_PatchFormDataImplementation : IAsyncDisposable
     private readonly Mock<IDataElementValidator> _dataElementValidator = new(MockBehavior.Strict);
 
     // System under test
-    private readonly ServiceCollection _serviceCollection = new();
     private readonly DataController _dataController;
-    private readonly ServiceProvider _serviceProvider;
 
     public DataController_PatchFormDataImplementation()
     {
         _formDataValidator.Setup(fdv => fdv.DataType).Returns(_dataType.Id);
         _formDataValidator.Setup(fdv => fdv.ValidationSource).Returns("formDataValidator");
         _formDataValidator.Setup(fdv => fdv.HasRelevantChanges(It.IsAny<object>(), It.IsAny<object>())).Returns(true);
-        // _dataElementValidator.Setup(ev => ev.DataType).Returns(_dataType.Id);
-        _serviceCollection.AddSingleton(_formDataValidator.Object);
-        _serviceCollection.AddSingleton(_dataElementValidator);
-        _serviceProvider = _serviceCollection.BuildServiceProvider();
+
+        var validatorFactory = new ValidatorFactory(
+                Enumerable.Empty<ITaskValidator>(),
+                new List<IDataElementValidator>()
+                {
+                    _dataElementValidator.Object
+                },
+                new List<IFormDataValidator>()
+                {
+                    _formDataValidator.Object
+                });
+
         var validationService = new ValidationService(
-            new ValidatorFactory(_serviceProvider.GetServices<ITaskValidator>(), _serviceProvider.GetServices<IDataElementValidator>(), _serviceProvider.GetServices<IFormDataValidator>()),
+            validatorFactory,
             _dataClientMock.Object,
             _appModelMock.Object,
             _appMetadataMock.Object,
             _vLoggerMock.Object
             );
+
         _dataController = new DataController(
             _dLoggerMock.Object,
             _instanceClientMock.Object,
@@ -148,10 +155,5 @@ public class DataController_PatchFormDataImplementation : IAsyncDisposable
         var issue = validator.Value.Should().ContainSingle().Which;
         issue.Description.Should().Be("First error");
         _dataProcessorMock.Verify(d => d.ProcessDataWrite(It.IsAny<Instance>(), It.IsAny<Guid>(), It.IsAny<MyModel>(), It.IsAny<MyModel?>(), null));
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        await _serviceProvider.DisposeAsync();
     }
 }

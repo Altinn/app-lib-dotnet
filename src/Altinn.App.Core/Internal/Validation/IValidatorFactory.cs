@@ -24,46 +24,6 @@ public interface IValidatorFactory
 }
 
 /// <summary>
-/// Implementation of <see cref="IValidatorFactory"/> that uses the <see cref="IServiceProvider"/> to locate validators.
-/// </summary>
-public class ValidatorFactoryWithLocator : IValidatorFactory
-{
-    private readonly IServiceProvider _serviceProvider;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ValidatorFactoryWithLocator"/> class.
-    /// </summary>
-    public ValidatorFactoryWithLocator(IServiceProvider serviceProvider)
-    {
-        _serviceProvider = serviceProvider;
-    }
-
-    /// <inheritdoc />
-    public IEnumerable<ITaskValidator> GetTaskValidators(string taskId)
-    {
-        return _serviceProvider.GetServices<ITaskValidator>()
-            // .Concat(_serviceProvider.GetKeyedServices<ITaskValidator>(taskId))
-            .Where(tv => tv.TaskId == "*" || tv.TaskId == taskId);
-    }
-
-    /// <inheritdoc />
-    public IEnumerable<IDataElementValidator> GetDataElementValidators(string dataTypeId)
-    {
-        return _serviceProvider.GetServices<IDataElementValidator>()
-            // .Concat(_serviceProvider.GetKeyedServices<IDataElementValidator>(dataElement.DataType))
-            .Where(dev => dev.DataType == "*" || dev.DataType == dataTypeId);
-    }
-
-    /// <inheritdoc />
-    public IEnumerable<IFormDataValidator> GetFormDataValidators(string dataTypeId)
-    {
-        return _serviceProvider.GetServices<IFormDataValidator>()
-            // .Concat(_serviceProvider.GetKeyedServices<IFormDataValidator>(dataElement.DataType))
-            .Where(fdv => fdv.DataType == "*" || fdv.DataType == dataTypeId);
-    }
-}
-
-/// <summary>
 /// Implementation of <see cref="IValidatorFactory"/> that takes IEnumerable of validators in constructor from the service provider.
 /// </summary>
 public class ValidatorFactory : IValidatorFactory
