@@ -19,7 +19,7 @@ namespace Altinn.App.Core.Tests.Internal.Process.ProcessTasks
         public async Task Start_calls_payment_service_start_payment()
         {
             // Arrange
-            var orderDetailsFormatter = new Mock<IOrderDetailsFormatter>();
+            var orderDetailsFormatter = new Mock<IOrderDetailsCalculator>();
             var processReader = new Mock<IProcessReader>();
             var paymentService = new Mock<IPaymentService>();
             var dataService = new Mock<IDataService>();
@@ -29,7 +29,7 @@ namespace Altinn.App.Core.Tests.Internal.Process.ProcessTasks
                 PaymentDataType = "paymentInformation"
             };
 
-            orderDetailsFormatter.Setup(odf => odf.GetOrderDetails(It.IsAny<Instance>())).ReturnsAsync(new OrderDetails { Currency = "NOK", OrderLines = [] });
+            orderDetailsFormatter.Setup(odf => odf.CalculateOrderDetails(It.IsAny<Instance>())).ReturnsAsync(new OrderDetails { Currency = "NOK", OrderLines = [] });
 
             var processTask = new ProcessTask
             {
@@ -44,7 +44,7 @@ namespace Altinn.App.Core.Tests.Internal.Process.ProcessTasks
 
             processReader.Setup(odf => odf.GetAltinnTaskExtension(It.IsAny<string>())).Returns(processTask.ExtensionElements.TaskExtension);
 
-            var paymentProcessTask = new PaymentProcessTask(processReader.Object, paymentService.Object, dataService.Object, orderDetailsFormatter.Object);
+            var paymentProcessTask = new PaymentProcessTask(processReader.Object, paymentService.Object, orderDetailsFormatter.Object);
             var instance = new Instance()
             {
                 Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d",

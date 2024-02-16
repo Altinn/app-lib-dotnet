@@ -10,7 +10,7 @@ namespace Altinn.App.Core.Internal.Process;
 /// <summary>
 /// Default implementation of the process event dispatcher
 /// </summary>
-class ProcessEventDispatcher : IProcessEventDispatcher
+public class ProcessEventDispatcher : IProcessEventDispatcher
 {
     private readonly IInstanceClient _instanceClient;
     private readonly IInstanceEventClient _instanceEventClient;

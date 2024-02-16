@@ -6,7 +6,6 @@ using Altinn.App.Core.Features.Payment.Models;
 using Altinn.App.Core.Features.Payment.Providers;
 using Altinn.App.Core.Features.Payment.Services;
 using Altinn.App.Core.Internal.Data;
-using Altinn.App.Core.Internal.Payment;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
@@ -20,7 +19,7 @@ public class PaymentServiceTests
 {
     private readonly PaymentService _paymentService;
     private readonly Mock<IPaymentProcessor> _paymentProcessor = new(MockBehavior.Strict);
-    private readonly Mock<IOrderDetailsFormatter> _orderDetailsFormatter = new(MockBehavior.Strict);
+    private readonly Mock<IOrderDetailsCalculator> _orderDetailsFormatter = new(MockBehavior.Strict);
     private readonly Mock<IDataService> _dataService = new(MockBehavior.Strict);
 
     public PaymentServiceTests()
@@ -37,7 +36,7 @@ public class PaymentServiceTests
         AltinnPaymentConfiguration paymentConfiguration = CreatePaymentConfiguration();
         PaymentInformation paymentInformation = CreatePaymentInformation();
 
-        _orderDetailsFormatter.Setup(p => p.GetOrderDetails(instance)).ReturnsAsync(order);
+        _orderDetailsFormatter.Setup(p => p.CalculateOrderDetails(instance)).ReturnsAsync(order);
         _dataService.Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
             .ReturnsAsync((Guid.Empty, null));
         _dataService.Setup(ds =>
@@ -53,7 +52,7 @@ public class PaymentServiceTests
         paymentInformationResult.RedirectUrl.Should().Be(paymentInformationResult.RedirectUrl);
 
         // Verify calls
-        _orderDetailsFormatter.Verify(p => p.GetOrderDetails(instance), Times.Once);
+        _orderDetailsFormatter.Verify(p => p.CalculateOrderDetails(instance), Times.Once);
         _paymentProcessor.Verify(p => p.StartPayment(instance, order), Times.Once);
         _dataService.Verify(dc => dc.InsertJsonObject(
             It.IsAny<InstanceIdentifier>(),
@@ -70,7 +69,7 @@ public class PaymentServiceTests
         _dataService.Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
             .ReturnsAsync((Guid.Empty, null));
         
-        _orderDetailsFormatter.Setup(p => p.GetOrderDetails(instance)).ThrowsAsync(new Exception());
+        _orderDetailsFormatter.Setup(p => p.CalculateOrderDetails(instance)).ThrowsAsync(new Exception());
 
         // Act & Assert
         await Assert.ThrowsAsync<Exception>(() =>
@@ -86,7 +85,7 @@ public class PaymentServiceTests
 
         _dataService.Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
             .ReturnsAsync((Guid.Empty, null));
-        _orderDetailsFormatter.Setup(p => p.GetOrderDetails(instance)).ReturnsAsync(order);
+        _orderDetailsFormatter.Setup(p => p.CalculateOrderDetails(instance)).ReturnsAsync(order);
         _paymentProcessor.Setup(p => p.StartPayment(instance, order)).ThrowsAsync(new Exception());
 
         // Act & Assert
@@ -102,7 +101,7 @@ public class PaymentServiceTests
         AltinnPaymentConfiguration paymentConfiguration = CreatePaymentConfiguration();
         PaymentInformation paymentInformation = CreatePaymentInformation();
 
-        _orderDetailsFormatter.Setup(p => p.GetOrderDetails(instance)).ReturnsAsync(order);
+        _orderDetailsFormatter.Setup(p => p.CalculateOrderDetails(instance)).ReturnsAsync(order);
         _dataService.Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
             .ReturnsAsync((Guid.Empty, null));
         _dataService.Setup(ds =>
@@ -141,7 +140,7 @@ public class PaymentServiceTests
         AltinnPaymentConfiguration paymentConfiguration = CreatePaymentConfiguration();
         PaymentInformation paymentInformation = CreatePaymentInformation();
 
-        _orderDetailsFormatter.Setup(p => p.GetOrderDetails(instance)).ReturnsAsync(order);
+        _orderDetailsFormatter.Setup(p => p.CalculateOrderDetails(instance)).ReturnsAsync(order);
 
         _dataService.Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
             .ReturnsAsync((Guid.NewGuid(), paymentInformation));
@@ -165,7 +164,7 @@ public class PaymentServiceTests
         AltinnPaymentConfiguration paymentConfiguration = CreatePaymentConfiguration();
         PaymentInformation paymentInformation = CreatePaymentInformation();
 
-        _orderDetailsFormatter.Setup(p => p.GetOrderDetails(instance)).ReturnsAsync(order);
+        _orderDetailsFormatter.Setup(p => p.CalculateOrderDetails(instance)).ReturnsAsync(order);
 
         _dataService.Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
             .ReturnsAsync((Guid.NewGuid(), paymentInformation));

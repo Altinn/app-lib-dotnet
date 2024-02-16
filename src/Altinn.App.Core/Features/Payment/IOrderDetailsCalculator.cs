@@ -1,12 +1,12 @@
 namespace Altinn.App.Core.Features.Payment;
 
-using Altinn.App.Core.Features.Payment.Models;
+using Models;
 using Altinn.Platform.Storage.Interface.Models;
 
 /// <summary>
 /// Interface that app developers need to implement in order to use the payment feature
 /// </summary>
-public interface IOrderDetailsFormatter
+public interface IOrderDetailsCalculator
 {
     /// <summary>
     /// Method that calculates an order based on an instance.
@@ -18,5 +18,5 @@ public interface IOrderDetailsFormatter
     /// </remarks>
     /// <param name="instance"></param>
     /// <returns>The Payment order that contains information about the requested payment</returns>
-    Task<OrderDetails> GetOrderDetails(Instance instance);
+    Task<OrderDetails> CalculateOrderDetails(Instance instance);
 }

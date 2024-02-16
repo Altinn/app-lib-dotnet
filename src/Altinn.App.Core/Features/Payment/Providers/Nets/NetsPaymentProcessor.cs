@@ -1,6 +1,6 @@
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features.Payment.Exceptions;
-using Altinn.App.Core.Internal.Payment;
+using Altinn.App.Core.Features.Payment.Models;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Options;
@@ -17,7 +17,7 @@ public class NetsPaymentProcessor : IPaymentProcessor
     private readonly NetsPaymentSettings _settings;
     private readonly GeneralSettings _generalSettings;
     private readonly INetsClient _netsClient;
-    private readonly IOrderDetailsFormatter? _orderDetailsFormatter;
+    private readonly IOrderDetailsCalculator? _orderDetailsFormatter;
 
     /// <summary>
     /// Implementation of IPaymentProcessor for Nets.
@@ -26,7 +26,7 @@ public class NetsPaymentProcessor : IPaymentProcessor
     /// <param name="settings"></param>
     /// <param name="generalSettings"></param>
     /// <param name="orderDetailsFormatter"></param>
-    public NetsPaymentProcessor(INetsClient netsClient, IOptions<NetsPaymentSettings> settings, IOptions<GeneralSettings> generalSettings, IOrderDetailsFormatter? orderDetailsFormatter = null)
+    public NetsPaymentProcessor(INetsClient netsClient, IOptions<NetsPaymentSettings> settings, IOptions<GeneralSettings> generalSettings, IOrderDetailsCalculator? orderDetailsFormatter = null)
     {
         _netsClient = netsClient;
         _settings = settings.Value;

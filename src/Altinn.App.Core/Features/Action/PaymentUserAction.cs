@@ -1,6 +1,6 @@
-﻿using Altinn.App.Core.Features.Payment.Services;
+﻿using Altinn.App.Core.Features.Payment.Models;
+using Altinn.App.Core.Features.Payment.Services;
 using Altinn.App.Core.Internal.Data;
-using Altinn.App.Core.Internal.Payment;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;

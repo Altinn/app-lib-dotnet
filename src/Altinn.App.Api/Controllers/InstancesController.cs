@@ -223,8 +223,7 @@ namespace Altinn.App.Api.Controllers
             }
 
             ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
-
-            RequestPartValidator requestValidator = new RequestPartValidator(application);
+            RequestPartValidator requestValidator = new(application);
             string? multipartError = requestValidator.ValidateParts(parsedRequest.Parts);
 
             if (!string.IsNullOrEmpty(multipartError))
@@ -252,7 +251,6 @@ namespace Altinn.App.Api.Controllers
             }
 
             EnforcementResult enforcementResult = await AuthorizeAction(org, app, party.PartyId, null, "instantiate");
-
             if (!enforcementResult.Authorized)
             {
                 return Forbidden(enforcementResult);
@@ -280,12 +278,13 @@ namespace Altinn.App.Api.Controllers
             try
             {
                 // start process and goto next task
-                ProcessStartRequest processStartRequest = new ProcessStartRequest
+                ProcessStartRequest processStartRequest = new()
                 {
                     Instance = instanceTemplate,
                     User = User
                 };
-                var result = await _processEngine.GenerateProcessStartEvents(processStartRequest);
+                
+                ProcessChangeResult result = await _processEngine.GenerateProcessStartEvents(processStartRequest);
                 if (!result.Success)
                 {
                     return Conflict(result.ErrorMessage);
@@ -404,14 +403,14 @@ namespace Altinn.App.Api.Controllers
                 return StatusCode((int)HttpStatusCode.Forbidden, $"Party {party.PartyId} is not allowed to instantiate this application {org}/{app}");
             }
 
-            Instance instanceTemplate = new Instance()
+            Instance instanceTemplate = new()
             {
                 InstanceOwner = instansiationInstance.InstanceOwner,
                 VisibleAfter = instansiationInstance.VisibleAfter,
-                DueBefore = instansiationInstance.DueBefore
+                DueBefore = instansiationInstance.DueBefore,
+                Org = application.Org
             };
 
-            instanceTemplate.Org = application.Org;
             ConditionallySetReadStatus(instanceTemplate);
 
             // Run custom app logic to validate instantiation

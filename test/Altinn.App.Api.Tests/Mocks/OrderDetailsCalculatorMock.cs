@@ -4,9 +4,9 @@ using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Api.Tests.Mocks
 {
-    public class OrderDetailsFormatterMock : IOrderDetailsFormatter
+    public class OrderDetailsCalculatorMock : IOrderDetailsCalculator
     {
-        public Task<OrderDetails> GetOrderDetails(Instance instance)
+        public Task<OrderDetails> CalculateOrderDetails(Instance instance)
         {
             throw new NotImplementedException();
         }

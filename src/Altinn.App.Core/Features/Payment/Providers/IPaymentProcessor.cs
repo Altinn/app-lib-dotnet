@@ -1,5 +1,4 @@
 using Altinn.App.Core.Features.Payment.Models;
-using Altinn.App.Core.Internal.Payment;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Features.Payment.Providers;

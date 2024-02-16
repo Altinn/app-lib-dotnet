@@ -2,11 +2,13 @@
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Extensions;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.UserAction;
+using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using IAuthorizationService = Altinn.App.Core.Internal.Auth.IAuthorizationService;
@@ -60,7 +62,7 @@ public class ActionsController : ControllerBase
         [FromRoute] Guid instanceGuid,
         [FromBody] UserActionRequest actionRequest)
     {
-        var action = actionRequest.Action;
+        string? action = actionRequest.Action;
         if (action == null)
         {
             return new BadRequestObjectResult(new ProblemDetails()
@@ -72,8 +74,7 @@ public class ActionsController : ControllerBase
             });
         }
 
-        var instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
-
+        Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
         if (instance?.Process == null)
         {
             return Conflict($"Process is not started.");
@@ -84,20 +85,20 @@ public class ActionsController : ControllerBase
             return Conflict($"Process is ended.");
         }
 
-        var userId = HttpContext.User.GetUserIdAsInt();
+        int? userId = HttpContext.User.GetUserIdAsInt();
         if (userId == null)
         {
             return Unauthorized();
         }
 
-        var authorized = await _authorization.AuthorizeAction(new AppIdentifier(org, app), new InstanceIdentifier(instanceOwnerPartyId, instanceGuid), HttpContext.User, action, instance.Process?.CurrentTask?.ElementId);
+        bool authorized = await _authorization.AuthorizeAction(new AppIdentifier(org, app), new InstanceIdentifier(instanceOwnerPartyId, instanceGuid), HttpContext.User, action, instance.Process?.CurrentTask?.ElementId);
         if (!authorized)
         {
             return Forbid();
         }
 
-        UserActionContext userActionContext = new UserActionContext(instance, userId.Value, actionRequest.ButtonId, actionRequest.Metadata);
-        var actionHandler = _userActionService.GetActionHandler(action);
+        UserActionContext userActionContext = new(instance, userId.Value, actionRequest.ButtonId, actionRequest.Metadata);
+        IUserAction? actionHandler = _userActionService.GetActionHandler(action);
         if (actionHandler == null)
         {
             return new NotFoundObjectResult(new UserActionResponse()
@@ -110,13 +111,13 @@ public class ActionsController : ControllerBase
             });
         }
 
-        var result = await actionHandler.HandleAction(userActionContext);
-
+        UserActionResult result = await actionHandler.HandleAction(userActionContext);
         if (result.ResultType == ResultType.Redirect)
         {
             return new RedirectResult(result.RedirectUrl ?? throw new ProcessException("Redirect URL missing"));
         }
-        else if (result.ResultType != ResultType.Success)
+
+        if (result.ResultType != ResultType.Success)
         {
             return new BadRequestObjectResult(new UserActionResponse()
             {

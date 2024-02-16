@@ -248,7 +248,7 @@ namespace Altinn.App.Core.Extensions
         {
             services.AddTransient<IPaymentService, PaymentService>();
             services.AddTransient<IPaymentProcessor, NetsPaymentProcessor>();
-            services.AddTransient<INetsClient, NetsClient>();
+            services.AddHttpClient<INetsClient, NetsClient>();
         }
 
         private static void AddSignatureServices(IServiceCollection services)

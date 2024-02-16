@@ -2,11 +2,9 @@ using Altinn.App.Core.Features.Payment.Exceptions;
 using Altinn.App.Core.Features.Payment.Models;
 using Altinn.App.Core.Features.Payment.Providers;
 using Altinn.App.Core.Internal.Data;
-using Altinn.App.Core.Internal.Payment;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
-using Microsoft.Extensions.Logging;
 
 namespace Altinn.App.Core.Features.Payment.Services;
 
@@ -16,19 +14,19 @@ namespace Altinn.App.Core.Features.Payment.Services;
 public class PaymentService : IPaymentService
 {
     private readonly IPaymentProcessor _paymentProcessor;
-    private readonly IOrderDetailsFormatter _orderDetailsFormatter;
+    private readonly IOrderDetailsCalculator _orderDetailsCalculator;
     private readonly IDataService _dataService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PaymentService"/> class.
     /// </summary>
     /// <param name="paymentProcessor"></param>
-    /// <param name="orderDetailsFormatter"></param>
+    /// <param name="orderDetailsCalculator"></param>
     /// <param name="dataService"></param>
-    public PaymentService(IPaymentProcessor paymentProcessor, IOrderDetailsFormatter orderDetailsFormatter, IDataService dataService)
+    public PaymentService(IPaymentProcessor paymentProcessor, IOrderDetailsCalculator orderDetailsCalculator, IDataService dataService)
     {
         _paymentProcessor = paymentProcessor;
-        _orderDetailsFormatter = orderDetailsFormatter;
+        _orderDetailsCalculator = orderDetailsCalculator;
         _dataService = dataService;
     }
 
@@ -44,7 +42,7 @@ public class PaymentService : IPaymentService
             await CancelPayment(instance, paymentConfiguration);
         }
         
-        OrderDetails orderDetails = await _orderDetailsFormatter.GetOrderDetails(instance);
+        OrderDetails orderDetails = await _orderDetailsCalculator.CalculateOrderDetails(instance);
         PaymentInformation startedPayment = await _paymentProcessor.StartPayment(instance, orderDetails);
 
         await _dataService.InsertJsonObject(new InstanceIdentifier(instance), dataTypeId, startedPayment);
@@ -62,7 +60,7 @@ public class PaymentService : IPaymentService
             return null;
         }
         
-        OrderDetails orderDetails = await _orderDetailsFormatter.GetOrderDetails(instance);
+        OrderDetails orderDetails = await _orderDetailsCalculator.CalculateOrderDetails(instance);
         PaymentStatus? paymentStatus = await _paymentProcessor.GetPaymentStatus(instance, paymentInformation.PaymentReference, orderDetails.TotalPriceIncVat);
 
         if (paymentStatus == null)
@@ -73,7 +71,6 @@ public class PaymentService : IPaymentService
         paymentInformation.Status = paymentStatus.Value;
         
         await _dataService.UpdateJsonObject(new InstanceIdentifier(instance), dataTypeId, dataElementId, paymentInformation);
-        
         return paymentInformation;
     }
  

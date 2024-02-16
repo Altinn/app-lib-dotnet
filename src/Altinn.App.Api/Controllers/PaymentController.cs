@@ -1,9 +1,9 @@
 #nullable enable
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Core.Features.Payment.Exceptions;
+using Altinn.App.Core.Features.Payment.Models;
 using Altinn.App.Core.Features.Payment.Services;
 using Altinn.App.Core.Internal.Instances;
-using Altinn.App.Core.Internal.Payment;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.Platform.Storage.Interface.Models;
@@ -35,7 +35,7 @@ public class PaymentController : Controller
     }
 
     /// <summary>
-    /// Get updated payment information for the instance.
+    /// Get updated payment information for the instance. Will contact the payment provider to check the status of the payment.
     /// </summary>
     /// <param name="org">unique identifier of the organisation responsible for the app</param>
     /// <param name="app">application identifier which is unique within an organisation</param>
@@ -43,6 +43,8 @@ public class PaymentController : Controller
     /// <param name="instanceGuid">unique id to identify the instance</param>
     /// <returns>An object containing updated payment information</returns>
     [HttpGet]
+    [ProducesResponseType(typeof(PaymentInformation), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetPaymentInformation(string org, string app, int instanceOwnerPartyId, Guid instanceGuid)
     {
         Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);

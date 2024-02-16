@@ -17,7 +17,7 @@ using Xunit;
 
 namespace Altinn.App.Core.Tests.Internal.Process;
 
-public class ProcessEventDispatcherTests
+public class ProcessEventHandlingTests
 {
     private readonly List<IProcessTask> processTasks =
     [
