@@ -3,9 +3,15 @@ using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features.Action;
+using Altinn.App.Core.Features.Validation;
+using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.UserAction;
+using Altinn.App.Core.Models.Validation;
+using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using IAuthorizationService = Altinn.App.Core.Internal.Auth.IAuthorizationService;
@@ -23,6 +29,9 @@ public class ActionsController : ControllerBase
     private readonly IAuthorizationService _authorization;
     private readonly IInstanceClient _instanceClient;
     private readonly UserActionService _userActionService;
+    private readonly IValidationService _validationService;
+    private readonly IDataClient _dataClient;
+    private readonly IAppMetadata _appMetadata;
 
     /// <summary>
     /// Create new instance of the <see cref="ActionsController"/> class
@@ -30,11 +39,23 @@ public class ActionsController : ControllerBase
     /// <param name="authorization">The authorization service</param>
     /// <param name="instanceClient">The instance client</param>
     /// <param name="userActionService">The user action service</param>
-    public ActionsController(IAuthorizationService authorization, IInstanceClient instanceClient, UserActionService userActionService)
+    /// <param name="validationService">Service for performing validations of user data</param>
+    /// <param name="dataClient">Client for accessing data in storage</param>
+    /// <param name="appMetadata">Service for getting application metadata</param>
+    public ActionsController(
+        IAuthorizationService authorization,
+        IInstanceClient instanceClient,
+        UserActionService userActionService,
+        IValidationService validationService,
+        IDataClient dataClient,
+        IAppMetadata appMetadata)
     {
         _authorization = authorization;
         _instanceClient = instanceClient;
         _userActionService = userActionService;
+        _validationService = validationService;
+        _dataClient = dataClient;
+        _appMetadata = appMetadata;
     }
 
     /// <summary>
@@ -119,10 +140,69 @@ public class ActionsController : ControllerBase
             });
         }
 
+        if (result.UpdatedDataModels is { Count: > 0 })
+        {
+            await SaveChangedModels(instance, result.UpdatedDataModels);
+        }
+
         return new OkObjectResult(new UserActionResponse()
         {
             ClientActions = result.ClientActions,
-            UpdatedDataModels = result.UpdatedDataModels
+            UpdatedDataModels = result.UpdatedDataModels,
+            UpdatedValidationIssues = await GetValidations(instance, result.UpdatedDataModels, actionRequest.IgnoredValidators),
         });
+    }
+
+    private async Task SaveChangedModels(Instance instance, Dictionary<string, object?> resultUpdatedDataModels)
+    {
+        var instanceIdentifier = new InstanceIdentifier(instance);
+        foreach (var (dataType, newModel) in resultUpdatedDataModels)
+        {
+            if (newModel is null)
+            {
+                continue;
+            }
+
+            ObjectUtils.InitializePropertiesInModel(newModel);
+
+            var dataElement = instance.Data.First(d => d.DataType.Equals(dataType, StringComparison.OrdinalIgnoreCase));
+            await _dataClient.UpdateData(newModel, instanceIdentifier.InstanceGuid, newModel.GetType(), instance.Org, instance.AppId.Split('/')[1], instanceIdentifier.InstanceOwnerPartyId, Guid.Parse(dataElement.Id));
+        }
+    }
+
+    private async Task<Dictionary<string, Dictionary<string, List<ValidationIssue>>>?> GetValidations(Instance instance, Dictionary<string, object?>? resultUpdatedDataModels, List<string>? ignoredValidators)
+    {
+        if (resultUpdatedDataModels is null || resultUpdatedDataModels.Count < 1)
+        {
+            return null;
+        }
+
+        var instanceIdentifier = new InstanceIdentifier(instance);
+        var application = await _appMetadata.GetApplicationMetadata();
+
+        var updatedValidationIssues = new Dictionary<string, Dictionary<string, List<ValidationIssue>>>();
+
+        // TODO: Consider validating models in parallel
+        foreach (var (dataTypeId, newModel) in resultUpdatedDataModels)
+        {
+            if (newModel is null)
+            {
+                continue;
+            }
+
+            var dataElement = instance.Data.First(d => d.DataType.Equals(dataTypeId, StringComparison.OrdinalIgnoreCase));
+            var dataType = application.DataTypes.First(d => d.Id.Equals(dataTypeId, StringComparison.OrdinalIgnoreCase));
+
+            // TODO: Consider rewriting so that we get the original data the IUserAction have requested instead of fetching it again
+            var oldData = await _dataClient.GetFormData( instanceIdentifier.InstanceGuid, newModel.GetType(), instance.Org, instance.AppId.Split('/')[1], instanceIdentifier.InstanceOwnerPartyId, Guid.Parse(dataElement.Id));
+
+            var validationIssues = await _validationService.ValidateFormData(instance, dataElement, dataType, newModel, oldData, ignoredValidators);
+            if (validationIssues.Count > 0)
+            {
+                updatedValidationIssues.Add(dataTypeId, validationIssues);
+            }
+        }
+
+        return updatedValidationIssues;
     }
 }
