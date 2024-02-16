@@ -5,7 +5,7 @@ using FluentAssertions;
 using Moq;
 using Xunit;
 
-namespace Altinn.App.PlatformServices.Tests.Options
+namespace Altinn.App.Core.Tests.Features.Options
 {
     public class AppOptionsFactoryTests
     {
@@ -29,7 +29,7 @@ namespace Altinn.App.PlatformServices.Tests.Options
 
             IAppOptionsProvider optionsProvider1 = factory.GetOptionsProvider("fylke");
             IAppOptionsProvider optionsProvider2 = factory.GetOptionsProvider("kommune");
-            
+
             optionsProvider1.Id.Should().Be("fylke");
             optionsProvider2.Id.Should().Be("kommune");
         }
@@ -39,7 +39,7 @@ namespace Altinn.App.PlatformServices.Tests.Options
         {
             var factory = new AppOptionsFactory(new List<IAppOptionsProvider>());
 
-            Action action = () => factory.GetOptionsProvider("country");
+            System.Action action = () => factory.GetOptionsProvider("country");
 
             action.Should().Throw<KeyNotFoundException>();
         }
@@ -80,7 +80,7 @@ namespace Altinn.App.PlatformServices.Tests.Options
             options.Parameters.First(x => x.Key == "key").Value.Should().Be("value");
         }
 
-        internal class CountryAppOptionsProvider : IAppOptionsProvider
+        private class CountryAppOptionsProvider : IAppOptionsProvider
         {
             public string Id { get; set; } = "country";
 

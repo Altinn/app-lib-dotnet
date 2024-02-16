@@ -85,7 +85,7 @@ namespace Altinn.App.Api.Controllers
 
             // Only return NotFound if we can't find an options provider.
             // If we find the options provider, but it doesnt' have values, return empty list.
-            if (appOptions.Options == null)
+            if (appOptions?.Options == null)
             {
                 return NotFound();
             }

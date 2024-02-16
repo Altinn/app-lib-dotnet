@@ -3,7 +3,6 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Configuration;
-using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Features.Validation.Default;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
@@ -27,7 +26,7 @@ public class ExpressionValidatorTests
     private readonly ExpressionValidator _validator;
     private readonly Mock<ILogger<ExpressionValidator>> _logger = new();
     private readonly Mock<IAppResources> _appResources = new(MockBehavior.Strict);
-    private readonly IOptions<FrontEndSettings> _frontendSettings = Options.Create(new FrontEndSettings());
+    private readonly IOptions<FrontEndSettings> _frontendSettings = Microsoft.Extensions.Options.Options.Create(new FrontEndSettings());
     private readonly Mock<LayoutEvaluatorStateInitializer> _layoutInitializer;
 
     public ExpressionValidatorTests()

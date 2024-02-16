@@ -22,7 +22,7 @@ namespace Altinn.App.Core.Tests.Features.Validators.Default
         {
             var generalSettings = new GeneralSettings();
             _validator =
-                new LegacyIInstanceValidatorFormDataValidator(Options.Create(generalSettings), _instanceValidator.Object);
+                new LegacyIInstanceValidatorFormDataValidator(Microsoft.Extensions.Options.Options.Create(generalSettings), _instanceValidator.Object);
         }
 
         [Fact]
@@ -31,7 +31,7 @@ namespace Altinn.App.Core.Tests.Features.Validators.Default
             // Arrange
             var data = new object();
 
-            var validator = new LegacyIInstanceValidatorFormDataValidator(Options.Create(new GeneralSettings()), null);
+            var validator = new LegacyIInstanceValidatorFormDataValidator(Microsoft.Extensions.Options.Options.Create(new GeneralSettings()), null);
             validator.HasRelevantChanges(data, data).Should().BeFalse();
 
             // Act
