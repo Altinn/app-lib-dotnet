@@ -156,7 +156,7 @@ public class ActionsController : ControllerBase
     private async Task SaveChangedModels(Instance instance, Dictionary<string, object?> resultUpdatedDataModels)
     {
         var instanceIdentifier = new InstanceIdentifier(instance);
-        foreach (var (dataType, newModel) in resultUpdatedDataModels)
+        foreach (var (elementId, newModel) in resultUpdatedDataModels)
         {
             if (newModel is null)
             {
@@ -165,7 +165,7 @@ public class ActionsController : ControllerBase
 
             ObjectUtils.InitializePropertiesInModel(newModel);
 
-            var dataElement = instance.Data.First(d => d.DataType.Equals(dataType, StringComparison.OrdinalIgnoreCase));
+            var dataElement = instance.Data.First(d => d.Id.Equals(elementId, StringComparison.OrdinalIgnoreCase));
             await _dataClient.UpdateData(newModel, instanceIdentifier.InstanceGuid, newModel.GetType(), instance.Org, instance.AppId.Split('/')[1], instanceIdentifier.InstanceOwnerPartyId, Guid.Parse(dataElement.Id));
         }
     }
@@ -183,15 +183,15 @@ public class ActionsController : ControllerBase
         var updatedValidationIssues = new Dictionary<string, Dictionary<string, List<ValidationIssue>>>();
 
         // TODO: Consider validating models in parallel
-        foreach (var (dataTypeId, newModel) in resultUpdatedDataModels)
+        foreach (var (elementId, newModel) in resultUpdatedDataModels)
         {
             if (newModel is null)
             {
                 continue;
             }
 
-            var dataElement = instance.Data.First(d => d.DataType.Equals(dataTypeId, StringComparison.OrdinalIgnoreCase));
-            var dataType = application.DataTypes.First(d => d.Id.Equals(dataTypeId, StringComparison.OrdinalIgnoreCase));
+            var dataElement = instance.Data.First(d => d.Id.Equals(elementId, StringComparison.OrdinalIgnoreCase));
+            var dataType = application.DataTypes.First(d => d.Id.Equals(dataElement.DataType, StringComparison.OrdinalIgnoreCase));
 
             // TODO: Consider rewriting so that we get the original data the IUserAction have requested instead of fetching it again
             var oldData = await _dataClient.GetFormData( instanceIdentifier.InstanceGuid, newModel.GetType(), instance.Org, instance.AppId.Split('/')[1], instanceIdentifier.InstanceOwnerPartyId, Guid.Parse(dataElement.Id));
@@ -199,7 +199,7 @@ public class ActionsController : ControllerBase
             var validationIssues = await _validationService.ValidateFormData(instance, dataElement, dataType, newModel, oldData, ignoredValidators);
             if (validationIssues.Count > 0)
             {
-                updatedValidationIssues.Add(dataTypeId, validationIssues);
+                updatedValidationIssues.Add(elementId, validationIssues);
             }
         }
 
