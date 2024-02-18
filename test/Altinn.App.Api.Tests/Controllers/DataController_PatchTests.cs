@@ -45,13 +45,12 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
 
-    private readonly ITestOutputHelper _outputHelper;
 
     // Constructor with common setup
-    public DataControllerPatchTests(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper) : base(factory)
+    public DataControllerPatchTests(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper)
+        : base(factory, outputHelper)
     {
         _formDataValidatorMock.Setup(v => v.DataType).Returns("Not a valid data type");
-        _outputHelper = outputHelper;
         OverrideServicesForAllTests = (services) =>
         {
             services.AddSingleton(_dataProcessorMock.Object);
@@ -108,7 +107,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
 
         var newModelElement = parsedResponse.NewDataModel.Should().BeOfType<JsonElement>().Which;
         var newModel = newModelElement.Deserialize<Skjema>()!;
-        newModel.Melding.Name.Should().Be("Ola Olsen");
+        newModel.Melding!.Name.Should().Be("Ola Olsen");
 
         _dataProcessorMock.Verify(p => p.ProcessDataWrite(It.IsAny<Instance>(), It.Is<Guid>(dataId => dataId == DataGuid), It.IsAny<Skjema>(), It.IsAny<Skjema?>(), null), Times.Exactly(1));
         _dataProcessorMock.VerifyNoOtherCalls();
@@ -133,7 +132,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
 
         var newModelElement = parsedResponse.NewDataModel.Should().BeOfType<JsonElement>().Which;
         var newModel = newModelElement.Deserialize<Skjema>()!;
-        newModel.Melding.Name.Should().BeNull();
+        newModel.Melding!.Name.Should().BeNull();
 
         _dataProcessorMock.Verify(p => p.ProcessDataWrite(It.IsAny<Instance>(), It.Is<Guid>(dataId => dataId == DataGuid), It.IsAny<Skjema>(), It.IsAny<Skjema?>(), null), Times.Exactly(1));
         _dataProcessorMock.VerifyNoOtherCalls();
@@ -200,7 +199,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
         var (_, _, parsedResponse) = await CallPatchApi<DataPatchResponse>(patch, null, HttpStatusCode.OK);
 
         var newModel = parsedResponse.NewDataModel.Should().BeOfType<JsonElement>().Which.Deserialize<Skjema>()!;
-        var listItem = newModel.Melding.NestedList.Should().ContainSingle().Which;
+        var listItem = newModel.Melding!.NestedList.Should().ContainSingle().Which;
         listItem.Key.Should().Be("newKey");
 
         parsedResponse.ValidationIssues
@@ -421,7 +420,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
             .Setup(p => p.ProcessDataRead(It.IsAny<Instance>(), It.IsAny<Guid>(), It.IsAny<Skjema>(), "nn"))
             .Returns((Instance instance, Guid dataGuid, Skjema skjema, string language) =>
             {
-                skjema.Melding.Random = "randomFromDataRead";
+                skjema.Melding!.Random = "randomFromDataRead";
                 return Task.CompletedTask;
             })
             .Verifiable(Times.Exactly(1));
