@@ -3,11 +3,11 @@ using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features.Action;
-using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
+using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.UserAction;
 using Altinn.App.Core.Models.Validation;
@@ -66,6 +66,7 @@ public class ActionsController : ControllerBase
     /// <param name="instanceOwnerPartyId">unique id of the party that this the owner of the instance</param>
     /// <param name="instanceGuid">unique id to identify the instance</param>
     /// <param name="actionRequest">user action request</param>
+    /// <param name="language">The currently used language by the user (or null if not available)</param>
     /// <returns><see cref="UserActionResponse"/></returns>
     [HttpPost]
     [Authorize]
@@ -77,7 +78,8 @@ public class ActionsController : ControllerBase
         [FromRoute] string app,
         [FromRoute] int instanceOwnerPartyId,
         [FromRoute] Guid instanceGuid,
-        [FromBody] UserActionRequest actionRequest)
+        [FromBody] UserActionRequest actionRequest,
+        [FromQuery] string? language = null)
     {
         var action = actionRequest.Action;
         if (action == null)
@@ -149,11 +151,11 @@ public class ActionsController : ControllerBase
         {
             ClientActions = result.ClientActions,
             UpdatedDataModels = result.UpdatedDataModels,
-            UpdatedValidationIssues = await GetValidations(instance, result.UpdatedDataModels, actionRequest.IgnoredValidators),
+            UpdatedValidationIssues = await GetValidations(instance, result.UpdatedDataModels, actionRequest.IgnoredValidators, language),
         });
     }
 
-    private async Task SaveChangedModels(Instance instance, Dictionary<string, object?> resultUpdatedDataModels)
+    private async Task SaveChangedModels(Instance instance, Dictionary<string, object> resultUpdatedDataModels)
     {
         var instanceIdentifier = new InstanceIdentifier(instance);
         foreach (var (elementId, newModel) in resultUpdatedDataModels)
@@ -170,7 +172,7 @@ public class ActionsController : ControllerBase
         }
     }
 
-    private async Task<Dictionary<string, Dictionary<string, List<ValidationIssue>>>?> GetValidations(Instance instance, Dictionary<string, object?>? resultUpdatedDataModels, List<string>? ignoredValidators)
+    private async Task<Dictionary<string, Dictionary<string, List<ValidationIssue>>>?> GetValidations(Instance instance, Dictionary<string, object>? resultUpdatedDataModels, List<string>? ignoredValidators, string? language)
     {
         if (resultUpdatedDataModels is null || resultUpdatedDataModels.Count < 1)
         {
@@ -196,7 +198,7 @@ public class ActionsController : ControllerBase
             // TODO: Consider rewriting so that we get the original data the IUserAction have requested instead of fetching it again
             var oldData = await _dataClient.GetFormData( instanceIdentifier.InstanceGuid, newModel.GetType(), instance.Org, instance.AppId.Split('/')[1], instanceIdentifier.InstanceOwnerPartyId, Guid.Parse(dataElement.Id));
 
-            var validationIssues = await _validationService.ValidateFormData(instance, dataElement, dataType, newModel, oldData, ignoredValidators);
+            var validationIssues = await _validationService.ValidateFormData(instance, dataElement, dataType, newModel, oldData, ignoredValidators, language);
             if (validationIssues.Count > 0)
             {
                 updatedValidationIssues.Add(elementId, validationIssues);

@@ -1,6 +1,3 @@
-using System.Net;
-using System.Runtime.Serialization;
-using Altinn.App.Core.Models.Validation;
 
 namespace Altinn.App.Core.Models.UserAction;
 
@@ -13,12 +10,12 @@ public class UserActionResult
     /// Gets or sets a value indicating whether the user action was a success
     /// </summary>
     public bool Success { get; set; }
-    
+
     /// <summary>
-    /// Gets or sets a dictionary of updated data models. Key should be dataTypeId
+    /// Gets or sets a dictionary of updated data models. Key should be elementId and value should be the updated data model
     /// </summary>
-    public Dictionary<string, object?>? UpdatedDataModels { get; set; } 
-    
+    public Dictionary<string, object>? UpdatedDataModels { get; set; }
+
     /// <summary>
     /// Actions for the client to perform after the user action has been handled
     /// </summary>

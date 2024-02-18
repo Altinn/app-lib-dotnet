@@ -14,7 +14,7 @@ public class UserActionResponse
     /// Data models that have been updated
     /// </summary>
     [JsonPropertyName("updatedDataModels")]
-    public Dictionary<string, object?>? UpdatedDataModels { get; set; }
+    public Dictionary<string, object>? UpdatedDataModels { get; set; }
 
     /// <summary>
     /// Gets a dictionary of updated validation issues. The first key is the data model id, the second key is the validator id
