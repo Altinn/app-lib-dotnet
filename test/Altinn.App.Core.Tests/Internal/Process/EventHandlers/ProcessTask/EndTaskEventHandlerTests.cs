@@ -10,20 +10,11 @@ namespace Altinn.App.Core.Tests.Internal.Process.EventHandlers.ProcessTask;
 
 public class EndTaskEventHandlerTests
 {
-    private Mock<IProcessTaskDataLocker> _processTaskDataLocker;
-    private Mock<IProcessTaskFinalizer> _processTaskFinisher;
-    private Mock<IServiceTask> _pdfServiceTask;
-    private Mock<IServiceTask> _eformidlingServiceTask;
-    private IEnumerable<IProcessTaskEnd> _processTaskEnds;
-
-    public EndTaskEventHandlerTests()
-    {
-        _processTaskDataLocker = new Mock<IProcessTaskDataLocker>();
-        _processTaskFinisher = new Mock<IProcessTaskFinalizer>();
-        _pdfServiceTask = new Mock<IServiceTask>();
-        _eformidlingServiceTask = new Mock<IServiceTask>();
-        _processTaskEnds = new List<IProcessTaskEnd>();
-    }
+    private readonly Mock<IProcessTaskDataLocker> _processTaskDataLocker = new();
+    private readonly Mock<IProcessTaskFinalizer> _processTaskFinisher = new();
+    private readonly Mock<IServiceTask> _pdfServiceTask = new();
+    private readonly Mock<IServiceTask> _eformidlingServiceTask = new();
+    private IEnumerable<IProcessTaskEnd> _processTaskEnds = new List<IProcessTaskEnd>();
 
     [Fact]
     public async Task Execute_handles_no_IProcessTaskAbandon_injected()
@@ -39,7 +30,7 @@ public class EndTaskEventHandlerTests
             Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d",
             AppId = "ttd/test",
         };
-        Mock<IProcessTask> mockProcessTask = new Mock<IProcessTask>();
+        Mock<IProcessTask> mockProcessTask = new();
         await eteh.Execute(mockProcessTask.Object, "Task_1", instance);
         _processTaskDataLocker.Verify(p => p.Lock("Task_1", instance));
         _processTaskFinisher.Verify(p => p.Finalize("Task_1", instance));
@@ -57,10 +48,10 @@ public class EndTaskEventHandlerTests
     [Fact]
     public async Task Execute_calls_all_added_implementations_of_IProcessTaskEnd()
     {
-        Mock<IProcessTaskEnd> endOne = new Mock<IProcessTaskEnd>();
-        Mock<IProcessTaskEnd> endTwo = new Mock<IProcessTaskEnd>();
+        Mock<IProcessTaskEnd> endOne = new();
+        Mock<IProcessTaskEnd> endTwo = new();
         _processTaskEnds = new List<IProcessTaskEnd>() { endOne.Object, endTwo.Object };
-        EndTaskEventHandler eteh = new EndTaskEventHandler(
+        EndTaskEventHandler eteh = new(
             _processTaskDataLocker.Object,
             _processTaskFinisher.Object,
             _pdfServiceTask.Object,
@@ -71,7 +62,7 @@ public class EndTaskEventHandlerTests
             Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d",
             AppId = "ttd/test",
         };
-        Mock<IProcessTask> mockProcessTask = new Mock<IProcessTask>();
+        Mock<IProcessTask> mockProcessTask = new();
         await eteh.Execute(mockProcessTask.Object, "Task_1", instance);
         endOne.Verify(a => a.End("Task_1", instance));
         endTwo.Verify(a => a.End("Task_1", instance));

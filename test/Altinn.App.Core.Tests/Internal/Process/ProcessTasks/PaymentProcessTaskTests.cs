@@ -22,7 +22,6 @@ namespace Altinn.App.Core.Tests.Internal.Process.ProcessTasks
             var orderDetailsFormatter = new Mock<IOrderDetailsCalculator>();
             var processReader = new Mock<IProcessReader>();
             var paymentService = new Mock<IPaymentService>();
-            var dataService = new Mock<IDataService>();
             
             AltinnPaymentConfiguration paymentConfiguration = new()
             {

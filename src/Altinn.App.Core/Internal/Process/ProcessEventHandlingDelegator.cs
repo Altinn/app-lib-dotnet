@@ -96,15 +96,14 @@ namespace Altinn.App.Core.Internal.Process
         private IProcessTask GetProcessTaskInstance(string? altinnTaskType)
         {
             altinnTaskType ??= "NullType";
-            foreach (var processTaskType in _processTasks)
+            IProcessTask? processTask = _processTasks.FirstOrDefault(pt => pt.Type == altinnTaskType);
+
+            if (processTask == null)
             {
-                if (processTaskType.Type == altinnTaskType)
-                {
-                    return processTaskType;
-                }
+                throw new ProcessException($"No process task instance found for altinnTaskType {altinnTaskType}");
             }
 
-            throw new ProcessException($"No process task instance found for altinnTaskType {altinnTaskType}");
+            return processTask;
         }
     }
 }

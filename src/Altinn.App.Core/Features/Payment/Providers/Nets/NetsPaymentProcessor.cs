@@ -88,7 +88,7 @@ public class NetsPaymentProcessor : IPaymentProcessor
         };
         
         HttpApiResult<NetsCreatePaymentSuccess> httpApiResult = await _netsClient.CreatePayment(payment);
-        if (!httpApiResult.IsSuccess || httpApiResult.Result.HostedPaymentPageUrl is null)
+        if (!httpApiResult.IsSuccess || httpApiResult.Result?.HostedPaymentPageUrl is null)
         {
             throw new PaymentException("Failed to create payment\n" + httpApiResult.Status + " - " + httpApiResult.RawError);
         }
