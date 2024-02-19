@@ -1,3 +1,4 @@
+#nullable disable
 using Altinn.App.Core.Features.Validation.Default;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Models;
@@ -59,7 +60,7 @@ public class DefaultTaskValidatorTests
     [Fact]
     public async Task UnknownTask_NoData_ReturnsNoErrors()
     {
-        var issues = await _sut.ValidateTask(_instance, "unknownTask");
+        var issues = await _sut.ValidateTask(_instance, "unknownTask", null);
         issues.Should().BeEmpty();
     }
 
@@ -70,14 +71,14 @@ public class DefaultTaskValidatorTests
         {
             DataType = "unknownDataType"
         });
-        var issues = await _sut.ValidateTask(_instance, "unknownTask");
+        var issues = await _sut.ValidateTask(_instance, "unknownTask", null);
         issues.Should().BeEmpty();
     }
 
     [Fact]
     public async Task UnlimitedTask_NoData_ReturnsNoErrors()
     {
-        var issues = await _sut.ValidateTask(_instance, UnlimitedTaskId);
+        var issues = await _sut.ValidateTask(_instance, UnlimitedTaskId, null);
         issues.Should().BeEmpty();
     }
 
@@ -92,7 +93,7 @@ public class DefaultTaskValidatorTests
             });
         }
 
-        var issues = await _sut.ValidateTask(_instance, UnlimitedTaskId);
+        var issues = await _sut.ValidateTask(_instance, UnlimitedTaskId, null);
         issues.Should().BeEmpty();
     }
 
@@ -103,14 +104,14 @@ public class DefaultTaskValidatorTests
         {
             DataType = OneRequiredDataType
         });
-        var issues = await _sut.ValidateTask(_instance, OneRequiredElementTaskId);
+        var issues = await _sut.ValidateTask(_instance, OneRequiredElementTaskId, null);
         issues.Should().BeEmpty();
     }
 
     [Fact]
     public async Task OneRequired_NoData_ReturnsError()
     {
-        var issues = await _sut.ValidateTask(_instance, OneRequiredElementTaskId);
+        var issues = await _sut.ValidateTask(_instance, OneRequiredElementTaskId, null);
         var issue = issues.Should().ContainSingle().Which;
         issue.Code.Should().Be("TooFewDataElementsOfType");
         issue.Severity.Should().Be(ValidationIssueSeverity.Error);
@@ -128,7 +129,7 @@ public class DefaultTaskValidatorTests
         {
             DataType = OneRequiredDataType
         });
-        var issues = await _sut.ValidateTask(_instance, OneRequiredElementTaskId);
+        var issues = await _sut.ValidateTask(_instance, OneRequiredElementTaskId, null);
         var issue = issues.Should().ContainSingle().Which;
         issue.Code.Should().Be("TooManyDataElementsOfType");
         issue.Severity.Should().Be(ValidationIssueSeverity.Error);

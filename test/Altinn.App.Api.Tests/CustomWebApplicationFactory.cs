@@ -114,7 +114,6 @@ public class ApiTestBase
         services.AddSingleton<HttpClient>(sp => new HttpClient(new MockHttpMessageHandler(SendAsync, sp.GetRequiredService<ILogger<MockHttpMessageHandler>>())));
     }
 
-
     /// <summary>
     /// Set this in your test class constructor to make the same overrides for all tests.
     /// </summary>
