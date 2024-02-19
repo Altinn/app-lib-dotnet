@@ -11,7 +11,6 @@ namespace Altinn.App.Core.Features.Payment.Providers.Nets;
 public class NetsClient : INetsClient
 {
     private readonly HttpClient _httpClient;
-    private readonly NetsPaymentSettings _settings;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="NetsClient"/> class.
@@ -20,11 +19,11 @@ public class NetsClient : INetsClient
     /// <param name="settings"></param>
     public NetsClient(HttpClient httpClient, IOptions<NetsPaymentSettings> settings)
     {
-        _settings = settings.Value;
+        NetsPaymentSettings netsPaymentSettings = settings.Value;
 
         _httpClient = httpClient;
-        _httpClient.BaseAddress = new Uri(_settings.BaseUrl);
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(_settings.SecretApiKey);
+        _httpClient.BaseAddress = new Uri(netsPaymentSettings.BaseUrl);
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(netsPaymentSettings.SecretApiKey);
         _httpClient.DefaultRequestHeaders.Add("CommercePlatformTag", "Altinn 3");
     }
 
@@ -42,21 +41,21 @@ public class NetsClient : INetsClient
     /// </summary>
     public async Task<HttpApiResult<NetsCreatePaymentSuccess>> CreatePayment(NetsCreatePayment payment)
     {
-        var response = await _httpClient.PostAsJsonAsync("/v1/payments", payment);
+        HttpResponseMessage? response = await _httpClient.PostAsJsonAsync("/v1/payments", payment);
         return await HttpApiResult<NetsCreatePaymentSuccess>.FromHttpResponse(response);
     }
 
     /// <inheritdoc/>
     public async Task<HttpApiResult<NetsPaymentFull>> RetrievePayment(string paymentId)
     {
-        var response = await _httpClient.GetAsync($"/v1/payments/{paymentId}");
+        HttpResponseMessage response = await _httpClient.GetAsync($"/v1/payments/{paymentId}");
         return await HttpApiResult<NetsPaymentFull>.FromHttpResponse(response);
     }
 
     /// <inheritdoc/>
     public async Task<HttpApiResult<bool>> CancelPayment(string paymentId)
     {
-        var response = await _httpClient.PostAsync($"v1/payments/{paymentId}/cancels", null);
+        HttpResponseMessage response = await _httpClient.PostAsync($"v1/payments/{paymentId}/cancels", null);
         return await HttpApiResult<bool>.FromHttpResponse(response);
     }
 }
