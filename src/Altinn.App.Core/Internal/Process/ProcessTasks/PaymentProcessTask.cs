@@ -14,19 +14,19 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks
     {
         private readonly IProcessReader _processReader;
         private readonly IPaymentService _paymentService;
-        private readonly IOrderDetailsCalculator? _orderDetailsFormatter;
+        private readonly IOrderDetailsCalculator? _orderDetailsCalculator;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PaymentProcessTask"/> class.
         /// </summary>
-        /// <param name="orderDetailsFormatter"></param>
         /// <param name="processReader"></param>
         /// <param name="paymentService"></param>
-        public PaymentProcessTask(IProcessReader processReader, IPaymentService paymentService, IOrderDetailsCalculator? orderDetailsFormatter = null)
+        /// <param name="orderDetailsCalculator"></param>
+        public PaymentProcessTask(IProcessReader processReader, IPaymentService paymentService, IOrderDetailsCalculator? orderDetailsCalculator = null)
         {
             _processReader = processReader;
             _paymentService = paymentService;
-            _orderDetailsFormatter = orderDetailsFormatter;
+            _orderDetailsCalculator = orderDetailsCalculator;
         }
 
         /// <inheritdoc/>
@@ -35,9 +35,12 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks
         /// <inheritdoc/>
         public async Task Start(string taskId, Instance instance, Dictionary<string, string> prefill)
         {
-            if (_orderDetailsFormatter == null)
-                throw new ProcessException(
-                    "No IOrderDetailsFormatter implementation found for generating the order lines. Implement the interface and add it as a transient service in Program.cs");
+            ArgumentNullException.ThrowIfNull(taskId);
+            ArgumentNullException.ThrowIfNull(instance);
+
+            if (_orderDetailsCalculator == null)
+                throw new PaymentException(
+                    $"No {nameof(IOrderDetailsCalculator)} implementation found for generating the order lines. Implement the interface and add it to the dependency injection container.");
 
             AltinnPaymentConfiguration? paymentConfiguration = _processReader.GetAltinnTaskExtension(instance.Process.CurrentTask.ElementId)?.PaymentConfiguration;
             if (paymentConfiguration == null)
@@ -55,6 +58,9 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks
         /// <inheritdoc/>
         public async Task Abandon(string taskId, Instance instance)
         {
+            ArgumentNullException.ThrowIfNull(taskId);
+            ArgumentNullException.ThrowIfNull(instance);
+
             AltinnPaymentConfiguration? paymentConfiguration = _processReader.GetAltinnTaskExtension(instance.Process.CurrentTask.ElementId)?.PaymentConfiguration;
             if (paymentConfiguration == null)
                 throw new PaymentException("PaymentConfiguration not found in AltinnTaskExtension");

@@ -52,7 +52,7 @@ public class ProcessTaskInitializer : IProcessTaskInitializer
         {
             _logger.LogDebug("Auto create data element: {DataTypeId}", dataType.Id);
 
-            DataElement? dataElement = instance.Data.Find(d => d.DataType == dataType.Id);
+            DataElement? dataElement = instance.Data?.Find(d => d.DataType == dataType.Id);
 
             if (dataElement == null)
             {
@@ -64,8 +64,7 @@ public class ProcessTaskInitializer : IProcessTaskInitializer
 
                 Type type = _appModel.GetModelType(dataType.AppLogic.ClassRef);
 
-                DataElement createdDataElement =
-                    await _dataClient.InsertFormData(instance, dataType.Id, data, type);
+                DataElement createdDataElement = await _dataClient.InsertFormData(instance, dataType.Id, data, type);
                 instance.Data.Add(createdDataElement);
 
                 await UpdatePresentationTextsOnInstance(instance, dataType.Id, data);
