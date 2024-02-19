@@ -10,7 +10,7 @@ using Altinn.App.Core.Features.Payment.Providers.Nets.Models;
 namespace Altinn.App.Core.Features.Payment.Providers.Nets;
 
 /// <summary>
-/// Implementation of IPaymentProcessor for Nets.
+/// Implementation of IPaymentProcessor for Nets. https://developer.nexigroup.com/nexi-checkout/en-EU/api/
 /// </summary>
 public class NetsPaymentProcessor : IPaymentProcessor
 {
@@ -26,7 +26,8 @@ public class NetsPaymentProcessor : IPaymentProcessor
     /// <param name="settings"></param>
     /// <param name="generalSettings"></param>
     /// <param name="orderDetailsFormatter"></param>
-    public NetsPaymentProcessor(INetsClient netsClient, IOptions<NetsPaymentSettings> settings, IOptions<GeneralSettings> generalSettings, IOrderDetailsCalculator? orderDetailsFormatter = null)
+    public NetsPaymentProcessor(INetsClient netsClient, IOptions<NetsPaymentSettings> settings,
+        IOptions<GeneralSettings> generalSettings, IOrderDetailsCalculator? orderDetailsFormatter = null)
     {
         _netsClient = netsClient;
         _settings = settings.Value;
@@ -39,13 +40,18 @@ public class NetsPaymentProcessor : IPaymentProcessor
     {
         if (_orderDetailsFormatter == null)
         {
-            throw new PaymentException("No IOrderDetailsFormatter implementation found. Implement the interface and add it as a transient service in Program.cs");
+            throw new PaymentException(
+                "No IOrderDetailsFormatter implementation found. Implement the interface and add it as a transient service in Program.cs");
         }
 
         var instanceIdentifier = new InstanceIdentifier(instance);
         string baseUrl = _generalSettings.FormattedExternalAppBaseUrl(new AppIdentifier(instance));
         var altinnAppUrl = $"{baseUrl}#/instance/{instanceIdentifier}";
         
+        /*
+         * Amounts are specified in the lowest monetary unit for the given currency, without punctuation marks. For example: 100,00 NOK is specified as 10000 and 9.99 USD is specified as 999.
+         * Entering the amount 100 corresponds to 1 unit of the currency entered, such as e.g. 1 NOK.
+         */
         var payment = new NetsCreatePayment()
         {
             Order = new NetsOrder
@@ -59,14 +65,13 @@ public class NetsPaymentProcessor : IPaymentProcessor
                     Name = l.Name,
                     Quantity = l.Quantity,
                     Unit = l.Unit,
+
                     UnitPrice = (int)(l.PriceExVat * 100),
                     GrossTotalAmount = (int)(l.PriceExVat * 100 * l.Quantity * (1 + l.VatPercent / 100)),
                     NetTotalAmount = (int)(l.PriceExVat * 100 * l.Quantity),
                     TaxAmount = (int)(l.PriceExVat * 100 * l.Quantity * (l.VatPercent / 100)),
                     TaxRate = (int)(l.VatPercent * 100),
-
                 }).ToList(),
-
             },
             MyReference = instance.Id.Split('/')[1],
             Checkout = new NetsCheckout
@@ -86,7 +91,7 @@ public class NetsPaymentProcessor : IPaymentProcessor
                 Charge = true
             },
         };
-        
+
         HttpApiResult<NetsCreatePaymentSuccess> httpApiResult = await _netsClient.CreatePayment(payment);
         if (!httpApiResult.IsSuccess || httpApiResult.Result?.HostedPaymentPageUrl is null)
         {
@@ -100,7 +105,8 @@ public class NetsPaymentProcessor : IPaymentProcessor
         {
             PaymentReference = paymentId,
             RedirectUrl = hostedPaymentPageUrl,
-            OrderDetails = orderDetails
+            OrderDetails = orderDetails,
+            Status = PaymentStatus.Created
         };
     }
 
@@ -116,14 +122,17 @@ public class NetsPaymentProcessor : IPaymentProcessor
         HttpApiResult<NetsPaymentFull> httpApiResult = await _netsClient.RetrievePayment(paymentReference);
         if (!httpApiResult.IsSuccess || httpApiResult.Result.Payment is null)
         {
-            throw new PaymentException("Failed to retrieve payment\n" + httpApiResult.Status + " - " + httpApiResult.RawError);
+            throw new PaymentException("Failed to retrieve payment\n" + httpApiResult.Status + " - " +
+                                       httpApiResult.RawError);
         }
-        
+
         decimal? chargedAmount = httpApiResult.Result?.Payment?.Summary?.ChargedAmount;
 
         if (chargedAmount is null or 0)
             return PaymentStatus.Created;
         
-        return chargedAmount == expectedTotalIncVat ? PaymentStatus.Paid : PaymentStatus.Failed;
+        // Amounts are specified in the lowest monetary unit for the given currency, without punctuation marks.
+        var expectedTotalIncVatTimes100 =  (int)(100 * expectedTotalIncVat);
+        return chargedAmount == expectedTotalIncVatTimes100 ? PaymentStatus.Paid : PaymentStatus.Failed;
     }
 }

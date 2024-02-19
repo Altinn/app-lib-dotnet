@@ -16,6 +16,17 @@ public class HttpApiResult<T>
         PropertyNameCaseInsensitive = true,
     };
 
+    public HttpApiResult()
+    {
+    }
+
+    public HttpApiResult(T? result, HttpStatusCode status, string? rawError)
+    {
+        Result = result;
+        Status = status;
+        RawError = rawError;
+    }
+
     [MemberNotNullWhen(true, nameof(Result))]
     public bool IsSuccess => Result is not null;
     public T? Result { get; init; }

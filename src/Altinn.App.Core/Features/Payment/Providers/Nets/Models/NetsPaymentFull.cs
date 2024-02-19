@@ -3,10 +3,10 @@ namespace Altinn.App.Core.Features.Payment.Providers.Nets.Models;
 
 public class NetsPaymentFull
 {
-    public Payment? Payment { get; set; }
+    public NetsPayment? Payment { get; set; }
 }
 
-public class Payment
+public class NetsPayment
 {
     public string? PaymentId { get; set; }
     public NetsSummary? Summary { get; set; }
