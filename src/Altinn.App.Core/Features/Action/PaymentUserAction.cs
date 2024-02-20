@@ -29,27 +29,31 @@ namespace Altinn.App.Core.Features.Action
 
         public async Task<UserActionResult> HandleAction(UserActionContext context)
         {
-            if (_processReader.GetFlowElement(context.Instance.Process.CurrentTask.ElementId) is ProcessTask currentTask)
+            if (_processReader.GetFlowElement(context.Instance.Process.CurrentTask.ElementId) is not ProcessTask currentTask)
             {
-                AltinnPaymentConfiguration? paymentConfiguration = currentTask.ExtensionElements?.TaskExtension?.PaymentConfiguration;
-                if (paymentConfiguration == null)
-                    throw new ProcessException("No payment configuration found on payment process task. Add payment configuration to task.");
-
-                (_, PaymentInformation paymentInformation) = await _dataService.GetByType<PaymentInformation>(context.Instance, paymentConfiguration.PaymentDataType);
-
-                if (paymentInformation?.RedirectUrl == null)
+                return UserActionResult.FailureResult(new ActionError()
                 {
-                    throw new ProcessException("No redirect url found on payment information. Should have been added when payment process task was started.");
-                }
-
-                return UserActionResult.RedirectResult(paymentInformation.RedirectUrl);
+                    Code = "NoProcessTask",
+                    Message = "Current task is not a process task."
+                });
             }
 
-            return UserActionResult.FailureResult(new ActionError()
+            AltinnPaymentConfiguration? paymentConfiguration = currentTask.ExtensionElements?.TaskExtension?.PaymentConfiguration;
+            if (paymentConfiguration == null)
+                throw new ProcessException("No payment configuration found on payment process task. Add payment configuration to task.");
+            
+            if(paymentConfiguration.PaymentDataType == null)
+                throw new ProcessException("No payment data type found on payment configuration for payment process task. Add payment data type to task config.");
+
+            (_, PaymentInformation? paymentInformation) = await _dataService.GetByType<PaymentInformation>(context.Instance, paymentConfiguration.PaymentDataType);
+
+            if (paymentInformation?.RedirectUrl == null)
             {
-                Code = "NoProcessTask",
-                Message = "Current task is not a process task."
-            });
+                throw new ProcessException("No redirect url found on payment information. Should have been added when payment process task was started.");
+            }
+
+            return UserActionResult.RedirectResult(paymentInformation.RedirectUrl);
+
         }
     }
 }

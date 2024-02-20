@@ -117,5 +117,10 @@ public interface IProcessReader
     /// <returns><see cref="ProcessElement"/></returns>
     public List<ProcessElement> GetAllFlowElements();
 
+    /// <summary>
+    /// Get AltinnTaskExtension for a given elementId
+    /// </summary>
+    /// <param name="elementId"></param>
+    /// <returns></returns>
     public AltinnTaskExtension? GetAltinnTaskExtension(string elementId);
 }

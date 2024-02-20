@@ -65,6 +65,7 @@ public class ProcessTaskInitializer : IProcessTaskInitializer
                 Type type = _appModel.GetModelType(dataType.AppLogic.ClassRef);
 
                 DataElement createdDataElement = await _dataClient.InsertFormData(instance, dataType.Id, data, type);
+                instance.Data ??= [];
                 instance.Data.Add(createdDataElement);
 
                 await UpdatePresentationTextsOnInstance(instance, dataType.Id, data);
@@ -75,6 +76,7 @@ public class ProcessTaskInitializer : IProcessTaskInitializer
         }
     }
 
+    /// <inheritdoc />
     public async Task UpdatePresentationTextsOnInstance(Instance instance, string dataType, dynamic data)
     {
         ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
@@ -95,6 +97,7 @@ public class ProcessTaskInitializer : IProcessTaskInitializer
         }
     }
 
+    /// <inheritdoc />
     public async Task UpdateDataValuesOnInstance(Instance instance, string dataType, object data)
     {
         ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();

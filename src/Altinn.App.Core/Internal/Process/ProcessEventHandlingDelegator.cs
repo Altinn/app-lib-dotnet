@@ -69,13 +69,13 @@ namespace Altinn.App.Core.Internal.Process
                         case InstanceEventType.process_StartEvent:
                             break;
                         case InstanceEventType.process_StartTask:
-                            await _startTaskEventHandler.Execute(GetProcessTaskInstance(altinnTaskType), taskId, instance, prefill ?? []);
+                            await _startTaskEventHandler.Execute(GetProcessTaskInstance(altinnTaskType), taskId!, instance, prefill ?? []);
                             break;
                         case InstanceEventType.process_EndTask:
-                            await _endTaskEventHandler.Execute(GetProcessTaskInstance(altinnTaskType), taskId, instance);
+                            await _endTaskEventHandler.Execute(GetProcessTaskInstance(altinnTaskType), taskId!, instance);
                             break;
                         case InstanceEventType.process_AbandonTask:
-                            await _abandonTaskEventHandler.Execute(GetProcessTaskInstance(altinnTaskType), taskId, instance);
+                            await _abandonTaskEventHandler.Execute(GetProcessTaskInstance(altinnTaskType), taskId!, instance);
                             break;
                         case InstanceEventType.process_EndEvent:
                             await _endEventHandler.Execute(instanceEvent, instance);

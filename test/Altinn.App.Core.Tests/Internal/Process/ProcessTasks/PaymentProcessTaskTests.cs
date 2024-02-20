@@ -83,7 +83,7 @@ namespace Altinn.App.Core.Tests.Internal.Process.ProcessTasks
             Instance instance = CreateInstance();
 
             // Act & Assert
-            await Assert.ThrowsAsync<PaymentException>(() => paymentProcessTask.Start("Task_1", instance, null));
+            await Assert.ThrowsAsync<PaymentException>(() => paymentProcessTask.Start("Task_1", instance, []));
         }
         
         [Fact]
@@ -111,7 +111,7 @@ namespace Altinn.App.Core.Tests.Internal.Process.ProcessTasks
             Instance instance = CreateInstance();
 
             // Act & Assert
-            await Assert.ThrowsAsync<PaymentException>(() => paymentProcessTask.Start("Task_1", instance, null));
+            await Assert.ThrowsAsync<PaymentException>(() => paymentProcessTask.Start("Task_1", instance, []));
         }
 
         [Fact]
@@ -144,7 +144,7 @@ namespace Altinn.App.Core.Tests.Internal.Process.ProcessTasks
             PaymentProcessTask paymentProcessTask = new(processReader.Object, paymentService.Object, orderDetailsFormatter.Object);
 
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentNullException>(() => paymentProcessTask.Start("Task_1", null, null));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => paymentProcessTask.Start("Task_1", null!, []));
         }
         
         private static Instance CreateInstance()

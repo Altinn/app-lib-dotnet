@@ -47,7 +47,7 @@ public class PdfServiceTaskTests
                 EnablePdfCreation = true
             },
         ]);
-        PdfServiceTask pst = new PdfServiceTask(_appMetadata.Object, _pdfService.Object, _appModel.Object);
+        PdfServiceTask pst = new PdfServiceTask(_appMetadata.Object, _pdfService.Object);
         await pst.Execute("Task_1", i);
         _appMetadata.Verify(am => am.GetApplicationMetadata(), Times.Once);
         _pdfService.Verify(ps => ps.GenerateAndStorePdf(i, "Task_1", CancellationToken.None), Times.Once);
@@ -103,7 +103,7 @@ public class PdfServiceTaskTests
                 EnablePdfCreation = true
             },
         ]);
-        PdfServiceTask pst = new PdfServiceTask(_appMetadata.Object, _pdfService.Object, _appModel.Object);
+        PdfServiceTask pst = new PdfServiceTask(_appMetadata.Object, _pdfService.Object);
         await pst.Execute("Task_1", i);
         _appMetadata.Verify(am => am.GetApplicationMetadata());
         _pdfService.Verify(ps => ps.GenerateAndStorePdf(i, "Task_1", CancellationToken.None), Times.Once);
@@ -141,7 +141,7 @@ public class PdfServiceTaskTests
                 EnablePdfCreation = true
             },
         ]);
-        PdfServiceTask pst = new PdfServiceTask(_appMetadata.Object, _pdfService.Object, _appModel.Object);
+        PdfServiceTask pst = new PdfServiceTask(_appMetadata.Object, _pdfService.Object);
         await pst.Execute("Task_1", i);
         _appMetadata.Verify(am => am.GetApplicationMetadata());
         _appMetadata.VerifyNoOtherCalls();
@@ -176,7 +176,7 @@ public class PdfServiceTaskTests
                 EnablePdfCreation = false
             },
         ]);
-        PdfServiceTask pst = new PdfServiceTask(_appMetadata.Object, _pdfService.Object, _appModel.Object);
+        PdfServiceTask pst = new PdfServiceTask(_appMetadata.Object, _pdfService.Object);
         await pst.Execute("Task_1", i);
         _appMetadata.Verify(am => am.GetApplicationMetadata(), Times.Once);
         _appMetadata.VerifyNoOtherCalls();
@@ -211,7 +211,7 @@ public class PdfServiceTaskTests
                 EnablePdfCreation = false
             },
         ]);
-        PdfServiceTask pst = new PdfServiceTask(_appMetadata.Object, _pdfService.Object, _appModel.Object);
+        PdfServiceTask pst = new PdfServiceTask(_appMetadata.Object, _pdfService.Object);
         await pst.Execute("Task_1", i);
         _appMetadata.Verify(am => am.GetApplicationMetadata(), Times.Once);
         _appMetadata.VerifyNoOtherCalls();

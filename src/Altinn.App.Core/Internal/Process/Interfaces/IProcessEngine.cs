@@ -21,9 +21,9 @@ namespace Altinn.App.Core.Internal.Process
         /// <summary>
         /// Handle process events and update storage
         /// </summary>
-        /// <param name="startRequest"></param>
+        /// <param name="instance"></param>
+        /// <param name="prefill"></param>
         /// <param name="events"></param>
-        /// <returns></returns>
         Task<Instance> HandleEventsAndUpdateStorage(Instance instance, Dictionary<string, string>? prefill, List<InstanceEvent>? events);
     }
 }

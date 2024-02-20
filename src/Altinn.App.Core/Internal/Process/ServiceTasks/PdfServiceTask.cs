@@ -1,5 +1,4 @@
 using Altinn.App.Core.Internal.App;
-using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
@@ -18,11 +17,8 @@ public class PdfServiceTask : IServiceTask
     /// Service task that generates PDFs for all connected datatypes that have the EnablePdfCreation flag set to true.
     /// </summary>
     /// <param name="appMetadata"></param>
-    /// <param name="featureManager"></param>
     /// <param name="pdfService"></param>
-    /// <param name="appModel"></param>
-    public PdfServiceTask(IAppMetadata appMetadata, IPdfService pdfService,
-        IAppModel appModel)
+    public PdfServiceTask(IAppMetadata appMetadata, IPdfService pdfService)
     {
         _pdfService = pdfService;
         _appMetadata = appMetadata;

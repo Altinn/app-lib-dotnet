@@ -50,7 +50,7 @@ namespace Altinn.App.Core.Tests.Internal.Data
             _mockAppMetadata.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(applicationMetadata);
 
             // Act
-            (Guid dataElementId, TestModel model) = await _dataService.GetByType<TestModel>(instance, dataType);
+            (Guid dataElementId, TestModel? model) = await _dataService.GetByType<TestModel>(instance, dataType);
 
             // Assert
             Assert.Equal(instance.Data.First().Id, dataElementId.ToString());
@@ -66,7 +66,7 @@ namespace Altinn.App.Core.Tests.Internal.Data
             instance.Data = [new DataElement() { DataType = otherType, Id = Guid.NewGuid().ToString() }];
 
             // Act
-            (Guid dataElementId, TestModel model) = await _dataService.GetByType<TestModel>(instance, dataType);
+            (Guid dataElementId, TestModel? model) = await _dataService.GetByType<TestModel>(instance, dataType);
 
             // Assert
             Assert.Equal(Guid.Empty, dataElementId);

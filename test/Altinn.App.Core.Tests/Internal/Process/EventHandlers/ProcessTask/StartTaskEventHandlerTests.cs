@@ -33,10 +33,10 @@ public class StartTaskEventHandlerTests
             AppId = "ttd/test",
         };
         Mock<IProcessTask> mockProcessTask = new Mock<IProcessTask>();
-        await steh.Execute(mockProcessTask.Object, "Task_1", instance, null);
+        await steh.Execute(mockProcessTask.Object, "Task_1", instance, []);
         _processTaskDataLocker.Verify(p => p.Unlock("Task_1", instance));
-        _processTaskInitializer.Verify(p => p.Initialize("Task_1", instance, null));
-        mockProcessTask.Verify(p => p.Start("Task_1", instance, null));
+        _processTaskInitializer.Verify(p => p.Initialize("Task_1", instance, new Dictionary<string, string>()));
+        mockProcessTask.Verify(p => p.Start("Task_1", instance, new Dictionary<string, string>()));
 
         _processTaskDataLocker.VerifyNoOtherCalls();
         _processTaskInitializer.VerifyNoOtherCalls();
@@ -63,12 +63,12 @@ public class StartTaskEventHandlerTests
             AppId = "ttd/test",
         };
         Mock<IProcessTask> mockProcessTask = new Mock<IProcessTask>();
-        await steh.Execute(mockProcessTask.Object, "Task_1", instance, null);
+        await steh.Execute(mockProcessTask.Object, "Task_1", instance, []);
         _processTaskDataLocker.Verify(p => p.Unlock("Task_1", instance));
-        _processTaskInitializer.Verify(p => p.Initialize("Task_1", instance, null));
-        mockProcessTask.Verify(p => p.Start("Task_1", instance, null));
-        startOne.Verify(p => p.Start("Task_1", instance, null));
-        startTwo.Verify(p => p.Start("Task_1", instance, null));
+        _processTaskInitializer.Verify(p => p.Initialize("Task_1", instance, new Dictionary<string, string>()));
+        mockProcessTask.Verify(p => p.Start("Task_1", instance, new Dictionary<string, string>()));
+        startOne.Verify(p => p.Start("Task_1", instance, new Dictionary<string, string>()));
+        startTwo.Verify(p => p.Start("Task_1", instance, new Dictionary<string, string>()));
 
         _processTaskDataLocker.VerifyNoOtherCalls();
         _processTaskInitializer.VerifyNoOtherCalls();
