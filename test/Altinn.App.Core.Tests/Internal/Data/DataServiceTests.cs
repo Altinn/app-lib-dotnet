@@ -54,6 +54,7 @@ namespace Altinn.App.Core.Tests.Internal.Data
 
             // Assert
             Assert.Equal(instance.Data.First().Id, dataElementId.ToString());
+            Assert.Equivalent(expectedModel, model);
         }
 
         [Fact]
