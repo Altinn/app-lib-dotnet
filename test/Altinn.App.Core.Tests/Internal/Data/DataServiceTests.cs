@@ -86,6 +86,9 @@ namespace Altinn.App.Core.Tests.Internal.Data
             ApplicationMetadata applicationMetadata = CreateAppMetadata(instance);
         
             var expectedModel = new TestModel();
+            using var referenceStream = new MemoryStream();
+            await JsonSerializer.SerializeAsync(referenceStream, expectedModel, _jsonSerializerOptions);
+            referenceStream.Position = 0;
             
             _mockDataClient.Setup(dc => dc.GetBinaryData(
                     applicationMetadata.AppIdentifier.Org,
@@ -93,7 +96,7 @@ namespace Altinn.App.Core.Tests.Internal.Data
                     instanceIdentifier.InstanceOwnerPartyId,
                     instanceIdentifier.InstanceGuid,
                     expectedDataId))
-                .ReturnsAsync(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(expectedModel, _jsonSerializerOptions))));
+                .ReturnsAsync(referenceStream);
             
             _mockAppMetadata.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(applicationMetadata);
             
