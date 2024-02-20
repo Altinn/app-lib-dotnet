@@ -1,6 +1,5 @@
 ﻿using System.Text.Json;
 using Altinn.App.Core.Internal.App;
-using Altinn.App.Core.Internal.Exceptions;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 
@@ -44,7 +43,7 @@ namespace Altinn.App.Core.Internal.Data
         /// <inheritdoc/>
         public async Task<T> GetById<T>(Instance instance, Guid dataElementId)
         {
-            DataElement dataElement = instance.Data.SingleOrDefault(d => d.Id == dataElementId.ToString()) ?? throw new NotFoundException($"Failed to locate data element with id {dataElementId} in instance {instance.Id}");
+            DataElement dataElement = instance.Data.SingleOrDefault(d => d.Id == dataElementId.ToString()) ?? throw new ArgumentNullException($"Failed to locate data element with id {dataElementId} in instance {instance.Id}");
             return await GetDataForDataElement<T>(new InstanceIdentifier(instance), dataElement);
         }
 
@@ -81,16 +80,10 @@ namespace Altinn.App.Core.Internal.Data
             Stream dataStream = await _dataClient.GetBinaryData(applicationMetadata.AppIdentifier.Org, applicationMetadata.AppIdentifier.App, instanceIdentifier.InstanceOwnerPartyId, instanceIdentifier.InstanceGuid, new Guid(dataElement.Id));
             if(dataStream == null)
             {
-                throw new NotFoundException("Failed to retrieve binary dataStream from dataClient");
+                throw new ArgumentNullException($"Failed to retrieve binary dataStream from dataClient using dataElement.Id {dataElement.Id}.");
             }
             
-            var data = await JsonSerializer.DeserializeAsync<T>(dataStream, _jsonSerializerOptions);
-            if (data == null)
-            {
-                throw new NotFoundException($"Failed to deserialize dataStream to type {nameof(T)}");
-            }
-
-            return data;
+            return await JsonSerializer.DeserializeAsync<T>(dataStream, _jsonSerializerOptions) ?? throw new InvalidOperationException($"Unable to deserialize data from dataStream to type {nameof(T)}.");
         }
     }
 }

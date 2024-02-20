@@ -1,7 +1,6 @@
 ﻿using System.Text.Json;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
-using Altinn.App.Core.Internal.Exceptions;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Moq;
@@ -112,7 +111,7 @@ namespace Altinn.App.Core.Tests.Internal.Data
             instance.Data = [new DataElement { Id = Guid.NewGuid().ToString() }];
 
             // Act & Assert
-            await Assert.ThrowsAsync<NotFoundException>(() => _dataService.GetById<TestModel>(instance, Guid.NewGuid()));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _dataService.GetById<TestModel>(instance, Guid.NewGuid()));
         }
         
         [Fact]
