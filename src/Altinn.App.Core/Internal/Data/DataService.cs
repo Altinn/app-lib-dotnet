@@ -1,7 +1,6 @@
 ﻿using System.Text.Json;
-using Altinn.App.Core.Extensions;
-using Altinn.App.Core.Interface;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Exceptions;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 
@@ -13,7 +12,7 @@ namespace Altinn.App.Core.Internal.Data
         private readonly IDataClient _dataClient;
         private readonly IAppMetadata _appMetadata;
 
-        private readonly JsonSerializerOptions _jsonSerializerOptions = new(JsonSerializerDefaults.General);
+        private readonly JsonSerializerOptions _jsonSerializerOptions = new(JsonSerializerDefaults.Web);
 
         
         /// <summary>
@@ -45,7 +44,7 @@ namespace Altinn.App.Core.Internal.Data
         /// <inheritdoc/>
         public async Task<T> GetById<T>(Instance instance, Guid dataElementId)
         {
-            DataElement dataElement = instance.Data.SingleOrDefault(d => d.Id == dataElementId.ToString()) ?? throw new ArgumentException("Failed to locate data element");
+            DataElement dataElement = instance.Data.SingleOrDefault(d => d.Id == dataElementId.ToString()) ?? throw new NotFoundException($"Failed to locate data element with id {dataElementId} in instance {instance.Id}");
             return await GetDataForDataElement<T>(new InstanceIdentifier(instance), dataElement);
         }
 
@@ -80,14 +79,18 @@ namespace Altinn.App.Core.Internal.Data
             ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
 
             Stream dataStream = await _dataClient.GetBinaryData(applicationMetadata.AppIdentifier.Org, applicationMetadata.AppIdentifier.App, instanceIdentifier.InstanceOwnerPartyId, instanceIdentifier.InstanceGuid, new Guid(dataElement.Id));
-            var data = await JsonSerializer.DeserializeAsync<T>(dataStream, _jsonSerializerOptions);
-            
-            if (data != null)
+            if(dataStream == null)
             {
-                return data;
+                throw new NotFoundException("Failed to retrieve binary dataStream from dataClient");
+            }
+            
+            var data = await JsonSerializer.DeserializeAsync<T>(dataStream, _jsonSerializerOptions);
+            if (data == null)
+            {
+                throw new NotFoundException($"Failed to deserialize dataStream to type {nameof(T)}");
             }
 
-            throw new ArgumentException($"Failed to locate data element of type {nameof(T)}");
+            return data;
         }
     }
 }

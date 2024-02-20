@@ -8,7 +8,7 @@
         /// <summary>
         /// Initializes a new instance of the <see cref="PaymentException"/> class.
         /// </summary>
-        /// <param name="mess/age"></param>
+        /// <param name="message"></param>
         public PaymentException(string message) : base(message)
         {
         }
