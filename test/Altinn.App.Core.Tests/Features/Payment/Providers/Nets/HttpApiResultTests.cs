@@ -10,10 +10,8 @@ public class HttpApiResultTests
     public async Task FromHttpResponse_ReturnsSuccessResult_WhenStatusCodeIsOk()
     {
         // Arrange
-        var mockResponse = new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new StringContent("{\"property\": \"value\"}")
-        };
+        using var mockResponse = new HttpResponseMessage(HttpStatusCode.OK);
+        mockResponse.Content = new StringContent("{\"property\": \"value\"}");
 
         // Act
         HttpApiResult<object> result = await HttpApiResult<object>.FromHttpResponse(mockResponse);
@@ -28,7 +26,7 @@ public class HttpApiResultTests
     public async Task FromHttpResponse_ReturnsNoContentResult_WhenStatusCodeIsNoContent()
     {
         // Arrange
-        var mockResponse = new HttpResponseMessage(HttpStatusCode.NoContent);
+        using var mockResponse = new HttpResponseMessage(HttpStatusCode.NoContent);
 
         // Act
         HttpApiResult<object> result = await HttpApiResult<object>.FromHttpResponse(mockResponse);
@@ -43,10 +41,8 @@ public class HttpApiResultTests
     public async Task FromHttpResponse_ReturnsErrorResult_WhenStatusCodeIsError()
     {
         // Arrange
-        var mockResponse = new HttpResponseMessage(HttpStatusCode.InternalServerError)
-        {
-            Content = new StringContent("Internal Server Error")
-        };
+        using var mockResponse = new HttpResponseMessage(HttpStatusCode.InternalServerError);
+        mockResponse.Content = new StringContent("Internal Server Error");
 
         // Act
         HttpApiResult<object> result = await HttpApiResult<object>.FromHttpResponse(mockResponse);
@@ -62,10 +58,8 @@ public class HttpApiResultTests
     public async Task FromHttpResponse_ReturnsErrorResult_WhenJsonDeserializationFails()
     {
         // Arrange
-        var mockResponse = new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new StringContent("Invalid Json")
-        };
+        using var mockResponse = new HttpResponseMessage(HttpStatusCode.OK);
+        mockResponse.Content = new StringContent("Invalid Json");
 
         // Act
         HttpApiResult<object> result = await HttpApiResult<object>.FromHttpResponse(mockResponse);
