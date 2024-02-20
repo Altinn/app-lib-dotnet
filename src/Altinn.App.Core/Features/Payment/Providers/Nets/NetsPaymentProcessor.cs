@@ -120,7 +120,7 @@ public class NetsPaymentProcessor : IPaymentProcessor
     public async Task<PaymentStatus?> GetPaymentStatus(Instance instance, string paymentReference, decimal expectedTotalIncVat)
     {
         HttpApiResult<NetsPaymentFull> httpApiResult = await _netsClient.RetrievePayment(paymentReference);
-        if (!httpApiResult.IsSuccess || httpApiResult.Result.Payment is null)
+        if (!httpApiResult.IsSuccess || httpApiResult.Result?.Payment is null)
         {
             throw new PaymentException("Failed to retrieve payment\n" + httpApiResult.Status + " - " +
                                        httpApiResult.RawError);
