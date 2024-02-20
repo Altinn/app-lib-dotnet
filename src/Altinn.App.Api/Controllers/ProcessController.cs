@@ -1,17 +1,14 @@
-#nullable enable
 using System.Net;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
-using Altinn.App.Core.Features;
-using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
+using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
-using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -204,9 +201,9 @@ namespace Altinn.App.Api.Controllers
             }
         }
 
-        private async Task<bool> CanTaskBeEnded(Instance instance, string currentTaskId)
+        private async Task<bool> CanTaskBeEnded(Instance instance, string currentTaskId, string? language)
         {
-            var validationIssues = await _validationService.ValidateInstanceAtTask(instance, currentTaskId);
+            var validationIssues = await _validationService.ValidateInstanceAtTask(instance, currentTaskId, language);
 
             return await ProcessHelper.CanEndProcessTask(instance, validationIssues);
         }
@@ -220,10 +217,7 @@ namespace Altinn.App.Api.Controllers
         /// <param name="instanceOwnerPartyId">unique id of the party that is the owner of the instance</param>
         /// <param name="instanceGuid">unique id to identify the instance</param>
         /// <param name="elementId">obsolete: alias for action</param>
-        /// <param name="lang">Optional parameter to pass on the language used in the form if this differs from the profile language,
-        /// which otherwise is used automatically. The language is picked up when generating the PDF when leaving a step, 
-        /// and is not used for anything else.
-        /// </param>
+        /// <param name="language">Signal the language to use for pdf generation, error messages...</param>
         [HttpPut("next")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -234,7 +228,7 @@ namespace Altinn.App.Api.Controllers
             [FromRoute] int instanceOwnerPartyId,
             [FromRoute] Guid instanceGuid,
             [FromQuery] string? elementId = null,
-            [FromQuery] string? lang = null)
+            [FromQuery] string? language = null)
         {
             try
             {
@@ -314,6 +308,7 @@ namespace Altinn.App.Api.Controllers
         /// <param name="app">application identifier which is unique within an organisation</param>
         /// <param name="instanceOwnerPartyId">unique id of the party that is the owner of the instance</param>
         /// <param name="instanceGuid">unique id to identify the instance</param>
+        /// <param name="language">The currently used language by the user (or null if not available)</param>
         /// <returns>current process status</returns>
         [HttpPut("completeProcess")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -323,7 +318,8 @@ namespace Altinn.App.Api.Controllers
             [FromRoute] string org,
             [FromRoute] string app,
             [FromRoute] int instanceOwnerPartyId,
-            [FromRoute] Guid instanceGuid)
+            [FromRoute] Guid instanceGuid,
+            [FromQuery] string? language = null)
         {
             Instance instance;
 
@@ -367,7 +363,7 @@ namespace Altinn.App.Api.Controllers
                     return Forbid();
                 }
 
-                if (!await CanTaskBeEnded(instance, currentTaskId))
+                if (!await CanTaskBeEnded(instance, currentTaskId, language))
                 {
                     return Conflict($"Instance is not valid for task {currentTaskId}. Automatic completion of process is stopped");
                 }

@@ -1,4 +1,3 @@
-using Altinn.App.Api.Configuration;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
@@ -41,6 +40,7 @@ using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Internal.Secrets;
 using Altinn.App.Core.Internal.Texts;
+using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models;
 using Altinn.Common.AccessTokenClient.Configuration;
 using Altinn.Common.AccessTokenClient.Services;
@@ -187,6 +187,7 @@ namespace Altinn.App.Core.Extensions
 
         private static void AddValidationServices(IServiceCollection services, IConfiguration configuration)
         {
+            services.AddTransient<IValidatorFactory, ValidatorFactory>();
             services.TryAddTransient<IValidationService, ValidationService>();
             if (configuration.GetSection("AppSettings").Get<AppSettings>()?.RequiredValidation == true)
             {
