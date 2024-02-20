@@ -56,10 +56,10 @@ namespace Altinn.App.Core.Internal.Process
                 if (Enum.TryParse(instanceEvent.EventType, true, out InstanceEventType eventType))
                 {
                     string? taskId = instanceEvent.ProcessInfo?.CurrentTask?.ElementId;
-
-                    if (string.IsNullOrEmpty(taskId))
+                    if (instanceEvent.ProcessInfo?.CurrentTask != null && string.IsNullOrEmpty(taskId))
                     {
-                        throw new ProcessException($"Unable to parse taskId from CurrentTask on instance event {eventType} ({instanceEvent.Id})");
+                        throw new ProcessException(
+                            $"Unable to parse taskId from CurrentTask on instance event {eventType} ({instanceEvent.Id})");
                     }
 
                     string? altinnTaskType = instanceEvent.ProcessInfo?.CurrentTask?.AltinnTaskType;
