@@ -1,7 +1,6 @@
 ﻿using Altinn.App.Core.Features.Payment;
 using Altinn.App.Core.Features.Payment.Exceptions;
 using Altinn.App.Core.Features.Payment.Services;
-using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.Platform.Storage.Interface.Models;
 
@@ -38,6 +37,7 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks
             ArgumentNullException.ThrowIfNull(taskId);
             ArgumentNullException.ThrowIfNull(instance);
 
+            //TODO: Fjern
             if (_orderDetailsCalculator == null)
                 throw new PaymentException(
                     $"No {nameof(IOrderDetailsCalculator)} implementation found for generating the order lines. Implement the interface and add it to the dependency injection container.");
@@ -52,7 +52,7 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks
         /// <inheritdoc/>
         public async Task End(string taskId, Instance instance)
         {
-            await Task.CompletedTask;
+            await Task.CompletedTask; //TODO: Lag en ITaskValidator som registreres hvis payment registreres.
         }
 
         /// <inheritdoc/>

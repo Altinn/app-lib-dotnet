@@ -6,7 +6,7 @@ using Altinn.Platform.Storage.Interface.Models;
 namespace Altinn.App.Core.Internal.Data
 {
     /// <inheritdoc/>
-    public class DataService : IDataService
+    internal class DataService : IDataService
     {
         private readonly IDataClient _dataClient;
         private readonly IAppMetadata _appMetadata;

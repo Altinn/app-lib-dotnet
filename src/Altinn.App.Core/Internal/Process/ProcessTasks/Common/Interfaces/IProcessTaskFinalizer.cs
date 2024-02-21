@@ -19,9 +19,9 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks
         /// Removes data elements generated from a task, if the data elements are tagged with the task ID.
         /// </summary>
         /// <param name="instance"></param>
-        /// <param name="endEvent"></param>
+        /// <param name="taskId"></param>
         /// <returns></returns>
-        Task RemoveDataElementsGeneratedFromTask(Instance instance, string endEvent);
+        Task RemoveDataElementsGeneratedFromTask(Instance instance, string taskId);
         
         /// <summary>
         /// Remove hidden data from the instance.

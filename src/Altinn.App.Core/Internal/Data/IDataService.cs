@@ -4,6 +4,7 @@ using Altinn.Platform.Storage.Interface.Models;
 namespace Altinn.App.Core.Internal.Data
 {
     /// <summary>
+    /// DRAFT. Don't make public yet.
     /// Service that simplifies access to data elements through the IDataClient.
     /// </summary>
     public interface IDataService

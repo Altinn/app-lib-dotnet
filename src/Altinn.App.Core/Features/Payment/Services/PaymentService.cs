@@ -39,7 +39,9 @@ public class PaymentService : IPaymentService
 
         if (paymentInformation != null && paymentInformation.Status != PaymentStatus.Paid)
         {
+            //TODO: Logg at det allerede finnes en payment, og at vi prøver å starte en ny. Warning.
             await CancelPayment(instance, paymentConfiguration);
+            //TODO: Hvis jeg ikke skriver om logikken rundt storage så må jeg slette her,
         }
         
         OrderDetails orderDetails = await _orderDetailsCalculator.CalculateOrderDetails(instance);
@@ -60,8 +62,7 @@ public class PaymentService : IPaymentService
             return null;
         }
         
-        OrderDetails orderDetails = await _orderDetailsCalculator.CalculateOrderDetails(instance);
-        PaymentStatus? paymentStatus = await _paymentProcessor.GetPaymentStatus(instance, paymentInformation.PaymentReference, orderDetails.TotalPriceIncVat);
+        PaymentStatus? paymentStatus = await _paymentProcessor.GetPaymentStatus(instance, paymentInformation.PaymentReference, paymentInformation.OrderDetails.TotalPriceIncVat); //TODO cleanup
 
         if (paymentStatus == null)
         {
@@ -84,7 +85,8 @@ public class PaymentService : IPaymentService
         if (paymentInformation != null && paymentInformation.Status != PaymentStatus.Paid)
         {
             await _paymentProcessor.CancelPayment(instance, paymentInformation.PaymentReference);
-            await _dataService.DeleteById(new InstanceIdentifier(instance), dataElementId);
+            //TODO: Hvis cancel feiler, ikke slett i hvert fall.
+            await _dataService.DeleteById(new InstanceIdentifier(instance), dataElementId); //TODO: Fjerne, og heller ta vare på historikk frem til vi vet at det er cancelled i Nets.
         } 
     }
 }

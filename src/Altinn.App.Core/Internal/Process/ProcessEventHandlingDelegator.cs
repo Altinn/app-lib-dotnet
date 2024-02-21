@@ -95,7 +95,7 @@ namespace Altinn.App.Core.Internal.Process
         /// <returns></returns>
         private IProcessTask GetProcessTaskInstance(string? altinnTaskType)
         {
-            altinnTaskType ??= "NullType";
+            altinnTaskType ??= "NullType"; //TODO null or empty
             IProcessTask? processTask = _processTasks.FirstOrDefault(pt => pt.Type == altinnTaskType);
 
             if (processTask == null)

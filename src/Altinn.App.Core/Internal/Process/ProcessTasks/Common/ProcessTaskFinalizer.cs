@@ -61,14 +61,14 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
     }
 
     /// <inheritdoc />
-    public async Task RemoveDataElementsGeneratedFromTask(Instance instance, string endEvent)
+    public async Task RemoveDataElementsGeneratedFromTask(Instance instance, string taskId)
     {
         var appIdentifier = new AppIdentifier(instance.AppId);
         var instanceIdentifier = new InstanceIdentifier(instance);
         foreach (DataElement dataElement in instance.Data?.Where(de =>
                                                 de.References != null &&
                                                 de.References.Exists(r =>
-                                                    r.ValueType == ReferenceType.Task && r.Value == endEvent)) ??
+                                                    r.ValueType == ReferenceType.Task && r.Value == taskId)) ??
                                             Enumerable.Empty<DataElement>())
         {
             await _dataClient.DeleteData(appIdentifier.Org, appIdentifier.App, instanceIdentifier.InstanceOwnerPartyId,
