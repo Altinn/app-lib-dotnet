@@ -71,8 +71,6 @@ void ConfigureMockServices(IServiceCollection services, ConfigurationManager con
     services.AddTransient<IProfileClient, ProfileClientMock>();
     services.AddTransient<IInstanceEventClient, InstanceEventClientMock>();
     services.AddTransient<IAppModel, AppModelMock>();
-    services.AddTransient<INetsClient, NetsClientMock>();
-    services.AddTransient<IOrderDetailsCalculator, OrderDetailsCalculatorMock>();
 }
 
 void Configure()

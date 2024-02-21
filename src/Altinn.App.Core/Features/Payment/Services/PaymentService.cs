@@ -61,8 +61,9 @@ public class PaymentService : IPaymentService
         {
             return null;
         }
-        
-        PaymentStatus? paymentStatus = await _paymentProcessor.GetPaymentStatus(instance, paymentInformation.PaymentReference, paymentInformation.OrderDetails.TotalPriceIncVat); //TODO cleanup
+
+        decimal totalPriceIncVat = paymentInformation.OrderDetails?.TotalPriceIncVat ?? 0;
+        PaymentStatus? paymentStatus = await _paymentProcessor.GetPaymentStatus(instance, paymentInformation.PaymentReference, totalPriceIncVat);
 
         if (paymentStatus == null)
         {

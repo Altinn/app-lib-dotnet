@@ -166,7 +166,7 @@ namespace Altinn.App.Core.Extensions
             AddAppOptions(services);
             AddActionServices(services);
             AddPdfServices(services);
-            AddPaymentServices(services);
+            // AddNetsPaymentServices(services, configuration);
             AddSignatureServices(services);
             AddEventServices(services);
             AddProcessServices(services);
@@ -183,6 +183,19 @@ namespace Altinn.App.Core.Extensions
             {
                 services.TryAddSingleton<ISecretsClient, SecretsLocalClient>();
             }
+        }
+        
+        /// <summary>
+        /// Adds all payment related services.
+        /// </summary>
+        public static void AddNetsPaymentServices(IServiceCollection services, IConfiguration configuration)
+        {
+            services.Configure<NetsPaymentSettings>(configuration.GetSection("NetsPaymentSettings"));
+            services.AddHttpClient<INetsClient, NetsClient>();
+            services.AddTransient<IPaymentProcessor, NetsPaymentProcessor>();
+            services.AddTransient<IPaymentService, PaymentService>();
+            services.AddTransient<IProcessTask, PaymentProcessTask>();
+            services.AddTransient<IUserAction, PaymentUserAction>();
         }
 
         private static void AddValidationServices(IServiceCollection services, IConfiguration configuration)
@@ -245,13 +258,6 @@ namespace Altinn.App.Core.Extensions
 #pragma warning restore CS0618 // Type or member is obsolete
         }
 
-        private static void AddPaymentServices(IServiceCollection services)
-        {
-            services.AddTransient<IPaymentService, PaymentService>();
-            services.AddTransient<IPaymentProcessor, NetsPaymentProcessor>();
-            services.AddHttpClient<INetsClient, NetsClient>();
-        }
-
         private static void AddSignatureServices(IServiceCollection services)
         {
             services.AddHttpClient<ISignClient, SignClient>();
@@ -294,7 +300,6 @@ namespace Altinn.App.Core.Extensions
             services.AddTransient<IProcessTask, ConfirmationProcessTask>();
             services.AddTransient<IProcessTask, FeedbackProcessTask>();
             services.AddTransient<IProcessTask, SigningProcessTask>();
-            services.AddTransient<IProcessTask, PaymentProcessTask>(); //TODO: Bare registrer når payment skal brukes.
             services.AddTransient<IProcessTask, NullTypeProcessTask>();
 
             //SERVICE TASKS
@@ -305,7 +310,6 @@ namespace Altinn.App.Core.Extensions
         private static void AddActionServices(IServiceCollection services)
         {
             services.TryAddTransient<UserActionService>();
-            services.AddTransient<IUserAction, PaymentUserAction>();
             services.AddTransient<IUserAction, SigningUserAction>();
             services.AddTransientUserActionAuthorizerForActionInAllTasks<UniqueSignatureAuthorizer>("sign");
         }
