@@ -15,7 +15,6 @@ namespace Altinn.App.Core.Tests.Features.Payment.Providers.Nets;
 public class NetsPaymentProcessorTests
 {
     private readonly Mock<INetsClient> _netsClientMock;
-    private readonly Mock<IOrderDetailsCalculator> _orderDetailsFormatterMock;
     private readonly IOptions<NetsPaymentSettings> _settings;
     private readonly IOptions<GeneralSettings> _generalSettings;
     private readonly NetsPaymentProcessor _processor;
@@ -23,7 +22,6 @@ public class NetsPaymentProcessorTests
     public NetsPaymentProcessorTests()
     {
         _netsClientMock = new Mock<INetsClient>();
-        _orderDetailsFormatterMock = new Mock<IOrderDetailsCalculator>();
         _settings = Options.Create(new NetsPaymentSettings
         {
             SecretApiKey = "secret",
@@ -31,7 +29,7 @@ public class NetsPaymentProcessorTests
             TermsUrl = "termsUrl",
         });
         _generalSettings = Options.Create(new GeneralSettings());
-        _processor = new NetsPaymentProcessor(_netsClientMock.Object, _settings, _generalSettings, _orderDetailsFormatterMock.Object);
+        _processor = new NetsPaymentProcessor(_netsClientMock.Object, _settings, _generalSettings);
     }
 
     [Fact]

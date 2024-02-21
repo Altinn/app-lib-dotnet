@@ -17,33 +17,20 @@ public class NetsPaymentProcessor : IPaymentProcessor
     private readonly NetsPaymentSettings _settings;
     private readonly GeneralSettings _generalSettings;
     private readonly INetsClient _netsClient;
-    private readonly IOrderDetailsCalculator? _orderDetailsFormatter;
 
     /// <summary>
     /// Implementation of IPaymentProcessor for Nets.
     /// </summary>
-    /// <param name="netsClient"></param>
-    /// <param name="settings"></param>
-    /// <param name="generalSettings"></param>
-    /// <param name="orderDetailsFormatter"></param>
-    public NetsPaymentProcessor(INetsClient netsClient, IOptions<NetsPaymentSettings> settings,
-        IOptions<GeneralSettings> generalSettings, IOrderDetailsCalculator? orderDetailsFormatter = null)
+    public NetsPaymentProcessor(INetsClient netsClient, IOptions<NetsPaymentSettings> settings, IOptions<GeneralSettings> generalSettings)
     {
         _netsClient = netsClient;
         _settings = settings.Value;
         _generalSettings = generalSettings.Value;
-        _orderDetailsFormatter = orderDetailsFormatter;
     }
 
     /// <inheritdoc />
     public async Task<PaymentInformation> StartPayment(Instance instance, OrderDetails orderDetails)
     {
-        if (_orderDetailsFormatter == null)
-        {
-            throw new PaymentException(
-                "No IOrderDetailsFormatter implementation found. Implement the interface and add it as a transient service in Program.cs");
-        }
-
         var instanceIdentifier = new InstanceIdentifier(instance);
         string baseUrl = _generalSettings.FormattedExternalAppBaseUrl(new AppIdentifier(instance));
         var altinnAppUrl = $"{baseUrl}#/instance/{instanceIdentifier}";
@@ -76,7 +63,7 @@ public class NetsPaymentProcessor : IPaymentProcessor
             MyReference = instance.Id.Split('/')[1],
             Checkout = new NetsCheckout
             {
-                IntegrationType = _settings.IntegrationType,
+                IntegrationType = "HostedPaymentPage",
                 TermsUrl = _settings.TermsUrl,
                 ReturnUrl = altinnAppUrl,
                 CancelUrl = altinnAppUrl,
@@ -128,11 +115,6 @@ public class NetsPaymentProcessor : IPaymentProcessor
 
         decimal? chargedAmount = httpApiResult.Result?.Payment?.Summary?.ChargedAmount;
 
-        if (chargedAmount is null or 0)
-            return PaymentStatus.Created;
-        
-        // Amounts are specified in the lowest monetary unit for the given currency, without punctuation marks.
-        var expectedTotalIncVatTimes100 =  (int)(100 * expectedTotalIncVat);
-        return chargedAmount == expectedTotalIncVatTimes100 ? PaymentStatus.Paid : PaymentStatus.Failed;
+        return chargedAmount > 0 ? PaymentStatus.Paid : PaymentStatus.Created;
     }
 }
