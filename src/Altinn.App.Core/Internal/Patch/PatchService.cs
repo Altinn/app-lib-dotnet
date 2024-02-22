@@ -61,7 +61,7 @@ public class PatchService: IPatchService
         AppIdentifier appIdentifier = (await _appMetadata.GetApplicationMetadata()).AppIdentifier;
         var modelType = _appModel.GetModelType(dataType.AppLogic.ClassRef);
         var oldModel =
-            await _dataClient.GetFormData(instanceIdentifier.InstanceGuid, modelType, appIdentifier.App, appIdentifier.Org, instanceIdentifier.InstanceOwnerPartyId, Guid.Parse(dataElement.Id));
+            await _dataClient.GetFormData(instanceIdentifier.InstanceGuid, modelType, appIdentifier.Org, appIdentifier.App, instanceIdentifier.InstanceOwnerPartyId, Guid.Parse(dataElement.Id));
         var oldModelNode = JsonSerializer.SerializeToNode(oldModel);
             var patchResult = jsonPatch.Apply(oldModelNode);
             if (!patchResult.IsSuccess)
@@ -72,8 +72,8 @@ public class PatchService: IPatchService
                     Title = testOperationFailed ? "Precondition in patch failed" : "Patch Operation Failed",
                     Detail = patchResult.Error,
                     Status = testOperationFailed
-                        ? (int)HttpStatusCode.Conflict
-                        : (int)HttpStatusCode.UnprocessableContent,
+                        ? DataPatchErrorStatus.PatchTestFailed
+                        : DataPatchErrorStatus.DeserializationFailed,
                     Extensions = new Dictionary<string, object?>()
                     {
                         { "previousModel", oldModel },
@@ -89,7 +89,7 @@ public class PatchService: IPatchService
                 {
                     Title = "Patch operation did not deserialize",
                     Detail = error,
-                    Status = (int)HttpStatusCode.UnprocessableContent,
+                    Status = DataPatchErrorStatus.DeserializationFailed
                 });
             }
             Guid dataElementId = Guid.Parse(dataElement.Id);

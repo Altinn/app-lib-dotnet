@@ -5,7 +5,7 @@ namespace Altinn.App.Core.Models.Result;
 /// </summary>
 /// <typeparam name="T">Type returned when Ok result</typeparam>
 /// <typeparam name="TU">Type returned when Error result</typeparam>
-public class Result<T, TU> where T: class? where TU: class, IResultError
+public class Result<T, TU> where T: notnull where TU: class, IResultError
 {
     private readonly T? _value;
     private readonly TU? _error;
@@ -17,7 +17,7 @@ public class Result<T, TU> where T: class? where TU: class, IResultError
     /// <returns></returns>
     public static Result<T, TU> Ok(T value)
     {
-        return new Result<T, TU>(value);
+        return new Result<T, TU>(value: value);
     }
     
     /// <summary>
@@ -27,7 +27,7 @@ public class Result<T, TU> where T: class? where TU: class, IResultError
     /// <returns></returns>
     public static Result<T, TU> Err(TU error)
     {
-        return new Result<T, TU>(error);
+        return new Result<T, TU>(error: error);
     }
     
     /// <summary>
@@ -37,11 +37,11 @@ public class Result<T, TU> where T: class? where TU: class, IResultError
     /// <exception cref="Exception">Exception with the Error.Reason as message</exception>
     public T Unwrap()
     {
-        if (_value == null)
+        if (_error != null)
         {
             throw new Exception(_error!.Reason());
         }
-        return _value;
+        return _value!;
     }
     
     /// <summary>
@@ -51,7 +51,7 @@ public class Result<T, TU> where T: class? where TU: class, IResultError
     /// <returns></returns>
     public T UnwrapOrElse(Func<TU, T> err)
     {
-        return _value ?? err(_error!);
+        return _error != null ? err(_error!) : _value!;
     }
     
     /// <summary>
@@ -63,7 +63,7 @@ public class Result<T, TU> where T: class? where TU: class, IResultError
     /// <returns></returns>
     public TV Map<TV>(Func<T, TV> ok, Func<TU, TV> err)
     {
-        return _value != null ? ok(_value) : err(_error!);
+        return _error != null ? err(_error!) : ok(_value!);
     }
     
     /// <summary>
@@ -91,13 +91,13 @@ public class Result<T, TU> where T: class? where TU: class, IResultError
     /// <returns></returns>
     public static implicit operator ResultType(Result<T, TU> claim)
     {
-        return claim._value != null ? ResultType.Ok : ResultType.Err;
+        return claim._error != null ? ResultType.Err : ResultType.Ok;
     }
 
     
     private Result(T value)
     {
-        _value = value; 
+        _value = value;
     }
     
     private Result(TU error)

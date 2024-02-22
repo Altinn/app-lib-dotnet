@@ -163,7 +163,7 @@ public class PatchServiceTests
         err.Should().NotBeNull();
         err!.Title.Should().Be("Precondition in patch failed");
         err!.Detail.Should().Be("Path `/Name` is not equal to the indicated value.");
-        err!.Status.Should().Be(409);
+        err!.Status.Should().Be(DataPatchErrorStatus.PatchTestFailed);
         err!.Extensions.Should().ContainKey("previousModel");
         err!.Extensions.Should().ContainKey("patchOperationIndex");
     }
@@ -201,6 +201,6 @@ public class PatchServiceTests
         err.Should().NotBeNull();
         err!.Title.Should().Be("Patch operation did not deserialize");
         err!.Detail.Should().Be("The JSON property 'Age' could not be mapped to any .NET member contained in type 'Altinn.App.Core.Tests.Internal.Patch.PatchServiceTests+MyModel'.");
-        err!.Status.Should().Be(422);
+        err!.Status.Should().Be(DataPatchErrorStatus.DeserializationFailed);
     }
 }
