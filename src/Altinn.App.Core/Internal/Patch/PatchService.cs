@@ -54,7 +54,7 @@ public class PatchService: IPatchService
     }
 
     /// <inheritdoc />
-    public async Task<Result<DataPatchResponse, DataPatchError>> ApplyPatch(Instance instance, DataType dataType,
+    public async Task<Result<DataPatchResult, DataPatchError>> ApplyPatch(Instance instance, DataType dataType,
         DataElement dataElement, JsonPatch jsonPatch, string? language, List<string>? ignoredValidators = null)
     {
         InstanceIdentifier instanceIdentifier = new InstanceIdentifier(instance);
@@ -67,7 +67,7 @@ public class PatchService: IPatchService
             if (!patchResult.IsSuccess)
             {
                 bool testOperationFailed = patchResult.Error!.Contains("is not equal to the indicated value.");
-                return Result<DataPatchResponse, DataPatchError>.Err(new DataPatchError()
+                return Result<DataPatchResult, DataPatchError>.Err(new DataPatchError()
                 {
                     Title = testOperationFailed ? "Precondition in patch failed" : "Patch Operation Failed",
                     Detail = patchResult.Error,
@@ -85,7 +85,7 @@ public class PatchService: IPatchService
             var (model, error) = DeserializeModel(oldModel.GetType(), patchResult.Result!);
             if (error is not null)
             {
-                return Result<DataPatchResponse, DataPatchError>.Err(new DataPatchError()
+                return Result<DataPatchResult, DataPatchError>.Err(new DataPatchError()
                 {
                     Title = "Patch operation did not deserialize",
                     Detail = error,
@@ -116,7 +116,7 @@ public class PatchService: IPatchService
                 instanceIdentifier.InstanceOwnerPartyId,
                 dataElementId);
 
-            return Result<DataPatchResponse, DataPatchError>.Ok(new DataPatchResponse
+            return Result<DataPatchResult, DataPatchError>.Ok(new DataPatchResult
             {
                 NewDataModel = model,
                 ValidationIssues = validationIssues

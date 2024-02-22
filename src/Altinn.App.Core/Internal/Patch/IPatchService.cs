@@ -17,5 +17,5 @@ public interface IPatchService
     /// <param name="language"></param>
     /// <param name="ignoredValidators"></param>
     /// <returns></returns>
-    public Task<Result<DataPatchResponse, DataPatchError>> ApplyPatch(Instance instance, DataType dataType, DataElement dataElement, JsonPatch jsonPatch, string? language, List<string>? ignoredValidators = null);
+    public Task<Result<DataPatchResult, DataPatchError>> ApplyPatch(Instance instance, DataType dataType, DataElement dataElement, JsonPatch jsonPatch, string? language, List<string>? ignoredValidators = null);
 }

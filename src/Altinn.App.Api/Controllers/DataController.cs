@@ -27,7 +27,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
 using Microsoft.FeatureManagement;
 using Microsoft.Net.Http.Headers;
-using DataPatchResponse = Altinn.App.Api.Models.DataPatchResponse;
 
 namespace Altinn.App.Api.Controllers
 {
@@ -417,7 +416,7 @@ namespace Altinn.App.Api.Controllers
                 var res = await _patchService.ApplyPatch(instance, dataType, dataElement, dataPatchRequest.Patch, language, dataPatchRequest.IgnoredValidators);
 
                 return res.Map<ActionResult<DataPatchResponse>>(
-                    response => Ok(response),
+                    response => Ok((DataPatchResponse)response),
                     error =>
                     {
                         int code = error.Status switch
