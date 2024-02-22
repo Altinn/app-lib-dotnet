@@ -252,7 +252,7 @@ namespace Altinn.App.Api.Controllers
         /// <param name="instanceOwnerPartyId">unique id of the party that is the owner of the instance</param>
         /// <param name="instanceGuid">unique id to identify the instance</param>
         /// <param name="dataGuid">unique id to identify the data element to get</param>
-        /// <param name="initializeAltinnRowId">Whether to initialize or remove AltinnRowId fields in the model</param>
+        /// <param name="includeRowId">Whether to initialize or remove AltinnRowId fields in the model</param>
         /// <param name="language">The language selected by the user.</param>
         /// <returns>The data element is returned in the body of the response</returns>
         [Authorize(Policy = AuthzConstants.POLICY_INSTANCE_READ)]
@@ -263,7 +263,7 @@ namespace Altinn.App.Api.Controllers
             [FromRoute] int instanceOwnerPartyId,
             [FromRoute] Guid instanceGuid,
             [FromRoute] Guid dataGuid,
-            [FromQuery] bool initializeAltinnRowId = false,
+            [FromQuery] bool includeRowId = false,
             [FromQuery] string? language = null)
         {
             try
@@ -291,7 +291,7 @@ namespace Altinn.App.Api.Controllers
                 }
                 else if (dataType.AppLogic?.ClassRef is not null)
                 {
-                    return await GetFormData(org, app, instanceOwnerPartyId, instanceGuid, instance, dataGuid, dataElement, dataType, initializeAltinnRowId, language);
+                    return await GetFormData(org, app, instanceOwnerPartyId, instanceGuid, instance, dataGuid, dataElement, dataType, includeRowId, language);
                 }
 
                 return await GetBinaryData(org, app, instanceOwnerPartyId, instanceGuid, dataGuid, dataElement);
@@ -737,7 +737,7 @@ namespace Altinn.App.Api.Controllers
             Guid dataGuid,
             DataElement dataElement,
             DataType dataType,
-            bool initializeAltinnRowId,
+            bool includeRowId,
             string? language)
         {
             // Get Form Data from data service. Assumes that the data element is form data.
@@ -763,7 +763,7 @@ namespace Altinn.App.Api.Controllers
                 await dataProcessor.ProcessDataRead(instance, dataGuid, appModel, language);
             }
 
-            if (initializeAltinnRowId)
+            if (includeRowId)
             {
                 ObjectUtils.InitializeAltinnRowId(appModel);
             }
@@ -781,7 +781,7 @@ namespace Altinn.App.Api.Controllers
                 }
             }
 
-            if (!initializeAltinnRowId)
+            if (!includeRowId)
             {
                 // If the consumer does not request AltinnRowId to be initialized, we remove it from the model
                 ObjectUtils.RemoveAltinnRowId(appModel);
