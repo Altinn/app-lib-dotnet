@@ -13,7 +13,7 @@ public static class ObjectUtils
     /// And set empty Guid properties named "AltinnRowId" to a new random guid
     /// </summary>
     /// <param name="model">The object to mutate</param>
-    public static void InitializePropertiesInModel(object model)
+    public static void InitializeAltinnRowId(object model)
     {
         foreach (var prop in model.GetType().GetProperties())
         {
@@ -39,7 +39,7 @@ public static class ObjectUtils
                     foreach (var item in (IList)value)
                     {
                         // Recurse into values of a list
-                        InitializePropertiesInModel(item);
+                        InitializeAltinnRowId(item);
                     }
                 }
             }
@@ -56,7 +56,7 @@ public static class ObjectUtils
                 // continue recursion over all properties
                 if (value is not null)
                 {
-                    InitializePropertiesInModel(value);
+                    InitializeAltinnRowId(value);
                 }
             }
         }
@@ -65,7 +65,7 @@ public static class ObjectUtils
     /// <summary>
     /// Set all <see cref="Guid"/> properties named "AltinnRowId" to Guid.Empty
     /// </summary>
-    public static void RemoveAltinnRowIds(object model)
+    public static void RemoveAltinnRowId(object model)
     {
         foreach (var prop in model.GetType().GetProperties())
         {
@@ -83,7 +83,7 @@ public static class ObjectUtils
                     foreach (var item in (IList)value)
                     {
                         // Recurse into values of a list
-                        InitializePropertiesInModel(item);
+                        RemoveAltinnRowId(item);
                     }
                 }
             }
@@ -95,7 +95,7 @@ public static class ObjectUtils
                 // continue recursion over all properties
                 if (value is not null)
                 {
-                    InitializePropertiesInModel(value);
+                    RemoveAltinnRowId(value);
                 }
             }
         }

@@ -118,6 +118,8 @@ public class DefaultTaskEvents : ITaskEvents
 
                 Type type = _appModel.GetModelType(dataType.AppLogic.ClassRef);
 
+                ObjectUtils.InitializeAltinnRowId(data);
+
                 DataElement createdDataElement =
                     await _dataClient.InsertFormData(instance, dataType.Id, data, type);
                 instance.Data.Add(createdDataElement);
@@ -223,7 +225,7 @@ public class DefaultTaskEvents : ITaskEvents
             }
         }
         // remove AltinnRowIds
-        ObjectUtils.RemoveAltinnRowIds(data);
+        ObjectUtils.RemoveAltinnRowId(data);
 
         // Save the updated data
         await _dataClient.UpdateData(data, instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, dataGuid);

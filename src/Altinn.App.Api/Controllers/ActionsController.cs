@@ -164,7 +164,7 @@ public class ActionsController : ControllerBase
                 continue;
             }
 
-            ObjectUtils.InitializePropertiesInModel(newModel);
+            ObjectUtils.InitializeAltinnRowId(newModel);
 
             var dataElement = instance.Data.First(d => d.Id.Equals(elementId, StringComparison.OrdinalIgnoreCase));
             await _dataClient.UpdateData(newModel, instanceIdentifier.InstanceGuid, newModel.GetType(), instance.Org, instance.AppId.Split('/')[1], instanceIdentifier.InstanceOwnerPartyId, Guid.Parse(dataElement.Id));
