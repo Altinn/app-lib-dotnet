@@ -15,6 +15,8 @@ public static class ObjectUtils
     /// <param name="model">The object to mutate</param>
     public static void InitializeAltinnRowId(object model)
     {
+        ArgumentNullException.ThrowIfNull(model);
+
         foreach (var prop in model.GetType().GetProperties())
         {
             if (prop.PropertyType == typeof(Guid) && prop.Name == "AltinnRowId")

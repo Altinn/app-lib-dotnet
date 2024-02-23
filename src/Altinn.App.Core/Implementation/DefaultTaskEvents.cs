@@ -162,6 +162,8 @@ public class DefaultTaskEvents : ITaskEvents
 
     private async Task RunRemoveFieldsInModelOnTaskComplete(Instance instance, List<DataType> dataTypesToLock)
     {
+        ArgumentNullException.ThrowIfNull(instance.Data);
+
         dataTypesToLock = dataTypesToLock.Where(d => !string.IsNullOrEmpty(d.AppLogic?.ClassRef)).ToList();
         await Task.WhenAll(
             instance.Data

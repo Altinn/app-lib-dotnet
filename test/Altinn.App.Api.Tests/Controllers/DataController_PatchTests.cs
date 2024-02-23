@@ -360,8 +360,8 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
     [Fact]
     public async Task RowId_GetsAddedAutomatically()
     {
-        var rowIdServer = Guid.Empty;
-        var rowIdClinet = Guid.Empty;
+        var rowIdServer = Guid.NewGuid();
+        var rowIdClinet = Guid.NewGuid();
         _dataProcessorMock
             .Setup(p => p.ProcessDataWrite(It.IsAny<Instance>(), It.IsAny<Guid?>(), It.IsAny<object>(), It.IsAny<object?>(), null))
             .Returns((Instance instance, Guid? dataGuid, object data, object? existingData, string language) =>
@@ -376,21 +376,35 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
                     IntValue = 321,
                     AltinnRowId = rowIdServer,
                 });
-                // Save the rowId from the server to compare 
-                rowIdClinet = model.Melding.SimpleList.SimpleKeyvalues[0].AltinnRowId;
-                rowIdServer = model.Melding.SimpleList.SimpleKeyvalues[1].AltinnRowId;
+                model.Melding.SimpleList.SimpleKeyvalues.Add(new SimpleKeyvalues()
+                {
+                    Key = "KeyFromServerWithoutRowId",
+                    IntValue = 3212,
+                });
                 return Task.CompletedTask;
             })
             .Verifiable(Times.Once);
         var patch = new JsonPatch(
             PatchOperation.Add(
                 JsonPointer.Create("melding", "simple_list"),
-                JsonNode.Parse($$"""{"simple_keyvalues":[{"key": "KeyFromClient", "intValue": 123, "altinnRowId": "{{rowIdClinet}}"}]}""")));
+                JsonNode.Parse($$"""
+                     {
+                         "simple_keyvalues":[
+                             {
+                                "key": "KeyFromClient", 
+                                "intValue": 123, 
+                                "altinnRowId": "{{rowIdClinet}}"
+                              },
+                              {
+                                   "key": "KeyFromClientNoRowId", 
+                                   "intValue": 1234
+                              }
+                        ]
+                     }
+                     """)));
 
         var (_, _, parsedResponse) = await CallPatchApi<DataPatchResponse>(patch, null, HttpStatusCode.OK);
 
-        rowIdClinet.Should().NotBeEmpty();
-        rowIdServer.Should().NotBeEmpty();
         var newModelElement = parsedResponse.NewDataModel.Should().BeOfType<JsonElement>().Which;
         var newModel = newModelElement.Deserialize<Skjema>()!;
         newModel.Melding!.SimpleList!.SimpleKeyvalues.Should().BeEquivalentTo(new List<SimpleKeyvalues>{
@@ -402,9 +416,21 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
             },
             new()
             {
+                Key = "KeyFromClientNoRowId",
+                IntValue = 1234,
+                AltinnRowId = newModel.Melding.SimpleList.SimpleKeyvalues![1].AltinnRowId
+            },
+            new()
+            {
                 Key = "KeyFromServer",
                 IntValue = 321,
                 AltinnRowId = rowIdServer
+            },
+            new()
+            {
+                Key = "KeyFromServerWithoutRowId",
+                IntValue = 3212,
+                AltinnRowId = newModel.Melding.SimpleList.SimpleKeyvalues![3].AltinnRowId
             }
         });
 
