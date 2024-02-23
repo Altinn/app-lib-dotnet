@@ -1,4 +1,3 @@
-using System.Net;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -7,7 +6,6 @@ using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
-using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Result;
@@ -26,7 +24,6 @@ public class PatchService: IPatchService
     private readonly IAppModel _appModel;
     private readonly IValidationService _validationService;
     private readonly IEnumerable<IDataProcessor> _dataProcessors;
-    private readonly IInstanceClient _instanceClient;
     
     private static readonly JsonSerializerOptions JsonSerializerOptions = new()
     {
@@ -41,20 +38,18 @@ public class PatchService: IPatchService
     /// <param name="dataClient"></param>
     /// <param name="validationService"></param>
     /// <param name="dataProcessors"></param>
-    /// <param name="instanceClient"></param>
     /// <param name="appModel"></param>
-    public PatchService(IAppMetadata appMetadata, IDataClient dataClient, IValidationService validationService, IEnumerable<IDataProcessor> dataProcessors, IInstanceClient instanceClient, IAppModel appModel)
+    public PatchService(IAppMetadata appMetadata, IDataClient dataClient, IValidationService validationService, IEnumerable<IDataProcessor> dataProcessors, IAppModel appModel)
     {
         _appMetadata = appMetadata;
         _dataClient = dataClient;
         _validationService = validationService;
         _dataProcessors = dataProcessors;
-        _instanceClient = instanceClient;
         _appModel = appModel;
     }
 
     /// <inheritdoc />
-    public async Task<Result<DataPatchResult, DataPatchError>> ApplyPatch(Instance instance, DataType dataType,
+    public async Task<ServiceResult<DataPatchResult, DataPatchError>> ApplyPatch(Instance instance, DataType dataType,
         DataElement dataElement, JsonPatch jsonPatch, string? language, List<string>? ignoredValidators = null)
     {
         InstanceIdentifier instanceIdentifier = new InstanceIdentifier(instance);
@@ -67,30 +62,30 @@ public class PatchService: IPatchService
             if (!patchResult.IsSuccess)
             {
                 bool testOperationFailed = patchResult.Error!.Contains("is not equal to the indicated value.");
-                return Result<DataPatchResult, DataPatchError>.Err(new DataPatchError()
+                return new DataPatchError()
                 {
                     Title = testOperationFailed ? "Precondition in patch failed" : "Patch Operation Failed",
                     Detail = patchResult.Error,
-                    Status = testOperationFailed
-                        ? DataPatchErrorStatus.PatchTestFailed
-                        : DataPatchErrorStatus.DeserializationFailed,
+                    ErrorType = testOperationFailed
+                        ? DataPatchErrorType.PatchTestFailed
+                        : DataPatchErrorType.DeserializationFailed,
                     Extensions = new Dictionary<string, object?>()
                     {
                         { "previousModel", oldModel },
                         { "patchOperationIndex", patchResult.Operation },
                     }
-                });
+                };
             }
 
             var (model, error) = DeserializeModel(oldModel.GetType(), patchResult.Result!);
             if (error is not null)
             {
-                return Result<DataPatchResult, DataPatchError>.Err(new DataPatchError()
+                return new DataPatchError()
                 {
                     Title = "Patch operation did not deserialize",
                     Detail = error,
-                    Status = DataPatchErrorStatus.DeserializationFailed
-                });
+                    ErrorType = DataPatchErrorType.DeserializationFailed
+                };
             }
             Guid dataElementId = Guid.Parse(dataElement.Id);
             foreach (var dataProcessor in _dataProcessors)
@@ -102,9 +97,6 @@ public class PatchService: IPatchService
             ObjectUtils.InitializeListsAndNullEmptyStrings(model);
 
             var validationIssues = await _validationService.ValidateFormData(instance, dataElement, dataType, model, oldModel, ignoredValidators, language);
-            
-            await UpdatePresentationTextsOnInstance(instance, dataType.Id, model);
-            await UpdateDataValuesOnInstance(instance, dataType.Id, model);
 
             // Save Formdata to database
             await _dataClient.UpdateData(
@@ -116,11 +108,11 @@ public class PatchService: IPatchService
                 instanceIdentifier.InstanceOwnerPartyId,
                 dataElementId);
 
-            return Result<DataPatchResult, DataPatchError>.Ok(new DataPatchResult
+            return new DataPatchResult
             {
                 NewDataModel = model,
                 ValidationIssues = validationIssues
-            });
+            };
     }
     
     private static (object Model, string? Error) DeserializeModel(Type type, JsonNode patchResult)
@@ -139,40 +131,6 @@ public class PatchService: IPatchService
         {
             // Give better feedback when the issue is that the patch contains a path that does not exist in the model
             return (null!, e.Message);
-        }
-    }
-    
-    private async Task UpdatePresentationTextsOnInstance(Instance instance, string dataType, object serviceModel)
-    {
-        var updatedValues = DataHelper.GetUpdatedDataValues(
-            (await _appMetadata.GetApplicationMetadata()).PresentationFields,
-            instance.PresentationTexts,
-            dataType,
-            serviceModel);
-
-        if (updatedValues.Count > 0)
-        {
-            await _instanceClient.UpdatePresentationTexts(
-                int.Parse(instance.Id.Split("/")[0]),
-                Guid.Parse(instance.Id.Split("/")[1]),
-                new PresentationTexts { Texts = updatedValues });
-        }
-    }
-
-    private async Task UpdateDataValuesOnInstance(Instance instance, string dataType, object serviceModel)
-    {
-        var updatedValues = DataHelper.GetUpdatedDataValues(
-            (await _appMetadata.GetApplicationMetadata()).DataFields,
-            instance.DataValues,
-            dataType,
-            serviceModel);
-
-        if (updatedValues.Count > 0)
-        {
-            await _instanceClient.UpdateDataValues(
-                int.Parse(instance.Id.Split("/")[0]),
-                Guid.Parse(instance.Id.Split("/")[1]),
-                new DataValues { Values = updatedValues });
         }
     }
 }

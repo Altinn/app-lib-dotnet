@@ -1,10 +1,12 @@
-using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Result;
 using Altinn.Platform.Storage.Interface.Models;
 using Json.Patch;
 
 namespace Altinn.App.Core.Internal.Patch;
 
+/// <summary>
+/// Service for handling JsonPatches to data elements.
+/// </summary>
 public interface IPatchService
 {
     /// <summary>
@@ -17,5 +19,5 @@ public interface IPatchService
     /// <param name="language"></param>
     /// <param name="ignoredValidators"></param>
     /// <returns></returns>
-    public Task<Result<DataPatchResult, DataPatchError>> ApplyPatch(Instance instance, DataType dataType, DataElement dataElement, JsonPatch jsonPatch, string? language, List<string>? ignoredValidators = null);
+    public Task<ServiceResult<DataPatchResult, DataPatchError>> ApplyPatch(Instance instance, DataType dataType, DataElement dataElement, JsonPatch jsonPatch, string? language, List<string>? ignoredValidators = null);
 }

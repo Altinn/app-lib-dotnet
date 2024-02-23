@@ -2,6 +2,9 @@ using Altinn.App.Core.Models.Validation;
 
 namespace Altinn.App.Core.Internal.Patch;
 
+/// <summary>
+/// Result of a data patch operation in the <see cref="IPatchService"/>.
+/// </summary>
 public class DataPatchResult
 {
     /// <summary>

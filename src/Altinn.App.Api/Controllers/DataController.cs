@@ -19,6 +19,7 @@ using Altinn.App.Core.Internal.Patch;
 using Altinn.App.Core.Internal.Prefill;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.Result;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using Json.Patch;
@@ -413,27 +414,15 @@ namespace Altinn.App.Api.Controllers
                     return BadRequest($"Could not determine if data type {dataType?.Id} requires application logic.");
                 }
 
-                var res = await _patchService.ApplyPatch(instance, dataType, dataElement, dataPatchRequest.Patch, language, dataPatchRequest.IgnoredValidators);
+                ServiceResult<DataPatchResult, DataPatchError> res = await _patchService.ApplyPatch(instance, dataType, dataElement, dataPatchRequest.Patch, language, dataPatchRequest.IgnoredValidators);
 
-                return res.Map<ActionResult<DataPatchResponse>>(
-                    response => Ok((DataPatchResponse)response),
-                    error =>
-                    {
-                        int code = error.Status switch
-                        {
-                            DataPatchErrorStatus.PatchTestFailed => (int)HttpStatusCode.Conflict,
-                            DataPatchErrorStatus.DeserializationFailed => (int)HttpStatusCode.UnprocessableContent,
-                            _ => (int)HttpStatusCode.InternalServerError
-                        };
-                        return StatusCode(code, new ProblemDetails()
-                        {
-                            Title = error.Title,
-                            Detail = error.Detail,
-                            Type = "https://datatracker.ietf.org/doc/html/rfc6902/",
-                            Status = code,
-                            Extensions = error.Extensions ?? new Dictionary<string, object?>(StringComparer.Ordinal)
-                        });
-                    });
+                if (res.Success)
+                {
+                    await UpdateDataValuesOnInstance(instance, dataType.Id, res.Ok.NewDataModel);
+                    await UpdatePresentationTextsOnInstance(instance, dataType.Id, res.Ok.NewDataModel);
+                }
+                
+                return MapPatchResult(res);
             }
             catch (PlatformHttpException e)
             {
@@ -751,6 +740,7 @@ namespace Altinn.App.Api.Controllers
             return Created(dataUrl, updatedDataElement);
         }
 
+        //TODO: This is duplicated in InstanceController and DefaultTaskEvents and should be moved to a common place
         private async Task UpdatePresentationTextsOnInstance(Instance instance, string dataType, object serviceModel)
         {
             var updatedValues = DataHelper.GetUpdatedDataValues(
@@ -768,6 +758,7 @@ namespace Altinn.App.Api.Controllers
             }
         }
 
+        //TODO: This is duplicated in InstanceController and DefaultTaskEvents and should be moved to a common place
         private async Task UpdateDataValuesOnInstance(Instance instance, string dataType, object serviceModel)
         {
             var updatedValues = DataHelper.GetUpdatedDataValues(
@@ -849,6 +840,33 @@ namespace Altinn.App.Api.Controllers
             }
 
             return false;
+        }
+
+        private ActionResult<DataPatchResponse> MapPatchResult(ServiceResult<DataPatchResult, DataPatchError> result)
+        {
+            if (result.Success)
+            {
+                return Ok(new DataPatchResponse
+                {
+                    NewDataModel = result.Ok.NewDataModel,
+                    ValidationIssues = result.Ok.ValidationIssues
+                });
+            }
+            
+            int code = result.Error.ErrorType switch
+            {
+                DataPatchErrorType.PatchTestFailed => (int)HttpStatusCode.Conflict,
+                DataPatchErrorType.DeserializationFailed => (int)HttpStatusCode.UnprocessableContent,
+                _ => (int)HttpStatusCode.InternalServerError
+            };
+            return StatusCode(code, new ProblemDetails()
+            {
+                Title = result.Error.Title,
+                Detail = result.Error.Detail,
+                Type = "https://datatracker.ietf.org/doc/html/rfc6902/",
+                Status = code,
+                Extensions = result.Error.Extensions ?? new Dictionary<string, object?>(StringComparer.Ordinal)
+            });
         }
     }
 }

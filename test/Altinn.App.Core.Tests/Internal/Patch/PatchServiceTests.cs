@@ -3,7 +3,6 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
-using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Patch;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models;
@@ -22,7 +21,7 @@ namespace Altinn.App.Core.Tests.Internal.Patch;
 public class PatchServiceTests
 {
      // Test data
-    static readonly Guid DataGuid = new("12345678-1234-1234-1234-123456789123");
+    private static readonly Guid DataGuid = new("12345678-1234-1234-1234-123456789123");
 
     private readonly Instance _instance = new()
     {
@@ -31,11 +30,10 @@ public class PatchServiceTests
 
     // Service mocks
     private readonly Mock<ILogger<ValidationService>> _vLoggerMock = new(MockBehavior.Loose);
-    private readonly Mock<IInstanceClient> _instanceClientMock = new(MockBehavior.Strict);
-    private readonly Mock<IDataClient> _dataClientMock = new (MockBehavior.Strict);
+    private readonly Mock<IDataClient> _dataClientMock = new(MockBehavior.Strict);
     private readonly Mock<IDataProcessor> _dataProcessorMock = new(MockBehavior.Strict);
-    private readonly Mock<IAppModel> _appModelMock = new (MockBehavior.Strict);
-    private readonly Mock<IAppMetadata> _appMetadataMock = new (MockBehavior.Strict);
+    private readonly Mock<IAppModel> _appModelMock = new(MockBehavior.Strict);
+    private readonly Mock<IAppMetadata> _appMetadataMock = new(MockBehavior.Strict);
 
     // ValidatorMocks
     private readonly Mock<IFormDataValidator> _formDataValidator = new(MockBehavior.Strict);
@@ -68,7 +66,7 @@ public class PatchServiceTests
             _appModelMock.Object,
             _appMetadataMock.Object,
             _vLoggerMock.Object);
-        _patchService = new PatchService(_appMetadataMock.Object, _dataClientMock.Object, validationService, new List<IDataProcessor>(){_dataProcessorMock.Object}, _instanceClientMock.Object, _appModelMock.Object);
+        _patchService = new PatchService(_appMetadataMock.Object, _dataClientMock.Object, validationService, new List<IDataProcessor> { _dataProcessorMock.Object }, _appModelMock.Object);
     }
 
     private readonly DataType _dataType = new()
@@ -101,17 +99,17 @@ public class PatchServiceTests
         _dataClientMock.Setup(d => d.GetFormData(It.IsAny<Guid>(), It.IsAny<Type>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>())).ReturnsAsync(oldModel).Verifiable();
         var validationIssues = new List<ValidationIssue>()
         {
-            new ()
+            new()
             {
                 Severity = ValidationIssueSeverity.Error,
                 Description = "First error",
             }
         };
 
-        _dataProcessorMock.Setup(d => d.ProcessDataWrite(It.IsAny<Instance>(), It.IsAny<Guid>(), It.IsAny<MyModel>(), It.IsAny<MyModel?>(), null)).Returns((Instance i, Guid j, MyModel data, MyModel? oldData, string? language) => Task.CompletedTask);
+        _dataProcessorMock.Setup(d => d.ProcessDataWrite(It.IsAny<Instance>(), It.IsAny<Guid>(), It.IsAny<MyModel>(), It.IsAny<MyModel?>(), null)).Returns(() => Task.CompletedTask);
         _formDataValidator.Setup(fdv => fdv.ValidateFormData(
             It.Is<Instance>(i => i == _instance),
-            It.Is<DataElement>(de=>de == _dataElement),
+            It.Is<DataElement>(de => de == _dataElement),
             It.IsAny<MyModel>(),
             null))
             .ReturnsAsync(validationIssues);
@@ -121,7 +119,9 @@ public class PatchServiceTests
 
         // Assert
         response.Should().NotBeNull();
-        var res = response.Unwrap();
+        response.Success.Should().BeTrue();
+        response.Ok.Should().NotBeNull();
+        var res = response.Ok!;
         res.NewDataModel.Should().BeOfType<MyModel>().Subject.Name.Should().Be("Test Testesen");
         var validator = res.ValidationIssues.Should().ContainSingle().Which;
         validator.Key.Should().Be("formDataValidator");
@@ -133,23 +133,23 @@ public class PatchServiceTests
     [Fact]
     public async Task Test_JsonPatchTest_fail()
     {
-        JsonPatch jsonPatch = new JsonPatch(PatchOperation.Test(JsonPointer.Parse("/Name"), "NotOriginalName"),PatchOperation.Replace(JsonPointer.Parse("/Name"), "Test Testesen"));
+        JsonPatch jsonPatch = new JsonPatch(PatchOperation.Test(JsonPointer.Parse("/Name"), "NotOriginalName"), PatchOperation.Replace(JsonPointer.Parse("/Name"), "Test Testesen"));
         List<string> ignoredValidators = new List<string> { "required" };
         var oldModel = new MyModel { Name = "OrginaltNavn" };
         _dataClientMock.Setup(d => d.GetFormData(It.IsAny<Guid>(), It.IsAny<Type>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>())).ReturnsAsync(oldModel).Verifiable();
         var validationIssues = new List<ValidationIssue>()
         {
-            new ()
+            new()
             {
                 Severity = ValidationIssueSeverity.Error,
                 Description = "First error",
             }
         };
 
-        _dataProcessorMock.Setup(d => d.ProcessDataWrite(It.IsAny<Instance>(), It.IsAny<Guid>(), It.IsAny<MyModel>(), It.IsAny<MyModel?>(), null)).Returns((Instance i, Guid j, MyModel data, MyModel? oldData, string? language) => Task.CompletedTask);
+        _dataProcessorMock.Setup(d => d.ProcessDataWrite(It.IsAny<Instance>(), It.IsAny<Guid>(), It.IsAny<MyModel>(), It.IsAny<MyModel?>(), null)).Returns(() => Task.CompletedTask);
         _formDataValidator.Setup(fdv => fdv.ValidateFormData(
                 It.Is<Instance>(i => i == _instance),
-                It.Is<DataElement>(de=>de == _dataElement),
+                It.Is<DataElement>(de => de == _dataElement),
                 It.IsAny<MyModel>(),
                 null))
             .ReturnsAsync(validationIssues);
@@ -159,13 +159,14 @@ public class PatchServiceTests
 
         // Assert
         response.Should().NotBeNull();
-        var err = response.Error();
+        response.Success.Should().BeFalse();
+        var err = response.Error;
         err.Should().NotBeNull();
         err!.Title.Should().Be("Precondition in patch failed");
-        err!.Detail.Should().Be("Path `/Name` is not equal to the indicated value.");
-        err!.Status.Should().Be(DataPatchErrorStatus.PatchTestFailed);
-        err!.Extensions.Should().ContainKey("previousModel");
-        err!.Extensions.Should().ContainKey("patchOperationIndex");
+        err.Detail.Should().Be("Path `/Name` is not equal to the indicated value.");
+        err.ErrorType.Should().Be(DataPatchErrorType.PatchTestFailed);
+        err.Extensions.Should().ContainKey("previousModel");
+        err.Extensions.Should().ContainKey("patchOperationIndex");
     }
     
     [Fact]
@@ -177,14 +178,14 @@ public class PatchServiceTests
         _dataClientMock.Setup(d => d.GetFormData(It.IsAny<Guid>(), It.IsAny<Type>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>())).ReturnsAsync(oldModel).Verifiable();
         var validationIssues = new List<ValidationIssue>()
         {
-            new ()
+            new()
             {
                 Severity = ValidationIssueSeverity.Error,
                 Description = "First error",
             }
         };
 
-        _dataProcessorMock.Setup(d => d.ProcessDataWrite(It.IsAny<Instance>(), It.IsAny<Guid>(), It.IsAny<MyModel>(), It.IsAny<MyModel?>(), null)).Returns((Instance i, Guid j, MyModel data, MyModel? oldData, string? language) => Task.CompletedTask);
+        _dataProcessorMock.Setup(d => d.ProcessDataWrite(It.IsAny<Instance>(), It.IsAny<Guid>(), It.IsAny<MyModel>(), It.IsAny<MyModel?>(), null)).Returns(() => Task.CompletedTask);
         _formDataValidator.Setup(fdv => fdv.ValidateFormData(
                 It.Is<Instance>(i => i == _instance),
                 It.Is<DataElement>(de => de == _dataElement),
@@ -197,10 +198,10 @@ public class PatchServiceTests
 
         // Assert
         response.Should().NotBeNull();
-        var err = response.Error();
+        var err = response.Error;
         err.Should().NotBeNull();
         err!.Title.Should().Be("Patch operation did not deserialize");
-        err!.Detail.Should().Be("The JSON property 'Age' could not be mapped to any .NET member contained in type 'Altinn.App.Core.Tests.Internal.Patch.PatchServiceTests+MyModel'.");
-        err!.Status.Should().Be(DataPatchErrorStatus.DeserializationFailed);
+        err.Detail.Should().Be("The JSON property 'Age' could not be mapped to any .NET member contained in type 'Altinn.App.Core.Tests.Internal.Patch.PatchServiceTests+MyModel'.");
+        err.ErrorType.Should().Be(DataPatchErrorType.DeserializationFailed);
     }
 }
