@@ -55,7 +55,8 @@ public class ExpressionTestAttribute : DataAttribute
     public override IEnumerable<object[]> GetData(MethodInfo methodInfo)
     {
         return Directory
-            .GetFiles(Path.Join("Features", "Validators", "shared-expression-validation-tests"))
+            .GetFiles(Path.Join("Features", "Validators", "expression-validation-tests", "shared"))
+            .Concat(Directory.GetFiles(Path.Join("Features", "Validators", "expression-validation-tests", "backend")))
             .Select(file =>
             {
                 var data = File.ReadAllText(file);
