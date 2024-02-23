@@ -740,7 +740,6 @@ namespace Altinn.App.Api.Controllers
             return Created(dataUrl, updatedDataElement);
         }
 
-        //TODO: This is duplicated in InstanceController and DefaultTaskEvents and should be moved to a common place
         private async Task UpdatePresentationTextsOnInstance(Instance instance, string dataType, object serviceModel)
         {
             var updatedValues = DataHelper.GetUpdatedDataValues(
@@ -758,7 +757,6 @@ namespace Altinn.App.Api.Controllers
             }
         }
 
-        //TODO: This is duplicated in InstanceController and DefaultTaskEvents and should be moved to a common place
         private async Task UpdateDataValuesOnInstance(Instance instance, string dataType, object serviceModel)
         {
             var updatedValues = DataHelper.GetUpdatedDataValues(
