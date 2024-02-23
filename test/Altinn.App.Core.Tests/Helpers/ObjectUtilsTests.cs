@@ -126,4 +126,45 @@ public class ObjectUtilsTests
         test.Child.AltinnRowId.Should().NotBe(Guid.Empty);
         test.Children.Should().AllSatisfy(c => c.AltinnRowId.Should().NotBe(Guid.Empty));
     }
+
+    [Fact]
+    public void TestRemoveAltinnRowId()
+    {
+        var test = new TestClass()
+        {
+            AltinnRowId = Guid.NewGuid(),
+            Child = new()
+            {
+                AltinnRowId = Guid.NewGuid(),
+                Child = new()
+                {
+                    AltinnRowId = Guid.NewGuid(),
+                    Children = new()
+                    {
+                        new TestClass()
+                        {
+                            AltinnRowId = Guid.NewGuid(),
+                            Child = new()
+                            {
+                                AltinnRowId = Guid.NewGuid()
+                            }
+                        }
+                    }
+                }
+            }
+        };
+        test.AltinnRowId.Should().NotBe(Guid.Empty);
+        test.Child.AltinnRowId.Should().NotBe(Guid.Empty);
+        test.Child.Child.AltinnRowId.Should().NotBe(Guid.Empty);
+        test.Child.Child.Children.Should().ContainSingle().Which.AltinnRowId.Should().NotBe(Guid.Empty);
+        test.Child.Child.Children.Should().ContainSingle().Which.Child!.AltinnRowId.Should().NotBe(Guid.Empty);
+
+        ObjectUtils.RemoveAltinnRowId(test);
+
+        test.AltinnRowId.Should().Be(Guid.Empty);
+        test.Child.AltinnRowId.Should().Be(Guid.Empty);
+        test.Child.Child.AltinnRowId.Should().Be(Guid.Empty);
+        test.Child.Child.Children.Should().ContainSingle().Which.AltinnRowId.Should().Be(Guid.Empty);
+        test.Child.Child.Children.Should().ContainSingle().Which.Child!.AltinnRowId.Should().Be(Guid.Empty);
+    }
 }

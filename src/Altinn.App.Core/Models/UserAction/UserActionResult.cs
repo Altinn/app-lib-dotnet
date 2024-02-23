@@ -56,17 +56,17 @@ public class UserActionResult
             Error = error
         };
     }
-    
+
     /// <summary>
     /// Adds an updated data model to the result
     /// </summary>
     /// <param name="dataModelId"></param>
     /// <param name="dataModel"></param>
-    public void AddUpdatedDataModel(string dataModelId, object? dataModel)
+    public void AddUpdatedDataModel(string dataModelId, object dataModel)
     {
         if (UpdatedDataModels == null)
         {
-            UpdatedDataModels = new Dictionary<string, object?>();
+            UpdatedDataModels = new Dictionary<string, object>();
         }
         UpdatedDataModels.Add(dataModelId, dataModel);
     }

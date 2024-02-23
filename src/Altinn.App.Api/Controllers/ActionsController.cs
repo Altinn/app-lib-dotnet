@@ -195,7 +195,7 @@ public class ActionsController : ControllerBase
             var dataType = application.DataTypes.First(d => d.Id.Equals(dataElement.DataType, StringComparison.OrdinalIgnoreCase));
 
             // TODO: Consider rewriting so that we get the original data the IUserAction have requested instead of fetching it again
-            var oldData = await _dataClient.GetFormData( instanceIdentifier.InstanceGuid, newModel.GetType(), instance.Org, instance.AppId.Split('/')[1], instanceIdentifier.InstanceOwnerPartyId, Guid.Parse(dataElement.Id));
+            var oldData = await _dataClient.GetFormData(instanceIdentifier.InstanceGuid, newModel.GetType(), instance.Org, instance.AppId.Split('/')[1], instanceIdentifier.InstanceOwnerPartyId, Guid.Parse(dataElement.Id));
 
             var validationIssues = await _validationService.ValidateFormData(instance, dataElement, dataType, newModel, oldData, ignoredValidators, language);
             if (validationIssues.Count > 0)
