@@ -115,7 +115,8 @@ namespace Altinn.App.Api.Tests.Controllers
             TestData.DeleteInstanceAndData(org, app, 1337, guid);
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-            Assert.Equal("Invalid data provided. Error: The file is zero bytes.",response.Content.ReadAsStringAsync().Result);
+            var responseContent = await response.Content.ReadAsStringAsync();
+            Assert.Equal("Invalid data provided. Error: The file is zero bytes.", responseContent);
         }
 
         [Fact]
