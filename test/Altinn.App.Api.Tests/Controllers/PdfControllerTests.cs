@@ -25,7 +25,7 @@ using IAppResources = Altinn.App.Core.Internal.App.IAppResources;
 
 namespace Altinn.App.Api.Tests.Controllers
 {
-    public class PdfControllerTests : ApiTestBase, IClassFixture<WebApplicationFactory<Program>>
+    public class PdfControllerTests
     {
         private readonly string org = "org";
         private readonly string app = "app";
@@ -45,8 +45,7 @@ namespace Altinn.App.Api.Tests.Controllers
         private readonly IOptions<PdfGeneratorSettings> _pdfGeneratorSettingsOptions = Microsoft.Extensions.Options.Options.Create<PdfGeneratorSettings>(new() { });
 
 
-        public PdfControllerTests(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper)
-            : base(factory, outputHelper)
+        public PdfControllerTests()
         {
             _instanceClient
                 .Setup(a => a.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>()))
