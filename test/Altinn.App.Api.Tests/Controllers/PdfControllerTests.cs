@@ -20,6 +20,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Moq.Protected;
 using Xunit;
+using Xunit.Abstractions;
 using IAppResources = Altinn.App.Core.Internal.App.IAppResources;
 
 namespace Altinn.App.Api.Tests.Controllers
@@ -44,8 +45,8 @@ namespace Altinn.App.Api.Tests.Controllers
         private readonly IOptions<PdfGeneratorSettings> _pdfGeneratorSettingsOptions = Microsoft.Extensions.Options.Options.Create<PdfGeneratorSettings>(new() { });
 
 
-        public PdfControllerTests(WebApplicationFactory<Program> factory)
-            : base(factory)
+        public PdfControllerTests(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper)
+            : base(factory, outputHelper)
         {
             _instanceClient
                 .Setup(a => a.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>()))
