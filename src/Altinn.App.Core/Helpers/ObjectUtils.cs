@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Reflection;
 
 namespace Altinn.App.Core.Helpers;
 
@@ -19,7 +20,7 @@ public static class ObjectUtils
 
         foreach (var prop in model.GetType().GetProperties())
         {
-            if (prop.PropertyType == typeof(Guid) && prop.Name == "AltinnRowId")
+            if (PropertyIsAltinRowGuid(prop))
             {
                 var value = (Guid)(prop.GetValue(model) ?? Guid.Empty);
                 if (value == Guid.Empty)
@@ -72,7 +73,7 @@ public static class ObjectUtils
         foreach (var prop in model.GetType().GetProperties())
         {
             // Handle guid fields named "AltinnRowId"
-            if (prop.PropertyType == typeof(Guid) && prop.Name == "AltinnRowId")
+            if (PropertyIsAltinRowGuid(prop))
             {
                 prop.SetValue(model, Guid.Empty);
             }
@@ -103,4 +104,8 @@ public static class ObjectUtils
         }
     }
 
+    private static bool PropertyIsAltinRowGuid(PropertyInfo prop)
+    {
+        return prop.PropertyType == typeof(Guid) && prop.Name == "AltinnRowId";
+    }
 }
