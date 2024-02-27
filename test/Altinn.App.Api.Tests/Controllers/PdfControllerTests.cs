@@ -1,5 +1,3 @@
-#nullable enable
-
 using Altinn.App.Api.Controllers;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
@@ -15,12 +13,10 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Options;
 using Moq;
 using Moq.Protected;
 using Xunit;
-using Xunit.Abstractions;
 using IAppResources = Altinn.App.Core.Internal.App.IAppResources;
 
 namespace Altinn.App.Api.Tests.Controllers
