@@ -17,14 +17,14 @@ namespace Altinn.App.Core.Internal.Patch;
 /// <summary>
 /// Service for applying patches to form data elements
 /// </summary>
-public class PatchService: IPatchService
+public class PatchService : IPatchService
 {
     private readonly IAppMetadata _appMetadata;
     private readonly IDataClient _dataClient;
     private readonly IAppModel _appModel;
     private readonly IValidationService _validationService;
     private readonly IEnumerable<IDataProcessor> _dataProcessors;
-    
+
     private static readonly JsonSerializerOptions JsonSerializerOptions = new()
     {
         UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
@@ -58,48 +58,48 @@ public class PatchService: IPatchService
         var oldModel =
             await _dataClient.GetFormData(instanceIdentifier.InstanceGuid, modelType, appIdentifier.Org, appIdentifier.App, instanceIdentifier.InstanceOwnerPartyId, Guid.Parse(dataElement.Id));
         var oldModelNode = JsonSerializer.SerializeToNode(oldModel);
-            var patchResult = jsonPatch.Apply(oldModelNode);
-            if (!patchResult.IsSuccess)
+        var patchResult = jsonPatch.Apply(oldModelNode);
+        if (!patchResult.IsSuccess)
+        {
+            bool testOperationFailed = patchResult.Error!.Contains("is not equal to the indicated value.");
+            return new DataPatchError()
             {
-                bool testOperationFailed = patchResult.Error!.Contains("is not equal to the indicated value.");
-                return new DataPatchError()
-                {
-                    Title = testOperationFailed ? "Precondition in patch failed" : "Patch Operation Failed",
-                    Detail = patchResult.Error,
-                    ErrorType = testOperationFailed
-                        ? DataPatchErrorType.PatchTestFailed
-                        : DataPatchErrorType.DeserializationFailed,
-                    Extensions = new Dictionary<string, object?>()
+                Title = testOperationFailed ? "Precondition in patch failed" : "Patch Operation Failed",
+                Detail = patchResult.Error,
+                ErrorType = testOperationFailed
+                    ? DataPatchErrorType.PatchTestFailed
+                    : DataPatchErrorType.DeserializationFailed,
+                Extensions = new Dictionary<string, object?>()
                     {
                         { "previousModel", oldModel },
                         { "patchOperationIndex", patchResult.Operation },
                     }
-                };
-            }
+            };
+        }
 
-            var (model, error) = DeserializeModel(oldModel.GetType(), patchResult.Result!);
-            if (error is not null)
+        var (model, error) = DeserializeModel(oldModel.GetType(), patchResult.Result!);
+        if (error is not null)
+        {
+            return new DataPatchError()
             {
-                return new DataPatchError()
-                {
-                    Title = "Patch operation did not deserialize",
-                    Detail = error,
-                    ErrorType = DataPatchErrorType.DeserializationFailed
-                };
-            }
-            Guid dataElementId = Guid.Parse(dataElement.Id);
-            foreach (var dataProcessor in _dataProcessors)
-            {
-                await dataProcessor.ProcessDataWrite(instance, dataElementId, model, oldModel, language);
-            }
+                Title = "Patch operation did not deserialize",
+                Detail = error,
+                ErrorType = DataPatchErrorType.DeserializationFailed
+            };
+        }
+        Guid dataElementId = Guid.Parse(dataElement.Id);
+        foreach (var dataProcessor in _dataProcessors)
+        {
+            await dataProcessor.ProcessDataWrite(instance, dataElementId, model, oldModel, language);
+        }
 
-            // Ensure that all lists are changed from null to empty list.
-            ObjectUtils.InitializeListsAndNullEmptyStrings(model);
+        // Ensure that all lists are changed from null to empty list.
+        ObjectUtils.InitializeAltinnRowId(model);
 
-            var validationIssues = await _validationService.ValidateFormData(instance, dataElement, dataType, model, oldModel, ignoredValidators, language);
+        var validationIssues = await _validationService.ValidateFormData(instance, dataElement, dataType, model, oldModel, ignoredValidators, language);
 
-            // Save Formdata to database
-            await _dataClient.UpdateData(
+        // Save Formdata to database
+        await _dataClient.UpdateData(
                 model,
                 instanceIdentifier.InstanceGuid,
                 modelType,
@@ -108,13 +108,13 @@ public class PatchService: IPatchService
                 instanceIdentifier.InstanceOwnerPartyId,
                 dataElementId);
 
-            return new DataPatchResult
-            {
-                NewDataModel = model,
-                ValidationIssues = validationIssues
-            };
+        return new DataPatchResult
+        {
+            NewDataModel = model,
+            ValidationIssues = validationIssues
+        };
     }
-    
+
     private static (object Model, string? Error) DeserializeModel(Type type, JsonNode patchResult)
     {
         try
