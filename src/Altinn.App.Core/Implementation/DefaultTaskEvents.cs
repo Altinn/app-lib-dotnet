@@ -185,7 +185,7 @@ public class DefaultTaskEvents : ITaskEvents
         object data = await _dataClient.GetFormData(
             instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, dataGuid);
 
-        // Remove hidden data before validation, ignore hidden rows. TODO: Determine how hidden rows should be handled going forward.
+        // Remove hidden data before validation, ignore hidden rows.
         if (_appSettings?.RemoveHiddenData == true)
         {
             var layoutSet = _appResources.GetLayoutSetForTask(dataType.TaskId);
