@@ -1,6 +1,8 @@
 using System.Text.Json;
+using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Expressions;
+using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
@@ -78,6 +80,7 @@ public class ExpressionValidator : IFormDataValidator
                     continue;
                 }
 
+                var rowContext = new RowContext(DataModel.GetRowIndices(resolvedField));
                 var positionalArguments = new[] { resolvedField };
                 foreach (var validation in validations)
                 {
@@ -88,7 +91,7 @@ public class ExpressionValidator : IFormDataValidator
                             continue;
                         }
 
-                        var isInvalid = ExpressionEvaluator.EvaluateExpression(evaluatorState, validation.Condition, null, positionalArguments);
+                        var isInvalid = ExpressionEvaluator.EvaluateExpression(evaluatorState, validation.Condition, rowContext, positionalArguments);
                         if (isInvalid is not bool)
                         {
                             throw new ArgumentException($"Validation condition for {resolvedField} did not evaluate to a boolean");

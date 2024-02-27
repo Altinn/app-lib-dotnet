@@ -169,7 +169,7 @@ public class LayoutEvaluatorState
     /// <summary>
     /// Get field from dataModel with key and context
     /// </summary>
-    public object? GetModelData(string? key, ComponentContext? context = null)
+    public object? GetModelData(string? key, ExpressionContext? context = null)
     {
         if (key is null)
         {
