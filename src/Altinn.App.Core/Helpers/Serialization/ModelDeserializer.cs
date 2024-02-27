@@ -12,7 +12,7 @@ namespace Altinn.App.Core.Helpers.Serialization
     /// </summary>
     public class ModelDeserializer
     {
-        JsonSerializerOptions JSON_SERIALIZER_OPTIONS = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        private static readonly JsonSerializerOptions JSON_SERIALIZER_OPTIONS = new JsonSerializerOptions(JsonSerializerDefaults.Web);
 
         private readonly ILogger _logger;
         private readonly Type _modelType;
