@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models.Validation;
@@ -58,6 +59,7 @@ public class ExpressionValidator : IFormDataValidator
         var validationConfig = JsonDocument.Parse(rawValidationConfig).RootElement;
         var layoutSet = _appResourceService.GetLayoutSetForTask(instance.Process.CurrentTask.ElementId);
         var evaluatorState = await _layoutEvaluatorStateInitializer.Init(instance, data, layoutSet?.Id);
+        LayoutEvaluator.RemoveHiddenData(evaluatorState, RowRemovalOption.SetToNull);
         return Validate(validationConfig, evaluatorState, _logger);
     }
 
@@ -83,6 +85,7 @@ public class ExpressionValidator : IFormDataValidator
                             continue;
                         }
 
+                        // TODO: component context is null, but it needs a way to specify its row indices so that dataModel expressions evaluate properly in repeating groups
                         var isInvalid = ExpressionEvaluator.EvaluateExpression(evaluatorState, validation.Condition, null, positionalArguments);
                         if (isInvalid is not bool)
                         {
