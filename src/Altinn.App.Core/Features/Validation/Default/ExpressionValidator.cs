@@ -58,11 +58,12 @@ public class ExpressionValidator : IFormDataValidator
         var validationConfig = JsonDocument.Parse(rawValidationConfig).RootElement;
         var layoutSet = _appResourceService.GetLayoutSetForTask(instance.Process.CurrentTask.ElementId);
         var evaluatorState = await _layoutEvaluatorStateInitializer.Init(instance, data, layoutSet?.Id);
-        return Validate(validationConfig, evaluatorState, _logger);
+        var hiddenFields = LayoutEvaluator.GetHiddenFieldsForRemoval(evaluatorState, true);
+        return Validate(validationConfig, evaluatorState, hiddenFields, _logger);
     }
 
 
-    internal static List<ValidationIssue> Validate(JsonElement validationConfig, LayoutEvaluatorState evaluatorState, ILogger logger)
+    internal static List<ValidationIssue> Validate(JsonElement validationConfig, LayoutEvaluatorState evaluatorState, List<string> hiddenFields, ILogger logger)
     {
         var validationIssues = new List<ValidationIssue>();
         var expressionValidations = ParseExpressionValidationConfig(validationConfig, logger);
@@ -73,6 +74,10 @@ public class ExpressionValidator : IFormDataValidator
             var validations = validationObject.Value;
             foreach (var resolvedField in resolvedFields)
             {
+                if (hiddenFields.Contains(resolvedField)) {
+                    continue;
+                }
+
                 var positionalArguments = new[] { resolvedField };
                 foreach (var validation in validations)
                 {

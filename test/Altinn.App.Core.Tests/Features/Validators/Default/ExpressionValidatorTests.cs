@@ -58,7 +58,6 @@ public class ExpressionValidatorTests
             .Setup(ar => ar.GetValidationConfiguration(null))
             .Returns(JsonSerializer.Serialize(testCase.ValidationConfig));
 
-        LayoutEvaluator.RemoveHiddenData(evaluatorState, RowRemovalOption.SetToNull);
         var validationIssues = await _validator.ValidateFormData(instance, dataElement, null!, null);
 
         var result = validationIssues.Select(i => new
