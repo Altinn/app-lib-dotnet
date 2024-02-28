@@ -1,7 +1,9 @@
-using Altinn.App.Core.Features.Validation;
+using System.Text.Json;
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
@@ -18,17 +20,21 @@ public class ValidationService : IValidationService
     private readonly IAppModel _appModel;
     private readonly IAppMetadata _appMetadata;
     private readonly ILogger<ValidationService> _logger;
+    private readonly IAppResources _appResourceService;
+    private readonly LayoutEvaluatorStateInitializer _layoutEvaluatorStateInitializer;
 
     /// <summary>
     /// Constructor with DI services
     /// </summary>
-    public ValidationService(IValidatorFactory validatorFactory, IDataClient dataClient, IAppModel appModel, IAppMetadata appMetadata, ILogger<ValidationService> logger)
+    public ValidationService(IValidatorFactory validatorFactory, IDataClient dataClient, IAppModel appModel, IAppMetadata appMetadata, ILogger<ValidationService> logger, IAppResources appResourceService, LayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer)
     {
         _validatorFactory = validatorFactory;
         _dataClient = dataClient;
         _appModel = appModel;
         _appMetadata = appMetadata;
         _logger = logger;
+        _appResourceService = appResourceService;
+        _layoutEvaluatorStateInitializer = layoutEvaluatorStateInitializer;
     }
 
     /// <inheritdoc/>
@@ -141,6 +147,17 @@ public class ValidationService : IValidationService
             .Where(dv => previousData is null || dv.HasRelevantChanges(data, previousData))
             .ToArray();
 
+        if (dataValidators.Length > 0)
+        {
+            // TODO: Add setting for "frontend removes hidden data"
+            var layoutSet = _appResourceService.GetLayoutSetForTask(dataType.TaskId);
+            data = await CloneAndRemoveHiddenData(data, instance, layoutSet?.Id);
+            if (previousData is not null)
+            {
+                previousData = await CloneAndRemoveHiddenData(previousData, instance, layoutSet?.Id);
+            }
+        }
+
         var issuesLists = await Task.WhenAll(dataValidators.Select(async (v) =>
         {
             try
@@ -160,4 +177,12 @@ public class ValidationService : IValidationService
         return dataValidators.Zip(issuesLists).ToDictionary(kv => kv.First.ValidationSource, kv => kv.Second);
     }
 
+    private async Task<object> CloneAndRemoveHiddenData(object data, Instance instance, string? layoutSetId)
+    {
+        var copyBytes = JsonSerializer.SerializeToUtf8Bytes(data);
+        var clonedData = JsonSerializer.Deserialize(copyBytes, data.GetType())!;
+        var evaluationState = await _layoutEvaluatorStateInitializer.Init(instance, clonedData, layoutSetId);
+        LayoutEvaluator.RemoveHiddenData(evaluationState, RowRemovalOption.SetToNull);
+        return clonedData;
+    }
 }
