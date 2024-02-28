@@ -44,6 +44,14 @@ public class SigningUserAction: IUserAction
     /// <exception cref="Altinn.App.Core.Internal.App.ApplicationConfigException"></exception>
     public async Task<UserActionResult> HandleAction(UserActionContext context)
     {
+        if (context.UserId == null)
+        {
+            return UserActionResult.FailureResult(new ActionError()
+            {
+                Code = "NoUserId",
+                Message = "User id is missing in token"
+            });
+        }
         if (_processReader.GetFlowElement(context.Instance.Process.CurrentTask.ElementId) is ProcessTask currentTask)
         {
             _logger.LogInformation("Signing action handler invoked for instance {Id}. In task: {CurrentTaskId}", context.Instance.Id, currentTask.Id);
