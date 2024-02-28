@@ -366,7 +366,6 @@ public class ProcessEngineTest : IDisposable
                 }
             }
         };
-        ProcessState originalProcessState = instance.Process.Copy();
         ClaimsPrincipal user = new(new ClaimsIdentity(new List<Claim>()
         {
             new(AltinnCoreClaimTypes.AuthenticationLevel, "2"),
