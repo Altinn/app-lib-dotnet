@@ -370,7 +370,7 @@ public class ProcessEngineTest : IDisposable
         {
             new(AltinnCoreClaimTypes.AuthenticationLevel, "2"),
         }));
-        ProcessNextRequest processNextRequest = new ProcessNextRequest() { Instance = instance, User = user, Action = "sign"};
+        ProcessNextRequest processNextRequest = new ProcessNextRequest() { Instance = instance, User = user, Action = "sign" };
         ProcessChangeResult result = await processEngine.Next(processNextRequest);
         result.Success.Should().BeFalse();
         result.ErrorMessage.Should().Be($"Action handler for action sign failed!");
@@ -848,7 +848,7 @@ public class ProcessEngineTest : IDisposable
         result.Should().Be(updatedInstance);
     }
 
-    private IProcessEngine GetProcessEngine(Mock<IProcessReader>? processReaderMock = null, Instance? updatedInstance = null, List<IUserAction>? userActions = null)
+    private ProcessEngine GetProcessEngine(Mock<IProcessReader>? processReaderMock = null, Instance? updatedInstance = null, List<IUserAction>? userActions = null)
     {
         if (processReaderMock == null)
         {
