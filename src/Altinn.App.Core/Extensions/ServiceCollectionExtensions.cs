@@ -184,19 +184,6 @@ namespace Altinn.App.Core.Extensions
                 services.TryAddSingleton<ISecretsClient, SecretsLocalClient>();
             }
         }
-        
-        /// <summary>
-        /// Adds all payment related services.
-        /// </summary>
-        public static void AddNetsPaymentServices(IServiceCollection services, IConfiguration configuration)
-        {
-            services.Configure<NetsPaymentSettings>(configuration.GetSection("NetsPaymentSettings"));
-            services.AddHttpClient<INetsClient, NetsClient>();
-            services.AddTransient<IPaymentProcessor, NetsPaymentProcessor>();
-            services.AddTransient<IPaymentService, PaymentService>();
-            services.AddTransient<IProcessTask, PaymentProcessTask>();
-            services.AddTransient<IUserAction, PaymentUserAction>();
-        }
 
         private static void AddValidationServices(IServiceCollection services, IConfiguration configuration)
         {

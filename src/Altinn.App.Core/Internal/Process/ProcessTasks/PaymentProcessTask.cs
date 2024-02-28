@@ -21,7 +21,7 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks
         /// <param name="processReader"></param>
         /// <param name="paymentService"></param>
         /// <param name="orderDetailsCalculator"></param>
-        public PaymentProcessTask(IProcessReader processReader, IPaymentService paymentService, IOrderDetailsCalculator? orderDetailsCalculator = null)
+        public PaymentProcessTask(IProcessReader processReader, IPaymentService paymentService, IOrderDetailsCalculator orderDetailsCalculator)
         {
             _processReader = processReader;
             _paymentService = paymentService;
@@ -36,11 +36,6 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks
         {
             ArgumentNullException.ThrowIfNull(taskId);
             ArgumentNullException.ThrowIfNull(instance);
-
-            //TODO: Fjern
-            if (_orderDetailsCalculator == null)
-                throw new PaymentException(
-                    $"No {nameof(IOrderDetailsCalculator)} implementation found for generating the order lines. Implement the interface and add it to the dependency injection container.");
 
             AltinnPaymentConfiguration? paymentConfiguration = _processReader.GetAltinnTaskExtension(instance.Process.CurrentTask.ElementId)?.PaymentConfiguration;
             if (paymentConfiguration == null)

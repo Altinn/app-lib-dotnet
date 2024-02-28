@@ -9,13 +9,23 @@ using Microsoft.Extensions.Logging;
 
 namespace Altinn.App.Core.Features.Action
 {
-    internal class PaymentUserAction : IUserAction
+    /// <summary>
+    /// User action for payment
+    /// </summary>
+    public class PaymentUserAction : IUserAction
     {
         private readonly IProcessReader _processReader;
         private readonly IDataService _dataService;
         private readonly ILogger<PaymentUserAction> _logger;
         private readonly IPaymentService _paymentService;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PaymentUserAction"/> class
+        /// </summary>
+        /// <param name="processReader"></param>
+        /// <param name="dataService"></param>
+        /// <param name="paymentService"></param>
+        /// <param name="logger"></param>
         public PaymentUserAction(IProcessReader processReader, IDataService dataService, IPaymentService paymentService, ILogger<PaymentUserAction> logger)
         {
             _processReader = processReader;
@@ -25,8 +35,12 @@ namespace Altinn.App.Core.Features.Action
 
         }
 
+        /// <summary>
+        /// Gets the id of the user action
+        /// </summary>
         public string Id => "pay";
 
+        /// <inheritdoc />
         public async Task<UserActionResult> HandleAction(UserActionContext context)
         {
             if (_processReader.GetFlowElement(context.Instance.Process.CurrentTask.ElementId) is not ProcessTask currentTask)

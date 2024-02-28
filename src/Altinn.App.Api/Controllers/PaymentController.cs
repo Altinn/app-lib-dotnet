@@ -20,22 +20,22 @@ namespace Altinn.App.Api.Controllers;
 [Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/payment")]
 public class PaymentController : Controller
 {
-    private readonly IPaymentService _paymentService;
     private readonly IInstanceClient _instanceClient;
     private readonly IProcessReader _processReader;
+    private readonly IPaymentService? _paymentService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PaymentController"/> class.
     /// </summary>
-    public PaymentController(IPaymentService paymentService, IInstanceClient instanceClient, IProcessReader processReader)
+    public PaymentController(IInstanceClient instanceClient, IProcessReader processReader, IPaymentService? paymentService)
     {
-        _paymentService = paymentService;
         _instanceClient = instanceClient;
         _processReader = processReader;
+        _paymentService = paymentService;
     }
 
     /// <summary>
-    /// Get updated payment information for the instance. Will contact the payment provider to check the status of the payment.
+    /// Get updated payment information for the instance. Will contact the payment provider to check the status of the payment. Will throw an exception if payment related services have not been added to the application service collection. See payment related documentation.
     /// </summary>
     /// <param name="org">unique identifier of the organisation responsible for the app</param>
     /// <param name="app">application identifier which is unique within an organisation</param>
@@ -47,6 +47,11 @@ public class PaymentController : Controller
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetPaymentInformation(string org, string app, int instanceOwnerPartyId, Guid instanceGuid)
     {
+        if (_paymentService == null)
+        {
+            throw new PaymentException("Payment related services have not been added to the service collection. See payment related documentation.");
+        }
+        
         Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
         AltinnPaymentConfiguration? paymentConfiguration = _processReader.GetAltinnTaskExtension(instance.Process.CurrentTask.ElementId)?.PaymentConfiguration;
         if (paymentConfiguration == null)

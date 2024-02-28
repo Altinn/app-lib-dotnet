@@ -4,6 +4,12 @@ using Altinn.App.Api.Infrastructure.Health;
 using Altinn.App.Api.Infrastructure.Telemetry;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Extensions;
+using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Action;
+using Altinn.App.Core.Features.Payment.Providers;
+using Altinn.App.Core.Features.Payment.Providers.Nets;
+using Altinn.App.Core.Features.Payment.Services;
+using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.Common.PEP.Authorization;
 using Altinn.Common.PEP.Clients;
 using AltinnCore.Authentication.JwtCookie;
@@ -71,6 +77,19 @@ namespace Altinn.App.Api.Extensions
 
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddMetricsServer(config);
+        }
+        
+        /// <summary>
+        /// Adds all services required to use Nets payment provider. Requires NetsPaymentSettings to be configured in app settings.
+        /// </summary>
+        public static void AddNetsPaymentServices(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.Configure<NetsPaymentSettings>(configuration.GetSection("NetsPaymentSettings"));
+            services.AddHttpClient<INetsClient, NetsClient>();
+            services.AddTransient<IPaymentProcessor, NetsPaymentProcessor>();
+            services.AddTransient<IPaymentService, PaymentService>();
+            services.AddTransient<IProcessTask, PaymentProcessTask>();
+            services.AddTransient<IUserAction, PaymentUserAction>();
         }
 
         private static void AddApplicationInsights(IServiceCollection services, IConfiguration config, IWebHostEnvironment env)
