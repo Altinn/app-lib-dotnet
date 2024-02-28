@@ -7,15 +7,15 @@ namespace Altinn.App.Core.Models.Expressions;
 /// <summary>
 /// Simple class for holding the context for <see cref="ExpressionEvaluator"/>
 /// </summary>
-public sealed class ComponentContext : ExpressionContext
+public sealed class ComponentContext
 {
     /// <summary>
     /// Constructor for ComponentContext
     /// </summary>
-    public ComponentContext( BaseComponent component, int[]? rowIndices, int? rowLength, IEnumerable<ComponentContext>? childContexts = null)
-        : base(rowIndices)
+    public ComponentContext(BaseComponent? component, int[]? rowIndices, int? rowLength, IEnumerable<ComponentContext>? childContexts = null)
     {
         Component = component;
+        RowIndices = rowIndices;
         RowLength = rowLength;
         ChildContexts = childContexts ?? Enumerable.Empty<ComponentContext>();
         foreach (var child in ChildContexts)
@@ -27,7 +27,12 @@ public sealed class ComponentContext : ExpressionContext
     /// <summary>
     /// The component from <see cref="LayoutModel"/> that should be used as context
     /// </summary>
-    public BaseComponent Component { get; }
+    public BaseComponent? Component { get; }
+
+    /// <summary>
+    /// The indicies for this context (in case the component is part of a repeating group)
+    /// </summary>
+    public int[]? RowIndices { get; }
 
     /// <summary>
     /// The number of rows in case the component is a repeating group

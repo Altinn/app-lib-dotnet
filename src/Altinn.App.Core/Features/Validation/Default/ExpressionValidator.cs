@@ -79,8 +79,7 @@ public class ExpressionValidator : IFormDataValidator
                 if (hiddenFields.Contains(resolvedField)) {
                     continue;
                 }
-
-                var rowContext = new RowContext(DataModel.GetRowIndices(resolvedField));
+                var context = new ComponentContext(component: null, rowIndices: DataModel.GetRowIndices(resolvedField), rowLength: null);
                 var positionalArguments = new[] { resolvedField };
                 foreach (var validation in validations)
                 {
@@ -91,7 +90,7 @@ public class ExpressionValidator : IFormDataValidator
                             continue;
                         }
 
-                        var isInvalid = ExpressionEvaluator.EvaluateExpression(evaluatorState, validation.Condition, rowContext, positionalArguments);
+                        var isInvalid = ExpressionEvaluator.EvaluateExpression(evaluatorState, validation.Condition, context, positionalArguments);
                         if (isInvalid is not bool)
                         {
                             throw new ArgumentException($"Validation condition for {resolvedField} did not evaluate to a boolean");
