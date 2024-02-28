@@ -9,8 +9,8 @@ public class UserActionResult
     /// <summary>
     /// Gets or sets a value indicating whether the user action was a success
     /// </summary>
-    public bool Success { get; set; }
-
+    public bool Success { get; init; }
+    
     /// <summary>
     /// Gets or sets a dictionary of updated data models. Key should be elementId and value should be the updated data model
     /// </summary>

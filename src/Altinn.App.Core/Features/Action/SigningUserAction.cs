@@ -51,7 +51,7 @@ public class SigningUserAction: IUserAction
             var connectedDataElements = GetDataElementSignatures(context.Instance.Data, dataTypes);
             if (connectedDataElements.Count > 0 && currentTask.ExtensionElements?.TaskExtension?.SignatureConfiguration?.SignatureDataType != null)
             {
-                SignatureContext signatureContext = new SignatureContext(new InstanceIdentifier(context.Instance), currentTask.ExtensionElements?.TaskExtension?.SignatureConfiguration?.SignatureDataType!, await GetSignee(context.UserId), connectedDataElements);
+                SignatureContext signatureContext = new SignatureContext(new InstanceIdentifier(context.Instance), currentTask.ExtensionElements?.TaskExtension?.SignatureConfiguration?.SignatureDataType!, await GetSignee(context.UserId.Value), connectedDataElements);
                 await _signClient.SignDataElements(signatureContext);
                 return UserActionResult.SuccessResult();
             }

@@ -65,6 +65,54 @@ public class SigningUserActionTests
         result.Should().BeEquivalentTo(UserActionResult.SuccessResult());
         signClientMock.VerifyNoOtherCalls();
     }
+
+    [Fact]
+    public async void HandleAction_returns_error_when_UserId_not_set_in_context()
+    {
+        // Arrange
+        UserProfile userProfile = new UserProfile()
+        {
+            UserId = 1337,
+            Party = new Party() { SSN = "12345678901" }
+        };
+        (var userAction, var signClientMock) = CreateSigningUserAction(userProfile);
+        var instance = new Instance()
+        {
+            Id = "500000/b194e9f5-02d0-41bc-8461-a0cbac8a6efc",
+            InstanceOwner = new()
+            {
+                PartyId = "5000",
+            },
+            Process = new()
+            {
+                CurrentTask = new()
+                {
+                    ElementId = "Task2"
+                }
+            },
+            Data = new()
+            {
+                new()
+                {
+                    Id = "a499c3ef-e88a-436b-8650-1c43e5037ada",
+                    DataType = "Model"
+                }
+            }
+        };
+        var userActionContext = new UserActionContext(instance, null);
+
+        // Act
+        var result = await userAction.HandleAction(userActionContext);
+
+        // Assert
+        var fail = UserActionResult.FailureResult(new ActionError()
+        {
+            Code = "NoUserId",
+            Message = "User id is missing in token"
+        });
+        result.Should().BeEquivalentTo(fail);
+        signClientMock.VerifyNoOtherCalls();
+    }
     
     [Fact]
     public async void HandleAction_throws_ApplicationConfigException_if_SignatureDataType_is_null()
