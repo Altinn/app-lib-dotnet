@@ -67,22 +67,25 @@ public static class LayoutEvaluator
         }
 
         // Remove data if hidden
-        foreach (var (bindingName, binding) in context.Component.DataModelBindings)
+        if (context.Component is not null)
         {
-            if (bindingName == "group")
+            foreach (var (bindingName, binding) in context.Component.DataModelBindings)
             {
-                continue;
-            }
+                if (bindingName == "group")
+                {
+                    continue;
+                }
 
-            var indexed_binding = state.AddInidicies(binding, context);
+                var indexed_binding = state.AddInidicies(binding, context);
 
-            if (context.IsHidden == true)
-            {
-                hiddenModelBindings.Add(indexed_binding);
-            }
-            else
-            {
-                nonHiddenModelBindings.Add(indexed_binding);
+                if (context.IsHidden == true)
+                {
+                    hiddenModelBindings.Add(indexed_binding);
+                }
+                else
+                {
+                    nonHiddenModelBindings.Add(indexed_binding);
+                }
             }
         }
     }
@@ -124,7 +127,7 @@ public static class LayoutEvaluator
             }
 
             var required = ExpressionEvaluator.EvaluateBooleanExpression(state, context, "required", false);
-            if (required)
+            if (required && context.Component is not null)
             {
                 foreach (var (bindingName, binding) in context.Component.DataModelBindings)
                 {

@@ -17,6 +17,7 @@ public class ExpressionValidator : IFormDataValidator
     private readonly ILogger<ExpressionValidator> _logger;
     private readonly IAppResources _appResourceService;
     private readonly LayoutEvaluatorStateInitializer _layoutEvaluatorStateInitializer;
+    private readonly IAppMetadata _appMetadata;
 
     private static readonly JsonSerializerOptions _jsonOptions = new()
     {
@@ -27,11 +28,12 @@ public class ExpressionValidator : IFormDataValidator
     /// <summary>
     /// Constructor for the expression validator
     /// </summary>
-    public ExpressionValidator(ILogger<ExpressionValidator> logger, IAppResources appResourceService, LayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer)
+    public ExpressionValidator(ILogger<ExpressionValidator> logger, IAppResources appResourceService, LayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer, IAppMetadata appMetadata)
     {
         _logger = logger;
         _appResourceService = appResourceService;
         _layoutEvaluatorStateInitializer = layoutEvaluatorStateInitializer;
+        _appMetadata = appMetadata;
     }
 
     /// <inheritdoc />
@@ -58,17 +60,13 @@ public class ExpressionValidator : IFormDataValidator
         }
 
         var validationConfig = JsonDocument.Parse(rawValidationConfig).RootElement;
-        var layoutSet = _appResourceService.GetLayoutSetForTask(instance.Process.CurrentTask.ElementId);
+        var appMetadata = await _appMetadata.GetApplicationMetadata();
+        var layoutSet = _appResourceService.GetLayoutSetForTask(appMetadata.DataTypes.First(dt=>dt.Id == dataElement.DataType).TaskId);
         var evaluatorState = await _layoutEvaluatorStateInitializer.Init(instance, data, layoutSet?.Id);
         var hiddenFields = LayoutEvaluator.GetHiddenFieldsForRemoval(evaluatorState, true);
-        return Validate(validationConfig, evaluatorState, hiddenFields, _logger);
-    }
 
-
-    internal static List<ValidationIssue> Validate(JsonElement validationConfig, LayoutEvaluatorState evaluatorState, List<string> hiddenFields, ILogger logger)
-    {
         var validationIssues = new List<ValidationIssue>();
-        var expressionValidations = ParseExpressionValidationConfig(validationConfig, logger);
+        var expressionValidations = ParseExpressionValidationConfig(validationConfig, _logger);
         foreach (var validationObject in expressionValidations)
         {
             var baseField = validationObject.Key;
@@ -110,7 +108,7 @@ public class ExpressionValidator : IFormDataValidator
                     }
                     catch(Exception e)
                     {
-                        logger.LogError(e, "Error while evaluating expression validation for {resolvedField}", resolvedField);
+                        _logger.LogError(e, "Error while evaluating expression validation for {resolvedField}", resolvedField);
                         throw;
                     }
                 }

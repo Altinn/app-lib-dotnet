@@ -125,7 +125,7 @@ public static class ExpressionEvaluator
             throw new NotImplementedException("Component lookup for components in groups not implemented");
         }
 
-        if (targetContext.Component is not BaseComponent || !targetContext.Component.DataModelBindings.TryGetValue("simpleBinding", out var binding))
+        if (targetContext.Component?.DataModelBindings.TryGetValue("simpleBinding", out var binding) != true)
         {
             throw new ArgumentException("component lookup requires the target component to have a simpleBinding");
         }

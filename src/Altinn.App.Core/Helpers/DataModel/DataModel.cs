@@ -116,7 +116,7 @@ public class DataModel : IDataModelAccessor
         return currentKey + "." + key;
     }
 
-    private static readonly Regex RowIndexRegex = new Regex(@"^([^[\]]+(\[(\d+)])?)+$");
+    private static readonly Regex RowIndexRegex = new Regex(@"^([^[\]]+(\[(\d+)])?)+$", RegexOptions.None, TimeSpan.FromSeconds(1));
     /// <summary>
     /// Get the row indices from a key
     /// </summary>
