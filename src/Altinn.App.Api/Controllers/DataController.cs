@@ -867,7 +867,7 @@ namespace Altinn.App.Api.Controllers
             return false;
         }
 
-        private ActionResult Problem(DataPatchError error)
+        private ObjectResult Problem(DataPatchError error)
         {
             int code = error.ErrorType switch
             {
