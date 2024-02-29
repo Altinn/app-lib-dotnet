@@ -7,7 +7,7 @@ namespace Altinn.App.Core.Models.Result;
 /// </summary>
 /// <typeparam name="T">Type returned when Ok result</typeparam>
 /// <typeparam name="TU">Type returned when Error result</typeparam>
-public class ServiceResult<T, TU> where T : class? where TU : class?, IServiceError?
+public class ServiceResult<T, TU>
 {
     /// <summary>
     /// The value returned when the result is Ok
@@ -36,11 +36,11 @@ public class ServiceResult<T, TU> where T : class? where TU : class?, IServiceEr
     /// Implicitly create a ServiceResult with a ok result
     /// </summary>
     /// <returns></returns>
-    public static implicit operator ServiceResult<T, TU>(T okData) => new(okData, null, true);
+    public static implicit operator ServiceResult<T, TU>(T okData) => new(okData, default, true);
     
     /// <summary>
     /// Implicitly create a ServiceResult with an error result
     /// </summary>
     /// <returns></returns>
-    public static implicit operator ServiceResult<T, TU>(TU error) => new(null, error, false);
+    public static implicit operator ServiceResult<T, TU>(TU error) => new(default, error, false);
 }

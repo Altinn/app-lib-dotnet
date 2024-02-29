@@ -36,5 +36,5 @@ public class ServiceResultTests
         res.Ok.Should().BeNull();
     }
 
-    private class DummyError : IServiceError;
+    private class DummyError;
 }

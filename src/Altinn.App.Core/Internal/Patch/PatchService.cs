@@ -77,30 +77,30 @@ public class PatchService : IPatchService
             };
         }
 
-        var (model, error) = DeserializeModel(oldModel.GetType(), patchResult.Result!);
-        if (error is not null)
+        var result = DeserializeModel(oldModel.GetType(), patchResult.Result!);
+        if (!result.Success)
         {
             return new DataPatchError()
             {
                 Title = "Patch operation did not deserialize",
-                Detail = error,
+                Detail = result.Error,
                 ErrorType = DataPatchErrorType.DeserializationFailed
             };
         }
         Guid dataElementId = Guid.Parse(dataElement.Id);
         foreach (var dataProcessor in _dataProcessors)
         {
-            await dataProcessor.ProcessDataWrite(instance, dataElementId, model, oldModel, language);
+            await dataProcessor.ProcessDataWrite(instance, dataElementId, result.Ok, oldModel, language);
         }
 
         // Ensure that all lists are changed from null to empty list.
-        ObjectUtils.InitializeAltinnRowId(model);
+        ObjectUtils.InitializeAltinnRowId(result.Ok);
 
-        var validationIssues = await _validationService.ValidateFormData(instance, dataElement, dataType, model, oldModel, ignoredValidators, language);
+        var validationIssues = await _validationService.ValidateFormData(instance, dataElement, dataType, result.Ok, oldModel, ignoredValidators, language);
 
         // Save Formdata to database
         await _dataClient.UpdateData(
-                model,
+                result.Ok,
                 instanceIdentifier.InstanceGuid,
                 modelType,
                 appIdentifier.Org,
@@ -110,27 +110,27 @@ public class PatchService : IPatchService
 
         return new DataPatchResult
         {
-            NewDataModel = model,
+            NewDataModel = result.Ok,
             ValidationIssues = validationIssues
         };
     }
 
-    private static (object Model, string? Error) DeserializeModel(Type type, JsonNode patchResult)
+    private static ServiceResult<object, string> DeserializeModel(Type type, JsonNode patchResult)
     {
         try
         {
             var model = patchResult.Deserialize(type, JsonSerializerOptions);
             if (model is null)
             {
-                return (null!, "Deserialize patched model returned null");
+                return "Deserialize patched model returned null";
             }
 
-            return (model, null);
+            return model;
         }
         catch (JsonException e) when (e.Message.Contains("could not be mapped to any .NET member contained in type"))
         {
             // Give better feedback when the issue is that the patch contains a path that does not exist in the model
-            return (null!, e.Message);
+            return e.Message;
         }
     }
 }

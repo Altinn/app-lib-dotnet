@@ -1,11 +1,9 @@
-using Altinn.App.Core.Models.Result;
-
 namespace Altinn.App.Core.Internal.Patch;
 
 /// <summary>
 /// Error that can be returned from the <see cref="IPatchService"/> when a patch operation fails.
 /// </summary>
-public class DataPatchError: IServiceError
+public class DataPatchError
 {
     /// <summary>
     /// The title of the error.

@@ -422,9 +422,15 @@ namespace Altinn.App.Api.Controllers
                 {
                     await UpdateDataValuesOnInstance(instance, dataType.Id, res.Ok.NewDataModel);
                     await UpdatePresentationTextsOnInstance(instance, dataType.Id, res.Ok.NewDataModel);
+                    
+                    return Ok(new DataPatchResponse
+                    {
+                        NewDataModel = res.Ok.NewDataModel,
+                        ValidationIssues = res.Ok.ValidationIssues
+                    });
                 }
 
-                return MapPatchResult(res);
+                return Problem(res.Error);
             }
             catch (PlatformHttpException e)
             {
@@ -861,18 +867,9 @@ namespace Altinn.App.Api.Controllers
             return false;
         }
 
-        private ActionResult<DataPatchResponse> MapPatchResult(ServiceResult<DataPatchResult, DataPatchError> result)
+        private ActionResult Problem(DataPatchError error)
         {
-            if (result.Success)
-            {
-                return Ok(new DataPatchResponse
-                {
-                    NewDataModel = result.Ok.NewDataModel,
-                    ValidationIssues = result.Ok.ValidationIssues
-                });
-            }
-
-            int code = result.Error.ErrorType switch
+            int code = error.ErrorType switch
             {
                 DataPatchErrorType.PatchTestFailed => (int)HttpStatusCode.Conflict,
                 DataPatchErrorType.DeserializationFailed => (int)HttpStatusCode.UnprocessableContent,
@@ -880,11 +877,11 @@ namespace Altinn.App.Api.Controllers
             };
             return StatusCode(code, new ProblemDetails()
             {
-                Title = result.Error.Title,
-                Detail = result.Error.Detail,
+                Title = error.Title,
+                Detail = error.Detail,
                 Type = "https://datatracker.ietf.org/doc/html/rfc6902/",
                 Status = code,
-                Extensions = result.Error.Extensions ?? new Dictionary<string, object?>(StringComparer.Ordinal)
+                Extensions = error.Extensions ?? new Dictionary<string, object?>(StringComparer.Ordinal)
             });
         }
     }
