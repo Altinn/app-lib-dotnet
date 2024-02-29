@@ -1,4 +1,6 @@
 
+using Altinn.App.Core.Models.Process;
+
 namespace Altinn.App.Core.Models.UserAction;
 
 /// <summary>
@@ -27,6 +29,11 @@ public class UserActionResult
     public ActionError? Error { get; set; }
     
     /// <summary>
+    /// Error type to return when the user action was not successful
+    /// </summary>
+    public ProcessErrorType ErrorType { get; set; }
+    
+    /// <summary>
     /// Creates a success result
     /// </summary>
     /// <param name="clientActions"></param>
@@ -40,20 +47,19 @@ public class UserActionResult
         };
         return userActionResult;
     }
-    
+
     /// <summary>
     /// Creates a failure result
     /// </summary>
-    /// <param name="error"></param>
-    /// <param name="clientActions"></param>
     /// <returns></returns>
-    public static UserActionResult FailureResult(ActionError error, List<ClientAction>? clientActions = null)
+    public static UserActionResult FailureResult(ActionError error, List<ClientAction>? clientActions = null, ProcessErrorType errorType = ProcessErrorType.Internal)
     {
         return new UserActionResult
         {
             Success = false,
             ClientActions = clientActions,
-            Error = error
+            Error = error,
+            ErrorType = errorType
         };
     }
 

@@ -132,8 +132,7 @@ public class ProcessEngine : IProcessEngine
             {
                 Success = false,
                 ErrorMessage = $"Action handler for action {request.Action} failed!",
-                //TODO: See how we can use ActionResult when #452 is merged
-                ErrorType = actionResult.Error?.Code == "NoUserId" ? ProcessErrorType.Unauthorized : ProcessErrorType.Internal
+                ErrorType = actionResult.ErrorType
             };
         }
 

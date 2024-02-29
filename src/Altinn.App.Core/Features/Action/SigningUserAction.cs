@@ -4,6 +4,7 @@ using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
@@ -46,11 +47,13 @@ public class SigningUserAction: IUserAction
     {
         if (context.UserId == null)
         {
-            return UserActionResult.FailureResult(new ActionError()
-            {
-                Code = "NoUserId",
-                Message = "User id is missing in token"
-            });
+            return UserActionResult.FailureResult(
+                error: new ActionError()
+                {
+                    Code = "NoUserId",
+                    Message = "User id is missing in token"
+                },
+                errorType: ProcessErrorType.Unauthorized);
         }
         if (_processReader.GetFlowElement(context.Instance.Process.CurrentTask.ElementId) is ProcessTask currentTask)
         {
