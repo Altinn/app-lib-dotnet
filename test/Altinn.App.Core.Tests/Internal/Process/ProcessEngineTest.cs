@@ -322,7 +322,7 @@ public class ProcessEngineTest : IDisposable
     }
     
     [Fact]
-    public async Task Next_returns_unsuccessful_unauthorized_when_action_handler_returns_code_NoUserId()
+    public async Task Next_returns_unsuccessful_unauthorized_when_action_handler_returns_errortype_Unauthorized()
     {
         var expectedInstance = new Instance()
         {
@@ -339,11 +339,13 @@ public class ProcessEngineTest : IDisposable
         };
         Mock<IUserAction> userActionMock = new Mock<IUserAction>(MockBehavior.Strict);
         userActionMock.Setup(u => u.Id).Returns("sign");
-        userActionMock.Setup(u => u.HandleAction(It.IsAny<UserActionContext>())).ReturnsAsync(UserActionResult.FailureResult(new ActionError()
-        {
-            Code = "NoUserId",
-            Message = "User id is missing in token"
-        }));
+        userActionMock.Setup(u => u.HandleAction(It.IsAny<UserActionContext>())).ReturnsAsync(UserActionResult.FailureResult(
+            error: new ActionError()
+            {
+                Code = "NoUserId",
+                Message = "User id is missing in token"
+            },
+            errorType: ProcessErrorType.Unauthorized));
         ProcessEngine processEngine = GetProcessEngine(null, expectedInstance, [userActionMock.Object]);
         Instance instance = new Instance()
         {

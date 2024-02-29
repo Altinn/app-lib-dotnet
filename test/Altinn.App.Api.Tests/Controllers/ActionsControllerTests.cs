@@ -6,6 +6,7 @@ using Altinn.App.Api.Models;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Api.Tests.Utils;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -166,9 +167,9 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
                              """;
         CompareResult<UserActionResponse>(expectedString, content);
     }
-
+    
     [Fact]
-    public async Task Perform_returns_400_if_action_failed()
+    public async Task Perform_returns_400_if_action_failed_and_errorType_is_BadRequest()
     {
         OverrideServicesForThisTest = (services) => { services.AddTransient<IUserAction, LookupAction>(); };
         var org = "tdd";
@@ -177,7 +178,7 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         Guid guid = new Guid("b1135209-628e-4a6e-9efd-e4282068ef41");
         TestData.DeleteInstance(org, app, 1337, guid);
         TestData.PrepareInstance(org, app, 1337, guid);
-        string token = PrincipalUtil.GetToken(1001, null, 3);
+        string token = PrincipalUtil.GetToken(400, null, 3);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         using HttpResponseMessage response = await client.PostAsync($"/{org}/{app}/instances/1337/{guid}/actions",
             new StringContent("{\"action\":\"lookup\"}", Encoding.UTF8, "application/json"));
@@ -185,6 +186,66 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         TestData.DeleteInstanceAndData(org, app, 1337, guid);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+    
+    [Fact]
+    public async Task Perform_returns_401_if_action_failed_and_errorType_is_Unauthorized()
+    {
+        OverrideServicesForThisTest = (services) => { services.AddTransient<IUserAction, LookupAction>(); };
+        var org = "tdd";
+        var app = "task-action";
+        HttpClient client = GetRootedClient(org, app);
+        Guid guid = new Guid("b1135209-628e-4a6e-9efd-e4282068ef41");
+        TestData.DeleteInstance(org, app, 1337, guid);
+        TestData.PrepareInstance(org, app, 1337, guid);
+        string token = PrincipalUtil.GetToken(401, null, 3);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        using HttpResponseMessage response = await client.PostAsync($"/{org}/{app}/instances/1337/{guid}/actions",
+            new StringContent("{\"action\":\"lookup\"}", Encoding.UTF8, "application/json"));
+        // Cleanup testdata
+        TestData.DeleteInstanceAndData(org, app, 1337, guid);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+    
+    [Fact]
+    public async Task Perform_returns_409_if_action_failed_and_errorType_is_Conflict()
+    {
+        OverrideServicesForThisTest = (services) => { services.AddTransient<IUserAction, LookupAction>(); };
+        var org = "tdd";
+        var app = "task-action";
+        HttpClient client = GetRootedClient(org, app);
+        Guid guid = new Guid("b1135209-628e-4a6e-9efd-e4282068ef41");
+        TestData.DeleteInstance(org, app, 1337, guid);
+        TestData.PrepareInstance(org, app, 1337, guid);
+        string token = PrincipalUtil.GetToken(409, null, 3);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        using HttpResponseMessage response = await client.PostAsync($"/{org}/{app}/instances/1337/{guid}/actions",
+            new StringContent("{\"action\":\"lookup\"}", Encoding.UTF8, "application/json"));
+        // Cleanup testdata
+        TestData.DeleteInstanceAndData(org, app, 1337, guid);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+    
+    [Fact]
+    public async Task Perform_returns_500_if_action_failed_and_errorType_is_Internal()
+    {
+        OverrideServicesForThisTest = (services) => { services.AddTransient<IUserAction, LookupAction>(); };
+        var org = "tdd";
+        var app = "task-action";
+        HttpClient client = GetRootedClient(org, app);
+        Guid guid = new Guid("b1135209-628e-4a6e-9efd-e4282068ef41");
+        TestData.DeleteInstance(org, app, 1337, guid);
+        TestData.PrepareInstance(org, app, 1337, guid);
+        string token = PrincipalUtil.GetToken(500, null, 3);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        using HttpResponseMessage response = await client.PostAsync($"/{org}/{app}/instances/1337/{guid}/actions",
+            new StringContent("{\"action\":\"lookup\"}", Encoding.UTF8, "application/json"));
+        // Cleanup testdata
+        TestData.DeleteInstanceAndData(org, app, 1337, guid);
+
+        response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
     }
 
     [Fact]
@@ -224,11 +285,25 @@ public class LookupAction : IUserAction
     public async Task<UserActionResult> HandleAction(UserActionContext context)
     {
         await Task.CompletedTask;
-        if (context.UserId == 1000)
+        if (context.UserId == 400)
         {
-            return UserActionResult.SuccessResult(new List<ClientAction>() { ClientAction.NextPage() });
+            return UserActionResult.FailureResult(new ActionError(), errorType: ProcessErrorType.BadRequest);
         }
 
-        return UserActionResult.FailureResult(new ActionError());
+        if (context.UserId == 401)
+        {
+            return UserActionResult.FailureResult(new ActionError(), errorType: ProcessErrorType.Unauthorized);
+        }
+        
+        if (context.UserId == 409)
+        {
+            return UserActionResult.FailureResult(new ActionError(), errorType: ProcessErrorType.Conflict);
+        }
+        
+        if (context.UserId == 500)
+        {
+            return UserActionResult.FailureResult(new ActionError(), errorType: ProcessErrorType.Internal);
+        }
+        return UserActionResult.SuccessResult(new List<ClientAction>() { ClientAction.NextPage() });
     }
 }

@@ -6,6 +6,7 @@ using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
 using Altinn.App.Core.Tests.Internal.Process.TestUtils;
 using Altinn.Platform.Profile.Models;
@@ -105,11 +106,13 @@ public class SigningUserActionTests
         var result = await userAction.HandleAction(userActionContext);
 
         // Assert
-        var fail = UserActionResult.FailureResult(new ActionError()
-        {
-            Code = "NoUserId",
-            Message = "User id is missing in token"
-        });
+        var fail = UserActionResult.FailureResult(
+            error: new ActionError()
+            {
+                Code = "NoUserId",
+                Message = "User id is missing in token"
+            },
+            errorType: ProcessErrorType.Unauthorized);
         result.Should().BeEquivalentTo(fail);
         signClientMock.VerifyNoOtherCalls();
     }
