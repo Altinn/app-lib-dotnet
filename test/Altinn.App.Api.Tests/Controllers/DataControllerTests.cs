@@ -79,7 +79,7 @@ namespace Altinn.App.Api.Tests.Controllers
 
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         }
-        
+
         [Fact]
         public async Task CreateDataElement_ZeroBytes_BinaryPdf_AnalyserShouldReturnBadRequest()
         {
@@ -93,7 +93,7 @@ namespace Altinn.App.Api.Tests.Controllers
             string org = "tdd";
             string app = "contributer-restriction";
             HttpClient client = GetRootedClient(org, app);
- 
+
             Guid guid = new Guid("0fc98a23-fe31-4ef5-8fb9-dd3f479354cd");
             TestData.DeleteInstance(org, app, 1337, guid);
             TestData.PrepareInstance(org, app, 1337, guid);

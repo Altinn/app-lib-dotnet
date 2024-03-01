@@ -237,7 +237,7 @@ public class ProcessHelperTests
         };
         ProcessHelper.GetSequenceFlowType(sequenceFlows).Should().Be(ProcessSequenceFlowType.AbandonCurrentReturnToNext);
     }
-    
+
     [Fact]
     public void GetSequenceFlowType_returns_second_flow_type_if_FlowType_Not_Defined_on_first_flow()
     {
@@ -259,7 +259,7 @@ public class ProcessHelperTests
         };
         ProcessHelper.GetSequenceFlowType(sequenceFlows).Should().Be(ProcessSequenceFlowType.AbandonCurrentReturnToNext);
     }
-    
+
     [Fact]
     public void GetSequenceFlowType_returns_CompleteCurrentMoveToNext_if_FlowType_Not_Defined()
     {
@@ -280,7 +280,7 @@ public class ProcessHelperTests
         };
         ProcessHelper.GetSequenceFlowType(sequenceFlows).Should().Be(ProcessSequenceFlowType.CompleteCurrentMoveToNext);
     }
-    
+
     [Fact]
     public void GetSequenceFlowType_returns_CompleteCurrentMoveToNext_if_Unknown_FlowTypes()
     {

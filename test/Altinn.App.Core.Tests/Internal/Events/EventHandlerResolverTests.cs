@@ -30,7 +30,7 @@ namespace Altinn.App.PlatformServices.Tests.Internal.Events
 
             IEventHandler eventHandler = factory.ResolveEventHandler("this.event.should.not.exists");
             Action action = () => eventHandler.ProcessEvent(new CloudEvent());
-            
+
             eventHandler.Should().BeOfType<UnhandledEventHandler>();
             eventHandler.EventType.Should().Be("app.events.unhandled");
             action.Should().Throw<NotImplementedException>();
