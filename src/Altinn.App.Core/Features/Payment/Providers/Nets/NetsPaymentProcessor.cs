@@ -19,9 +19,16 @@ public class NetsPaymentProcessor : IPaymentProcessor
     private readonly INetsClient _netsClient;
 
     /// <summary>
+    /// Amounts are specified in the lowest monetary unit for the given currency, without punctuation marks. For example: 100,00 NOK is specified as 10000 and 9.99 USD is specified as 999.
+    /// Entering the amount 100 corresponds to 1 unit of the currency entered, such as e.g. 1 NOK.
+    /// </summary>
+    private const int LowestMonetaryUnitMultiplier = 100;
+
+    /// <summary>
     /// Implementation of IPaymentProcessor for Nets.
     /// </summary>
-    public NetsPaymentProcessor(INetsClient netsClient, IOptions<NetsPaymentSettings> settings, IOptions<GeneralSettings> generalSettings)
+    public NetsPaymentProcessor(INetsClient netsClient, IOptions<NetsPaymentSettings> settings,
+        IOptions<GeneralSettings> generalSettings)
     {
         _netsClient = netsClient;
         _settings = settings.Value;
@@ -34,16 +41,12 @@ public class NetsPaymentProcessor : IPaymentProcessor
         var instanceIdentifier = new InstanceIdentifier(instance);
         string baseUrl = _generalSettings.FormattedExternalAppBaseUrl(new AppIdentifier(instance));
         var altinnAppUrl = $"{baseUrl}#/instance/{instanceIdentifier}";
-        
-        /*
-         * Amounts are specified in the lowest monetary unit for the given currency, without punctuation marks. For example: 100,00 NOK is specified as 10000 and 9.99 USD is specified as 999.
-         * Entering the amount 100 corresponds to 1 unit of the currency entered, such as e.g. 1 NOK.
-         */
+
         var payment = new NetsCreatePayment()
         {
             Order = new NetsOrder
             {
-                Amount = (int)(orderDetails.TotalPriceIncVat * 100),
+                Amount = (int)(orderDetails.TotalPriceIncVat * LowestMonetaryUnitMultiplier),
                 Currency = orderDetails.Currency,
                 Reference = orderDetails.OrderReference,
                 Items = orderDetails.OrderLines.Select(l => new NetsOrderItem()
@@ -53,11 +56,12 @@ public class NetsPaymentProcessor : IPaymentProcessor
                     Quantity = l.Quantity,
                     Unit = l.Unit,
 
-                    UnitPrice = (int)(l.PriceExVat * 100),
-                    GrossTotalAmount = (int)(l.PriceExVat * 100 * l.Quantity * (1 + l.VatPercent / 100)),
-                    NetTotalAmount = (int)(l.PriceExVat * 100 * l.Quantity),
-                    TaxAmount = (int)(l.PriceExVat * 100 * l.Quantity * (l.VatPercent / 100)),
-                    TaxRate = (int)(l.VatPercent * 100),
+                    UnitPrice = (int)(l.PriceExVat * LowestMonetaryUnitMultiplier),
+                    GrossTotalAmount = (int)(l.PriceExVat * LowestMonetaryUnitMultiplier * l.Quantity *
+                                             (1 + l.VatPercent / 100)),
+                    NetTotalAmount = (int)(l.PriceExVat * LowestMonetaryUnitMultiplier * l.Quantity),
+                    TaxAmount = (int)(l.PriceExVat * LowestMonetaryUnitMultiplier * l.Quantity * (l.VatPercent / 100)),
+                    TaxRate = (int)(l.VatPercent * LowestMonetaryUnitMultiplier),
                 }).ToList(),
             },
             MyReference = instance.Id.Split('/')[1],
@@ -82,7 +86,8 @@ public class NetsPaymentProcessor : IPaymentProcessor
         HttpApiResult<NetsCreatePaymentSuccess> httpApiResult = await _netsClient.CreatePayment(payment);
         if (!httpApiResult.IsSuccess || httpApiResult.Result?.HostedPaymentPageUrl is null)
         {
-            throw new PaymentException("Failed to create payment\n" + httpApiResult.Status + " - " + httpApiResult.RawError);
+            throw new PaymentException("Failed to create payment\n" + httpApiResult.Status + " - " +
+                                       httpApiResult.RawError);
         }
 
         string hostedPaymentPageUrl = httpApiResult.Result.HostedPaymentPageUrl;
@@ -98,9 +103,14 @@ public class NetsPaymentProcessor : IPaymentProcessor
     }
 
     /// <inheritdoc />
-    public async Task CancelPayment(Instance instance, string paymentReference)
+    public async Task<bool> CancelPayment(Instance instance, PaymentInformation paymentInformation)
     {
-        await _netsClient.CancelPayment(paymentReference);
+        int amount = paymentInformation.OrderDetails != null
+            ? (int)(paymentInformation.OrderDetails.TotalPriceIncVat * LowestMonetaryUnitMultiplier)
+            : 0;
+
+        bool result = await _netsClient.CancelPayment(paymentInformation.PaymentReference, amount);
+        return result;
     }
 
     /// <inheritdoc />

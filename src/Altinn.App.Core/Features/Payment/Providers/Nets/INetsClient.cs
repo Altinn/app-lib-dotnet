@@ -25,7 +25,8 @@ namespace Altinn.App.Core.Features.Payment.Providers.Nets
         /// Cancel a payment that has not been captured.
         /// </summary>
         /// <param name="paymentId"></param>
+        /// <param name="amount"></param>
         /// <returns></returns>
-        Task<HttpApiResult<bool>> CancelPayment(string paymentId);
+        Task<bool> CancelPayment(string paymentId, int amount);
     }
 }

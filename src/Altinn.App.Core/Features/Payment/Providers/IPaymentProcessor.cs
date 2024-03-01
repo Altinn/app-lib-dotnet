@@ -20,9 +20,9 @@ public interface IPaymentProcessor
     /// Cancels a payment for the specified instance and payment reference.
     /// </summary>
     /// <param name="instance">The instance for which the payment is being cancelled.</param>
-    /// <param name="paymentReference">The reference of the payment to be cancelled.</param>
+    /// <param name="paymentInformation"></param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public Task CancelPayment(Instance instance, string paymentReference);
+    public Task<bool> CancelPayment(Instance instance, PaymentInformation paymentInformation);
 
     /// <summary>
     /// Gets the payment status for the specified instance and payment reference.

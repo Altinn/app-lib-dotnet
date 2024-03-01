@@ -10,6 +10,7 @@ using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
@@ -21,11 +22,12 @@ public class PaymentServiceTests
     private readonly Mock<IPaymentProcessor> _paymentProcessor = new(MockBehavior.Strict);
     private readonly Mock<IOrderDetailsCalculator> _orderDetailsFormatter = new(MockBehavior.Strict);
     private readonly Mock<IDataService> _dataService = new(MockBehavior.Strict);
+    private readonly Mock<ILogger<PaymentService>> _logger = new();
 
     public PaymentServiceTests()
     {
         _paymentService =
-            new PaymentService(_paymentProcessor.Object, _orderDetailsFormatter.Object, _dataService.Object);
+            new PaymentService(_paymentProcessor.Object, _orderDetailsFormatter.Object, _dataService.Object, _logger.Object);
     }
 
     [Fact]
@@ -149,7 +151,7 @@ public class PaymentServiceTests
             .ReturnsAsync((PaymentStatus?)null);
 
         var paymentService =
-            new PaymentService(_paymentProcessor.Object, _orderDetailsFormatter.Object, _dataService.Object);
+            new PaymentService(_paymentProcessor.Object, _orderDetailsFormatter.Object, _dataService.Object, _logger.Object);
 
         // Act & Assert
         await Assert.ThrowsAsync<PaymentException>(() =>
@@ -175,9 +177,9 @@ public class PaymentServiceTests
         _paymentProcessor.Setup(pp =>
                 pp.GetPaymentStatus(It.IsAny<Instance>(), It.IsAny<string>(), It.IsAny<decimal>()))
             .ReturnsAsync(PaymentStatus.Paid);
-
+        
         var paymentService =
-            new PaymentService(_paymentProcessor.Object, _orderDetailsFormatter.Object, _dataService.Object);
+            new PaymentService(_paymentProcessor.Object, _orderDetailsFormatter.Object, _dataService.Object, _logger.Object);
 
         // Act
         PaymentInformation? result =

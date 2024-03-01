@@ -129,28 +129,16 @@ public class NetsRefunds
     public decimal Amount { get; set; }
     public string? State { get; set; }
     public string? LastUpdated { get; set; }
-    public NetsOrderItems[]? OrderItems { get; set; }
+    public NetsOrderItem[]? OrderItems { get; set; }
 }
 
-public class NetsOrderItems
-{
-    public string? Reference { get; set; }
-    public string? Name { get; set; }
-    public double? Quantity { get; set; }
-    public string? Unit { get; set; }
-    public decimal? UnitPrice { get; set; }
-    public decimal? TaxRate { get; set; }
-    public decimal? TaxAmount { get; set; }
-    public decimal? GrossTotalAmount { get; set; }
-    public decimal? NetTotalAmount { get; set; }
-}
 
 public class NetsCharges
 {
     public string? ChargeId { get; set; }
     public decimal? Amount { get; set; }
     public string? Created { get; set; }
-    public NetsOrderItems[]? OrderItems { get; set; }
+    public NetsOrderItem[]? OrderItems { get; set; }
 }
 
 public class NetsSubscription
