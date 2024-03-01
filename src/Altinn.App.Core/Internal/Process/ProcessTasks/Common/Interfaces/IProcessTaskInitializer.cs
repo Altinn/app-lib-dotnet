@@ -14,24 +14,5 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks
         /// <param name="instance"></param>
         /// <param name="prefill"></param>
         Task Initialize(string taskId, Instance instance, Dictionary<string, string> prefill);
-
-        
-        /// <summary>
-        /// Updates presentation texts on the instance for a given data type and data.
-        /// </summary>
-        /// <param name="instance"></param>
-        /// <param name="dataType"></param>
-        /// <param name="data"></param>
-        /// <returns></returns>
-        Task UpdatePresentationTextsOnInstance(Instance instance, string dataType, dynamic data);
-        
-        /// <summary>
-        /// Updates data values on the instance for a given data type and data.
-        /// </summary>
-        /// <param name="instance"></param>
-        /// <param name="dataType"></param>
-        /// <param name="data"></param>
-        /// <returns></returns>
-        Task UpdateDataValuesOnInstance(Instance instance, string dataType, object data);
     }
 }

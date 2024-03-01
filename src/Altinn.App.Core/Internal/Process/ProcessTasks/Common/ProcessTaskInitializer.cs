@@ -64,6 +64,8 @@ public class ProcessTaskInitializer : IProcessTaskInitializer
 
                 Type type = _appModel.GetModelType(dataType.AppLogic.ClassRef);
 
+                ObjectUtils.InitializeAltinnRowId(data);
+
                 DataElement createdDataElement = await _dataClient.InsertFormData(instance, dataType.Id, data, type);
                 instance.Data ??= [];
                 instance.Data.Add(createdDataElement);

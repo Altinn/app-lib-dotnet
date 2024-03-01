@@ -14,31 +14,5 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks
         /// <param name="instance"></param>
         /// <returns></returns>
         Task Finalize(string taskId, Instance instance);
-
-        /// <summary>
-        /// Removes data elements generated from a task, if the data elements are tagged with the task ID.
-        /// </summary>
-        /// <param name="instance"></param>
-        /// <param name="taskId"></param>
-        /// <returns></returns>
-        Task RemoveDataElementsGeneratedFromTask(Instance instance, string taskId);
-        
-        /// <summary>
-        /// Remove hidden data from the instance.
-        /// </summary>
-        /// <param name="instance"></param>
-        /// <param name="instanceGuid"></param>
-        /// <param name="connectedDataTypes"></param>
-        /// <returns></returns>
-        Task RemoveHiddenData(Instance instance, Guid instanceGuid, List<DataType>? connectedDataTypes);
-        
-        /// <summary>
-        /// Remove shadow fields from the instance.
-        /// </summary>
-        /// <param name="instance"></param>
-        /// <param name="instanceGuid"></param>
-        /// <param name="connectedDataTypes"></param>
-        /// <returns></returns>
-        Task RemoveShadowFields(Instance instance, Guid instanceGuid, List<DataType> connectedDataTypes);
     }
 }

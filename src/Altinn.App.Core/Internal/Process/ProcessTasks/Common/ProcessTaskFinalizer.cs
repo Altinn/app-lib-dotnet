@@ -22,7 +22,7 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
     private readonly IAppModel _appModel;
     private readonly IAppResources _appResources;
     private readonly LayoutEvaluatorStateInitializer _layoutEvaluatorStateInitializer;
-    private readonly IOptions<AppSettings>? _appSettings;
+    private readonly IOptions<AppSettings> _appSettings;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessTaskFinalizer"/> class.
@@ -38,7 +38,7 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
         IAppModel appModel,
         IAppResources appResources,
         LayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer,
-        IOptions<AppSettings>? appSettings = null)
+        IOptions<AppSettings> appSettings)
     {
         _appMetadata = appMetadata;
         _dataClient = dataClient;
@@ -56,8 +56,8 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
         List<DataType> connectedDataTypes = applicationMetadata.DataTypes.FindAll(dt => dt.TaskId == taskId);
 
         await RemoveDataElementsGeneratedFromTask(instance, taskId);
-        await RemoveHiddenData(instance, instanceGuid, connectedDataTypes);
-        await RemoveShadowFields(instance, instanceGuid, connectedDataTypes);
+
+        await RunRemoveFieldsInModelOnTaskComplete(instance, connectedDataTypes);
     }
 
     /// <inheritdoc />
@@ -76,93 +76,76 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
         }
     }
 
-    /// <inheritdoc />
-    public async Task RemoveHiddenData(Instance instance, Guid instanceGuid, List<DataType>? connectedDataTypes)
+    private async Task RunRemoveFieldsInModelOnTaskComplete(Instance instance, List<DataType> dataTypesToLock)
     {
-        if ((_appSettings?.Value?.RemoveHiddenData) != true)
-        {
-            return;
-        }
+        ArgumentNullException.ThrowIfNull(instance.Data);
 
-        foreach (DataType dataType in connectedDataTypes?.Where(dt => dt.AppLogic != null) ?? Enumerable.Empty<DataType>())
-        {
-            foreach (Guid dataElementId in instance.Data.Where(de => de.DataType == dataType.Id)
-                         .Select(dataElement => Guid.Parse(dataElement.Id)))
-            {
-                // Delete hidden data in datamodel
-                Type modelType = _appModel.GetModelType(dataType.AppLogic.ClassRef);
-                string app = instance.AppId.Split("/")[1];
-                int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
-                object data = await _dataClient.GetFormData(
-                    instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, dataElementId);
-
-                if (_appSettings?.Value?.RemoveHiddenData == true)
+        dataTypesToLock = dataTypesToLock.Where(d => !string.IsNullOrEmpty(d.AppLogic?.ClassRef)).ToList();
+        await Task.WhenAll(
+            instance.Data
+                .Join(dataTypesToLock, de => de.DataType, dt => dt.Id, (de, dt) => (dataElement: de, dataType: dt))
+                .Select(async (d) =>
                 {
-                    // Remove hidden data before validation, ignore hidden rows. TODO: Determine how hidden rows should be handled going forward.
-                    LayoutSet? layoutSet = _appResources.GetLayoutSetForTask(dataType.TaskId);
-                    LayoutEvaluatorState evaluationState = await _layoutEvaluatorStateInitializer.Init(instance, data, layoutSet?.Id);
-                    LayoutEvaluator.RemoveHiddenData(evaluationState, RowRemovalOption.Ignore);
-                }
-
-                // save the updated data if there are changes
-                await _dataClient.UpdateData(data, instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId,
-                    dataElementId);
-            }
-        }
+                    await RemoveFieldsOnTaskComplete(instance, dataTypesToLock, d.dataElement, d.dataType);
+                }));
     }
 
-    /// <inheritdoc />
-    public async Task RemoveShadowFields(Instance instance, Guid instanceGuid, List<DataType> connectedDataTypes)
+    private async Task RemoveFieldsOnTaskComplete(Instance instance, List<DataType> dataTypesToLock, DataElement dataElement, DataType dataType)
     {
-        if (connectedDataTypes.Find(dt => dt.AppLogic?.ShadowFields?.Prefix != null) == null)
+        // Download the data
+        Type modelType = _appModel.GetModelType(dataType.AppLogic.ClassRef);
+        var instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
+        var dataGuid = Guid.Parse(dataElement.Id);
+        string app = instance.AppId.Split("/")[1];
+        int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
+        object data = await _dataClient.GetFormData(
+            instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, dataGuid);
+
+        // Remove hidden data before validation, ignore hidden rows.
+        if (_appSettings.Value?.RemoveHiddenData == true)
         {
-            return;
+            var layoutSet = _appResources.GetLayoutSetForTask(dataType.TaskId);
+            var evaluationState = await _layoutEvaluatorStateInitializer.Init(instance, data, layoutSet?.Id);
+            LayoutEvaluator.RemoveHiddenData(evaluationState, RowRemovalOption.Ignore);
         }
 
-        foreach (DataType dataType in connectedDataTypes.Where(dt => dt.AppLogic?.ShadowFields != null))
+        // Remove shadow fields
+        if (dataType.AppLogic?.ShadowFields?.Prefix != null)
         {
-            foreach (Guid dataElementId in instance.Data.Where(de => de.DataType == dataType.Id)
-                         .Select(dataElement => Guid.Parse(dataElement.Id)))
+            var modifier = new IgnorePropertiesWithPrefix(dataType.AppLogic.ShadowFields.Prefix);
+            JsonSerializerOptions options = new()
             {
-                Type modelType = _appModel.GetModelType(dataType.AppLogic.ClassRef);
-                string app = instance.AppId.Split("/")[1];
-                int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
-                dynamic data = await _dataClient.GetFormData(
-                    instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, dataElementId);
-
-                var modifier = new IgnorePropertiesWithPrefix(dataType.AppLogic.ShadowFields.Prefix);
-                JsonSerializerOptions options = new()
+                TypeInfoResolver = new DefaultJsonTypeInfoResolver
                 {
-                    TypeInfoResolver = new DefaultJsonTypeInfoResolver
-                    {
-                        Modifiers = { modifier.ModifyPrefixInfo }
-                    },
-                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-                };
+                    Modifiers = { modifier.ModifyPrefixInfo }
+                },
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            };
 
-                string serializedData = JsonSerializer.Serialize(data, options);
-                if (dataType.AppLogic.ShadowFields.SaveToDataType != null)
+            string serializedData = JsonSerializer.Serialize(data, options);
+            if (dataType.AppLogic.ShadowFields.SaveToDataType != null)
+            {
+                // Save the shadow fields to another data type
+                var saveToDataType = dataTypesToLock.Find(dt => dt.Id == dataType.AppLogic.ShadowFields.SaveToDataType);
+                if (saveToDataType == null)
                 {
-                    DataType? saveToDataType =
-                        connectedDataTypes.Find(dt => dt.Id == dataType.AppLogic.ShadowFields.SaveToDataType);
-                    if (saveToDataType == null)
-                    {
-                        throw new Exception(
-                            $"SaveToDataType {dataType.AppLogic.ShadowFields.SaveToDataType} not found");
-                    }
-
-                    Type saveToModelType = _appModel.GetModelType(saveToDataType.AppLogic.ClassRef);
-                    object? updatedData = JsonSerializer.Deserialize(serializedData, saveToModelType);
-                    await _dataClient.InsertFormData(updatedData, instanceGuid, saveToModelType ?? modelType,
-                        instance.Org, app, instanceOwnerPartyId, saveToDataType.Id);
+                    throw new Exception($"SaveToDataType {dataType.AppLogic.ShadowFields.SaveToDataType} not found");
                 }
-                else
-                {
-                    object? updatedData = JsonSerializer.Deserialize(serializedData, modelType);
-                    await _dataClient.UpdateData(updatedData, instanceGuid, modelType, instance.Org, app,
-                        instanceOwnerPartyId, dataElementId);
-                }
+
+                Type saveToModelType = _appModel.GetModelType(saveToDataType.AppLogic.ClassRef);
+                var updatedData = JsonSerializer.Deserialize(serializedData, saveToModelType);
+                await _dataClient.InsertFormData(updatedData, instanceGuid, saveToModelType ?? modelType, instance.Org, app, instanceOwnerPartyId, saveToDataType.Id);
+            }
+            else
+            {
+                // Remove the shadow fields from the data
+                data = JsonSerializer.Deserialize(serializedData, modelType)!;
             }
         }
+        // remove AltinnRowIds
+        ObjectUtils.RemoveAltinnRowId(data);
+
+        // Save the updated data
+        await _dataClient.UpdateData(data, instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, dataGuid);
     }
 }
