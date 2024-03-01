@@ -75,6 +75,7 @@ csharp_style_expression_bodied_lambdas = true:silent
 csharp_style_expression_bodied_local_functions = false:silent
 csharp_indent_labels = one_less_than_current
 csharp_style_prefer_primary_constructors = false:suggestion
+max_line_length = 160
 
 [Program.cs]
 dotnet_diagnostic.CA1050.severity = none
