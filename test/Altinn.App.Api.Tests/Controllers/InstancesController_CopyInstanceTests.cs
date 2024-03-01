@@ -363,9 +363,6 @@ public class InstancesController_CopyInstanceTests
         _processEngine.Setup(p => p.GenerateProcessStartEvents(It.IsAny<ProcessStartRequest>()))
             .ReturnsAsync(() => { return new ProcessChangeResult() { Success = true }; });
         _processEngine.Setup(p => p.HandleEventsAndUpdateStorage(It.IsAny<Instance>(), It.IsAny<Dictionary<string, string>>(), It.IsAny<List<InstanceEvent>>()));
-        _processEngine.Setup(p => p.StartProcess(It.IsAny<ProcessStartRequest>()))
-            .ReturnsAsync(() => { return new ProcessChangeResult() { Success = true }; });
-        _processEngine.Setup(p => p.UpdateInstanceAndRerunEvents(It.IsAny<ProcessStartRequest>(), It.IsAny<List<InstanceEvent>>()));
         _data.Setup(p => p.GetFormData(instanceGuid, It.IsAny<Type?>()!, Org, AppName, InstanceOwnerPartyId, dataGuid))
             .ReturnsAsync(new { test = "test" });
         _data.Setup(p => p.InsertFormData(It.IsAny<object>(), instanceGuid, It.IsAny<Type?>()!, Org, AppName, InstanceOwnerPartyId, dataTypeId))
