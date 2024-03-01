@@ -18,9 +18,9 @@ public class UserActionResult
     public ResultType ResultType { get; set; }
 
     /// <summary>
-    /// Gets or sets a dictionary of updated data models. Key should be dataTypeId
+    /// Gets or sets a dictionary of updated data models. Key should be elementId and value should be the updated data model
     /// </summary>
-    public Dictionary<string, object?>? UpdatedDataModels { get; set; }
+    public Dictionary<string, object>? UpdatedDataModels { get; set; }
 
     /// <summary>
     /// Actions for the client to perform after the user action has been handled
@@ -87,11 +87,11 @@ public class UserActionResult
     /// </summary>
     /// <param name="dataModelId"></param>
     /// <param name="dataModel"></param>
-    public void AddUpdatedDataModel(string dataModelId, object? dataModel)
+    public void AddUpdatedDataModel(string dataModelId, object dataModel)
     {
         if (UpdatedDataModels == null)
         {
-            UpdatedDataModels = new Dictionary<string, object?>();
+            UpdatedDataModels = new Dictionary<string, object>();
         }
         UpdatedDataModels.Add(dataModelId, dataModel);
     }

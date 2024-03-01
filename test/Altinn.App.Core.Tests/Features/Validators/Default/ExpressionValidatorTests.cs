@@ -8,6 +8,7 @@ using Altinn.App.Core.Features.Validation.Default;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Expressions;
+using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Models.Validation;
 using Altinn.App.Core.Tests.Helpers;
@@ -27,14 +28,25 @@ public class ExpressionValidatorTests
     private readonly ExpressionValidator _validator;
     private readonly Mock<ILogger<ExpressionValidator>> _logger = new();
     private readonly Mock<IAppResources> _appResources = new(MockBehavior.Strict);
+    private readonly Mock<IAppMetadata> _appMetadata = new(MockBehavior.Strict);
     private readonly IOptions<FrontEndSettings> _frontendSettings = Options.Create(new FrontEndSettings());
     private readonly Mock<LayoutEvaluatorStateInitializer> _layoutInitializer;
 
     public ExpressionValidatorTests()
     {
+        _appMetadata
+            .Setup(ar => ar.GetApplicationMetadata())
+            .ReturnsAsync(
+                new ApplicationMetadata("org/app")
+                {
+                    DataTypes = new List<DataType>() { new() { } }
+                });
+        _appResources
+            .Setup(ar => ar.GetLayoutSetForTask(null))
+            .Returns(new LayoutSet());
         _layoutInitializer = new(MockBehavior.Strict, _appResources.Object, _frontendSettings) { CallBase = false };
         _validator =
-            new ExpressionValidator(_logger.Object, _appResources.Object, _layoutInitializer.Object);
+            new ExpressionValidator(_logger.Object, _appResources.Object, _layoutInitializer.Object, _appMetadata.Object);
     }
 
     [Theory]
@@ -54,7 +66,6 @@ public class ExpressionValidatorTests
             .Setup(ar => ar.GetValidationConfiguration(null))
             .Returns(JsonSerializer.Serialize(testCase.ValidationConfig));
 
-        LayoutEvaluator.RemoveHiddenData(evaluatorState, RowRemovalOption.SetToNull);
         var validationIssues = await _validator.ValidateFormData(instance, dataElement, null!, null);
 
         var result = validationIssues.Select(i => new
@@ -85,7 +96,9 @@ public class ExpressionTestAttribute : DataAttribute
 
     public override IEnumerable<object[]> GetData(MethodInfo methodInfo)
     {
-        var files = Directory.GetFiles(Path.Join("Features", "Validators", "shared-expression-validation-tests"));
+        var files = Directory
+            .GetFiles(Path.Join("Features", "Validators", "expression-validation-tests", "shared"))
+            .Concat( Directory.GetFiles(Path.Join("Features", "Validators", "expression-validation-tests", "backend")));
 
         foreach (var file in files)
         {

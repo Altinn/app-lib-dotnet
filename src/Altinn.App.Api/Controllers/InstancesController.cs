@@ -821,6 +821,8 @@ namespace Altinn.App.Api.Controllers
 
                     await _instantiationProcessor.DataCreation(targetInstance, data, null);
 
+                    ObjectUtils.InitializeAltinnRowId(data);
+
                     await _dataClient.InsertFormData(
                         data,
                         Guid.Parse(targetInstance.Id.Split("/")[1]),
@@ -956,6 +958,8 @@ namespace Altinn.App.Api.Controllers
                     await _prefillService.PrefillDataModel(instance.InstanceOwner.PartyId, part.Name!, data);
 
                     await _instantiationProcessor.DataCreation(instance, data, null);
+
+                    ObjectUtils.InitializeAltinnRowId(data);
 
                     dataElement = await _dataClient.InsertFormData(
                         data,
