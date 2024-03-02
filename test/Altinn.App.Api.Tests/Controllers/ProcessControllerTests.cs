@@ -7,6 +7,9 @@ using Altinn.App.Api.Models;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Api.Tests.Utils;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Internal.Pdf;
+using Altinn.App.Core.Models.Validation;
+using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -119,26 +122,7 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
     }
 
     [Fact]
-    public async Task RunProcessNext()
-    {
-        SendAsync = async message =>
-        {
-            message.RequestUri!.PathAndQuery.Should().Be($"/pdf");
-            return new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent("this is the binary pdf content"),
-            };
-        };
-        using var client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
-        var nextResponse = await client.PutAsync($"{Org}/{App}/instances/{InstanceId}/process/next", null);
-        var nextResponseContent = await nextResponse.Content.ReadAsStringAsync();
-        _outputHelper.WriteLine(nextResponseContent);
-        nextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
-
-    }
-
-    [Fact]
-    public async Task RunProcessNextWithLang()
+    public async Task RunProcessNextWithLang_VerifyPdfCallWithLanguage()
     {
         var language = "es";
         SendAsync = async message =>
@@ -160,6 +144,7 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
             };
         };
         using var client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
+        // both "?lang" and "?language" should work
         var nextResponse = await client.PutAsync($"{Org}/{App}/instances/{InstanceId}/process/next?lang={language}", null);
         var nextResponseContent = await nextResponse.Content.ReadAsStringAsync();
         _outputHelper.WriteLine(nextResponseContent);
@@ -167,7 +152,7 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
     }
 
     [Fact]
-    public async Task RunProcessNextWithLanguage()
+    public async Task RunProcessNextWithLanguage_VerifyPdfCall()
     {
         var language = "es";
         SendAsync = async message =>
@@ -189,10 +174,102 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
             };
         };
         using var client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
+        // both "?lang" and "?language" should work
         var nextResponse = await client.PutAsync($"{Org}/{App}/instances/{InstanceId}/process/next?language={language}", null);
         var nextResponseContent = await nextResponse.Content.ReadAsStringAsync();
         _outputHelper.WriteLine(nextResponseContent);
         nextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task RunProcessNext_FailingValidator_ReturnsValidationErrors()
+    {
+        var dataValidator = new Mock<IFormDataValidator>(MockBehavior.Strict);
+        dataValidator.Setup(v => v.DataType).Returns("*");
+        dataValidator.Setup(v => v.ValidationSource).Returns("test-source");
+        dataValidator.Setup(v => v.ValidateFormData(It.IsAny<Instance>(), It.IsAny<DataElement>(), It.IsAny<object>(), It.IsAny<string>()))
+            .ReturnsAsync(new List<ValidationIssue>
+            {
+                new()
+                {
+                    Code = "test-code",
+                    Description = "test-description",
+                    Severity = ValidationIssueSeverity.Error,
+                },
+            });
+        OverrideServicesForThisTest = (services) =>
+        {
+            services.AddSingleton(dataValidator.Object);
+        };
+        using var client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
+        var nextResponse = await client.PutAsync($"{Org}/{App}/instances/{InstanceId}/process/next", null);
+        var nextResponseContent = await nextResponse.Content.ReadAsStringAsync();
+        _outputHelper.WriteLine(nextResponseContent);
+        nextResponse.Should().HaveStatusCode(HttpStatusCode.Conflict);
+        using var document = JsonDocument.Parse(nextResponseContent);
+        var issues = document.RootElement.GetProperty("validationIssues").EnumerateArray().ToList();
+        issues.Should().ContainSingle(p => p.GetProperty("source").GetString() == "test-source" && p.GetProperty("description").GetString() == "test-description");
+
+        // Verify that the instance is not updated
+        var instance = await TestData.GetInstance(Org, App, InstanceOwnerPartyId, InstanceGuid);
+        instance.Process.CurrentTask.Should().NotBeNull();
+        instance.Process.CurrentTask!.ElementId.Should().Be("Task_1");
+    }
+
+    [Fact]
+    public async Task RunProcessNext_NonErrorValidations_ReturnsOk()
+    {
+        var dataValidator = new Mock<IFormDataValidator>(MockBehavior.Strict);
+        dataValidator.Setup(v => v.DataType).Returns("*");
+        dataValidator.Setup(v => v.ValidationSource).Returns("test-source");
+        dataValidator.Setup(v => v.ValidateFormData(It.IsAny<Instance>(), It.IsAny<DataElement>(), It.IsAny<object>(), It.IsAny<string>()))
+            .ReturnsAsync(new List<ValidationIssue>
+            {
+                new()
+                {
+                    Code = "test-success",
+                    Description = "test-success-description",
+                    Severity = ValidationIssueSeverity.Success,
+                },
+                new()
+                {
+                    Code = "test-fixed",
+                    Description = "test-fixed-description",
+                    Severity = ValidationIssueSeverity.Fixed,
+                },
+                new()
+                {
+                    Code = "test-informational",
+                    Description = "test-informational-description",
+                    Severity = ValidationIssueSeverity.Informational,
+                },
+                new()
+                {
+                    Code = "test-warning",
+                    Description = "test-warning-description",
+                    Severity = ValidationIssueSeverity.Warning,
+                },
+            });
+        var pdfMock = new Mock<IPdfGeneratorClient>(MockBehavior.Strict);
+        pdfMock.Setup(p => p.GeneratePdf(It.IsAny<Uri>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MemoryStream());
+        OverrideServicesForThisTest = (services) =>
+        {
+            services.AddSingleton(dataValidator.Object);
+            services.AddSingleton(pdfMock.Object);
+        };
+        using var client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
+        var nextResponse = await client.PutAsync($"{Org}/{App}/instances/{InstanceId}/process/next", null);
+        var nextResponseContent = await nextResponse.Content.ReadAsStringAsync();
+        _outputHelper.WriteLine(nextResponseContent);
+        nextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
+        using var document = JsonDocument.Parse(nextResponseContent);
+        document.RootElement.EnumerateObject().Should().NotContain(p => p.Name == "validationIssues");
+
+        // Verify that the instance is updated to the ended state
+        var instance = await TestData.GetInstance(Org, App, InstanceOwnerPartyId, InstanceGuid);
+        instance.Process.CurrentTask.Should().BeNull();
+        instance.Process.EndEvent.Should().Be("EndEvent_1");
     }
 
 
