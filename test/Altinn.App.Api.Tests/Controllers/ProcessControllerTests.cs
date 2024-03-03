@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -251,8 +252,9 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
                 },
             });
         var pdfMock = new Mock<IPdfGeneratorClient>(MockBehavior.Strict);
+        using var pdfReturnStream = new MemoryStream();
         pdfMock.Setup(p => p.GeneratePdf(It.IsAny<Uri>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MemoryStream());
+            .ReturnsAsync(pdfReturnStream);
         OverrideServicesForThisTest = (services) =>
         {
             services.AddSingleton(dataValidator.Object);
@@ -272,7 +274,48 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         instance.Process.EndEvent.Should().Be("EndEvent_1");
     }
 
+    [Fact]
+    public async Task RunCompleteTask_GoesToEndEvent()
+    {
+        var pdfMock = new Mock<IPdfGeneratorClient>(MockBehavior.Strict);
+        using var pdfReturnStream = new MemoryStream();
+        pdfMock.Setup(p => p.GeneratePdf(It.IsAny<Uri>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(pdfReturnStream);
+        OverrideServicesForThisTest = (services) =>
+        {
+            services.AddSingleton(pdfMock.Object);
+        };
+        using var client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
+        var nextResponse = await client.PutAsync($"{Org}/{App}/instances/{InstanceId}/process/completeProcess", null);
+        var nextResponseContent = await nextResponse.Content.ReadAsStringAsync();
+        _outputHelper.WriteLine(nextResponseContent);
+        nextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
 
+        // Verify that the instance is updated to the ended state
+        var instance = await TestData.GetInstance(Org, App, InstanceOwnerPartyId, InstanceGuid);
+        instance.Process.CurrentTask.Should().BeNull();
+        instance.Process.EndEvent.Should().Be("EndEvent_1");
+    }
+
+    [Fact]
+    public async Task RunNextWithAction_WhenActionIsNotAuthorized_ReturnsUnauthorized()
+    {
+        var pdfMock = new Mock<IPdfGeneratorClient>(MockBehavior.Strict);
+        using var pdfReturnStream = new MemoryStream();
+        pdfMock.Setup(p => p.GeneratePdf(It.IsAny<Uri>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(pdfReturnStream);
+        OverrideServicesForThisTest = (services) =>
+        {
+            services.AddSingleton(pdfMock.Object);
+        };
+        using var client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
+        using var content = new StringContent("""{"action": "unknown-action_unauthorized"}""", Encoding.UTF8, "application/json");
+        var nextResponse = await client.PutAsync($"{Org}/{App}/instances/{InstanceId}/process/next", content);
+        var nextResponseContent = await nextResponse.Content.ReadAsStringAsync();
+        _outputHelper.WriteLine(nextResponseContent);
+        nextResponse.Should().HaveStatusCode(HttpStatusCode.Forbidden);
+
+    }
 
     //TODO: replace this assertion with a proper one once fluentassertions has a json compare feature scheduled for v7 https://github.com/fluentassertions/fluentassertions/issues/2205
     private static void CompareResult<T>(string expectedString, string actualString)
