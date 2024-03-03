@@ -63,7 +63,7 @@ public class ProcessEngineTest : IDisposable
 
     [Fact]
     public async Task StartProcess_starts_process_and_moves_to_first_task_without_event_dispatch_when_dryrun()
-    { 
+    {
         ProcessEngine processEngine = GetProcessEngine();
         Instance instance = new Instance()
         {
@@ -320,7 +320,7 @@ public class ProcessEngineTest : IDisposable
         result.ErrorMessage.Should().Be("Instance does not have current task information!");
         result.ErrorType.Should().Be(ProcessErrorType.Conflict);
     }
-    
+
     [Fact]
     public async Task Next_returns_unsuccessful_unauthorized_when_action_handler_returns_errortype_Unauthorized()
     {

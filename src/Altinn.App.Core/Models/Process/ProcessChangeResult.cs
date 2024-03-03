@@ -43,7 +43,7 @@ namespace Altinn.App.Core.Models.Process
         /// The user is not authorized to perform the process change
         /// </summary>
         Unauthorized,
-        
+
         /// <summary>
         /// The request was not valid
         /// </summary>

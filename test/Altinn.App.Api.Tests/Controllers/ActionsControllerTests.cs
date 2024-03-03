@@ -167,7 +167,7 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
                              """;
         CompareResult<UserActionResponse>(expectedString, content);
     }
-    
+
     [Fact]
     public async Task Perform_returns_400_if_action_failed_and_errorType_is_BadRequest()
     {
@@ -187,7 +187,7 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
-    
+
     [Fact]
     public async Task Perform_returns_401_if_action_failed_and_errorType_is_Unauthorized()
     {
@@ -207,7 +207,7 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
-    
+
     [Fact]
     public async Task Perform_returns_409_if_action_failed_and_errorType_is_Conflict()
     {
@@ -227,7 +227,7 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
     }
-    
+
     [Fact]
     public async Task Perform_returns_500_if_action_failed_and_errorType_is_Internal()
     {
@@ -294,12 +294,12 @@ public class LookupAction : IUserAction
         {
             return UserActionResult.FailureResult(new ActionError(), errorType: ProcessErrorType.Unauthorized);
         }
-        
+
         if (context.UserId == 409)
         {
             return UserActionResult.FailureResult(new ActionError(), errorType: ProcessErrorType.Conflict);
         }
-        
+
         if (context.UserId == 500)
         {
             return UserActionResult.FailureResult(new ActionError(), errorType: ProcessErrorType.Internal);

@@ -116,7 +116,7 @@ public class SigningUserActionTests
         result.Should().BeEquivalentTo(fail);
         signClientMock.VerifyNoOtherCalls();
     }
-    
+
     [Fact]
     public async void HandleAction_throws_ApplicationConfigException_if_SignatureDataType_is_null()
     {

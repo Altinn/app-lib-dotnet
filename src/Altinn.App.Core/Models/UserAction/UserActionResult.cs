@@ -12,7 +12,7 @@ public class UserActionResult
     /// Gets or sets a value indicating whether the user action was a success
     /// </summary>
     public bool Success { get; init; }
-    
+
     /// <summary>
     /// Gets or sets a dictionary of updated data models. Key should be elementId and value should be the updated data model
     /// </summary>
@@ -32,7 +32,7 @@ public class UserActionResult
     /// Error type to return when the user action was not successful
     /// </summary>
     public ProcessErrorType ErrorType { get; set; }
-    
+
     /// <summary>
     /// Creates a success result
     /// </summary>
