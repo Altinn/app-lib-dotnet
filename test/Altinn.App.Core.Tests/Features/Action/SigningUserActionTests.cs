@@ -156,11 +156,11 @@ public class SigningUserActionTests
         await Assert.ThrowsAsync<ApplicationConfigException>(async () => await userAction.HandleAction(userActionContext));
         signClientMock.VerifyNoOtherCalls();
     }
-    
+
     private static (SigningUserAction SigningUserAction, Mock<ISignClient> SignClientMock) CreateSigningUserAction(UserProfile userProfileToReturn = null, PlatformHttpException platformHttpExceptionToThrow = null, string testBpmnfilename = "signing-task-process.bpmn")
     {
         IProcessReader processReader = ProcessTestUtils.SetupProcessReader(testBpmnfilename, Path.Combine("Features", "Action", "TestData"));
-        
+
         var profileClientMock = new Mock<IProfileClient>();
         var signingClientMock = new Mock<ISignClient>();
         profileClientMock.Setup(p => p.GetUserProfile(It.IsAny<int>())).ReturnsAsync(userProfileToReturn);
@@ -168,7 +168,7 @@ public class SigningUserActionTests
         {
             signingClientMock.Setup(p => p.SignDataElements(It.IsAny<SignatureContext>())).ThrowsAsync(platformHttpExceptionToThrow);
         }
-        
+
         return (new SigningUserAction(processReader, new NullLogger<SigningUserAction>(), profileClientMock.Object, signingClientMock.Object), signingClientMock);
     }
 

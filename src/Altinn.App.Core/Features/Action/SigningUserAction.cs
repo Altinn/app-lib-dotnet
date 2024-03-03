@@ -15,7 +15,7 @@ namespace Altinn.App.Core.Features.Action;
 /// <summary>
 /// Class handling tasks that should happen when action signing is performed.
 /// </summary>
-public class SigningUserAction: IUserAction
+public class SigningUserAction : IUserAction
 {
     private readonly IProcessReader _processReader;
     private readonly ILogger<SigningUserAction> _logger;
@@ -36,7 +36,7 @@ public class SigningUserAction: IUserAction
         _signClient = signClient;
         _processReader = processReader;
     }
-    
+
     /// <inheritdoc />
     public string Id => "sign";
 

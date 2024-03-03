@@ -22,12 +22,12 @@ public class UserActionResult
     /// Actions for the client to perform after the user action has been handled
     /// </summary>
     public List<ClientAction>? ClientActions { get; set; }
-    
+
     /// <summary>
     /// Validation issues that should be displayed to the user
     /// </summary>
     public ActionError? Error { get; set; }
-    
+
     /// <summary>
     /// Error type to return when the user action was not successful
     /// </summary>

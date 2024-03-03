@@ -124,8 +124,9 @@ public class ProcessEngine : IProcessEngine
         int? userId = request.User.GetUserIdAsInt();
 
         var actionHandler = _userActionService.GetActionHandler(request.Action);
+
         var actionResult = actionHandler is null ? UserActionResult.SuccessResult() : await actionHandler.HandleAction(new UserActionContext(request.Instance, userId));
-        
+
         if (!actionResult.Success)
         {
             return new ProcessChangeResult()

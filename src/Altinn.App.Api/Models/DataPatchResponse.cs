@@ -1,4 +1,3 @@
-#nullable disable
 using Altinn.App.Api.Controllers;
 using Altinn.App.Core.Models.Validation;
 
