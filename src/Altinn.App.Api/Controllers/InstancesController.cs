@@ -559,7 +559,7 @@ namespace Altinn.App.Api.Controllers
                 User = User
             };
 
-            var startResult = await _processEngine.GenerateProcessStartEvents(processStartRequest);
+            ProcessChangeResult startResult = await _processEngine.GenerateProcessStartEvents(processStartRequest);
 
             targetInstance = await _instanceClient.CreateInstance(org, app, targetInstance);
 

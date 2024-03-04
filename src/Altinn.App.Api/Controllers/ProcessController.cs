@@ -127,7 +127,7 @@ namespace Altinn.App.Api.Controllers
                     StartEventId = startEvent,
                     User = User
                 };
-                var result = await _processEngine.GenerateProcessStartEvents(request);
+                ProcessChangeResult result = await _processEngine.GenerateProcessStartEvents(request);
                 if (!result.Success)
                 {
                     return Conflict(result.ErrorMessage);
