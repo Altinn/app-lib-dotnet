@@ -8,6 +8,7 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Infrastructure.Clients.Maskinporten;
 using Altinn.App.Core.Infrastructure.Clients.Storage;
+using Altinn.App.Core.Internal.Maskinporten;
 using Altinn.App.Core.Models;
 using Altinn.Common.EFormidlingClient;
 using Altinn.Common.EFormidlingClient.Models;
@@ -29,9 +30,7 @@ namespace Altinn.App.Core.EFormidling.Implementation
         private readonly IEFormidlingClient _eFormidlingClient;
         private readonly ILogger<EformidlingStatusCheckEventHandler> _logger;
         private readonly IHttpClientFactory _httpClientFactory;
-        private readonly IMaskinportenService _maskinportenService;
-        private readonly MaskinportenSettings _maskinportenSettings;
-        private readonly IX509CertificateProvider _x509CertificateProvider;
+        private readonly IMaskinportenTokenProvider _maskinportenTokenProvider;
         private readonly PlatformSettings _platformSettings;
         private readonly GeneralSettings _generalSettings;
 
@@ -42,9 +41,7 @@ namespace Altinn.App.Core.EFormidling.Implementation
             IEFormidlingClient eFormidlingClient,
             IHttpClientFactory httpClientFactory,
             ILogger<EformidlingStatusCheckEventHandler> logger,
-            IMaskinportenService maskinportenService,
-            IOptions<MaskinportenSettings> maskinportenSettings,
-            IX509CertificateProvider x509CertificateProvider,
+            IMaskinportenTokenProvider maskinportenTokenProvider,
             IOptions<PlatformSettings> platformSettings,
             IOptions<GeneralSettings> generalSettings
             )
@@ -52,9 +49,7 @@ namespace Altinn.App.Core.EFormidling.Implementation
             _eFormidlingClient = eFormidlingClient;
             _logger = logger;
             _httpClientFactory = httpClientFactory;
-            _maskinportenService = maskinportenService;
-            _maskinportenSettings = maskinportenSettings.Value;
-            _x509CertificateProvider = x509CertificateProvider;
+            _maskinportenTokenProvider = maskinportenTokenProvider;
             _platformSettings = platformSettings.Value;
             _generalSettings = generalSettings.Value;
         }
@@ -112,10 +107,10 @@ namespace Altinn.App.Core.EFormidling.Implementation
             string baseUrl = _generalSettings.FormattedExternalAppBaseUrl(appIdentifier);
             string url = $"{baseUrl}instances/{instanceIdentifier}/process/next";
 
-            TokenResponse altinnToken = await GetOrganizationToken();
+            string altinnToken = await GetOrganizationToken();
             HttpClient httpClient = _httpClientFactory.CreateClient();
 
-            HttpResponseMessage response = await httpClient.PutAsync(altinnToken.AccessToken, url, new StringContent(string.Empty));
+            HttpResponseMessage response = await httpClient.PutAsync(altinnToken, url, new StringContent(string.Empty));
 
             if (response.IsSuccessStatusCode)
             {
@@ -138,14 +133,14 @@ namespace Altinn.App.Core.EFormidling.Implementation
         {
             string url = $"instances/{instanceIdentifier.InstanceOwnerPartyId}/{instanceIdentifier.InstanceGuid}/complete";
 
-            TokenResponse altinnToken = await GetOrganizationToken();
+            string altinnToken = await GetOrganizationToken();
 
             HttpClient httpClient = _httpClientFactory.CreateClient();
             httpClient.BaseAddress = new Uri(_platformSettings.ApiStorageEndpoint);
             httpClient.DefaultRequestHeaders.Add(General.SubscriptionKeyHeaderName, _platformSettings.SubscriptionKey);
             httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-            HttpResponseMessage response = await httpClient.PostAsync(altinnToken.AccessToken, url, new StringContent(string.Empty));
+            HttpResponseMessage response = await httpClient.PostAsync(altinnToken, url, new StringContent(string.Empty));
 
             if (response.StatusCode == HttpStatusCode.OK)
             {
@@ -157,13 +152,9 @@ namespace Altinn.App.Core.EFormidling.Implementation
             throw await PlatformHttpException.CreateAsync(response);
         }
 
-        private async Task<TokenResponse> GetOrganizationToken()
+        private async Task<string> GetOrganizationToken()
         {
-            X509Certificate2 x509cert = await _x509CertificateProvider.GetCertificate();
-            var maskinportenToken = await _maskinportenService.GetToken(x509cert, _maskinportenSettings.Environment, _maskinportenSettings.ClientId, "altinn:serviceowner/instances.read altinn:serviceowner/instances.write", string.Empty);
-            var altinnToken = await _maskinportenService.ExchangeToAltinnToken(maskinportenToken, _maskinportenSettings.Environment);
-
-            return altinnToken;
+            return await _maskinportenTokenProvider.GetAltinnExchangedToken("altinn:serviceowner/instances.read altinn:serviceowner/instances.write");
         }
 
         private async Task<Statuses> GetStatusesForShipment(string shipmentId)
