@@ -1,8 +1,6 @@
 using System.Net;
 using System.Security.Claims;
 using System.Text.Json;
-using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
 using Altinn.App.Api.Helpers.RequestHandling;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
@@ -17,9 +15,11 @@ using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
+using Altinn.App.Core.Internal.Patch;
 using Altinn.App.Core.Internal.Prefill;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.Result;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using Json.Patch;
@@ -49,16 +49,10 @@ namespace Altinn.App.Api.Controllers
         private readonly IAppResources _appResourcesService;
         private readonly IAppMetadata _appMetadata;
         private readonly IPrefill _prefillService;
-        private readonly IValidationService _validationService;
         private readonly IFileAnalysisService _fileAnalyserService;
         private readonly IFileValidationService _fileValidationService;
         private readonly IFeatureManager _featureManager;
-
-        private static readonly JsonSerializerOptions JsonSerializerOptions = new()
-        {
-            UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
-            PropertyNameCaseInsensitive = true,
-        };
+        private readonly IPatchService _patchService;
 
         private const long REQUEST_SIZE_LIMIT = 2000 * 1024 * 1024;
 
@@ -75,9 +69,9 @@ namespace Altinn.App.Api.Controllers
         /// <param name="appMetadata">The app metadata service</param>
         /// <param name="featureManager">The feature manager controlling enabled features.</param>
         /// <param name="prefillService">A service with prefill related logic.</param>
-        /// <param name="validationService">The service used to validate data</param>
         /// <param name="fileAnalyserService">Service used to analyse files uploaded.</param>
         /// <param name="fileValidationService">Service used to validate files uploaded.</param>
+        /// <param name="patchService">Service for applying a json patch to a json serializable object</param>
         public DataController(
             ILogger<DataController> logger,
             IInstanceClient instanceClient,
@@ -87,11 +81,11 @@ namespace Altinn.App.Api.Controllers
             IAppModel appModel,
             IAppResources appResourcesService,
             IPrefill prefillService,
-            IValidationService validationService,
             IFileAnalysisService fileAnalyserService,
             IFileValidationService fileValidationService,
             IAppMetadata appMetadata,
-            IFeatureManager featureManager)
+            IFeatureManager featureManager,
+            IPatchService patchService)
         {
             _logger = logger;
 
@@ -103,10 +97,10 @@ namespace Altinn.App.Api.Controllers
             _appResourcesService = appResourcesService;
             _appMetadata = appMetadata;
             _prefillService = prefillService;
-            _validationService = validationService;
             _fileAnalyserService = fileAnalyserService;
             _fileValidationService = fileValidationService;
             _featureManager = featureManager;
+            _patchService = patchService;
         }
 
         /// <summary>
@@ -252,6 +246,7 @@ namespace Altinn.App.Api.Controllers
         /// <param name="instanceOwnerPartyId">unique id of the party that is the owner of the instance</param>
         /// <param name="instanceGuid">unique id to identify the instance</param>
         /// <param name="dataGuid">unique id to identify the data element to get</param>
+        /// <param name="includeRowId">Whether to initialize or remove AltinnRowId fields in the model</param>
         /// <param name="language">The language selected by the user.</param>
         /// <returns>The data element is returned in the body of the response</returns>
         [Authorize(Policy = AuthzConstants.POLICY_INSTANCE_READ)]
@@ -262,6 +257,7 @@ namespace Altinn.App.Api.Controllers
             [FromRoute] int instanceOwnerPartyId,
             [FromRoute] Guid instanceGuid,
             [FromRoute] Guid dataGuid,
+            [FromQuery] bool includeRowId = false,
             [FromQuery] string? language = null)
         {
             try
@@ -289,7 +285,7 @@ namespace Altinn.App.Api.Controllers
                 }
                 else if (dataType.AppLogic?.ClassRef is not null)
                 {
-                    return await GetFormData(org, app, instanceOwnerPartyId, instanceGuid, dataGuid, dataType, language, instance);
+                    return await GetFormData(org, app, instanceOwnerPartyId, instanceGuid, instance, dataGuid, dataElement, dataType, includeRowId, language);
                 }
 
                 return await GetBinaryData(org, app, instanceOwnerPartyId, instanceGuid, dataGuid, dataElement);
@@ -420,116 +416,25 @@ namespace Altinn.App.Api.Controllers
                     return BadRequest($"Could not determine if data type {dataType?.Id} requires application logic.");
                 }
 
-                var modelType = _appModel.GetModelType(dataType.AppLogic.ClassRef);
+                ServiceResult<DataPatchResult, DataPatchError> res = await _patchService.ApplyPatch(instance, dataType, dataElement, dataPatchRequest.Patch, language, dataPatchRequest.IgnoredValidators);
 
-                var oldModel =
-                    await _dataClient.GetFormData(instanceGuid, modelType, org, app, instanceOwnerPartyId, dataGuid);
-
-                var (response, problemDetails) =
-                    await PatchFormDataImplementation(dataType, dataElement, dataPatchRequest, oldModel, language, instance);
-
-                if (problemDetails is not null)
+                if (res.Success)
                 {
-                    return StatusCode(problemDetails.Status ?? 500, problemDetails);
+                    await UpdateDataValuesOnInstance(instance, dataType.Id, res.Ok.NewDataModel);
+                    await UpdatePresentationTextsOnInstance(instance, dataType.Id, res.Ok.NewDataModel);
+
+                    return Ok(new DataPatchResponse
+                    {
+                        NewDataModel = res.Ok.NewDataModel,
+                        ValidationIssues = res.Ok.ValidationIssues
+                    });
                 }
 
-                await UpdatePresentationTextsOnInstance(instance, dataType.Id, response.NewDataModel);
-                await UpdateDataValuesOnInstance(instance, dataType.Id, response.NewDataModel);
-
-                // Save Formdata to database
-                await _dataClient.UpdateData(
-                    response.NewDataModel,
-                    instanceGuid,
-                    modelType,
-                    org,
-                    app,
-                    instanceOwnerPartyId,
-                    dataGuid);
-
-                return Ok(response);
+                return Problem(res.Error);
             }
             catch (PlatformHttpException e)
             {
                 return HandlePlatformHttpException(e, $"Unable to update data element {dataGuid} for instance {instanceOwnerPartyId}/{instanceGuid}");
-            }
-        }
-
-        /// <summary>
-        /// Part of <see cref="PatchFormData" /> that is separated out for testing purposes.
-        /// </summary>
-        /// <param name="dataType">The type of the data element</param>
-        /// <param name="dataElement">The data element</param>
-        /// <param name="dataPatchRequest">Container object for the <see cref="JsonPatch" /> and list of ignored validators</param>
-        /// <param name="oldModel">The old state of the form data</param>
-        /// <param name="language">The language selected by the user.</param>
-        /// <param name="instance">The instance</param>
-        /// <returns>DataPatchResponse after this patch operation</returns>
-        internal async Task<(DataPatchResponse Response, ProblemDetails? Error)> PatchFormDataImplementation(DataType dataType, DataElement dataElement, DataPatchRequest dataPatchRequest, object oldModel, string? language, Instance instance)
-        {
-            var oldModelNode = JsonSerializer.SerializeToNode(oldModel);
-            var patchResult = dataPatchRequest.Patch.Apply(oldModelNode);
-            if (!patchResult.IsSuccess)
-            {
-                bool testOperationFailed = patchResult.Error!.Contains("is not equal to the indicated value.");
-                return (null!, new ProblemDetails()
-                {
-                    Title = testOperationFailed ? "Test operation in patch failed" : "Patch Operation Failed",
-                    Detail = patchResult.Error,
-                    Type = "https://datatracker.ietf.org/doc/html/rfc6902/",
-                    Status = testOperationFailed ? (int)HttpStatusCode.Conflict : (int)HttpStatusCode.UnprocessableContent,
-                    Extensions = new Dictionary<string, object?>()
-                    {
-                        { "previousModel", oldModel },
-                        { "patchOperationIndex", patchResult.Operation },
-                    }
-                });
-            }
-
-            var (model, error) = DeserializeModel(oldModel.GetType(), patchResult.Result!);
-            if (error is not null)
-            {
-                return (null!, new ProblemDetails()
-                {
-                    Title = "Patch operation did not deserialize",
-                    Detail = error,
-                    Type = "https://datatracker.ietf.org/doc/html/rfc6902/",
-                    Status = (int)HttpStatusCode.UnprocessableContent,
-                });
-            }
-
-            foreach (var dataProcessor in _dataProcessors)
-            {
-                await dataProcessor.ProcessDataWrite(instance, Guid.Parse(dataElement.Id), model, oldModel, language);
-            }
-
-            // Ensure that all lists are changed from null to empty list.
-            ObjectUtils.InitializeListsAndNullEmptyStrings(model);
-
-            var validationIssues = await _validationService.ValidateFormData(instance, dataElement, dataType, model, oldModel, dataPatchRequest.IgnoredValidators, language);
-            var response = new DataPatchResponse
-            {
-                NewDataModel = model,
-                ValidationIssues = validationIssues
-            };
-            return (response, null);
-        }
-
-        private static (object Model, string? Error) DeserializeModel(Type type, JsonNode patchResult)
-        {
-            try
-            {
-                var model = patchResult.Deserialize(type, JsonSerializerOptions);
-                if (model is null)
-                {
-                    return (null!, "Deserialize patched model returned null");
-                }
-
-                return (model, null);
-            }
-            catch (JsonException e) when (e.Message.Contains("could not be mapped to any .NET member contained in type"))
-            {
-                // Give better feedback when the issue is that the patch contains a path that does not exist in the model
-                return (null!, e.Message);
             }
         }
 
@@ -662,6 +567,8 @@ namespace Altinn.App.Api.Controllers
 
             int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
 
+            ObjectUtils.InitializeAltinnRowId(appModel);
+
             DataElement dataElement = await _dataClient.InsertFormData(appModel, instanceGuid, _appModel.GetModelType(classRef), org, app, instanceOwnerPartyId, dataType);
             SelfLinkHelper.SetDataAppSelfLinks(instanceOwnerPartyId, instanceGuid, dataElement, Request);
 
@@ -729,10 +636,12 @@ namespace Altinn.App.Api.Controllers
             string app,
             int instanceOwnerId,
             Guid instanceGuid,
+            Instance instance,
             Guid dataGuid,
+            DataElement dataElement,
             DataType dataType,
-            string? language,
-            Instance instance)
+            bool includeRowId,
+            string? language)
         {
             // Get Form Data from data service. Assumes that the data element is form data.
             object appModel = await _dataClient.GetFormData(
@@ -748,13 +657,7 @@ namespace Altinn.App.Api.Controllers
                 return BadRequest($"Did not find form data for data element {dataGuid}");
             }
 
-            if (instance.Data.FirstOrDefault(d => d.Id == dataGuid.ToString())?.Locked == true)
-            {
-                // Skip further processing if the data element is locked
-                return Ok(appModel);
-            }
-
-            // we need to save the changes if dataProcessRead changes the model
+            // we need to save a copy to detect changes if dataProcessRead changes the model
             byte[] beforeProcessDataRead = JsonSerializer.SerializeToUtf8Bytes(appModel);
 
             foreach (var dataProcessor in _dataProcessors)
@@ -763,12 +666,31 @@ namespace Altinn.App.Api.Controllers
                 await dataProcessor.ProcessDataRead(instance, dataGuid, appModel, language);
             }
 
-            if (!beforeProcessDataRead.SequenceEqual(JsonSerializer.SerializeToUtf8Bytes(appModel)))
+            if (includeRowId)
             {
-                // Save back the changes if dataProcessRead has changed the model
-                await _dataClient.UpdateData(appModel, instanceGuid, appModel.GetType(), org, app, instanceOwnerId, dataGuid);
+                ObjectUtils.InitializeAltinnRowId(appModel);
             }
 
+            // Save back the changes if dataProcessRead has changed the model and the element is not locked
+            if (!dataElement.Locked && !beforeProcessDataRead.SequenceEqual(JsonSerializer.SerializeToUtf8Bytes(appModel)))
+            {
+                try
+                {
+                    await _dataClient.UpdateData(appModel, instanceGuid, appModel.GetType(), org, app, instanceOwnerId, dataGuid);
+                }
+                catch (PlatformHttpException e) when (e.Response.StatusCode == HttpStatusCode.Forbidden)
+                {
+                    _logger.LogInformation("User does not have write access to the data element. Skipping update.");
+                }
+            }
+
+            if (!includeRowId)
+            {
+                // If the consumer does not request AltinnRowId to be initialized, we remove it from the model
+                ObjectUtils.RemoveAltinnRowId(appModel);
+            }
+
+            // This is likely not required as the instance is already read
             string? userOrgClaim = User.GetOrg();
             if (userOrgClaim == null || !org.Equals(userOrgClaim, StringComparison.InvariantCultureIgnoreCase))
             {
@@ -817,6 +739,8 @@ namespace Altinn.App.Api.Controllers
 
             await UpdatePresentationTextsOnInstance(instance, dataType.Id, serviceModel);
             await UpdateDataValuesOnInstance(instance, dataType.Id, serviceModel);
+
+            ObjectUtils.InitializeAltinnRowId(serviceModel);
 
             // Save Formdata to database
             DataElement updatedDataElement = await _dataClient.UpdateData(
@@ -941,6 +865,24 @@ namespace Altinn.App.Api.Controllers
             }
 
             return false;
+        }
+
+        private ObjectResult Problem(DataPatchError error)
+        {
+            int code = error.ErrorType switch
+            {
+                DataPatchErrorType.PatchTestFailed => (int)HttpStatusCode.Conflict,
+                DataPatchErrorType.DeserializationFailed => (int)HttpStatusCode.UnprocessableContent,
+                _ => (int)HttpStatusCode.InternalServerError
+            };
+            return StatusCode(code, new ProblemDetails()
+            {
+                Title = error.Title,
+                Detail = error.Detail,
+                Type = "https://datatracker.ietf.org/doc/html/rfc6902/",
+                Status = code,
+                Extensions = error.Extensions ?? new Dictionary<string, object?>(StringComparer.Ordinal)
+            });
         }
     }
 }

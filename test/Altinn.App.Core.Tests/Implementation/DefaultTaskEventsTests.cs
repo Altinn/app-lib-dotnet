@@ -20,7 +20,7 @@ using Xunit;
 
 namespace Altinn.App.PlatformServices.Tests.Implementation;
 
-public class DefaultTaskEventsTests: IDisposable
+public class DefaultTaskEventsTests : IDisposable
 {
     private readonly ILogger<DefaultTaskEvents> _logger = NullLogger<DefaultTaskEvents>.Instance;
     private readonly Mock<IAppResources> _resMock;
@@ -43,7 +43,7 @@ public class DefaultTaskEventsTests: IDisposable
         _application = new ApplicationMetadata("ttd/test");
         _resMock = new Mock<IAppResources>();
         _metaMock = new Mock<IAppMetadata>();
-        _dataMock = new Mock<IDataClient>();
+        _dataMock = new Mock<IDataClient>(MockBehavior.Strict);
         _prefillMock = new Mock<IPrefill>();
         _appModel = new DefaultAppModel(NullLogger<DefaultAppModel>.Instance);
         _appModelMock = new Mock<IAppModel>();
@@ -76,7 +76,7 @@ public class DefaultTaskEventsTests: IDisposable
             _layoutStateInitializer);
         await te.OnAbandonProcessTask("Task_1", new Instance());
     }
-    
+
     [Fact]
     public async void OnAbandonProcessTask_calls_all_added_implementations()
     {
@@ -132,6 +132,7 @@ public class DefaultTaskEventsTests: IDisposable
         {
             Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d",
             AppId = "ttd/test",
+            Data = new List<DataElement>(),
         };
         await te.OnEndProcessTask("Task_1", instance);
         _metaMock.Verify(r => r.GetApplicationMetadata());
@@ -144,34 +145,47 @@ public class DefaultTaskEventsTests: IDisposable
     [Fact]
     public async void OnEndProcessTask_removes_all_shadow_fields_and_saves_to_specified_datatype()
     {
+        var org = "ttd";
+        var appId = "shadow-fields-test";
         var application = GetApplicationMetadataForShadowFields();
+        var instanceOwnerPartyId = 1337;
+        var instanceGuid = Guid.Parse("fa0678ad-960d-4307-aba2-ba29c9804c9d");
+        var dataGuid = Guid.Parse("03ea848c-64f0-40f4-b5b4-30e1642d09b5");
         var instance = new Instance()
         {
-            Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d",
-            AppId = "ttd/shadow-fields-test",
+            Id = $"{instanceOwnerPartyId}/{instanceGuid}",
+            AppId = $"{org}/{appId}",
             Data = new List<DataElement>()
             {
-                { 
+                {
                     new()
                     {
                         DataType = "model",
-                        Id = "03ea848c-64f0-40f4-b5b4-30e1642d09b5",
+                        Id = dataGuid.ToString(),
                     }
                 }
             },
             InstanceOwner = new InstanceOwner()
             {
-                PartyId = "1000"
+                PartyId = instanceOwnerPartyId.ToString()
             },
-            Org = "ttd"
+            Org = org
         };
         _metaMock.Setup(r => r.GetApplicationMetadata()).ReturnsAsync(application);
         _appModelMock.Setup(r => r.GetModelType("Altinn.App.Core.Tests.Implementation.TestData.AppDataModel.ModelWithShadowFields")).Returns(typeof(Altinn.App.Core.Tests.Implementation.TestData.AppDataModel.ModelWithShadowFields));
-        var instanceGuid = Guid.Parse("fa0678ad-960d-4307-aba2-ba29c9804c9d");
-        var dataElementId = Guid.Parse("03ea848c-64f0-40f4-b5b4-30e1642d09b5");
         Type modelType = typeof(ModelWithShadowFields);
-        _dataMock.Setup(r => r.GetFormData(instanceGuid, modelType, "ttd", "shadow-fields-test", 1000, dataElementId))
-            .ReturnsAsync(GetDataElementForShadowFields());
+        _dataMock.Setup(r => r.GetFormData(instanceGuid, modelType, org, appId, instanceOwnerPartyId, dataGuid))
+            .ReturnsAsync(GetDataElementForShadowFields())
+            .Verifiable(Times.Once);
+        _dataMock.Setup(d => d.InsertFormData<object>(It.IsAny<ModelWithShadowFields>(), instanceGuid, modelType, org, appId, instanceOwnerPartyId, "model-clean"))
+            .ReturnsAsync(new DataElement())
+            .Verifiable(Times.Once);
+        _dataMock.Setup(r => r.UpdateData(It.IsAny<object>(), instanceGuid, modelType, "ttd", "shadow-fields-test", instanceOwnerPartyId, dataGuid))
+            .ReturnsAsync(new DataElement())
+            .Verifiable(Times.Once);
+        _dataMock.Setup(d => d.LockDataElement(It.IsAny<InstanceIdentifier>(), dataGuid))
+            .ReturnsAsync(new DataElement())
+            .Verifiable(Times.Once);
 
         DefaultTaskEvents te = new DefaultTaskEvents(
             _logger,
@@ -190,42 +204,48 @@ public class DefaultTaskEventsTests: IDisposable
 
         await te.OnEndProcessTask("Task_1", instance);
         _metaMock.Verify(r => r.GetApplicationMetadata());
-        _dataMock.Verify(r => r.InsertFormData<object>(It.IsAny<ModelWithShadowFields>(), instanceGuid, modelType, "ttd", "shadow-fields-test", 1000, "model-clean"));
-        _dataMock.Verify(r => r.GetFormData(instanceGuid, modelType, "ttd", "shadow-fields-test", 1000, dataElementId));
-        _dataMock.Verify(r => r.LockDataElement(It.Is<InstanceIdentifier>(i => i.InstanceOwnerPartyId == 1337 && i.InstanceGuid == instanceGuid), new Guid(instance.Data[0].Id)));
+        _dataMock.Verify();
     }
 
     [Fact]
     public async void OnEndProcessTask_removes_all_shadow_fields_and_saves_to_current_datatype_when_saveToDataType_not_specified()
     {
+        var instanceOwnerPartyId = 1337;
+        var instanceGuid = Guid.Parse("fa0678ad-960d-4307-aba2-ba29c9804c9d");
+        var dataGuid = Guid.Parse("03ea848c-64f0-40f4-b5b4-30e1642d09b5");
         var application = GetApplicationMetadataForShadowFields(false);
         var instance = new Instance()
         {
-            Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d",
+            Id = $"{instanceOwnerPartyId}/{instanceGuid}",
             AppId = "ttd/shadow-fields-test",
             Data = new List<DataElement>()
             {
-                { 
+                {
                     new()
                     {
                         DataType = "model",
-                        Id = "03ea848c-64f0-40f4-b5b4-30e1642d09b5",
+                        Id = dataGuid.ToString(),
                     }
                 }
             },
             InstanceOwner = new InstanceOwner()
             {
-                PartyId = "1000"
+                PartyId = instanceOwnerPartyId.ToString()
             },
             Org = "ttd"
         };
         _metaMock.Setup(r => r.GetApplicationMetadata()).ReturnsAsync(application);
         _appModelMock.Setup(r => r.GetModelType("Altinn.App.Core.Tests.Implementation.TestData.AppDataModel.ModelWithShadowFields")).Returns(typeof(Altinn.App.Core.Tests.Implementation.TestData.AppDataModel.ModelWithShadowFields));
-        var instanceGuid = Guid.Parse("fa0678ad-960d-4307-aba2-ba29c9804c9d");
-        var dataElementId = Guid.Parse("03ea848c-64f0-40f4-b5b4-30e1642d09b5");
         Type modelType = typeof(Altinn.App.Core.Tests.Implementation.TestData.AppDataModel.ModelWithShadowFields);
-        _dataMock.Setup(r => r.GetFormData(instanceGuid, modelType, "ttd", "shadow-fields-test", 1000, dataElementId))
-            .ReturnsAsync(GetDataElementForShadowFields());
+        _dataMock.Setup(r => r.GetFormData(instanceGuid, modelType, "ttd", "shadow-fields-test", instanceOwnerPartyId, dataGuid))
+            .ReturnsAsync(GetDataElementForShadowFields())
+            .Verifiable(Times.Once);
+        _dataMock.Setup(r => r.UpdateData(It.IsAny<object>(), instanceGuid, modelType, "ttd", "shadow-fields-test", instanceOwnerPartyId, dataGuid))
+            .ReturnsAsync(new DataElement())
+            .Verifiable(Times.Once);
+        _dataMock.Setup(d => d.LockDataElement(It.IsAny<InstanceIdentifier>(), dataGuid))
+            .ReturnsAsync(new DataElement())
+            .Verifiable(Times.Once);
 
         DefaultTaskEvents te = new DefaultTaskEvents(
             _logger,
@@ -244,9 +264,8 @@ public class DefaultTaskEventsTests: IDisposable
 
         await te.OnEndProcessTask("Task_1", instance);
         _metaMock.Verify(r => r.GetApplicationMetadata());
-        _dataMock.Verify(r => r.UpdateData<object>(It.IsAny<Altinn.App.Core.Tests.Implementation.TestData.AppDataModel.ModelWithShadowFields>(), instanceGuid, modelType, "ttd", "shadow-fields-test", 1000, dataElementId));
-        _dataMock.Verify(r => r.GetFormData(instanceGuid, modelType, "ttd", "shadow-fields-test", 1000, dataElementId));
-        _dataMock.Verify(r => r.LockDataElement(It.Is<InstanceIdentifier>(i => i.InstanceOwnerPartyId == 1337 && i.InstanceGuid == instanceGuid), new Guid(instance.Data[0].Id)));
+
+        _dataMock.Verify();
     }
 
     [Fact]
@@ -259,7 +278,7 @@ public class DefaultTaskEventsTests: IDisposable
             AppId = "ttd/shadow-fields-test",
             Data = new List<DataElement>()
             {
-                { 
+                {
                     new()
                     {
                         DataType = "model",
@@ -300,7 +319,7 @@ public class DefaultTaskEventsTests: IDisposable
         _metaMock.Verify(r => r.GetApplicationMetadata());
         _dataMock.Verify(r => r.GetFormData(instanceGuid, modelType, "ttd", "shadow-fields-test", 1000, dataElementId));
     }
-    
+
     [Fact]
     public async void OnEndProcessTask_calls_all_added_implementations_of_IProcessTaskStart()
     {
@@ -373,19 +392,27 @@ public class DefaultTaskEventsTests: IDisposable
             Process = new()
             {
                 Ended = DateTime.Now
-            }
+            },
+            Data = new List<DataElement>(),
         };
         await te.OnEndProcessTask("EndEvent_1", instance);
         _metaMock.Verify(r => r.GetApplicationMetadata());
         _instanceMock.Verify(i => i.DeleteInstance(1000, Guid.Parse("fa0678ad-960d-4307-aba2-ba29c9804c9d"), true), Times.Never);
     }
-    
+
     [Fact]
     public async void OnEndProcessTask_deletes_old_datatypes_generated_from_task_beeing_ended()
     {
+        var org = "ttd";
+        var app = "test";
+        var instanceOwenerPartyId = 1337;
+        var instanceGuid = Guid.Parse("fa0678ad-960d-4307-aba2-ba29c9804c9d");
+        var dataGuid = Guid.Parse("ba0678ad-960d-4307-aba2-ba29c9804c9d");
         _application.DataTypes = new List<DataType>();
         _application.AutoDeleteOnProcessEnd = false;
         _metaMock.Setup(r => r.GetApplicationMetadata()).ReturnsAsync(_application);
+        _dataMock.Setup(d => d.DeleteData(org, app, instanceOwenerPartyId, instanceGuid, dataGuid, false))
+            .ReturnsAsync(true);
         DefaultTaskEvents te = new DefaultTaskEvents(
             _logger,
             _resMock.Object,
@@ -402,11 +429,11 @@ public class DefaultTaskEventsTests: IDisposable
             _layoutStateInitializer);
         var instance = new Instance()
         {
-            Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d",
+            Id = $"{instanceOwenerPartyId}/{instanceGuid}",
             AppId = "ttd/test",
             InstanceOwner = new()
             {
-                PartyId = "1000"
+                PartyId = instanceOwenerPartyId.ToString()
             },
             Process = new()
             {
@@ -416,7 +443,7 @@ public class DefaultTaskEventsTests: IDisposable
             {
                 new()
                 {
-                    Id = "ba0678ad-960d-4307-aba2-ba29c9804c9d",
+                    Id = dataGuid.ToString(),
                     References = new()
                     {
                         new()
@@ -440,7 +467,7 @@ public class DefaultTaskEventsTests: IDisposable
         _instanceMock.Verify(i => i.DeleteInstance(1000, Guid.Parse("fa0678ad-960d-4307-aba2-ba29c9804c9d"), true), Times.Never);
         _dataMock.Verify(d => d.DeleteData("ttd", "test", 1337, Guid.Parse("fa0678ad-960d-4307-aba2-ba29c9804c9d"), Guid.Parse("ba0678ad-960d-4307-aba2-ba29c9804c9d"), false), Times.Once);
     }
-    
+
     [Fact]
     public async void OnEndProcessTask_sets_hard_soft_delete_if_process_ended_and_autoDeleteOnProcessEnd_true()
     {
@@ -472,13 +499,14 @@ public class DefaultTaskEventsTests: IDisposable
             Process = new()
             {
                 Ended = DateTime.Now
-            }
+            },
+            Data = new List<DataElement>()
         };
         await te.OnEndProcessTask("EndEvent_1", instance);
         _metaMock.Verify(r => r.GetApplicationMetadata());
         _instanceMock.Verify(i => i.DeleteInstance(1000, Guid.Parse("fa0678ad-960d-4307-aba2-ba29c9804c9d"), true), Times.Once);
     }
-    
+
     [Fact]
     public async void OnEndProcessTask_does_not_sets_hard_soft_delete_if_process_not_ended_and_autoDeleteOnProcessEnd_true()
     {
@@ -502,18 +530,19 @@ public class DefaultTaskEventsTests: IDisposable
         var instance = new Instance()
         {
             Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d",
-            AppId = "ttd/test",            
+            AppId = "ttd/test",
             InstanceOwner = new()
             {
                 PartyId = "1000"
             },
-            Process = new()
+            Process = new(),
+            Data = new List<DataElement>(),
         };
         await te.OnEndProcessTask("EndEvent_1", instance);
         _metaMock.Verify(r => r.GetApplicationMetadata());
         _instanceMock.Verify(i => i.DeleteInstance(1000, Guid.Parse("fa0678ad-960d-4307-aba2-ba29c9804c9d"), true), Times.Never);
     }
-    
+
     [Fact]
     public async void OnEndProcessTask_does_not_sets_hard_soft_delete_if_process_null_and_autoDeleteOnProcessEnd_true()
     {
@@ -541,7 +570,8 @@ public class DefaultTaskEventsTests: IDisposable
             InstanceOwner = new()
             {
                 PartyId = "1000"
-            }
+            },
+            Data = new List<DataElement>(),
         };
         await te.OnEndProcessTask("EndEvent_1", instance);
         _metaMock.Verify(r => r.GetApplicationMetadata());
@@ -633,7 +663,7 @@ public class DefaultTaskEventsTests: IDisposable
 
     private ModelWithShadowFields GetDataElementForShadowFields()
     {
-            return new ModelWithShadowFields()
+        return new ModelWithShadowFields()
         {
             AltinnSF_hello = "hello",
             AltinnSF_test = "test",

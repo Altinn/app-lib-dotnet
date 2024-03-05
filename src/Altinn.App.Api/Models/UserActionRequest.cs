@@ -12,16 +12,22 @@ public class UserActionRequest
     /// </summary>
     [JsonPropertyName("action")]
     public string? Action { get; set; }
-    
+
     /// <summary>
     /// The id of the button that was clicked
     /// </summary>
     [JsonPropertyName("buttonId")]
     public string? ButtonId { get; set; }
-    
+
     /// <summary>
     /// Additional metadata for the action
     /// </summary>
     [JsonPropertyName("metadata")]
     public Dictionary<string, string>? Metadata { get; set; }
+
+    /// <summary>
+    /// Ignored validators that should not be evauated as part of this action
+    /// </summary>
+    [JsonPropertyName("ignoredValidators")]
+    public List<string>? IgnoredValidators { get; set; }
 }

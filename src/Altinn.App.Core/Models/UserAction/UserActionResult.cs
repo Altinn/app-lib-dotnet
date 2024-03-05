@@ -1,6 +1,3 @@
-using System.Net;
-using System.Runtime.Serialization;
-using Altinn.App.Core.Models.Validation;
 
 namespace Altinn.App.Core.Models.UserAction;
 
@@ -13,22 +10,22 @@ public class UserActionResult
     /// Gets or sets a value indicating whether the user action was a success
     /// </summary>
     public bool Success { get; set; }
-    
+
     /// <summary>
-    /// Gets or sets a dictionary of updated data models. Key should be dataTypeId
+    /// Gets or sets a dictionary of updated data models. Key should be elementId and value should be the updated data model
     /// </summary>
-    public Dictionary<string, object?>? UpdatedDataModels { get; set; } 
-    
+    public Dictionary<string, object>? UpdatedDataModels { get; set; }
+
     /// <summary>
     /// Actions for the client to perform after the user action has been handled
     /// </summary>
     public List<ClientAction>? ClientActions { get; set; }
-    
+
     /// <summary>
     /// Validation issues that should be displayed to the user
     /// </summary>
     public ActionError? Error { get; set; }
-    
+
     /// <summary>
     /// Creates a success result
     /// </summary>
@@ -43,7 +40,7 @@ public class UserActionResult
         };
         return userActionResult;
     }
-    
+
     /// <summary>
     /// Creates a failure result
     /// </summary>
@@ -59,17 +56,17 @@ public class UserActionResult
             Error = error
         };
     }
-    
+
     /// <summary>
     /// Adds an updated data model to the result
     /// </summary>
     /// <param name="dataModelId"></param>
     /// <param name="dataModel"></param>
-    public void AddUpdatedDataModel(string dataModelId, object? dataModel)
+    public void AddUpdatedDataModel(string dataModelId, object dataModel)
     {
         if (UpdatedDataModels == null)
         {
-            UpdatedDataModels = new Dictionary<string, object?>();
+            UpdatedDataModels = new Dictionary<string, object>();
         }
         UpdatedDataModels.Add(dataModelId, dataModel);
     }
