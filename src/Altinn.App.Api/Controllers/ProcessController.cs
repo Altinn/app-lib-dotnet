@@ -330,7 +330,7 @@ namespace Altinn.App.Api.Controllers
             }
         }
 
-        private ActionResult<AppProcessState> GetResultForError(ProcessChangeResult result)
+        private ActionResult<ProblemDetails> GetResultForError(ProcessChangeResult result)
         {
             switch (result.ErrorType)
             {
