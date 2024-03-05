@@ -5,6 +5,7 @@ using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.UserAction;
+using Altinn.App.Core.Models.UserAction.UserActionResults;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
 using Signee = Altinn.App.Core.Internal.Sign.Signee;
@@ -42,7 +43,7 @@ public class SigningUserAction : IUserAction
     /// <inheritdoc />
     /// <exception cref="Altinn.App.Core.Helpers.PlatformHttpException"></exception>
     /// <exception cref="Altinn.App.Core.Internal.App.ApplicationConfigException"></exception>
-    public async Task<UserActionResult> HandleAction(UserActionContext context)
+    public async Task<BaseUserActionResult> HandleAction(UserActionContext context)
     {
         if (_processReader.GetFlowElement(context.Instance.Process.CurrentTask.ElementId) is ProcessTask currentTask)
         {
@@ -53,13 +54,13 @@ public class SigningUserAction : IUserAction
             {
                 SignatureContext signatureContext = new SignatureContext(new InstanceIdentifier(context.Instance), currentTask.ExtensionElements?.TaskExtension?.SignatureConfiguration?.SignatureDataType!, await GetSignee(context.UserId), connectedDataElements);
                 await _signClient.SignDataElements(signatureContext);
-                return UserActionResult.SuccessResult();
+                return new SuccessBaseUserActionResult();
             }
 
             throw new ApplicationConfigException("Missing configuration for signing. Check that the task has a signature configuration and that the data types to sign are defined.");
         }
 
-        return UserActionResult.FailureResult(new ActionError()
+        return new FailureBaseUserActionResult(new ActionError()
         {
             Code = "NoProcessTask",
             Message = "Current task is not a process task."

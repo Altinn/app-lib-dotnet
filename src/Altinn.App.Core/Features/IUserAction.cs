@@ -1,4 +1,5 @@
 using Altinn.App.Core.Models.UserAction;
+using Altinn.App.Core.Models.UserAction.UserActionResults;
 
 namespace Altinn.App.Core.Features;
 
@@ -17,5 +18,5 @@ public interface IUserAction
     /// </summary>
     /// <param name="context">The user action context</param>
     /// <returns>If the handling of the action was a success</returns>
-    Task<UserActionResult> HandleAction(UserActionContext context);
+    Task<BaseUserActionResult> HandleAction(UserActionContext context);
 }

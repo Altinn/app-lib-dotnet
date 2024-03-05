@@ -1,6 +1,7 @@
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Models.UserAction;
+using Altinn.App.Core.Models.UserAction.UserActionResults;
 using FluentAssertions;
 using Xunit;
 
@@ -56,9 +57,10 @@ public class UserActionServiceTests
     {
         public string Id => "dummy";
 
-        public Task<UserActionResult> HandleAction(UserActionContext context)
+        public async Task<BaseUserActionResult> HandleAction(UserActionContext context)
         {
-            return Task.FromResult(UserActionResult.SuccessResult());
+            await Task.CompletedTask;
+            return new SuccessBaseUserActionResult();
         }
     }
 
@@ -66,9 +68,10 @@ public class UserActionServiceTests
     {
         public string Id => "dummy";
 
-        public Task<UserActionResult> HandleAction(UserActionContext context)
+        public async Task<BaseUserActionResult> HandleAction(UserActionContext context)
         {
-            return Task.FromResult(UserActionResult.SuccessResult(new List<ClientAction>() { ClientAction.NextPage() }));
+            await Task.CompletedTask;
+            return new SuccessBaseUserActionResult(new List<ClientAction>() { ClientAction.NextPage() });
         }
     }
 }

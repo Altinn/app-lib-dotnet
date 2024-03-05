@@ -7,6 +7,7 @@ using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.UserAction;
+using Altinn.App.Core.Models.UserAction.UserActionResults;
 using Altinn.App.Core.Tests.Internal.Process.TestUtils;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
@@ -62,7 +63,7 @@ public class SigningUserActionTests
         // Assert
         SignatureContext expected = new SignatureContext(new InstanceIdentifier(instance), "signature", new Signee() { UserId = "1337", PersonNumber = "12345678901" }, new DataElementSignature("a499c3ef-e88a-436b-8650-1c43e5037ada"));
         signClientMock.Verify(s => s.SignDataElements(It.Is<SignatureContext>(sc => AssertSigningContextAsExpected(sc, expected))), Times.Once);
-        result.Should().BeEquivalentTo(UserActionResult.SuccessResult());
+        result.Should().BeEquivalentTo(new SuccessBaseUserActionResult());
         signClientMock.VerifyNoOtherCalls();
     }
 

@@ -11,6 +11,7 @@ using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.UserAction;
+using Altinn.App.Core.Models.UserAction.UserActionResults;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -132,32 +133,42 @@ public class ActionsController : ControllerBase
             });
         }
 
-        UserActionResult result = await actionHandler.HandleAction(userActionContext);
-        if (result.ResultType == ResultType.Redirect)
+        BaseUserActionResult result = await actionHandler.HandleAction(userActionContext);
+        switch (result)
         {
-            return new RedirectResult(result.RedirectUrl ?? throw new ProcessException("Redirect URL missing"));
-        }
+            case RedirectBaseUserActionResult redirectResult:
+                return new RedirectResult(redirectResult.RedirectUrl);
 
-        if (result.ResultType != ResultType.Success)
-        {
-            return new BadRequestObjectResult(new UserActionResponse()
+            case FailureBaseUserActionResult failureResult:
+                return new BadRequestObjectResult(new UserActionResponse()
+                {
+                    ClientActions = failureResult.ClientActions,
+                    Error = failureResult.Error
+                });
+
+            case SuccessBaseUserActionResult successResult:
             {
-                ClientActions = result.ClientActions,
-                Error = result.Error
-            });
-        }
+                if (successResult.UpdatedDataModels is { Count: > 0 })
+                {
+                    await SaveChangedModels(instance, successResult.UpdatedDataModels);
+                }
 
-        if (result.UpdatedDataModels is { Count: > 0 })
-        {
-            await SaveChangedModels(instance, result.UpdatedDataModels);
-        }
+                return new OkObjectResult(new UserActionResponse()
+                {
+                    ClientActions = successResult.ClientActions,
+                    UpdatedDataModels = successResult.UpdatedDataModels,
+                    UpdatedValidationIssues = await GetValidations(
+                        instance,
+                        successResult.UpdatedDataModels,
+                        actionRequest.IgnoredValidators,
+                        language),
+                });
+            }
 
-        return new OkObjectResult(new UserActionResponse()
-        {
-            ClientActions = result.ClientActions,
-            UpdatedDataModels = result.UpdatedDataModels,
-            UpdatedValidationIssues = await GetValidations(instance, result.UpdatedDataModels, actionRequest.IgnoredValidators, language),
-        });
+            default:
+                throw new NotImplementedException(
+                    $"UserActionResult of type {result.GetType().Name} is not implemented");
+        }
     }
 
     private async Task SaveChangedModels(Instance instance, Dictionary<string, object> resultUpdatedDataModels)

@@ -7,6 +7,7 @@ using Altinn.App.Api.Tests.Data;
 using Altinn.App.Api.Tests.Utils;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Models.UserAction;
+using Altinn.App.Core.Models.UserAction.UserActionResults;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -221,14 +222,14 @@ public class LookupAction : IUserAction
 {
     public string Id => "lookup";
 
-    public async Task<UserActionResult> HandleAction(UserActionContext context)
+    public async Task<BaseUserActionResult> HandleAction(UserActionContext context)
     {
         await Task.CompletedTask;
         if (context.UserId == 1000)
         {
-            return UserActionResult.SuccessResult(new List<ClientAction>() { ClientAction.NextPage() });
+            return new SuccessBaseUserActionResult(new List<ClientAction>() { ClientAction.NextPage() });
         }
 
-        return UserActionResult.FailureResult(new ActionError());
+        return new FailureBaseUserActionResult(new ActionError());
     }
 }

@@ -8,6 +8,7 @@ using Altinn.App.Core.Internal.Process.Elements.Base;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
+using Altinn.App.Core.Models.UserAction.UserActionResults;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
@@ -133,9 +134,11 @@ public class ProcessEngine : IProcessEngine
         }
 
         IUserAction? actionHandler = _userActionService.GetActionHandler(request.Action);
-        UserActionResult actionResult = actionHandler is null ? UserActionResult.SuccessResult() : await actionHandler.HandleAction(new UserActionContext(request.Instance, userId.Value));
+        BaseUserActionResult actionResult = actionHandler is null
+            ? new SuccessBaseUserActionResult()
+            : await actionHandler.HandleAction(new UserActionContext(request.Instance, userId.Value));
 
-        if (actionResult.ResultType != ResultType.Success)
+        if (actionResult is FailureBaseUserActionResult)
         {
             return new ProcessChangeResult()
             {
