@@ -17,6 +17,7 @@ public class MultiDecisionHelperTests
     {
         _output = output;
     }
+
     private static readonly JsonSerializerOptions SerializerOptions = new()
     {
         WriteIndented = true
