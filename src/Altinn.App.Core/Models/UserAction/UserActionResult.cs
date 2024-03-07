@@ -87,8 +87,6 @@ public class UserActionResult
     /// <summary>
     /// Creates a redirect result
     /// </summary>
-    /// <param name="redirectUrl"></param>
-    /// <returns></returns>
     public static UserActionResult RedirectResult(string redirectUrl)
     {
         return new UserActionResult
