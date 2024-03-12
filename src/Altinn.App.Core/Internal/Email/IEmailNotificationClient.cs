@@ -13,5 +13,5 @@ public interface IEmailNotificationClient
     /// <returns>Boolean</returns>
     /// <param name="emailNotification">The email notification,</param>
     /// <param name="ct">Cancellation token.</param>
-    Task<bool> RequestEmailNotification(EmailNotification emailNotification, CancellationToken ct);
+    Task<string> RequestEmailNotification(EmailNotification emailNotification, CancellationToken ct);
 }
