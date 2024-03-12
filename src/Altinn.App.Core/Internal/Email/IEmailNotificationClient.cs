@@ -10,8 +10,6 @@ public interface IEmailNotificationClient
     /// <summary>
     /// Requests an email notification.
     /// </summary>
-    /// <returns>Boolean</returns>
-    /// <param name="emailNotification">The email notification,</param>
-    /// <param name="ct">Cancellation token.</param>
-    Task<string> RequestEmailNotification(EmailNotification emailNotification, CancellationToken ct);
+    /// <returns>The id of the email notification order</returns>
+    Task<string> RequestEmailNotification(string url, EmailNotification emailNotification, CancellationToken ct);
 }

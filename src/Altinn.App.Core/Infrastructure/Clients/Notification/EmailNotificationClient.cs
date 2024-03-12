@@ -1,6 +1,5 @@
 ﻿using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Internal.Email;
-using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Models.Email;
 using Microsoft.Extensions.Options;
 using System.Text;
@@ -22,7 +21,7 @@ public class EmailNotificationClient : IEmailNotificationClient
 
     /// <inheritdoc/>
     /// <exception cref="EmailNotificationException"/>
-    public async Task<string> RequestEmailNotification(EmailNotification emailNotification, CancellationToken ct)
+    public async Task<string> RequestEmailNotification(string url, EmailNotification emailNotification, CancellationToken ct)
     {
         string requestContent = JsonSerializer.Serialize(emailNotification, _jsonSerializerOptions);
         using StringContent stringContent = new(requestContent, Encoding.UTF8, "application/json");
