@@ -51,7 +51,8 @@ public class PaymentServiceTests
             await _paymentService.StartPayment(instance, paymentConfiguration);
 
         // Assert
-        paymentInformationResult.RedirectUrl.Should().Be(paymentInformationResult.RedirectUrl);
+        paymentInformationResult.RedirectUrl.Should().Be(paymentInformation.RedirectUrl);
+        paymentInformationResult.PaymentProcessorId.Should().Be(paymentInformation.PaymentProcessorId);
 
         // Verify calls
         _orderDetailsFormatter.Verify(p => p.CalculateOrderDetails(instance), Times.Once);
@@ -196,7 +197,8 @@ public class PaymentServiceTests
         // Arrange
         Instance instance = CreateInstance();
         AltinnPaymentConfiguration paymentConfiguration = new() { PaymentDataType = "paymentDataType" };
-        PaymentInformation paymentInformation = new() { Status = PaymentStatus.Created, RedirectUrl = "redirectUrl", PaymentReference = "paymentReference" };
+        PaymentInformation paymentInformation = new()
+            { Status = PaymentStatus.Created, RedirectUrl = "redirectUrl", PaymentProcessorId = "paymentProcessorId", PaymentReference = "paymentReference" };
 
         _dataService.Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
             .ReturnsAsync((Guid.NewGuid(), paymentInformation));
@@ -221,7 +223,8 @@ public class PaymentServiceTests
         // Arrange
         Instance instance = CreateInstance();
         AltinnPaymentConfiguration paymentConfiguration = new() { PaymentDataType = "paymentDataType" };
-        PaymentInformation paymentInformation = new() { Status = PaymentStatus.Created, RedirectUrl = "redirectUrl", PaymentReference = "paymentReference" };
+        PaymentInformation paymentInformation = new()
+            { Status = PaymentStatus.Created, RedirectUrl = "redirectUrl", PaymentProcessorId = "paymentProcessorId", PaymentReference = "paymentReference" };
 
         _dataService.Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
             .ReturnsAsync((Guid.NewGuid(), paymentInformation));
@@ -241,6 +244,7 @@ public class PaymentServiceTests
         return new PaymentInformation
         {
             RedirectUrl = "Redirect URL",
+            PaymentProcessorId = "paymentProcessorId",
             PaymentReference = "PaymentReference",
             Status = PaymentStatus.Created
         };

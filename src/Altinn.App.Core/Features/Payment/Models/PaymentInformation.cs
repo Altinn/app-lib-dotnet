@@ -13,6 +13,12 @@ namespace Altinn.App.Core.Features.Payment.Models
         public required string RedirectUrl { get; set; }
 
         /// <summary>
+        /// Gets or sets the payment provider for the transaction.
+        /// </summary>
+        public required string PaymentProcessorId { get; set; }
+
+        
+        /// <summary>
         /// Gets or sets the payment reference for the transaction.
         /// </summary>
         public required string PaymentReference { get; set; }

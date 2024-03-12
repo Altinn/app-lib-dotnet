@@ -128,6 +128,7 @@ public class NetsPaymentProcessorTests
         PaymentInformation paymentInformation = new()
         {
             RedirectUrl = "redirectUrl",
+            PaymentProcessorId = "paymentProcessorId",
             PaymentReference = "paymentReference",
             OrderDetails = new OrderDetails()
             {

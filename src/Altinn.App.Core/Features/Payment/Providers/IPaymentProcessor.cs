@@ -9,6 +9,11 @@ namespace Altinn.App.Core.Features.Payment.Providers;
 public interface IPaymentProcessor
 {
     /// <summary>
+    /// Internal ID for the payment processor.
+    /// </summary>
+    public string PaymentProcessorId { get; }
+    
+    /// <summary>
     /// Starts a payment process for the specified instance and order details.
     /// </summary>
     /// <param name="instance">The instance for which the payment is being started.</param>

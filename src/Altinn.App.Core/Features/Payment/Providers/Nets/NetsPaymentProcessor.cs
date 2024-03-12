@@ -36,6 +36,9 @@ public class NetsPaymentProcessor : IPaymentProcessor
     }
 
     /// <inheritdoc />
+    public string PaymentProcessorId => "Nets Easy";
+
+    /// <inheritdoc />
     public async Task<PaymentInformation> StartPayment(Instance instance, OrderDetails orderDetails)
     {
         var instanceIdentifier = new InstanceIdentifier(instance);
@@ -96,6 +99,7 @@ public class NetsPaymentProcessor : IPaymentProcessor
         return new PaymentInformation
         {
             PaymentReference = paymentId,
+            PaymentProcessorId = PaymentProcessorId,
             RedirectUrl = hostedPaymentPageUrl,
             OrderDetails = orderDetails,
             Status = PaymentStatus.Created
