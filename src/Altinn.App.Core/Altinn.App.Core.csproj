@@ -15,7 +15,7 @@
     <PackageReference Include="Altinn.Platform.Models" Version="1.4.0" />
     <PackageReference Include="Altinn.Platform.Storage.Interface" Version="3.24.0" />
     <PackageReference Include="HtmlAgilityPack" Version="1.11.59" />
-    <PackageReference Include="JWTCookieAuthentication" Version="3.0.1" />
+    <PackageReference Include="JWTCookieAuthentication" Version="4.0.1" />
     <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.22.0" />
     <PackageReference Include="Microsoft.AspNet.WebApi.Client" Version="5.2.9" />
     <PackageReference Include="Microsoft.FeatureManagement.AspNetCore" Version="3.1.1" />
