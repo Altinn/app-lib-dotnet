@@ -1,4 +1,5 @@
 ﻿using Altinn.App.Core.Internal.Email;
+using Altinn.App.Core.Models.Email;
 
 namespace Altinn.App.Core.Infrastructure.Clients.Notification;
 /// <summary>
@@ -7,5 +8,9 @@ namespace Altinn.App.Core.Infrastructure.Clients.Notification;
 /// </summary>
 public class EmailNotificationClient : IEmailNotificationClient
 {
-
+    /// <inheritdoc/>
+    public Task<bool> RequestEmailNotification(EmailNotification emailNotification, CancellationToken ct)
+    {
+        throw new NotImplementedException();
+    }
 }

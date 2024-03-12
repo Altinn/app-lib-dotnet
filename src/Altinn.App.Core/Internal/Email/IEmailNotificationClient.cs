@@ -1,12 +1,17 @@
+using Altinn.App.Core.Models.Email;
+
 namespace Altinn.App.Core.Internal.Email;
 
 /// <summary>
-/// Defines the required operations on a client of the PDF generator service.
+/// Defines the required operations on a client of the Email notification service.
 /// </summary>
 public interface IEmailNotificationClient
 {
     /// <summary>
-    /// Sends an email.
+    /// Requests an email notification.
     /// </summary>
-    /// <returns>TODO: fill in returns</returns>
+    /// <returns>Boolean</returns>
+    /// <param name="emailNotification">The email notification,</param>
+    /// <param name="ct">Cancellation token.</param>
+    Task<bool> RequestEmailNotification(EmailNotification emailNotification, CancellationToken ct);
 }
