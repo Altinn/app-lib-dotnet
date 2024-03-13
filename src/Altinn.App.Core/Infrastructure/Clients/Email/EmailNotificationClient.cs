@@ -63,7 +63,7 @@ public class EmailNotificationClient : IEmailNotificationClient
         }
         catch(Exception e) when (e is not EmailNotificationException)
         {
-            var ex = new EmailNotificationException("Email notification failed", e);
+            var ex = new EmailNotificationException("Something went wrong when processing the email order, see inner exception for details.", e);
             ex.Data.Add("responseContent", httpContent);
             ex.Data.Add("responseStatusCode", httpResponseMessage?.StatusCode.ToString());
             ex.Data.Add("responseReasonPhrase", httpResponseMessage?.ReasonPhrase);
