@@ -1,4 +1,4 @@
-﻿using Altinn.App.Core.Infrastructure.Clients.Notification;
+﻿using Altinn.App.Core.Infrastructure.Clients.Email;
 
 namespace Altinn.App.Core.Models.Email;
 /// <summary>
