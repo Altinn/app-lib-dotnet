@@ -1,11 +1,13 @@
 ﻿using Altinn.ApiClients.Maskinporten.Config;
 using Altinn.ApiClients.Maskinporten.Interfaces;
 using Altinn.ApiClients.Maskinporten.Models;
+using Altinn.ApiClients.Maskinporten.Services;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Infrastructure.Clients.KeyVault;
 using Altinn.App.Core.Infrastructure.Clients.Maskinporten;
 using Altinn.App.Core.Infrastructure.Clients.Storage;
 using Altinn.App.Core.Internal.Maskinporten;
@@ -13,6 +15,7 @@ using Altinn.App.Core.Models;
 using Altinn.Common.EFormidlingClient;
 using Altinn.Common.EFormidlingClient.Models;
 using Altinn.Platform.Storage.Interface.Models;
+using AltinnCore.Authentication.Constants;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -34,6 +37,13 @@ namespace Altinn.App.Core.EFormidling.Implementation
         private readonly PlatformSettings _platformSettings;
         private readonly GeneralSettings _generalSettings;
 
+        [Obsolete("Do not use this for new code. Will be removed as part of V9.")]
+        private readonly IMaskinportenService? _maskinportenService;
+        [Obsolete("Do not use this for new code. Will be removed as part of V9.")]
+        private readonly MaskinportenSettings? _maskinportenSettings;
+        [Obsolete("Do not use this for new code. Will be removed as part of V9.")]
+        private readonly IX509CertificateProvider? _x509CertificateProvider;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="EformidlingStatusCheckEventHandler"/> class.
         /// </summary>
@@ -41,7 +51,34 @@ namespace Altinn.App.Core.EFormidling.Implementation
             IEFormidlingClient eFormidlingClient,
             IHttpClientFactory httpClientFactory,
             ILogger<EformidlingStatusCheckEventHandler> logger,
-            IMaskinportenTokenProvider maskinportenTokenProvider,
+            IMaskinportenTokenProvider? maskinportenTokenProvider,
+            IOptions<PlatformSettings> platformSettings,
+            IOptions<GeneralSettings> generalSettings
+            )
+        {
+            // Even though maskinportenTokenProvider is nullable, it is required for the new constructor.
+            // This is to allow for a smooth transition from the old to the new constructor.
+            ArgumentNullException.ThrowIfNull(maskinportenTokenProvider);
+
+            _eFormidlingClient = eFormidlingClient;
+            _logger = logger;
+            _httpClientFactory = httpClientFactory;
+            _maskinportenTokenProvider = maskinportenTokenProvider;
+            _platformSettings = platformSettings.Value;
+            _generalSettings = generalSettings.Value;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="EformidlingStatusCheckEventHandler"/> class.
+        /// </summary>
+        [Obsolete("Use the constructor using IMaskinportenTokenProvider instead. This constructor will be removed when V9 is released.")]
+        public EformidlingStatusCheckEventHandler(
+            IEFormidlingClient eFormidlingClient,
+            IHttpClientFactory httpClientFactory,
+            ILogger<EformidlingStatusCheckEventHandler> logger,
+            IMaskinportenService maskinportenService,
+            IOptions<MaskinportenSettings> maskinportenSettings,
+            IX509CertificateProvider x509CertificateProvider,
             IOptions<PlatformSettings> platformSettings,
             IOptions<GeneralSettings> generalSettings
             )
@@ -49,7 +86,9 @@ namespace Altinn.App.Core.EFormidling.Implementation
             _eFormidlingClient = eFormidlingClient;
             _logger = logger;
             _httpClientFactory = httpClientFactory;
-            _maskinportenTokenProvider = maskinportenTokenProvider;
+            _maskinportenService = maskinportenService;
+            _maskinportenSettings = maskinportenSettings.Value;
+            _x509CertificateProvider = x509CertificateProvider;
             _platformSettings = platformSettings.Value;
             _generalSettings = generalSettings.Value;
         }
@@ -154,7 +193,19 @@ namespace Altinn.App.Core.EFormidling.Implementation
 
         private async Task<string> GetOrganizationToken()
         {
-            return await _maskinportenTokenProvider.GetAltinnExchangedToken("altinn:serviceowner/instances.read altinn:serviceowner/instances.write");
+            string scopes = "altinn:serviceowner/instances.read altinn:serviceowner/instances.write";
+
+            // This block should be removed as when we release V9 of backend
+            if (_x509CertificateProvider != null && _maskinportenService != null && _maskinportenSettings != null)
+            {
+                X509Certificate2 x509cert = await _x509CertificateProvider.GetCertificate();
+                TokenResponse maskinportenToken = await _maskinportenService.GetToken(x509cert, _maskinportenSettings.Environment, _maskinportenSettings.ClientId, scopes, string.Empty);
+                TokenResponse altinnToken = await _maskinportenService.ExchangeToAltinnToken(maskinportenToken, _maskinportenSettings.Environment);
+
+                return altinnToken.AccessToken;
+            }
+
+            return await _maskinportenTokenProvider.GetAltinnExchangedToken(scopes);
         }
 
         private async Task<Statuses> GetStatusesForShipment(string shipmentId)

@@ -14,7 +14,7 @@ namespace Altinn.App.Core.Internal.Maskinporten
         /// <summary>
         /// Adds the default token provider for Maskinporten using Jwk as the authentication method.
         /// The Jwk is fetched from the secret store using the provided secretKeyName.
-        /// When using this locally the secret should best be fetched from the local secret store using dotnet user-secrets.
+        /// When using this locally the secret should be fetched from the local secret store using dotnet user-secrets.
         /// </summary>
         public static IServiceCollection AddMaskinportenJwkTokenProvider(this IServiceCollection services, string secretKeyName)
         {
