@@ -4,6 +4,7 @@ using Altinn.ApiClients.Maskinporten.Services;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.EFormidling.Implementation;
 using Altinn.App.Core.Infrastructure.Clients.Maskinporten;
+using Altinn.App.Core.Internal.Maskinporten;
 using Altinn.App.Core.Models;
 using Altinn.Common.EFormidlingClient;
 using FluentAssertions;
@@ -17,9 +18,20 @@ namespace Altinn.App.Api.Tests.EFormidling;
 public class EformidlingStatusCheckEventHandlerTests
 {
     [Fact]
-    public async Task ProcessEvent_NoStatuses_ShouldReturnFalse()
+    public async Task ProcessEvent_WithX509NoStatuses_ShouldReturnFalse()
     {
-        EformidlingStatusCheckEventHandler eventHandler = GetMockedEventHandler();
+        EformidlingStatusCheckEventHandler eventHandler = GetMockedEventHandler(false);
+        CloudEvent cloudEvent = GetValidCloudEvent();
+
+        bool processStatus = await eventHandler.ProcessEvent(cloudEvent);
+
+        processStatus.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ProcessEvent_WithJwkNoStatuses_ShouldReturnFalse()
+    {
+        EformidlingStatusCheckEventHandler eventHandler = GetMockedEventHandler(true);
         CloudEvent cloudEvent = GetValidCloudEvent();
 
         bool processStatus = await eventHandler.ProcessEvent(cloudEvent);
@@ -41,7 +53,7 @@ public class EformidlingStatusCheckEventHandlerTests
         };
     }
 
-    private static EformidlingStatusCheckEventHandler GetMockedEventHandler()
+    private static EformidlingStatusCheckEventHandler GetMockedEventHandler(bool useJwk)
     {
         var eFormidlingClientMock = new Mock<IEFormidlingClient>();
         var httpClientFactoryMock = new Mock<IHttpClientFactory>();
@@ -54,6 +66,9 @@ public class EformidlingStatusCheckEventHandlerTests
 
         var maskinportenSettingsMock = new Mock<IOptions<MaskinportenSettings>>();
         var x509CertificateProviderMock = new Mock<IX509CertificateProvider>();
+
+        var maskinPortenTokenProviderMock = new Mock<IMaskinportenTokenProvider>();
+
         IOptions<Core.Configuration.PlatformSettings> platformSettingsMock = Options.Create(new Altinn.App.Core.Configuration.PlatformSettings()
         {
             ApiEventsEndpoint = "http://localhost:5101/events/api/v1/",
@@ -61,16 +76,31 @@ public class EformidlingStatusCheckEventHandlerTests
         });
         var generalSettingsMock = new Mock<IOptions<GeneralSettings>>();
 
-        EformidlingStatusCheckEventHandler eventHandler = new(
-            eFormidlingClientMock.Object,
-            httpClientFactoryMock.Object,
-            eFormidlingLoggerMock.Object,
-            maskinportenServiceMock.Object,
-            maskinportenSettingsMock.Object,
-            x509CertificateProviderMock.Object,
-            platformSettingsMock,
-            generalSettingsMock.Object
-        );
+        EformidlingStatusCheckEventHandler eventHandler;
+        if (useJwk)
+        {
+            eventHandler = new(
+                eFormidlingClientMock.Object,
+                httpClientFactoryMock.Object,
+                eFormidlingLoggerMock.Object,
+                maskinPortenTokenProviderMock.Object,
+                platformSettingsMock,
+                generalSettingsMock.Object
+            );
+        }
+        else
+        {
+            eventHandler = new(
+                eFormidlingClientMock.Object,
+                httpClientFactoryMock.Object,
+                eFormidlingLoggerMock.Object,
+                maskinportenServiceMock.Object,
+                maskinportenSettingsMock.Object,
+                x509CertificateProviderMock.Object,
+                platformSettingsMock,
+                generalSettingsMock.Object
+            );
+        }
         return eventHandler;
     }
 }
