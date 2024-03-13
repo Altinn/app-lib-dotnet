@@ -11,5 +11,5 @@ public interface IEmailNotificationClient
     /// Requests an email notification.
     /// </summary>
     /// <returns>The id of the email notification order</returns>
-    Task<string> RequestEmailNotification(string url, EmailNotification emailNotification, CancellationToken ct);
+    Task<EmailOrderResponse> Order(EmailNotification emailNotification, CancellationToken ct);
 }
