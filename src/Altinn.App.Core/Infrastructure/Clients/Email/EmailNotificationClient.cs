@@ -9,7 +9,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 
-namespace Altinn.App.Core.Infrastructure.Clients.Notification;
+namespace Altinn.App.Core.Infrastructure.Clients.Email;
 /// <summary>
 /// Implementation of the <see cref="IEmailNotificationClient"/> interface using a HttpClient to send
 /// requests to the Email Notification service.
