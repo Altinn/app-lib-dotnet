@@ -97,6 +97,7 @@
 
   <ItemGroup>
     <Watch Remove="Extensions\DictionaryExtensionsTests.cs" />
+    <Watch Remove="Internal\Maskinporten\MaskinportenExtensionsTests.cs" />
     <Watch Remove="Internal\Maskinporten\MaskinportenJwkTokenProviderTests.cs" />
     <Watch Remove="Internal\Pdf\PdfServiceTests.cs" />
     <Watch Remove="Mocks\RequestInterceptor.cs" />
