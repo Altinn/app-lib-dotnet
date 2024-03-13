@@ -39,7 +39,7 @@ namespace Altinn.App.Core.Internal.Maskinporten
         {
             string base64EncodedJwk = await GetBase64EncodedJwk();
             TokenResponse maskinportenToken = await _maskinportenService.GetToken(base64EncodedJwk, _maskinportenSettings.Environment, _maskinportenSettings.ClientId, scopes, string.Empty);
-            
+
             return maskinportenToken.AccessToken;
         }
 

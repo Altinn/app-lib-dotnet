@@ -18,12 +18,8 @@ namespace Altinn.App.Core.Internal.Maskinporten
         /// </summary>
         public static IServiceCollection AddMaskinportenJwkTokenProvider(this IServiceCollection services, string secretKeyName)
         {
-            services.AddTransient<IMaskinportenTokenProvider>(sp => 
-                new MaskinportenJwkTokenProvider(
-                    sp.GetRequiredService<IMaskinportenService>(), 
-                    sp.GetRequiredService<IOptions<MaskinportenSettings>>(), 
-                    sp.GetRequiredService<ISecretsClient>(),
-                    secretKeyName));
+            services.AddTransient<IMaskinportenTokenProvider>(sp =>
+                new MaskinportenJwkTokenProvider(sp.GetRequiredService<IMaskinportenService>(), sp.GetRequiredService<IOptions<MaskinportenSettings>>(), sp.GetRequiredService<ISecretsClient>(), secretKeyName));
 
             return services;
         }
