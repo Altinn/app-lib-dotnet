@@ -25,7 +25,7 @@ public class MaskinportenJwkTokenProviderTests
         var maskinportenService = new Mock<IMaskinportenService>();
         maskinportenService.Setup(s => s.GetToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()))
             .ReturnsAsync(new TokenResponse { AccessToken = "myMaskinportenAccessToken" });
-        
+
         var secretsClient = new Mock<ISecretsClient>();
         secretsClient.Setup(s => s.GetSecretAsync(It.IsAny<string>())).ReturnsAsync("myBase64EncodedJwk");
 
@@ -56,7 +56,7 @@ public class MaskinportenJwkTokenProviderTests
         TokenResponse altinnTokenResponse = new() { AccessToken = "myAltinnAccessToken" };
         maskinportenService.Setup(s => s.ExchangeToAltinnToken(maskinportenTokenResponse, maskinportenSettings.Value.Environment, null, null, false, false))
             .ReturnsAsync(altinnTokenResponse);
-        
+
         var secretsClient = new Mock<ISecretsClient>();
         secretsClient.Setup(s => s.GetSecretAsync(It.IsAny<string>())).ReturnsAsync("myBase64EncodedJwk");
 
