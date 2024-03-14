@@ -14,6 +14,7 @@ using Altinn.Common.AccessTokenClient.Services;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Moq;
+using Moq.Protected;
 using Xunit;
 
 public class EmailNotificationClientTests
@@ -33,9 +34,14 @@ public class EmailNotificationClientTests
 
         HttpRequestMessage? capturedRequest = null; // Capture request to verify the uri used in the http call.
         string capturedContent = string.Empty; // Capture http content to verify.
-
-        var httpClient = new Mock<HttpClient>();
-        httpClient.Setup(h => h.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+        
+        var handlerMock = new Mock<HttpMessageHandler>();
+        handlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent("{\"orderId\": \"order123\"}", Encoding.UTF8, "application/json")
@@ -46,7 +52,12 @@ public class EmailNotificationClientTests
                 capturedContent = await request.Content!.ReadAsStringAsync(token);
             });
 
-        var emailNotificationClient = CreateEmailNotificationClient(httpClient);
+        var httpClientFactoryMock = new Mock<IHttpClientFactory>();
+        var httpClient = new HttpClient(handlerMock.Object);
+
+        httpClientFactoryMock.Setup(h => h.CreateClient(It.IsAny<string>())).Returns(httpClient);
+
+        var emailNotificationClient = CreateEmailNotificationClient(httpClientFactoryMock);
         var ct = new CancellationTokenSource().Token;
 
         // Act
@@ -63,8 +74,13 @@ public class EmailNotificationClientTests
     public async void Order_ShouldReturnOrderId_OnSuccess()
     {
         // Arrange
-        var httpClient = new Mock<HttpClient>();
-        httpClient.Setup(h => h.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+        var handlerMock = new Mock<HttpMessageHandler>();
+        handlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(() =>
             {
                 var jsonContent = new StringContent("{\"orderId\": \"order123\"}", Encoding.UTF8, "application/json");
@@ -74,7 +90,13 @@ public class EmailNotificationClientTests
                 };
                 return response;
             });
-        var emailNotificationClient = CreateEmailNotificationClient(httpClient);
+
+        var httpClientFactoryMock = new Mock<IHttpClientFactory>();
+        var httpClient = new HttpClient(handlerMock.Object);
+
+        httpClientFactoryMock.Setup(h => h.CreateClient(It.IsAny<string>())).Returns(httpClient);
+
+        var emailNotificationClient = CreateEmailNotificationClient(httpClientFactoryMock);
         var recipients = new List<EmailRecipient>()
         {
             new("test.testesen@testdirektoratet.no")
@@ -95,8 +117,13 @@ public class EmailNotificationClientTests
     public async void Order_ShouldThrowEmailNotificationException_OnFailure()
     {
         // Arrange
-        var httpClient = new Mock<HttpClient>();
-        httpClient.Setup(h => h.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+        var handlerMock = new Mock<HttpMessageHandler>();
+        handlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(() =>
             {
                 var jsonContent = new StringContent(string.Empty, Encoding.UTF8, "application/json");
@@ -106,7 +133,13 @@ public class EmailNotificationClientTests
                 };
                 return response;
             });
-        var emailNotificationClient = CreateEmailNotificationClient(httpClient);
+
+        var httpClientFactoryMock = new Mock<IHttpClientFactory>();
+        var httpClient = new HttpClient(handlerMock.Object);
+
+        httpClientFactoryMock.Setup(h => h.CreateClient(It.IsAny<string>())).Returns(httpClient);
+
+        var emailNotificationClient = CreateEmailNotificationClient(httpClientFactoryMock);
         var recipients = new List<EmailRecipient>()
         {
             new("test.testesen@testdirektoratet.no")
@@ -123,18 +156,16 @@ public class EmailNotificationClientTests
         await FluentActions.Awaiting(orderEmailNotification).Should().ThrowAsync<EmailNotificationException>();
     }
 
-    private static EmailNotificationClient CreateEmailNotificationClient(Mock<HttpClient> mockHttpClient)
+    private static EmailNotificationClient CreateEmailNotificationClient(Mock<IHttpClientFactory> mockHttpClientFactory)
     {
         var appDataMock = new Mock<IAppMetadata>();
-
         appDataMock.Setup(a => a.GetApplicationMetadata())
             .ReturnsAsync(new ApplicationMetadata("ttd/app-lib-test"));
-        var httpClient = mockHttpClient;
 
         var accessTokenGenerator = new Mock<IAccessTokenGenerator>();
         accessTokenGenerator.Setup(a => a.GenerateAccessToken(It.IsAny<string>(), It.IsAny<string>()))
             .Returns("token");
 
-        return new EmailNotificationClient(httpClient.Object, Options.Create(new PlatformSettings()), appDataMock.Object, accessTokenGenerator.Object, new Microsoft.ApplicationInsights.TelemetryClient());
+        return new EmailNotificationClient(mockHttpClientFactory.Object, Options.Create(new PlatformSettings()), appDataMock.Object, accessTokenGenerator.Object, new Microsoft.ApplicationInsights.TelemetryClient());
     }
 }
