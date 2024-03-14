@@ -1,12 +1,15 @@
 ﻿using Altinn.ApiClients.Maskinporten.Config;
 using Altinn.ApiClients.Maskinporten.Interfaces;
+using Altinn.ApiClients.Maskinporten.Models;
 using Altinn.ApiClients.Maskinporten.Services;
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.EFormidling;
 using Altinn.App.Core.EFormidling.Implementation;
 using Altinn.App.Core.Infrastructure.Clients.Maskinporten;
 using Altinn.App.Core.Internal.Maskinporten;
 using Altinn.App.Core.Models;
 using Altinn.Common.EFormidlingClient;
+using Altinn.Common.EFormidlingClient.Models;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -18,9 +21,9 @@ namespace Altinn.App.Api.Tests.EFormidling;
 public class EformidlingStatusCheckEventHandlerTests
 {
     [Fact]
-    public async Task ProcessEvent_WithX509NoStatuses_ShouldReturnFalse()
+    public async Task ProcessEvent_WithX509Created_ShouldReturnFalse()
     {
-        EformidlingStatusCheckEventHandler eventHandler = GetMockedEventHandler(false);
+        EformidlingStatusCheckEventHandler eventHandler = GetMockedEventHandler(false, false);
         CloudEvent cloudEvent = GetValidCloudEvent();
 
         bool processStatus = await eventHandler.ProcessEvent(cloudEvent);
@@ -29,14 +32,25 @@ public class EformidlingStatusCheckEventHandlerTests
     }
 
     [Fact]
-    public async Task ProcessEvent_WithJwkNoStatuses_ShouldReturnFalse()
+    public async Task ProcessEvent_WithJwkCreated_ShouldReturnFalse()
     {
-        EformidlingStatusCheckEventHandler eventHandler = GetMockedEventHandler(true);
+        EformidlingStatusCheckEventHandler eventHandler = GetMockedEventHandler(true, false);
         CloudEvent cloudEvent = GetValidCloudEvent();
 
         bool processStatus = await eventHandler.ProcessEvent(cloudEvent);
 
         processStatus.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ProcessEvent_WithJwkDelivered_ShouldReturnTrue()
+    {
+        EformidlingStatusCheckEventHandler eventHandler = GetMockedEventHandler(true, true);
+        CloudEvent cloudEvent = GetValidCloudEvent();
+        
+        bool processStatus = await eventHandler.ProcessEvent(cloudEvent);
+        
+        processStatus.Should().BeTrue();
     }
 
     private static CloudEvent GetValidCloudEvent()
@@ -53,17 +67,28 @@ public class EformidlingStatusCheckEventHandlerTests
         };
     }
 
-    private static EformidlingStatusCheckEventHandler GetMockedEventHandler(bool useJwk)
+    private static EformidlingStatusCheckEventHandler GetMockedEventHandler(bool useJwk, bool delivered)
     {
         var eFormidlingClientMock = new Mock<IEFormidlingClient>();
-        var httpClientFactoryMock = new Mock<IHttpClientFactory>();
-        var eFormidlingLoggerMock = new Mock<ILogger<EformidlingStatusCheckEventHandler>>();
-
+        Statuses statuses = GetStatues(delivered);
+        eFormidlingClientMock.Setup(e => e.GetMessageStatusById(It.IsAny<string>(), It.IsAny<Dictionary<string,string>>()))
+            .ReturnsAsync(statuses);
+        
         var httpClientMock = new Mock<HttpClient>();
+        httpClientMock.Setup(s => s.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HttpResponseMessage(System.Net.HttpStatusCode.OK));
+
+        var httpClientFactoryMock = new Mock<IHttpClientFactory>();
+        httpClientFactoryMock.Setup(s => s.CreateClient(It.IsAny<string>()))
+            .Returns(httpClientMock.Object);
+
+        var eFormidlingLoggerMock = new Mock<ILogger<EformidlingStatusCheckEventHandler>>();
+        
         var maskinportenServiceLoggerMock = new Mock<ILogger<MaskinportenService>>();
         var tokenCacheProviderMock = new Mock<ITokenCacheProvider>();
+        
         var maskinportenServiceMock = new Mock<MaskinportenService>(httpClientMock.Object, maskinportenServiceLoggerMock.Object, tokenCacheProviderMock.Object);
-
+        
         var maskinportenSettingsMock = new Mock<IOptions<MaskinportenSettings>>();
         var x509CertificateProviderMock = new Mock<IX509CertificateProvider>();
 
@@ -74,7 +99,7 @@ public class EformidlingStatusCheckEventHandlerTests
             ApiEventsEndpoint = "http://localhost:5101/events/api/v1/",
             SubscriptionKey = "key"
         });
-        var generalSettingsMock = new Mock<IOptions<GeneralSettings>>();
+        var generalSettingsMock = new Mock<GeneralSettings>();
 
         EformidlingStatusCheckEventHandler eventHandler;
         if (useJwk)
@@ -85,7 +110,7 @@ public class EformidlingStatusCheckEventHandlerTests
                 eFormidlingLoggerMock.Object,
                 maskinPortenTokenProviderMock.Object,
                 platformSettingsMock,
-                generalSettingsMock.Object
+                Options.Create(generalSettingsMock.Object)
             );
         }
         else
@@ -98,9 +123,25 @@ public class EformidlingStatusCheckEventHandlerTests
                 maskinportenSettingsMock.Object,
                 x509CertificateProviderMock.Object,
                 platformSettingsMock,
-                generalSettingsMock.Object
+                Options.Create(generalSettingsMock.Object)
             );
         }
         return eventHandler;
+    }
+
+    private static Statuses GetStatues(bool delivered)
+    {
+        Statuses statuses = new()
+        {
+            Content = new List<Content>
+            {
+                new()
+                {
+                    Status = delivered ? "LEVERT" : "OPPRETTET"
+                }
+            }
+        };
+
+        return statuses;
     }
 }
