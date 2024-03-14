@@ -44,40 +44,37 @@ public class EmailNotificationClient : IEmailNotificationClient
         EmailOrderResponse? orderResponse = null;
         try
         {
-            var requestContent = JsonSerializer.Serialize(emailNotification, _jsonSerializerOptions);
-            using var stringContent = new StringContent(requestContent, Encoding.UTF8, "application/json");
+            var application = await _appMetadata.GetApplicationMetadata();
 
             var uri = _platformSettings.NotificationEndpoint.TrimEnd('/') + "/api/v1/orders/email";
+            var requestContent = JsonSerializer.Serialize(emailNotification, _jsonSerializerOptions);
 
             using var httpRequest = new HttpRequestMessage(HttpMethod.Post, uri)
             {
-                Content = stringContent,
+                Content = new StringContent(requestContent, Encoding.UTF8, "application/json"),
                 Method = HttpMethod.Post,
             };
             await AddAuthHeader(httpRequest);
 
             httpResponseMessage = await _httpClient.SendAsync(httpRequest, ct);
-            if (!httpResponseMessage.IsSuccessStatusCode)
-            {
-                _orderCount.WithLabels("error").Inc();
-                httpContent = await httpResponseMessage.Content.ReadAsStringAsync(ct);
-                var ex = new EmailNotificationException("Email notification failed");
-                ex.Data.Add("responseContent", httpContent);
-                ex.Data.Add("responseStatusCode", httpResponseMessage.StatusCode.ToString());
-                ex.Data.Add("responseReasonPhrase", httpResponseMessage.ReasonPhrase);
-
-                throw ex;
-            }
             httpContent = await httpResponseMessage.Content.ReadAsStringAsync(ct);
+            if (httpResponseMessage.IsSuccessStatusCode) 
+            {
+                httpContent = await httpResponseMessage.Content.ReadAsStringAsync(ct);
 
-            orderResponse = JsonSerializer.Deserialize<EmailOrderResponse>(httpContent);
-            if (orderResponse is null)
-                throw new Exception("Couldn't deserialize email notification order response");
+                orderResponse = JsonSerializer.Deserialize<EmailOrderResponse>(httpContent);
+                if (orderResponse is null)
+                    throw new Exception("Couldn't deserialize email notification order response");
 
-            _orderCount.WithLabels("success").Inc();
+                _orderCount.WithLabels("success").Inc();
+            }
+            else
+            {
+                throw new Exception("Got error status code for email notification order");
+            }
             return orderResponse;
         }
-        catch(Exception e) when (e is not EmailNotificationException)
+        catch(Exception e)
         {
             _orderCount.WithLabels("error").Inc();
             var ex = new EmailNotificationException("Something went wrong when processing the email order, see inner exception for details.", e);
