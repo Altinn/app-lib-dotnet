@@ -1,4 +1,4 @@
-﻿using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Email;
 using Altinn.App.Core.Models.Email;
@@ -61,7 +61,7 @@ public sealed class EmailNotificationClient : IEmailNotificationClient
 
             httpResponseMessage = await httpClient.SendAsync(httpRequestMessage, ct);
             httpContent = await httpResponseMessage.Content.ReadAsStringAsync(ct);
-            if (httpResponseMessage.IsSuccessStatusCode) 
+            if (httpResponseMessage.IsSuccessStatusCode)
             {
                 httpContent = await httpResponseMessage.Content.ReadAsStringAsync(ct);
 
@@ -77,7 +77,7 @@ public sealed class EmailNotificationClient : IEmailNotificationClient
             }
             return orderResponse;
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             _orderCount.WithLabels("error").Inc();
             var ex = new EmailNotificationException("Something went wrong when processing the email order, see inner exception for details.", e);
