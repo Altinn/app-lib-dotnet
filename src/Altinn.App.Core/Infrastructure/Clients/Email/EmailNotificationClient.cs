@@ -63,8 +63,6 @@ public sealed class EmailNotificationClient : IEmailNotificationClient
             httpContent = await httpResponseMessage.Content.ReadAsStringAsync(ct);
             if (httpResponseMessage.IsSuccessStatusCode)
             {
-                httpContent = await httpResponseMessage.Content.ReadAsStringAsync(ct);
-
                 orderResponse = JsonSerializer.Deserialize<EmailOrderResponse>(httpContent);
                 if (orderResponse is null)
                     throw new InvalidOperationException("Couldn't deserialize email notification order response.");
