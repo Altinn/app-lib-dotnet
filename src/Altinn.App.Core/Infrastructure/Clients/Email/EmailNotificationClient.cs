@@ -19,7 +19,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Email;
 /// </summary>
 public class EmailNotificationClient : IEmailNotificationClient
 {
-    private readonly HttpClient _httpClient;
+    private readonly IHttpClientFactory _httpClientFactory;
     private readonly IAppMetadata _appMetadata;
     private readonly PlatformSettings _platformSettings;
     private readonly IAccessTokenGenerator _accessTokenGenerator;
@@ -39,6 +39,8 @@ public class EmailNotificationClient : IEmailNotificationClient
         var startTime = DateTime.UtcNow;
         var timer = Stopwatch.StartNew();
 
+        using var httpClient = _httpClientFactory.CreateClient();
+
         HttpResponseMessage? httpResponseMessage = null;
         string? httpContent = null;
         EmailOrderResponse? orderResponse = null;
@@ -47,16 +49,19 @@ public class EmailNotificationClient : IEmailNotificationClient
             var application = await _appMetadata.GetApplicationMetadata();
 
             var uri = _platformSettings.NotificationEndpoint.TrimEnd('/') + "/api/v1/orders/email";
-            var requestContent = JsonSerializer.Serialize(emailNotification, _jsonSerializerOptions);
+            var body = JsonSerializer.Serialize(emailNotification, _jsonSerializerOptions);
 
-            using var httpRequest = new HttpRequestMessage(HttpMethod.Post, uri)
+            using var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, uri)
             {
-                Content = new StringContent(requestContent, Encoding.UTF8, "application/json"),
-                Method = HttpMethod.Post,
+                Content = new StringContent(body, new MediaTypeHeaderValue("application/json")),
             };
-            await AddAuthHeader(httpRequest);
+            httpRequestMessage.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            httpRequestMessage.Headers.Add(
+                "PlatformAccessToken",
+                _accessTokenGenerator.GenerateAccessToken(application.Org, application.AppIdentifier.App)
+            );
 
-            httpResponseMessage = await _httpClient.SendAsync(httpRequest, ct);
+            httpResponseMessage = await httpClient.SendAsync(httpRequestMessage, ct);
             httpContent = await httpResponseMessage.Content.ReadAsStringAsync(ct);
             if (httpResponseMessage.IsSuccessStatusCode) 
             {
@@ -99,32 +104,25 @@ public class EmailNotificationClient : IEmailNotificationClient
         }
     }
 
-    private async Task AddAuthHeader(HttpRequestMessage request)
-    {
-        ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
-        request.Headers.Add("PlatformAccessToken", _accessTokenGenerator.GenerateAccessToken(application.Org, application.AppIdentifier.App));
-    }
-
     /// <summary>
     /// Initializes a new instance of the <see cref="EmailNotificationClient"/> class.
     /// </summary>
-    /// <param name="httpClient">The HttpClient to use in communication with the email notification service.</param>
+    /// <param name="httpClientFactory"></param>
     /// <param name="platformSettings">Api endpoints for platform services.</param>
     /// <param name="appMetadata">The service providing appmetadata.</param>
     /// <param name="accessTokenGenerator">An access token generator to create an access token.</param>
     /// <param name="telemetryClient">Client used to track dependencies.</param>
     public EmailNotificationClient(
-        HttpClient httpClient,
+        IHttpClientFactory httpClientFactory,
         IOptions<PlatformSettings> platformSettings,
         IAppMetadata appMetadata,
         IAccessTokenGenerator accessTokenGenerator,
         TelemetryClient telemetryClient)
     {
-        _httpClient = httpClient;
         _platformSettings = platformSettings.Value;
+        _httpClientFactory = httpClientFactory;
         _appMetadata = appMetadata;
         _accessTokenGenerator = accessTokenGenerator;
         _telemetryClient = telemetryClient;
-        _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
     }
 }
