@@ -135,6 +135,6 @@ public class EmailNotificationClientTests
         accessTokenGenerator.Setup(a => a.GenerateAccessToken(It.IsAny<string>(), It.IsAny<string>()))
             .Returns("token");
 
-        return new EmailNotificationClient(httpClient.Object, Options.Create(new PlatformSettings()), appDataMock.Object, accessTokenGenerator.Object);
+        return new EmailNotificationClient(httpClient.Object, Options.Create(new PlatformSettings()), appDataMock.Object, accessTokenGenerator.Object, new Microsoft.ApplicationInsights.TelemetryClient());
     }
 }
