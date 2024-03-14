@@ -61,7 +61,7 @@ public class EmailNotificationClientTests
         var ct = new CancellationTokenSource().Token;
 
         // Act
-        var emailOrderResponse = await emailNotificationClient.Order(emailNotification, ct);
+        _ = await emailNotificationClient.Order(emailNotification, ct);
 
         // Assert
         capturedContent.Should().Be(expectedContent);
