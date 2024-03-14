@@ -1,7 +1,6 @@
 ﻿using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Email;
-using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Email;
 using Altinn.Common.AccessTokenClient.Services;
 using Microsoft.ApplicationInsights;
@@ -9,7 +8,6 @@ using Microsoft.Extensions.Options;
 using Prometheus;
 using System.Diagnostics;
 using System.Net.Http.Headers;
-using System.Text;
 using System.Text.Json;
 
 namespace Altinn.App.Core.Infrastructure.Clients.Email;
@@ -69,13 +67,13 @@ public sealed class EmailNotificationClient : IEmailNotificationClient
 
                 orderResponse = JsonSerializer.Deserialize<EmailOrderResponse>(httpContent);
                 if (orderResponse is null)
-                    throw new Exception("Couldn't deserialize email notification order response");
+                    throw new NullReferenceException("Couldn't deserialize email notification order response");
 
                 _orderCount.WithLabels("success").Inc();
             }
             else
             {
-                throw new Exception("Got error status code for email notification order");
+                throw new HttpRequestException("Got error status code for email notification order");
             }
             return orderResponse;
         }
