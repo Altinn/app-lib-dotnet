@@ -47,9 +47,9 @@ public class EformidlingStatusCheckEventHandlerTests
     {
         EformidlingStatusCheckEventHandler eventHandler = GetMockedEventHandler(true, true);
         CloudEvent cloudEvent = GetValidCloudEvent();
-        
+
         bool processStatus = await eventHandler.ProcessEvent(cloudEvent);
-        
+
         processStatus.Should().BeTrue();
     }
 
@@ -71,9 +71,9 @@ public class EformidlingStatusCheckEventHandlerTests
     {
         var eFormidlingClientMock = new Mock<IEFormidlingClient>();
         Statuses statuses = GetStatues(delivered);
-        eFormidlingClientMock.Setup(e => e.GetMessageStatusById(It.IsAny<string>(), It.IsAny<Dictionary<string,string>>()))
+        eFormidlingClientMock.Setup(e => e.GetMessageStatusById(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>()))
             .ReturnsAsync(statuses);
-        
+
         var httpClientMock = new Mock<HttpClient>();
         httpClientMock.Setup(s => s.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new HttpResponseMessage(System.Net.HttpStatusCode.OK));
@@ -83,12 +83,12 @@ public class EformidlingStatusCheckEventHandlerTests
             .Returns(httpClientMock.Object);
 
         var eFormidlingLoggerMock = new Mock<ILogger<EformidlingStatusCheckEventHandler>>();
-        
+
         var maskinportenServiceLoggerMock = new Mock<ILogger<MaskinportenService>>();
         var tokenCacheProviderMock = new Mock<ITokenCacheProvider>();
-        
+
         var maskinportenServiceMock = new Mock<MaskinportenService>(httpClientMock.Object, maskinportenServiceLoggerMock.Object, tokenCacheProviderMock.Object);
-        
+
         var maskinportenSettingsMock = new Mock<IOptions<MaskinportenSettings>>();
         var x509CertificateProviderMock = new Mock<IX509CertificateProvider>();
 
