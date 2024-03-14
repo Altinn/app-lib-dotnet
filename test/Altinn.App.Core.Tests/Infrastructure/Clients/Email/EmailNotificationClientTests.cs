@@ -116,9 +116,10 @@ public class EmailNotificationClientTests
         var ct = new CancellationTokenSource().Token;
 
         // Act
+        // Define an asynchronous delegate action, allowing for the capture and testing of any exceptions thrown.
         Func<Task> orderEmailNotification = async () => await emailNotificationClient.Order(emailNotification, ct);
 
-        // Asser
+        // Assert
         await FluentActions.Awaiting(orderEmailNotification).Should().ThrowAsync<EmailNotificationException>();
     }
 
