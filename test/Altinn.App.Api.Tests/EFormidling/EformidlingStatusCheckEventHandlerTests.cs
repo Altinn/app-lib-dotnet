@@ -14,6 +14,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
+using System.Security.Cryptography.X509Certificates;
 using Xunit;
 
 namespace Altinn.App.Api.Tests.EFormidling;
@@ -89,12 +90,21 @@ public class EformidlingStatusCheckEventHandlerTests
 
         var maskinportenServiceMock = new Mock<MaskinportenService>(httpClientMock.Object, maskinportenServiceLoggerMock.Object, tokenCacheProviderMock.Object);
 
-        var maskinportenSettingsMock = new Mock<IOptions<MaskinportenSettings>>();
+        var maskinportenSettingsMock = new MaskinportenSettings()
+        {
+            Environment = "ver2",
+            ClientId = Guid.NewGuid().ToString()
+        };
+
+        var x509CertificateMock = new Mock<X509Certificate2>().Object;
         var x509CertificateProviderMock = new Mock<IX509CertificateProvider>();
+        x509CertificateProviderMock.Setup(s => s.GetCertificate().Result).Returns(x509CertificateMock);
 
         var maskinPortenTokenProviderMock = new Mock<IMaskinportenTokenProvider>();
+        maskinPortenTokenProviderMock.Setup(s => s.GetAltinnExchangedToken(It.IsAny<string>()))
+            .ReturnsAsync("myAltinnAccesstoken");
 
-        IOptions<Core.Configuration.PlatformSettings> platformSettingsMock = Options.Create(new Altinn.App.Core.Configuration.PlatformSettings()
+        IOptions<PlatformSettings> platformSettingsMock = Options.Create(new PlatformSettings()
         {
             ApiEventsEndpoint = "http://localhost:5101/events/api/v1/",
             SubscriptionKey = "key"
@@ -120,7 +130,7 @@ public class EformidlingStatusCheckEventHandlerTests
                 httpClientFactoryMock.Object,
                 eFormidlingLoggerMock.Object,
                 maskinportenServiceMock.Object,
-                maskinportenSettingsMock.Object,
+                Options.Create(maskinportenSettingsMock),
                 x509CertificateProviderMock.Object,
                 platformSettingsMock,
                 Options.Create(generalSettingsMock.Object)
