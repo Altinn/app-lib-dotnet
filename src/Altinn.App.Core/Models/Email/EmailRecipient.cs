@@ -1,4 +1,4 @@
-﻿namespace Altinn.App.Core.Models.Email;
+namespace Altinn.App.Core.Models.Email;
 /// <summary>
 /// Represents the recipient of an email.
 /// </summary>

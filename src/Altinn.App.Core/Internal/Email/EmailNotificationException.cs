@@ -1,4 +1,4 @@
-﻿namespace Altinn.App.Core.Internal.Email;
+namespace Altinn.App.Core.Internal.Email;
 
 /// <summary>
 /// Class representing an exception throw when an email notification could not be sent.
