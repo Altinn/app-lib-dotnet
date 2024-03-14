@@ -67,7 +67,7 @@ public sealed class EmailNotificationClient : IEmailNotificationClient
 
                 orderResponse = JsonSerializer.Deserialize<EmailOrderResponse>(httpContent);
                 if (orderResponse is null)
-                    throw new NullReferenceException("Couldn't deserialize email notification order response");
+                    throw new InvalidOperationException("Couldn't deserialize email notification order response.");
 
                 _orderCount.WithLabels("success").Inc();
             }
