@@ -5,7 +5,7 @@ namespace Altinn.App.Core.Models.Email;
 /// <summary>
 /// The response from the email notification API.
 /// </summary>
-public record EmailOrderResponse
+public sealed record EmailOrderResponse
 {
     /// <summary>
     /// The id of the email order.

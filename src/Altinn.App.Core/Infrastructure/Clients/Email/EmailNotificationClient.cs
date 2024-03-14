@@ -17,7 +17,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Email;
 /// Implementation of the <see cref="IEmailNotificationClient"/> interface using a HttpClient to send
 /// requests to the Email Notification service.
 /// </summary>
-public class EmailNotificationClient : IEmailNotificationClient
+public sealed class EmailNotificationClient : IEmailNotificationClient
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IAppMetadata _appMetadata;

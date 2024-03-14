@@ -3,7 +3,7 @@
 /// <summary>
 /// Class representing an exception throw when an email notification could not be sent.
 /// </summary>
-public class EmailNotificationException : Exception
+public sealed class EmailNotificationException : Exception
 {
     /// <summary>
     /// Creates a new Exception of <see cref="EmailNotificationException"/>
