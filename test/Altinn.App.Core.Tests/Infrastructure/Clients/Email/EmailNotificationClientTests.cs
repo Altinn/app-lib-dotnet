@@ -54,8 +54,9 @@ public class EmailNotificationClientTests
 
         // Assert
         capturedContent.Should().Be(expectedContent);
+        capturedRequest.Should().NotBeNull();
+        capturedRequest!.RequestUri.Should().NotBeNull();
         capturedRequest!.RequestUri!.ToString().Should().Be(expectedUri);
-
     }
 
     [Fact]
