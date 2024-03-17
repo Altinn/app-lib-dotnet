@@ -41,7 +41,7 @@ public class JoinedAppOptionsProvider : IAppOptionsProvider
                 }));
 
         // Flatten all options to a single list
-        var options = appOptions.SelectMany(o => o.AppOption.Options ?? Enumerable.Empty<AppOption>()).ToList();
+        var options = appOptions.SelectMany(o => o.AppOption.Options ?? throw new KeyNotFoundException($"{o.Id} is not registrered as an app option")).ToList();
         // Flatten all parameters to a single dictionary, prefixing the key with the option id
         var parameters = appOptions
             .SelectMany(o =>
@@ -52,7 +52,7 @@ public class JoinedAppOptionsProvider : IAppOptionsProvider
         // Return the combined AppOptions object
         return new AppOptions
         {
-            IsCacheable = appOptions.All(o => o.AppOption.IsCacheable),
+            IsCacheable = Array.TrueForAll(appOptions, o => o.AppOption.IsCacheable),
             Options = options,
             Parameters = parameters
         };

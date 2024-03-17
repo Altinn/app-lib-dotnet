@@ -13,6 +13,7 @@ public class JoinedAppOptionsTests
     private readonly Mock<IAppOptionsProvider> _neverUsedOptionsProviderMock = new(MockBehavior.Strict);
     private readonly Mock<IAppOptionsProvider> _countryAppOptionsMock = new(MockBehavior.Strict);
     private readonly Mock<IAppOptionsProvider> _sentinelOptionsProviderMock = new(MockBehavior.Strict);
+    private readonly Mock<IAppOptionsFileHandler> _fileHandlerMock = new(MockBehavior.Strict);
     private readonly ServiceCollection _serviceCollection = new();
 
     private const string Language = "nb";
@@ -61,8 +62,13 @@ public class JoinedAppOptionsTests
             });
         _serviceCollection.AddSingleton(_sentinelOptionsProviderMock.Object);
 
+        // Registrer a mocked default handler
+        _serviceCollection.AddSingleton(_fileHandlerMock.Object);
+        _serviceCollection.AddSingleton<IAppOptionsProvider, DefaultAppOptionsProvider>();
+
         // This provider should never be used and cause an error if it is
-        _neverUsedOptionsProviderMock.Setup(p => p.Id).Returns("never-used").Verifiable(Times.AtMost(1));
+        _neverUsedOptionsProviderMock.Setup(p => p.Id).Returns("never-used");
+        _serviceCollection.AddSingleton(_neverUsedOptionsProviderMock.Object);
 
         _serviceCollection.AddSingleton<AppOptionsFactory>();
         _serviceCollection.AddSingleton<InstanceAppOptionsFactory>();
@@ -153,5 +159,22 @@ public class JoinedAppOptionsTests
         _neverUsedOptionsProviderMock.VerifyAll();
         _countryAppOptionsMock.VerifyAll();
         _sentinelOptionsProviderMock.VerifyAll();
+    }
+
+    [Fact]
+    public async Task JoinWithMissingProvider_ThrowsExceptionToWarnAboutMissconfiguration()
+    {
+        _fileHandlerMock.Setup(p => p.ReadOptionsFromFileAsync("missing")).ReturnsAsync((List<AppOption>)null!);
+        _serviceCollection.AddJoinedAppOptions("country", "country-no-sentinel", "missing");
+
+        using var sp = _serviceCollection.BuildServiceProvider();
+        var appOptionsService = sp.GetRequiredService<AppOptionsService>();
+
+        var action = new Func<Task>(async () => await appOptionsService.GetOptionsAsync("country", Language, new()));
+        var exception = await action.Should().ThrowAsync<KeyNotFoundException>();
+        exception.WithMessage("missing is not registrered as an app option");
+
+        _neverUsedOptionsProviderMock.VerifyAll();
+        _countryAppOptionsMock.VerifyAll();
     }
 }
