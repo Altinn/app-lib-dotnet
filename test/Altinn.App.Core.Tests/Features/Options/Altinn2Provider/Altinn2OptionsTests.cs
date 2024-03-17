@@ -1,4 +1,3 @@
-#nullable disable
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Options;
 using Altinn.App.Core.Features.Options.Altinn2Provider;
@@ -6,13 +5,13 @@ using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
-namespace Altinn.App.PlatformServices.Tests.Options.Altinn2Provider
+namespace Altinn.App.Core.Tests.Features.Options.Altinn2Provider
 {
     public class Altinn2OptionsTests
     {
         /// <summary>
         /// Change this to false to test with real https://www.altinn.no/api/metadata/codelists instead of
-        /// the moq in <see cref="Altinn.App.PlatformServices.Tests.Options.Altinn2Provider.Altinn2MetadataApiClientHttpMessageHandlerMoq"/>
+        /// the moq in <see cref="Altinn2MetadataApiClientHttpMessageHandlerMoq"/>
         /// </summary>
         private readonly bool _shouldMoqAltinn2Api = true;
 
