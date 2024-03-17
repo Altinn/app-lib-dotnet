@@ -127,4 +127,31 @@ public class JoinedAppOptionsTests
         _countryAppOptionsMock.VerifyAll();
         _sentinelOptionsProviderMock.VerifyAll();
     }
+
+    [Fact]
+    public async Task JoinLists_VerifyParameters()
+    {
+        // Test the edge case where only a single list is joined
+        _serviceCollection.AddJoinedAppOptions("country", "country-no-sentinel", "sentinel");
+
+        using var sp = _serviceCollection.BuildServiceProvider();
+        var appOptionsService = sp.GetRequiredService<AppOptionsService>();
+
+        var parameters = new Dictionary<string, string>
+        {
+            { "key", "value" }
+        };
+
+        var options = await appOptionsService.GetOptionsAsync("country", Language, parameters);
+
+        options.Parameters.Should().BeEquivalentTo(new Dictionary<string, string>
+        {
+            { "country-no-sentinel_key", "value" },
+            { "sentinel_key", "value" },
+        });
+
+        _neverUsedOptionsProviderMock.VerifyAll();
+        _countryAppOptionsMock.VerifyAll();
+        _sentinelOptionsProviderMock.VerifyAll();
+    }
 }
