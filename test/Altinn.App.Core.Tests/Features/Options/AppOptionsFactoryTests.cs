@@ -102,7 +102,7 @@ namespace Altinn.App.Core.Tests.Features.Options
                         }
                     },
 
-                    Parameters = keyValuePairs.ToDictionary(kvp => kvp.Key, kvp => (string?)kvp.Value)
+                    Parameters = keyValuePairs!
                 };
 
                 return Task.FromResult(options);

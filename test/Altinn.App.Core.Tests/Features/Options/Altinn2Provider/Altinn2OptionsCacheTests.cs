@@ -9,7 +9,7 @@ namespace Altinn.App.Core.Tests.Features.Options.Altinn2Provider
 {
     public class Altinn2OptionsCacheTests
     {
-        public ServiceCollection GetServiceCollection()
+        public static ServiceCollection GetServiceCollection()
         {
             var services = new ServiceCollection();
 
@@ -18,7 +18,7 @@ namespace Altinn.App.Core.Tests.Features.Options.Altinn2Provider
             var httpClient = services.AddHttpClient<Altinn2MetadataApiClient>();
 
             // Registrer the instrumented fake message handler as singleton, so we can count
-            // how many http calls getw through the cache.
+            // how many http calls gets through the cache.
             services.AddSingleton<Altinn2MetadataApiClientHttpMessageHandlerMoq>();
             httpClient.ConfigurePrimaryHttpMessageHandler<Altinn2MetadataApiClientHttpMessageHandlerMoq>();
 
@@ -54,7 +54,7 @@ namespace Altinn.App.Core.Tests.Features.Options.Altinn2Provider
                 var messageHandler = scope.ServiceProvider.GetRequiredService<Altinn2MetadataApiClientHttpMessageHandlerMoq>();
                 messageHandler.CallCounter.Should().Be(0);
                 providers.Count().Should().Be(3);
-                var optionsProvider = providers.SingleOrDefault(p => p.Id == "ASF_Land3");
+                var optionsProvider = providers.Single(p => p.Id == "ASF_Land3");
                 await optionsProvider.GetAppOptionsAsync("nb", new Dictionary<string, string>());
                 await Task.Delay(5);
                 messageHandler.CallCounter.Should().Be(1);
@@ -69,7 +69,7 @@ namespace Altinn.App.Core.Tests.Features.Options.Altinn2Provider
             {
                 var providers = scope.ServiceProvider.GetRequiredService<IEnumerable<IAppOptionsProvider>>();
                 var messageHandler = scope.ServiceProvider.GetRequiredService<Altinn2MetadataApiClientHttpMessageHandlerMoq>();
-                var optionsProvider = providers.SingleOrDefault(p => p.Id == "ASF_Land3");
+                var optionsProvider = providers.Single(p => p.Id == "ASF_Land3");
                 await optionsProvider.GetAppOptionsAsync("nb", new Dictionary<string, string>());
                 await Task.Delay(5);
                 messageHandler.CallCounter.Should().Be(1);
@@ -84,7 +84,7 @@ namespace Altinn.App.Core.Tests.Features.Options.Altinn2Provider
             {
                 var providers = scope.ServiceProvider.GetRequiredService<IEnumerable<IAppOptionsProvider>>();
                 var messageHandler = scope.ServiceProvider.GetRequiredService<Altinn2MetadataApiClientHttpMessageHandlerMoq>();
-                var optionsProvider = providers.SingleOrDefault(p => p.Id == "ASF_Fylker");
+                var optionsProvider = providers.Single(p => p.Id == "ASF_Fylker");
                 await optionsProvider.GetAppOptionsAsync("nb", new Dictionary<string, string>());
                 await Task.Delay(5);
                 messageHandler.CallCounter.Should().Be(2);

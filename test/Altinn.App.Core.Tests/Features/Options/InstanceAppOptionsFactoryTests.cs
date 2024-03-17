@@ -33,7 +33,7 @@ namespace Altinn.App.Core.Tests.Features.Options
         {
             public string Id => "vehicles";
 
-            public Task<AppOptions> GetInstanceAppOptionsAsync(InstanceIdentifier instanceIdentifier, string language, Dictionary<string, string> keyValuePairs)
+            public Task<AppOptions> GetInstanceAppOptionsAsync(InstanceIdentifier instanceIdentifier, string? language, Dictionary<string, string> keyValuePairs)
             {
                 var options = new AppOptions
                 {
