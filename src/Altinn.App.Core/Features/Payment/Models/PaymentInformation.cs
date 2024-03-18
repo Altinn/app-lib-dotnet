@@ -1,6 +1,4 @@
-﻿using System.Text.Json.Serialization;
-
-namespace Altinn.App.Core.Features.Payment.Models
+﻿namespace Altinn.App.Core.Features.Payment.Models
 {
     /// <summary>
     /// Represents payment information for a transaction.
@@ -8,30 +6,18 @@ namespace Altinn.App.Core.Features.Payment.Models
     public class PaymentInformation
     {
         /// <summary>
-        /// Gets or sets the redirect URL for the payment.
+        /// Gets or sets the taskId of the payment task this payment information is associated with.
         /// </summary>
-        public required string RedirectUrl { get; set; }
+        public required string TaskId { get; set; }
 
         /// <summary>
-        /// Gets or sets the payment provider for the transaction.
+        /// The internal ID of the payment processor.
         /// </summary>
         public required string PaymentProcessorId { get; set; }
 
-        
         /// <summary>
-        /// Gets or sets the payment reference for the transaction.
+        /// Contains details about the payment, set by the payment processor implementation.
         /// </summary>
-        public required string PaymentReference { get; set; }
-
-        /// <summary>
-        /// Gets or sets the status of the payment.
-        /// </summary>
-        [JsonConverter(typeof(JsonStringEnumConverter))]
-        public PaymentStatus Status { get; set; }
-
-        /// <summary>
-        /// Gets or sets the order details for the transaction.
-        /// </summary>
-        public OrderDetails? OrderDetails { get; set; }
+        public required PaymentDetails PaymentDetails { get; set; }
     }
 }

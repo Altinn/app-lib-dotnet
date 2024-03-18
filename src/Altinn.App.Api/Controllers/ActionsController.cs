@@ -74,7 +74,6 @@ public class ActionsController : ControllerBase
     [Authorize]
     [ProducesResponseType(typeof(UserActionResponse), 200)]
     [ProducesResponseType(typeof(ProblemDetails), 400)]
-    [ProducesResponseType(typeof(RedirectResult), 302)]
     [ProducesResponseType(409)]
     [ProducesResponseType(500)]
     [ProducesResponseType(401)]
@@ -136,10 +135,6 @@ public class ActionsController : ControllerBase
         }
 
         UserActionResult result = await actionHandler.HandleAction(userActionContext);
-        if (result.ResultType == ResultType.Redirect)
-        {
-            return new RedirectResult(result.RedirectUrl ?? throw new ProcessException("Redirect URL missing"));
-        }
 
         if (result.ResultType != ResultType.Success)
         {
@@ -168,6 +163,7 @@ public class ActionsController : ControllerBase
             ClientActions = result.ClientActions,
             UpdatedDataModels = result.UpdatedDataModels,
             UpdatedValidationIssues = await GetValidations(instance, result.UpdatedDataModels, actionRequest.IgnoredValidators, language),
+            RedirectUrl = result.RedirectUrl,
         });
     }
 

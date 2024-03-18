@@ -53,7 +53,7 @@ public class UserActionResult
     /// <summary>
     /// If this is set, the client should redirect to this url
     /// </summary>
-    public string? RedirectUrl { get; set; }
+    public Uri? RedirectUrl { get; set; }
     /// <summary>
     /// Creates a success result
     /// </summary>
@@ -87,7 +87,7 @@ public class UserActionResult
     /// <summary>
     /// Creates a redirect result
     /// </summary>
-    public static UserActionResult RedirectResult(string redirectUrl)
+    public static UserActionResult RedirectResult(Uri redirectUrl)
     {
         return new UserActionResult
         {

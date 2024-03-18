@@ -54,11 +54,11 @@ public class NetsPaymentProcessorTests
             });
 
         // Act
-        PaymentInformation result = await _processor.StartPayment(instance, orderDetails);
+        PaymentDetails result = await _processor.StartPayment(instance, orderDetails);
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal("12345", result.PaymentReference);
+        Assert.Equal("12345", result.PaymentId);
         Assert.Equal("http://paymenturl.com", result.RedirectUrl);
     }
 
@@ -90,11 +90,11 @@ public class NetsPaymentProcessorTests
             });
 
         // Act
-        PaymentInformation result = await _processor.StartPayment(instance, orderDetails);
+        PaymentDetails result = await _processor.StartPayment(instance, orderDetails);
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal("12345", result.PaymentReference);
+        Assert.Equal("12345", result.PaymentId);
         Assert.Equal("http://paymenturl.com", result.RedirectUrl);
         Assert.Equal(PaymentStatus.Created, result.Status);
 
@@ -127,11 +127,15 @@ public class NetsPaymentProcessorTests
         Instance instance = CreateInstance();
         PaymentInformation paymentInformation = new()
         {
-            RedirectUrl = "redirectUrl",
+            TaskId = "taskId",
             PaymentProcessorId = "paymentProcessorId",
-            PaymentReference = "paymentReference",
-            OrderDetails = new OrderDetails()
+            PaymentDetails = new PaymentDetails
             {
+                PaymentId = "paymentReference",
+                Status = PaymentStatus.Created,
+                RedirectUrl = "redirectUrl",
+                OrderDetails = new OrderDetails
+                {
                 Currency = "NOK",
                 OrderReference = "orderReference",
                 OrderLines =
@@ -144,16 +148,21 @@ public class NetsPaymentProcessorTests
                         VatPercent = 25,
                     }
                 ],
+                },
             },
         };
 
-        _netsClientMock.Setup(x => x.CancelPayment(paymentInformation.PaymentReference, (int)(paymentInformation.OrderDetails.TotalPriceIncVat * 100))).ReturnsAsync(true);
+        _netsClientMock.Setup(x =>
+                x.CancelPayment(paymentInformation.PaymentDetails.PaymentId, (int)(paymentInformation.PaymentDetails.OrderDetails.TotalPriceIncVat * 100)))
+            .ReturnsAsync(true);
 
         // Act
         await _processor.CancelPayment(instance, paymentInformation);
 
         // Assert
-        _netsClientMock.Verify(x => x.CancelPayment(paymentInformation.PaymentReference, (int)paymentInformation.OrderDetails.TotalPriceIncVat * 100), Times.Once);
+        _netsClientMock.Verify(
+            x => x.CancelPayment(paymentInformation.PaymentDetails.PaymentId, (int)paymentInformation.PaymentDetails.OrderDetails.TotalPriceIncVat * 100),
+            Times.Once);
     }
 
     [Fact]

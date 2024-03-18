@@ -9,13 +9,20 @@ namespace Altinn.App.Core.Features.Payment.Models
         /// The payment request has been created and sent to payment provider.
         /// </summary>
         Created,
+        
         /// <summary>
         /// The payment has been paid.
         /// </summary>
         Paid,
+        
         /// <summary>
         /// Something went wrong and the payment is considered failed.
         /// </summary>
-        Failed
+        Failed,
+
+        /// <summary>
+        /// The payment has been cancelled.
+        /// </summary>
+        Cancelled,
     }
 }

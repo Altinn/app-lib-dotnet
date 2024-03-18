@@ -39,7 +39,7 @@ public class NetsPaymentProcessor : IPaymentProcessor
     public string PaymentProcessorId => "Nets Easy";
 
     /// <inheritdoc />
-    public async Task<PaymentInformation> StartPayment(Instance instance, OrderDetails orderDetails)
+    public async Task<PaymentDetails> StartPayment(Instance instance, OrderDetails orderDetails)
     {
         var instanceIdentifier = new InstanceIdentifier(instance);
         string baseUrl = _generalSettings.FormattedExternalAppBaseUrl(new AppIdentifier(instance));
@@ -96,24 +96,23 @@ public class NetsPaymentProcessor : IPaymentProcessor
         string hostedPaymentPageUrl = httpApiResult.Result.HostedPaymentPageUrl;
         string paymentId = httpApiResult.Result.PaymentId;
 
-        return new PaymentInformation
+        return new PaymentDetails
         {
-            PaymentReference = paymentId,
-            PaymentProcessorId = PaymentProcessorId,
+            PaymentId = paymentId,
+            Status = PaymentStatus.Created,
             RedirectUrl = hostedPaymentPageUrl,
             OrderDetails = orderDetails,
-            Status = PaymentStatus.Created
         };
     }
 
     /// <inheritdoc />
     public async Task<bool> CancelPayment(Instance instance, PaymentInformation paymentInformation)
     {
-        int amount = paymentInformation.OrderDetails != null
-            ? (int)(paymentInformation.OrderDetails.TotalPriceIncVat * LowestMonetaryUnitMultiplier)
+        int amount = paymentInformation.PaymentDetails.OrderDetails != null
+            ? (int)(paymentInformation.PaymentDetails.OrderDetails.TotalPriceIncVat * LowestMonetaryUnitMultiplier)
             : 0;
 
-        bool result = await _netsClient.CancelPayment(paymentInformation.PaymentReference, amount);
+        bool result = await _netsClient.CancelPayment(paymentInformation.PaymentDetails.PaymentId, amount);
         return result;
     }
 

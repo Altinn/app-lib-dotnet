@@ -18,8 +18,8 @@ public interface IPaymentProcessor
     /// </summary>
     /// <param name="instance">The instance for which the payment is being started.</param>
     /// <param name="orderDetails">The details of the order being paid.</param>
-    /// <returns>A task representing the asynchronous operation. The task result contains the payment information.</returns>
-    public Task<PaymentInformation> StartPayment(Instance instance, OrderDetails orderDetails);
+    /// <returns>A task representing the asynchronous operation. The task result contains the payment details.</returns>
+    public Task<PaymentDetails> StartPayment(Instance instance, OrderDetails orderDetails);
 
     /// <summary>
     /// Cancels a payment for the specified instance and payment reference.

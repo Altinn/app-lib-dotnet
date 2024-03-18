@@ -10,7 +10,7 @@ namespace Altinn.App.Core.Features.Payment.Services
     public interface IPaymentService
     {
         /// <summary>
-        /// Start payment for an instance.
+        /// Start payment for an instance. Will clean up any existing non-completed payment before starting a new payment.
         /// </summary>
         /// <param name="instance"></param>
         /// <param name="paymentConfiguration"></param>
@@ -23,14 +23,6 @@ namespace Altinn.App.Core.Features.Payment.Services
         /// <param name="instance"></param>
         /// <param name="paymentConfiguration"></param>
         /// <returns></returns>
-        Task<PaymentInformation?> CheckAndStorePaymentInformation(Instance instance, AltinnPaymentConfiguration paymentConfiguration);
-
-        /// <summary>
-        /// Cancel payment for an instance.
-        /// </summary>
-        /// <param name="instance"></param>
-        /// <param name="paymentConfiguration"></param>
-        /// <returns></returns>
-        Task CancelPaymentIfNotPaid(Instance instance, AltinnPaymentConfiguration paymentConfiguration);
+        Task<PaymentInformation?> CheckAndStorePaymentStatus(Instance instance, AltinnPaymentConfiguration paymentConfiguration);
     }
 }
