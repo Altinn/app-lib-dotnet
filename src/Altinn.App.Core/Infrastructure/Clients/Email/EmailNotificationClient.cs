@@ -23,7 +23,7 @@ public sealed class EmailNotificationClient : IEmailNotificationClient
     private readonly IAccessTokenGenerator _accessTokenGenerator;
     private readonly TelemetryClient _telemetryClient;
     private static readonly Counter _orderCount = Metrics
-        .CreateCounter("altinn_app_notification_order_request_count", "Number of notification order requests.", labelNames: ["email"]);
+        .CreateCounter("altinn_app_notification_order_request_count", "Number of notification order requests.", labelNames: ["type", "result"]);
 
     private readonly JsonSerializerOptions _jsonSerializerOptions = new()
     {
@@ -67,7 +67,7 @@ public sealed class EmailNotificationClient : IEmailNotificationClient
                 if (orderResponse is null)
                     throw new InvalidOperationException("Couldn't deserialize email notification order response.");
 
-                _orderCount.WithLabels("success").Inc();
+                _orderCount.WithLabels("email", "success").Inc();
             }
             else
             {
@@ -77,7 +77,7 @@ public sealed class EmailNotificationClient : IEmailNotificationClient
         }
         catch (Exception e)
         {
-            _orderCount.WithLabels("error").Inc();
+            _orderCount.WithLabels("email", "error").Inc();
             var ex = new EmailNotificationException("Something went wrong when processing the email order, see inner exception for details.", e);
             ex.Data.Add("responseContent", httpContent);
             ex.Data.Add("responseStatusCode", httpResponseMessage?.StatusCode.ToString());
