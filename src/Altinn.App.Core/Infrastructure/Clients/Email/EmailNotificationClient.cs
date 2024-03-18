@@ -82,6 +82,7 @@ public sealed class EmailNotificationClient : IEmailNotificationClient
             ex.Data.Add("responseContent", httpContent);
             ex.Data.Add("responseStatusCode", httpResponseMessage?.StatusCode.ToString());
             ex.Data.Add("responseReasonPhrase", httpResponseMessage?.ReasonPhrase);
+            _telemetryClient.TrackException(ex);
             throw ex;
         }
         finally
