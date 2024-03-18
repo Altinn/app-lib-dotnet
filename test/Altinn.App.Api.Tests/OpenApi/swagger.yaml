@@ -76,6 +76,10 @@ paths:
             text/xml:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
+        '409':
+          description: Conflict
+        '500':
+          description: Server Error
         '401':
           description: Unauthorized
   '/{org}/{app}/api/v1/applicationlanguages':
@@ -1415,6 +1419,70 @@ paths:
       responses:
         '200':
           description: Success
+  '/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/payment':
+    get:
+      tags:
+        - Payment
+      parameters:
+        - name: org
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: app
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: instanceOwnerPartyId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - name: instanceGuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/PaymentInformation'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentInformation'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/PaymentInformation'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/PaymentInformation'
+            text/xml:
+              schema:
+                $ref: '#/components/schemas/PaymentInformation'
+        '404':
+          description: Not Found
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/xml:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
   '/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/pdf/format':
     get:
       tags:
@@ -3088,6 +3156,33 @@ components:
         - copy
         - test
       type: string
+    OrderDetails:
+      type: object
+      properties:
+        orderReference:
+          type: string
+          nullable: true
+        currency:
+          type: string
+          nullable: true
+        orderLines:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentOrderLine'
+          nullable: true
+        totalPriceExVat:
+          type: number
+          format: double
+          readOnly: true
+        totalVat:
+          type: number
+          format: double
+          readOnly: true
+        totalPriceIncVat:
+          type: number
+          format: double
+          readOnly: true
+      additionalProperties: false
     PatchOperation:
       type: object
       properties:
@@ -3100,6 +3195,68 @@ components:
         value:
           $ref: '#/components/schemas/JsonNode'
       additionalProperties: false
+    PaymentDetails:
+      type: object
+      properties:
+        paymentId:
+          type: string
+          nullable: true
+        redirectUrl:
+          type: string
+          nullable: true
+        receiptUrl:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/PaymentStatus'
+        orderDetails:
+          $ref: '#/components/schemas/OrderDetails'
+      additionalProperties: false
+    PaymentInformation:
+      type: object
+      properties:
+        taskId:
+          type: string
+          nullable: true
+        paymentProcessorId:
+          type: string
+          nullable: true
+        paymentDetails:
+          $ref: '#/components/schemas/PaymentDetails'
+      additionalProperties: false
+    PaymentOrderLine:
+      type: object
+      properties:
+        id:
+          type: string
+          nullable: true
+        name:
+          type: string
+          nullable: true
+        textResourceKey:
+          type: string
+          nullable: true
+        priceExVat:
+          type: number
+          format: double
+        quantity:
+          type: integer
+          format: int32
+        vatPercent:
+          type: number
+          format: double
+        unit:
+          type: string
+          nullable: true
+      additionalProperties: false
+    PaymentStatus:
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+      type: integer
+      format: int32
     PointerSegment:
       type: object
       properties:
@@ -3365,6 +3522,10 @@ components:
           nullable: true
         error:
           $ref: '#/components/schemas/ActionError'
+        redirectUrl:
+          type: string
+          format: uri
+          nullable: true
       additionalProperties: false
     ValidationIssue:
       type: object
