@@ -6,55 +6,45 @@ namespace Altinn.App.Core.Models.Email;
 /// </summary>
 public sealed class EmailNotification
 {
+    private DateTime _requestedSendTime;
+
     /// <summary>
     /// The subject of the email.
     /// </summary>
-    public string Subject { get; init; }
+    public required string Subject { get; init; }
     /// <summary>
     /// The body of the email. 
     /// </summary>
-    public string Body { get; init; }
-    /// <summary>
-    /// The content type of the email. 
-    /// "Plain" by default.
-    /// </summary>
-    public string ContentType { get; init; }
-    /// <summary>
-    /// The Requested send time for the email. 
-    /// DateTime.Now by default.
-    /// </summary>
-    public DateTime RequestedSendTime { get; init; }
+    public required string Body { get; init; }
     /// <summary>
     /// The senders reference for the email. 
     /// Used to track the email request.
     /// </summary>
-    public string SendersReference { get; init; }
+    public required string SendersReference { get; init; }
     /// <summary>
     /// The recipients of the email. 
     /// </summary>
-    public IReadOnlyList<EmailRecipient> Recipients { get; init; }
+    public required IReadOnlyList<EmailRecipient> Recipients { get; init; }
     /// <summary>
-    /// Structure used by <see cref="EmailNotificationClient"/> to request an email notification to a list of recipients.
+    /// The content type of the email. 
+    /// "Plain" by default.
     /// </summary>
-    /// <param name="subject"><inheritdoc cref="Subject"/></param>
-    /// <param name="body"><inheritdoc cref="Body"/></param>
-    /// <param name="emailRecipients"><inheritdoc cref="Recipients"/></param>
-    /// <param name="sendersReference"><inheritdoc cref="SendersReference"/></param>
-    /// <param name="contentType"><inheritdoc cref="ContentType"/></param>
-    /// <param name="requestedSendTime"><inheritdoc cref="RequestedSendTime"/></param>
-    public EmailNotification(
-        string subject,
-        string body,
-        List<EmailRecipient> emailRecipients,
-        string sendersReference,
-        string contentType = "Plain",
-        DateTime? requestedSendTime = null)
+    public string ContentType { get; init; } = "Plain";
+    /// <summary>
+    /// The Requested send time for the email. 
+    /// DateTime.Now by default.
+    /// </summary>
+    public DateTime? RequestedSendTime
     {
-        Subject = subject;
-        Body = body;
-        Recipients = emailRecipients;
-        SendersReference = sendersReference;
-        ContentType = contentType;
-        RequestedSendTime = requestedSendTime is null ? DateTime.Now : (DateTime)requestedSendTime;
+        get => _requestedSendTime;
+        init
+        {
+            if (value is null)
+                _requestedSendTime = DateTime.UtcNow;
+            else
+            {
+                _requestedSendTime = ((DateTime)value).ToUniversalTime();
+            }
+        }
     }
 }

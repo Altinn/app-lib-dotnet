@@ -23,7 +23,13 @@ public class EmailNotificationClientTests
     public async void Order_VerifyHttpCall()
     {
         // Arrange
-        var emailNotification = new EmailNotification("subject", "body", [new("test.testesen@testdirektoratet.no")], "testref", requestedSendTime: DateTime.MinValue);
+        var emailNotification = new EmailNotification
+        {
+            Subject = "subject",
+            Body = "body",
+            Recipients = [new("test.testesen@testdirektoratet.no")],
+            SendersReference = "testref"
+        };
         var expectedUri = "http://localhost:5101/notifications/api/v1/orders/email";
         var expectedContent = JsonSerializer.Serialize(
             emailNotification,
@@ -99,7 +105,13 @@ public class EmailNotificationClientTests
             new("test.testesen@testdirektoratet.no")
         };
 
-        var emailNotification = new EmailNotification("subject", "body", recipients, "testref", requestedSendTime: DateTime.MinValue);
+        var emailNotification = new EmailNotification
+        {
+            Subject = "subject",
+            Body = "body",
+            Recipients = recipients,
+            SendersReference = "testref"
+        };
         var ct = new CancellationTokenSource().Token;
 
         // Act
@@ -142,7 +154,13 @@ public class EmailNotificationClientTests
             new("test.testesen@testdirektoratet.no")
         };
 
-        var emailNotification = new EmailNotification("subject", "body", recipients, "testref");
+        var emailNotification = new EmailNotification
+        {
+            Subject = "subject",
+            Body = "body",
+            Recipients = recipients,
+            SendersReference = "testref"
+        };
         var ct = new CancellationTokenSource().Token;
 
         // Act
