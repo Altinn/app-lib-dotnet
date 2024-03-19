@@ -31,9 +31,7 @@ public class EmailNotificationClientTests
             SendersReference = "testref"
         };
         var expectedUri = "http://localhost:5101/notifications/api/v1/orders/email";
-        var expectedContent = JsonSerializer.Serialize(
-            emailNotification,
-            new JsonSerializerOptions() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        var expectedContent = JsonSerializer.Serialize(emailNotification);
 
         HttpRequestMessage? capturedRequest = null; // Capture request to verify the uri used in the http call.
         string capturedContent = string.Empty; // Capture http content to verify.

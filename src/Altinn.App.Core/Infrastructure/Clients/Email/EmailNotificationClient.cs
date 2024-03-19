@@ -47,11 +47,6 @@ public sealed class EmailNotificationClient : IEmailNotificationClient
         _telemetryClient = telemetryClient;
     }
 
-    private readonly JsonSerializerOptions _jsonSerializerOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-    };
-
     /// <inheritdoc/>
     /// <exception cref="EmailNotificationException"/>
     public async Task<EmailOrderResponse> Order(EmailNotification emailNotification, CancellationToken ct)
@@ -69,7 +64,7 @@ public sealed class EmailNotificationClient : IEmailNotificationClient
             var application = await _appMetadata.GetApplicationMetadata();
 
             var uri = _platformSettings.NotificationEndpoint.TrimEnd('/') + "/api/v1/orders/email";
-            var body = JsonSerializer.Serialize(emailNotification, _jsonSerializerOptions);
+            var body = JsonSerializer.Serialize(emailNotification);
 
             using var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, uri)
             {
@@ -100,11 +95,10 @@ public sealed class EmailNotificationClient : IEmailNotificationClient
         catch (Exception e)
         {
             _orderCount.WithLabels("email", "error").Inc();
-            var ex = new EmailNotificationException("Something went wrong when processing the email order, see inner exception for details.", e);
-            ex.Data.Add("responseContent", httpContent);
-            ex.Data.Add("responseStatusCode", httpResponseMessage?.StatusCode.ToString());
-            ex.Data.Add("responseReasonPhrase", httpResponseMessage?.ReasonPhrase);
-            _telemetryClient.TrackException(ex);
+            var ex = new EmailNotificationException($"Something went wrong when processing the email order. " +
+                $"\nresponseContent: {httpContent}" +
+                $"\nresponseStatusCode: {httpResponseMessage?.StatusCode}" +
+                $"\nresponseReasonPhrase: {httpResponseMessage?.ReasonPhrase}", e);
             throw ex;
         }
         finally
