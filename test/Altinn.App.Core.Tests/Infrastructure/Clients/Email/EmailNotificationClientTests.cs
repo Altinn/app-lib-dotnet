@@ -28,7 +28,8 @@ public class EmailNotificationClientTests
             Subject = "subject",
             Body = "body",
             Recipients = [new("test.testesen@testdirektoratet.no")],
-            SendersReference = "testref"
+            SendersReference = "testref",
+            RequestedSendTime = DateTime.UtcNow
         };
         var expectedUri = "http://localhost:5101/notifications/api/v1/orders/email";
         var expectedContent = JsonSerializer.Serialize(emailNotification);
