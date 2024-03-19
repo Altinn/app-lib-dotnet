@@ -25,6 +25,28 @@ public sealed class EmailNotificationClient : IEmailNotificationClient
     private static readonly Counter _orderCount = Metrics
         .CreateCounter("altinn_app_notification_order_request_count", "Number of notification order requests.", labelNames: ["type", "result"]);
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="EmailNotificationClient"/> class.
+    /// </summary>
+    /// <param name="httpClientFactory"></param>
+    /// <param name="platformSettings">Api endpoints for platform services.</param>
+    /// <param name="appMetadata">The service providing appmetadata.</param>
+    /// <param name="accessTokenGenerator">An access token generator to create an access token.</param>
+    /// <param name="telemetryClient">Client used to track dependencies.</param>
+    public EmailNotificationClient(
+        IHttpClientFactory httpClientFactory,
+        IOptions<PlatformSettings> platformSettings,
+        IAppMetadata appMetadata,
+        IAccessTokenGenerator accessTokenGenerator,
+        TelemetryClient telemetryClient)
+    {
+        _platformSettings = platformSettings.Value;
+        _httpClientFactory = httpClientFactory;
+        _appMetadata = appMetadata;
+        _accessTokenGenerator = accessTokenGenerator;
+        _telemetryClient = telemetryClient;
+    }
+
     private readonly JsonSerializerOptions _jsonSerializerOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
@@ -99,27 +121,5 @@ public sealed class EmailNotificationClient : IEmailNotificationClient
                 orderResponse is not null
             );
         }
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="EmailNotificationClient"/> class.
-    /// </summary>
-    /// <param name="httpClientFactory"></param>
-    /// <param name="platformSettings">Api endpoints for platform services.</param>
-    /// <param name="appMetadata">The service providing appmetadata.</param>
-    /// <param name="accessTokenGenerator">An access token generator to create an access token.</param>
-    /// <param name="telemetryClient">Client used to track dependencies.</param>
-    public EmailNotificationClient(
-        IHttpClientFactory httpClientFactory,
-        IOptions<PlatformSettings> platformSettings,
-        IAppMetadata appMetadata,
-        IAccessTokenGenerator accessTokenGenerator,
-        TelemetryClient telemetryClient)
-    {
-        _platformSettings = platformSettings.Value;
-        _httpClientFactory = httpClientFactory;
-        _appMetadata = appMetadata;
-        _accessTokenGenerator = accessTokenGenerator;
-        _telemetryClient = telemetryClient;
     }
 }
