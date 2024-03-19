@@ -1,10 +1,9 @@
 ﻿using Altinn.ApiClients.Maskinporten.Config;
 using Altinn.ApiClients.Maskinporten.Interfaces;
-using Altinn.ApiClients.Maskinporten.Models;
 using Altinn.ApiClients.Maskinporten.Services;
 using Altinn.App.Core.Configuration;
-using Altinn.App.Core.EFormidling;
 using Altinn.App.Core.EFormidling.Implementation;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Infrastructure.Clients.Maskinporten;
 using Altinn.App.Core.Internal.Maskinporten;
 using Altinn.App.Core.Models;
@@ -24,7 +23,7 @@ public class EformidlingStatusCheckEventHandlerTests
     [Fact]
     public async Task ProcessEvent_WithX509Created_ShouldReturnFalse()
     {
-        EformidlingStatusCheckEventHandler eventHandler = GetMockedEventHandler(false, false);
+        IEventHandler eventHandler = GetMockedEventHandler(false, false);
         CloudEvent cloudEvent = GetValidCloudEvent();
 
         bool processStatus = await eventHandler.ProcessEvent(cloudEvent);
@@ -35,7 +34,7 @@ public class EformidlingStatusCheckEventHandlerTests
     [Fact]
     public async Task ProcessEvent_WithJwkCreated_ShouldReturnFalse()
     {
-        EformidlingStatusCheckEventHandler eventHandler = GetMockedEventHandler(true, false);
+        IEventHandler eventHandler = GetMockedEventHandler(true, false);
         CloudEvent cloudEvent = GetValidCloudEvent();
 
         bool processStatus = await eventHandler.ProcessEvent(cloudEvent);
@@ -46,7 +45,7 @@ public class EformidlingStatusCheckEventHandlerTests
     [Fact]
     public async Task ProcessEvent_WithJwkDelivered_ShouldReturnTrue()
     {
-        EformidlingStatusCheckEventHandler eventHandler = GetMockedEventHandler(true, true);
+        IEventHandler eventHandler = GetMockedEventHandler(true, true);
         CloudEvent cloudEvent = GetValidCloudEvent();
 
         bool processStatus = await eventHandler.ProcessEvent(cloudEvent);
@@ -68,7 +67,7 @@ public class EformidlingStatusCheckEventHandlerTests
         };
     }
 
-    private static EformidlingStatusCheckEventHandler GetMockedEventHandler(bool useJwk, bool delivered)
+    private static IEventHandler GetMockedEventHandler(bool useJwk, bool delivered)
     {
         var eFormidlingClientMock = new Mock<IEFormidlingClient>();
         Statuses statuses = GetStatues(delivered);
@@ -111,10 +110,10 @@ public class EformidlingStatusCheckEventHandlerTests
         });
         var generalSettingsMock = new Mock<GeneralSettings>();
 
-        EformidlingStatusCheckEventHandler eventHandler;
+        IEventHandler eventHandler;
         if (useJwk)
         {
-            eventHandler = new(
+            eventHandler = new EformidlingStatusCheckEventHandler2(
                 eFormidlingClientMock.Object,
                 httpClientFactoryMock.Object,
                 eFormidlingLoggerMock.Object,
@@ -125,7 +124,7 @@ public class EformidlingStatusCheckEventHandlerTests
         }
         else
         {
-            eventHandler = new(
+            eventHandler = new EformidlingStatusCheckEventHandler(
                 eFormidlingClientMock.Object,
                 httpClientFactoryMock.Object,
                 eFormidlingLoggerMock.Object,
