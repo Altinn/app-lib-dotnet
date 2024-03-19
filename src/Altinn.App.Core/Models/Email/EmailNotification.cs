@@ -43,26 +43,12 @@ public sealed class EmailNotification
     [JsonPropertyName("requestedSendTime")]
     public DateTime? RequestedSendTime
     {
-        get
-        {
-            if (_requestedSendTime == default)
-            {
-                return DateTime.UtcNow.AddMinutes(1);
-            }
-            else
-            {
-                return _requestedSendTime;
-            }
-        }
+        // The notifications API requires RequestedSendTime to be in the future, add 1 minute to account for any delays
+        get => _requestedSendTime == default ? DateTime.UtcNow.AddMinutes(1) : _requestedSendTime;
 
         init
         {
-            if (value is null)
-                _requestedSendTime = DateTime.UtcNow.AddMinutes(1);
-            else
-            {
-                _requestedSendTime = ((DateTime)value).ToUniversalTime();
-            }
+            _requestedSendTime = value is null ? DateTime.UtcNow.AddMinutes(1) : ((DateTime)value).ToUniversalTime();
         }
     }
 }
