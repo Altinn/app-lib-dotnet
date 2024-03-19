@@ -17,7 +17,7 @@ public class EndTaskEventHandlerTests
     private readonly Mock<IServiceTask> _pdfServiceTask = new();
     private readonly Mock<IServiceTask> _eformidlingServiceTask = new();
     private IEnumerable<IProcessTaskEnd> _processTaskEnds = new List<IProcessTaskEnd>();
-    private ILogger<EndTaskEventHandler> _logger = new NullLogger<EndTaskEventHandler>();
+    private readonly ILogger<EndTaskEventHandler> _logger = new NullLogger<EndTaskEventHandler>();
 
     [Fact]
     public async Task Execute_handles_no_IProcessTaskAbandon_injected()
