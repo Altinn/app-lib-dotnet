@@ -55,7 +55,7 @@ public class EmailNotificationClientTests
         httpClientFactoryMock.Setup(h => h.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
         var emailNotificationClient = CreateEmailNotificationClient(httpClientFactoryMock);
-        var ct = new CancellationTokenSource().Token;
+        var ct = CancellationToken.None;
 
         // Act
         _ = await emailNotificationClient.Order(emailNotification, ct);
