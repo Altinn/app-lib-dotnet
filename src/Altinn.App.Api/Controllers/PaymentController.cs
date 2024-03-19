@@ -1,5 +1,6 @@
 #nullable enable
 using Altinn.App.Api.Infrastructure.Filters;
+using Altinn.App.Core.Features.Payment;
 using Altinn.App.Core.Features.Payment.Exceptions;
 using Altinn.App.Core.Features.Payment.Models;
 using Altinn.App.Core.Features.Payment.Services;
@@ -23,15 +24,21 @@ public class PaymentController : Controller
     private readonly IInstanceClient _instanceClient;
     private readonly IProcessReader _processReader;
     private readonly IPaymentService? _paymentService;
+    private readonly IOrderDetailsCalculator? _orderDetailsCalculator;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PaymentController"/> class.
     /// </summary>
-    public PaymentController(IInstanceClient instanceClient, IProcessReader processReader, IPaymentService? paymentService)
+    public PaymentController(
+        IInstanceClient instanceClient,
+        IProcessReader processReader,
+        IPaymentService? paymentService,
+        IOrderDetailsCalculator? orderDetailsCalculator)
     {
         _instanceClient = instanceClient;
         _processReader = processReader;
         _paymentService = paymentService;
+        _orderDetailsCalculator = orderDetailsCalculator;
     }
 
     /// <summary>
@@ -61,5 +68,30 @@ public class PaymentController : Controller
 
         PaymentInformation? paymentInformation = await _paymentService.CheckAndStorePaymentStatus(instance, paymentConfiguration);
         return paymentInformation != null ? Ok(paymentInformation) : NotFound();
+    }
+
+    /// <summary>
+    /// Run order details calculations and return the result. Does not require the current task to be a payment task.
+    /// </summary>
+    /// <param name="org">unique identifier of the organisation responsible for the app</param>
+    /// <param name="app">application identifier which is unique within an organisation</param>
+    /// <param name="instanceOwnerPartyId">unique id of the party that this the owner of the instance</param>
+    /// <param name="instanceGuid">unique id to identify the instance</param>
+    /// <returns>An object containing updated payment information</returns>
+    [HttpGet("order-details")]
+    [ProducesResponseType(typeof(OrderDetails), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetOrderDetails(string org, string app, int instanceOwnerPartyId, Guid instanceGuid)
+    {
+        if (_orderDetailsCalculator == null)
+        {
+            throw new PaymentException(
+                "You must add an implementation of the IOrderDetailsCalculator interface to the DI container. See payment related documentation.");
+        }
+
+        Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
+        OrderDetails orderDetails = await _orderDetailsCalculator.CalculateOrderDetails(instance);
+
+        return Ok(orderDetails);
     }
 }
