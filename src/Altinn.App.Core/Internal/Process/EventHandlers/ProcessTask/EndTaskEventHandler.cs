@@ -64,7 +64,7 @@ namespace Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask
                 await _processTaskDataLocker.Unlock(taskId, instance);
                 throw;
             }
-            
+
             await _eformidlingServiceTask.Execute(taskId, instance);
         }
 

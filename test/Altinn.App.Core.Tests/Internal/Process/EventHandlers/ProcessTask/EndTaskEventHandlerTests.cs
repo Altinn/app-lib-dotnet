@@ -122,5 +122,5 @@ public class EndTaskEventHandlerTests
 
         // Make sure eFormidling service task is not called if PDF failed.
         _eformidlingServiceTask.Verify(p => p.Execute("Task_1", instance), Times.Never);
-    } 
+    }
 }
