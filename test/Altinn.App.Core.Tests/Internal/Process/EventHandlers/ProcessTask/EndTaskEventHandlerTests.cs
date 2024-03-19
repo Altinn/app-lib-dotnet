@@ -103,24 +103,25 @@ public class EndTaskEventHandlerTests
             AppId = "ttd/test",
         };
 
+        var taskId = "Task_1";
         Mock<IProcessTask> mockProcessTask = new();
 
         // Make PDF service task throw exception to simulate a failure situation.
         _pdfServiceTask.Setup(x => x.Execute(It.IsAny<string>(), instance)).ThrowsAsync(new Exception());
 
         // Expect exception to be thrown
-        await Assert.ThrowsAsync<Exception>(async () => await eteh.Execute(mockProcessTask.Object, "Task_1", instance));
+        await Assert.ThrowsAsync<Exception>(async () => await eteh.Execute(mockProcessTask.Object, taskId, instance));
 
         // Assert normal flow until the exception is thrown
-        _processTaskDataLocker.Verify(p => p.Lock("Task_1", instance));
-        _processTaskFinisher.Verify(p => p.Finalize("Task_1", instance));
-        mockProcessTask.Verify(p => p.End("Task_1", instance));
-        _pdfServiceTask.Verify(p => p.Execute("Task_1", instance));
+        _processTaskDataLocker.Verify(p => p.Lock(taskId, instance));
+        _processTaskFinisher.Verify(p => p.Finalize(taskId, instance));
+        mockProcessTask.Verify(p => p.End(taskId, instance));
+        _pdfServiceTask.Verify(p => p.Execute(taskId, instance));
 
         // Make sure unlock data is called
-        _processTaskDataLocker.Verify(p => p.Unlock("Task_1", instance));
+        _processTaskDataLocker.Verify(p => p.Unlock(taskId, instance));
 
         // Make sure eFormidling service task is not called if PDF failed.
-        _eformidlingServiceTask.Verify(p => p.Execute("Task_1", instance), Times.Never);
+        _eformidlingServiceTask.Verify(p => p.Execute(taskId, instance), Times.Never);
     }
 }
