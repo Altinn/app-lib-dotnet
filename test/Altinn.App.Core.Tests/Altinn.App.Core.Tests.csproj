@@ -97,7 +97,6 @@
 
   <ItemGroup>
     <Watch Remove="Extensions\DictionaryExtensionsTests.cs" />
-    <Watch Remove="Infrastructure\Clients\Email\EmailNotificationClientTests.cs" />
     <Watch Remove="Internal\Pdf\PdfServiceTests.cs" />
     <Watch Remove="Mocks\RequestInterceptor.cs" />
   </ItemGroup>
