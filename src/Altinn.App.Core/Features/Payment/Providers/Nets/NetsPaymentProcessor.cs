@@ -101,7 +101,6 @@ public class NetsPaymentProcessor : IPaymentProcessor
             PaymentId = paymentId,
             Status = PaymentStatus.Created,
             RedirectUrl = hostedPaymentPageUrl,
-            OrderDetails = orderDetails,
         };
     }
 

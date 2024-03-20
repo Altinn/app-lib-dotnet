@@ -68,6 +68,11 @@ public class PaymentUserActionTests
         {
             TaskId = instance.Process.CurrentTask.ElementId,
             PaymentProcessorId = paymentConfiguration.PaymentProcessorId,
+            OrderDetails = new OrderDetails
+            {
+                Currency = "NOK",
+                OrderLines = []
+            },
             PaymentDetails = new PaymentDetails
             {
                 PaymentId = "1",

@@ -67,6 +67,7 @@ public class PaymentService : IPaymentService
         {
             TaskId = instance.Process.CurrentTask.ElementId,
             PaymentProcessorId = paymentProcessor.PaymentProcessorId,
+            OrderDetails = orderDetails,
             PaymentDetails = startedPayment
         };
 
@@ -83,16 +84,22 @@ public class PaymentService : IPaymentService
         string dataTypeId = paymentConfiguration.PaymentDataType!;
         (Guid dataElementId, PaymentInformation? paymentInformation) = await _dataService.GetByType<PaymentInformation>(instance, dataTypeId);
 
+        // TODO: Consider if this should be put in storage in process task start.
         if (paymentInformation == null)
         {
-            return null;
+            return new PaymentInformation
+            {
+                TaskId = instance.Process.CurrentTask.ElementId,
+                PaymentProcessorId = paymentConfiguration.PaymentProcessorId!,
+                OrderDetails = await _orderDetailsCalculator.CalculateOrderDetails(instance),
+            };
         }
 
         IPaymentProcessor paymentProcessor = _paymentProcessors.FirstOrDefault(p => p.PaymentProcessorId == paymentConfiguration.PaymentProcessorId) ??
                                              throw new PaymentException($"Payment processor with ID '{paymentConfiguration.PaymentProcessorId}' not found.");
 
-        PaymentDetails paymentDetails = paymentInformation.PaymentDetails;
-        decimal totalPriceIncVat = paymentDetails.OrderDetails?.TotalPriceIncVat ?? 0;
+        PaymentDetails paymentDetails = paymentInformation.PaymentDetails!;
+        decimal totalPriceIncVat = paymentInformation.OrderDetails?.TotalPriceIncVat ?? 0;
 
         PaymentStatus? paymentStatus = await paymentProcessor.GetPaymentStatus(instance, paymentDetails.PaymentId, totalPriceIncVat);
         if (paymentStatus == null)

@@ -27,9 +27,4 @@ public class PaymentDetails
     /// </summary>
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public required PaymentStatus Status { get; set; }
-
-    /// <summary>
-    /// Gets or sets the order details for the transaction.
-    /// </summary>
-    public OrderDetails? OrderDetails { get; set; }
 }

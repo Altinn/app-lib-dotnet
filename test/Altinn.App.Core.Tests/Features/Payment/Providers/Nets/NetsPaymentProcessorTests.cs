@@ -129,13 +129,8 @@ public class NetsPaymentProcessorTests
         {
             TaskId = "taskId",
             PaymentProcessorId = "paymentProcessorId",
-            PaymentDetails = new PaymentDetails
+            OrderDetails = new OrderDetails
             {
-                PaymentId = "paymentReference",
-                Status = PaymentStatus.Created,
-                RedirectUrl = "redirectUrl",
-                OrderDetails = new OrderDetails
-                {
                 Currency = "NOK",
                 OrderReference = "orderReference",
                 OrderLines =
@@ -148,7 +143,13 @@ public class NetsPaymentProcessorTests
                         VatPercent = 25,
                     }
                 ],
-                },
+            },
+            PaymentDetails = new PaymentDetails
+            {
+                PaymentId = "paymentReference",
+                Status = PaymentStatus.Created,
+                RedirectUrl = "redirectUrl",
+                
             },
         };
 

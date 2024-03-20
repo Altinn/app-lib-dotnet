@@ -5207,9 +5207,6 @@
           },
           "status": {
             "$ref": "#/components/schemas/PaymentStatus"
-          },
-          "orderDetails": {
-            "$ref": "#/components/schemas/OrderDetails"
           }
         },
         "additionalProperties": false
@@ -5224,6 +5221,9 @@
           "paymentProcessorId": {
             "type": "string",
             "nullable": true
+          },
+          "orderDetails": {
+            "$ref": "#/components/schemas/OrderDetails"
           },
           "paymentDetails": {
             "$ref": "#/components/schemas/PaymentDetails"

@@ -136,7 +136,7 @@ public class ActionsController : ControllerBase
 
         UserActionResult result = await actionHandler.HandleAction(userActionContext);
 
-        if (result.ResultType != ResultType.Success)
+        if (result.ResultType == ResultType.Failure)
         {
             return StatusCode(
                 statusCode: result.ErrorType switch

@@ -14,10 +14,6 @@ public enum ResultType
     /// The user action failed
     /// </summary>
     Failure,
-    /// <summary>
-    /// The client should redirect the user to a new url
-    /// </summary>
-    Redirect
 }
 
 /// <summary>
@@ -91,7 +87,6 @@ public class UserActionResult
     {
         return new UserActionResult
         {
-            ResultType = ResultType.Redirect,
             RedirectUrl = redirectUrl
         };
     }

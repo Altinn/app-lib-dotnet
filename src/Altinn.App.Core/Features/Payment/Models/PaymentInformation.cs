@@ -16,8 +16,13 @@
         public required string PaymentProcessorId { get; set; }
 
         /// <summary>
+        /// Gets or sets the order details for the transaction.
+        /// </summary>
+        public required OrderDetails OrderDetails { get; set; }
+
+        /// <summary>
         /// Contains details about the payment, set by the payment processor implementation.
         /// </summary>
-        public required PaymentDetails PaymentDetails { get; set; }
+        public PaymentDetails? PaymentDetails { get; set; }
     }
 }

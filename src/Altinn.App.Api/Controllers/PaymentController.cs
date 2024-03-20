@@ -66,8 +66,8 @@ public class PaymentController : Controller
             throw new PaymentException("Payment configuration not found in AltinnTaskExtension");
         }
 
-        PaymentInformation? paymentInformation = await _paymentService.CheckAndStorePaymentStatus(instance, paymentConfiguration);
-        return paymentInformation != null ? Ok(paymentInformation) : NotFound();
+        PaymentInformation paymentInformation = await _paymentService.CheckAndStorePaymentStatus(instance, paymentConfiguration);
+        return Ok(paymentInformation);
     }
 
     /// <summary>

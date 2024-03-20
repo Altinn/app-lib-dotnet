@@ -51,7 +51,9 @@ public class PaymentServiceTests
         PaymentInformation paymentInformationResult = await _paymentService.StartPayment(instance, paymentConfiguration);
 
         // Assert
-        paymentInformationResult.PaymentDetails.RedirectUrl.Should().Be(paymentInformation.PaymentDetails.RedirectUrl);
+        paymentInformationResult.PaymentDetails.Should().NotBeNull();
+        paymentInformationResult.PaymentDetails!.RedirectUrl.Should().Be(paymentInformation.PaymentDetails!.RedirectUrl);
+        paymentInformationResult.OrderDetails.Should().BeEquivalentTo(order);
         paymentInformationResult.PaymentProcessorId.Should().Be(paymentInformation.PaymentProcessorId);
 
         // Verify calls
@@ -126,7 +128,10 @@ public class PaymentServiceTests
     public async Task CheckAndStorePaymentInformation_ReturnsNull_WhenNoPaymentInformationFound()
     {
         Instance instance = CreateInstance();
+        OrderDetails order = CreateOrderDetails();
         AltinnPaymentConfiguration paymentConfiguration = CreatePaymentConfiguration();
+
+        _orderDetailsCalculator.Setup(p => p.CalculateOrderDetails(instance)).ReturnsAsync(order);
 
         _dataService.Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
             .ReturnsAsync((Guid.Empty, null));
@@ -136,7 +141,11 @@ public class PaymentServiceTests
             await _paymentService.CheckAndStorePaymentStatus(instance, paymentConfiguration);
 
         // Assert
-        Assert.Null(result);
+        result.Should().NotBeNull();
+        instance.Process.CurrentTask.ElementId.Should().Be(result!.TaskId);
+        paymentConfiguration.PaymentProcessorId.Should().Be(result!.PaymentProcessorId);
+        order.Should().BeEquivalentTo(result!.OrderDetails);
+        result.PaymentDetails.Should().BeNull();
     }
 
     [Fact]
@@ -196,8 +205,9 @@ public class PaymentServiceTests
             await paymentService.CheckAndStorePaymentStatus(instance, paymentConfiguration);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal(PaymentStatus.Paid, result.PaymentDetails.Status);
+        result.Should().NotBeNull();
+        result!.PaymentDetails.Should().NotBeNull();
+        result.PaymentDetails!.Status.Should().Be(PaymentStatus.Paid);
     }
 
     [Fact]
@@ -209,7 +219,7 @@ public class PaymentServiceTests
         OrderDetails orderDetails = CreateOrderDetails();
         PaymentInformation paymentInformation = CreatePaymentInformation(paymentConfiguration.PaymentProcessorId!);
 
-        paymentInformation.PaymentDetails.Status = PaymentStatus.Cancelled;
+        paymentInformation.PaymentDetails!.Status = PaymentStatus.Cancelled;
         
         _dataService.Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
             .ReturnsAsync((Guid.NewGuid(), paymentInformation));
@@ -272,6 +282,11 @@ public class PaymentServiceTests
         {
             TaskId = "taskId",
             PaymentProcessorId = paymentProcssorId,
+            OrderDetails = new OrderDetails
+            {
+                Currency = "NOK",
+                OrderLines = []
+            },
             PaymentDetails = new PaymentDetails
             {
                 RedirectUrl = "Redirect URL",
