@@ -1,17 +1,20 @@
-﻿namespace Altinn.App.Core.Tests.Infrastructure.Clients.Email;
+﻿namespace Altinn.App.Core.Tests.Infrastructure.Clients.Notifications.Email;
 
 using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
-using Altinn.App.Core.Infrastructure.Clients.Email;
+using Altinn.App.Core.Infrastructure.Clients.Notifications.Email;
 using Altinn.App.Core.Internal.App;
-using Altinn.App.Core.Internal.Email;
+using Altinn.App.Core.Internal.Notifications.Email;
 using Altinn.App.Core.Models;
-using Altinn.App.Core.Models.Email;
+using Altinn.App.Core.Models.Notifications.Email;
 using Altinn.Common.AccessTokenClient.Services;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
 using Moq.Protected;
@@ -172,6 +175,8 @@ public class EmailNotificationClientTests
 
     private static EmailNotificationClient CreateEmailNotificationClient(Mock<IHttpClientFactory> mockHttpClientFactory)
     {
+        var loggerFactory = new NullLoggerFactory();
+
         var appDataMock = new Mock<IAppMetadata>();
         appDataMock.Setup(a => a.GetApplicationMetadata())
             .ReturnsAsync(new ApplicationMetadata("ttd/app-lib-test"));
@@ -180,6 +185,14 @@ public class EmailNotificationClientTests
         accessTokenGenerator.Setup(a => a.GenerateAccessToken(It.IsAny<string>(), It.IsAny<string>()))
             .Returns("token");
 
-        return new EmailNotificationClient(mockHttpClientFactory.Object, Options.Create(new PlatformSettings()), appDataMock.Object, accessTokenGenerator.Object, new Microsoft.ApplicationInsights.TelemetryClient());
+        var sp = new ServiceCollection().BuildServiceProvider();
+
+        return new EmailNotificationClient(
+            loggerFactory.CreateLogger<EmailNotificationClient>(), 
+            mockHttpClientFactory.Object,
+            Options.Create(new PlatformSettings()),
+            appDataMock.Object,
+            accessTokenGenerator.Object,
+            sp);
     }
 }
