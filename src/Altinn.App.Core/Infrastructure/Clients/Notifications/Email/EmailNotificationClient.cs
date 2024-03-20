@@ -1,58 +1,45 @@
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Internal.App;
-using Altinn.App.Core.Internal.Email;
-using Altinn.App.Core.Models.Email;
+using Altinn.App.Core.Internal.Notifications.Email;
+using Altinn.App.Core.Models.Notifications.Email;
 using Altinn.Common.AccessTokenClient.Services;
 using Microsoft.ApplicationInsights;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Prometheus;
-using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Text.Json;
 
-namespace Altinn.App.Core.Infrastructure.Clients.Email;
-/// <summary>
-/// Implementation of the <see cref="IEmailNotificationClient"/> interface using a HttpClient to send
-/// requests to the Email Notification service.
-/// </summary>
-public sealed class EmailNotificationClient : IEmailNotificationClient
+namespace Altinn.App.Core.Infrastructure.Clients.Notifications.Email;
+
+internal sealed class EmailNotificationClient : IEmailNotificationClient
 {
+    private readonly ILogger<EmailNotificationClient> _logger;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IAppMetadata _appMetadata;
     private readonly PlatformSettings _platformSettings;
     private readonly IAccessTokenGenerator _accessTokenGenerator;
     private readonly TelemetryClient? _telemetryClient;
-    private static readonly Counter _orderCount = Metrics
-        .CreateCounter("altinn_app_notification_order_request_count", "Number of notification order requests.", labelNames: ["type", "result"]);
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="EmailNotificationClient"/> class.
-    /// </summary>
-    /// <param name="httpClientFactory"></param>
-    /// <param name="platformSettings">Api endpoints for platform services.</param>
-    /// <param name="appMetadata">The service providing appmetadata.</param>
-    /// <param name="accessTokenGenerator">An access token generator to create an access token.</param>
-    /// <param name="telemetryClient">Client used to track dependencies.</param>
     public EmailNotificationClient(
+        ILogger<EmailNotificationClient> logger,
         IHttpClientFactory httpClientFactory,
         IOptions<PlatformSettings> platformSettings,
         IAppMetadata appMetadata,
         IAccessTokenGenerator accessTokenGenerator,
-        TelemetryClient? telemetryClient = null)
+        IServiceProvider serviceProvider)
     {
+        _logger = logger;
         _platformSettings = platformSettings.Value;
         _httpClientFactory = httpClientFactory;
         _appMetadata = appMetadata;
         _accessTokenGenerator = accessTokenGenerator;
-        _telemetryClient = telemetryClient;
+        _telemetryClient = serviceProvider.GetService<TelemetryClient>();
     }
 
-    /// <inheritdoc/>
-    /// <exception cref="EmailNotificationException"/>
     public async Task<EmailOrderResponse> Order(EmailNotification emailNotification, CancellationToken ct)
     {
-        var startTime = DateTime.UtcNow;
-        var timer = Stopwatch.StartNew();
+        using var dependency = new Telemetry.Dependency(_telemetryClient);
 
         using var httpClient = _httpClientFactory.CreateClient();
 
@@ -84,7 +71,7 @@ public sealed class EmailNotificationClient : IEmailNotificationClient
                 if (orderResponse is null)
                     throw new InvalidOperationException("Couldn't deserialize email notification order response.");
 
-                _orderCount.WithLabels("email", "success").Inc();
+                Telemetry.OrderCount.WithLabels(Telemetry.Types.Email, Telemetry.Result.Success).Inc();
             }
             else
             {
@@ -94,26 +81,15 @@ public sealed class EmailNotificationClient : IEmailNotificationClient
         }
         catch (Exception e)
         {
-            _orderCount.WithLabels("email", "error").Inc();
-            var ex = new EmailNotificationException($"Something went wrong when processing the email order. " +
-                $"\nresponseContent: {httpContent}" +
-                $"\nresponseStatusCode: {httpResponseMessage?.StatusCode}" +
-                $"\nresponseReasonPhrase: {httpResponseMessage?.ReasonPhrase}", e);
+            dependency.Errored();
+            Telemetry.OrderCount.WithLabels(Telemetry.Types.Email, Telemetry.Result.Error).Inc();
+            var ex = new EmailNotificationException($"Something went wrong when processing the email order", httpResponseMessage, httpContent, e);
+            _logger.LogError(ex, "Error when processing email notification order");
             throw ex;
         }
         finally
         {
             httpResponseMessage?.Dispose();
-
-            timer.Stop();
-            _telemetryClient?.TrackDependency(
-                "Altinn.Notifications",
-                "OrderEmailNotification",
-                "",
-                startTime,
-                timer.Elapsed,
-                orderResponse is not null
-            );
         }
     }
 }
