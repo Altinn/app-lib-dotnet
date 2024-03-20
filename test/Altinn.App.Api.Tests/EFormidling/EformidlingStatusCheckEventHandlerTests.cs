@@ -83,6 +83,7 @@ public class EformidlingStatusCheckEventHandlerTests
             .Returns(httpClientMock.Object);
 
         var eFormidlingLoggerMock = new Mock<ILogger<EformidlingStatusCheckEventHandler>>();
+        var eFormidlingLoggerMock2 = new Mock<ILogger<EformidlingStatusCheckEventHandler2>>();
 
         var maskinportenServiceLoggerMock = new Mock<ILogger<MaskinportenService>>();
         var tokenCacheProviderMock = new Mock<ITokenCacheProvider>();
@@ -116,7 +117,7 @@ public class EformidlingStatusCheckEventHandlerTests
             eventHandler = new EformidlingStatusCheckEventHandler2(
                 eFormidlingClientMock.Object,
                 httpClientFactoryMock.Object,
-                eFormidlingLoggerMock.Object,
+                eFormidlingLoggerMock2.Object,
                 maskinPortenTokenProviderMock.Object,
                 platformSettingsMock,
                 Options.Create(generalSettingsMock.Object)
