@@ -187,7 +187,7 @@ public class SmsNotificationClientTests
         var sp = new ServiceCollection().BuildServiceProvider();
 
         return new SmsNotificationClient(
-            loggerFactory.CreateLogger<SmsNotificationClient>(), 
+            loggerFactory.CreateLogger<SmsNotificationClient>(),
             mockHttpClientFactory.Object,
             Options.Create(new PlatformSettings()),
             appDataMock.Object,

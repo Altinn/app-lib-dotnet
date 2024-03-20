@@ -188,7 +188,7 @@ public class EmailNotificationClientTests
         var sp = new ServiceCollection().BuildServiceProvider();
 
         return new EmailNotificationClient(
-            loggerFactory.CreateLogger<EmailNotificationClient>(), 
+            loggerFactory.CreateLogger<EmailNotificationClient>(),
             mockHttpClientFactory.Object,
             Options.Create(new PlatformSettings()),
             appDataMock.Object,
