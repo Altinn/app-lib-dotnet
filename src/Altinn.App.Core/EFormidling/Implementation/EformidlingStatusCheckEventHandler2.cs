@@ -23,19 +23,19 @@ namespace Altinn.App.Core.EFormidling.Implementation
     public class EformidlingStatusCheckEventHandler2 : IEventHandler
     {
         private readonly IEFormidlingClient _eFormidlingClient;
-        private readonly ILogger<EformidlingStatusCheckEventHandler> _logger;
+        private readonly ILogger<EformidlingStatusCheckEventHandler2> _logger;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IMaskinportenTokenProvider _maskinportenTokenProvider;
         private readonly PlatformSettings _platformSettings;
         private readonly GeneralSettings _generalSettings;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="EformidlingStatusCheckEventHandler"/> class.
+        /// Initializes a new instance of the <see cref="EformidlingStatusCheckEventHandler2"/> class.
         /// </summary>
         public EformidlingStatusCheckEventHandler2(
             IEFormidlingClient eFormidlingClient,
             IHttpClientFactory httpClientFactory,
-            ILogger<EformidlingStatusCheckEventHandler> logger,
+            ILogger<EformidlingStatusCheckEventHandler2> logger,
             IMaskinportenTokenProvider maskinportenTokenProvider,
             IOptions<PlatformSettings> platformSettings,
             IOptions<GeneralSettings> generalSettings
