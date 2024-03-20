@@ -53,9 +53,9 @@ public class NetsClient : INetsClient
     }
 
     /// <inheritdoc/>
-    public async Task<bool> CancelPayment(string paymentId, int amount)
+    public async Task<bool> TerminatePayment(string paymentId)
     {
-        HttpResponseMessage response = await _httpClient.PostAsJsonAsync($"v1/payments/{paymentId}/cancels", new NetsCancelPayment { Amount = amount });
+        HttpResponseMessage response = await _httpClient.PutAsync($"v1/payments/{paymentId}/terminate", null);
         return response.IsSuccessStatusCode;
     }
 }

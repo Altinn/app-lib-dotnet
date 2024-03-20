@@ -22,12 +22,12 @@ public interface IPaymentProcessor
     public Task<PaymentDetails> StartPayment(Instance instance, OrderDetails orderDetails);
 
     /// <summary>
-    /// Cancels a payment for the specified instance and payment reference.
+    /// Terminate a payment for the specified instance and payment reference.
     /// </summary>
-    /// <param name="instance">The instance for which the payment is being cancelled.</param>
+    /// <param name="instance">The instance for which the payment is being terminated.</param>
     /// <param name="paymentInformation"></param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public Task<bool> CancelPayment(Instance instance, PaymentInformation paymentInformation);
+    public Task<bool> TerminatePayment(Instance instance, PaymentInformation paymentInformation);
 
     /// <summary>
     /// Gets the payment status for the specified instance and payment reference.

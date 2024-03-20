@@ -153,15 +153,15 @@ public class NetsPaymentProcessorTests
         };
 
         _netsClientMock.Setup(x =>
-                x.CancelPayment(paymentInformation.PaymentDetails.PaymentId, (int)(paymentInformation.PaymentDetails.OrderDetails.TotalPriceIncVat * 100)))
+                x.TerminatePayment(paymentInformation.PaymentDetails.PaymentId))
             .ReturnsAsync(true);
 
         // Act
-        await _processor.CancelPayment(instance, paymentInformation);
+        await _processor.TerminatePayment(instance, paymentInformation);
 
         // Assert
         _netsClientMock.Verify(
-            x => x.CancelPayment(paymentInformation.PaymentDetails.PaymentId, (int)paymentInformation.PaymentDetails.OrderDetails.TotalPriceIncVat * 100),
+            x => x.TerminatePayment(paymentInformation.PaymentDetails.PaymentId),
             Times.Once);
     }
 

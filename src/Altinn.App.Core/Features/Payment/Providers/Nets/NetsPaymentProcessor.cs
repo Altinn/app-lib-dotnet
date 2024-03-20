@@ -106,13 +106,9 @@ public class NetsPaymentProcessor : IPaymentProcessor
     }
 
     /// <inheritdoc />
-    public async Task<bool> CancelPayment(Instance instance, PaymentInformation paymentInformation)
+    public async Task<bool> TerminatePayment(Instance instance, PaymentInformation paymentInformation)
     {
-        int amount = paymentInformation.PaymentDetails.OrderDetails != null
-            ? (int)(paymentInformation.PaymentDetails.OrderDetails.TotalPriceIncVat * LowestMonetaryUnitMultiplier)
-            : 0;
-
-        bool result = await _netsClient.CancelPayment(paymentInformation.PaymentDetails.PaymentId, amount);
+        bool result = await _netsClient.TerminatePayment(paymentInformation.PaymentDetails.PaymentId);
         return result;
     }
 

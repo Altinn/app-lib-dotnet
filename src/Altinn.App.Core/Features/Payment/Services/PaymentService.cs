@@ -111,7 +111,7 @@ public class PaymentService : IPaymentService
         IPaymentProcessor paymentProcessor = _paymentProcessors.FirstOrDefault(pp => pp.PaymentProcessorId == paymentInformation.PaymentProcessorId) ??
                                              throw new PaymentException($"Payment processor with ID '{paymentInformation.PaymentProcessorId}' not found.");
 
-        bool success = await paymentProcessor.CancelPayment(instance, paymentInformation);
+        bool success = await paymentProcessor.TerminatePayment(instance, paymentInformation);
 
         if (!success)
         {

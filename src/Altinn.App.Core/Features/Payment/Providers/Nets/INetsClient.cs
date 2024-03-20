@@ -22,11 +22,11 @@ namespace Altinn.App.Core.Features.Payment.Providers.Nets
         Task<HttpApiResult<NetsPaymentFull>> RetrievePayment(string paymentId);
 
         /// <summary>
-        /// Cancel a payment that has not been captured.
+        /// Terminate a payment that has not been captured.
         /// </summary>
         /// <param name="paymentId"></param>
         /// <param name="amount"></param>
         /// <returns></returns>
-        Task<bool> CancelPayment(string paymentId, int amount);
+        Task<bool> TerminatePayment(string paymentId);
     }
 }

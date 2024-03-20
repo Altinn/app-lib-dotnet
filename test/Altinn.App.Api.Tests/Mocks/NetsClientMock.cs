@@ -15,7 +15,7 @@ namespace Altinn.App.Api.Tests.Mocks.Services
             throw new NotImplementedException();
         }
 
-        public Task<bool> CancelPayment(string paymentId, int amount)
+        public Task<bool> TerminatePayment(string paymentId)
         {
             throw new NotImplementedException();
         }

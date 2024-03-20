@@ -223,8 +223,8 @@ public class PaymentServiceTests
         _orderDetailsCalculator.Setup(p => p.CalculateOrderDetails(instance)).ReturnsAsync(orderDetails);
 
         _paymentProcessor.Setup(x => x.PaymentProcessorId).Returns(paymentConfiguration.PaymentProcessorId!);
-        
-        _paymentProcessor.Setup(pp => pp.CancelPayment(It.IsAny<Instance>(), It.IsAny<PaymentInformation>()))
+
+        _paymentProcessor.Setup(pp => pp.TerminatePayment(It.IsAny<Instance>(), It.IsAny<PaymentInformation>()))
             .ReturnsAsync(true);
 
         _paymentProcessor.Setup(x => x.StartPayment(instance, orderDetails)).ReturnsAsync(paymentInformation.PaymentDetails);
@@ -233,7 +233,7 @@ public class PaymentServiceTests
         await _paymentService.StartPayment(instance, paymentConfiguration);
 
         // Assert
-        _paymentProcessor.Verify(pp => pp.CancelPayment(It.IsAny<Instance>(), It.IsAny<PaymentInformation>()), Times.Once);
+        _paymentProcessor.Verify(pp => pp.TerminatePayment(It.IsAny<Instance>(), It.IsAny<PaymentInformation>()), Times.Once);
         _dataService.Verify(ds => ds.DeleteById(It.IsAny<InstanceIdentifier>(), It.IsAny<Guid>()), Times.Once);
     }
 
@@ -256,13 +256,13 @@ public class PaymentServiceTests
         _dataService.Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
             .ReturnsAsync((Guid.NewGuid(), paymentInformation));
 
-        _paymentProcessor.Setup(pp => pp.CancelPayment(It.IsAny<Instance>(), It.IsAny<PaymentInformation>()))
+        _paymentProcessor.Setup(pp => pp.TerminatePayment(It.IsAny<Instance>(), It.IsAny<PaymentInformation>()))
             .ReturnsAsync(false);
 
         await Assert.ThrowsAsync<PaymentException>(async () => await _paymentService.StartPayment(instance, paymentConfiguration));
 
         // Act & Assert
-        _paymentProcessor.Verify(pp => pp.CancelPayment(It.IsAny<Instance>(), It.IsAny<PaymentInformation>()), Times.Once);
+        _paymentProcessor.Verify(pp => pp.TerminatePayment(It.IsAny<Instance>(), It.IsAny<PaymentInformation>()), Times.Once);
         _dataService.Verify(ds => ds.DeleteById(It.IsAny<InstanceIdentifier>(), It.IsAny<Guid>()), Times.Never);
     }
 
