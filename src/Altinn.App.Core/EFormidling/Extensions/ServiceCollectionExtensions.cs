@@ -21,7 +21,7 @@ public static class ServiceCollectionExtensions
     /// <typeparam name="TM">App specific implementation of <see cref="IEFormidlingMetadata"/></typeparam>
     public static void AddEFormidlingServices<TM>(this IServiceCollection services, IConfiguration configuration) where TM : IEFormidlingMetadata
     {
-        AddEFormidlingServices<TM, DefaultEFormidlingReceivers>(services, configuration);
+        AddEFormidlingServices2<TM, DefaultEFormidlingReceivers>(services, configuration);
     }
 
     /// <summary>
