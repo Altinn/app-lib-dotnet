@@ -58,7 +58,7 @@ public class EmailNotificationClientTests
             });
 
         var httpClientFactoryMock = new Mock<IHttpClientFactory>();
-        var httpClient = new HttpClient(handlerMock.Object);
+        using var httpClient = new HttpClient(handlerMock.Object);
 
         httpClientFactoryMock.Setup(h => h.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
@@ -97,7 +97,7 @@ public class EmailNotificationClientTests
             });
 
         var httpClientFactoryMock = new Mock<IHttpClientFactory>();
-        var httpClient = new HttpClient(handlerMock.Object);
+        using var httpClient = new HttpClient(handlerMock.Object);
 
         httpClientFactoryMock.Setup(h => h.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
@@ -146,7 +146,7 @@ public class EmailNotificationClientTests
             });
 
         var httpClientFactoryMock = new Mock<IHttpClientFactory>();
-        var httpClient = new HttpClient(handlerMock.Object);
+        using var httpClient = new HttpClient(handlerMock.Object);
 
         httpClientFactoryMock.Setup(h => h.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
@@ -175,7 +175,7 @@ public class EmailNotificationClientTests
 
     private static EmailNotificationClient CreateEmailNotificationClient(Mock<IHttpClientFactory> mockHttpClientFactory)
     {
-        var loggerFactory = new NullLoggerFactory();
+        using var loggerFactory = new NullLoggerFactory();
 
         var appDataMock = new Mock<IAppMetadata>();
         appDataMock.Setup(a => a.GetApplicationMetadata())
