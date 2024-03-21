@@ -6,7 +6,6 @@ using Altinn.App.Core.Internal.Notifications.Sms;
 using Altinn.App.Core.Models.Notifications.Sms;
 using Altinn.Common.AccessTokenClient.Services;
 using Microsoft.ApplicationInsights;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -27,14 +26,14 @@ internal sealed class SmsNotificationClient : ISmsNotificationClient
         IOptions<PlatformSettings> platformSettings,
         IAppMetadata appMetadata,
         IAccessTokenGenerator accessTokenGenerator,
-        IServiceProvider serviceProvider)
+        TelemetryClient? telemetryClient = null)
     {
         _logger = logger;
         _httpClientFactory = httpClientFactory;
         _platformSettings = platformSettings.Value;
         _appMetadata = appMetadata;
         _accessTokenGenerator = accessTokenGenerator;
-        _telemetryClient = serviceProvider.GetService<TelemetryClient>();
+        _telemetryClient = telemetryClient;
     }
 
     public async Task<SmsNotificationOrderResponse> Order(SmsNotification smsNotification, CancellationToken ct)
