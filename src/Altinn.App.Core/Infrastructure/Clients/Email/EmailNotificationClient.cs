@@ -1,3 +1,6 @@
+using System.Diagnostics;
+using System.Net.Http.Headers;
+using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Email;
@@ -6,11 +9,9 @@ using Altinn.Common.AccessTokenClient.Services;
 using Microsoft.ApplicationInsights;
 using Microsoft.Extensions.Options;
 using Prometheus;
-using System.Diagnostics;
-using System.Net.Http.Headers;
-using System.Text.Json;
 
 namespace Altinn.App.Core.Infrastructure.Clients.Email;
+
 /// <summary>
 /// Implementation of the <see cref="IEmailNotificationClient"/> interface using a HttpClient to send
 /// requests to the Email Notification service.
@@ -22,8 +23,11 @@ public sealed class EmailNotificationClient : IEmailNotificationClient
     private readonly PlatformSettings _platformSettings;
     private readonly IAccessTokenGenerator _accessTokenGenerator;
     private readonly TelemetryClient _telemetryClient;
-    private static readonly Counter _orderCount = Metrics
-        .CreateCounter("altinn_app_notification_order_request_count", "Number of notification order requests.", labelNames: ["type", "result"]);
+    private static readonly Counter _orderCount = Metrics.CreateCounter(
+        "altinn_app_notification_order_request_count",
+        "Number of notification order requests.",
+        labelNames: ["type", "result"]
+    );
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EmailNotificationClient"/> class.
@@ -38,7 +42,8 @@ public sealed class EmailNotificationClient : IEmailNotificationClient
         IOptions<PlatformSettings> platformSettings,
         IAppMetadata appMetadata,
         IAccessTokenGenerator accessTokenGenerator,
-        TelemetryClient telemetryClient)
+        TelemetryClient telemetryClient
+    )
     {
         _platformSettings = platformSettings.Value;
         _httpClientFactory = httpClientFactory;
@@ -95,10 +100,13 @@ public sealed class EmailNotificationClient : IEmailNotificationClient
         catch (Exception e)
         {
             _orderCount.WithLabels("email", "error").Inc();
-            var ex = new EmailNotificationException($"Something went wrong when processing the email order. " +
-                $"\nresponseContent: {httpContent}" +
-                $"\nresponseStatusCode: {httpResponseMessage?.StatusCode}" +
-                $"\nresponseReasonPhrase: {httpResponseMessage?.ReasonPhrase}", e);
+            var ex = new EmailNotificationException(
+                $"Something went wrong when processing the email order. "
+                    + $"\nresponseContent: {httpContent}"
+                    + $"\nresponseStatusCode: {httpResponseMessage?.StatusCode}"
+                    + $"\nresponseReasonPhrase: {httpResponseMessage?.ReasonPhrase}",
+                e
+            );
             throw ex;
         }
         finally

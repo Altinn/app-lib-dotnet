@@ -2,9 +2,7 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
-
 using Altinn.App.Core.Helpers;
-
 using Xunit;
 
 namespace Altinn.App.PlatformServices.Tests.Helpers;
@@ -27,16 +25,8 @@ public class ShadowFieldsConverterTests
             },
             Gruppe = new List<Altinn.App.Core.Tests.Implementation.TestData.AppDataModel.Gruppe>()
             {
-                new()
-                {
-                    AltinnSF_gfhjelpefelt = "gfhjelpefelt",
-                    Gf1 = "gf1",
-                },
-                new()
-                {
-                    AltinnSF_gfhjelpefelt = "gfhjelpefelt2",
-                    Gf1 = "gf1-v2",
-                }
+                new() { AltinnSF_gfhjelpefelt = "gfhjelpefelt", Gf1 = "gf1", },
+                new() { AltinnSF_gfhjelpefelt = "gfhjelpefelt2", Gf1 = "gf1-v2", }
             }
         };
 
@@ -45,14 +35,12 @@ public class ShadowFieldsConverterTests
         Assert.Contains("AltinnSF_", serializedDataWithoutModifier);
 
         var modifier = new IgnorePropertiesWithPrefix("AltinnSF_");
-        JsonSerializerOptions options = new()
-        {
-            TypeInfoResolver = new DefaultJsonTypeInfoResolver
+        JsonSerializerOptions options =
+            new()
             {
-                Modifiers = { modifier.ModifyPrefixInfo }
-            },
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-        };
+                TypeInfoResolver = new DefaultJsonTypeInfoResolver { Modifiers = { modifier.ModifyPrefixInfo } },
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            };
 
         // Check that serialization with modifier removes shadow fields from result
         string serializedData = JsonSerializer.Serialize(data, options);

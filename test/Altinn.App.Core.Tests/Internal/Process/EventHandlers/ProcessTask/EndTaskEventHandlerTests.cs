@@ -24,12 +24,9 @@ public class EndTaskEventHandlerTests
             _processTaskFinisher.Object,
             _pdfServiceTask.Object,
             _eformidlingServiceTask.Object,
-            _processTaskEnds);
-        var instance = new Instance()
-        {
-            Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d",
-            AppId = "ttd/test",
-        };
+            _processTaskEnds
+        );
+        var instance = new Instance() { Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d", AppId = "ttd/test", };
         Mock<IProcessTask> mockProcessTask = new();
         await eteh.Execute(mockProcessTask.Object, "Task_1", instance);
         _processTaskDataLocker.Verify(p => p.Lock("Task_1", instance));
@@ -51,17 +48,15 @@ public class EndTaskEventHandlerTests
         Mock<IProcessTaskEnd> endOne = new();
         Mock<IProcessTaskEnd> endTwo = new();
         _processTaskEnds = new List<IProcessTaskEnd>() { endOne.Object, endTwo.Object };
-        EndTaskEventHandler eteh = new(
-            _processTaskDataLocker.Object,
-            _processTaskFinisher.Object,
-            _pdfServiceTask.Object,
-            _eformidlingServiceTask.Object,
-            _processTaskEnds);
-        var instance = new Instance()
-        {
-            Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d",
-            AppId = "ttd/test",
-        };
+        EndTaskEventHandler eteh =
+            new(
+                _processTaskDataLocker.Object,
+                _processTaskFinisher.Object,
+                _pdfServiceTask.Object,
+                _eformidlingServiceTask.Object,
+                _processTaskEnds
+            );
+        var instance = new Instance() { Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d", AppId = "ttd/test", };
         Mock<IProcessTask> mockProcessTask = new();
         await eteh.Execute(mockProcessTask.Object, "Task_1", instance);
         endOne.Verify(a => a.End("Task_1", instance));

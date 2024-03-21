@@ -38,7 +38,8 @@ namespace Altinn.App.Api.Controllers
             IWebHostEnvironment env,
             IOptions<AppSettings> appSettings,
             IAppResources appResources,
-            IAppMetadata appMetadata)
+            IAppMetadata appMetadata
+        )
         {
             _antiforgery = antiforgery;
             _platformSettings = platformSettings.Value;
@@ -59,16 +60,21 @@ namespace Altinn.App.Api.Controllers
         public async Task<IActionResult> Index(
             [FromRoute] string org,
             [FromRoute] string app,
-            [FromQuery] bool dontChooseReportee)
+            [FromQuery] bool dontChooseReportee
+        )
         {
             // See comments in the configuration of Antiforgery in MvcConfiguration.cs.
             var tokens = _antiforgery.GetAndStoreTokens(HttpContext);
             if (tokens.RequestToken != null)
             {
-                HttpContext.Response.Cookies.Append("XSRF-TOKEN", tokens.RequestToken, new CookieOptions
-                {
-                    HttpOnly = false // Make this cookie readable by Javascript.
-                });
+                HttpContext.Response.Cookies.Append(
+                    "XSRF-TOKEN",
+                    tokens.RequestToken,
+                    new CookieOptions
+                    {
+                        HttpOnly = false // Make this cookie readable by Javascript.
+                    }
+                );
             }
 
             if (await ShouldShowAppView())
