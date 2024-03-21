@@ -71,14 +71,14 @@ internal sealed class SmsNotificationClient : ISmsNotificationClient
             {
                 orderResponse = JsonSerializer.Deserialize<SmsNotificationOrderResponse>(httpContent);
                 if (orderResponse is null)
-                    throw new Exception("Couldn't deserialize SMS notification order response");
+                    throw new InvalidOperationException("Couldn't deserialize SMS notification order response");
 
                 Telemetry.OrderCount.WithLabels(Telemetry.Types.Sms, Telemetry.Result.Success).Inc();
                 return orderResponse;
             }
             else
             {
-                throw new Exception("Got error status code for SMS notification order");
+                throw new HttpRequestException("Got error status code for SMS notification order");
             }
         }
         catch (Exception e)
