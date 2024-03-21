@@ -248,6 +248,30 @@ public class SmsNotificationClientTests
         notification.RequestedSendTime.Should().BeOnOrAfter(now);
     }
 
+    [Fact]
+    public void DIContainer_Accepts_Missing_TelemetryClient()
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton<IHttpClientFactory>(new Mock<IHttpClientFactory>().Object);
+        services.AddSingleton<IAppMetadata>(new Mock<IAppMetadata>().Object);
+        services.AddSingleton<IAccessTokenGenerator>(new Mock<IAccessTokenGenerator>().Object);
+        services.AddSingleton<IOptions<PlatformSettings>>(Options.Create(new PlatformSettings()));
+        services.AddLogging(logging =>
+        {
+            logging.ClearProviders();
+            logging.AddProvider(NullLoggerProvider.Instance);
+        });
+        services.AddSingleton<ISmsNotificationClient, SmsNotificationClient>();
+
+        using var serviceProvider = services.BuildServiceProvider(new ServiceProviderOptions
+        {
+            ValidateOnBuild = true,
+            ValidateScopes = true,
+        });
+        var smsNotificationClient = serviceProvider.GetRequiredService<ISmsNotificationClient>();
+        smsNotificationClient.Should().NotBeNull();
+    }
+
     private static SmsNotificationClient CreateSmsNotificationClient(Mock<IHttpClientFactory> mockHttpClientFactory, bool withTelemetryClient = false)
     {
         using var loggerFactory = new NullLoggerFactory();
@@ -260,20 +284,12 @@ public class SmsNotificationClientTests
         accessTokenGenerator.Setup(a => a.GenerateAccessToken(It.IsAny<string>(), It.IsAny<string>()))
             .Returns("token");
 
-        var services = new ServiceCollection();
-        if (withTelemetryClient)
-        {
-            services.AddSingleton(new TelemetryClient());
-        }
-
-        var sp = services.BuildServiceProvider();
-
         return new SmsNotificationClient(
             loggerFactory.CreateLogger<SmsNotificationClient>(),
             mockHttpClientFactory.Object,
             Options.Create(new PlatformSettings()),
             appDataMock.Object,
             accessTokenGenerator.Object,
-            sp);
+            withTelemetryClient ? new TelemetryClient() : null);
     }
 }

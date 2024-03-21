@@ -4,7 +4,6 @@ using Altinn.App.Core.Internal.Notifications.Email;
 using Altinn.App.Core.Models.Notifications.Email;
 using Altinn.Common.AccessTokenClient.Services;
 using Microsoft.ApplicationInsights;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Net.Http.Headers;
@@ -27,14 +26,14 @@ internal sealed class EmailNotificationClient : IEmailNotificationClient
         IOptions<PlatformSettings> platformSettings,
         IAppMetadata appMetadata,
         IAccessTokenGenerator accessTokenGenerator,
-        IServiceProvider serviceProvider)
+        TelemetryClient? telemetryClient = null)
     {
         _logger = logger;
         _platformSettings = platformSettings.Value;
         _httpClientFactory = httpClientFactory;
         _appMetadata = appMetadata;
         _accessTokenGenerator = accessTokenGenerator;
-        _telemetryClient = serviceProvider.GetService<TelemetryClient>();
+        _telemetryClient = telemetryClient;
     }
 
     public async Task<EmailOrderResponse> Order(EmailNotification emailNotification, CancellationToken ct)
