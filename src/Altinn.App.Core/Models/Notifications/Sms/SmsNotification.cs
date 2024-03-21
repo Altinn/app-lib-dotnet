@@ -31,7 +31,7 @@ public sealed record SmsNotification
         get => _requestedSendTime == default ? DateTime.UtcNow : _requestedSendTime;
         init
         {
-            _requestedSendTime = value switch 
+            _requestedSendTime = value switch
             {
                 null => DateTime.UtcNow,
                 DateTime timestamp when timestamp <= DateTime.UtcNow.AddMinutes(-1) => DateTime.UtcNow,

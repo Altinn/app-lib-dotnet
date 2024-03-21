@@ -267,7 +267,7 @@ public class EmailNotificationClientTests
         {
             services.AddSingleton(new TelemetryClient());
         }
-        
+
         var sp = services.BuildServiceProvider();
 
         return new EmailNotificationClient(
