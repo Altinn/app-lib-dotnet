@@ -105,7 +105,7 @@ namespace Altinn.App.Core.EFormidling.Implementation
             string altinnToken = await GetOrganizationToken();
             HttpClient httpClient = _httpClientFactory.CreateClient();
 
-            HttpResponseMessage response = await httpClient.PutAsync(altinnToken, url, new StringContent(string.Empty));
+            using HttpResponseMessage response = await httpClient.PutAsync(altinnToken, url, new StringContent(string.Empty));
 
             if (response.IsSuccessStatusCode)
             {
@@ -135,7 +135,7 @@ namespace Altinn.App.Core.EFormidling.Implementation
             httpClient.DefaultRequestHeaders.Add(General.SubscriptionKeyHeaderName, _platformSettings.SubscriptionKey);
             httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-            HttpResponseMessage response = await httpClient.PostAsync(altinnToken, url, new StringContent(string.Empty));
+            using HttpResponseMessage response = await httpClient.PostAsync(altinnToken, url, new StringContent(string.Empty));
 
             if (response.StatusCode == HttpStatusCode.OK)
             {

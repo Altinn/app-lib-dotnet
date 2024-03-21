@@ -73,7 +73,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Authorization
             string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
             try
             {
-                HttpResponseMessage response = await _client.GetAsync(token, apiUrl);
+                using HttpResponseMessage response = await _client.GetAsync(token, apiUrl);
 
                 if (response.StatusCode == System.Net.HttpStatusCode.OK)
                 {
@@ -96,7 +96,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Authorization
             string apiUrl = $"parties/{partyId}/validate?userid={userId}";
             string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
 
-            HttpResponseMessage response = await _client.GetAsync(token, apiUrl);
+            using HttpResponseMessage response = await _client.GetAsync(token, apiUrl);
 
             if (response.StatusCode == System.Net.HttpStatusCode.OK)
             {

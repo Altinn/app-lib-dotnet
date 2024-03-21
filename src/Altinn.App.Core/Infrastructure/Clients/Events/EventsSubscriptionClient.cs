@@ -63,7 +63,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Events
             string serializedSubscriptionRequest = JsonSerializer.Serialize(subscriptionRequest);
 
             _logger.LogInformation("About to send the following subscription request {subscriptionJson}", serializedSubscriptionRequest);
-            HttpResponseMessage response = await _client.PostAsync(
+            using HttpResponseMessage response = await _client.PostAsync(
                 "subscriptions",
                 new StringContent(serializedSubscriptionRequest, Encoding.UTF8, "application/json"));
 
