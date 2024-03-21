@@ -5,7 +5,7 @@ namespace Altinn.App.Core.Models.Notifications.Sms;
 /// <summary>
 /// SMS notification class used for placing SMS notification orders.
 /// </summary>
-public sealed class SmsNotification
+public sealed record SmsNotification
 {
     private DateTime _requestedSendTime;
 
@@ -31,7 +31,12 @@ public sealed class SmsNotification
         get => _requestedSendTime == default ? DateTime.UtcNow : _requestedSendTime;
         init
         {
-            _requestedSendTime = value is null ? DateTime.UtcNow : ((DateTime)value).ToUniversalTime();
+            _requestedSendTime = value switch 
+            {
+                null => DateTime.UtcNow,
+                DateTime timestamp when timestamp <= DateTime.UtcNow.AddMinutes(-1) => DateTime.UtcNow,
+                DateTime timestamp => timestamp.ToUniversalTime(),
+            };
         }
     }
 

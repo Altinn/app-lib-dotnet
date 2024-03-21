@@ -12,6 +12,7 @@ using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Notifications.Sms;
 using Altinn.Common.AccessTokenClient.Services;
 using FluentAssertions;
+using Microsoft.ApplicationInsights;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -22,8 +23,10 @@ using Xunit;
 
 public class SmsNotificationClientTests
 {
-    [Fact]
-    public async void Order_VerifyHttpCall()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async void Order_VerifyHttpCall(bool includeTelemetryClient)
     {
         // Arrange
         var smsNotification = new SmsNotification
@@ -63,7 +66,7 @@ public class SmsNotificationClientTests
 
         httpClientFactoryMock.Setup(h => h.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
-        var smsNotificationClient = CreateSmsNotificationClient(httpClientFactoryMock);
+        var smsNotificationClient = CreateSmsNotificationClient(httpClientFactoryMock, includeTelemetryClient);
 
         // Act
         _ = await smsNotificationClient.Order(smsNotification, default);
@@ -172,7 +175,80 @@ public class SmsNotificationClientTests
         await FluentActions.Awaiting(orderSmsNotification).Should().ThrowAsync<SmsNotificationException>();
     }
 
-    private static SmsNotificationClient CreateSmsNotificationClient(Mock<IHttpClientFactory> mockHttpClientFactory)
+    [Fact]
+    public async void Order_ShouldThrowSmsNotificationException_OnInvalidJsonResponse()
+    {
+        // Arrange
+        var handlerMock = new Mock<HttpMessageHandler>();
+        handlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(() =>
+            {
+                var jsonContent = new StringContent("{\"orderId\": 1234}", Encoding.UTF8, "application/json");
+                var response = new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = jsonContent,
+                };
+                return response;
+            });
+
+        var httpClientFactoryMock = new Mock<IHttpClientFactory>();
+        using var httpClient = new HttpClient(handlerMock.Object);
+
+        httpClientFactoryMock.Setup(h => h.CreateClient(It.IsAny<string>())).Returns(httpClient);
+
+        var smsNotificationClient = CreateSmsNotificationClient(httpClientFactoryMock);
+        var recipients = new List<SmsRecipient>()
+        {
+            new("test.testesen@testdirektoratet.no")
+        };
+
+        var smsNotification = new SmsNotification
+        {
+            SenderNumber = "+4799999999",
+            Body = "body",
+            Recipients = recipients,
+            SendersReference = "testref",
+            RequestedSendTime = DateTime.UtcNow,
+        };
+
+        // Act
+        Func<Task> orderSmsNotification = async () => await smsNotificationClient.Order(smsNotification, default);
+
+        // Assert
+        await FluentActions.Awaiting(orderSmsNotification).Should().ThrowAsync<SmsNotificationException>();
+    }
+
+    [Fact]
+    public void Notification_RequestedSendTime_Always_Valid()
+    {
+        var notification = new SmsNotification
+        {
+            SenderNumber = "+4799999999",
+            Body = "body",
+            Recipients = [new("test.testesen@testdirektoratet.no")],
+            SendersReference = "testref",
+        };
+        notification.RequestedSendTime.Should().NotBe(default);
+
+        notification = notification with { RequestedSendTime = null };
+        notification.RequestedSendTime.Should().NotBe(default);
+
+        var sendTime = DateTime.Now;
+        notification = notification with { RequestedSendTime = sendTime };
+        notification.RequestedSendTime.Should().Be(sendTime.ToUniversalTime());
+
+        var now = DateTime.UtcNow;
+        sendTime = DateTime.UtcNow.AddMinutes(-10);
+        notification = notification with { RequestedSendTime = sendTime };
+        notification.RequestedSendTime.Should().BeOnOrAfter(now);
+    }
+
+    private static SmsNotificationClient CreateSmsNotificationClient(Mock<IHttpClientFactory> mockHttpClientFactory, bool withTelemetryClient = false)
     {
         using var loggerFactory = new NullLoggerFactory();
 
@@ -184,7 +260,13 @@ public class SmsNotificationClientTests
         accessTokenGenerator.Setup(a => a.GenerateAccessToken(It.IsAny<string>(), It.IsAny<string>()))
             .Returns("token");
 
-        var sp = new ServiceCollection().BuildServiceProvider();
+        var services = new ServiceCollection();
+        if (withTelemetryClient)
+        {
+            services.AddSingleton(new TelemetryClient());
+        }
+
+        var sp = services.BuildServiceProvider();
 
         return new SmsNotificationClient(
             loggerFactory.CreateLogger<SmsNotificationClient>(),
