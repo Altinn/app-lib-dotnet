@@ -66,10 +66,9 @@ public class EmailNotificationClientTests
         httpClientFactoryMock.Setup(h => h.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
         var emailNotificationClient = CreateEmailNotificationClient(httpClientFactoryMock, includeTelemetryClient);
-        var ct = CancellationToken.None;
 
         // Act
-        _ = await emailNotificationClient.Order(emailNotification, ct);
+        _ = await emailNotificationClient.Order(emailNotification, default);
 
         // Assert
         capturedContent.Should().Be(expectedContent);
@@ -117,10 +116,9 @@ public class EmailNotificationClientTests
             Recipients = recipients,
             SendersReference = "testref"
         };
-        var ct = new CancellationTokenSource().Token;
 
         // Act
-        var emailOrderResponse = await emailNotificationClient.Order(emailNotification, ct);
+        var emailOrderResponse = await emailNotificationClient.Order(emailNotification, default);
 
         // Assert
         emailOrderResponse.Should().NotBeNull();
@@ -166,11 +164,10 @@ public class EmailNotificationClientTests
             Recipients = recipients,
             SendersReference = "testref"
         };
-        var ct = new CancellationTokenSource().Token;
 
         // Act
         // Define an asynchronous delegate action, allowing for the capture and testing of any exceptions thrown.
-        Func<Task> orderEmailNotification = async () => await emailNotificationClient.Order(emailNotification, ct);
+        Func<Task> orderEmailNotification = async () => await emailNotificationClient.Order(emailNotification, default);
 
         // Assert
         await FluentActions.Awaiting(orderEmailNotification).Should().ThrowAsync<EmailNotificationException>();
@@ -215,11 +212,10 @@ public class EmailNotificationClientTests
             Recipients = recipients,
             SendersReference = "testref"
         };
-        var ct = new CancellationTokenSource().Token;
 
         // Act
         // Define an asynchronous delegate action, allowing for the capture and testing of any exceptions thrown.
-        Func<Task> orderEmailNotification = async () => await emailNotificationClient.Order(emailNotification, ct);
+        Func<Task> orderEmailNotification = async () => await emailNotificationClient.Order(emailNotification, default);
 
         // Assert
         await FluentActions.Awaiting(orderEmailNotification).Should().ThrowAsync<EmailNotificationException>();
