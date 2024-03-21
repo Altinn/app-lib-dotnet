@@ -1,9 +1,11 @@
 name: Build and Test on windows, macos and ubuntu
 on:
   push:
-    branches: [ main ]
+    branches: 
+      - v7
   pull_request:
-    branches: [ main ]
+    branches: 
+      - v7
     types: [opened, synchronize, reopened]
   workflow_dispatch:
 jobs:
