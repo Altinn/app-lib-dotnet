@@ -5,7 +5,7 @@ namespace Altinn.App.Core.Models.Notifications.Email;
 /// <summary>
 /// Structure used by <see cref="EmailNotificationClient"/> to request an email notification to a list of recipients.
 /// </summary>
-public sealed class EmailNotification
+public sealed record EmailNotification
 {
     private DateTime _requestedSendTime;
 
@@ -46,7 +46,12 @@ public sealed class EmailNotification
         get => _requestedSendTime == default ? DateTime.UtcNow : _requestedSendTime;
         init
         {
-            _requestedSendTime = value is null ? DateTime.UtcNow : ((DateTime)value).ToUniversalTime();
+            _requestedSendTime = value switch 
+            {
+                null => DateTime.UtcNow,
+                DateTime timestamp when timestamp <= DateTime.UtcNow.AddMinutes(-1) => DateTime.UtcNow,
+                DateTime timestamp => timestamp.ToUniversalTime(),
+            };
         }
     }
 }

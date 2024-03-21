@@ -12,6 +12,7 @@ using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Notifications.Email;
 using Altinn.Common.AccessTokenClient.Services;
 using FluentAssertions;
+using Microsoft.ApplicationInsights;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -22,8 +23,10 @@ using Xunit;
 
 public class EmailNotificationClientTests
 {
-    [Fact]
-    public async void Order_VerifyHttpCall()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async void Order_VerifyHttpCall(bool includeTelemetryClient)
     {
         // Arrange
         var emailNotification = new EmailNotification
@@ -62,7 +65,7 @@ public class EmailNotificationClientTests
 
         httpClientFactoryMock.Setup(h => h.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
-        var emailNotificationClient = CreateEmailNotificationClient(httpClientFactoryMock);
+        var emailNotificationClient = CreateEmailNotificationClient(httpClientFactoryMock, includeTelemetryClient);
         var ct = CancellationToken.None;
 
         // Act
@@ -173,7 +176,81 @@ public class EmailNotificationClientTests
         await FluentActions.Awaiting(orderEmailNotification).Should().ThrowAsync<EmailNotificationException>();
     }
 
-    private static EmailNotificationClient CreateEmailNotificationClient(Mock<IHttpClientFactory> mockHttpClientFactory)
+    [Fact]
+    public async void Order_ShouldThrowEmailNotificationException_OnInvalidJsonResponse()
+    {
+        // Arrange
+        var handlerMock = new Mock<HttpMessageHandler>();
+        handlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(() =>
+            {
+                var jsonContent = new StringContent("{\"orderId\": 123}", Encoding.UTF8, "application/json");
+                var response = new HttpResponseMessage(HttpStatusCode.BadRequest)
+                {
+                    Content = jsonContent,
+                };
+                return response;
+            });
+
+        var httpClientFactoryMock = new Mock<IHttpClientFactory>();
+        using var httpClient = new HttpClient(handlerMock.Object);
+
+        httpClientFactoryMock.Setup(h => h.CreateClient(It.IsAny<string>())).Returns(httpClient);
+
+        var emailNotificationClient = CreateEmailNotificationClient(httpClientFactoryMock);
+        var recipients = new List<EmailRecipient>()
+        {
+            new("test.testesen@testdirektoratet.no")
+        };
+
+        var emailNotification = new EmailNotification
+        {
+            Subject = "subject",
+            Body = "body",
+            Recipients = recipients,
+            SendersReference = "testref"
+        };
+        var ct = new CancellationTokenSource().Token;
+
+        // Act
+        // Define an asynchronous delegate action, allowing for the capture and testing of any exceptions thrown.
+        Func<Task> orderEmailNotification = async () => await emailNotificationClient.Order(emailNotification, ct);
+
+        // Assert
+        await FluentActions.Awaiting(orderEmailNotification).Should().ThrowAsync<EmailNotificationException>();
+    }
+
+    [Fact]
+    public void Notification_RequestedSendTime_Always_Valid()
+    {
+        var notification = new EmailNotification
+        {
+            Subject = "subject",
+            Body = "body",
+            Recipients = [new("test.testesen@testdirektoratet.no")],
+            SendersReference = "testref",
+        };
+        notification.RequestedSendTime.Should().NotBe(default);
+
+        notification = notification with { RequestedSendTime = null };
+        notification.RequestedSendTime.Should().NotBe(default);
+
+        var sendTime = DateTime.Now;
+        notification = notification with { RequestedSendTime = sendTime };
+        notification.RequestedSendTime.Should().Be(sendTime.ToUniversalTime());
+
+        var now = DateTime.UtcNow;
+        sendTime = DateTime.UtcNow.AddMinutes(-10);
+        notification = notification with { RequestedSendTime = sendTime };
+        notification.RequestedSendTime.Should().BeOnOrAfter(now);
+    }
+
+    private static EmailNotificationClient CreateEmailNotificationClient(Mock<IHttpClientFactory> mockHttpClientFactory, bool withTelemetryClient = false)
     {
         using var loggerFactory = new NullLoggerFactory();
 
@@ -185,7 +262,13 @@ public class EmailNotificationClientTests
         accessTokenGenerator.Setup(a => a.GenerateAccessToken(It.IsAny<string>(), It.IsAny<string>()))
             .Returns("token");
 
-        var sp = new ServiceCollection().BuildServiceProvider();
+        var services = new ServiceCollection();
+        if (withTelemetryClient)
+        {
+            services.AddSingleton(new TelemetryClient());
+        }
+        
+        var sp = services.BuildServiceProvider();
 
         return new EmailNotificationClient(
             loggerFactory.CreateLogger<EmailNotificationClient>(),
