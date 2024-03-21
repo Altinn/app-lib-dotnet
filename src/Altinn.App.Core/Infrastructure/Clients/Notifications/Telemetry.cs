@@ -24,6 +24,7 @@ internal static class Telemetry
     internal struct Dependency : IDisposable
     {
         private readonly TelemetryClient? _telemetryClient;
+        private readonly DateTime _startDateTime;
         private readonly long _startTimestamp;
         private bool _errored;
 
@@ -32,6 +33,7 @@ internal static class Telemetry
         public Dependency(TelemetryClient? telemetryClient)
         {
             _telemetryClient = telemetryClient;
+            _startDateTime = DateTime.UtcNow;
             _startTimestamp = Stopwatch.GetTimestamp();
         }
 
@@ -44,7 +46,7 @@ internal static class Telemetry
                 "Altinn.Notifications",
                 "OrderNotification",
                 null,
-                new DateTime(_startTimestamp),
+                _startDateTime,
                 elapsed,
                 !_errored
             );
