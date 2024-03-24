@@ -36,17 +36,15 @@ public class ExpressionValidatorTests
     {
         _appMetadata
             .Setup(ar => ar.GetApplicationMetadata())
-            .ReturnsAsync(
-                new ApplicationMetadata("org/app")
-                {
-                    DataTypes = new List<DataType>() { new() { } }
-                });
-        _appResources
-            .Setup(ar => ar.GetLayoutSetForTask(null))
-            .Returns(new LayoutSet());
+            .ReturnsAsync(new ApplicationMetadata("org/app") { DataTypes = new List<DataType>() { new() { } } });
+        _appResources.Setup(ar => ar.GetLayoutSetForTask(null)).Returns(new LayoutSet());
         _layoutInitializer = new(MockBehavior.Strict, _appResources.Object, _frontendSettings) { CallBase = false };
-        _validator =
-            new ExpressionValidator(_logger.Object, _appResources.Object, _layoutInitializer.Object, _appMetadata.Object);
+        _validator = new ExpressionValidator(
+            _logger.Object,
+            _appResources.Object,
+            _layoutInitializer.Object,
+            _appMetadata.Object
+        );
     }
 
     [Theory]
@@ -60,7 +58,14 @@ public class ExpressionValidatorTests
 
         var evaluatorState = new LayoutEvaluatorState(dataModel, testCase.Layouts, _frontendSettings.Value, instance);
         _layoutInitializer
-            .Setup(init => init.Init(It.Is<Instance>(i => i == instance), It.IsAny<object>(), It.IsAny<string>(), It.IsAny<string>()))
+            .Setup(init =>
+                init.Init(
+                    It.Is<Instance>(i => i == instance),
+                    It.IsAny<object>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>()
+                )
+            )
             .ReturnsAsync(evaluatorState);
         _appResources
             .Setup(ar => ar.GetValidationConfiguration(null))
@@ -105,7 +110,8 @@ public class ExpressionTestAttribute : DataAttribute
             var data = File.ReadAllText(file);
             ExpressionValidationTestModel testCase = JsonSerializer.Deserialize<ExpressionValidationTestModel>(
                 data,
-                JsonSerializerOptions)!;
+                JsonSerializerOptions
+            )!;
             yield return new object[] { testCase };
         }
     }

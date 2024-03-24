@@ -7,7 +7,9 @@ namespace Altinn.App.Core.Helpers
     /// </summary>
     public static class MimeTypeMap
     {
-        private static readonly Lazy<IDictionary<string, MimeType>> _mappings = new Lazy<IDictionary<string, MimeType>>(BuildMappings);
+        private static readonly Lazy<IDictionary<string, MimeType>> _mappings = new Lazy<IDictionary<string, MimeType>>(
+            BuildMappings
+        );
 
         private static IDictionary<string, MimeType> BuildMappings()
         {
@@ -636,7 +638,9 @@ namespace Altinn.App.Core.Helpers
                 extension = "." + extension;
             }
 
-            return _mappings.Value.TryGetValue(extension, out MimeType? mime) ? mime : new MimeType("application/octet-stream");
+            return _mappings.Value.TryGetValue(extension, out MimeType? mime)
+                ? mime
+                : new MimeType("application/octet-stream");
         }
     }
 }

@@ -1,7 +1,7 @@
-﻿using Altinn.App.Api.Tests.Mocks;
-using System.Linq;
+﻿using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Altinn.App.Api.Tests.Mocks;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 
@@ -51,9 +51,8 @@ public static class TestData
     {
         string instancesDirectory = GetInstancesDirectory();
 
-        return Path.Join(instancesDirectory, org, app, instanceOwnerId.ToString(), instanceGuid.ToString()) +
-               Path.DirectorySeparatorChar;
-
+        return Path.Join(instancesDirectory, org, app, instanceOwnerId.ToString(), instanceGuid.ToString())
+            + Path.DirectorySeparatorChar;
     }
 
     public static (string org, string app) GetInstanceOrgApp(InstanceIdentifier identifier)
@@ -74,10 +73,18 @@ public static class TestData
             }
         }
 
-        throw new DirectoryNotFoundException($"No instance found for instanceOwnerId {instanceOwner} and instanceGuid {instanceId}");
+        throw new DirectoryNotFoundException(
+            $"No instance found for instanceOwnerId {instanceOwner} and instanceGuid {instanceId}"
+        );
     }
 
-    public static string GetDataElementPath(string org, string app, int instanceOwnerId, Guid instanceGuid, Guid dataGuid)
+    public static string GetDataElementPath(
+        string org,
+        string app,
+        int instanceOwnerId,
+        Guid instanceGuid,
+        Guid dataGuid
+    )
     {
         string dataDirectory = GetDataDirectory(org, app, instanceOwnerId, instanceGuid);
         return Path.Combine(dataDirectory, $"{dataGuid}.json");
@@ -92,13 +99,21 @@ public static class TestData
     public static string GetTestDataRolesFolder(int userId, int resourcePartyId)
     {
         string testDataDirectory = GetTestDataRootDirectory();
-        return Path.Combine(testDataDirectory, "authorization", "roles", "User_" + userId, "party_" + resourcePartyId, "roles.json");
+        return Path.Combine(
+            testDataDirectory,
+            "authorization",
+            "roles",
+            "User_" + userId,
+            "party_" + resourcePartyId,
+            "roles.json"
+        );
     }
 
     public static string GetAltinnAppsPolicyPath(string org, string app)
     {
         string testDataDirectory = GetTestDataRootDirectory();
-        return Path.Combine(testDataDirectory, "apps", org, app, "config", "authorization") + Path.DirectorySeparatorChar;
+        return Path.Combine(testDataDirectory, "apps", org, app, "config", "authorization")
+            + Path.DirectorySeparatorChar;
     }
 
     public static string GetAltinnProfilePath()
@@ -173,7 +188,11 @@ public static class TestData
 
         if (Directory.Exists(path))
         {
-            foreach (var filePath in Directory.GetFiles(path, "*.*", SearchOption.AllDirectories).Where(filePath => !filePath.Contains("pretest")))
+            foreach (
+                var filePath in Directory
+                    .GetFiles(path, "*.*", SearchOption.AllDirectories)
+                    .Where(filePath => !filePath.Contains("pretest"))
+            )
             {
                 File.Delete(filePath);
             }
@@ -185,12 +204,13 @@ public static class TestData
         }
     }
 
-    private static JsonSerializerOptions JsonSerializerOptions => new(JsonSerializerDefaults.Web)
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        PropertyNameCaseInsensitive = true,
-        Converters = { new JsonStringEnumConverter() }
-    };
+    private static JsonSerializerOptions JsonSerializerOptions =>
+        new(JsonSerializerDefaults.Web)
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            PropertyNameCaseInsensitive = true,
+            Converters = { new JsonStringEnumConverter() }
+        };
 
     public static async Task<Instance> GetInstance(string org, string app, int instanceOwnerPartyId, Guid instanceGuid)
     {

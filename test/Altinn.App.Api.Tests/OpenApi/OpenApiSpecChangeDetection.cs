@@ -8,9 +8,8 @@ namespace Altinn.App.Api.Tests.OpenApi;
 
 public class OpenApiSpecChangeDetection : ApiTestBase, IClassFixture<WebApplicationFactory<Program>>
 {
-    public OpenApiSpecChangeDetection(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper) : base(factory, outputHelper)
-    {
-    }
+    public OpenApiSpecChangeDetection(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper)
+        : base(factory, outputHelper) { }
 
     [Fact]
     public async Task SaveJsonSwagger()

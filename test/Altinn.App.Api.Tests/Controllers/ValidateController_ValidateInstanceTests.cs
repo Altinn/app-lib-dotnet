@@ -1,20 +1,20 @@
-using Altinn.App.Api.Tests.Utils;
-using Microsoft.AspNetCore.Mvc.Testing;
-using System.Net.Http.Headers;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models;
+using Altinn.App.Api.Tests.Utils;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Models.Validation;
-using Xunit;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace Altinn.App.Api.Tests.Controllers;
@@ -31,15 +31,20 @@ public class ValidateControllerValidateInstanceTests : ApiTestBase, IClassFixtur
     private readonly Mock<IDataProcessor> _dataProcessorMock = new(MockBehavior.Strict);
     private readonly Mock<IFormDataValidator> _formDataValidatorMock = new(MockBehavior.Strict);
 
-    private static readonly JsonSerializerOptions JsonSerializerOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = true,
-        UnknownTypeHandling = JsonUnknownTypeHandling.JsonElement,
-        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-    };
+    private static readonly JsonSerializerOptions JsonSerializerOptions =
+        new()
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = true,
+            UnknownTypeHandling = JsonUnknownTypeHandling.JsonElement,
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        };
 
-    public ValidateControllerValidateInstanceTests(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper) : base(factory, outputHelper)
+    public ValidateControllerValidateInstanceTests(
+        WebApplicationFactory<Program> factory,
+        ITestOutputHelper outputHelper
+    )
+        : base(factory, outputHelper)
     {
         _formDataValidatorMock.Setup(v => v.DataType).Returns("Not a valid data type");
         OverrideServicesForAllTests = (services) =>
@@ -75,8 +80,8 @@ public class ValidateControllerValidateInstanceTests : ApiTestBase, IClassFixtur
         using var responseParsedRaw = JsonDocument.Parse(responseString);
         _outputHelper.WriteLine(JsonSerializer.Serialize(responseParsedRaw, JsonSerializerOptions));
         return responseString;
-
     }
+
     private static TResponse ParseResponse<TResponse>(string responseString)
     {
         return JsonSerializer.Deserialize<TResponse>(responseString, JsonSerializerOptions)!;
@@ -101,20 +106,26 @@ public class ValidateControllerValidateInstanceTests : ApiTestBase, IClassFixtur
     {
         var oldTaskValidatorMock = new Mock<IInstanceValidator>(MockBehavior.Strict);
 
-        oldTaskValidatorMock.Setup(v => v.ValidateTask(It.IsAny<Instance>(), "Task_1", It.IsAny<ModelStateDictionary>()))
+        oldTaskValidatorMock
+            .Setup(v => v.ValidateTask(It.IsAny<Instance>(), "Task_1", It.IsAny<ModelStateDictionary>()))
             .Returns(
                 (Instance instance, string task, ModelStateDictionary issues) =>
                 {
                     issues.AddModelError("**SHOULD_BE_IGNORED**", "TaskErrorText");
                     return Task.CompletedTask;
-                }).Verifiable(Times.Once);
-        oldTaskValidatorMock.Setup(v => v.ValidateData(It.IsAny<object>(), It.IsAny<ModelStateDictionary>()))
+                }
+            )
+            .Verifiable(Times.Once);
+        oldTaskValidatorMock
+            .Setup(v => v.ValidateData(It.IsAny<object>(), It.IsAny<ModelStateDictionary>()))
             .Returns(
                 (object data, ModelStateDictionary issues) =>
                 {
                     issues.AddModelError((Skjema s) => s.Melding!.NestedList, "*FIXED*CustomErrorText");
                     return Task.CompletedTask;
-                }).Verifiable(Times.Once);
+                }
+            )
+            .Verifiable(Times.Once);
 
         OverrideServicesForThisTest = (services) =>
         {
@@ -140,5 +151,4 @@ public class ValidateControllerValidateInstanceTests : ApiTestBase, IClassFixtur
         _formDataValidatorMock.Verify();
         oldTaskValidatorMock.Verify();
     }
-
 }

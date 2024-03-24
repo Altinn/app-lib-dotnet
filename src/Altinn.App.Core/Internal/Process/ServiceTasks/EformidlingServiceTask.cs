@@ -23,7 +23,13 @@ public class EformidlingServiceTask : IServiceTask
     /// <summary>
     /// Initializes a new instance of the <see cref="EformidlingServiceTask"/> class.
     /// </summary>
-    public EformidlingServiceTask(ILogger<EformidlingServiceTask> logger, IAppMetadata appMetadata, IInstanceClient instanceClient, IEFormidlingService? eFormidlingService = null, IOptions<AppSettings>? appSettings = null)
+    public EformidlingServiceTask(
+        ILogger<EformidlingServiceTask> logger,
+        IAppMetadata appMetadata,
+        IInstanceClient instanceClient,
+        IEFormidlingService? eFormidlingService = null,
+        IOptions<AppSettings>? appSettings = null
+    )
     {
         _logger = logger;
         _appMetadata = appMetadata;
@@ -36,7 +42,10 @@ public class EformidlingServiceTask : IServiceTask
     public async Task Execute(string taskId, Instance instance)
     {
         ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
-        if (_appSettings?.Value?.EnableEFormidling == true && applicationMetadata.EFormidling?.SendAfterTaskId == taskId)
+        if (
+            _appSettings?.Value?.EnableEFormidling == true
+            && applicationMetadata.EFormidling?.SendAfterTaskId == taskId
+        )
         {
             if (_eFormidlingService != null)
             {

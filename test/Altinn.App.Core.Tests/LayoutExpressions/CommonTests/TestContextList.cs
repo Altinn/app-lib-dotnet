@@ -1,6 +1,5 @@
 using System.Reflection;
 using System.Text.Json;
-
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Tests.Helpers;
 using FluentAssertions;
@@ -40,16 +39,21 @@ public class TestContextList
         _output.WriteLine($"{test.Filename} in {test.Folder}");
         _output.WriteLine(test.RawJson);
         _output.WriteLine(test.FullPath);
-        var state = new LayoutEvaluatorState(
-            new JsonDataModel(test.DataModel),
-            test.ComponentModel,
-            new(),
-            new());
+        var state = new LayoutEvaluatorState(new JsonDataModel(test.DataModel), test.ComponentModel, new(), new());
 
         test.ParsingException.Should().BeNull("Loading of test failed");
 
         var results = state.GetComponentContexts().Select(c => ComponentContextForTestSpec.FromContext(c)).ToList();
-        _output.WriteLine(JsonSerializer.Serialize(new { resultContexts = results }, new JsonSerializerOptions { WriteIndented = true, DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault }));
+        _output.WriteLine(
+            JsonSerializer.Serialize(
+                new { resultContexts = results },
+                new JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                    DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault
+                }
+            )
+        );
 
         foreach (var (result, expected, index) in results.Zip(test.Expected, Enumerable.Range(0, int.MaxValue)))
         {
@@ -63,9 +67,22 @@ public class TestContextList
     public void Ensure_tests_For_All_Folders()
     {
         // This is just a way to ensure that all folders have test methods associcated.
-        var jsonTestFolders = Directory.GetDirectories(Path.Join("LayoutExpressions", "CommonTests", "shared-tests", "context-lists")).Select(d => Path.GetFileName(d)).ToArray();
-        var testMethods = this.GetType().GetMethods().Select(m => m.CustomAttributes.FirstOrDefault(ca => ca.AttributeType == typeof(SharedTestContextListAttribute))?.ConstructorArguments.FirstOrDefault().Value).OfType<string>().ToArray();
-        testMethods.Should().BeEquivalentTo(jsonTestFolders, "Shared test folders should have a corresponding test method");
+        var jsonTestFolders = Directory
+            .GetDirectories(Path.Join("LayoutExpressions", "CommonTests", "shared-tests", "context-lists"))
+            .Select(d => Path.GetFileName(d))
+            .ToArray();
+        var testMethods = this.GetType()
+            .GetMethods()
+            .Select(m =>
+                m.CustomAttributes.FirstOrDefault(ca => ca.AttributeType == typeof(SharedTestContextListAttribute))
+                    ?.ConstructorArguments.FirstOrDefault()
+                    .Value
+            )
+            .OfType<string>()
+            .ToArray();
+        testMethods
+            .Should()
+            .BeEquivalentTo(jsonTestFolders, "Shared test folders should have a corresponding test method");
     }
 }
 
@@ -80,7 +97,9 @@ public class SharedTestContextListAttribute : DataAttribute
 
     public override IEnumerable<object[]> GetData(MethodInfo methodInfo)
     {
-        var files = Directory.GetFiles(Path.Join("LayoutExpressions", "CommonTests", "shared-tests", "context-lists", _folder));
+        var files = Directory.GetFiles(
+            Path.Join("LayoutExpressions", "CommonTests", "shared-tests", "context-lists", _folder)
+        );
         foreach (var file in files)
         {
             ContextListRoot testCase = new();
@@ -89,10 +108,8 @@ public class SharedTestContextListAttribute : DataAttribute
             {
                 testCase = JsonSerializer.Deserialize<ContextListRoot>(
                     data,
-                    new JsonSerializerOptions
-                    {
-                        ReadCommentHandling = JsonCommentHandling.Skip,
-                    })!;
+                    new JsonSerializerOptions { ReadCommentHandling = JsonCommentHandling.Skip, }
+                )!;
             }
             catch (Exception e)
             {

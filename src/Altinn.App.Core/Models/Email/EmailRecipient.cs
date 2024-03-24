@@ -1,5 +1,7 @@
 using System.Text.Json.Serialization;
+
 namespace Altinn.App.Core.Models.Email;
+
 /// <summary>
 /// Represents the recipient of an email.
 /// </summary>

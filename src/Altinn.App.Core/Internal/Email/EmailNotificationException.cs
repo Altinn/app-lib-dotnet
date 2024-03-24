@@ -9,24 +9,19 @@ public sealed class EmailNotificationException : Exception
     /// Creates a new Exception of <see cref="EmailNotificationException"/>
     /// Intended to be used when the email notification fails.
     /// </summary>
-    public EmailNotificationException()
-    {
-    }
+    public EmailNotificationException() { }
 
     /// <summary>
     /// Creates a new Exception of <see cref="EmailNotificationException"/>
     /// Intended to be used when the email notification fails.
     /// </summary>
-    public EmailNotificationException(string? message) : base(message)
-    {
-    }
+    public EmailNotificationException(string? message)
+        : base(message) { }
 
     /// <summary>
     /// Creates a new Exception of <see cref="EmailNotificationException"/>
     /// Intended to be used when the email notification fails.
     /// </summary>
-    public EmailNotificationException(string? message, Exception? innerException) : base(message, innerException)
-    {
-    }
+    public EmailNotificationException(string? message, Exception? innerException)
+        : base(message, innerException) { }
 }
-

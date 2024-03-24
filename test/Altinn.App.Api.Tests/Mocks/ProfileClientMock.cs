@@ -12,9 +12,11 @@ public class ProfileClientMock : IProfileClient
     {
         var folder = TestData.GetRegisterProfilePath();
         var file = Path.Join(folder, $"{userId}.json");
-        return (await JsonSerializer.DeserializeAsync<UserProfile>(File.OpenRead(file), new JsonSerializerOptions(JsonSerializerDefaults.Web)
-        {
-            Converters = { new JsonStringEnumConverter() }
-        }))!;
+        return (
+            await JsonSerializer.DeserializeAsync<UserProfile>(
+                File.OpenRead(file),
+                new JsonSerializerOptions(JsonSerializerDefaults.Web) { Converters = { new JsonStringEnumConverter() } }
+            )
+        )!;
     }
 }
