@@ -68,7 +68,7 @@ internal sealed class EmailNotificationClient : IEmailNotificationClient
             {
                 orderResponse = JsonSerializer.Deserialize<EmailOrderResponse>(httpContent);
                 if (orderResponse is null)
-                    throw new InvalidOperationException("Couldn't deserialize email notification order response.");
+                    throw new JsonException("Couldn't deserialize email notification order response.");
 
                 Telemetry.OrderCount.WithLabels(Telemetry.Types.Email, Telemetry.Result.Success).Inc();
             }
