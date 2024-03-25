@@ -6,7 +6,7 @@ namespace Altinn.App.Core.Internal.Notifications.Email;
 public sealed class EmailNotificationException : Exception
 {
     internal EmailNotificationException(string? message, HttpResponseMessage? response, string? content, Exception? innerException)
-    : base($"{message}: StatuCode={response?.StatusCode}\nReason={response?.ReasonPhrase}\nBody={content}\n", innerException)
+    : base($"{message}: StatusCode={response?.StatusCode}\nReason={response?.ReasonPhrase}\nBody={content}\n", innerException)
     {
     }
 }
