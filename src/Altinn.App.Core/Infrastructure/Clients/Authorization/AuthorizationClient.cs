@@ -115,7 +115,6 @@ namespace Altinn.App.Core.Infrastructure.Clients.Authorization
         /// <inheritdoc />
         public async Task<bool> AuthorizeAction(AppIdentifier appIdentifier, InstanceIdentifier instanceIdentifier, ClaimsPrincipal user, string action, string? taskId = null)
         {
-            
             XacmlJsonRequestRoot request = DecisionHelper.CreateDecisionRequest(appIdentifier.Org, appIdentifier.App, user, action, instanceIdentifier.InstanceOwnerPartyId, instanceIdentifier.InstanceGuid, taskId);
             XacmlJsonResponse response = await _pdp.GetDecisionForRequest(request);
             if (response?.Response == null)
