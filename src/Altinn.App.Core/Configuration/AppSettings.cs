@@ -152,7 +152,7 @@ namespace Altinn.App.Core.Configuration
         /// <summary>
         /// Name of the cookie for runtime
         /// </summary>
-        public string RuntimeCookieName { get; set; }
+        public string RuntimeCookieName { get; set; } = "AltinnStudioRuntime";
 
         /// <summary>
         /// Option to disable csrf check
