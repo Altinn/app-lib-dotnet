@@ -50,7 +50,8 @@ namespace Altinn.App.Core.Internal.Process
         public string GatewayId { get; } = "AltinnExpressionsExclusiveGateway";
 
         /// <inheritdoc />
-        public async Task<List<SequenceFlow>> FilterAsync(List<SequenceFlow> outgoingFlows, Instance instance, ProcessGatewayInformation processGatewayInformation)
+        public async Task<List<SequenceFlow>> FilterAsync(List<SequenceFlow> outgoingFlows, Instance instance,
+            ProcessGatewayInformation processGatewayInformation)
         {
             var state = await GetLayoutEvaluatorState(instance, processGatewayInformation.Action, processGatewayInformation.DataTypeId);
 
@@ -69,7 +70,8 @@ namespace Altinn.App.Core.Internal.Process
                 Type dataElementType = dataType;
                 if (dataGuid != null)
                 {
-                    data = await _dataClient.GetFormData(instanceIdentifier.InstanceGuid, dataElementType, instance.Org, instance.AppId.Split("/")[1], int.Parse(instance.InstanceOwner.PartyId), dataGuid.Value);
+                    data = await _dataClient.GetFormData(instanceIdentifier.InstanceGuid, dataElementType, instance.Org, instance.AppId.Split("/")[1],
+                        int.Parse(instance.InstanceOwner.PartyId), dataGuid.Value);
                 }
             }
 
@@ -82,21 +84,11 @@ namespace Altinn.App.Core.Internal.Process
             if (sequenceFlow.ConditionExpression != null)
             {
                 var expression = GetExpressionFromCondition(sequenceFlow.ConditionExpression);
-                var stateComponentContexts = state.GetComponentContexts();
-                if (stateComponentContexts.Any())
+                // If there is no component context in the state, evaluate the expression once without a component context
+                var stateComponentContexts = state.GetComponentContexts().Any() ? state.GetComponentContexts().ToList() : [null];
+                foreach (ComponentContext? componentContext in stateComponentContexts)
                 {
-                    foreach (var componentContext in stateComponentContexts)
-                    {
-                        var result = ExpressionEvaluator.EvaluateExpression(state, expression, componentContext);
-                        if (result is bool boolResult && boolResult)
-                        {
-                            return true;
-                        }
-                    }
-                }
-                else
-                {
-                    var result = ExpressionEvaluator.EvaluateExpression(state, expression, null);
+                    var result = ExpressionEvaluator.EvaluateExpression(state, expression, componentContext);
                     if (result is bool boolResult && boolResult)
                     {
                         return true;
@@ -156,7 +148,8 @@ namespace Altinn.App.Core.Internal.Process
             }
             else
             {
-                dataType = (await _appMetadata.GetApplicationMetadata()).DataTypes.Find(d => d.TaskId == instance.Process.CurrentTask.ElementId && d.AppLogic != null);
+                dataType = (await _appMetadata.GetApplicationMetadata()).DataTypes.Find(d =>
+                    d.TaskId == instance.Process.CurrentTask.ElementId && d.AppLogic != null);
             }
 
             if (dataType != null)
