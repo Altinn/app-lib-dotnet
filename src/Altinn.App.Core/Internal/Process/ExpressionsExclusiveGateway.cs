@@ -82,9 +82,21 @@ namespace Altinn.App.Core.Internal.Process
             if (sequenceFlow.ConditionExpression != null)
             {
                 var expression = GetExpressionFromCondition(sequenceFlow.ConditionExpression);
-                foreach (var componentContext in state.GetComponentContexts())
+                var stateComponentContexts = state.GetComponentContexts();
+                if (stateComponentContexts.Any())
                 {
-                    var result = ExpressionEvaluator.EvaluateExpression(state, expression, componentContext);
+                    foreach (var componentContext in stateComponentContexts)
+                    {
+                        var result = ExpressionEvaluator.EvaluateExpression(state, expression, componentContext);
+                        if (result is bool boolResult && boolResult)
+                        {
+                            return true;
+                        }
+                    }
+                }
+                else
+                {
+                    var result = ExpressionEvaluator.EvaluateExpression(state, expression, null);
                     if (result is bool boolResult && boolResult)
                     {
                         return true;
