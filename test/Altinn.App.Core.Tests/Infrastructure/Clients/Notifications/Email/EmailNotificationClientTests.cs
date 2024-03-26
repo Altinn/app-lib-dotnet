@@ -1,17 +1,21 @@
-﻿namespace Altinn.App.Core.Tests.Infrastructure.Clients.Email;
+﻿namespace Altinn.App.Core.Tests.Infrastructure.Clients.Notifications.Email;
 
 using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
-using Altinn.App.Core.Infrastructure.Clients.Email;
+using Altinn.App.Core.Infrastructure.Clients.Notifications.Email;
 using Altinn.App.Core.Internal.App;
-using Altinn.App.Core.Internal.Email;
+using Altinn.App.Core.Internal.Notifications.Email;
 using Altinn.App.Core.Models;
-using Altinn.App.Core.Models.Email;
+using Altinn.App.Core.Models.Notifications.Email;
 using Altinn.Common.AccessTokenClient.Services;
 using FluentAssertions;
+using Microsoft.ApplicationInsights;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
 using Moq.Protected;
@@ -19,8 +23,10 @@ using Xunit;
 
 public class EmailNotificationClientTests
 {
-    [Fact]
-    public async void Order_VerifyHttpCall()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async void Order_VerifyHttpCall(bool includeTelemetryClient)
     {
         // Arrange
         var emailNotification = new EmailNotification
@@ -55,15 +61,14 @@ public class EmailNotificationClientTests
             });
 
         var httpClientFactoryMock = new Mock<IHttpClientFactory>();
-        var httpClient = new HttpClient(handlerMock.Object);
+        using var httpClient = new HttpClient(handlerMock.Object);
 
         httpClientFactoryMock.Setup(h => h.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
-        var emailNotificationClient = CreateEmailNotificationClient(httpClientFactoryMock);
-        var ct = CancellationToken.None;
+        var emailNotificationClient = CreateEmailNotificationClient(httpClientFactoryMock, includeTelemetryClient);
 
         // Act
-        _ = await emailNotificationClient.Order(emailNotification, ct);
+        _ = await emailNotificationClient.Order(emailNotification, default);
 
         // Assert
         capturedContent.Should().Be(expectedContent);
@@ -94,7 +99,7 @@ public class EmailNotificationClientTests
             });
 
         var httpClientFactoryMock = new Mock<IHttpClientFactory>();
-        var httpClient = new HttpClient(handlerMock.Object);
+        using var httpClient = new HttpClient(handlerMock.Object);
 
         httpClientFactoryMock.Setup(h => h.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
@@ -111,10 +116,9 @@ public class EmailNotificationClientTests
             Recipients = recipients,
             SendersReference = "testref"
         };
-        var ct = new CancellationTokenSource().Token;
 
         // Act
-        var emailOrderResponse = await emailNotificationClient.Order(emailNotification, ct);
+        var emailOrderResponse = await emailNotificationClient.Order(emailNotification, default);
 
         // Assert
         emailOrderResponse.Should().NotBeNull();
@@ -143,7 +147,7 @@ public class EmailNotificationClientTests
             });
 
         var httpClientFactoryMock = new Mock<IHttpClientFactory>();
-        var httpClient = new HttpClient(handlerMock.Object);
+        using var httpClient = new HttpClient(handlerMock.Object);
 
         httpClientFactoryMock.Setup(h => h.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
@@ -160,18 +164,116 @@ public class EmailNotificationClientTests
             Recipients = recipients,
             SendersReference = "testref"
         };
-        var ct = new CancellationTokenSource().Token;
 
         // Act
         // Define an asynchronous delegate action, allowing for the capture and testing of any exceptions thrown.
-        Func<Task> orderEmailNotification = async () => await emailNotificationClient.Order(emailNotification, ct);
+        Func<Task> orderEmailNotification = async () => await emailNotificationClient.Order(emailNotification, default);
 
         // Assert
         await FluentActions.Awaiting(orderEmailNotification).Should().ThrowAsync<EmailNotificationException>();
     }
 
-    private static EmailNotificationClient CreateEmailNotificationClient(Mock<IHttpClientFactory> mockHttpClientFactory)
+    [Fact]
+    public async void Order_ShouldThrowEmailNotificationException_OnInvalidJsonResponse()
     {
+        // Arrange
+        var handlerMock = new Mock<HttpMessageHandler>();
+        handlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(() =>
+            {
+                var jsonContent = new StringContent("{\"orderId\": 123}", Encoding.UTF8, "application/json");
+                var response = new HttpResponseMessage(HttpStatusCode.BadRequest)
+                {
+                    Content = jsonContent,
+                };
+                return response;
+            });
+
+        var httpClientFactoryMock = new Mock<IHttpClientFactory>();
+        using var httpClient = new HttpClient(handlerMock.Object);
+
+        httpClientFactoryMock.Setup(h => h.CreateClient(It.IsAny<string>())).Returns(httpClient);
+
+        var emailNotificationClient = CreateEmailNotificationClient(httpClientFactoryMock);
+        var recipients = new List<EmailRecipient>()
+        {
+            new("test.testesen@testdirektoratet.no")
+        };
+
+        var emailNotification = new EmailNotification
+        {
+            Subject = "subject",
+            Body = "body",
+            Recipients = recipients,
+            SendersReference = "testref"
+        };
+
+        // Act
+        // Define an asynchronous delegate action, allowing for the capture and testing of any exceptions thrown.
+        Func<Task> orderEmailNotification = async () => await emailNotificationClient.Order(emailNotification, default);
+
+        // Assert
+        await FluentActions.Awaiting(orderEmailNotification).Should().ThrowAsync<EmailNotificationException>();
+    }
+
+    [Fact]
+    public void Notification_RequestedSendTime_Always_Valid()
+    {
+        var notification = new EmailNotification
+        {
+            Subject = "subject",
+            Body = "body",
+            Recipients = [new("test.testesen@testdirektoratet.no")],
+            SendersReference = "testref",
+        };
+        notification.RequestedSendTime.Should().NotBe(default);
+
+        notification = notification with { RequestedSendTime = null };
+        notification.RequestedSendTime.Should().NotBe(default);
+
+        var sendTime = DateTime.Now;
+        notification = notification with { RequestedSendTime = sendTime };
+        notification.RequestedSendTime.Should().Be(sendTime.ToUniversalTime());
+
+        var now = DateTime.UtcNow;
+        sendTime = DateTime.UtcNow.AddMinutes(-10);
+        notification = notification with { RequestedSendTime = sendTime };
+        notification.RequestedSendTime.Should().BeOnOrAfter(now);
+    }
+
+    [Fact]
+    public void DIContainer_Accepts_Missing_TelemetryClient()
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton<IHttpClientFactory>(new Mock<IHttpClientFactory>().Object);
+        services.AddSingleton<IAppMetadata>(new Mock<IAppMetadata>().Object);
+        services.AddSingleton<IAccessTokenGenerator>(new Mock<IAccessTokenGenerator>().Object);
+        services.AddSingleton<IOptions<PlatformSettings>>(Options.Create(new PlatformSettings()));
+        services.AddLogging(logging =>
+        {
+            logging.ClearProviders();
+            logging.AddProvider(NullLoggerProvider.Instance);
+        });
+        services.AddSingleton<IEmailNotificationClient, EmailNotificationClient>();
+
+        using var serviceProvider = services.BuildServiceProvider(new ServiceProviderOptions
+        {
+            ValidateOnBuild = true,
+            ValidateScopes = true,
+        });
+        var smsNotificationClient = serviceProvider.GetRequiredService<IEmailNotificationClient>();
+        smsNotificationClient.Should().NotBeNull();
+    }
+
+    private static EmailNotificationClient CreateEmailNotificationClient(Mock<IHttpClientFactory> mockHttpClientFactory, bool withTelemetryClient = false)
+    {
+        using var loggerFactory = new NullLoggerFactory();
+
         var appDataMock = new Mock<IAppMetadata>();
         appDataMock.Setup(a => a.GetApplicationMetadata())
             .ReturnsAsync(new ApplicationMetadata("ttd/app-lib-test"));
@@ -180,6 +282,12 @@ public class EmailNotificationClientTests
         accessTokenGenerator.Setup(a => a.GenerateAccessToken(It.IsAny<string>(), It.IsAny<string>()))
             .Returns("token");
 
-        return new EmailNotificationClient(mockHttpClientFactory.Object, Options.Create(new PlatformSettings()), appDataMock.Object, accessTokenGenerator.Object, new Microsoft.ApplicationInsights.TelemetryClient());
+        return new EmailNotificationClient(
+            loggerFactory.CreateLogger<EmailNotificationClient>(),
+            mockHttpClientFactory.Object,
+            Options.Create(new PlatformSettings()),
+            appDataMock.Object,
+            accessTokenGenerator.Object,
+            withTelemetryClient ? new TelemetryClient() : null);
     }
 }
