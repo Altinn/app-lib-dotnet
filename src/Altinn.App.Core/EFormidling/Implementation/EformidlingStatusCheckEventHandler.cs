@@ -24,6 +24,7 @@ namespace Altinn.App.Core.EFormidling.Implementation
     /// <summary>
     /// Handles status checking of messages sent through the Eformidling integration point.
     /// </summary>
+    [Obsolete("UseEformidlingStatusCheckEventHandler2 instead. This class will be removed in V9.")]
     public class EformidlingStatusCheckEventHandler : IEventHandler
     {
         private readonly IEFormidlingClient _eFormidlingClient;

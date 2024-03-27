@@ -12,6 +12,7 @@ using Altinn.App.Core.Features.Validation.Default;
 using Altinn.App.Core.Implementation;
 using Altinn.App.Core.Infrastructure.Clients.Authentication;
 using Altinn.App.Core.Infrastructure.Clients.Authorization;
+using Altinn.App.Core.Infrastructure.Clients.Email;
 using Altinn.App.Core.Infrastructure.Clients.Events;
 using Altinn.App.Core.Infrastructure.Clients.KeyVault;
 using Altinn.App.Core.Infrastructure.Clients.Pdf;
@@ -22,6 +23,7 @@ using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.Email;
 using Altinn.App.Core.Internal.Events;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Instances;
@@ -30,11 +32,13 @@ using Altinn.App.Core.Internal.Patch;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Prefill;
 using Altinn.App.Core.Internal.Process;
-using Altinn.App.Core.Internal.Process.Action;
+using Altinn.App.Core.Internal.Process.EventHandlers;
+using Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask;
+using Altinn.App.Core.Internal.Process.ProcessTasks;
+using Altinn.App.Core.Internal.Process.ServiceTasks;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Internal.Secrets;
-using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models;
@@ -53,9 +57,12 @@ using IProcessEngine = Altinn.App.Core.Internal.Process.IProcessEngine;
 using IProcessReader = Altinn.App.Core.Internal.Process.IProcessReader;
 using ProcessEngine = Altinn.App.Core.Internal.Process.ProcessEngine;
 using ProcessReader = Altinn.App.Core.Internal.Process.ProcessReader;
+using Altinn.App.Core.Internal.Sign;
+using Altinn.App.Core.Internal.Process.Authorization;
 
 namespace Altinn.App.Core.Extensions
 {
+
     /// <summary>
     /// This class holds a collection of extension methods for the <see cref="IServiceCollection"/> interface.
     /// </summary>
@@ -101,7 +108,7 @@ namespace Altinn.App.Core.Extensions
 
         private static void AddApplicationIdentifier(IServiceCollection services)
         {
-            services.AddSingleton<AppIdentifier>(sp =>
+            services.AddSingleton(sp =>
             {
                 var appIdentifier = GetApplicationId();
                 return new AppIdentifier(appIdentifier);
@@ -140,7 +147,6 @@ namespace Altinn.App.Core.Extensions
             services.TryAddSingleton<IAppMetadata, AppMetadata>();
             services.TryAddSingleton<IFrontendFeatures, FrontendFeatures>();
             services.TryAddTransient<IAppEvents, DefaultAppEvents>();
-            services.TryAddTransient<ITaskEvents, DefaultTaskEvents>();
 #pragma warning disable CS0618, CS0612 // Type or member is obsolete
             services.TryAddTransient<IPageOrder, DefaultPageOrder>();
 #pragma warning restore CS0618, CS0612 // Type or member is obsolete
@@ -152,15 +158,19 @@ namespace Altinn.App.Core.Extensions
             services.TryAddTransient<IDataListsService, DataListsService>();
             services.TryAddTransient<LayoutEvaluatorStateInitializer>();
             services.TryAddTransient<IPatchService, PatchService>();
-            services.Configure<Altinn.Common.PEP.Configuration.PepSettings>(configuration.GetSection("PEPSettings"));
-            services.Configure<Altinn.Common.PEP.Configuration.PlatformSettings>(configuration.GetSection("PlatformSettings"));
+            services.AddTransient<IDataService, DataService>();
+            services.Configure<Common.PEP.Configuration.PepSettings>(configuration.GetSection("PEPSettings"));
+            services.Configure<Common.PEP.Configuration.PlatformSettings>(configuration.GetSection("PlatformSettings"));
             services.Configure<AccessTokenSettings>(configuration.GetSection("AccessTokenSettings"));
             services.Configure<FrontEndSettings>(configuration.GetSection(nameof(FrontEndSettings)));
             services.Configure<PdfGeneratorSettings>(configuration.GetSection(nameof(PdfGeneratorSettings)));
+
             AddAppOptions(services);
             AddActionServices(services);
             AddPdfServices(services);
+            AddSignatureServices(services);
             AddEventServices(services);
+            AddEmailServices(services);
             AddProcessServices(services);
             AddFileAnalyserServices(services);
             AddFileValidatorServices(services);
@@ -228,6 +238,11 @@ namespace Altinn.App.Core.Extensions
             }
         }
 
+        private static void AddEmailServices(IServiceCollection services)
+        {
+            services.TryAddTransient<IEmailNotificationClient, EmailNotificationClient>();
+        }
+
         private static void AddPdfServices(IServiceCollection services)
         {
             services.TryAddTransient<IPdfGeneratorClient, PdfGeneratorClient>();
@@ -235,6 +250,11 @@ namespace Altinn.App.Core.Extensions
 #pragma warning disable CS0618 // Type or member is obsolete
             services.TryAddTransient<IPdfFormatter, NullPdfFormatter>();
 #pragma warning restore CS0618 // Type or member is obsolete
+        }
+
+        private static void AddSignatureServices(IServiceCollection services)
+        {
+            services.AddHttpClient<ISignClient, SignClient>();
         }
 
         private static void AddAppOptions(IServiceCollection services)
@@ -256,16 +276,35 @@ namespace Altinn.App.Core.Extensions
             services.TryAddTransient<IProcessEngine, ProcessEngine>();
             services.TryAddTransient<IProcessNavigator, ProcessNavigator>();
             services.TryAddSingleton<IProcessReader, ProcessReader>();
+            services.TryAddSingleton<IProcessEventHandlerDelegator, ProcessEventHandlingDelegator>();
             services.TryAddTransient<IProcessEventDispatcher, ProcessEventDispatcher>();
             services.AddTransient<IProcessExclusiveGateway, ExpressionsExclusiveGateway>();
             services.TryAddTransient<ExclusiveGatewayFactory>();
+
+            services.AddTransient<IProcessTaskInitializer, ProcessTaskInitializer>();
+            services.AddTransient<IProcessTaskFinalizer, ProcessTaskFinalizer>();
+            services.AddTransient<IProcessTaskDataLocker, ProcessTaskDataLocker>();
+            services.AddTransient<IStartTaskEventHandler, StartTaskEventHandler>();
+            services.AddTransient<IEndTaskEventHandler, EndTaskEventHandler>();
+            services.AddTransient<IAbandonTaskEventHandler, AbandonTaskEventHandler>();
+            services.AddTransient<IEndEventEventHandler, EndEventEventHandler>();
+
+            //PROCESS TASKS
+            services.AddTransient<IProcessTask, DataProcessTask>();
+            services.AddTransient<IProcessTask, ConfirmationProcessTask>();
+            services.AddTransient<IProcessTask, FeedbackProcessTask>();
+            services.AddTransient<IProcessTask, SigningProcessTask>();
+            services.AddTransient<IProcessTask, NullTypeProcessTask>();
+
+            //SERVICE TASKS
+            services.AddKeyedTransient<IServiceTask, PdfServiceTask>("pdfService");
+            services.AddKeyedTransient<IServiceTask, EformidlingServiceTask>("eFormidlingService");
         }
 
         private static void AddActionServices(IServiceCollection services)
         {
             services.TryAddTransient<UserActionService>();
             services.AddTransient<IUserAction, SigningUserAction>();
-            services.AddHttpClient<ISignClient, SignClient>();
             services.AddTransientUserActionAuthorizerForActionInAllTasks<UniqueSignatureAuthorizer>("sign");
         }
 
