@@ -29,10 +29,10 @@ public class JoinedAppOptionsProvider : IAppOptionsProvider
     /// <inheritdoc />
     public async Task<AppOptions> GetAppOptionsAsync(string? language, Dictionary<string, string> keyValuePairs)
     {
-        // Pretend this isn't the same as injecting the ServiceProvider
+        // The app options factory is delayed to avoid circular dependencies
         var appOptionsFactory = _appOptionsFactory();
         // Get options for all subOptions ids
-        var appOptions = await Task.WhenAll(
+        (string Id, AppOptions AppOption)[] appOptions = await Task.WhenAll(
             _subOptions
                 .Select(async optionId =>
                 {
@@ -41,13 +41,9 @@ public class JoinedAppOptionsProvider : IAppOptionsProvider
                 }));
 
         // Flatten all options to a single list
-        var options = appOptions.SelectMany(o => o.AppOption.Options ?? throw new KeyNotFoundException($"{o.Id} is not registrered as an app option")).ToList();
+        List<AppOption> options = GetAllOptionsInSingleList(appOptions);
         // Flatten all parameters to a single dictionary, prefixing the key with the option id
-        var parameters = appOptions
-            .SelectMany(o =>
-                o.AppOption.Parameters.Select(p =>
-                    new KeyValuePair<string, string?>($"{o.Id}_{p.Key}", p.Value)))
-            .ToDictionary();
+        Dictionary<string, string?> parameters = GetCombinedParameterDictionary(appOptions);
 
         // Return the combined AppOptions object
         return new AppOptions
@@ -56,5 +52,21 @@ public class JoinedAppOptionsProvider : IAppOptionsProvider
             Options = options,
             Parameters = parameters
         };
+    }
+
+    private static Dictionary<string, string?> GetCombinedParameterDictionary((string Id, AppOptions AppOption)[] appOptions)
+    {
+        return appOptions
+            .SelectMany(o =>
+                o.AppOption.Parameters.Select(p =>
+                    new KeyValuePair<string, string?>($"{o.Id}_{p.Key}", p.Value)))
+            .ToDictionary();
+    }
+
+    private static List<AppOption> GetAllOptionsInSingleList((string Id, AppOptions AppOption)[] appOptions)
+    {
+        return appOptions
+            .SelectMany(o => o.AppOption.Options ?? throw new KeyNotFoundException($"{o.Id} is not registrered as an app option"))
+            .ToList();
     }
 }
