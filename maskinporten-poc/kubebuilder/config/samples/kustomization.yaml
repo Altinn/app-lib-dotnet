@@ -1,0 +1,4 @@
+## Append samples of your project ##
+resources:
+- client_v1_maskinportenclient.yaml
+#+kubebuilder:scaffold:manifestskustomizesamples

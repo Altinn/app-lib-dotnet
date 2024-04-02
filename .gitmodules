@@ -1,0 +1,4 @@
+[submodule "maskinporten-poc/kubebuilder/test/app/altinn-studio-charts"]
+	path = maskinporten-poc/kubebuilder/test/app/altinn-studio-charts
+	url = git@github.com:martinothamar/altinn-studio-charts.git
+	branch = feature/maskinporten-reqs

@@ -1,0 +1,9 @@
+apiVersion: client.altinn.operator/v1
+kind: MaskinportenClient
+metadata:
+  labels:
+    app: local-testapp-deployment
+  name: local-testapp
+spec:
+  appId: 'testapp'
+  scopes: ['test-scope']
