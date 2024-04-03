@@ -189,7 +189,6 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         SendAsync = async message =>
         {
             message.RequestUri!.PathAndQuery.Should().Be($"/pdf");
-            sendAsyncCalled = true;
             var content = await message.Content!.ReadAsStringAsync();
 
             _outputHelper.WriteLine("pdf request content:");
@@ -200,6 +199,8 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
             var lockedInstanceString = await File.ReadAllTextAsync(dataElementPath);
             var lockedInstance = JsonSerializer.Deserialize<DataElement>(lockedInstanceString, JsonSerializerOptions)!;
             lockedInstance.Locked.Should().BeTrue();
+
+            sendAsyncCalled = true;
 
             // Return a 429 to simulate pdf generation failure
             return new HttpResponseMessage(HttpStatusCode.TooManyRequests);
