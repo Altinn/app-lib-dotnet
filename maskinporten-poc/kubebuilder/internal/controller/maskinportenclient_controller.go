@@ -116,6 +116,7 @@ func (r *MaskinportenClientReconciler) updateWithError(ctx context.Context, log 
 
 func (r *MaskinportenClientReconciler) fetchResources(ctx context.Context, instance *clientv1.MaskinportenClient, operatorContext *internalContext.OperatorContext) (*corev1.Secret, error) {
 	appLabel := fmt.Sprintf("%s-%s-deployment", operatorContext.Te, instance.Spec.AppId)
+
 	var secrets corev1.SecretList
 	if err := r.List(ctx, &secrets, client.InNamespace(instance.Namespace), client.MatchingLabels{"app": appLabel}); err != nil {
 		// log.Error(err, "Failed to find app secrets")
@@ -134,7 +135,7 @@ func (r *MaskinportenClientReconciler) fetchResources(ctx context.Context, insta
 	return &secret, nil
 }
 
-func (r *MaskinportenClientReconciler) reconcileMaskinportenApi(ctx context.Context, instance *clientv1.MaskinportenClient) (*maskinporten.ClientInfo, error) {
+func (r *MaskinportenClientReconciler) reconcileMaskinportenApi(_ context.Context, instance *clientv1.MaskinportenClient) (*maskinporten.ClientInfo, error) {
 	clientInfo := maskinporten.ClientInfo{
 		ClientId: "test",
 	}
