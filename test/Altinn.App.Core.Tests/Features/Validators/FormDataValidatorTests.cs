@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Altinn.App.Core.Tests.Features.Validators;
 
-public class GenericValidatorTests
+public class FormDataValidatorTests
 {
     private class MyModel
     {
@@ -21,11 +21,9 @@ public class GenericValidatorTests
         public List<MyModel>? Children { get; set; }
     }
 
-    private class TestValidator : GenericFormDataValidator<MyModel>
+    private class TestValidator : FormDataValidator<MyModel>
     {
-        public TestValidator() : base("MyType")
-        {
-        }
+        public override string DataType => "MyType";
 
         protected override bool HasRelevantChanges(MyModel current, MyModel previous)
         {

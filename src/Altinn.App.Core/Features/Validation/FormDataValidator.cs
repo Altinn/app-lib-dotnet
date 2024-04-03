@@ -10,25 +10,15 @@ namespace Altinn.App.Core.Features.Validation;
 /// Simple wrapper for validation of form data that does the type checking for you.
 /// </summary>
 /// <typeparam name="TModel">The type of the model this class will validate</typeparam>
-[Obsolete("Use FormDataValidator instead")]
-public abstract class GenericFormDataValidator<TModel> : IFormDataValidator
+public abstract class FormDataValidator<TModel> : IFormDataValidator
 {
-    /// <summary>
-    /// Constructor to force the DataType to be set.
-    /// </summary>
-    /// <param name="dataType">The data type this validator should run on</param>
-    protected GenericFormDataValidator(string dataType)
-    {
-        DataType = dataType;
-    }
     /// <inheritdoc />
-    public string DataType { get; private init; }
+    public abstract string DataType { get; }
 
-    // ReSharper disable once StaticMemberInGenericType
-    private static readonly AsyncLocal<List<ValidationIssue>> ValidationIssues = new();
+    private List<ValidationIssue>? ValidationIssues { get; set; }
 
     /// <summary>
-    /// Default implementation that respects the runFor prefixes.
+    /// Default implementation that calls the same method with TModel arguments.
     /// </summary>
     public bool HasRelevantChanges(object current, object previous)
     {
@@ -57,7 +47,6 @@ public abstract class GenericFormDataValidator<TModel> : IFormDataValidator
     /// <param name="customTextParams">List of parameters to replace after looking up the translation. Zero indexed {0}</param>
     protected void CreateValidationIssue<T>(Expression<Func<TModel, T>> selector, string textKey, ValidationIssueSeverity severity = ValidationIssueSeverity.Error, string? description = null, string? code = null, List<string>? customTextParams = null)
     {
-        Debug.Assert(ValidationIssues.Value is not null);
         AddValidationIssue(new ValidationIssue
         {
             Field = LinqExpressionHelpers.GetJsonPath(selector),
@@ -74,8 +63,8 @@ public abstract class GenericFormDataValidator<TModel> : IFormDataValidator
     /// </summary>
     protected void AddValidationIssue(ValidationIssue issue)
     {
-        Debug.Assert(ValidationIssues.Value is not null);
-        ValidationIssues.Value.Add(issue);
+        Debug.Assert(ValidationIssues is not null, "ValidationIssues is not initialized, You can only call AddValidationIssue from within the ValidateFormData method.");
+        ValidationIssues.Add(issue);
     }
 
     /// <summary>
@@ -88,10 +77,10 @@ public abstract class GenericFormDataValidator<TModel> : IFormDataValidator
         {
             throw new ArgumentException($"Data is not of type {typeof(TModel)}");
         }
-
-        ValidationIssues.Value = new List<ValidationIssue>();
+        Debug.Assert(ValidationIssues is null, "FormDataValidator must be registered as a Transient service and only used once to validate data");
+        ValidationIssues = new List<ValidationIssue>();
         await ValidateFormData(instance, dataElement, model, language);
-        return ValidationIssues.Value;
+        return ValidationIssues;
 
     }
 
@@ -102,6 +91,7 @@ public abstract class GenericFormDataValidator<TModel> : IFormDataValidator
 
     /// <summary>
     /// Implement this method to check if the data has changed in a way that requires validation.
+    /// A default "return true" implementation can be used if the validator is quick and does not call external APIs.
     /// </summary>
     /// <param name="current">The current data model after applying patches and data processing</param>
     /// <param name="previous">The previous state before patches and data processing</param>
