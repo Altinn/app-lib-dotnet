@@ -47,7 +47,7 @@ public static class ExpressionEvaluator
     /// <summary>
     /// Evaluate a <see cref="Expression" /> from a given <see cref="LayoutEvaluatorState" /> in a <see cref="ComponentContext" />
     /// </summary>
-    public static object? EvaluateExpression(LayoutEvaluatorState state, Expression expr, ComponentContext context, object[]? positionalArguments = null)
+    public static object? EvaluateExpression(LayoutEvaluatorState state, Expression expr, ComponentContext? context, object[]? positionalArguments = null)
     {
         if (expr is null)
         {
@@ -92,7 +92,7 @@ public static class ExpressionEvaluator
         return ret;
     }
 
-    private static object? DataModel(string? key, ComponentContext context, LayoutEvaluatorState state)
+    private static object? DataModel(string? key, ComponentContext? context, LayoutEvaluatorState state)
     {
         var data = state.GetModelData(key, context);
 
@@ -105,7 +105,7 @@ public static class ExpressionEvaluator
         };
     }
 
-    private static object? Component(object?[] args, ComponentContext context, LayoutEvaluatorState state)
+    private static object? Component(object?[] args, ComponentContext? context, LayoutEvaluatorState state)
     {
         var componentId = args.First()?.ToString();
         if (componentId is null)
@@ -113,7 +113,7 @@ public static class ExpressionEvaluator
             throw new ArgumentException("Cannot lookup component null");
         }
 
-        if (context.Component is null)
+        if (context?.Component is null)
         {
             throw new ArgumentException("The component expression requires a component context");
         }

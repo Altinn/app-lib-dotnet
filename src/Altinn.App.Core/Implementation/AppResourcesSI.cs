@@ -288,7 +288,7 @@ namespace Altinn.App.Core.Implementation
             var order = GetLayoutSettingsForSet(layoutSetId)?.Pages?.Order;
             if (order is null)
             {
-                throw new InvalidDataException("No $Pages.Order field found" + (layoutSetId is null ? "" : $" for layoutSet {layoutSetId}"));
+                return new LayoutModel();
             }
 
             var layoutModel = new LayoutModel();
