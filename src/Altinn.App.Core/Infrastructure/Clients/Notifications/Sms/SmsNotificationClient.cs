@@ -90,7 +90,7 @@ internal sealed class SmsNotificationClient : ISmsNotificationClient
             exception = e;
             Telemetry.OrderCount.WithLabels(Telemetry.Types.Sms, Telemetry.Result.Error).Inc();
             var ex = new SmsNotificationException($"Something went wrong when processing the SMS notification order", httpResponseMessage, httpContent, e);
-            _logger.LogError(ex, "Error when processing email notification order");
+            _logger.LogError(ex, "Error when processing SMS notification order");
             throw ex;
         }
         finally
