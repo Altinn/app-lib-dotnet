@@ -21,35 +21,9 @@ internal static class Telemetry
         internal static readonly string Error = "error";
     }
 
-    internal struct Dependency : IDisposable
+    internal static class Dependency
     {
-        private readonly TelemetryClient? _telemetryClient;
-        private readonly DateTime _startDateTime;
-        private readonly long _startTimestamp;
-        private bool _errored;
-
-        public void Errored() => _errored = true;
-
-        public Dependency(TelemetryClient? telemetryClient)
-        {
-            _telemetryClient = telemetryClient;
-            _startDateTime = DateTime.UtcNow;
-            _startTimestamp = Stopwatch.GetTimestamp();
-        }
-
-        public readonly void Dispose()
-        {
-            var stopTimestamp = Stopwatch.GetTimestamp();
-            var elapsed = Stopwatch.GetElapsedTime(_startTimestamp, stopTimestamp);
-
-            _telemetryClient?.TrackDependency(
-                "Altinn.Notifications",
-                "OrderNotification",
-                null,
-                _startDateTime,
-                elapsed,
-                !_errored
-            );
-        }
+        internal static readonly string TypeName = "Altinn.Notifications";
+        internal static readonly string Name = "OrderNotification";
     }
 }

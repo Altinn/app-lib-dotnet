@@ -242,8 +242,8 @@ namespace Altinn.App.Core.Extensions
 
         private static void AddNotificationServices(IServiceCollection services)
         {
-            services.TryAddSingleton<IEmailNotificationClient, EmailNotificationClient>();
-            services.TryAddSingleton<ISmsNotificationClient, SmsNotificationClient>();
+            services.AddHttpClient<IEmailNotificationClient, EmailNotificationClient>();
+            services.AddHttpClient<ISmsNotificationClient, SmsNotificationClient>();
         }
 
         private static void AddPdfServices(IServiceCollection services)

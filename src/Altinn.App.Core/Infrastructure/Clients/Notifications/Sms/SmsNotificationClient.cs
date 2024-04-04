@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
@@ -14,7 +15,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Notifications.Sms;
 internal sealed class SmsNotificationClient : ISmsNotificationClient
 {
     private readonly ILogger<SmsNotificationClient> _logger;
-    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly HttpClient _httpClient;
     private readonly PlatformSettings _platformSettings;
     private readonly IAppMetadata _appMetadata;
     private readonly IAccessTokenGenerator _accessTokenGenerator;
@@ -22,14 +23,14 @@ internal sealed class SmsNotificationClient : ISmsNotificationClient
 
     public SmsNotificationClient(
         ILogger<SmsNotificationClient> logger,
-        IHttpClientFactory httpClientFactory,
+        HttpClient httpClient,
         IOptions<PlatformSettings> platformSettings,
         IAppMetadata appMetadata,
         IAccessTokenGenerator accessTokenGenerator,
         TelemetryClient? telemetryClient = null)
     {
         _logger = logger;
-        _httpClientFactory = httpClientFactory;
+        _httpClient = httpClient;
         _platformSettings = platformSettings.Value;
         _appMetadata = appMetadata;
         _accessTokenGenerator = accessTokenGenerator;
@@ -38,18 +39,21 @@ internal sealed class SmsNotificationClient : ISmsNotificationClient
 
     public async Task<SmsNotificationOrderResponse> Order(SmsNotification smsNotification, CancellationToken ct)
     {
-        using var dependency = new Telemetry.Dependency(_telemetryClient);
-
-        using var httpClient = _httpClientFactory.CreateClient();
+        DateTime startDateTime = default;
+        long startTimestamp = default;
+        if (_telemetryClient is not null)
+        {
+            startDateTime = DateTime.UtcNow;
+            startTimestamp = Stopwatch.GetTimestamp();
+        }
 
         HttpResponseMessage? httpResponseMessage = null;
         string? httpContent = null;
-        Models.ApplicationMetadata? application = null;
-        SmsNotificationOrderResponse? orderResponse = null;
+        Exception? exception = null;
 
         try
         {
-            application = await _appMetadata.GetApplicationMetadata();
+            Models.ApplicationMetadata? application = await _appMetadata.GetApplicationMetadata();
 
             var uri = _platformSettings.NotificationEndpoint.TrimEnd('/') + "/api/v1/orders/sms";
             var body = JsonSerializer.Serialize(smsNotification);
@@ -64,12 +68,12 @@ internal sealed class SmsNotificationClient : ISmsNotificationClient
                 _accessTokenGenerator.GenerateAccessToken(application.Org, application.AppIdentifier.App)
             );
 
-            httpResponseMessage = await httpClient.SendAsync(httpRequestMessage, ct);
+            httpResponseMessage = await _httpClient.SendAsync(httpRequestMessage, ct);
             httpContent = await httpResponseMessage.Content.ReadAsStringAsync(ct);
 
             if (httpResponseMessage.IsSuccessStatusCode)
             {
-                orderResponse = JsonSerializer.Deserialize<SmsNotificationOrderResponse>(httpContent);
+                SmsNotificationOrderResponse? orderResponse = JsonSerializer.Deserialize<SmsNotificationOrderResponse>(httpContent);
                 if (orderResponse is null)
                     throw new JsonException("Couldn't deserialize SMS notification order response");
 
@@ -83,7 +87,7 @@ internal sealed class SmsNotificationClient : ISmsNotificationClient
         }
         catch (Exception e)
         {
-            dependency.Errored();
+            exception = e;
             Telemetry.OrderCount.WithLabels(Telemetry.Types.Sms, Telemetry.Result.Error).Inc();
             var ex = new SmsNotificationException($"Something went wrong when processing the SMS notification order", httpResponseMessage, httpContent, e);
             _logger.LogError(ex, "Error when processing email notification order");
@@ -92,6 +96,20 @@ internal sealed class SmsNotificationClient : ISmsNotificationClient
         finally
         {
             httpResponseMessage?.Dispose();
+            if (_telemetryClient is not null)
+            {
+                var stopTimestamp = Stopwatch.GetTimestamp();
+                var elapsed = Stopwatch.GetElapsedTime(startTimestamp, stopTimestamp);
+
+                _telemetryClient.TrackDependency(
+                    Telemetry.Dependency.TypeName,
+                    Telemetry.Dependency.Name,
+                    null,
+                    startDateTime,
+                    elapsed,
+                    exception is null
+                );
+            }
         }
     }
 }
