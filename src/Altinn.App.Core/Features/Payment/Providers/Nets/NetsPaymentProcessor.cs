@@ -107,6 +107,11 @@ public class NetsPaymentProcessor : IPaymentProcessor
     /// <inheritdoc />
     public async Task<bool> TerminatePayment(Instance instance, PaymentInformation paymentInformation)
     {
+        if (paymentInformation.PaymentDetails?.PaymentId is null)
+        {
+            throw new PaymentException("PaymentId is missing in paymentInformation. Can't terminate.");
+        }
+        
         bool result = await _netsClient.TerminatePayment(paymentInformation.PaymentDetails.PaymentId);
         return result;
     }

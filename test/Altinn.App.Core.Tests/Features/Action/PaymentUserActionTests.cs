@@ -83,7 +83,7 @@ public class PaymentUserActionTests
 
         var userActionContext = new UserActionContext(instance, 1337);
 
-        _paymentServiceMock.Setup(x => x.StartPayment(It.IsAny<Instance>(), It.IsAny<AltinnPaymentConfiguration>())).ReturnsAsync(paymentInformation);
+        _paymentServiceMock.Setup(x => x.StartPayment(It.IsAny<Instance>(), It.IsAny<AltinnPaymentConfiguration>())).ReturnsAsync((paymentInformation, false));
 
         // Act
         PaymentUserAction userAction = CreatePaymentUserAction();

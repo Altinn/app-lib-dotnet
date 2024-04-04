@@ -33,7 +33,8 @@ public class PaymentService : IPaymentService
     }
 
     /// <inheritdoc/>
-    public async Task<PaymentInformation> StartPayment(Instance instance, AltinnPaymentConfiguration paymentConfiguration)
+    public async Task<(PaymentInformation paymentInformation, bool alreadyPaid)> StartPayment(Instance instance,
+        AltinnPaymentConfiguration paymentConfiguration)
     {
         _logger.LogInformation("Starting payment for instance {instanceId}.", instance.Id);
 
@@ -44,19 +45,22 @@ public class PaymentService : IPaymentService
         string dataTypeId = paymentConfiguration.PaymentDataType!;
 
         (Guid dataElementId, PaymentInformation? existingPaymentInformation) = await _dataService.GetByType<PaymentInformation>(instance, dataTypeId);
-        if (existingPaymentInformation != null)
+        if (existingPaymentInformation?.PaymentDetails != null)
         {
             if (existingPaymentInformation.PaymentDetails.Status != PaymentStatus.Paid)
             {
                 _logger.LogWarning(
-                    "Payment with payment reference {paymentReference} already started for instance {instanceId}. Trying to cancel before creating new payment.",
+                    "Payment with payment id {paymentId} already started for instance {instanceId}. Trying to cancel before creating new payment.",
                     existingPaymentInformation.PaymentDetails.PaymentId, instance.Id);
                 await CancelAndDelete(instance, dataElementId, existingPaymentInformation);
             }
             else
             {
-                throw new PaymentException(
-                    $"Payment with payment reference {existingPaymentInformation.PaymentDetails.PaymentId} already paid for instance {instance.Id}. Cannot start new payment.");
+                _logger.LogWarning(
+                    "Payment with payment id {paymentId} already paid for instance {instanceId}. Cannot start new payment.",
+                    existingPaymentInformation.PaymentDetails.PaymentId, instance.Id);
+
+                return (existingPaymentInformation, true);
             }
         }
 
@@ -72,7 +76,7 @@ public class PaymentService : IPaymentService
         };
 
         await _dataService.InsertJsonObject(new InstanceIdentifier(instance), dataTypeId, paymentInformation);
-        return paymentInformation;
+        return (paymentInformation, false);
     }
 
     /// <inheritdoc/>

@@ -15,7 +15,7 @@ namespace Altinn.App.Core.Features.Payment.Services
         /// <param name="instance"></param>
         /// <param name="paymentConfiguration"></param>
         /// <returns></returns>
-        Task<PaymentInformation> StartPayment(Instance instance, AltinnPaymentConfiguration paymentConfiguration);
+        Task<(PaymentInformation paymentInformation, bool alreadyPaid)> StartPayment(Instance instance, AltinnPaymentConfiguration paymentConfiguration);
 
         /// <summary>
         /// Check updated payment information from payment provider and store the updated data.

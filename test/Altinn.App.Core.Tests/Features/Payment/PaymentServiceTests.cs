@@ -48,13 +48,14 @@ public class PaymentServiceTests
         _paymentProcessor.Setup(p => p.StartPayment(instance, order)).ReturnsAsync(paymentInformation.PaymentDetails);
 
         // Act
-        PaymentInformation paymentInformationResult = await _paymentService.StartPayment(instance, paymentConfiguration);
+        (PaymentInformation paymentInformationResult, bool alreadyPaid) = await _paymentService.StartPayment(instance, paymentConfiguration);
 
         // Assert
         paymentInformationResult.PaymentDetails.Should().NotBeNull();
         paymentInformationResult.PaymentDetails!.RedirectUrl.Should().Be(paymentInformation.PaymentDetails!.RedirectUrl);
         paymentInformationResult.OrderDetails.Should().BeEquivalentTo(order);
         paymentInformationResult.PaymentProcessorId.Should().Be(paymentInformation.PaymentProcessorId);
+        alreadyPaid.Should().BeFalse();
 
         // Verify calls
         _orderDetailsCalculator.Verify(odc => odc.CalculateOrderDetails(instance), Times.Once);
@@ -63,6 +64,32 @@ public class PaymentServiceTests
             It.IsAny<InstanceIdentifier>(),
             paymentConfiguration.PaymentDataType!,
             It.IsAny<object>()));
+    }
+
+    [Fact]
+    public async Task StartPayment_ReturnsAlreadyPaidTrue_WhenPaymentIsAlreadyPaid()
+    {
+        Instance instance = CreateInstance();
+        OrderDetails order = CreateOrderDetails();
+        AltinnPaymentConfiguration paymentConfiguration = CreatePaymentConfiguration();
+
+        _paymentProcessor.Setup(pp => pp.PaymentProcessorId).Returns(paymentConfiguration.PaymentProcessorId!);
+
+        _dataService.Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
+            .ReturnsAsync((Guid.NewGuid(),
+                new PaymentInformation
+                {
+                    TaskId = "Task_1", PaymentProcessorId = "PaymentProcessorId",
+                    PaymentDetails = new PaymentDetails { Status = PaymentStatus.Paid, PaymentId = "id", RedirectUrl = "url" },
+                    OrderDetails = order
+                }));
+
+        // Act
+        (PaymentInformation paymentInformationResult, bool alreadyPaid) = await _paymentService.StartPayment(instance, paymentConfiguration);
+
+        // Assert
+        paymentInformationResult.PaymentDetails.Should().NotBeNull();
+        alreadyPaid.Should().BeTrue();
     }
 
     [Fact]

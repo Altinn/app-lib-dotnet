@@ -1,11 +1,10 @@
-﻿using Altinn.App.Core.Features.Payment.Exceptions;
-using Altinn.App.Core.Features.Payment.Models;
+﻿using Altinn.App.Core.Features.Payment.Models;
 using Altinn.App.Core.Features.Payment.Services;
 using Altinn.App.Core.Internal.App;
-using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
+using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
 using Microsoft.Extensions.Logging;
 
@@ -58,8 +57,23 @@ namespace Altinn.App.Core.Features.Action
                 throw new ApplicationConfigException("PaymentConfig is missing in the payment process task configuration.");
             }
 
-            PaymentInformation paymentInformation = await _paymentService.StartPayment(context.Instance, paymentConfiguration);
-            return UserActionResult.RedirectResult(new Uri(paymentInformation.PaymentDetails.RedirectUrl));
+            (PaymentInformation paymentInformation, bool alreadyPaid) = await _paymentService.StartPayment(context.Instance, paymentConfiguration);
+
+            if (alreadyPaid)
+            {
+                return UserActionResult.FailureResult(error: new ActionError { Code = "PaymentAlreadyCompleted", Message = "Payment already completed." },
+                    errorType: ProcessErrorType.Conflict);
+            }
+
+            string? paymentDetailsRedirectUrl = paymentInformation.PaymentDetails?.RedirectUrl;
+            if (paymentDetailsRedirectUrl == null)
+            {
+                return UserActionResult.FailureResult(
+                    error: new ActionError { Code = "PaymentRedirectUrlMissing", Message = "Payment redirect URL is missing." },
+                    errorType: ProcessErrorType.Internal);
+            }
+
+            return UserActionResult.RedirectResult(new Uri(paymentDetailsRedirectUrl));
         }
     }
 }
