@@ -22,7 +22,7 @@ public sealed record SmsNotification
     public required string Body { get; init; }
 
     /// <summary>
-    /// The Requested send time for the email. 
+    /// The Requested send time for the SMS. 
     /// DateTime.UtcNow by default.
     /// </summary>
     [JsonPropertyName("requestedSendTime")]
