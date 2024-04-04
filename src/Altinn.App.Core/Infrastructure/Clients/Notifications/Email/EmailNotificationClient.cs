@@ -49,7 +49,6 @@ internal sealed class EmailNotificationClient : IEmailNotificationClient
 
         HttpResponseMessage? httpResponseMessage = null;
         string? httpContent = null;
-        EmailOrderResponse? orderResponse = null;
         Exception? exception = null;
         try
         {
@@ -70,6 +69,7 @@ internal sealed class EmailNotificationClient : IEmailNotificationClient
 
             httpResponseMessage = await _httpClient.SendAsync(httpRequestMessage, ct);
             httpContent = await httpResponseMessage.Content.ReadAsStringAsync(ct);
+            EmailOrderResponse? orderResponse;
             if (httpResponseMessage.IsSuccessStatusCode)
             {
                 orderResponse = JsonSerializer.Deserialize<EmailOrderResponse>(httpContent);
