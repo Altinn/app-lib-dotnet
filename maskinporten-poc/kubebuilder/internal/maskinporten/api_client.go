@@ -10,6 +10,7 @@ import (
 
 	"altinn.operator/maskinporten/internal/config"
 	"altinn.operator/maskinporten/internal/maskinporten/api"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/go-jose/go-jose/v4"
 	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/google/uuid"
@@ -111,7 +112,7 @@ func (c *apiClient) accessTokenFetcher() (*tokenResponse, error) {
 	}
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	resp, err := c.client.Do(req)
+	resp, err := c.RetryableHTTPDo(req)
 	if err != nil {
 		return nil, err
 	}
@@ -217,4 +218,34 @@ func (c *Cached[T]) Get() (*T, error) {
 	defer c.mutex.RUnlock()
 
 	return c.current, nil
+}
+
+// RetryableHTTPDo performs an HTTP request with retry logic.
+func (c *apiClient) RetryableHTTPDo(req *http.Request) (*http.Response, error) {
+	var resp *http.Response
+	var err error
+
+	operation := func() error {
+		resp, err = c.client.Do(req)
+		if err != nil {
+			return err // Network error, retry.
+		}
+		if resp.StatusCode >= 500 { // Retrying on 5xx server errors.
+			return fmt.Errorf("server error: %v", resp.Status)
+		}
+		return nil // No retry needed - success or client side error
+	}
+
+	backoffStrategy := backoff.NewExponentialBackOff()
+	// Default setting is to 1.5x the time interval for every failure
+	backoffStrategy.InitialInterval = 1 * time.Second
+	backoffStrategy.MaxInterval = 30 * time.Second
+	backoffStrategy.MaxElapsedTime = 2 * time.Minute
+
+	err = backoff.Retry(operation, backoffStrategy)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
 }
