@@ -60,12 +60,9 @@ public class EmailNotificationClientTests
                 capturedContent = await request.Content!.ReadAsStringAsync(token);
             });
 
-        var httpClientFactoryMock = new Mock<IHttpClientFactory>();
         using var httpClient = new HttpClient(handlerMock.Object);
 
-        httpClientFactoryMock.Setup(h => h.CreateClient(It.IsAny<string>())).Returns(httpClient);
-
-        var emailNotificationClient = CreateEmailNotificationClient(httpClientFactoryMock, includeTelemetryClient);
+        var emailNotificationClient = CreateEmailNotificationClient(httpClient, includeTelemetryClient);
 
         // Act
         _ = await emailNotificationClient.Order(emailNotification, default);
@@ -98,12 +95,9 @@ public class EmailNotificationClientTests
                 return response;
             });
 
-        var httpClientFactoryMock = new Mock<IHttpClientFactory>();
         using var httpClient = new HttpClient(handlerMock.Object);
 
-        httpClientFactoryMock.Setup(h => h.CreateClient(It.IsAny<string>())).Returns(httpClient);
-
-        var emailNotificationClient = CreateEmailNotificationClient(httpClientFactoryMock);
+        var emailNotificationClient = CreateEmailNotificationClient(httpClient);
         var recipients = new List<EmailRecipient>()
         {
             new("test.testesen@testdirektoratet.no")
@@ -146,12 +140,9 @@ public class EmailNotificationClientTests
                 return response;
             });
 
-        var httpClientFactoryMock = new Mock<IHttpClientFactory>();
         using var httpClient = new HttpClient(handlerMock.Object);
 
-        httpClientFactoryMock.Setup(h => h.CreateClient(It.IsAny<string>())).Returns(httpClient);
-
-        var emailNotificationClient = CreateEmailNotificationClient(httpClientFactoryMock);
+        var emailNotificationClient = CreateEmailNotificationClient(httpClient);
         var recipients = new List<EmailRecipient>()
         {
             new("test.testesen@testdirektoratet.no")
@@ -194,12 +185,9 @@ public class EmailNotificationClientTests
                 return response;
             });
 
-        var httpClientFactoryMock = new Mock<IHttpClientFactory>();
         using var httpClient = new HttpClient(handlerMock.Object);
 
-        httpClientFactoryMock.Setup(h => h.CreateClient(It.IsAny<string>())).Returns(httpClient);
-
-        var emailNotificationClient = CreateEmailNotificationClient(httpClientFactoryMock);
+        var emailNotificationClient = CreateEmailNotificationClient(httpClient);
         var recipients = new List<EmailRecipient>()
         {
             new("test.testesen@testdirektoratet.no")
@@ -250,7 +238,7 @@ public class EmailNotificationClientTests
     public void DIContainer_Accepts_Missing_TelemetryClient()
     {
         var services = new ServiceCollection();
-        services.AddSingleton<IHttpClientFactory>(new Mock<IHttpClientFactory>().Object);
+        services.AddSingleton<HttpClient>(new HttpClient());
         services.AddSingleton<IAppMetadata>(new Mock<IAppMetadata>().Object);
         services.AddSingleton<IAccessTokenGenerator>(new Mock<IAccessTokenGenerator>().Object);
         services.AddSingleton<IOptions<PlatformSettings>>(Options.Create(new PlatformSettings()));
@@ -259,7 +247,7 @@ public class EmailNotificationClientTests
             logging.ClearProviders();
             logging.AddProvider(NullLoggerProvider.Instance);
         });
-        services.AddSingleton<IEmailNotificationClient, EmailNotificationClient>();
+        services.AddTransient<IEmailNotificationClient, EmailNotificationClient>();
 
         using var serviceProvider = services.BuildServiceProvider(new ServiceProviderOptions
         {
@@ -270,7 +258,7 @@ public class EmailNotificationClientTests
         smsNotificationClient.Should().NotBeNull();
     }
 
-    private static EmailNotificationClient CreateEmailNotificationClient(Mock<IHttpClientFactory> mockHttpClientFactory, bool withTelemetryClient = false)
+    private static EmailNotificationClient CreateEmailNotificationClient(HttpClient httpClient, bool withTelemetryClient = false)
     {
         using var loggerFactory = new NullLoggerFactory();
 
@@ -284,7 +272,7 @@ public class EmailNotificationClientTests
 
         return new EmailNotificationClient(
             loggerFactory.CreateLogger<EmailNotificationClient>(),
-            mockHttpClientFactory.Object,
+            httpClient,
             Options.Create(new PlatformSettings()),
             appDataMock.Object,
             accessTokenGenerator.Object,

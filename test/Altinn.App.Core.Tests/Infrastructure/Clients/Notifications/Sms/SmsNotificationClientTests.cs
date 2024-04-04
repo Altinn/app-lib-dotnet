@@ -61,12 +61,9 @@ public class SmsNotificationClientTests
                 capturedContent = await request.Content!.ReadAsStringAsync(token);
             });
 
-        var httpClientFactoryMock = new Mock<IHttpClientFactory>();
         using var httpClient = new HttpClient(handlerMock.Object);
 
-        httpClientFactoryMock.Setup(h => h.CreateClient(It.IsAny<string>())).Returns(httpClient);
-
-        var smsNotificationClient = CreateSmsNotificationClient(httpClientFactoryMock, includeTelemetryClient);
+        var smsNotificationClient = CreateSmsNotificationClient(httpClient, includeTelemetryClient);
 
         // Act
         _ = await smsNotificationClient.Order(smsNotification, default);
@@ -99,12 +96,9 @@ public class SmsNotificationClientTests
                 return response;
             });
 
-        var httpClientFactoryMock = new Mock<IHttpClientFactory>();
         using var httpClient = new HttpClient(handlerMock.Object);
 
-        httpClientFactoryMock.Setup(h => h.CreateClient(It.IsAny<string>())).Returns(httpClient);
-
-        var smsNotificationClient = CreateSmsNotificationClient(httpClientFactoryMock);
+        var smsNotificationClient = CreateSmsNotificationClient(httpClient);
         var recipients = new List<SmsRecipient>()
         {
             new("test.testesen@testdirektoratet.no")
@@ -148,12 +142,9 @@ public class SmsNotificationClientTests
                 return response;
             });
 
-        var httpClientFactoryMock = new Mock<IHttpClientFactory>();
         using var httpClient = new HttpClient(handlerMock.Object);
 
-        httpClientFactoryMock.Setup(h => h.CreateClient(It.IsAny<string>())).Returns(httpClient);
-
-        var smsNotificationClient = CreateSmsNotificationClient(httpClientFactoryMock);
+        var smsNotificationClient = CreateSmsNotificationClient(httpClient);
         var recipients = new List<SmsRecipient>()
         {
             new("test.testesen@testdirektoratet.no")
@@ -196,12 +187,9 @@ public class SmsNotificationClientTests
                 return response;
             });
 
-        var httpClientFactoryMock = new Mock<IHttpClientFactory>();
         using var httpClient = new HttpClient(handlerMock.Object);
 
-        httpClientFactoryMock.Setup(h => h.CreateClient(It.IsAny<string>())).Returns(httpClient);
-
-        var smsNotificationClient = CreateSmsNotificationClient(httpClientFactoryMock);
+        var smsNotificationClient = CreateSmsNotificationClient(httpClient);
         var recipients = new List<SmsRecipient>()
         {
             new("test.testesen@testdirektoratet.no")
@@ -252,7 +240,7 @@ public class SmsNotificationClientTests
     public void DIContainer_Accepts_Missing_TelemetryClient()
     {
         var services = new ServiceCollection();
-        services.AddSingleton<IHttpClientFactory>(new Mock<IHttpClientFactory>().Object);
+        services.AddSingleton<HttpClient>(new HttpClient());
         services.AddSingleton<IAppMetadata>(new Mock<IAppMetadata>().Object);
         services.AddSingleton<IAccessTokenGenerator>(new Mock<IAccessTokenGenerator>().Object);
         services.AddSingleton<IOptions<PlatformSettings>>(Options.Create(new PlatformSettings()));
@@ -261,7 +249,7 @@ public class SmsNotificationClientTests
             logging.ClearProviders();
             logging.AddProvider(NullLoggerProvider.Instance);
         });
-        services.AddSingleton<ISmsNotificationClient, SmsNotificationClient>();
+        services.AddTransient<ISmsNotificationClient, SmsNotificationClient>();
 
         using var serviceProvider = services.BuildServiceProvider(new ServiceProviderOptions
         {
@@ -272,7 +260,7 @@ public class SmsNotificationClientTests
         smsNotificationClient.Should().NotBeNull();
     }
 
-    private static SmsNotificationClient CreateSmsNotificationClient(Mock<IHttpClientFactory> mockHttpClientFactory, bool withTelemetryClient = false)
+    private static SmsNotificationClient CreateSmsNotificationClient(HttpClient httpClient, bool withTelemetryClient = false)
     {
         using var loggerFactory = new NullLoggerFactory();
 
@@ -286,7 +274,7 @@ public class SmsNotificationClientTests
 
         return new SmsNotificationClient(
             loggerFactory.CreateLogger<SmsNotificationClient>(),
-            mockHttpClientFactory.Object,
+            httpClient,
             Options.Create(new PlatformSettings()),
             appDataMock.Object,
             accessTokenGenerator.Object,
