@@ -43,6 +43,15 @@ type MaskinportenClientReconciler struct {
 	Scheme *runtime.Scheme
 }
 
+func NewMaskinportenClientReconciler(client client.Client, scheme *runtime.Scheme) *MaskinportenClientReconciler {
+	// rt := internal.NewRuntime(".env")
+
+	return &MaskinportenClientReconciler{
+		Client: client,
+		Scheme: scheme,
+	}
+}
+
 //+kubebuilder:rbac:groups=client.altinn.operator,resources=maskinportenclients,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=client.altinn.operator,resources=maskinportenclients/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=client.altinn.operator,resources=maskinportenclients/finalizers,verbs=update
@@ -79,10 +88,15 @@ func (r *MaskinportenClientReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, err
 	}
 
-	clientInfo, err := r.reconcileMaskinportenApi(ctx, instance)
+	clientInfo, changed, err := r.reconcileMaskinportenApi(ctx, instance)
 	if err != nil {
 		r.updateWithError(ctx, log, err, "Failed to reconcile Maskinporten API", instance)
 		return ctrl.Result{}, err
+	}
+
+	if !changed {
+		log.Info("MaskinportenClient already reconciled")
+		return ctrl.Result{}, nil
 	}
 
 	err = r.reconcileSecret(ctx, clientInfo, secret)
@@ -135,14 +149,18 @@ func (r *MaskinportenClientReconciler) fetchResources(ctx context.Context, insta
 	return &secret, nil
 }
 
-func (r *MaskinportenClientReconciler) reconcileMaskinportenApi(_ context.Context, instance *clientv1.MaskinportenClient) (*maskinporten.ClientInfo, error) {
+func (r *MaskinportenClientReconciler) reconcileMaskinportenApi(_ context.Context, instance *clientv1.MaskinportenClient) (*maskinporten.ClientInfo, bool, error) {
 	clientInfo := maskinporten.ClientInfo{
 		ClientId: "test",
 	}
 
+	if instance.Status.ClientId == clientInfo.ClientId {
+		return &clientInfo, false, nil
+	}
+
 	instance.Status.ClientId = clientInfo.ClientId
 
-	return &clientInfo, nil
+	return &clientInfo, true, nil
 }
 
 func (r *MaskinportenClientReconciler) reconcileSecret(ctx context.Context, clientInfo *maskinporten.ClientInfo, secret *corev1.Secret) error {

@@ -68,10 +68,10 @@ var _ = Describe("MaskinportenClient Controller", func() {
 		})
 		It("should successfully reconcile the resource", func() {
 			By("Reconciling the created resource")
-			controllerReconciler := &MaskinportenClientReconciler{
-				Client: k8sClient,
-				Scheme: k8sClient.Scheme(),
-			}
+			controllerReconciler := NewMaskinportenClientReconciler(
+				k8sClient,
+				k8sClient.Scheme(),
+			)
 
 			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
 				NamespacedName: typeNamespacedName,
