@@ -28,34 +28,49 @@ var (
 	parser = dotenv.ParserEnv("", ".", func(s string) string { return s })
 )
 
+func tryFindProjectRoot() {
+	for {
+		if _, err := os.Stat("go.mod"); err == nil {
+			return
+		}
+
+		if err := os.Chdir(".."); err != nil {
+			return
+		}
+	}
+}
+
 func LoadConfig(filePath string) (*Config, error) {
+	tryFindProjectRoot()
+
 	if filePath == "" {
-		filePath = ".env"
+		filePath = "local.env"
+	}
+
+	currentDir, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		if path.IsAbs(filePath) {
+			return nil, fmt.Errorf("env file does not exist: '%s'", filePath)
+		} else {
+			return nil, fmt.Errorf("env file does not exist in '%s': '%s'", currentDir, filePath)
+		}
 	}
 
 	if !path.IsAbs(filePath) {
-		currentDir, err := os.Getwd()
-		if err != nil {
-			return nil, err
-		}
 		filePath = path.Join(currentDir, filePath)
 	}
 
-	_, err := os.Stat(filePath)
-	if os.IsNotExist(err) {
-		return nil, fmt.Errorf("env file does not exist: '%s'", filePath)
-	} else if err != nil {
-		return nil, err
-	}
-
 	if err := k.Load(file.Provider(filePath), parser); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error loading config '%s': %w", filePath, err)
 	}
 
 	var cfg Config
 
 	if err := k.Unmarshal("", &cfg); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error unmarshalling config '%s': %w", filePath, err)
 	}
 
 	validate := validator.New(validator.WithRequiredStructEnabled())
@@ -64,7 +79,7 @@ func LoadConfig(filePath string) (*Config, error) {
 		return nil, err
 	}
 
-	k.Print()
+	// k.Print() // Uncomment to print the config, only for debug, there be secrets
 
 	return &cfg, nil
 }

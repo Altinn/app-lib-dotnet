@@ -10,7 +10,7 @@ import (
 func TestWellKnownConfig(t *testing.T) {
 	RegisterTestingT(t)
 
-	cfg, err := config.LoadConfig("../test.env")
+	cfg, err := config.LoadConfig("")
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
@@ -32,14 +32,17 @@ func TestWellKnownConfig(t *testing.T) {
 func TestCreateGrant(t *testing.T) {
 	RegisterTestingT(t)
 
-	cfg, err := config.LoadConfig("../test.env")
+	cfg, err := config.LoadConfig("")
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
-	apiClient, err := NewApiClient(&cfg.MaskinportenApi)
+	client, err := NewApiClient(&cfg.MaskinportenApi)
 	Expect(err).NotTo(HaveOccurred())
 
-	grant, err := apiClient.createGrant()
+	concreteClient, ok := client.(*apiClient)
+	Expect(ok).To(BeTrue())
+
+	grant, err := concreteClient.createGrant()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(grant).NotTo(BeNil())
 }
@@ -47,14 +50,17 @@ func TestCreateGrant(t *testing.T) {
 // func TestFetchAccessToken(t *testing.T) {
 // 	RegisterTestingT(t)
 
-// 	cfg, err := config.LoadConfig("../test.env")
+// 	cfg, err := config.LoadConfig("")
 // 	Expect(err).NotTo(HaveOccurred())
 // 	Expect(cfg).NotTo(BeNil())
 
-// 	apiClient, err := NewApiClient(&cfg.MaskinportenApi)
+// 	client, err := NewApiClient(&cfg.MaskinportenApi)
 // 	Expect(err).NotTo(HaveOccurred())
 
-// 	token, err := apiClient.accessTokenFetcher()
+// 	concreteClient, ok := client.(*apiClient)
+// 	Expect(ok).To(BeTrue())
+
+// 	token, err := concreteClient.accessTokenFetcher()
 // 	Expect(err).NotTo(HaveOccurred())
 // 	Expect(token.AccessToken).NotTo(BeNil())
 // }

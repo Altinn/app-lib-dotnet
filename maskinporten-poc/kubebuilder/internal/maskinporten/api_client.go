@@ -29,7 +29,9 @@ type apiClient struct {
 // - https://docs.digdir.no/docs/Maskinporten/maskinporten_protocol_token
 // - https://docs.digdir.no/docs/Maskinporten/maskinporten_func_wellknown
 
-func NewApiClient(config *config.MaskinportenApiConfig) (*apiClient, error) {
+var _ api.ApiClient = (*apiClient)(nil)
+
+func NewApiClient(config *config.MaskinportenApiConfig) (api.ApiClient, error) {
 	jwk := jose.JSONWebKey{}
 	if err := json.Unmarshal([]byte(config.Jwk), &jwk); err != nil {
 		return nil, err

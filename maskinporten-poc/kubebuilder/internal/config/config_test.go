@@ -32,7 +32,7 @@ func TestConfig_Missing_Values_Fail(t *testing.T) {
 func TestConfig_TestEnv_Loads_Ok(t *testing.T) {
 	RegisterTestingT(t)
 
-	cfg, err := LoadConfig("../test.env")
+	cfg, err := LoadConfig("")
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 	Expect(cfg.MaskinportenApi.ClientId).To(Equal("64d8055d-bf0c-4ee2-979e-d2bbe996a9f5"))
