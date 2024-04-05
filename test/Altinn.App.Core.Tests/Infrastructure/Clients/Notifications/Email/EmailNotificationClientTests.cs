@@ -238,7 +238,7 @@ public class EmailNotificationClientTests
     public void DIContainer_Accepts_Missing_TelemetryClient()
     {
         var services = new ServiceCollection();
-        services.AddSingleton<HttpClient>(new HttpClient());
+        services.AddSingleton<HttpClient>(_ => new HttpClient());
         services.AddSingleton<IAppMetadata>(new Mock<IAppMetadata>().Object);
         services.AddSingleton<IAccessTokenGenerator>(new Mock<IAccessTokenGenerator>().Object);
         services.AddSingleton<IOptions<PlatformSettings>>(Options.Create(new PlatformSettings()));
