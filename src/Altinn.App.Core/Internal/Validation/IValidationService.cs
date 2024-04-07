@@ -42,6 +42,12 @@ public interface IValidationService
     Task<List<ValidationIssue>> ValidateDataElement(Instance instance, DataElement dataElement, DataType dataType, string? language);
 
     /// <summary>
+    /// Validates a file upload. Will prevent the file from being stored if
+    /// issues with severity Error are found.
+    /// </summary>
+    Task<List<ValidationIssue>> ValidateFileUpload(Instance instance, DataType dataType, byte[] fileContent, string? filename, string? mimeType, string? language);
+
+    /// <summary>
     /// Validates a single data element. Used by frontend to continuously validate form data as it changes.
     /// </summary>
     /// <remarks>

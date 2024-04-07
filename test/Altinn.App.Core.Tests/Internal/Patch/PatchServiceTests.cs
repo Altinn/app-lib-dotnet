@@ -56,6 +56,7 @@ public class PatchServiceTests
             {
                 _dataElementValidator.Object
             },
+            Enumerable.Empty<IFileUploadValidator>(),
             new List<IFormDataValidator>()
             {
                 _formDataValidator.Object

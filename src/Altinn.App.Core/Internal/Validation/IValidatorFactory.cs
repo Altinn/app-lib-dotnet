@@ -1,6 +1,4 @@
 using Altinn.App.Core.Features;
-using Altinn.App.Core.Features.Validation;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Altinn.App.Core.Internal.Validation;
 
@@ -14,13 +12,18 @@ public interface IValidatorFactory
     /// </summary>
     public IEnumerable<ITaskValidator> GetTaskValidators(string taskId);
     /// <summary>
-    /// Gets all data element validators for a given data element.
+    /// Gets all data element validators for a given data type.
     /// </summary>
     public IEnumerable<IDataElementValidator> GetDataElementValidators(string dataTypeId);
     /// <summary>
-    /// Gets all form data validators for a given data element.
+    /// Gets all form data validators for a given data type.
     /// </summary>
     public IEnumerable<IFormDataValidator> GetFormDataValidators(string dataTypeId);
+
+    /// <summary>
+    /// Gets all file upload validators for a given data element.
+    /// </summary>
+    public IEnumerable<IFileUploadValidator> GetFileUploadValidators(string dataTypeId);
 }
 
 /// <summary>
@@ -30,27 +33,42 @@ public class ValidatorFactory : IValidatorFactory
 {
     private readonly IEnumerable<ITaskValidator> _taskValidators;
     private readonly IEnumerable<IDataElementValidator> _dataElementValidators;
+    private readonly IEnumerable<IFileUploadValidator> _fileUploadValidators;
     private readonly IEnumerable<IFormDataValidator> _formDataValidators;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ValidatorFactory"/> class.
     /// </summary>
-    public ValidatorFactory(IEnumerable<ITaskValidator> taskValidators, IEnumerable<IDataElementValidator> dataElementValidators, IEnumerable<IFormDataValidator> formDataValidators)
+    public ValidatorFactory(
+        IEnumerable<ITaskValidator> taskValidators,
+        IEnumerable<IDataElementValidator> dataElementValidators,
+        IEnumerable<IFileUploadValidator> fileUploadValidators,
+        IEnumerable<IFormDataValidator> formDataValidators)
     {
         _taskValidators = taskValidators;
         _dataElementValidators = dataElementValidators;
+        _fileUploadValidators = fileUploadValidators;
         _formDataValidators = formDataValidators;
     }
+
     /// <inheritdoc />
     public IEnumerable<ITaskValidator> GetTaskValidators(string taskId)
     {
         return _taskValidators.Where(tv => tv.TaskId == "*" || tv.TaskId == taskId);
     }
+
     /// <inheritdoc />
     public IEnumerable<IDataElementValidator> GetDataElementValidators(string dataTypeId)
     {
         return _dataElementValidators.Where(dev => dev.DataType == "*" || dev.DataType == dataTypeId);
     }
+
+    /// <inheritdoc />
+    public IEnumerable<IFileUploadValidator> GetFileUploadValidators(string dataTypeId)
+    {
+        return _fileUploadValidators.Where(fuv => fuv.DataType == "*" || fuv.DataType == dataTypeId);
+    }
+
     /// <inheritdoc />
     public IEnumerable<IFormDataValidator> GetFormDataValidators(string dataTypeId)
     {

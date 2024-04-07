@@ -15,10 +15,8 @@ public interface IDataElementValidator
 {
     /// <summary>
     /// The data type that this validator should run for. This is the id of the data type from applicationmetadata.json
+    /// The string "*" is a special value that means that the validator should run for all data types.
     /// </summary>
-    /// <remarks>
-    ///
-    /// </remarks>
     string DataType { get; }
 
     /// <summary>

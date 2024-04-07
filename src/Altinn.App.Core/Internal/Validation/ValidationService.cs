@@ -1,4 +1,3 @@
-using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
@@ -79,6 +78,7 @@ public class ValidationService : IValidationService
     {
         ArgumentNullException.ThrowIfNull(instance);
         ArgumentNullException.ThrowIfNull(dataElement);
+        ArgumentNullException.ThrowIfNull(dataType);
         ArgumentNullException.ThrowIfNull(dataElement.DataType);
 
         // Get both keyed and non-keyed validators for the data type
@@ -102,6 +102,33 @@ public class ValidationService : IValidationService
         }
 
         return (await dataElementsIssuesTask).SelectMany(x => x).ToList();
+    }
+
+    /// <inheritdoc/>
+    public async Task<List<ValidationIssue>> ValidateFileUpload(Instance instance, DataType dataType, byte[] fileContent, string? filename, string? mimeType, string? language)
+    {
+        ArgumentNullException.ThrowIfNull(instance);
+        ArgumentNullException.ThrowIfNull(dataType);
+        ArgumentNullException.ThrowIfNull(fileContent);
+
+        var validators = _validatorFactory.GetFileUploadValidators(dataType.Id);
+        var issuesLists = await Task.WhenAll(validators.Select(async v =>
+        {
+            try
+            {
+                _logger.LogDebug("Start running validator {validatorName} on {dataType} for instance {instanceId}", v.GetType().Name, dataType.Id, instance.Id);
+                var issues = await v.Validate(instance, dataType, fileContent, filename, mimeType, language);
+                issues.ForEach(i => i.Source = v.ValidationSource); // Ensure that the source is set to the validator source
+                return issues;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error while running validator {validatorName} on {dataType} for instance {instanceId}", v.GetType().Name, dataType.Id, instance.Id);
+                throw;
+            }
+        }));
+
+        return issuesLists.SelectMany(l => l).ToList();
     }
 
     private Task<List<ValidationIssue>[]> RunDataElementValidators(Instance instance, DataElement dataElement, DataType dataType, string? language)

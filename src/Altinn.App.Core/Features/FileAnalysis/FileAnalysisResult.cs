@@ -1,6 +1,4 @@
-﻿using Altinn.App.Core.Features.FileAnalyzis;
-
-namespace Altinn.App.Core.Features.FileAnalysis
+﻿namespace Altinn.App.Core.Features.FileAnalysis
 {
     /// <summary>
     /// Results from a file analysis done based the content of the file, ie. the binary data.
@@ -8,7 +6,7 @@ namespace Altinn.App.Core.Features.FileAnalysis
     public class FileAnalysisResult
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="FileAnalysisService"/> class.
+        /// Initializes a new instance of the <see cref="FileAnalysisResult"/> class.
         /// </summary>
         public FileAnalysisResult(string analyserId)
         {
