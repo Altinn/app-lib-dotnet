@@ -49,9 +49,9 @@ public static class LayoutEvaluator
         }
 
         // Remove data for hidden rows
-        if (context.Component is RepeatingGroupComponent repGroup && context.RowLength is not null && context.HiddenRows is not null)
+        if (context is { Component: RepeatingGroupComponent repGroup, RowLength: int rowLength, HiddenRows: not null })
         {
-            foreach (var index in Enumerable.Range(0, context.RowLength.Value).Reverse())
+            foreach (var index in Enumerable.Range(0, rowLength).Reverse())
             {
                 var rowIndices = context.RowIndices?.Append(index).ToArray() ?? new[] { index };
                 var indexedBinding = state.AddInidicies(repGroup.DataModelBindings["group"], rowIndices);
@@ -125,26 +125,43 @@ public static class LayoutEvaluator
             {
                 RunLayoutValidationsForRequiredRecurs(validationIssues, state, dataElementId, childContext);
             }
-
             var required = ExpressionEvaluator.EvaluateBooleanExpression(state, context, "required", false);
-            if (required && context.Component is not null)
+            if (required)
             {
-                foreach (var (bindingName, binding) in context.Component.DataModelBindings)
+                switch (context.Component)
                 {
-                    if (state.GetModelData(binding, context) is null)
-                    {
-                        var field = state.AddInidicies(binding, context);
-                        validationIssues.Add(new ValidationIssue()
-                        {
-                            Severity = ValidationIssueSeverity.Error,
-                            DataElementId = dataElementId,
-                            Field = field,
-                            Description = $"{field} is required in component with id {context.Component.Id}",
-                            Code = "required",
-                            Source = ValidationIssueSources.Required
-                        });
-                    }
+                    case LikertComponent:
+                        // Likert component must have special validation rules
+                        break;
+                    case null:
+                        throw new NullReferenceException("context.Component is null");
+                    default:
+                        ValidateGenericComponent(validationIssues, state, dataElementId, context);
+                        break;
                 }
+            }
+        }
+    }
+
+    private static void ValidateGenericComponent(List<ValidationIssue> validationIssues, LayoutEvaluatorState state, string dataElementId,
+        ComponentContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context.Component);
+
+        foreach (var (bindingName, binding) in context.Component.DataModelBindings)
+        {
+            if (state.GetModelData(binding, context) is null)
+            {
+                var field = state.AddInidicies(binding, context);
+                validationIssues.Add(new ValidationIssue()
+                {
+                    Severity = ValidationIssueSeverity.Error,
+                    DataElementId = dataElementId,
+                    Field = field,
+                    Description = $"{field} is required in component with id {context.Component.Id}",
+                    Code = "required",
+                    Source = ValidationIssueSources.Required
+                });
             }
         }
     }

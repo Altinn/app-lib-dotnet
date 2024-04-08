@@ -357,9 +357,12 @@ public class PageComponentConverter : JsonConverter<PageComponent>
             case "dropdown":
                 ValidateOptions(optionId, literalOptions, optionsSource, secure);
                 return new OptionsComponent(id, type, dataModelBindings, hidden, required, readOnly, optionId, literalOptions, optionsSource, secure, additionalProperties);
+            case "likert":
+                ThrowJsonExceptionIfNull(optionId, "\"optionId\" is required on likert components");
+                return new LikertComponent(id, type, optionId, dataModelBindings, hidden, required, readOnly, additionalProperties);
         }
 
-        // Most compoents are handled as BaseComponent
+        // Most components are handled as BaseComponent
         return new BaseComponent(id, type, dataModelBindings, hidden, required, readOnly, additionalProperties);
     }
 

@@ -7,7 +7,7 @@ using Altinn.App.Core.Models.Expressions;
 namespace Altinn.App.Core.Models.Layout.Components;
 
 /// <summary>
-/// Custom component for handeling the special fields that represents an option.
+/// Custom component for handling the special fields that represents an option.
 /// </summary>
 public class OptionsComponent : BaseComponent
 {
