@@ -83,6 +83,10 @@ lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
 build: manifests generate fmt vet ## Build manager binary.
 	go build -o bin/manager cmd/main.go
 
+.PHONY: telemetry
+telemetry: ## Build and start the telemetry services using docker-compose
+	@$(CONTAINER_TOOL) compose up --build
+
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./cmd/main.go
