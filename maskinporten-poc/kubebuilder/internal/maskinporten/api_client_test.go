@@ -1,6 +1,8 @@
 package maskinporten
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"altinn.operator/maskinporten/internal/config"
@@ -64,3 +66,30 @@ func TestCreateGrant(t *testing.T) {
 // 	Expect(err).NotTo(HaveOccurred())
 // 	Expect(token.AccessToken).NotTo(BeNil())
 // }
+
+func TestFetchAccessTokenWithHTTPTest(t *testing.T) {
+	g := NewWithT(t) // Initialize a new GomegaWithT instance for this test
+
+	// Create a mock server
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"access_token":"mock_access_token","token_type":"Bearer","expires_in":3600}`))
+	}))
+	defer server.Close()
+
+	cfg, err := config.LoadConfig("")
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(cfg).NotTo(BeNil())
+
+	cfg.MaskinportenApi.Url = server.URL
+
+	client, err := NewApiClient(&cfg.MaskinportenApi)
+	g.Expect(err).NotTo(HaveOccurred())
+
+	concreteClient, ok := client.(*apiClient)
+	g.Expect(ok).To(BeTrue())
+
+	token, err := concreteClient.accessTokenFetcher()
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(token.AccessToken).NotTo(BeNil())
+}
