@@ -1,7 +1,9 @@
 package api
 
+import "context"
+
 type ApiClient interface {
-	GetWellKnownConfiguration() (*WellKnownResponse, error)
+	GetWellKnownConfiguration(ctx context.Context) (*WellKnownResponse, error)
 }
 
 type WellKnownResponse struct {

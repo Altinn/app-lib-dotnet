@@ -1,6 +1,7 @@
 package maskinporten
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -12,6 +13,7 @@ import (
 
 func TestWellKnownConfig(t *testing.T) {
 	g := NewWithT(t)
+	ctx := context.Background()
 
 	cfg, err := config.LoadConfig("")
 	g.Expect(err).NotTo(HaveOccurred())
@@ -20,11 +22,11 @@ func TestWellKnownConfig(t *testing.T) {
 	apiClient, err := NewApiClient(&cfg.MaskinportenApi)
 	g.Expect(err).NotTo(HaveOccurred())
 
-	config1, err := apiClient.GetWellKnownConfiguration()
+	config1, err := apiClient.GetWellKnownConfiguration(ctx)
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(config1).NotTo(BeNil())
 
-	config2, err := apiClient.GetWellKnownConfiguration()
+	config2, err := apiClient.GetWellKnownConfiguration(ctx)
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(config2).NotTo(BeNil())
 	config3 := *config1
@@ -34,6 +36,7 @@ func TestWellKnownConfig(t *testing.T) {
 
 func TestCreateGrant(t *testing.T) {
 	g := NewWithT(t)
+	ctx := context.Background()
 
 	cfg, err := config.LoadConfig("")
 	g.Expect(err).NotTo(HaveOccurred())
@@ -45,7 +48,7 @@ func TestCreateGrant(t *testing.T) {
 	concreteClient, ok := client.(*apiClient)
 	g.Expect(ok).To(BeTrue())
 
-	grant, err := concreteClient.createGrant()
+	grant, err := concreteClient.createGrant(ctx)
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(grant).NotTo(BeNil())
 }
@@ -70,6 +73,7 @@ func TestCreateGrant(t *testing.T) {
 
 func TestFetchAccessTokenWithHTTPTest(t *testing.T) {
 	g := NewWithT(t)
+	ctx := context.Background()
 
 	// Create a mock server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -90,18 +94,19 @@ func TestFetchAccessTokenWithHTTPTest(t *testing.T) {
 	concreteClient, ok := client.(*apiClient)
 	g.Expect(ok).To(BeTrue())
 
-	token, err := concreteClient.accessTokenFetcher()
+	token, err := concreteClient.accessTokenFetcher(ctx)
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(token.AccessToken).NotTo(BeNil())
 }
 
-func mockTokenRetriever() (*tokenResponse, error) {
+func mockTokenRetriever(ctx context.Context) (*tokenResponse, error) {
 	// Return a mock tokenResponse
 	return &tokenResponse{AccessToken: "mock_access_token"}, nil
 }
 
 func TestCreateReq(t *testing.T) {
 	g := NewWithT(t)
+	ctx := context.Background()
 
 	client := &apiClient{
 		// Setup mock for accessToken with a custom retriever function.
@@ -111,7 +116,7 @@ func TestCreateReq(t *testing.T) {
 
 	var endpoint = "http://example.com/api/endpoint"
 
-	req, err := client.CreateReq(endpoint)
+	req, err := client.createReq(ctx, endpoint)
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(req).NotTo(BeNil())
 	g.Expect(req.Method).To(Equal("POST"))

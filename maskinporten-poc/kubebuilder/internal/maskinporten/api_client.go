@@ -1,6 +1,7 @@
 package maskinporten
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -54,15 +55,15 @@ func NewApiClient(config *config.MaskinportenApiConfig) (api.ApiClient, error) {
 	return client, nil
 }
 
-func (c *apiClient) CreateReq(endpoint string) (*http.Request, error) {
+func (c *apiClient) createReq(ctx context.Context, endpoint string) (*http.Request, error) {
 	// Fetch the access token from the cache.
-	tokenResponse, err := c.accessToken.Get()
+	tokenResponse, err := c.accessToken.Get(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get access token: %w", err)
 	}
 
 	// Prepare the request.
-	req, err := http.NewRequest("POST", endpoint, nil)
+	req, err := http.NewRequestWithContext(ctx, "POST", endpoint, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new request: %w", err)
 	}
@@ -74,12 +75,15 @@ func (c *apiClient) CreateReq(endpoint string) (*http.Request, error) {
 	return req, nil
 }
 
-func (c *apiClient) GetWellKnownConfiguration() (*api.WellKnownResponse, error) {
-	return c.wellKnown.Get()
+func (c *apiClient) GetWellKnownConfiguration(ctx context.Context) (*api.WellKnownResponse, error) {
+	ctx, span := c.tracer.Start(ctx, "GetWellKnownConfiguration")
+	defer span.End()
+
+	return c.wellKnown.Get(ctx)
 }
 
-func (c *apiClient) createGrant() (*string, error) {
-	wellKnown, err := c.wellKnown.Get()
+func (c *apiClient) createGrant(ctx context.Context) (*string, error) {
+	wellKnown, err := c.wellKnown.Get(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -115,8 +119,8 @@ func (c *apiClient) createGrant() (*string, error) {
 	return &signedToken, nil
 }
 
-func (c *apiClient) accessTokenFetcher() (*tokenResponse, error) {
-	grant, err := c.createGrant()
+func (c *apiClient) accessTokenFetcher(ctx context.Context) (*tokenResponse, error) {
+	grant, err := c.createGrant(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +137,7 @@ func (c *apiClient) accessTokenFetcher() (*tokenResponse, error) {
 
 	endpoint += "?" + urlEncodedContent.Encode()
 
-	req, err := http.NewRequest("POST", endpoint, nil)
+	req, err := http.NewRequestWithContext(ctx, "POST", endpoint, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -164,13 +168,13 @@ type tokenResponse struct {
 	Scope       string `json:"scope"`
 }
 
-func (c *apiClient) wellKnownFetcher() (*api.WellKnownResponse, error) {
+func (c *apiClient) wellKnownFetcher(ctx context.Context) (*api.WellKnownResponse, error) {
 	endpoint, err := url.JoinPath(c.config.Url, "/.well-known/oauth-authorization-server")
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("GET", endpoint, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", endpoint, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -206,13 +210,13 @@ func deserialize[T any](resp *http.Response) (T, error) {
 
 type Cached[T any] struct {
 	mutex            sync.RWMutex
-	retriever        func() (*T, error)
+	retriever        func(ctx context.Context) (*T, error)
 	current          *T
 	currentFetchedAt time.Time
 	expireAfter      time.Duration
 }
 
-func NewCached[T any](expireAfter time.Duration, retriever func() (*T, error)) Cached[T] {
+func NewCached[T any](expireAfter time.Duration, retriever func(ctx context.Context) (*T, error)) Cached[T] {
 	return Cached[T]{
 		retriever:   retriever,
 		mutex:       sync.RWMutex{},
@@ -220,7 +224,7 @@ func NewCached[T any](expireAfter time.Duration, retriever func() (*T, error)) C
 	}
 }
 
-func (c *Cached[T]) Get() (*T, error) {
+func (c *Cached[T]) Get(ctx context.Context) (*T, error) {
 	c.mutex.RLock()
 	now := time.Now()
 	if c.currentFetchedAt.IsZero() || now.Sub(c.currentFetchedAt) > c.expireAfter {
@@ -233,7 +237,7 @@ func (c *Cached[T]) Get() (*T, error) {
 			return c.current, nil
 		}
 
-		value, err := c.retriever()
+		value, err := c.retriever(ctx)
 		if err != nil {
 			return nil, err
 		}
