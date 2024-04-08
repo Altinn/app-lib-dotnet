@@ -29,7 +29,9 @@ type apiClient struct {
 // - https://docs.digdir.no/docs/Maskinporten/maskinporten_protocol_token
 // - https://docs.digdir.no/docs/Maskinporten/maskinporten_func_wellknown
 
-func NewApiClient(config *config.MaskinportenApiConfig) (*apiClient, error) {
+var _ api.ApiClient = (*apiClient)(nil)
+
+func NewApiClient(config *config.MaskinportenApiConfig) (api.ApiClient, error) {
 	jwk := jose.JSONWebKey{}
 	if err := json.Unmarshal([]byte(config.Jwk), &jwk); err != nil {
 		return nil, err
@@ -126,11 +128,12 @@ func (c *apiClient) accessTokenFetcher() (*tokenResponse, error) {
 
 	endpoint += "?" + urlEncodedContent.Encode()
 
-	req, err := c.createReq(endpoint)
+	req, err := http.NewRequest("POST", endpoint, nil)
 	if err != nil {
 		return nil, err
 	}
 
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	resp, err := c.RetryableHTTPDo(req)
 	if err != nil {
 		return nil, err
