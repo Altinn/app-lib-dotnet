@@ -88,6 +88,26 @@ func (c *apiClient) createGrant() (*string, error) {
 	return &signedToken, nil
 }
 
+func (c *apiClient) createClientRequest(endpoint string) (*http.Request, error) {
+	// Fetch the access token from the cache.
+	tokenResponse, err := c.accessToken.Get()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get access token: %w", err)
+	}
+
+	// Prepare the request.
+	req, err := http.NewRequest("POST", endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create new request: %w", err)
+	}
+
+	// Set necessary headers.
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Authorization", "Bearer "+tokenResponse.AccessToken)
+
+	return req, nil
+}
+
 func (c *apiClient) accessTokenFetcher() (*tokenResponse, error) {
 	grant, err := c.createGrant()
 	if err != nil {
@@ -106,12 +126,11 @@ func (c *apiClient) accessTokenFetcher() (*tokenResponse, error) {
 
 	endpoint += "?" + urlEncodedContent.Encode()
 
-	req, err := http.NewRequest("POST", endpoint, nil)
+	req, err := c.createClientRequest(endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	resp, err := c.RetryableHTTPDo(req)
 	if err != nil {
 		return nil, err
