@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"altinn.operator/maskinporten/internal/config"
 	. "github.com/onsi/gomega"
@@ -92,4 +93,29 @@ func TestFetchAccessTokenWithHTTPTest(t *testing.T) {
 	token, err := concreteClient.accessTokenFetcher()
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(token.AccessToken).NotTo(BeNil())
+}
+
+func mockTokenRetriever() (*tokenResponse, error) {
+	// Return a mock tokenResponse
+	return &tokenResponse{AccessToken: "mock_access_token"}, nil
+}
+
+func TestCreateReq(t *testing.T) {
+	g := NewWithT(t)
+
+	client := &apiClient{
+		// Setup mock for accessToken with a custom retriever function.
+		// This Cached[tokenResponse] instance will return the mock token when Get is called.
+		accessToken: NewCached(time.Minute*5, mockTokenRetriever),
+	}
+
+	var endpoint = "http://example.com/api/endpoint"
+
+	req, err := client.CreateReq(endpoint)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(req).NotTo(BeNil())
+	g.Expect(req.Method).To(Equal("POST"))
+	g.Expect(req.URL.String()).To(Equal(endpoint))
+	g.Expect(req.Header.Get("Content-Type")).To(Equal("application/x-www-form-urlencoded"))
+	g.Expect(req.Header.Get("Authorization")).To(Equal("Bearer mock_access_token"))
 }
