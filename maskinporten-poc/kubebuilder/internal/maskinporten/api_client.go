@@ -88,7 +88,7 @@ func (c *apiClient) createGrant() (*string, error) {
 	return &signedToken, nil
 }
 
-func (c *apiClient) createClientRequest(endpoint string) (*http.Request, error) {
+func (c *apiClient) createReq(endpoint string) (*http.Request, error) {
 	// Fetch the access token from the cache.
 	tokenResponse, err := c.accessToken.Get()
 	if err != nil {
@@ -126,7 +126,7 @@ func (c *apiClient) accessTokenFetcher() (*tokenResponse, error) {
 
 	endpoint += "?" + urlEncodedContent.Encode()
 
-	req, err := c.createClientRequest(endpoint)
+	req, err := c.createReq(endpoint)
 	if err != nil {
 		return nil, err
 	}
