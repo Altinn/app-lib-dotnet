@@ -10,43 +10,43 @@ import (
 )
 
 func TestWellKnownConfig(t *testing.T) {
-	RegisterTestingT(t)
+	g := NewWithT(t)
 
 	cfg, err := config.LoadConfig("")
-	Expect(err).NotTo(HaveOccurred())
-	Expect(cfg).NotTo(BeNil())
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(cfg).NotTo(BeNil())
 
 	apiClient, err := NewApiClient(&cfg.MaskinportenApi)
-	Expect(err).NotTo(HaveOccurred())
+	g.Expect(err).NotTo(HaveOccurred())
 
 	config1, err := apiClient.GetWellKnownConfiguration()
-	Expect(err).NotTo(HaveOccurred())
-	Expect(config1).NotTo(BeNil())
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(config1).NotTo(BeNil())
 
 	config2, err := apiClient.GetWellKnownConfiguration()
-	Expect(err).NotTo(HaveOccurred())
-	Expect(config2).NotTo(BeNil())
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(config2).NotTo(BeNil())
 	config3 := *config1
-	Expect(config1 == config2).To(BeTrue()) // Due to cache
-	Expect(config1 == &config3).To(BeFalse())
+	g.Expect(config1 == config2).To(BeTrue()) // Due to cache
+	g.Expect(config1 == &config3).To(BeFalse())
 }
 
 func TestCreateGrant(t *testing.T) {
-	RegisterTestingT(t)
+	g := NewWithT(t)
 
 	cfg, err := config.LoadConfig("")
-	Expect(err).NotTo(HaveOccurred())
-	Expect(cfg).NotTo(BeNil())
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(cfg).NotTo(BeNil())
 
 	client, err := NewApiClient(&cfg.MaskinportenApi)
-	Expect(err).NotTo(HaveOccurred())
+	g.Expect(err).NotTo(HaveOccurred())
 
 	concreteClient, ok := client.(*apiClient)
-	Expect(ok).To(BeTrue())
+	g.Expect(ok).To(BeTrue())
 
 	grant, err := concreteClient.createGrant()
-	Expect(err).NotTo(HaveOccurred())
-	Expect(grant).NotTo(BeNil())
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(grant).NotTo(BeNil())
 }
 
 // func TestFetchAccessToken(t *testing.T) {
@@ -68,7 +68,7 @@ func TestCreateGrant(t *testing.T) {
 // }
 
 func TestFetchAccessTokenWithHTTPTest(t *testing.T) {
-	g := NewWithT(t) // Initialize a new GomegaWithT instance for this test
+	g := NewWithT(t)
 
 	// Create a mock server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
