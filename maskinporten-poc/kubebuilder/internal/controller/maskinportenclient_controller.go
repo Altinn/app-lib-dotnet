@@ -24,6 +24,8 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -47,7 +49,8 @@ const JsonFileName = "maskinporten-client.json"
 type MaskinportenClientReconciler struct {
 	client.Client
 	Scheme  *runtime.Scheme
-	Runtime rt.Runtime
+	runtime rt.Runtime
+	tracer  trace.Tracer
 }
 
 func NewMaskinportenClientReconciler(client client.Client, scheme *runtime.Scheme) *MaskinportenClientReconciler {
@@ -59,7 +62,8 @@ func NewMaskinportenClientReconciler(client client.Client, scheme *runtime.Schem
 	return &MaskinportenClientReconciler{
 		Client:  client,
 		Scheme:  scheme,
-		Runtime: rt,
+		runtime: rt,
+		tracer:  otel.Tracer("maskinporten.MaskinportenClientReconciler"),
 	}
 }
 
@@ -77,11 +81,14 @@ func NewMaskinportenClientReconciler(client client.Client, scheme *runtime.Schem
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.17.0/pkg/reconcile
 func (r *MaskinportenClientReconciler) Reconcile(ctx context.Context, kreq ctrl.Request) (ctrl.Result, error) {
+	ctx, span := r.tracer.Start(ctx, "Reconcile")
+	defer span.End()
+
 	log := log.FromContext(ctx)
 
 	log.Info("Reconciling MaskinportenClient")
 
-	req, err := r.mapRequest(kreq)
+	req, err := r.mapRequest(ctx, kreq)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -115,11 +122,7 @@ func (r *MaskinportenClientReconciler) Reconcile(ctx context.Context, kreq ctrl.
 	}
 
 	if instance != nil {
-		instance.Status.State = "reconciled"
-		timestamp := metav1.Now()
-		instance.Status.LastSynced = &timestamp
-		instance.Status.Reason = fmt.Sprintf("Reconciled %d resources", len(actions))
-		err = r.Status().Update(ctx, instance)
+		err = r.updateStatus(ctx, instance, actions)
 		if err != nil {
 			log.Error(err, "Failed to update MaskinportenClient status")
 			return ctrl.Result{}, err
@@ -129,6 +132,18 @@ func (r *MaskinportenClientReconciler) Reconcile(ctx context.Context, kreq ctrl.
 	log.Info("Reconciled MaskinportenClient")
 
 	return ctrl.Result{}, nil
+}
+
+func (r *MaskinportenClientReconciler) updateStatus(ctx context.Context, instance *clientv1.MaskinportenClient, actions reconciliationActionList) error {
+	ctx, span := r.tracer.Start(ctx, "Reconcile.updateStatus")
+	defer span.End()
+
+	instance.Status.State = "reconciled"
+	timestamp := metav1.Now()
+	instance.Status.LastSynced = &timestamp
+	instance.Status.Reason = fmt.Sprintf("Reconciled %d resources", len(actions))
+	err := r.Status().Update(ctx, instance)
+	return err
 }
 
 type maskinportenClientRequest struct {
@@ -182,14 +197,17 @@ type reconciliationAction struct {
 
 type reconciliationActionList []*reconciliationAction
 
-func (r *MaskinportenClientReconciler) mapRequest(req ctrl.Request) (*maskinportenClientRequest, error) {
+func (r *MaskinportenClientReconciler) mapRequest(ctx context.Context, req ctrl.Request) (*maskinportenClientRequest, error) {
+	_, span := r.tracer.Start(ctx, "Reconcile.mapRequest")
+	defer span.End()
+
 	nameSplit := strings.Split(req.Name, "-")
 	if len(nameSplit) < 2 {
 		return nil, fmt.Errorf("unexpected name format for MaskinportenClient resource: %s", req.Name)
 	}
 	appId := nameSplit[1]
 
-	operatorContext := r.Runtime.GetOperatorContext()
+	operatorContext := r.runtime.GetOperatorContext()
 
 	return &maskinportenClientRequest{
 		NamespacedName: req.NamespacedName,
@@ -201,6 +219,9 @@ func (r *MaskinportenClientReconciler) mapRequest(req ctrl.Request) (*maskinport
 }
 
 func (r *MaskinportenClientReconciler) getInstance(ctx context.Context, req *maskinportenClientRequest) (*clientv1.MaskinportenClient, error) {
+	ctx, span := r.tracer.Start(ctx, "Reconcile.getInstance")
+	defer span.End()
+
 	log := log.FromContext(ctx)
 
 	instance := &clientv1.MaskinportenClient{}
@@ -219,6 +240,9 @@ func (r *MaskinportenClientReconciler) getInstance(ctx context.Context, req *mas
 }
 
 func (r *MaskinportenClientReconciler) updateWithError(ctx context.Context, log logr.Logger, origError error, msg string, instance *clientv1.MaskinportenClient) error {
+	ctx, span := r.tracer.Start(ctx, "Reconcile.updateWithError")
+	defer span.End()
+
 	log.Error(origError, "Reconciliation of MaskinportenClient failed", "failure", msg)
 	instance.Status.State = "error"
 	err := r.Status().Update(ctx, instance)
@@ -229,7 +253,10 @@ func (r *MaskinportenClientReconciler) updateWithError(ctx context.Context, log 
 	return err
 }
 
-func (r *MaskinportenClientReconciler) computeDesiredState(_ context.Context, req *maskinportenClientRequest, instance *clientv1.MaskinportenClient) (maskinportenResourceList, error) {
+func (r *MaskinportenClientReconciler) computeDesiredState(ctx context.Context, req *maskinportenClientRequest, instance *clientv1.MaskinportenClient) (maskinportenResourceList, error) {
+	_, span := r.tracer.Start(ctx, "Reconcile.computeDesiredState")
+	defer span.End()
+
 	resources := make(maskinportenResourceList, 0)
 
 	var clientInfo *api.ClientInfo
@@ -269,6 +296,9 @@ func (r *MaskinportenClientReconciler) computeDesiredState(_ context.Context, re
 }
 
 func (r *MaskinportenClientReconciler) fetchCurrentState(ctx context.Context, req *maskinportenClientRequest) (maskinportenResourceList, error) {
+	ctx, span := r.tracer.Start(ctx, "Reconcile.fetchCurrentState")
+	defer span.End()
+
 	resources := make(maskinportenResourceList, 0)
 
 	var secrets corev1.SecretList
@@ -290,7 +320,7 @@ func (r *MaskinportenClientReconciler) fetchCurrentState(ctx context.Context, re
 		resources = append(resources, &maskinportenSecretResource{secret: secret})
 	}
 
-	clientManager := r.Runtime.GetMaskinportenClientManager()
+	clientManager := r.runtime.GetMaskinportenClientManager()
 	clientInfo, err := clientManager.Get(req.AppId)
 	if err != nil {
 		return nil, err
@@ -313,8 +343,11 @@ func find(kind maskinportenResourceKind, resources maskinportenResourceList) mas
 }
 
 func (r *MaskinportenClientReconciler) reconcile(ctx context.Context, _ *maskinportenClientRequest, currentState maskinportenResourceList, desiredState maskinportenResourceList) (reconciliationActionList, error) {
+	ctx, span := r.tracer.Start(ctx, "Reconcile.reconcile")
+	defer span.End()
+
 	actions := make(reconciliationActionList, 0)
-	clientManager := r.Runtime.GetMaskinportenClientManager()
+	clientManager := r.runtime.GetMaskinportenClientManager()
 
 	for i := range desiredState {
 		resource := desiredState[i]

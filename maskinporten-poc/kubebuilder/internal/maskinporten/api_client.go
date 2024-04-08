@@ -14,6 +14,9 @@ import (
 	"github.com/go-jose/go-jose/v4"
 	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/google/uuid"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type apiClient struct {
@@ -22,6 +25,7 @@ type apiClient struct {
 	jwk         jose.JSONWebKey
 	wellKnown   Cached[api.WellKnownResponse]
 	accessToken Cached[tokenResponse]
+	tracer      trace.Tracer
 }
 
 // Docs:
@@ -39,8 +43,9 @@ func NewApiClient(config *config.MaskinportenApiConfig) (api.ApiClient, error) {
 
 	client := &apiClient{
 		config: config,
-		client: http.Client{},
+		client: http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)},
 		jwk:    jwk,
+		tracer: otel.Tracer("maskinporten.ApiClient"),
 	}
 
 	client.wellKnown = NewCached(5*time.Minute, client.wellKnownFetcher)
