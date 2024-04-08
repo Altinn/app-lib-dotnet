@@ -21,18 +21,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"strings"
 
 	"github.com/go-logr/logr"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -44,6 +45,7 @@ import (
 )
 
 const JsonFileName = "maskinporten-client.json"
+const FinalizerName = "client.altinn.operator/finalizer"
 
 // MaskinportenClientReconciler reconciles a MaskinportenClient object
 type MaskinportenClientReconciler struct {
@@ -81,7 +83,7 @@ func NewMaskinportenClientReconciler(client client.Client, scheme *runtime.Schem
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.17.0/pkg/reconcile
 func (r *MaskinportenClientReconciler) Reconcile(ctx context.Context, kreq ctrl.Request) (ctrl.Result, error) {
-	ctx, span := r.tracer.Start(ctx, "Reconcile")
+	ctx, span := r.tracer.Start(ctx, "Reconcile", trace.WithAttributes(attribute.String("namespace", kreq.Namespace), attribute.String("name", kreq.Name)))
 	defer span.End()
 
 	log := log.FromContext(ctx)
@@ -90,150 +92,114 @@ func (r *MaskinportenClientReconciler) Reconcile(ctx context.Context, kreq ctrl.
 
 	req, err := r.mapRequest(ctx, kreq)
 	if err != nil {
+		span.SetStatus(codes.Error, "mapRequest failed")
+		span.RecordError(err)
 		return ctrl.Result{}, err
 	}
+
+	span.SetAttributes(attribute.String("app_id", req.AppId))
 
 	instance, err := r.getInstance(ctx, req)
 	if err != nil {
-		return ctrl.Result{}, err
+		span.SetStatus(codes.Error, "getInstance failed")
+		span.RecordError(err)
+		// TODO: we end up here with NotFound after having cleaned up and removed finalizer
+		// why?
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+
+	span.SetAttributes(
+		attribute.String("request_kind", req.Kind.String()),
+		attribute.Int64("generation", instance.GetGeneration()),
+	)
 
 	desiredState, err := r.computeDesiredState(ctx, req, instance)
 	if err != nil {
+		span.SetStatus(codes.Error, "computeDesiredState failed")
+		span.RecordError(err)
 		r.updateWithError(ctx, log, err, "Failed to compute desired state", instance)
 		return ctrl.Result{}, err
 	}
 
 	currentState, err := r.fetchCurrentState(ctx, req)
 	if err != nil {
+		span.SetStatus(codes.Error, "fetchCurrentState failed")
+		span.RecordError(err)
 		r.updateWithError(ctx, log, err, "Failed to fetch resources", instance)
 		return ctrl.Result{}, err
 	}
 
-	actions, err := r.reconcile(ctx, req, currentState, desiredState)
+	actions, err := r.reconcile(ctx, currentState, desiredState)
 	if err != nil {
+		span.SetStatus(codes.Error, "reconcile failed")
+		span.RecordError(err)
 		r.updateWithError(ctx, log, err, "Failed to compute reconciliation", instance)
 		return ctrl.Result{}, err
 	}
 
 	if len(actions) == 0 {
 		log.Info("No actions taken")
+		span.SetStatus(codes.Ok, "reconciled successfully")
 		return ctrl.Result{}, nil
 	}
 
-	if instance != nil {
-		err = r.updateStatus(ctx, instance, actions)
-		if err != nil {
-			log.Error(err, "Failed to update MaskinportenClient status")
-			return ctrl.Result{}, err
-		}
+	err = r.updateStatus(ctx, req, instance, "reconciled", fmt.Sprintf("Reconciled %d resources", len(actions)))
+	if err != nil {
+		span.SetStatus(codes.Error, "updateStatus failed")
+		span.RecordError(err)
+		log.Error(err, "Failed to update MaskinportenClient status")
+		return ctrl.Result{}, err
 	}
 
 	log.Info("Reconciled MaskinportenClient")
 
+	span.SetStatus(codes.Ok, "reconciled successfully")
 	return ctrl.Result{}, nil
 }
 
-func (r *MaskinportenClientReconciler) updateStatus(ctx context.Context, instance *clientv1.MaskinportenClient, actions reconciliationActionList) error {
+func (r *MaskinportenClientReconciler) updateStatus(ctx context.Context, req *maskinportenClientRequest, instance *clientv1.MaskinportenClient, state string, reason string) error {
 	ctx, span := r.tracer.Start(ctx, "Reconcile.updateStatus")
 	defer span.End()
 
-	instance.Status.State = "reconciled"
+	instance.Status.State = state
 	timestamp := metav1.Now()
 	instance.Status.LastSynced = &timestamp
-	instance.Status.Reason = fmt.Sprintf("Reconciled %d resources", len(actions))
-	err := r.Status().Update(ctx, instance)
-	return err
-}
+	instance.Status.Reason = reason
 
-type maskinportenClientRequest struct {
-	NamespacedName types.NamespacedName
-	Name           string
-	Namespace      string
-	AppId          string
-	AppLabel       string
-}
-
-type maskinportenResourceKind int
-
-const (
-	ApiClientKind maskinportenResourceKind = iota + 1
-	SecretKind
-)
-
-type maskinportenResource interface {
-	Kind() maskinportenResourceKind
-}
-
-type maskinportenResourceList []maskinportenResource
-
-type maskinportenSecretResource struct {
-	secret *corev1.Secret
-}
-
-func (r *maskinportenSecretResource) Kind() maskinportenResourceKind {
-	return SecretKind
-}
-
-type maskinportenApiClientResource struct {
-	info *api.ClientInfo
-}
-
-func (r *maskinportenApiClientResource) Kind() maskinportenResourceKind {
-	return ApiClientKind
-}
-
-type reconciliationActionKind int
-
-const (
-	UpsertKind reconciliationActionKind = iota + 1
-	DeleteKind
-)
-
-type reconciliationAction struct {
-	kind     reconciliationActionKind
-	resource maskinportenResource
-}
-
-type reconciliationActionList []*reconciliationAction
-
-func (r *MaskinportenClientReconciler) mapRequest(ctx context.Context, req ctrl.Request) (*maskinportenClientRequest, error) {
-	_, span := r.tracer.Start(ctx, "Reconcile.mapRequest")
-	defer span.End()
-
-	nameSplit := strings.Split(req.Name, "-")
-	if len(nameSplit) < 2 {
-		return nil, fmt.Errorf("unexpected name format for MaskinportenClient resource: %s", req.Name)
+	updatedFinalizers := false
+	if req.Kind == RequestCreateKind {
+		updatedFinalizers = controllerutil.AddFinalizer(instance, FinalizerName)
+	} else if req.Kind == RequestDeleteKind {
+		updatedFinalizers = controllerutil.RemoveFinalizer(instance, FinalizerName)
 	}
-	appId := nameSplit[1]
 
-	operatorContext := r.runtime.GetOperatorContext()
-
-	return &maskinportenClientRequest{
-		NamespacedName: req.NamespacedName,
-		Name:           req.Name,
-		Namespace:      req.Namespace,
-		AppId:          appId,
-		AppLabel:       fmt.Sprintf("%s-%s-deployment", operatorContext.Te, appId),
-	}, nil
+	if updatedFinalizers {
+		return r.Update(ctx, instance)
+	} else {
+		return r.Status().Update(ctx, instance)
+	}
 }
 
 func (r *MaskinportenClientReconciler) getInstance(ctx context.Context, req *maskinportenClientRequest) (*clientv1.MaskinportenClient, error) {
 	ctx, span := r.tracer.Start(ctx, "Reconcile.getInstance")
 	defer span.End()
 
-	log := log.FromContext(ctx)
-
 	instance := &clientv1.MaskinportenClient{}
-	err := r.Get(ctx, req.NamespacedName, instance)
-	wasDeleted := errors.IsNotFound(err)
-	if err != nil && !wasDeleted {
-		log.Error(err, "Failed to get MaskinportenClient")
+	if err := r.Get(ctx, req.NamespacedName, instance); err != nil {
 		return nil, fmt.Errorf("failed to get MaskinportenClient: %w", err)
 	}
 
-	if wasDeleted {
-		return nil, nil
+	if instance.ObjectMeta.DeletionTimestamp.IsZero() {
+		if !controllerutil.ContainsFinalizer(instance, FinalizerName) {
+			req.Kind = RequestCreateKind
+			if err := r.updateStatus(ctx, req, instance, "recorded", ""); err != nil {
+				return nil, err
+			}
+		} else {
+			req.Kind = RequestUpdateKind
+		}
+	} else {
+		req.Kind = RequestDeleteKind
 	}
 
 	return instance, nil
@@ -260,7 +226,7 @@ func (r *MaskinportenClientReconciler) computeDesiredState(ctx context.Context, 
 	resources := make(maskinportenResourceList, 0)
 
 	var clientInfo *api.ClientInfo
-	if instance != nil {
+	if req.Kind != RequestDeleteKind {
 		clientInfo = &api.ClientInfo{
 			AppId:  req.AppId,
 			Scopes: instance.Spec.Scopes,
@@ -282,7 +248,7 @@ func (r *MaskinportenClientReconciler) computeDesiredState(ctx context.Context, 
 		Immutable: &f,
 	}
 
-	if instance != nil {
+	if req.Kind != RequestDeleteKind {
 		clientInfoJson, err := json.Marshal(clientInfo)
 		if err != nil {
 			return resources, err
@@ -335,14 +301,14 @@ func (r *MaskinportenClientReconciler) fetchCurrentState(ctx context.Context, re
 
 func find(kind maskinportenResourceKind, resources maskinportenResourceList) maskinportenResource {
 	for i := range resources {
-		if resources[i].Kind() == kind {
+		if resources[i].kind() == kind {
 			return resources[i]
 		}
 	}
 	return nil
 }
 
-func (r *MaskinportenClientReconciler) reconcile(ctx context.Context, _ *maskinportenClientRequest, currentState maskinportenResourceList, desiredState maskinportenResourceList) (reconciliationActionList, error) {
+func (r *MaskinportenClientReconciler) reconcile(ctx context.Context, currentState maskinportenResourceList, desiredState maskinportenResourceList) (reconciliationActionList, error) {
 	ctx, span := r.tracer.Start(ctx, "Reconcile.reconcile")
 	defer span.End()
 
@@ -351,9 +317,9 @@ func (r *MaskinportenClientReconciler) reconcile(ctx context.Context, _ *maskinp
 
 	for i := range desiredState {
 		resource := desiredState[i]
-		currentState := find(resource.Kind(), currentState)
+		currentState := find(resource.kind(), currentState)
 
-		switch resource.Kind() {
+		switch resource.kind() {
 		case ApiClientKind:
 			apiClientResource := resource.(*maskinportenApiClientResource)
 
@@ -363,7 +329,7 @@ func (r *MaskinportenClientReconciler) reconcile(ctx context.Context, _ *maskinp
 			}
 			if created || !apiClientResource.info.Equal(clientInfo) {
 				apiClientResource.info = clientInfo
-				actions = append(actions, &reconciliationAction{kind: UpsertKind, resource: apiClientResource})
+				actions = append(actions, &reconciliationAction{kind: ActionUpsertKind, resource: apiClientResource})
 			}
 		case SecretKind:
 			secretResource := resource.(*maskinportenSecretResource)
@@ -384,7 +350,7 @@ func (r *MaskinportenClientReconciler) reconcile(ctx context.Context, _ *maskinp
 					if err := r.Update(ctx, secretResource.secret); err != nil {
 						return actions, err
 					}
-					actions = append(actions, &reconciliationAction{kind: UpsertKind, resource: secretResource})
+					actions = append(actions, &reconciliationAction{kind: ActionUpsertKind, resource: secretResource})
 				}
 			}
 		}
@@ -392,16 +358,16 @@ func (r *MaskinportenClientReconciler) reconcile(ctx context.Context, _ *maskinp
 
 	for i := range currentState {
 		resource := currentState[i]
-		desiredResource := find(resource.Kind(), desiredState)
+		desiredResource := find(resource.kind(), desiredState)
 
-		switch resource.Kind() {
+		switch resource.kind() {
 		case ApiClientKind:
 			apiClientResource := resource.(*maskinportenApiClientResource)
 			if desiredResource == nil {
 				if err := clientManager.Delete(apiClientResource.info.AppId); err != nil {
 					return actions, err
 				}
-				actions = append(actions, &reconciliationAction{kind: DeleteKind, resource: apiClientResource})
+				actions = append(actions, &reconciliationAction{kind: ActionDeleteKind, resource: apiClientResource})
 			}
 		case SecretKind:
 			secretResource := resource.(*maskinportenSecretResource)
@@ -412,7 +378,7 @@ func (r *MaskinportenClientReconciler) reconcile(ctx context.Context, _ *maskinp
 				if err := r.Update(ctx, secretResource.secret); err != nil {
 					return actions, err
 				}
-				actions = append(actions, &reconciliationAction{kind: DeleteKind, resource: secretResource})
+				actions = append(actions, &reconciliationAction{kind: ActionDeleteKind, resource: secretResource})
 			}
 		}
 	}
@@ -424,5 +390,7 @@ func (r *MaskinportenClientReconciler) reconcile(ctx context.Context, _ *maskinp
 func (r *MaskinportenClientReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&clientv1.MaskinportenClient{}).
+		// Only reconcile on generation change (which does not change when status or metadata change)
+		WithEventFilter(predicate.GenerationChangedPredicate{}).
 		Complete(r)
 }
