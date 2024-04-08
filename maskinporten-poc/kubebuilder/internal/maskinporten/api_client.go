@@ -49,6 +49,26 @@ func NewApiClient(config *config.MaskinportenApiConfig) (api.ApiClient, error) {
 	return client, nil
 }
 
+func (c *apiClient) CreateReq(endpoint string) (*http.Request, error) {
+	// Fetch the access token from the cache.
+	tokenResponse, err := c.accessToken.Get()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get access token: %w", err)
+	}
+
+	// Prepare the request.
+	req, err := http.NewRequest("POST", endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create new request: %w", err)
+	}
+
+	// Set necessary headers.
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Authorization", "Bearer "+tokenResponse.AccessToken)
+
+	return req, nil
+}
+
 func (c *apiClient) GetWellKnownConfiguration() (*api.WellKnownResponse, error) {
 	return c.wellKnown.Get()
 }
