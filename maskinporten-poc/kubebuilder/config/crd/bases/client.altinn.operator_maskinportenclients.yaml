@@ -60,11 +60,18 @@ spec:
                 items:
                   type: string
                 type: array
+              lastActions:
+                items:
+                  type: string
+                type: array
               lastSynced:
                 description: LastSynced is the timestamp of the last successful sync
                   towards Maskinporten API
                 format: date-time
                 type: string
+              observedGeneration:
+                format: int64
+                type: integer
               reason:
                 type: string
               state:

@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/go-logr/logr"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -105,11 +104,16 @@ func (r *MaskinportenClientReconciler) Reconcile(ctx context.Context, kreq ctrl.
 
 	instance, err := r.getInstance(ctx, req)
 	if err != nil {
-		span.SetStatus(codes.Error, "getInstance failed")
-		span.RecordError(err)
-		// TODO: we end up here with NotFound after having cleaned up and removed finalizer
-		// why?
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		notFoundIgnored := client.IgnoreNotFound(err)
+		if notFoundIgnored != nil {
+			span.SetStatus(codes.Error, "getInstance failed")
+			span.RecordError(err)
+			log.Error(err, "Reconciling MaskinportenClient errored")
+		} else {
+			log.Info("Reconciling MaskinportenClient skipped, was deleted (so we have removed finalizer)..")
+			// TODO: we end up here with NotFound after having cleaned up and removed finalizer.. why?
+		}
+		return ctrl.Result{}, notFoundIgnored
 	}
 
 	span.SetAttributes(
@@ -119,25 +123,19 @@ func (r *MaskinportenClientReconciler) Reconcile(ctx context.Context, kreq ctrl.
 
 	desiredState, err := r.computeDesiredState(ctx, req, instance)
 	if err != nil {
-		span.SetStatus(codes.Error, "computeDesiredState failed")
-		span.RecordError(err)
-		r.updateWithError(ctx, log, err, "Failed to compute desired state", instance)
+		r.updateStatusWithError(ctx, err, "computeDesiredState failed", instance, nil)
 		return ctrl.Result{}, err
 	}
 
 	currentState, err := r.fetchCurrentState(ctx, req)
 	if err != nil {
-		span.SetStatus(codes.Error, "fetchCurrentState failed")
-		span.RecordError(err)
-		r.updateWithError(ctx, log, err, "Failed to fetch resources", instance)
+		r.updateStatusWithError(ctx, err, "fetchCurrentState failed", instance, nil)
 		return ctrl.Result{}, err
 	}
 
 	actions, err := r.reconcile(ctx, currentState, desiredState)
 	if err != nil {
-		span.SetStatus(codes.Error, "reconcile failed")
-		span.RecordError(err)
-		r.updateWithError(ctx, log, err, "Failed to compute reconciliation", instance)
+		r.updateStatusWithError(ctx, err, "reconcile failed", instance, actions)
 		return ctrl.Result{}, err
 	}
 
@@ -147,7 +145,8 @@ func (r *MaskinportenClientReconciler) Reconcile(ctx context.Context, kreq ctrl.
 		return ctrl.Result{}, nil
 	}
 
-	err = r.updateStatus(ctx, req, instance, "reconciled", fmt.Sprintf("Reconciled %d resources", len(actions)))
+	reason := fmt.Sprintf("Reconciled %d resources", len(actions))
+	err = r.updateStatus(ctx, req, instance, "reconciled", reason, actions)
 	if err != nil {
 		span.SetStatus(codes.Error, "updateStatus failed")
 		span.RecordError(err)
@@ -167,27 +166,64 @@ func (r *MaskinportenClientReconciler) updateStatus(
 	instance *clientv1.MaskinportenClient,
 	state string,
 	reason string,
+	actions reconciliationActionList,
 ) error {
 	ctx, span := r.tracer.Start(ctx, "Reconcile.updateStatus")
 	defer span.End()
+
+	log := log.FromContext(ctx)
 
 	instance.Status.State = state
 	timestamp := metav1.Now()
 	instance.Status.LastSynced = &timestamp
 	instance.Status.Reason = reason
+	if actions != nil {
+		instance.Status.LastActions = actions.Strings()
+	} else {
+		instance.Status.LastActions = nil
+	}
+	instance.Status.ObservedGeneration = instance.GetGeneration()
 
 	updatedFinalizers := false
-	if req.Kind == RequestCreateKind {
-		updatedFinalizers = controllerutil.AddFinalizer(instance, FinalizerName)
-	} else if req.Kind == RequestDeleteKind {
-		updatedFinalizers = controllerutil.RemoveFinalizer(instance, FinalizerName)
+	if req != nil {
+		if req.Kind == RequestCreateKind {
+			updatedFinalizers = controllerutil.AddFinalizer(instance, FinalizerName)
+		} else if req.Kind == RequestDeleteKind {
+			updatedFinalizers = controllerutil.RemoveFinalizer(instance, FinalizerName)
+		}
 	}
 
+	var err error
 	if updatedFinalizers {
-		return r.Update(ctx, instance)
+		err = r.Update(ctx, instance)
 	} else {
-		return r.Status().Update(ctx, instance)
+		err = r.Status().Update(ctx, instance)
 	}
+
+	if err != nil {
+		span.SetStatus(codes.Error, "failed to update status")
+		span.RecordError(err)
+		log.Error(err, "Failed to update MaskinportenClient status")
+	}
+
+	return err
+}
+
+func (r *MaskinportenClientReconciler) updateStatusWithError(
+	ctx context.Context,
+	origError error,
+	msg string,
+	instance *clientv1.MaskinportenClient,
+	actions reconciliationActionList,
+) error {
+	origSpan := trace.SpanFromContext(ctx)
+	log := log.FromContext(ctx)
+	log.Error(origError, "Reconciliation of MaskinportenClient failed", "failure", msg)
+
+	origSpan.SetStatus(codes.Error, msg)
+	origSpan.RecordError(origError)
+
+	return r.updateStatus(ctx, nil, instance, "error", msg, actions)
 }
 
 func (r *MaskinportenClientReconciler) getInstance(
@@ -205,7 +241,7 @@ func (r *MaskinportenClientReconciler) getInstance(
 	if instance.ObjectMeta.DeletionTimestamp.IsZero() {
 		if !controllerutil.ContainsFinalizer(instance, FinalizerName) {
 			req.Kind = RequestCreateKind
-			if err := r.updateStatus(ctx, req, instance, "recorded", ""); err != nil {
+			if err := r.updateStatus(ctx, req, instance, "recorded", "", nil); err != nil {
 				return nil, err
 			}
 		} else {
@@ -216,26 +252,6 @@ func (r *MaskinportenClientReconciler) getInstance(
 	}
 
 	return instance, nil
-}
-
-func (r *MaskinportenClientReconciler) updateWithError(
-	ctx context.Context,
-	log logr.Logger,
-	origError error,
-	msg string,
-	instance *clientv1.MaskinportenClient,
-) error {
-	ctx, span := r.tracer.Start(ctx, "Reconcile.updateWithError")
-	defer span.End()
-
-	log.Error(origError, "Reconciliation of MaskinportenClient failed", "failure", msg)
-	instance.Status.State = "error"
-	err := r.Status().Update(ctx, instance)
-	if err != nil {
-		log.Error(err, "Failed to update MaskinportenClient status when encountering error")
-	}
-
-	return err
 }
 
 func (r *MaskinportenClientReconciler) computeDesiredState(

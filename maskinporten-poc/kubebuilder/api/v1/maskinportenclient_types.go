@@ -44,9 +44,11 @@ type MaskinportenClientStatus struct {
 	// LastSynced is the timestamp of the last successful sync towards Maskinporten API
 	//
 	// +kubebuilder:validation:Format: date-time
-	LastSynced *metav1.Time `json:"lastSynced,omitempty"`
-	State      string       `json:"state,omitempty"`
-	Reason     string       `json:"reason,omitempty"`
+	LastSynced         *metav1.Time `json:"lastSynced,omitempty"`
+	State              string       `json:"state,omitempty"`
+	Reason             string       `json:"reason,omitempty"`
+	ObservedGeneration int64        `json:"observedGeneration,omitempty"`
+	LastActions        []string     `json:"lastActions,omitempty"`
 }
 
 //+kubebuilder:object:root=true
