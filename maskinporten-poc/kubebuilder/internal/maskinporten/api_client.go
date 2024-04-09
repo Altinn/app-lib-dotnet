@@ -106,7 +106,10 @@ func (c *apiClient) createGrant(ctx context.Context) (*string, error) {
 		Scope: c.config.Scope,
 	}
 
-	signer, err := jose.NewSigner(jose.SigningKey{Algorithm: jose.RS256, Key: c.jwk}, (&jose.SignerOptions{}).WithType("JWT"))
+	signer, err := jose.NewSigner(
+		jose.SigningKey{Algorithm: jose.RS256, Key: c.jwk},
+		(&jose.SignerOptions{}).WithType("JWT"),
+	)
 	if err != nil {
 		return nil, err
 	}

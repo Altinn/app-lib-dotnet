@@ -39,7 +39,10 @@ type maskinportenClientRequest struct {
 	Kind           requestKind
 }
 
-func (r *MaskinportenClientReconciler) mapRequest(ctx context.Context, req ctrl.Request) (*maskinportenClientRequest, error) {
+func (r *MaskinportenClientReconciler) mapRequest(
+	ctx context.Context,
+	req ctrl.Request,
+) (*maskinportenClientRequest, error) {
 	_, span := r.tracer.Start(ctx, "Reconcile.mapRequest")
 	defer span.End()
 

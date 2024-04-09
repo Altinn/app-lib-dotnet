@@ -18,9 +18,9 @@ type Config struct {
 
 type MaskinportenApiConfig struct {
 	ClientId string `koanf:"client_id" validate:"required"`
-	Url      string `koanf:"url" validate:"required,http_url"`
-	Jwk      string `koanf:"jwk" validate:"required,json"`
-	Scope    string `koanf:"scope" validate:"required"`
+	Url      string `koanf:"url"       validate:"required,http_url"`
+	Jwk      string `koanf:"jwk"       validate:"required,json"`
+	Scope    string `koanf:"scope"     validate:"required"`
 }
 
 var (

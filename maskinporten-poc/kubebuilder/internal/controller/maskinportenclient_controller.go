@@ -83,7 +83,11 @@ func NewMaskinportenClientReconciler(client client.Client, scheme *runtime.Schem
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.17.0/pkg/reconcile
 func (r *MaskinportenClientReconciler) Reconcile(ctx context.Context, kreq ctrl.Request) (ctrl.Result, error) {
-	ctx, span := r.tracer.Start(ctx, "Reconcile", trace.WithAttributes(attribute.String("namespace", kreq.Namespace), attribute.String("name", kreq.Name)))
+	ctx, span := r.tracer.Start(
+		ctx,
+		"Reconcile",
+		trace.WithAttributes(attribute.String("namespace", kreq.Namespace), attribute.String("name", kreq.Name)),
+	)
 	defer span.End()
 
 	log := log.FromContext(ctx)
@@ -157,7 +161,13 @@ func (r *MaskinportenClientReconciler) Reconcile(ctx context.Context, kreq ctrl.
 	return ctrl.Result{}, nil
 }
 
-func (r *MaskinportenClientReconciler) updateStatus(ctx context.Context, req *maskinportenClientRequest, instance *clientv1.MaskinportenClient, state string, reason string) error {
+func (r *MaskinportenClientReconciler) updateStatus(
+	ctx context.Context,
+	req *maskinportenClientRequest,
+	instance *clientv1.MaskinportenClient,
+	state string,
+	reason string,
+) error {
 	ctx, span := r.tracer.Start(ctx, "Reconcile.updateStatus")
 	defer span.End()
 
@@ -180,7 +190,10 @@ func (r *MaskinportenClientReconciler) updateStatus(ctx context.Context, req *ma
 	}
 }
 
-func (r *MaskinportenClientReconciler) getInstance(ctx context.Context, req *maskinportenClientRequest) (*clientv1.MaskinportenClient, error) {
+func (r *MaskinportenClientReconciler) getInstance(
+	ctx context.Context,
+	req *maskinportenClientRequest,
+) (*clientv1.MaskinportenClient, error) {
 	ctx, span := r.tracer.Start(ctx, "Reconcile.getInstance")
 	defer span.End()
 
@@ -205,7 +218,13 @@ func (r *MaskinportenClientReconciler) getInstance(ctx context.Context, req *mas
 	return instance, nil
 }
 
-func (r *MaskinportenClientReconciler) updateWithError(ctx context.Context, log logr.Logger, origError error, msg string, instance *clientv1.MaskinportenClient) error {
+func (r *MaskinportenClientReconciler) updateWithError(
+	ctx context.Context,
+	log logr.Logger,
+	origError error,
+	msg string,
+	instance *clientv1.MaskinportenClient,
+) error {
 	ctx, span := r.tracer.Start(ctx, "Reconcile.updateWithError")
 	defer span.End()
 
@@ -219,7 +238,11 @@ func (r *MaskinportenClientReconciler) updateWithError(ctx context.Context, log 
 	return err
 }
 
-func (r *MaskinportenClientReconciler) computeDesiredState(ctx context.Context, req *maskinportenClientRequest, instance *clientv1.MaskinportenClient) (maskinportenResourceList, error) {
+func (r *MaskinportenClientReconciler) computeDesiredState(
+	ctx context.Context,
+	req *maskinportenClientRequest,
+	instance *clientv1.MaskinportenClient,
+) (maskinportenResourceList, error) {
 	_, span := r.tracer.Start(ctx, "Reconcile.computeDesiredState")
 	defer span.End()
 
@@ -261,7 +284,10 @@ func (r *MaskinportenClientReconciler) computeDesiredState(ctx context.Context, 
 	return resources, nil
 }
 
-func (r *MaskinportenClientReconciler) fetchCurrentState(ctx context.Context, req *maskinportenClientRequest) (maskinportenResourceList, error) {
+func (r *MaskinportenClientReconciler) fetchCurrentState(
+	ctx context.Context,
+	req *maskinportenClientRequest,
+) (maskinportenResourceList, error) {
 	ctx, span := r.tracer.Start(ctx, "Reconcile.fetchCurrentState")
 	defer span.End()
 
@@ -308,7 +334,11 @@ func find(kind maskinportenResourceKind, resources maskinportenResourceList) mas
 	return nil
 }
 
-func (r *MaskinportenClientReconciler) reconcile(ctx context.Context, currentState maskinportenResourceList, desiredState maskinportenResourceList) (reconciliationActionList, error) {
+func (r *MaskinportenClientReconciler) reconcile(
+	ctx context.Context,
+	currentState maskinportenResourceList,
+	desiredState maskinportenResourceList,
+) (reconciliationActionList, error) {
 	ctx, span := r.tracer.Start(ctx, "Reconcile.reconcile")
 	defer span.End()
 
