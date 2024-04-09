@@ -72,15 +72,6 @@ func NewMaskinportenClientReconciler(client client.Client, scheme *runtime.Schem
 //+kubebuilder:rbac:groups=client.altinn.operator,resources=maskinportenclients/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=client.altinn.operator,resources=maskinportenclients/finalizers,verbs=update
 
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the MaskinportenClient object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.17.0/pkg/reconcile
 func (r *MaskinportenClientReconciler) Reconcile(ctx context.Context, kreq ctrl.Request) (ctrl.Result, error) {
 	ctx, span := r.tracer.Start(
 		ctx,
@@ -311,18 +302,15 @@ func (r *MaskinportenClientReconciler) fetchCurrentState(
 
 	var secrets corev1.SecretList
 	if err := r.List(ctx, &secrets, client.InNamespace(req.Namespace), client.MatchingLabels{"app": req.AppLabel}); err != nil {
-		// log.Error(err, "Failed to find app secrets")
 		return nil, err
 	}
 	if len(secrets.Items) > 1 {
-		// log.Error(nil, "Unexpected number of secrets found", "count", len(secrets.Items))
 		return nil, fmt.Errorf("unexpected number of secrets found: %d", len(secrets.Items))
 	}
 
 	if len(secrets.Items) == 1 {
 		secret := &secrets.Items[0]
 		if secret.Type != corev1.SecretTypeOpaque {
-			// log.Info("Unexpected secret type", "type", secret.Type)
 			return nil, fmt.Errorf("unexpected secret type: %s (expected Opaque)", secret.Type)
 		}
 		resources = append(resources, &maskinportenSecretResource{secret: secret})
