@@ -1,0 +1,31 @@
+name: Label PR based on Branch Name
+
+on:
+  pull_request:
+    types: [opened, reopened]
+
+jobs:
+  label_pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Label PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+             const branchName =  context.payload.pull_request.head.ref;
+             console.log('Branch Name:', branchName);
+             const labelsToAdd = ["bug", "feat", "ignore"];
+             const prefix = branchName.split('/')[0];
+             console.log('Prefix:', prefix);
+             if (labelsToAdd.includes(prefix)) {
+               console.log('Adding label:', prefix);
+               await github.rest.issues.addLabels({
+                 issue_number: context.issue.number,
+                 owner: context.repo.owner,
+                 repo: context.repo.repo,
+                 labels: [prefix]
+               });
+             } else {
+               console.log('No matching label found for prefix:', prefix);
+             }
