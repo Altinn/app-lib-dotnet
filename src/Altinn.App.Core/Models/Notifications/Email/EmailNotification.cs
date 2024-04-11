@@ -2,6 +2,7 @@ using Altinn.App.Core.Features;
 using System.Text.Json.Serialization;
 
 namespace Altinn.App.Core.Models.Notifications.Email;
+
 /// <summary>
 /// Structure used by <see cref="IEmailNotificationClient"/> to request an email notification to a list of recipients.
 /// </summary>
