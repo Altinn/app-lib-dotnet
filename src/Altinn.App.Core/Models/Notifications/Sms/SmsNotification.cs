@@ -1,9 +1,10 @@
-﻿using System.Text.Json.Serialization;
+﻿using Altinn.App.Core.Features;
+using System.Text.Json.Serialization;
 
 namespace Altinn.App.Core.Models.Notifications.Sms;
 
 /// <summary>
-/// SMS notification class used for placing SMS notification orders.
+/// Structure used by <see cref="ISmsNotificationClient"/> to request a SMS notification to a list of recipients.
 /// </summary>
 public sealed record SmsNotification
 {

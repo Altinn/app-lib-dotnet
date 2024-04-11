@@ -1,6 +1,6 @@
 using Altinn.App.Core.Models.Notifications.Sms;
 
-namespace Altinn.App.Core.Internal.Notifications.Sms;
+namespace Altinn.App.Core.Features;
 
 /// <summary>
 /// Client for managing Altinn SMS notifications

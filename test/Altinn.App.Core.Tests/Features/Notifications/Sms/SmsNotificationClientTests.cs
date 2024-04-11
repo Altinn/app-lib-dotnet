@@ -1,13 +1,13 @@
-﻿namespace Altinn.App.Core.Tests.Infrastructure.Clients.Notifications.Sms;
+﻿namespace Altinn.App.Core.Tests.Features.Notifications.Sms;
 
 using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
-using Altinn.App.Core.Infrastructure.Clients.Notifications.Sms;
+using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Notifications.Sms;
 using Altinn.App.Core.Internal.App;
-using Altinn.App.Core.Internal.Notifications.Sms;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Notifications.Sms;
 using Altinn.Common.AccessTokenClient.Services;

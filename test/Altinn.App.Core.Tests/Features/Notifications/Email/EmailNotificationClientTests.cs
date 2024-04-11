@@ -1,13 +1,13 @@
-﻿namespace Altinn.App.Core.Tests.Infrastructure.Clients.Notifications.Email;
+﻿namespace Altinn.App.Core.Tests.Features.Notifications.Email;
 
 using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
-using Altinn.App.Core.Infrastructure.Clients.Notifications.Email;
+using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Notifications.Email;
 using Altinn.App.Core.Internal.App;
-using Altinn.App.Core.Internal.Notifications.Email;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Notifications.Email;
 using Altinn.Common.AccessTokenClient.Services;

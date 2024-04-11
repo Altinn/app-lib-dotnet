@@ -1,6 +1,6 @@
 using Altinn.App.Core.Models.Notifications.Email;
 
-namespace Altinn.App.Core.Internal.Notifications.Email;
+namespace Altinn.App.Core.Features;
 
 /// <summary>
 /// Client for managing Altinn email notifications

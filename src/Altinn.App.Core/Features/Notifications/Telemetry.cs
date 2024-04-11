@@ -1,8 +1,6 @@
-using System.Diagnostics;
-using Microsoft.ApplicationInsights;
 using Prometheus;
 
-namespace Altinn.App.Core.Infrastructure.Clients.Notifications;
+namespace Altinn.App.Core.Features.Notifications;
 
 internal static class Telemetry
 {

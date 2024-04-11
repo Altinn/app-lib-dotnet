@@ -1,28 +1,27 @@
+using System.Diagnostics;
+using System.Net.Http.Headers;
+using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Internal.App;
-using Altinn.App.Core.Internal.Notifications.Email;
-using Altinn.App.Core.Models.Notifications.Email;
+using Altinn.App.Core.Models.Notifications.Sms;
 using Altinn.Common.AccessTokenClient.Services;
 using Microsoft.ApplicationInsights;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System.Diagnostics;
-using System.Net.Http.Headers;
-using System.Text.Json;
 
-namespace Altinn.App.Core.Infrastructure.Clients.Notifications.Email;
+namespace Altinn.App.Core.Features.Notifications.Sms;
 
-internal sealed class EmailNotificationClient : IEmailNotificationClient
+internal sealed class SmsNotificationClient : ISmsNotificationClient
 {
-    private readonly ILogger<EmailNotificationClient> _logger;
+    private readonly ILogger<SmsNotificationClient> _logger;
     private readonly HttpClient _httpClient;
-    private readonly IAppMetadata _appMetadata;
     private readonly PlatformSettings _platformSettings;
+    private readonly IAppMetadata _appMetadata;
     private readonly IAccessTokenGenerator _accessTokenGenerator;
     private readonly TelemetryClient? _telemetryClient;
 
-    public EmailNotificationClient(
-        ILogger<EmailNotificationClient> logger,
+    public SmsNotificationClient(
+        ILogger<SmsNotificationClient> logger,
         HttpClient httpClient,
         IOptions<PlatformSettings> platformSettings,
         IAppMetadata appMetadata,
@@ -30,14 +29,14 @@ internal sealed class EmailNotificationClient : IEmailNotificationClient
         TelemetryClient? telemetryClient = null)
     {
         _logger = logger;
-        _platformSettings = platformSettings.Value;
         _httpClient = httpClient;
+        _platformSettings = platformSettings.Value;
         _appMetadata = appMetadata;
         _accessTokenGenerator = accessTokenGenerator;
         _telemetryClient = telemetryClient;
     }
 
-    public async Task<EmailOrderResponse> Order(EmailNotification emailNotification, CancellationToken ct)
+    public async Task<SmsNotificationOrderResponse> Order(SmsNotification smsNotification, CancellationToken ct)
     {
         DateTime startDateTime = default;
         long startTimestamp = default;
@@ -50,12 +49,13 @@ internal sealed class EmailNotificationClient : IEmailNotificationClient
         HttpResponseMessage? httpResponseMessage = null;
         string? httpContent = null;
         Exception? exception = null;
+
         try
         {
-            var application = await _appMetadata.GetApplicationMetadata();
+            Models.ApplicationMetadata? application = await _appMetadata.GetApplicationMetadata();
 
-            var uri = _platformSettings.NotificationEndpoint.TrimEnd('/') + "/api/v1/orders/email";
-            var body = JsonSerializer.Serialize(emailNotification);
+            var uri = _platformSettings.NotificationEndpoint.TrimEnd('/') + "/api/v1/orders/sms";
+            var body = JsonSerializer.Serialize(smsNotification);
 
             using var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, uri)
             {
@@ -69,27 +69,27 @@ internal sealed class EmailNotificationClient : IEmailNotificationClient
 
             httpResponseMessage = await _httpClient.SendAsync(httpRequestMessage, ct);
             httpContent = await httpResponseMessage.Content.ReadAsStringAsync(ct);
-            EmailOrderResponse? orderResponse;
+
             if (httpResponseMessage.IsSuccessStatusCode)
             {
-                orderResponse = JsonSerializer.Deserialize<EmailOrderResponse>(httpContent);
+                SmsNotificationOrderResponse? orderResponse = JsonSerializer.Deserialize<SmsNotificationOrderResponse>(httpContent);
                 if (orderResponse is null)
-                    throw new JsonException("Couldn't deserialize email notification order response.");
+                    throw new JsonException("Couldn't deserialize SMS notification order response");
 
-                Telemetry.OrderCount.WithLabels(Telemetry.Types.Email, Telemetry.Result.Success).Inc();
+                Telemetry.OrderCount.WithLabels(Telemetry.Types.Sms, Telemetry.Result.Success).Inc();
+                return orderResponse;
             }
             else
             {
-                throw new HttpRequestException("Got error status code for email notification order");
+                throw new HttpRequestException("Got error status code for SMS notification order");
             }
-            return orderResponse;
         }
         catch (Exception e)
         {
             exception = e;
-            Telemetry.OrderCount.WithLabels(Telemetry.Types.Email, Telemetry.Result.Error).Inc();
-            var ex = new EmailNotificationException($"Something went wrong when processing the email order", httpResponseMessage, httpContent, e);
-            _logger.LogError(ex, "Error when processing email notification order");
+            Telemetry.OrderCount.WithLabels(Telemetry.Types.Sms, Telemetry.Result.Error).Inc();
+            var ex = new SmsNotificationException($"Something went wrong when processing the SMS notification order", httpResponseMessage, httpContent, e);
+            _logger.LogError(ex, "Error when processing SMS notification order");
             throw ex;
         }
         finally

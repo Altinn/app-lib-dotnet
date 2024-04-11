@@ -57,10 +57,8 @@ using ProcessEngine = Altinn.App.Core.Internal.Process.ProcessEngine;
 using ProcessReader = Altinn.App.Core.Internal.Process.ProcessReader;
 using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Internal.Process.Authorization;
-using Altinn.App.Core.Internal.Notifications.Email;
-using Altinn.App.Core.Infrastructure.Clients.Notifications.Email;
-using Altinn.App.Core.Infrastructure.Clients.Notifications.Sms;
-using Altinn.App.Core.Internal.Notifications.Sms;
+using Altinn.App.Core.Features.Notifications.Email;
+using Altinn.App.Core.Features.Notifications.Sms;
 
 namespace Altinn.App.Core.Extensions
 {

@@ -1,9 +1,9 @@
-using Altinn.App.Core.Infrastructure.Clients.Notifications.Email;
+using Altinn.App.Core.Features;
 using System.Text.Json.Serialization;
 
 namespace Altinn.App.Core.Models.Notifications.Email;
 /// <summary>
-/// Structure used by <see cref="EmailNotificationClient"/> to request an email notification to a list of recipients.
+/// Structure used by <see cref="IEmailNotificationClient"/> to request an email notification to a list of recipients.
 /// </summary>
 public sealed record EmailNotification
 {
