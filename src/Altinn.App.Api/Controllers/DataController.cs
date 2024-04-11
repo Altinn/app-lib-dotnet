@@ -568,6 +568,7 @@ namespace Altinn.App.Api.Controllers
             int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
 
             ObjectUtils.InitializeAltinnRowId(appModel);
+            ObjectUtils.PrepareModelForXmlStorage(appModel);
 
             DataElement dataElement = await _dataClient.InsertFormData(appModel, instanceGuid, _appModel.GetModelType(classRef), org, app, instanceOwnerPartyId, dataType);
             SelfLinkHelper.SetDataAppSelfLinks(instanceOwnerPartyId, instanceGuid, dataElement, Request);
@@ -741,6 +742,7 @@ namespace Altinn.App.Api.Controllers
             await UpdateDataValuesOnInstance(instance, dataType.Id, serviceModel);
 
             ObjectUtils.InitializeAltinnRowId(serviceModel);
+            ObjectUtils.PrepareModelForXmlStorage(serviceModel);
 
             // Save Formdata to database
             DataElement updatedDataElement = await _dataClient.UpdateData(

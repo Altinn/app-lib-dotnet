@@ -125,7 +125,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         // to avoid issue introduced with .Net when MS introduced BOM by default
         // when serializing ref. https://github.com/dotnet/runtime/issues/63585
         // Will be fixed with  https://github.com/dotnet/runtime/pull/75637
-        private static void Serialize<T>(T dataToSerialize, Type type, MemoryStream targetStream)
+        internal static void Serialize<T>(T dataToSerialize, Type type, MemoryStream targetStream)
         {
             XmlWriterSettings xmlWriterSettings = new XmlWriterSettings() { Encoding = new UTF8Encoding(false) };
             XmlWriter xmlWriter = XmlWriter.Create(targetStream, xmlWriterSettings);
