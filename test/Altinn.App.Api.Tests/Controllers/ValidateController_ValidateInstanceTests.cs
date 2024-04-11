@@ -59,16 +59,6 @@ public class ValidateControllerValidateInstanceTests : ApiTestBase, IClassFixtur
         return await httpClient.GetAsync($"/{Org}/{App}/instances/{InstanceId}/validate");
     }
 
-    private async Task<(HttpResponseMessage response, string responseString)> CallValidateDataApi()
-    {
-        using var httpClient = GetRootedClient(Org, App);
-        string token = PrincipalUtil.GetToken(1337, null);
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        var response = await httpClient.GetAsync($"/{Org}/{App}/instances/{InstanceId}/data/{DataGuid}/validate");
-        var responseString = await LogResponse(response);
-        return (response, responseString);
-    }
-
     private async Task<string> LogResponse(HttpResponseMessage response)
     {
         var responseString = await response.Content.ReadAsStringAsync();
@@ -85,7 +75,7 @@ public class ValidateControllerValidateInstanceTests : ApiTestBase, IClassFixtur
     [Fact]
     public async Task ValidateInstance_NoSetup()
     {
-        var response = await CallValidateInstanceApi();
+        using var response = await CallValidateInstanceApi();
         var responseString = await LogResponse(response);
 
         response.Should().HaveStatusCode(HttpStatusCode.OK);
@@ -120,7 +110,7 @@ public class ValidateControllerValidateInstanceTests : ApiTestBase, IClassFixtur
         {
             services.AddSingleton(oldTaskValidatorMock.Object);
         };
-        var response = await CallValidateInstanceApi();
+        using var response = await CallValidateInstanceApi();
         var responseString = await LogResponse(response);
 
         response.Should().HaveStatusCode(HttpStatusCode.OK);

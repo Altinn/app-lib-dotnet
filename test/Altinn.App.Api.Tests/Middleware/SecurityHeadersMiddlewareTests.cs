@@ -27,7 +27,7 @@ public class SecurityHeadersMiddlewareTests
             })
             .StartAsync();
         // Act
-        var response = await host.GetTestClient().GetAsync("/");
+        using var response = await host.GetTestClient().GetAsync("/");
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         Assert.Equal("deny", response.Headers.GetValues("X-Frame-Options").FirstOrDefault());

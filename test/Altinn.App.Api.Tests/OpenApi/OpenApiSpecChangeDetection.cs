@@ -17,7 +17,7 @@ public class OpenApiSpecChangeDetection : ApiTestBase, IClassFixture<WebApplicat
     {
         HttpClient client = GetRootedClient("tdd", "contributer-restriction");
         // The test project exposes swagger.json at /swagger/v1/swagger.json not /{org}/{app}/swagger/v1/swagger.json
-        HttpResponseMessage response = await client.GetAsync("/swagger/v1/swagger.json");
+        using HttpResponseMessage response = await client.GetAsync("/swagger/v1/swagger.json");
         string openApiSpec = await response.Content.ReadAsStringAsync();
         response.EnsureSuccessStatusCode();
         var originalSpec = await File.ReadAllTextAsync("../../../OpenApi/swagger.json");
@@ -32,7 +32,7 @@ public class OpenApiSpecChangeDetection : ApiTestBase, IClassFixture<WebApplicat
         // The test project exposes swagger.json at /swagger/v1/swagger.json not /{org}/{app}/swagger/v1/swagger.json
         using var request = new HttpRequestMessage(HttpMethod.Get, "/swagger/v1/swagger.yaml");
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/yaml"));
-        HttpResponseMessage response = await client.SendAsync(request);
+        using HttpResponseMessage response = await client.SendAsync(request);
         string openApiSpec = await response.Content.ReadAsStringAsync();
         response.EnsureSuccessStatusCode();
         var originalSpec = await File.ReadAllTextAsync("../../../OpenApi/swagger.yaml");

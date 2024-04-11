@@ -66,7 +66,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Register
             string endpointUrl = $"parties/{partyId}";
             string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
             ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
-            HttpResponseMessage response = await _client.GetAsync(token, endpointUrl, _accessTokenGenerator.GenerateAccessToken(application.Org, application.AppIdentifier.App));
+            using HttpResponseMessage response = await _client.GetAsync(token, endpointUrl, _accessTokenGenerator.GenerateAccessToken(application.Org, application.AppIdentifier.App));
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 party = await JsonSerializerPermissive.DeserializeAsync<Party>(response.Content);
@@ -104,7 +104,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Register
             ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
             request.Headers.Add("PlatformAccessToken", _accessTokenGenerator.GenerateAccessToken(application.Org, application.AppIdentifier.App));
 
-            HttpResponseMessage response = await _client.SendAsync(request);
+            using HttpResponseMessage response = await _client.SendAsync(request);
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 party = await JsonSerializerPermissive.DeserializeAsync<Party>(response.Content);

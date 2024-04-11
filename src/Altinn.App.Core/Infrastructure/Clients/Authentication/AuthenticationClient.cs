@@ -46,7 +46,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Authentication
         {
             string endpointUrl = $"refresh";
             string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, General.RuntimeCookieName);
-            HttpResponseMessage response = await _client.GetAsync(token, endpointUrl);
+            using HttpResponseMessage response = await _client.GetAsync(token, endpointUrl);
 
             if (response.StatusCode == System.Net.HttpStatusCode.OK)
             {

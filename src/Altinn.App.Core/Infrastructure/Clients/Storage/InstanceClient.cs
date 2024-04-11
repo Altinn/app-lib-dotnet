@@ -63,7 +63,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             string apiUrl = $"instances/{instanceIdentifier}";
             string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
 
-            HttpResponseMessage response = await _client.GetAsync(token, apiUrl);
+            using HttpResponseMessage response = await _client.GetAsync(token, apiUrl);
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 string instanceData = await response.Content.ReadAsStringAsync();
@@ -124,7 +124,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
 
         private async Task<QueryResponse<Instance>> QueryInstances(string token, string url)
         {
-            HttpResponseMessage response = await _client.GetAsync(token, url);
+            using HttpResponseMessage response = await _client.GetAsync(token, url);
 
             if (response.StatusCode == HttpStatusCode.OK)
             {
@@ -151,7 +151,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             _logger.LogInformation($"update process state: {processStateString}");
 
             StringContent httpContent = new StringContent(processStateString, Encoding.UTF8, "application/json");
-            HttpResponseMessage response = await _client.PutAsync(token, apiUrl, httpContent);
+            using HttpResponseMessage response = await _client.PutAsync(token, apiUrl, httpContent);
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 string instanceData = await response.Content.ReadAsStringAsync();
@@ -173,7 +173,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
 
             StringContent content = new StringContent(JsonConvert.SerializeObject(instanceTemplate), Encoding.UTF8, "application/json");
-            HttpResponseMessage response = await _client.PostAsync(token, apiUrl, content);
+            using HttpResponseMessage response = await _client.PostAsync(token, apiUrl, content);
 
             if (response.IsSuccessStatusCode)
             {
@@ -192,7 +192,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}/complete";
             string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
 
-            HttpResponseMessage response = await _client.PostAsync(token, apiUrl, new StringContent(string.Empty));
+            using HttpResponseMessage response = await _client.PostAsync(token, apiUrl, new StringContent(string.Empty));
 
             if (response.StatusCode == HttpStatusCode.OK)
             {
@@ -210,7 +210,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}/readstatus?status={readStatus}";
             string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
 
-            HttpResponseMessage response = await _client.PutAsync(token, apiUrl, new StringContent(string.Empty));
+            using HttpResponseMessage response = await _client.PutAsync(token, apiUrl, new StringContent(string.Empty));
 
             if (response.StatusCode == HttpStatusCode.OK)
             {
@@ -229,7 +229,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}/substatus";
             string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
 
-            HttpResponseMessage response = await _client.PutAsync(token, apiUrl, new StringContent(JsonConvert.SerializeObject(substatus), Encoding.UTF8, "application/json"));
+            using HttpResponseMessage response = await _client.PutAsync(token, apiUrl, new StringContent(JsonConvert.SerializeObject(substatus), Encoding.UTF8, "application/json"));
 
             if (response.StatusCode == HttpStatusCode.OK)
             {
@@ -247,7 +247,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}/presentationtexts";
             string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
 
-            HttpResponseMessage response = await _client.PutAsync(token, apiUrl, new StringContent(JsonConvert.SerializeObject(presentationTexts), Encoding.UTF8, "application/json"));
+            using HttpResponseMessage response = await _client.PutAsync(token, apiUrl, new StringContent(JsonConvert.SerializeObject(presentationTexts), Encoding.UTF8, "application/json"));
 
             if (response.StatusCode == HttpStatusCode.OK)
             {
@@ -265,7 +265,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}/datavalues";
             string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
 
-            HttpResponseMessage response = await _client.PutAsync(token, apiUrl, new StringContent(JsonConvert.SerializeObject(dataValues), Encoding.UTF8, "application/json"));
+            using HttpResponseMessage response = await _client.PutAsync(token, apiUrl, new StringContent(JsonConvert.SerializeObject(dataValues), Encoding.UTF8, "application/json"));
 
             if (response.StatusCode == HttpStatusCode.OK)
             {
@@ -283,7 +283,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}?hard={hard}";
             string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
 
-            HttpResponseMessage response = await _client.DeleteAsync(token, apiUrl);
+            using HttpResponseMessage response = await _client.DeleteAsync(token, apiUrl);
 
             if (response.StatusCode == HttpStatusCode.OK)
             {

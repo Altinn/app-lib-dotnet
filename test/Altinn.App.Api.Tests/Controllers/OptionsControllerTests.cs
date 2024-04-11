@@ -30,7 +30,7 @@ namespace Altinn.App.Api.Tests.Controllers
             HttpClient client = GetRootedClient(org, app);
 
             string url = $"/{org}/{app}/api/options/test?language=esperanto";
-            HttpResponseMessage response = await client.GetAsync(url);
+            using HttpResponseMessage response = await client.GetAsync(url);
             var content = await response.Content.ReadAsStringAsync();
             _outputHelper.WriteLine(content);
             response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -81,7 +81,7 @@ namespace Altinn.App.Api.Tests.Controllers
             HttpClient client = GetRootedClient(org, app);
 
             string url = $"/{org}/{app}/api/options/test?";
-            HttpResponseMessage response = await client.GetAsync(url);
+            using HttpResponseMessage response = await client.GetAsync(url);
             var content = await response.Content.ReadAsStringAsync();
             response.StatusCode.Should().Be(HttpStatusCode.OK, content);
 
@@ -110,7 +110,7 @@ namespace Altinn.App.Api.Tests.Controllers
             HttpClient client = GetRootedClient(org, app);
 
             string url = $"/{org}/{app}/api/options/test";
-            HttpResponseMessage response = await client.GetAsync(url);
+            using HttpResponseMessage response = await client.GetAsync(url);
             var content = await response.Content.ReadAsStringAsync();
             _outputHelper.WriteLine(content);
             response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -128,7 +128,7 @@ namespace Altinn.App.Api.Tests.Controllers
             HttpClient client = GetRootedClient(org, app);
 
             string url = $"/{org}/{app}/api/options/fileSourceOptions";
-            HttpResponseMessage response = await client.GetAsync(url);
+            using HttpResponseMessage response = await client.GetAsync(url);
             var content = await response.Content.ReadAsStringAsync();
             _outputHelper.WriteLine(content);
             response.Should().HaveStatusCode(HttpStatusCode.OK);
@@ -146,7 +146,7 @@ namespace Altinn.App.Api.Tests.Controllers
             HttpClient client = GetRootedClient(org, app);
 
             string url = $"/{org}/{app}/api/options/non-existent-option-list";
-            HttpResponseMessage response = await client.GetAsync(url);
+            using HttpResponseMessage response = await client.GetAsync(url);
             var content = await response.Content.ReadAsStringAsync();
             _outputHelper.WriteLine(content);
             response.Should().HaveStatusCode(HttpStatusCode.NotFound);
@@ -165,7 +165,7 @@ namespace Altinn.App.Api.Tests.Controllers
             HttpClient client = GetRootedClient(org, app);
 
             string url = $"/{org}/{app}/api/options/test";
-            HttpResponseMessage response = await client.GetAsync(url);
+            using HttpResponseMessage response = await client.GetAsync(url);
             var content = await response.Content.ReadAsStringAsync();
             _outputHelper.WriteLine(content);
             response.StatusCode.Should().Be(HttpStatusCode.OK);

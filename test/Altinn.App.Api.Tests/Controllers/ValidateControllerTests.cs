@@ -180,7 +180,7 @@ public class ValidateControllerTests
             }
         };
 
-        var updateProcessResult = new HttpResponseMessage(HttpStatusCode.Forbidden);
+        using var updateProcessResult = new HttpResponseMessage(HttpStatusCode.Forbidden);
         PlatformHttpException exception = await PlatformHttpException.CreateAsync(updateProcessResult);
 
         instanceMock.Setup(i => i.GetInstance(app, org, instanceOwnerPartyId, instanceId))
@@ -223,7 +223,7 @@ public class ValidateControllerTests
             }
         };
 
-        var updateProcessResult = new HttpResponseMessage(HttpStatusCode.BadRequest);
+        using var updateProcessResult = new HttpResponseMessage(HttpStatusCode.BadRequest);
         PlatformHttpException exception = await PlatformHttpException.CreateAsync(updateProcessResult);
 
         instanceMock.Setup(i => i.GetInstance(app, org, instanceOwnerPartyId, instanceId))

@@ -70,7 +70,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
                 apiUrl += $"{paramSeparator}from={from}&to={to}";
             }
 
-            HttpResponseMessage response = await _client.GetAsync(token, apiUrl);
+            using HttpResponseMessage response = await _client.GetAsync(token, apiUrl);
 
             if (response.IsSuccessStatusCode)
             {
@@ -91,7 +91,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             string apiUrl = $"instances/{instanceEvent.InstanceId}/events";
             string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
 
-            HttpResponseMessage response = await _client.PostAsync(token, apiUrl, new StringContent(instanceEvent.ToString(), Encoding.UTF8, "application/json"));
+            using HttpResponseMessage response = await _client.PostAsync(token, apiUrl, new StringContent(instanceEvent.ToString(), Encoding.UTF8, "application/json"));
 
             if (response.IsSuccessStatusCode)
             {

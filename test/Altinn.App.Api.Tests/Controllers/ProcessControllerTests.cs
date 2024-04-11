@@ -67,7 +67,7 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         TestData.PrepareInstance(org, app, partyId, instanceId);
 
         string url = $"/{org}/{app}/instances/{partyId}/{instanceId}/process";
-        HttpResponseMessage response = await client.GetAsync(url);
+        using HttpResponseMessage response = await client.GetAsync(url);
         TestData.DeleteInstance(org, app, partyId, instanceId);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -144,7 +144,7 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         };
         using var client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
         // both "?lang" and "?language" should work
-        var nextResponse = await client.PutAsync($"{Org}/{App}/instances/{InstanceId}/process/next?lang={language}", null);
+        using var nextResponse = await client.PutAsync($"{Org}/{App}/instances/{InstanceId}/process/next?lang={language}", null);
         var nextResponseContent = await nextResponse.Content.ReadAsStringAsync();
         _outputHelper.WriteLine(nextResponseContent);
         nextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
@@ -174,7 +174,7 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         };
         using var client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
         // both "?lang" and "?language" should work
-        var nextResponse = await client.PutAsync($"{Org}/{App}/instances/{InstanceId}/process/next?language={language}", null);
+        using var nextResponse = await client.PutAsync($"{Org}/{App}/instances/{InstanceId}/process/next?language={language}", null);
         var nextResponseContent = await nextResponse.Content.ReadAsStringAsync();
         _outputHelper.WriteLine(nextResponseContent);
         nextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
@@ -239,7 +239,7 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
             services.AddSingleton(dataValidator.Object);
         };
         using var client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
-        var nextResponse = await client.PutAsync($"{Org}/{App}/instances/{InstanceId}/process/next", null);
+        using var nextResponse = await client.PutAsync($"{Org}/{App}/instances/{InstanceId}/process/next", null);
         var nextResponseContent = await nextResponse.Content.ReadAsStringAsync();
         _outputHelper.WriteLine(nextResponseContent);
         nextResponse.Should().HaveStatusCode(HttpStatusCode.Conflict);
@@ -297,7 +297,7 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
             services.AddSingleton(pdfMock.Object);
         };
         using var client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
-        var nextResponse = await client.PutAsync($"{Org}/{App}/instances/{InstanceId}/process/next", null);
+        using var nextResponse = await client.PutAsync($"{Org}/{App}/instances/{InstanceId}/process/next", null);
         var nextResponseContent = await nextResponse.Content.ReadAsStringAsync();
         _outputHelper.WriteLine(nextResponseContent);
         nextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
@@ -322,7 +322,7 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
             services.AddSingleton(pdfMock.Object);
         };
         using var client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
-        var nextResponse = await client.PutAsync($"{Org}/{App}/instances/{InstanceId}/process/completeProcess", null);
+        using var nextResponse = await client.PutAsync($"{Org}/{App}/instances/{InstanceId}/process/completeProcess", null);
         var nextResponseContent = await nextResponse.Content.ReadAsStringAsync();
         _outputHelper.WriteLine(nextResponseContent);
         nextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
@@ -346,7 +346,7 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         };
         using var client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
         using var content = new StringContent("""{"action": "unknown-action_unauthorized"}""", Encoding.UTF8, "application/json");
-        var nextResponse = await client.PutAsync($"{Org}/{App}/instances/{InstanceId}/process/next", content);
+        using var nextResponse = await client.PutAsync($"{Org}/{App}/instances/{InstanceId}/process/next", content);
         var nextResponseContent = await nextResponse.Content.ReadAsStringAsync();
         _outputHelper.WriteLine(nextResponseContent);
         nextResponse.Should().HaveStatusCode(HttpStatusCode.Forbidden);

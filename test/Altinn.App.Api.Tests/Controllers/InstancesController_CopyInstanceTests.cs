@@ -218,8 +218,9 @@ public class InstancesController_CopyInstanceTests
         Guid instanceGuid = Guid.NewGuid();
 
         // Storage returns Forbidden if the given instance id is wrong.
+        using var response = new HttpResponseMessage(System.Net.HttpStatusCode.Forbidden);
         PlatformHttpException platformHttpException =
-            await PlatformHttpException.CreateAsync(new HttpResponseMessage(System.Net.HttpStatusCode.Forbidden));
+            await PlatformHttpException.CreateAsync(response);
 
         _httpContextMock.Setup(httpContext => httpContext.User).Returns(PrincipalUtil.GetUserPrincipal(1337, null));
         _appMetadata.Setup(a => a.GetApplicationMetadata())
@@ -253,8 +254,9 @@ public class InstancesController_CopyInstanceTests
         Guid instanceGuid = Guid.NewGuid();
 
         // Simulate a BadGateway respons from Platform
+        using var response = new HttpResponseMessage(System.Net.HttpStatusCode.BadGateway);
         PlatformHttpException platformHttpException =
-            await PlatformHttpException.CreateAsync(new HttpResponseMessage(System.Net.HttpStatusCode.BadGateway));
+            await PlatformHttpException.CreateAsync(response);
 
         _httpContextMock.Setup(httpContext => httpContext.User).Returns(PrincipalUtil.GetUserPrincipal(1337, null));
         _appMetadata.Setup(a => a.GetApplicationMetadata())

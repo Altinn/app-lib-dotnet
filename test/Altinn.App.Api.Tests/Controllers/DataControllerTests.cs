@@ -37,7 +37,7 @@ namespace Altinn.App.Api.Tests.Controllers
 
 
             using var content = new StringContent("{}", System.Text.Encoding.UTF8, "application/json"); // empty valid json
-            var response = await client.PostAsync($"/{org}/{app}/instances/{instanceOwnerPartyId}/{guid}/data", content);
+            using var response = await client.PostAsync($"/{org}/{app}/instances/{instanceOwnerPartyId}/{guid}/data", content);
             response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
             var responseContent = await response.Content.ReadAsStringAsync();
             responseContent.Should().Contain("dataType");
@@ -72,7 +72,7 @@ namespace Altinn.App.Api.Tests.Controllers
             };
 
             // This is where it happens
-            HttpResponseMessage response = await client.SendAsync(request);
+            using HttpResponseMessage response = await client.SendAsync(request);
 
             // Cleanup testdata
             TestData.DeleteInstanceAndData(org, app, 1337, guid);
@@ -109,7 +109,7 @@ namespace Altinn.App.Api.Tests.Controllers
             };
 
             // This is where it happens
-            HttpResponseMessage response = await client.SendAsync(request);
+            using HttpResponseMessage response = await client.SendAsync(request);
 
             // Cleanup testdata
             TestData.DeleteInstanceAndData(org, app, 1337, guid);
@@ -148,7 +148,7 @@ namespace Altinn.App.Api.Tests.Controllers
             };
 
             // This is where it happens
-            HttpResponseMessage response = await client.SendAsync(request);
+            using HttpResponseMessage response = await client.SendAsync(request);
             string responseContent = await response.Content.ReadAsStringAsync();
 
             // Cleanup testdata

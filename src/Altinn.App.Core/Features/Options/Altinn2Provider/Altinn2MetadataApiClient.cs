@@ -1,3 +1,4 @@
+using System.Net;
 using Altinn.App.Core.Helpers;
 
 namespace Altinn.App.Core.Features.Options.Altinn2Provider
@@ -28,14 +29,21 @@ namespace Altinn.App.Core.Features.Options.Altinn2Provider
         /// <param name="version">The version number for the list in the api</param>
         public async Task<MetadataCodelistResponse> GetAltinn2Codelist(string id, string langCode, int? version = null)
         {
-            var response = await _client.GetAsync($"https://www.altinn.no/api/metadata/codelists/{id}/{version?.ToString() ?? string.Empty}?language={langCode}");
-            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            return await Get(id, langCode, version) ?? await Get(id, langCode: null, version);
+
+            async Task<MetadataCodelistResponse?> Get(string id, string? langCode, int? version)
             {
-                response = await _client.GetAsync($"https://www.altinn.no/api/metadata/codelists/{id}/{version?.ToString() ?? string.Empty}");
+                var versionParam = version?.ToString() ?? "";
+                var langCodeParam = langCode is null ? "" : $"?language={langCode}";
+                var url = $"https://www.altinn.no/api/metadata/codelists/{id}/{versionParam}{langCodeParam}";
+                using var response = await _client.GetAsync(url);
+
+                if (response.StatusCode == HttpStatusCode.NotFound)
+                    return null;
+
+                response.EnsureSuccessStatusCode();
+                return await JsonSerializerPermissive.DeserializeAsync<MetadataCodelistResponse>(response.Content);
             }
-            response.EnsureSuccessStatusCode();
-            var codelist = await JsonSerializerPermissive.DeserializeAsync<MetadataCodelistResponse>(response.Content);
-            return codelist;
         }
     }
 }

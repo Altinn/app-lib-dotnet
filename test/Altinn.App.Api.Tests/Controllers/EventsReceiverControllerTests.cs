@@ -47,7 +47,7 @@ namespace Altinn.App.Api.Tests.Controllers
                 Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(cloudEvent), Encoding.UTF8, "application/json")
             };
 
-            HttpResponseMessage response = await client.SendAsync(request);
+            using HttpResponseMessage response = await client.SendAsync(request);
 
             response.StatusCode.Should().Be(HttpStatusCode.OK);
         }
@@ -76,7 +76,7 @@ namespace Altinn.App.Api.Tests.Controllers
                 Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(cloudEvent), Encoding.UTF8, "application/json")
             };
 
-            HttpResponseMessage response = await client.SendAsync(request);
+            using HttpResponseMessage response = await client.SendAsync(request);
 
             response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         }

@@ -80,7 +80,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             stream.Position = 0;
             StreamContent streamContent = new StreamContent(stream);
             streamContent.Headers.ContentType = MediaTypeHeaderValue.Parse("application/xml");
-            HttpResponseMessage response = await _client.PostAsync(token, apiUrl, streamContent);
+            using HttpResponseMessage response = await _client.PostAsync(token, apiUrl, streamContent);
 
             if (response.IsSuccessStatusCode)
             {
@@ -109,7 +109,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             StreamContent streamContent = new StreamContent(stream);
             streamContent.Headers.ContentType = MediaTypeHeaderValue.Parse("application/xml");
 
-            HttpResponseMessage response = await _client.PutAsync(token, apiUrl, streamContent);
+            using HttpResponseMessage response = await _client.PutAsync(token, apiUrl, streamContent);
 
             if (response.IsSuccessStatusCode)
             {
@@ -143,6 +143,8 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
 
             string token = _userTokenProvider.GetUserToken();
 
+            // Not disposing this since the stream is returned to the caller
+            // TODO: wrap the stream in an object that disposes both the resopnse and the stream?
             HttpResponseMessage response = await _client.GetAsync(token, apiUrl);
 
             if (response.IsSuccessStatusCode)
@@ -164,10 +166,10 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             string apiUrl = $"instances/{instanceIdentifier}/data/{dataId}";
             string token = _userTokenProvider.GetUserToken();
 
-            HttpResponseMessage response = await _client.GetAsync(token, apiUrl);
+            using HttpResponseMessage response = await _client.GetAsync(token, apiUrl);
             if (response.IsSuccessStatusCode)
             {
-                using Stream stream = await response.Content.ReadAsStreamAsync();
+                await using Stream stream = await response.Content.ReadAsStreamAsync();
                 ModelDeserializer deserializer = new ModelDeserializer(_logger, type);
                 object? model = await deserializer.DeserializeAsync(stream, "application/xml");
 
@@ -193,7 +195,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             DataElementList dataList;
             List<AttachmentList> attachmentList = new List<AttachmentList>();
 
-            HttpResponseMessage response = await _client.GetAsync(token, apiUrl);
+            using HttpResponseMessage response = await _client.GetAsync(token, apiUrl);
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 string instanceData = await response.Content.ReadAsStringAsync();
@@ -255,7 +257,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             string apiUrl = $"instances/{instanceIdentifier}/data/{dataGuid}?delay={delay}";
             string token = _userTokenProvider.GetUserToken();
 
-            HttpResponseMessage response = await _client.DeleteAsync(token, apiUrl);
+            using HttpResponseMessage response = await _client.DeleteAsync(token, apiUrl);
 
             if (response.IsSuccessStatusCode)
             {
@@ -276,7 +278,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
 
             StreamContent content = request.CreateContentStream();
 
-            HttpResponseMessage response = await _client.PostAsync(token, apiUrl, content);
+            using HttpResponseMessage response = await _client.PostAsync(token, apiUrl, content);
 
             if (response.IsSuccessStatusCode)
             {
@@ -312,7 +314,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
                 };
             }
 
-            HttpResponseMessage response = await _client.PostAsync(token, apiUrl, content);
+            using HttpResponseMessage response = await _client.PostAsync(token, apiUrl, content);
 
             if (response.IsSuccessStatusCode)
             {
@@ -335,7 +337,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
 
             StreamContent content = request.CreateContentStream();
 
-            HttpResponseMessage response = await _client.PutAsync(token, apiUrl, content);
+            using HttpResponseMessage response = await _client.PutAsync(token, apiUrl, content);
 
             if (response.IsSuccessStatusCode)
             {
@@ -361,7 +363,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
                 FileName = filename,
                 FileNameStar = filename
             };
-            HttpResponseMessage response = await _client.PutAsync(token, apiUrl, content);
+            using HttpResponseMessage response = await _client.PutAsync(token, apiUrl, content);
             _logger.LogInformation("Update binary data result: {ResultCode}", response.StatusCode);
             if (response.IsSuccessStatusCode)
             {
@@ -380,7 +382,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             string token = _userTokenProvider.GetUserToken();
 
             StringContent jsonString = new StringContent(JsonConvert.SerializeObject(dataElement), Encoding.UTF8, "application/json");
-            HttpResponseMessage response = await _client.PutAsync(token, apiUrl, jsonString);
+            using HttpResponseMessage response = await _client.PutAsync(token, apiUrl, jsonString);
 
             if (response.IsSuccessStatusCode)
             {
@@ -398,7 +400,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             string apiUrl = $"{_platformSettings.ApiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}/lock";
             string token = _userTokenProvider.GetUserToken();
             _logger.LogDebug("Locking data element {DataGuid} for instance {InstanceIdentifier} URL: {Url}", dataGuid, instanceIdentifier, apiUrl);
-            HttpResponseMessage response = await _client.PutAsync(token, apiUrl, content: null);
+            using HttpResponseMessage response = await _client.PutAsync(token, apiUrl, content: null);
             if (response.IsSuccessStatusCode)
             {
                 DataElement result = JsonConvert.DeserializeObject<DataElement>(await response.Content.ReadAsStringAsync())!;
@@ -414,7 +416,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             string apiUrl = $"{_platformSettings.ApiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}/lock";
             string token = _userTokenProvider.GetUserToken();
             _logger.LogDebug("Unlocking data element {DataGuid} for instance {InstanceIdentifier} URL: {Url}", dataGuid, instanceIdentifier, apiUrl);
-            HttpResponseMessage response = await _client.DeleteAsync(token, apiUrl);
+            using HttpResponseMessage response = await _client.DeleteAsync(token, apiUrl);
             if (response.IsSuccessStatusCode)
             {
                 DataElement result = JsonConvert.DeserializeObject<DataElement>(await response.Content.ReadAsStringAsync())!;

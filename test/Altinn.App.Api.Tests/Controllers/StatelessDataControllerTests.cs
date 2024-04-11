@@ -135,7 +135,7 @@ public class StatelessDataControllerTests
         });
 
         // Act
-        var response = await client.SendAsync(request);
+        using var response = await client.SendAsync(request);
         var responseText = await response.Content.ReadAsStringAsync();
 
         // Assert
@@ -163,7 +163,7 @@ public class StatelessDataControllerTests
 
 
         // Act
-        var response = await client.SendAsync(request);
+        using var response = await client.SendAsync(request);
 
         // Assert
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.Forbidden);

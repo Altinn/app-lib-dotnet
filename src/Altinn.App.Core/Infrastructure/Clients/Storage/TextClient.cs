@@ -71,7 +71,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
                 string url = $"applications/{org}/{app}/texts/{language}";
                 string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
 
-                HttpResponseMessage response = await _client.GetAsync(token, url);
+                using HttpResponseMessage response = await _client.GetAsync(token, url);
                 if (response.StatusCode == System.Net.HttpStatusCode.OK)
                 {
                     textResource = await JsonSerializerPermissive.DeserializeAsync<TextResource>(response.Content);

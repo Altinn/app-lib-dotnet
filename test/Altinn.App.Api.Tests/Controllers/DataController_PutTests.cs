@@ -43,7 +43,7 @@ public class DataController_PutTests : ApiTestBase, IClassFixture<WebApplication
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Create instance
-        var createResponse =
+        using var createResponse =
             await client.PostAsync($"{org}/{app}/instances/?instanceOwnerPartyId={instanceOwnerPartyId}", null);
         var createResponseContent = await createResponse.Content.ReadAsStringAsync();
         createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -53,7 +53,7 @@ public class DataController_PutTests : ApiTestBase, IClassFixture<WebApplication
         // Create data element (not sure why it isn't created when the instance is created, autoCreate is true)
         using var createDataElementContent =
             new StringContent("""{"melding":{"name": "Ivar"}}""", System.Text.Encoding.UTF8, "application/json");
-        var createDataElementResponse =
+        using var createDataElementResponse =
             await client.PostAsync($"/{org}/{app}/instances/{instanceId}/data?dataType=default", createDataElementContent);
         var createDataElementResponseContent = await createDataElementResponse.Content.ReadAsStringAsync();
         createDataElementResponse.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -64,11 +64,11 @@ public class DataController_PutTests : ApiTestBase, IClassFixture<WebApplication
         // Update data element
         using var updateDataElementContent =
             new StringContent("""{"melding":{"name": "Ola Olsen"}}""", System.Text.Encoding.UTF8, "application/json");
-        var response = await client.PutAsync($"/{org}/{app}/instances/{instanceId}/data/{dataGuid}", updateDataElementContent);
+        using var response = await client.PutAsync($"/{org}/{app}/instances/{instanceId}/data/{dataGuid}", updateDataElementContent);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         // Verify stored data
-        var readDataElementResponse = await client.GetAsync($"/{org}/{app}/instances/{instanceId}/data/{dataGuid}");
+        using var readDataElementResponse = await client.GetAsync($"/{org}/{app}/instances/{instanceId}/data/{dataGuid}");
         readDataElementResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         var readDataElementResponseContent = await readDataElementResponse.Content.ReadAsStringAsync();
         var readDataElementResponseParsed =
@@ -105,7 +105,7 @@ public class DataController_PutTests : ApiTestBase, IClassFixture<WebApplication
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Create instance
-        var createResponse =
+        using var createResponse =
             await client.PostAsync($"{org}/{app}/instances/?instanceOwnerPartyId={instanceOwnerPartyId}", null);
         var createResponseContent = await createResponse.Content.ReadAsStringAsync();
         createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -115,7 +115,7 @@ public class DataController_PutTests : ApiTestBase, IClassFixture<WebApplication
         // Create data element (not sure why it isn't created when the instance is created, autoCreate is true)
         using var createDataElementContent =
             new StringContent("""{"melding":{"name": "Ivar"}}""", System.Text.Encoding.UTF8, "application/json");
-        var createDataElementResponse =
+        using var createDataElementResponse =
             await client.PostAsync($"/{org}/{app}/instances/{instanceId}/data?dataType=default",
                 createDataElementContent);
         var createDataElementResponseContent = await createDataElementResponse.Content.ReadAsStringAsync();
@@ -125,7 +125,7 @@ public class DataController_PutTests : ApiTestBase, IClassFixture<WebApplication
         var dataGuid = createDataElementResponseParsed.Id;
 
         // Verify stored data
-        var firstReadDataElementResponse = await client.GetAsync($"/{org}/{app}/instances/{instanceId}/data/{dataGuid}");
+        using var firstReadDataElementResponse = await client.GetAsync($"/{org}/{app}/instances/{instanceId}/data/{dataGuid}");
         var firstReadDataElementResponseContent = await firstReadDataElementResponse.Content.ReadAsStringAsync();
         var firstReadDataElementResponseParsed =
             JsonSerializer.Deserialize<Skjema>(firstReadDataElementResponseContent)!;
@@ -135,12 +135,12 @@ public class DataController_PutTests : ApiTestBase, IClassFixture<WebApplication
         // Update data element
         using var updateDataElementContent =
             new StringContent("""{"melding":{"name": "Ola Olsen"}}""", System.Text.Encoding.UTF8, "application/json");
-        var response = await client.PutAsync($"/{org}/{app}/instances/{instanceId}/data/{dataGuid}", updateDataElementContent);
+        using var response = await client.PutAsync($"/{org}/{app}/instances/{instanceId}/data/{dataGuid}", updateDataElementContent);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
 
         // Verify stored data
-        var readDataElementResponse = await client.GetAsync($"/{org}/{app}/instances/{instanceId}/data/{dataGuid}");
+        using var readDataElementResponse = await client.GetAsync($"/{org}/{app}/instances/{instanceId}/data/{dataGuid}");
         var readDataElementResponseContent = await readDataElementResponse.Content.ReadAsStringAsync();
         var readDataElementResponseParsed =
             JsonSerializer.Deserialize<Skjema>(readDataElementResponseContent)!;

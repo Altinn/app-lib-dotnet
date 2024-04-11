@@ -61,7 +61,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
     }
 
     // Helper method to call the API
-    private async Task<(HttpResponseMessage response, string responseString, TResponse parsedResponse)> CallPatchApi<TResponse>(JsonPatch patch, List<string>? ignoredValidators, HttpStatusCode expectedStatus, string? language = null)
+    private async Task<(string responseString, TResponse parsedResponse)> CallPatchApi<TResponse>(JsonPatch patch, List<string>? ignoredValidators, HttpStatusCode expectedStatus, string? language = null)
     {
         var url = $"/{Org}/{App}/instances/{InstanceId}/data/{DataGuid}";
         if (language is not null)
@@ -80,14 +80,14 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
         _outputHelper.WriteLine(serializedPatch);
         using var updateDataElementContent =
             new StringContent(serializedPatch, System.Text.Encoding.UTF8, "application/json");
-        var response = await httpClient.PatchAsync(url, updateDataElementContent);
+        using var response = await httpClient.PatchAsync(url, updateDataElementContent);
         var responseString = await response.Content.ReadAsStringAsync();
         using var responseParsedRaw = JsonDocument.Parse(responseString);
         _outputHelper.WriteLine("\nResponse:");
         _outputHelper.WriteLine(JsonSerializer.Serialize(responseParsedRaw, JsonSerializerOptions));
         response.Should().HaveStatusCode(expectedStatus);
         var responseObject = JsonSerializer.Deserialize<TResponse>(responseString, JsonSerializerOptions)!;
-        return (response, responseString, responseObject);
+        return (responseString, responseObject);
     }
 
 
@@ -101,7 +101,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
         var patch = new JsonPatch(
             PatchOperation.Replace(JsonPointer.Create("melding", "name"), JsonNode.Parse("\"Ola Olsen\"")));
 
-        var (_, _, parsedResponse) = await CallPatchApi<DataPatchResponse>(patch, null, HttpStatusCode.OK);
+        var (_, parsedResponse) = await CallPatchApi<DataPatchResponse>(patch, null, HttpStatusCode.OK);
 
         parsedResponse.ValidationIssues.Should().ContainKey("Required").WhoseValue.Should().BeEmpty();
 
@@ -123,7 +123,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
             PatchOperation.Test(JsonPointer.Create("melding", "name"), JsonNode.Parse("null")),
             PatchOperation.Replace(JsonPointer.Create("melding", "name"), JsonNode.Parse("null")));
 
-        var (_, _, parsedResponse) = await CallPatchApi<DataPatchResponse>(patch, null, HttpStatusCode.OK);
+        var (_, parsedResponse) = await CallPatchApi<DataPatchResponse>(patch, null, HttpStatusCode.OK);
 
         var requiredList = parsedResponse.ValidationIssues.Should().ContainKey("Required").WhoseValue;
         var requiredName = requiredList.Should().ContainSingle().Which;
@@ -146,7 +146,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
             PatchOperation.Test(JsonPointer.Create("melding", "name"), JsonNode.Parse("\"Not correct previous value\"")),
             PatchOperation.Replace(JsonPointer.Create("melding", "name"), JsonNode.Parse("null")));
 
-        var (_, _, parsedResponse) = await CallPatchApi<ProblemDetails>(patch, null, HttpStatusCode.Conflict);
+        var (_, parsedResponse) = await CallPatchApi<ProblemDetails>(patch, null, HttpStatusCode.Conflict);
 
         parsedResponse.Detail.Should().Be("Path `/melding/name` is not equal to the indicated value.");
 
@@ -161,7 +161,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
             PatchOperation.Test(JsonPointer.Create("melding", "name-error"), JsonNode.Parse("null")),
             PatchOperation.Replace(JsonPointer.Create("melding", "name"), JsonNode.Parse("null")));
 
-        var (_, _, parsedResponse) = await CallPatchApi<ProblemDetails>(patch, null, HttpStatusCode.UnprocessableContent);
+        var (_, parsedResponse) = await CallPatchApi<ProblemDetails>(patch, null, HttpStatusCode.UnprocessableContent);
 
         parsedResponse.Detail.Should().Be("Path `/melding/name-error` could not be reached.");
 
@@ -177,7 +177,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
             PatchOperation.Test(pointer, JsonNode.Parse("null")),
             PatchOperation.Replace(pointer, JsonNode.Parse("\"Ivar\"")));
 
-        var (_, _, parsedResponse) = await CallPatchApi<ProblemDetails>(patch, null, HttpStatusCode.UnprocessableContent);
+        var (_, parsedResponse) = await CallPatchApi<ProblemDetails>(patch, null, HttpStatusCode.UnprocessableContent);
 
         parsedResponse.Detail.Should().Be("Path `/not/a pointer` could not be reached.");
 
@@ -196,7 +196,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
             PatchOperation.Test(pointer, JsonNode.Parse("""[]""")),
             PatchOperation.Add(pointer, JsonNode.Parse("""[{"key": "newKey"}]""")));
 
-        var (_, _, parsedResponse) = await CallPatchApi<DataPatchResponse>(patch, null, HttpStatusCode.OK);
+        var (_, parsedResponse) = await CallPatchApi<DataPatchResponse>(patch, null, HttpStatusCode.OK);
 
         var newModel = parsedResponse.NewDataModel.Should().BeOfType<JsonElement>().Which.Deserialize<Skjema>()!;
         var listItem = newModel.Melding!.NestedList.Should().ContainSingle().Which;
@@ -227,7 +227,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
         var patch = new JsonPatch(
             PatchOperation.Add(pointer, JsonNode.Parse("\"newValue\"")));
 
-        var (_, _, parsedResponse) = await CallPatchApi<ProblemDetails>(patch, null, HttpStatusCode.UnprocessableContent);
+        var (_, parsedResponse) = await CallPatchApi<ProblemDetails>(patch, null, HttpStatusCode.UnprocessableContent);
 
         parsedResponse.Detail.Should().Contain("/melding/nested_list/0/newKey");
 
@@ -242,7 +242,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
         var patch = new JsonPatch(
             PatchOperation.Add(pointer, JsonNode.Parse("""[{"key": "newKey"}]""")));
 
-        var (_, _, parsedResponse) = await CallPatchApi<ProblemDetails>(patch, null, HttpStatusCode.UnprocessableContent);
+        var (_, parsedResponse) = await CallPatchApi<ProblemDetails>(patch, null, HttpStatusCode.UnprocessableContent);
 
         parsedResponse.Detail.Should().Contain("The JSON property 'non_existing_field' could not be mapped to any .NET member contained in type");
 
@@ -261,7 +261,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
             PatchOperation.Add(pointer.Combine("-"), JsonNode.Parse("""{"key": "myKey" }"""))
         );
 
-        var (_, _, firstResponse) = await CallPatchApi<DataPatchResponse>(createFirstElementPatch, null, HttpStatusCode.OK);
+        var (_, firstResponse) = await CallPatchApi<DataPatchResponse>(createFirstElementPatch, null, HttpStatusCode.OK);
 
         var firstData = firstResponse.NewDataModel.Should().BeOfType<JsonElement>().Which;
         var firstListItem = firstData.GetProperty("melding").GetProperty("nested_list").EnumerateArray().First();
@@ -270,7 +270,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
         var addValuePatch = new JsonPatch(
             PatchOperation.Test(pointer.Combine("0"), firstListItem.AsNode()),
             PatchOperation.Remove(pointer.Combine("0")));
-        var (_, _, secondResponse) = await CallPatchApi<DataPatchResponse>(addValuePatch, null, HttpStatusCode.OK);
+        var (_, secondResponse) = await CallPatchApi<DataPatchResponse>(addValuePatch, null, HttpStatusCode.OK);
         var secondData = secondResponse.NewDataModel.Should().BeOfType<JsonElement>().Which;
         secondData.GetProperty("melding").GetProperty("nested_list").GetArrayLength().Should().Be(0);
     }
@@ -288,7 +288,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
             PatchOperation.Remove(pointer)
         );
 
-        var (_, _, firstResponse) = await CallPatchApi<DataPatchResponse>(createFirstElementPatch, null, HttpStatusCode.OK);
+        var (_, firstResponse) = await CallPatchApi<DataPatchResponse>(createFirstElementPatch, null, HttpStatusCode.OK);
 
         var firstData = firstResponse.NewDataModel.Should().BeOfType<JsonElement>().Which;
         var firstListItem = firstData.GetProperty("melding").GetProperty("name");
@@ -297,7 +297,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
         var addValuePatch = new JsonPatch(
             PatchOperation.Test(pointer, firstListItem.AsNode()),
             PatchOperation.Replace(pointer, JsonNode.Parse("\"mySecondValue\"")));
-        var (_, _, secondResponse) = await CallPatchApi<DataPatchResponse>(addValuePatch, null, HttpStatusCode.OK);
+        var (_, secondResponse) = await CallPatchApi<DataPatchResponse>(addValuePatch, null, HttpStatusCode.OK);
         var secondData = secondResponse.NewDataModel.Should().BeOfType<JsonElement>().Which;
         var secondValue = secondData.GetProperty("melding").GetProperty("name");
         secondValue.GetString().Should().Be("mySecondValue");
@@ -315,7 +315,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
             PatchOperation.Add(pointer, JsonNode.Parse("\"\""))
         );
 
-        var (_, _, firstResponse) = await CallPatchApi<DataPatchResponse>(createFirstElementPatch, null, HttpStatusCode.OK);
+        var (_, firstResponse) = await CallPatchApi<DataPatchResponse>(createFirstElementPatch, null, HttpStatusCode.OK);
 
         var firstData = firstResponse.NewDataModel.Should().BeOfType<JsonElement>().Which;
         var firstListItem = firstData.GetProperty("melding").GetProperty("name");
@@ -324,7 +324,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
         var addValuePatch = new JsonPatch(
             PatchOperation.Test(pointer, firstListItem.AsNode()),
             PatchOperation.Replace(pointer, JsonNode.Parse("\"mySecondValue\"")));
-        var (_, _, secondResponse) = await CallPatchApi<DataPatchResponse>(addValuePatch, null, HttpStatusCode.OK);
+        var (_, secondResponse) = await CallPatchApi<DataPatchResponse>(addValuePatch, null, HttpStatusCode.OK);
         var secondData = secondResponse.NewDataModel.Should().BeOfType<JsonElement>().Which;
         var secondValue = secondData.GetProperty("melding").GetProperty("name");
         secondValue.GetString().Should().Be("mySecondValue");
@@ -342,7 +342,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
             PatchOperation.Add(pointer, JsonNode.Parse("""{"value": "" }"""))
         );
 
-        var (_, _, firstResponse) = await CallPatchApi<DataPatchResponse>(createFirstElementPatch, null, HttpStatusCode.OK);
+        var (_, firstResponse) = await CallPatchApi<DataPatchResponse>(createFirstElementPatch, null, HttpStatusCode.OK);
 
         var firstData = firstResponse.NewDataModel.Should().BeOfType<JsonElement>().Which;
         var firstListItem = firstData.GetProperty("melding").GetProperty("tag-with-attribute");
@@ -351,7 +351,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
         var addValuePatch = new JsonPatch(
             PatchOperation.Test(pointer, firstListItem.AsNode()),
             PatchOperation.Replace(pointer.Combine("value"), JsonNode.Parse("null")));
-        var (_, _, secondResponse) = await CallPatchApi<DataPatchResponse>(addValuePatch, null, HttpStatusCode.OK);
+        var (_, secondResponse) = await CallPatchApi<DataPatchResponse>(addValuePatch, null, HttpStatusCode.OK);
         var secondData = secondResponse.NewDataModel.Should().BeOfType<JsonElement>().Which;
         var secondValue = secondData.GetProperty("melding").GetProperty("name");
         secondValue.ValueKind.Should().Be(JsonValueKind.Null);
@@ -403,7 +403,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
                      }
                      """)));
 
-        var (_, _, parsedResponse) = await CallPatchApi<DataPatchResponse>(patch, null, HttpStatusCode.OK);
+        var (_, parsedResponse) = await CallPatchApi<DataPatchResponse>(patch, null, HttpStatusCode.OK);
 
         var newModelElement = parsedResponse.NewDataModel.Should().BeOfType<JsonElement>().Which;
         var newModel = newModelElement.Deserialize<Skjema>()!;
@@ -461,7 +461,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
         using var httpClient = GetRootedClient(Org, App);
         string token = PrincipalUtil.GetToken(1337, null);
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        var response = await httpClient.GetAsync(url);
+        using var response = await httpClient.GetAsync(url);
         var responseString = await response.Content.ReadAsStringAsync();
         using var responseParsedRaw = JsonDocument.Parse(responseString);
         _outputHelper.WriteLine("\nResponse:");
@@ -475,7 +475,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
         var patch = new JsonPatch(
             PatchOperation.Test(JsonPointer.Create("melding", "name"), JsonNode.Parse("null")),
             PatchOperation.Replace(JsonPointer.Create("melding", "name"), JsonNode.Parse("\"Ola Olsen\"")));
-        var (_, _, parsedResponsePatch) = await CallPatchApi<DataPatchResponse>(patch, null, HttpStatusCode.OK);
+        var (_, parsedResponsePatch) = await CallPatchApi<DataPatchResponse>(patch, null, HttpStatusCode.OK);
 
         // Verify that the patch operation preserves the changes made by ProcessDataRead
         var newModelElement = parsedResponsePatch.NewDataModel.Should().BeOfType<JsonElement>().Which;
@@ -508,7 +508,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
             .Returns((Instance instance, Guid? dataGuid, object skjema, object? existingData, string language) => Task.CompletedTask);
 
         var patch = new JsonPatch();
-        var (_, responseString, _) = await CallPatchApi<DataPatchResponse>(patch, null, HttpStatusCode.OK);
+        var (responseString, _) = await CallPatchApi<DataPatchResponse>(patch, null, HttpStatusCode.OK);
 
         responseString.Should().Contain("\"severity\":1");
     }

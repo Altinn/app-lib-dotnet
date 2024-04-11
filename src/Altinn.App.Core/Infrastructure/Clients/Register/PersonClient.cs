@@ -68,7 +68,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Register
             request.Headers.Add("X-Ai-NationalIdentityNumber", nationalIdentityNumber);
             request.Headers.Add("X-Ai-LastName", ConvertToBase64(lastName));
 
-            var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseContentRead, ct);
+            using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseContentRead, ct);
 
             return await ReadResponse(response, ct);
         }

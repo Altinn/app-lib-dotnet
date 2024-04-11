@@ -47,7 +47,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         content.Add(new StringContent($$$"""<Skjema><melding><name>{{{testName}}}</name></melding></Skjema>""", System.Text.Encoding.UTF8, "application/xml"), "default");
 
         // Create instance
-        var createResponse =
+        using var createResponse =
             await client.PostAsync($"{org}/{app}/instances/?instanceOwnerPartyId={instanceOwnerPartyId}", content);
         var createResponseContent = await createResponse.Content.ReadAsStringAsync();
         createResponse.StatusCode.Should().Be(HttpStatusCode.Created, createResponseContent);
@@ -61,7 +61,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
 
 
         // Verify stored data
-        var readDataElementResponse = await client.GetAsync($"/{org}/{app}/instances/{instanceId}/data/{dataGuid}");
+        using var readDataElementResponse = await client.GetAsync($"/{org}/{app}/instances/{instanceId}/data/{dataGuid}");
         readDataElementResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         var readDataElementResponseContent = await readDataElementResponse.Content.ReadAsStringAsync();
         var readDataElementResponseParsed =
@@ -86,7 +86,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         content.Add(new StringContent("INVALID XML", System.Text.Encoding.UTF8, "application/xml"), "default");
 
         // Create instance
-        var createResponse =
+        using var createResponse =
             await client.PostAsync($"{org}/{app}/instances/?instanceOwnerPartyId={instanceOwnerPartyId}", content);
         var createResponseContent = await createResponse.Content.ReadAsStringAsync();
         createResponse.StatusCode.Should().Be(HttpStatusCode.InternalServerError, createResponseContent);
@@ -111,7 +111,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         content.Add(new StringContent($$$"""<Skjema><melding><name>{{{testName}}}</name></melding></Skjema>""", System.Text.Encoding.UTF8, "application/xml"), "wrongName");
 
         // Create instance
-        var createResponse =
+        using var createResponse =
             await client.PostAsync($"{org}/{app}/instances/?instanceOwnerPartyId={instanceOwnerPartyId}", content);
         var createResponseContent = await createResponse.Content.ReadAsStringAsync();
         createResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest, createResponseContent);

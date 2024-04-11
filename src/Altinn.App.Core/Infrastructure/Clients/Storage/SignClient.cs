@@ -45,7 +45,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         {
             string apiUrl = $"instances/{signatureContext.InstanceIdentifier}/sign";
             string token = _userTokenProvider.GetUserToken();
-            HttpResponseMessage response = await _client.PostAsync(token, apiUrl, BuildSignRequest(signatureContext));
+            using HttpResponseMessage response = await _client.PostAsync(token, apiUrl, BuildSignRequest(signatureContext));
             if (response.IsSuccessStatusCode)
             {
                 return;

@@ -91,7 +91,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Events
 
             string serializedCloudEvent = JsonSerializer.Serialize(cloudEvent);
 
-            HttpResponseMessage response = await _client.PostAsync(
+            using HttpResponseMessage response = await _client.PostAsync(
                 token,
                 "app",
                 new StringContent(serializedCloudEvent, Encoding.UTF8, "application/json"),

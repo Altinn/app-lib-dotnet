@@ -88,6 +88,8 @@ public class PdfGeneratorClient : IPdfGeneratorClient
 
         string requestContent = JsonSerializer.Serialize(generatorRequest, _jsonSerializerOptions);
         using StringContent stringContent = new(requestContent, Encoding.UTF8, "application/json");
+        // TODO: can't dispose the response here, as the stream is returned below
+        // in the future we should make sure we dispose both the stream and the response
         var httpResponseMessage = await _httpClient.PostAsync(
             _platformSettings.ApiPdf2Endpoint,
             stringContent,

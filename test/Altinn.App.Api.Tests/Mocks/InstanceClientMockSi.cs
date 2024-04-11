@@ -243,8 +243,9 @@ namespace Altinn.App.Api.Tests.Mocks
 
             if (substatus == null || string.IsNullOrEmpty(substatus.Label))
             {
-                throw await PlatformHttpException.CreateAsync(
-                    new HttpResponseMessage { StatusCode = System.Net.HttpStatusCode.BadRequest });
+                using var response = 
+                    new HttpResponseMessage { StatusCode = System.Net.HttpStatusCode.BadRequest };
+                throw await PlatformHttpException.CreateAsync(response);
             }
 
             string instancePath = GetInstancePath(instanceOwnerPartyId, instanceGuid);
@@ -402,7 +403,7 @@ namespace Altinn.App.Api.Tests.Mocks
             if (!string.IsNullOrEmpty(invalidKey))
             {
                 // platform exceptions.
-                HttpResponseMessage res = new()
+                using HttpResponseMessage res = new()
                 {
                     StatusCode = System.Net.HttpStatusCode.BadRequest,
                     Content = new StringContent($"Unknown query parameter: {invalidKey}")
