@@ -4,6 +4,7 @@ using Altinn.App.Api.Infrastructure.Health;
 using Altinn.App.Api.Infrastructure.Telemetry;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Extensions;
+using Altinn.Common.PEP;
 using Altinn.Common.PEP.Authorization;
 using Altinn.Common.PEP.Clients;
 using AltinnCore.Authentication.JwtCookie;
@@ -13,6 +14,9 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.FeatureManagement;
 using Microsoft.IdentityModel.Tokens;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Prometheus;
 
 namespace Altinn.App.Api.Extensions
@@ -55,6 +59,7 @@ namespace Altinn.App.Api.Extensions
             services.ConfigureDataProtection();
 
             AddApplicationInsights(services, config, env);
+            AddOpenTelemetry(services, config, env);
             AddAuthenticationScheme(services, config, env);
             AddAuthorizationPolicies(services);
             AddAntiforgery(services);
@@ -102,6 +107,40 @@ namespace Altinn.App.Api.Extensions
                 services.AddApplicationInsightsTelemetryProcessor<HealthTelemetryFilter>();
                 services.AddSingleton<ITelemetryInitializer, CustomTelemetryInitializer>();
             }
+        }
+
+        private static void AddOpenTelemetry(IServiceCollection services, IConfiguration config, IWebHostEnvironment env)
+        {
+            services
+                .AddOpenTelemetry()
+                .ConfigureResource(r => 
+                    r.AddService(
+                        serviceName: config.GetValue<string>("ServiceName") ?? "unknown",
+                        serviceVersion: typeof(Program).Assembly.GetName().Version?.ToString(),
+                        serviceInstanceId: Environment.MachineName))
+                .WithTracing(tpbuilder => 
+                {
+                    if (env.IsDevelopment())
+                    {
+                        tpbuilder.SetSampler(new AlwaysOnSampler());
+                    }
+
+                    tpbuilder
+                        .AddSource("TODO: find docker-image-tag/assembly-version")
+                        .AddHttpClientInstrumentation()
+                        .AddAspNetCoreInstrumentation()
+                        .AddOtlpExporter();
+                })
+                .WithMetrics( x =>
+                {
+                    x.AddRuntimeInstrumentation()
+                        .AddMeter(
+                            "Microsoft.AspNetCore.Hosting",
+                            "Microsoft.AspNetCore.Server.Kestrel",
+                            "System.Net.Http",
+                            "Altinn.App.Api");
+                });
+
         }
 
         private static void AddAuthorizationPolicies(IServiceCollection services)
