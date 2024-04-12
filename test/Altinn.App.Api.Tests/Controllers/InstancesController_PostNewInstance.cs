@@ -18,7 +18,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
 {
     private readonly Mock<IDataProcessor> _dataProcessor = new();
 
-    private static readonly JsonSerializerOptions JsonSerializerOptions = new JsonSerializerOptions()
+    private static readonly JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     };
@@ -52,7 +52,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         var createResponseContent = await createResponse.Content.ReadAsStringAsync();
         createResponse.StatusCode.Should().Be(HttpStatusCode.Created, createResponseContent);
 
-        var createResponseParsed = JsonSerializer.Deserialize<Instance>(createResponseContent, JsonSerializerOptions)!;
+        var createResponseParsed = JsonSerializer.Deserialize<Instance>(createResponseContent, _jsonSerializerOptions)!;
 
         // Verify Data id
         var instanceId = createResponseParsed.Id;
