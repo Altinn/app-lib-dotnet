@@ -53,7 +53,7 @@ public class PageComponentConverterTests
 
 public class PageComponentConverterTestAttribute : DataAttribute
 {
-    private static readonly JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions 
+    private static readonly JsonSerializerOptions _jsonSerializerOptions = new() 
     { 
         ReadCommentHandling = JsonCommentHandling.Skip, 
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase 

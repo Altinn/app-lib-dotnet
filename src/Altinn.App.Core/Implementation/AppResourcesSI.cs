@@ -19,17 +19,17 @@ namespace Altinn.App.Core.Implementation
     /// </summary>
     public class AppResourcesSI : IAppResources
     {
-        private readonly AppSettings _settings;
-        private readonly IAppMetadata _appMetadata;
-        private readonly IWebHostEnvironment _hostingEnvironment;
-        private readonly ILogger _logger;
-
         private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
         {
             AllowTrailingCommas = true,
             ReadCommentHandling = JsonCommentHandling.Skip,
             PropertyNameCaseInsensitive = true,
         };
+
+        private readonly AppSettings _settings;
+        private readonly IAppMetadata _appMetadata;
+        private readonly IWebHostEnvironment _hostingEnvironment;
+        private readonly ILogger _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AppResourcesSI"/> class.

@@ -19,7 +19,7 @@ namespace Altinn.App.Api.Controllers
     [ApiController]
     public class PdfController : ControllerBase
     {
-        private static readonly JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions() 
+        private static readonly JsonSerializerOptions _jsonSerializerOptions = new() 
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         };

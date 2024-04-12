@@ -15,7 +15,7 @@ namespace Altinn.App.Api.Controllers
     /// </summary>
     public class HomeController : Controller
     {
-        private static readonly JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions() 
+        private static readonly JsonSerializerOptions _jsonSerializerOptions = new() 
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase 
         };

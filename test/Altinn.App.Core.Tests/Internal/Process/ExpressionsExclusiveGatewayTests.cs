@@ -21,7 +21,7 @@ namespace Altinn.App.Core.Tests.Internal.Process;
 
 public class ExpressionsExclusiveGatewayTests
 {
-    private static readonly JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions
+    private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = true,

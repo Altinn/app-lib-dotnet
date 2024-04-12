@@ -16,7 +16,7 @@ namespace Altinn.App.Core.Tests.Internal.App
 {
     public class AppMedataTest
     {
-        private static readonly JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions 
+        private static readonly JsonSerializerOptions _jsonSerializerOptions = new() 
         { 
             WriteIndented = true, 
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping 

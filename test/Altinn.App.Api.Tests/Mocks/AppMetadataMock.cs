@@ -15,7 +15,7 @@ namespace App.IntegrationTests.Mocks.Services
 {
     public class AppMetadataMock : IAppMetadata
     {
-        private static readonly JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions()
+        private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             PropertyNameCaseInsensitive = true,

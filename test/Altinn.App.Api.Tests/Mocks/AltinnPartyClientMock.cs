@@ -8,7 +8,7 @@ namespace Altinn.App.Api.Tests.Mocks;
 
 public class AltinnPartyClientMock : IAltinnPartyClient
 {
-    private static readonly JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web)
+    private static readonly JsonSerializerOptions _jsonSerializerOptions = new(JsonSerializerDefaults.Web)
     {
         Converters = { new JsonStringEnumConverter() }
     };

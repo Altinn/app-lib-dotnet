@@ -15,7 +15,7 @@ namespace Altinn.App.Core.Tests.LayoutExpressions;
 
 public static class LayoutTestUtils
 {
-    private static readonly JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+    private static readonly JsonSerializerOptions _jsonSerializerOptions = new(JsonSerializerDefaults.Web);
 
     public static async Task<LayoutEvaluatorState> GetLayoutModelTools(object model, string folder)
     {

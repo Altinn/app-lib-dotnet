@@ -12,7 +12,7 @@ namespace Altinn.App.Core.Tests.LayoutExpressions;
 
 public class TestContextList
 {
-    private static readonly JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions 
+    private static readonly JsonSerializerOptions _jsonSerializerOptions = new() 
     { 
         WriteIndented = true, 
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault 
@@ -77,7 +77,7 @@ public class TestContextList
 
 public class SharedTestContextListAttribute : DataAttribute
 {
-    private static readonly JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions
+    private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
     {
         ReadCommentHandling = JsonCommentHandling.Skip,
     };

@@ -18,7 +18,7 @@ namespace Altinn.App.Core.Internal.Process
     /// </summary>
     public class ExpressionsExclusiveGateway : IProcessExclusiveGateway
     {
-        private static readonly JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions()
+        private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
         {
             AllowTrailingCommas = true,
             ReadCommentHandling = JsonCommentHandling.Skip,

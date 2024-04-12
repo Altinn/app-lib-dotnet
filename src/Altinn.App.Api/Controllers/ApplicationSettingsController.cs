@@ -12,7 +12,7 @@ namespace Altinn.App.Api.Controllers
     [ApiController]
     public class ApplicationSettingsController : ControllerBase
     {
-        private static readonly JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions
+        private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
         {
             DictionaryKeyPolicy = JsonNamingPolicy.CamelCase
         };
