@@ -15,7 +15,10 @@ namespace Altinn.App.Core.Infrastructure.Clients.Events
     /// </summary>
     public class EventsSubscriptionClient : IEventsSubscription
     {
-        private static readonly JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions() { PropertyNameCaseInsensitive = true };
+        private static readonly JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions() 
+        {
+            PropertyNameCaseInsensitive = true
+        };
 
         private readonly PlatformSettings _platformSettings;
         private readonly GeneralSettings _generalSettings;

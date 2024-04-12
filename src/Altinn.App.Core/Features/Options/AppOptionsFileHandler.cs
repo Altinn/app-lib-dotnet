@@ -11,7 +11,7 @@ namespace Altinn.App.Core.Features.Options
     public class AppOptionsFileHandler : IAppOptionsFileHandler
     {
         private readonly AppSettings _settings;
-        private static readonly JsonSerializerOptions JSON_SERIALIZER_SETTINGS = new(JsonSerializerDefaults.Web)
+        private static readonly JsonSerializerOptions _jsonSerializerOptions = new(JsonSerializerDefaults.Web)
         {
             ReadCommentHandling = JsonCommentHandling.Skip,
             AllowTrailingCommas = true,
@@ -35,7 +35,7 @@ namespace Altinn.App.Core.Features.Options
             if (File.Exists(filename))
             {
                 string fileData = await File.ReadAllTextAsync(filename, Encoding.UTF8);
-                List<AppOption> options = JsonSerializer.Deserialize<List<AppOption>>(fileData, JSON_SERIALIZER_SETTINGS)!;
+                List<AppOption> options = JsonSerializer.Deserialize<List<AppOption>>(fileData, _jsonSerializerOptions)!;
                 return options;
             }
 

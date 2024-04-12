@@ -45,6 +45,8 @@ public class ShadowFieldsConverterTests
         Assert.Contains("AltinnSF_", serializedDataWithoutModifier);
 
         var modifier = new IgnorePropertiesWithPrefix("AltinnSF_");
+
+        // TODO: could be cached in a dictionary with the prefix as key, since serializer options _should_ be static/reused
         JsonSerializerOptions options = new()
         {
             TypeInfoResolver = new DefaultJsonTypeInfoResolver
