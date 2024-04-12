@@ -10,7 +10,7 @@ namespace Altinn.App.Core.Tests.Internal.Data
 {
     public class DataServiceTests
     {
-        private readonly JsonSerializerOptions _jsonSerializerOptions = new(JsonSerializerDefaults.Web);
+        private static readonly JsonSerializerOptions _jsonSerializerOptions = new(JsonSerializerDefaults.Web);
 
         private readonly Mock<IDataClient> _mockDataClient;
         private readonly Mock<IAppMetadata> _mockAppMetadata;
