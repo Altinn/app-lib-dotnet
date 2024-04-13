@@ -4,9 +4,8 @@ namespace Altinn.App.Api.Infrastructure.Telemetry;
 
 /// <summary>
 /// Provides a factory interface for creating metric meters.
-/// This interface extends the IMeterFactory to simplyfy creation
 /// </summary>
-public interface IMetricFactory : IMeterFactory
+public interface IMetricFactory
 {
     /// <summary>
     /// Creates a new meter instance using configuration settings obtained from environment variables.
@@ -16,10 +15,21 @@ public interface IMetricFactory : IMeterFactory
 }
 
 /// <summary>
-/// s
+/// Factory creating .Net Meters
 /// </summary>
 public class MetricFactory : IMetricFactory
 {
+    private readonly IMeterFactory _meterFactory;
+
+    /// <summary>
+    /// Initializes a new instance of the MetricFactory class using the specified IMeterFactory.
+    /// </summary>
+    /// <param name="meterFactory">The factory to create Meter instances.</param>
+    public MetricFactory(IMeterFactory meterFactory)
+    {
+        _meterFactory = meterFactory ?? throw new ArgumentNullException(nameof(meterFactory));
+    }
+    
     /// <summary>
     /// Creates a new meter instance using configuration settings obtained from environment variables.
     /// </summary>
@@ -35,24 +45,6 @@ public class MetricFactory : IMetricFactory
             Version = meterVersion
         };
 
-        return Create(op);
-    }
-
-    /// <summary>
-    /// Creates a Meter from MeterOptions.
-    /// </summary>
-    /// <param name="options">Meter options.</param>
-    /// <returns></returns>
-    public Meter Create(MeterOptions options)
-    {
-        return new Meter(options);
-    }
-
-    /// <summary>
-    /// Implemented to satisfy the IDisposable interface requirement of IMeterFactory
-    /// </summary>
-    public void Dispose()
-    {
-        // Nothing to dispose, but implemented to satisfy the IDisposable interface requirement of IMeterFactory
+        return _meterFactory.Create(op);
     }
 }
