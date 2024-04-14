@@ -28,27 +28,21 @@ public class ObjectUtils_XmlSerializationTests(ITestOutputHelper _output)
         public NullableDecimalMedORID? DecimalMedOrid { get; set; }
 
         public bool ShouldSerializeDecimalMedOrid()
-        {
-            return DecimalMedOrid?.value != null;
-        }
+            => DecimalMedOrid?.value != null;
 
         [XmlElement("aarets2", Order = 2)]
         [JsonPropertyName("aarets2")]
         public StringMedORID? StringMedOrid { get; set; }
 
         public bool ShouldSerializeStringMedOrid()
-        {
-            return StringMedOrid?.value != null;
-        }
+            => StringMedOrid?.value != null;
 
         [XmlElement("aarets3", Order = 3)]
         [JsonPropertyName("aarets3")]
         public string? NormalString { get; set; }
 
         public bool ShouldSerializeNormalString()
-        {
-            return NormalString != "should not serialize";
-        }
+            => NormalString != "should not serialize";
 
         [XmlElement("aarets4", Order = 4)]
         [JsonPropertyName("aarets4")]
