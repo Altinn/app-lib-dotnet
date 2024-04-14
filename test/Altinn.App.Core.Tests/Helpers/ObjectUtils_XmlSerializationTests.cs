@@ -16,9 +16,8 @@ using Xunit.Abstractions;
 
 namespace Altinn.App.Core.Tests.Helpers;
 
-public class ObjectUtils_XmlSerializationTests(ITestOutputHelper output)
+public class ObjectUtils_XmlSerializationTests(ITestOutputHelper _output)
 {
-    private readonly ITestOutputHelper _output = output;
     private readonly Mock<ILogger> _loggerMock = new();
 
     [XmlRoot(ElementName = "model")]
@@ -26,37 +25,72 @@ public class ObjectUtils_XmlSerializationTests(ITestOutputHelper output)
     {
         [XmlElement("aarets", Order = 1)]
         [JsonPropertyName("aarets")]
-        public DesimalMedORID? aarets { get; set; }
+        public NullableDecimalMedORID? DecimalMedOrid { get; set; }
+
+        public bool ShouldSerializeDecimalMedOrid()
+        {
+            return DecimalMedOrid?.value != null;
+        }
 
         [XmlElement("aarets2", Order = 2)]
         [JsonPropertyName("aarets2")]
-        public StringMedORID? aarets2 { get; set; }
+        public StringMedORID? StringMedOrid { get; set; }
+
+        public bool ShouldSerializeStringMedOrid()
+        {
+            return StringMedOrid?.value != null;
+        }
 
         [XmlElement("aarets3", Order = 3)]
         [JsonPropertyName("aarets3")]
-        public string? aarets3 { get; set; }
+        public string? NormalString { get; set; }
 
-        [XmlElement("children", Order = 4)]
-        public List<YttersteObjekt>? children { get; set; }
+        public bool ShouldSerializeNormalString()
+        {
+            return NormalString != "should not serialize";
+        }
+
+        [XmlElement("aarets4", Order = 4)]
+        [JsonPropertyName("aarets4")]
+        public decimal? NullableDecimal { get; set; }
+
+        public bool ShouldSerializeNullableDecimal()
+        {
+            return NullableDecimal != null && NullableDecimal != 1234567890;
+        }
+
+        [XmlElement("aarets5", Order = 5)]
+        [JsonPropertyName("aarets5")]
+        public decimal Decimal { get; set; }
+
+        public bool ShouldSerializeDecimal()
+        {
+            return Decimal != 1234567890;
+        }
+
+        [XmlElement("children", Order = 6)]
+        public List<YttersteObjekt>? Children { get; set; }
     }
 
-    public class DesimalMedORID
+    public class NullableDecimalMedORID
     {
         [XmlIgnore]
+        [JsonPropertyName("value")]
         public decimal? value { get; set; }
 
         [XmlText]
         [JsonIgnore]
-        public string? valueAsString
+        public decimal valueOrDefault
         {
-            get => value?.ToString();
+            get => value ?? default;
             set
             {
-                this.value = value == null ? null : (decimal?)decimal.Parse(value);
+                this.value = value;
             }
         }
 
         [XmlAttribute("orid")]
+        [JsonPropertyName("orid")]
         [BindNever]
         public string orid => "30320";
     }
@@ -70,6 +104,13 @@ public class ObjectUtils_XmlSerializationTests(ITestOutputHelper output)
         [BindNever]
         public string orid => "30321";
     }
+
+    public static TheoryData<decimal?> DecimalTests => new()
+    {
+        { 123 },
+        { 123.456m },
+        { null },
+    };
 
     public static TheoryData<string?, string?> StringTests => new()
     {
@@ -95,8 +136,6 @@ public class ObjectUtils_XmlSerializationTests(ITestOutputHelper output)
 
         ObjectUtils.PrepareModelForXmlStorage(test);
 
-        // prepareForXmlStorage should set all empty strings to null
-        // but serialization only sets [XmlText] strings to null
         AssertObject(test, value, storedValue);
     }
 
@@ -109,18 +148,6 @@ public class ObjectUtils_XmlSerializationTests(ITestOutputHelper output)
         // Serialize and deserialize twice to ensure that all changes in serialization is applied
         var testResult = await SerializeDeserialize(test);
         testResult = await SerializeDeserialize(testResult);
-
-        if (storedValue is null)
-        {
-            // XmlSerialization does not set the parent object aarets2 to null, so we do that manually for all test cases to work
-            testResult.aarets2.Should().NotBeNull();
-            testResult.aarets2!.value.Should().BeNull();
-            testResult.aarets2 = null;
-            var child = testResult.children.Should().ContainSingle().Which;
-            child.aarets2.Should().NotBeNull();
-            child.aarets2!.value.Should().BeNull();
-            child.aarets2 = null;
-        }
 
         AssertObject(testResult, value, storedValue);
     }
@@ -160,13 +187,13 @@ public class ObjectUtils_XmlSerializationTests(ITestOutputHelper output)
         if (value is null)
         {
             // JsonSerialization does not set the parent object aarets2 to null, so we do that manually for all test cases to work
-            testResult.aarets2.Should().NotBeNull();
-            testResult.aarets2!.value.Should().BeNull();
-            testResult.aarets2 = null;
-            var child = testResult.children.Should().ContainSingle().Which;
-            child.aarets2.Should().NotBeNull();
-            child.aarets2!.value.Should().BeNull();
-            child.aarets2 = null;
+            testResult.StringMedOrid.Should().NotBeNull();
+            testResult.StringMedOrid!.value.Should().BeNull();
+            testResult.StringMedOrid = null;
+            var child = testResult.Children.Should().ContainSingle().Which;
+            child.StringMedOrid.Should().NotBeNull();
+            child.StringMedOrid!.value.Should().BeNull();
+            child.StringMedOrid = null;
         }
 
         AssertObject(testResult, value, value);
@@ -176,65 +203,219 @@ public class ObjectUtils_XmlSerializationTests(ITestOutputHelper output)
     {
         var test = new YttersteObjekt
         {
-            aarets2 = new StringMedORID
+            StringMedOrid = new StringMedORID
             {
                 value = value
             },
-            aarets3 = value,
-            children = new List<YttersteObjekt>
+            NormalString = value,
+            Children = new List<YttersteObjekt>
             {
                 new YttersteObjekt
                 {
-                    aarets2 = new StringMedORID
+                    StringMedOrid = new StringMedORID
                     {
                         value = value
                     },
-                    aarets3 = value,
+                    NormalString = value,
                 }
             }
         };
 
-        test.aarets.Should().BeNull();
-        test.aarets2.Should().NotBeNull();
-        test.aarets2!.value.Should().Be(value);
-        test.aarets2.orid.Should().Be("30321");
-        var child = test.children.Should().ContainSingle().Which;
-        child.aarets.Should().BeNull();
-        child.aarets2.Should().NotBeNull();
-        child.aarets2!.value.Should().Be(value);
-        child.aarets2.orid.Should().Be("30321");
-        child.aarets3.Should().Be(value);
+        test.DecimalMedOrid.Should().BeNull();
+        test.StringMedOrid.Should().NotBeNull();
+        test.StringMedOrid!.value.Should().Be(value);
+        test.StringMedOrid.orid.Should().Be("30321");
+        var child = test.Children.Should().ContainSingle().Which;
+        child.DecimalMedOrid.Should().BeNull();
+        child.StringMedOrid.Should().NotBeNull();
+        child.StringMedOrid!.value.Should().Be(value);
+        child.StringMedOrid.orid.Should().Be("30321");
+        child.NormalString.Should().Be(value);
         return test;
     }
 
     private static void AssertObject(YttersteObjekt test, string? normalValue, string? xmlTextValue)
     {
-        test.aarets.Should().BeNull();
+        test.DecimalMedOrid.Should().BeNull();
         if (xmlTextValue is null)
         {
-            test.aarets2.Should().BeNull();
+            test.StringMedOrid.Should().BeNull();
         }
         else
         {
-            test.aarets2.Should().NotBeNull();
-            test.aarets2!.value.Should().Be(xmlTextValue);
-            test.aarets2.orid.Should().Be("30321");
+            test.StringMedOrid.Should().NotBeNull();
+            test.StringMedOrid!.value.Should().Be(xmlTextValue);
+            test.StringMedOrid.orid.Should().Be("30321");
         }
 
-        test.aarets3.Should().Be(normalValue);
-        var child = test.children.Should().ContainSingle().Which;
-        child.aarets.Should().BeNull();
+        test.NormalString.Should().Be(normalValue);
+        var child = test.Children.Should().ContainSingle().Which;
+        child.DecimalMedOrid.Should().BeNull();
         if (xmlTextValue is null)
         {
-            child.aarets2.Should().BeNull();
+            child.StringMedOrid.Should().BeNull();
         }
         else
         {
-            child.aarets2.Should().NotBeNull();
-            child.aarets2!.value.Should().Be(xmlTextValue);
-            child.aarets2.orid.Should().Be("30321");
+            child.StringMedOrid.Should().NotBeNull();
+            child.StringMedOrid!.value.Should().Be(xmlTextValue);
+            child.StringMedOrid.orid.Should().Be("30321");
         }
 
-        child.aarets3.Should().Be(normalValue);
+        child.NormalString.Should().Be(normalValue);
+    }
+
+    [Theory]
+    [MemberData(nameof(DecimalTests))]
+    public void TestPrepareForStorage_Decimal(decimal? value)
+    {
+        var test = CreateObject(value);
+
+        ObjectUtils.PrepareModelForXmlStorage(test);
+
+        // prepareForXmlStorage should set all empty strings to null
+        // but serialization only sets [XmlText] strings to null
+        AssertObject(test, value);
+    }
+
+    [Theory]
+    [MemberData(nameof(DecimalTests))]
+    public async Task TestSerializeDeserializeAsStorage_Decimal(decimal? value)
+    {
+        var test = CreateObject(value);
+
+        // Serialize and deserialize twice to ensure that all changes in serialization is applied
+        var testResult = await SerializeDeserialize(test);
+        testResult = await SerializeDeserialize(testResult);
+
+        AssertObject(testResult, value);
+    }
+
+    [Theory]
+    [MemberData(nameof(DecimalTests))]
+    public void TestSerializeDeserializeAsJson_Decimal(decimal? value)
+    {
+        var test = CreateObject(value);
+
+        // Serialize
+        var json = JsonSerializer.Serialize(test);
+        _output.WriteLine(json);
+
+        // Deserialize
+        var testResult = JsonSerializer.Deserialize<YttersteObjekt>(json)!;
+
+        if (value is null)
+        {
+            // JsonSerialization does not set the parent object StringMedOrid to null, so we do that manually for all test cases to work
+            testResult.DecimalMedOrid.Should().NotBeNull();
+            testResult.DecimalMedOrid!.value.Should().BeNull();
+            testResult.DecimalMedOrid = null;
+            var child = testResult.Children.Should().ContainSingle().Which;
+            child.DecimalMedOrid.Should().NotBeNull();
+            child.DecimalMedOrid!.value.Should().BeNull();
+            child.DecimalMedOrid = null;
+        }
+
+        AssertObject(testResult, value);
+    }
+
+    private static YttersteObjekt CreateObject(decimal? value)
+    {
+        var test = new YttersteObjekt
+        {
+            DecimalMedOrid = new NullableDecimalMedORID
+            {
+                value = value
+            },
+            NullableDecimal = value,
+            Decimal = value ?? default,
+            Children = new List<YttersteObjekt>
+            {
+                new YttersteObjekt
+                {
+                    DecimalMedOrid = new NullableDecimalMedORID
+                    {
+                        value = value
+                    },
+                    NullableDecimal = value,
+                    Decimal = value ?? default,
+                }
+            }
+        };
+
+        test.StringMedOrid.Should().BeNull();
+        test.DecimalMedOrid.Should().NotBeNull();
+        test.DecimalMedOrid!.value.Should().Be(value);
+        test.DecimalMedOrid.orid.Should().Be("30320");
+        test.Decimal.Should().Be(value ?? default);
+        test.NullableDecimal.Should().Be(value);
+        var child = test.Children.Should().ContainSingle().Which;
+        child.StringMedOrid.Should().BeNull();
+        child.DecimalMedOrid.Should().NotBeNull();
+        child.DecimalMedOrid!.value.Should().Be(value);
+        child.DecimalMedOrid.orid.Should().Be("30320");
+        child.Decimal.Should().Be(value ?? default);
+        child.NullableDecimal.Should().Be(value);
+        return test;
+    }
+
+    private static void AssertObject(YttersteObjekt test, decimal? value)
+    {
+        test.StringMedOrid.Should().BeNull();
+        if (value is null)
+        {
+            test.DecimalMedOrid.Should().BeNull();
+        }
+        else
+        {
+            test.DecimalMedOrid.Should().NotBeNull();
+            test.DecimalMedOrid!.value.Should().Be(value);
+            test.DecimalMedOrid.orid.Should().Be("30320");
+        }
+
+        test.Decimal.Should().Be(value ?? default);
+        test.NullableDecimal.Should().Be(value);
+        var child = test.Children.Should().ContainSingle().Which;
+        child.StringMedOrid.Should().BeNull();
+        if (value is null)
+        {
+            child.DecimalMedOrid.Should().BeNull();
+        }
+        else
+        {
+            child.DecimalMedOrid.Should().NotBeNull();
+            child.DecimalMedOrid!.value.Should().Be(value);
+            child.DecimalMedOrid.orid.Should().Be("30320");
+        }
+
+        child.Decimal.Should().Be(value ?? default);
+        child.NullableDecimal.Should().Be(value);
+    }
+
+    [Fact]
+    public void VerifyShouldSerialize()
+    {
+        var test = new YttersteObjekt
+        {
+            DecimalMedOrid = new(),
+            StringMedOrid = new(),
+            NormalString = "should not serialize",
+            NullableDecimal = 1234567890,
+            Decimal = 1234567890,
+        };
+
+        test.DecimalMedOrid.Should().NotBeNull();
+        test.StringMedOrid.Should().NotBeNull();
+        test.NormalString.Should().NotBeNull();
+        test.NullableDecimal.Should().NotBeNull();
+        test.Decimal.Should().NotBe(0);
+
+        ObjectUtils.PrepareModelForXmlStorage(test);
+
+        test.DecimalMedOrid.Should().BeNull();
+        test.StringMedOrid.Should().BeNull();
+        test.NormalString.Should().BeNull();
+        test.NullableDecimal.Should().BeNull();
+        test.Decimal.Should().Be(default);
     }
 }

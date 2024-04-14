@@ -69,9 +69,11 @@ public static class ObjectUtils
     public static void PrepareModelForXmlStorage(object model)
     {
         ArgumentNullException.ThrowIfNull(model);
+        var type = model.GetType();
+        var methodInfos = type.GetMethods();
 
         // Iterate over properties of the model
-        foreach (var prop in model.GetType().GetProperties())
+        foreach (var prop in type.GetProperties())
         {
             // Property has a generic type that is a subtype of List<>
             if (prop.PropertyType.IsGenericType && prop.PropertyType.GetGenericTypeDefinition() == typeof(List<>))
@@ -104,8 +106,9 @@ public static class ObjectUtils
                 var value = prop.GetValue(model);
                 if (value is null)
                     continue;
+                SetToDefaultIfShouldSerializeFalse(model, prop, methodInfos, value);
 
-                // Only touch string properties with the [XmlText] attribute and contains only whitespace
+                // Set string properties with [XmlText] attribute to null if they are empty or whitespace
                 if (value is string s &&
                 string.IsNullOrWhiteSpace(s) &&
                 prop.GetCustomAttributes<XmlTextAttribute>().SingleElement() is not null)
@@ -120,34 +123,26 @@ public static class ObjectUtils
                     PrepareModelForXmlStorage(value);
                 }
 
-                NullParentIfEmptyXmlTextProperty(model, value, prop);
+                // NullParentIfEmptyXmlTextProperty(model, value, prop);
+                SetToDefaultIfShouldSerializeFalse(model, prop, methodInfos, value);
             }
         }
     }
 
-    private static void NullParentIfEmptyXmlTextProperty(object model, object value, PropertyInfo propertyInfo)
+    private static void SetToDefaultIfShouldSerializeFalse(object model, PropertyInfo prop, MethodInfo[] methodInfos, object value)
     {
-        var properties = value.GetType().GetProperties();
-        // Get the number of properties that have the [BindNever] attribute (typically fixed values)
-        var attributePropertyCount = properties.Count(p => p.GetCustomAttributes<BindNeverAttribute>().Any());
-        if (attributePropertyCount + 1 != properties.Length)
-        {
-            // If there are more than one property WITHOUT the [BindNever] attribute, we should not null the parent
-            return;
-        }
+        string methodName = $"ShouldSerialize{prop.Name}";
 
-        // Get the property that has the [XmlText] attribute
-        var xmlTextProperty = properties.Where(p => p.GetCustomAttributes<XmlTextAttribute>().Any()).SingleElement();
+        var shouldSerializeMethod = methodInfos
+            .Where(
+                m => m.Name == methodName
+                     && m.GetParameters().Length == 0
+                     && m.ReturnType == typeof(bool))
+            .SingleElement();
 
-        if (xmlTextProperty is null)
+        if (shouldSerializeMethod?.Invoke(model, null) is false)
         {
-            return;
-        }
-
-        if (xmlTextProperty.GetValue(value) is null)
-        {
-            // set the parent property to null if the [XmlText] property is null
-            propertyInfo.SetValue(model, null);
+            prop.SetValue(model, default);
         }
     }
 

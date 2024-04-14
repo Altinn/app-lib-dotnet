@@ -248,7 +248,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
 
         _dataProcessorMock.VerifyNoOtherCalls();
     }
-    
+
     [Fact]
     public async Task SetXmlTextPropertyToEmtpy_ReturnsCorrectDataModel()
     {
