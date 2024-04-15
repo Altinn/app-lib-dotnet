@@ -127,18 +127,35 @@ namespace Altinn.App.Api.Extensions
 
                     tpbuilder
                         .AddSource("TODO: find docker-image-tag/assembly-version")
-                        .AddHttpClientInstrumentation()
-                        .AddAspNetCoreInstrumentation()
+                        .AddHttpClientInstrumentation(opts => 
+                        {
+                            opts.RecordException = true;
+                        })
+                        .AddHttpClientInstrumentation(opts => 
+                        {
+                            opts.RecordException = true;
+                        })
+                        .AddAspNetCoreInstrumentation(opts => 
+                        {
+                            opts.RecordException = true;
+                        })
                         .AddOtlpExporter();
                 })
-                .WithMetrics( x =>
+                .WithMetrics(mpbuilder =>
                 {
-                    x.AddRuntimeInstrumentation()
-                        .AddMeter(
-                            "Microsoft.AspNetCore.Hosting",
-                            "Microsoft.AspNetCore.Server.Kestrel",
-                            "System.Net.Http",
-                            "Altinn.App.Api");
+                    mpbuilder.AddRuntimeInstrumentation()
+                        .AddHttpClientInstrumentation()
+                        .AddAspNetCoreInstrumentation()
+                        .AddOtlpExporter(
+                        (_, readerOptions) =>
+                        {
+                            if (env.IsDevelopment())
+                            {
+                                // Export interval should be set by env var when running in real environments
+                                // but locally it's nice to receive metrics more often than the default 60s
+                                readerOptions.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds = 10_000;
+                            }
+                        });
                 });
 
         }
