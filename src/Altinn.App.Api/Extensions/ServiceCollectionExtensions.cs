@@ -137,10 +137,6 @@ namespace Altinn.App.Api.Extensions
                         {
                             opts.RecordException = true;
                         })
-                        .AddHttpClientInstrumentation(opts =>
-                        {
-                            opts.RecordException = true;
-                        })
                         .AddAspNetCoreInstrumentation(opts =>
                         {
                             opts.RecordException = true;
