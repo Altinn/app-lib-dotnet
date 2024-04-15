@@ -16,10 +16,10 @@ namespace Altinn.App.Core.Tests.Internal.App
 {
     public class AppMedataTest
     {
-        private static readonly JsonSerializerOptions _jsonSerializerOptions = new() 
-        { 
-            WriteIndented = true, 
-            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping 
+        private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
+        {
+            WriteIndented = true,
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
         };
 
         private readonly string appBasePath = Path.Combine("Internal", "App", "TestData") + Path.DirectorySeparatorChar;

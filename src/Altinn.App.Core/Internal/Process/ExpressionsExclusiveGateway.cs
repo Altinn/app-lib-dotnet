@@ -24,7 +24,7 @@ namespace Altinn.App.Core.Internal.Process
             ReadCommentHandling = JsonCommentHandling.Skip,
             PropertyNameCaseInsensitive = true,
         };
-        private static readonly JsonSerializerOptions _jsonSerializerOptionsCamelCase = new() 
+        private static readonly JsonSerializerOptions _jsonSerializerOptionsCamelCase = new()
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         };

@@ -11,7 +11,7 @@ namespace Altinn.App.Core.Internal.Language
     /// </summary>
     public class ApplicationLanguage : IApplicationLanguage
     {
-        private static readonly JsonSerializerOptions _jsonSerializerOptions = new() 
+        private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         };

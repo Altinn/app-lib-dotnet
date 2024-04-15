@@ -12,10 +12,10 @@ namespace Altinn.App.Core.Tests.LayoutExpressions;
 
 public class TestContextList
 {
-    private static readonly JsonSerializerOptions _jsonSerializerOptions = new() 
-    { 
-        WriteIndented = true, 
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault 
+    private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
+    {
+        WriteIndented = true,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault
     };
 
     private readonly ITestOutputHelper _output;
