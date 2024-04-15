@@ -1,5 +1,6 @@
 #nullable disable
 using Altinn.App.Core.Extensions;
+using OpenTelemetry.Logs;
 
 namespace Altinn.App.Api.Extensions;
 
@@ -19,5 +20,9 @@ public static class WebHostBuilderExtensions
         {
             configBuilder.LoadAppConfig(args);
         });
+        builder.ConfigureLogging(log => log.AddOpenTelemetry(opt => 
+        {
+            opt.AddOtlpExporter();
+        }));
     }
 }
