@@ -20,7 +20,7 @@ public static class WebHostBuilderExtensions
         {
             configBuilder.LoadAppConfig(args);
         });
-        builder.ConfigureLogging(log => log.AddOpenTelemetry(opt => 
+        builder.ConfigureLogging(log => log.AddOpenTelemetry(opt =>
         {
             opt.AddOtlpExporter();
         }));

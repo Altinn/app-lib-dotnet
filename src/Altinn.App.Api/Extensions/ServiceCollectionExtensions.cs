@@ -119,12 +119,12 @@ namespace Altinn.App.Api.Extensions
             services.AddSingleton(sp => new Meter(appId, appVersion));
             services
                 .AddOpenTelemetry()
-                .ConfigureResource(r => 
+                .ConfigureResource(r =>
                     r.AddService(
                         serviceName: appId,
                         serviceVersion: appVersion,
                         serviceInstanceId: Environment.MachineName))
-                .WithTracing(tpbuilder => 
+                .WithTracing(tpbuilder =>
                 {
                     if (env.IsDevelopment())
                     {
@@ -133,15 +133,15 @@ namespace Altinn.App.Api.Extensions
 
                     tpbuilder
                         .AddSource(appId)
-                        .AddHttpClientInstrumentation(opts => 
+                        .AddHttpClientInstrumentation(opts =>
                         {
                             opts.RecordException = true;
                         })
-                        .AddHttpClientInstrumentation(opts => 
+                        .AddHttpClientInstrumentation(opts =>
                         {
                             opts.RecordException = true;
                         })
-                        .AddAspNetCoreInstrumentation(opts => 
+                        .AddAspNetCoreInstrumentation(opts =>
                         {
                             opts.RecordException = true;
                         })
