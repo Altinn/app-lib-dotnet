@@ -9,7 +9,7 @@ namespace Altinn.App.Core.Helpers
     /// </summary>
     public static partial class JsonHelper
     {
-        private static readonly Dictionary<string, JsonSerializerOptions> _ignorePrefixOptions = new ();
+        private static readonly Dictionary<string, JsonSerializerOptions> _ignorePrefixOptions = new();
 
         /// <summary>
         /// Get a <see cref="JsonSerializerOptions"/> instance that ignores properties with a specific prefix.
