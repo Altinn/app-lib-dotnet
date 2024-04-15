@@ -1,10 +1,12 @@
-﻿using Altinn.App.Api.Controllers;
+﻿using System.Diagnostics;
+using System.Diagnostics.Metrics;
+using Altinn.App.Api.Controllers;
+using Altinn.App.Api.Helpers;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Infrastructure.Health;
 using Altinn.App.Api.Infrastructure.Telemetry;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Extensions;
-using Altinn.Common.PEP;
 using Altinn.Common.PEP.Authorization;
 using Altinn.Common.PEP.Clients;
 using AltinnCore.Authentication.JwtCookie;
@@ -111,12 +113,16 @@ namespace Altinn.App.Api.Extensions
 
         private static void AddOpenTelemetry(IServiceCollection services, IConfiguration config, IWebHostEnvironment env)
         {
+            var appId = StartupHelper.GetApplicationId();
+            var appVersion = config.GetSection("AppSettings").GetValue<string>("AppVersion");
+            services.AddSingleton(sp => new ActivitySource(appId, appVersion));
+            services.AddSingleton(sp => new Meter(appId, appVersion));
             services
                 .AddOpenTelemetry()
                 .ConfigureResource(r => 
                     r.AddService(
-                        serviceName: config.GetValue<string>("ServiceName") ?? "unknown",
-                        serviceVersion: typeof(Program).Assembly.GetName().Version?.ToString(),
+                        serviceName: appId,
+                        serviceVersion: appVersion,
                         serviceInstanceId: Environment.MachineName))
                 .WithTracing(tpbuilder => 
                 {
@@ -126,7 +132,7 @@ namespace Altinn.App.Api.Extensions
                     }
 
                     tpbuilder
-                        .AddSource("TODO: find docker-image-tag/assembly-version")
+                        .AddSource(appId)
                         .AddHttpClientInstrumentation(opts => 
                         {
                             opts.RecordException = true;
@@ -143,7 +149,9 @@ namespace Altinn.App.Api.Extensions
                 })
                 .WithMetrics(mpbuilder =>
                 {
-                    mpbuilder.AddRuntimeInstrumentation()
+                    mpbuilder
+                        .AddMeter(appId)
+                        .AddRuntimeInstrumentation()
                         .AddHttpClientInstrumentation()
                         .AddAspNetCoreInstrumentation()
                         .AddOtlpExporter(
@@ -157,7 +165,6 @@ namespace Altinn.App.Api.Extensions
                             }
                         });
                 });
-
         }
 
         private static void AddAuthorizationPolicies(IServiceCollection services)
