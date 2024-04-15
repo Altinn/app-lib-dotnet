@@ -111,20 +111,7 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
         // Remove shadow fields
         if (dataType.AppLogic?.ShadowFields?.Prefix != null)
         {
-            var modifier = new IgnorePropertiesWithPrefix(dataType.AppLogic.ShadowFields.Prefix);
-
-            // TODO: should cache, like comment says below
-#pragma warning disable CA1869 //Not caching options since dynamic param is being used. Consider dict cache.
-            JsonSerializerOptions options = new()
-#pragma warning restore CA1869
-            {
-                TypeInfoResolver = new DefaultJsonTypeInfoResolver
-                {
-                    Modifiers = { modifier.ModifyPrefixInfo }
-                },
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-            };
-
+            var options = JsonHelper.GetOptionsWithIgnorePrefix(dataType.AppLogic.ShadowFields.Prefix);
             string serializedData = JsonSerializer.Serialize(data, options);
             if (dataType.AppLogic.ShadowFields.SaveToDataType != null)
             {

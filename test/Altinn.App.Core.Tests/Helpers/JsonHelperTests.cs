@@ -240,4 +240,14 @@ public class JsonHelperTests
         diff.Should().ContainKey("ListTest[0].DecimalTest").WhoseValue.Should().Match(x => isMatch(x));
         diff.Should().HaveCount(5);
     }
+
+    [Fact]
+    public void OptionsWithIgnorePrefix()
+    {
+        var options1 = JsonHelper.GetOptionsWithIgnorePrefix("A_");
+        var options2 = JsonHelper.GetOptionsWithIgnorePrefix("A_");
+        options1.Should().BeSameAs(options2);
+        var options3 = JsonHelper.GetOptionsWithIgnorePrefix("B_");
+        options3.Should().NotBeSameAs(options2);
+    }
 }
