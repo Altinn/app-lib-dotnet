@@ -127,4 +127,38 @@ public class EndTaskEventHandlerTests
         // Make sure eFormidling service task is not called if PDF failed.
         _eformidlingServiceTask.Verify(p => p.Execute(taskId, instance), Times.Never);
     }
+
+    [Fact]
+    public void Throws_If_Missing_Pdf_ServiceTask()
+    {
+        IServiceTask[] serviceTasks = [
+            _eformidlingServiceTask.Object
+        ];
+
+        var ex = Assert.Throws<InvalidOperationException>(() => 
+            new EndTaskEventHandler(
+                _processTaskDataLocker.Object,
+                _processTaskFinisher.Object,
+                serviceTasks,
+                _processTaskEnds,
+                _logger));
+        Assert.Equal("PdfServiceTask not found in serviceTasks", ex.Message);
+    }
+
+    [Fact]
+    public void Throws_If_Missing_Eformidling_ServiceTask()
+    {
+        IServiceTask[] serviceTasks = [
+            _pdfServiceTask.Object
+        ];
+
+        var ex = Assert.Throws<InvalidOperationException>(() => 
+            new EndTaskEventHandler(
+                _processTaskDataLocker.Object,
+                _processTaskFinisher.Object,
+                serviceTasks,
+                _processTaskEnds,
+                _logger));
+        Assert.Equal("EformidlingServiceTask not found in serviceTasks", ex.Message);
+    }
 }
