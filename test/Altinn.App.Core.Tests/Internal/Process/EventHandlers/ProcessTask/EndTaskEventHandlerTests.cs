@@ -135,7 +135,7 @@ public class EndTaskEventHandlerTests
             _eformidlingServiceTask.Object
         ];
 
-        var ex = Assert.Throws<InvalidOperationException>(() => 
+        var ex = Assert.Throws<InvalidOperationException>(() =>
             new EndTaskEventHandler(
                 _processTaskDataLocker.Object,
                 _processTaskFinisher.Object,
@@ -152,7 +152,7 @@ public class EndTaskEventHandlerTests
             _pdfServiceTask.Object
         ];
 
-        var ex = Assert.Throws<InvalidOperationException>(() => 
+        var ex = Assert.Throws<InvalidOperationException>(() =>
             new EndTaskEventHandler(
                 _processTaskDataLocker.Object,
                 _processTaskFinisher.Object,

@@ -21,7 +21,7 @@ public class DITests
         public string ApplicationName { get => "test"; set => throw new NotImplementedException(); }
         public IFileProvider ContentRootFileProvider { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
         public string ContentRootPath { get => new DirectoryInfo("./").FullName; set => throw new NotImplementedException(); }
-        public string EnvironmentName { get => _env; set => _env = value;  }
+        public string EnvironmentName { get => _env; set => _env = value; }
     }
 
     private sealed class AppInsightsListener : EventListener
@@ -31,7 +31,7 @@ public class DITests
 
         protected override void OnEventSourceCreated(EventSource eventSource)
         {
-            
+
             if (eventSource.Name == "Microsoft-ApplicationInsights-AspNetCore")
             {
                 _eventSources.Add(eventSource);
@@ -60,7 +60,7 @@ public class DITests
             }
             base.Dispose();
         }
-    } 
+    }
 
     [Fact]
     public void AppInsights_Registers_Correctly()
@@ -84,7 +84,7 @@ public class DITests
 
         var telemetryConfig = sp.GetRequiredService<TelemetryConfiguration>();
         Assert.NotNull(telemetryConfig);
-        
+
         var client = sp.GetRequiredService<TelemetryClient>();
         Assert.NotNull(client);
 
