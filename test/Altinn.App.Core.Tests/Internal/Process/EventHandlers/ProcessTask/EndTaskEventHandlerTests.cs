@@ -14,8 +14,14 @@ public class EndTaskEventHandlerTests
 {
     private readonly Mock<IProcessTaskDataLocker> _processTaskDataLocker = new();
     private readonly Mock<IProcessTaskFinalizer> _processTaskFinisher = new();
-    private readonly Mock<IServiceTask> _pdfServiceTask = new();
-    private readonly Mock<IServiceTask> _eformidlingServiceTask = new();
+    private readonly Mock<IPdfServiceTask> _pdfServiceTask = new();
+    private readonly Mock<IEformidlingServiceTask> _eformidlingServiceTask = new();
+
+    private IServiceTask[] ServiceTasks => [
+        _pdfServiceTask.Object,
+        _eformidlingServiceTask.Object
+    ];
+
     private IEnumerable<IProcessTaskEnd> _processTaskEnds = new List<IProcessTaskEnd>();
     private readonly ILogger<EndTaskEventHandler> _logger = new NullLogger<EndTaskEventHandler>();
 
@@ -25,8 +31,7 @@ public class EndTaskEventHandlerTests
         EndTaskEventHandler eteh = new EndTaskEventHandler(
             _processTaskDataLocker.Object,
             _processTaskFinisher.Object,
-            _pdfServiceTask.Object,
-            _eformidlingServiceTask.Object,
+            ServiceTasks,
             _processTaskEnds,
             _logger);
         var instance = new Instance()
@@ -58,8 +63,7 @@ public class EndTaskEventHandlerTests
         EndTaskEventHandler eteh = new(
             _processTaskDataLocker.Object,
             _processTaskFinisher.Object,
-            _pdfServiceTask.Object,
-            _eformidlingServiceTask.Object,
+            ServiceTasks,
             _processTaskEnds,
             _logger);
         var instance = new Instance()
@@ -92,8 +96,7 @@ public class EndTaskEventHandlerTests
         EndTaskEventHandler eteh = new(
             _processTaskDataLocker.Object,
             _processTaskFinisher.Object,
-            _pdfServiceTask.Object,
-            _eformidlingServiceTask.Object,
+            ServiceTasks,
             _processTaskEnds,
             _logger);
 
