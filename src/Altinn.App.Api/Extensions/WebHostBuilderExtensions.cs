@@ -22,6 +22,8 @@ public static class WebHostBuilderExtensions
         });
         builder.ConfigureLogging(log => log.AddOpenTelemetry(opt =>
         {
+            opt.IncludeFormattedMessage = true;
+
             opt.AddOtlpExporter();
         }));
     }
