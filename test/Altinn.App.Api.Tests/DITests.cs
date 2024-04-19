@@ -120,7 +120,7 @@ public class DITests
     [Theory]
     [InlineData("false")]
     [InlineData("not_bool_parsable")]
-    public void UseOpenTelemetry_WhenFalseOrNotParsable_RegistersApplicationInsights(string useSpecifiedConfigValue)
+    public void UseOpenTelemetry_WhenFalseOrNotParsable_RegistersApplicationInsights(string userSpecifiedConfigValue)
     {
         var services = new ServiceCollection();
         var env = new FakeWebHostEnvironment { EnvironmentName = "Development" };
@@ -131,7 +131,7 @@ public class DITests
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["AppSettings:UseOpenTelemetry"] = useSpecifiedConfigValue,
+                ["AppSettings:UseOpenTelemetry"] = userSpecifiedConfigValue,
                 ["ApplicationInsights:InstrumentationKey"] = "test"
             })
             .Build();
