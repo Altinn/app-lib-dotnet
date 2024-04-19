@@ -33,7 +33,7 @@ public partial class Telemetry
         counter.Add(1);
     }
 
-    internal static class Notifications 
+    internal static class Notifications
     {
         internal static readonly string TypeLabel = "type";
         internal static readonly string ResultLabel = "result";

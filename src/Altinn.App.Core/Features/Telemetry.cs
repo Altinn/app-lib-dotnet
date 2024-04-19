@@ -58,7 +58,7 @@ public sealed partial class Telemetry : IDisposable
         return _counters.GetOrAdd(name, static (name, closure) => closure.Factory(name, closure.Self, closure.Context), closure);
     }
 
-    internal static class Metrics 
+    internal static class Metrics
     {
         internal static readonly string Prefix = "altinn_app";
 

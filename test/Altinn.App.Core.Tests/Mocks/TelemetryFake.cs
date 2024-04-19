@@ -28,19 +28,19 @@ internal sealed record TelemetryFake : IDisposable
     internal TelemetryFake(string org = "ttd", string name = "test", string version = "v1")
     {
         var appId = new AppIdentifier(org, name);
-        var options = new AppSettings 
+        var options = new AppSettings
         {
             AppVersion = version,
         };
 
         ActivityListener = new ActivityListener()
         {
-            ShouldListenTo = (activitySource) => 
+            ShouldListenTo = (activitySource) =>
             {
                 return activitySource.Name == appId.App;
             },
             Sample = (ref ActivityCreationOptions<ActivityContext> options) => ActivitySamplingResult.AllDataAndRecorded,
-            ActivityStarted = activity => 
+            ActivityStarted = activity =>
             {
                 _activities.Add(activity);
             },
@@ -49,7 +49,7 @@ internal sealed record TelemetryFake : IDisposable
 
         MeterListener = new MeterListener()
         {
-            InstrumentPublished = (instrument, listener) => 
+            InstrumentPublished = (instrument, listener) =>
             {
                 if (instrument.Meter.Name != appId.App)
                 {
@@ -60,7 +60,7 @@ internal sealed record TelemetryFake : IDisposable
                 listener.EnableMeasurementEvents(instrument, this);
             },
         };
-        MeterListener.SetMeasurementEventCallback<long>(static (instrument, measurement, tagSpan, state) => 
+        MeterListener.SetMeasurementEventCallback<long>(static (instrument, measurement, tagSpan, state) =>
         {
             Debug.Assert(state is not null);
             var self = (TelemetryFake)state!;

@@ -74,7 +74,7 @@ public class SmsNotificationClientTests
         capturedRequest.Should().NotBeNull();
         capturedRequest!.RequestUri.Should().NotBeNull();
         capturedRequest!.RequestUri!.ToString().Should().Be(expectedUri);
-        
+
         if (includeTelemetry)
         {
             Assert.NotNull(telemetry);
@@ -87,7 +87,7 @@ public class SmsNotificationClientTests
                 .Be(Telemetry.Notifications.OrderType.Sms.ToStringFast());
 
             var metric = telemetry.Telemetry.GetNotificationOrdersMetric(
-                Telemetry.Notifications.OrderType.Sms, 
+                Telemetry.Notifications.OrderType.Sms,
                 Telemetry.Notifications.OrderResult.Success);
             var measurements = telemetry.CapturedMetrics.GetValueOrDefault(metric);
             Assert.NotNull(measurements);

@@ -86,7 +86,7 @@ public class EmailNotificationClientTests
                 .Be(Telemetry.Notifications.OrderType.Email.ToStringFast());
 
             var metric = telemetry.Telemetry.GetNotificationOrdersMetric(
-                Telemetry.Notifications.OrderType.Email, 
+                Telemetry.Notifications.OrderType.Email,
                 Telemetry.Notifications.OrderResult.Success);
             var measurements = telemetry.CapturedMetrics.GetValueOrDefault(metric);
             Assert.NotNull(measurements);
