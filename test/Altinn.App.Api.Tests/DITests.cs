@@ -7,8 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.ApplicationInsights;
 using System.Diagnostics.Tracing;
-using System.Diagnostics;
-using System.Diagnostics.Metrics;
+using Altinn.App.Core.Features;
 
 namespace Altinn.App.Api.Tests;
 
@@ -110,11 +109,8 @@ public class DITests
 
         using var sp = services.BuildServiceProvider();
 
-        var activitySource = sp.GetService<ActivitySource>();
-        Assert.NotNull(activitySource);
-
-        var meter = sp.GetService<Meter>();
-        Assert.NotNull(meter);
+        var telemetry = sp.GetService<Telemetry>();
+        Assert.NotNull(telemetry);
     }
 
     [Fact]
@@ -139,11 +135,8 @@ public class DITests
         using var sp = services.BuildServiceProvider();
 
         // OTEL specific services should NOT be registered
-        var activitySource = sp.GetService<ActivitySource>();
-        Assert.Null(activitySource);
-
-        var meter = sp.GetService<Meter>();
-        Assert.Null(meter);
+        var telemetry = sp.GetService<Telemetry>();
+        Assert.Null(telemetry);
 
         // Application Insight services should be registered
         var telemetryConfig = sp.GetRequiredService<TelemetryConfiguration>();
