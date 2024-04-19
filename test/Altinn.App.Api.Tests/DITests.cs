@@ -117,10 +117,8 @@ public class DITests
         Assert.NotNull(meter);
     }
 
-    [Theory]
-    [InlineData("false")]
-    [InlineData("not_bool_parsable")]
-    public void UseOpenTelemetry_WhenFalseOrNotParsable_RegistersApplicationInsights(string userSpecifiedConfigValue)
+    [Fact]
+    public void UseOpenTelemetry_WhenFalse_RegistersApplicationInsights()
     {
         var services = new ServiceCollection();
         var env = new FakeWebHostEnvironment { EnvironmentName = "Development" };
@@ -131,7 +129,7 @@ public class DITests
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["AppSettings:UseOpenTelemetry"] = userSpecifiedConfigValue,
+                ["AppSettings:UseOpenTelemetry"] = "false",
                 ["ApplicationInsights:InstrumentationKey"] = "test"
             })
             .Build();
@@ -153,6 +151,27 @@ public class DITests
 
         var client = sp.GetRequiredService<TelemetryClient>();
         Assert.NotNull(client);
+    }
+
+    [Fact]
+    public void UseOpenTelemetry_WhenNotParsable_ThrowsArgumentException()
+    {
+        var services = new ServiceCollection();
+        var env = new FakeWebHostEnvironment { EnvironmentName = "Development" };
+
+        // Set a non-boolean value for the UseOpenTelemetry setting
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["AppSettings:UseOpenTelemetry"] = "not_a_boolean"
+            })
+            .Build();
+
+        var exception = Assert.Throws<ArgumentException>(() =>
+            Extensions.ServiceCollectionExtensions.AddAltinnAppServices(services, config, env)
+        );
+
+        Assert.Contains("UseOpenTelemetry must be boolean or not set", exception.Message);
     }
 
 }

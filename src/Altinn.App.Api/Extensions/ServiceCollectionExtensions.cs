@@ -60,20 +60,20 @@ namespace Altinn.App.Api.Extensions
             services.AddAppServices(config, env);
             services.ConfigureDataProtection();
 
-            if (bool.TryParse(config["AppSettings:UseOpenTelemetry"], out bool useOpenTelemetry))
+            var useOpenTelemetrySetting = config["AppSettings:UseOpenTelemetry"];
+
+            // Use Application Insights as default, opt in to use Open Telemetry
+            if (string.IsNullOrEmpty(useOpenTelemetrySetting) || useOpenTelemetrySetting.Equals("false", StringComparison.OrdinalIgnoreCase))
             {
-                if (useOpenTelemetry)
-                {
-                    AddOpenTelemetry(services, config, env);
-                }
-                else
-                {
-                    AddApplicationInsights(services, config, env);
-                }
+                AddApplicationInsights(services, config, env);
+            }
+            else if (useOpenTelemetrySetting.Equals("true", StringComparison.OrdinalIgnoreCase))
+            {
+                AddOpenTelemetry(services, config, env);
             }
             else
             {
-                AddApplicationInsights(services, config, env);
+                throw new ArgumentException("UseOpenTelemetry must be boolean or not set.", nameof(config));
             }
 
             AddAuthenticationScheme(services, config, env);
