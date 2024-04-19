@@ -60,8 +60,22 @@ namespace Altinn.App.Api.Extensions
             services.AddAppServices(config, env);
             services.ConfigureDataProtection();
 
-            AddApplicationInsights(services, config, env);
-            AddOpenTelemetry(services, config, env);
+            if (bool.TryParse(config["AppSettings:UseOpenTelemetry"], out bool useOpenTelemetry))
+            {
+                if (useOpenTelemetry)
+                {
+                    AddOpenTelemetry(services, config, env);
+                }
+                else
+                {
+                    AddApplicationInsights(services, config, env);
+                }
+            }
+            else
+            {
+                AddApplicationInsights(services, config, env);
+            }
+
             AddAuthenticationScheme(services, config, env);
             AddAuthorizationPolicies(services);
             AddAntiforgery(services);

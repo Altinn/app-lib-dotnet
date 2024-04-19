@@ -7,6 +7,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.ApplicationInsights;
 using System.Diagnostics.Tracing;
+using System.Diagnostics;
+using System.Diagnostics.Metrics;
 
 namespace Altinn.App.Api.Tests;
 
@@ -91,4 +93,66 @@ public class DITests
         EventLevel[] errorLevels = [EventLevel.Error, EventLevel.Critical];
         Assert.Empty(listener.Events.Where(e => errorLevels.Contains(e.Level)));
     }
+    [Fact]
+    public void OpenTelemetry_Registers_Correctly()
+    {
+        var services = new ServiceCollection();
+        var env = new FakeWebHostEnvironment { EnvironmentName = "Development" };
+
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["AppSettings:UseOpenTelemetry"] = "true"
+            })
+            .Build();
+
+        Extensions.ServiceCollectionExtensions.AddAltinnAppServices(services, config, env);
+
+        using var sp = services.BuildServiceProvider();
+
+        var activitySource = sp.GetService<ActivitySource>();
+        Assert.NotNull(activitySource);
+
+        var meter = sp.GetService<Meter>();
+        Assert.NotNull(meter);
+    }
+
+    [Theory]
+    [InlineData("false")]
+    [InlineData("not_bool_parsable")]
+    public void UseOpenTelemetry_WhenFalseOrNotParsable_RegistersApplicationInsights(string useSpecifiedConfigValue)
+    {
+        var services = new ServiceCollection();
+        var env = new FakeWebHostEnvironment { EnvironmentName = "Development" };
+
+        services.AddSingleton<IWebHostEnvironment>(env);
+        services.AddSingleton<IHostingEnvironment>(env);
+
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["AppSettings:UseOpenTelemetry"] = useSpecifiedConfigValue,
+                ["ApplicationInsights:InstrumentationKey"] = "test"
+            })
+            .Build();
+
+        Extensions.ServiceCollectionExtensions.AddAltinnAppServices(services, config, env);
+
+        using var sp = services.BuildServiceProvider();
+
+        // OTEL specific services should NOT be registered
+        var activitySource = sp.GetService<ActivitySource>();
+        Assert.Null(activitySource);
+
+        var meter = sp.GetService<Meter>();
+        Assert.Null(meter);
+
+        // Application Insight services should be registered
+        var telemetryConfig = sp.GetRequiredService<TelemetryConfiguration>();
+        Assert.NotNull(telemetryConfig);
+
+        var client = sp.GetRequiredService<TelemetryClient>();
+        Assert.NotNull(client);
+    }
+
 }
