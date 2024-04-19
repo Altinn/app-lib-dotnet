@@ -2,7 +2,6 @@ using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Models.Notifications.Email;
 using Altinn.Common.AccessTokenClient.Services;
-using Microsoft.ApplicationInsights;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Diagnostics;
@@ -13,12 +12,14 @@ namespace Altinn.App.Core.Features.Notifications.Email;
 
 internal sealed class EmailNotificationClient : IEmailNotificationClient
 {
+    private static readonly Telemetry.Notifications.OrderType _orderType = Telemetry.Notifications.OrderType.Email;
+
     private readonly ILogger<EmailNotificationClient> _logger;
     private readonly HttpClient _httpClient;
     private readonly IAppMetadata _appMetadata;
     private readonly PlatformSettings _platformSettings;
     private readonly IAccessTokenGenerator _accessTokenGenerator;
-    private readonly TelemetryClient? _telemetryClient;
+    private readonly Telemetry? _telemetry;
 
     public EmailNotificationClient(
         ILogger<EmailNotificationClient> logger,
@@ -26,29 +27,22 @@ internal sealed class EmailNotificationClient : IEmailNotificationClient
         IOptions<PlatformSettings> platformSettings,
         IAppMetadata appMetadata,
         IAccessTokenGenerator accessTokenGenerator,
-        TelemetryClient? telemetryClient = null)
+        Telemetry? telemetry = null)
     {
         _logger = logger;
         _platformSettings = platformSettings.Value;
         _httpClient = httpClient;
         _appMetadata = appMetadata;
         _accessTokenGenerator = accessTokenGenerator;
-        _telemetryClient = telemetryClient;
+        _telemetry = telemetry;
     }
 
     public async Task<EmailOrderResponse> Order(EmailNotification emailNotification, CancellationToken ct)
     {
-        DateTime startDateTime = default;
-        long startTimestamp = default;
-        if (_telemetryClient is not null)
-        {
-            startDateTime = DateTime.UtcNow;
-            startTimestamp = Stopwatch.GetTimestamp();
-        }
+        using var activity = _telemetry?.StartNotificationActivity(_orderType);
 
         HttpResponseMessage? httpResponseMessage = null;
         string? httpContent = null;
-        Exception? exception = null;
         try
         {
             var application = await _appMetadata.GetApplicationMetadata();
@@ -75,7 +69,8 @@ internal sealed class EmailNotificationClient : IEmailNotificationClient
                 if (orderResponse is null)
                     throw new JsonException("Couldn't deserialize email notification order response.");
 
-                Telemetry.OrderCount.WithLabels(Telemetry.Types.Email, Telemetry.Result.Success).Inc();
+                _telemetry?.NotificationOrderAdded(_orderType, Telemetry.Notifications.OrderResult.Success);
+                activity?.SetStatus(ActivityStatusCode.Ok);
             }
             else
             {
@@ -85,29 +80,17 @@ internal sealed class EmailNotificationClient : IEmailNotificationClient
         }
         catch (Exception e)
         {
-            exception = e;
-            Telemetry.OrderCount.WithLabels(Telemetry.Types.Email, Telemetry.Result.Error).Inc();
             var ex = new EmailNotificationException($"Something went wrong when processing the email order", httpResponseMessage, httpContent, e);
             _logger.LogError(ex, "Error when processing email notification order");
+
+            _telemetry?.NotificationOrderAdded(_orderType, Telemetry.Notifications.OrderResult.Error);
+            activity?.Errored(ex);
+
             throw ex;
         }
         finally
         {
             httpResponseMessage?.Dispose();
-            if (_telemetryClient is not null)
-            {
-                var stopTimestamp = Stopwatch.GetTimestamp();
-                var elapsed = Stopwatch.GetElapsedTime(startTimestamp, stopTimestamp);
-
-                _telemetryClient.TrackDependency(
-                    Telemetry.Dependency.TypeName,
-                    Telemetry.Dependency.Name,
-                    null,
-                    startDateTime,
-                    elapsed,
-                    exception is null
-                );
-            }
         }
     }
 }

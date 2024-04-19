@@ -10,9 +10,9 @@ using Altinn.App.Core.Features.Notifications.Email;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Notifications.Email;
+using Altinn.App.Core.Tests.Mocks;
 using Altinn.Common.AccessTokenClient.Services;
 using FluentAssertions;
-using Microsoft.ApplicationInsights;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -26,7 +26,7 @@ public class EmailNotificationClientTests
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public async void Order_VerifyHttpCall(bool includeTelemetryClient)
+    public async void Order_VerifyHttpCall(bool includeTelemetry)
     {
         // Arrange
         var emailNotification = new EmailNotification
@@ -62,16 +62,42 @@ public class EmailNotificationClientTests
 
         using var httpClient = new HttpClient(handlerMock.Object);
 
-        var emailNotificationClient = CreateEmailNotificationClient(httpClient, includeTelemetryClient);
+        using var fixture = CreateFixture(httpClient, includeTelemetry);
+        var (_, client, telemetry) = fixture;
 
         // Act
-        _ = await emailNotificationClient.Order(emailNotification, default);
+        _ = await client.Order(emailNotification, default);
 
         // Assert
         capturedContent.Should().Be(expectedContent);
         capturedRequest.Should().NotBeNull();
         capturedRequest!.RequestUri.Should().NotBeNull();
         capturedRequest!.RequestUri!.ToString().Should().Be(expectedUri);
+
+        if (includeTelemetry)
+        {
+            Assert.NotNull(telemetry);
+            var activities = telemetry.CapturedActivities;
+            activities.Count.Should().Be(1);
+
+            var activity = activities[^1];
+            activity.OperationName.Should().Be(Telemetry.Notifications.OrderTraceName);
+            activity.GetTagItem(Telemetry.Notifications.TypeLabel).Should()
+                .Be(Telemetry.Notifications.OrderType.Email.ToStringFast());
+
+            var metric = telemetry.Telemetry.GetNotificationOrdersMetric(
+                Telemetry.Notifications.OrderType.Email, 
+                Telemetry.Notifications.OrderResult.Success);
+            var measurements = telemetry.CapturedMetrics.GetValueOrDefault(metric);
+            Assert.NotNull(measurements);
+            measurements.Count.Should().Be(1);
+            var measurement = measurements[^1];
+            measurement.Value.Should().Be(1);
+            measurement.Tags[Telemetry.Notifications.TypeLabel].Should()
+                .Be(Telemetry.Notifications.OrderType.Email.ToStringFast());
+            measurement.Tags[Telemetry.Notifications.ResultLabel].Should()
+                .Be(Telemetry.Notifications.OrderResult.Success.ToStringFast());
+        }
     }
 
     [Fact]
@@ -97,7 +123,9 @@ public class EmailNotificationClientTests
 
         using var httpClient = new HttpClient(handlerMock.Object);
 
-        var emailNotificationClient = CreateEmailNotificationClient(httpClient);
+        using var fixture = CreateFixture(httpClient);
+        var (_, client, _) = fixture;
+
         var recipients = new List<EmailRecipient>()
         {
             new("test.testesen@testdirektoratet.no")
@@ -112,7 +140,7 @@ public class EmailNotificationClientTests
         };
 
         // Act
-        var emailOrderResponse = await emailNotificationClient.Order(emailNotification, default);
+        var emailOrderResponse = await client.Order(emailNotification, default);
 
         // Assert
         emailOrderResponse.Should().NotBeNull();
@@ -142,7 +170,9 @@ public class EmailNotificationClientTests
 
         using var httpClient = new HttpClient(handlerMock.Object);
 
-        var emailNotificationClient = CreateEmailNotificationClient(httpClient);
+        using var fixture = CreateFixture(httpClient);
+        var (_, client, _) = fixture;
+
         var recipients = new List<EmailRecipient>()
         {
             new("test.testesen@testdirektoratet.no")
@@ -158,7 +188,7 @@ public class EmailNotificationClientTests
 
         // Act
         // Define an asynchronous delegate action, allowing for the capture and testing of any exceptions thrown.
-        Func<Task> orderEmailNotification = async () => await emailNotificationClient.Order(emailNotification, default);
+        Func<Task> orderEmailNotification = async () => await client.Order(emailNotification, default);
 
         // Assert
         await FluentActions.Awaiting(orderEmailNotification).Should().ThrowAsync<EmailNotificationException>();
@@ -187,7 +217,9 @@ public class EmailNotificationClientTests
 
         using var httpClient = new HttpClient(handlerMock.Object);
 
-        var emailNotificationClient = CreateEmailNotificationClient(httpClient);
+        using var fixture = CreateFixture(httpClient);
+        var (_, client, _) = fixture;
+
         var recipients = new List<EmailRecipient>()
         {
             new("test.testesen@testdirektoratet.no")
@@ -203,7 +235,7 @@ public class EmailNotificationClientTests
 
         // Act
         // Define an asynchronous delegate action, allowing for the capture and testing of any exceptions thrown.
-        Func<Task> orderEmailNotification = async () => await emailNotificationClient.Order(emailNotification, default);
+        Func<Task> orderEmailNotification = async () => await client.Order(emailNotification, default);
 
         // Assert
         await FluentActions.Awaiting(orderEmailNotification).Should().ThrowAsync<EmailNotificationException>();
@@ -237,8 +269,24 @@ public class EmailNotificationClientTests
     [Fact]
     public void DIContainer_Accepts_Missing_TelemetryClient()
     {
+        using var fixture = CreateFixture(withTelemetry: false);
+        var (_, client, _) = fixture;
+        Assert.NotNull(client);
+    }
+
+    private static Fixture CreateFixture(HttpClient? httpClient = null, bool withTelemetry = true)
+    {
         var services = new ServiceCollection();
-        services.AddSingleton<HttpClient>(_ => new HttpClient());
+
+        if (httpClient is not null)
+        {
+            services.AddSingleton<HttpClient>(httpClient);
+        }
+        else
+        {
+            services.AddSingleton<HttpClient>(_ => new HttpClient());
+        }
+
         services.AddSingleton<IAppMetadata>(new Mock<IAppMetadata>().Object);
         services.AddSingleton<IAccessTokenGenerator>(new Mock<IAccessTokenGenerator>().Object);
         services.AddSingleton<IOptions<PlatformSettings>>(Options.Create(new PlatformSettings()));
@@ -247,35 +295,47 @@ public class EmailNotificationClientTests
             logging.ClearProviders();
             logging.AddProvider(NullLoggerProvider.Instance);
         });
-        services.AddTransient<IEmailNotificationClient, EmailNotificationClient>();
 
-        using var serviceProvider = services.BuildServiceProvider(new ServiceProviderOptions
-        {
-            ValidateOnBuild = true,
-            ValidateScopes = true,
-        });
-        var smsNotificationClient = serviceProvider.GetRequiredService<IEmailNotificationClient>();
-        smsNotificationClient.Should().NotBeNull();
-    }
-
-    private static EmailNotificationClient CreateEmailNotificationClient(HttpClient httpClient, bool withTelemetryClient = false)
-    {
-        using var loggerFactory = new NullLoggerFactory();
+        var appId = Guid.NewGuid().ToString();
 
         var appDataMock = new Mock<IAppMetadata>();
         appDataMock.Setup(a => a.GetApplicationMetadata())
-            .ReturnsAsync(new ApplicationMetadata("ttd/app-lib-test"));
+            .ReturnsAsync(new ApplicationMetadata($"ttd/{appId}"));
+        services.AddSingleton<IAppMetadata>(appDataMock.Object);
 
         var accessTokenGenerator = new Mock<IAccessTokenGenerator>();
         accessTokenGenerator.Setup(a => a.GenerateAccessToken(It.IsAny<string>(), It.IsAny<string>()))
             .Returns("token");
+        services.AddSingleton<IAccessTokenGenerator>(accessTokenGenerator.Object);
 
-        return new EmailNotificationClient(
-            loggerFactory.CreateLogger<EmailNotificationClient>(),
-            httpClient,
-            Options.Create(new PlatformSettings()),
-            appDataMock.Object,
-            accessTokenGenerator.Object,
-            withTelemetryClient ? new TelemetryClient() : null);
+        TelemetryFake? telemetryFake = null;
+        if (withTelemetry)
+        {
+            telemetryFake = new TelemetryFake("ttd", appId);
+            services.AddSingleton(telemetryFake);
+            services.AddSingleton<Telemetry>(telemetryFake.Telemetry);
+        }
+
+        services.AddTransient<IEmailNotificationClient, EmailNotificationClient>();
+
+        var sp = services.BuildServiceProvider(new ServiceProviderOptions
+        {
+            ValidateOnBuild = true,
+            ValidateScopes = true,
+        });
+
+        var client = (EmailNotificationClient)sp.GetRequiredService<IEmailNotificationClient>();
+        return new(sp, client, telemetryFake);
+    }
+
+    private readonly record struct Fixture(IServiceProvider ServiceProvider, EmailNotificationClient Client, TelemetryFake? Telemetry) : IDisposable
+    {
+        public void Dispose()
+        {
+            if (ServiceProvider is IDisposable sp)
+            {
+                sp.Dispose();
+            }
+        }
     }
 }

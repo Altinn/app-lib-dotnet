@@ -1,12 +1,11 @@
-﻿using System.Diagnostics;
-using System.Diagnostics.Metrics;
-using Altinn.App.Api.Controllers;
+﻿using Altinn.App.Api.Controllers;
 using Altinn.App.Api.Helpers;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Infrastructure.Health;
 using Altinn.App.Api.Infrastructure.Telemetry;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Extensions;
+using Altinn.App.Core.Features;
 using Altinn.Common.PEP.Authorization;
 using Altinn.Common.PEP.Clients;
 using AltinnCore.Authentication.JwtCookie;
@@ -135,8 +134,7 @@ namespace Altinn.App.Api.Extensions
         {
             var appId = StartupHelper.GetApplicationId();
             var appVersion = config.GetSection("AppSettings").GetValue<string>("AppVersion");
-            services.AddSingleton(sp => new ActivitySource(appId, appVersion));
-            services.AddSingleton(sp => new Meter(appId, appVersion));
+            services.AddSingleton<Telemetry>();
             services
                 .AddOpenTelemetry()
                 .ConfigureResource(r =>
