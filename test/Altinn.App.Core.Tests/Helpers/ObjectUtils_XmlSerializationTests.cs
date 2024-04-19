@@ -28,7 +28,7 @@ public class ObjectUtils_XmlSerializationTests(ITestOutputHelper _output)
         public NullableDecimalMedORID? DecimalMedOrid { get; set; }
 
         public bool ShouldSerializeDecimalMedOrid()
-            => DecimalMedOrid?.value != null;
+            => DecimalMedOrid?.valueNullable != null;
 
         [XmlElement("aarets2", Order = 2)]
         [JsonPropertyName("aarets2")]
@@ -68,20 +68,20 @@ public class ObjectUtils_XmlSerializationTests(ITestOutputHelper _output)
 
     public class NullableDecimalMedORID
     {
-        [XmlIgnore]
-        [JsonPropertyName("value")]
-        public decimal? value { get; set; }
-
         [XmlText]
         [JsonIgnore]
-        public decimal valueOrDefault
+        public decimal value
         {
-            get => value ?? default;
+            get => valueNullable ?? default;
             set
             {
-                this.value = value;
+                this.valueNullable = value;
             }
         }
+
+        [XmlIgnore]
+        [JsonPropertyName("value")]
+        public decimal? valueNullable { get; set; }
 
         [XmlAttribute("orid")]
         [JsonPropertyName("orid")]
@@ -302,11 +302,11 @@ public class ObjectUtils_XmlSerializationTests(ITestOutputHelper _output)
         {
             // JsonSerialization does not set the parent object StringMedOrid to null, so we do that manually for all test cases to work
             testResult.DecimalMedOrid.Should().NotBeNull();
-            testResult.DecimalMedOrid!.value.Should().BeNull();
+            testResult.DecimalMedOrid!.valueNullable.Should().BeNull();
             testResult.DecimalMedOrid = null;
             var child = testResult.Children.Should().ContainSingle().Which;
             child.DecimalMedOrid.Should().NotBeNull();
-            child.DecimalMedOrid!.value.Should().BeNull();
+            child.DecimalMedOrid!.valueNullable.Should().BeNull();
             child.DecimalMedOrid = null;
         }
 
@@ -319,7 +319,7 @@ public class ObjectUtils_XmlSerializationTests(ITestOutputHelper _output)
         {
             DecimalMedOrid = new NullableDecimalMedORID
             {
-                value = value
+                valueNullable = value
             },
             NullableDecimal = value,
             Decimal = value ?? default,
@@ -329,7 +329,7 @@ public class ObjectUtils_XmlSerializationTests(ITestOutputHelper _output)
                 {
                     DecimalMedOrid = new NullableDecimalMedORID
                     {
-                        value = value
+                        valueNullable = value
                     },
                     NullableDecimal = value,
                     Decimal = value ?? default,
@@ -339,14 +339,14 @@ public class ObjectUtils_XmlSerializationTests(ITestOutputHelper _output)
 
         test.StringMedOrid.Should().BeNull();
         test.DecimalMedOrid.Should().NotBeNull();
-        test.DecimalMedOrid!.value.Should().Be(value);
+        test.DecimalMedOrid!.valueNullable.Should().Be(value);
         test.DecimalMedOrid.orid.Should().Be("30320");
         test.Decimal.Should().Be(value ?? default);
         test.NullableDecimal.Should().Be(value);
         var child = test.Children.Should().ContainSingle().Which;
         child.StringMedOrid.Should().BeNull();
         child.DecimalMedOrid.Should().NotBeNull();
-        child.DecimalMedOrid!.value.Should().Be(value);
+        child.DecimalMedOrid!.valueNullable.Should().Be(value);
         child.DecimalMedOrid.orid.Should().Be("30320");
         child.Decimal.Should().Be(value ?? default);
         child.NullableDecimal.Should().Be(value);
@@ -363,7 +363,7 @@ public class ObjectUtils_XmlSerializationTests(ITestOutputHelper _output)
         else
         {
             test.DecimalMedOrid.Should().NotBeNull();
-            test.DecimalMedOrid!.value.Should().Be(value);
+            test.DecimalMedOrid!.valueNullable.Should().Be(value);
             test.DecimalMedOrid.orid.Should().Be("30320");
         }
 
@@ -378,7 +378,7 @@ public class ObjectUtils_XmlSerializationTests(ITestOutputHelper _output)
         else
         {
             child.DecimalMedOrid.Should().NotBeNull();
-            child.DecimalMedOrid!.value.Should().Be(value);
+            child.DecimalMedOrid!.valueNullable.Should().Be(value);
             child.DecimalMedOrid.orid.Should().Be("30320");
         }
 
