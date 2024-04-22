@@ -1,5 +1,6 @@
 using System.Reflection;
 using Altinn.App.Api.Helpers;
+using Altinn.App.Api.Infrastructure.Middleware;
 using Altinn.App.Core.Configuration;
 using Prometheus;
 
@@ -31,6 +32,7 @@ public static class WebApplicationBuilderExtensions
         app.UseStaticFiles('/' + appId);
         app.UseAuthentication();
         app.UseAuthorization();
+        app.UseTelemetry();
 
         app.UseEndpoints(endpoints =>
         {
