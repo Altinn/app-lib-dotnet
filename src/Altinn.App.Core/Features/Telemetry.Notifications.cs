@@ -9,7 +9,7 @@ namespace Altinn.App.Core.Features;
 
 public partial class Telemetry
 {
-    internal Activity? StartNotificationActivity(OrderType type)
+    internal Activity? StartNotificationOrderActivity(OrderType type)
     {
         var activity = ActivitySource.StartActivity(OrderTraceName);
         activity?.SetTag(TypeLabel, type.ToStringFast());

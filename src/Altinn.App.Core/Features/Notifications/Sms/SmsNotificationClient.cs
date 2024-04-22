@@ -39,7 +39,7 @@ internal sealed class SmsNotificationClient : ISmsNotificationClient
 
     public async Task<SmsNotificationOrderResponse> Order(SmsNotification smsNotification, CancellationToken ct)
     {
-        using var activity = _telemetry?.StartNotificationActivity(_orderType);
+        using var activity = _telemetry?.StartNotificationOrderActivity(_orderType);
 
         HttpResponseMessage? httpResponseMessage = null;
         string? httpContent = null;
