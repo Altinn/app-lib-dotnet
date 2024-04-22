@@ -86,9 +86,7 @@ public class SmsNotificationClientTests
             activity.GetTagItem(Telemetry.Notifications.TypeLabel).Should()
                 .Be(Telemetry.Notifications.OrderType.Sms.ToStringFast());
 
-            var metric = telemetry.Telemetry.GetNotificationOrdersMetric(
-                Telemetry.Notifications.OrderType.Sms,
-                Telemetry.Notifications.OrderResult.Success);
+            var metric = telemetry.Telemetry.GetNotificationOrdersMetric();
             var measurements = telemetry.CapturedMetrics.GetValueOrDefault(metric);
             Assert.NotNull(measurements);
             measurements.Count.Should().Be(1);

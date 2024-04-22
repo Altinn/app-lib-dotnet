@@ -58,11 +58,25 @@ public sealed partial class Telemetry : IDisposable
         return _counters.GetOrAdd(name, static (name, closure) => closure.Factory(name, closure.Self, closure.Context), closure);
     }
 
-    internal static class Metrics
+    private Counter<long> GetCounter(string name, Func<string, Telemetry, Counter<long>> factory)
+    {
+        (Telemetry Self, Func<string, Telemetry, Counter<long>> Factory) closure = (this, factory);
+        return _counters.GetOrAdd(name, static (name, closure) => closure.Factory(name, closure.Self), closure);
+    }
+
+    /// <summary>
+    /// Utility methods for creating metrics for an app.
+    /// </summary>
+    public static class Metrics
     {
         internal static readonly string Prefix = "altinn_app";
 
-        internal static string CreateName(string name) => $"{Prefix}_{name}";
+        /// <summary>
+        /// Creates a name for a metric with the prefix "altinn_app".
+        /// </summary>
+        /// <param name="name">Name of the metric, naming-convention is 'snake_case'</param>
+        /// <returns>Full metric name</returns>
+        public static string CreateName(string name) => $"{Prefix}_{name}";
     }
 
     /// <summary>

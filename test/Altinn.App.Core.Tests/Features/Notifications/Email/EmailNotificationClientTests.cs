@@ -85,9 +85,7 @@ public class EmailNotificationClientTests
             activity.GetTagItem(Telemetry.Notifications.TypeLabel).Should()
                 .Be(Telemetry.Notifications.OrderType.Email.ToStringFast());
 
-            var metric = telemetry.Telemetry.GetNotificationOrdersMetric(
-                Telemetry.Notifications.OrderType.Email,
-                Telemetry.Notifications.OrderResult.Success);
+            var metric = telemetry.Telemetry.GetNotificationOrdersMetric();
             var measurements = telemetry.CapturedMetrics.GetValueOrDefault(metric);
             Assert.NotNull(measurements);
             measurements.Count.Should().Be(1);
