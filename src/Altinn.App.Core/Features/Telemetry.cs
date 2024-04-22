@@ -93,11 +93,26 @@ public sealed partial class Telemetry : IDisposable
         internal static string CreateLibName(string name) => $"{Prefix}_{name}";
     }
 
+    /// <summary>
+    /// Labels used to tag traces for observability.
+    /// </summary>
     public static class Labels
     {
+        /// <summary>
+        /// Label for the party ID of the instance owner.
+        /// </summary>
         public static readonly string InstanceOwnerPartyId = "instance.owner_party_id";
+        /// <summary>
+        /// Label for the guid that identifies the instance.
+        /// </summary>
         public static readonly string InstanceGuid = "instance.guid";
+        /// <summary>
+        /// Label for the guid that identifies the data.
+        /// </summary>
         public static readonly string DataGuid = "data.guid";
+        /// <summary>
+        /// Label for the ID of the task.
+        /// </summary>
         public static readonly string TaskId = "task.id";
     }
 
