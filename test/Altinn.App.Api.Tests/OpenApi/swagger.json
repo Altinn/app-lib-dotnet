@@ -5204,9 +5204,6 @@
           "redirectUrl": {
             "type": "string",
             "nullable": true
-          },
-          "status": {
-            "$ref": "#/components/schemas/PaymentStatus"
           }
         },
         "additionalProperties": false
@@ -5217,6 +5214,9 @@
           "taskId": {
             "type": "string",
             "nullable": true
+          },
+          "status": {
+            "$ref": "#/components/schemas/PaymentStatus"
           },
           "orderDetails": {
             "$ref": "#/components/schemas/OrderDetails"
@@ -5266,7 +5266,9 @@
           0,
           1,
           2,
-          3
+          3,
+          4,
+          5
         ],
         "type": "integer",
         "format": "int32"

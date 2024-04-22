@@ -45,7 +45,7 @@ public class PaymentService : IPaymentService
         (Guid dataElementId, PaymentInformation? existingPaymentInformation) = await _dataService.GetByType<PaymentInformation>(instance, dataTypeId);
         if (existingPaymentInformation?.PaymentDetails != null)
         {
-            if (existingPaymentInformation.PaymentDetails.Status != PaymentStatus.Paid)
+            if (existingPaymentInformation.Status != PaymentStatus.Paid)
             {
                 _logger.LogWarning(
                     "Payment with payment id {paymentId} already started for instance {instanceId}. Trying to cancel before creating new payment.",
@@ -65,12 +65,14 @@ public class PaymentService : IPaymentService
         OrderDetails orderDetails = await _orderDetailsCalculator.CalculateOrderDetails(instance);
         IPaymentProcessor paymentProcessor = _paymentProcessors.FirstOrDefault(p => p.PaymentProcessorId == orderDetails.PaymentProcessorId) ??
                                              throw new PaymentException($"Payment processor with ID '{orderDetails.PaymentProcessorId}' not found.");
-        
-        PaymentDetails startedPayment = await paymentProcessor.StartPayment(instance, orderDetails);
+
+        //If the sum of the order is 0, we can skip invoking the payment processor.
+        PaymentDetails? startedPayment = orderDetails.TotalPriceIncVat > 0 ? await paymentProcessor.StartPayment(instance, orderDetails) : null;
 
         PaymentInformation paymentInformation = new()
         {
             TaskId = instance.Process.CurrentTask.ElementId,
+            Status = startedPayment != null ? PaymentStatus.Created : PaymentStatus.Skipped,
             OrderDetails = orderDetails,
             PaymentDetails = startedPayment
         };
@@ -88,12 +90,12 @@ public class PaymentService : IPaymentService
         string dataTypeId = paymentConfiguration.PaymentDataType!;
         (Guid dataElementId, PaymentInformation? paymentInformation) = await _dataService.GetByType<PaymentInformation>(instance, dataTypeId);
 
-        // TODO: Consider if this should be put in storage in process task start.
         if (paymentInformation == null)
         {
             return new PaymentInformation
             {
                 TaskId = instance.Process.CurrentTask.ElementId,
+                Status = PaymentStatus.Uninitialized,
                 OrderDetails = await _orderDetailsCalculator.CalculateOrderDetails(instance),
             };
         }
@@ -101,6 +103,11 @@ public class PaymentService : IPaymentService
         PaymentDetails paymentDetails = paymentInformation.PaymentDetails!;
         decimal totalPriceIncVat = paymentInformation.OrderDetails.TotalPriceIncVat;
         string paymentProcessorId = paymentInformation.OrderDetails.PaymentProcessorId;
+
+        if (paymentInformation.Status == PaymentStatus.Skipped)
+        {
+            return paymentInformation;
+        }
 
         IPaymentProcessor paymentProcessor = _paymentProcessors.FirstOrDefault(p => p.PaymentProcessorId == paymentProcessorId) ??
                                              throw new PaymentException($"Payment processor with ID '{paymentProcessorId}' not found.");
@@ -111,7 +118,7 @@ public class PaymentService : IPaymentService
             throw new PaymentException($"Unable to check payment status for instance {instance.Id}.");
         }
 
-        paymentDetails.Status = paymentStatus.Value;
+        paymentInformation.Status = paymentStatus.Value;
 
         await _dataService.UpdateJsonObject(new InstanceIdentifier(instance), dataTypeId, dataElementId, paymentInformation);
         return paymentInformation;

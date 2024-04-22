@@ -80,8 +80,9 @@ public class PaymentServiceTests
                 new PaymentInformation
                 {
                     TaskId = "Task_1",
+                    Status = PaymentStatus.Paid,
                     OrderDetails = orderDetails,
-                    PaymentDetails = new PaymentDetails { Status = PaymentStatus.Paid, PaymentId = "id", RedirectUrl = "url" },
+                    PaymentDetails = new PaymentDetails { PaymentId = "id", RedirectUrl = "url" },
                 }));
 
         // Act
@@ -233,7 +234,7 @@ public class PaymentServiceTests
         // Assert
         result.Should().NotBeNull();
         result!.PaymentDetails.Should().NotBeNull();
-        result.PaymentDetails!.Status.Should().Be(PaymentStatus.Paid);
+        result.Status.Should().Be(PaymentStatus.Paid);
     }
 
     [Fact]
@@ -245,7 +246,7 @@ public class PaymentServiceTests
         OrderDetails orderDetails = CreateOrderDetails();
         PaymentInformation paymentInformation = CreatePaymentInformation();
 
-        paymentInformation.PaymentDetails!.Status = PaymentStatus.Cancelled;
+        paymentInformation.Status = PaymentStatus.Cancelled;
         
         _dataService.Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
             .ReturnsAsync((Guid.NewGuid(), paymentInformation));
@@ -307,6 +308,7 @@ public class PaymentServiceTests
         return new PaymentInformation
         {
             TaskId = "taskId",
+            Status = PaymentStatus.Created,
             OrderDetails = new OrderDetails
             {
                 PaymentProcessorId = "paymentProcessorId",
@@ -317,7 +319,6 @@ public class PaymentServiceTests
             {
                 RedirectUrl = "Redirect URL",
                 PaymentId = "PaymentReference",
-                Status = PaymentStatus.Created
             }
         };
     }

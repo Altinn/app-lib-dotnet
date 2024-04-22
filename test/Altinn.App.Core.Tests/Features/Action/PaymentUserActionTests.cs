@@ -61,6 +61,7 @@ public class PaymentUserActionTests
         PaymentInformation paymentInformation = new()
         {
             TaskId = instance.Process.CurrentTask.ElementId,
+            Status = PaymentStatus.Created,
             OrderDetails = new OrderDetails
             {
                 PaymentProcessorId = "paymentProcessorId",
@@ -70,7 +71,6 @@ public class PaymentUserActionTests
             PaymentDetails = new PaymentDetails
             {
                 PaymentId = "1",
-                Status = PaymentStatus.Created,
                 RedirectUrl = "https://example.com",
             }
         };

@@ -16,10 +16,4 @@ public class PaymentDetails
     /// Gets or sets the redirect URL for the payment.
     /// </summary>
     public required string RedirectUrl { get; set; }
-
-    /// <summary>
-    /// Gets or sets the status of the payment.
-    /// </summary>
-    [JsonConverter(typeof(JsonStringEnumConverter))]
-    public required PaymentStatus Status { get; set; }
 }

@@ -3271,8 +3271,6 @@ components:
         redirectUrl:
           type: string
           nullable: true
-        status:
-          $ref: '#/components/schemas/PaymentStatus'
       additionalProperties: false
     PaymentInformation:
       type: object
@@ -3280,6 +3278,8 @@ components:
         taskId:
           type: string
           nullable: true
+        status:
+          $ref: '#/components/schemas/PaymentStatus'
         orderDetails:
           $ref: '#/components/schemas/OrderDetails'
         paymentDetails:
@@ -3316,6 +3316,8 @@ components:
         - 1
         - 2
         - 3
+        - 4
+        - 5
       type: integer
       format: int32
     PointerSegment:

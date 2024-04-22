@@ -66,14 +66,10 @@ namespace Altinn.App.Core.Features.Action
             }
 
             string? paymentDetailsRedirectUrl = paymentInformation.PaymentDetails?.RedirectUrl;
-            if (paymentDetailsRedirectUrl == null)
-            {
-                return UserActionResult.FailureResult(
-                    error: new ActionError { Code = "PaymentRedirectUrlMissing", Message = "Payment redirect URL is missing." },
-                    errorType: ProcessErrorType.Internal);
-            }
 
-            return UserActionResult.RedirectResult(new Uri(paymentDetailsRedirectUrl));
+            return paymentDetailsRedirectUrl == null
+                ? UserActionResult.SuccessResult()
+                : UserActionResult.RedirectResult(new Uri(paymentDetailsRedirectUrl));
         }
     }
 }

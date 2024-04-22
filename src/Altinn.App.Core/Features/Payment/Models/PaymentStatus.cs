@@ -6,7 +6,12 @@ namespace Altinn.App.Core.Features.Payment.Models
     public enum PaymentStatus
     {
         /// <summary>
-        /// The payment request has been created and sent to payment provider.
+        /// The payment is not initialized. We have not contacted the payment processor yet.
+        /// </summary>
+        Uninitialized,
+        
+        /// <summary>
+        /// The payment request has been created and sent to payment processor.
         /// </summary>
         Created,
         
@@ -24,5 +29,10 @@ namespace Altinn.App.Core.Features.Payment.Models
         /// The payment has been cancelled.
         /// </summary>
         Cancelled,
+
+        /// <summary>
+        /// The payment was skipped, likely because the sum of the order was zero.
+        /// </summary>
+        Skipped,
     }
 }

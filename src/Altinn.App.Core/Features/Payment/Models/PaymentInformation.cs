@@ -1,4 +1,6 @@
-﻿namespace Altinn.App.Core.Features.Payment.Models
+﻿using System.Text.Json.Serialization;
+
+namespace Altinn.App.Core.Features.Payment.Models
 {
     /// <summary>
     /// Represents payment information for a transaction.
@@ -10,6 +12,12 @@
         /// </summary>
         public required string TaskId { get; set; }
 
+        /// <summary>
+        /// Gets or sets the status of the payment.
+        /// </summary>
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public required PaymentStatus Status { get; set; }
+        
         /// <summary>
         /// Gets or sets the order details for the transaction.
         /// </summary>

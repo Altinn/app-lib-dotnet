@@ -96,7 +96,6 @@ public class NetsPaymentProcessorTests
         Assert.NotNull(result);
         Assert.Equal("12345", result.PaymentId);
         Assert.Equal("http://paymenturl.com", result.RedirectUrl);
-        Assert.Equal(PaymentStatus.Created, result.Status);
 
         _netsClientMock.Verify(
             x => x.CreatePayment(It.Is<NetsCreatePayment>(netsCreatePayment => netsCreatePayment.Order.Amount == expectedSum)), Times.Once);
@@ -128,6 +127,7 @@ public class NetsPaymentProcessorTests
         PaymentInformation paymentInformation = new()
         {
             TaskId = "taskId",
+            Status = PaymentStatus.Created,
             OrderDetails = new OrderDetails
             {
                 PaymentProcessorId = "paymentProcessorId",
@@ -147,9 +147,7 @@ public class NetsPaymentProcessorTests
             PaymentDetails = new PaymentDetails
             {
                 PaymentId = "paymentReference",
-                Status = PaymentStatus.Created,
                 RedirectUrl = "redirectUrl",
-                
             },
         };
 

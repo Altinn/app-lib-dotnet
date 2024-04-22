@@ -99,7 +99,6 @@ public class NetsPaymentProcessor : IPaymentProcessor
         return new PaymentDetails
         {
             PaymentId = paymentId,
-            Status = PaymentStatus.Created,
             RedirectUrl = hostedPaymentPageUrl,
         };
     }
