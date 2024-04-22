@@ -243,7 +243,7 @@ namespace Altinn.App.Api.Tests.Mocks
 
             if (substatus == null || string.IsNullOrEmpty(substatus.Label))
             {
-                using var response = 
+                using var response =
                     new HttpResponseMessage { StatusCode = System.Net.HttpStatusCode.BadRequest };
                 throw await PlatformHttpException.CreateAsync(response);
             }
