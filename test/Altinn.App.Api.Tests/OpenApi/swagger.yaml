@@ -3223,6 +3223,9 @@ components:
     OrderDetails:
       type: object
       properties:
+        paymentProcessorId:
+          type: string
+          nullable: true
         orderReference:
           type: string
           nullable: true
@@ -3268,9 +3271,6 @@ components:
         redirectUrl:
           type: string
           nullable: true
-        receiptUrl:
-          type: string
-          nullable: true
         status:
           $ref: '#/components/schemas/PaymentStatus'
       additionalProperties: false
@@ -3278,9 +3278,6 @@ components:
       type: object
       properties:
         taskId:
-          type: string
-          nullable: true
-        paymentProcessorId:
           type: string
           nullable: true
         orderDetails:

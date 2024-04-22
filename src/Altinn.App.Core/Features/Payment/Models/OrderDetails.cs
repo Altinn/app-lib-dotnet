@@ -6,6 +6,11 @@ namespace Altinn.App.Core.Features.Payment.Models;
 public class OrderDetails
 {
     /// <summary>
+    /// The ID of the payment provider that should handle the payment
+    /// </summary>
+    public string PaymentProcessorId { get; set; }
+    
+    /// <summary>
     /// Optional reference to the order. Could be used by other systems to identify the order
     /// </summary>
     public string? OrderReference { get; set; }

@@ -128,9 +128,9 @@ public class NetsPaymentProcessorTests
         PaymentInformation paymentInformation = new()
         {
             TaskId = "taskId",
-            PaymentProcessorId = "paymentProcessorId",
             OrderDetails = new OrderDetails
             {
+                PaymentProcessorId = "paymentProcessorId",
                 Currency = "NOK",
                 OrderReference = "orderReference",
                 OrderLines =

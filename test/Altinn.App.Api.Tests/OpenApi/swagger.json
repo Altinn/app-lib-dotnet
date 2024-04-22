@@ -5139,6 +5139,10 @@
       "OrderDetails": {
         "type": "object",
         "properties": {
+          "paymentProcessorId": {
+            "type": "string",
+            "nullable": true
+          },
           "orderReference": {
             "type": "string",
             "nullable": true
@@ -5201,10 +5205,6 @@
             "type": "string",
             "nullable": true
           },
-          "receiptUrl": {
-            "type": "string",
-            "nullable": true
-          },
           "status": {
             "$ref": "#/components/schemas/PaymentStatus"
           }
@@ -5215,10 +5215,6 @@
         "type": "object",
         "properties": {
           "taskId": {
-            "type": "string",
-            "nullable": true
-          },
-          "paymentProcessorId": {
             "type": "string",
             "nullable": true
           },

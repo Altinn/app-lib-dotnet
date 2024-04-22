@@ -39,8 +39,6 @@ public class PaymentService : IPaymentService
         _logger.LogInformation("Starting payment for instance {instanceId}.", instance.Id);
 
         ValidateConfig(paymentConfiguration);
-        IPaymentProcessor paymentProcessor = _paymentProcessors.FirstOrDefault(p => p.PaymentProcessorId == paymentConfiguration.PaymentProcessorId) ??
-                                             throw new PaymentException($"Payment processor with ID '{paymentConfiguration.PaymentProcessorId}' not found.");
 
         string dataTypeId = paymentConfiguration.PaymentDataType!;
 
@@ -65,12 +63,14 @@ public class PaymentService : IPaymentService
         }
 
         OrderDetails orderDetails = await _orderDetailsCalculator.CalculateOrderDetails(instance);
+        IPaymentProcessor paymentProcessor = _paymentProcessors.FirstOrDefault(p => p.PaymentProcessorId == orderDetails.PaymentProcessorId) ??
+                                             throw new PaymentException($"Payment processor with ID '{orderDetails.PaymentProcessorId}' not found.");
+        
         PaymentDetails startedPayment = await paymentProcessor.StartPayment(instance, orderDetails);
 
         PaymentInformation paymentInformation = new()
         {
             TaskId = instance.Process.CurrentTask.ElementId,
-            PaymentProcessorId = paymentProcessor.PaymentProcessorId,
             OrderDetails = orderDetails,
             PaymentDetails = startedPayment
         };
@@ -94,17 +94,17 @@ public class PaymentService : IPaymentService
             return new PaymentInformation
             {
                 TaskId = instance.Process.CurrentTask.ElementId,
-                PaymentProcessorId = paymentConfiguration.PaymentProcessorId!,
                 OrderDetails = await _orderDetailsCalculator.CalculateOrderDetails(instance),
             };
         }
 
-        IPaymentProcessor paymentProcessor = _paymentProcessors.FirstOrDefault(p => p.PaymentProcessorId == paymentConfiguration.PaymentProcessorId) ??
-                                             throw new PaymentException($"Payment processor with ID '{paymentConfiguration.PaymentProcessorId}' not found.");
-
         PaymentDetails paymentDetails = paymentInformation.PaymentDetails!;
-        decimal totalPriceIncVat = paymentInformation.OrderDetails?.TotalPriceIncVat ?? 0;
+        decimal totalPriceIncVat = paymentInformation.OrderDetails.TotalPriceIncVat;
+        string paymentProcessorId = paymentInformation.OrderDetails.PaymentProcessorId;
 
+        IPaymentProcessor paymentProcessor = _paymentProcessors.FirstOrDefault(p => p.PaymentProcessorId == paymentProcessorId) ??
+                                             throw new PaymentException($"Payment processor with ID '{paymentProcessorId}' not found.");
+        
         PaymentStatus? paymentStatus = await paymentProcessor.GetPaymentStatus(instance, paymentDetails.PaymentId, totalPriceIncVat);
         if (paymentStatus == null)
         {
@@ -119,34 +119,31 @@ public class PaymentService : IPaymentService
 
     private async Task CancelAndDelete(Instance instance, Guid dataElementId, PaymentInformation paymentInformation)
     {
-        IPaymentProcessor paymentProcessor = _paymentProcessors.FirstOrDefault(pp => pp.PaymentProcessorId == paymentInformation.PaymentProcessorId) ??
-                                             throw new PaymentException($"Payment processor with ID '{paymentInformation.PaymentProcessorId}' not found.");
+        string paymentProcessorId = paymentInformation.OrderDetails.PaymentProcessorId;
+        IPaymentProcessor paymentProcessor = _paymentProcessors.FirstOrDefault(pp => pp.PaymentProcessorId == paymentProcessorId) ??
+                                             throw new PaymentException($"Payment processor with ID '{paymentProcessorId}' not found.");
 
         bool success = await paymentProcessor.TerminatePayment(instance, paymentInformation);
-
+        string paymentId = paymentInformation.PaymentDetails?.PaymentId ?? "missing";
+        
         if (!success)
         {
             throw new PaymentException(
-                $"Unable to cancel existing {paymentInformation.PaymentProcessorId} payment with ID: {paymentInformation.PaymentDetails.PaymentId}.");
+                $"Unable to cancel existing {paymentProcessorId} payment with ID: {paymentId}.");
         }
 
         _logger.LogDebug("Payment {paymentReference} cancelled for instance {instanceId}. Deleting payment information.",
-            paymentInformation.PaymentDetails.PaymentId, instance.Id);
+            paymentId, instance.Id);
 
         await _dataService.DeleteById(new InstanceIdentifier(instance), dataElementId);
 
-        _logger.LogDebug("Payment information for payment {paymentReference} deleted for instance {instanceId}.", paymentInformation.PaymentDetails.PaymentId,
+        _logger.LogDebug("Payment information for payment {paymentReference} deleted for instance {instanceId}.", paymentId,
             instance.Id);
     }
 
     private static void ValidateConfig(AltinnPaymentConfiguration paymentConfiguration)
     {
         List<string> errorMessages = [];
-
-        if (string.IsNullOrWhiteSpace(paymentConfiguration.PaymentProcessorId))
-        {
-            errorMessages.Add("PaymentProcessorId is missing.");
-        }
 
         if (string.IsNullOrWhiteSpace(paymentConfiguration.PaymentDataType))
         {

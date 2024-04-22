@@ -18,11 +18,6 @@ public class PaymentDetails
     public required string RedirectUrl { get; set; }
 
     /// <summary>
-    /// Contains a URL to the payment processor receipt, if available.
-    /// </summary>
-    public string? ReceiptUrl { get; set; }
-
-    /// <summary>
     /// Gets or sets the status of the payment.
     /// </summary>
     [JsonConverter(typeof(JsonStringEnumConverter))]

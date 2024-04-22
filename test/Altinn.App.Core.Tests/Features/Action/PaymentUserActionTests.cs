@@ -58,18 +58,12 @@ public class PaymentUserActionTests
             ]
         };
 
-        AltinnPaymentConfiguration paymentConfiguration = new()
-        {
-            PaymentProcessorId = "paymentProcessorId",
-            PaymentDataType = "paymentInformation"
-        };
-
         PaymentInformation paymentInformation = new()
         {
             TaskId = instance.Process.CurrentTask.ElementId,
-            PaymentProcessorId = paymentConfiguration.PaymentProcessorId,
             OrderDetails = new OrderDetails
             {
+                PaymentProcessorId = "paymentProcessorId",
                 Currency = "NOK",
                 OrderLines = []
             },

@@ -11,11 +11,6 @@
         public required string TaskId { get; set; }
 
         /// <summary>
-        /// The internal ID of the payment processor.
-        /// </summary>
-        public required string PaymentProcessorId { get; set; }
-
-        /// <summary>
         /// Gets or sets the order details for the transaction.
         /// </summary>
         public required OrderDetails OrderDetails { get; set; }
