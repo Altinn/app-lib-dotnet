@@ -81,17 +81,20 @@ public class DITests
 
         Extensions.ServiceCollectionExtensions.AddAltinnAppServices(services, config, env);
 
-        using var sp = services.BuildServiceProvider();
+        using (var sp = services.BuildServiceProvider())
+        {
+            var telemetryConfig = sp.GetRequiredService<TelemetryConfiguration>();
+            Assert.NotNull(telemetryConfig);
 
-        var telemetryConfig = sp.GetRequiredService<TelemetryConfiguration>();
-        Assert.NotNull(telemetryConfig);
-
-        var client = sp.GetRequiredService<TelemetryClient>();
-        Assert.NotNull(client);
+            var client = sp.GetRequiredService<TelemetryClient>();
+            Assert.NotNull(client);
+            client.Flush();
+        }
 
         EventLevel[] errorLevels = [EventLevel.Error, EventLevel.Critical];
         Assert.Empty(listener.Events.Where(e => errorLevels.Contains(e.Level)));
     }
+
     [Fact]
     public void OpenTelemetry_Registers_Correctly()
     {

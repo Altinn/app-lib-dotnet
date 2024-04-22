@@ -1,8 +1,5 @@
-using System.Reflection;
 using Altinn.App.Api.Helpers;
 using Altinn.App.Api.Infrastructure.Middleware;
-using Altinn.App.Core.Configuration;
-using Prometheus;
 
 namespace Altinn.App.Api.Extensions;
 
@@ -22,11 +19,8 @@ public static class WebApplicationBuilderExtensions
         if (app is WebApplication webApp && webApp.Environment.IsDevelopment())
         {
             app.UseDeveloperExceptionPage();
-            webApp.UseAltinnPrometheus(appId);
         }
 
-        app.UseHttpMetrics();
-        app.UseMetricServer();
         app.UseDefaultSecurityHeaders();
         app.UseRouting();
         app.UseStaticFiles('/' + appId);
@@ -40,22 +34,5 @@ public static class WebApplicationBuilderExtensions
         });
         app.UseHealthChecks("/health");
         return app;
-    }
-
-    private static void UseAltinnPrometheus(this WebApplication webApp, string appId)
-    {
-        var metricsSettings = webApp.Configuration.GetSection("MetricsSettings")?.Get<MetricsSettings>() ?? new MetricsSettings();
-        if (!metricsSettings.Enabled)
-        {
-            return;
-        }
-
-        webApp.UseHttpMetrics();
-        var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown";
-        Metrics.DefaultRegistry.SetStaticLabels(new Dictionary<string, string>()
-        {
-            { "application_id", appId },
-            { "nuget_package_version", version }
-        });
     }
 }

@@ -16,7 +16,7 @@ public partial class Telemetry
         return activity;
     }
 
-    internal Counter<long> GetNotificationOrdersMetric()
+    private Counter<long> GetNotificationOrdersMetric()
     {
         return GetCounter(OrderMetricName, static (name, self) => self.Meter.CreateCounter<long>(
             name,
@@ -25,7 +25,7 @@ public partial class Telemetry
         ));
     }
 
-    internal void NotificationOrderAdded(OrderType type, OrderResult result)
+    internal void NotificationOrderRequest(OrderType type, OrderResult result)
     {
         var counter = GetNotificationOrdersMetric();
         counter.Add(1, new Tag(TypeLabel, type.ToStringFast()), new Tag(ResultLabel, result.ToStringFast()));
@@ -38,7 +38,7 @@ public partial class Telemetry
 
         internal static readonly string OrderTraceName = "Notifications.Order";
 
-        internal static readonly string OrderMetricName = Metrics.CreateName("notification_orders");
+        internal static readonly string OrderMetricName = Metrics.CreateLibName("notification_orders");
 
         [EnumExtensions]
         internal enum OrderResult

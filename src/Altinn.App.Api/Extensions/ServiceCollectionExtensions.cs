@@ -3,7 +3,6 @@ using Altinn.App.Api.Helpers;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Infrastructure.Health;
 using Altinn.App.Api.Infrastructure.Telemetry;
-using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
 using Altinn.Common.PEP.Authorization;
@@ -18,7 +17,6 @@ using Microsoft.IdentityModel.Tokens;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
-using Prometheus;
 
 namespace Altinn.App.Api.Extensions
 {
@@ -90,7 +88,6 @@ namespace Altinn.App.Api.Extensions
             services.AddHttpClient<AuthorizationApiClient>();
 
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-            services.AddMetricsServer(config);
         }
 
         /// <summary>
@@ -233,16 +230,6 @@ namespace Altinn.App.Api.Extensions
             });
 
             services.TryAddSingleton<ValidateAntiforgeryTokenIfAuthCookieAuthorizationFilter>();
-        }
-
-        private static void AddMetricsServer(this IServiceCollection services, IConfiguration config)
-        {
-            var metricsSettings = config.GetSection("MetricsSettings").Get<MetricsSettings>() ?? new MetricsSettings();
-            if (metricsSettings.Enabled)
-            {
-                ushort port = metricsSettings.Port;
-                services.AddMetricServer(options => { options.Port = port; });
-            }
         }
     }
 }

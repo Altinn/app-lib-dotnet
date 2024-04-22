@@ -16,14 +16,14 @@ internal sealed record TelemetryFake : IDisposable
 
     internal MeterListener MeterListener { get; }
 
-    private readonly List<Activity> _activities = new();
-    private readonly ConcurrentDictionary<Instrument, IReadOnlyList<MetricMeasurement>> _metricValues = new();
+    private readonly ConcurrentBag<Activity> _activities = [];
+    private readonly ConcurrentDictionary<string, IReadOnlyList<MetricMeasurement>> _metricValues = [];
 
     internal readonly record struct MetricMeasurement(long Value, IReadOnlyDictionary<string, object?> Tags);
 
-    internal IReadOnlyList<Activity> CapturedActivities => _activities;
+    internal IEnumerable<Activity> CapturedActivities => _activities;
 
-    internal IReadOnlyDictionary<Instrument, IReadOnlyList<MetricMeasurement>> CapturedMetrics => _metricValues;
+    internal IReadOnlyDictionary<string, IReadOnlyList<MetricMeasurement>> CapturedMetrics => _metricValues;
 
     internal TelemetryFake(string org = "ttd", string name = "test", string version = "v1")
     {
@@ -56,7 +56,7 @@ internal sealed record TelemetryFake : IDisposable
                     return;
                 }
 
-                _metricValues.TryAdd(instrument, new List<MetricMeasurement>());
+                _metricValues.TryAdd(instrument.Name, new List<MetricMeasurement>());
                 listener.EnableMeasurementEvents(instrument, this);
             },
         };
@@ -64,7 +64,8 @@ internal sealed record TelemetryFake : IDisposable
         {
             Debug.Assert(state is not null);
             var self = (TelemetryFake)state!;
-            var measurements = (List<MetricMeasurement>)self._metricValues[instrument];
+            Debug.Assert(self._metricValues[instrument.Name] is List<MetricMeasurement>);
+            var measurements = (List<MetricMeasurement>)self._metricValues[instrument.Name];
             var tags = new Dictionary<string, object?>(tagSpan.Length);
             for (int i = 0; i < tagSpan.Length; i++)
             {

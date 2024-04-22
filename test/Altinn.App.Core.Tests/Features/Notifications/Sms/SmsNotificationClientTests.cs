@@ -78,16 +78,15 @@ public class SmsNotificationClientTests
         if (includeTelemetry)
         {
             Assert.NotNull(telemetry);
-            var activities = telemetry.CapturedActivities;
-            activities.Count.Should().Be(1);
+            var activities = telemetry.CapturedActivities.ToArray();
+            activities.Length.Should().Be(1);
 
             var activity = activities[^1];
             activity.OperationName.Should().Be(Telemetry.Notifications.OrderTraceName);
             activity.GetTagItem(Telemetry.Notifications.TypeLabel).Should()
                 .Be(Telemetry.Notifications.OrderType.Sms.ToStringFast());
 
-            var metric = telemetry.Telemetry.GetNotificationOrdersMetric();
-            var measurements = telemetry.CapturedMetrics.GetValueOrDefault(metric);
+            var measurements = telemetry.CapturedMetrics.GetValueOrDefault(Telemetry.Notifications.OrderMetricName);
             Assert.NotNull(measurements);
             measurements.Count.Should().Be(1);
             var measurement = measurements[^1];

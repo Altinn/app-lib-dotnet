@@ -25,6 +25,11 @@ public sealed partial class Telemetry : IDisposable
     private bool _disposed;
     private readonly object _lock = new();
 
+    // /// <summary>
+    // /// Object for managing counters for the app.
+    // /// </summary>
+    // public readonly CountersRegistry Counters;
+
     /// <summary>
     /// Gets the ActivitySource for the app.
     /// Using this, you can create traces that are transported to the OpenTelemetry collector.
@@ -50,13 +55,22 @@ public sealed partial class Telemetry : IDisposable
         var appVersion = appSettings.Value.AppVersion;
         ActivitySource = new ActivitySource(appId, appVersion);
         Meter = new Meter(appId, appVersion);
+        // Counters = new(this);
     }
 
-    private Counter<long> GetCounter<T>(string name, Func<string, Telemetry, T, Counter<long>> factory, T context)
-    {
-        (Telemetry Self, Func<string, Telemetry, T, Counter<long>> Factory, T Context) closure = (this, factory, context);
-        return _counters.GetOrAdd(name, static (name, closure) => closure.Factory(name, closure.Self, closure.Context), closure);
-    }
+    // public sealed class CountersRegistry
+    // {
+    //     private readonly Telemetry _parent;
+
+    //     internal CountersRegistry(Telemetry telemetry) => _parent = telemetry;
+
+    //     public void Increment(string name, ulong delta = 1)
+    //     {
+    //         name = Metrics.CreateName(name);
+    //         var counter = _parent.GetCounter(name, static (name, self) => self.Meter.CreateCounter<long>(name));
+    //         counter.Add((long)delta);
+    //     }
+    // }
 
     private Counter<long> GetCounter(string name, Func<string, Telemetry, Counter<long>> factory)
     {
@@ -69,14 +83,17 @@ public sealed partial class Telemetry : IDisposable
     /// </summary>
     public static class Metrics
     {
-        internal static readonly string Prefix = "altinn_app";
+        internal static readonly string Prefix = "altinn_app_lib";
+        internal static readonly string PrefixCustom = "altinn_app";
 
         /// <summary>
         /// Creates a name for a metric with the prefix "altinn_app".
         /// </summary>
         /// <param name="name">Name of the metric, naming-convention is 'snake_case'</param>
         /// <returns>Full metric name</returns>
-        public static string CreateName(string name) => $"{Prefix}_{name}";
+        public static string CreateName(string name) => $"{PrefixCustom}_{name}"; 
+
+        internal static string CreateLibName(string name) => $"{Prefix}_{name}";
     }
 
     /// <summary>
