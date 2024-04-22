@@ -53,6 +53,26 @@ internal static class TelemetryMiddleware
             trace.Activity.SetTag("user.party_id", partyId);
             trace.Activity.SetTag("user.authentication_level", authenticationLevel);
 
+            if (context.Request.RouteValues.TryGetValue("instanceOwnerPartyId", out var instanceOwnerPartyId) && instanceOwnerPartyId is not null)
+            {
+                if (instanceOwnerPartyId is not int instanceOwnerPartyIdInt)
+                {
+                    instanceOwnerPartyIdInt = Convert.ToInt32(instanceOwnerPartyId);
+                }
+
+                trace.Activity.SetTag(Core.Features.Telemetry.Labels.InstanceOwnerPartyId, instanceOwnerPartyIdInt);
+            }
+
+            if (context.Request.RouteValues.TryGetValue("instanceGuid", out var instanceGuid) && instanceGuid is not null)
+            {
+                trace.Activity.SetTag(Core.Features.Telemetry.Labels.InstanceGuid, instanceGuid);
+            }
+
+            if (context.Request.RouteValues.TryGetValue("dataGuid", out var dataGuid) && dataGuid is not null)
+            {
+                trace.Activity.SetTag(Core.Features.Telemetry.Labels.DataGuid, dataGuid);
+            }
+
             await next(context);
         });
 

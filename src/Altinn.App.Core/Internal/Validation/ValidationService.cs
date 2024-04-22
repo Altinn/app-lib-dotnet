@@ -1,4 +1,4 @@
-using Altinn.App.Core.Features.Validation;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
@@ -18,17 +18,26 @@ public class ValidationService : IValidationService
     private readonly IAppModel _appModel;
     private readonly IAppMetadata _appMetadata;
     private readonly ILogger<ValidationService> _logger;
+    private readonly Telemetry _telemetry;
 
     /// <summary>
     /// Constructor with DI services
     /// </summary>
-    public ValidationService(IValidatorFactory validatorFactory, IDataClient dataClient, IAppModel appModel, IAppMetadata appMetadata, ILogger<ValidationService> logger)
+    public ValidationService(
+        IValidatorFactory validatorFactory, 
+        IDataClient dataClient, 
+        IAppModel appModel, 
+        IAppMetadata appMetadata, 
+        ILogger<ValidationService> logger,
+        Telemetry telemetry
+    )
     {
         _validatorFactory = validatorFactory;
         _dataClient = dataClient;
         _appModel = appModel;
         _appMetadata = appMetadata;
         _logger = logger;
+        _telemetry = telemetry;
     }
 
     /// <inheritdoc/>
@@ -36,6 +45,9 @@ public class ValidationService : IValidationService
     {
         ArgumentNullException.ThrowIfNull(instance);
         ArgumentNullException.ThrowIfNull(taskId);
+
+        Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
+        using var activity = _telemetry.StartValidateInstanceAtTaskActivity(instanceGuid, taskId);
 
         // Run task validations (but don't await yet)
         Task<List<ValidationIssue>[]> taskIssuesTask = RunTaskValidators(instance, taskId, language);
@@ -58,6 +70,7 @@ public class ValidationService : IValidationService
 
         return Task.WhenAll(taskValidators.Select(async tv =>
         {
+            using var activity = _telemetry.StartRunTaskValidatorActivity(tv.TaskId);
             try
             {
                 _logger.LogDebug("Start running validator {validatorName} on task {taskId} in instance {instanceId}", tv.GetType().Name, taskId, instance.Id);
@@ -68,6 +81,7 @@ public class ValidationService : IValidationService
             catch (Exception e)
             {
                 _logger.LogError(e, "Error while running validator {validatorName} on task {taskId} in instance {instanceId}", tv.GetType().Name, taskId, instance.Id);
+                activity?.Errored(e);
                 throw;
             }
         }));
@@ -81,6 +95,10 @@ public class ValidationService : IValidationService
         ArgumentNullException.ThrowIfNull(dataElement);
         ArgumentNullException.ThrowIfNull(dataElement.DataType);
 
+        Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
+        Guid dataGuid = Guid.Parse(dataElement.Id);
+        using var activity = _telemetry.StartValidateDataElementActivity(instanceGuid, dataGuid);
+
         // Get both keyed and non-keyed validators for the data type
         Task<List<ValidationIssue>[]> dataElementsIssuesTask = RunDataElementValidators(instance, dataElement, dataType, language);
 
@@ -89,16 +107,14 @@ public class ValidationService : IValidationService
         {
             Type modelType = _appModel.GetModelType(dataType.AppLogic.ClassRef);
 
-            Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
             string app = instance.AppId.Split("/")[1];
             int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
-            var data = await _dataClient.GetFormData(instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, Guid.Parse(dataElement.Id)); // TODO: Add method that accepts instance and dataElement
+            var data = await _dataClient.GetFormData(instanceGuid, modelType, instance.Org, app, instanceOwnerPartyId, dataGuid); // TODO: Add method that accepts instance and dataElement
             var formDataIssuesDictionary = await ValidateFormData(instance, dataElement, dataType, data, previousData: null, ignoredValidators: null, language);
 
             return (await dataElementsIssuesTask).SelectMany(x => x)
                 .Concat(formDataIssuesDictionary.SelectMany(kv => kv.Value))
                 .ToList();
-
         }
 
         return (await dataElementsIssuesTask).SelectMany(x => x).ToList();
@@ -110,6 +126,7 @@ public class ValidationService : IValidationService
 
         var dataElementsIssuesTask = Task.WhenAll(validators.Select(async v =>
         {
+            using var activity = _telemetry.StartRunTaskValidatorActivity(v.DataType);
             try
             {
                 _logger.LogDebug("Start running validator {validatorName} on {dataType} for data element {dataElementId} in instance {instanceId}", v.GetType().Name, dataElement.DataType, dataElement.Id, instance.Id);
@@ -120,6 +137,7 @@ public class ValidationService : IValidationService
             catch (Exception e)
             {
                 _logger.LogError(e, "Error while running validator {validatorName} on {dataType} for data element {dataElementId} in instance {instanceId}", v.GetType().Name, dataElement.DataType, dataElement.Id, instance.Id);
+                activity?.Errored(e);
                 throw;
             }
         }));
@@ -136,6 +154,8 @@ public class ValidationService : IValidationService
         ArgumentNullException.ThrowIfNull(dataElement.DataType);
         ArgumentNullException.ThrowIfNull(data);
 
+        using var activity = _telemetry.StartValidateFormDataActivity();
+
         // Locate the relevant data validator services from normal and keyed services
         var dataValidators = _validatorFactory.GetFormDataValidators(dataType.Id)
             .Where(dv => previousData is null || dv.HasRelevantChanges(data, previousData))
@@ -143,6 +163,7 @@ public class ValidationService : IValidationService
 
         var issuesLists = await Task.WhenAll(dataValidators.Select(async (v) =>
         {
+            using var activity = _telemetry.StartRunFormDataValidatorActivity();
             try
             {
                 _logger.LogDebug("Start running validator {validatorName} on {dataType} for data element {dataElementId} in instance {instanceId}", v.GetType().Name, dataElement.DataType, dataElement.Id, instance.Id);
@@ -153,6 +174,7 @@ public class ValidationService : IValidationService
             catch (Exception e)
             {
                 _logger.LogError(e, "Error while running validator {validatorName} on {dataType} for data element {dataElementId} in instance {instanceId}", v.GetType().Name, dataElement.DataType, dataElement.Id, instance.Id);
+                activity?.Errored(e);
                 throw;
             }
         }));

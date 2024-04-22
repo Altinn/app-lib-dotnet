@@ -58,6 +58,7 @@ public sealed partial class Telemetry : IDisposable
         // Counters = new(this);
 
         InitNotifications();
+        InitValidation();
     }
 
     // public sealed class CountersRegistry
@@ -90,6 +91,14 @@ public sealed partial class Telemetry : IDisposable
         public static string CreateName(string name) => $"{PrefixCustom}_{name}";
 
         internal static string CreateLibName(string name) => $"{Prefix}_{name}";
+    }
+
+    public static class Labels
+    {
+        public static readonly string InstanceOwnerPartyId = "instance.owner_party_id";
+        public static readonly string InstanceGuid = "instance.guid";
+        public static readonly string DataGuid = "data.guid";
+        public static readonly string TaskId = "task.id";
     }
 
     /// <summary>
