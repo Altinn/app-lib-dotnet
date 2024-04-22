@@ -31,11 +31,12 @@ public partial class Telemetry
         return activity;
     }
 
-    internal Activity? StartDeleteInstanceActivity(InstanceType type, Guid instanceGuid)
+    internal Activity? StartDeleteInstanceActivity(InstanceType type, Guid instanceGuid, int instanceOwnerPartyId)
     {
         var activity = ActivitySource.StartActivity(TraceNameCreate);
         activity?.SetTag(InstanceLabels.Type, type.ToStringFast());
         activity?.SetTag(Labels.InstanceGuid, instanceGuid);
+        activity?.SetTag(Labels.InstanceOwnerPartyId, instanceOwnerPartyId);
         return activity;
     }
 
@@ -54,35 +55,39 @@ public partial class Telemetry
         return activity;
     }
 
-    internal Activity? StartUpdateReadStatusActivity(InstanceType type, Guid instanceGuid)
+    internal Activity? StartUpdateReadStatusActivity(InstanceType type, Guid instanceGuid, int instanceOwnerPartyId)
     {
         var activity = ActivitySource.StartActivity(TraceNameReadStatus);
         activity?.SetTag(InstanceLabels.Type, type.ToStringFast());
         activity?.SetTag(Labels.InstanceGuid, instanceGuid);
+        activity?.SetTag(Labels.InstanceOwnerPartyId, instanceOwnerPartyId);
         return activity;
     }
 
-    internal Activity? StartUpdateSubStatusActivity(InstanceType type, Guid instanceGuid)
+    internal Activity? StartUpdateSubStatusActivity(InstanceType type, Guid instanceGuid, int instanceOwnerPartyId)
     {
         var activity = ActivitySource.StartActivity(TraceNameSubStatus);
         activity?.SetTag(InstanceLabels.Type, type.ToStringFast());
         activity?.SetTag(Labels.InstanceGuid, instanceGuid);
+        activity?.SetTag(Labels.InstanceOwnerPartyId, instanceOwnerPartyId);
         return activity;
     }
 
-    internal Activity? StartUpdatePresentationTextActivity(InstanceType type, Guid instanceGuid)
+    internal Activity? StartUpdatePresentationTextActivity(InstanceType type, Guid instanceGuid, int instanceOwnerPartyId)
     {
         var activity = ActivitySource.StartActivity(TraceNamePresentationText);
         activity?.SetTag(InstanceLabels.Type, type.ToStringFast());
         activity?.SetTag(Labels.InstanceGuid, instanceGuid);
+        activity?.SetTag(Labels.InstanceOwnerPartyId, instanceOwnerPartyId);
         return activity;
     }
 
-    internal Activity? StartUpdateDataValuesActivity(InstanceType type, Guid instanceGuid)
+    internal Activity? StartUpdateDataValuesActivity(InstanceType type, Guid instanceGuid, int instanceOwnerPartyId)
     {
         var activity = ActivitySource.StartActivity(TraceNameDataValues);
         activity?.SetTag(InstanceLabels.Type, type.ToStringFast());
         activity?.SetTag(Labels.InstanceGuid, instanceGuid);
+        activity?.SetTag(Labels.InstanceOwnerPartyId, instanceOwnerPartyId);
         return activity;
     }
 
