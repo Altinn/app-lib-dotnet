@@ -34,6 +34,7 @@ public class PatchServiceTests
     private readonly Mock<IDataProcessor> _dataProcessorMock = new(MockBehavior.Strict);
     private readonly Mock<IAppModel> _appModelMock = new(MockBehavior.Strict);
     private readonly Mock<IAppMetadata> _appMetadataMock = new(MockBehavior.Strict);
+    private readonly Mock<Telemetry> _telemetryMock = new(MockBehavior.Strict);
 
     // ValidatorMocks
     private readonly Mock<IFormDataValidator> _formDataValidator = new(MockBehavior.Strict);
@@ -65,7 +66,8 @@ public class PatchServiceTests
             _dataClientMock.Object,
             _appModelMock.Object,
             _appMetadataMock.Object,
-            _vLoggerMock.Object);
+            _vLoggerMock.Object,
+            _telemetryMock.Object);
         _patchService = new PatchService(_appMetadataMock.Object, _dataClientMock.Object, validationService, new List<IDataProcessor> { _dataProcessorMock.Object }, _appModelMock.Object);
     }
 
