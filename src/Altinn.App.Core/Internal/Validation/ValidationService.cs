@@ -24,10 +24,10 @@ public class ValidationService : IValidationService
     /// Constructor with DI services
     /// </summary>
     public ValidationService(
-        IValidatorFactory validatorFactory, 
-        IDataClient dataClient, 
-        IAppModel appModel, 
-        IAppMetadata appMetadata, 
+        IValidatorFactory validatorFactory,
+        IDataClient dataClient,
+        IAppModel appModel,
+        IAppMetadata appMetadata,
         ILogger<ValidationService> logger,
         Telemetry telemetry
     )
