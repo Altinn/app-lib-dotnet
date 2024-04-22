@@ -42,7 +42,7 @@ public sealed partial class Telemetry : IDisposable
     /// </summary>
     public Meter Meter { get; }
 
-    private readonly ConcurrentDictionary<string, Counter<long>> _counters = new();
+    private readonly Dictionary<string, Counter<long>> _counters = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Telemetry"/> class.
@@ -56,6 +56,8 @@ public sealed partial class Telemetry : IDisposable
         ActivitySource = new ActivitySource(appId, appVersion);
         Meter = new Meter(appId, appVersion);
         // Counters = new(this);
+
+        InitNotifications();
     }
 
     // public sealed class CountersRegistry
@@ -71,12 +73,6 @@ public sealed partial class Telemetry : IDisposable
     //         counter.Add((long)delta);
     //     }
     // }
-
-    private Counter<long> GetCounter(string name, Func<string, Telemetry, Counter<long>> factory)
-    {
-        (Telemetry Self, Func<string, Telemetry, Counter<long>> Factory) closure = (this, factory);
-        return _counters.GetOrAdd(name, static (name, closure) => closure.Factory(name, closure.Self), closure);
-    }
 
     /// <summary>
     /// Utility methods for creating metrics for an app.

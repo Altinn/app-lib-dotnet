@@ -69,7 +69,7 @@ internal sealed class SmsNotificationClient : ISmsNotificationClient
                 if (orderResponse is null)
                     throw new JsonException("Couldn't deserialize SMS notification order response");
 
-                _telemetry?.NotificationOrderRequest(_orderType, Telemetry.Notifications.OrderResult.Success);
+                _telemetry?.RecordNotificationOrder(_orderType, Telemetry.Notifications.OrderResult.Success);
                 activity?.SetStatus(ActivityStatusCode.Ok);
                 return orderResponse;
             }
@@ -83,7 +83,7 @@ internal sealed class SmsNotificationClient : ISmsNotificationClient
             var ex = new SmsNotificationException($"Something went wrong when processing the SMS notification order", httpResponseMessage, httpContent, e);
             _logger.LogError(ex, "Error when processing SMS notification order");
 
-            _telemetry?.NotificationOrderRequest(_orderType, Telemetry.Notifications.OrderResult.Error);
+            _telemetry?.RecordNotificationOrder(_orderType, Telemetry.Notifications.OrderResult.Error);
             activity?.Errored(ex);
 
             throw ex;

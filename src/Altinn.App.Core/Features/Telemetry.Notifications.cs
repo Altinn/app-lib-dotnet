@@ -9,6 +9,15 @@ namespace Altinn.App.Core.Features;
 
 public partial class Telemetry
 {
+    private void InitNotifications()
+    {
+        _counters.Add(OrderMetricName, Meter.CreateCounter<long>(
+            OrderMetricName,
+            unit: null,
+            description: null
+        ));
+    }
+
     internal Activity? StartNotificationOrderActivity(OrderType type)
     {
         var activity = ActivitySource.StartActivity(OrderTraceName);
@@ -16,18 +25,9 @@ public partial class Telemetry
         return activity;
     }
 
-    private Counter<long> GetNotificationOrdersMetric()
+    internal void RecordNotificationOrder(OrderType type, OrderResult result)
     {
-        return GetCounter(OrderMetricName, static (name, self) => self.Meter.CreateCounter<long>(
-            name,
-            unit: null,
-            description: null
-        ));
-    }
-
-    internal void NotificationOrderRequest(OrderType type, OrderResult result)
-    {
-        var counter = GetNotificationOrdersMetric();
+        var counter = _counters[OrderMetricName];
         counter.Add(1, new Tag(TypeLabel, type.ToStringFast()), new Tag(ResultLabel, result.ToStringFast()));
     }
 

@@ -69,7 +69,7 @@ internal sealed class EmailNotificationClient : IEmailNotificationClient
                 if (orderResponse is null)
                     throw new JsonException("Couldn't deserialize email notification order response.");
 
-                _telemetry?.NotificationOrderRequest(_orderType, Telemetry.Notifications.OrderResult.Success);
+                _telemetry?.RecordNotificationOrder(_orderType, Telemetry.Notifications.OrderResult.Success);
                 activity?.SetStatus(ActivityStatusCode.Ok);
             }
             else
@@ -83,7 +83,7 @@ internal sealed class EmailNotificationClient : IEmailNotificationClient
             var ex = new EmailNotificationException($"Something went wrong when processing the email order", httpResponseMessage, httpContent, e);
             _logger.LogError(ex, "Error when processing email notification order");
 
-            _telemetry?.NotificationOrderRequest(_orderType, Telemetry.Notifications.OrderResult.Error);
+            _telemetry?.RecordNotificationOrder(_orderType, Telemetry.Notifications.OrderResult.Error);
             activity?.Errored(ex);
 
             throw ex;
