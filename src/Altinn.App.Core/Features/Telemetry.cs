@@ -87,7 +87,7 @@ public sealed partial class Telemetry : IDisposable
         /// </summary>
         /// <param name="name">Name of the metric, naming-convention is 'snake_case'</param>
         /// <returns>Full metric name</returns>
-        public static string CreateName(string name) => $"{PrefixCustom}_{name}"; 
+        public static string CreateName(string name) => $"{PrefixCustom}_{name}";
 
         internal static string CreateLibName(string name) => $"{Prefix}_{name}";
     }

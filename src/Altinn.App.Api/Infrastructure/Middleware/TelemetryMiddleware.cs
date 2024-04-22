@@ -47,7 +47,7 @@ internal static class TelemetryMiddleware
                     authenticationLevel = Convert.ToInt32(claim.Value);
                 }
             }
-            
+
             trace.Activity.SetTag("user.name", userName);
             trace.Activity.SetTag("user.id", userId);
             trace.Activity.SetTag("user.party_id", partyId);
