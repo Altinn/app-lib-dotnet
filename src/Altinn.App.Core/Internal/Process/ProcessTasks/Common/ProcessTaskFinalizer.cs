@@ -1,6 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Text.Json.Serialization.Metadata;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
@@ -111,7 +109,7 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
         // Remove shadow fields
         if (dataType.AppLogic?.ShadowFields?.Prefix != null)
         {
-            string serializedData = JsonHelper.SerializeIgnorePrefix(data, dataType.AppLogic.ShadowFields.Prefix);
+            string serializedData = JsonSerializerIgnorePrefix.Serialize(data, dataType.AppLogic.ShadowFields.Prefix);
             if (dataType.AppLogic.ShadowFields.SaveToDataType != null)
             {
                 // Save the shadow fields to another data type

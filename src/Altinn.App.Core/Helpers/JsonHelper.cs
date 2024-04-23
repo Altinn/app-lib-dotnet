@@ -9,7 +9,7 @@ namespace Altinn.App.Core.Helpers
     /// <summary>
     /// Helper class for processing JSON objects
     /// </summary>
-    public static partial class JsonHelper
+    public static class JsonHelper
     {
         /// <summary>
         /// Run DataProcessWrite returning the dictionary of the changed fields.

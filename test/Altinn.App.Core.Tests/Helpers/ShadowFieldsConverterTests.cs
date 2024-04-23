@@ -9,7 +9,7 @@ namespace Altinn.App.PlatformServices.Tests.Helpers;
 
 public class ShadowFieldsConverterTests
 {
-    private static (string Prefix, ModelWithShadowFields Data) GetData()
+    internal static (string Prefix, ModelWithShadowFields Data) GetData()
     {
         var data = new ModelWithShadowFields()
         {
@@ -60,20 +60,6 @@ public class ShadowFieldsConverterTests
 
         // Check that serialization with modifier removes shadow fields from result
         string serializedData = JsonSerializer.Serialize(data, options);
-        Assert.DoesNotContain(prefix, serializedData);
-    }
-
-    [Fact]
-    public void ShouldRemoveShadowFields_WithPrefix_JsonHelperApi()
-    {
-        var (prefix, data) = GetData();
-
-        // Check that regular serialization (without modifier) includes shadow fields in result
-        string serializedDataWithoutModifier = JsonSerializer.Serialize(data);
-        Assert.Contains(prefix, serializedDataWithoutModifier);
-
-        // Check that serialization with modifier removes shadow fields from result
-        string serializedData = JsonHelper.SerializeIgnorePrefix(data, prefix);
         Assert.DoesNotContain(prefix, serializedData);
     }
 }
