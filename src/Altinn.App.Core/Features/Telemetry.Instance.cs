@@ -138,9 +138,9 @@ public partial class Telemetry
             GetInstances,
         }
 
-        public static class InstanceLabels
+        internal static class InstanceLabels
         {
-            public const string Type = "instance.get.type";
+            internal const string Type = "instance.get.type";
         }
 
     }

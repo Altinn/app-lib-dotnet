@@ -38,18 +38,21 @@ public class AuthorizationService : IAuthorizationService
     /// <inheritdoc />
     public async Task<List<Party>?> GetPartyList(int userId)
     {
+        using var activity = _telemetry?.StartGetPartyListActivity(userId);
         return await _authorizationClient.GetPartyList(userId);
     }
 
     /// <inheritdoc />
     public async Task<bool?> ValidateSelectedParty(int userId, int partyId)
     {
+        using var activity = _telemetry?.StartValidateSelectedPartyActivity(userId, partyId);
         return await _authorizationClient.ValidateSelectedParty(userId, partyId);
     }
 
     /// <inheritdoc />
     public async Task<bool> AuthorizeAction(AppIdentifier appIdentifier, InstanceIdentifier instanceIdentifier, ClaimsPrincipal user, string action, string? taskId = null)
     {
+        using var activity = _telemetry?.StartAuthorizeActionActivity(instanceIdentifier, action, taskId);
         if (!await _authorizationClient.AuthorizeAction(appIdentifier, instanceIdentifier, user, action, taskId))
         {
             return false;
@@ -70,8 +73,9 @@ public class AuthorizationService : IAuthorizationService
     /// <inheritdoc />
     public async Task<List<UserAction>> AuthorizeActions(Instance instance, ClaimsPrincipal user, List<AltinnAction> actions)
     {
+        using var activity = _telemetry?.StartAuthorizeActionsActivity(instance, actions);
         var authDecisions = await _authorizationClient.AuthorizeActions(instance, user, actions.Select(a => a.Value).ToList());
-        List<UserAction> authorizedActions = new();
+        List<UserAction> authorizedActions = [];
         foreach (var action in actions)
         {
             authorizedActions.Add(new UserAction()
