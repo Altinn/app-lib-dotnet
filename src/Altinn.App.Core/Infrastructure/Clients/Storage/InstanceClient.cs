@@ -144,7 +144,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         /// <inheritdoc />
         public async Task<Instance> UpdateProcess(Instance instance)
         {
-            using var activity = _telemetry.StartUpdateProcessActivity();
+            using var activity = _telemetry.StartUpdateProcessActivity(instance);
             ProcessState processState = instance.Process;
 
             string apiUrl = $"instances/{instance.Id}/process";

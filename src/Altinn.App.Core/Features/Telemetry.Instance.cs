@@ -46,9 +46,14 @@ public partial class Telemetry
         return activity;
     }
 
-    internal Activity? StartUpdateProcessActivity()
+    internal Activity? StartUpdateProcessActivity(Platform.Storage.Interface.Models.Instance instance)
     {
         var activity = ActivitySource.StartActivity(TraceNameProcess);
+        if(activity is not null)
+        {
+            Guid InstanceGuid = Guid.Parse(instance.Id.Split('/')[1]);
+            activity.SetTag(Labels.InstanceGuid, InstanceGuid);
+        }
         return activity;
     }
 
