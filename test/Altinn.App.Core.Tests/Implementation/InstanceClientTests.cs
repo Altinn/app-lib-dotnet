@@ -2,10 +2,10 @@
 using System.Net;
 using System.Text;
 using Altinn.App.Core.Configuration;
-using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Infrastructure.Clients.Storage;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Tests.Mocks;
 using Altinn.Platform.Storage.Interface.Models;
 
 using Microsoft.AspNetCore.Http;
@@ -29,7 +29,7 @@ namespace Altinn.App.PlatformServices.Tests.Implementation
         private readonly Mock<HttpMessageHandler> handlerMock;
         private readonly Mock<IHttpContextAccessor> contextAccessor;
         private readonly Mock<ILogger<InstanceClient>> logger;
-        private readonly Mock<Telemetry> telemetry;
+        private readonly TelemetryFake telemetry;
 
         public InstanceClientTests()
         {
@@ -38,7 +38,7 @@ namespace Altinn.App.PlatformServices.Tests.Implementation
             handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
             contextAccessor = new Mock<IHttpContextAccessor>();
             logger = new Mock<ILogger<InstanceClient>>();
-            telemetry = new Mock<Telemetry>();
+            telemetry = new TelemetryFake();
         }
 
         [Fact]

@@ -10,7 +10,7 @@ namespace Altinn.App.Core.Tests.Mocks;
 
 internal sealed record TelemetryFake : IDisposable
 {
-    internal Telemetry Telemetry { get; }
+    internal Telemetry Object { get; }
 
     internal ActivityListener ActivityListener { get; }
 
@@ -81,13 +81,13 @@ internal sealed record TelemetryFake : IDisposable
         });
         MeterListener.Start();
 
-        Telemetry = new Telemetry(appId, Options.Create(options));
+        Object = new Telemetry(appId, Options.Create(options));
     }
 
     public void Dispose()
     {
         ActivityListener.Dispose();
         MeterListener.Dispose();
-        Telemetry.Dispose();
+        Object.Dispose();
     }
 }
