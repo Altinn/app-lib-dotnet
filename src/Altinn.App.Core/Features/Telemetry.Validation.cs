@@ -24,12 +24,15 @@ public partial class Telemetry
         return activity;
     }
 
-    internal Activity? StartRunTaskValidatorActivity(string taskId)
+    internal Activity? StartRunTaskValidatorActivity(ITaskValidator validator)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(taskId);
-
         var activity = ActivitySource.StartActivity(TraceNameRunTaskValidator);
-        activity?.SetTag(Labels.TaskId, taskId);
+        
+        if (activity is not null)
+        {
+            activity.SetTag(LabelValidatorType, validator.GetType().Name);
+            activity.SetTag(LabelValidatorSource, validator.ValidationSource);
+        }
         return activity;
     }
 
@@ -44,11 +47,15 @@ public partial class Telemetry
         return activity;
     }
 
-    internal Activity? StartRunDataElementValidatorActivity(string dataType)
+    internal Activity? StartRunDataElementValidatorActivity(IDataElementValidator validator)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(dataType);
-
         var activity = ActivitySource.StartActivity(TraceNameRunDataElementValidator);
+
+        if (activity is not null)
+        {
+            activity.SetTag(LabelValidatorType, validator.GetType().Name);
+            activity.SetTag(LabelValidatorSource, validator.ValidationSource);
+        }
         return activity;
     }
 
@@ -61,6 +68,19 @@ public partial class Telemetry
             TryAddInstanceId(activity, instance);
             TryAddDataElementId(activity, dataElement);
         }
+        return activity;
+    }
+
+    internal Activity? StartRunFormDataValidatorActivity(IFormDataValidator validator)
+    {
+        var activity = ActivitySource.StartActivity(TraceNameRunFormDataValidator);
+
+        if (activity is not null)
+        {
+            activity.SetTag(LabelValidatorType, validator.GetType().Name);
+            activity.SetTag(LabelValidatorSource, validator.ValidationSource);
+        }
+
         return activity;
     }
 
@@ -82,12 +102,6 @@ public partial class Telemetry
         }
     }
 
-    internal Activity? StartRunFormDataValidatorActivity()
-    {
-        var activity = ActivitySource.StartActivity(TraceNameRunFormDataValidator);
-        return activity;
-    }
-
     internal static class Validation
     {
         private const string _prefix = "Validation";
@@ -98,5 +112,8 @@ public partial class Telemetry
         internal const string TraceNameRunDataElementValidator = $"{_prefix}.RunDataElementValidator";
         internal const string TraceNameValidateFormData = $"{_prefix}.ValidateFormData";
         internal const string TraceNameRunFormDataValidator = $"{_prefix}.RunFormDataValidator";
+
+        internal const string LabelValidatorType = "validator.type";
+        internal const string LabelValidatorSource = "validator.source";
     }
 }
