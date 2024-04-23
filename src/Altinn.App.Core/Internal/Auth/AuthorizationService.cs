@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Internal.Process.Authorization;
 using Altinn.App.Core.Internal.Process.Elements;
@@ -16,16 +17,22 @@ public class AuthorizationService : IAuthorizationService
 {
     private readonly IAuthorizationClient _authorizationClient;
     private readonly IEnumerable<IUserActionAuthorizerProvider> _userActionAuthorizers;
+    private readonly Telemetry? _telemetry;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AuthorizationService"/> class
     /// </summary>
     /// <param name="authorizationClient">The authorization client</param>
     /// <param name="userActionAuthorizers">The user action authorizers</param>
-    public AuthorizationService(IAuthorizationClient authorizationClient, IEnumerable<IUserActionAuthorizerProvider> userActionAuthorizers)
+    /// <param name="telemetry">Telemetry for traces and metrics.</param>
+    public AuthorizationService(
+        IAuthorizationClient authorizationClient,
+        IEnumerable<IUserActionAuthorizerProvider> userActionAuthorizers,
+        Telemetry? telemetry = null)
     {
         _authorizationClient = authorizationClient;
         _userActionAuthorizers = userActionAuthorizers;
+        _telemetry = telemetry;
     }
 
     /// <inheritdoc />

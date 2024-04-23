@@ -30,7 +30,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         private readonly ILogger _logger;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly HttpClient _client;
-        private readonly Telemetry _telemetry;
+        private readonly Telemetry? _telemetry;
         private readonly AppSettings _settings;
 
         /// <summary>
@@ -48,7 +48,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             IHttpContextAccessor httpContextAccessor,
             HttpClient httpClient,
             IOptionsMonitor<AppSettings> settings,
-            Telemetry telemetry)
+            Telemetry? telemetry = null)
         {
             _logger = logger;
             _httpContextAccessor = httpContextAccessor;
