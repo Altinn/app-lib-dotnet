@@ -93,18 +93,18 @@ public partial class Telemetry
 
     internal static class Instance
     {
-        private static readonly string _prefix = "Instance";
+        private const string _prefix = "Instance";
 
-        internal static readonly string TraceNameGet = $"{_prefix}.Get";
-        internal static readonly string TraceNameQuery = $"{_prefix}.Query";
-        internal static readonly string TraceNameCreate = $"{_prefix}.Create";
-        internal static readonly string TaceNameDelete = $"{_prefix}.Delete";
-        internal static readonly string TraceNameProcess = $"{_prefix}.UpdateProcess";
-        internal static readonly string TraceNameConfirmation = $"{_prefix}.CompleteConfirmation";
-        internal static readonly string TraceNameReadStatus = $"{_prefix}.UpdateReadStatus";
-        internal static readonly string TraceNameSubStatus = $"{_prefix}.UpdateSubStatus";
-        internal static readonly string TraceNamePresentationText = $"{_prefix}.UpdatePresentationText";
-        internal static readonly string TraceNameDataValues = $"{_prefix}.UpdateDataValues";
+        internal const string TraceNameGet = $"{_prefix}.Get";
+        internal const string TraceNameQuery = $"{_prefix}.Query";
+        internal const string TraceNameCreate = $"{_prefix}.Create";
+        internal const string TaceNameDelete = $"{_prefix}.Delete";
+        internal const string TraceNameProcess = $"{_prefix}.UpdateProcess";
+        internal const string TraceNameConfirmation = $"{_prefix}.CompleteConfirmation";
+        internal const string TraceNameReadStatus = $"{_prefix}.UpdateReadStatus";
+        internal const string TraceNameSubStatus = $"{_prefix}.UpdateSubStatus";
+        internal const string TraceNamePresentationText = $"{_prefix}.UpdatePresentationText";
+        internal const string TraceNameDataValues = $"{_prefix}.UpdateDataValues";
 
         [EnumExtensions]
         internal enum InstanceType
