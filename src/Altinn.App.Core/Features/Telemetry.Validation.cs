@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using static Altinn.App.Core.Features.Telemetry.Validation;
 
@@ -15,7 +14,7 @@ public partial class Telemetry
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(taskId);
 
-        var activity = ActivitySource.StartActivity(ValidateInstanceAtTaskTraceName);
+        var activity = ActivitySource.StartActivity(TraceNameValidateInstanceAtTask);
         if (activity is not null)
         {
             activity.SetTag(Labels.TaskId, taskId);
@@ -29,14 +28,14 @@ public partial class Telemetry
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(taskId);
 
-        var activity = ActivitySource.StartActivity(RunTaskValidatorTraceName);
+        var activity = ActivitySource.StartActivity(TraceNameRunTaskValidator);
         activity?.SetTag(Labels.TaskId, taskId);
         return activity;
     }
 
     internal Activity? StartValidateDataElementActivity(Platform.Storage.Interface.Models.Instance instance, DataElement dataElement)
     {
-        var activity = ActivitySource.StartActivity(ValidateDataElementTraceName);
+        var activity = ActivitySource.StartActivity(TraceNameValidateDataElement);
         if (activity is not null)
         {
             TryAddInstanceId(activity, instance);
@@ -49,13 +48,13 @@ public partial class Telemetry
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(dataType);
 
-        var activity = ActivitySource.StartActivity(RunDataElementValidatorTraceName);
+        var activity = ActivitySource.StartActivity(TraceNameRunDataElementValidator);
         return activity;
     }
 
     internal Activity? StartValidateFormDataActivity(Platform.Storage.Interface.Models.Instance instance, DataElement dataElement)
     {
-        var activity = ActivitySource.StartActivity(ValidateFormDataTraceName);
+        var activity = ActivitySource.StartActivity(TraceNameValidateFormData);
         
         if (activity is not null)
         {
@@ -85,7 +84,7 @@ public partial class Telemetry
 
     internal Activity? StartRunFormDataValidatorActivity()
     {
-        var activity = ActivitySource.StartActivity(RunFormDataValidatorTraceName);
+        var activity = ActivitySource.StartActivity(TraceNameRunFormDataValidator);
         return activity;
     }
 
@@ -93,11 +92,11 @@ public partial class Telemetry
     {
         private const string _prefix = "Validation";
 
-        internal const string RunTaskValidatorTraceName = $"{_prefix}.RunTaskValidator";
-        internal const string ValidateInstanceAtTaskTraceName = $"{_prefix}.ValidateInstanceAtTask";
-        internal const string ValidateDataElementTraceName = $"{_prefix}.ValidateDataElement";
-        internal const string RunDataElementValidatorTraceName = $"{_prefix}.RunDataElementValidator";
-        internal const string ValidateFormDataTraceName = $"{_prefix}.ValidateFormData";
-        internal const string RunFormDataValidatorTraceName = $"{_prefix}.RunFormDataValidator";
+        internal const string TraceNameRunTaskValidator = $"{_prefix}.RunTaskValidator";
+        internal const string TraceNameValidateInstanceAtTask = $"{_prefix}.ValidateInstanceAtTask";
+        internal const string TraceNameValidateDataElement = $"{_prefix}.ValidateDataElement";
+        internal const string TraceNameRunDataElementValidator = $"{_prefix}.RunDataElementValidator";
+        internal const string TraceNameValidateFormData = $"{_prefix}.ValidateFormData";
+        internal const string TraceNameRunFormDataValidator = $"{_prefix}.RunFormDataValidator";
     }
 }
