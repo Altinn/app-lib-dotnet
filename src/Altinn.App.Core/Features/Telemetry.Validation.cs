@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Altinn.Platform.Storage.Interface.Models;
 using static Altinn.App.Core.Features.Telemetry.Validation;
 
 namespace Altinn.App.Core.Features;
@@ -9,13 +10,17 @@ public partial class Telemetry
     {
     }
 
-    internal Activity? StartValidateInstanceAtTaskActivity(Guid instanceGuid, string taskId)
+    internal Activity? StartValidateInstanceAtTaskActivity(Platform.Storage.Interface.Models.Instance instance, string taskId)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(taskId);
 
-        var activity = ActivitySource.StartActivity(ValidateInstanceAtTaskTraceName);
-        activity?.SetTag(Labels.InstanceGuid, instanceGuid);
-        activity?.SetTag(Labels.TaskId, taskId);
+        var activity = ActivitySource.StartActivity(TraceNameValidateInstanceAtTask);
+        if (activity is not null)
+        {
+            activity.SetTag(Labels.TaskId, taskId);
+            
+            TryAddInstanceId(activity, instance);
+        }
         return activity;
     }
 
@@ -23,16 +28,19 @@ public partial class Telemetry
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(taskId);
 
-        var activity = ActivitySource.StartActivity(RunTaskValidatorTraceName);
+        var activity = ActivitySource.StartActivity(TraceNameRunTaskValidator);
         activity?.SetTag(Labels.TaskId, taskId);
         return activity;
     }
 
-    internal Activity? StartValidateDataElementActivity(Guid instanceGuid, Guid dataGuid)
+    internal Activity? StartValidateDataElementActivity(Platform.Storage.Interface.Models.Instance instance, DataElement dataElement)
     {
-        var activity = ActivitySource.StartActivity(ValidateDataElementTraceName);
-        activity?.SetTag(Labels.InstanceGuid, instanceGuid);
-        activity?.SetTag(Labels.DataGuid, dataGuid);
+        var activity = ActivitySource.StartActivity(TraceNameValidateDataElement);
+        if (activity is not null)
+        {
+            TryAddInstanceId(activity, instance);
+            TryAddDataElementId(activity, dataElement);
+        }
         return activity;
     }
 
@@ -40,31 +48,55 @@ public partial class Telemetry
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(dataType);
 
-        var activity = ActivitySource.StartActivity(RunDataElementValidatorTraceName);
+        var activity = ActivitySource.StartActivity(TraceNameRunDataElementValidator);
         return activity;
     }
 
-    internal Activity? StartValidateFormDataActivity()
+    internal Activity? StartValidateFormDataActivity(Platform.Storage.Interface.Models.Instance instance, DataElement dataElement)
     {
-        var activity = ActivitySource.StartActivity(ValidateFormDataTraceName);
+        var activity = ActivitySource.StartActivity(TraceNameValidateFormData);
+        
+        if (activity is not null)
+        {
+            TryAddInstanceId(activity, instance);
+            TryAddDataElementId(activity, dataElement);
+        }
         return activity;
+    }
+
+    private static void TryAddInstanceId(Activity activity, Platform.Storage.Interface.Models.Instance? instance)
+    {
+        if (instance?.Id is not null)
+        {
+            Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
+            activity.SetTag(Labels.InstanceGuid, instanceGuid);
+        }
+    }
+
+    private static void TryAddDataElementId(Activity activity, DataElement? dataElement)
+    {
+        if (dataElement?.Id is not null)
+        {
+            Guid dataGuid = Guid.Parse(dataElement.Id);
+            activity.SetTag(Labels.DataGuid, dataGuid);
+        }
     }
 
     internal Activity? StartRunFormDataValidatorActivity()
     {
-        var activity = ActivitySource.StartActivity(RunFormDataValidatorTraceName);
+        var activity = ActivitySource.StartActivity(TraceNameRunFormDataValidator);
         return activity;
     }
 
     internal static class Validation
     {
-        private static readonly string _prefix = "Validation";
+        private const string _prefix = "Validation";
 
-        internal static readonly string RunTaskValidatorTraceName = $"{_prefix}.RunTaskValidator";
-        internal static readonly string ValidateInstanceAtTaskTraceName = $"{_prefix}.ValidateInstanceAtTask";
-        internal static readonly string ValidateDataElementTraceName = $"{_prefix}.ValidateDataElement";
-        internal static readonly string RunDataElementValidatorTraceName = $"{_prefix}.RunDataElementValidator";
-        internal static readonly string ValidateFormDataTraceName = $"{_prefix}.ValidateFormData";
-        internal static readonly string RunFormDataValidatorTraceName = $"{_prefix}.RunFormDataValidator";
+        internal const string TraceNameRunTaskValidator = $"{_prefix}.RunTaskValidator";
+        internal const string TraceNameValidateInstanceAtTask = $"{_prefix}.ValidateInstanceAtTask";
+        internal const string TraceNameValidateDataElement = $"{_prefix}.ValidateDataElement";
+        internal const string TraceNameRunDataElementValidator = $"{_prefix}.RunDataElementValidator";
+        internal const string TraceNameValidateFormData = $"{_prefix}.ValidateFormData";
+        internal const string TraceNameRunFormDataValidator = $"{_prefix}.RunFormDataValidator";
     }
 }
