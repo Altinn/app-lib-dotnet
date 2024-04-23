@@ -310,7 +310,7 @@ public class EmailNotificationClientTests
         {
             telemetryFake = new TelemetryFake("ttd", appId);
             services.AddSingleton(_ => telemetryFake);
-            services.AddSingleton<Telemetry>(telemetryFake.Telemetry);
+            services.AddSingleton<Telemetry>(telemetryFake.Object);
         }
 
         services.AddTransient<IEmailNotificationClient, EmailNotificationClient>();
