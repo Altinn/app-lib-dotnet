@@ -99,7 +99,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         /// <inheritdoc />
         public async Task<List<Instance>> GetInstances(Dictionary<string, StringValues> queryParams)
         {
-            _telemetry.StartGetInstanceActivity(InstanceType.GetInstances);
+            using var activity = _telemetry.StartGetInstanceActivity(InstanceType.GetInstances);
             StringBuilder apiUrl = new($"instances?");
 
             foreach (var queryParameter in queryParams)
@@ -125,7 +125,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
 
         private async Task<QueryResponse<Instance>> QueryInstances(string token, string url)
         {
-            _telemetry.StartQueryInstancesActivity(token);
+            using var activity = _telemetry.StartQueryInstancesActivity(token);
             HttpResponseMessage response = await _client.GetAsync(token, url);
 
             if (response.StatusCode == HttpStatusCode.OK)
@@ -144,7 +144,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         /// <inheritdoc />
         public async Task<Instance> UpdateProcess(Instance instance)
         {
-            _telemetry.StartUpdateProcessActivity();
+            using var activity = _telemetry.StartUpdateProcessActivity();
             ProcessState processState = instance.Process;
 
             string apiUrl = $"instances/{instance.Id}/process";
@@ -171,7 +171,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         /// <inheritdoc/>
         public async Task<Instance> CreateInstance(string org, string app, Instance instanceTemplate)
         {
-            _telemetry.StartCreateInstanceActivity();
+            using var activity = _telemetry.StartCreateInstanceActivity();
             string apiUrl = $"instances?appId={org}/{app}";
             string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
 
@@ -191,7 +191,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         /// <inheritdoc/>
         public async Task<Instance> AddCompleteConfirmation(int instanceOwnerPartyId, Guid instanceGuid)
         {
-            _telemetry.StartCompleteConfirmationActivity(instanceGuid, instanceOwnerPartyId);
+            using var activity = _telemetry.StartCompleteConfirmationActivity(instanceGuid, instanceOwnerPartyId);
             string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}/complete";
             string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
 
@@ -210,7 +210,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         /// <inheritdoc/>
         public async Task<Instance> UpdateReadStatus(int instanceOwnerPartyId, Guid instanceGuid, string readStatus)
         {
-            _telemetry.StartUpdateReadStatusActivity(instanceGuid, instanceOwnerPartyId);
+            using var activity = _telemetry.StartUpdateReadStatusActivity(instanceGuid, instanceOwnerPartyId);
             string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}/readstatus?status={readStatus}";
             string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
 
@@ -230,7 +230,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         /// <inheritdoc/>
         public async Task<Instance> UpdateSubstatus(int instanceOwnerPartyId, Guid instanceGuid, Substatus substatus)
         {
-            _telemetry.StartUpdateSubStatusActivity(instanceGuid, instanceOwnerPartyId);
+            using var activity = _telemetry.StartUpdateSubStatusActivity(instanceGuid, instanceOwnerPartyId);
             string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}/substatus";
             string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
 
@@ -249,7 +249,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         /// <inheritdoc />
         public async Task<Instance> UpdatePresentationTexts(int instanceOwnerPartyId, Guid instanceGuid, PresentationTexts presentationTexts)
         {
-            _telemetry.StartUpdatePresentationTextActivity(instanceGuid, instanceOwnerPartyId);
+            using var activity = _telemetry.StartUpdatePresentationTextActivity(instanceGuid, instanceOwnerPartyId);
             string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}/presentationtexts";
             string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
 
@@ -268,7 +268,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         /// <inheritdoc />
         public async Task<Instance> UpdateDataValues(int instanceOwnerPartyId, Guid instanceGuid, DataValues dataValues)
         {
-            _telemetry.StartUpdateDataValuesActivity(instanceGuid, instanceOwnerPartyId);
+            using var activity = _telemetry.StartUpdateDataValuesActivity(instanceGuid, instanceOwnerPartyId);
             string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}/datavalues";
             string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
 
@@ -287,7 +287,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         /// <inheritdoc />
         public async Task<Instance> DeleteInstance(int instanceOwnerPartyId, Guid instanceGuid, bool hard)
         {
-            _telemetry.StartDeleteInstanceActivity(instanceGuid, instanceOwnerPartyId);
+            using var activity = _telemetry.StartDeleteInstanceActivity(instanceGuid, instanceOwnerPartyId);
             string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}?hard={hard}";
             string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
 
