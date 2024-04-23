@@ -39,6 +39,7 @@ public class NetsPaymentProcessorTests
         Instance instance = CreateInstance();
         var orderDetails = new OrderDetails
         {
+            PaymentProcessorId = "paymentProcessorId",
             Currency = "NOK",
             OrderLines = []
         };
@@ -69,6 +70,7 @@ public class NetsPaymentProcessorTests
         Instance instance = CreateInstance();
         var orderDetails = new OrderDetails
         {
+            PaymentProcessorId = "paymentProcessorId",
             Currency = "NOK",
             OrderLines =
             [
@@ -108,6 +110,7 @@ public class NetsPaymentProcessorTests
         Instance instance = CreateInstance();
         var orderDetails = new OrderDetails
         {
+            PaymentProcessorId = "paymentProcessorId",
             Currency = "NOK",
             OrderLines = []
         };
@@ -183,13 +186,14 @@ public class NetsPaymentProcessorTests
                         {
                             // All amounts sent to and received from Nets are in the lowest monetary unit for the given currency, without punctuation marks.
                             ChargedAmount = expectedTotalIncVat * 100
-                        }
+                        },
+                        Checkout = new() { Url = "redirect url", CancelUrl = "cancel url" }
                     }
                 }
             });
 
         // Act
-        PaymentStatus? result = await _processor.GetPaymentStatus(instance, paymentReference, expectedTotalIncVat);
+        (PaymentStatus result, _) = await _processor.GetPaymentStatus(instance, paymentReference, expectedTotalIncVat);
 
         // Assert
         Assert.Equal(PaymentStatus.Paid, result);

@@ -116,17 +116,119 @@ public class NetsPaymentProcessor : IPaymentProcessor
     }
 
     /// <inheritdoc />
-    public async Task<PaymentStatus?> GetPaymentStatus(Instance instance, string paymentReference, decimal expectedTotalIncVat)
+    public async Task<(PaymentStatus status, PaymentDetails paymentDetails)> GetPaymentStatus(Instance instance, string paymentId, decimal expectedTotalIncVat)
     {
-        HttpApiResult<NetsPaymentFull> httpApiResult = await _netsClient.RetrievePayment(paymentReference);
-        if (!httpApiResult.IsSuccess || httpApiResult.Result?.Payment is null)
+        HttpApiResult<NetsPaymentFull> httpApiResult = await _netsClient.RetrievePayment(paymentId);
+
+        if (!httpApiResult.IsSuccess || httpApiResult.Result is null)
         {
             throw new PaymentException("Failed to retrieve payment\n" + httpApiResult.Status + " - " +
                                        httpApiResult.RawError);
         }
 
-        decimal? chargedAmount = httpApiResult.Result?.Payment?.Summary?.ChargedAmount;
+        NetsPayment payment = httpApiResult.Result.Payment!;
+        decimal? chargedAmount = payment.Summary?.ChargedAmount;
 
-        return chargedAmount > 0 ? PaymentStatus.Paid : PaymentStatus.Created;
+        PaymentStatus status = chargedAmount > 0 ? PaymentStatus.Paid : PaymentStatus.Created;
+        NetsPaymentDetails? paymentPaymentDetails = payment.PaymentDetails;
+
+        PaymentDetails paymentDetails = new()
+        {
+            PaymentId = paymentId,
+            RedirectUrl = payment.Checkout!.Url!,
+            Payer = MapPayerDetails(payment.Consumer),
+            PaymentType = paymentPaymentDetails?.PaymentType,
+            PaymentMethod = paymentPaymentDetails?.PaymentMethod,
+            InvoiceDetails = MapInvoiceDetails(paymentPaymentDetails?.InvoiceDetails),
+            CardDetails = MapCardDetails(paymentPaymentDetails?.CardDetails),
+        };
+
+        return (status, paymentDetails);
+    }
+
+    private static Payer? MapPayerDetails(NetsConsumer? consumer)
+    {
+        if (consumer == null)
+        {
+            return null;
+        }
+
+        PayerCompany? payerCompany = consumer.Company != null
+            ? new PayerCompany
+            {
+                Name = consumer.Company.Name,
+                OrganisationNumber = consumer.Company.RegistrationNumber,
+                ContactPerson = new PayerPrivatePerson
+                {
+                    FirstName = consumer.Company.ContactDetails?.FirstName,
+                    LastName = consumer.Company.ContactDetails?.LastName,
+                    Email = consumer.Company.ContactDetails?.Email,
+                    PhoneNumber = new PhoneNumber
+                    {
+                        Prefix = consumer.Company.ContactDetails?.PhoneNumber?.Prefix,
+                        Number = consumer.Company.ContactDetails?.PhoneNumber?.Number,
+                    }
+                }
+            }
+            : null;
+
+        PayerPrivatePerson? payerPrivatePerson = consumer.PrivatePerson != null
+            ? new PayerPrivatePerson
+            {
+                FirstName = consumer.PrivatePerson.FirstName,
+                LastName = consumer.PrivatePerson.LastName,
+                Email = consumer.PrivatePerson.Email,
+                PhoneNumber = new PhoneNumber
+                {
+                    Prefix = consumer.PrivatePerson.PhoneNumber?.Prefix,
+                    Number = consumer.PrivatePerson.PhoneNumber?.Number,
+                }
+            }
+            : null;
+
+        return new Payer
+        {
+            Company = payerCompany,
+            PrivatePerson = payerPrivatePerson,
+            ShippingAddress = MapAddress(consumer.ShippingAddress),
+            BillingAddress = MapAddress(consumer.BillingAddress),
+        };
+    }
+
+
+    private static InvoiceDetails? MapInvoiceDetails(NetsInvoiceDetails? netsInvoiceDetails)
+    {
+        if (netsInvoiceDetails == null) return null;
+
+        return new InvoiceDetails
+        {
+            InvoiceNumber = netsInvoiceDetails.InvoiceNumber,
+        };
+    }
+
+    private static CardDetails? MapCardDetails(NetsCardDetails? netsCardDetails)
+    {
+        if (netsCardDetails == null) return null;
+
+        return new CardDetails
+        {
+            MaskedPan = netsCardDetails.MaskedPan,
+            ExpiryDate = netsCardDetails.ExpiryDate
+        };
+    }
+
+    private static Address? MapAddress(NetsAddress? address)
+    {
+        if (address == null) return null;
+
+        return new Address
+        {
+            Name = address.ReceiverLine,
+            AddressLine1 = address.AddressLine1,
+            AddressLine2 = address.AddressLine2,
+            PostalCode = address.PostalCode,
+            City = address.City,
+            Country = address.Country,
+        };
     }
 }

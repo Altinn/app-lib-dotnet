@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using Altinn.App.Core.Features.Payment.Providers.Nets.Models;
 
 namespace Altinn.App.Core.Features.Payment.Models;
 
@@ -16,4 +17,29 @@ public class PaymentDetails
     /// Gets or sets the redirect URL for the payment.
     /// </summary>
     public required string RedirectUrl { get; set; }
+
+    /// <summary>
+    /// Person/Company making the payment
+    /// </summary>
+    public Payer? Payer { get; set; }
+
+    /// <summary>
+    /// Type of payment. Typically 'CARD' or 'INVOICE'. Up to payment processor to define.
+    /// </summary>
+    public string? PaymentType { get; set; }
+
+    /// <summary>
+    /// The payment method, for example Visa or Mastercard. Up to payment processor to define.
+    /// </summary>
+    public string? PaymentMethod { get; set; }
+
+    /// <summary>
+    /// If invoice was used, this will contain the invoice number.
+    /// </summary>
+    public InvoiceDetails? InvoiceDetails { get; set; }
+
+    /// <summary>
+    /// If card was used, this will contain the card details.
+    /// </summary>
+    public CardDetails? CardDetails { get; set; }
 }

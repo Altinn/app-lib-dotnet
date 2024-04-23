@@ -189,10 +189,9 @@ public class PaymentServiceTests
             .ReturnsAsync((Guid.NewGuid(), paymentInformation));
 
         _paymentProcessor.Setup(x => x.PaymentProcessorId).Returns(orderDetails.PaymentProcessorId);
-        
-        _paymentProcessor.Setup(pp =>
-                pp.GetPaymentStatus(It.IsAny<Instance>(), It.IsAny<string>(), It.IsAny<decimal>()))
-            .ReturnsAsync((PaymentStatus?)null);
+
+        _paymentProcessor.Setup(x => x.GetPaymentStatus(It.IsAny<Instance>(), It.IsAny<string>(), It.IsAny<decimal>()))
+            .ThrowsAsync(new PaymentException("Some exception"));
 
         var paymentService =
             new PaymentService([_paymentProcessor.Object], _orderDetailsCalculator.Object, _dataService.Object, _logger.Object);
@@ -222,7 +221,7 @@ public class PaymentServiceTests
         
         _paymentProcessor.Setup(pp =>
                 pp.GetPaymentStatus(It.IsAny<Instance>(), It.IsAny<string>(), It.IsAny<decimal>()))
-            .ReturnsAsync(PaymentStatus.Paid);
+            .ReturnsAsync((PaymentStatus.Paid, new PaymentDetails { PaymentId = "paymentId", RedirectUrl = "redirect url" }));
 
         var paymentService =
             new PaymentService([_paymentProcessor.Object], _orderDetailsCalculator.Object, _dataService.Object, _logger.Object);
@@ -318,7 +317,7 @@ public class PaymentServiceTests
             PaymentDetails = new PaymentDetails
             {
                 RedirectUrl = "Redirect URL",
-                PaymentId = "PaymentReference",
+                PaymentId = "paymentId",
             }
         };
     }

@@ -16,25 +16,17 @@ public interface IPaymentProcessor
     /// <summary>
     /// Starts a payment process for the specified instance and order details.
     /// </summary>
-    /// <param name="instance">The instance for which the payment is being started.</param>
-    /// <param name="orderDetails">The details of the order being paid.</param>
-    /// <returns>A task representing the asynchronous operation. The task result contains the payment details.</returns>
     public Task<PaymentDetails> StartPayment(Instance instance, OrderDetails orderDetails);
 
     /// <summary>
     /// Terminate a payment for the specified instance and payment reference.
     /// </summary>
-    /// <param name="instance">The instance for which the payment is being terminated.</param>
-    /// <param name="paymentInformation"></param>
     /// <returns>A task representing the asynchronous operation.</returns>
     public Task<bool> TerminatePayment(Instance instance, PaymentInformation paymentInformation);
 
     /// <summary>
     /// Gets the payment status for the specified instance and payment reference.
     /// </summary>
-    /// <param name="instance"></param>
-    /// <param name="paymentReference"></param>
-    /// <param name="expectedTotalIncVat"></param>
-    /// <returns>A task representing the asynchronous operation. The task result contains the response from the payment provider.</returns>
-    public Task<PaymentStatus?> GetPaymentStatus(Instance instance, string paymentReference, decimal expectedTotalIncVat);
+    public Task<(PaymentStatus status, PaymentDetails paymentDetails)>
+        GetPaymentStatus(Instance instance, string paymentReference, decimal expectedTotalIncVat);
 }

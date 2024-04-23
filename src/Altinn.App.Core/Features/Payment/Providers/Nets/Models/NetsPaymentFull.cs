@@ -13,7 +13,7 @@ public class NetsPayment
     public NetsConsumer? Consumer { get; set; }
     public NetsPaymentDetails? PaymentDetails { get; set; }
     public NetsOrderDetails? OrderDetails { get; set; }
-    public NetsCheckoutUrls? CheckoutUrls { get; set; }
+    public NetsCheckoutUrls? Checkout { get; set; }
     public string? Created { get; set; }
     public NetsRefunds[]? Refunds { get; set; }
     public NetsCharges[]? Charges { get; set; }
@@ -33,13 +33,13 @@ public class NetsSummary
 
 public class NetsConsumer
 {
-    public NetsShippingAddress? ShippingAddress { get; set; }
+    public NetsAddress? ShippingAddress { get; set; }
     public NetsCompany? Company { get; set; }
     public NetsPrivatePerson? PrivatePerson { get; set; }
-    public NetsBillingAddress? BillingAddress { get; set; }
+    public NetsAddress? BillingAddress { get; set; }
 }
 
-public class NetsShippingAddress
+public class NetsAddress
 {
     public string? AddressLine1 { get; set; }
     public string? AddressLine2 { get; set; }
@@ -79,16 +79,6 @@ public class NetsPrivatePerson
     public string? LastName { get; set; }
     public string? Email { get; set; }
     public NetsPhoneNumber? PhoneNumber { get; set; }
-}
-
-public class NetsBillingAddress
-{
-    public string? AddressLine1 { get; set; }
-    public string? AddressLine2 { get; set; }
-    public string? ReceiverLine { get; set; }
-    public string? PostalCode { get; set; }
-    public string? City { get; set; }
-    public string? Country { get; set; }
 }
 
 public class NetsPaymentDetails

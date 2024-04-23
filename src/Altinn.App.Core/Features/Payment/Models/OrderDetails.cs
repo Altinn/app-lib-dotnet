@@ -8,12 +8,18 @@ public class OrderDetails
     /// <summary>
     /// The ID of the payment provider that should handle the payment
     /// </summary>
-    public string PaymentProcessorId { get; set; }
+    public required string PaymentProcessorId { get; set; }
+
+    /// <summary>
+    /// The party that will receive the payment. Used in the receipt.
+    /// </summary>
+    public PaymentReceiver Receiver { get; set; }
     
     /// <summary>
-    /// Optional reference to the order. Could be used by other systems to identify the order
+    /// Optional reference to the order. Could be used by other systems to identify the order.
     /// </summary>
     public string? OrderReference { get; set; }
+    
     /// <summary>
     /// Monetary unit of the prices in the order.
     /// </summary>

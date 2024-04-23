@@ -111,14 +111,12 @@ public class PaymentService : IPaymentService
 
         IPaymentProcessor paymentProcessor = _paymentProcessors.FirstOrDefault(p => p.PaymentProcessorId == paymentProcessorId) ??
                                              throw new PaymentException($"Payment processor with ID '{paymentProcessorId}' not found.");
-        
-        PaymentStatus? paymentStatus = await paymentProcessor.GetPaymentStatus(instance, paymentDetails.PaymentId, totalPriceIncVat);
-        if (paymentStatus == null)
-        {
-            throw new PaymentException($"Unable to check payment status for instance {instance.Id}.");
-        }
 
-        paymentInformation.Status = paymentStatus.Value;
+        (PaymentStatus paymentStatus, PaymentDetails updatedPaymentDetails) =
+            await paymentProcessor.GetPaymentStatus(instance, paymentDetails.PaymentId, totalPriceIncVat);
+
+        paymentInformation.Status = paymentStatus;
+        paymentInformation.PaymentDetails = updatedPaymentDetails;
 
         await _dataService.UpdateJsonObject(new InstanceIdentifier(instance), dataTypeId, dataElementId, paymentInformation);
         return paymentInformation;

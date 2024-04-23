@@ -4388,6 +4388,36 @@
         "type": "integer",
         "format": "int32"
       },
+      "Address": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "addressLine1": {
+            "type": "string",
+            "nullable": true
+          },
+          "addressLine2": {
+            "type": "string",
+            "nullable": true
+          },
+          "postalCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "city": {
+            "type": "string",
+            "nullable": true
+          },
+          "country": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "AppProcessElementInfo": {
         "type": "object",
         "properties": {
@@ -4602,6 +4632,20 @@
             "additionalProperties": {
               "nullable": true
             },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CardDetails": {
+        "type": "object",
+        "properties": {
+          "maskedPan": {
+            "type": "string",
+            "nullable": true
+          },
+          "expiryDate": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -5073,6 +5117,16 @@
         },
         "additionalProperties": false
       },
+      "InvoiceDetails": {
+        "type": "object",
+        "properties": {
+          "invoiceNumber": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "JsonNode": {
         "type": "object",
         "properties": {
@@ -5143,6 +5197,9 @@
             "type": "string",
             "nullable": true
           },
+          "receiver": {
+            "$ref": "#/components/schemas/PaymentReceiver"
+          },
           "orderReference": {
             "type": "string",
             "nullable": true
@@ -5194,6 +5251,62 @@
         },
         "additionalProperties": false
       },
+      "Payer": {
+        "type": "object",
+        "properties": {
+          "privatePerson": {
+            "$ref": "#/components/schemas/PayerPrivatePerson"
+          },
+          "company": {
+            "$ref": "#/components/schemas/PayerCompany"
+          },
+          "shippingAddress": {
+            "$ref": "#/components/schemas/Address"
+          },
+          "billingAddress": {
+            "$ref": "#/components/schemas/Address"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PayerCompany": {
+        "type": "object",
+        "properties": {
+          "organisationNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "contactPerson": {
+            "$ref": "#/components/schemas/PayerPrivatePerson"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PayerPrivatePerson": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastName": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "phoneNumber": {
+            "$ref": "#/components/schemas/PhoneNumber"
+          }
+        },
+        "additionalProperties": false
+      },
       "PaymentDetails": {
         "type": "object",
         "properties": {
@@ -5204,6 +5317,23 @@
           "redirectUrl": {
             "type": "string",
             "nullable": true
+          },
+          "payer": {
+            "$ref": "#/components/schemas/Payer"
+          },
+          "paymentType": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentMethod": {
+            "type": "string",
+            "nullable": true
+          },
+          "invoiceDetails": {
+            "$ref": "#/components/schemas/InvoiceDetails"
+          },
+          "cardDetails": {
+            "$ref": "#/components/schemas/CardDetails"
           }
         },
         "additionalProperties": false
@@ -5261,6 +5391,23 @@
         },
         "additionalProperties": false
       },
+      "PaymentReceiver": {
+        "type": "object",
+        "properties": {
+          "organisationNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "postalAddress": {
+            "$ref": "#/components/schemas/Address"
+          }
+        },
+        "additionalProperties": false
+      },
       "PaymentStatus": {
         "enum": [
           0,
@@ -5272,6 +5419,20 @@
         ],
         "type": "integer",
         "format": "int32"
+      },
+      "PhoneNumber": {
+        "type": "object",
+        "properties": {
+          "prefix": {
+            "type": "string",
+            "nullable": true
+          },
+          "number": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
       },
       "PointerSegment": {
         "type": "object",
