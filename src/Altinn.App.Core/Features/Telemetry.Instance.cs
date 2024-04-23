@@ -19,7 +19,6 @@ public partial class Telemetry
     internal Activity? StartQueryInstancesActivity(string token)
     {
         var activity = ActivitySource.StartActivity(TraceNameQuery);
-        activity?.SetTag(InstanceLabels.Type, InstanceType.QueryInstances.ToStringFast());
         activity?.SetTag("token", token); // TODO: magic string -> boo!
         return activity;
     }
@@ -27,14 +26,12 @@ public partial class Telemetry
     internal Activity? StartCreateInstanceActivity()
     {
         var activity = ActivitySource.StartActivity(TraceNameCreate);
-        activity?.SetTag(InstanceLabels.Type, InstanceType.CreateInstance.ToStringFast());
         return activity;
     }
 
     internal Activity? StartDeleteInstanceActivity(Guid instanceGuid, int instanceOwnerPartyId)
     {
         var activity = ActivitySource.StartActivity(TraceNameCreate);
-        activity?.SetTag(InstanceLabels.Type, InstanceType.DeleteInstance.ToStringFast());
         activity?.SetTag(Labels.InstanceGuid, instanceGuid);
         activity?.SetTag(Labels.InstanceOwnerPartyId, instanceOwnerPartyId);
         return activity;
@@ -43,14 +40,12 @@ public partial class Telemetry
     internal Activity? StartUpdateProcessActivity()
     {
         var activity = ActivitySource.StartActivity(TraceNameProcess);
-        activity?.SetTag(InstanceLabels.Type, InstanceType.UpdateProcess.ToStringFast());
         return activity;
     }
 
     internal Activity? StartCompleteConfirmationActivity(Guid instanceGuid, int instanceOwnerPartyId)
     {
         var activity = ActivitySource.StartActivity(TraceNameConfirmation);
-        activity?.SetTag(InstanceLabels.Type, InstanceType.CompleteConfirmation.ToStringFast());
         activity?.SetTag(Labels.InstanceGuid, instanceGuid);
         activity?.SetTag(Labels.InstanceOwnerPartyId, instanceOwnerPartyId);
         return activity;
@@ -59,7 +54,6 @@ public partial class Telemetry
     internal Activity? StartUpdateReadStatusActivity(Guid instanceGuid, int instanceOwnerPartyId)
     {
         var activity = ActivitySource.StartActivity(TraceNameReadStatus);
-        activity?.SetTag(InstanceLabels.Type, InstanceType.UpdateReadStatus.ToStringFast());
         activity?.SetTag(Labels.InstanceGuid, instanceGuid);
         activity?.SetTag(Labels.InstanceOwnerPartyId, instanceOwnerPartyId);
         return activity;
@@ -68,7 +62,6 @@ public partial class Telemetry
     internal Activity? StartUpdateSubStatusActivity(Guid instanceGuid, int instanceOwnerPartyId)
     {
         var activity = ActivitySource.StartActivity(TraceNameSubStatus);
-        activity?.SetTag(InstanceLabels.Type, InstanceType.UpdateSubStatus.ToStringFast());
         activity?.SetTag(Labels.InstanceGuid, instanceGuid);
         activity?.SetTag(Labels.InstanceOwnerPartyId, instanceOwnerPartyId);
         return activity;
@@ -77,7 +70,6 @@ public partial class Telemetry
     internal Activity? StartUpdatePresentationTextActivity(Guid instanceGuid, int instanceOwnerPartyId)
     {
         var activity = ActivitySource.StartActivity(TraceNamePresentationText);
-        activity?.SetTag(InstanceLabels.Type, InstanceType.UpdatePresentationText.ToStringFast());
         activity?.SetTag(Labels.InstanceGuid, instanceGuid);
         activity?.SetTag(Labels.InstanceOwnerPartyId, instanceOwnerPartyId);
         return activity;
@@ -86,7 +78,6 @@ public partial class Telemetry
     internal Activity? StartUpdateDataValuesActivity(Guid instanceGuid, int instanceOwnerPartyId)
     {
         var activity = ActivitySource.StartActivity(TraceNameDataValues);
-        activity?.SetTag(InstanceLabels.Type, InstanceType.UpdateDataValues.ToStringFast());
         activity?.SetTag(Labels.InstanceGuid, instanceGuid);
         activity?.SetTag(Labels.InstanceOwnerPartyId, instanceOwnerPartyId);
         return activity;
@@ -114,31 +105,13 @@ public partial class Telemetry
             GetInstanceByGuid,
             [Display(Name = "get_instance_by_instance")]
             GetInstanceByInstance,
-            [Display(Name = "create_instance")]
-            CreateInstance,
-            [Display(Name = "delete_instance")]
-            DeleteInstance,
             [Display(Name = "get_instances")]
             GetInstances,
-            [Display(Name = "query_instances")]
-            QueryInstances,
-            [Display(Name = "update_process")]
-            UpdateProcess,
-            [Display(Name = "complete_confirmation")]
-            CompleteConfirmation,
-            [Display(Name = "update_read_status")]
-            UpdateReadStatus,
-            [Display(Name = "update_sub_status")]
-            UpdateSubStatus,
-            [Display(Name = "update_presentation_text")]
-            UpdatePresentationText,
-            [Display(Name = "update_data_values")]
-            UpdateDataValues,
         }
 
         public static class InstanceLabels
         {
-            public const string Type = "instance.type";
+            public const string Type = "instance.get.type";
         }
 
     }
