@@ -17,14 +17,19 @@ public static class ObjectUtils
     /// <param name="depth">Remaining recursion depth. To prevent infinite recursion we stop prepeation after this depth. (default matches json serialization)</param>
     public static void InitializeAltinnRowId(object model, int depth = 64)
     {
+        ArgumentNullException.ThrowIfNull(model);
+        var type = model.GetType();
         if (depth < 0)
         {
-            return;
+            throw new Exception($"Recursion depth exceeded. {type.Name} in {type.Namespace} likely causes infinite recursion.");
         }
 
-        ArgumentNullException.ThrowIfNull(model);
+        if(type.Namespace?.StartsWith("System") == true)
+        {
+            return; // Some system types causes infinite recursion
+        }
 
-        foreach (var prop in model.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public))
+        foreach (var prop in type.GetProperties(BindingFlags.Instance | BindingFlags.Public))
         {
             if (PropertyIsAltinRowGuid(prop))
             {
@@ -51,7 +56,7 @@ public static class ObjectUtils
                 }
             }
             // property does not have an index parameter, nor is a value type, thus we should recurse into the property
-            else if (prop.GetIndexParameters().Length == 0 && prop.PropertyType.IsValueType == false)
+            else if (prop.GetIndexParameters().Length == 0)
             {
                 var value = prop.GetValue(model);
 
@@ -75,13 +80,18 @@ public static class ObjectUtils
     /// <param name="depth">Remaining recursion depth. To prevent infinite recursion we stop prepeation after this depth. (default matches json serialization)</param>
     public static void PrepareModelForXmlStorage(object model, int depth = 64)
     {
+        ArgumentNullException.ThrowIfNull(model);
+        var type = model.GetType();
         if (depth < 0)
+        {
+            throw new Exception($"Recursion depth exceeded. {type.Name} in {type.Namespace} likely causes infinite recursion.");
+        }
+
+        if(type.Namespace?.StartsWith("System") == true)
         {
             return;
         }
 
-        ArgumentNullException.ThrowIfNull(model);
-        var type = model.GetType();
         var methodInfos = type.GetMethods();
 
         // Iterate over properties of the model
