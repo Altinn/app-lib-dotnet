@@ -137,7 +137,7 @@ public partial class Telemetry
 
         public static class InstanceLabels
         {
-            public static readonly string Type = "instance.type";
+            public const string Type = "instance.type";
         }
 
     }
