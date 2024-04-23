@@ -14,11 +14,17 @@ public static class ObjectUtils
     /// Set empty Guid properties named "AltinnRowId" to a new random guid
     /// </summary>
     /// <param name="model">The object to mutate</param>
-    public static void InitializeAltinnRowId(object model)
+    /// <param name="depth">Remaining recursion depth. To prevent infinite recursion we stop prepeation after this depth. (default matches json serialization)</param>
+    public static void InitializeAltinnRowId(object model, int depth = 64)
     {
+        if (depth < 0)
+        {
+            return;
+        }
+
         ArgumentNullException.ThrowIfNull(model);
 
-        foreach (var prop in model.GetType().GetProperties())
+        foreach (var prop in model.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public))
         {
             if (PropertyIsAltinRowGuid(prop))
             {
@@ -39,7 +45,7 @@ public static class ObjectUtils
                         // Recurse into values of a list
                         if (item is not null)
                         {
-                            InitializeAltinnRowId(item);
+                            InitializeAltinnRowId(item, depth - 1);
                         }
                     }
                 }
@@ -52,7 +58,7 @@ public static class ObjectUtils
                 // continue recursion over all properties that are not null or value types
                 if (value is not null)
                 {
-                    InitializeAltinnRowId(value);
+                    InitializeAltinnRowId(value, depth - 1);
                 }
             }
         }
@@ -66,14 +72,20 @@ public static class ObjectUtils
     /// * If a class has `[XmlTextAttribute]` and no value, set the parent property to null (if the other properties has [BindNever] attribute)
     /// </summary>
     /// <param name="model">The object to mutate</param>
-    public static void PrepareModelForXmlStorage(object model)
+    /// <param name="depth">Remaining recursion depth. To prevent infinite recursion we stop prepeation after this depth. (default matches json serialization)</param>
+    public static void PrepareModelForXmlStorage(object model, int depth = 64)
     {
+        if (depth < 0)
+        {
+            return;
+        }
+
         ArgumentNullException.ThrowIfNull(model);
         var type = model.GetType();
         var methodInfos = type.GetMethods();
 
         // Iterate over properties of the model
-        foreach (var prop in type.GetProperties())
+        foreach (var prop in type.GetProperties(BindingFlags.Instance | BindingFlags.Public))
         {
             // Property has a generic type that is a subtype of List<>
             if (prop.PropertyType.IsGenericType && prop.PropertyType.GetGenericTypeDefinition() == typeof(List<>))
@@ -81,7 +93,7 @@ public static class ObjectUtils
                 var value = prop.GetValue(model);
                 if (value is null)
                 {
-                    // Initialize IList with null value (this is what comes back from xml deserialization)
+                    // Initialize IList if it has null value (xml deserialization always retrurn emtpy list, not null)
                     prop.SetValue(model, Activator.CreateInstance(prop.PropertyType));
                 }
                 else
@@ -91,7 +103,7 @@ public static class ObjectUtils
                     {
                         if (item is not null)
                         {
-                            PrepareModelForXmlStorage(item);
+                            PrepareModelForXmlStorage(item, depth - 1);
                         }
                     }
                 }
@@ -106,30 +118,26 @@ public static class ObjectUtils
                 var value = prop.GetValue(model);
                 if (value is null)
                     continue;
-                SetToDefaultIfShouldSerializeFalse(model, prop, methodInfos, value);
+                SetToDefaultIfShouldSerializeFalse(model, prop, methodInfos);
 
                 // Set string properties with [XmlText] attribute to null if they are empty or whitespace
                 if (value is string s &&
                 string.IsNullOrWhiteSpace(s) &&
-                prop.GetCustomAttributes<XmlTextAttribute>().SingleElement() is not null)
+                prop.GetCustomAttribute<XmlTextAttribute>() is not null)
                 {
                     // Ensure empty strings are set to null
                     prop.SetValue(model, null);
                 }
 
                 // continue recursion over all properties that are NOT null or value types
-                else if (value.GetType().IsValueType == false)
-                {
-                    PrepareModelForXmlStorage(value);
-                }
+                PrepareModelForXmlStorage(value, depth - 1);
 
-                // NullParentIfEmptyXmlTextProperty(model, value, prop);
-                SetToDefaultIfShouldSerializeFalse(model, prop, methodInfos, value);
+                SetToDefaultIfShouldSerializeFalse(model, prop, methodInfos);
             }
         }
     }
 
-    private static void SetToDefaultIfShouldSerializeFalse(object model, PropertyInfo prop, MethodInfo[] methodInfos, object value)
+    private static void SetToDefaultIfShouldSerializeFalse(object model, PropertyInfo prop, MethodInfo[] methodInfos)
     {
         string methodName = $"ShouldSerialize{prop.Name}";
 
