@@ -4,12 +4,19 @@ using System.Diagnostics.Metrics;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Models;
+using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Xunit;
 
 namespace Altinn.App.Core.Tests.Mocks;
 
 internal sealed record TelemetryFake : IDisposable
 {
+    internal bool IsDisposed { get; private set; }
+
+    internal static ConcurrentDictionary<Scope, byte> Scopes { get; } = [];
+
     internal Telemetry Object { get; }
 
     internal ActivityListener ActivityListener { get; }
@@ -33,11 +40,14 @@ internal sealed record TelemetryFake : IDisposable
             AppVersion = version,
         };
 
+        Object = new Telemetry(appId, Options.Create(options));
+
         ActivityListener = new ActivityListener()
         {
             ShouldListenTo = (activitySource) =>
             {
-                return activitySource.Name == appId.App;
+                var sameSource = ReferenceEquals(activitySource, Object.ActivitySource);
+                return sameSource;
             },
             Sample = (ref ActivityCreationOptions<ActivityContext> options) => ActivitySamplingResult.AllDataAndRecorded,
             ActivityStarted = activity =>
@@ -51,7 +61,8 @@ internal sealed record TelemetryFake : IDisposable
         {
             InstrumentPublished = (instrument, listener) =>
             {
-                if (instrument.Meter.Name != appId.App)
+                var sameSource = ReferenceEquals(instrument.Meter, Object.Meter);
+                if (!sameSource)
                 {
                     return;
                 }
@@ -80,8 +91,6 @@ internal sealed record TelemetryFake : IDisposable
             measurements.Add(new(measurement, tags));
         });
         MeterListener.Start();
-
-        Object = new Telemetry(appId, Options.Create(options));
     }
 
     public void Dispose()
@@ -89,5 +98,71 @@ internal sealed record TelemetryFake : IDisposable
         ActivityListener.Dispose();
         MeterListener.Dispose();
         Object.Dispose();
+        IsDisposed = true;
+
+        foreach (var (scope, _) in Scopes)
+        {
+            scope.IsDisposed = true;
+        }
+    }
+
+    internal sealed class Scope : IDisposable
+    {
+        public bool IsDisposed { get; internal set; }
+
+        public void Dispose() => Scopes.TryRemove(this, out _).Should().BeTrue();
+    }
+
+    internal static Scope CreateScope()
+    {
+        var scope = new Scope();
+        Scopes.TryAdd(scope, default).Should().BeTrue();
+        return scope;
+    }
+}
+
+internal static class TelemetryDI 
+{
+    internal static IServiceCollection AddTelemetryFake(this IServiceCollection services)
+    {
+        services.AddSingleton(_ => new TelemetryFake());
+        services.AddSingleton<Telemetry>(sp => sp.GetRequiredService<TelemetryFake>().Object);
+        return services;
+    }
+}
+
+public class TelemetryDITests 
+{
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void TelemetryFake_Is_Disposed(bool materialize)
+    {
+        using var scope = TelemetryFake.CreateScope();
+        scope.IsDisposed.Should().BeFalse();
+
+        var services = new ServiceCollection();
+        services.AddTelemetryFake();
+        var sp = services.BuildServiceProvider(new ServiceProviderOptions
+        {
+            ValidateOnBuild = true,
+            ValidateScopes = true,
+        });
+
+        if (materialize)
+        {
+            var fake = sp.GetRequiredService<TelemetryFake>();
+            fake.IsDisposed.Should().BeFalse();
+            scope.IsDisposed.Should().BeFalse();
+            sp.Dispose();
+            fake.IsDisposed.Should().BeTrue();
+            scope.IsDisposed.Should().BeTrue();
+        }
+        else 
+        {
+            scope.IsDisposed.Should().BeFalse();
+            sp.Dispose();
+            scope.IsDisposed.Should().BeFalse();
+        }
     }
 }

@@ -169,5 +169,4 @@ public class DITests
 
         Assert.Contains("UseOpenTelemetry must be boolean or not set", exception.Message);
     }
-
 }

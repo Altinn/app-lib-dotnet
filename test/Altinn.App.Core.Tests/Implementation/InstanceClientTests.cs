@@ -22,7 +22,7 @@ using Xunit;
 
 namespace Altinn.App.PlatformServices.Tests.Implementation
 {
-    public class InstanceClientTests
+    public class InstanceClientTests : IDisposable
     {
         private readonly Mock<IOptions<PlatformSettings>> platformSettingsOptions;
         private readonly Mock<IOptionsMonitor<AppSettings>> appSettingsOptions;
@@ -468,6 +468,11 @@ namespace Altinn.App.PlatformServices.Tests.Implementation
                 .ReturnsAsync(httpResponseMessages[0])
                 .Verifiable();
             }
+        }
+
+        public void Dispose()
+        {
+            telemetry.Dispose();
         }
     }
 }

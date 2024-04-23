@@ -19,7 +19,7 @@ using DataType = Altinn.Platform.Storage.Interface.Models.DataType;
 
 namespace Altinn.App.Core.Tests.Internal.Patch;
 
-public class PatchServiceTests
+public class PatchServiceTests : IDisposable
 {
     // Test data
     private static readonly Guid DataGuid = new("12345678-1234-1234-1234-123456789123");
@@ -206,5 +206,10 @@ public class PatchServiceTests
         err!.Title.Should().Be("Patch operation did not deserialize");
         err.Detail.Should().Be("The JSON property 'Age' could not be mapped to any .NET member contained in type 'Altinn.App.Core.Tests.Internal.Patch.PatchServiceTests+MyModel'.");
         err.ErrorType.Should().Be(DataPatchErrorType.DeserializationFailed);
+    }
+
+    public void Dispose()
+    {
+        _telemetryMock.Dispose();
     }
 }

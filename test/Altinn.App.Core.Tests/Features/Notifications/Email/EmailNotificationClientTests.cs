@@ -305,12 +305,9 @@ public class EmailNotificationClientTests
             .Returns("token");
         services.AddSingleton<IAccessTokenGenerator>(accessTokenGenerator.Object);
 
-        TelemetryFake? telemetryFake = null;
         if (withTelemetry)
         {
-            telemetryFake = new TelemetryFake("ttd", appId);
-            services.AddSingleton(_ => telemetryFake);
-            services.AddSingleton<Telemetry>(telemetryFake.Object);
+            services.AddTelemetryFake();
         }
 
         services.AddTransient<IEmailNotificationClient, EmailNotificationClient>();
@@ -322,6 +319,7 @@ public class EmailNotificationClientTests
         });
 
         var client = (EmailNotificationClient)sp.GetRequiredService<IEmailNotificationClient>();
+        var telemetryFake = sp.GetService<TelemetryFake>();
         return new(sp, client, telemetryFake);
     }
 

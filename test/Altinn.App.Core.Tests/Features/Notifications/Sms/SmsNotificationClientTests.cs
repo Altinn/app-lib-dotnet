@@ -307,12 +307,9 @@ public class SmsNotificationClientTests
             .Returns("token");
         services.AddSingleton<IAccessTokenGenerator>(accessTokenGenerator.Object);
 
-        TelemetryFake? telemetryFake = null;
         if (withTelemetry)
         {
-            telemetryFake = new TelemetryFake("ttd", appId);
-            services.AddSingleton(_ => telemetryFake);
-            services.AddSingleton<Telemetry>(telemetryFake.Object);
+            services.AddTelemetryFake();
         }
 
         services.AddTransient<ISmsNotificationClient, SmsNotificationClient>();
@@ -324,6 +321,7 @@ public class SmsNotificationClientTests
         });
 
         var client = (SmsNotificationClient)sp.GetRequiredService<ISmsNotificationClient>();
+        var telemetryFake = sp.GetService<TelemetryFake>();
         return new(sp, client, telemetryFake);
     }
 
