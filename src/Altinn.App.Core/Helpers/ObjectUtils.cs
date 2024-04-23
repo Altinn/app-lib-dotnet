@@ -24,7 +24,7 @@ public static class ObjectUtils
             throw new Exception($"Recursion depth exceeded. {type.Name} in {type.Namespace} likely causes infinite recursion.");
         }
 
-        if(type.Namespace?.StartsWith("System") == true)
+        if (type.Namespace?.StartsWith("System") == true)
         {
             return; // Some system types causes infinite recursion
         }
@@ -87,7 +87,7 @@ public static class ObjectUtils
             throw new Exception($"Recursion depth exceeded. {type.Name} in {type.Namespace} likely causes infinite recursion.");
         }
 
-        if(type.Namespace?.StartsWith("System") == true)
+        if (type.Namespace?.StartsWith("System") == true)
         {
             return;
         }
