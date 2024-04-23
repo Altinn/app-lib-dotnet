@@ -72,10 +72,8 @@ public class ShadowFieldsConverterTests
         string serializedDataWithoutModifier = JsonSerializer.Serialize(data);
         Assert.Contains(prefix, serializedDataWithoutModifier);
 
-        var options = JsonHelper.GetOptionsWithIgnorePrefix(prefix);
-
         // Check that serialization with modifier removes shadow fields from result
-        string serializedData = JsonSerializer.Serialize(data, options);
+        string serializedData = JsonHelper.SerializeIgnorePrefix(data, prefix);
         Assert.DoesNotContain(prefix, serializedData);
     }
 }

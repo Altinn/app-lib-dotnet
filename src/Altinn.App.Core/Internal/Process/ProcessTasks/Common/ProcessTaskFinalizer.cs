@@ -111,8 +111,7 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
         // Remove shadow fields
         if (dataType.AppLogic?.ShadowFields?.Prefix != null)
         {
-            var options = JsonHelper.GetOptionsWithIgnorePrefix(dataType.AppLogic.ShadowFields.Prefix);
-            string serializedData = JsonSerializer.Serialize(data, options);
+            string serializedData = JsonHelper.SerializeIgnorePrefix(data, dataType.AppLogic.ShadowFields.Prefix);
             if (dataType.AppLogic.ShadowFields.SaveToDataType != null)
             {
                 // Save the shadow fields to another data type

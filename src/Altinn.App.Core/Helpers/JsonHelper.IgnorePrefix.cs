@@ -11,11 +11,7 @@ namespace Altinn.App.Core.Helpers
     {
         private static readonly Dictionary<string, JsonSerializerOptions> _ignorePrefixOptions = new();
 
-        /// <summary>
-        /// Get a <see cref="JsonSerializerOptions"/> instance that ignores properties with a specific prefix.
-        /// These instances are cached using the prefix as a key.
-        /// </summary>
-        public static JsonSerializerOptions GetOptionsWithIgnorePrefix(string prefix)
+        internal static JsonSerializerOptions GetOptionsWithIgnorePrefix(string prefix)
         {
             lock (_ignorePrefixOptions)
             {
@@ -43,6 +39,14 @@ namespace Altinn.App.Core.Helpers
                 _ignorePrefixOptions.Add(prefix, newOptions);
                 return newOptions;
             }
+        }
+
+        internal static string SerializeIgnorePrefix(object obj, string prefix)
+        {
+            ArgumentNullException.ThrowIfNull(prefix);
+
+            var options = GetOptionsWithIgnorePrefix(prefix);
+            return JsonSerializer.Serialize(obj, options);
         }
     }
 }

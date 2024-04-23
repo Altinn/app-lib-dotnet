@@ -249,5 +249,7 @@ public class JsonHelperTests
         options1.Should().BeSameAs(options2);
         var options3 = JsonHelper.GetOptionsWithIgnorePrefix("B_");
         options3.Should().NotBeSameAs(options2);
+
+        Assert.Throws<ArgumentNullException>(() => JsonHelper.GetOptionsWithIgnorePrefix(null!));
     }
 }
