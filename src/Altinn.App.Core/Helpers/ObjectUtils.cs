@@ -132,8 +132,8 @@ public static class ObjectUtils
 
                 // Set string properties with [XmlText] attribute to null if they are empty or whitespace
                 if (value is string s &&
-                string.IsNullOrWhiteSpace(s) &&
-                prop.GetCustomAttribute<XmlTextAttribute>() is not null)
+                    string.IsNullOrWhiteSpace(s) &&
+                    prop.GetCustomAttribute<XmlTextAttribute>() is not null)
                 {
                     // Ensure empty strings are set to null
                     prop.SetValue(model, null);
