@@ -1,4 +1,4 @@
-namespace Altinn.App.Core.Features.Payment.Providers.Nets;
+namespace Altinn.App.Core.Features.Payment.Processors.Nets;
 
 public class NetsPaymentSettings
 {

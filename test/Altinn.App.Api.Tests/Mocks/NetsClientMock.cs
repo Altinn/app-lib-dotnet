@@ -1,5 +1,5 @@
-﻿using Altinn.App.Core.Features.Payment.Providers.Nets;
-using Altinn.App.Core.Features.Payment.Providers.Nets.Models;
+﻿using Altinn.App.Core.Features.Payment.Processors.Nets;
+using Altinn.App.Core.Features.Payment.Processors.Nets.Models;
 
 namespace Altinn.App.Api.Tests.Mocks.Services
 {

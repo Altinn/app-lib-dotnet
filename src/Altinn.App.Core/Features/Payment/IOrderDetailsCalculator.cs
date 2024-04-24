@@ -16,7 +16,6 @@ public interface IOrderDetailsCalculator
     /// depends on instance or data properties.
     /// This method can be called multiple times for the same instance, in order to preview the price before payment starts.
     /// </remarks>
-    /// <param name="instance"></param>
     /// <returns>The Payment order that contains information about the requested payment</returns>
-    Task<OrderDetails> CalculateOrderDetails(Instance instance);
+    Task<OrderDetails> CalculateOrderDetails(Instance instance, string? language);
 }

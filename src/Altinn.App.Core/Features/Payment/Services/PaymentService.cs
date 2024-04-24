@@ -1,6 +1,6 @@
 using Altinn.App.Core.Features.Payment.Exceptions;
 using Altinn.App.Core.Features.Payment.Models;
-using Altinn.App.Core.Features.Payment.Providers;
+using Altinn.App.Core.Features.Payment.Processors;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
@@ -34,7 +34,7 @@ public class PaymentService : IPaymentService
 
     /// <inheritdoc/>
     public async Task<(PaymentInformation paymentInformation, bool alreadyPaid)> StartPayment(Instance instance,
-        AltinnPaymentConfiguration paymentConfiguration)
+        AltinnPaymentConfiguration paymentConfiguration, string? language)
     {
         _logger.LogInformation("Starting payment for instance {instanceId}.", instance.Id);
 
@@ -62,12 +62,12 @@ public class PaymentService : IPaymentService
             }
         }
 
-        OrderDetails orderDetails = await _orderDetailsCalculator.CalculateOrderDetails(instance);
+        OrderDetails orderDetails = await _orderDetailsCalculator.CalculateOrderDetails(instance, language);
         IPaymentProcessor paymentProcessor = _paymentProcessors.FirstOrDefault(p => p.PaymentProcessorId == orderDetails.PaymentProcessorId) ??
                                              throw new PaymentException($"Payment processor with ID '{orderDetails.PaymentProcessorId}' not found.");
 
         //If the sum of the order is 0, we can skip invoking the payment processor.
-        PaymentDetails? startedPayment = orderDetails.TotalPriceIncVat > 0 ? await paymentProcessor.StartPayment(instance, orderDetails) : null;
+        PaymentDetails? startedPayment = orderDetails.TotalPriceIncVat > 0 ? await paymentProcessor.StartPayment(instance, orderDetails, language) : null;
 
         PaymentInformation paymentInformation = new()
         {
@@ -82,7 +82,7 @@ public class PaymentService : IPaymentService
     }
 
     /// <inheritdoc/>
-    public async Task<PaymentInformation?> CheckAndStorePaymentStatus(Instance instance, AltinnPaymentConfiguration paymentConfiguration)
+    public async Task<PaymentInformation> CheckAndStorePaymentStatus(Instance instance, AltinnPaymentConfiguration paymentConfiguration, string? language)
     {
         _logger.LogInformation("Checking payment status for instance {instanceId}.", instance.Id);
 
@@ -96,7 +96,7 @@ public class PaymentService : IPaymentService
             {
                 TaskId = instance.Process.CurrentTask.ElementId,
                 Status = PaymentStatus.Uninitialized,
-                OrderDetails = await _orderDetailsCalculator.CalculateOrderDetails(instance),
+                OrderDetails = await _orderDetailsCalculator.CalculateOrderDetails(instance, language),
             };
         }
 
@@ -113,7 +113,7 @@ public class PaymentService : IPaymentService
                                              throw new PaymentException($"Payment processor with ID '{paymentProcessorId}' not found.");
 
         (PaymentStatus paymentStatus, PaymentDetails updatedPaymentDetails) =
-            await paymentProcessor.GetPaymentStatus(instance, paymentDetails.PaymentId, totalPriceIncVat);
+            await paymentProcessor.GetPaymentStatus(instance, paymentDetails.PaymentId, totalPriceIncVat, language);
 
         paymentInformation.Status = paymentStatus;
         paymentInformation.PaymentDetails = updatedPaymentDetails;

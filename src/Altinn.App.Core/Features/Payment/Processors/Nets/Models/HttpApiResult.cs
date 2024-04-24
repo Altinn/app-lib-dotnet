@@ -4,7 +4,7 @@ using System.Net.Http.Json;
 using System.Reflection;
 using System.Text.Json;
 
-namespace Altinn.App.Core.Features.Payment.Providers.Nets.Models;
+namespace Altinn.App.Core.Features.Payment.Processors.Nets.Models;
 
 
 public class HttpApiResult<T>

@@ -6,7 +6,7 @@ namespace Altinn.App.Api.Tests.Mocks
 {
     public class OrderDetailsCalculatorMock : IOrderDetailsCalculator
     {
-        public Task<OrderDetails> CalculateOrderDetails(Instance instance)
+        public Task<OrderDetails> CalculateOrderDetails(Instance instance, string? language)
         {
             throw new NotImplementedException();
         }

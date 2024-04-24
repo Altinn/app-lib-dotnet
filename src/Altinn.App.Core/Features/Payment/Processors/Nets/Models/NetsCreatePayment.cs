@@ -1,6 +1,6 @@
 using Altinn.App.Core.Features.Payment.Models;
 
-namespace Altinn.App.Core.Features.Payment.Providers.Nets.Models;
+namespace Altinn.App.Core.Features.Payment.Processors.Nets.Models;
 
 /// <summary>
 /// Initializes a new payment object that becomes the object used throughout the checkout flow for a particular customer and order. Creating a payment object is the first step when you intend to accept a payment from your customer. Entering the amount 100 corresponds to 1 unit of the currency entered, such as e.g. 1 NOK. Typically you provide the following information:

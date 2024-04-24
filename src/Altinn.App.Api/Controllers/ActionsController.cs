@@ -120,7 +120,7 @@ public class ActionsController : ControllerBase
             return Forbid();
         }
 
-        UserActionContext userActionContext = new(instance, userId.Value, actionRequest.ButtonId, actionRequest.Metadata);
+        UserActionContext userActionContext = new(instance, userId.Value, actionRequest.ButtonId, actionRequest.Metadata, language);
         IUserAction? actionHandler = _userActionService.GetActionHandler(action);
         if (actionHandler == null)
         {

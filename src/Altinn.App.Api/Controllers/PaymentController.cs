@@ -48,11 +48,17 @@ public class PaymentController : Controller
     /// <param name="app">application identifier which is unique within an organisation</param>
     /// <param name="instanceOwnerPartyId">unique id of the party that this the owner of the instance</param>
     /// <param name="instanceGuid">unique id to identify the instance</param>
+    /// <param name="language">The currently used language by the user (or null if not available)</param>
     /// <returns>An object containing updated payment information</returns>
     [HttpGet]
     [ProducesResponseType(typeof(PaymentInformation), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetPaymentInformation(string org, string app, int instanceOwnerPartyId, Guid instanceGuid)
+    public async Task<IActionResult> GetPaymentInformation(
+        [FromRoute] string org,
+        [FromRoute] string app,
+        [FromRoute] int instanceOwnerPartyId,
+        [FromRoute] Guid instanceGuid,
+        [FromQuery] string? language = null)
     {
         if (_paymentService == null)
         {
@@ -66,7 +72,7 @@ public class PaymentController : Controller
             throw new PaymentException("Payment configuration not found in AltinnTaskExtension");
         }
 
-        PaymentInformation paymentInformation = await _paymentService.CheckAndStorePaymentStatus(instance, paymentConfiguration);
+        PaymentInformation paymentInformation = await _paymentService.CheckAndStorePaymentStatus(instance, paymentConfiguration, language);
         return Ok(paymentInformation);
     }
 
@@ -77,11 +83,17 @@ public class PaymentController : Controller
     /// <param name="app">application identifier which is unique within an organisation</param>
     /// <param name="instanceOwnerPartyId">unique id of the party that this the owner of the instance</param>
     /// <param name="instanceGuid">unique id to identify the instance</param>
+    /// <param name="language">The currently used language by the user (or null if not available)</param>
     /// <returns>An object containing updated payment information</returns>
     [HttpGet("order-details")]
     [ProducesResponseType(typeof(OrderDetails), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetOrderDetails(string org, string app, int instanceOwnerPartyId, Guid instanceGuid)
+    public async Task<IActionResult> GetOrderDetails(
+        [FromRoute] string org,
+        [FromRoute] string app,
+        [FromRoute] int instanceOwnerPartyId,
+        [FromRoute] Guid instanceGuid,
+        [FromQuery] string? language = null)
     {
         if (_orderDetailsCalculator == null)
         {
@@ -90,7 +102,7 @@ public class PaymentController : Controller
         }
 
         Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
-        OrderDetails orderDetails = await _orderDetailsCalculator.CalculateOrderDetails(instance);
+        OrderDetails orderDetails = await _orderDetailsCalculator.CalculateOrderDetails(instance, language);
 
         return Ok(orderDetails);
     }

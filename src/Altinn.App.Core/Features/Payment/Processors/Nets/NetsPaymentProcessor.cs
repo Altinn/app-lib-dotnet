@@ -1,13 +1,14 @@
+using System.Web;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features.Payment.Exceptions;
 using Altinn.App.Core.Features.Payment.Models;
+using Altinn.App.Core.Features.Payment.Processors.Nets.Models;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Options;
 using OrderDetails = Altinn.App.Core.Features.Payment.Models.OrderDetails;
-using Altinn.App.Core.Features.Payment.Providers.Nets.Models;
 
-namespace Altinn.App.Core.Features.Payment.Providers.Nets;
+namespace Altinn.App.Core.Features.Payment.Processors.Nets;
 
 /// <summary>
 /// Implementation of IPaymentProcessor for Nets. https://developer.nexigroup.com/nexi-checkout/en-EU/api/
@@ -39,7 +40,7 @@ public class NetsPaymentProcessor : IPaymentProcessor
     public string PaymentProcessorId => "Nets Easy";
 
     /// <inheritdoc />
-    public async Task<PaymentDetails> StartPayment(Instance instance, OrderDetails orderDetails)
+    public async Task<PaymentDetails> StartPayment(Instance instance, OrderDetails orderDetails, string? language)
     {
         var instanceIdentifier = new InstanceIdentifier(instance);
         string baseUrl = _generalSettings.FormattedExternalAppBaseUrl(new AppIdentifier(instance));
@@ -99,7 +100,7 @@ public class NetsPaymentProcessor : IPaymentProcessor
         return new PaymentDetails
         {
             PaymentId = paymentId,
-            RedirectUrl = hostedPaymentPageUrl,
+            RedirectUrl = AddLanguageQueryParam(hostedPaymentPageUrl, language)
         };
     }
 
@@ -116,7 +117,8 @@ public class NetsPaymentProcessor : IPaymentProcessor
     }
 
     /// <inheritdoc />
-    public async Task<(PaymentStatus status, PaymentDetails paymentDetails)> GetPaymentStatus(Instance instance, string paymentId, decimal expectedTotalIncVat)
+    public async Task<(PaymentStatus status, PaymentDetails paymentDetails)> GetPaymentStatus(Instance instance, string paymentId, decimal expectedTotalIncVat,
+        string? language)
     {
         HttpApiResult<NetsPaymentFull> httpApiResult = await _netsClient.RetrievePayment(paymentId);
 
@@ -135,7 +137,7 @@ public class NetsPaymentProcessor : IPaymentProcessor
         PaymentDetails paymentDetails = new()
         {
             PaymentId = paymentId,
-            RedirectUrl = payment.Checkout!.Url!,
+            RedirectUrl = AddLanguageQueryParam(payment.Checkout!.Url!, language),
             Payer = MapPayerDetails(payment.Consumer),
             PaymentType = paymentPaymentDetails?.PaymentType,
             PaymentMethod = paymentPaymentDetails?.PaymentMethod,
@@ -230,5 +232,30 @@ public class NetsPaymentProcessor : IPaymentProcessor
             City = address.City,
             Country = address.Country,
         };
+    }
+
+    private static string AddLanguageQueryParam(string url, string? language)
+    {
+        string? languageParam = language switch
+        {
+            "nb" => "language=" + HttpUtility.UrlEncode("nb-NO"),
+            "nn" => "language=" + HttpUtility.UrlEncode("nn-NO"),
+            _ => null
+        };
+
+        if (string.IsNullOrEmpty(languageParam))
+            return url;
+
+        UriBuilder uriBuilder = new(url);
+        if (string.IsNullOrEmpty(uriBuilder.Query))
+        {
+            uriBuilder.Query = languageParam;
+        }
+        else
+        {
+            uriBuilder.Query = $"{uriBuilder.Query.Substring(1)}&{languageParam}"; //Substring(1) removes automatically added '?' from UriBuilder.Query.
+        }
+
+        return uriBuilder.Uri.ToString();
     }
 }

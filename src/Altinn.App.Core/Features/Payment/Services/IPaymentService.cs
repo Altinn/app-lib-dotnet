@@ -12,17 +12,12 @@ namespace Altinn.App.Core.Features.Payment.Services
         /// <summary>
         /// Start payment for an instance. Will clean up any existing non-completed payment before starting a new payment.
         /// </summary>
-        /// <param name="instance"></param>
-        /// <param name="paymentConfiguration"></param>
-        /// <returns></returns>
-        Task<(PaymentInformation paymentInformation, bool alreadyPaid)> StartPayment(Instance instance, AltinnPaymentConfiguration paymentConfiguration);
+        Task<(PaymentInformation paymentInformation, bool alreadyPaid)> StartPayment(Instance instance, AltinnPaymentConfiguration paymentConfiguration,
+            string? language);
 
         /// <summary>
         /// Check updated payment information from payment provider and store the updated data.
         /// </summary>
-        /// <param name="instance"></param>
-        /// <param name="paymentConfiguration"></param>
-        /// <returns></returns>
-        Task<PaymentInformation?> CheckAndStorePaymentStatus(Instance instance, AltinnPaymentConfiguration paymentConfiguration);
+        Task<PaymentInformation> CheckAndStorePaymentStatus(Instance instance, AltinnPaymentConfiguration paymentConfiguration, string? language);
     }
 }

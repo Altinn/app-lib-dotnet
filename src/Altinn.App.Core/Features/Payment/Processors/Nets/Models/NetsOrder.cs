@@ -1,4 +1,4 @@
-namespace Altinn.App.Core.Features.Payment.Providers.Nets.Models;
+namespace Altinn.App.Core.Features.Payment.Processors.Nets.Models;
 
 /// <summary>
 /// Specifies an order associated with a payment. An order must contain at least one order item. The amount of the order must match the sum of the specified order items.

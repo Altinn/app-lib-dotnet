@@ -57,7 +57,8 @@ namespace Altinn.App.Core.Features.Action
                 throw new ApplicationConfigException("PaymentConfig is missing in the payment process task configuration.");
             }
 
-            (PaymentInformation paymentInformation, bool alreadyPaid) = await _paymentService.StartPayment(context.Instance, paymentConfiguration);
+            (PaymentInformation paymentInformation, bool alreadyPaid) =
+                await _paymentService.StartPayment(context.Instance, paymentConfiguration, context.Language);
 
             if (alreadyPaid)
             {

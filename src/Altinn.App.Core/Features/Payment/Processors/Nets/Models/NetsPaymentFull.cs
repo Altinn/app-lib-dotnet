@@ -1,5 +1,5 @@
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-namespace Altinn.App.Core.Features.Payment.Providers.Nets.Models;
+namespace Altinn.App.Core.Features.Payment.Processors.Nets.Models;
 
 public class NetsPaymentFull
 {

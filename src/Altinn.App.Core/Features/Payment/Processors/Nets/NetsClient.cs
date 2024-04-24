@@ -1,9 +1,9 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using Altinn.App.Core.Features.Payment.Providers.Nets.Models;
+using Altinn.App.Core.Features.Payment.Processors.Nets.Models;
 using Microsoft.Extensions.Options;
 
-namespace Altinn.App.Core.Features.Payment.Providers.Nets;
+namespace Altinn.App.Core.Features.Payment.Processors.Nets;
 
 /// <summary>
 /// Http client for Nets API

@@ -1,4 +1,4 @@
-namespace Altinn.App.Core.Features.Payment.Providers.Nets.Models
+namespace Altinn.App.Core.Features.Payment.Processors.Nets.Models
 {
     /// <summary>
     /// Specifies payment methods configuration to be used for this payment, ignored if empty or null.

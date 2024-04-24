@@ -1,6 +1,6 @@
-﻿using Altinn.App.Core.Features.Payment.Providers.Nets.Models;
+﻿using Altinn.App.Core.Features.Payment.Processors.Nets.Models;
 
-namespace Altinn.App.Core.Features.Payment.Providers.Nets
+namespace Altinn.App.Core.Features.Payment.Processors.Nets
 {
     /// <summary>
     /// Represents a client for interacting with the Nets payment provider.

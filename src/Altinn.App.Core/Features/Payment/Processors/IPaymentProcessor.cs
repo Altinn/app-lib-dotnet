@@ -1,7 +1,7 @@
 using Altinn.App.Core.Features.Payment.Models;
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Features.Payment.Providers;
+namespace Altinn.App.Core.Features.Payment.Processors;
 
 /// <summary>
 /// Represents a payment processor that handles payment-related operations.
@@ -16,17 +16,16 @@ public interface IPaymentProcessor
     /// <summary>
     /// Starts a payment process for the specified instance and order details.
     /// </summary>
-    public Task<PaymentDetails> StartPayment(Instance instance, OrderDetails orderDetails);
+    public Task<PaymentDetails> StartPayment(Instance instance, OrderDetails orderDetails, string? language);
 
     /// <summary>
     /// Terminate a payment for the specified instance and payment reference.
     /// </summary>
-    /// <returns>A task representing the asynchronous operation.</returns>
     public Task<bool> TerminatePayment(Instance instance, PaymentInformation paymentInformation);
-
+    
     /// <summary>
     /// Gets the payment status for the specified instance and payment reference.
     /// </summary>
     public Task<(PaymentStatus status, PaymentDetails paymentDetails)>
-        GetPaymentStatus(Instance instance, string paymentReference, decimal expectedTotalIncVat);
+        GetPaymentStatus(Instance instance, string paymentReference, decimal expectedTotalIncVat, string? language);
 }

@@ -3,9 +3,10 @@ using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features.Payment;
 using Altinn.App.Core.Features.Payment.Exceptions;
 using Altinn.App.Core.Features.Payment.Models;
-using Altinn.App.Core.Features.Payment.Providers.Nets;
-using Altinn.App.Core.Features.Payment.Providers.Nets.Models;
+using Altinn.App.Core.Features.Payment.Processors.Nets;
+using Altinn.App.Core.Features.Payment.Processors.Nets.Models;
 using Altinn.Platform.Storage.Interface.Models;
+using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
@@ -49,18 +50,18 @@ public class NetsPaymentProcessorTests
             {
                 Result = new NetsCreatePaymentSuccess
                 {
-                    HostedPaymentPageUrl = "http://paymenturl.com",
+                    HostedPaymentPageUrl = "https://payment-url.com",
                     PaymentId = "12345"
                 }
             });
 
         // Act
-        PaymentDetails result = await _processor.StartPayment(instance, orderDetails);
+        PaymentDetails result = await _processor.StartPayment(instance, orderDetails, "nb");
 
         // Assert
         Assert.NotNull(result);
         Assert.Equal("12345", result.PaymentId);
-        Assert.Equal("http://paymenturl.com", result.RedirectUrl);
+        Assert.Equal("https://payment-url.com/?language=nb-NO", result.RedirectUrl);
     }
 
     [Fact]
@@ -86,18 +87,18 @@ public class NetsPaymentProcessorTests
             {
                 Result = new NetsCreatePaymentSuccess
                 {
-                    HostedPaymentPageUrl = "http://paymenturl.com",
+                    HostedPaymentPageUrl = "https://payment-url.com",
                     PaymentId = "12345"
                 }
             });
 
         // Act
-        PaymentDetails result = await _processor.StartPayment(instance, orderDetails);
+        PaymentDetails result = await _processor.StartPayment(instance, orderDetails, "nb");
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal("12345", result.PaymentId);
-        Assert.Equal("http://paymenturl.com", result.RedirectUrl);
+        result.Should().NotBeNull();
+        result.PaymentId.Should().Be("12345");
+        result.RedirectUrl.Should().Be("https://payment-url.com/?language=nb-NO");
 
         _netsClientMock.Verify(
             x => x.CreatePayment(It.Is<NetsCreatePayment>(netsCreatePayment => netsCreatePayment.Order.Amount == expectedSum)), Times.Once);
@@ -119,7 +120,7 @@ public class NetsPaymentProcessorTests
             .ReturnsAsync(new HttpApiResult<NetsCreatePaymentSuccess>());
 
         // Act & Assert
-        await Assert.ThrowsAsync<PaymentException>(() => _processor.StartPayment(instance, orderDetails));
+        await Assert.ThrowsAsync<PaymentException>(() => _processor.StartPayment(instance, orderDetails, null));
     }
 
     [Fact]
@@ -174,6 +175,7 @@ public class NetsPaymentProcessorTests
         Instance instance = CreateInstance();
         const string paymentReference = "12345";
         const decimal expectedTotalIncVat = 100;
+        const string language = "nb";
 
         _netsClientMock.Setup(x => x.RetrievePayment(paymentReference))
             .ReturnsAsync(new HttpApiResult<NetsPaymentFull>
@@ -187,16 +189,17 @@ public class NetsPaymentProcessorTests
                             // All amounts sent to and received from Nets are in the lowest monetary unit for the given currency, without punctuation marks.
                             ChargedAmount = expectedTotalIncVat * 100
                         },
-                        Checkout = new() { Url = "redirect url", CancelUrl = "cancel url" }
+                        Checkout = new() { Url = "https://redirect-url.com", CancelUrl = "https://cancel-url.com" }
                     }
                 }
             });
 
         // Act
-        (PaymentStatus result, _) = await _processor.GetPaymentStatus(instance, paymentReference, expectedTotalIncVat);
+        (PaymentStatus result, PaymentDetails paymentDetails) = await _processor.GetPaymentStatus(instance, paymentReference, expectedTotalIncVat, language);
 
         // Assert
         Assert.Equal(PaymentStatus.Paid, result);
+        paymentDetails.RedirectUrl.Should().Contain("language=nb-NO");
     }
 
     [Fact]
@@ -211,7 +214,7 @@ public class NetsPaymentProcessorTests
             .ReturnsAsync(new HttpApiResult<NetsPaymentFull>());
 
         // Act & Assert
-        await Assert.ThrowsAsync<PaymentException>(() => _processor.GetPaymentStatus(instance, paymentReference, expectedTotalIncVat));
+        await Assert.ThrowsAsync<PaymentException>(() => _processor.GetPaymentStatus(instance, paymentReference, expectedTotalIncVat, null));
     }
 
     private static Instance CreateInstance()

@@ -1,4 +1,4 @@
-namespace Altinn.App.Core.Features.Payment.Providers.Nets.Models;
+namespace Altinn.App.Core.Features.Payment.Processors.Nets.Models;
 
 /// <summary>
 /// Notifications allow you to subscribe to status updates for a payment.
