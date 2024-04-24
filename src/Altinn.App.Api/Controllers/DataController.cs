@@ -183,7 +183,7 @@ namespace Altinn.App.Api.Controllers
                     bool parseSuccess = Request.Headers.TryGetValue("Content-Disposition", out StringValues headerValues);
                     string? filename = parseSuccess ? DataRestrictionValidation.GetFileNameFromHeader(headerValues) : null;
 
-                    var validationIssues = await _validationService.ValidateFileUpload(instance, dataTypeFromMetadata, fileStream.ToArray(), filename, streamContent.Headers.ContentType!.ToString(), language);
+                    var validationIssues = await _validationService.ValidateFileUpload(instance, dataTypeFromMetadata, fileStream.ToArray(), filename, streamContent.Headers.ContentType?.ToString(), language);
 
                     if (validationIssues.Exists(v => v.Severity == ValidationIssueSeverity.Error))
                     {
