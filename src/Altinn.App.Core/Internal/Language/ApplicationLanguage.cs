@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Implementation;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -18,23 +19,28 @@ namespace Altinn.App.Core.Internal.Language
 
         private readonly AppSettings _settings;
         private readonly ILogger _logger;
+        private readonly Telemetry? _telemetry;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ApplicationLanguage"/> class.
         /// </summary>
         /// <param name="settings">The app repository settings.</param>
         /// <param name="logger">A logger from the built in logger factory.</param>
+        /// <param name="telemetry">Telemetry for traces and metrics.</param>
         public ApplicationLanguage(
             IOptions<AppSettings> settings,
-            ILogger<AppResourcesSI> logger)
+            ILogger<AppResourcesSI> logger,
+            Telemetry? telemetry = null)
         {
             _settings = settings.Value;
             _logger = logger;
+            _telemetry = telemetry;
         }
 
         /// <inheritdoc />
         public async Task<List<Models.ApplicationLanguage>> GetApplicationLanguages()
         {
+            using var activity = _telemetry?.StartGetApplicationLanguageActivity();
             var pathTextsResourceFolder = Path.Join(_settings.AppBasePath, _settings.ConfigurationFolder, _settings.TextFolder);
             var directoryInfo = new DirectoryInfo(pathTextsResourceFolder);
             var textResourceFilesInDirectory = directoryInfo.GetFiles();
