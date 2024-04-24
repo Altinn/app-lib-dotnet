@@ -29,7 +29,7 @@ public class UserActionResult
     /// Gets or sets a value indicating whether the user action was a success
     /// </summary>
     public bool Success { get; init; }
-    
+
     /// <summary>
     /// Indicates the type of result
     /// </summary>
