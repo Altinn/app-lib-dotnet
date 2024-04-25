@@ -50,16 +50,21 @@ public class SmsNotificationClientTests
             .Setup<Task<HttpResponseMessage>>(
                 "SendAsync",
                 ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent("{\"orderId\": \"order123\"}", Encoding.UTF8, "application/json")
-            })
-            .Callback<HttpRequestMessage, CancellationToken>(async (request, token) =>
-            {
-                capturedRequest = request;
-                capturedContent = await request.Content!.ReadAsStringAsync(token);
-            });
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(
+                new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("{\"orderId\": \"order123\"}", Encoding.UTF8, "application/json")
+                }
+            )
+            .Callback<HttpRequestMessage, CancellationToken>(
+                async (request, token) =>
+                {
+                    capturedRequest = request;
+                    capturedContent = await request.Content!.ReadAsStringAsync(token);
+                }
+            );
 
         using var httpClient = new HttpClient(handlerMock.Object);
 
@@ -83,7 +88,9 @@ public class SmsNotificationClientTests
 
             var activity = activities[^1];
             activity.OperationName.Should().Be(Telemetry.Notifications.OrderTraceName);
-            activity.GetTagItem(Telemetry.Notifications.TypeLabel).Should()
+            activity
+                .GetTagItem(Telemetry.Notifications.TypeLabel)
+                .Should()
                 .Be(Telemetry.Notifications.OrderType.Sms.ToStringFast());
 
             var measurements = telemetry.CapturedMetrics.GetValueOrDefault(Telemetry.Notifications.OrderMetricName);
@@ -91,9 +98,13 @@ public class SmsNotificationClientTests
             measurements.Count.Should().Be(1);
             var measurement = measurements[^1];
             measurement.Value.Should().Be(1);
-            measurement.Tags[Telemetry.Notifications.TypeLabel].Should()
+            measurement
+                .Tags[Telemetry.Notifications.TypeLabel]
+                .Should()
                 .Be(Telemetry.Notifications.OrderType.Sms.ToStringFast());
-            measurement.Tags[Telemetry.Notifications.ResultLabel].Should()
+            measurement
+                .Tags[Telemetry.Notifications.ResultLabel]
+                .Should()
                 .Be(Telemetry.Notifications.OrderResult.Success.ToStringFast());
         }
     }
@@ -108,14 +119,12 @@ public class SmsNotificationClientTests
             .Setup<Task<HttpResponseMessage>>(
                 "SendAsync",
                 ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
+                ItExpr.IsAny<CancellationToken>()
+            )
             .ReturnsAsync(() =>
             {
                 var jsonContent = new StringContent("{\"orderId\": \"order123\"}", Encoding.UTF8, "application/json");
-                var response = new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = jsonContent,
-                };
+                var response = new HttpResponseMessage(HttpStatusCode.OK) { Content = jsonContent, };
                 return response;
             });
 
@@ -124,10 +133,7 @@ public class SmsNotificationClientTests
         using var fixture = CreateFixture(httpClient);
         var (_, client, _) = fixture;
 
-        var recipients = new List<SmsRecipient>()
-        {
-            new("test.testesen@testdirektoratet.no")
-        };
+        var recipients = new List<SmsRecipient>() { new("test.testesen@testdirektoratet.no") };
 
         var smsNotification = new SmsNotification
         {
@@ -156,14 +162,12 @@ public class SmsNotificationClientTests
             .Setup<Task<HttpResponseMessage>>(
                 "SendAsync",
                 ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
+                ItExpr.IsAny<CancellationToken>()
+            )
             .ReturnsAsync(() =>
             {
                 var jsonContent = new StringContent(string.Empty, Encoding.UTF8, "application/json");
-                var response = new HttpResponseMessage(HttpStatusCode.BadRequest)
-                {
-                    Content = jsonContent,
-                };
+                var response = new HttpResponseMessage(HttpStatusCode.BadRequest) { Content = jsonContent, };
                 return response;
             });
 
@@ -172,10 +176,7 @@ public class SmsNotificationClientTests
         using var fixture = CreateFixture(httpClient);
         var (_, client, _) = fixture;
 
-        var recipients = new List<SmsRecipient>()
-        {
-            new("test.testesen@testdirektoratet.no")
-        };
+        var recipients = new List<SmsRecipient>() { new("test.testesen@testdirektoratet.no") };
 
         var smsNotification = new SmsNotification
         {
@@ -203,14 +204,12 @@ public class SmsNotificationClientTests
             .Setup<Task<HttpResponseMessage>>(
                 "SendAsync",
                 ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
+                ItExpr.IsAny<CancellationToken>()
+            )
             .ReturnsAsync(() =>
             {
                 var jsonContent = new StringContent("{\"orderId\": 1234}", Encoding.UTF8, "application/json");
-                var response = new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = jsonContent,
-                };
+                var response = new HttpResponseMessage(HttpStatusCode.OK) { Content = jsonContent, };
                 return response;
             });
 
@@ -219,10 +218,7 @@ public class SmsNotificationClientTests
         using var fixture = CreateFixture(httpClient);
         var (_, client, _) = fixture;
 
-        var recipients = new List<SmsRecipient>()
-        {
-            new("test.testesen@testdirektoratet.no")
-        };
+        var recipients = new List<SmsRecipient>() { new("test.testesen@testdirektoratet.no") };
 
         var smsNotification = new SmsNotification
         {
@@ -298,13 +294,11 @@ public class SmsNotificationClientTests
         var appId = Guid.NewGuid().ToString();
 
         var appDataMock = new Mock<IAppMetadata>();
-        appDataMock.Setup(a => a.GetApplicationMetadata())
-            .ReturnsAsync(new ApplicationMetadata($"ttd/{appId}"));
+        appDataMock.Setup(a => a.GetApplicationMetadata()).ReturnsAsync(new ApplicationMetadata($"ttd/{appId}"));
         services.AddSingleton<IAppMetadata>(appDataMock.Object);
 
         var accessTokenGenerator = new Mock<IAccessTokenGenerator>();
-        accessTokenGenerator.Setup(a => a.GenerateAccessToken(It.IsAny<string>(), It.IsAny<string>()))
-            .Returns("token");
+        accessTokenGenerator.Setup(a => a.GenerateAccessToken(It.IsAny<string>(), It.IsAny<string>())).Returns("token");
         services.AddSingleton<IAccessTokenGenerator>(accessTokenGenerator.Object);
 
         if (withTelemetry)
@@ -314,18 +308,20 @@ public class SmsNotificationClientTests
 
         services.AddTransient<ISmsNotificationClient, SmsNotificationClient>();
 
-        var sp = services.BuildServiceProvider(new ServiceProviderOptions
-        {
-            ValidateOnBuild = true,
-            ValidateScopes = true,
-        });
+        var sp = services.BuildServiceProvider(
+            new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true, }
+        );
 
         var client = (SmsNotificationClient)sp.GetRequiredService<ISmsNotificationClient>();
         var telemetryFake = sp.GetService<TelemetryFake>();
         return new(sp, client, telemetryFake);
     }
 
-    private readonly record struct Fixture(IServiceProvider ServiceProvider, SmsNotificationClient Client, TelemetryFake? TelemetryFake) : IDisposable
+    private readonly record struct Fixture(
+        IServiceProvider ServiceProvider,
+        SmsNotificationClient Client,
+        TelemetryFake? TelemetryFake
+    ) : IDisposable
     {
         public void Dispose()
         {

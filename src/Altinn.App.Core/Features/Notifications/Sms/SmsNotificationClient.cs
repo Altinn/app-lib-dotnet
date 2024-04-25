@@ -27,7 +27,8 @@ internal sealed class SmsNotificationClient : ISmsNotificationClient
         IOptions<PlatformSettings> platformSettings,
         IAppMetadata appMetadata,
         IAccessTokenGenerator accessTokenGenerator,
-        Telemetry? telemetry = null)
+        Telemetry? telemetry = null
+    )
     {
         _logger = logger;
         _httpClient = httpClient;
@@ -65,7 +66,9 @@ internal sealed class SmsNotificationClient : ISmsNotificationClient
 
             if (httpResponseMessage.IsSuccessStatusCode)
             {
-                SmsNotificationOrderResponse? orderResponse = JsonSerializer.Deserialize<SmsNotificationOrderResponse>(httpContent);
+                SmsNotificationOrderResponse? orderResponse = JsonSerializer.Deserialize<SmsNotificationOrderResponse>(
+                    httpContent
+                );
                 if (orderResponse is null)
                     throw new JsonException("Couldn't deserialize SMS notification order response");
 
@@ -80,7 +83,12 @@ internal sealed class SmsNotificationClient : ISmsNotificationClient
         }
         catch (Exception e)
         {
-            var ex = new SmsNotificationException($"Something went wrong when processing the SMS notification order", httpResponseMessage, httpContent, e);
+            var ex = new SmsNotificationException(
+                $"Something went wrong when processing the SMS notification order",
+                httpResponseMessage,
+                httpContent,
+                e
+            );
             _logger.LogError(ex, "Error when processing SMS notification order");
 
             _telemetry?.RecordNotificationOrder(_orderType, Telemetry.Notifications.OrderResult.Error);

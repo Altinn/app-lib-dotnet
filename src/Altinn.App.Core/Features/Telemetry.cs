@@ -102,14 +102,17 @@ public sealed partial class Telemetry : IDisposable
         /// Label for the party ID of the instance owner.
         /// </summary>
         public static readonly string InstanceOwnerPartyId = "instance.owner_party_id";
+
         /// <summary>
         /// Label for the guid that identifies the instance.
         /// </summary>
         public static readonly string InstanceGuid = "instance.guid";
+
         /// <summary>
         /// Label for the guid that identifies the data.
         /// </summary>
         public static readonly string DataGuid = "data.guid";
+
         /// <summary>
         /// Label for the ID of the task.
         /// </summary>

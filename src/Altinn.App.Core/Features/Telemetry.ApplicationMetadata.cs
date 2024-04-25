@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using static Altinn.App.Core.Features.Telemetry.ApplicationMetadata;
+
 namespace Altinn.App.Core.Features;
 
 public partial class Telemetry
@@ -9,16 +10,19 @@ public partial class Telemetry
         var activity = ActivitySource.StartActivity(TraceNameGet);
         return activity;
     }
+
     internal Activity? StartGetApplicationXACMLPolicyActivity()
     {
         var activity = ActivitySource.StartActivity(TraceNameGetXACMLPolicy);
         return activity;
     }
+
     internal Activity? StartGetApplicationBPMNProcessActivity()
     {
         var activity = ActivitySource.StartActivity(TraceNameGetBPMNProcess);
         return activity;
     }
+
     internal static class ApplicationMetadata
     {
         private const string _prefix = "ApplicationMetadata";

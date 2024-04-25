@@ -27,17 +27,15 @@ namespace Altinn.App.Core.Internal.Process.EventHandlers
         /// <summary>
         /// Execute the event handler logic.
         /// </summary>
-        /// <param name="instanceEvent"></param>
-        /// <param name="instance"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentException"></exception>
         public async Task Execute(InstanceEvent instanceEvent, Instance instance)
         {
             string? endEvent = instanceEvent.ProcessInfo?.EndEvent;
 
             if (string.IsNullOrEmpty(endEvent))
             {
-                throw new ArgumentException($"End event is not set for instance event {instanceEvent.EventType} {instanceEvent.Id} on instance {instance.Id}.");
+                throw new ArgumentException(
+                    $"End event is not set for instance event {instanceEvent.EventType} {instanceEvent.Id} on instance {instance.Id}."
+                );
             }
 
             await _appEvents.OnEndAppEvent(endEvent, instance);

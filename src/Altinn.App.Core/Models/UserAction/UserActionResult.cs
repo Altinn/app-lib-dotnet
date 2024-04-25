@@ -1,4 +1,5 @@
 using Altinn.App.Core.Models.Process;
+
 namespace Altinn.App.Core.Models.UserAction;
 
 /// <summary>
@@ -10,10 +11,12 @@ public enum ResultType
     /// The user action succeeded
     /// </summary>
     Success,
+
     /// <summary>
     /// The user action failed
     /// </summary>
     Failure,
+
     /// <summary>
     /// The client should redirect the user to a new url
     /// </summary>
@@ -28,7 +31,12 @@ public class UserActionResult
     /// <summary>
     /// Gets or sets a value indicating whether the user action was a success
     /// </summary>
-    public ResultType ResultType { get; init; }
+    public bool Success { get; init; }
+
+    /// <summary>
+    /// Indicates the type of result
+    /// </summary>
+    public ResultType ResultType { get; set; }
 
     /// <summary>
     /// Gets or sets a dictionary of updated data models. Key should be elementId and value should be the updated data model
@@ -54,6 +62,7 @@ public class UserActionResult
     /// If this is set, the client should redirect to this url
     /// </summary>
     public string? RedirectUrl { get; set; }
+
     /// <summary>
     /// Creates a success result
     /// </summary>
@@ -61,19 +70,23 @@ public class UserActionResult
     /// <returns></returns>
     public static UserActionResult SuccessResult(List<ClientAction>? clientActions = null)
     {
-        var userActionResult = new UserActionResult
+        return new UserActionResult
         {
+            Success = true,
             ResultType = ResultType.Success,
             ClientActions = clientActions
         };
-        return userActionResult;
     }
 
     /// <summary>
     /// Creates a failure result
     /// </summary>
     /// <returns></returns>
-    public static UserActionResult FailureResult(ActionError error, List<ClientAction>? clientActions = null, ProcessErrorType errorType = ProcessErrorType.Internal)
+    public static UserActionResult FailureResult(
+        ActionError error,
+        List<ClientAction>? clientActions = null,
+        ProcessErrorType errorType = ProcessErrorType.Internal
+    )
     {
         return new UserActionResult
         {
@@ -93,6 +106,7 @@ public class UserActionResult
     {
         return new UserActionResult
         {
+            Success = true,
             ResultType = ResultType.Redirect,
             RedirectUrl = redirectUrl
         };

@@ -35,10 +35,7 @@ internal sealed record TelemetryFake : IDisposable
     internal TelemetryFake(string org = "ttd", string name = "test", string version = "v1")
     {
         var appId = new AppIdentifier(org, name);
-        var options = new AppSettings
-        {
-            AppVersion = version,
-        };
+        var options = new AppSettings { AppVersion = version, };
 
         Object = new Telemetry(appId, Options.Create(options));
 
@@ -49,7 +46,8 @@ internal sealed record TelemetryFake : IDisposable
                 var sameSource = ReferenceEquals(activitySource, Object.ActivitySource);
                 return sameSource;
             },
-            Sample = (ref ActivityCreationOptions<ActivityContext> options) => ActivitySamplingResult.AllDataAndRecorded,
+            Sample = (ref ActivityCreationOptions<ActivityContext> options) =>
+                ActivitySamplingResult.AllDataAndRecorded,
             ActivityStarted = activity =>
             {
                 _activities.Add(activity);
@@ -71,25 +69,27 @@ internal sealed record TelemetryFake : IDisposable
                 listener.EnableMeasurementEvents(instrument, this);
             },
         };
-        MeterListener.SetMeasurementEventCallback<long>(static (instrument, measurement, tagSpan, state) =>
-        {
-            Debug.Assert(state is not null);
-            var self = (TelemetryFake)state!;
-            Debug.Assert(self._metricValues[instrument.Name] is List<MetricMeasurement>);
-            var measurements = (List<MetricMeasurement>)self._metricValues[instrument.Name];
-            var tags = new Dictionary<string, object?>(tagSpan.Length);
-            for (int i = 0; i < tagSpan.Length; i++)
+        MeterListener.SetMeasurementEventCallback<long>(
+            static (instrument, measurement, tagSpan, state) =>
             {
-                tags.Add(tagSpan[i].Key, tagSpan[i].Value);
-            }
+                Debug.Assert(state is not null);
+                var self = (TelemetryFake)state!;
+                Debug.Assert(self._metricValues[instrument.Name] is List<MetricMeasurement>);
+                var measurements = (List<MetricMeasurement>)self._metricValues[instrument.Name];
+                var tags = new Dictionary<string, object?>(tagSpan.Length);
+                for (int i = 0; i < tagSpan.Length; i++)
+                {
+                    tags.Add(tagSpan[i].Key, tagSpan[i].Value);
+                }
 
-            foreach (var t in instrument.Tags ?? [])
-            {
-                tags.Add(t.Key, t.Value);
-            }
+                foreach (var t in instrument.Tags ?? [])
+                {
+                    tags.Add(t.Key, t.Value);
+                }
 
-            measurements.Add(new(measurement, tags));
-        });
+                measurements.Add(new(measurement, tags));
+            }
+        );
         MeterListener.Start();
     }
 
@@ -121,7 +121,7 @@ internal sealed record TelemetryFake : IDisposable
     }
 }
 
-internal static class TelemetryDI 
+internal static class TelemetryDI
 {
     internal static IServiceCollection AddTelemetryFake(this IServiceCollection services)
     {
@@ -131,7 +131,7 @@ internal static class TelemetryDI
     }
 }
 
-public class TelemetryDITests 
+public class TelemetryDITests
 {
     [Theory]
     [InlineData(true)]
@@ -143,11 +143,9 @@ public class TelemetryDITests
 
         var services = new ServiceCollection();
         services.AddTelemetryFake();
-        var sp = services.BuildServiceProvider(new ServiceProviderOptions
-        {
-            ValidateOnBuild = true,
-            ValidateScopes = true,
-        });
+        var sp = services.BuildServiceProvider(
+            new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true, }
+        );
 
         if (materialize)
         {
@@ -158,7 +156,7 @@ public class TelemetryDITests
             fake.IsDisposed.Should().BeTrue();
             scope.IsDisposed.Should().BeTrue();
         }
-        else 
+        else
         {
             scope.IsDisposed.Should().BeFalse();
             sp.Dispose();

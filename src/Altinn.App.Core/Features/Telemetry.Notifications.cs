@@ -1,9 +1,9 @@
-using System.Diagnostics;
-using NetEscapades.EnumGenerators;
-using Tag = System.Collections.Generic.KeyValuePair<string, object?>;
-using static Altinn.App.Core.Features.Telemetry.Notifications;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using NetEscapades.EnumGenerators;
+using static Altinn.App.Core.Features.Telemetry.Notifications;
+using Tag = System.Collections.Generic.KeyValuePair<string, object?>;
 
 namespace Altinn.App.Core.Features;
 
@@ -11,11 +11,7 @@ public partial class Telemetry
 {
     private void InitNotifications()
     {
-        _counters.Add(OrderMetricName, Meter.CreateCounter<long>(
-            OrderMetricName,
-            unit: null,
-            description: null
-        ));
+        _counters.Add(OrderMetricName, Meter.CreateCounter<long>(OrderMetricName, unit: null, description: null));
     }
 
     internal Activity? StartNotificationOrderActivity(OrderType type)
@@ -45,6 +41,7 @@ public partial class Telemetry
         {
             [Display(Name = "success")]
             Success,
+
             [Display(Name = "error")]
             Error
         }
@@ -54,6 +51,7 @@ public partial class Telemetry
         {
             [Display(Name = "sms")]
             Sms,
+
             [Display(Name = "email")]
             Email,
         }

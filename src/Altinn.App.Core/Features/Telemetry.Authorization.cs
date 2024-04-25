@@ -3,49 +3,59 @@ using Altinn.App.Core.Internal.Process.Authorization;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models;
 using static Altinn.App.Core.Features.Telemetry.Authorization;
+
 namespace Altinn.App.Core.Features;
 
 public partial class Telemetry
 {
-
     internal Activity? StartGetPartyListActivity(int userId)
     {
         var activity = ActivitySource.StartActivity(TraceNameGet);
-        if(activity is not null)
+        if (activity is not null)
         {
             activity.SetTag(AuthorizationLabels.UserId, userId);
         }
         return activity;
     }
+
     internal Activity? StartValidateSelectedPartyActivity(int userId, int partyId)
     {
         var activity = ActivitySource.StartActivity(TraceNameValidate);
-        if(activity is not null)
+        if (activity is not null)
         {
             activity.SetTag(AuthorizationLabels.UserId, userId);
             activity.SetTag(Labels.InstanceOwnerPartyId, partyId); // TODO: verify that this party id is indeed the instance owner party id
         }
         return activity;
     }
-    internal Activity? StartAuthorizeActionActivity(InstanceIdentifier instanceIdentifier, string action, string? taskId = null)
+
+    internal Activity? StartAuthorizeActionActivity(
+        InstanceIdentifier instanceIdentifier,
+        string action,
+        string? taskId = null
+    )
     {
         var activity = ActivitySource.StartActivity(TraceNameAuthorize);
-        if(activity is not null)
+        if (activity is not null)
         {
             activity.SetTag(Labels.InstanceGuid, instanceIdentifier.InstanceGuid.ToString());
             activity.SetTag(Labels.InstanceOwnerPartyId, instanceIdentifier.InstanceOwnerPartyId.ToString());
             activity.SetTag(AuthorizationLabels.Action, action);
-            if(taskId is not null)
+            if (taskId is not null)
             {
                 activity.SetTag(Labels.TaskId, taskId);
             }
         }
         return activity;
     }
-    internal Activity? StartAuthorizeActionsActivity(Platform.Storage.Interface.Models.Instance instance, List<AltinnAction> actions)
+
+    internal Activity? StartAuthorizeActionsActivity(
+        Platform.Storage.Interface.Models.Instance instance,
+        List<AltinnAction> actions
+    )
     {
         var activity = ActivitySource.StartActivity(TraceNameAuthorizeMultiple);
-        if(activity is not null)
+        if (activity is not null)
         {
             Guid InstanceGuid = Guid.Parse(instance.Id.Split('/')[1]);
             activity.SetTag(Labels.InstanceGuid, InstanceGuid);
@@ -55,21 +65,27 @@ public partial class Telemetry
         }
         return activity;
     }
-    internal Activity? StartIsAuthorizerActivity(IUserActionAuthorizerProvider authorizer, string? taskId, string action)
+
+    internal Activity? StartIsAuthorizerActivity(
+        IUserActionAuthorizerProvider authorizer,
+        string? taskId,
+        string action
+    )
     {
         var activity = ActivitySource.StartActivity(TraceNameIsAuthorizer);
-        if(activity is not null)
+        if (activity is not null)
         {
-            if(taskId is not null)
+            if (taskId is not null)
                 activity.SetTag(Labels.TaskId, taskId);
-            if(authorizer.TaskId is not null)
+            if (authorizer.TaskId is not null)
                 activity.SetTag(AuthorizationLabels.AuthorizerTaskId, authorizer.TaskId);
-            if(authorizer.Action is not null)
+            if (authorizer.Action is not null)
                 activity.SetTag(AuthorizationLabels.AuthorizerAction, authorizer.Action);
             activity.SetTag(AuthorizationLabels.Action, action);
         }
         return activity;
     }
+
     internal static class Authorization
     {
         private const string _prefix = "Authorization";
@@ -79,7 +95,6 @@ public partial class Telemetry
         internal const string TraceNameAuthorize = $"{_prefix}.AuthorizeAction";
         internal const string TraceNameAuthorizeMultiple = $"{_prefix}.AuthorizeActions";
         internal const string TraceNameIsAuthorizer = $"{_prefix}.IsAuthorizerForTaskAndAction";
-
     }
 
     internal static class AuthorizationLabels
@@ -89,6 +104,5 @@ public partial class Telemetry
         internal const string ActionId = "authorization.actionid";
         internal const string AuthorizerAction = "authorization.authorizer.action";
         internal const string AuthorizerTaskId = "authorization.authorizer.taskid";
-
     }
 }

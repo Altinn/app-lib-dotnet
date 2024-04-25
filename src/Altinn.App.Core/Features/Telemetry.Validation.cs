@@ -6,11 +6,12 @@ namespace Altinn.App.Core.Features;
 
 public partial class Telemetry
 {
-    private void InitValidation()
-    {
-    }
+    private void InitValidation() { }
 
-    internal Activity? StartValidateInstanceAtTaskActivity(Platform.Storage.Interface.Models.Instance instance, string taskId)
+    internal Activity? StartValidateInstanceAtTaskActivity(
+        Platform.Storage.Interface.Models.Instance instance,
+        string taskId
+    )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(taskId);
 
@@ -18,7 +19,7 @@ public partial class Telemetry
         if (activity is not null)
         {
             activity.SetTag(Labels.TaskId, taskId);
-            
+
             TryAddInstanceId(activity, instance);
         }
         return activity;
@@ -27,7 +28,7 @@ public partial class Telemetry
     internal Activity? StartRunTaskValidatorActivity(ITaskValidator validator)
     {
         var activity = ActivitySource.StartActivity(TraceNameRunTaskValidator);
-        
+
         if (activity is not null)
         {
             activity.SetTag(LabelValidatorType, validator.GetType().Name);
@@ -36,7 +37,10 @@ public partial class Telemetry
         return activity;
     }
 
-    internal Activity? StartValidateDataElementActivity(Platform.Storage.Interface.Models.Instance instance, DataElement dataElement)
+    internal Activity? StartValidateDataElementActivity(
+        Platform.Storage.Interface.Models.Instance instance,
+        DataElement dataElement
+    )
     {
         var activity = ActivitySource.StartActivity(TraceNameValidateDataElement);
         if (activity is not null)
@@ -59,10 +63,13 @@ public partial class Telemetry
         return activity;
     }
 
-    internal Activity? StartValidateFormDataActivity(Platform.Storage.Interface.Models.Instance instance, DataElement dataElement)
+    internal Activity? StartValidateFormDataActivity(
+        Platform.Storage.Interface.Models.Instance instance,
+        DataElement dataElement
+    )
     {
         var activity = ActivitySource.StartActivity(TraceNameValidateFormData);
-        
+
         if (activity is not null)
         {
             TryAddInstanceId(activity, instance);

@@ -47,7 +47,11 @@ namespace Altinn.App.Api.Extensions
         /// <param name="services">The <see cref="IServiceCollection"/> being built.</param>
         /// <param name="config">A reference to the current <see cref="IConfiguration"/> object.</param>
         /// <param name="env">A reference to the current <see cref="IWebHostEnvironment"/> object.</param>
-        public static void AddAltinnAppServices(this IServiceCollection services, IConfiguration config, IWebHostEnvironment env)
+        public static void AddAltinnAppServices(
+            this IServiceCollection services,
+            IConfiguration config,
+            IWebHostEnvironment env
+        )
         {
             services.AddMemoryCache();
             services.AddHealthChecks().AddCheck<HealthCheck>("default_health_check");
@@ -60,7 +64,10 @@ namespace Altinn.App.Api.Extensions
             var useOpenTelemetrySetting = config["AppSettings:UseOpenTelemetry"];
 
             // Use Application Insights as default, opt in to use Open Telemetry
-            if (string.IsNullOrEmpty(useOpenTelemetrySetting) || useOpenTelemetrySetting.Equals("false", StringComparison.OrdinalIgnoreCase))
+            if (
+                string.IsNullOrEmpty(useOpenTelemetrySetting)
+                || useOpenTelemetrySetting.Equals("false", StringComparison.OrdinalIgnoreCase)
+            )
             {
                 AddApplicationInsights(services, config, env);
             }
@@ -96,38 +103,51 @@ namespace Altinn.App.Api.Extensions
         /// <param name="services">Services</param>
         /// <param name="config">Config</param>
         /// <param name="env">Environment</param>
-        internal static void AddApplicationInsights(IServiceCollection services, IConfiguration config, IWebHostEnvironment env)
+        internal static void AddApplicationInsights(
+            IServiceCollection services,
+            IConfiguration config,
+            IWebHostEnvironment env
+        )
         {
             string? applicationInsightsKey = env.IsDevelopment()
                 ? config["ApplicationInsights:InstrumentationKey"]
                 : Environment.GetEnvironmentVariable("ApplicationInsights__InstrumentationKey");
-            string? applicationInsightsConnectionString = env.IsDevelopment() ?
-                config["ApplicationInsights:ConnectionString"]
+            string? applicationInsightsConnectionString = env.IsDevelopment()
+                ? config["ApplicationInsights:ConnectionString"]
                 : Environment.GetEnvironmentVariable("ApplicationInsights__ConnectionString");
 
-            if (!string.IsNullOrEmpty(applicationInsightsKey) || !string.IsNullOrEmpty(applicationInsightsConnectionString))
+            if (
+                !string.IsNullOrEmpty(applicationInsightsKey)
+                || !string.IsNullOrEmpty(applicationInsightsConnectionString)
+            )
             {
-                services.AddApplicationInsightsTelemetry((options) =>
-                {
-                    if (string.IsNullOrEmpty(applicationInsightsConnectionString))
+                services.AddApplicationInsightsTelemetry(
+                    (options) =>
                     {
+                        if (string.IsNullOrEmpty(applicationInsightsConnectionString))
+                        {
 #pragma warning disable CS0618 // Type or member is obsolete
-                        // Set instrumentationKey for compatibility if connectionString does not exist.
-                        options.InstrumentationKey = applicationInsightsKey;
+                            // Set instrumentationKey for compatibility if connectionString does not exist.
+                            options.InstrumentationKey = applicationInsightsKey;
 #pragma warning restore CS0618 // Type or member is obsolete
+                        }
+                        else
+                        {
+                            options.ConnectionString = applicationInsightsConnectionString;
+                        }
                     }
-                    else
-                    {
-                        options.ConnectionString = applicationInsightsConnectionString;
-                    }
-                });
+                );
                 services.AddApplicationInsightsTelemetryProcessor<IdentityTelemetryFilter>();
                 services.AddApplicationInsightsTelemetryProcessor<HealthTelemetryFilter>();
                 services.AddSingleton<ITelemetryInitializer, CustomTelemetryInitializer>();
             }
         }
 
-        private static void AddOpenTelemetry(IServiceCollection services, IConfiguration config, IWebHostEnvironment env)
+        private static void AddOpenTelemetry(
+            IServiceCollection services,
+            IConfiguration config,
+            IWebHostEnvironment env
+        )
         {
             var appId = StartupHelper.GetApplicationId();
             var appVersion = config.GetSection("AppSettings").GetValue<string>("AppVersion");
@@ -138,7 +158,9 @@ namespace Altinn.App.Api.Extensions
                     r.AddService(
                         serviceName: appId,
                         serviceVersion: appVersion,
-                        serviceInstanceId: Environment.MachineName))
+                        serviceInstanceId: Environment.MachineName
+                    )
+                )
                 .WithTracing(tpbuilder =>
                 {
                     if (env.IsDevelopment())
@@ -166,15 +188,17 @@ namespace Altinn.App.Api.Extensions
                         .AddHttpClientInstrumentation()
                         .AddAspNetCoreInstrumentation()
                         .AddOtlpExporter(
-                        (_, readerOptions) =>
-                        {
-                            if (env.IsDevelopment())
+                            (_, readerOptions) =>
                             {
-                                // Export interval should be set by env var when running in real environments
-                                // but locally it's nice to receive metrics more often than the default 60s
-                                readerOptions.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds = 10_000;
+                                if (env.IsDevelopment())
+                                {
+                                    // Export interval should be set by env var when running in real environments
+                                    // but locally it's nice to receive metrics more often than the default 60s
+                                    readerOptions.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds =
+                                        10_000;
+                                }
                             }
-                        });
+                        );
                 });
         }
 
@@ -183,16 +207,33 @@ namespace Altinn.App.Api.Extensions
             services.AddAuthorization(options =>
             {
                 options.AddPolicy("InstanceRead", policy => policy.Requirements.Add(new AppAccessRequirement("read")));
-                options.AddPolicy("InstanceWrite", policy => policy.Requirements.Add(new AppAccessRequirement("write")));
-                options.AddPolicy("InstanceDelete", policy => policy.Requirements.Add(new AppAccessRequirement("delete")));
-                options.AddPolicy("InstanceInstantiate", policy => policy.Requirements.Add(new AppAccessRequirement("instantiate")));
-                options.AddPolicy("InstanceComplete", policy => policy.Requirements.Add(new AppAccessRequirement("complete")));
+                options.AddPolicy(
+                    "InstanceWrite",
+                    policy => policy.Requirements.Add(new AppAccessRequirement("write"))
+                );
+                options.AddPolicy(
+                    "InstanceDelete",
+                    policy => policy.Requirements.Add(new AppAccessRequirement("delete"))
+                );
+                options.AddPolicy(
+                    "InstanceInstantiate",
+                    policy => policy.Requirements.Add(new AppAccessRequirement("instantiate"))
+                );
+                options.AddPolicy(
+                    "InstanceComplete",
+                    policy => policy.Requirements.Add(new AppAccessRequirement("complete"))
+                );
             });
         }
 
-        private static void AddAuthenticationScheme(IServiceCollection services, IConfiguration config, IWebHostEnvironment env)
+        private static void AddAuthenticationScheme(
+            IServiceCollection services,
+            IConfiguration config,
+            IWebHostEnvironment env
+        )
         {
-            services.AddAuthentication(JwtCookieDefaults.AuthenticationScheme)
+            services
+                .AddAuthentication(JwtCookieDefaults.AuthenticationScheme)
                 .AddJwtCookie(options =>
                 {
                     options.TokenValidationParameters = new TokenValidationParameters

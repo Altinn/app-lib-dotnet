@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using static Altinn.App.Core.Features.Telemetry.ApplicationLanguage;
+
 namespace Altinn.App.Core.Features;
 
 public partial class Telemetry
@@ -9,6 +10,7 @@ public partial class Telemetry
         var activity = ActivitySource.StartActivity(TraceNameGet);
         return activity;
     }
+
     internal static class ApplicationLanguage
     {
         private const string _prefix = "ApplicationLanguage";

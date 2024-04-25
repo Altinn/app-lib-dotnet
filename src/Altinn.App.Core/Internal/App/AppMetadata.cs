@@ -12,12 +12,13 @@ namespace Altinn.App.Core.Internal.App
     /// </summary>
     public class AppMetadata : IAppMetadata
     {
-        private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            PropertyNameCaseInsensitive = true,
-            AllowTrailingCommas = true
-        };
+        private static readonly JsonSerializerOptions _jsonSerializerOptions =
+            new()
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                PropertyNameCaseInsensitive = true,
+                AllowTrailingCommas = true
+            };
 
         private readonly AppSettings _settings;
         private readonly IFrontendFeatures _frontendFeatures;
@@ -33,7 +34,8 @@ namespace Altinn.App.Core.Internal.App
         public AppMetadata(
             IOptions<AppSettings> settings,
             IFrontendFeatures frontendFeatures,
-            Telemetry? telemetry = null)
+            Telemetry? telemetry = null
+        )
         {
             _settings = settings.Value;
             _frontendFeatures = frontendFeatures;
@@ -52,16 +54,25 @@ namespace Altinn.App.Core.Internal.App
                 return _application;
             }
 
-            string filename = Path.Join(_settings.AppBasePath, _settings.ConfigurationFolder, _settings.ApplicationMetadataFileName);
+            string filename = Path.Join(
+                _settings.AppBasePath,
+                _settings.ConfigurationFolder,
+                _settings.ApplicationMetadataFileName
+            );
             try
             {
                 if (File.Exists(filename))
                 {
                     using FileStream fileStream = File.OpenRead(filename);
-                    var application = await JsonSerializer.DeserializeAsync<ApplicationMetadata>(fileStream, _jsonSerializerOptions);
+                    var application = await JsonSerializer.DeserializeAsync<ApplicationMetadata>(
+                        fileStream,
+                        _jsonSerializerOptions
+                    );
                     if (application == null)
                     {
-                        throw new ApplicationConfigException($"Deserialization returned null, Could indicate problems with deserialization of {filename}");
+                        throw new ApplicationConfigException(
+                            $"Deserialization returned null, Could indicate problems with deserialization of {filename}"
+                        );
                     }
 
                     application.Features = await _frontendFeatures.GetFrontendFeatures();
@@ -74,7 +85,10 @@ namespace Altinn.App.Core.Internal.App
             }
             catch (JsonException ex)
             {
-                throw new ApplicationConfigException($"Something went wrong when parsing application metadata file: {filename}", ex);
+                throw new ApplicationConfigException(
+                    $"Something went wrong when parsing application metadata file: {filename}",
+                    ex
+                );
             }
         }
 
@@ -82,7 +96,12 @@ namespace Altinn.App.Core.Internal.App
         public async Task<string> GetApplicationXACMLPolicy()
         {
             using var activity = _telemetry?.StartGetApplicationXACMLPolicyActivity();
-            string filename = Path.Join(_settings.AppBasePath, _settings.ConfigurationFolder, _settings.AuthorizationFolder, _settings.ApplicationXACMLPolicyFileName);
+            string filename = Path.Join(
+                _settings.AppBasePath,
+                _settings.ConfigurationFolder,
+                _settings.AuthorizationFolder,
+                _settings.ApplicationXACMLPolicyFileName
+            );
             if (File.Exists(filename))
             {
                 return await File.ReadAllTextAsync(filename, Encoding.UTF8);
@@ -95,7 +114,12 @@ namespace Altinn.App.Core.Internal.App
         public async Task<string> GetApplicationBPMNProcess()
         {
             using var activity = _telemetry?.StartGetApplicationBPMNProcessActivity();
-            string filename = Path.Join(_settings.AppBasePath, _settings.ConfigurationFolder, _settings.ProcessFolder, _settings.ProcessFileName);
+            string filename = Path.Join(
+                _settings.AppBasePath,
+                _settings.ConfigurationFolder,
+                _settings.ProcessFolder,
+                _settings.ProcessFileName
+            );
             if (File.Exists(filename))
             {
                 return await File.ReadAllTextAsync(filename, Encoding.UTF8);
