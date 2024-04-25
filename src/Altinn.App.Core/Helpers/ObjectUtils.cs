@@ -21,7 +21,9 @@ public static class ObjectUtils
         var type = model.GetType();
         if (depth < 0)
         {
-            throw new Exception($"Recursion depth exceeded. {type.Name} in {type.Namespace} likely causes infinite recursion.");
+            throw new Exception(
+                $"Recursion depth exceeded. {type.Name} in {type.Namespace} likely causes infinite recursion."
+            );
         }
 
         if (type.Namespace?.StartsWith("System") == true)
@@ -84,7 +86,9 @@ public static class ObjectUtils
         var type = model.GetType();
         if (depth < 0)
         {
-            throw new Exception($"Recursion depth exceeded. {type.Name} in {type.Namespace} likely causes infinite recursion.");
+            throw new Exception(
+                $"Recursion depth exceeded. {type.Name} in {type.Namespace} likely causes infinite recursion."
+            );
         }
 
         if (type.Namespace?.StartsWith("System") == true)
@@ -131,9 +135,11 @@ public static class ObjectUtils
                 SetToDefaultIfShouldSerializeFalse(model, prop, methodInfos);
 
                 // Set string properties with [XmlText] attribute to null if they are empty or whitespace
-                if (value is string s &&
-                    string.IsNullOrWhiteSpace(s) &&
-                    prop.GetCustomAttribute<XmlTextAttribute>() is not null)
+                if (
+                    value is string s
+                    && string.IsNullOrWhiteSpace(s)
+                    && prop.GetCustomAttribute<XmlTextAttribute>() is not null
+                )
                 {
                     // Ensure empty strings are set to null
                     prop.SetValue(model, null);
@@ -152,10 +158,7 @@ public static class ObjectUtils
         string methodName = $"ShouldSerialize{prop.Name}";
 
         var shouldSerializeMethod = methodInfos
-            .Where(
-                m => m.Name == methodName
-                     && m.GetParameters().Length == 0
-                     && m.ReturnType == typeof(bool))
+            .Where(m => m.Name == methodName && m.GetParameters().Length == 0 && m.ReturnType == typeof(bool))
             .SingleElement();
 
         if (shouldSerializeMethod?.Invoke(model, null) is false)

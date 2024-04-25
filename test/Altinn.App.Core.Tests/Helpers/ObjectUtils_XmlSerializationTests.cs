@@ -27,22 +27,19 @@ public class ObjectUtils_XmlSerializationTests(ITestOutputHelper _output)
         [JsonPropertyName("aarets")]
         public NullableDecimalMedORID? DecimalMedOrid { get; set; }
 
-        public bool ShouldSerializeDecimalMedOrid()
-            => DecimalMedOrid?.valueNullable != null;
+        public bool ShouldSerializeDecimalMedOrid() => DecimalMedOrid?.valueNullable != null;
 
         [XmlElement("aarets2", Order = 2)]
         [JsonPropertyName("aarets2")]
         public StringMedORID? StringMedOrid { get; set; }
 
-        public bool ShouldSerializeStringMedOrid()
-            => StringMedOrid?.value != null;
+        public bool ShouldSerializeStringMedOrid() => StringMedOrid?.value != null;
 
         [XmlElement("aarets3", Order = 3)]
         [JsonPropertyName("aarets3")]
         public string? NormalString { get; set; }
 
-        public bool ShouldSerializeNormalString()
-            => NormalString != "should not serialize";
+        public bool ShouldSerializeNormalString() => NormalString != "should not serialize";
 
         [XmlElement("aarets4", Order = 4)]
         [JsonPropertyName("aarets4")]
@@ -73,10 +70,7 @@ public class ObjectUtils_XmlSerializationTests(ITestOutputHelper _output)
         public decimal value
         {
             get => valueNullable ?? default;
-            set
-            {
-                this.valueNullable = value;
-            }
+            set { this.valueNullable = value; }
         }
 
         [XmlIgnore]
@@ -99,28 +93,30 @@ public class ObjectUtils_XmlSerializationTests(ITestOutputHelper _output)
         public string orid => "30321";
     }
 
-    public static TheoryData<decimal?> DecimalTests => new()
-    {
-        { 123 },
-        { 123.456m },
-        { null },
-    };
+    public static TheoryData<decimal?> DecimalTests =>
+        new()
+        {
+            { 123 },
+            { 123.456m },
+            { null },
+        };
 
-    public static TheoryData<string?, string?> StringTests => new()
-    {
-        // originalValue, storedValue
-        { null,  null },
-        { "some", "some" },
-        { string.Empty, null },
-        { " ", null },
-        { "  ", null },
-        { "  a", "  a" },
-        { "  a ", "  a " },
-        { "a  ", "a  " },
-        { "a", "a" },
-        { "a.", "a." },
-        { "a.📚", "a.📚" },
-    };
+    public static TheoryData<string?, string?> StringTests =>
+        new()
+        {
+            // originalValue, storedValue
+            { null, null },
+            { "some", "some" },
+            { string.Empty, null },
+            { " ", null },
+            { "  ", null },
+            { "  a", "  a" },
+            { "  a ", "  a " },
+            { "a  ", "a  " },
+            { "a", "a" },
+            { "a.", "a." },
+            { "a.📚", "a.📚" },
+        };
 
     [Theory]
     [MemberData(nameof(StringTests))]
@@ -197,19 +193,13 @@ public class ObjectUtils_XmlSerializationTests(ITestOutputHelper _output)
     {
         var test = new YttersteObjekt
         {
-            StringMedOrid = new StringMedORID
-            {
-                value = value
-            },
+            StringMedOrid = new StringMedORID { value = value },
             NormalString = value,
             Children = new List<YttersteObjekt>
             {
                 new YttersteObjekt
                 {
-                    StringMedOrid = new StringMedORID
-                    {
-                        value = value
-                    },
+                    StringMedOrid = new StringMedORID { value = value },
                     NormalString = value,
                 }
             }
@@ -317,20 +307,14 @@ public class ObjectUtils_XmlSerializationTests(ITestOutputHelper _output)
     {
         var test = new YttersteObjekt
         {
-            DecimalMedOrid = new NullableDecimalMedORID
-            {
-                valueNullable = value
-            },
+            DecimalMedOrid = new NullableDecimalMedORID { valueNullable = value },
             NullableDecimal = value,
             Decimal = value ?? default,
             Children = new List<YttersteObjekt>
             {
                 new YttersteObjekt
                 {
-                    DecimalMedOrid = new NullableDecimalMedORID
-                    {
-                        valueNullable = value
-                    },
+                    DecimalMedOrid = new NullableDecimalMedORID { valueNullable = value },
                     NullableDecimal = value,
                     Decimal = value ?? default,
                 }
