@@ -11,10 +11,12 @@ public interface IValidatorFactory
     /// Gets all task validators for a given task.
     /// </summary>
     public IEnumerable<ITaskValidator> GetTaskValidators(string taskId);
+
     /// <summary>
     /// Gets all data element validators for a given data type.
     /// </summary>
     public IEnumerable<IDataElementValidator> GetDataElementValidators(string dataTypeId);
+
     /// <summary>
     /// Gets all form data validators for a given data type.
     /// </summary>
@@ -43,7 +45,8 @@ public class ValidatorFactory : IValidatorFactory
         IEnumerable<ITaskValidator> taskValidators,
         IEnumerable<IDataElementValidator> dataElementValidators,
         IEnumerable<IFileUploadValidator> fileUploadValidators,
-        IEnumerable<IFormDataValidator> formDataValidators)
+        IEnumerable<IFormDataValidator> formDataValidators
+    )
     {
         _taskValidators = taskValidators;
         _dataElementValidators = dataElementValidators;

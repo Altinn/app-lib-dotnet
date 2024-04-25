@@ -10,12 +10,14 @@ namespace Altinn.App.Core.Features.Options
     /// <inheritdoc/>
     public class AppOptionsFileHandler : IAppOptionsFileHandler
     {
+        private static readonly JsonSerializerOptions _jsonSerializerOptions =
+            new(JsonSerializerDefaults.Web)
+            {
+                ReadCommentHandling = JsonCommentHandling.Skip,
+                AllowTrailingCommas = true,
+            };
+
         private readonly AppSettings _settings;
-        private static readonly JsonSerializerOptions JSON_SERIALIZER_SETTINGS = new(JsonSerializerDefaults.Web)
-        {
-            ReadCommentHandling = JsonCommentHandling.Skip,
-            AllowTrailingCommas = true,
-        };
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AppOptionsFileHandler"/> class.
@@ -35,7 +37,10 @@ namespace Altinn.App.Core.Features.Options
             if (File.Exists(filename))
             {
                 string fileData = await File.ReadAllTextAsync(filename, Encoding.UTF8);
-                List<AppOption> options = JsonSerializer.Deserialize<List<AppOption>>(fileData, JSON_SERIALIZER_SETTINGS)!;
+                List<AppOption> options = JsonSerializer.Deserialize<List<AppOption>>(
+                    fileData,
+                    _jsonSerializerOptions
+                )!;
                 return options;
             }
 

@@ -80,7 +80,8 @@ namespace Altinn.App.Api.Controllers
             IValidationService validationService,
             IAppMetadata appMetadata,
             IFeatureManager featureManager,
-            IPatchService patchService)
+            IPatchService patchService
+        )
         {
             _logger = logger;
 
@@ -118,7 +119,8 @@ namespace Altinn.App.Api.Controllers
             [FromRoute] int instanceOwnerPartyId,
             [FromRoute] Guid instanceGuid,
             [FromQuery] string dataType,
-            [FromQuery] string? language = null)
+            [FromQuery] string? language = null
+        )
         {
             /* The Body of the request is read much later when it has been made sure it is worth it. */
 
@@ -126,11 +128,15 @@ namespace Altinn.App.Api.Controllers
             {
                 Application application = await _appMetadata.GetApplicationMetadata();
 
-                DataType? dataTypeFromMetadata = application.DataTypes.First(e => e.Id.Equals(dataType, StringComparison.InvariantCultureIgnoreCase));
+                DataType? dataTypeFromMetadata = application.DataTypes.First(e =>
+                    e.Id.Equals(dataType, StringComparison.InvariantCultureIgnoreCase)
+                );
 
                 if (dataTypeFromMetadata == null)
                 {
-                    return BadRequest($"Element type {dataType} not allowed for instance {instanceOwnerPartyId}/{instanceGuid}.");
+                    return BadRequest(
+                        $"Element type {dataType} not allowed for instance {instanceOwnerPartyId}/{instanceGuid}."
+                    );
                 }
 
                 if (!IsValidContributer(dataTypeFromMetadata, User))
@@ -148,7 +154,9 @@ namespace Altinn.App.Api.Controllers
 
                 if (!InstanceIsActive(instance))
                 {
-                    return Conflict($"Cannot upload data for archived or deleted instance {instanceOwnerPartyId}/{instanceGuid}");
+                    return Conflict(
+                        $"Cannot upload data for archived or deleted instance {instanceOwnerPartyId}/{instanceGuid}"
+                    );
                 }
 
                 if (appLogic)
@@ -157,7 +165,8 @@ namespace Altinn.App.Api.Controllers
                 }
                 else
                 {
-                    (bool validationRestrictionSuccess, List<ValidationIssue> errors) = DataRestrictionValidation.CompliesWithDataRestrictions(Request, dataTypeFromMetadata);
+                    (bool validationRestrictionSuccess, List<ValidationIssue> errors) =
+                        DataRestrictionValidation.CompliesWithDataRestrictions(Request, dataTypeFromMetadata);
                     if (!validationRestrictionSuccess)
                     {
                         return BadRequest(await GetErrorDetails(errors));
@@ -180,10 +189,22 @@ namespace Altinn.App.Api.Controllers
                         return BadRequest(await GetErrorDetails(new List<ValidationIssue> { error }));
                     }
 
-                    bool parseSuccess = Request.Headers.TryGetValue("Content-Disposition", out StringValues headerValues);
-                    string? filename = parseSuccess ? DataRestrictionValidation.GetFileNameFromHeader(headerValues) : null;
+                    bool parseSuccess = Request.Headers.TryGetValue(
+                        "Content-Disposition",
+                        out StringValues headerValues
+                    );
+                    string? filename = parseSuccess
+                        ? DataRestrictionValidation.GetFileNameFromHeader(headerValues)
+                        : null;
 
-                    var validationIssues = await _validationService.ValidateFileUpload(instance, dataTypeFromMetadata, fileStream.ToArray(), filename, streamContent.Headers.ContentType?.ToString(), language);
+                    var validationIssues = await _validationService.ValidateFileUpload(
+                        instance,
+                        dataTypeFromMetadata,
+                        fileStream.ToArray(),
+                        filename,
+                        streamContent.Headers.ContentType?.ToString(),
+                        language
+                    );
 
                     if (validationIssues.Exists(v => v.Severity == ValidationIssueSeverity.Error))
                     {
@@ -191,12 +212,21 @@ namespace Altinn.App.Api.Controllers
                     }
 
                     fileStream.Seek(0, SeekOrigin.Begin);
-                    return await CreateBinaryData(instance, dataType, streamContent.Headers.ContentType.ToString(), filename, fileStream);
+                    return await CreateBinaryData(
+                        instance,
+                        dataType,
+                        streamContent.Headers.ContentType.ToString(),
+                        filename,
+                        fileStream
+                    );
                 }
             }
             catch (PlatformHttpException e)
             {
-                return HandlePlatformHttpException(e, $"Cannot create data element of {dataType} for {instanceOwnerPartyId}/{instanceGuid}");
+                return HandlePlatformHttpException(
+                    e,
+                    $"Cannot create data element of {dataType} for {instanceOwnerPartyId}/{instanceGuid}"
+                );
             }
         }
 
@@ -210,7 +240,9 @@ namespace Altinn.App.Api.Controllers
         /// </summary>
         private async Task<object> GetErrorDetails(List<ValidationIssue> errors)
         {
-            return await _featureManager.IsEnabledAsync(FeatureFlags.JsonObjectInDataResponse) ? errors : string.Join(";", errors.Select(x => x.Description));
+            return await _featureManager.IsEnabledAsync(FeatureFlags.JsonObjectInDataResponse)
+                ? errors
+                : string.Join(";", errors.Select(x => x.Description));
         }
 
         /// <summary>
@@ -233,7 +265,8 @@ namespace Altinn.App.Api.Controllers
             [FromRoute] Guid instanceGuid,
             [FromRoute] Guid dataGuid,
             [FromQuery] bool includeRowId = false,
-            [FromQuery] string? language = null)
+            [FromQuery] string? language = null
+        )
         {
             try
             {
@@ -260,14 +293,28 @@ namespace Altinn.App.Api.Controllers
                 }
                 else if (dataType.AppLogic?.ClassRef is not null)
                 {
-                    return await GetFormData(org, app, instanceOwnerPartyId, instanceGuid, instance, dataGuid, dataElement, dataType, includeRowId, language);
+                    return await GetFormData(
+                        org,
+                        app,
+                        instanceOwnerPartyId,
+                        instanceGuid,
+                        instance,
+                        dataGuid,
+                        dataElement,
+                        dataType,
+                        includeRowId,
+                        language
+                    );
                 }
 
                 return await GetBinaryData(org, app, instanceOwnerPartyId, instanceGuid, dataGuid, dataElement);
             }
             catch (PlatformHttpException e)
             {
-                return HandlePlatformHttpException(e, $"Cannot get data element of {dataGuid} for {instanceOwnerPartyId}/{instanceGuid}");
+                return HandlePlatformHttpException(
+                    e,
+                    $"Cannot get data element of {dataGuid} for {instanceOwnerPartyId}/{instanceGuid}"
+                );
             }
         }
 
@@ -293,7 +340,8 @@ namespace Altinn.App.Api.Controllers
             [FromRoute] int instanceOwnerPartyId,
             [FromRoute] Guid instanceGuid,
             [FromRoute] Guid dataGuid,
-            [FromQuery] string? language = null)
+            [FromQuery] string? language = null
+        )
         {
             try
             {
@@ -301,7 +349,9 @@ namespace Altinn.App.Api.Controllers
 
                 if (!InstanceIsActive(instance))
                 {
-                    return Conflict($"Cannot update data element of archived or deleted instance {instanceOwnerPartyId}/{instanceGuid}");
+                    return Conflict(
+                        $"Cannot update data element of archived or deleted instance {instanceOwnerPartyId}/{instanceGuid}"
+                    );
                 }
 
                 DataElement? dataElement = instance.Data.First(m => m.Id.Equals(dataGuid.ToString()));
@@ -315,7 +365,12 @@ namespace Altinn.App.Api.Controllers
 
                 if (dataType is null)
                 {
-                    _logger.LogError("Could not determine if {dataType} requires app logic for application {org}/{app}", dataType, org, app);
+                    _logger.LogError(
+                        "Could not determine if {dataType} requires app logic for application {org}/{app}",
+                        dataType,
+                        org,
+                        app
+                    );
                     return BadRequest($"Could not determine if data type {dataType} requires application logic.");
                 }
                 else if (dataType.AppLogic?.ClassRef is not null)
@@ -323,7 +378,8 @@ namespace Altinn.App.Api.Controllers
                     return await PutFormData(org, app, instance, dataGuid, dataType, language);
                 }
 
-                (bool validationRestrictionSuccess, List<ValidationIssue> errors) = DataRestrictionValidation.CompliesWithDataRestrictions(Request, dataType);
+                (bool validationRestrictionSuccess, List<ValidationIssue> errors) =
+                    DataRestrictionValidation.CompliesWithDataRestrictions(Request, dataType);
                 if (!validationRestrictionSuccess)
                 {
                     return BadRequest(await GetErrorDetails(errors));
@@ -333,7 +389,10 @@ namespace Altinn.App.Api.Controllers
             }
             catch (PlatformHttpException e)
             {
-                return HandlePlatformHttpException(e, $"Unable to update data element {dataGuid} for instance {instanceOwnerPartyId}/{instanceGuid}");
+                return HandlePlatformHttpException(
+                    e,
+                    $"Unable to update data element {dataGuid} for instance {instanceOwnerPartyId}/{instanceGuid}"
+                );
             }
         }
 
@@ -360,7 +419,8 @@ namespace Altinn.App.Api.Controllers
             [FromRoute] Guid instanceGuid,
             [FromRoute] Guid dataGuid,
             [FromBody] DataPatchRequest dataPatchRequest,
-            [FromQuery] string? language = null)
+            [FromQuery] string? language = null
+        )
         {
             try
             {
@@ -369,7 +429,8 @@ namespace Altinn.App.Api.Controllers
                 if (!InstanceIsActive(instance))
                 {
                     return Conflict(
-                        $"Cannot update data element of archived or deleted instance {instanceOwnerPartyId}/{instanceGuid}");
+                        $"Cannot update data element of archived or deleted instance {instanceOwnerPartyId}/{instanceGuid}"
+                    );
                 }
 
                 var dataElement = instance.Data.First(m => m.Id.Equals(dataGuid.ToString()));
@@ -387,29 +448,42 @@ namespace Altinn.App.Api.Controllers
                         "Could not determine if {dataType} requires app logic for application {org}/{app}",
                         dataType,
                         org,
-                        app);
+                        app
+                    );
                     return BadRequest($"Could not determine if data type {dataType?.Id} requires application logic.");
                 }
 
-                ServiceResult<DataPatchResult, DataPatchError> res = await _patchService.ApplyPatch(instance, dataType, dataElement, dataPatchRequest.Patch, language, dataPatchRequest.IgnoredValidators);
+                ServiceResult<DataPatchResult, DataPatchError> res = await _patchService.ApplyPatch(
+                    instance,
+                    dataType,
+                    dataElement,
+                    dataPatchRequest.Patch,
+                    language,
+                    dataPatchRequest.IgnoredValidators
+                );
 
                 if (res.Success)
                 {
                     await UpdateDataValuesOnInstance(instance, dataType.Id, res.Ok.NewDataModel);
                     await UpdatePresentationTextsOnInstance(instance, dataType.Id, res.Ok.NewDataModel);
 
-                    return Ok(new DataPatchResponse
-                    {
-                        NewDataModel = res.Ok.NewDataModel,
-                        ValidationIssues = res.Ok.ValidationIssues
-                    });
+                    return Ok(
+                        new DataPatchResponse
+                        {
+                            NewDataModel = res.Ok.NewDataModel,
+                            ValidationIssues = res.Ok.ValidationIssues
+                        }
+                    );
                 }
 
                 return Problem(res.Error);
             }
             catch (PlatformHttpException e)
             {
-                return HandlePlatformHttpException(e, $"Unable to update data element {dataGuid} for instance {instanceOwnerPartyId}/{instanceGuid}");
+                return HandlePlatformHttpException(
+                    e,
+                    $"Unable to update data element {dataGuid} for instance {instanceOwnerPartyId}/{instanceGuid}"
+                );
             }
         }
 
@@ -429,7 +503,8 @@ namespace Altinn.App.Api.Controllers
             [FromRoute] string app,
             [FromRoute] int instanceOwnerPartyId,
             [FromRoute] Guid instanceGuid,
-            [FromRoute] Guid dataGuid)
+            [FromRoute] Guid dataGuid
+        )
         {
             try
             {
@@ -441,7 +516,9 @@ namespace Altinn.App.Api.Controllers
 
                 if (!InstanceIsActive(instance))
                 {
-                    return Conflict($"Cannot delete data element of archived or deleted instance {instanceOwnerPartyId}/{instanceGuid}");
+                    return Conflict(
+                        $"Cannot delete data element of archived or deleted instance {instanceOwnerPartyId}/{instanceGuid}"
+                    );
                 }
 
                 DataElement? dataElement = instance.Data.Find(m => m.Id.Equals(dataGuid.ToString()));
@@ -455,7 +532,8 @@ namespace Altinn.App.Api.Controllers
 
                 if (dataType == null)
                 {
-                    string errorMsg = $"Could not determine if {dataElement.DataType} requires app logic for application {org}/{app}";
+                    string errorMsg =
+                        $"Could not determine if {dataElement.DataType} requires app logic for application {org}/{app}";
                     _logger.LogError(errorMsg);
                     return BadRequest(errorMsg);
                 }
@@ -469,7 +547,10 @@ namespace Altinn.App.Api.Controllers
             }
             catch (PlatformHttpException e)
             {
-                return HandlePlatformHttpException(e, $"Cannot delete data element {dataGuid} for {instanceOwnerPartyId}/{instanceGuid}");
+                return HandlePlatformHttpException(
+                    e,
+                    $"Cannot delete data element {dataGuid} for {instanceOwnerPartyId}/{instanceGuid}"
+                );
             }
         }
 
@@ -489,27 +570,38 @@ namespace Altinn.App.Api.Controllers
             return StatusCode(500, $"{message}");
         }
 
-        private async Task<ActionResult> CreateBinaryData(Instance instanceBefore, string dataType, string contentType, string? filename, Stream fileStream)
+        private async Task<ActionResult> CreateBinaryData(
+            Instance instanceBefore,
+            string dataType,
+            string contentType,
+            string? filename,
+            Stream fileStream
+        )
         {
             int instanceOwnerPartyId = int.Parse(instanceBefore.Id.Split("/")[0]);
             Guid instanceGuid = Guid.Parse(instanceBefore.Id.Split("/")[1]);
 
-            DataElement dataElement = await _dataClient.InsertBinaryData(instanceBefore.Id, dataType, contentType, filename, fileStream);
+            DataElement dataElement = await _dataClient.InsertBinaryData(
+                instanceBefore.Id,
+                dataType,
+                contentType,
+                filename,
+                fileStream
+            );
 
             if (Guid.Parse(dataElement.Id) == Guid.Empty)
             {
-                return StatusCode(500, $"Cannot store form attachment on instance {instanceOwnerPartyId}/{instanceGuid}");
+                return StatusCode(
+                    500,
+                    $"Cannot store form attachment on instance {instanceOwnerPartyId}/{instanceGuid}"
+                );
             }
 
             SelfLinkHelper.SetDataAppSelfLinks(instanceOwnerPartyId, instanceGuid, dataElement, Request);
             return Created(dataElement.SelfLinks.Apps, dataElement);
         }
 
-        private async Task<ActionResult> CreateAppModelData(
-            string org,
-            string app,
-            Instance instance,
-            string dataType)
+        private async Task<ActionResult> CreateAppModelData(string org, string app, Instance instance, string dataType)
         {
             Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
 
@@ -544,7 +636,15 @@ namespace Altinn.App.Api.Controllers
 
             ObjectUtils.InitializeAltinnRowId(appModel);
 
-            DataElement dataElement = await _dataClient.InsertFormData(appModel, instanceGuid, _appModel.GetModelType(classRef), org, app, instanceOwnerPartyId, dataType);
+            DataElement dataElement = await _dataClient.InsertFormData(
+                appModel,
+                instanceGuid,
+                _appModel.GetModelType(classRef),
+                org,
+                app,
+                instanceOwnerPartyId,
+                dataType
+            );
             SelfLinkHelper.SetDataAppSelfLinks(instanceOwnerPartyId, instanceGuid, dataElement, Request);
 
             return Created(dataElement.SelfLinks.Apps, dataElement);
@@ -560,7 +660,8 @@ namespace Altinn.App.Api.Controllers
             int instanceOwnerPartyId,
             Guid instanceGuid,
             Guid dataGuid,
-            DataElement dataElement)
+            DataElement dataElement
+        )
         {
             Stream dataStream = await _dataClient.GetBinaryData(org, app, instanceOwnerPartyId, instanceGuid, dataGuid);
 
@@ -580,9 +681,22 @@ namespace Altinn.App.Api.Controllers
             }
         }
 
-        private async Task<ActionResult> DeleteBinaryData(string org, string app, int instanceOwnerId, Guid instanceGuid, Guid dataGuid)
+        private async Task<ActionResult> DeleteBinaryData(
+            string org,
+            string app,
+            int instanceOwnerId,
+            Guid instanceGuid,
+            Guid dataGuid
+        )
         {
-            bool successfullyDeleted = await _dataClient.DeleteData(org, app, instanceOwnerId, instanceGuid, dataGuid, false);
+            bool successfullyDeleted = await _dataClient.DeleteData(
+                org,
+                app,
+                instanceOwnerId,
+                instanceGuid,
+                dataGuid,
+                false
+            );
 
             if (successfullyDeleted)
             {
@@ -590,7 +704,10 @@ namespace Altinn.App.Api.Controllers
             }
             else
             {
-                return StatusCode(500, $"Something went wrong when deleting data element {dataGuid} for instance {instanceGuid}");
+                return StatusCode(
+                    500,
+                    $"Something went wrong when deleting data element {dataGuid} for instance {instanceGuid}"
+                );
             }
         }
 
@@ -616,7 +733,8 @@ namespace Altinn.App.Api.Controllers
             DataElement dataElement,
             DataType dataType,
             bool includeRowId,
-            string? language)
+            string? language
+        )
         {
             // Get Form Data from data service. Assumes that the data element is form data.
             object appModel = await _dataClient.GetFormData(
@@ -625,7 +743,8 @@ namespace Altinn.App.Api.Controllers
                 org,
                 app,
                 instanceOwnerId,
-                dataGuid);
+                dataGuid
+            );
 
             if (appModel == null)
             {
@@ -637,7 +756,11 @@ namespace Altinn.App.Api.Controllers
 
             foreach (var dataProcessor in _dataProcessors)
             {
-                _logger.LogInformation("ProcessDataRead for {modelType} using {dataProcesor}", appModel.GetType().Name, dataProcessor.GetType().Name);
+                _logger.LogInformation(
+                    "ProcessDataRead for {modelType} using {dataProcesor}",
+                    appModel.GetType().Name,
+                    dataProcessor.GetType().Name
+                );
                 await dataProcessor.ProcessDataRead(instance, dataGuid, appModel, language);
             }
 
@@ -647,11 +770,22 @@ namespace Altinn.App.Api.Controllers
             }
 
             // Save back the changes if dataProcessRead has changed the model and the element is not locked
-            if (!dataElement.Locked && !beforeProcessDataRead.SequenceEqual(JsonSerializer.SerializeToUtf8Bytes(appModel)))
+            if (
+                !dataElement.Locked
+                && !beforeProcessDataRead.SequenceEqual(JsonSerializer.SerializeToUtf8Bytes(appModel))
+            )
             {
                 try
                 {
-                    await _dataClient.UpdateData(appModel, instanceGuid, appModel.GetType(), org, app, instanceOwnerId, dataGuid);
+                    await _dataClient.UpdateData(
+                        appModel,
+                        instanceGuid,
+                        appModel.GetType(),
+                        org,
+                        app,
+                        instanceOwnerId,
+                        dataGuid
+                    );
                 }
                 catch (PlatformHttpException e) when (e.Response.StatusCode == HttpStatusCode.Forbidden)
                 {
@@ -681,7 +815,13 @@ namespace Altinn.App.Api.Controllers
             {
                 var contentDispositionHeader = ContentDispositionHeaderValue.Parse(headerValues.ToString());
                 _logger.LogInformation("Content-Disposition: {ContentDisposition}", headerValues.ToString());
-                DataElement dataElement = await _dataClient.UpdateBinaryData(new InstanceIdentifier(instanceOwnerPartyId, instanceGuid), Request.ContentType, contentDispositionHeader.FileName.ToString(), dataGuid, Request.Body);
+                DataElement dataElement = await _dataClient.UpdateBinaryData(
+                    new InstanceIdentifier(instanceOwnerPartyId, instanceGuid),
+                    Request.ContentType,
+                    contentDispositionHeader.FileName.ToString(),
+                    dataGuid,
+                    Request.Body
+                );
                 SelfLinkHelper.SetDataAppSelfLinks(instanceOwnerPartyId, instanceGuid, dataElement, Request);
 
                 return Created(dataElement.SelfLinks.Apps, dataElement);
@@ -690,7 +830,14 @@ namespace Altinn.App.Api.Controllers
             return BadRequest("Invalid data provided. Error:  The request must include a Content-Disposition header");
         }
 
-        private async Task<ActionResult> PutFormData(string org, string app, Instance instance, Guid dataGuid, DataType dataType, string? language)
+        private async Task<ActionResult> PutFormData(
+            string org,
+            string app,
+            Instance instance,
+            Guid dataGuid,
+            DataType dataType,
+            string? language
+        )
         {
             int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
 
@@ -710,7 +857,14 @@ namespace Altinn.App.Api.Controllers
                 return BadRequest("No data found in content");
             }
 
-            Dictionary<string, object?>? changedFields = await JsonHelper.ProcessDataWriteWithDiff(instance, dataGuid, serviceModel, language, _dataProcessors, _logger);
+            Dictionary<string, object?>? changedFields = await JsonHelper.ProcessDataWriteWithDiff(
+                instance,
+                dataGuid,
+                serviceModel,
+                language,
+                _dataProcessors,
+                _logger
+            );
 
             await UpdatePresentationTextsOnInstance(instance, dataType.Id, serviceModel);
             await UpdateDataValuesOnInstance(instance, dataType.Id, serviceModel);
@@ -725,17 +879,15 @@ namespace Altinn.App.Api.Controllers
                 org,
                 app,
                 instanceOwnerPartyId,
-                dataGuid);
+                dataGuid
+            );
 
             SelfLinkHelper.SetDataAppSelfLinks(instanceOwnerPartyId, instanceGuid, updatedDataElement, Request);
 
             string dataUrl = updatedDataElement.SelfLinks.Apps;
             if (changedFields is not null)
             {
-                CalculationResult calculationResult = new(updatedDataElement)
-                {
-                    ChangedFields = changedFields
-                };
+                CalculationResult calculationResult = new(updatedDataElement) { ChangedFields = changedFields };
                 return Ok(calculationResult);
             }
 
@@ -748,14 +900,16 @@ namespace Altinn.App.Api.Controllers
                 (await _appMetadata.GetApplicationMetadata()).PresentationFields,
                 instance.PresentationTexts,
                 dataType,
-                serviceModel);
+                serviceModel
+            );
 
             if (updatedValues.Count > 0)
             {
                 await _instanceClient.UpdatePresentationTexts(
                     int.Parse(instance.Id.Split("/")[0]),
                     Guid.Parse(instance.Id.Split("/")[1]),
-                    new PresentationTexts { Texts = updatedValues });
+                    new PresentationTexts { Texts = updatedValues }
+                );
             }
         }
 
@@ -765,14 +919,16 @@ namespace Altinn.App.Api.Controllers
                 (await _appMetadata.GetApplicationMetadata()).DataFields,
                 instance.DataValues,
                 dataType,
-                serviceModel);
+                serviceModel
+            );
 
             if (updatedValues.Count > 0)
             {
                 await _instanceClient.UpdateDataValues(
                     int.Parse(instance.Id.Split("/")[0]),
                     Guid.Parse(instance.Id.Split("/")[1]),
-                    new DataValues { Values = updatedValues });
+                    new DataValues { Values = updatedValues }
+                );
             }
         }
 
@@ -850,14 +1006,17 @@ namespace Altinn.App.Api.Controllers
                 DataPatchErrorType.DeserializationFailed => (int)HttpStatusCode.UnprocessableContent,
                 _ => (int)HttpStatusCode.InternalServerError
             };
-            return StatusCode(code, new ProblemDetails()
-            {
-                Title = error.Title,
-                Detail = error.Detail,
-                Type = "https://datatracker.ietf.org/doc/html/rfc6902/",
-                Status = code,
-                Extensions = error.Extensions ?? new Dictionary<string, object?>(StringComparer.Ordinal)
-            });
+            return StatusCode(
+                code,
+                new ProblemDetails()
+                {
+                    Title = error.Title,
+                    Detail = error.Detail,
+                    Type = "https://datatracker.ietf.org/doc/html/rfc6902/",
+                    Status = code,
+                    Extensions = error.Extensions ?? new Dictionary<string, object?>(StringComparer.Ordinal)
+                }
+            );
         }
     }
 }

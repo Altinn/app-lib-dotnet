@@ -1,4 +1,5 @@
 #nullable disable
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Internal.App;
@@ -15,6 +16,9 @@ namespace Altinn.App.Core.Tests.Internal.App
 {
     public class AppMedataTest
     {
+        private static readonly JsonSerializerOptions _jsonSerializerOptions =
+            new() { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
+
         private readonly string appBasePath = Path.Combine("Internal", "App", "TestData") + Path.DirectorySeparatorChar;
 
         [Fact]
@@ -32,10 +36,7 @@ namespace Altinn.App.Core.Tests.Internal.App
                 Org = "tdd",
                 Created = DateTime.Parse("2019-09-16T22:22:22"),
                 CreatedBy = "username",
-                Title = new Dictionary<string, string>()
-                {
-                    { "nb", "Bestillingseksempelapp" }
-                },
+                Title = new Dictionary<string, string>() { { "nb", "Bestillingseksempelapp" } },
                 DataTypes = new List<DataType>()
                 {
                     new()
@@ -60,10 +61,7 @@ namespace Altinn.App.Core.Tests.Internal.App
                     Person = true,
                     SubUnit = true
                 },
-                OnEntry = new OnEntry()
-                {
-                    Show = "select-instance"
-                },
+                OnEntry = new OnEntry() { Show = "select-instance" },
                 Features = enabledFrontendFeatures
             };
             var actual = await appMetadata.GetApplicationMetadata();
@@ -86,10 +84,7 @@ namespace Altinn.App.Core.Tests.Internal.App
                 Org = "tdd",
                 Created = DateTime.Parse("2019-09-16T22:22:22"),
                 CreatedBy = "username",
-                Title = new Dictionary<string, string>()
-                {
-                    { "nb", "Bestillingseksempelapp" }
-                },
+                Title = new Dictionary<string, string>() { { "nb", "Bestillingseksempelapp" } },
                 DataTypes = new List<DataType>()
                 {
                     new()
@@ -125,15 +120,9 @@ namespace Altinn.App.Core.Tests.Internal.App
                     TypeVersion = "2.0",
                     Type = "arkivmelding",
                     SecurityLevel = 3,
-                    DataTypes = new List<string>()
-                    {
-                        "372c7af5-71e1-4e99-8e05-4716711a8b53",
-                    }
+                    DataTypes = new List<string>() { "372c7af5-71e1-4e99-8e05-4716711a8b53", }
                 },
-                OnEntry = new OnEntry()
-                {
-                    Show = "select-instance"
-                },
+                OnEntry = new OnEntry() { Show = "select-instance" },
                 Features = enabledFrontendFeatures
             };
             var actual = await appMetadata.GetApplicationMetadata();
@@ -146,18 +135,20 @@ namespace Altinn.App.Core.Tests.Internal.App
         {
             AppSettings appSettings = GetAppSettings("AppMetadata", "default.applicationmetadata.json");
             Mock<IFrontendFeatures> appFeaturesMock = new Mock<IFrontendFeatures>();
-            appFeaturesMock.Setup(af => af.GetFrontendFeatures()).ReturnsAsync(new Dictionary<string, bool>() { { "footer", true } });
-            IAppMetadata appMetadata = SetupAppMedata(Microsoft.Extensions.Options.Options.Create(appSettings), appFeaturesMock.Object);
+            appFeaturesMock
+                .Setup(af => af.GetFrontendFeatures())
+                .ReturnsAsync(new Dictionary<string, bool>() { { "footer", true } });
+            IAppMetadata appMetadata = SetupAppMedata(
+                Microsoft.Extensions.Options.Options.Create(appSettings),
+                appFeaturesMock.Object
+            );
             ApplicationMetadata expected = new ApplicationMetadata("tdd/bestilling")
             {
                 Id = "tdd/bestilling",
                 Org = "tdd",
                 Created = DateTime.Parse("2019-09-16T22:22:22"),
                 CreatedBy = "username",
-                Title = new Dictionary<string, string>()
-                {
-                    { "nb", "Bestillingseksempelapp" }
-                },
+                Title = new Dictionary<string, string>() { { "nb", "Bestillingseksempelapp" } },
                 DataTypes = new List<DataType>()
                 {
                     new()
@@ -182,14 +173,8 @@ namespace Altinn.App.Core.Tests.Internal.App
                     Person = true,
                     SubUnit = true
                 },
-                OnEntry = new OnEntry()
-                {
-                    Show = "select-instance"
-                },
-                Features = new Dictionary<string, bool>()
-                {
-                    { "footer", true }
-                }
+                OnEntry = new OnEntry() { Show = "select-instance" },
+                Features = new Dictionary<string, bool>() { { "footer", true } }
             };
             var actual = await appMetadata.GetApplicationMetadata();
             var actual2 = await appMetadata.GetApplicationMetadata();
@@ -207,7 +192,10 @@ namespace Altinn.App.Core.Tests.Internal.App
             IFrontendFeatures frontendFeatures = new FrontendFeatures(featureManagerMock.Object);
             Dictionary<string, bool> enabledFrontendFeatures = await frontendFeatures.GetFrontendFeatures();
 
-            AppSettings appSettings = GetAppSettings("AppMetadata", "onentry-legacy-selectoptions.applicationmetadata.json");
+            AppSettings appSettings = GetAppSettings(
+                "AppMetadata",
+                "onentry-legacy-selectoptions.applicationmetadata.json"
+            );
             IAppMetadata appMetadata = SetupAppMedata(Microsoft.Extensions.Options.Options.Create(appSettings));
             ApplicationMetadata expected = new ApplicationMetadata("tdd/bestilling")
             {
@@ -215,10 +203,7 @@ namespace Altinn.App.Core.Tests.Internal.App
                 Org = "tdd",
                 Created = DateTime.Parse("2019-09-16T22:22:22"),
                 CreatedBy = "username",
-                Title = new Dictionary<string, string>()
-                {
-                    { "nb", "Bestillingseksempelapp" }
-                },
+                Title = new Dictionary<string, string>() { { "nb", "Bestillingseksempelapp" } },
                 DataTypes = new List<DataType>()
                 {
                     new()
@@ -249,10 +234,7 @@ namespace Altinn.App.Core.Tests.Internal.App
                     InstanceSelection = new()
                     {
                         SortDirection = "desc",
-                        RowsPerPageOptions = new List<int>()
-                        {
-                            5, 3, 10, 25, 50, 100
-                        },
+                        RowsPerPageOptions = new List<int>() { 5, 3, 10, 25, 50, 100 },
                         DefaultRowsPerPage = 1,
                         DefaultSelectedOption = 1
                     }
@@ -272,7 +254,10 @@ namespace Altinn.App.Core.Tests.Internal.App
             IFrontendFeatures frontendFeatures = new FrontendFeatures(featureManagerMock.Object);
             Dictionary<string, bool> enabledFrontendFeatures = await frontendFeatures.GetFrontendFeatures();
 
-            AppSettings appSettings = GetAppSettings("AppMetadata", "onentry-new-selectoptions.applicationmetadata.json");
+            AppSettings appSettings = GetAppSettings(
+                "AppMetadata",
+                "onentry-new-selectoptions.applicationmetadata.json"
+            );
             IAppMetadata appMetadata = SetupAppMedata(Microsoft.Extensions.Options.Options.Create(appSettings));
             ApplicationMetadata expected = new ApplicationMetadata("tdd/bestilling")
             {
@@ -280,10 +265,7 @@ namespace Altinn.App.Core.Tests.Internal.App
                 Org = "tdd",
                 Created = DateTime.Parse("2019-09-16T22:22:22"),
                 CreatedBy = "username",
-                Title = new Dictionary<string, string>()
-                {
-                    { "nb", "Bestillingseksempelapp" }
-                },
+                Title = new Dictionary<string, string>() { { "nb", "Bestillingseksempelapp" } },
                 DataTypes = new List<DataType>()
                 {
                     new()
@@ -314,10 +296,7 @@ namespace Altinn.App.Core.Tests.Internal.App
                     InstanceSelection = new()
                     {
                         SortDirection = "desc",
-                        RowsPerPageOptions = new List<int>()
-                        {
-                            5, 3, 10, 25, 50, 100
-                        },
+                        RowsPerPageOptions = new List<int>() { 5, 3, 10, 25, 50, 100 },
                         DefaultSelectedOption = 2
                     }
                 },
@@ -336,7 +315,10 @@ namespace Altinn.App.Core.Tests.Internal.App
             IFrontendFeatures frontendFeatures = new FrontendFeatures(featureManagerMock.Object);
             Dictionary<string, bool> enabledFrontendFeatures = await frontendFeatures.GetFrontendFeatures();
 
-            AppSettings appSettings = GetAppSettings("AppMetadata", "onentry-prefer-new-selectoptions.applicationmetadata.json");
+            AppSettings appSettings = GetAppSettings(
+                "AppMetadata",
+                "onentry-prefer-new-selectoptions.applicationmetadata.json"
+            );
             IAppMetadata appMetadata = SetupAppMedata(Microsoft.Extensions.Options.Options.Create(appSettings));
             ApplicationMetadata expected = new ApplicationMetadata("tdd/bestilling")
             {
@@ -344,10 +326,7 @@ namespace Altinn.App.Core.Tests.Internal.App
                 Org = "tdd",
                 Created = DateTime.Parse("2019-09-16T22:22:22"),
                 CreatedBy = "username",
-                Title = new Dictionary<string, string>()
-                {
-                    { "nb", "Bestillingseksempelapp" }
-                },
+                Title = new Dictionary<string, string>() { { "nb", "Bestillingseksempelapp" } },
                 DataTypes = new List<DataType>()
                 {
                     new()
@@ -378,10 +357,7 @@ namespace Altinn.App.Core.Tests.Internal.App
                     InstanceSelection = new()
                     {
                         SortDirection = "desc",
-                        RowsPerPageOptions = new List<int>()
-                        {
-                            5, 3, 10, 25, 50, 100
-                        },
+                        RowsPerPageOptions = new List<int>() { 5, 3, 10, 25, 50, 100 },
                         DefaultRowsPerPage = 1,
                         DefaultSelectedOption = 3
                     }
@@ -409,10 +385,7 @@ namespace Altinn.App.Core.Tests.Internal.App
                 Org = "tdd",
                 Created = DateTime.Parse("2019-09-16T22:22:22"),
                 CreatedBy = "username",
-                Title = new Dictionary<string, string>()
-                {
-                    { "nb", "Bestillingseksempelapp" }
-                },
+                Title = new Dictionary<string, string>() { { "nb", "Bestillingseksempelapp" } },
                 DataTypes = new List<DataType>()
                 {
                     new()
@@ -443,10 +416,7 @@ namespace Altinn.App.Core.Tests.Internal.App
                     InstanceSelection = new()
                     {
                         SortDirection = "desc",
-                        RowsPerPageOptions = new List<int>()
-                        {
-                            5, 3, 10, 25, 50, 100
-                        },
+                        RowsPerPageOptions = new List<int>() { 5, 3, 10, 25, 50, 100 },
                         DefaultRowsPerPage = 1,
                         DefaultSelectedOption = 3
                     }
@@ -482,9 +452,14 @@ namespace Altinn.App.Core.Tests.Internal.App
             AppSettings appSettings = GetAppSettings("AppMetadata", "unmapped-properties.applicationmetadata.json");
             IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
             var appMetadataObj = await appMetadata.GetApplicationMetadata();
-            string serialized = JsonSerializer.Serialize(appMetadataObj, new JsonSerializerOptions { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
-            string expected = File.ReadAllText(Path.Join(appBasePath, "AppMetadata", "unmapped-properties.applicationmetadata.expected.json"));
-            expected = expected.Replace("--AltinnNugetVersion--", typeof(ApplicationMetadata).Assembly!.GetName().Version!.ToString());
+            string serialized = JsonSerializer.Serialize(appMetadataObj, _jsonSerializerOptions);
+            string expected = File.ReadAllText(
+                Path.Join(appBasePath, "AppMetadata", "unmapped-properties.applicationmetadata.expected.json")
+            );
+            expected = expected.Replace(
+                "--AltinnNugetVersion--",
+                typeof(ApplicationMetadata).Assembly!.GetName().Version!.ToString()
+            );
             serialized.Should().Be(expected);
         }
 
@@ -493,7 +468,9 @@ namespace Altinn.App.Core.Tests.Internal.App
         {
             AppSettings appSettings = GetAppSettings("AppMetadata", "notfound.applicationmetadata.json");
             IAppMetadata appMetadata = SetupAppMedata(Microsoft.Extensions.Options.Options.Create(appSettings));
-            await Assert.ThrowsAsync<ApplicationConfigException>(async () => await appMetadata.GetApplicationMetadata());
+            await Assert.ThrowsAsync<ApplicationConfigException>(
+                async () => await appMetadata.GetApplicationMetadata()
+            );
         }
 
         [Fact]
@@ -501,7 +478,9 @@ namespace Altinn.App.Core.Tests.Internal.App
         {
             AppSettings appSettings = GetAppSettings("AppMetadata", "invalid.applicationmetadata.json");
             IAppMetadata appMetadata = SetupAppMedata(Microsoft.Extensions.Options.Options.Create(appSettings));
-            await Assert.ThrowsAsync<ApplicationConfigException>(async () => await appMetadata.GetApplicationMetadata());
+            await Assert.ThrowsAsync<ApplicationConfigException>(
+                async () => await appMetadata.GetApplicationMetadata()
+            );
         }
 
         [Fact]
@@ -509,7 +488,9 @@ namespace Altinn.App.Core.Tests.Internal.App
         {
             AppSettings appSettings = GetAppSettings("AppMetadata", "invalid-int.applicationmetadata.json");
             IAppMetadata appMetadata = SetupAppMedata(Microsoft.Extensions.Options.Options.Create(appSettings));
-            await Assert.ThrowsAsync<ApplicationConfigException>(async () => await appMetadata.GetApplicationMetadata());
+            await Assert.ThrowsAsync<ApplicationConfigException>(
+                async () => await appMetadata.GetApplicationMetadata()
+            );
         }
 
         [Fact]
@@ -517,7 +498,8 @@ namespace Altinn.App.Core.Tests.Internal.App
         {
             AppSettings appSettings = GetAppSettings(subfolder: "AppPolicy", policyFilename: "policy.xml");
             IAppMetadata appMetadata = SetupAppMedata(Microsoft.Extensions.Options.Options.Create(appSettings));
-            string expected = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" + Environment.NewLine + "<root>policy</root>";
+            string expected =
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>" + Environment.NewLine + "<root>policy</root>";
             var actual = await appMetadata.GetApplicationXACMLPolicy();
             actual.Should().BeEquivalentTo(expected);
         }
@@ -535,7 +517,8 @@ namespace Altinn.App.Core.Tests.Internal.App
         {
             AppSettings appSettings = GetAppSettings(subfolder: "AppProcess", bpmnFilename: "process.bpmn");
             IAppMetadata appMetadata = SetupAppMedata(Microsoft.Extensions.Options.Options.Create(appSettings));
-            string expected = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" + Environment.NewLine + "<root>process</root>";
+            string expected =
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>" + Environment.NewLine + "<root>process</root>";
             var actual = await appMetadata.GetApplicationBPMNProcess();
             actual.Should().BeEquivalentTo(expected);
         }
@@ -545,10 +528,17 @@ namespace Altinn.App.Core.Tests.Internal.App
         {
             AppSettings appSettings = GetAppSettings(subfolder: "AppProcess", policyFilename: "notfound.xml");
             IAppMetadata appMetadata = SetupAppMedata(Microsoft.Extensions.Options.Options.Create(appSettings));
-            await Assert.ThrowsAsync<ApplicationConfigException>(async () => await appMetadata.GetApplicationBPMNProcess());
+            await Assert.ThrowsAsync<ApplicationConfigException>(
+                async () => await appMetadata.GetApplicationBPMNProcess()
+            );
         }
 
-        private AppSettings GetAppSettings(string subfolder, string appMetadataFilename = "", string bpmnFilename = "", string policyFilename = "")
+        private AppSettings GetAppSettings(
+            string subfolder,
+            string appMetadataFilename = "",
+            string bpmnFilename = "",
+            string policyFilename = ""
+        )
         {
             AppSettings appSettings = new AppSettings()
             {
@@ -563,7 +553,10 @@ namespace Altinn.App.Core.Tests.Internal.App
             return appSettings;
         }
 
-        private static IAppMetadata SetupAppMedata(IOptions<AppSettings> appsettings, IFrontendFeatures frontendFeatures = null)
+        private static IAppMetadata SetupAppMedata(
+            IOptions<AppSettings> appsettings,
+            IFrontendFeatures frontendFeatures = null
+        )
         {
             var featureManagerMock = new Mock<IFeatureManager>();
 

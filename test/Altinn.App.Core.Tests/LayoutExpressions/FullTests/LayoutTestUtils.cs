@@ -1,5 +1,4 @@
 using System.Text.Json;
-
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
@@ -15,6 +14,8 @@ namespace Altinn.App.Core.Tests.LayoutExpressions;
 
 public static class LayoutTestUtils
 {
+    private static readonly JsonSerializerOptions _jsonSerializerOptions = new(JsonSerializerDefaults.Web);
+
     public static async Task<LayoutEvaluatorState> GetLayoutModelTools(object model, string folder)
     {
         var services = new ServiceCollection();
@@ -31,11 +32,12 @@ public static class LayoutTestUtils
             var layout = await File.ReadAllBytesAsync(layoutFile);
             string pageName = layoutFile.Replace(layoutsPath + "/", string.Empty).Replace(".json", string.Empty);
 
-            var pageOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
-
             PageComponentConverter.SetAsyncLocalPageName(pageName);
 
-            layoutModel.Pages[pageName] = JsonSerializer.Deserialize<PageComponent>(layout.RemoveBom(), pageOptions)!;
+            layoutModel.Pages[pageName] = JsonSerializer.Deserialize<PageComponent>(
+                layout.RemoveBom(),
+                _jsonSerializerOptions
+            )!;
         }
 
         resources.Setup(r => r.GetLayoutModel(null)).Returns(layoutModel);

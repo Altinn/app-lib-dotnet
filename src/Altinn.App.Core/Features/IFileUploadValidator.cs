@@ -25,5 +25,12 @@ public interface IFileUploadValidator
     /// Validating a an uploaded file to possibly prevent the upload.
     /// The file is considered valid if the list of issues has no entries where <see cref="ValidationIssue.Severity"/> is Error.
     /// </summary>
-    Task<List<ValidationIssue>> Validate(Instance instance, DataType dataType, byte[] fileContent, string? filename, string? mimeType, string? language);
+    Task<List<ValidationIssue>> Validate(
+        Instance instance,
+        DataType dataType,
+        byte[] fileContent,
+        string? filename,
+        string? mimeType,
+        string? language
+    );
 }

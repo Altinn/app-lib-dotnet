@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Altinn.App.Core.Models.Email;
+namespace Altinn.App.Core.Models.Notifications.Email;
 
 /// <summary>
 /// The response from the email notification API.
@@ -12,6 +12,7 @@ public sealed record EmailOrderResponse
     /// </summary>
     [JsonPropertyName("orderId")]
     public string OrderId { get; init; }
+
     /// <summary>
     /// Initializes the EmailOrderResponse class.
     /// </summary>

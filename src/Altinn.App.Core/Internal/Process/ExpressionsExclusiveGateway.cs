@@ -18,6 +18,16 @@ namespace Altinn.App.Core.Internal.Process
     /// </summary>
     public class ExpressionsExclusiveGateway : IProcessExclusiveGateway
     {
+        private static readonly JsonSerializerOptions _jsonSerializerOptions =
+            new()
+            {
+                AllowTrailingCommas = true,
+                ReadCommentHandling = JsonCommentHandling.Skip,
+                PropertyNameCaseInsensitive = true,
+            };
+        private static readonly JsonSerializerOptions _jsonSerializerOptionsCamelCase =
+            new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
         private readonly LayoutEvaluatorStateInitializer _layoutStateInit;
         private readonly IAppResources _resources;
         private readonly IAppMetadata _appMetadata;
@@ -37,7 +47,8 @@ namespace Altinn.App.Core.Internal.Process
             IAppResources resources,
             IAppModel appModel,
             IAppMetadata appMetadata,
-            IDataClient dataClient)
+            IDataClient dataClient
+        )
         {
             _layoutStateInit = layoutEvaluatorStateInitializer;
             _resources = resources;
@@ -50,14 +61,26 @@ namespace Altinn.App.Core.Internal.Process
         public string GatewayId { get; } = "AltinnExpressionsExclusiveGateway";
 
         /// <inheritdoc />
-        public async Task<List<SequenceFlow>> FilterAsync(List<SequenceFlow> outgoingFlows, Instance instance, ProcessGatewayInformation processGatewayInformation)
+        public async Task<List<SequenceFlow>> FilterAsync(
+            List<SequenceFlow> outgoingFlows,
+            Instance instance,
+            ProcessGatewayInformation processGatewayInformation
+        )
         {
-            var state = await GetLayoutEvaluatorState(instance, processGatewayInformation.Action, processGatewayInformation.DataTypeId);
+            var state = await GetLayoutEvaluatorState(
+                instance,
+                processGatewayInformation.Action,
+                processGatewayInformation.DataTypeId
+            );
 
             return outgoingFlows.Where(outgoingFlow => EvaluateSequenceFlow(state, outgoingFlow)).ToList();
         }
 
-        private async Task<LayoutEvaluatorState> GetLayoutEvaluatorState(Instance instance, string? action, string? dataTypeId)
+        private async Task<LayoutEvaluatorState> GetLayoutEvaluatorState(
+            Instance instance,
+            string? action,
+            string? dataTypeId
+        )
         {
             var layoutSet = GetLayoutSet(instance);
             var (checkedDataTypeId, dataType) = await GetDataType(instance, layoutSet, dataTypeId);
@@ -69,7 +92,14 @@ namespace Altinn.App.Core.Internal.Process
                 Type dataElementType = dataType;
                 if (dataGuid != null)
                 {
-                    data = await _dataClient.GetFormData(instanceIdentifier.InstanceGuid, dataElementType, instance.Org, instance.AppId.Split("/")[1], int.Parse(instance.InstanceOwner.PartyId), dataGuid.Value);
+                    data = await _dataClient.GetFormData(
+                        instanceIdentifier.InstanceGuid,
+                        dataElementType,
+                        instance.Org,
+                        instance.AppId.Split("/")[1],
+                        int.Parse(instance.InstanceOwner.PartyId),
+                        dataGuid.Value
+                    );
                 }
             }
 
@@ -101,29 +131,24 @@ namespace Altinn.App.Core.Internal.Process
 
         private static Expression GetExpressionFromCondition(string condition)
         {
-            JsonSerializerOptions options = new()
-            {
-                AllowTrailingCommas = true,
-                ReadCommentHandling = JsonCommentHandling.Skip,
-                PropertyNameCaseInsensitive = true,
-            };
             Utf8JsonReader reader = new Utf8JsonReader(Encoding.UTF8.GetBytes(condition));
             reader.Read();
-            var expressionFromCondition = ExpressionConverter.ReadNotNull(ref reader, options);
+            var expressionFromCondition = ExpressionConverter.ReadNotNull(ref reader, _jsonSerializerOptions);
             return expressionFromCondition;
         }
 
         private LayoutSet? GetLayoutSet(Instance instance)
         {
             string taskId = instance.Process.CurrentTask.ElementId;
-            JsonSerializerOptions options = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-
 
             string layoutSetsString = _resources.GetLayoutSets();
             LayoutSet? layoutSet = null;
             if (!string.IsNullOrEmpty(layoutSetsString))
             {
-                LayoutSets? layoutSets = JsonSerializer.Deserialize<LayoutSets>(layoutSetsString, options);
+                LayoutSets? layoutSets = JsonSerializer.Deserialize<LayoutSets>(
+                    layoutSetsString,
+                    _jsonSerializerOptionsCamelCase
+                );
                 layoutSet = layoutSets?.Sets?.Find(t => t.Tasks.Contains(taskId));
             }
 
@@ -131,20 +156,30 @@ namespace Altinn.App.Core.Internal.Process
         }
 
         //TODO: Find a better home for this method
-        private async Task<(string? DataTypeId, Type? DataTypeClassType)> GetDataType(Instance instance, LayoutSet? layoutSet, string? dataTypeId)
+        private async Task<(string? DataTypeId, Type? DataTypeClassType)> GetDataType(
+            Instance instance,
+            LayoutSet? layoutSet,
+            string? dataTypeId
+        )
         {
             DataType? dataType;
             if (dataTypeId != null)
             {
-                dataType = (await _appMetadata.GetApplicationMetadata()).DataTypes.Find(d => d.Id == dataTypeId && d.AppLogic != null);
+                dataType = (await _appMetadata.GetApplicationMetadata()).DataTypes.Find(d =>
+                    d.Id == dataTypeId && d.AppLogic != null
+                );
             }
             else if (layoutSet != null)
             {
-                dataType = (await _appMetadata.GetApplicationMetadata()).DataTypes.Find(d => d.Id == layoutSet.DataType && d.AppLogic != null);
+                dataType = (await _appMetadata.GetApplicationMetadata()).DataTypes.Find(d =>
+                    d.Id == layoutSet.DataType && d.AppLogic != null
+                );
             }
             else
             {
-                dataType = (await _appMetadata.GetApplicationMetadata()).DataTypes.Find(d => d.TaskId == instance.Process.CurrentTask.ElementId && d.AppLogic != null);
+                dataType = (await _appMetadata.GetApplicationMetadata()).DataTypes.Find(d =>
+                    d.TaskId == instance.Process.CurrentTask.ElementId && d.AppLogic != null
+                );
             }
 
             if (dataType != null)

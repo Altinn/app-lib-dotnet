@@ -3,6 +3,8 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Features.DataLists;
 using Altinn.App.Core.Features.DataProcessing;
+using Altinn.App.Core.Features.Notifications.Email;
+using Altinn.App.Core.Features.Notifications.Sms;
 using Altinn.App.Core.Features.Options;
 using Altinn.App.Core.Features.PageOrder;
 using Altinn.App.Core.Features.Pdf;
@@ -11,7 +13,6 @@ using Altinn.App.Core.Features.Validation.Default;
 using Altinn.App.Core.Implementation;
 using Altinn.App.Core.Infrastructure.Clients.Authentication;
 using Altinn.App.Core.Infrastructure.Clients.Authorization;
-using Altinn.App.Core.Infrastructure.Clients.Email;
 using Altinn.App.Core.Infrastructure.Clients.Events;
 using Altinn.App.Core.Infrastructure.Clients.KeyVault;
 using Altinn.App.Core.Infrastructure.Clients.Pdf;
@@ -22,7 +23,6 @@ using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Data;
-using Altinn.App.Core.Internal.Email;
 using Altinn.App.Core.Internal.Events;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Instances;
@@ -31,6 +31,7 @@ using Altinn.App.Core.Internal.Patch;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Prefill;
 using Altinn.App.Core.Internal.Process;
+using Altinn.App.Core.Internal.Process.Authorization;
 using Altinn.App.Core.Internal.Process.EventHandlers;
 using Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
@@ -38,6 +39,7 @@ using Altinn.App.Core.Internal.Process.ServiceTasks;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Internal.Secrets;
+using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models;
@@ -56,12 +58,9 @@ using IProcessEngine = Altinn.App.Core.Internal.Process.IProcessEngine;
 using IProcessReader = Altinn.App.Core.Internal.Process.IProcessReader;
 using ProcessEngine = Altinn.App.Core.Internal.Process.ProcessEngine;
 using ProcessReader = Altinn.App.Core.Internal.Process.ProcessReader;
-using Altinn.App.Core.Internal.Sign;
-using Altinn.App.Core.Internal.Process.Authorization;
 
 namespace Altinn.App.Core.Extensions
 {
-
     /// <summary>
     /// This class holds a collection of extension methods for the <see cref="IServiceCollection"/> interface.
     /// </summary>
@@ -73,7 +72,11 @@ namespace Altinn.App.Core.Extensions
         /// <param name="services">The <see cref="IServiceCollection"/> being built.</param>
         /// <param name="configuration">A reference to the current <see cref="IConfiguration"/> object.</param>
         /// <param name="env">A reference to the current <see cref="IWebHostEnvironment"/> object.</param>
-        public static void AddPlatformServices(this IServiceCollection services, IConfiguration configuration, IWebHostEnvironment env)
+        public static void AddPlatformServices(
+            this IServiceCollection services,
+            IConfiguration configuration,
+            IWebHostEnvironment env
+        )
         {
             services.Configure<AppSettings>(configuration.GetSection("AppSettings"));
             services.Configure<GeneralSettings>(configuration.GetSection("GeneralSettings"));
@@ -123,7 +126,9 @@ namespace Altinn.App.Core.Extensions
 
             if (id == null)
             {
-                throw new KeyNotFoundException("Could not find id in applicationmetadata.json. Please ensure applicationmeta.json is well formed and contains a key for id.");
+                throw new KeyNotFoundException(
+                    "Could not find id in applicationmetadata.json. Please ensure applicationmeta.json is well formed and contains a key for id."
+                );
             }
 
             return id;
@@ -135,7 +140,11 @@ namespace Altinn.App.Core.Extensions
         /// <param name="services">The <see cref="IServiceCollection"/> being built.</param>
         /// <param name="configuration">A reference to the current <see cref="IConfiguration"/> object.</param>
         /// <param name="env">A reference to the current <see cref="IWebHostEnvironment"/> object.</param>
-        public static void AddAppServices(this IServiceCollection services, IConfiguration configuration, IWebHostEnvironment env)
+        public static void AddAppServices(
+            this IServiceCollection services,
+            IConfiguration configuration,
+            IWebHostEnvironment env
+        )
         {
             // Services for Altinn App
             services.TryAddTransient<IPDP, PDPAppSI>();
@@ -169,7 +178,7 @@ namespace Altinn.App.Core.Extensions
             AddPdfServices(services);
             AddSignatureServices(services);
             AddEventServices(services);
-            AddEmailServices(services);
+            AddNotificationServices(services);
             AddProcessServices(services);
             AddMetricsDecorators(services, configuration);
 
@@ -238,9 +247,10 @@ namespace Altinn.App.Core.Extensions
             }
         }
 
-        private static void AddEmailServices(IServiceCollection services)
+        private static void AddNotificationServices(IServiceCollection services)
         {
-            services.TryAddTransient<IEmailNotificationClient, EmailNotificationClient>();
+            services.AddHttpClient<IEmailNotificationClient, EmailNotificationClient>();
+            services.AddHttpClient<ISmsNotificationClient, SmsNotificationClient>();
         }
 
         private static void AddPdfServices(IServiceCollection services)
@@ -297,8 +307,8 @@ namespace Altinn.App.Core.Extensions
             services.AddTransient<IProcessTask, NullTypeProcessTask>();
 
             //SERVICE TASKS
-            services.AddKeyedTransient<IServiceTask, PdfServiceTask>("pdfService");
-            services.AddKeyedTransient<IServiceTask, EformidlingServiceTask>("eFormidlingService");
+            services.AddTransient<IServiceTask, PdfServiceTask>();
+            services.AddTransient<IServiceTask, EformidlingServiceTask>();
         }
 
         private static void AddActionServices(IServiceCollection services)
@@ -308,10 +318,10 @@ namespace Altinn.App.Core.Extensions
             services.AddTransientUserActionAuthorizerForActionInAllTasks<UniqueSignatureAuthorizer>("sign");
         }
 
-
         private static void AddMetricsDecorators(IServiceCollection services, IConfiguration configuration)
         {
-            MetricsSettings metricsSettings = configuration.GetSection("MetricsSettings")?.Get<MetricsSettings>() ?? new MetricsSettings();
+            MetricsSettings metricsSettings =
+                configuration.GetSection("MetricsSettings")?.Get<MetricsSettings>() ?? new MetricsSettings();
             if (metricsSettings.Enabled)
             {
                 services.Decorate<IInstanceClient, InstanceClientMetricsDecorator>();

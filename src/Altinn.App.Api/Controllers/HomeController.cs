@@ -15,6 +15,9 @@ namespace Altinn.App.Api.Controllers
     /// </summary>
     public class HomeController : Controller
     {
+        private static readonly JsonSerializerOptions _jsonSerializerOptions =
+            new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
         private readonly IAntiforgery _antiforgery;
         private readonly PlatformSettings _platformSettings;
         private readonly IWebHostEnvironment _env;
@@ -38,7 +41,8 @@ namespace Altinn.App.Api.Controllers
             IWebHostEnvironment env,
             IOptions<AppSettings> appSettings,
             IAppResources appResources,
-            IAppMetadata appMetadata)
+            IAppMetadata appMetadata
+        )
         {
             _antiforgery = antiforgery;
             _platformSettings = platformSettings.Value;
@@ -59,16 +63,21 @@ namespace Altinn.App.Api.Controllers
         public async Task<IActionResult> Index(
             [FromRoute] string org,
             [FromRoute] string app,
-            [FromQuery] bool dontChooseReportee)
+            [FromQuery] bool dontChooseReportee
+        )
         {
             // See comments in the configuration of Antiforgery in MvcConfiguration.cs.
             var tokens = _antiforgery.GetAndStoreTokens(HttpContext);
             if (tokens.RequestToken != null)
             {
-                HttpContext.Response.Cookies.Append("XSRF-TOKEN", tokens.RequestToken, new CookieOptions
-                {
-                    HttpOnly = false // Make this cookie readable by Javascript.
-                });
+                HttpContext.Response.Cookies.Append(
+                    "XSRF-TOKEN",
+                    tokens.RequestToken,
+                    new CookieOptions
+                    {
+                        HttpOnly = false // Make this cookie readable by Javascript.
+                    }
+                );
             }
 
             if (await ShouldShowAppView())
@@ -132,12 +141,14 @@ namespace Altinn.App.Api.Controllers
         private DataType? GetStatelessDataType(ApplicationMetadata application)
         {
             string layoutSetsString = _appResources.GetLayoutSets();
-            JsonSerializerOptions options = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
             // Stateless apps only work with layousets
             if (!string.IsNullOrEmpty(layoutSetsString))
             {
-                LayoutSets? layoutSets = JsonSerializer.Deserialize<LayoutSets>(layoutSetsString, options);
+                LayoutSets? layoutSets = JsonSerializer.Deserialize<LayoutSets>(
+                    layoutSetsString,
+                    _jsonSerializerOptions
+                );
                 string? dataTypeId = layoutSets?.Sets?.Find(set => set.Id == application.OnEntry?.Show)?.DataType;
                 return application.DataTypes.Find(d => d.Id == dataTypeId);
             }

@@ -7,7 +7,9 @@ namespace Altinn.App.Core.Helpers
     /// </summary>
     public static class MimeTypeMap
     {
-        private static readonly Lazy<IDictionary<string, MimeType>> _mappings = new Lazy<IDictionary<string, MimeType>>(BuildMappings);
+        private static readonly Lazy<IDictionary<string, MimeType>> _mappings = new Lazy<IDictionary<string, MimeType>>(
+            BuildMappings
+        );
 
         private static IDictionary<string, MimeType> BuildMappings()
         {
@@ -160,6 +162,7 @@ namespace Altinn.App.Core.Helpers
                 { ".fsx", new("application/fsharp-script") },
                 { ".generictest", new("application/xml") },
                 { ".gif", new("image/gif") },
+                { ".gml", new("application/gml+xml") },
                 { ".gpx", new("application/gpx+xml") },
                 { ".group", new("text/x-ms-group") },
                 { ".gsm", new("audio/x-gsm") },
@@ -453,6 +456,7 @@ namespace Altinn.App.Core.Helpers
                 { ".snp", new("application/octet-stream") },
                 { ".sol", new("text/plain") },
                 { ".sor", new("text/plain") },
+                { ".sos", new("text/vnd.sosi") },
                 { ".spc", new("application/x-pkcs7-certificates") },
                 { ".spl", new("application/futuresplash") },
                 { ".spx", new("audio/ogg") },
@@ -636,7 +640,9 @@ namespace Altinn.App.Core.Helpers
                 extension = "." + extension;
             }
 
-            return _mappings.Value.TryGetValue(extension, out MimeType? mime) ? mime : new MimeType("application/octet-stream");
+            return _mappings.Value.TryGetValue(extension, out MimeType? mime)
+                ? mime
+                : new MimeType("application/octet-stream");
         }
     }
 }

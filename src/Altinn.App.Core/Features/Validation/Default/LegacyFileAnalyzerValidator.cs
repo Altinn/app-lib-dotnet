@@ -7,7 +7,7 @@ using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 
 /// <summary>
-/// Implementation of <see cref="IFileUploadValidator"/> that uses the legacy 
+/// Implementation of <see cref="IFileUploadValidator"/> that uses the legacy
 /// <see cref="IFileValidator"/> and <see cref="IFileAnalyser"/>.
 /// </summary>
 public class LegacyFileAnalyzerValidator : IFileUploadValidator
@@ -18,7 +18,10 @@ public class LegacyFileAnalyzerValidator : IFileUploadValidator
     /// <summary>
     /// Constructor for depency injection.
     /// </summary>
-    public LegacyFileAnalyzerValidator(IEnumerable<IFileValidator> fileValidators, IEnumerable<IFileAnalyser> fileAnalysers)
+    public LegacyFileAnalyzerValidator(
+        IEnumerable<IFileValidator> fileValidators,
+        IEnumerable<IFileAnalyser> fileAnalysers
+    )
     {
         _fileValidators = fileValidators;
         _fileAnalysers = fileAnalysers;
@@ -28,7 +31,14 @@ public class LegacyFileAnalyzerValidator : IFileUploadValidator
     public string DataType => "*";
 
     /// <inheritdoc/>
-    public async Task<List<ValidationIssue>> Validate(Instance instance, DataType dataType, byte[] fileContent, string? filename, string? mimeType, string? language)
+    public async Task<List<ValidationIssue>> Validate(
+        Instance instance,
+        DataType dataType,
+        byte[] fileContent,
+        string? filename,
+        string? mimeType,
+        string? language
+    )
     {
         var fileAnalysisResults = new List<FileAnalysisResult>();
         if (dataType.EnabledFileAnalysers?.Count > 0)
@@ -36,7 +46,8 @@ public class LegacyFileAnalyzerValidator : IFileUploadValidator
             // Run file analysis
             foreach (var analyserName in dataType.EnabledFileAnalysers)
             {
-                var analyser = _fileAnalysers.FirstOrDefault(a => a.Id == analyserName)
+                var analyser =
+                    _fileAnalysers.FirstOrDefault(a => a.Id == analyserName)
                     ?? throw new InvalidOperationException("Could not find file analyzer with ID: " + analyzerName);
                 using var stream = new MemoryStream(fileContent);
                 var result = await analyser.Analyse(stream, filename);

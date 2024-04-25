@@ -27,21 +27,22 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
     private static readonly Guid InstanceGuid = new("5a2fa5ec-f97c-4816-b57a-dc78a981917e");
     private static readonly string InstanceId = $"{InstanceOwnerPartyId}/{InstanceGuid}";
     private static readonly Guid DataGuid = new("cd691c32-ae36-4555-8aee-0b7054a413e4");
+    private static readonly JsonSerializerOptions _jsonSerializerOptions =
+        new()
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = true,
+            UnknownTypeHandling = JsonUnknownTypeHandling.JsonElement,
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        };
 
     // Define mocks
     private readonly Mock<IDataProcessor> _dataProcessorMock = new(MockBehavior.Strict);
     private readonly Mock<IFormDataValidator> _formDataValidatorMock = new(MockBehavior.Strict);
 
-    private static readonly JsonSerializerOptions JsonSerializerOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = true,
-        UnknownTypeHandling = JsonUnknownTypeHandling.JsonElement,
-        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-    };
-
     // Constructor with common setup
-    public ProcessControllerTests(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper) : base(factory, outputHelper)
+    public ProcessControllerTests(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper)
+        : base(factory, outputHelper)
     {
         _formDataValidatorMock.Setup(v => v.DataType).Returns("Not a valid data type");
         OverrideServicesForAllTests = (services) =>
@@ -73,50 +74,50 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var content = await response.Content.ReadAsStringAsync();
         var expectedString = """
-                             {
-                               "currentTask": {
-                                 "actions": {
-                                   "read": true,
-                                   "write": true
-                                 },
-                                 "userActions": [
-                                   {
-                                     "id": "read",
-                                     "authorized": true,
-                                     "type": "ProcessAction"
-                                   },
-                                   {
-                                     "id": "write",
-                                     "authorized": true,
-                                     "type": "ProcessAction"
-                                   }
-                                 ],
-                                 "read": true,
-                                 "write": true,
-                                 "flow": 2,
-                                 "started": "2019-12-05T13:24:34.9196661Z",
-                                 "elementId": "Task_1",
-                                 "name": "Utfylling",
-                                 "altinnTaskType": "data",
-                                 "ended": null,
-                                 "validated": {
-                                   "timestamp": "2020-02-07T10:46:36.985894Z",
-                                   "canCompleteTask": false
-                                 },
-                                 "flowType": null
-                               },
-                               "processTasks": [
-                                 {
-                                   "altinnTaskType": "data",
-                                   "elementId": "Task_1"
-                                 }
-                               ],
-                               "started": "2019-12-05T13:24:34.8412179Z",
-                               "startEvent": "StartEvent_1",
-                               "ended": null,
-                               "endEvent": null
-                             }
-                             """;
+            {
+              "currentTask": {
+                "actions": {
+                  "read": true,
+                  "write": true
+                },
+                "userActions": [
+                  {
+                    "id": "read",
+                    "authorized": true,
+                    "type": "ProcessAction"
+                  },
+                  {
+                    "id": "write",
+                    "authorized": true,
+                    "type": "ProcessAction"
+                  }
+                ],
+                "read": true,
+                "write": true,
+                "flow": 2,
+                "started": "2019-12-05T13:24:34.9196661Z",
+                "elementId": "Task_1",
+                "name": "Utfylling",
+                "altinnTaskType": "data",
+                "ended": null,
+                "validated": {
+                  "timestamp": "2020-02-07T10:46:36.985894Z",
+                  "canCompleteTask": false
+                },
+                "flowType": null
+              },
+              "processTasks": [
+                {
+                  "altinnTaskType": "data",
+                  "elementId": "Task_1"
+                }
+              ],
+              "started": "2019-12-05T13:24:34.8412179Z",
+              "startEvent": "StartEvent_1",
+              "ended": null,
+              "endEvent": null
+            }
+            """;
         CompareResult<AppProcessState>(expectedString, content);
     }
 
@@ -144,7 +145,10 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         };
         using var client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
         // both "?lang" and "?language" should work
-        var nextResponse = await client.PutAsync($"{Org}/{App}/instances/{InstanceId}/process/next?lang={language}", null);
+        var nextResponse = await client.PutAsync(
+            $"{Org}/{App}/instances/{InstanceId}/process/next?lang={language}",
+            null
+        );
         var nextResponseContent = await nextResponse.Content.ReadAsStringAsync();
         _outputHelper.WriteLine(nextResponseContent);
         nextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
@@ -174,7 +178,10 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         };
         using var client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
         // both "?lang" and "?language" should work
-        var nextResponse = await client.PutAsync($"{Org}/{App}/instances/{InstanceId}/process/next?language={language}", null);
+        var nextResponse = await client.PutAsync(
+            $"{Org}/{App}/instances/{InstanceId}/process/next?language={language}",
+            null
+        );
         var nextResponseContent = await nextResponse.Content.ReadAsStringAsync();
         _outputHelper.WriteLine(nextResponseContent);
         nextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
@@ -197,7 +204,7 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
 
             // Verify that data element is locked while pdf is being generated
             var lockedInstanceString = await File.ReadAllTextAsync(dataElementPath);
-            var lockedInstance = JsonSerializer.Deserialize<DataElement>(lockedInstanceString, JsonSerializerOptions)!;
+            var lockedInstance = JsonSerializer.Deserialize<DataElement>(lockedInstanceString, _jsonSerializerOptions)!;
             lockedInstance.Locked.Should().BeTrue();
 
             sendAsyncCalled = true;
@@ -214,7 +221,7 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
 
         // Verify that the instance is not locked after pdf failed
         var unLockedInstanceString = await File.ReadAllTextAsync(dataElementPath);
-        var unLockedInstance = JsonSerializer.Deserialize<DataElement>(unLockedInstanceString, JsonSerializerOptions)!;
+        var unLockedInstance = JsonSerializer.Deserialize<DataElement>(unLockedInstanceString, _jsonSerializerOptions)!;
         unLockedInstance.Locked.Should().BeFalse();
     }
 
@@ -224,16 +231,26 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         var dataValidator = new Mock<IFormDataValidator>(MockBehavior.Strict);
         dataValidator.Setup(v => v.DataType).Returns("*");
         dataValidator.Setup(v => v.ValidationSource).Returns("test-source");
-        dataValidator.Setup(v => v.ValidateFormData(It.IsAny<Instance>(), It.IsAny<DataElement>(), It.IsAny<object>(), It.IsAny<string>()))
-            .ReturnsAsync(new List<ValidationIssue>
-            {
-                new()
+        dataValidator
+            .Setup(v =>
+                v.ValidateFormData(
+                    It.IsAny<Instance>(),
+                    It.IsAny<DataElement>(),
+                    It.IsAny<object>(),
+                    It.IsAny<string>()
+                )
+            )
+            .ReturnsAsync(
+                new List<ValidationIssue>
                 {
-                    Code = "test-code",
-                    Description = "test-description",
-                    Severity = ValidationIssueSeverity.Error,
-                },
-            });
+                    new()
+                    {
+                        Code = "test-code",
+                        Description = "test-description",
+                        Severity = ValidationIssueSeverity.Error,
+                    },
+                }
+            );
         OverrideServicesForThisTest = (services) =>
         {
             services.AddSingleton(dataValidator.Object);
@@ -245,7 +262,12 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         nextResponse.Should().HaveStatusCode(HttpStatusCode.Conflict);
         using var document = JsonDocument.Parse(nextResponseContent);
         var issues = document.RootElement.GetProperty("validationIssues").EnumerateArray().ToList();
-        issues.Should().ContainSingle(p => p.GetProperty("source").GetString() == "test-source" && p.GetProperty("description").GetString() == "test-description");
+        issues
+            .Should()
+            .ContainSingle(p =>
+                p.GetProperty("source").GetString() == "test-source"
+                && p.GetProperty("description").GetString() == "test-description"
+            );
 
         // Verify that the instance is not updated
         var instance = await TestData.GetInstance(Org, App, InstanceOwnerPartyId, InstanceGuid);
@@ -259,38 +281,47 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         var dataValidator = new Mock<IFormDataValidator>(MockBehavior.Strict);
         dataValidator.Setup(v => v.DataType).Returns("*");
         dataValidator.Setup(v => v.ValidationSource).Returns("test-source");
-        dataValidator.Setup(v => v.ValidateFormData(It.IsAny<Instance>(), It.IsAny<DataElement>(), It.IsAny<object>(), It.IsAny<string>()))
-            .ReturnsAsync(new List<ValidationIssue>
-            {
-                new()
+        dataValidator
+            .Setup(v =>
+                v.ValidateFormData(
+                    It.IsAny<Instance>(),
+                    It.IsAny<DataElement>(),
+                    It.IsAny<object>(),
+                    It.IsAny<string>()
+                )
+            )
+            .ReturnsAsync(
+                new List<ValidationIssue>
                 {
-                    Code = "test-success",
-                    Description = "test-success-description",
-                    Severity = ValidationIssueSeverity.Success,
-                },
-                new()
-                {
-                    Code = "test-fixed",
-                    Description = "test-fixed-description",
-                    Severity = ValidationIssueSeverity.Fixed,
-                },
-                new()
-                {
-                    Code = "test-informational",
-                    Description = "test-informational-description",
-                    Severity = ValidationIssueSeverity.Informational,
-                },
-                new()
-                {
-                    Code = "test-warning",
-                    Description = "test-warning-description",
-                    Severity = ValidationIssueSeverity.Warning,
-                },
-            });
+                    new()
+                    {
+                        Code = "test-success",
+                        Description = "test-success-description",
+                        Severity = ValidationIssueSeverity.Success,
+                    },
+                    new()
+                    {
+                        Code = "test-fixed",
+                        Description = "test-fixed-description",
+                        Severity = ValidationIssueSeverity.Fixed,
+                    },
+                    new()
+                    {
+                        Code = "test-informational",
+                        Description = "test-informational-description",
+                        Severity = ValidationIssueSeverity.Informational,
+                    },
+                    new()
+                    {
+                        Code = "test-warning",
+                        Description = "test-warning-description",
+                        Severity = ValidationIssueSeverity.Warning,
+                    },
+                }
+            );
         var pdfMock = new Mock<IPdfGeneratorClient>(MockBehavior.Strict);
         using var pdfReturnStream = new MemoryStream();
-        pdfMock.Setup(p => p.GeneratePdf(It.IsAny<Uri>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(pdfReturnStream);
+        pdfMock.Setup(p => p.GeneratePdf(It.IsAny<Uri>(), It.IsAny<CancellationToken>())).ReturnsAsync(pdfReturnStream);
         OverrideServicesForThisTest = (services) =>
         {
             services.AddSingleton(dataValidator.Object);
@@ -315,8 +346,7 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
     {
         var pdfMock = new Mock<IPdfGeneratorClient>(MockBehavior.Strict);
         using var pdfReturnStream = new MemoryStream();
-        pdfMock.Setup(p => p.GeneratePdf(It.IsAny<Uri>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(pdfReturnStream);
+        pdfMock.Setup(p => p.GeneratePdf(It.IsAny<Uri>(), It.IsAny<CancellationToken>())).ReturnsAsync(pdfReturnStream);
         OverrideServicesForThisTest = (services) =>
         {
             services.AddSingleton(pdfMock.Object);
@@ -338,19 +368,21 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
     {
         var pdfMock = new Mock<IPdfGeneratorClient>(MockBehavior.Strict);
         using var pdfReturnStream = new MemoryStream();
-        pdfMock.Setup(p => p.GeneratePdf(It.IsAny<Uri>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(pdfReturnStream);
+        pdfMock.Setup(p => p.GeneratePdf(It.IsAny<Uri>(), It.IsAny<CancellationToken>())).ReturnsAsync(pdfReturnStream);
         OverrideServicesForThisTest = (services) =>
         {
             services.AddSingleton(pdfMock.Object);
         };
         using var client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
-        using var content = new StringContent("""{"action": "unknown-action_unauthorized"}""", Encoding.UTF8, "application/json");
+        using var content = new StringContent(
+            """{"action": "unknown-action_unauthorized"}""",
+            Encoding.UTF8,
+            "application/json"
+        );
         var nextResponse = await client.PutAsync($"{Org}/{App}/instances/{InstanceId}/process/next", content);
         var nextResponseContent = await nextResponse.Content.ReadAsStringAsync();
         _outputHelper.WriteLine(nextResponseContent);
         nextResponse.Should().HaveStatusCode(HttpStatusCode.Forbidden);
-
     }
 
     //TODO: replace this assertion with a proper one once fluentassertions has a json compare feature scheduled for v7 https://github.com/fluentassertions/fluentassertions/issues/2205
