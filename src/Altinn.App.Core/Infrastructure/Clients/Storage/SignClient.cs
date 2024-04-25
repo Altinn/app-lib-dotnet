@@ -58,6 +58,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         {
             SignRequest signRequest = new SignRequest()
             {
+                TaskId = signatureContext.TaskId,
                 Signee = new()
                 {
                     UserId = signatureContext.Signee.UserId,
