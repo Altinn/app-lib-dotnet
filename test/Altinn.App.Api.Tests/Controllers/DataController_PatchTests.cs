@@ -9,6 +9,7 @@ using Altinn.App.Api.Tests.Data;
 using Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models;
 using Altinn.App.Api.Tests.Utils;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Json.More;
@@ -25,6 +26,15 @@ namespace Altinn.App.Api.Tests.Controllers;
 
 public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicationFactory<Program>>
 {
+    private static readonly JsonSerializerOptions _jsonSerializerOptions =
+        new()
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = true,
+            UnknownTypeHandling = JsonUnknownTypeHandling.JsonElement,
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        };
+
     // Define constants
     private const string Org = "tdd";
     private const string App = "contributer-restriction";
@@ -36,15 +46,6 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
     // Define mocks
     private readonly Mock<IDataProcessor> _dataProcessorMock = new(MockBehavior.Strict);
     private readonly Mock<IFormDataValidator> _formDataValidatorMock = new(MockBehavior.Strict);
-
-    private static readonly JsonSerializerOptions JsonSerializerOptions =
-        new()
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            WriteIndented = true,
-            UnknownTypeHandling = JsonUnknownTypeHandling.JsonElement,
-            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-        };
 
     // Constructor with common setup
     public DataControllerPatchTests(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper)
@@ -83,7 +84,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var serializedPatch = JsonSerializer.Serialize(
             new DataPatchRequest() { Patch = patch, IgnoredValidators = ignoredValidators, },
-            JsonSerializerOptions
+            _jsonSerializerOptions
         );
         _outputHelper.WriteLine(serializedPatch);
         using var updateDataElementContent = new StringContent(
@@ -95,9 +96,9 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
         var responseString = await response.Content.ReadAsStringAsync();
         using var responseParsedRaw = JsonDocument.Parse(responseString);
         _outputHelper.WriteLine("\nResponse:");
-        _outputHelper.WriteLine(JsonSerializer.Serialize(responseParsedRaw, JsonSerializerOptions));
+        _outputHelper.WriteLine(JsonSerializer.Serialize(responseParsedRaw, _jsonSerializerOptions));
         response.Should().HaveStatusCode(expectedStatus);
-        var responseObject = JsonSerializer.Deserialize<TResponse>(responseString, JsonSerializerOptions)!;
+        var responseObject = JsonSerializer.Deserialize<TResponse>(responseString, _jsonSerializerOptions)!;
         return (response, responseString, responseObject);
     }
 
@@ -659,9 +660,9 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
         var responseString = await response.Content.ReadAsStringAsync();
         using var responseParsedRaw = JsonDocument.Parse(responseString);
         _outputHelper.WriteLine("\nResponse:");
-        _outputHelper.WriteLine(JsonSerializer.Serialize(responseParsedRaw, JsonSerializerOptions));
+        _outputHelper.WriteLine(JsonSerializer.Serialize(responseParsedRaw, _jsonSerializerOptions));
         response.Should().HaveStatusCode(HttpStatusCode.OK);
-        var responseObject = JsonSerializer.Deserialize<Skjema>(responseString, JsonSerializerOptions)!;
+        var responseObject = JsonSerializer.Deserialize<Skjema>(responseString, _jsonSerializerOptions)!;
 
         responseObject.Melding!.Random.Should().Be("randomFromDataRead");
 
@@ -741,5 +742,72 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
         var (_, responseString, _) = await CallPatchApi<DataPatchResponse>(patch, null, HttpStatusCode.OK);
 
         responseString.Should().Contain("\"severity\":1");
+    }
+
+    [Fact]
+    public async Task IgnoredValidators_NotExecuted()
+    {
+        // Common setup
+        _dataProcessorMock
+            .Setup(p =>
+                p.ProcessDataWrite(
+                    It.IsAny<Instance>(),
+                    It.IsAny<Guid?>(),
+                    It.IsAny<object>(),
+                    It.IsAny<object?>(),
+                    null
+                )
+            )
+            .Returns(
+                (Instance instance, Guid? dataGuid, object skjema, object? existingData, string? language) =>
+                    Task.CompletedTask
+            )
+            .Verifiable(Times.Exactly(2));
+
+        // Add extra validator that should be ignored
+        _formDataValidatorMock
+            .Setup(fdv =>
+                fdv.ValidateFormData(
+                    It.IsAny<Instance>(),
+                    It.IsAny<DataElement>(),
+                    It.IsAny<object>(),
+                    It.IsAny<string?>()
+                )
+            )
+            .ReturnsAsync(
+                new List<ValidationIssue>
+                {
+                    new() { Severity = ValidationIssueSeverity.Error, Description = "Ignored validator", }
+                }
+            )
+            .Verifiable(Times.Once);
+        _formDataValidatorMock.SetupGet(fdv => fdv.ValidationSource).Returns("ignored");
+        _formDataValidatorMock.SetupGet(fdv => fdv.DataType).Returns("default");
+        _formDataValidatorMock
+            .Setup(fdv => fdv.HasRelevantChanges(It.IsAny<object>(), It.IsAny<object>()))
+            .Returns(true);
+
+        var patch = new JsonPatch(
+            PatchOperation.Replace(JsonPointer.Create("melding", "name"), JsonNode.Parse("\"Ola Olsen\""))
+        );
+
+        var (_, _, parsedResponse1) = await CallPatchApi<DataPatchResponse>(patch, ["ignored"], HttpStatusCode.OK);
+
+        // Verify that no issues from the ignored validator are present
+        parsedResponse1.ValidationIssues.Should().NotContainKey("ignored");
+
+        var (_, _, parsedResponse2) = await CallPatchApi<DataPatchResponse>(patch, null, HttpStatusCode.OK);
+
+        // Verify that issues from the ignored validator are present
+        parsedResponse2
+            .ValidationIssues.Should()
+            .ContainKey("ignored")
+            .WhoseValue.Should()
+            .ContainSingle()
+            .Which.Description.Should()
+            .Be("Ignored validator");
+
+        _dataProcessorMock.Verify();
+        _formDataValidatorMock.Verify();
     }
 }

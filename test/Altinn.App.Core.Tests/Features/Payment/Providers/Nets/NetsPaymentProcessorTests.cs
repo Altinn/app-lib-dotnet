@@ -23,7 +23,7 @@ public class NetsPaymentProcessorTests
     public NetsPaymentProcessorTests()
     {
         _netsClientMock = new Mock<INetsClient>();
-        _settings = Options.Create(
+        _settings = Microsoft.Extensions.Options.Options.Create(
             new NetsPaymentSettings
             {
                 SecretApiKey = "secret",
@@ -31,7 +31,7 @@ public class NetsPaymentProcessorTests
                 TermsUrl = "termsUrl",
             }
         );
-        _generalSettings = Options.Create(new GeneralSettings());
+        _generalSettings = Microsoft.Extensions.Options.Options.Create(new GeneralSettings());
         _processor = new NetsPaymentProcessor(_netsClientMock.Object, _settings, _generalSettings);
     }
 

@@ -42,7 +42,10 @@ public static class ObjectUtils
                     foreach (var item in (IList)value)
                     {
                         // Recurse into values of a list
-                        InitializeAltinnRowId(item);
+                        if (item is not null)
+                        {
+                            InitializeAltinnRowId(item);
+                        }
                     }
                 }
             }
@@ -50,14 +53,14 @@ public static class ObjectUtils
             {
                 var value = prop.GetValue(model);
 
-                if (value is "")
+                if (value is string s && string.IsNullOrWhiteSpace(s))
                 {
                     // Initialize string with null value (xml serialization does not always preserve "")
                     prop.SetValue(model, null);
                 }
 
-                // continue recursion over all properties
-                if (value is not null)
+                // continue recursion over all properties that are not null or value types
+                if (value?.GetType().IsValueType == false)
                 {
                     InitializeAltinnRowId(value);
                 }
@@ -70,6 +73,8 @@ public static class ObjectUtils
     /// </summary>
     public static void RemoveAltinnRowId(object model)
     {
+        ArgumentNullException.ThrowIfNull(model);
+
         foreach (var prop in model.GetType().GetProperties())
         {
             // Handle guid fields named "AltinnRowId"
@@ -86,7 +91,10 @@ public static class ObjectUtils
                     foreach (var item in (IList)value)
                     {
                         // Recurse into values of a list
-                        RemoveAltinnRowId(item);
+                        if (item is not null)
+                        {
+                            RemoveAltinnRowId(item);
+                        }
                     }
                 }
             }

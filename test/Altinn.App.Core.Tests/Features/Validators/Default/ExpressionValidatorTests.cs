@@ -29,7 +29,10 @@ public class ExpressionValidatorTests
     private readonly Mock<ILogger<ExpressionValidator>> _logger = new();
     private readonly Mock<IAppResources> _appResources = new(MockBehavior.Strict);
     private readonly Mock<IAppMetadata> _appMetadata = new(MockBehavior.Strict);
-    private readonly IOptions<FrontEndSettings> _frontendSettings = Options.Create(new FrontEndSettings());
+
+    private readonly IOptions<FrontEndSettings> _frontendSettings = Microsoft.Extensions.Options.Options.Create(
+        new FrontEndSettings()
+    );
     private readonly Mock<LayoutEvaluatorStateInitializer> _layoutInitializer;
 
     public ExpressionValidatorTests()
@@ -93,11 +96,8 @@ public class ExpressionValidatorTests
 
 public class ExpressionTestAttribute : DataAttribute
 {
-    private static readonly JsonSerializerOptions JsonSerializerOptions = new JsonSerializerOptions
-    {
-        ReadCommentHandling = JsonCommentHandling.Skip,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-    };
+    private static readonly JsonSerializerOptions _jsonSerializerOptions =
+        new() { ReadCommentHandling = JsonCommentHandling.Skip, PropertyNamingPolicy = JsonNamingPolicy.CamelCase, };
 
     public override IEnumerable<object[]> GetData(MethodInfo methodInfo)
     {
@@ -110,7 +110,7 @@ public class ExpressionTestAttribute : DataAttribute
             var data = File.ReadAllText(file);
             ExpressionValidationTestModel testCase = JsonSerializer.Deserialize<ExpressionValidationTestModel>(
                 data,
-                JsonSerializerOptions
+                _jsonSerializerOptions
             )!;
             yield return new object[] { testCase };
         }

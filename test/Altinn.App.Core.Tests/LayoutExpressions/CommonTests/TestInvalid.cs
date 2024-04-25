@@ -11,6 +11,9 @@ namespace Altinn.App.Core.Tests.LayoutExpressions;
 
 public class TestInvalid
 {
+    private static readonly JsonSerializerOptions _jsonSerializerOptions =
+        new() { ReadCommentHandling = JsonCommentHandling.Skip, PropertyNamingPolicy = JsonNamingPolicy.CamelCase, };
+
     private readonly ITestOutputHelper _output;
 
     public TestInvalid(ITestOutputHelper output)
@@ -27,14 +30,7 @@ public class TestInvalid
         _output.WriteLine(testCase.FullPath);
         Action act = () =>
         {
-            var test = JsonSerializer.Deserialize<ExpressionTestCaseRoot>(
-                testCase.RawJson!,
-                new JsonSerializerOptions
-                {
-                    ReadCommentHandling = JsonCommentHandling.Skip,
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                }
-            )!;
+            var test = JsonSerializer.Deserialize<ExpressionTestCaseRoot>(testCase.RawJson!, _jsonSerializerOptions)!;
             var state = new LayoutEvaluatorState(
                 new JsonDataModel(test.DataModel),
                 test.ComponentModel,

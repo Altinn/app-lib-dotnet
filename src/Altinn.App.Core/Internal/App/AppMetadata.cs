@@ -11,6 +11,14 @@ namespace Altinn.App.Core.Internal.App
     /// </summary>
     public class AppMetadata : IAppMetadata
     {
+        private static readonly JsonSerializerOptions _jsonSerializerOptions =
+            new()
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                PropertyNameCaseInsensitive = true,
+                AllowTrailingCommas = true
+            };
+
         private readonly AppSettings _settings;
         private readonly IFrontendFeatures _frontendFeatures;
         private ApplicationMetadata? _application;
@@ -46,16 +54,10 @@ namespace Altinn.App.Core.Internal.App
             {
                 if (File.Exists(filename))
                 {
-                    JsonSerializerOptions jsonSerializerOptions = new JsonSerializerOptions()
-                    {
-                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                        PropertyNameCaseInsensitive = true,
-                        AllowTrailingCommas = true
-                    };
                     using FileStream fileStream = File.OpenRead(filename);
                     var application = await JsonSerializer.DeserializeAsync<ApplicationMetadata>(
                         fileStream,
-                        jsonSerializerOptions
+                        _jsonSerializerOptions
                     );
                     if (application == null)
                     {

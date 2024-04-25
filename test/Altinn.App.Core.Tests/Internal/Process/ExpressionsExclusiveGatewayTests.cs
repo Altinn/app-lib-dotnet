@@ -21,6 +21,9 @@ namespace Altinn.App.Core.Tests.Internal.Process;
 
 public class ExpressionsExclusiveGatewayTests
 {
+    private static readonly JsonSerializerOptions _jsonSerializerOptions =
+        new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, WriteIndented = true, };
+
     [Fact]
     public async Task FilterAsync_NoExpressions_ReturnsAllFlows()
     {
@@ -294,11 +297,6 @@ public class ExpressionsExclusiveGatewayTests
         );
     }
 
-    private static string LayoutSetsToString(LayoutSets layoutSets)
-    {
-        return JsonSerializer.Serialize(
-            layoutSets,
-            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, WriteIndented = true, }
-        );
-    }
+    private static string LayoutSetsToString(LayoutSets layoutSets) =>
+        JsonSerializer.Serialize(layoutSets, _jsonSerializerOptions);
 }

@@ -9,10 +9,12 @@ using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Internal.Process.ServiceTasks;
 
+internal interface IEformidlingServiceTask : IServiceTask { }
+
 /// <summary>
 /// Service task that sends eFormidling shipment, if EFormidling is enabled in config and EFormidling.SendAfterTaskId matches the current task.
 /// </summary>
-public class EformidlingServiceTask : IServiceTask
+public class EformidlingServiceTask : IEformidlingServiceTask
 {
     private readonly ILogger<EformidlingServiceTask> _logger;
     private readonly IAppMetadata _appMetadata;
@@ -21,7 +23,7 @@ public class EformidlingServiceTask : IServiceTask
     private readonly IOptions<AppSettings>? _appSettings;
 
     /// <summary>
-    /// Service task that sends eFormidling shipment, if EFormidling is enabled in config and EFormidling.SendAfterTaskId matches the current task.
+    /// Initializes a new instance of the <see cref="EformidlingServiceTask"/> class.
     /// </summary>
     public EformidlingServiceTask(
         ILogger<EformidlingServiceTask> logger,
@@ -38,12 +40,7 @@ public class EformidlingServiceTask : IServiceTask
         _appSettings = appSettings;
     }
 
-    /// <summary>
-    /// Executes the service task.
-    /// </summary>
-    /// <param name="taskId"></param>
-    /// <param name="instance"></param>
-    /// <returns></returns>
+    /// <inheritdoc/>
     public async Task Execute(string taskId, Instance instance)
     {
         ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();

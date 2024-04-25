@@ -16,6 +16,11 @@ public enum ResultType
     /// The user action failed
     /// </summary>
     Failure,
+
+    /// <summary>
+    /// The client should redirect the user to a new url
+    /// </summary>
+    Redirect
 }
 
 /// <summary>
@@ -26,7 +31,12 @@ public class UserActionResult
     /// <summary>
     /// Gets or sets a value indicating whether the user action was a success
     /// </summary>
-    public ResultType ResultType { get; init; }
+    public bool Success { get; set; }
+
+    /// <summary>
+    /// Indicates the type of result
+    /// </summary>
+    public ResultType ResultType { get; set; }
 
     /// <summary>
     /// Gets or sets a dictionary of updated data models. Key should be elementId and value should be the updated data model
@@ -60,8 +70,12 @@ public class UserActionResult
     /// <returns></returns>
     public static UserActionResult SuccessResult(List<ClientAction>? clientActions = null)
     {
-        var userActionResult = new UserActionResult { ResultType = ResultType.Success, ClientActions = clientActions };
-        return userActionResult;
+        return new UserActionResult
+        {
+            Success = true,
+            ResultType = ResultType.Success,
+            ClientActions = clientActions
+        };
     }
 
     /// <summary>
@@ -86,9 +100,16 @@ public class UserActionResult
     /// <summary>
     /// Creates a redirect result
     /// </summary>
+    /// <param name="redirectUrl"></param>
+    /// <returns></returns>
     public static UserActionResult RedirectResult(Uri redirectUrl)
     {
-        return new UserActionResult { RedirectUrl = redirectUrl };
+        return new UserActionResult
+        {
+            Success = true,
+            ResultType = ResultType.Redirect,
+            RedirectUrl = redirectUrl
+        };
     }
 
     /// <summary>

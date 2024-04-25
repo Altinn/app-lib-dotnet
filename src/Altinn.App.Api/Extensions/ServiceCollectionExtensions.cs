@@ -24,7 +24,7 @@ using Prometheus;
 namespace Altinn.App.Api.Extensions
 {
     /// <summary>
-    /// Class for registering requiered services to run an Altinn application.
+    /// Class for registering required services to run an Altinn application.
     /// </summary>
     public static class ServiceCollectionExtensions
     {
@@ -96,7 +96,13 @@ namespace Altinn.App.Api.Extensions
             services.AddTransient<IUserAction, PaymentUserAction>();
         }
 
-        private static void AddApplicationInsights(
+        /// <summary>
+        /// Adds Application Insights to the service collection.
+        /// </summary>
+        /// <param name="services">Services</param>
+        /// <param name="config">Config</param>
+        /// <param name="env">Environment</param>
+        internal static void AddApplicationInsights(
             IServiceCollection services,
             IConfiguration config,
             IWebHostEnvironment env

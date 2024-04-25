@@ -42,10 +42,6 @@ namespace Altinn.App.Core.Internal.Process
         /// <summary>
         /// Loops through all events and delegates the event to the correct event handler.
         /// </summary>
-        /// <param name="instance"></param>
-        /// <param name="events"></param>
-        /// <param name="prefill"></param>
-        /// <returns></returns>
         public async Task HandleEvents(
             Instance instance,
             Dictionary<string, string>? prefill,
@@ -91,6 +87,7 @@ namespace Altinn.App.Core.Internal.Process
                             );
                             break;
                         case InstanceEventType.process_AbandonTask:
+                            // InstanceEventType is set to Abandon when action performed is `Reject`. This is to keep backwards compatability with existing code that only should be run when a task is abandoned/rejected.
                             await _abandonTaskEventHandler.Execute(
                                 GetProcessTaskInstance(altinnTaskType),
                                 taskId!,
@@ -112,7 +109,6 @@ namespace Altinn.App.Core.Internal.Process
         /// <summary>
         /// Identify the correct task implementation
         /// </summary>
-        /// <returns></returns>
         private IProcessTask GetProcessTaskInstance(string? altinnTaskType)
         {
             if (string.IsNullOrEmpty(altinnTaskType))

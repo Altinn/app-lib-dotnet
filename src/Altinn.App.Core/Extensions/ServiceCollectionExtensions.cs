@@ -4,6 +4,8 @@ using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Features.DataLists;
 using Altinn.App.Core.Features.DataProcessing;
 using Altinn.App.Core.Features.FileAnalyzis;
+using Altinn.App.Core.Features.Notifications.Email;
+using Altinn.App.Core.Features.Notifications.Sms;
 using Altinn.App.Core.Features.Options;
 using Altinn.App.Core.Features.PageOrder;
 using Altinn.App.Core.Features.Pdf;
@@ -109,7 +111,7 @@ namespace Altinn.App.Core.Extensions
 
         private static void AddApplicationIdentifier(IServiceCollection services)
         {
-            services.AddSingleton<AppIdentifier>(sp =>
+            services.AddSingleton(sp =>
             {
                 var appIdentifier = GetApplicationId();
                 return new AppIdentifier(appIdentifier);
@@ -166,10 +168,8 @@ namespace Altinn.App.Core.Extensions
             services.TryAddTransient<LayoutEvaluatorStateInitializer>();
             services.TryAddTransient<IPatchService, PatchService>();
             services.AddTransient<IDataService, DataService>();
-            services.Configure<Altinn.Common.PEP.Configuration.PepSettings>(configuration.GetSection("PEPSettings"));
-            services.Configure<Altinn.Common.PEP.Configuration.PlatformSettings>(
-                configuration.GetSection("PlatformSettings")
-            );
+            services.Configure<Common.PEP.Configuration.PepSettings>(configuration.GetSection("PEPSettings"));
+            services.Configure<Common.PEP.Configuration.PlatformSettings>(configuration.GetSection("PlatformSettings"));
             services.Configure<AccessTokenSettings>(configuration.GetSection("AccessTokenSettings"));
             services.Configure<FrontEndSettings>(configuration.GetSection(nameof(FrontEndSettings)));
             services.Configure<PdfGeneratorSettings>(configuration.GetSection(nameof(PdfGeneratorSettings)));
@@ -179,6 +179,7 @@ namespace Altinn.App.Core.Extensions
             AddPdfServices(services);
             AddSignatureServices(services);
             AddEventServices(services);
+            AddNotificationServices(services);
             AddProcessServices(services);
             AddFileAnalyserServices(services);
             AddFileValidatorServices(services);
@@ -246,6 +247,12 @@ namespace Altinn.App.Core.Extensions
             }
         }
 
+        private static void AddNotificationServices(IServiceCollection services)
+        {
+            services.AddHttpClient<IEmailNotificationClient, EmailNotificationClient>();
+            services.AddHttpClient<ISmsNotificationClient, SmsNotificationClient>();
+        }
+
         private static void AddPdfServices(IServiceCollection services)
         {
             services.TryAddTransient<IPdfGeneratorClient, PdfGeneratorClient>();
@@ -300,8 +307,8 @@ namespace Altinn.App.Core.Extensions
             services.AddTransient<IProcessTask, NullTypeProcessTask>();
 
             //SERVICE TASKS
-            services.AddKeyedTransient<IServiceTask, PdfServiceTask>("pdfService");
-            services.AddKeyedTransient<IServiceTask, EformidlingServiceTask>("eFormidlingService");
+            services.AddTransient<IServiceTask, PdfServiceTask>();
+            services.AddTransient<IServiceTask, EformidlingServiceTask>();
         }
 
         private static void AddActionServices(IServiceCollection services)

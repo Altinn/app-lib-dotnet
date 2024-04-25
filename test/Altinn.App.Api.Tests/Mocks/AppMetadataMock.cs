@@ -14,6 +14,14 @@ namespace App.IntegrationTests.Mocks.Services
 {
     public class AppMetadataMock : IAppMetadata
     {
+        private static readonly JsonSerializerOptions _jsonSerializerOptions =
+            new()
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                PropertyNameCaseInsensitive = true,
+                AllowTrailingCommas = true
+            };
+
         private readonly AppSettings _settings;
         private readonly IFrontendFeatures _frontendFeatures;
         private ApplicationMetadata? _application;
@@ -60,16 +68,10 @@ namespace App.IntegrationTests.Mocks.Services
             {
                 if (File.Exists(filename))
                 {
-                    JsonSerializerOptions jsonSerializerOptions = new JsonSerializerOptions()
-                    {
-                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                        PropertyNameCaseInsensitive = true,
-                        AllowTrailingCommas = true
-                    };
                     using FileStream fileStream = File.OpenRead(filename);
                     var application = await JsonSerializer.DeserializeAsync<ApplicationMetadata>(
                         fileStream,
-                        jsonSerializerOptions
+                        _jsonSerializerOptions
                     );
                     if (application == null)
                     {

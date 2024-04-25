@@ -1,4 +1,3 @@
-#nullable disable
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Options;
 using Altinn.App.Core.Models;
@@ -6,7 +5,7 @@ using FluentAssertions;
 using Moq;
 using Xunit;
 
-namespace Altinn.App.PlatformServices.Tests.Options
+namespace Altinn.App.Core.Tests.Features.Options
 {
     public class AppOptionsFactoryTests
     {
@@ -44,7 +43,7 @@ namespace Altinn.App.PlatformServices.Tests.Options
         {
             var factory = new AppOptionsFactory(new List<IAppOptionsProvider>());
 
-            Action action = () => factory.GetOptionsProvider("country");
+            System.Action action = () => factory.GetOptionsProvider("country");
 
             action.Should().Throw<KeyNotFoundException>();
         }
@@ -106,11 +105,11 @@ namespace Altinn.App.PlatformServices.Tests.Options
             options.Parameters.First(x => x.Key == "key").Value.Should().Be("value");
         }
 
-        internal class CountryAppOptionsProvider : IAppOptionsProvider
+        private class CountryAppOptionsProvider : IAppOptionsProvider
         {
             public string Id { get; set; } = "country";
 
-            public Task<AppOptions> GetAppOptionsAsync(string language, Dictionary<string, string> keyValuePairs)
+            public Task<AppOptions> GetAppOptionsAsync(string? language, Dictionary<string, string> keyValuePairs)
             {
                 var options = new AppOptions
                 {
@@ -120,7 +119,7 @@ namespace Altinn.App.PlatformServices.Tests.Options
                         new AppOption { Label = "Sverige", Value = "46" }
                     },
 
-                    Parameters = keyValuePairs
+                    Parameters = keyValuePairs!
                 };
 
                 return Task.FromResult(options);

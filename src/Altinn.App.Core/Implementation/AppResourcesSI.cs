@@ -19,18 +19,18 @@ namespace Altinn.App.Core.Implementation
     /// </summary>
     public class AppResourcesSI : IAppResources
     {
-        private readonly AppSettings _settings;
-        private readonly IAppMetadata _appMetadata;
-        private readonly IWebHostEnvironment _hostingEnvironment;
-        private readonly ILogger _logger;
-
-        private static readonly JsonSerializerOptions DESERIALIZER_OPTIONS =
+        private static readonly JsonSerializerOptions _jsonSerializerOptions =
             new()
             {
                 AllowTrailingCommas = true,
                 ReadCommentHandling = JsonCommentHandling.Skip,
                 PropertyNameCaseInsensitive = true,
             };
+
+        private readonly AppSettings _settings;
+        private readonly IAppMetadata _appMetadata;
+        private readonly IWebHostEnvironment _hostingEnvironment;
+        private readonly ILogger _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AppResourcesSI"/> class.
@@ -79,7 +79,7 @@ namespace Altinn.App.Core.Implementation
                 TextResource textResource = (
                     await System.Text.Json.JsonSerializer.DeserializeAsync<TextResource>(
                         fileStream,
-                        DESERIALIZER_OPTIONS
+                        _jsonSerializerOptions
                     )
                 )!;
                 textResource.Id = $"{org}-{app}-{language}";
@@ -264,7 +264,10 @@ namespace Altinn.App.Core.Implementation
             string? layoutSetsString = GetLayoutSets();
             if (layoutSetsString is not null)
             {
-                return System.Text.Json.JsonSerializer.Deserialize<LayoutSets>(layoutSetsString, DESERIALIZER_OPTIONS);
+                return System.Text.Json.JsonSerializer.Deserialize<LayoutSets>(
+                    layoutSetsString,
+                    _jsonSerializerOptions
+                );
             }
 
             return null;
@@ -303,7 +306,9 @@ namespace Altinn.App.Core.Implementation
             var order = GetLayoutSettingsForSet(layoutSetId)?.Pages?.Order;
             if (order is null)
             {
-                return new LayoutModel();
+                throw new InvalidDataException(
+                    "No $Pages.Order field found" + (layoutSetId is null ? "" : $" for layoutSet {layoutSetId}")
+                );
             }
 
             var layoutModel = new LayoutModel();
@@ -315,7 +320,7 @@ namespace Altinn.App.Core.Implementation
                 layoutModel.Pages[page] =
                     System.Text.Json.JsonSerializer.Deserialize<PageComponent>(
                         pageBytes.RemoveBom(),
-                        DESERIALIZER_OPTIONS
+                        _jsonSerializerOptions
                     ) ?? throw new InvalidDataException(page + ".json is \"null\"");
             }
 

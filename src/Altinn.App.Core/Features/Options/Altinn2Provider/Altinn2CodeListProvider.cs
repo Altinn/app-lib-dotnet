@@ -76,15 +76,17 @@ namespace Altinn.App.Core.Features.Options.Altinn2Provider
                 _ => "1044", // default to norwegian bokmål
             };
 
-            return await _cache.GetOrCreateAsync(
-                $"{_metadataApiId}{langCode}{_codeListVersion}",
-                async (entry) =>
-                {
-                    entry.Priority = CacheItemPriority.NeverRemove;
-                    entry.AbsoluteExpiration = DateTimeOffset.MaxValue;
-                    return await _client.GetAltinn2Codelist(_metadataApiId, langCode, _codeListVersion);
-                }
-            );
+            return (
+                await _cache.GetOrCreateAsync(
+                    $"{_metadataApiId}{langCode}{_codeListVersion}",
+                    async (entry) =>
+                    {
+                        entry.Priority = CacheItemPriority.NeverRemove;
+                        entry.AbsoluteExpiration = DateTimeOffset.MaxValue;
+                        return await _client.GetAltinn2Codelist(_metadataApiId, langCode, _codeListVersion);
+                    }
+                )
+            )!;
         }
 
         /// <inheritdoc/>

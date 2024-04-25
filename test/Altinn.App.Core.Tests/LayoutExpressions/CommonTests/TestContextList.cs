@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Tests.Helpers;
 using FluentAssertions;
@@ -11,6 +12,9 @@ namespace Altinn.App.Core.Tests.LayoutExpressions;
 
 public class TestContextList
 {
+    private static readonly JsonSerializerOptions _jsonSerializerOptions =
+        new() { WriteIndented = true, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault };
+
     private readonly ITestOutputHelper _output;
 
     public TestContextList(ITestOutputHelper output)
@@ -44,16 +48,7 @@ public class TestContextList
         test.ParsingException.Should().BeNull("Loading of test failed");
 
         var results = state.GetComponentContexts().Select(c => ComponentContextForTestSpec.FromContext(c)).ToList();
-        _output.WriteLine(
-            JsonSerializer.Serialize(
-                new { resultContexts = results },
-                new JsonSerializerOptions
-                {
-                    WriteIndented = true,
-                    DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault
-                }
-            )
-        );
+        _output.WriteLine(JsonSerializer.Serialize(new { resultContexts = results }, _jsonSerializerOptions));
 
         foreach (var (result, expected, index) in results.Zip(test.Expected, Enumerable.Range(0, int.MaxValue)))
         {
@@ -88,6 +83,9 @@ public class TestContextList
 
 public class SharedTestContextListAttribute : DataAttribute
 {
+    private static readonly JsonSerializerOptions _jsonSerializerOptions =
+        new() { ReadCommentHandling = JsonCommentHandling.Skip, };
+
     private readonly string _folder;
 
     public SharedTestContextListAttribute(string folder)
@@ -106,10 +104,7 @@ public class SharedTestContextListAttribute : DataAttribute
             var data = File.ReadAllText(file);
             try
             {
-                testCase = JsonSerializer.Deserialize<ContextListRoot>(
-                    data,
-                    new JsonSerializerOptions { ReadCommentHandling = JsonCommentHandling.Skip, }
-                )!;
+                testCase = JsonSerializer.Deserialize<ContextListRoot>(data, _jsonSerializerOptions)!;
             }
             catch (Exception e)
             {

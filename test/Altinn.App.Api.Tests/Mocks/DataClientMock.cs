@@ -15,7 +15,8 @@ namespace App.IntegrationTests.Mocks.Services
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IAppMetadata _appMetadata;
-        private static readonly JsonSerializerOptions _serializerOptions =
+
+        private static readonly JsonSerializerOptions _jsonSerializerOptions =
             new() { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
         public DataClientMock(IAppMetadata appMetadata, IHttpContextAccessor httpContextAccessor)
@@ -63,7 +64,7 @@ namespace App.IntegrationTests.Mocks.Services
                 }
 
                 if (
-                    JsonSerializer.Deserialize<DataElement>(fileContent, _serializerOptions)
+                    JsonSerializer.Deserialize<DataElement>(fileContent, _jsonSerializerOptions)
                     is not DataElement dataElement
                 )
                 {
@@ -546,7 +547,7 @@ namespace App.IntegrationTests.Mocks.Services
                 Guid.Parse(dataElement.Id)
             );
 
-            string jsonData = JsonSerializer.Serialize(dataElement, _serializerOptions);
+            string jsonData = JsonSerializer.Serialize(dataElement, _jsonSerializerOptions);
 
             using StreamWriter sw = new(dataElementPath);
 
@@ -569,7 +570,7 @@ namespace App.IntegrationTests.Mocks.Services
             foreach (string file in files)
             {
                 string content = File.ReadAllText(Path.Combine(path, file));
-                DataElement? dataElement = JsonSerializer.Deserialize<DataElement>(content, _serializerOptions);
+                DataElement? dataElement = JsonSerializer.Deserialize<DataElement>(content, _jsonSerializerOptions);
 
                 if (dataElement != null)
                 {

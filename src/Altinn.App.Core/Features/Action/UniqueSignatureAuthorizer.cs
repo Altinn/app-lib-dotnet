@@ -15,6 +15,9 @@ namespace Altinn.App.Core.Features.Action;
 /// </summary>
 public class UniqueSignatureAuthorizer : IUserActionAuthorizer
 {
+    private static readonly JsonSerializerOptions _jsonSerializerOptions =
+        new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, PropertyNameCaseInsensitive = true, };
+
     private readonly IAppMetadata _appMetadata;
     private readonly IProcessReader _processReader;
     private readonly IInstanceClient _instanceClient;
@@ -98,12 +101,7 @@ public class UniqueSignatureAuthorizer : IUserActionAuthorizer
         );
         try
         {
-            JsonSerializerOptions options = new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                PropertyNameCaseInsensitive = true,
-            };
-            var signDocument = await JsonSerializer.DeserializeAsync<SignDocument>(data, options);
+            var signDocument = await JsonSerializer.DeserializeAsync<SignDocument>(data, _jsonSerializerOptions);
             return signDocument?.SigneeInfo.UserId ?? "";
         }
         catch (JsonException)
