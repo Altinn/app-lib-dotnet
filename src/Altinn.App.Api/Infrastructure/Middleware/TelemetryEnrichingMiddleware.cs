@@ -7,13 +7,13 @@ namespace Altinn.App.Api.Infrastructure.Middleware;
 /// <summary>
 /// Middleware for adding telemetry to the request
 /// </summary>
-internal static class TelemetryMiddleware
+public static class TelemetryEnrichingMiddleware
 {
     /// <summary>
     /// Adds telemetry to the request
     /// </summary>
     /// <param name="app">App</param>
-    internal static IApplicationBuilder UseTelemetry(this IApplicationBuilder app)
+    public static IApplicationBuilder UseTelemetryEnricher(this IApplicationBuilder app)
     {
         app.Use(
             static async (context, next) =>

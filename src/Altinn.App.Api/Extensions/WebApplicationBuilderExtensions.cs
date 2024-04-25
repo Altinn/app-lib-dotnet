@@ -26,7 +26,7 @@ public static class WebApplicationBuilderExtensions
         app.UseStaticFiles('/' + appId);
         app.UseAuthentication();
         app.UseAuthorization();
-        app.UseTelemetry();
+        app.UseTelemetryEnricher();
 
         app.UseEndpoints(endpoints =>
         {
