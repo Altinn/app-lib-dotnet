@@ -48,7 +48,7 @@ public class LegacyFileAnalyzerValidator : IFileUploadValidator
             {
                 var analyser =
                     _fileAnalysers.FirstOrDefault(a => a.Id == analyserName)
-                    ?? throw new InvalidOperationException("Could not find file analyzer with ID: " + analyzerName);
+                    ?? throw new InvalidOperationException("Could not find file analyzer with ID: " + analyserName);
                 using var stream = new MemoryStream(fileContent);
                 var result = await analyser.Analyse(stream, filename);
                 result.AnalyserId = analyser.Id;
