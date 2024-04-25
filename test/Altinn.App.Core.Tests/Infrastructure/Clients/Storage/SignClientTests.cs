@@ -54,6 +54,7 @@ public class SignClientTests
         var dataElementId = Guid.NewGuid().ToString();
         var signatureContext = new SignatureContext(
             instanceIdentifier,
+            "Task_1",
             "sign-data-type",
             new Signee()
             {
@@ -113,6 +114,7 @@ public class SignClientTests
         var dataElementId = Guid.NewGuid().ToString();
         var signatureContext = new SignatureContext(
             instanceIdentifier,
+            "Task_1",
             "sign-data-type",
             new Signee()
             {
