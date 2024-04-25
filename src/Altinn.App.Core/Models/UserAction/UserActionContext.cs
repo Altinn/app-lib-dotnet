@@ -15,8 +15,13 @@ public class UserActionContext
     /// <param name="buttonId">The id of the button that triggered the action (optional)</param>
     /// <param name="actionMetadata"></param>
     /// <param name="language">The currently used language by the user (or null if not available)</param>
-    public UserActionContext(Instance instance, int? userId, string? buttonId = null, Dictionary<string, string>? actionMetadata = null,
-        string? language = null)
+    public UserActionContext(
+        Instance instance,
+        int? userId,
+        string? buttonId = null,
+        Dictionary<string, string>? actionMetadata = null,
+        string? language = null
+    )
     {
         Instance = instance;
         UserId = userId;

@@ -24,12 +24,13 @@ namespace Altinn.App.Core.Implementation
         private readonly IWebHostEnvironment _hostingEnvironment;
         private readonly ILogger _logger;
 
-        private static readonly JsonSerializerOptions DESERIALIZER_OPTIONS = new()
-        {
-            AllowTrailingCommas = true,
-            ReadCommentHandling = JsonCommentHandling.Skip,
-            PropertyNameCaseInsensitive = true,
-        };
+        private static readonly JsonSerializerOptions DESERIALIZER_OPTIONS =
+            new()
+            {
+                AllowTrailingCommas = true,
+                ReadCommentHandling = JsonCommentHandling.Skip,
+                PropertyNameCaseInsensitive = true,
+            };
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AppResourcesSI"/> class.
@@ -42,7 +43,8 @@ namespace Altinn.App.Core.Implementation
             IOptions<AppSettings> settings,
             IAppMetadata appMetadata,
             IWebHostEnvironment hostingEnvironment,
-            ILogger<AppResourcesSI> logger)
+            ILogger<AppResourcesSI> logger
+        )
         {
             _settings = settings.Value;
             _appMetadata = appMetadata;
@@ -53,7 +55,10 @@ namespace Altinn.App.Core.Implementation
         /// <inheritdoc />
         public byte[] GetText(string org, string app, string textResource)
         {
-            return ReadFileContentsFromLegalPath(_settings.AppBasePath + _settings.ConfigurationFolder + _settings.TextFolder, textResource);
+            return ReadFileContentsFromLegalPath(
+                _settings.AppBasePath + _settings.ConfigurationFolder + _settings.TextFolder,
+                textResource
+            );
         }
 
         /// <inheritdoc />
@@ -71,7 +76,12 @@ namespace Altinn.App.Core.Implementation
 
             using (FileStream fileStream = new(fullFileName, FileMode.Open, FileAccess.Read))
             {
-                TextResource textResource = (await System.Text.Json.JsonSerializer.DeserializeAsync<TextResource>(fileStream, DESERIALIZER_OPTIONS))!;
+                TextResource textResource = (
+                    await System.Text.Json.JsonSerializer.DeserializeAsync<TextResource>(
+                        fileStream,
+                        DESERIALIZER_OPTIONS
+                    )
+                )!;
                 textResource.Id = $"{org}-{app}-{language}";
                 textResource.Org = org;
                 textResource.Language = language;
@@ -89,10 +99,7 @@ namespace Altinn.App.Core.Implementation
                 Application application = applicationMetadata;
                 if (applicationMetadata.OnEntry != null)
                 {
-                    application.OnEntry = new OnEntryConfig()
-                    {
-                        Show = applicationMetadata.OnEntry.Show
-                    };
+                    application.OnEntry = new OnEntryConfig() { Show = applicationMetadata.OnEntry.Show };
                 }
 
                 return application;
@@ -162,7 +169,11 @@ namespace Altinn.App.Core.Implementation
         /// <inheritdoc />
         public string? GetLayoutSettingsString()
         {
-            string filename = Path.Join(_settings.AppBasePath, _settings.UiFolder, _settings.FormLayoutSettingsFileName);
+            string filename = Path.Join(
+                _settings.AppBasePath,
+                _settings.UiFolder,
+                _settings.FormLayoutSettingsFileName
+            );
             string? filedata = null;
             if (File.Exists(filename))
             {
@@ -175,7 +186,11 @@ namespace Altinn.App.Core.Implementation
         /// <inheritdoc />
         public LayoutSettings GetLayoutSettings()
         {
-            string filename = Path.Join(_settings.AppBasePath, _settings.UiFolder, _settings.FormLayoutSettingsFileName);
+            string filename = Path.Join(
+                _settings.AppBasePath,
+                _settings.UiFolder,
+                _settings.FormLayoutSettingsFileName
+            );
             if (File.Exists(filename))
             {
                 var filedata = File.ReadAllText(filename, Encoding.UTF8);
@@ -297,7 +312,11 @@ namespace Altinn.App.Core.Implementation
                 var pageBytes = File.ReadAllBytes(Path.Join(folder, page + ".json"));
                 // Set the PageName using AsyncLocal before deserializing.
                 PageComponentConverter.SetAsyncLocalPageName(page);
-                layoutModel.Pages[page] = System.Text.Json.JsonSerializer.Deserialize<PageComponent>(pageBytes.RemoveBom(), DESERIALIZER_OPTIONS) ?? throw new InvalidDataException(page + ".json is \"null\"");
+                layoutModel.Pages[page] =
+                    System.Text.Json.JsonSerializer.Deserialize<PageComponent>(
+                        pageBytes.RemoveBom(),
+                        DESERIALIZER_OPTIONS
+                    ) ?? throw new InvalidDataException(page + ".json is \"null\"");
             }
 
             return layoutModel;
@@ -306,7 +325,12 @@ namespace Altinn.App.Core.Implementation
         /// <inheritdoc />
         public string? GetLayoutSettingsStringForSet(string layoutSetId)
         {
-            string filename = Path.Join(_settings.AppBasePath, _settings.UiFolder, layoutSetId, _settings.FormLayoutSettingsFileName);
+            string filename = Path.Join(
+                _settings.AppBasePath,
+                _settings.UiFolder,
+                layoutSetId,
+                _settings.FormLayoutSettingsFileName
+            );
             string? filedata = null;
             if (File.Exists(filename))
             {
@@ -319,7 +343,12 @@ namespace Altinn.App.Core.Implementation
         /// <inheritdoc />
         public LayoutSettings? GetLayoutSettingsForSet(string? layoutSetId)
         {
-            string filename = Path.Join(_settings.AppBasePath, _settings.UiFolder, layoutSetId, _settings.FormLayoutSettingsFileName);
+            string filename = Path.Join(
+                _settings.AppBasePath,
+                _settings.UiFolder,
+                layoutSetId,
+                _settings.FormLayoutSettingsFileName
+            );
             if (File.Exists(filename))
             {
                 string? filedata = null;

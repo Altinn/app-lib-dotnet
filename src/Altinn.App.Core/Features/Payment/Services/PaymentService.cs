@@ -23,8 +23,12 @@ public class PaymentService : IPaymentService
     /// <summary>
     /// Initializes a new instance of the <see cref="PaymentService"/> class.
     /// </summary>
-    public PaymentService(IEnumerable<IPaymentProcessor> paymentProcessors, IOrderDetailsCalculator orderDetailsCalculator, IDataService dataService,
-        ILogger<PaymentService> logger)
+    public PaymentService(
+        IEnumerable<IPaymentProcessor> paymentProcessors,
+        IOrderDetailsCalculator orderDetailsCalculator,
+        IDataService dataService,
+        ILogger<PaymentService> logger
+    )
     {
         _paymentProcessors = paymentProcessors;
         _orderDetailsCalculator = orderDetailsCalculator;
@@ -33,8 +37,11 @@ public class PaymentService : IPaymentService
     }
 
     /// <inheritdoc/>
-    public async Task<(PaymentInformation paymentInformation, bool alreadyPaid)> StartPayment(Instance instance,
-        AltinnPaymentConfiguration paymentConfiguration, string? language)
+    public async Task<(PaymentInformation paymentInformation, bool alreadyPaid)> StartPayment(
+        Instance instance,
+        AltinnPaymentConfiguration paymentConfiguration,
+        string? language
+    )
     {
         _logger.LogInformation("Starting payment for instance {instanceId}.", instance.Id);
 
@@ -42,53 +49,70 @@ public class PaymentService : IPaymentService
 
         string dataTypeId = paymentConfiguration.PaymentDataType!;
 
-        (Guid dataElementId, PaymentInformation? existingPaymentInformation) = await _dataService.GetByType<PaymentInformation>(instance, dataTypeId);
+        (Guid dataElementId, PaymentInformation? existingPaymentInformation) =
+            await _dataService.GetByType<PaymentInformation>(instance, dataTypeId);
         if (existingPaymentInformation?.PaymentDetails != null)
         {
             if (existingPaymentInformation.Status != PaymentStatus.Paid)
             {
                 _logger.LogWarning(
                     "Payment with payment id {paymentId} already started for instance {instanceId}. Trying to cancel before creating new payment.",
-                    existingPaymentInformation.PaymentDetails.PaymentId, instance.Id);
+                    existingPaymentInformation.PaymentDetails.PaymentId,
+                    instance.Id
+                );
                 await CancelAndDelete(instance, dataElementId, existingPaymentInformation);
             }
             else
             {
                 _logger.LogWarning(
                     "Payment with payment id {paymentId} already paid for instance {instanceId}. Cannot start new payment.",
-                    existingPaymentInformation.PaymentDetails.PaymentId, instance.Id);
+                    existingPaymentInformation.PaymentDetails.PaymentId,
+                    instance.Id
+                );
 
                 return (existingPaymentInformation, true);
             }
         }
 
         OrderDetails orderDetails = await _orderDetailsCalculator.CalculateOrderDetails(instance, language);
-        IPaymentProcessor paymentProcessor = _paymentProcessors.FirstOrDefault(p => p.PaymentProcessorId == orderDetails.PaymentProcessorId) ??
-                                             throw new PaymentException($"Payment processor with ID '{orderDetails.PaymentProcessorId}' not found.");
+        IPaymentProcessor paymentProcessor =
+            _paymentProcessors.FirstOrDefault(p => p.PaymentProcessorId == orderDetails.PaymentProcessorId)
+            ?? throw new PaymentException($"Payment processor with ID '{orderDetails.PaymentProcessorId}' not found.");
 
         //If the sum of the order is 0, we can skip invoking the payment processor.
-        PaymentDetails? startedPayment = orderDetails.TotalPriceIncVat > 0 ? await paymentProcessor.StartPayment(instance, orderDetails, language) : null;
+        PaymentDetails? startedPayment =
+            orderDetails.TotalPriceIncVat > 0
+                ? await paymentProcessor.StartPayment(instance, orderDetails, language)
+                : null;
 
-        PaymentInformation paymentInformation = new()
-        {
-            TaskId = instance.Process.CurrentTask.ElementId,
-            Status = startedPayment != null ? PaymentStatus.Created : PaymentStatus.Skipped,
-            OrderDetails = orderDetails,
-            PaymentDetails = startedPayment
-        };
+        PaymentInformation paymentInformation =
+            new()
+            {
+                TaskId = instance.Process.CurrentTask.ElementId,
+                Status = startedPayment != null ? PaymentStatus.Created : PaymentStatus.Skipped,
+                OrderDetails = orderDetails,
+                PaymentDetails = startedPayment
+            };
 
         await _dataService.InsertJsonObject(new InstanceIdentifier(instance), dataTypeId, paymentInformation);
         return (paymentInformation, false);
     }
 
     /// <inheritdoc/>
-    public async Task<PaymentInformation> CheckAndStorePaymentStatus(Instance instance, AltinnPaymentConfiguration paymentConfiguration, string? language)
+    public async Task<PaymentInformation> CheckAndStorePaymentStatus(
+        Instance instance,
+        AltinnPaymentConfiguration paymentConfiguration,
+        string? language
+    )
     {
         _logger.LogInformation("Checking payment status for instance {instanceId}.", instance.Id);
 
         ValidateConfig(paymentConfiguration);
         string dataTypeId = paymentConfiguration.PaymentDataType!;
-        (Guid dataElementId, PaymentInformation? paymentInformation) = await _dataService.GetByType<PaymentInformation>(instance, dataTypeId);
+        (Guid dataElementId, PaymentInformation? paymentInformation) = await _dataService.GetByType<PaymentInformation>(
+            instance,
+            dataTypeId
+        );
 
         if (paymentInformation == null)
         {
@@ -109,41 +133,57 @@ public class PaymentService : IPaymentService
             return paymentInformation;
         }
 
-        IPaymentProcessor paymentProcessor = _paymentProcessors.FirstOrDefault(p => p.PaymentProcessorId == paymentProcessorId) ??
-                                             throw new PaymentException($"Payment processor with ID '{paymentProcessorId}' not found.");
+        IPaymentProcessor paymentProcessor =
+            _paymentProcessors.FirstOrDefault(p => p.PaymentProcessorId == paymentProcessorId)
+            ?? throw new PaymentException($"Payment processor with ID '{paymentProcessorId}' not found.");
 
-        (PaymentStatus paymentStatus, PaymentDetails updatedPaymentDetails) =
-            await paymentProcessor.GetPaymentStatus(instance, paymentDetails.PaymentId, totalPriceIncVat, language);
+        (PaymentStatus paymentStatus, PaymentDetails updatedPaymentDetails) = await paymentProcessor.GetPaymentStatus(
+            instance,
+            paymentDetails.PaymentId,
+            totalPriceIncVat,
+            language
+        );
 
         paymentInformation.Status = paymentStatus;
         paymentInformation.PaymentDetails = updatedPaymentDetails;
 
-        await _dataService.UpdateJsonObject(new InstanceIdentifier(instance), dataTypeId, dataElementId, paymentInformation);
+        await _dataService.UpdateJsonObject(
+            new InstanceIdentifier(instance),
+            dataTypeId,
+            dataElementId,
+            paymentInformation
+        );
         return paymentInformation;
     }
 
     private async Task CancelAndDelete(Instance instance, Guid dataElementId, PaymentInformation paymentInformation)
     {
         string paymentProcessorId = paymentInformation.OrderDetails.PaymentProcessorId;
-        IPaymentProcessor paymentProcessor = _paymentProcessors.FirstOrDefault(pp => pp.PaymentProcessorId == paymentProcessorId) ??
-                                             throw new PaymentException($"Payment processor with ID '{paymentProcessorId}' not found.");
+        IPaymentProcessor paymentProcessor =
+            _paymentProcessors.FirstOrDefault(pp => pp.PaymentProcessorId == paymentProcessorId)
+            ?? throw new PaymentException($"Payment processor with ID '{paymentProcessorId}' not found.");
 
         bool success = await paymentProcessor.TerminatePayment(instance, paymentInformation);
         string paymentId = paymentInformation.PaymentDetails?.PaymentId ?? "missing";
-        
+
         if (!success)
         {
-            throw new PaymentException(
-                $"Unable to cancel existing {paymentProcessorId} payment with ID: {paymentId}.");
+            throw new PaymentException($"Unable to cancel existing {paymentProcessorId} payment with ID: {paymentId}.");
         }
 
-        _logger.LogDebug("Payment {paymentReference} cancelled for instance {instanceId}. Deleting payment information.",
-            paymentId, instance.Id);
+        _logger.LogDebug(
+            "Payment {paymentReference} cancelled for instance {instanceId}. Deleting payment information.",
+            paymentId,
+            instance.Id
+        );
 
         await _dataService.DeleteById(new InstanceIdentifier(instance), dataElementId);
 
-        _logger.LogDebug("Payment information for payment {paymentReference} deleted for instance {instanceId}.", paymentId,
-            instance.Id);
+        _logger.LogDebug(
+            "Payment information for payment {paymentReference} deleted for instance {instanceId}.",
+            paymentId,
+            instance.Id
+        );
     }
 
     private static void ValidateConfig(AltinnPaymentConfiguration paymentConfiguration)
@@ -157,7 +197,9 @@ public class PaymentService : IPaymentService
 
         if (errorMessages.Count != 0)
         {
-            throw new ApplicationConfigException("Payment process task configuration is not valid: " + string.Join(",\n", errorMessages));
+            throw new ApplicationConfigException(
+                "Payment process task configuration is not valid: " + string.Join(",\n", errorMessages)
+            );
         }
     }
 }

@@ -1,4 +1,5 @@
 using Altinn.App.Core.Models.Process;
+
 namespace Altinn.App.Core.Models.UserAction;
 
 /// <summary>
@@ -10,6 +11,7 @@ public enum ResultType
     /// The user action succeeded
     /// </summary>
     Success,
+
     /// <summary>
     /// The user action failed
     /// </summary>
@@ -50,6 +52,7 @@ public class UserActionResult
     /// If this is set, the client should redirect to this url
     /// </summary>
     public Uri? RedirectUrl { get; set; }
+
     /// <summary>
     /// Creates a success result
     /// </summary>
@@ -57,11 +60,7 @@ public class UserActionResult
     /// <returns></returns>
     public static UserActionResult SuccessResult(List<ClientAction>? clientActions = null)
     {
-        var userActionResult = new UserActionResult
-        {
-            ResultType = ResultType.Success,
-            ClientActions = clientActions
-        };
+        var userActionResult = new UserActionResult { ResultType = ResultType.Success, ClientActions = clientActions };
         return userActionResult;
     }
 
@@ -69,7 +68,11 @@ public class UserActionResult
     /// Creates a failure result
     /// </summary>
     /// <returns></returns>
-    public static UserActionResult FailureResult(ActionError error, List<ClientAction>? clientActions = null, ProcessErrorType errorType = ProcessErrorType.Internal)
+    public static UserActionResult FailureResult(
+        ActionError error,
+        List<ClientAction>? clientActions = null,
+        ProcessErrorType errorType = ProcessErrorType.Internal
+    )
     {
         return new UserActionResult
         {
@@ -85,10 +88,7 @@ public class UserActionResult
     /// </summary>
     public static UserActionResult RedirectResult(Uri redirectUrl)
     {
-        return new UserActionResult
-        {
-            RedirectUrl = redirectUrl
-        };
+        return new UserActionResult { RedirectUrl = redirectUrl };
     }
 
     /// <summary>

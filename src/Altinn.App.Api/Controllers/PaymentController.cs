@@ -33,7 +33,8 @@ public class PaymentController : Controller
         IInstanceClient instanceClient,
         IProcessReader processReader,
         IPaymentService? paymentService,
-        IOrderDetailsCalculator? orderDetailsCalculator)
+        IOrderDetailsCalculator? orderDetailsCalculator
+    )
     {
         _instanceClient = instanceClient;
         _processReader = processReader;
@@ -58,21 +59,30 @@ public class PaymentController : Controller
         [FromRoute] string app,
         [FromRoute] int instanceOwnerPartyId,
         [FromRoute] Guid instanceGuid,
-        [FromQuery] string? language = null)
+        [FromQuery] string? language = null
+    )
     {
         if (_paymentService == null)
         {
-            throw new PaymentException("Payment related services have not been added to the service collection. See payment related documentation.");
+            throw new PaymentException(
+                "Payment related services have not been added to the service collection. See payment related documentation."
+            );
         }
 
         Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
-        AltinnPaymentConfiguration? paymentConfiguration = _processReader.GetAltinnTaskExtension(instance.Process.CurrentTask.ElementId)?.PaymentConfiguration;
+        AltinnPaymentConfiguration? paymentConfiguration = _processReader
+            .GetAltinnTaskExtension(instance.Process.CurrentTask.ElementId)
+            ?.PaymentConfiguration;
         if (paymentConfiguration == null)
         {
             throw new PaymentException("Payment configuration not found in AltinnTaskExtension");
         }
 
-        PaymentInformation paymentInformation = await _paymentService.CheckAndStorePaymentStatus(instance, paymentConfiguration, language);
+        PaymentInformation paymentInformation = await _paymentService.CheckAndStorePaymentStatus(
+            instance,
+            paymentConfiguration,
+            language
+        );
         return Ok(paymentInformation);
     }
 
@@ -93,12 +103,14 @@ public class PaymentController : Controller
         [FromRoute] string app,
         [FromRoute] int instanceOwnerPartyId,
         [FromRoute] Guid instanceGuid,
-        [FromQuery] string? language = null)
+        [FromQuery] string? language = null
+    )
     {
         if (_orderDetailsCalculator == null)
         {
             throw new PaymentException(
-                "You must add an implementation of the IOrderDetailsCalculator interface to the DI container. See payment related documentation.");
+                "You must add an implementation of the IOrderDetailsCalculator interface to the DI container. See payment related documentation."
+            );
         }
 
         Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);

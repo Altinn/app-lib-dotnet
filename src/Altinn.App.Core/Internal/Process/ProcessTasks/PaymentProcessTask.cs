@@ -30,7 +30,7 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks
             _dataClient = dataClient;
             _processReader = processReader;
         }
-        
+
         /// <inheritdoc/>
         public string Type => "payment";
 
@@ -43,17 +43,22 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks
         /// <inheritdoc/>
         public async Task End(string taskId, Instance instance)
         {
-            AltinnPaymentConfiguration? paymentConfiguration =
-                _processReader.GetAltinnTaskExtension(taskId)?.PaymentConfiguration;
+            AltinnPaymentConfiguration? paymentConfiguration = _processReader
+                .GetAltinnTaskExtension(taskId)
+                ?.PaymentConfiguration;
 
             if (paymentConfiguration == null)
             {
-                throw new ApplicationConfigException("PaymentConfig is missing in the payment process task configuration.");
+                throw new ApplicationConfigException(
+                    "PaymentConfig is missing in the payment process task configuration."
+                );
             }
 
             if (string.IsNullOrWhiteSpace(paymentConfiguration.PaymentDataType))
             {
-                throw new ApplicationConfigException("PaymentDataType is missing in the payment process task configuration.");
+                throw new ApplicationConfigException(
+                    "PaymentDataType is missing in the payment process task configuration."
+                );
             }
 
             //TODO: Try to move this into PDF service without making breaking changes. Just needed a quick working demo.
@@ -66,7 +71,8 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks
                 PdfContentType,
                 ReceiptFileName,
                 pdfStream,
-                taskId);
+                taskId
+            );
         }
 
         /// <inheritdoc/>

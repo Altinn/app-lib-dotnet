@@ -17,7 +17,7 @@ namespace Altinn.App.Core.Features.Payment.Models
         /// </summary>
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public required PaymentStatus Status { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the order details for the transaction.
         /// </summary>

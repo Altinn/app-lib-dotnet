@@ -26,8 +26,12 @@ public class PaymentServiceTests
 
     public PaymentServiceTests()
     {
-        _paymentService =
-            new PaymentService([_paymentProcessor.Object], _orderDetailsCalculator.Object, _dataService.Object, _logger.Object);
+        _paymentService = new PaymentService(
+            [_paymentProcessor.Object],
+            _orderDetailsCalculator.Object,
+            _dataService.Object,
+            _logger.Object
+        );
     }
 
     [Fact]
@@ -40,31 +44,45 @@ public class PaymentServiceTests
         const string language = "nb";
 
         _orderDetailsCalculator.Setup(p => p.CalculateOrderDetails(instance, language)).ReturnsAsync(orderDetails);
-        _dataService.Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
+        _dataService
+            .Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
             .ReturnsAsync((Guid.Empty, null));
-        _dataService.Setup(ds =>
-                ds.InsertJsonObject(It.IsAny<InstanceIdentifier>(), It.IsAny<string>(), It.IsAny<object>()))
+        _dataService
+            .Setup(ds => ds.InsertJsonObject(It.IsAny<InstanceIdentifier>(), It.IsAny<string>(), It.IsAny<object>()))
             .ReturnsAsync(new DataElement());
         _paymentProcessor.Setup(pp => pp.PaymentProcessorId).Returns(orderDetails.PaymentProcessorId);
-        _paymentProcessor.Setup(p => p.StartPayment(instance, orderDetails, language)).ReturnsAsync(paymentInformation.PaymentDetails);
+        _paymentProcessor
+            .Setup(p => p.StartPayment(instance, orderDetails, language))
+            .ReturnsAsync(paymentInformation.PaymentDetails);
 
         // Act
-        (PaymentInformation paymentInformationResult, bool alreadyPaid) = await _paymentService.StartPayment(instance, paymentConfiguration, language);
+        (PaymentInformation paymentInformationResult, bool alreadyPaid) = await _paymentService.StartPayment(
+            instance,
+            paymentConfiguration,
+            language
+        );
 
         // Assert
         paymentInformationResult.PaymentDetails.Should().NotBeNull();
-        paymentInformationResult.PaymentDetails!.RedirectUrl.Should().Be(paymentInformation.PaymentDetails!.RedirectUrl);
+        paymentInformationResult
+            .PaymentDetails!.RedirectUrl.Should()
+            .Be(paymentInformation.PaymentDetails!.RedirectUrl);
         paymentInformationResult.OrderDetails.Should().BeEquivalentTo(orderDetails);
-        paymentInformationResult.OrderDetails.PaymentProcessorId.Should().Be(paymentInformation.OrderDetails.PaymentProcessorId);
+        paymentInformationResult
+            .OrderDetails.PaymentProcessorId.Should()
+            .Be(paymentInformation.OrderDetails.PaymentProcessorId);
         alreadyPaid.Should().BeFalse();
 
         // Verify calls
         _orderDetailsCalculator.Verify(odc => odc.CalculateOrderDetails(instance, language), Times.Once);
         _paymentProcessor.Verify(pp => pp.StartPayment(instance, orderDetails, language), Times.Once);
-        _dataService.Verify(ds => ds.InsertJsonObject(
-            It.IsAny<InstanceIdentifier>(),
-            paymentConfiguration.PaymentDataType!,
-            It.IsAny<object>()));
+        _dataService.Verify(ds =>
+            ds.InsertJsonObject(
+                It.IsAny<InstanceIdentifier>(),
+                paymentConfiguration.PaymentDataType!,
+                It.IsAny<object>()
+            )
+        );
     }
 
     [Fact]
@@ -77,18 +95,27 @@ public class PaymentServiceTests
 
         _paymentProcessor.Setup(pp => pp.PaymentProcessorId).Returns(orderDetails.PaymentProcessorId);
 
-        _dataService.Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
-            .ReturnsAsync((Guid.NewGuid(),
-                new PaymentInformation
-                {
-                    TaskId = "Task_1",
-                    Status = PaymentStatus.Paid,
-                    OrderDetails = orderDetails,
-                    PaymentDetails = new PaymentDetails { PaymentId = "id", RedirectUrl = "url" },
-                }));
+        _dataService
+            .Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
+            .ReturnsAsync(
+                (
+                    Guid.NewGuid(),
+                    new PaymentInformation
+                    {
+                        TaskId = "Task_1",
+                        Status = PaymentStatus.Paid,
+                        OrderDetails = orderDetails,
+                        PaymentDetails = new PaymentDetails { PaymentId = "id", RedirectUrl = "url" },
+                    }
+                )
+            );
 
         // Act
-        (PaymentInformation paymentInformationResult, bool alreadyPaid) = await _paymentService.StartPayment(instance, paymentConfiguration, language);
+        (PaymentInformation paymentInformationResult, bool alreadyPaid) = await _paymentService.StartPayment(
+            instance,
+            paymentConfiguration,
+            language
+        );
 
         // Assert
         paymentInformationResult.PaymentDetails.Should().NotBeNull();
@@ -102,16 +129,20 @@ public class PaymentServiceTests
         AltinnPaymentConfiguration paymentConfiguration = CreatePaymentConfiguration();
         const string language = "nb";
 
-        _dataService.Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
+        _dataService
+            .Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
             .ReturnsAsync((Guid.Empty, null));
 
-        _orderDetailsCalculator.Setup(odc => odc.CalculateOrderDetails(instance, language)).ThrowsAsync(new Exception());
+        _orderDetailsCalculator
+            .Setup(odc => odc.CalculateOrderDetails(instance, language))
+            .ThrowsAsync(new Exception());
 
         _paymentProcessor.Setup(x => x.PaymentProcessorId).Returns("paymentProcessorId");
 
         // Act & Assert
-        await Assert.ThrowsAsync<Exception>(() =>
-            _paymentService.StartPayment(instance, paymentConfiguration, language));
+        await Assert.ThrowsAsync<Exception>(
+            () => _paymentService.StartPayment(instance, paymentConfiguration, language)
+        );
     }
 
     [Fact]
@@ -122,7 +153,8 @@ public class PaymentServiceTests
         AltinnPaymentConfiguration paymentConfiguration = CreatePaymentConfiguration();
         const string language = "nb";
 
-        _dataService.Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
+        _dataService
+            .Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
             .ReturnsAsync((Guid.Empty, null));
         _orderDetailsCalculator.Setup(pp => pp.CalculateOrderDetails(instance, language)).ReturnsAsync(orderDetails);
 
@@ -130,8 +162,9 @@ public class PaymentServiceTests
         _paymentProcessor.Setup(pp => pp.StartPayment(instance, orderDetails, language)).ThrowsAsync(new Exception());
 
         // Act & Assert
-        await Assert.ThrowsAsync<Exception>(() =>
-            _paymentService.StartPayment(instance, paymentConfiguration, language));
+        await Assert.ThrowsAsync<Exception>(
+            () => _paymentService.StartPayment(instance, paymentConfiguration, language)
+        );
     }
 
     [Fact]
@@ -144,17 +177,21 @@ public class PaymentServiceTests
         const string language = "nb";
 
         _orderDetailsCalculator.Setup(p => p.CalculateOrderDetails(instance, language)).ReturnsAsync(orderDetails);
-        _dataService.Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
+        _dataService
+            .Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
             .ReturnsAsync((Guid.Empty, null));
-        _dataService.Setup(ds =>
-                ds.InsertJsonObject(It.IsAny<InstanceIdentifier>(), It.IsAny<string>(), It.IsAny<object>()))
+        _dataService
+            .Setup(ds => ds.InsertJsonObject(It.IsAny<InstanceIdentifier>(), It.IsAny<string>(), It.IsAny<object>()))
             .ThrowsAsync(new Exception());
         _paymentProcessor.Setup(pp => pp.PaymentProcessorId).Returns(orderDetails.PaymentProcessorId);
-        _paymentProcessor.Setup(pp => pp.StartPayment(instance, orderDetails, language)).ReturnsAsync(paymentInformation.PaymentDetails);
+        _paymentProcessor
+            .Setup(pp => pp.StartPayment(instance, orderDetails, language))
+            .ReturnsAsync(paymentInformation.PaymentDetails);
 
         // Act & Assert
-        await Assert.ThrowsAsync<Exception>(() =>
-            _paymentService.StartPayment(instance, paymentConfiguration, language));
+        await Assert.ThrowsAsync<Exception>(
+            () => _paymentService.StartPayment(instance, paymentConfiguration, language)
+        );
     }
 
     [Fact]
@@ -167,12 +204,16 @@ public class PaymentServiceTests
 
         _orderDetailsCalculator.Setup(p => p.CalculateOrderDetails(instance, language)).ReturnsAsync(orderDetails);
 
-        _dataService.Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
+        _dataService
+            .Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
             .ReturnsAsync((Guid.Empty, null));
 
         // Act
-        PaymentInformation? result =
-            await _paymentService.CheckAndStorePaymentStatus(instance, paymentConfiguration, language);
+        PaymentInformation? result = await _paymentService.CheckAndStorePaymentStatus(
+            instance,
+            paymentConfiguration,
+            language
+        );
 
         // Assert
         result.Should().NotBeNull();
@@ -192,20 +233,27 @@ public class PaymentServiceTests
 
         _orderDetailsCalculator.Setup(odc => odc.CalculateOrderDetails(instance, language)).ReturnsAsync(orderDetails);
 
-        _dataService.Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
+        _dataService
+            .Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
             .ReturnsAsync((Guid.NewGuid(), paymentInformation));
 
         _paymentProcessor.Setup(x => x.PaymentProcessorId).Returns(orderDetails.PaymentProcessorId);
 
-        _paymentProcessor.Setup(x => x.GetPaymentStatus(It.IsAny<Instance>(), It.IsAny<string>(), It.IsAny<decimal>(), language))
+        _paymentProcessor
+            .Setup(x => x.GetPaymentStatus(It.IsAny<Instance>(), It.IsAny<string>(), It.IsAny<decimal>(), language))
             .ThrowsAsync(new PaymentException("Some exception"));
 
-        var paymentService =
-            new PaymentService([_paymentProcessor.Object], _orderDetailsCalculator.Object, _dataService.Object, _logger.Object);
+        var paymentService = new PaymentService(
+            [_paymentProcessor.Object],
+            _orderDetailsCalculator.Object,
+            _dataService.Object,
+            _logger.Object
+        );
 
         // Act & Assert
-        await Assert.ThrowsAsync<PaymentException>(() =>
-            paymentService.CheckAndStorePaymentStatus(instance, paymentConfiguration, language));
+        await Assert.ThrowsAsync<PaymentException>(
+            () => paymentService.CheckAndStorePaymentStatus(instance, paymentConfiguration, language)
+        );
     }
 
     [Fact]
@@ -219,24 +267,42 @@ public class PaymentServiceTests
 
         _orderDetailsCalculator.Setup(p => p.CalculateOrderDetails(instance, language)).ReturnsAsync(orderDetails);
 
-        _dataService.Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
+        _dataService
+            .Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
             .ReturnsAsync((Guid.NewGuid(), paymentInformation));
 
-        _dataService.Setup(ds =>
-            ds.UpdateJsonObject(It.IsAny<InstanceIdentifier>(), It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<object>())).ReturnsAsync(new DataElement());
+        _dataService
+            .Setup(ds =>
+                ds.UpdateJsonObject(
+                    It.IsAny<InstanceIdentifier>(),
+                    It.IsAny<string>(),
+                    It.IsAny<Guid>(),
+                    It.IsAny<object>()
+                )
+            )
+            .ReturnsAsync(new DataElement());
 
         _paymentProcessor.Setup(x => x.PaymentProcessorId).Returns(orderDetails.PaymentProcessorId);
-        
-        _paymentProcessor.Setup(pp =>
-                pp.GetPaymentStatus(It.IsAny<Instance>(), It.IsAny<string>(), It.IsAny<decimal>(), language))
-            .ReturnsAsync((PaymentStatus.Paid, new PaymentDetails { PaymentId = "paymentId", RedirectUrl = "redirect url" }));
 
-        var paymentService =
-            new PaymentService([_paymentProcessor.Object], _orderDetailsCalculator.Object, _dataService.Object, _logger.Object);
+        _paymentProcessor
+            .Setup(pp => pp.GetPaymentStatus(It.IsAny<Instance>(), It.IsAny<string>(), It.IsAny<decimal>(), language))
+            .ReturnsAsync(
+                (PaymentStatus.Paid, new PaymentDetails { PaymentId = "paymentId", RedirectUrl = "redirect url" })
+            );
+
+        var paymentService = new PaymentService(
+            [_paymentProcessor.Object],
+            _orderDetailsCalculator.Object,
+            _dataService.Object,
+            _logger.Object
+        );
 
         // Act
-        PaymentInformation? result =
-            await paymentService.CheckAndStorePaymentStatus(instance, paymentConfiguration, language);
+        PaymentInformation? result = await paymentService.CheckAndStorePaymentStatus(
+            instance,
+            paymentConfiguration,
+            language
+        );
 
         // Assert
         result.Should().NotBeNull();
@@ -255,30 +321,43 @@ public class PaymentServiceTests
         const string language = "nb";
 
         paymentInformation.Status = PaymentStatus.Cancelled;
-        
-        _dataService.Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
+
+        _dataService
+            .Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
             .ReturnsAsync((Guid.NewGuid(), paymentInformation));
 
-        _dataService.Setup(ds => ds.DeleteById(It.IsAny<InstanceIdentifier>(), It.IsAny<Guid>()))
-            .ReturnsAsync(true);
+        _dataService.Setup(ds => ds.DeleteById(It.IsAny<InstanceIdentifier>(), It.IsAny<Guid>())).ReturnsAsync(true);
 
-        _dataService.Setup(x => x.InsertJsonObject(It.IsAny<InstanceIdentifier>(), paymentConfiguration.PaymentDataType!, It.IsAny<object>()))
+        _dataService
+            .Setup(x =>
+                x.InsertJsonObject(
+                    It.IsAny<InstanceIdentifier>(),
+                    paymentConfiguration.PaymentDataType!,
+                    It.IsAny<object>()
+                )
+            )
             .ReturnsAsync(new DataElement());
 
         _orderDetailsCalculator.Setup(p => p.CalculateOrderDetails(instance, language)).ReturnsAsync(orderDetails);
 
         _paymentProcessor.Setup(x => x.PaymentProcessorId).Returns(orderDetails.PaymentProcessorId);
 
-        _paymentProcessor.Setup(pp => pp.TerminatePayment(It.IsAny<Instance>(), It.IsAny<PaymentInformation>()))
+        _paymentProcessor
+            .Setup(pp => pp.TerminatePayment(It.IsAny<Instance>(), It.IsAny<PaymentInformation>()))
             .ReturnsAsync(true);
 
-        _paymentProcessor.Setup(x => x.StartPayment(instance, orderDetails, language)).ReturnsAsync(paymentInformation.PaymentDetails);
+        _paymentProcessor
+            .Setup(x => x.StartPayment(instance, orderDetails, language))
+            .ReturnsAsync(paymentInformation.PaymentDetails);
 
         // Act
         await _paymentService.StartPayment(instance, paymentConfiguration, language);
 
         // Assert
-        _paymentProcessor.Verify(pp => pp.TerminatePayment(It.IsAny<Instance>(), It.IsAny<PaymentInformation>()), Times.Once);
+        _paymentProcessor.Verify(
+            pp => pp.TerminatePayment(It.IsAny<Instance>(), It.IsAny<PaymentInformation>()),
+            Times.Once
+        );
         _dataService.Verify(ds => ds.DeleteById(It.IsAny<InstanceIdentifier>(), It.IsAny<Guid>()), Times.Once);
     }
 
@@ -293,22 +372,31 @@ public class PaymentServiceTests
         const string language = "nb";
 
         _orderDetailsCalculator.Setup(p => p.CalculateOrderDetails(instance, language)).ReturnsAsync(orderDetails);
-        _dataService.Setup(ds =>
-                ds.InsertJsonObject(It.IsAny<InstanceIdentifier>(), It.IsAny<string>(), It.IsAny<object>()))
+        _dataService
+            .Setup(ds => ds.InsertJsonObject(It.IsAny<InstanceIdentifier>(), It.IsAny<string>(), It.IsAny<object>()))
             .ReturnsAsync(new DataElement());
         _paymentProcessor.Setup(pp => pp.PaymentProcessorId).Returns(orderDetails.PaymentProcessorId);
-        _paymentProcessor.Setup(p => p.StartPayment(instance, orderDetails, language)).ReturnsAsync(paymentInformation.PaymentDetails);
-        
-        _dataService.Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
+        _paymentProcessor
+            .Setup(p => p.StartPayment(instance, orderDetails, language))
+            .ReturnsAsync(paymentInformation.PaymentDetails);
+
+        _dataService
+            .Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
             .ReturnsAsync((Guid.NewGuid(), paymentInformation));
 
-        _paymentProcessor.Setup(pp => pp.TerminatePayment(It.IsAny<Instance>(), It.IsAny<PaymentInformation>()))
+        _paymentProcessor
+            .Setup(pp => pp.TerminatePayment(It.IsAny<Instance>(), It.IsAny<PaymentInformation>()))
             .ReturnsAsync(false);
 
-        await Assert.ThrowsAsync<PaymentException>(async () => await _paymentService.StartPayment(instance, paymentConfiguration, language));
+        await Assert.ThrowsAsync<PaymentException>(
+            async () => await _paymentService.StartPayment(instance, paymentConfiguration, language)
+        );
 
         // Act & Assert
-        _paymentProcessor.Verify(pp => pp.TerminatePayment(It.IsAny<Instance>(), It.IsAny<PaymentInformation>()), Times.Once);
+        _paymentProcessor.Verify(
+            pp => pp.TerminatePayment(It.IsAny<Instance>(), It.IsAny<PaymentInformation>()),
+            Times.Once
+        );
         _dataService.Verify(ds => ds.DeleteById(It.IsAny<InstanceIdentifier>(), It.IsAny<Guid>()), Times.Never);
     }
 
@@ -324,11 +412,7 @@ public class PaymentServiceTests
                 Currency = "NOK",
                 OrderLines = []
             },
-            PaymentDetails = new PaymentDetails
-            {
-                RedirectUrl = "Redirect URL",
-                PaymentId = "paymentId",
-            }
+            PaymentDetails = new PaymentDetails { RedirectUrl = "Redirect URL", PaymentId = "paymentId", }
         };
     }
 
@@ -340,11 +424,7 @@ public class PaymentServiceTests
             AppId = "ttd/test",
             Process = new ProcessState
             {
-                CurrentTask = new ProcessElementInfo
-                {
-                    AltinnTaskType = "payment",
-                    ElementId = "Task_1",
-                },
+                CurrentTask = new ProcessElementInfo { AltinnTaskType = "payment", ElementId = "Task_1", },
             },
         };
     }

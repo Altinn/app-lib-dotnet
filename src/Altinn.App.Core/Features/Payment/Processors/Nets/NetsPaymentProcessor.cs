@@ -28,8 +28,11 @@ public class NetsPaymentProcessor : IPaymentProcessor
     /// <summary>
     /// Implementation of IPaymentProcessor for Nets.
     /// </summary>
-    public NetsPaymentProcessor(INetsClient netsClient, IOptions<NetsPaymentSettings> settings,
-        IOptions<GeneralSettings> generalSettings)
+    public NetsPaymentProcessor(
+        INetsClient netsClient,
+        IOptions<NetsPaymentSettings> settings,
+        IOptions<GeneralSettings> generalSettings
+    )
     {
         _netsClient = netsClient;
         _settings = settings.Value;
@@ -53,20 +56,25 @@ public class NetsPaymentProcessor : IPaymentProcessor
                 Amount = (int)(orderDetails.TotalPriceIncVat * LowestMonetaryUnitMultiplier),
                 Currency = orderDetails.Currency,
                 Reference = orderDetails.OrderReference,
-                Items = orderDetails.OrderLines.Select(l => new NetsOrderItem()
-                {
-                    Reference = l.Id,
-                    Name = l.Name,
-                    Quantity = l.Quantity,
-                    Unit = l.Unit,
+                Items = orderDetails
+                    .OrderLines.Select(l => new NetsOrderItem()
+                    {
+                        Reference = l.Id,
+                        Name = l.Name,
+                        Quantity = l.Quantity,
+                        Unit = l.Unit,
 
-                    UnitPrice = (int)(l.PriceExVat * LowestMonetaryUnitMultiplier),
-                    GrossTotalAmount = (int)(l.PriceExVat * LowestMonetaryUnitMultiplier * l.Quantity *
-                                             (1 + l.VatPercent / 100)),
-                    NetTotalAmount = (int)(l.PriceExVat * LowestMonetaryUnitMultiplier * l.Quantity),
-                    TaxAmount = (int)(l.PriceExVat * LowestMonetaryUnitMultiplier * l.Quantity * (l.VatPercent / 100)),
-                    TaxRate = (int)(l.VatPercent * LowestMonetaryUnitMultiplier),
-                }).ToList(),
+                        UnitPrice = (int)(l.PriceExVat * LowestMonetaryUnitMultiplier),
+                        GrossTotalAmount = (int)(
+                            l.PriceExVat * LowestMonetaryUnitMultiplier * l.Quantity * (1 + l.VatPercent / 100)
+                        ),
+                        NetTotalAmount = (int)(l.PriceExVat * LowestMonetaryUnitMultiplier * l.Quantity),
+                        TaxAmount = (int)(
+                            l.PriceExVat * LowestMonetaryUnitMultiplier * l.Quantity * (l.VatPercent / 100)
+                        ),
+                        TaxRate = (int)(l.VatPercent * LowestMonetaryUnitMultiplier),
+                    })
+                    .ToList(),
             },
             MyReference = instance.Id.Split('/')[1],
             Checkout = new NetsCheckout
@@ -90,8 +98,9 @@ public class NetsPaymentProcessor : IPaymentProcessor
         HttpApiResult<NetsCreatePaymentSuccess> httpApiResult = await _netsClient.CreatePayment(payment);
         if (!httpApiResult.IsSuccess || httpApiResult.Result?.HostedPaymentPageUrl is null)
         {
-            throw new PaymentException("Failed to create payment\n" + httpApiResult.Status + " - " +
-                                       httpApiResult.RawError);
+            throw new PaymentException(
+                "Failed to create payment\n" + httpApiResult.Status + " - " + httpApiResult.RawError
+            );
         }
 
         string hostedPaymentPageUrl = httpApiResult.Result.HostedPaymentPageUrl;
@@ -111,21 +120,26 @@ public class NetsPaymentProcessor : IPaymentProcessor
         {
             throw new PaymentException("PaymentId is missing in paymentInformation. Can't terminate.");
         }
-        
+
         bool result = await _netsClient.TerminatePayment(paymentInformation.PaymentDetails.PaymentId);
         return result;
     }
 
     /// <inheritdoc />
-    public async Task<(PaymentStatus status, PaymentDetails paymentDetails)> GetPaymentStatus(Instance instance, string paymentId, decimal expectedTotalIncVat,
-        string? language)
+    public async Task<(PaymentStatus status, PaymentDetails paymentDetails)> GetPaymentStatus(
+        Instance instance,
+        string paymentId,
+        decimal expectedTotalIncVat,
+        string? language
+    )
     {
         HttpApiResult<NetsPaymentFull> httpApiResult = await _netsClient.RetrievePayment(paymentId);
 
         if (!httpApiResult.IsSuccess || httpApiResult.Result is null)
         {
-            throw new PaymentException("Failed to retrieve payment\n" + httpApiResult.Status + " - " +
-                                       httpApiResult.RawError);
+            throw new PaymentException(
+                "Failed to retrieve payment\n" + httpApiResult.Status + " - " + httpApiResult.RawError
+            );
         }
 
         NetsPayment payment = httpApiResult.Result.Payment!;
@@ -134,16 +148,17 @@ public class NetsPaymentProcessor : IPaymentProcessor
         PaymentStatus status = chargedAmount > 0 ? PaymentStatus.Paid : PaymentStatus.Created;
         NetsPaymentDetails? paymentPaymentDetails = payment.PaymentDetails;
 
-        PaymentDetails paymentDetails = new()
-        {
-            PaymentId = paymentId,
-            RedirectUrl = AddLanguageQueryParam(payment.Checkout!.Url!, language),
-            Payer = MapPayerDetails(payment.Consumer),
-            PaymentType = paymentPaymentDetails?.PaymentType,
-            PaymentMethod = paymentPaymentDetails?.PaymentMethod,
-            InvoiceDetails = MapInvoiceDetails(paymentPaymentDetails?.InvoiceDetails),
-            CardDetails = MapCardDetails(paymentPaymentDetails?.CardDetails),
-        };
+        PaymentDetails paymentDetails =
+            new()
+            {
+                PaymentId = paymentId,
+                RedirectUrl = AddLanguageQueryParam(payment.Checkout!.Url!, language),
+                Payer = MapPayerDetails(payment.Consumer),
+                PaymentType = paymentPaymentDetails?.PaymentType,
+                PaymentMethod = paymentPaymentDetails?.PaymentMethod,
+                InvoiceDetails = MapInvoiceDetails(paymentPaymentDetails?.InvoiceDetails),
+                CardDetails = MapCardDetails(paymentPaymentDetails?.CardDetails),
+            };
 
         return (status, paymentDetails);
     }
@@ -155,38 +170,40 @@ public class NetsPaymentProcessor : IPaymentProcessor
             return null;
         }
 
-        PayerCompany? payerCompany = consumer.Company != null
-            ? new PayerCompany
-            {
-                Name = consumer.Company.Name,
-                OrganisationNumber = consumer.Company.RegistrationNumber,
-                ContactPerson = new PayerPrivatePerson
+        PayerCompany? payerCompany =
+            consumer.Company != null
+                ? new PayerCompany
                 {
-                    FirstName = consumer.Company.ContactDetails?.FirstName,
-                    LastName = consumer.Company.ContactDetails?.LastName,
-                    Email = consumer.Company.ContactDetails?.Email,
-                    PhoneNumber = new PhoneNumber
+                    Name = consumer.Company.Name,
+                    OrganisationNumber = consumer.Company.RegistrationNumber,
+                    ContactPerson = new PayerPrivatePerson
                     {
-                        Prefix = consumer.Company.ContactDetails?.PhoneNumber?.Prefix,
-                        Number = consumer.Company.ContactDetails?.PhoneNumber?.Number,
+                        FirstName = consumer.Company.ContactDetails?.FirstName,
+                        LastName = consumer.Company.ContactDetails?.LastName,
+                        Email = consumer.Company.ContactDetails?.Email,
+                        PhoneNumber = new PhoneNumber
+                        {
+                            Prefix = consumer.Company.ContactDetails?.PhoneNumber?.Prefix,
+                            Number = consumer.Company.ContactDetails?.PhoneNumber?.Number,
+                        }
                     }
                 }
-            }
-            : null;
+                : null;
 
-        PayerPrivatePerson? payerPrivatePerson = consumer.PrivatePerson != null
-            ? new PayerPrivatePerson
-            {
-                FirstName = consumer.PrivatePerson.FirstName,
-                LastName = consumer.PrivatePerson.LastName,
-                Email = consumer.PrivatePerson.Email,
-                PhoneNumber = new PhoneNumber
+        PayerPrivatePerson? payerPrivatePerson =
+            consumer.PrivatePerson != null
+                ? new PayerPrivatePerson
                 {
-                    Prefix = consumer.PrivatePerson.PhoneNumber?.Prefix,
-                    Number = consumer.PrivatePerson.PhoneNumber?.Number,
+                    FirstName = consumer.PrivatePerson.FirstName,
+                    LastName = consumer.PrivatePerson.LastName,
+                    Email = consumer.PrivatePerson.Email,
+                    PhoneNumber = new PhoneNumber
+                    {
+                        Prefix = consumer.PrivatePerson.PhoneNumber?.Prefix,
+                        Number = consumer.PrivatePerson.PhoneNumber?.Number,
+                    }
                 }
-            }
-            : null;
+                : null;
 
         return new Payer
         {
@@ -197,31 +214,26 @@ public class NetsPaymentProcessor : IPaymentProcessor
         };
     }
 
-
     private static InvoiceDetails? MapInvoiceDetails(NetsInvoiceDetails? netsInvoiceDetails)
     {
-        if (netsInvoiceDetails == null) return null;
+        if (netsInvoiceDetails == null)
+            return null;
 
-        return new InvoiceDetails
-        {
-            InvoiceNumber = netsInvoiceDetails.InvoiceNumber,
-        };
+        return new InvoiceDetails { InvoiceNumber = netsInvoiceDetails.InvoiceNumber, };
     }
 
     private static CardDetails? MapCardDetails(NetsCardDetails? netsCardDetails)
     {
-        if (netsCardDetails == null) return null;
+        if (netsCardDetails == null)
+            return null;
 
-        return new CardDetails
-        {
-            MaskedPan = netsCardDetails.MaskedPan,
-            ExpiryDate = netsCardDetails.ExpiryDate
-        };
+        return new CardDetails { MaskedPan = netsCardDetails.MaskedPan, ExpiryDate = netsCardDetails.ExpiryDate };
     }
 
     private static Address? MapAddress(NetsAddress? address)
     {
-        if (address == null) return null;
+        if (address == null)
+            return null;
 
         return new Address
         {

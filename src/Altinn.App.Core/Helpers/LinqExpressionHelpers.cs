@@ -47,14 +47,16 @@ public static class LinqExpressionHelpers
                 // Special case for handling indexers (eg m=>m.Children![0].Age)
                 case MethodCallExpression
                 {
-                    Method.Name: "get_Item", Arguments: [{ } indexExpression],
+                    Method.Name: "get_Item",
+                    Arguments: [{ } indexExpression],
                     Object: MemberExpression memberExpression
                 }:
                     var index = GetValueFromExpression(indexExpression);
                     if (index is not int)
                     {
                         throw new ArgumentException(
-                            $"Invalid indexer expression: Expected int, but got {index?.GetType().Name}: {index}");
+                            $"Invalid indexer expression: Expected int, but got {index?.GetType().Name}: {index}"
+                        );
                     }
 
                     path.Add($"{GetJsonPropertyName(memberExpression.Member)}[{index}]");
@@ -62,10 +64,7 @@ public static class LinqExpressionHelpers
                     break;
 
                 // Special case for selecting all children of a list using Select ( m => m.Children.Select(c=>c.Age) )
-                case MethodCallExpression
-                {
-                    Method.Name: "Select", Arguments: [{ } root, { } selectorFunction]
-                }:
+                case MethodCallExpression { Method.Name: "Select", Arguments: [{ } root, { } selectorFunction] }:
                     path.Add(GetJsonPath_internal(selectorFunction));
                     current = root;
                     break;
@@ -95,8 +94,7 @@ public static class LinqExpressionHelpers
 
             // Currently we just error on unknown expressions
             default:
-                throw new ArgumentException(
-                    $"Invalid indexer expression {expression}. Failed reading {expression}");
+                throw new ArgumentException($"Invalid indexer expression {expression}. Failed reading {expression}");
         }
     }
 

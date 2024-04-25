@@ -39,7 +39,9 @@ public class PageComponentConverterTests
         {
             if (child is GroupComponent childGroup)
             {
-                children.Add(new HierarchyTestModel { Id = childGroup.Id, Children = GenerateTestHierarchy(childGroup) });
+                children.Add(
+                    new HierarchyTestModel { Id = childGroup.Id, Children = GenerateTestHierarchy(childGroup) }
+                );
             }
             else
             {
@@ -60,7 +62,14 @@ public class PageComponentConverterTestAttribute : DataAttribute
         foreach (var file in files)
         {
             var data = File.ReadAllText(file);
-            var testCase = JsonSerializer.Deserialize<PageComponentConverterTestModel>(data, new JsonSerializerOptions { ReadCommentHandling = JsonCommentHandling.Skip, PropertyNamingPolicy = JsonNamingPolicy.CamelCase })!;
+            var testCase = JsonSerializer.Deserialize<PageComponentConverterTestModel>(
+                data,
+                new JsonSerializerOptions
+                {
+                    ReadCommentHandling = JsonCommentHandling.Skip,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                }
+            )!;
             yield return new object[] { testCase };
         }
     }

@@ -6,7 +6,6 @@ using System.Text.Json;
 
 namespace Altinn.App.Core.Features.Payment.Processors.Nets.Models;
 
-
 public class HttpApiResult<T>
 {
     // ReSharper disable once StaticMemberInGenericType
@@ -16,9 +15,7 @@ public class HttpApiResult<T>
         PropertyNameCaseInsensitive = true,
     };
 
-    public HttpApiResult()
-    {
-    }
+    public HttpApiResult() { }
 
     public HttpApiResult(T? result, HttpStatusCode status, string? rawError)
     {
@@ -39,11 +36,7 @@ public class HttpApiResult<T>
         {
             if (response.StatusCode == HttpStatusCode.NoContent)
             {
-                return new HttpApiResult<T>
-                {
-                    Status = response.StatusCode,
-                    Result = default,
-                };
+                return new HttpApiResult<T> { Status = response.StatusCode, Result = default, };
             }
 
             try
@@ -51,16 +44,14 @@ public class HttpApiResult<T>
                 return new HttpApiResult<T>
                 {
                     Status = response.StatusCode,
-                    Result = await response.Content.ReadFromJsonAsync<T>(JSON_OPTIONS) ?? throw new JsonException("Could not deserialize response"),
+                    Result =
+                        await response.Content.ReadFromJsonAsync<T>(JSON_OPTIONS)
+                        ?? throw new JsonException("Could not deserialize response"),
                 };
             }
             catch (JsonException e)
             {
-                return new HttpApiResult<T>()
-                {
-                    Status = response.StatusCode,
-                    RawError = e.Message,
-                };
+                return new HttpApiResult<T>() { Status = response.StatusCode, RawError = e.Message, };
             }
         }
 

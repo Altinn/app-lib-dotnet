@@ -37,47 +37,31 @@ public class PaymentUserActionTests
         var instance = new Instance()
         {
             Id = "500000/b194e9f5-02d0-41bc-8461-a0cbac8a6efc",
-            InstanceOwner = new InstanceOwner
-            {
-                PartyId = "5000",
-            },
-            Process = new ProcessState
-            {
-                CurrentTask = new ProcessElementInfo
-                {
-                    ElementId = "Task2"
-                }
-            },
-            Data =
-            [
-                new DataElement
-                {
-                    Id = "a499c3ef-e88a-436b-8650-1c43e5037ada",
-                    DataType = "Model"
-                }
-            ]
+            InstanceOwner = new InstanceOwner { PartyId = "5000", },
+            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "Task2" } },
+            Data = [new DataElement { Id = "a499c3ef-e88a-436b-8650-1c43e5037ada", DataType = "Model" }]
         };
 
-        PaymentInformation paymentInformation = new()
-        {
-            TaskId = instance.Process.CurrentTask.ElementId,
-            Status = PaymentStatus.Created,
-            OrderDetails = new OrderDetails
+        PaymentInformation paymentInformation =
+            new()
             {
-                PaymentProcessorId = "paymentProcessorId",
-                Currency = "NOK",
-                OrderLines = []
-            },
-            PaymentDetails = new PaymentDetails
-            {
-                PaymentId = "1",
-                RedirectUrl = "https://example.com",
-            }
-        };
+                TaskId = instance.Process.CurrentTask.ElementId,
+                Status = PaymentStatus.Created,
+                OrderDetails = new OrderDetails
+                {
+                    PaymentProcessorId = "paymentProcessorId",
+                    Currency = "NOK",
+                    OrderLines = []
+                },
+                PaymentDetails = new PaymentDetails { PaymentId = "1", RedirectUrl = "https://example.com", }
+            };
 
         var userActionContext = new UserActionContext(instance, 1337);
 
-        _paymentServiceMock.Setup(x => x.StartPayment(It.IsAny<Instance>(), It.IsAny<AltinnPaymentConfiguration>(), It.IsAny<string>()))
+        _paymentServiceMock
+            .Setup(x =>
+                x.StartPayment(It.IsAny<Instance>(), It.IsAny<AltinnPaymentConfiguration>(), It.IsAny<string>())
+            )
             .ReturnsAsync((paymentInformation, false));
 
         // Act
@@ -85,12 +69,17 @@ public class PaymentUserActionTests
         UserActionResult result = await userAction.HandleAction(userActionContext);
 
         // Assert
-        result.Should().BeEquivalentTo(UserActionResult.RedirectResult(new Uri(paymentInformation.PaymentDetails.RedirectUrl)));
+        result
+            .Should()
+            .BeEquivalentTo(UserActionResult.RedirectResult(new Uri(paymentInformation.PaymentDetails.RedirectUrl)));
     }
 
     private PaymentUserAction CreatePaymentUserAction(string testBpmnFilename = "payment-task-process.bpmn")
     {
-        IProcessReader processReader = ProcessTestUtils.SetupProcessReader(testBpmnFilename, Path.Combine("Features", "Action", "TestData"));
+        IProcessReader processReader = ProcessTestUtils.SetupProcessReader(
+            testBpmnFilename,
+            Path.Combine("Features", "Action", "TestData")
+        );
         return new PaymentUserAction(processReader, _paymentServiceMock.Object, NullLogger<PaymentUserAction>.Instance);
     }
 }

@@ -23,12 +23,14 @@ public class NetsPaymentProcessorTests
     public NetsPaymentProcessorTests()
     {
         _netsClientMock = new Mock<INetsClient>();
-        _settings = Options.Create(new NetsPaymentSettings
-        {
-            SecretApiKey = "secret",
-            BaseUrl = "baseUrl",
-            TermsUrl = "termsUrl",
-        });
+        _settings = Options.Create(
+            new NetsPaymentSettings
+            {
+                SecretApiKey = "secret",
+                BaseUrl = "baseUrl",
+                TermsUrl = "termsUrl",
+            }
+        );
         _generalSettings = Options.Create(new GeneralSettings());
         _processor = new NetsPaymentProcessor(_netsClientMock.Object, _settings, _generalSettings);
     }
@@ -45,15 +47,18 @@ public class NetsPaymentProcessorTests
             OrderLines = []
         };
 
-        _netsClientMock.Setup(x => x.CreatePayment(It.IsAny<NetsCreatePayment>()))
-            .ReturnsAsync(new HttpApiResult<NetsCreatePaymentSuccess>
-            {
-                Result = new NetsCreatePaymentSuccess
+        _netsClientMock
+            .Setup(x => x.CreatePayment(It.IsAny<NetsCreatePayment>()))
+            .ReturnsAsync(
+                new HttpApiResult<NetsCreatePaymentSuccess>
                 {
-                    HostedPaymentPageUrl = "https://payment-url.com",
-                    PaymentId = "12345"
+                    Result = new NetsCreatePaymentSuccess
+                    {
+                        HostedPaymentPageUrl = "https://payment-url.com",
+                        PaymentId = "12345"
+                    }
                 }
-            });
+            );
 
         // Act
         PaymentDetails result = await _processor.StartPayment(instance, orderDetails, "nb");
@@ -75,22 +80,41 @@ public class NetsPaymentProcessorTests
             Currency = "NOK",
             OrderLines =
             [
-                new PaymentOrderLine() { Id = "1", Name = "Item 1", Quantity = 1, PriceExVat = 100, VatPercent = 25M },
-                new PaymentOrderLine() { Id = "2", Name = "Item 2", Quantity = 2, PriceExVat = 200, VatPercent = 25M }
+                new PaymentOrderLine()
+                {
+                    Id = "1",
+                    Name = "Item 1",
+                    Quantity = 1,
+                    PriceExVat = 100,
+                    VatPercent = 25M
+                },
+                new PaymentOrderLine()
+                {
+                    Id = "2",
+                    Name = "Item 2",
+                    Quantity = 2,
+                    PriceExVat = 200,
+                    VatPercent = 25M
+                }
             ]
         };
 
-        int expectedSum = orderDetails.OrderLines.Sum(x => (int)(x.PriceExVat * 100 * x.Quantity * (1 + (x.VatPercent / 100))));
+        int expectedSum = orderDetails.OrderLines.Sum(x =>
+            (int)(x.PriceExVat * 100 * x.Quantity * (1 + (x.VatPercent / 100)))
+        );
 
-        _netsClientMock.Setup(x => x.CreatePayment(It.IsAny<NetsCreatePayment>()))
-            .ReturnsAsync(new HttpApiResult<NetsCreatePaymentSuccess>
-            {
-                Result = new NetsCreatePaymentSuccess
+        _netsClientMock
+            .Setup(x => x.CreatePayment(It.IsAny<NetsCreatePayment>()))
+            .ReturnsAsync(
+                new HttpApiResult<NetsCreatePaymentSuccess>
                 {
-                    HostedPaymentPageUrl = "https://payment-url.com",
-                    PaymentId = "12345"
+                    Result = new NetsCreatePaymentSuccess
+                    {
+                        HostedPaymentPageUrl = "https://payment-url.com",
+                        PaymentId = "12345"
+                    }
                 }
-            });
+            );
 
         // Act
         PaymentDetails result = await _processor.StartPayment(instance, orderDetails, "nb");
@@ -101,7 +125,12 @@ public class NetsPaymentProcessorTests
         result.RedirectUrl.Should().Be("https://payment-url.com/?language=nb-NO");
 
         _netsClientMock.Verify(
-            x => x.CreatePayment(It.Is<NetsCreatePayment>(netsCreatePayment => netsCreatePayment.Order.Amount == expectedSum)), Times.Once);
+            x =>
+                x.CreatePayment(
+                    It.Is<NetsCreatePayment>(netsCreatePayment => netsCreatePayment.Order.Amount == expectedSum)
+                ),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -116,7 +145,8 @@ public class NetsPaymentProcessorTests
             OrderLines = []
         };
 
-        _netsClientMock.Setup(x => x.CreatePayment(It.IsAny<NetsCreatePayment>()))
+        _netsClientMock
+            .Setup(x => x.CreatePayment(It.IsAny<NetsCreatePayment>()))
             .ReturnsAsync(new HttpApiResult<NetsCreatePaymentSuccess>());
 
         // Act & Assert
@@ -128,44 +158,37 @@ public class NetsPaymentProcessorTests
     {
         // Arrange
         Instance instance = CreateInstance();
-        PaymentInformation paymentInformation = new()
-        {
-            TaskId = "taskId",
-            Status = PaymentStatus.Created,
-            OrderDetails = new OrderDetails
+        PaymentInformation paymentInformation =
+            new()
             {
-                PaymentProcessorId = "paymentProcessorId",
-                Currency = "NOK",
-                OrderReference = "orderReference",
-                OrderLines =
-                [
-                    new PaymentOrderLine
-                    {
-                        Id = "1",
-                        Name = "Item 1",
-                        PriceExVat = 500,
-                        VatPercent = 25,
-                    }
-                ],
-            },
-            PaymentDetails = new PaymentDetails
-            {
-                PaymentId = "paymentReference",
-                RedirectUrl = "redirectUrl",
-            },
-        };
+                TaskId = "taskId",
+                Status = PaymentStatus.Created,
+                OrderDetails = new OrderDetails
+                {
+                    PaymentProcessorId = "paymentProcessorId",
+                    Currency = "NOK",
+                    OrderReference = "orderReference",
+                    OrderLines =
+                    [
+                        new PaymentOrderLine
+                        {
+                            Id = "1",
+                            Name = "Item 1",
+                            PriceExVat = 500,
+                            VatPercent = 25,
+                        }
+                    ],
+                },
+                PaymentDetails = new PaymentDetails { PaymentId = "paymentReference", RedirectUrl = "redirectUrl", },
+            };
 
-        _netsClientMock.Setup(x =>
-                x.TerminatePayment(paymentInformation.PaymentDetails.PaymentId))
-            .ReturnsAsync(true);
+        _netsClientMock.Setup(x => x.TerminatePayment(paymentInformation.PaymentDetails.PaymentId)).ReturnsAsync(true);
 
         // Act
         await _processor.TerminatePayment(instance, paymentInformation);
 
         // Assert
-        _netsClientMock.Verify(
-            x => x.TerminatePayment(paymentInformation.PaymentDetails.PaymentId),
-            Times.Once);
+        _netsClientMock.Verify(x => x.TerminatePayment(paymentInformation.PaymentDetails.PaymentId), Times.Once);
     }
 
     [Fact]
@@ -177,25 +200,33 @@ public class NetsPaymentProcessorTests
         const decimal expectedTotalIncVat = 100;
         const string language = "nb";
 
-        _netsClientMock.Setup(x => x.RetrievePayment(paymentReference))
-            .ReturnsAsync(new HttpApiResult<NetsPaymentFull>
-            {
-                Result = new NetsPaymentFull
+        _netsClientMock
+            .Setup(x => x.RetrievePayment(paymentReference))
+            .ReturnsAsync(
+                new HttpApiResult<NetsPaymentFull>
                 {
-                    Payment = new NetsPayment
+                    Result = new NetsPaymentFull
                     {
-                        Summary = new NetsSummary
+                        Payment = new NetsPayment
                         {
-                            // All amounts sent to and received from Nets are in the lowest monetary unit for the given currency, without punctuation marks.
-                            ChargedAmount = expectedTotalIncVat * 100
-                        },
-                        Checkout = new() { Url = "https://redirect-url.com", CancelUrl = "https://cancel-url.com" }
+                            Summary = new NetsSummary
+                            {
+                                // All amounts sent to and received from Nets are in the lowest monetary unit for the given currency, without punctuation marks.
+                                ChargedAmount = expectedTotalIncVat * 100
+                            },
+                            Checkout = new() { Url = "https://redirect-url.com", CancelUrl = "https://cancel-url.com" }
+                        }
                     }
                 }
-            });
+            );
 
         // Act
-        (PaymentStatus result, PaymentDetails paymentDetails) = await _processor.GetPaymentStatus(instance, paymentReference, expectedTotalIncVat, language);
+        (PaymentStatus result, PaymentDetails paymentDetails) = await _processor.GetPaymentStatus(
+            instance,
+            paymentReference,
+            expectedTotalIncVat,
+            language
+        );
 
         // Assert
         Assert.Equal(PaymentStatus.Paid, result);
@@ -210,11 +241,14 @@ public class NetsPaymentProcessorTests
         const string paymentReference = "12345";
         const decimal expectedTotalIncVat = 100;
 
-        _netsClientMock.Setup(x => x.RetrievePayment(paymentReference))
+        _netsClientMock
+            .Setup(x => x.RetrievePayment(paymentReference))
             .ReturnsAsync(new HttpApiResult<NetsPaymentFull>());
 
         // Act & Assert
-        await Assert.ThrowsAsync<PaymentException>(() => _processor.GetPaymentStatus(instance, paymentReference, expectedTotalIncVat, null));
+        await Assert.ThrowsAsync<PaymentException>(
+            () => _processor.GetPaymentStatus(instance, paymentReference, expectedTotalIncVat, null)
+        );
     }
 
     private static Instance CreateInstance()
@@ -225,11 +259,7 @@ public class NetsPaymentProcessorTests
             AppId = "ttd/test",
             Process = new ProcessState
             {
-                CurrentTask = new ProcessElementInfo
-                {
-                    AltinnTaskType = "payment",
-                    ElementId = "Task_1",
-                },
+                CurrentTask = new ProcessElementInfo { AltinnTaskType = "payment", ElementId = "Task_1", },
             },
         };
     }

@@ -23,7 +23,13 @@ public class EformidlingServiceTask : IServiceTask
     /// <summary>
     /// Service task that sends eFormidling shipment, if EFormidling is enabled in config and EFormidling.SendAfterTaskId matches the current task.
     /// </summary>
-    public EformidlingServiceTask(ILogger<EformidlingServiceTask> logger, IAppMetadata appMetadata, IInstanceClient instanceClient, IEFormidlingService? eFormidlingService = null, IOptions<AppSettings>? appSettings = null)
+    public EformidlingServiceTask(
+        ILogger<EformidlingServiceTask> logger,
+        IAppMetadata appMetadata,
+        IInstanceClient instanceClient,
+        IEFormidlingService? eFormidlingService = null,
+        IOptions<AppSettings>? appSettings = null
+    )
     {
         _logger = logger;
         _appMetadata = appMetadata;
@@ -41,7 +47,10 @@ public class EformidlingServiceTask : IServiceTask
     public async Task Execute(string taskId, Instance instance)
     {
         ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
-        if (_appSettings?.Value?.EnableEFormidling == true && applicationMetadata.EFormidling?.SendAfterTaskId == taskId)
+        if (
+            _appSettings?.Value?.EnableEFormidling == true
+            && applicationMetadata.EFormidling?.SendAfterTaskId == taskId
+        )
         {
             if (_eFormidlingService != null)
             {

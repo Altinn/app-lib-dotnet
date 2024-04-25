@@ -122,7 +122,6 @@ public class NetsRefunds
     public NetsOrderItem[]? OrderItems { get; set; }
 }
 
-
 public class NetsCharges
 {
     public string? ChargeId { get; set; }
@@ -140,4 +139,3 @@ public class NetsUnscheduledSubscription
 {
     public string? UnscheduledSubscriptionId { get; set; }
 }
-

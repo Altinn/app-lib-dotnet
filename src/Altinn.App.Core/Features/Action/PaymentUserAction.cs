@@ -25,7 +25,11 @@ namespace Altinn.App.Core.Features.Action
         /// <param name="processReader"></param>
         /// <param name="paymentService"></param>
         /// <param name="logger"></param>
-        public PaymentUserAction(IProcessReader processReader, IPaymentService paymentService, ILogger<PaymentUserAction> logger)
+        public PaymentUserAction(
+            IProcessReader processReader,
+            IPaymentService paymentService,
+            ILogger<PaymentUserAction> logger
+        )
         {
             _processReader = processReader;
             _paymentService = paymentService;
@@ -40,30 +44,45 @@ namespace Altinn.App.Core.Features.Action
         /// <inheritdoc />
         public async Task<UserActionResult> HandleAction(UserActionContext context)
         {
-            if (_processReader.GetFlowElement(context.Instance.Process.CurrentTask.ElementId) is not ProcessTask currentTask)
+            if (
+                _processReader.GetFlowElement(context.Instance.Process.CurrentTask.ElementId)
+                is not ProcessTask currentTask
+            )
             {
-                return UserActionResult.FailureResult(new ActionError()
-                {
-                    Code = "NoProcessTask",
-                    Message = "Current task is not a process task."
-                });
+                return UserActionResult.FailureResult(
+                    new ActionError() { Code = "NoProcessTask", Message = "Current task is not a process task." }
+                );
             }
 
-            _logger.LogInformation("Payment action handler invoked for instance {Id}. In task: {CurrentTaskId}", context.Instance.Id, currentTask.Id);
+            _logger.LogInformation(
+                "Payment action handler invoked for instance {Id}. In task: {CurrentTaskId}",
+                context.Instance.Id,
+                currentTask.Id
+            );
 
-            AltinnPaymentConfiguration? paymentConfiguration = currentTask.ExtensionElements?.TaskExtension?.PaymentConfiguration;
+            AltinnPaymentConfiguration? paymentConfiguration = currentTask
+                .ExtensionElements
+                ?.TaskExtension
+                ?.PaymentConfiguration;
             if (paymentConfiguration == null)
             {
-                throw new ApplicationConfigException("PaymentConfig is missing in the payment process task configuration.");
+                throw new ApplicationConfigException(
+                    "PaymentConfig is missing in the payment process task configuration."
+                );
             }
 
-            (PaymentInformation paymentInformation, bool alreadyPaid) =
-                await _paymentService.StartPayment(context.Instance, paymentConfiguration, context.Language);
+            (PaymentInformation paymentInformation, bool alreadyPaid) = await _paymentService.StartPayment(
+                context.Instance,
+                paymentConfiguration,
+                context.Language
+            );
 
             if (alreadyPaid)
             {
-                return UserActionResult.FailureResult(error: new ActionError { Code = "PaymentAlreadyCompleted", Message = "Payment already completed." },
-                    errorType: ProcessErrorType.Conflict);
+                return UserActionResult.FailureResult(
+                    error: new ActionError { Code = "PaymentAlreadyCompleted", Message = "Payment already completed." },
+                    errorType: ProcessErrorType.Conflict
+                );
             }
 
             string? paymentDetailsRedirectUrl = paymentInformation.PaymentDetails?.RedirectUrl;

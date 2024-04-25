@@ -12,7 +12,7 @@ public interface IPaymentProcessor
     /// Internal ID for the payment processor.
     /// </summary>
     public string PaymentProcessorId { get; }
-    
+
     /// <summary>
     /// Starts a payment process for the specified instance and order details.
     /// </summary>
@@ -22,10 +22,14 @@ public interface IPaymentProcessor
     /// Terminate a payment for the specified instance and payment reference.
     /// </summary>
     public Task<bool> TerminatePayment(Instance instance, PaymentInformation paymentInformation);
-    
+
     /// <summary>
     /// Gets the payment status for the specified instance and payment reference.
     /// </summary>
-    public Task<(PaymentStatus status, PaymentDetails paymentDetails)>
-        GetPaymentStatus(Instance instance, string paymentReference, decimal expectedTotalIncVat, string? language);
+    public Task<(PaymentStatus status, PaymentDetails paymentDetails)> GetPaymentStatus(
+        Instance instance,
+        string paymentReference,
+        decimal expectedTotalIncVat,
+        string? language
+    );
 }

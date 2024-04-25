@@ -12,7 +12,9 @@ namespace Altinn.App.PlatformServices.Tests.Options
         [Fact]
         public void GetOptionsProvider_NoCustomOptionsProvider_ShouldReturnDefault()
         {
-            var factory = new InstanceAppOptionsFactory(new List<IInstanceAppOptionsProvider>() { new VehiclesInstanceAppOptionsProvider() });
+            var factory = new InstanceAppOptionsFactory(
+                new List<IInstanceAppOptionsProvider>() { new VehiclesInstanceAppOptionsProvider() }
+            );
 
             IInstanceAppOptionsProvider optionsProvider = factory.GetOptionsProvider("not-vehicles");
 
@@ -22,7 +24,9 @@ namespace Altinn.App.PlatformServices.Tests.Options
         [Fact]
         public void GetOptionsProvider_CustomOptionsProvider_ShouldReturnCustomType()
         {
-            var factory = new InstanceAppOptionsFactory(new List<IInstanceAppOptionsProvider>() { new VehiclesInstanceAppOptionsProvider() });
+            var factory = new InstanceAppOptionsFactory(
+                new List<IInstanceAppOptionsProvider>() { new VehiclesInstanceAppOptionsProvider() }
+            );
 
             IInstanceAppOptionsProvider optionsProvider = factory.GetOptionsProvider("vehicles");
 
@@ -34,27 +38,19 @@ namespace Altinn.App.PlatformServices.Tests.Options
         {
             public string Id => "vehicles";
 
-            public Task<AppOptions> GetInstanceAppOptionsAsync(InstanceIdentifier instanceIdentifier, string language, Dictionary<string, string> keyValuePairs)
+            public Task<AppOptions> GetInstanceAppOptionsAsync(
+                InstanceIdentifier instanceIdentifier,
+                string language,
+                Dictionary<string, string> keyValuePairs
+            )
             {
                 var options = new AppOptions
                 {
                     Options = new List<AppOption>
                     {
-                        new AppOption
-                        {
-                            Label = "Skoda Octavia 1.6",
-                            Value = "DN49525"
-                        },
-                        new AppOption
-                        {
-                            Label = "e-Golf",
-                            Value = "EK38470"
-                        },
-                        new AppOption
-                        {
-                            Label = "Tilhenger",
-                            Value = "JT5817"
-                        }
+                        new AppOption { Label = "Skoda Octavia 1.6", Value = "DN49525" },
+                        new AppOption { Label = "e-Golf", Value = "EK38470" },
+                        new AppOption { Label = "Tilhenger", Value = "JT5817" }
                     }
                 };
 

@@ -30,6 +30,7 @@ using Altinn.App.Core.Internal.Patch;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Prefill;
 using Altinn.App.Core.Internal.Process;
+using Altinn.App.Core.Internal.Process.Authorization;
 using Altinn.App.Core.Internal.Process.EventHandlers;
 using Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
@@ -37,6 +38,7 @@ using Altinn.App.Core.Internal.Process.ServiceTasks;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Internal.Secrets;
+using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models;
@@ -55,8 +57,6 @@ using IProcessEngine = Altinn.App.Core.Internal.Process.IProcessEngine;
 using IProcessReader = Altinn.App.Core.Internal.Process.IProcessReader;
 using ProcessEngine = Altinn.App.Core.Internal.Process.ProcessEngine;
 using ProcessReader = Altinn.App.Core.Internal.Process.ProcessReader;
-using Altinn.App.Core.Internal.Sign;
-using Altinn.App.Core.Internal.Process.Authorization;
 
 namespace Altinn.App.Core.Extensions
 {
@@ -71,7 +71,11 @@ namespace Altinn.App.Core.Extensions
         /// <param name="services">The <see cref="IServiceCollection"/> being built.</param>
         /// <param name="configuration">A reference to the current <see cref="IConfiguration"/> object.</param>
         /// <param name="env">A reference to the current <see cref="IWebHostEnvironment"/> object.</param>
-        public static void AddPlatformServices(this IServiceCollection services, IConfiguration configuration, IWebHostEnvironment env)
+        public static void AddPlatformServices(
+            this IServiceCollection services,
+            IConfiguration configuration,
+            IWebHostEnvironment env
+        )
         {
             services.Configure<AppSettings>(configuration.GetSection("AppSettings"));
             services.Configure<GeneralSettings>(configuration.GetSection("GeneralSettings"));
@@ -121,7 +125,9 @@ namespace Altinn.App.Core.Extensions
 
             if (id == null)
             {
-                throw new KeyNotFoundException("Could not find id in applicationmetadata.json. Please ensure applicationmeta.json is well formed and contains a key for id.");
+                throw new KeyNotFoundException(
+                    "Could not find id in applicationmetadata.json. Please ensure applicationmeta.json is well formed and contains a key for id."
+                );
             }
 
             return id;
@@ -133,7 +139,11 @@ namespace Altinn.App.Core.Extensions
         /// <param name="services">The <see cref="IServiceCollection"/> being built.</param>
         /// <param name="configuration">A reference to the current <see cref="IConfiguration"/> object.</param>
         /// <param name="env">A reference to the current <see cref="IWebHostEnvironment"/> object.</param>
-        public static void AddAppServices(this IServiceCollection services, IConfiguration configuration, IWebHostEnvironment env)
+        public static void AddAppServices(
+            this IServiceCollection services,
+            IConfiguration configuration,
+            IWebHostEnvironment env
+        )
         {
             // Services for Altinn App
             services.TryAddTransient<IPDP, PDPAppSI>();
@@ -157,7 +167,9 @@ namespace Altinn.App.Core.Extensions
             services.TryAddTransient<IPatchService, PatchService>();
             services.AddTransient<IDataService, DataService>();
             services.Configure<Altinn.Common.PEP.Configuration.PepSettings>(configuration.GetSection("PEPSettings"));
-            services.Configure<Altinn.Common.PEP.Configuration.PlatformSettings>(configuration.GetSection("PlatformSettings"));
+            services.Configure<Altinn.Common.PEP.Configuration.PlatformSettings>(
+                configuration.GetSection("PlatformSettings")
+            );
             services.Configure<AccessTokenSettings>(configuration.GetSection("AccessTokenSettings"));
             services.Configure<FrontEndSettings>(configuration.GetSection(nameof(FrontEndSettings)));
             services.Configure<PdfGeneratorSettings>(configuration.GetSection(nameof(PdfGeneratorSettings)));
@@ -313,7 +325,8 @@ namespace Altinn.App.Core.Extensions
 
         private static void AddMetricsDecorators(IServiceCollection services, IConfiguration configuration)
         {
-            MetricsSettings metricsSettings = configuration.GetSection("MetricsSettings")?.Get<MetricsSettings>() ?? new MetricsSettings();
+            MetricsSettings metricsSettings =
+                configuration.GetSection("MetricsSettings")?.Get<MetricsSettings>() ?? new MetricsSettings();
             if (metricsSettings.Enabled)
             {
                 services.Decorate<IInstanceClient, InstanceClientMetricsDecorator>();

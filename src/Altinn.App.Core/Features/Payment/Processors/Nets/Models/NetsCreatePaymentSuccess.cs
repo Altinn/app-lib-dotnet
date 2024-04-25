@@ -9,6 +9,7 @@ public class NetsCreatePaymentSuccess
     /// The identifier (UUID) of the newly created payment object. Use this identifier in subsequent request when referring to the new payment.
     /// </summary>
     public required string PaymentId { get; set; }
+
     /// <summary>
     /// The URL your website should redirect to if using a hosted pre-built checkout page.
     /// </summary>
