@@ -149,7 +149,7 @@ namespace Altinn.App.Api.Extensions
             IWebHostEnvironment env
         )
         {
-            var appId = StartupHelper.GetApplicationId();
+            var appId = StartupHelper.GetApplicationId().Split("/")[1];
             var appVersion = config.GetSection("AppSettings").GetValue<string>("AppVersion");
             services.AddSingleton<Telemetry>();
             services
