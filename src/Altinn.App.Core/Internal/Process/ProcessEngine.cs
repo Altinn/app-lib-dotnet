@@ -25,6 +25,7 @@ public class ProcessEngine : IProcessEngine
     private readonly IProcessEventHandlerDelegator _processEventHandlerDelegator;
     private readonly IProcessEventDispatcher _processEventDispatcher;
     private readonly UserActionService _userActionService;
+    private readonly Telemetry? _telemetry;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessEngine"/> class
@@ -35,13 +36,15 @@ public class ProcessEngine : IProcessEngine
     /// <param name="processEventsDelegator"></param>
     /// <param name="processEventDispatcher">The process event dispatcher</param>
     /// <param name="userActionService">The action handler factory</param>
+    /// <param name="telemetry">The telemetry service</param>
     public ProcessEngine(
         IProcessReader processReader,
         IProfileClient profileClient,
         IProcessNavigator processNavigator,
         IProcessEventHandlerDelegator processEventsDelegator,
         IProcessEventDispatcher processEventDispatcher,
-        UserActionService userActionService
+        UserActionService userActionService,
+        Telemetry? telemetry = null
     )
     {
         _processReader = processReader;
@@ -50,11 +53,14 @@ public class ProcessEngine : IProcessEngine
         _processEventHandlerDelegator = processEventsDelegator;
         _processEventDispatcher = processEventDispatcher;
         _userActionService = userActionService;
+        _telemetry = telemetry;
     }
 
     /// <inheritdoc/>
     public async Task<ProcessChangeResult> GenerateProcessStartEvents(ProcessStartRequest processStartRequest)
     {
+        using var activity = _telemetry?.StartProcessStartActivity(processStartRequest.Instance);
+
         if (processStartRequest.Instance.Process != null)
         {
             return new ProcessChangeResult()
@@ -108,12 +114,16 @@ public class ProcessEngine : IProcessEngine
                 Events = events
             };
 
+        _telemetry?.ProcessStarted();
+
         return new ProcessChangeResult() { Success = true, ProcessStateChange = processStateChange };
     }
 
     /// <inheritdoc/>
     public async Task<ProcessChangeResult> Next(ProcessNextRequest request)
     {
+        using var activity = _telemetry?.StartProcessNextActivity(request.Instance);
+
         Instance instance = request.Instance;
         string? currentElementId = instance.Process?.CurrentTask?.ElementId;
 
@@ -146,6 +156,11 @@ public class ProcessEngine : IProcessEngine
         }
 
         ProcessStateChange? nextResult = await HandleMoveToNext(instance, request.User, request.Action);
+
+        if (nextResult?.NewProcessState?.Ended is not null)
+        {
+            _telemetry?.ProcessEnded(nextResult);
+        }
 
         return new ProcessChangeResult() { Success = true, ProcessStateChange = nextResult };
     }
@@ -259,6 +274,8 @@ public class ProcessEngine : IProcessEngine
         // ending process if next element is end event
         if (_processReader.IsEndEvent(nextElement?.Id))
         {
+            using var activity = _telemetry?.StartProcessEndActivity(instance);
+
             currentState.CurrentTask = null;
             currentState.Ended = now;
             currentState.EndEvent = nextElement!.Id;

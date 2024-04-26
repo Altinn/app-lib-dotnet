@@ -15,7 +15,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
-using static Altinn.App.Core.Features.Telemetry.Instance;
+using static Altinn.App.Core.Features.Telemetry.Instances;
 
 namespace Altinn.App.Core.Infrastructure.Clients.Storage
 {
@@ -199,6 +199,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
                 Instance createdInstance = JsonConvert.DeserializeObject<Instance>(
                     await response.Content.ReadAsStringAsync()
                 )!;
+                _telemetry?.InstanceCreated(createdInstance);
                 return createdInstance;
             }
 
@@ -224,6 +225,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             {
                 string instanceData = await response.Content.ReadAsStringAsync();
                 Instance instance = JsonConvert.DeserializeObject<Instance>(instanceData)!;
+                _telemetry?.InstanceCompleted(instance);
                 return instance;
             }
 
@@ -353,6 +355,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             {
                 string instanceData = await response.Content.ReadAsStringAsync();
                 Instance instance = JsonConvert.DeserializeObject<Instance>(instanceData)!;
+                _telemetry?.InstanceDeleted(instance);
                 return instance;
             }
 

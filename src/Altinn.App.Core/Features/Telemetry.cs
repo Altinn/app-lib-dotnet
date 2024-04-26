@@ -1,8 +1,8 @@
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Models;
+using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Options;
 using OpenTelemetry.Trace;
 
@@ -43,6 +43,7 @@ public sealed partial class Telemetry : IDisposable
     public Meter Meter { get; }
 
     private readonly Dictionary<string, Counter<long>> _counters = new();
+    private readonly Dictionary<string, Histogram<double>> _histograms = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Telemetry"/> class.
@@ -59,6 +60,8 @@ public sealed partial class Telemetry : IDisposable
 
         InitNotifications();
         InitValidation();
+        InitInstances();
+        InitProcesses();
     }
 
     // public sealed class CountersRegistry
@@ -117,6 +120,24 @@ public sealed partial class Telemetry : IDisposable
         /// Label for the ID of the task.
         /// </summary>
         public static readonly string TaskId = "task.id";
+    }
+
+    private static void TryAddInstanceId(Activity activity, Instance? instance)
+    {
+        if (instance?.Id is not null)
+        {
+            Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
+            activity.SetTag(Labels.InstanceGuid, instanceGuid);
+        }
+    }
+
+    private static void TryAddDataElementId(Activity activity, DataElement? dataElement)
+    {
+        if (dataElement?.Id is not null)
+        {
+            Guid dataGuid = Guid.Parse(dataElement.Id);
+            activity.SetTag(Labels.DataGuid, dataGuid);
+        }
     }
 
     /// <summary>

@@ -8,10 +8,7 @@ public partial class Telemetry
 {
     private void InitValidation() { }
 
-    internal Activity? StartValidateInstanceAtTaskActivity(
-        Platform.Storage.Interface.Models.Instance instance,
-        string taskId
-    )
+    internal Activity? StartValidateInstanceAtTaskActivity(Instance instance, string taskId)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(taskId);
 
@@ -37,10 +34,7 @@ public partial class Telemetry
         return activity;
     }
 
-    internal Activity? StartValidateDataElementActivity(
-        Platform.Storage.Interface.Models.Instance instance,
-        DataElement dataElement
-    )
+    internal Activity? StartValidateDataElementActivity(Instance instance, DataElement dataElement)
     {
         var activity = ActivitySource.StartActivity(TraceNameValidateDataElement);
         if (activity is not null)
@@ -63,10 +57,7 @@ public partial class Telemetry
         return activity;
     }
 
-    internal Activity? StartValidateFormDataActivity(
-        Platform.Storage.Interface.Models.Instance instance,
-        DataElement dataElement
-    )
+    internal Activity? StartValidateFormDataActivity(Instance instance, DataElement dataElement)
     {
         var activity = ActivitySource.StartActivity(TraceNameValidateFormData);
 
@@ -89,24 +80,6 @@ public partial class Telemetry
         }
 
         return activity;
-    }
-
-    private static void TryAddInstanceId(Activity activity, Platform.Storage.Interface.Models.Instance? instance)
-    {
-        if (instance?.Id is not null)
-        {
-            Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
-            activity.SetTag(Labels.InstanceGuid, instanceGuid);
-        }
-    }
-
-    private static void TryAddDataElementId(Activity activity, DataElement? dataElement)
-    {
-        if (dataElement?.Id is not null)
-        {
-            Guid dataGuid = Guid.Parse(dataElement.Id);
-            activity.SetTag(Labels.DataGuid, dataGuid);
-        }
     }
 
     internal static class Validation

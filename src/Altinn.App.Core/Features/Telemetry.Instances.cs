@@ -1,12 +1,61 @@
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
+using Altinn.Platform.Storage.Interface.Models;
 using NetEscapades.EnumGenerators;
-using static Altinn.App.Core.Features.Telemetry.Instance;
+using static Altinn.App.Core.Features.Telemetry.Instances;
 
 namespace Altinn.App.Core.Features;
 
 public partial class Telemetry
 {
+    private void InitInstances()
+    {
+        _counters.Add(
+            MetricNameInstancesCreated,
+            Meter.CreateCounter<long>(MetricNameInstancesCreated, unit: null, description: null)
+        );
+        _counters.Add(
+            MetricNameInstancesCompleted,
+            Meter.CreateCounter<long>(MetricNameInstancesCompleted, unit: null, description: null)
+        );
+        _counters.Add(
+            MetricNameInstancesDeleted,
+            Meter.CreateCounter<long>(MetricNameInstancesDeleted, unit: null, description: null)
+        );
+
+        _histograms.Add(
+            MetricNameInstancesDuration,
+            Meter.CreateHistogram<double>(MetricNameInstancesDuration, unit: null, description: null)
+        );
+    }
+
+    internal void InstanceCreated(Instance instance)
+    {
+        _counters[MetricNameInstancesCreated].Add(1);
+    }
+
+    internal void InstanceCompleted(Instance instance)
+    {
+        _counters[MetricNameInstancesCompleted].Add(1);
+
+        if (instance.Created is not null)
+        {
+            var duration = DateTime.UtcNow - instance.Created.Value;
+            _histograms[MetricNameInstancesDuration].Record(duration.TotalSeconds);
+        }
+    }
+
+    internal void InstanceDeleted(Instance instance)
+    {
+        _counters[MetricNameInstancesDeleted].Add(1);
+
+        if (instance.Created is not null)
+        {
+            var duration = DateTime.UtcNow - instance.Created.Value;
+            _histograms[MetricNameInstancesDuration].Record(duration.TotalSeconds);
+        }
+    }
+
     internal Activity? StartGetInstanceActivity(InstanceType type, Guid? instanceGuid = null)
     {
         var activity = ActivitySource.StartActivity(TraceNameGet);
@@ -46,7 +95,7 @@ public partial class Telemetry
         return activity;
     }
 
-    internal Activity? StartUpdateProcessActivity(Platform.Storage.Interface.Models.Instance instance)
+    internal Activity? StartUpdateProcessActivity(Instance instance)
     {
         var activity = ActivitySource.StartActivity(TraceNameProcess);
         if (activity is not null)
@@ -112,9 +161,14 @@ public partial class Telemetry
         return activity;
     }
 
-    internal static class Instance
+    internal static class Instances
     {
         private const string _prefix = "Instance";
+
+        internal static readonly string MetricNameInstancesCreated = Metrics.CreateLibName("instances_created");
+        internal static readonly string MetricNameInstancesCompleted = Metrics.CreateLibName("instances_completed");
+        internal static readonly string MetricNameInstancesDeleted = Metrics.CreateLibName("instances_deleted");
+        internal static readonly string MetricNameInstancesDuration = Metrics.CreateLibName("instances_duration");
 
         internal const string TraceNameGet = $"{_prefix}.Get";
         internal const string TraceNameQuery = $"{_prefix}.Query";
