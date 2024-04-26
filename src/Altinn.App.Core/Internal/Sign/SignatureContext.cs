@@ -11,14 +11,12 @@ public class SignatureContext
     /// Create a new signing context for one data element
     /// </summary>
     /// <param name="instanceIdentifier">Identifier for the instance containing the data elements to sign</param>
-    /// <param name="taskId">The id of the task connected to this signature</param>
     /// <param name="signatureDataTypeId">The id of the DataType where the signature should be stored</param>
     /// <param name="signee">The signee</param>
     /// <param name="dataElementSignature">The data element to sign <see cref="DataElementSignature"/></param>
-    public SignatureContext(InstanceIdentifier instanceIdentifier, string taskId, string signatureDataTypeId, Signee signee, params DataElementSignature[] dataElementSignature)
+    public SignatureContext(InstanceIdentifier instanceIdentifier, string signatureDataTypeId, Signee signee, params DataElementSignature[] dataElementSignature)
     {
         InstanceIdentifier = instanceIdentifier;
-        TaskId = taskId;
         SignatureDataTypeId = signatureDataTypeId;
         DataElementSignatures.AddRange(dataElementSignature);
         Signee = signee;
@@ -28,24 +26,17 @@ public class SignatureContext
     /// Create a new signing context for multiple data elements
     /// </summary>
     /// <param name="instanceIdentifier">Identifier for the instance containing the data elements to sign</param>
-    /// <param name="taskId">The id of the task connected to this signature</param>
     /// <param name="signatureDataTypeId">The id of the DataType where the signature should be stored</param>
     /// <param name="signee">The signee</param>
     /// <param name="dataElementSignatures">The data elements to sign <see cref="DataElementSignature"/></param>
-    public SignatureContext(InstanceIdentifier instanceIdentifier, string taskId, string signatureDataTypeId, Signee signee, List<DataElementSignature> dataElementSignatures)
+    public SignatureContext(InstanceIdentifier instanceIdentifier, string signatureDataTypeId, Signee signee, List<DataElementSignature> dataElementSignatures)
     {
         InstanceIdentifier = instanceIdentifier;
-        TaskId = taskId;
         SignatureDataTypeId = signatureDataTypeId;
         DataElementSignatures = dataElementSignatures;
         Signee = signee;
     }
 
-    /// <summary>
-    /// The id of the Task this signature belongs to
-    /// </summary>
-    public string TaskId { get; }
-    
     /// <summary>
     /// The id of the DataType where the signature should be stored
     /// </summary>
