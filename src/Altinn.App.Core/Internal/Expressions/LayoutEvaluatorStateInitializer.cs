@@ -1,6 +1,7 @@
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Data;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Options;
 
@@ -14,14 +15,20 @@ public class LayoutEvaluatorStateInitializer
     // Dependency injection properties (set in ctor)
     private readonly IAppResources _appResources;
     private readonly FrontEndSettings _frontEndSettings;
+    private readonly IDataClient _dataClient;
 
     /// <summary>
     /// Constructor with services from dependency injection
     /// </summary>
-    public LayoutEvaluatorStateInitializer(IAppResources appResources, IOptions<FrontEndSettings> frontEndSettings)
+    public LayoutEvaluatorStateInitializer(
+        IAppResources appResources,
+        IOptions<FrontEndSettings> frontEndSettings,
+        IDataClient dataClient
+    )
     {
         _appResources = appResources;
         _frontEndSettings = frontEndSettings.Value;
+        _dataClient = dataClient;
     }
 
     /// <summary>

@@ -156,8 +156,7 @@ public interface IAppResources
     byte[] GetRuleHandlerForSet(string id);
 
     /// <summary>
-    /// Gets the the rule handler for a layoutset
+    /// Gets the validation configuration for a given data type
     /// </summary>
-    /// <returns>The layout settings</returns>
-    string? GetValidationConfiguration(string modelId);
+    string? GetValidationConfiguration(string dataTypeId);
 }

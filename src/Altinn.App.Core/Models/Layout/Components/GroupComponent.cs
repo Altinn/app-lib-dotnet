@@ -13,7 +13,7 @@ public class GroupComponent : BaseComponent
     public GroupComponent(
         string id,
         string type,
-        IReadOnlyDictionary<string, string>? dataModelBindings,
+        IReadOnlyDictionary<string, ModelBinding>? dataModelBindings,
         IEnumerable<BaseComponent> children,
         IEnumerable<string>? childIDs,
         Expression? hidden,

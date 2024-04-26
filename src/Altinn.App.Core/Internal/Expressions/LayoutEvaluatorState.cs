@@ -192,20 +192,20 @@ public class LayoutEvaluatorState
     /// <summary>
     /// Get field from dataModel with key and context
     /// </summary>
-    public object? GetModelData(string? key, ComponentContext? context = null)
+    public object? GetModelData(ModelBinding? key, ComponentContext? context = null)
     {
         if (key is null)
         {
             throw new ArgumentException("Cannot lookup dataModel null");
         }
 
-        return _dataModel.GetModelData(key, context?.RowIndices);
+        return _dataModel.GetModelData(key.Value, context?.RowIndices);
     }
 
     /// <summary>
     /// Get all of the resolved keys (including all possible indexes) from a data model key
     /// </summary>
-    public string[] GetResolvedKeys(string key)
+    public ModelBinding[] GetResolvedKeys(ModelBinding key)
     {
         return _dataModel.GetResolvedKeys(key);
     }
@@ -213,7 +213,7 @@ public class LayoutEvaluatorState
     /// <summary>
     /// Set the value of a field to null.
     /// </summary>
-    public void RemoveDataField(string key, RowRemovalOption rowRemovalOption)
+    public void RemoveDataField(ModelBinding key, RowRemovalOption rowRemovalOption)
     {
         _dataModel.RemoveField(key, rowRemovalOption);
     }
@@ -260,7 +260,7 @@ public class LayoutEvaluatorState
     /// indicies = [1,2]
     /// => "bedrift[1].ansatte[2].navn"
     /// </example>
-    public string AddInidicies(string binding, ComponentContext context)
+    public ModelBinding AddInidicies(ModelBinding binding, ComponentContext context)
     {
         return _dataModel.AddIndicies(binding, context.RowIndices);
     }
@@ -268,7 +268,7 @@ public class LayoutEvaluatorState
     /// <summary>
     /// Return a full dataModelBiding from a context aware binding by adding indicies
     /// </summary>
-    public string AddInidicies(string binding, ReadOnlySpan<int> indices)
+    public ModelBinding AddInidicies(ModelBinding binding, ReadOnlySpan<int> indices)
     {
         return _dataModel.AddIndicies(binding, indices);
     }
@@ -311,7 +311,8 @@ public class LayoutEvaluatorState
                 );
                 return;
             }
-            if (!_dataModel.VerifyKey(binding))
+            var dataType = expr.Args.ElementAtOrDefault(1)?.Value as string;
+            if (!_dataModel.VerifyKey(new ModelBinding { Field = binding, DataType = dataType }))
             {
                 errors.Add($"Invalid binding \"{binding}\" on component {component.PageId}.{component.Id}");
             }

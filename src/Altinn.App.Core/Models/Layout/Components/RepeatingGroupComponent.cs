@@ -13,7 +13,7 @@ public class RepeatingGroupComponent : GroupComponent
     public RepeatingGroupComponent(
         string id,
         string type,
-        IReadOnlyDictionary<string, string>? dataModelBindings,
+        IReadOnlyDictionary<string, ModelBinding>? dataModelBindings,
         IEnumerable<BaseComponent> children,
         IEnumerable<string>? childIDs,
         int maxCount,

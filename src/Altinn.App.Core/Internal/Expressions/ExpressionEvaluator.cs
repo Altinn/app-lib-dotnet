@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 using Altinn.App.Core.Models.Expressions;
+using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Models.Layout.Components;
 
 namespace Altinn.App.Core.Internal.Expressions;
@@ -75,7 +76,7 @@ public static class ExpressionEvaluator
         // ! TODO: should find better ways to deal with nulls here for the next major version
         var ret = expr.Function switch
         {
-            ExpressionFunction.dataModel => DataModel(args.First()?.ToString(), context, state),
+            ExpressionFunction.dataModel => DataModel(args, context, state),
             ExpressionFunction.component => Component(args, context, state),
             ExpressionFunction.instanceContext => state.GetInstanceContext(args.First()?.ToString()!),
             ExpressionFunction.@if => IfImpl(args),
@@ -106,7 +107,23 @@ public static class ExpressionEvaluator
         return ret;
     }
 
-    private static object? DataModel(string? key, ComponentContext? context, LayoutEvaluatorState state)
+    private static object? DataModel(object?[] args, ComponentContext? context, LayoutEvaluatorState state)
+    {
+        var key = args switch
+        {
+            [string field] => new ModelBinding { Field = field },
+            [string field, string dataType] => new ModelBinding { Field = field, DataType = dataType },
+            [ModelBinding binding] => binding,
+            [null] => throw new ExpressionEvaluatorTypeErrorException("Cannot lookup dataModel null"),
+            _
+                => throw new ExpressionEvaluatorTypeErrorException(
+                    $"""Expected ["dataModel", ...] to have 1-2 argument(s), got {args.Length}"""
+                )
+        };
+        return DataModel(key, context, state);
+    }
+
+    private static object? DataModel(ModelBinding key, ComponentContext? context, LayoutEvaluatorState state)
     {
         var data = state.GetModelData(key, context);
 

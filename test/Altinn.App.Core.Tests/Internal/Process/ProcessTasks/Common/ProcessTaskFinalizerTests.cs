@@ -31,7 +31,7 @@ public class ProcessTaskFinalizerTests
         var frontendSettingsMock = new Mock<IOptions<FrontEndSettings>>();
         _layoutEvaluatorStateInitializerMock = new Mock<LayoutEvaluatorStateInitializer>(
             MockBehavior.Strict,
-            [_appResourcesMock.Object, frontendSettingsMock.Object]
+            [_appResourcesMock.Object, frontendSettingsMock.Object, _dataClientMock.Object]
         );
         _appSettingsMock = Options.Create(new AppSettings());
 

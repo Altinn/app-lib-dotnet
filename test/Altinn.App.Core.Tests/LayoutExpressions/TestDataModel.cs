@@ -1,8 +1,9 @@
-using System.Text.Json;
+using System.Collections;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.DataModel;
+using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Tests.Helpers;
 using FluentAssertions;
 using Newtonsoft.Json;
@@ -271,10 +272,10 @@ public class TestDataModel
                 }
             }
         };
-        var serializedModel = System.Text.Json.JsonSerializer.Serialize(model);
+        var serializedModel = JsonSerializer.Serialize(model);
 
         // deleteRows = false
-        var model1 = System.Text.Json.JsonSerializer.Deserialize<Model>(serializedModel)!;
+        var model1 = JsonSerializer.Deserialize<Model>(serializedModel)!;
         IDataModelAccessor modelHelper1 = new DataModel(model1);
 
         modelHelper1.RemoveField("friends[0].friends[0]", RowRemovalOption.SetToNull);
@@ -288,7 +289,7 @@ public class TestDataModel
         model1.Friends[2].Name!.Value.Should().Be("Tredje venn");
 
         // deleteRows = true
-        var model2 = System.Text.Json.JsonSerializer.Deserialize<Model>(serializedModel)!;
+        var model2 = JsonSerializer.Deserialize<Model>(serializedModel)!;
         IDataModelAccessor modelHelper2 = new DataModel(model2);
 
         modelHelper2.RemoveField("friends[0].friends[0]", RowRemovalOption.DeleteRow);
@@ -335,7 +336,7 @@ public class TestDataModel
             new
             {
                 // ArrayList is not supported as a data model
-                friends = new System.Collections.ArrayList() { 1, 2, 3 },
+                friends = new ArrayList { 1, 2, 3 }
             }
         );
         modelHelper
@@ -357,16 +358,16 @@ public class TestDataModel
         );
 
         // Plain add indicies
-        modelHelper.AddIndicies("friends.friends", [0, 1]).Should().Be("friends[0].friends[1]");
+        modelHelper.AddIndicies("friends.friends", [0, 1]).Should().Be((ModelBinding)"friends[0].friends[1]");
 
         // Ignore extra indicies
-        modelHelper.AddIndicies("friends.friends", [0, 1, 4, 6]).Should().Be("friends[0].friends[1]");
+        modelHelper.AddIndicies("friends.friends", [0, 1, 4, 6]).Should().Be((ModelBinding)"friends[0].friends[1]");
 
         // Don't add indicies if they are specified in input
-        modelHelper.AddIndicies("friends[3]", [0]).Should().Be("friends[3]");
+        modelHelper.AddIndicies("friends[3]", [0]).Should().Be((ModelBinding)"friends[3]");
 
         // First index is ignored if it is explicit
-        modelHelper.AddIndicies("friends[0].friends", [2, 3]).Should().Be("friends[0].friends[3]");
+        modelHelper.AddIndicies("friends[0].friends", [2, 3]).Should().Be((ModelBinding)"friends[0].friends[3]");
     }
 
     [Fact]

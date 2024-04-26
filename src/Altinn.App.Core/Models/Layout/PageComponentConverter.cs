@@ -258,7 +258,7 @@ public class PageComponentConverter : JsonConverter<PageComponent>
         }
         string? id = null;
         string? type = null;
-        Dictionary<string, string>? dataModelBindings = null;
+        Dictionary<string, ModelBinding>? dataModelBindings = null;
         Expression? hidden = null;
         Expression? hiddenRow = null;
         Expression? required = null;
@@ -304,7 +304,7 @@ public class PageComponentConverter : JsonConverter<PageComponent>
                     break;
                 case "datamodelbindings":
                     // TODO: deserialize directly to make LineNumber and BytePositionInLine to give better errors
-                    dataModelBindings = JsonSerializer.Deserialize<Dictionary<string, string>>(ref reader, options);
+                    dataModelBindings = DeserializeModelBindings(ref reader);
                     break;
                 // case "textresourcebindings":
                 //     break;
@@ -469,6 +469,34 @@ public class PageComponentConverter : JsonConverter<PageComponent>
 
         // Most compoents are handled as BaseComponent
         return new BaseComponent(id, type, dataModelBindings, hidden, required, readOnly, additionalProperties);
+    }
+
+    private Dictionary<string, ModelBinding>? DeserializeModelBindings(ref Utf8JsonReader reader)
+    {
+        var modelBindings = new Dictionary<string, ModelBinding>();
+        if (reader.TokenType != JsonTokenType.StartObject)
+        {
+            throw new JsonException("Expected StartObject token for \"dataModelBindings\"");
+        }
+
+        while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
+        {
+            if (reader.TokenType != JsonTokenType.PropertyName)
+            {
+                throw new JsonException();
+            }
+
+            var propertyName = reader.GetString()!;
+            reader.Read();
+            modelBindings[propertyName] = reader.TokenType switch
+            {
+                JsonTokenType.String => new ModelBinding { Field = reader.GetString()! },
+                JsonTokenType.StartObject => JsonSerializer.Deserialize<ModelBinding>(ref reader),
+                _ => throw new JsonException()
+            };
+        }
+
+        return modelBindings;
     }
 
     private static void ValidateOptions(

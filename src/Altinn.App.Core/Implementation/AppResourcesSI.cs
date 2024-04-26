@@ -449,11 +449,11 @@ public class AppResourcesSI : IAppResources
     }
 
     /// <inheritdoc />
-    public string? GetValidationConfiguration(string modelId)
+    public string? GetValidationConfiguration(string dataTypeId)
     {
         using var activity = _telemetry?.StartGetValidationConfigurationActivity();
         string legalPath = $"{_settings.AppBasePath}{_settings.ModelsFolder}";
-        string filename = $"{legalPath}{modelId}.{_settings.ValidationConfigurationFileName}";
+        string filename = $"{legalPath}{dataTypeId}.{_settings.ValidationConfigurationFileName}";
         PathHelper.EnsureLegalPath(legalPath, filename);
 
         string? filedata = null;

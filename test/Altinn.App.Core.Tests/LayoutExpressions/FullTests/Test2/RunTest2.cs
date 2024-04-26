@@ -2,6 +2,7 @@
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Expressions;
+using Altinn.App.Core.Models.Layout;
 using FluentAssertions;
 
 namespace Altinn.App.Core.Tests.LayoutExpressions.FullTests.Test2;
@@ -48,7 +49,7 @@ public class RunTest2
         hidden
             .Should()
             .BeEquivalentTo(
-                new List<string> { "some.data[0].binding2", "some.data[1].binding", "some.data[1].binding2" }
+                new List<ModelBinding> { "some.data[0].binding2", "some.data[1].binding", "some.data[1].binding2" }
             );
 
         // Verify before removing data
@@ -85,7 +86,7 @@ public class RunTest2
         );
         var hidden = LayoutEvaluator.GetHiddenFieldsForRemoval(state);
 
-        hidden.Should().BeEquivalentTo(new List<string> { "some.data[1].binding2" });
+        hidden.Should().BeEquivalentTo(new List<ModelBinding> { "some.data[1].binding2" });
     }
 }
 

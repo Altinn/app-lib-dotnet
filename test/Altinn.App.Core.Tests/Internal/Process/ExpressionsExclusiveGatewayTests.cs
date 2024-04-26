@@ -286,7 +286,11 @@ public class ExpressionsExclusiveGatewayTests
         }
 
         var frontendSettings = Options.Create(new FrontEndSettings());
-        var layoutStateInit = new LayoutEvaluatorStateInitializer(resources.Object, frontendSettings);
+        var layoutStateInit = new LayoutEvaluatorStateInitializer(
+            resources.Object,
+            frontendSettings,
+            dataClient.Object
+        );
         return new ExpressionsExclusiveGateway(
             layoutStateInit,
             resources.Object,

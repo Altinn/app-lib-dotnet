@@ -1,3 +1,5 @@
+using Altinn.App.Core.Models.Layout;
+
 namespace Altinn.App.Core.Helpers;
 
 /// <summary>
@@ -14,17 +16,17 @@ public interface IDataModelAccessor
     /// "Bedrifter[1].Ansatte.Alder", will fail, because the indicies will be reset
     /// after an inline index is used
     /// </remarks>
-    object? GetModelData(string key, ReadOnlySpan<int> indicies = default);
+    object? GetModelData(ModelBinding key, ReadOnlySpan<int> indicies = default);
 
     /// <summary>
     /// Get the count of data elements set in a group (enumerable)
     /// </summary>
-    int? GetModelDataCount(string key, ReadOnlySpan<int> indicies = default);
+    int? GetModelDataCount(ModelBinding key, ReadOnlySpan<int> indicies = default);
 
     /// <summary>
-    /// Get all of the resoved keys (including all possible indexes) from a data model key
+    /// Get all of the resolved keys (including all possible indexes) from a data model key
     /// </summary>
-    string[] GetResolvedKeys(string key);
+    ModelBinding[] GetResolvedKeys(ModelBinding key);
 
     /// <summary>
     /// Return a full dataModelBiding from a context aware binding by adding indicies
@@ -34,17 +36,17 @@ public interface IDataModelAccessor
     /// indicies = [1,2]
     /// => "bedrift[1].ansatte[2].navn"
     /// </example>
-    string AddIndicies(string key, ReadOnlySpan<int> indicies = default);
+    ModelBinding AddIndicies(ModelBinding key, ReadOnlySpan<int> indicies = default);
 
     /// <summary>
     /// Remove a value from the wrapped datamodel
     /// </summary>
-    void RemoveField(string key, RowRemovalOption rowRemovalOption);
+    void RemoveField(ModelBinding key, RowRemovalOption rowRemovalOption);
 
     /// <summary>
     /// Verify that a Key is a valid lookup for the datamodel
     /// </summary>
-    bool VerifyKey(string key);
+    bool VerifyKey(ModelBinding key);
 }
 
 /// <summary>

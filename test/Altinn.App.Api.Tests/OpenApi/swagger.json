@@ -3809,7 +3809,7 @@
         }
       }
     },
-    "/{org}/{app}/api/validationconfig/{id}": {
+    "/{org}/{app}/api/validationconfig/{dataTypeId}": {
       "get": {
         "tags": [
           "Resource"
@@ -3832,7 +3832,7 @@
             }
           },
           {
-            "name": "id",
+            "name": "dataTypeId",
             "in": "path",
             "required": true,
             "schema": {

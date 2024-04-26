@@ -3,6 +3,7 @@ using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models.Expressions;
+using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
@@ -78,7 +79,7 @@ public class ExpressionValidator : IFormDataValidator
         var expressionValidations = ParseExpressionValidationConfig(validationConfig.RootElement, _logger);
         foreach (var validationObject in expressionValidations)
         {
-            var baseField = validationObject.Key;
+            var baseField = new ModelBinding { Field = validationObject.Key, DataType = dataElement.DataType };
             var resolvedFields = evaluatorState.GetResolvedKeys(baseField);
             var validations = validationObject.Value;
             foreach (var resolvedField in resolvedFields)
@@ -92,7 +93,7 @@ public class ExpressionValidator : IFormDataValidator
                     rowIndices: DataModel.GetRowIndices(resolvedField),
                     rowLength: null
                 );
-                var positionalArguments = new[] { resolvedField };
+                var positionalArguments = new object[] { resolvedField };
                 foreach (var validation in validations)
                 {
                     try
@@ -118,7 +119,8 @@ public class ExpressionValidator : IFormDataValidator
                         {
                             var validationIssue = new ValidationIssue
                             {
-                                Field = resolvedField,
+                                Field = resolvedField.Field,
+                                // DataElementId = resolvedField.DataType,
                                 Severity = validation.Severity ?? ValidationIssueSeverity.Error,
                                 CustomTextKey = validation.Message,
                                 Code = validation.Message,

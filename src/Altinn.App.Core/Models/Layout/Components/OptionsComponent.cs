@@ -33,7 +33,7 @@ public class OptionsComponent : BaseComponent
     public OptionsComponent(
         string id,
         string type,
-        IReadOnlyDictionary<string, string>? dataModelBindings,
+        IReadOnlyDictionary<string, ModelBinding>? dataModelBindings,
         Expression? hidden,
         Expression? required,
         Expression? readOnly,

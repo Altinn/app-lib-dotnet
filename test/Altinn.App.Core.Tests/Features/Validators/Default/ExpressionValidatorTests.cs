@@ -6,6 +6,7 @@ using System.Text.Json.Serialization;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features.Validation.Default;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Layout;
@@ -17,28 +18,43 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
+using Xunit.Abstractions;
 using Xunit.Sdk;
 
 namespace Altinn.App.Core.Tests.Features.Validators.Default;
 
 public class ExpressionValidatorTests
 {
+    private readonly ITestOutputHelper _output;
     private readonly ExpressionValidator _validator;
     private readonly Mock<ILogger<ExpressionValidator>> _logger = new();
     private readonly Mock<IAppResources> _appResources = new(MockBehavior.Strict);
     private readonly Mock<IAppMetadata> _appMetadata = new(MockBehavior.Strict);
+    private readonly Mock<IDataClient> _dataClient = new(MockBehavior.Strict);
     private readonly IOptions<FrontEndSettings> _frontendSettings = Microsoft.Extensions.Options.Options.Create(
         new FrontEndSettings()
     );
     private readonly Mock<LayoutEvaluatorStateInitializer> _layoutInitializer;
+    private static readonly JsonSerializerOptions _jsonSerializerOptions = new() { WriteIndented = true };
 
-    public ExpressionValidatorTests()
+    public ExpressionValidatorTests(ITestOutputHelper output)
     {
+        _output = output;
         _appMetadata
             .Setup(ar => ar.GetApplicationMetadata())
-            .ReturnsAsync(new ApplicationMetadata("org/app") { DataTypes = new List<DataType>() { new() { } } });
+            .ReturnsAsync(
+                new ApplicationMetadata("org/app") { DataTypes = new List<DataType> { new() { Id = "default" } } }
+            );
         _appResources.Setup(ar => ar.GetLayoutSetForTask(null)).Returns(new LayoutSet());
-        _layoutInitializer = new(MockBehavior.Strict, _appResources.Object, _frontendSettings) { CallBase = false };
+        _layoutInitializer = new Mock<LayoutEvaluatorStateInitializer>(
+            MockBehavior.Strict,
+            _appResources.Object,
+            _frontendSettings,
+            _dataClient.Object
+        )
+        {
+            CallBase = false
+        };
         _validator = new ExpressionValidator(
             _logger.Object,
             _appResources.Object,
@@ -51,8 +67,13 @@ public class ExpressionValidatorTests
     [ExpressionTest]
     public async Task RunExpressionValidationTest(ExpressionValidationTestModel testCase)
     {
+        _output.WriteLine($"Running test: {testCase.Name}");
+        _output.WriteLine(JsonSerializer.Serialize(testCase.FormData, _jsonSerializerOptions));
+        _output.WriteLine(JsonSerializer.Serialize(testCase.ValidationConfig, _jsonSerializerOptions));
+        _output.WriteLine(JsonSerializer.Serialize(testCase.Expects, _jsonSerializerOptions));
+
         var instance = new Instance();
-        var dataElement = new DataElement();
+        var dataElement = new DataElement { DataType = "default" };
 
         var dataModel = new JsonDataModel(testCase.FormData);
 
@@ -68,7 +89,7 @@ public class ExpressionValidatorTests
             )
             .ReturnsAsync(evaluatorState);
         _appResources
-            .Setup(ar => ar.GetValidationConfiguration(null))
+            .Setup(ar => ar.GetValidationConfiguration("default"))
             .Returns(JsonSerializer.Serialize(testCase.ValidationConfig));
 
         var validationIssues = await _validator.ValidateFormData(instance, dataElement, null!, null);
@@ -137,5 +158,10 @@ public class ExpressionValidationTestModel
         public string Field { get; set; }
 
         public string ComponentId { get; set; }
+    }
+
+    public override string ToString()
+    {
+        return Name;
     }
 }

@@ -2,6 +2,7 @@
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Expressions;
+using Altinn.App.Core.Models.Layout;
 using FluentAssertions;
 
 namespace Altinn.App.Core.Tests.LayoutExpressions.FullTests.Test3;
@@ -51,7 +52,7 @@ public class RunTest3
         var hidden = LayoutEvaluator.GetHiddenFieldsForRemoval(state);
 
         // Should try to remove "some.data[0].binding2", because it is not nullable int and the parent object exists
-        hidden.Should().BeEquivalentTo(new List<string> { "some.data[2]" });
+        hidden.Should().BeEquivalentTo(new List<ModelBinding> { "some.data[2]" });
 
         // Verify before removing data
         data.Some.Data.Should().HaveCount(3);
@@ -108,7 +109,7 @@ public class RunTest3
         var hidden = LayoutEvaluator.GetHiddenFieldsForRemoval(state);
 
         // Should try to remove "some.data[0].binding2", because it is not nullable int and the parent object exists
-        hidden.Should().BeEquivalentTo(new List<string> { "some.data[2]" });
+        hidden.Should().BeEquivalentTo(new List<ModelBinding> { "some.data[2]" });
 
         // Verify before removing data
         data.Some.Data.Should().HaveCount(3);

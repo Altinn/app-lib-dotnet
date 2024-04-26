@@ -19,7 +19,7 @@ public class BaseComponent
     public BaseComponent(
         string id,
         string type,
-        IReadOnlyDictionary<string, string>? dataModelBindings,
+        IReadOnlyDictionary<string, ModelBinding>? dataModelBindings,
         Expression? hidden,
         Expression? required,
         Expression? readOnly,
@@ -28,7 +28,7 @@ public class BaseComponent
     {
         Id = id;
         Type = type;
-        DataModelBindings = dataModelBindings ?? ImmutableDictionary<string, string>.Empty;
+        DataModelBindings = dataModelBindings ?? ImmutableDictionary<string, ModelBinding>.Empty;
         Hidden = hidden;
         Required = required;
         ReadOnly = readOnly;
@@ -75,7 +75,7 @@ public class BaseComponent
     /// <summary>
     /// Data model bindings for the component or group
     /// </summary>
-    public IReadOnlyDictionary<string, string> DataModelBindings { get; }
+    public IReadOnlyDictionary<string, ModelBinding> DataModelBindings { get; }
 
     /// <summary>
     /// The group or page that this component is part of. NULL for page components

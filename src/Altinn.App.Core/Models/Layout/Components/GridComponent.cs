@@ -15,7 +15,7 @@ public class GridComponent : GroupComponent
     public GridComponent(
         string id,
         string type,
-        IReadOnlyDictionary<string, string>? dataModelBindings,
+        IReadOnlyDictionary<string, ModelBinding>? dataModelBindings,
         IEnumerable<BaseComponent> children,
         IEnumerable<string>? childIDs,
         Expression? hidden,

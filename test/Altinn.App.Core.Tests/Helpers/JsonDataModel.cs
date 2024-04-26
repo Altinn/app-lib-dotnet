@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.DataModel;
+using Altinn.App.Core.Models.Layout;
 
 namespace Altinn.App.Core.Tests.Helpers;
 
@@ -25,14 +26,14 @@ public class JsonDataModel : IDataModelAccessor
     }
 
     /// <inheritdoc />
-    public object? GetModelData(string key, ReadOnlySpan<int> indicies = default)
+    public object? GetModelData(ModelBinding key, ReadOnlySpan<int> indicies = default)
     {
         if (_modelRoot is null)
         {
             return null;
         }
 
-        return GetModelDataRecursive(key.Split('.'), 0, _modelRoot, indicies);
+        return GetModelDataRecursive(key.Field.Split('.'), 0, _modelRoot, indicies);
     }
 
     private object? GetModelDataRecursive(string[] keys, int index, JsonNode? currentModel, ReadOnlySpan<int> indicies)
@@ -104,14 +105,14 @@ public class JsonDataModel : IDataModelAccessor
     }
 
     /// <inheritdoc />
-    public int? GetModelDataCount(string key, ReadOnlySpan<int> indicies = default)
+    public int? GetModelDataCount(ModelBinding key, ReadOnlySpan<int> indicies = default)
     {
         if (_modelRoot is null)
         {
             return null;
         }
 
-        return GetModelDataCountRecurs(key.Split('.'), 0, _modelRoot, indicies);
+        return GetModelDataCountRecurs(key.Field.Split('.'), 0, _modelRoot, indicies);
     }
 
     private int? GetModelDataCountRecurs(string[] keys, int index, JsonNode? currentModel, ReadOnlySpan<int> indicies)
@@ -165,18 +166,19 @@ public class JsonDataModel : IDataModelAccessor
     }
 
     /// <inheritdoc />
-    public string[] GetResolvedKeys(string key)
+    public ModelBinding[] GetResolvedKeys(ModelBinding key)
     {
         if (_modelRoot is null)
         {
             return [];
         }
 
-        var keyParts = key.Split('.');
-        return GetResolvedKeysRecursive(keyParts, _modelRoot);
+        var keyParts = key.Field.Split('.');
+        return GetResolvedKeysRecursive(key, keyParts, _modelRoot);
     }
 
-    private string[] GetResolvedKeysRecursive(
+    private ModelBinding[] GetResolvedKeysRecursive(
+        ModelBinding fullkey,
         string[] keyParts,
         JsonNode? currentModel,
         int currentIndex = 0,
@@ -209,10 +211,11 @@ public class JsonDataModel : IDataModelAccessor
             {
                 // Index not specified, recurse on all elements
                 int i = 0;
-                var resolvedKeys = new List<string>();
+                var resolvedKeys = new List<ModelBinding>();
                 foreach (var child in childArray)
                 {
                     var newResolvedKeys = GetResolvedKeysRecursive(
+                        fullkey,
                         keyParts,
                         child,
                         currentIndex + 1,
@@ -228,6 +231,7 @@ public class JsonDataModel : IDataModelAccessor
             {
                 // Index specified, recurse on that element
                 return GetResolvedKeysRecursive(
+                    fullkey,
                     keyParts,
                     childModel,
                     currentIndex + 1,
@@ -238,6 +242,7 @@ public class JsonDataModel : IDataModelAccessor
 
         // Otherwise, just recurse
         return GetResolvedKeysRecursive(
+            fullkey,
             keyParts,
             childModel,
             currentIndex + 1,
@@ -246,14 +251,14 @@ public class JsonDataModel : IDataModelAccessor
     }
 
     /// <inheritdoc />
-    public string AddIndicies(string key, ReadOnlySpan<int> indicies = default)
+    public ModelBinding AddIndicies(ModelBinding key, ReadOnlySpan<int> indicies = default)
     {
         if (indicies.Length == 0)
         {
             return key;
         }
 
-        var keys = key.Split('.');
+        var keys = key.Field.Split('.');
         var outputKey = string.Empty;
         JsonNode? currentModel = _modelRoot;
 
@@ -293,13 +298,16 @@ public class JsonDataModel : IDataModelAccessor
             }
         }
 
-        return outputKey;
+        return key with
+        {
+            Field = outputKey
+        };
     }
 
     /// <inheritdoc />
-    public void RemoveField(string key, RowRemovalOption rowRemovalOption)
+    public void RemoveField(ModelBinding key, RowRemovalOption rowRemovalOption)
     {
-        var keys_split = key.Split('.');
+        var keys_split = key.Field.Split('.');
         var keys = keys_split[0..^1];
         var (lastKey, lastGroupIndex) = DataModel.ParseKeyPart(keys_split[^1]);
 
@@ -342,7 +350,7 @@ public class JsonDataModel : IDataModelAccessor
     }
 
     /// <inheritdoc />
-    public bool VerifyKey(string key)
+    public bool VerifyKey(ModelBinding key)
     {
         throw new NotImplementedException("Impossible to verify keys in a json model");
     }
