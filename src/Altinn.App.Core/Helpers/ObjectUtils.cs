@@ -181,11 +181,22 @@ public static class ObjectUtils
     /// <summary>
     /// Set all <see cref="Guid"/> properties named "AltinnRowId" to Guid.Empty
     /// </summary>
-    public static void RemoveAltinnRowId(object model)
+    public static void RemoveAltinnRowId(object model, int depth = 64)
     {
         ArgumentNullException.ThrowIfNull(model);
+        if (depth < 0)
+        {
+            throw new Exception(
+                $"Recursion depth exceeded. {model.GetType().Name} in {model.GetType().Namespace} likely causes infinite recursion."
+            );
+        }
+        var type = model.GetType();
+        if (type.Namespace?.StartsWith("System") == true)
+        {
+            return; // Some system types causes infinite recursion
+        }
 
-        foreach (var prop in model.GetType().GetProperties())
+        foreach (var prop in type.GetProperties())
         {
             // Handle guid fields named "AltinnRowId"
             if (PropertyIsAltinRowGuid(prop))
@@ -203,7 +214,7 @@ public static class ObjectUtils
                         // Recurse into values of a list
                         if (item is not null)
                         {
-                            RemoveAltinnRowId(item);
+                            RemoveAltinnRowId(item, depth - 1);
                         }
                     }
                 }
@@ -214,9 +225,9 @@ public static class ObjectUtils
                 var value = prop.GetValue(model);
 
                 // continue recursion over all properties
-                if (value?.GetType().IsValueType == false)
+                if (value is not null)
                 {
-                    RemoveAltinnRowId(value);
+                    RemoveAltinnRowId(value, depth - 1);
                 }
             }
         }
