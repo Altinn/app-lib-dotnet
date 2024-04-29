@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Xml.Serialization;
@@ -116,6 +117,10 @@ public class ObjectUtils_XmlSerializationTests(ITestOutputHelper _output)
             { "a", "a" },
             { "a.", "a." },
             { "a.📚", "a.📚" },
+            { "\n\n", null },
+            { "\n\na", "\n\na" },
+            { "a\n\n", "a\n\n" },
+            { "a\nb", "a\nb" }
         };
 
     [Theory]
@@ -149,7 +154,7 @@ public class ObjectUtils_XmlSerializationTests(ITestOutputHelper _output)
         DataClient.Serialize<YttersteObjekt>(test, typeof(YttersteObjekt), serializationStream);
 
         serializationStream.Seek(0, SeekOrigin.Begin);
-        _output.WriteLine(System.Text.Encoding.UTF8.GetString(serializationStream.ToArray()));
+        _output.WriteLine(Encoding.UTF8.GetString(serializationStream.ToArray()));
 
         // Deserialize
         ModelDeserializer serializer = new ModelDeserializer(_loggerMock.Object, typeof(YttersteObjekt));
