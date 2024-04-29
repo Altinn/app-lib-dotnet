@@ -3,9 +3,11 @@ using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
 using Altinn.App.Core.Internal.Profile;
+using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
 using Altinn.Platform.Profile.Models;
@@ -21,6 +23,7 @@ public class ProcessEngine : IProcessEngine
 {
     private readonly IProcessReader _processReader;
     private readonly IProfileClient _profileClient;
+    private readonly IDataClient _dataClient;
     private readonly IProcessNavigator _processNavigator;
     private readonly IProcessEventHandlerDelegator _processEventHandlerDelegator;
     private readonly IProcessEventDispatcher _processEventDispatcher;
@@ -31,6 +34,7 @@ public class ProcessEngine : IProcessEngine
     /// </summary>
     /// <param name="processReader">Process reader service</param>
     /// <param name="profileClient">The profile service</param>
+    /// <param name="dataClient">The data handling service</param>
     /// <param name="processNavigator">The process navigator</param>
     /// <param name="processEventsDelegator"></param>
     /// <param name="processEventDispatcher">The process event dispatcher</param>
@@ -38,6 +42,7 @@ public class ProcessEngine : IProcessEngine
     public ProcessEngine(
         IProcessReader processReader,
         IProfileClient profileClient,
+        IDataClient dataClient,
         IProcessNavigator processNavigator,
         IProcessEventHandlerDelegator processEventsDelegator,
         IProcessEventDispatcher processEventDispatcher,
@@ -45,6 +50,7 @@ public class ProcessEngine : IProcessEngine
     {
         _processReader = processReader;
         _profileClient = profileClient;
+        _dataClient = dataClient;
         _processNavigator = processNavigator;
         _processEventHandlerDelegator = processEventsDelegator;
         _processEventDispatcher = processEventDispatcher;
@@ -122,8 +128,12 @@ public class ProcessEngine : IProcessEngine
         }
 
         int? userId = request.User.GetUserIdAsInt();
-
         IUserAction? actionHandler = _userActionService.GetActionHandler(request.Action);
+        
+        // Removes existing/stale data elements previously generated from this task
+        // TODO: Move this logic to ProcessTaskInitializer.Initialize once the authentication model supports a service/app user with the appropriate scopes
+        // -> src/Altinn.App.Core/Internal/Process/ProcessTasks/Common/ProcessTaskInitializer.cs 
+        await RemoveDataElementsGeneratedFromTask(instance, currentElementId);
 
         UserActionResult actionResult = actionHandler is null ? UserActionResult.SuccessResult() : await actionHandler.HandleAction(new UserActionContext(request.Instance, userId));
 
@@ -146,6 +156,29 @@ public class ProcessEngine : IProcessEngine
         };
     }
 
+    private async Task RemoveDataElementsGeneratedFromTask(Instance instance, string taskId)
+    {
+        AppIdentifier appIdentifier = new(instance.AppId);
+        InstanceIdentifier instanceIdentifier = new(instance);
+        var dataElements =
+            instance.Data?.Where(de =>
+                de.References != null
+                && de.References.Exists(r => r.ValueType == ReferenceType.Task && r.Value == taskId)
+            ) ?? Enumerable.Empty<DataElement>();
+        
+        foreach (var dataElement in dataElements)
+        {
+            await _dataClient.DeleteData(
+                appIdentifier.Org,
+                appIdentifier.App,
+                instanceIdentifier.InstanceOwnerPartyId,
+                instanceIdentifier.InstanceGuid,
+                Guid.Parse(dataElement.Id),
+                false
+            );
+        }
+    }
+    
     /// <inheritdoc/>
     public async Task<Instance> HandleEventsAndUpdateStorage(Instance instance, Dictionary<string, string>? prefill, List<InstanceEvent>? events)
     {
