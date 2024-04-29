@@ -6,33 +6,18 @@ using static Altinn.App.Core.Features.Telemetry.Instances;
 
 namespace Altinn.App.Core.Features;
 
-public partial class Telemetry
+partial class Telemetry
 {
     private void InitInstances()
     {
-        _counters.Add(
-            MetricNameInstancesCreated,
-            Meter.CreateCounter<long>(MetricNameInstancesCreated, unit: null, description: null)
-        );
-        _counters.Add(
-            MetricNameInstancesCompleted,
-            Meter.CreateCounter<long>(MetricNameInstancesCompleted, unit: null, description: null)
-        );
-        _counters.Add(
-            MetricNameInstancesDeleted,
-            Meter.CreateCounter<long>(MetricNameInstancesDeleted, unit: null, description: null)
-        );
+        InitMetricCounter(MetricNameInstancesCreated, init: static m => m.Add(0));
+        InitMetricCounter(MetricNameInstancesCompleted, init: static m => m.Add(0));
+        InitMetricCounter(MetricNameInstancesDeleted, init: static m => m.Add(0));
 
-        _histograms.Add(
-            MetricNameInstancesDuration,
-            Meter.CreateHistogram<double>(MetricNameInstancesDuration, unit: null, description: null)
-        );
+        InitMetricHistogram(MetricNameInstancesDuration);
     }
 
-    internal void InstanceCreated(Instance instance)
-    {
-        _counters[MetricNameInstancesCreated].Add(1);
-    }
+    internal void InstanceCreated(Instance instance) => _counters[MetricNameInstancesCreated].Add(1);
 
     internal void InstanceCompleted(Instance instance)
     {

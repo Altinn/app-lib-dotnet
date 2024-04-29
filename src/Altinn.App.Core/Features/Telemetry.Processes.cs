@@ -5,23 +5,14 @@ using static Altinn.App.Core.Features.Telemetry.Processes;
 
 namespace Altinn.App.Core.Features;
 
-public partial class Telemetry
+partial class Telemetry
 {
     private void InitProcesses()
     {
-        _counters.Add(
-            MetricNameProcessesCreated,
-            Meter.CreateCounter<long>(MetricNameProcessesCreated, unit: null, description: null)
-        );
-        _counters.Add(
-            MetricNameProcessesEnded,
-            Meter.CreateCounter<long>(MetricNameProcessesEnded, unit: null, description: null)
-        );
+        InitMetricCounter(MetricNameProcessesCreated, static m => m.Add(0));
+        InitMetricCounter(MetricNameProcessesEnded, static m => m.Add(0));
 
-        _histograms.Add(
-            MetricNameProcessesDuration,
-            Meter.CreateHistogram<double>(MetricNameProcessesDuration, unit: null, description: null)
-        );
+        InitMetricHistogram(MetricNameProcessesDuration);
     }
 
     internal void ProcessStarted()

@@ -1,17 +1,28 @@
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
-using System.Diagnostics.Metrics;
 using NetEscapades.EnumGenerators;
 using static Altinn.App.Core.Features.Telemetry.Notifications;
 using Tag = System.Collections.Generic.KeyValuePair<string, object?>;
 
 namespace Altinn.App.Core.Features;
 
-public partial class Telemetry
+partial class Telemetry
 {
     private void InitNotifications()
     {
-        _counters.Add(OrderMetricName, Meter.CreateCounter<long>(OrderMetricName, unit: null, description: null));
+        InitMetricCounter(
+            OrderMetricName,
+            init: static m =>
+            {
+                foreach (var type in OrderTypeExtensions.GetValues())
+                {
+                    foreach (var result in OrderResultExtensions.GetValues())
+                    {
+                        m.Add(0, new Tag(TypeLabel, type.ToStringFast()), new Tag(ResultLabel, result.ToStringFast()));
+                    }
+                }
+            }
+        );
     }
 
     internal Activity? StartNotificationOrderActivity(OrderType type)
@@ -21,11 +32,9 @@ public partial class Telemetry
         return activity;
     }
 
-    internal void RecordNotificationOrder(OrderType type, OrderResult result)
-    {
-        var counter = _counters[OrderMetricName];
-        counter.Add(1, new Tag(TypeLabel, type.ToStringFast()), new Tag(ResultLabel, result.ToStringFast()));
-    }
+    internal void RecordNotificationOrder(OrderType type, OrderResult result) =>
+        _counters[OrderMetricName]
+            .Add(1, new Tag(TypeLabel, type.ToStringFast()), new Tag(ResultLabel, result.ToStringFast()));
 
     internal static class Notifications
     {

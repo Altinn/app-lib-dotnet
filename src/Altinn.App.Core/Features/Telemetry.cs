@@ -4,18 +4,8 @@ using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Options;
-using OpenTelemetry.Trace;
 
 namespace Altinn.App.Core.Features;
-
-internal static class TelemetryExtensions
-{
-    internal static void Errored(this Activity? activity, Exception? exception = null, string? error = null)
-    {
-        activity?.SetStatus(ActivityStatusCode.Error, error);
-        activity?.RecordException(exception);
-    }
-}
 
 /// <summary>
 /// Used for creating traces and metrics for the app.
@@ -57,26 +47,16 @@ public sealed partial class Telemetry : IDisposable
         ActivitySource = new ActivitySource(appId, appVersion);
         Meter = new Meter(appId, appVersion);
         // Counters = new(this);
-
-        InitNotifications();
-        InitValidation();
-        InitInstances();
-        InitProcesses();
     }
 
-    // public sealed class CountersRegistry
-    // {
-    //     private readonly Telemetry _parent;
-
-    //     internal CountersRegistry(Telemetry telemetry) => _parent = telemetry;
-
-    //     public void Increment(string name, ulong delta = 1)
-    //     {
-    //         name = Metrics.CreateName(name);
-    //         var counter = _parent.GetCounter(name, static (name, self) => self.Meter.CreateCounter<long>(name));
-    //         counter.Add((long)delta);
-    //     }
-    // }
+    internal void Init()
+    {
+        InitDatum();
+        InitInstances();
+        InitNotifications();
+        InitProcesses();
+        InitValidation();
+    }
 
     /// <summary>
     /// Utility methods for creating metrics for an app.
@@ -138,6 +118,19 @@ public sealed partial class Telemetry : IDisposable
             Guid dataGuid = Guid.Parse(dataElement.Id);
             activity.SetTag(Labels.DataGuid, dataGuid);
         }
+    }
+
+    private void InitMetricCounter(string name, Action<Counter<long>> init)
+    {
+        var counter = Meter.CreateCounter<long>(name, unit: null, description: null);
+        _counters.Add(name, counter);
+        init(counter);
+    }
+
+    private void InitMetricHistogram(string name)
+    {
+        var histogram = Meter.CreateHistogram<double>(name, unit: null, description: null);
+        _histograms.Add(name, histogram);
     }
 
     /// <summary>

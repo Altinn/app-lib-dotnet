@@ -151,6 +151,7 @@ namespace Altinn.App.Api.Extensions
         {
             var appId = StartupHelper.GetApplicationId().Split("/")[1];
             var appVersion = config.GetSection("AppSettings").GetValue<string>("AppVersion");
+            services.AddHostedService<TelemetryInitialization>();
             services.AddSingleton<Telemetry>();
             services
                 .AddOpenTelemetry()
@@ -200,6 +201,28 @@ namespace Altinn.App.Api.Extensions
                             }
                         );
                 });
+        }
+
+        private sealed class TelemetryInitialization(Telemetry telemetry, MeterProvider meterProvider) : IHostedService
+        {
+            public Task StartAsync(CancellationToken cancellationToken)
+            {
+                // This codepath for initialization is here only because it makes it a lot easier to
+                // query the metrics from Prometheus using 'increase' without the appearance of a "missed" sample.
+                // 'increase' in Prometheus will not interpret 'none' -> 1 as a delta/increase,
+                // so when querying the increase within a range, there may be 1 less sample than expected.
+                // So here we let the metrics be initialized to 0,
+                // and then run collection/flush on the otel MeterProvider to make sure they are exported.
+                // The first time we then increment the metric, it will count as a change from 0 -> 1
+                telemetry.Init();
+                if (!meterProvider.ForceFlush(10_000))
+                {
+                    throw new Exception("Couldn't initialize metrics to zero");
+                }
+                return Task.CompletedTask;
+            }
+
+            public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
         }
 
         private static void AddAuthorizationPolicies(IServiceCollection services)

@@ -4,7 +4,7 @@ using static Altinn.App.Core.Features.Telemetry.Validation;
 
 namespace Altinn.App.Core.Features;
 
-public partial class Telemetry
+partial class Telemetry
 {
     private void InitValidation() { }
 
