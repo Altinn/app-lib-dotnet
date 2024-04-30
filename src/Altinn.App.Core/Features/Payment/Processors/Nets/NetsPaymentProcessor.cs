@@ -156,6 +156,8 @@ public class NetsPaymentProcessor : IPaymentProcessor
                 Payer = MapPayerDetails(payment.Consumer),
                 PaymentType = paymentPaymentDetails?.PaymentType,
                 PaymentMethod = paymentPaymentDetails?.PaymentMethod,
+                CreatedDate = payment.Created,
+                ChargedDate = payment.Charges?.FirstOrDefault()?.Created,
                 InvoiceDetails = MapInvoiceDetails(paymentPaymentDetails?.InvoiceDetails),
                 CardDetails = MapCardDetails(paymentPaymentDetails?.CardDetails),
             };

@@ -34,6 +34,16 @@ public class PaymentDetails
     public string? PaymentMethod { get; set; }
 
     /// <summary>
+    /// The time and date the payment was created.
+    /// </summary>
+    public string? CreatedDate { get; set; }
+
+    /// <summary>
+    /// The time and date the payment was charged.
+    /// </summary>
+    public string? ChargedDate { get; set; }
+
+    /// <summary>
     /// If invoice was used, this will contain the invoice number.
     /// </summary>
     public InvoiceDetails? InvoiceDetails { get; set; }
