@@ -5930,6 +5930,17 @@
             "type": "string",
             "nullable": true
           },
+          "bankAccountNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "phoneNumber": {
+            "$ref": "#/components/schemas/PhoneNumber"
+          },
           "postalAddress": {
             "$ref": "#/components/schemas/Address"
           }
