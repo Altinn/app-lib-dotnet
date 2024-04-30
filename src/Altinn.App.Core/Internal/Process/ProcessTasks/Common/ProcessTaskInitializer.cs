@@ -6,6 +6,7 @@ using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Prefill;
 using Altinn.App.Core.Models;
+using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
 
@@ -125,6 +126,37 @@ public class ProcessTaskInitializer : IProcessTaskInitializer
                 new DataValues { Values = updatedValues });
 
             instance.DataValues = updatedInstance.DataValues;
+        }
+    }
+    
+    /// <summary>
+    /// Removes all data elements generated from a specific task.<br/>
+    /// NOTE: This should ideally be called from `Initialize` to clean up the current task (in case this is not the first run),
+    ///     but we currently cannot guarantee that the initialize-user has the correct permissions to perform cleanup.<br/>
+    /// TODO: Future -> Make private, invoke `Initialize` and remove from IProcessTaskInitializer interface
+    /// </summary>
+    /// <param name="instance"></param>
+    /// <param name="taskId"></param>
+    public async Task RemoveDataElementsGeneratedFromTask(Instance instance, string taskId)
+    {
+        AppIdentifier appIdentifier = new(instance.AppId);
+        InstanceIdentifier instanceIdentifier = new(instance);
+        var dataElements =
+            instance.Data?.Where(de =>
+                de.References != null
+                && de.References.Exists(r => r.ValueType == ReferenceType.Task && r.Value == taskId)
+            ) ?? Enumerable.Empty<DataElement>();
+        
+        foreach (var dataElement in dataElements)
+        {
+            await _dataClient.DeleteData(
+                appIdentifier.Org,
+                appIdentifier.App,
+                instanceIdentifier.InstanceOwnerPartyId,
+                instanceIdentifier.InstanceGuid,
+                Guid.Parse(dataElement.Id),
+                false
+            );
         }
     }
 }

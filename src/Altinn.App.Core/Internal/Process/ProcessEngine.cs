@@ -6,8 +6,8 @@ using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
+using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.App.Core.Internal.Profile;
-using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
 using Altinn.Platform.Profile.Models;
@@ -27,6 +27,7 @@ public class ProcessEngine : IProcessEngine
     private readonly IProcessNavigator _processNavigator;
     private readonly IProcessEventHandlerDelegator _processEventHandlerDelegator;
     private readonly IProcessEventDispatcher _processEventDispatcher;
+    private readonly IProcessTaskInitializer _processTaskInitializer;
     private readonly UserActionService _userActionService;
 
     /// <summary>
@@ -46,6 +47,7 @@ public class ProcessEngine : IProcessEngine
         IProcessNavigator processNavigator,
         IProcessEventHandlerDelegator processEventsDelegator,
         IProcessEventDispatcher processEventDispatcher,
+        IProcessTaskInitializer processTaskInitializer,
         UserActionService userActionService)
     {
         _processReader = processReader;
@@ -54,6 +56,7 @@ public class ProcessEngine : IProcessEngine
         _processNavigator = processNavigator;
         _processEventHandlerDelegator = processEventsDelegator;
         _processEventDispatcher = processEventDispatcher;
+        _processTaskInitializer = processTaskInitializer;
         _userActionService = userActionService;
     }
 
@@ -132,8 +135,7 @@ public class ProcessEngine : IProcessEngine
         
         // Removes existing/stale data elements previously generated from this task
         // TODO: Move this logic to ProcessTaskInitializer.Initialize once the authentication model supports a service/app user with the appropriate scopes
-        // -> src/Altinn.App.Core/Internal/Process/ProcessTasks/Common/ProcessTaskInitializer.cs 
-        await RemoveDataElementsGeneratedFromTask(instance, currentElementId);
+        await _processTaskInitializer.RemoveDataElementsGeneratedFromTask(instance, currentElementId);
 
         UserActionResult actionResult = actionHandler is null ? UserActionResult.SuccessResult() : await actionHandler.HandleAction(new UserActionContext(request.Instance, userId));
 
@@ -154,29 +156,6 @@ public class ProcessEngine : IProcessEngine
             Success = true,
             ProcessStateChange = nextResult
         };
-    }
-
-    private async Task RemoveDataElementsGeneratedFromTask(Instance instance, string taskId)
-    {
-        AppIdentifier appIdentifier = new(instance.AppId);
-        InstanceIdentifier instanceIdentifier = new(instance);
-        var dataElements =
-            instance.Data?.Where(de =>
-                de.References != null
-                && de.References.Exists(r => r.ValueType == ReferenceType.Task && r.Value == taskId)
-            ) ?? Enumerable.Empty<DataElement>();
-        
-        foreach (var dataElement in dataElements)
-        {
-            await _dataClient.DeleteData(
-                appIdentifier.Org,
-                appIdentifier.App,
-                instanceIdentifier.InstanceOwnerPartyId,
-                instanceIdentifier.InstanceGuid,
-                Guid.Parse(dataElement.Id),
-                false
-            );
-        }
     }
     
     /// <inheritdoc/>

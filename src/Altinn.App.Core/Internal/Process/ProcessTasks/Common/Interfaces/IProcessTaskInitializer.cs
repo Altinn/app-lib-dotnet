@@ -14,5 +14,8 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks
         /// <param name="instance"></param>
         /// <param name="prefill"></param>
         Task Initialize(string taskId, Instance instance, Dictionary<string, string>? prefill);
+        
+        // Temporary: Documented in implementation
+        Task RemoveDataElementsGeneratedFromTask(Instance instance, string taskId);
     }
 }
