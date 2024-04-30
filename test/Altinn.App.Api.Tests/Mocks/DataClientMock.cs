@@ -15,6 +15,7 @@ namespace App.IntegrationTests.Mocks.Services
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IAppMetadata _appMetadata;
+
         private static readonly JsonSerializerOptions _jsonSerializerOptions =
             new() { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
