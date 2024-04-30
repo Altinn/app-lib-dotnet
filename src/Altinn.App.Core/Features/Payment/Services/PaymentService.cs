@@ -47,6 +47,7 @@ public class PaymentService : IPaymentService
 
         ValidateConfig(paymentConfiguration);
 
+        _logger.LogInformation("Payment config is valid for instance {instanceId}.", instance.Id);
         string dataTypeId = paymentConfiguration.PaymentDataType!;
 
         (Guid dataElementId, PaymentInformation? existingPaymentInformation) =
@@ -77,13 +78,33 @@ public class PaymentService : IPaymentService
         OrderDetails orderDetails = await _orderDetailsCalculator.CalculateOrderDetails(instance, language);
         IPaymentProcessor paymentProcessor =
             _paymentProcessors.FirstOrDefault(p => p.PaymentProcessorId == orderDetails.PaymentProcessorId)
-            ?? throw new PaymentException($"Payment processor with ID '{orderDetails.PaymentProcessorId}' not found.");
+            ?? throw new PaymentException(
+                $"Payment processor with ID '{orderDetails.PaymentProcessorId}' not found for instance {instance.Id}."
+            );
+
+        _logger.LogInformation(
+            "Payment processor {paymentProviderId} will be used for payment for instance {instanceId}.",
+            paymentProcessor.PaymentProcessorId,
+            instance.Id
+        );
 
         //If the sum of the order is 0, we can skip invoking the payment processor.
         PaymentDetails? startedPayment =
             orderDetails.TotalPriceIncVat > 0
                 ? await paymentProcessor.StartPayment(instance, orderDetails, language)
                 : null;
+
+        if (startedPayment != null)
+        {
+            _logger.LogInformation("Payment started successfully for instance {instanceId}.", instance.Id);
+        }
+        else
+        {
+            _logger.LogInformation(
+                "Skipping starting payment since order sum is zero for instance {instanceId}.",
+                instance.Id
+            );
+        }
 
         PaymentInformation paymentInformation =
             new()
@@ -116,6 +137,11 @@ public class PaymentService : IPaymentService
 
         if (paymentInformation == null)
         {
+            _logger.LogInformation(
+                "No payment information stored yet for instance {instanceId}. Returning uninitialized result.",
+                instance.Id
+            );
+
             return new PaymentInformation
             {
                 TaskId = instance.Process.CurrentTask.ElementId,
@@ -130,6 +156,12 @@ public class PaymentService : IPaymentService
 
         if (paymentInformation.Status == PaymentStatus.Skipped)
         {
+            _logger.LogInformation(
+                "Payment status is '{skipped}' for instance {instanceId}. Won't ask payment processor for status.",
+                PaymentStatus.Skipped.ToString(),
+                instance.Id
+            );
+
             return paymentInformation;
         }
 
@@ -147,12 +179,19 @@ public class PaymentService : IPaymentService
         paymentInformation.Status = paymentStatus;
         paymentInformation.PaymentDetails = updatedPaymentDetails;
 
+        _logger.LogInformation(
+            "Updated payment status is {status} for instance {instanceId}.",
+            paymentInformation.Status.ToString(),
+            instance.Id
+        );
+
         await _dataService.UpdateJsonObject(
             new InstanceIdentifier(instance),
             dataTypeId,
             dataElementId,
             paymentInformation
         );
+
         return paymentInformation;
     }
 
@@ -173,6 +212,23 @@ public class PaymentService : IPaymentService
         }
 
         return paymentInformation.Status is PaymentStatus.Paid or PaymentStatus.Skipped;
+    }
+
+    /// <inheritdoc/>
+    public async Task CancelAndDelete(Instance instance, AltinnPaymentConfiguration paymentConfiguration)
+    {
+        ValidateConfig(paymentConfiguration);
+
+        string dataTypeId = paymentConfiguration.PaymentDataType!;
+        (Guid dataElementId, PaymentInformation? paymentInformation) = await _dataService.GetByType<PaymentInformation>(
+            instance,
+            dataTypeId
+        );
+
+        if (paymentInformation == null)
+            return;
+
+        await CancelAndDelete(instance, dataElementId, paymentInformation);
     }
 
     private async Task CancelAndDelete(Instance instance, Guid dataElementId, PaymentInformation paymentInformation)

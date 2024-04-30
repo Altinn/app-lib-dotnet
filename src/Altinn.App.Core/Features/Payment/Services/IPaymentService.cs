@@ -28,8 +28,13 @@ namespace Altinn.App.Core.Features.Payment.Services
         );
 
         /// <summary>
-        /// Check our internal state to see if payment is complete. Throws if not.
+        /// Check our internal state to see if payment is complete.
         /// </summary>
         Task<bool> IsPaymentCompleted(Instance instance, AltinnPaymentConfiguration paymentConfiguration);
+
+        /// <summary>
+        /// Cancel payment with payment processor and delete internal payment information.
+        /// </summary>
+        Task CancelAndDelete(Instance instance, AltinnPaymentConfiguration paymentConfiguration);
     }
 }

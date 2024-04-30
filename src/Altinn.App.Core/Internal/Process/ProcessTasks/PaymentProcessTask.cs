@@ -83,9 +83,20 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks
         }
 
         /// <inheritdoc/>
-        public Task Abandon(string taskId, Instance instance)
+        public async Task Abandon(string taskId, Instance instance)
         {
-            return Task.CompletedTask;
+            AltinnPaymentConfiguration? paymentConfiguration = _processReader
+                .GetAltinnTaskExtension(taskId)
+                ?.PaymentConfiguration;
+
+            if (paymentConfiguration == null)
+            {
+                throw new ApplicationConfigException(
+                    "PaymentConfig is missing in the payment process task configuration."
+                );
+            }
+
+            await _paymentService.CancelAndDelete(instance, paymentConfiguration);
         }
     }
 }
