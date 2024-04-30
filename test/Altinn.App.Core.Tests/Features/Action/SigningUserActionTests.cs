@@ -141,6 +141,9 @@ public class SigningUserActionTests
 
         var profileClientMock = new Mock<IProfileClient>();
         var signingClientMock = new Mock<ISignClient>();
+        var appMetadataMock = new Mock<IAppMetadata>();
+        var appMetadata = new ApplicationMetadata("org/id") { DataTypes = [new DataType { Id = "model" }] };
+        appMetadataMock.Setup(m => m.GetApplicationMetadata()).ReturnsAsync(appMetadata);
         profileClientMock.Setup(p => p.GetUserProfile(It.IsAny<int>())).ReturnsAsync(userProfileToReturn);
         if (platformHttpExceptionToThrow != null)
         {
@@ -154,7 +157,8 @@ public class SigningUserActionTests
                 processReader,
                 new NullLogger<SigningUserAction>(),
                 profileClientMock.Object,
-                signingClientMock.Object
+                signingClientMock.Object,
+                appMetadataMock.Object
             ),
             signingClientMock
         );
