@@ -4,5 +4,8 @@ public class PaymentReceiver
 {
     public string OrganisationNumber { get; set; }
     public string Name { get; set; }
+    public string? BankAccountNumber { get; set; }
+    public string? Email { get; set; }
+    public PhoneNumber? PhoneNumber { get; set; }
     public Address PostalAddress { get; set; }
 }
