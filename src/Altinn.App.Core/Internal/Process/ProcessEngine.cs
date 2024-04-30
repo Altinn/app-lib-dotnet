@@ -3,7 +3,6 @@ using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Helpers;
-using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
