@@ -8,6 +8,7 @@ using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using Signee = Altinn.App.Core.Internal.Sign.Signee;
 
 namespace Altinn.App.Core.Features.Action;
@@ -71,14 +72,13 @@ public class SigningUserAction : IUserAction
             var appMetadata = await _appMetadata.GetApplicationMetadata();
             var dataTypeIds =
                 currentTask.ExtensionElements?.TaskExtension?.SignatureConfiguration?.DataTypesToSign ?? [];
-            var dataTypes = appMetadata
+            var dataTypesToSign = appMetadata
                 ?.DataTypes?.Where(d => dataTypeIds.Contains(d.Id, StringComparer.OrdinalIgnoreCase))
                 .ToList();
 
-            var dataElementSignatures = GetDataElementSignatures(context.Instance.Data, dataTypes);
-
-            if (ShouldSign(currentTask, dataTypes, dataElementSignatures))
+            if (ShouldSign(currentTask, context.Instance.Data, dataTypesToSign))
             {
+                var dataElementSignatures = GetDataElementSignatures(context.Instance.Data, dataTypesToSign);
                 SignatureContext signatureContext =
                     new(
                         new InstanceIdentifier(context.Instance),
@@ -102,15 +102,22 @@ public class SigningUserAction : IUserAction
 
     private static bool ShouldSign(
         ProcessTask currentTask,
-        List<DataType>? dataTypes,
-        List<DataElementSignature> dataElementSignatures
+        List<DataElement> dataElements,
+        List<DataType>? dataTypesToSign
     )
     {
-        if (currentTask.ExtensionElements?.TaskExtension?.SignatureConfiguration?.SignatureDataType is null)
+        var signatureIsConfigured =
+            currentTask.ExtensionElements?.TaskExtension?.SignatureConfiguration?.SignatureDataType is not null;
+        if (dataTypesToSign.IsNullOrEmpty() || !signatureIsConfigured)
         {
             return false;
         }
-        return dataElementSignatures.Count > 0 || (dataTypes is not null && dataTypes.All(d => d.MinCount == 0));
+
+        var dataElementMatchExists = dataElements.Any(de =>
+            dataTypesToSign!.Any(dt => string.Equals(dt.Id, de.DataType, StringComparison.OrdinalIgnoreCase))
+        );
+        var allDataTypesAreOptional = dataTypesToSign!.All(d => d.MinCount == 0);
+        return dataElementMatchExists || allDataTypesAreOptional;
     }
 
     private static List<DataElementSignature> GetDataElementSignatures(
@@ -119,9 +126,9 @@ public class SigningUserAction : IUserAction
     )
     {
         var connectedDataElements = new List<DataElementSignature>();
-        if (dataTypesToSign is null)
+        if (dataTypesToSign.IsNullOrEmpty())
             return connectedDataElements;
-        foreach (var dataType in dataTypesToSign)
+        foreach (var dataType in dataTypesToSign!)
         {
             connectedDataElements.AddRange(
                 dataElements
