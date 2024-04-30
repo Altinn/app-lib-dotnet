@@ -133,7 +133,7 @@ public class ProcessTaskInitializer : IProcessTaskInitializer
     /// Removes all data elements generated from a specific task.<br/>
     /// NOTE: This should ideally be called from `Initialize` to clean up the current task (in case this is not the first run),
     ///     but we currently cannot guarantee that the initialize-user has the correct permissions to perform cleanup.<br/>
-    /// TODO: Future -> Make private, invoke `Initialize` and remove from IProcessTaskInitializer interface
+    /// TODO: Future -> Make private, invoke from `Initialize`, remove from `IProcessTaskInitializer` interface, remove from caller `ProcessEnginge.Next`
     /// </summary>
     /// <param name="instance"></param>
     /// <param name="taskId"></param>

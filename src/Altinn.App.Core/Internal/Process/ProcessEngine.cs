@@ -23,7 +23,6 @@ public class ProcessEngine : IProcessEngine
 {
     private readonly IProcessReader _processReader;
     private readonly IProfileClient _profileClient;
-    private readonly IDataClient _dataClient;
     private readonly IProcessNavigator _processNavigator;
     private readonly IProcessEventHandlerDelegator _processEventHandlerDelegator;
     private readonly IProcessEventDispatcher _processEventDispatcher;
@@ -35,15 +34,14 @@ public class ProcessEngine : IProcessEngine
     /// </summary>
     /// <param name="processReader">Process reader service</param>
     /// <param name="profileClient">The profile service</param>
-    /// <param name="dataClient">The data handling service</param>
     /// <param name="processNavigator">The process navigator</param>
-    /// <param name="processEventsDelegator"></param>
+    /// <param name="processEventsDelegator">The process events delegator</param>
     /// <param name="processEventDispatcher">The process event dispatcher</param>
+    /// <param name="processTaskInitializer">The process tasks initializer</param>
     /// <param name="userActionService">The action handler factory</param>
     public ProcessEngine(
         IProcessReader processReader,
         IProfileClient profileClient,
-        IDataClient dataClient,
         IProcessNavigator processNavigator,
         IProcessEventHandlerDelegator processEventsDelegator,
         IProcessEventDispatcher processEventDispatcher,
@@ -52,7 +50,6 @@ public class ProcessEngine : IProcessEngine
     {
         _processReader = processReader;
         _profileClient = profileClient;
-        _dataClient = dataClient;
         _processNavigator = processNavigator;
         _processEventHandlerDelegator = processEventsDelegator;
         _processEventDispatcher = processEventDispatcher;
