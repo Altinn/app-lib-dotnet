@@ -16,6 +16,11 @@ public class OrderDetails
     public PaymentReceiver Receiver { get; set; }
 
     /// <summary>
+    /// Type of payer. Person or company.
+    /// </summary>
+    public PayerType[]? AllowedPayerTypes { get; set; }
+
+    /// <summary>
     /// Optional reference to the order. Could be used by other systems to identify the order.
     /// </summary>
     public string? OrderReference { get; set; }

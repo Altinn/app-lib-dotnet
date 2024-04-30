@@ -5687,6 +5687,13 @@
           "receiver": {
             "$ref": "#/components/schemas/PaymentReceiver"
           },
+          "allowedPayerTypes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PayerType"
+            },
+            "nullable": true
+          },
           "orderReference": {
             "type": "string",
             "nullable": true
@@ -5812,6 +5819,14 @@
         },
         "additionalProperties": false
       },
+      "PayerType": {
+        "enum": [
+          0,
+          1
+        ],
+        "type": "integer",
+        "format": "int32"
+      },
       "PaymentDetails": {
         "type": "object",
         "properties": {
@@ -5831,6 +5846,14 @@
             "nullable": true
           },
           "paymentMethod": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdDate": {
+            "type": "string",
+            "nullable": true
+          },
+          "chargedDate": {
             "type": "string",
             "nullable": true
           },

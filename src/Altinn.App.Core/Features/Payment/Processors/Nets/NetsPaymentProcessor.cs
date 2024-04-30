@@ -63,7 +63,6 @@ public class NetsPaymentProcessor : IPaymentProcessor
                         Name = l.Name,
                         Quantity = l.Quantity,
                         Unit = l.Unit,
-
                         UnitPrice = (int)(l.PriceExVat * LowestMonetaryUnitMultiplier),
                         GrossTotalAmount = (int)(
                             l.PriceExVat * LowestMonetaryUnitMultiplier * l.Quantity * (1 + l.VatPercent / 100)
@@ -83,6 +82,10 @@ public class NetsPaymentProcessor : IPaymentProcessor
                 TermsUrl = _settings.TermsUrl,
                 ReturnUrl = altinnAppUrl,
                 CancelUrl = altinnAppUrl,
+                ConsumerType = new NetsConsumerType
+                {
+                    SupportedTypes = GetConsumerTypes(orderDetails.AllowedPayerTypes),
+                },
                 Appearance = new NetsApparence
                 {
                     DisplayOptions = new NetsApparence.NetsDisplayOptions
@@ -214,6 +217,26 @@ public class NetsPaymentProcessor : IPaymentProcessor
             ShippingAddress = MapAddress(consumer.ShippingAddress),
             BillingAddress = MapAddress(consumer.BillingAddress),
         };
+    }
+
+    private static List<string> GetConsumerTypes(PayerType[]? payerTypes)
+    {
+        List<string> consumerTypes = [];
+
+        if (payerTypes == null)
+            return consumerTypes;
+
+        if (payerTypes.Contains(PayerType.Company))
+        {
+            consumerTypes.Add("B2B");
+        }
+
+        if (payerTypes.Contains(PayerType.Person))
+        {
+            consumerTypes.Add("B2C");
+        }
+
+        return consumerTypes;
     }
 
     private static InvoiceDetails? MapInvoiceDetails(NetsInvoiceDetails? netsInvoiceDetails)

@@ -3607,6 +3607,11 @@ components:
           nullable: true
         receiver:
           $ref: '#/components/schemas/PaymentReceiver'
+        allowedPayerTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/PayerType'
+          nullable: true
         orderReference:
           type: string
           nullable: true
@@ -3694,6 +3699,12 @@ components:
         phoneNumber:
           $ref: '#/components/schemas/PhoneNumber'
       additionalProperties: false
+    PayerType:
+      enum:
+        - 0
+        - 1
+      type: integer
+      format: int32
     PaymentDetails:
       type: object
       properties:
@@ -3709,6 +3720,12 @@ components:
           type: string
           nullable: true
         paymentMethod:
+          type: string
+          nullable: true
+        createdDate:
+          type: string
+          nullable: true
+        chargedDate:
           type: string
           nullable: true
         invoiceDetails:
