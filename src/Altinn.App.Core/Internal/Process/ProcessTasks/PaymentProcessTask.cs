@@ -1,5 +1,4 @@
-﻿using Altinn.App.Core.Features.Payment;
-using Altinn.App.Core.Features.Payment.Exceptions;
+﻿using Altinn.App.Core.Features.Payment.Exceptions;
 using Altinn.App.Core.Features.Payment.Services;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
@@ -17,6 +16,7 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks
         private readonly IPdfService _pdfService;
         private readonly IDataClient _dataClient;
         private readonly IProcessReader _processReader;
+        private readonly IPaymentService _paymentService;
 
         private const string PdfContentType = "application/pdf";
         private const string ReceiptFileName = "Betalingskvittering.pdf";
@@ -24,11 +24,17 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks
         /// <summary>
         /// Initializes a new instance of the <see cref="PaymentProcessTask"/> class.
         /// </summary>
-        public PaymentProcessTask(IPdfService pdfService, IDataClient dataClient, IProcessReader processReader)
+        public PaymentProcessTask(
+            IPdfService pdfService,
+            IDataClient dataClient,
+            IProcessReader processReader,
+            IPaymentService paymentService
+        )
         {
             _pdfService = pdfService;
             _dataClient = dataClient;
             _processReader = processReader;
+            _paymentService = paymentService;
         }
 
         /// <inheritdoc/>
@@ -61,7 +67,8 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks
                 );
             }
 
-            //TODO: Try to move this into PDF service without making breaking changes. Just needed a quick working demo.
+            if (!await _paymentService.IsPaymentCompleted(instance, paymentConfiguration))
+                throw new PaymentException("The payment is not completed.");
 
             Stream pdfStream = await _pdfService.GeneratePdf(instance, taskId, CancellationToken.None);
 

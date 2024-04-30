@@ -26,5 +26,10 @@ namespace Altinn.App.Core.Features.Payment.Services
             AltinnPaymentConfiguration paymentConfiguration,
             string? language
         );
+
+        /// <summary>
+        /// Check our internal state to see if payment is complete. Throws if not.
+        /// </summary>
+        Task<bool> IsPaymentCompleted(Instance instance, AltinnPaymentConfiguration paymentConfiguration);
     }
 }

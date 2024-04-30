@@ -156,6 +156,25 @@ public class PaymentService : IPaymentService
         return paymentInformation;
     }
 
+    /// <inheritdoc/>
+    public async Task<bool> IsPaymentCompleted(Instance instance, AltinnPaymentConfiguration paymentConfiguration)
+    {
+        ValidateConfig(paymentConfiguration);
+
+        string dataTypeId = paymentConfiguration.PaymentDataType!;
+        (Guid _, PaymentInformation? paymentInformation) = await _dataService.GetByType<PaymentInformation>(
+            instance,
+            dataTypeId
+        );
+
+        if (paymentInformation == null)
+        {
+            throw new PaymentException("Payment information not found.");
+        }
+
+        return paymentInformation.Status is PaymentStatus.Paid or PaymentStatus.Skipped;
+    }
+
     private async Task CancelAndDelete(Instance instance, Guid dataElementId, PaymentInformation paymentInformation)
     {
         string paymentProcessorId = paymentInformation.OrderDetails.PaymentProcessorId;
