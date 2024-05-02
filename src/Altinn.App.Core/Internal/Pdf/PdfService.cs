@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using System.Xml.Serialization;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Helpers.Extensions;
