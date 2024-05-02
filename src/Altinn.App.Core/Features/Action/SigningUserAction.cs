@@ -1,4 +1,3 @@
-using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
@@ -108,13 +107,13 @@ public class SigningUserAction : IUserAction
     {
         var signatureIsConfigured =
             currentTask.ExtensionElements?.TaskExtension?.SignatureConfiguration?.SignatureDataType is not null;
-        if (dataTypesToSign.IsNullOrEmpty() || !signatureIsConfigured)
+        if (dataTypesToSign is null or [] || !signatureIsConfigured)
         {
             return false;
         }
 
         var dataElementMatchExists = dataElements.Any(de =>
-            dataTypesToSign!.Any(dt => string.Equals(dt.Id, de.DataType, StringComparison.OrdinalIgnoreCase))
+            dataTypesToSign.Any(dt => string.Equals(dt.Id, de.DataType, StringComparison.OrdinalIgnoreCase))
         );
         var allDataTypesAreOptional = dataTypesToSign!.All(d => d.MinCount == 0);
         return dataElementMatchExists || allDataTypesAreOptional;
@@ -126,7 +125,7 @@ public class SigningUserAction : IUserAction
     )
     {
         var connectedDataElements = new List<DataElementSignature>();
-        if (dataTypesToSign.IsNullOrEmpty())
+        if (dataTypesToSign is null or [])
             return connectedDataElements;
         foreach (var dataType in dataTypesToSign!)
         {
