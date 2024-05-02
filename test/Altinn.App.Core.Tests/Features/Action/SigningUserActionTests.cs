@@ -78,7 +78,7 @@ public class SigningUserActionTests
         var appMetadata = new ApplicationMetadata("org/id")
         {
             // Optional because MinCount == 0
-            DataTypes = [new DataType { Id = "model", MinCount = 1 }]
+            DataTypes = [new DataType { Id = "model", MinCount = 0 }]
         };
         (var userAction, var signClientMock) = CreateSigningUserAction(
             applicationMetadataToReturn: appMetadata,

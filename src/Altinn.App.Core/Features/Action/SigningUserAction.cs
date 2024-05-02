@@ -115,7 +115,7 @@ public class SigningUserAction : IUserAction
         var dataElementMatchExists = dataElements.Any(de =>
             dataTypesToSign.Any(dt => string.Equals(dt.Id, de.DataType, StringComparison.OrdinalIgnoreCase))
         );
-        var allDataTypesAreOptional = dataTypesToSign!.All(d => d.MinCount == 0);
+        var allDataTypesAreOptional = dataTypesToSign.All(d => d.MinCount == 0);
         return dataElementMatchExists || allDataTypesAreOptional;
     }
 
@@ -127,7 +127,7 @@ public class SigningUserAction : IUserAction
         var connectedDataElements = new List<DataElementSignature>();
         if (dataTypesToSign is null or [])
             return connectedDataElements;
-        foreach (var dataType in dataTypesToSign!)
+        foreach (var dataType in dataTypesToSign)
         {
             connectedDataElements.AddRange(
                 dataElements
