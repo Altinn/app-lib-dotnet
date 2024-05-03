@@ -13,12 +13,8 @@ partial class Telemetry
         ArgumentException.ThrowIfNullOrWhiteSpace(taskId);
 
         var activity = ActivitySource.StartActivity(TraceNameValidateInstanceAtTask);
-        if (activity is not null)
-        {
-            activity.SetTag(Labels.TaskId, taskId);
-
-            TryAddInstanceId(activity, instance);
-        }
+        activity.SetTaskId(taskId);
+        activity.SetInstanceId(instance);
         return activity;
     }
 
@@ -37,11 +33,8 @@ partial class Telemetry
     internal Activity? StartValidateDataElementActivity(Instance instance, DataElement dataElement)
     {
         var activity = ActivitySource.StartActivity(TraceNameValidateDataElement);
-        if (activity is not null)
-        {
-            TryAddInstanceId(activity, instance);
-            TryAddDataElementId(activity, dataElement);
-        }
+        activity.SetInstanceId(instance);
+        activity.SetDataElementId(dataElement);
         return activity;
     }
 
@@ -61,11 +54,8 @@ partial class Telemetry
     {
         var activity = ActivitySource.StartActivity(TraceNameValidateFormData);
 
-        if (activity is not null)
-        {
-            TryAddInstanceId(activity, instance);
-            TryAddDataElementId(activity, dataElement);
-        }
+        activity.SetInstanceId(instance);
+        activity.SetDataElementId(dataElement);
         return activity;
     }
 

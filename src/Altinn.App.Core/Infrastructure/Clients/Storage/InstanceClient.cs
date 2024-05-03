@@ -132,7 +132,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
 
         private async Task<QueryResponse<Instance>> QueryInstances(string token, string url)
         {
-            using var activity = _telemetry?.StartQueryInstancesActivity(token);
+            using var activity = _telemetry?.StartQueryInstancesActivity();
             HttpResponseMessage response = await _client.GetAsync(token, url);
 
             if (response.StatusCode == HttpStatusCode.OK)

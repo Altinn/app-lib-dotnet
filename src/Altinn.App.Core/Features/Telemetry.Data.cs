@@ -2,14 +2,14 @@ using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using Altinn.Platform.Storage.Interface.Models;
 using NetEscapades.EnumGenerators;
-using static Altinn.App.Core.Features.Telemetry.Datum;
+using static Altinn.App.Core.Features.Telemetry.Data;
 using Tag = System.Collections.Generic.KeyValuePair<string, object?>;
 
 namespace Altinn.App.Core.Features;
 
 partial class Telemetry
 {
-    private void InitDatum()
+    private void InitData()
     {
         InitMetricCounter(
             MetricNameDataPatched,
@@ -27,14 +27,11 @@ partial class Telemetry
     internal Activity? StartDataPatchActivity(Instance instance)
     {
         var activity = ActivitySource.StartActivity(TraceNamePatch);
-        if (activity is not null)
-        {
-            TryAddInstanceId(activity, instance);
-        }
+        activity.SetInstanceId(instance);
         return activity;
     }
 
-    internal static class Datum
+    internal static class Data
     {
         internal static readonly string ResultLabel = "result";
 

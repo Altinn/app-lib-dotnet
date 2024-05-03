@@ -13,6 +13,7 @@ namespace Altinn.App.Core.Features;
 public sealed partial class Telemetry : IDisposable
 {
     private bool _disposed;
+    private bool _isInitialized;
     private readonly object _lock = new();
 
     // /// <summary>
@@ -47,15 +48,24 @@ public sealed partial class Telemetry : IDisposable
         ActivitySource = new ActivitySource(appId, appVersion);
         Meter = new Meter(appId, appVersion);
         // Counters = new(this);
+
+        Init();
     }
 
     internal void Init()
     {
-        InitDatum();
-        InitInstances();
-        InitNotifications();
-        InitProcesses();
-        InitValidation();
+        lock (_lock)
+        {
+            if (_isInitialized)
+                return;
+            _isInitialized = true;
+
+            InitData();
+            InitInstances();
+            InitNotifications();
+            InitProcesses();
+            InitValidation();
+        }
     }
 
     /// <summary>
@@ -100,24 +110,6 @@ public sealed partial class Telemetry : IDisposable
         /// Label for the ID of the task.
         /// </summary>
         public static readonly string TaskId = "task.id";
-    }
-
-    private static void TryAddInstanceId(Activity activity, Instance? instance)
-    {
-        if (instance?.Id is not null)
-        {
-            Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
-            activity.SetTag(Labels.InstanceGuid, instanceGuid);
-        }
-    }
-
-    private static void TryAddDataElementId(Activity activity, DataElement? dataElement)
-    {
-        if (dataElement?.Id is not null)
-        {
-            Guid dataGuid = Guid.Parse(dataElement.Id);
-            activity.SetTag(Labels.DataGuid, dataGuid);
-        }
     }
 
     private void InitMetricCounter(string name, Action<Counter<long>> init)

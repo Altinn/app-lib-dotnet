@@ -34,20 +34,14 @@ partial class Telemetry
     internal Activity? StartProcessStartActivity(Instance instance)
     {
         var activity = ActivitySource.StartActivity(TraceNameStart);
-        if (activity is not null)
-        {
-            TryAddInstanceId(activity, instance);
-        }
+        activity.SetInstanceId(instance);
         return activity;
     }
 
     internal Activity? StartProcessNextActivity(Instance instance)
     {
         var activity = ActivitySource.StartActivity(TraceNameNext);
-        if (activity is not null)
-        {
-            TryAddInstanceId(activity, instance);
-        }
+        activity.SetInstanceId(instance);
         return activity;
     }
 
@@ -56,10 +50,7 @@ partial class Telemetry
         ArgumentNullException.ThrowIfNull(instance?.Process);
 
         var activity = ActivitySource.StartActivity(TraceNameEnd);
-        if (activity is not null)
-        {
-            TryAddInstanceId(activity, instance);
-        }
+        activity.SetInstanceId(instance);
         return activity;
     }
 

@@ -47,19 +47,14 @@ partial class Telemetry
         if (activity is not null)
         {
             activity.SetTag(InstanceLabels.Type, type.ToStringFast());
-            if (instanceGuid is not null)
-                activity.SetTag(Labels.InstanceGuid, instanceGuid);
+            activity.SetInstanceId(instanceGuid);
         }
         return activity;
     }
 
-    internal Activity? StartQueryInstancesActivity(string token)
+    internal Activity? StartQueryInstancesActivity()
     {
         var activity = ActivitySource.StartActivity(TraceNameQuery);
-        if (activity is not null)
-        {
-            activity.SetTag("token", token); // TODO: magic string -> boo!
-        }
         return activity;
     }
 
@@ -71,78 +66,56 @@ partial class Telemetry
 
     internal Activity? StartDeleteInstanceActivity(Guid instanceGuid, int instanceOwnerPartyId)
     {
-        var activity = ActivitySource.StartActivity(TraceNameCreate);
-        if (activity is not null)
-        {
-            activity.SetTag(Labels.InstanceGuid, instanceGuid);
-            activity.SetTag(Labels.InstanceOwnerPartyId, instanceOwnerPartyId);
-        }
+        var activity = ActivitySource.StartActivity(TraceNameDelete);
+        activity.SetInstanceId(instanceGuid);
+        activity.SetInstanceOwnerPartyId(instanceOwnerPartyId);
         return activity;
     }
 
     internal Activity? StartUpdateProcessActivity(Instance instance)
     {
         var activity = ActivitySource.StartActivity(TraceNameProcess);
-        if (activity is not null)
-        {
-            Guid InstanceGuid = Guid.Parse(instance.Id.Split('/')[1]);
-            activity.SetTag(Labels.InstanceGuid, InstanceGuid);
-        }
+        activity.SetInstanceId(instance);
         return activity;
     }
 
     internal Activity? StartCompleteConfirmationActivity(Guid instanceGuid, int instanceOwnerPartyId)
     {
         var activity = ActivitySource.StartActivity(TraceNameConfirmation);
-        if (activity is not null)
-        {
-            activity.SetTag(Labels.InstanceGuid, instanceGuid);
-            activity.SetTag(Labels.InstanceOwnerPartyId, instanceOwnerPartyId);
-        }
+        activity.SetInstanceId(instanceGuid);
+        activity.SetInstanceOwnerPartyId(instanceOwnerPartyId);
         return activity;
     }
 
     internal Activity? StartUpdateReadStatusActivity(Guid instanceGuid, int instanceOwnerPartyId)
     {
         var activity = ActivitySource.StartActivity(TraceNameReadStatus);
-        if (activity is not null)
-        {
-            activity.SetTag(Labels.InstanceGuid, instanceGuid);
-            activity.SetTag(Labels.InstanceOwnerPartyId, instanceOwnerPartyId);
-        }
+        activity.SetInstanceId(instanceGuid);
+        activity.SetInstanceOwnerPartyId(instanceOwnerPartyId);
         return activity;
     }
 
     internal Activity? StartUpdateSubStatusActivity(Guid instanceGuid, int instanceOwnerPartyId)
     {
         var activity = ActivitySource.StartActivity(TraceNameSubStatus);
-        if (activity is not null)
-        {
-            activity.SetTag(Labels.InstanceGuid, instanceGuid);
-            activity.SetTag(Labels.InstanceOwnerPartyId, instanceOwnerPartyId);
-        }
+        activity.SetInstanceId(instanceGuid);
+        activity.SetInstanceOwnerPartyId(instanceOwnerPartyId);
         return activity;
     }
 
     internal Activity? StartUpdatePresentationTextActivity(Guid instanceGuid, int instanceOwnerPartyId)
     {
         var activity = ActivitySource.StartActivity(TraceNamePresentationText);
-        if (activity is not null)
-        {
-            activity.SetTag(Labels.InstanceGuid, instanceGuid);
-            activity.SetTag(Labels.InstanceOwnerPartyId, instanceOwnerPartyId);
-        }
+        activity.SetInstanceId(instanceGuid);
+        activity.SetInstanceOwnerPartyId(instanceOwnerPartyId);
         return activity;
     }
 
     internal Activity? StartUpdateDataValuesActivity(Guid instanceGuid, int instanceOwnerPartyId)
     {
         var activity = ActivitySource.StartActivity(TraceNameDataValues);
-        if (activity is not null)
-        {
-            activity.SetTag(Labels.InstanceGuid, instanceGuid);
-            activity.SetTag(Labels.InstanceOwnerPartyId, instanceOwnerPartyId);
-        }
+        activity.SetInstanceId(instanceGuid);
+        activity.SetInstanceOwnerPartyId(instanceOwnerPartyId);
         return activity;
     }
 
@@ -158,7 +131,7 @@ partial class Telemetry
         internal const string TraceNameGet = $"{_prefix}.Get";
         internal const string TraceNameQuery = $"{_prefix}.Query";
         internal const string TraceNameCreate = $"{_prefix}.Create";
-        internal const string TaceNameDelete = $"{_prefix}.Delete";
+        internal const string TraceNameDelete = $"{_prefix}.Delete";
         internal const string TraceNameProcess = $"{_prefix}.UpdateProcess";
         internal const string TraceNameConfirmation = $"{_prefix}.CompleteConfirmation";
         internal const string TraceNameReadStatus = $"{_prefix}.UpdateReadStatus";
