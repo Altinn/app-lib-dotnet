@@ -33,14 +33,14 @@ partial class Telemetry
 
     internal Activity? StartProcessStartActivity(Instance instance)
     {
-        var activity = ActivitySource.StartActivity(TraceNameStart);
+        var activity = ActivitySource.StartActivity($"{_prefix}.Start");
         activity.SetInstanceId(instance);
         return activity;
     }
 
     internal Activity? StartProcessNextActivity(Instance instance)
     {
-        var activity = ActivitySource.StartActivity(TraceNameNext);
+        var activity = ActivitySource.StartActivity($"{_prefix}.Next");
         activity.SetInstanceId(instance);
         return activity;
     }
@@ -49,21 +49,17 @@ partial class Telemetry
     {
         ArgumentNullException.ThrowIfNull(instance?.Process);
 
-        var activity = ActivitySource.StartActivity(TraceNameEnd);
+        var activity = ActivitySource.StartActivity($"{_prefix}.End");
         activity.SetInstanceId(instance);
         return activity;
     }
 
     internal static class Processes
     {
-        private const string _prefix = "Process";
+        internal const string _prefix = "Process";
 
         internal static readonly string MetricNameProcessesCreated = Metrics.CreateLibName("processes_created");
         internal static readonly string MetricNameProcessesEnded = Metrics.CreateLibName("processes_ended");
         internal static readonly string MetricNameProcessesDuration = Metrics.CreateLibName("processes_duration");
-
-        internal const string TraceNameStart = $"{_prefix}.Start";
-        internal const string TraceNameNext = $"{_prefix}.Next";
-        internal const string TraceNameEnd = $"{_prefix}.End";
     }
 }

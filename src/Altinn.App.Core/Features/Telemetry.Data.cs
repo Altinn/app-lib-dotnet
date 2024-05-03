@@ -15,31 +15,29 @@ partial class Telemetry
             MetricNameDataPatched,
             init: static m =>
             {
-                m.Add(0, new Tag(ResultLabel, PatchResult.Success.ToStringFast()));
-                m.Add(0, new Tag(ResultLabel, PatchResult.Error.ToStringFast()));
+                m.Add(0, new Tag(LabelResult, PatchResult.Success.ToStringFast()));
+                m.Add(0, new Tag(LabelResult, PatchResult.Error.ToStringFast()));
             }
         );
     }
 
     internal void DataPatched(PatchResult result) =>
-        _counters[MetricNameDataPatched].Add(1, new Tag(ResultLabel, result.ToStringFast()));
+        _counters[MetricNameDataPatched].Add(1, new Tag(LabelResult, result.ToStringFast()));
 
     internal Activity? StartDataPatchActivity(Instance instance)
     {
-        var activity = ActivitySource.StartActivity(TraceNamePatch);
+        var activity = ActivitySource.StartActivity($"{_prefix}.Patch");
         activity.SetInstanceId(instance);
         return activity;
     }
 
     internal static class Data
     {
-        internal static readonly string ResultLabel = "result";
+        internal static readonly string LabelResult = "result";
 
-        private const string _prefix = "Data";
+        internal const string _prefix = "Data";
 
         internal static readonly string MetricNameDataPatched = Metrics.CreateLibName("datum_patched");
-
-        internal const string TraceNamePatch = $"{_prefix}.Patch";
 
         [EnumExtensions]
         internal enum PatchResult

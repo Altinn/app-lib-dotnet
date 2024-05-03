@@ -85,7 +85,7 @@ public class PatchService : IPatchService
         var telemetryPatchResult = (
             patchResult.IsSuccess ? Telemetry.Data.PatchResult.Success : Telemetry.Data.PatchResult.Error
         );
-        activity?.SetTag(ResultLabel, telemetryPatchResult.ToStringFast());
+        activity?.SetTag(LabelResult, telemetryPatchResult.ToStringFast());
         _telemetry?.DataPatched(telemetryPatchResult);
 
         if (!patchResult.IsSuccess)

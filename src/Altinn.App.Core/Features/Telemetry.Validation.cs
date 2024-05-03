@@ -12,7 +12,7 @@ partial class Telemetry
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(taskId);
 
-        var activity = ActivitySource.StartActivity(TraceNameValidateInstanceAtTask);
+        var activity = ActivitySource.StartActivity($"{_prefix}.ValidateInstanceAtTask");
         activity.SetTaskId(taskId);
         activity.SetInstanceId(instance);
         return activity;
@@ -20,7 +20,7 @@ partial class Telemetry
 
     internal Activity? StartRunTaskValidatorActivity(ITaskValidator validator)
     {
-        var activity = ActivitySource.StartActivity(TraceNameRunTaskValidator);
+        var activity = ActivitySource.StartActivity($"{_prefix}.RunTaskValidator");
 
         if (activity is not null)
         {
@@ -32,7 +32,7 @@ partial class Telemetry
 
     internal Activity? StartValidateDataElementActivity(Instance instance, DataElement dataElement)
     {
-        var activity = ActivitySource.StartActivity(TraceNameValidateDataElement);
+        var activity = ActivitySource.StartActivity($"{_prefix}.ValidateDataElement");
         activity.SetInstanceId(instance);
         activity.SetDataElementId(dataElement);
         return activity;
@@ -40,7 +40,7 @@ partial class Telemetry
 
     internal Activity? StartRunDataElementValidatorActivity(IDataElementValidator validator)
     {
-        var activity = ActivitySource.StartActivity(TraceNameRunDataElementValidator);
+        var activity = ActivitySource.StartActivity($"{_prefix}.RunDataElementValidator");
 
         if (activity is not null)
         {
@@ -52,7 +52,7 @@ partial class Telemetry
 
     internal Activity? StartValidateFormDataActivity(Instance instance, DataElement dataElement)
     {
-        var activity = ActivitySource.StartActivity(TraceNameValidateFormData);
+        var activity = ActivitySource.StartActivity($"{_prefix}.ValidateFormData");
 
         activity.SetInstanceId(instance);
         activity.SetDataElementId(dataElement);
@@ -61,7 +61,7 @@ partial class Telemetry
 
     internal Activity? StartRunFormDataValidatorActivity(IFormDataValidator validator)
     {
-        var activity = ActivitySource.StartActivity(TraceNameRunFormDataValidator);
+        var activity = ActivitySource.StartActivity($"{_prefix}.RunFormDataValidator");
 
         if (activity is not null)
         {
@@ -74,14 +74,7 @@ partial class Telemetry
 
     internal static class Validation
     {
-        private const string _prefix = "Validation";
-
-        internal const string TraceNameRunTaskValidator = $"{_prefix}.RunTaskValidator";
-        internal const string TraceNameValidateInstanceAtTask = $"{_prefix}.ValidateInstanceAtTask";
-        internal const string TraceNameValidateDataElement = $"{_prefix}.ValidateDataElement";
-        internal const string TraceNameRunDataElementValidator = $"{_prefix}.RunDataElementValidator";
-        internal const string TraceNameValidateFormData = $"{_prefix}.ValidateFormData";
-        internal const string TraceNameRunFormDataValidator = $"{_prefix}.RunFormDataValidator";
+        internal const string _prefix = "Validation";
 
         internal const string LabelValidatorType = "validator.type";
         internal const string LabelValidatorSource = "validator.source";
