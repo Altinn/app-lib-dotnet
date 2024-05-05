@@ -149,7 +149,11 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         // Will be fixed with  https://github.com/dotnet/runtime/pull/75637
         internal static void Serialize<T>(T dataToSerialize, Type type, Stream targetStream)
         {
-            XmlWriterSettings xmlWriterSettings = new XmlWriterSettings() { Encoding = new UTF8Encoding(false) };
+            XmlWriterSettings xmlWriterSettings = new XmlWriterSettings()
+            {
+                Encoding = new UTF8Encoding(false),
+                NewLineHandling = NewLineHandling.None,
+            };
             XmlWriter xmlWriter = XmlWriter.Create(targetStream, xmlWriterSettings);
 
             XmlSerializer serializer = new(type);
