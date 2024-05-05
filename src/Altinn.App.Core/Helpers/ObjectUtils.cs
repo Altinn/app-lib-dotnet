@@ -28,7 +28,7 @@ public static class ObjectUtils
 
         if (type.Namespace?.StartsWith("System") == true)
         {
-            return; // Some system types causes infinite recursion
+            return; // System.DateTime.Now causes infinite recursion, and we shuldn't recurse into system types anyway.
         }
 
         foreach (var prop in type.GetProperties(BindingFlags.Instance | BindingFlags.Public))
@@ -193,7 +193,7 @@ public static class ObjectUtils
         var type = model.GetType();
         if (type.Namespace?.StartsWith("System") == true)
         {
-            return; // Some system types causes infinite recursion
+            return; // System.DateTime.Now causes infinite recursion, and we shuldn't recurse into system types anyway.
         }
 
         foreach (var prop in type.GetProperties())
