@@ -8,9 +8,10 @@ namespace Altinn.App.Core.Features;
 
 partial class Telemetry
 {
-    private void InitNotifications()
+    private void InitNotifications(InitContext context)
     {
         InitMetricCounter(
+            context,
             OrderMetricName,
             init: static m =>
             {
@@ -27,7 +28,7 @@ partial class Telemetry
 
     internal Activity? StartNotificationOrderActivity(OrderType type)
     {
-        var activity = ActivitySource.StartActivity(OrderTraceName);
+        var activity = ActivitySource.StartActivity("Notifications.Order");
         activity?.SetTag(TypeLabel, type.ToStringFast());
         return activity;
     }
@@ -40,8 +41,6 @@ partial class Telemetry
     {
         internal static readonly string TypeLabel = "type";
         internal static readonly string ResultLabel = "result";
-
-        internal static readonly string OrderTraceName = "Notifications.Order";
 
         internal static readonly string OrderMetricName = Metrics.CreateLibName("notification_orders");
 

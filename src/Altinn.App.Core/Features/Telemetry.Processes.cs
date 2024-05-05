@@ -7,12 +7,12 @@ namespace Altinn.App.Core.Features;
 
 partial class Telemetry
 {
-    private void InitProcesses()
+    private void InitProcesses(InitContext context)
     {
-        InitMetricCounter(MetricNameProcessesCreated, static m => m.Add(0));
-        InitMetricCounter(MetricNameProcessesEnded, static m => m.Add(0));
+        InitMetricCounter(context, MetricNameProcessesCreated, static m => m.Add(0));
+        InitMetricCounter(context, MetricNameProcessesEnded, static m => m.Add(0));
 
-        InitMetricHistogram(MetricNameProcessesDuration);
+        InitMetricHistogram(context, MetricNameProcessesDuration);
     }
 
     internal void ProcessStarted()

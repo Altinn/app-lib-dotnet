@@ -1,8 +1,8 @@
+using System.Collections.Frozen;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Models;
-using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Features;
@@ -33,8 +33,8 @@ public sealed partial class Telemetry : IDisposable
     /// </summary>
     public Meter Meter { get; }
 
-    private readonly Dictionary<string, Counter<long>> _counters = new();
-    private readonly Dictionary<string, Histogram<double>> _histograms = new();
+    private FrozenDictionary<string, Counter<long>> _counters;
+    private FrozenDictionary<string, Histogram<double>> _histograms;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Telemetry"/> class.
@@ -49,6 +49,9 @@ public sealed partial class Telemetry : IDisposable
         Meter = new Meter(appId, appVersion);
         // Counters = new(this);
 
+        _counters = FrozenDictionary<string, Counter<long>>.Empty;
+        _histograms = FrozenDictionary<string, Histogram<double>>.Empty;
+
         Init();
     }
 
@@ -60,13 +63,25 @@ public sealed partial class Telemetry : IDisposable
                 return;
             _isInitialized = true;
 
-            InitData();
-            InitInstances();
-            InitNotifications();
-            InitProcesses();
-            InitValidation();
+            var counters = new Dictionary<string, Counter<long>>();
+            var histograms = new Dictionary<string, Histogram<double>>();
+            var context = new InitContext(counters, histograms);
+
+            InitData(context);
+            InitInstances(context);
+            InitNotifications(context);
+            InitProcesses(context);
+            InitValidation(context);
+
+            _counters = counters.ToFrozenDictionary();
+            _histograms = histograms.ToFrozenDictionary();
         }
     }
+
+    private readonly record struct InitContext(
+        Dictionary<string, Counter<long>> Counters,
+        Dictionary<string, Histogram<double>> Histograms
+    );
 
     /// <summary>
     /// Utility methods for creating metrics for an app.
@@ -112,17 +127,17 @@ public sealed partial class Telemetry : IDisposable
         public static readonly string TaskId = "task.id";
     }
 
-    private void InitMetricCounter(string name, Action<Counter<long>> init)
+    private void InitMetricCounter(InitContext context, string name, Action<Counter<long>> init)
     {
         var counter = Meter.CreateCounter<long>(name, unit: null, description: null);
-        _counters.Add(name, counter);
+        context.Counters.Add(name, counter);
         init(counter);
     }
 
-    private void InitMetricHistogram(string name)
+    private void InitMetricHistogram(InitContext context, string name)
     {
         var histogram = Meter.CreateHistogram<double>(name, unit: null, description: null);
-        _histograms.Add(name, histogram);
+        context.Histograms.Add(name, histogram);
     }
 
     /// <summary>

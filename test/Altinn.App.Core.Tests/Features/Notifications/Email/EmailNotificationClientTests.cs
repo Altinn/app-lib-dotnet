@@ -86,7 +86,7 @@ public class EmailNotificationClientTests
             activities.Length.Should().Be(1);
 
             var activity = activities[^1];
-            activity.OperationName.Should().Be(Telemetry.Notifications.OrderTraceName);
+            activity.OperationName.Should().Be("Notifications.Order");
             activity
                 .GetTagItem(Telemetry.Notifications.TypeLabel)
                 .Should()

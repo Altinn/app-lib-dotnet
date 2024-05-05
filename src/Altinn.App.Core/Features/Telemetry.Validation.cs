@@ -6,7 +6,7 @@ namespace Altinn.App.Core.Features;
 
 partial class Telemetry
 {
-    private void InitValidation() { }
+    private void InitValidation(InitContext context) { }
 
     internal Activity? StartValidateInstanceAtTaskActivity(Instance instance, string taskId)
     {

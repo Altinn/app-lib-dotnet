@@ -8,13 +8,13 @@ namespace Altinn.App.Core.Features;
 
 partial class Telemetry
 {
-    private void InitInstances()
+    private void InitInstances(InitContext context)
     {
-        InitMetricCounter(MetricNameInstancesCreated, init: static m => m.Add(0));
-        InitMetricCounter(MetricNameInstancesCompleted, init: static m => m.Add(0));
-        InitMetricCounter(MetricNameInstancesDeleted, init: static m => m.Add(0));
+        InitMetricCounter(context, MetricNameInstancesCreated, init: static m => m.Add(0));
+        InitMetricCounter(context, MetricNameInstancesCompleted, init: static m => m.Add(0));
+        InitMetricCounter(context, MetricNameInstancesDeleted, init: static m => m.Add(0));
 
-        InitMetricHistogram(MetricNameInstancesDuration);
+        InitMetricHistogram(context, MetricNameInstancesDuration);
     }
 
     internal void InstanceCreated(Instance instance) => _counters[MetricNameInstancesCreated].Add(1);

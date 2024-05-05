@@ -9,9 +9,10 @@ namespace Altinn.App.Core.Features;
 
 partial class Telemetry
 {
-    private void InitData()
+    private void InitData(InitContext context)
     {
         InitMetricCounter(
+            context,
             MetricNameDataPatched,
             init: static m =>
             {
