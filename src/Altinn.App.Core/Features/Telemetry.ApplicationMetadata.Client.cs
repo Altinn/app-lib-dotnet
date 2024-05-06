@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using static Altinn.App.Core.Features.Telemetry.ApplicationMetadata;
+using static Altinn.App.Core.Features.Telemetry.ApplicationMetadataClient;
 
 namespace Altinn.App.Core.Features;
 
@@ -23,8 +23,8 @@ public partial class Telemetry
         return activity;
     }
 
-    internal static class ApplicationMetadata
+    internal static class ApplicationMetadataClient
     {
-        internal const string _prefix = "ApplicationMetadata";
+        internal const string _prefix = "ApplicationMetadata.Client";
     }
 }
