@@ -2,13 +2,13 @@ using System.Diagnostics;
 using Altinn.App.Core.Internal.Process.Authorization;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models;
-using static Altinn.App.Core.Features.Telemetry.Authorization;
+using static Altinn.App.Core.Features.Telemetry.AuthorizationService;
 
 namespace Altinn.App.Core.Features;
 
 public partial class Telemetry
 {
-    internal Activity? StartGetPartyListActivity(int userId)
+    internal Activity? StartClientGetPartyListActivity(int userId)
     {
         var activity = ActivitySource.StartActivity($"{_prefix}.GetPartyList");
         if (activity is not null)
@@ -18,7 +18,7 @@ public partial class Telemetry
         return activity;
     }
 
-    internal Activity? StartValidateSelectedPartyActivity(int userId, int partyId)
+    internal Activity? StartClientValidateSelectedPartyActivity(int userId, int partyId)
     {
         var activity = ActivitySource.StartActivity($"{_prefix}.ValidateSelectedParty");
         if (activity is not null)
@@ -29,7 +29,7 @@ public partial class Telemetry
         return activity;
     }
 
-    internal Activity? StartAuthorizeActionActivity(
+    internal Activity? StartClientAuthorizeActionActivity(
         InstanceIdentifier instanceIdentifier,
         string action,
         string? taskId = null
@@ -49,22 +49,22 @@ public partial class Telemetry
         return activity;
     }
 
-    internal Activity? StartAuthorizeActionsActivity(
+    internal Activity? StartClientAuthorizeActionsActivity(
         Platform.Storage.Interface.Models.Instance instance,
-        List<AltinnAction> actions
+        List<string> actions
     )
     {
         var activity = ActivitySource.StartActivity($"{_prefix}.AuthorizeActions");
         if (activity is not null)
         {
             activity.SetInstanceId(instance);
-            string actionTypes = string.Join(", ", actions.Select(a => a.Value.ToString()));
+            string actionTypes = string.Join(", ", actions);
             activity.SetTag(AuthorizationLabels.ActionId, actionTypes);
         }
         return activity;
     }
 
-    internal Activity? StartIsAuthorizerActivity(
+    internal Activity? StartClientIsAuthorizerActivity(
         IUserActionAuthorizerProvider authorizer,
         string? taskId,
         string action
@@ -83,17 +83,8 @@ public partial class Telemetry
         return activity;
     }
 
-    internal static class Authorization
+    internal static class AuthorizationClient
     {
-        internal const string _prefix = "Authorization";
-    }
-
-    internal static class AuthorizationLabels
-    {
-        internal const string UserId = "authorization.userid";
-        internal const string Action = "authorization.action";
-        internal const string ActionId = "authorization.actionid";
-        internal const string AuthorizerAction = "authorization.authorizer.action";
-        internal const string AuthorizerTaskId = "authorization.authorizer.taskid";
+        internal const string _prefix = "Authorization.Client";
     }
 }
