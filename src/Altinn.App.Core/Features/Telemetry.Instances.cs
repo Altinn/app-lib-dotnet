@@ -41,14 +41,24 @@ partial class Telemetry
         }
     }
 
-    internal Activity? StartGetInstanceActivity(InstanceType type, Guid? instanceGuid = null)
+    internal Activity? StartGetInstanceByGuidActivity(Guid? instanceGuid = null)
     {
-        var activity = ActivitySource.StartActivity($"{_prefix}.Get");
-        if (activity is not null)
-        {
-            activity.SetTag(InstanceLabels.Type, type.ToStringFast());
-            activity.SetInstanceId(instanceGuid);
-        }
+        var activity = ActivitySource.StartActivity($"{_prefix}.GetInstanceByGuid");
+        activity.SetInstanceId(instanceGuid);
+        return activity;
+    }
+
+    internal Activity? StartGetInstanceByInstanceActivity(Guid? instanceGuid = null)
+    {
+        var activity = ActivitySource.StartActivity($"{_prefix}.GetInstanceByInstance");
+        activity.SetInstanceId(instanceGuid);
+        return activity;
+    }
+
+    internal Activity? StartGetInstancesActivity(Guid? instanceGuid = null)
+    {
+        var activity = ActivitySource.StartActivity($"{_prefix}.GetInstances");
+        activity.SetInstanceId(instanceGuid);
         return activity;
     }
 
@@ -127,23 +137,5 @@ partial class Telemetry
         internal static readonly string MetricNameInstancesCompleted = Metrics.CreateLibName("instances_completed");
         internal static readonly string MetricNameInstancesDeleted = Metrics.CreateLibName("instances_deleted");
         internal static readonly string MetricNameInstancesDuration = Metrics.CreateLibName("instances_duration");
-
-        [EnumExtensions]
-        internal enum InstanceType
-        {
-            [Display(Name = "get_instance_by_guid")]
-            GetInstanceByGuid,
-
-            [Display(Name = "get_instance_by_instance")]
-            GetInstanceByInstance,
-
-            [Display(Name = "get_instances")]
-            GetInstances,
-        }
-
-        internal static class InstanceLabels
-        {
-            internal const string Type = "instance.get.type";
-        }
     }
 }

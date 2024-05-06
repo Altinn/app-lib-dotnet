@@ -65,7 +65,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         /// <inheritdoc />
         public async Task<Instance> GetInstance(string app, string org, int instanceOwnerPartyId, Guid instanceGuid)
         {
-            using var activity = _telemetry?.StartGetInstanceActivity(InstanceType.GetInstanceByGuid, instanceGuid);
+            using var activity = _telemetry?.StartGetInstanceByGuidActivity(instanceGuid);
             string instanceIdentifier = $"{instanceOwnerPartyId}/{instanceGuid}";
 
             string apiUrl = $"instances/{instanceIdentifier}";
@@ -92,7 +92,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         public async Task<Instance> GetInstance(Instance instance)
         {
             Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
-            using var activity = _telemetry?.StartGetInstanceActivity(InstanceType.GetInstanceByInstance, instanceGuid);
+            using var activity = _telemetry?.StartGetInstanceByInstanceActivity(instanceGuid);
             string app = instance.AppId.Split("/")[1];
             string org = instance.Org;
             int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
@@ -103,7 +103,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         /// <inheritdoc />
         public async Task<List<Instance>> GetInstances(Dictionary<string, StringValues> queryParams)
         {
-            using var activity = _telemetry?.StartGetInstanceActivity(InstanceType.GetInstances);
+            using var activity = _telemetry?.StartGetInstancesActivity();
             StringBuilder apiUrl = new($"instances?");
 
             foreach (var queryParameter in queryParams)
