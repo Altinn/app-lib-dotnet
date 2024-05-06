@@ -7,28 +7,24 @@ public partial class Telemetry
 {
     internal Activity? StartGetApplicationMetadataActivity()
     {
-        var activity = ActivitySource.StartActivity(TraceNameGet);
+        var activity = ActivitySource.StartActivity($"{_prefix}.Get");
         return activity;
     }
 
     internal Activity? StartGetApplicationXACMLPolicyActivity()
     {
-        var activity = ActivitySource.StartActivity(TraceNameGetXACMLPolicy);
+        var activity = ActivitySource.StartActivity($"{_prefix}.GetXACMLPolicy");
         return activity;
     }
 
     internal Activity? StartGetApplicationBPMNProcessActivity()
     {
-        var activity = ActivitySource.StartActivity(TraceNameGetBPMNProcess);
+        var activity = ActivitySource.StartActivity($"{_prefix}.GetBPMNProcess");
         return activity;
     }
 
     internal static class ApplicationMetadata
     {
-        private const string _prefix = "ApplicationMetadata";
-
-        internal const string TraceNameGet = $"{_prefix}.Get";
-        internal const string TraceNameGetXACMLPolicy = $"{_prefix}.GetXACMLPolicy";
-        internal const string TraceNameGetBPMNProcess = $"{_prefix}.GetBPMNProcess";
+        internal const string _prefix = "ApplicationMetadata";
     }
 }
