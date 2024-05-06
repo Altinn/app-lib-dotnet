@@ -10,7 +10,7 @@ public partial class Telemetry
 {
     internal Activity? StartGetPartyListActivity(int userId)
     {
-        var activity = ActivitySource.StartActivity(TraceNameGet);
+        var activity = ActivitySource.StartActivity($"{_prefix}.GetPartyList");
         if (activity is not null)
         {
             activity.SetTag(AuthorizationLabels.UserId, userId);
@@ -20,7 +20,7 @@ public partial class Telemetry
 
     internal Activity? StartValidateSelectedPartyActivity(int userId, int partyId)
     {
-        var activity = ActivitySource.StartActivity(TraceNameValidate);
+        var activity = ActivitySource.StartActivity($"{_prefix}.ValidateSelectedParty");
         if (activity is not null)
         {
             activity.SetTag(AuthorizationLabels.UserId, userId);
@@ -35,7 +35,7 @@ public partial class Telemetry
         string? taskId = null
     )
     {
-        var activity = ActivitySource.StartActivity(TraceNameAuthorize);
+        var activity = ActivitySource.StartActivity($"{_prefix}.AuthorizeAction");
         if (activity is not null)
         {
             activity.SetTag(Labels.InstanceGuid, instanceIdentifier.InstanceGuid.ToString());
@@ -54,7 +54,7 @@ public partial class Telemetry
         List<AltinnAction> actions
     )
     {
-        var activity = ActivitySource.StartActivity(TraceNameAuthorizeMultiple);
+        var activity = ActivitySource.StartActivity($"{_prefix}.AuthorizeActions");
         if (activity is not null)
         {
             Guid InstanceGuid = Guid.Parse(instance.Id.Split('/')[1]);
@@ -72,7 +72,7 @@ public partial class Telemetry
         string action
     )
     {
-        var activity = ActivitySource.StartActivity(TraceNameIsAuthorizer);
+        var activity = ActivitySource.StartActivity($"{_prefix}.IsAuthorizerForTaskAndAction");
         if (activity is not null)
         {
             if (taskId is not null)
@@ -88,13 +88,7 @@ public partial class Telemetry
 
     internal static class Authorization
     {
-        private const string _prefix = "Authorization";
-
-        internal const string TraceNameGet = $"{_prefix}.GetPartyList";
-        internal const string TraceNameValidate = $"{_prefix}.ValidateSelectedParty";
-        internal const string TraceNameAuthorize = $"{_prefix}.AuthorizeAction";
-        internal const string TraceNameAuthorizeMultiple = $"{_prefix}.AuthorizeActions";
-        internal const string TraceNameIsAuthorizer = $"{_prefix}.IsAuthorizerForTaskAndAction";
+        internal const string _prefix = "Authorization";
     }
 
     internal static class AuthorizationLabels
