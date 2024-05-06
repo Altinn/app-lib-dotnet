@@ -13,7 +13,7 @@ public static class JsonUtils
             var bytes = Encoding.UTF8.GetBytes(json);
             var parser = new Utf8JsonReader(bytes);
             using var outStream = new MemoryStream(bytes.Length * 2);
-            var writer = new Utf8JsonWriter((outStream), new JsonWriterOptions { Indented = true });
+            using var writer = new Utf8JsonWriter((outStream), new JsonWriterOptions { Indented = true });
 
             while (parser.Read())
             {
