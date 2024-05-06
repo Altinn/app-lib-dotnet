@@ -37,7 +37,7 @@ partial class Telemetry
 
         internal const string _prefix = "Data";
 
-        internal static readonly string MetricNameDataPatched = Metrics.CreateLibName("datum_patched");
+        internal static readonly string MetricNameDataPatched = Metrics.CreateLibName("data_patched");
 
         [EnumExtensions]
         internal enum PatchResult
