@@ -32,7 +32,7 @@ namespace Altinn.App.Core.Implementation
         private readonly IAppMetadata _appMetadata;
         private readonly IWebHostEnvironment _hostingEnvironment;
         private readonly ILogger _logger;
-        private readonly Telemetry _telemetry;
+        private readonly Telemetry? _telemetry;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AppResourcesSI"/> class.
@@ -47,7 +47,7 @@ namespace Altinn.App.Core.Implementation
             IAppMetadata appMetadata,
             IWebHostEnvironment hostingEnvironment,
             ILogger<AppResourcesSI> logger,
-            Telemetry telemetry
+            Telemetry? telemetry = null
         )
         {
             _settings = settings.Value;

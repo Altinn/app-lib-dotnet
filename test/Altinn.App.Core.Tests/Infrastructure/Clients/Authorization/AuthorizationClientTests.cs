@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Infrastructure.Clients.Authorization;
+using Altinn.App.Core.Tests.Mocks;
 using Altinn.Authorization.ABAC.Xacml.JsonProfile;
 using Altinn.Common.PEP.Interfaces;
 using Altinn.Platform.Storage.Interface.Models;
@@ -20,6 +21,7 @@ public class AuthorizationClientTests
     [Fact]
     public async Task AuthorizeActions_returns_dictionary_with_one_action_denied()
     {
+        TelemetryFake telemetry = new();
         Mock<IPDP> pdpMock = new();
         Mock<HttpContextAccessor> httpContextAccessorMock = new();
         Mock<HttpClient> httpClientMock = new();
@@ -32,7 +34,8 @@ public class AuthorizationClientTests
             httpClientMock.Object,
             appSettingsMock.Object,
             pdpMock.Object,
-            NullLogger<AuthorizationClient>.Instance
+            NullLogger<AuthorizationClient>.Instance,
+            telemetry.Object
         );
 
         var claimsPrincipal = GetClaims("1337");
@@ -65,6 +68,7 @@ public class AuthorizationClientTests
     [Fact]
     public async Task AuthorizeActions_returns_empty_dictionary_if_no_response_from_pdp()
     {
+        TelemetryFake telemetry = new();
         Mock<IPDP> pdpMock = new();
         Mock<HttpContextAccessor> httpContextAccessorMock = new();
         Mock<HttpClient> httpClientMock = new();
@@ -78,7 +82,8 @@ public class AuthorizationClientTests
             httpClientMock.Object,
             appSettingsMock.Object,
             pdpMock.Object,
-            NullLogger<AuthorizationClient>.Instance
+            NullLogger<AuthorizationClient>.Instance,
+            telemetry.Object
         );
 
         var claimsPrincipal = GetClaims("1337");
