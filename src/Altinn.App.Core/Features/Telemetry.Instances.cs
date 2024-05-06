@@ -43,7 +43,7 @@ partial class Telemetry
 
     internal Activity? StartGetInstanceActivity(InstanceType type, Guid? instanceGuid = null)
     {
-        var activity = ActivitySource.StartActivity("Instance.Get");
+        var activity = ActivitySource.StartActivity($"{_prefix}.Get");
         if (activity is not null)
         {
             activity.SetTag(InstanceLabels.Type, type.ToStringFast());
@@ -54,19 +54,19 @@ partial class Telemetry
 
     internal Activity? StartQueryInstancesActivity()
     {
-        var activity = ActivitySource.StartActivity("Instance.Query");
+        var activity = ActivitySource.StartActivity($"{_prefix}.Query");
         return activity;
     }
 
     internal Activity? StartCreateInstanceActivity()
     {
-        var activity = ActivitySource.StartActivity("Instance.Create");
+        var activity = ActivitySource.StartActivity($"{_prefix}.Create");
         return activity;
     }
 
     internal Activity? StartDeleteInstanceActivity(Guid instanceGuid, int instanceOwnerPartyId)
     {
-        var activity = ActivitySource.StartActivity("Instance.Delete");
+        var activity = ActivitySource.StartActivity($"{_prefix}.Delete");
         activity.SetInstanceId(instanceGuid);
         activity.SetInstanceOwnerPartyId(instanceOwnerPartyId);
         return activity;
@@ -74,14 +74,14 @@ partial class Telemetry
 
     internal Activity? StartUpdateProcessActivity(Instance instance)
     {
-        var activity = ActivitySource.StartActivity("Instance.UpdateProcess");
+        var activity = ActivitySource.StartActivity($"{_prefix}.UpdateProcess");
         activity.SetInstanceId(instance);
         return activity;
     }
 
     internal Activity? StartCompleteConfirmationActivity(Guid instanceGuid, int instanceOwnerPartyId)
     {
-        var activity = ActivitySource.StartActivity("Instance.CompleteConfirmation");
+        var activity = ActivitySource.StartActivity($"{_prefix}.CompleteConfirmation");
         activity.SetInstanceId(instanceGuid);
         activity.SetInstanceOwnerPartyId(instanceOwnerPartyId);
         return activity;
@@ -89,7 +89,7 @@ partial class Telemetry
 
     internal Activity? StartUpdateReadStatusActivity(Guid instanceGuid, int instanceOwnerPartyId)
     {
-        var activity = ActivitySource.StartActivity("Instance.UpdateReadStatus");
+        var activity = ActivitySource.StartActivity($"{_prefix}.UpdateReadStatus");
         activity.SetInstanceId(instanceGuid);
         activity.SetInstanceOwnerPartyId(instanceOwnerPartyId);
         return activity;
@@ -97,7 +97,7 @@ partial class Telemetry
 
     internal Activity? StartUpdateSubStatusActivity(Guid instanceGuid, int instanceOwnerPartyId)
     {
-        var activity = ActivitySource.StartActivity("Instance.UpdateSubStatus");
+        var activity = ActivitySource.StartActivity($"{_prefix}.UpdateSubStatus");
         activity.SetInstanceId(instanceGuid);
         activity.SetInstanceOwnerPartyId(instanceOwnerPartyId);
         return activity;
@@ -105,7 +105,7 @@ partial class Telemetry
 
     internal Activity? StartUpdatePresentationTextActivity(Guid instanceGuid, int instanceOwnerPartyId)
     {
-        var activity = ActivitySource.StartActivity("Instance.UpdatePresentationText");
+        var activity = ActivitySource.StartActivity($"{_prefix}.UpdatePresentationText");
         activity.SetInstanceId(instanceGuid);
         activity.SetInstanceOwnerPartyId(instanceOwnerPartyId);
         return activity;
@@ -113,7 +113,7 @@ partial class Telemetry
 
     internal Activity? StartUpdateDataValuesActivity(Guid instanceGuid, int instanceOwnerPartyId)
     {
-        var activity = ActivitySource.StartActivity("Instance.UpdateDataValues");
+        var activity = ActivitySource.StartActivity($"{_prefix}.UpdateDataValues");
         activity.SetInstanceId(instanceGuid);
         activity.SetInstanceOwnerPartyId(instanceOwnerPartyId);
         return activity;
@@ -121,7 +121,7 @@ partial class Telemetry
 
     internal static class Instances
     {
-        private const string _prefix = "Instance";
+        internal const string _prefix = "Instance";
 
         internal static readonly string MetricNameInstancesCreated = Metrics.CreateLibName("instances_created");
         internal static readonly string MetricNameInstancesCompleted = Metrics.CreateLibName("instances_completed");
