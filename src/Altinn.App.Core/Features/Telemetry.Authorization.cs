@@ -24,7 +24,7 @@ public partial class Telemetry
         if (activity is not null)
         {
             activity.SetTag(AuthorizationLabels.UserId, userId);
-            activity.SetTag(Labels.InstanceOwnerPartyId, partyId); // TODO: verify that this party id is indeed the instance owner party id
+            activity.SetInstanceOwnerPartyId(partyId);
         }
         return activity;
     }
@@ -38,8 +38,8 @@ public partial class Telemetry
         var activity = ActivitySource.StartActivity($"{_prefix}.AuthorizeAction");
         if (activity is not null)
         {
-            activity.SetTag(Labels.InstanceGuid, instanceIdentifier.InstanceGuid.ToString());
-            activity.SetTag(Labels.InstanceOwnerPartyId, instanceIdentifier.InstanceOwnerPartyId.ToString());
+            activity.SetInstanceId(instanceIdentifier.InstanceGuid);
+            activity.SetInstanceOwnerPartyId(instanceIdentifier.InstanceOwnerPartyId);
             activity.SetTag(AuthorizationLabels.Action, action);
             if (taskId is not null)
             {
@@ -57,9 +57,7 @@ public partial class Telemetry
         var activity = ActivitySource.StartActivity($"{_prefix}.AuthorizeActions");
         if (activity is not null)
         {
-            Guid InstanceGuid = Guid.Parse(instance.Id.Split('/')[1]);
-            activity.SetTag(Labels.InstanceGuid, InstanceGuid);
-
+            activity.SetInstanceId(instance);
             string actionTypes = string.Join(", ", actions.Select(a => a.Value.ToString()));
             activity.SetTag(AuthorizationLabels.ActionId, actionTypes);
         }
@@ -75,8 +73,7 @@ public partial class Telemetry
         var activity = ActivitySource.StartActivity($"{_prefix}.IsAuthorizerForTaskAndAction");
         if (activity is not null)
         {
-            if (taskId is not null)
-                activity.SetTag(Labels.TaskId, taskId);
+            activity.SetTaskId(taskId);
             if (authorizer.TaskId is not null)
                 activity.SetTag(AuthorizationLabels.AuthorizerTaskId, authorizer.TaskId);
             if (authorizer.Action is not null)
