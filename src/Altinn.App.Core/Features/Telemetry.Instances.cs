@@ -1,7 +1,5 @@
-using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using Altinn.Platform.Storage.Interface.Models;
-using NetEscapades.EnumGenerators;
 using static Altinn.App.Core.Features.Telemetry.Instances;
 
 namespace Altinn.App.Core.Features;
