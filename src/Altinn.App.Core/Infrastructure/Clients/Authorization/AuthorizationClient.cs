@@ -63,7 +63,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Authorization
 
             if (!httpClient.DefaultRequestHeaders.Contains(ForwardedForHeaderName))
             {
-                string? clientIpAddress = _httpContextAccessor?.HttpContext?.Request?.Headers?[ForwardedForHeaderName];
+                string? clientIpAddress = _httpContextAccessor.HttpContext?.Request?.Headers?[ForwardedForHeaderName];
                 httpClient.DefaultRequestHeaders.Add(ForwardedForHeaderName, clientIpAddress);
             }
             httpClient.DefaultRequestHeaders.Add(

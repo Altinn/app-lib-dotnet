@@ -108,8 +108,9 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
 
             foreach (var queryParameter in queryParams)
             {
-                foreach (string value in queryParameter.Value)
+                foreach (string? value in queryParameter.Value)
                 {
+                    // TODO: remember to escape the value here
                     apiUrl.Append($"&{queryParameter.Key}={value}");
                 }
             }
@@ -254,7 +255,9 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             _logger.LogError(
                 $"Could not update read status for instance {instanceOwnerPartyId}/{instanceGuid}. Request failed with status code {response.StatusCode}"
             );
+#nullable disable
             return null;
+#nullable restore
         }
 
         /// <inheritdoc/>
