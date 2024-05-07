@@ -17,7 +17,6 @@ jobs:
     runs-on: ${{ matrix.os}}
     env:
       DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE: false
-      DOTNET_TREATWARNINGSASERRORS: true
     steps:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4

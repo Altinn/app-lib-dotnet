@@ -215,7 +215,5 @@ namespace Altinn.App.Core.Configuration
         /// Enable the functionality to run expression validation in backend
         /// </summary>
         public bool ExpressionValidation { get; set; } = false;
-
-        public string RandomThing { get; set; }
     }
 }
