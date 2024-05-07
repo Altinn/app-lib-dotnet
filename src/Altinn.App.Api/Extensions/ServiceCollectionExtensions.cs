@@ -8,12 +8,14 @@ using Altinn.App.Core.Features;
 using Altinn.Common.PEP.Authorization;
 using Altinn.Common.PEP.Clients;
 using AltinnCore.Authentication.JwtCookie;
+using Azure.Monitor.OpenTelemetry.Exporter;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.FeatureManagement;
 using Microsoft.IdentityModel.Tokens;
+using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -47,7 +49,7 @@ namespace Altinn.App.Api.Extensions
         /// <param name="services">The <see cref="IServiceCollection"/> being built.</param>
         /// <param name="config">A reference to the current <see cref="IConfiguration"/> object.</param>
         /// <param name="env">A reference to the current <see cref="IWebHostEnvironment"/> object.</param>
-        public static void AddAltinnAppServices(
+        public static AltinnAppBuilder AddAltinnAppServices(
             this IServiceCollection services,
             IConfiguration config,
             IWebHostEnvironment env
@@ -61,23 +63,17 @@ namespace Altinn.App.Api.Extensions
             services.AddAppServices(config, env);
             services.ConfigureDataProtection();
 
-            var useOpenTelemetrySetting = config["AppSettings:UseOpenTelemetry"];
+            var useOpenTelemetrySetting = config.GetValue<bool?>("AppSettings:UseOpenTelemetry");
+            IOpenTelemetryBuilder? openTelemetryBuilder = null;
 
             // Use Application Insights as default, opt in to use Open Telemetry
-            if (
-                string.IsNullOrEmpty(useOpenTelemetrySetting)
-                || useOpenTelemetrySetting.Equals("false", StringComparison.OrdinalIgnoreCase)
-            )
+            if (useOpenTelemetrySetting is true)
             {
-                AddApplicationInsights(services, config, env);
-            }
-            else if (useOpenTelemetrySetting.Equals("true", StringComparison.OrdinalIgnoreCase))
-            {
-                AddOpenTelemetry(services, config, env);
+                openTelemetryBuilder = AddOpenTelemetry(services, config, env);
             }
             else
             {
-                throw new ArgumentException("UseOpenTelemetry must be boolean or not set.", nameof(config));
+                AddApplicationInsights(services, config, env);
             }
 
             AddAuthenticationScheme(services, config, env);
@@ -95,6 +91,43 @@ namespace Altinn.App.Api.Extensions
             services.AddHttpClient<AuthorizationApiClient>();
 
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
+            var existingBuilderRegistration = services.LastOrDefault(s => s.ServiceType == typeof(AltinnAppBuilder));
+            AltinnAppBuilder builder;
+            if (existingBuilderRegistration is not null)
+            {
+                if (existingBuilderRegistration.ImplementationInstance is not AltinnAppBuilder existingBuilder)
+                {
+                    throw new InvalidOperationException("AltinnAppBuilder was already registered, but not correctly");
+                }
+                builder = existingBuilder;
+            }
+            else
+            {
+                builder = new AltinnAppBuilder(openTelemetryBuilder);
+                services.AddSingleton<AltinnAppBuilder>(builder);
+            }
+
+            return builder;
+        }
+
+        /// <summary>
+        /// Get Application Insights configuration from environment variables or appsettings.json.
+        /// </summary>
+        /// <param name="config">config</param>
+        /// <param name="env">env</param>
+        /// <returns></returns>
+        internal static (string? Key, string? ConnectionString) GetAppInsightsConfig(IConfiguration config, string env)
+        {
+            var isDevelopment = string.Equals(env, "Development", StringComparison.OrdinalIgnoreCase);
+            string? key = isDevelopment
+                ? config["ApplicationInsights:InstrumentationKey"]
+                : Environment.GetEnvironmentVariable("ApplicationInsights__InstrumentationKey");
+            string? connectionString = isDevelopment
+                ? config["ApplicationInsights:ConnectionString"]
+                : Environment.GetEnvironmentVariable("ApplicationInsights__ConnectionString");
+
+            return (key, connectionString);
         }
 
         /// <summary>
@@ -109,12 +142,10 @@ namespace Altinn.App.Api.Extensions
             IWebHostEnvironment env
         )
         {
-            string? applicationInsightsKey = env.IsDevelopment()
-                ? config["ApplicationInsights:InstrumentationKey"]
-                : Environment.GetEnvironmentVariable("ApplicationInsights__InstrumentationKey");
-            string? applicationInsightsConnectionString = env.IsDevelopment()
-                ? config["ApplicationInsights:ConnectionString"]
-                : Environment.GetEnvironmentVariable("ApplicationInsights__ConnectionString");
+            var (applicationInsightsKey, applicationInsightsConnectionString) = GetAppInsightsConfig(
+                config,
+                env.EnvironmentName
+            );
 
             if (
                 !string.IsNullOrEmpty(applicationInsightsKey)
@@ -143,7 +174,7 @@ namespace Altinn.App.Api.Extensions
             }
         }
 
-        private static void AddOpenTelemetry(
+        private static IOpenTelemetryBuilder AddOpenTelemetry(
             IServiceCollection services,
             IConfiguration config,
             IWebHostEnvironment env
@@ -153,7 +184,14 @@ namespace Altinn.App.Api.Extensions
             var appVersion = config.GetSection("AppSettings").GetValue<string>("AppVersion");
             services.AddHostedService<TelemetryInitialization>();
             services.AddSingleton<Telemetry>();
-            services
+
+            var (appInsightsKey, appInsightsConnectionString) = GetAppInsightsConfig(config, env.EnvironmentName);
+            if (string.IsNullOrWhiteSpace(appInsightsConnectionString) && !string.IsNullOrWhiteSpace(appInsightsKey))
+            {
+                appInsightsConnectionString = $"InstrumentationKey={appInsightsKey}";
+            }
+
+            var builder = services
                 .AddOpenTelemetry()
                 .ConfigureResource(r =>
                     r.AddService(
@@ -162,14 +200,14 @@ namespace Altinn.App.Api.Extensions
                         serviceInstanceId: Environment.MachineName
                     )
                 )
-                .WithTracing(tpbuilder =>
+                .WithTracing(builder =>
                 {
                     if (env.IsDevelopment())
                     {
-                        tpbuilder.SetSampler(new AlwaysOnSampler());
+                        builder.SetSampler(new AlwaysOnSampler());
                     }
 
-                    tpbuilder
+                    builder = builder
                         .AddSource(appId)
                         .AddHttpClientInstrumentation(opts =>
                         {
@@ -178,17 +216,38 @@ namespace Altinn.App.Api.Extensions
                         .AddAspNetCoreInstrumentation(opts =>
                         {
                             opts.RecordException = true;
-                        })
-                        .AddOtlpExporter();
+                        });
+
+                    if (!string.IsNullOrWhiteSpace(appInsightsConnectionString))
+                    {
+                        builder = builder.AddAzureMonitorTraceExporter(options =>
+                        {
+                            options.ConnectionString = appInsightsConnectionString;
+                        });
+                    }
+                    else
+                    {
+                        builder = builder.AddOtlpExporter();
+                    }
                 })
-                .WithMetrics(mpbuilder =>
+                .WithMetrics(builder =>
                 {
-                    mpbuilder
+                    builder = builder
                         .AddMeter(appId)
                         .AddRuntimeInstrumentation()
                         .AddHttpClientInstrumentation()
-                        .AddAspNetCoreInstrumentation()
-                        .AddOtlpExporter(
+                        .AddAspNetCoreInstrumentation();
+
+                    if (!string.IsNullOrWhiteSpace(appInsightsConnectionString))
+                    {
+                        builder = builder.AddAzureMonitorMetricExporter(options =>
+                        {
+                            options.ConnectionString = appInsightsConnectionString;
+                        });
+                    }
+                    else
+                    {
+                        builder = builder.AddOtlpExporter(
                             (_, readerOptions) =>
                             {
                                 if (env.IsDevelopment())
@@ -197,10 +256,15 @@ namespace Altinn.App.Api.Extensions
                                     // but locally it's nice to receive metrics more often than the default 60s
                                     readerOptions.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds =
                                         10_000;
+                                    readerOptions.PeriodicExportingMetricReaderOptions.ExportTimeoutMilliseconds =
+                                        8_000;
                                 }
                             }
                         );
+                    }
                 });
+
+            return builder;
         }
 
         private sealed class TelemetryInitialization(Telemetry telemetry, MeterProvider meterProvider) : IHostedService
@@ -217,7 +281,7 @@ namespace Altinn.App.Api.Extensions
                 telemetry.Init();
                 if (!meterProvider.ForceFlush(10_000))
                 {
-                    throw new Exception("Couldn't initialize metrics to zero");
+                    throw new Exception("Couldn't initialize Telemetry service");
                 }
                 return Task.CompletedTask;
             }
