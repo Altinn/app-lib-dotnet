@@ -136,7 +136,7 @@ namespace Altinn.App.Core.Implementation
         /// <inheritdoc/>
         public string? GetApplicationBPMNProcess()
         {
-            using var activity = _telemetry.StartClientGetApplicationBPMNProcessActivity();
+            using var activity = _telemetry?.StartClientGetApplicationBPMNProcessActivity();
             try
             {
                 return _appMetadata.GetApplicationBPMNProcess().Result;
