@@ -88,7 +88,7 @@ namespace Altinn.App.Api.Controllers
             UserProfile? user = await _profileClient.GetUserProfile(userContext.UserId);
             if (user is null)
             {
-                return StatusCode(500, "Could not retrieve user profile");
+                return StatusCode(500, "Could not get user profile while validating instantiation");
             }
             List<Party>? partyList = await _authorizationClient.GetPartyList(userContext.UserId);
             Application application = await _appMetadata.GetApplicationMetadata();
