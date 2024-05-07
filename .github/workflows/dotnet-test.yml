@@ -31,4 +31,4 @@ jobs:
           dotnet build AppLibDotnet.sln -v m
       - name: Test
         run: |
-          dotnet test AppLibDotnet.sln -v m --no-build
+          dotnet test AppLibDotnet.sln -v m --no-restore --no-build
