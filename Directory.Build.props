@@ -1,6 +1,8 @@
 <Project>
-    <PropertyGroup>
+    <PropertyGroup Condition="'$(DOTNET_TREATWARNINGSASERRORS)' == 'true'">
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    </PropertyGroup>
+    <PropertyGroup>
         <LangVersion>latest</LangVersion>
     </PropertyGroup>
 
