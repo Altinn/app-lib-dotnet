@@ -74,18 +74,7 @@ public static class WebHostBuilderExtensions
 
                 builder.ConfigureServices(services =>
                 {
-                    var service = services.LastOrDefault(s => s.ServiceType == typeof(AltinnAppBuilder));
-                    if (service is null)
-                    {
-                        throw new InvalidOperationException(
-                            "AltinnAppBuilder not registered yet. Make sure AddAltinnAppServices is called earlier in the pipeline"
-                        );
-                    }
-                    var appBuilder = service.ImplementationInstance as AltinnAppBuilder;
-                    Debug.Assert(
-                        appBuilder is not null,
-                        "If the AltinnAppBuilder service registration is found, the instance should be here"
-                    );
+                    var appBuilder = services.GetInstanceInServices<AltinnAppBuilder>();
 
                     if (appBuilder.LoggingConfigurator is not null)
                     {

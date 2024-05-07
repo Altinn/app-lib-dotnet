@@ -92,42 +92,11 @@ namespace Altinn.App.Api.Extensions
 
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
-            var existingBuilderRegistration = services.LastOrDefault(s => s.ServiceType == typeof(AltinnAppBuilder));
-            AltinnAppBuilder builder;
-            if (existingBuilderRegistration is not null)
-            {
-                if (existingBuilderRegistration.ImplementationInstance is not AltinnAppBuilder existingBuilder)
-                {
-                    throw new InvalidOperationException("AltinnAppBuilder was already registered, but not correctly");
-                }
-                builder = existingBuilder;
-            }
-            else
-            {
-                builder = new AltinnAppBuilder(openTelemetryBuilder);
-                services.AddSingleton<AltinnAppBuilder>(builder);
-            }
+            var builder = services.GetOrCreateInstanceInServices<AltinnAppBuilder>(
+                () => new AltinnAppBuilder(openTelemetryBuilder)
+            );
 
             return builder;
-        }
-
-        /// <summary>
-        /// Get Application Insights configuration from environment variables or appsettings.json.
-        /// </summary>
-        /// <param name="config">config</param>
-        /// <param name="env">env</param>
-        /// <returns></returns>
-        internal static (string? Key, string? ConnectionString) GetAppInsightsConfig(IConfiguration config, string env)
-        {
-            var isDevelopment = string.Equals(env, "Development", StringComparison.OrdinalIgnoreCase);
-            string? key = isDevelopment
-                ? config["ApplicationInsights:InstrumentationKey"]
-                : Environment.GetEnvironmentVariable("ApplicationInsights__InstrumentationKey");
-            string? connectionString = isDevelopment
-                ? config["ApplicationInsights:ConnectionString"]
-                : Environment.GetEnvironmentVariable("ApplicationInsights__ConnectionString");
-
-            return (key, connectionString);
         }
 
         /// <summary>
@@ -191,78 +160,83 @@ namespace Altinn.App.Api.Extensions
                 appInsightsConnectionString = $"InstrumentationKey={appInsightsKey}";
             }
 
-            var builder = services
-                .AddOpenTelemetry()
-                .ConfigureResource(r =>
-                    r.AddService(
-                        serviceName: appId,
-                        serviceVersion: appVersion,
-                        serviceInstanceId: Environment.MachineName
-                    )
-                )
-                .WithTracing(builder =>
-                {
-                    if (env.IsDevelopment())
-                    {
-                        builder.SetSampler(new AlwaysOnSampler());
-                    }
-
-                    builder = builder
-                        .AddSource(appId)
-                        .AddHttpClientInstrumentation(opts =>
+            var builder = services.GetOrCreateInstanceInServices<IOpenTelemetryBuilder>(
+                () =>
+                    services
+                        .AddOpenTelemetry()
+                        .ConfigureResource(r =>
+                            r.AddService(
+                                serviceName: appId,
+                                serviceVersion: appVersion,
+                                serviceInstanceId: Environment.MachineName
+                            )
+                        )
+                        .WithTracing(builder =>
                         {
-                            opts.RecordException = true;
-                        })
-                        .AddAspNetCoreInstrumentation(opts =>
-                        {
-                            opts.RecordException = true;
-                        });
-
-                    if (!string.IsNullOrWhiteSpace(appInsightsConnectionString))
-                    {
-                        builder = builder.AddAzureMonitorTraceExporter(options =>
-                        {
-                            options.ConnectionString = appInsightsConnectionString;
-                        });
-                    }
-                    else
-                    {
-                        builder = builder.AddOtlpExporter();
-                    }
-                })
-                .WithMetrics(builder =>
-                {
-                    builder = builder
-                        .AddMeter(appId)
-                        .AddRuntimeInstrumentation()
-                        .AddHttpClientInstrumentation()
-                        .AddAspNetCoreInstrumentation();
-
-                    if (!string.IsNullOrWhiteSpace(appInsightsConnectionString))
-                    {
-                        builder = builder.AddAzureMonitorMetricExporter(options =>
-                        {
-                            options.ConnectionString = appInsightsConnectionString;
-                        });
-                    }
-                    else
-                    {
-                        builder = builder.AddOtlpExporter(
-                            (_, readerOptions) =>
+                            if (env.IsDevelopment())
                             {
-                                if (env.IsDevelopment())
-                                {
-                                    // Export interval should be set by env var when running in real environments
-                                    // but locally it's nice to receive metrics more often than the default 60s
-                                    readerOptions.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds =
-                                        10_000;
-                                    readerOptions.PeriodicExportingMetricReaderOptions.ExportTimeoutMilliseconds =
-                                        8_000;
-                                }
+                                builder.SetSampler(new AlwaysOnSampler());
                             }
-                        );
-                    }
-                });
+
+                            builder = builder
+                                .AddSource(appId)
+                                .AddHttpClientInstrumentation(opts =>
+                                {
+                                    opts.RecordException = true;
+                                })
+                                .AddAspNetCoreInstrumentation(opts =>
+                                {
+                                    opts.RecordException = true;
+                                });
+
+                            if (!string.IsNullOrWhiteSpace(appInsightsConnectionString))
+                            {
+                                builder = builder.AddAzureMonitorTraceExporter(options =>
+                                {
+                                    options.ConnectionString = appInsightsConnectionString;
+                                });
+                            }
+                            else
+                            {
+                                builder = builder.AddOtlpExporter();
+                            }
+                        })
+                        .WithMetrics(builder =>
+                        {
+                            builder = builder
+                                .AddMeter(appId)
+                                .AddRuntimeInstrumentation()
+                                .AddHttpClientInstrumentation()
+                                .AddAspNetCoreInstrumentation();
+
+                            if (!string.IsNullOrWhiteSpace(appInsightsConnectionString))
+                            {
+                                builder = builder.AddAzureMonitorMetricExporter(options =>
+                                {
+                                    options.ConnectionString = appInsightsConnectionString;
+                                });
+                            }
+                            else
+                            {
+                                builder = builder.AddOtlpExporter(
+                                    (_, readerOptions) =>
+                                    {
+                                        if (env.IsDevelopment())
+                                        {
+                                            // Export interval should be set by env var when running in real environments
+                                            // but locally it's nice to receive metrics more often than the default 60s
+                                            readerOptions
+                                                .PeriodicExportingMetricReaderOptions
+                                                .ExportIntervalMilliseconds = 10_000;
+                                            readerOptions
+                                                .PeriodicExportingMetricReaderOptions
+                                                .ExportTimeoutMilliseconds = 8_000;
+                                        }
+                                    }
+                                );
+                            }
+                        })
+            );
 
             return builder;
         }
@@ -358,6 +332,83 @@ namespace Altinn.App.Api.Extensions
             });
 
             services.TryAddSingleton<ValidateAntiforgeryTokenIfAuthCookieAuthorizationFilter>();
+        }
+
+        /// <summary>
+        /// Get Application Insights configuration from environment variables or appsettings.json.
+        /// </summary>
+        /// <param name="config">config</param>
+        /// <param name="env">env</param>
+        /// <returns></returns>
+        internal static (string? Key, string? ConnectionString) GetAppInsightsConfig(IConfiguration config, string env)
+        {
+            var isDevelopment = string.Equals(env, "Development", StringComparison.OrdinalIgnoreCase);
+            string? key = isDevelopment
+                ? config["ApplicationInsights:InstrumentationKey"]
+                : Environment.GetEnvironmentVariable("ApplicationInsights__InstrumentationKey");
+            string? connectionString = isDevelopment
+                ? config["ApplicationInsights:ConnectionString"]
+                : Environment.GetEnvironmentVariable("ApplicationInsights__ConnectionString");
+
+            return (key, connectionString);
+        }
+
+        /// <summary>
+        /// Stores an instance of type T in the service collection, or returns the existing instance if it already exists.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="services">collection</param>
+        /// <param name="factory">factory</param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException">Invalid registration</exception>
+        internal static T GetOrCreateInstanceInServices<T>(this IServiceCollection services, Func<T> factory)
+            where T : class
+        {
+            var name = typeof(T).Name;
+
+            var existingInstanceRegistration = services.LastOrDefault(s => s.ServiceType == typeof(T));
+            T instance;
+            if (existingInstanceRegistration is not null)
+            {
+                if (existingInstanceRegistration.ImplementationInstance is not T existingInstance)
+                {
+                    throw new InvalidOperationException($"{name} was already registered, but not correctly");
+                }
+                instance = existingInstance;
+            }
+            else
+            {
+                instance = factory();
+                services.AddSingleton<T>(instance);
+            }
+
+            return instance;
+        }
+
+        /// <summary>
+        /// Get an instance of type T from the service collection.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="services">services</param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException">Invalid registration</exception>
+        internal static T GetInstanceInServices<T>(this IServiceCollection services)
+            where T : class
+        {
+            var name = typeof(T).Name;
+
+            var existingInstanceRegistration = services.LastOrDefault(s => s.ServiceType == typeof(T));
+            if (existingInstanceRegistration is null)
+            {
+                throw new InvalidOperationException($"{name} was not registered");
+            }
+
+            if (existingInstanceRegistration.ImplementationInstance is not T instance)
+            {
+                throw new InvalidOperationException($"{name} was registered, but not correctly");
+            }
+
+            return instance;
         }
     }
 }
