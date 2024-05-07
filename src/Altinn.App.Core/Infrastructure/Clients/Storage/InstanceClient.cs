@@ -101,6 +101,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             {
                 foreach (string? value in queryParameter.Value)
                 {
+                    // TODO: remember to escape the value here
                     apiUrl.Append($"&{queryParameter.Key}={value}");
                 }
             }

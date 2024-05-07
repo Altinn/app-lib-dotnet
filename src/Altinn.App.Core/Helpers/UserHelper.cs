@@ -71,7 +71,7 @@ namespace Altinn.App.Core.Helpers
             UserProfile? userProfile = await _profileClient.GetUserProfile(userContext.UserId);
             if (userProfile is null)
             {
-                throw new Exception("Could not get user profile.");
+                throw new Exception("Could not get user profile while getting user context");
             }
             userContext.UserParty = userProfile.Party;
 

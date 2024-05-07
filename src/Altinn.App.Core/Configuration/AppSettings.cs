@@ -65,6 +65,7 @@ namespace Altinn.App.Core.Configuration
         // TODO: can this be removed?
         // Env var being set is ServiceRepositorySettings__BaseResourceFolderContainer, but this prop is not used anywhere
 #nullable disable
+        [Obsolete("This is not used, and will be removed in the next major version")]
         public string BaseResourceFolderContainer { get; set; }
 
 #nullable restore

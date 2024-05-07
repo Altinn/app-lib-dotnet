@@ -144,7 +144,7 @@ public class SigningUserAction : IUserAction
         var userProfile = await _profileClient.GetUserProfile(userId);
         if (userProfile is null)
         {
-            throw new Exception("Could not get user profile.");
+            throw new Exception("Could not get user profile while getting signee");
         }
         return new Signee
         {

@@ -39,7 +39,7 @@ public class ProcessNavigator : IProcessNavigator
         List<ProcessElement> directFlowTargets = _processReader.GetNextElements(currentElement);
         List<ProcessElement> filteredNext = await NextFollowAndFilterGateways(
             instance,
-            directFlowTargets.Cast<ProcessElement?>().ToList(),
+            directFlowTargets as List<ProcessElement?>,
             action
         );
         if (filteredNext.Count == 0)

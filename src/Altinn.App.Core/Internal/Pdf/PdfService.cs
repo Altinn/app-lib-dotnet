@@ -135,7 +135,7 @@ public class PdfService : IPdfService
             UserProfile? userProfile = await _profileClient.GetUserProfile((int)userId);
             if (userProfile is null)
             {
-                throw new Exception("Could not get user profile.");
+                throw new Exception("Could not get user profile while getting language");
             }
 
             if (!string.IsNullOrEmpty(userProfile.ProfileSettingPreference?.Language))
