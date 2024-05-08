@@ -39,7 +39,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         /// <param name="logger">the logger</param>
         /// <param name="httpClient">A HttpClient from the built in HttpClient factory.</param>
         /// <param name="userTokenProvider">Service to obtain json web token</param>
-        /// <param name="telemetry"></param>
+        /// <param name="telemetry">Telemetry for traces and metrics.</param>
         public DataClient(
             IOptions<PlatformSettings> platformSettings,
             ILogger<DataClient> logger,
