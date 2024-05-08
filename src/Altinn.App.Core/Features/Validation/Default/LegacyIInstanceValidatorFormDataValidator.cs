@@ -1,4 +1,5 @@
 #pragma warning disable CS0618 // Type or member is obsolete
+using System.Diagnostics;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features.Validation.Helpers;
 using Altinn.App.Core.Models.Validation;
@@ -34,7 +35,15 @@ public class LegacyIInstanceValidatorFormDataValidator : IFormDataValidator
     public string DataType => _instanceValidator is null ? "" : "*";
 
     /// <inheritdoc />>
-    public string ValidationSource => _instanceValidator?.GetType().FullName ?? GetType().FullName!;
+    public string ValidationSource
+    {
+        get
+        {
+            var value = _instanceValidator?.GetType().FullName ?? GetType().FullName;
+            Debug.Assert(value is not null, "FullName does not return null on class/struct types");
+            return value;
+        }
+    }
 
     /// <summary>
     /// Always run for incremental validation (if it exists)

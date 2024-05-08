@@ -72,6 +72,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 string instanceData = await response.Content.ReadAsStringAsync();
+                // ! TODO: this non-forgiving operator should be removed for the next major release
                 Instance instance = JsonConvert.DeserializeObject<Instance>(instanceData)!;
                 return instance;
             }
@@ -129,9 +130,9 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 string responseString = await response.Content.ReadAsStringAsync();
-                QueryResponse<Instance> queryResponse = JsonConvert.DeserializeObject<QueryResponse<Instance>>(
-                    responseString
-                )!;
+                QueryResponse<Instance> queryResponse =
+                    JsonConvert.DeserializeObject<QueryResponse<Instance>>(responseString)
+                    ?? throw new JsonException("Could not deserialize Instance query response");
                 return queryResponse;
             }
             else
@@ -160,6 +161,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 string instanceData = await response.Content.ReadAsStringAsync();
+                // ! TODO: this non-forgiving operator should be removed for the next major release
                 Instance updatedInstance = JsonConvert.DeserializeObject<Instance>(instanceData)!;
 
                 return updatedInstance;
@@ -189,6 +191,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
 
             if (response.IsSuccessStatusCode)
             {
+                // ! TODO: this non-forgiving operator should be removed for the next major release
                 Instance createdInstance = JsonConvert.DeserializeObject<Instance>(
                     await response.Content.ReadAsStringAsync()
                 )!;
@@ -216,6 +219,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 string instanceData = await response.Content.ReadAsStringAsync();
+                // ! TODO: this non-forgiving operator should be removed for the next major release
                 Instance instance = JsonConvert.DeserializeObject<Instance>(instanceData)!;
                 return instance;
             }
@@ -237,6 +241,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 string instanceData = await response.Content.ReadAsStringAsync();
+                // ! TODO: this non-forgiving operator should be removed for the next major release
                 Instance instance = JsonConvert.DeserializeObject<Instance>(instanceData)!;
                 return instance;
             }
@@ -267,6 +272,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 string instanceData = await response.Content.ReadAsStringAsync();
+                // ! TODO: this non-forgiving operator should be removed for the next major release
                 Instance instance = JsonConvert.DeserializeObject<Instance>(instanceData)!;
                 return instance;
             }
@@ -296,6 +302,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 string instanceData = await response.Content.ReadAsStringAsync();
+                // ! TODO: this non-forgiving operator should be removed for the next major release
                 Instance instance = JsonConvert.DeserializeObject<Instance>(instanceData)!;
                 return instance;
             }
@@ -321,6 +328,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 string instanceData = await response.Content.ReadAsStringAsync();
+                // ! TODO: this non-forgiving operator should be removed for the next major release
                 Instance instance = JsonConvert.DeserializeObject<Instance>(instanceData)!;
                 return instance;
             }
@@ -342,6 +350,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 string instanceData = await response.Content.ReadAsStringAsync();
+                // ! TODO: this non-forgiving operator should be removed for the next major release
                 Instance instance = JsonConvert.DeserializeObject<Instance>(instanceData)!;
                 return instance;
             }

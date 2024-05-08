@@ -82,7 +82,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Events
             {
                 Subject = $"/party/{instance.InstanceOwner.PartyId}",
                 Type = eventType,
-                AlternativeSubject = alternativeSubject!,
+                AlternativeSubject = alternativeSubject,
                 Time = DateTime.UtcNow,
                 SpecVersion = "1.0",
                 Source = new Uri($"{baseUrl}instances/{instance.Id}")
