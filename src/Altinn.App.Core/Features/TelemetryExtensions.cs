@@ -75,6 +75,22 @@ public static class TelemetryExtensions
     }
 
     /// <summary>
+    /// Sets the Instance owner Party ID as a tag/attribute on the activity/span
+    /// </summary>
+    /// <param name="activity">Activity</param>
+    /// <param name="instanceOwnerPartyId">Instance owner Party ID</param>
+    /// <returns>Activity</returns>
+    public static Activity? SetInstanceOwnerPartyId(this Activity? activity, string? instanceOwnerPartyId)
+    {
+        if (!string.IsNullOrWhiteSpace(instanceOwnerPartyId))
+        {
+            activity?.SetTag(Labels.InstanceOwnerPartyId, instanceOwnerPartyId);
+        }
+
+        return activity;
+    }
+
+    /// <summary>
     /// Sets the Data GUID as a tag/attribute on the activity/span
     /// </summary>
     /// <param name="activity">Activity</param>
