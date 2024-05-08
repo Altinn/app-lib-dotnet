@@ -6,7 +6,6 @@ partial class Telemetry
 {
     internal Activity? StartFileValidateActivity()
     {
-        var activity = ActivitySource.StartActivity("FileValidatorService.Validate");
-        return activity;
+        return ActivitySource.StartActivity("FileValidatorService.Validate");
     }
 }

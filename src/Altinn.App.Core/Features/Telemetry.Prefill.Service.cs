@@ -7,8 +7,7 @@ partial class Telemetry
 {
     internal Activity? StartPrefillDataModelActivity()
     {
-        var activity = ActivitySource.StartActivity($"{_prefix}.PrefillDataModel");
-        return activity;
+        return ActivitySource.StartActivity($"{_prefix}.PrefillDataModel");
     }
 
     internal Activity? StartPrefillDataModelActivity(string? partyId)

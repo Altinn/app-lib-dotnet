@@ -6,7 +6,6 @@ partial class Telemetry
 {
     internal Activity? StartAnalyseActivity()
     {
-        var activity = ActivitySource.StartActivity("FileAnalysis.Analyse");
-        return activity;
+        return ActivitySource.StartActivity("FileAnalysis.Analyse");
     }
 }
