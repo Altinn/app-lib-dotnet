@@ -40,9 +40,9 @@ public class LegacyIInstanceValidatorTaskValidator : ITaskValidator
     {
         get
         {
-            var value = _instanceValidator?.GetType().FullName ?? GetType().FullName;
-            Debug.Assert(value is not null, "FullName does not return null on class/struct types");
-            return value;
+            var type = _instanceValidator?.GetType() ?? GetType();
+            Debug.Assert(type.FullName is not null, "FullName does not return null on class/struct types");
+            return type.FullName;
         }
     }
 
