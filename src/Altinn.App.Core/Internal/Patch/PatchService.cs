@@ -90,7 +90,9 @@ public class PatchService : IPatchService
 
         if (!patchResult.IsSuccess)
         {
-            bool testOperationFailed = patchResult.Error!.Contains("is not equal to the indicated value.");
+            bool testOperationFailed =
+                patchResult.Error?.Contains("is not equal to the indicated value.")
+                ?? throw new Exception("JsonPatch failed, but no error message was provided");
             return new DataPatchError()
             {
                 Title = testOperationFailed ? "Precondition in patch failed" : "Patch Operation Failed",
@@ -106,7 +108,7 @@ public class PatchService : IPatchService
             };
         }
 
-        var result = DeserializeModel(oldModel.GetType(), patchResult.Result!);
+        var result = DeserializeModel(oldModel.GetType(), patchResult.Result);
         if (!result.Success)
         {
             return new DataPatchError()
@@ -149,7 +151,7 @@ public class PatchService : IPatchService
         return new DataPatchResult { NewDataModel = result.Ok, ValidationIssues = validationIssues };
     }
 
-    private static ServiceResult<object, string> DeserializeModel(Type type, JsonNode patchResult)
+    private static ServiceResult<object, string> DeserializeModel(Type type, JsonNode? patchResult)
     {
         try
         {

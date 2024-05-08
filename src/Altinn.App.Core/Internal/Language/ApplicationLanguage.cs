@@ -53,6 +53,7 @@ namespace Altinn.App.Core.Internal.Language
             {
                 await using (FileStream fileStream = new(fileInfo.FullName, FileMode.Open, FileAccess.Read))
                 {
+                    // ! TODO: find a better way to deal with deserialization errors here, rather than adding nulls to the list
                     var applicationLanguage = (
                         await JsonSerializer.DeserializeAsync<Models.ApplicationLanguage>(
                             fileStream,
