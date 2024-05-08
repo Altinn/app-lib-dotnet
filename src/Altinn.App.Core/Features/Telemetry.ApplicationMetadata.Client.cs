@@ -5,23 +5,13 @@ namespace Altinn.App.Core.Features;
 
 public partial class Telemetry
 {
-    internal Activity? StartGetApplicationMetadataActivity()
-    {
-        var activity = ActivitySource.StartActivity($"{_prefix}.Get");
-        return activity;
-    }
+    internal Activity? StartGetApplicationMetadataActivity() => ActivitySource.StartActivity($"{_prefix}.Get");
 
-    internal Activity? StartGetApplicationXACMLPolicyActivity()
-    {
-        var activity = ActivitySource.StartActivity($"{_prefix}.GetXACMLPolicy");
-        return activity;
-    }
+    internal Activity? StartGetApplicationXACMLPolicyActivity() =>
+        ActivitySource.StartActivity($"{_prefix}.GetXACMLPolicy");
 
-    internal Activity? StartGetApplicationBPMNProcessActivity()
-    {
-        var activity = ActivitySource.StartActivity($"{_prefix}.GetBPMNProcess");
-        return activity;
-    }
+    internal Activity? StartGetApplicationBPMNProcessActivity() =>
+        ActivitySource.StartActivity($"{_prefix}.GetBPMNProcess");
 
     internal static class ApplicationMetadataClient
     {

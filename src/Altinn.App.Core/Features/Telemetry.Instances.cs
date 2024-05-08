@@ -60,11 +60,7 @@ partial class Telemetry
         return activity;
     }
 
-    internal Activity? StartQueryInstancesActivity()
-    {
-        var activity = ActivitySource.StartActivity($"{_prefix}.Query");
-        return activity;
-    }
+    internal Activity? StartQueryInstancesActivity() => ActivitySource.StartActivity($"{_prefix}.Query");
 
     internal Activity? StartCreateInstanceActivity()
     {

@@ -5,10 +5,7 @@ namespace Altinn.App.Core.Features;
 
 partial class Telemetry
 {
-    internal Activity? StartPrefillDataModelActivity()
-    {
-        return ActivitySource.StartActivity($"{_prefix}.PrefillDataModel");
-    }
+    internal Activity? StartPrefillDataModelActivity() => ActivitySource.StartActivity($"{_prefix}.PrefillDataModel");
 
     internal Activity? StartPrefillDataModelActivity(string? partyId)
     {

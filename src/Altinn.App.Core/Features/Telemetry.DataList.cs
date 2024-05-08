@@ -5,10 +5,7 @@ namespace Altinn.App.Core.Features;
 
 partial class Telemetry
 {
-    internal Activity? StartDataListActivity()
-    {
-        return ActivitySource.StartActivity("DataList.GetAsync");
-    }
+    internal Activity? StartDataListActivity() => ActivitySource.StartActivity("DataList.GetAsync");
 
     internal Activity? StartDataListActivity(InstanceIdentifier instanceIdentifier)
     {

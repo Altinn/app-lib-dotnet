@@ -11,8 +11,5 @@ partial class Telemetry
         return activity;
     }
 
-    internal Activity? StartLookupPartyActivity()
-    {
-        return ActivitySource.StartActivity("PartyClient.LookupParty");
-    }
+    internal Activity? StartLookupPartyActivity() => ActivitySource.StartActivity("PartyClient.LookupParty");
 }
