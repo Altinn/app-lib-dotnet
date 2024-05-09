@@ -14,7 +14,7 @@ public class JsonHelperTests
     /// <summary>
     /// Helper method to setup and get the dictionary of the diffs
     /// </summary>
-    public async Task<Dictionary<string, object?>?> DoTest<TModel>(
+    public static async Task<Dictionary<string, object?>?> DoTest<TModel>(
         TModel model,
         Func<TModel, bool> processDataWriteImpl
     )

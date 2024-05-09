@@ -388,7 +388,7 @@ namespace Altinn.App.Core.Implementation
             return ReadFileByte(filename);
         }
 
-        private byte[] ReadFileByte(string fileName)
+        private static byte[] ReadFileByte(string fileName)
         {
             byte[]? filedata = null;
             if (File.Exists(fileName))
@@ -401,7 +401,7 @@ namespace Altinn.App.Core.Implementation
 #nullable restore
         }
 
-        private byte[] ReadFileContentsFromLegalPath(string legalPath, string filePath)
+        private static byte[] ReadFileContentsFromLegalPath(string legalPath, string filePath)
         {
             var fullFileName = legalPath + filePath;
             if (!PathHelper.ValidateLegalFilePath(legalPath, fullFileName))

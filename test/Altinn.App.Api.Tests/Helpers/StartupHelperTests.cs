@@ -36,7 +36,7 @@ public class StartupHelperTests
     public void IncludeXmlComments_discards_exceptions()
     {
         var testDouble = new SwaggerIncludeXmlCommentsTestDouble();
-        StartupHelper.IncludeXmlComments(testDouble.IncludeXmlCommentsFailingTestDouble);
+        StartupHelper.IncludeXmlComments(SwaggerIncludeXmlCommentsTestDouble.IncludeXmlCommentsFailingTestDouble);
         testDouble.GetStrings().Should().HaveCount(0);
         testDouble.GetBools().Should().HaveCount(0);
     }

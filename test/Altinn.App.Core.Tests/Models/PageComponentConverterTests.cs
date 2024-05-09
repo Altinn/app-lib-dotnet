@@ -32,7 +32,7 @@ public class PageComponentConverterTests
         }
     }
 
-    private HierarchyTestModel[] GenerateTestHierarchy(GroupComponent group)
+    private static HierarchyTestModel[] GenerateTestHierarchy(GroupComponent group)
     {
         var children = new List<HierarchyTestModel>();
         foreach (var child in group.Children)

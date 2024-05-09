@@ -43,7 +43,12 @@ public class DataModel : IDataModelAccessor
         return null;
     }
 
-    private object? GetModelDataRecursive(string[] keys, int index, object currentModel, ReadOnlySpan<int> indicies)
+    private static object? GetModelDataRecursive(
+        string[] keys,
+        int index,
+        object currentModel,
+        ReadOnlySpan<int> indicies
+    )
     {
         if (index == keys.Length)
         {
@@ -98,7 +103,7 @@ public class DataModel : IDataModelAccessor
     {
         if (_serviceModel is null)
         {
-            return new string[0];
+            return [];
         }
 
         var keyParts = key.Split('.');
@@ -135,7 +140,7 @@ public class DataModel : IDataModelAccessor
         return rowIndices.Length == 0 ? null : rowIndices;
     }
 
-    private string[] GetResolvedKeysRecursive(
+    private static string[] GetResolvedKeysRecursive(
         string[] keyParts,
         object currentModel,
         int currentIndex = 0,
@@ -144,12 +149,12 @@ public class DataModel : IDataModelAccessor
     {
         if (currentModel is null)
         {
-            return new string[0];
+            return [];
         }
 
         if (currentIndex == keyParts.Length)
         {
-            return new[] { currentKey };
+            return [currentKey];
         }
 
         var (key, groupIndex) = ParseKeyPart(keyParts[currentIndex]);
@@ -157,7 +162,7 @@ public class DataModel : IDataModelAccessor
         var childModel = prop?.GetValue(currentModel);
         if (childModel is null)
         {
-            return new string[0];
+            return [];
         }
 
         if (childModel is not string && childModel is System.Collections.IEnumerable childModelList)
@@ -403,7 +408,7 @@ public class DataModel : IDataModelAccessor
         return VerifyKeyRecursive(key.Split('.'), 0, _serviceModel.GetType());
     }
 
-    private bool VerifyKeyRecursive(string[] keys, int index, Type currentModel)
+    private static bool VerifyKeyRecursive(string[] keys, int index, Type currentModel)
     {
         if (index == keys.Length)
         {

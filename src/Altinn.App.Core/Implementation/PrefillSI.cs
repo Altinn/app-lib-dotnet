@@ -288,7 +288,7 @@ namespace Altinn.App.Core.Implementation
             }
         }
 
-        private Dictionary<string, string> SwapKeyValuesForPrefil(Dictionary<string, string> externalPrefil)
+        private static Dictionary<string, string> SwapKeyValuesForPrefil(Dictionary<string, string> externalPrefil)
         {
             return externalPrefil.ToDictionary(x => x.Value, x => x.Key);
         }

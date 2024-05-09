@@ -35,7 +35,12 @@ public class JsonDataModel : IDataModelAccessor
         return GetModelDataRecursive(key.Split('.'), 0, _modelRoot, indicies);
     }
 
-    private object? GetModelDataRecursive(string[] keys, int index, JsonNode? currentModel, ReadOnlySpan<int> indicies)
+    private static object? GetModelDataRecursive(
+        string[] keys,
+        int index,
+        JsonNode? currentModel,
+        ReadOnlySpan<int> indicies
+    )
     {
         if (currentModel is null)
         {
@@ -114,7 +119,12 @@ public class JsonDataModel : IDataModelAccessor
         return GetModelDataCountRecurs(key.Split('.'), 0, _modelRoot, indicies);
     }
 
-    private int? GetModelDataCountRecurs(string[] keys, int index, JsonNode? currentModel, ReadOnlySpan<int> indicies)
+    private static int? GetModelDataCountRecurs(
+        string[] keys,
+        int index,
+        JsonNode? currentModel,
+        ReadOnlySpan<int> indicies
+    )
     {
         if (index == keys.Length || currentModel is null)
         {
@@ -169,14 +179,14 @@ public class JsonDataModel : IDataModelAccessor
     {
         if (_modelRoot is null)
         {
-            return new string[0];
+            return [];
         }
 
         var keyParts = key.Split('.');
         return GetResolvedKeysRecursive(keyParts, _modelRoot);
     }
 
-    private string[] GetResolvedKeysRecursive(
+    private static string[] GetResolvedKeysRecursive(
         string[] keyParts,
         JsonNode? currentModel,
         int currentIndex = 0,
@@ -185,12 +195,12 @@ public class JsonDataModel : IDataModelAccessor
     {
         if (currentModel is null)
         {
-            return new string[0];
+            return [];
         }
 
         if (currentIndex == keyParts.Length)
         {
-            return new[] { currentKey };
+            return [currentKey];
         }
 
         var (key, groupIndex) = DataModel.ParseKeyPart(keyParts[currentIndex]);
@@ -199,7 +209,7 @@ public class JsonDataModel : IDataModelAccessor
             || !currentModel.AsObject().TryGetPropertyValue(key, out JsonNode? childModel)
         )
         {
-            return new string[0];
+            return [];
         }
 
         if (childModel is JsonArray childArray)
