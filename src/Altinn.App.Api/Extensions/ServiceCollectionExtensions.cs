@@ -151,6 +151,10 @@ namespace Altinn.App.Api.Extensions
         {
             var appId = StartupHelper.GetApplicationId().Split("/")[1];
             var appVersion = config.GetSection("AppSettings").GetValue<string>("AppVersion");
+            if (string.IsNullOrWhiteSpace(appVersion))
+            {
+                appVersion = "Local";
+            }
             services.AddHostedService<TelemetryInitialization>();
             services.AddSingleton<Telemetry>();
 
