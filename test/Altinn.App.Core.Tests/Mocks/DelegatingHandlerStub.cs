@@ -1,4 +1,4 @@
-﻿#nullable disable
+#nullable disable
 using System.Net;
 
 namespace Altinn.App.PlatformServices.Tests.Mocks
@@ -17,7 +17,10 @@ namespace Altinn.App.PlatformServices.Tests.Mocks
             _handlerFunc = handlerFunc;
         }
 
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken
+        )
         {
             return _handlerFunc(request, cancellationToken);
         }

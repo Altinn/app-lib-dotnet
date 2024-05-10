@@ -1,4 +1,4 @@
-﻿using Altinn.App.Core.Internal.Secrets;
+using Altinn.App.Core.Internal.Secrets;
 
 namespace Altinn.App.Core.Internal.Events
 {
@@ -13,7 +13,7 @@ namespace Altinn.App.Core.Internal.Events
 
         /// <summary>
         /// Provides a new instance of <see cref="KeyVaultEventSecretCodeProvider"/>
-        /// This 
+        /// This
         /// </summary>
         /// <param name="keyVaultClient"></param>
         public KeyVaultEventSecretCodeProvider(ISecretsClient keyVaultClient)
@@ -33,7 +33,9 @@ namespace Altinn.App.Core.Internal.Events
             string secretCode = await _keyVaultClient.GetSecretAsync(secretKey);
             if (secretCode == null)
             {
-                throw new ArgumentException($"Unable to fetch event subscription secret code from key vault with the specified secret {secretKey}.");
+                throw new ArgumentException(
+                    $"Unable to fetch event subscription secret code from key vault with the specified secret {secretKey}."
+                );
             }
 
             _secretCode = secretCode;

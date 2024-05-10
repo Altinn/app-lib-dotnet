@@ -1,8 +1,8 @@
-﻿namespace Altinn.App.Core.Internal.Auth
+namespace Altinn.App.Core.Internal.Auth
 {
     /// <summary>
     /// Defines the methods required for an implementation of a user JSON Web Token provider.
-    /// The provider is used by client implementations that needs the user token in requests 
+    /// The provider is used by client implementations that needs the user token in requests
     /// against other systems.
     /// </summary>
     public interface IUserTokenProvider

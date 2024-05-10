@@ -18,12 +18,19 @@ public class AltinnSignatureConfiguration
     /// Set what dataTypeId that should be used for storing the signature
     /// </summary>
     [XmlElement("signatureDataType", Namespace = "http://altinn.no/process")]
+#nullable disable
     public string SignatureDataType { get; set; }
 
+#nullable restore
+
     /// <summary>
-    /// Define what signature dataypes this signature should be unique from. Users that have sign any of the signatures in the list will not be able to sign this signature 
+    /// Define what signature dataypes this signature should be unique from. Users that have sign any of the signatures in the list will not be able to sign this signature
     /// </summary>
-    [XmlArray(ElementName = "uniqueFromSignaturesInDataTypes", Namespace = "http://altinn.no/process", IsNullable = true)]
+    [XmlArray(
+        ElementName = "uniqueFromSignaturesInDataTypes",
+        Namespace = "http://altinn.no/process",
+        IsNullable = true
+    )]
     [XmlArrayItem(ElementName = "dataType", Namespace = "http://altinn.no/process")]
     public List<string> UniqueFromSignaturesInDataTypes { get; set; } = new();
 }

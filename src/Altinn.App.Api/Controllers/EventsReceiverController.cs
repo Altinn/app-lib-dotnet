@@ -1,4 +1,4 @@
-﻿#nullable disable
+#nullable disable
 using System.Text.Json;
 using System.Threading.Tasks;
 using Altinn.App.Core.Configuration;
@@ -29,7 +29,8 @@ namespace Altinn.App.Api.Controllers
             IEventHandlerResolver eventHandlerResolver,
             ILogger<EventsReceiverController> logger,
             IOptions<PlatformSettings> options,
-            IEventSecretCodeProvider secretCodeProvider)
+            IEventSecretCodeProvider secretCodeProvider
+        )
         {
             _eventHandlerResolver = eventHandlerResolver;
             _logger = logger;
@@ -53,7 +54,10 @@ namespace Altinn.App.Api.Controllers
 
             if (cloudEvent.Type == null)
             {
-                _logger.LogError("CloudEvent.Type is null, unable to process event! Data received: {data}", JsonSerializer.Serialize(cloudEvent));
+                _logger.LogError(
+                    "CloudEvent.Type is null, unable to process event! Data received: {data}",
+                    JsonSerializer.Serialize(cloudEvent)
+                );
                 return BadRequest();
             }
 
@@ -73,7 +77,13 @@ namespace Altinn.App.Api.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unable to process event {eventType}. An exception was raised while processing message {messageid}. Exception thrown {exceptionMessage}", cloudEvent.Type, cloudEvent.Id, ex.Message);
+                _logger.LogError(
+                    ex,
+                    "Unable to process event {eventType}. An exception was raised while processing message {messageid}. Exception thrown {exceptionMessage}",
+                    cloudEvent.Type,
+                    cloudEvent.Id,
+                    ex.Message
+                );
                 return new StatusCodeResult(500);
             }
         }

@@ -10,29 +10,16 @@ namespace Altinn.App.PlatformServices.Tests.Implementation;
 public class NullPdfFormatterTests
 {
     [Fact]
-    public async void NullPdfFormatter_FormatPdf_returns_Layoutsettings_as_is()
+    public async Task NullPdfFormatter_FormatPdf_returns_Layoutsettings_as_is()
     {
         // Arrange
         var layoutSettings = new LayoutSettings()
         {
-            Components = new Components()
-            {
-                ExcludeFromPdf = new List<string>()
-                {
-                    "excludeFromPdf"
-                }
-            },
+            Components = new Components() { ExcludeFromPdf = new List<string>() { "excludeFromPdf" } },
             Pages = new Pages()
             {
-                Order = new List<string>()
-                {
-                    "Page1",
-                    "PageExcludeFromPdf"
-                },
-                ExcludeFromPdf = new List<string>()
-                {
-                    "PageExcludeFromPdf"
-                }
+                Order = new List<string>() { "Page1", "PageExcludeFromPdf" },
+                ExcludeFromPdf = new List<string>() { "PageExcludeFromPdf" }
             }
         };
 

@@ -11,6 +11,7 @@ namespace Altinn.App.Core.Internal.Process.Elements
         /// Gets or sets the ID of a sequence flow
         /// </summary>
         [XmlAttribute("id")]
+#nullable disable
         public string Id { get; set; }
 
         /// <summary>
@@ -26,10 +27,12 @@ namespace Altinn.App.Core.Internal.Process.Elements
         public string TargetRef { get; set; }
 
         /// <summary>
-        /// Gets or sets the flowtype of a sequence flow. 
+        /// Gets or sets the flowtype of a sequence flow.
         /// </summary>
         [XmlAttribute("flowtype", Namespace = "http://altinn.no")]
         public string FlowType { get; set; }
+
+#nullable restore
 
         /// <summary>
         /// Gets or sets the condition expression of a sequence flow

@@ -1,4 +1,4 @@
-﻿#nullable disable
+#nullable disable
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.DataLists;
 using Altinn.App.Core.Models;
@@ -41,8 +41,18 @@ namespace Altinn.App.PlatformServices.Tests.DataLists
                 {
                     ListItems = new List<object>
                     {
-                        new { Name = "Norway", Code = "NO", Phone = 47 },
-                        new { Name = "Sweden", Code = "SE", Phone = 46 },
+                        new
+                        {
+                            Name = "Norway",
+                            Code = "NO",
+                            Phone = 47
+                        },
+                        new
+                        {
+                            Name = "Sweden",
+                            Code = "SE",
+                            Phone = 46
+                        },
                     }
                 };
 

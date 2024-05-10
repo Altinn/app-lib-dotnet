@@ -1,23 +1,17 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using System.Xml.Serialization;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Extensions;
-using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers.Extensions;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Profile;
-using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Profile.Models;
-using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
-
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
-using Microsoft.IdentityModel.Tokens;
-using Newtonsoft.Json;
 
 namespace Altinn.App.Core.Internal.Pdf;
 
@@ -55,7 +49,8 @@ public class PdfService : IPdfService
         IProfileClient profileClient,
         IPdfGeneratorClient pdfGeneratorClient,
         IOptions<PdfGeneratorSettings> pdfGeneratorSettings,
-        IOptions<GeneralSettings> generalSettings)
+        IOptions<GeneralSettings> generalSettings
+    )
     {
         _resourceService = appResources;
         _dataClient = dataClient;
@@ -66,13 +61,12 @@ public class PdfService : IPdfService
         _generalSettings = generalSettings.Value;
     }
 
-
     /// <inheritdoc/>
     public async Task GenerateAndStorePdf(Instance instance, string taskId, CancellationToken ct)
     {
         string language = GetOverriddenLanguage();
         // Avoid a costly call if the language is allready overriden by the user
-        language = language.IsNullOrEmpty() ? await GetLanguage() : language;
+        language = string.IsNullOrEmpty(language) ? await GetLanguage() : language;
 
         var pdfContent = await GeneratePdfContent(instance, taskId, ct, language);
 
@@ -80,13 +74,7 @@ public class PdfService : IPdfService
 
         TextResource? textResource = await GetTextResource(appIdentifier.App, appIdentifier.Org, language);
         string fileName = GetFileName(instance, textResource);
-        await _dataClient.InsertBinaryData(
-            instance.Id,
-            PdfElementType,
-            PdfContentType,
-            fileName,
-            pdfContent,
-            taskId);
+        await _dataClient.InsertBinaryData(instance.Id, PdfElementType, PdfContentType, fileName, pdfContent, taskId);
     }
 
     /// <inheritdoc/>
@@ -94,15 +82,22 @@ public class PdfService : IPdfService
     {
         var language = GetOverriddenLanguage();
         // Avoid a costly call if the language is allready overriden by the user
-        language = language.IsNullOrEmpty() ? await GetLanguage() : language;
+        language = string.IsNullOrEmpty(language) ? await GetLanguage() : language;
 
         return await GeneratePdfContent(instance, taskId, ct, language);
     }
 
-    private async Task<Stream> GeneratePdfContent(Instance instance, string taskId, CancellationToken ct, string language)
+    private async Task<Stream> GeneratePdfContent(
+        Instance instance,
+        string taskId,
+        CancellationToken ct,
+        string language
+    )
     {
         var baseUrl = _generalSettings.FormattedExternalAppBaseUrl(new AppIdentifier(instance));
-        var pagePath = _pdfGeneratorSettings.AppPdfPagePathTemplate.ToLowerInvariant().Replace("{instanceid}", instance.Id);
+        var pagePath = _pdfGeneratorSettings
+            .AppPdfPagePathTemplate.ToLowerInvariant()
+            .Replace("{instanceid}", instance.Id);
 
         Uri uri = BuildUri(baseUrl, pagePath, language);
 
@@ -128,7 +123,6 @@ public class PdfService : IPdfService
         return new Uri(url);
     }
 
-
     private async Task<string> GetLanguage()
     {
         string language = "nb";
@@ -138,7 +132,9 @@ public class PdfService : IPdfService
 
         if (userId != null)
         {
-            UserProfile userProfile = await _profileClient.GetUserProfile((int)userId);
+            UserProfile userProfile =
+                await _profileClient.GetUserProfile((int)userId)
+                ?? throw new Exception("Could not get user profile while getting language");
 
             if (!string.IsNullOrEmpty(userProfile.ProfileSettingPreference?.Language))
             {
@@ -156,7 +152,9 @@ public class PdfService : IPdfService
         if (_httpContextAccessor.HttpContext != null)
         {
             StringValues queryLanguage;
-            bool hasQueryLanguage = _httpContextAccessor.HttpContext.Request.Query.TryGetValue("language", out queryLanguage) || _httpContextAccessor.HttpContext.Request.Query.TryGetValue("lang", out queryLanguage);
+            bool hasQueryLanguage =
+                _httpContextAccessor.HttpContext.Request.Query.TryGetValue("language", out queryLanguage)
+                || _httpContextAccessor.HttpContext.Request.Query.TryGetValue("lang", out queryLanguage);
             if (hasQueryLanguage)
             {
                 return queryLanguage.ToString();
@@ -192,8 +190,8 @@ public class PdfService : IPdfService
         }
 
         TextResourceElement? titleText =
-            textResource.Resources.Find(textResourceElement => textResourceElement.Id.Equals("appName")) ??
-            textResource.Resources.Find(textResourceElement => textResourceElement.Id.Equals("ServiceName"));
+            textResource.Resources.Find(textResourceElement => textResourceElement.Id.Equals("appName"))
+            ?? textResource.Resources.Find(textResourceElement => textResourceElement.Id.Equals("ServiceName"));
 
         if (titleText != null && !string.IsNullOrEmpty(titleText.Value))
         {

@@ -8,14 +8,12 @@ using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
-
 using AltinnCore.Authentication.Utils;
-
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
-
 using Newtonsoft.Json;
 
 namespace Altinn.App.Core.Infrastructure.Clients.Storage
@@ -43,13 +41,17 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             ILogger<InstanceClient> logger,
             IHttpContextAccessor httpContextAccessor,
             HttpClient httpClient,
-            IOptionsMonitor<AppSettings> settings)
+            IOptionsMonitor<AppSettings> settings
+        )
         {
             _logger = logger;
             _httpContextAccessor = httpContextAccessor;
             _settings = settings.CurrentValue;
             httpClient.BaseAddress = new Uri(platformSettings.Value.ApiStorageEndpoint);
-            httpClient.DefaultRequestHeaders.Add(General.SubscriptionKeyHeaderName, platformSettings.Value.SubscriptionKey);
+            httpClient.DefaultRequestHeaders.Add(
+                General.SubscriptionKeyHeaderName,
+                platformSettings.Value.SubscriptionKey
+            );
             httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
             _client = httpClient;
@@ -61,7 +63,10 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             string instanceIdentifier = $"{instanceOwnerPartyId}/{instanceGuid}";
 
             string apiUrl = $"instances/{instanceIdentifier}";
-            string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
+            string token = JwtTokenUtil.GetTokenFromContext(
+                _httpContextAccessor.HttpContext,
+                _settings.RuntimeCookieName
+            );
 
             HttpResponseMessage response = await _client.GetAsync(token, apiUrl);
             if (response.StatusCode == HttpStatusCode.OK)
@@ -91,18 +96,13 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         /// <inheritdoc />
         public async Task<List<Instance>> GetInstances(Dictionary<string, StringValues> queryParams)
         {
-            StringBuilder apiUrl = new($"instances?");
+            var apiUrl = QueryHelpers.AddQueryString("instances", queryParams);
 
-            foreach (var queryParameter in queryParams)
-            {
-                foreach (string value in queryParameter.Value)
-                {
-                    apiUrl.Append($"&{queryParameter.Key}={value}");
-                }
-            }
-
-            string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
-            QueryResponse<Instance> queryResponse = await QueryInstances(token, apiUrl.ToString());
+            string token = JwtTokenUtil.GetTokenFromContext(
+                _httpContextAccessor.HttpContext,
+                _settings.RuntimeCookieName
+            );
+            QueryResponse<Instance> queryResponse = await QueryInstances(token, apiUrl);
 
             if (queryResponse.Count == 0)
             {
@@ -129,7 +129,9 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 string responseString = await response.Content.ReadAsStringAsync();
-                QueryResponse<Instance> queryResponse = JsonConvert.DeserializeObject<QueryResponse<Instance>>(responseString)!;
+                QueryResponse<Instance> queryResponse = JsonConvert.DeserializeObject<QueryResponse<Instance>>(
+                    responseString
+                )!;
                 return queryResponse;
             }
             else
@@ -145,7 +147,10 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             ProcessState processState = instance.Process;
 
             string apiUrl = $"instances/{instance.Id}/process";
-            string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
+            string token = JwtTokenUtil.GetTokenFromContext(
+                _httpContextAccessor.HttpContext,
+                _settings.RuntimeCookieName
+            );
 
             string processStateString = JsonConvert.SerializeObject(processState);
             _logger.LogInformation($"update process state: {processStateString}");
@@ -170,19 +175,30 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         public async Task<Instance> CreateInstance(string org, string app, Instance instanceTemplate)
         {
             string apiUrl = $"instances?appId={org}/{app}";
-            string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
+            string token = JwtTokenUtil.GetTokenFromContext(
+                _httpContextAccessor.HttpContext,
+                _settings.RuntimeCookieName
+            );
 
-            StringContent content = new StringContent(JsonConvert.SerializeObject(instanceTemplate), Encoding.UTF8, "application/json");
+            StringContent content = new StringContent(
+                JsonConvert.SerializeObject(instanceTemplate),
+                Encoding.UTF8,
+                "application/json"
+            );
             HttpResponseMessage response = await _client.PostAsync(token, apiUrl, content);
 
             if (response.IsSuccessStatusCode)
             {
-                Instance createdInstance = JsonConvert.DeserializeObject<Instance>(await response.Content.ReadAsStringAsync())!;
+                Instance createdInstance = JsonConvert.DeserializeObject<Instance>(
+                    await response.Content.ReadAsStringAsync()
+                )!;
 
                 return createdInstance;
             }
 
-            _logger.LogError($"Unable to create instance {response.StatusCode} - {await response.Content.ReadAsStringAsync()}");
+            _logger.LogError(
+                $"Unable to create instance {response.StatusCode} - {await response.Content.ReadAsStringAsync()}"
+            );
             throw await PlatformHttpException.CreateAsync(response);
         }
 
@@ -190,7 +206,10 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         public async Task<Instance> AddCompleteConfirmation(int instanceOwnerPartyId, Guid instanceGuid)
         {
             string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}/complete";
-            string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
+            string token = JwtTokenUtil.GetTokenFromContext(
+                _httpContextAccessor.HttpContext,
+                _settings.RuntimeCookieName
+            );
 
             HttpResponseMessage response = await _client.PostAsync(token, apiUrl, new StringContent(string.Empty));
 
@@ -208,7 +227,10 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         public async Task<Instance> UpdateReadStatus(int instanceOwnerPartyId, Guid instanceGuid, string readStatus)
         {
             string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}/readstatus?status={readStatus}";
-            string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
+            string token = JwtTokenUtil.GetTokenFromContext(
+                _httpContextAccessor.HttpContext,
+                _settings.RuntimeCookieName
+            );
 
             HttpResponseMessage response = await _client.PutAsync(token, apiUrl, new StringContent(string.Empty));
 
@@ -219,17 +241,28 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
                 return instance;
             }
 
-            _logger.LogError($"Could not update read status for instance {instanceOwnerPartyId}/{instanceGuid}. Request failed with status code {response.StatusCode}");
+            _logger.LogError(
+                $"Could not update read status for instance {instanceOwnerPartyId}/{instanceGuid}. Request failed with status code {response.StatusCode}"
+            );
+#nullable disable
             return null;
+#nullable restore
         }
 
         /// <inheritdoc/>
         public async Task<Instance> UpdateSubstatus(int instanceOwnerPartyId, Guid instanceGuid, Substatus substatus)
         {
             string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}/substatus";
-            string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
+            string token = JwtTokenUtil.GetTokenFromContext(
+                _httpContextAccessor.HttpContext,
+                _settings.RuntimeCookieName
+            );
 
-            HttpResponseMessage response = await _client.PutAsync(token, apiUrl, new StringContent(JsonConvert.SerializeObject(substatus), Encoding.UTF8, "application/json"));
+            HttpResponseMessage response = await _client.PutAsync(
+                token,
+                apiUrl,
+                new StringContent(JsonConvert.SerializeObject(substatus), Encoding.UTF8, "application/json")
+            );
 
             if (response.StatusCode == HttpStatusCode.OK)
             {
@@ -242,12 +275,23 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         }
 
         /// <inheritdoc />
-        public async Task<Instance> UpdatePresentationTexts(int instanceOwnerPartyId, Guid instanceGuid, PresentationTexts presentationTexts)
+        public async Task<Instance> UpdatePresentationTexts(
+            int instanceOwnerPartyId,
+            Guid instanceGuid,
+            PresentationTexts presentationTexts
+        )
         {
             string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}/presentationtexts";
-            string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
+            string token = JwtTokenUtil.GetTokenFromContext(
+                _httpContextAccessor.HttpContext,
+                _settings.RuntimeCookieName
+            );
 
-            HttpResponseMessage response = await _client.PutAsync(token, apiUrl, new StringContent(JsonConvert.SerializeObject(presentationTexts), Encoding.UTF8, "application/json"));
+            HttpResponseMessage response = await _client.PutAsync(
+                token,
+                apiUrl,
+                new StringContent(JsonConvert.SerializeObject(presentationTexts), Encoding.UTF8, "application/json")
+            );
 
             if (response.StatusCode == HttpStatusCode.OK)
             {
@@ -263,9 +307,16 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         public async Task<Instance> UpdateDataValues(int instanceOwnerPartyId, Guid instanceGuid, DataValues dataValues)
         {
             string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}/datavalues";
-            string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
+            string token = JwtTokenUtil.GetTokenFromContext(
+                _httpContextAccessor.HttpContext,
+                _settings.RuntimeCookieName
+            );
 
-            HttpResponseMessage response = await _client.PutAsync(token, apiUrl, new StringContent(JsonConvert.SerializeObject(dataValues), Encoding.UTF8, "application/json"));
+            HttpResponseMessage response = await _client.PutAsync(
+                token,
+                apiUrl,
+                new StringContent(JsonConvert.SerializeObject(dataValues), Encoding.UTF8, "application/json")
+            );
 
             if (response.StatusCode == HttpStatusCode.OK)
             {
@@ -281,7 +332,10 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         public async Task<Instance> DeleteInstance(int instanceOwnerPartyId, Guid instanceGuid, bool hard)
         {
             string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}?hard={hard}";
-            string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
+            string token = JwtTokenUtil.GetTokenFromContext(
+                _httpContextAccessor.HttpContext,
+                _settings.RuntimeCookieName
+            );
 
             HttpResponseMessage response = await _client.DeleteAsync(token, apiUrl);
 

@@ -1,4 +1,4 @@
-﻿#nullable disable
+#nullable disable
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Enums;
@@ -49,7 +49,7 @@ namespace Altinn.App.Api.Models
 
         /// <summary>
         /// Adds a individual data element file scan result and updates the aggregated file scan result status
-        /// </summary>        
+        /// </summary>
         public void AddFileScanResult(DataElementFileScanResult dataElementFileScanResult)
         {
             if (dataElementFileScanResult.FileScanResult != FileScanResult.NotApplicable)
@@ -68,7 +68,6 @@ namespace Altinn.App.Api.Models
             {
                 FileScanResult = FileScanResult.Infected;
             }
-
             // This implicitly states that there are no infected files and that they
             // either have to be clean or pending - so any pending would result in Pending status
             // and if there are no Pending and no Infected they are all Clean.

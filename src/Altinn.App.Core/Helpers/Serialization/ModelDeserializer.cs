@@ -2,7 +2,6 @@ using System.Text;
 using System.Text.Json;
 using System.Xml;
 using System.Xml.Serialization;
-
 using Microsoft.Extensions.Logging;
 
 namespace Altinn.App.Core.Helpers.Serialization
@@ -91,7 +90,7 @@ namespace Altinn.App.Core.Helpers.Serialization
         {
             Error = null;
 
-            string streamContent = null;
+            string? streamContent = null;
             try
             {
                 // In this first try block we assume that the namespace is the same in the model
@@ -117,6 +116,11 @@ namespace Altinn.App.Core.Helpers.Serialization
                     attributes.XmlRoot = new XmlRootAttribute(elementName);
                     attributeOverrides.Add(_modelType, attributes);
 
+                    if (string.IsNullOrWhiteSpace(streamContent))
+                    {
+                        throw new Exception("No XML content read from stream");
+                    }
+
                     using XmlTextReader xmlTextReader = new XmlTextReader(new StringReader(streamContent));
                     XmlSerializer serializer = new XmlSerializer(_modelType, attributeOverrides);
 
@@ -125,7 +129,7 @@ namespace Altinn.App.Core.Helpers.Serialization
                 catch (InvalidOperationException invalidOperationException)
                 {
                     // One possible fail condition is if the XML has a namespace, but the model does not, or that the namespaces are different.
-                    Error = $"{invalidOperationException.Message} {invalidOperationException?.InnerException.Message}";
+                    Error = $"{invalidOperationException.Message} {invalidOperationException?.InnerException?.Message}";
                     return null;
                 }
             }

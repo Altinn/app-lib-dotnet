@@ -1,6 +1,6 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Primitives;
 using System.Net.Http.Headers;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Primitives;
 
 namespace Altinn.App.Core.Extensions
 {

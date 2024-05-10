@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 
 namespace Altinn.App.Core.Models
 {
@@ -12,6 +12,8 @@ namespace Altinn.App.Core.Models
         /// Example: "nb"
         /// </summary>
         [JsonPropertyName("language")]
+#nullable disable
         public string Language { get; set; }
+#nullable restore
     }
 }

@@ -8,15 +8,13 @@ namespace Altinn.App.Api.Tests.Mocks;
 
 public class ProfileClientMock : IProfileClient
 {
-    private static readonly JsonSerializerOptions _jsonSerializerOptions = new(JsonSerializerDefaults.Web)
-    {
-        Converters = { new JsonStringEnumConverter() }
-    };
+    private static readonly JsonSerializerOptions _jsonSerializerOptions =
+        new(JsonSerializerDefaults.Web) { Converters = { new JsonStringEnumConverter() } };
 
-    public async Task<UserProfile> GetUserProfile(int userId)
+    public async Task<UserProfile?> GetUserProfile(int userId)
     {
         var folder = TestData.GetRegisterProfilePath();
         var file = Path.Join(folder, $"{userId}.json");
-        return (await JsonSerializer.DeserializeAsync<UserProfile>(File.OpenRead(file), _jsonSerializerOptions))!;
+        return await JsonSerializer.DeserializeAsync<UserProfile>(File.OpenRead(file), _jsonSerializerOptions);
     }
 }

@@ -1,7 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Layout;
@@ -75,7 +74,8 @@ public class ComponentContextForTestSpec
     public string CurrentPageName { get; set; } = default!;
 
     [JsonPropertyName("children")]
-    public IEnumerable<ComponentContextForTestSpec> ChildContexts { get; set; } = Enumerable.Empty<ComponentContextForTestSpec>();
+    public IEnumerable<ComponentContextForTestSpec> ChildContexts { get; set; } =
+        Enumerable.Empty<ComponentContextForTestSpec>();
 
     public ComponentContext ToContext(LayoutModel model)
     {
@@ -84,11 +84,16 @@ public class ComponentContextForTestSpec
 
     public static ComponentContextForTestSpec FromContext(ComponentContext context)
     {
+        ArgumentNullException.ThrowIfNull(context.Component);
+        ArgumentNullException.ThrowIfNull(context.Component.Id);
+        ArgumentNullException.ThrowIfNull(context.Component.PageId);
+
         return new ComponentContextForTestSpec
         {
             ComponentId = context.Component.Id,
             CurrentPageName = context.Component.PageId,
-            ChildContexts = context.ChildContexts?.Select(c => FromContext(c)) ?? Enumerable.Empty<ComponentContextForTestSpec>(),
+            ChildContexts =
+                context.ChildContexts?.Select(c => FromContext(c)) ?? Enumerable.Empty<ComponentContextForTestSpec>(),
             RowIndices = context.RowIndices
         };
     }

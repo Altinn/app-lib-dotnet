@@ -12,20 +12,18 @@ namespace Altinn.App.Api.Tests.Controllers;
 
 public class ApplicationMetadataControllerTests : ApiTestBase, IClassFixture<WebApplicationFactory<Program>>
 {
-    private static readonly JsonSerializerOptions _jsonSerializerOptions = new(JsonSerializerDefaults.Web);
-
     private readonly Mock<IAppMetadata> _appMetadataMock = new();
 
-    public ApplicationMetadataControllerTests(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper) : base(factory, outputHelper)
-    {
-    }
+    public ApplicationMetadataControllerTests(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper)
+        : base(factory, outputHelper) { }
 
     [Fact]
     public async Task VeryfyExtraFieldsInApplicationMetadataIsPreserved()
     {
         var org = "tdd";
         var appId = "contributer-restriction";
-        var appMetadataSample = $"{{\"id\":\"{org}/{appId}\",\"org\":\"{org}\",\"title\":{{\"nb\":\"Bestillingseksempelapp\"}},\"dataTypes\":[],\"partyTypesAllowed\":{{}},\"extra_Unknown_list\":[3,\"tre\",{{\"verdi\":3}}]}}";
+        var appMetadataSample =
+            $"{{\"id\":\"{org}/{appId}\",\"org\":\"{org}\",\"title\":{{\"nb\":\"Bestillingseksempelapp\"}},\"dataTypes\":[],\"partyTypesAllowed\":{{}},\"extra_Unknown_list\":[3,\"tre\",{{\"verdi\":3}}]}}";
         var application = JsonSerializer.Deserialize<ApplicationMetadata>(appMetadataSample, _jsonSerializerOptions)!;
         _appMetadataMock.Setup(m => m.GetApplicationMetadata()).ReturnsAsync(application);
         OverrideServicesForThisTest = (services) =>

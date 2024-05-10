@@ -10,18 +10,12 @@ namespace Altinn.App.PlatformServices.Tests.Features.DataProcessing;
 public class NullInstantiationProcessTests
 {
     [Fact]
-    public async void NullInstantiationTest_DataCreation_changes_nothing()
+    public async Task NullInstantiationTest_DataCreation_changes_nothing()
     {
         // Arrange
         var nullInstantiation = new NullInstantiationProcessor();
-        DummyModel expected = new DummyModel()
-        {
-            Name = "Test",
-        };
-        object input = new DummyModel()
-        {
-            Name = "Test"
-        };
+        DummyModel expected = new DummyModel() { Name = "Test", };
+        object input = new DummyModel() { Name = "Test" };
 
         // Act
         await nullInstantiation.DataCreation(new Instance(), input, new Dictionary<string, string>());

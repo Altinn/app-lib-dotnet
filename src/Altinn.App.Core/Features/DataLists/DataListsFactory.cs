@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -19,6 +19,7 @@ namespace Altinn.App.Core.Features.DataLists
         {
             DataListProviders = dataListProviders;
         }
+
         private IEnumerable<IDataListProvider> DataListProviders { get; }
 
         /// <summary>

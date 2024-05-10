@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,6 +15,7 @@ namespace Altinn.App.Core.Models
         /// Gets or sets the list of objects.
         /// </summary>
         public List<object> ListItems { get; set; } = new List<object>();
+
         /// <summary>
         /// Gets or sets the metadata of the DataList.
         /// </summary>

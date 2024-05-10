@@ -6,9 +6,9 @@ namespace Altinn.App.Core.Configuration
     /// <summary>
     /// Class that represents the ServiceRepositorySettings
     /// </summary>
+    // TODO: IOptions validation so that we know which of these properties are required
     public class AppSettings
     {
-
         /// <summary>
         /// Constant for the location of json schema file
         /// </summary>
@@ -62,7 +62,13 @@ namespace Altinn.App.Core.Configuration
         /// <summary>
         /// Gets or sets the BaseResourceFolderContainer that identifies where in the docker container the runtime can find files needed
         /// </summary>
+        // TODO: can this be removed?
+        // Env var being set is ServiceRepositorySettings__BaseResourceFolderContainer, but this prop is not used anywhere
+#nullable disable
+        [Obsolete("This is not used, and will be removed in the next major version")]
         public string BaseResourceFolderContainer { get; set; }
+
+#nullable restore
 
         /// <summary>
         /// Gets or sets The name of the FormLayout json file Name
@@ -132,7 +138,8 @@ namespace Altinn.App.Core.Configuration
         /// <summary>
         /// Gets or sets default Bootstrap url
         /// </summary>
-        public string DefaultBootstrapUrl { get; set; } = "https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css";
+        public string DefaultBootstrapUrl { get; set; } =
+            "https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css";
 
         /// <summary>
         /// Gets or sets the filename for the instantiation handler
@@ -142,6 +149,7 @@ namespace Altinn.App.Core.Configuration
         /// <summary>
         /// Open Id Connect Well known endpoint
         /// </summary>
+#nullable disable
         public string OpenIdWellKnownEndpoint { get; set; }
 
         /// <summary>
@@ -153,6 +161,8 @@ namespace Altinn.App.Core.Configuration
         /// Name of the cookie for runtime
         /// </summary>
         public string RuntimeCookieName { get; set; }
+
+#nullable restore
 
         /// <summary>
         /// Option to disable csrf check
@@ -184,9 +194,12 @@ namespace Altinn.App.Core.Configuration
         public string EFormidlingSender { get; set; } = "910075918";
 
         /// <summary>
-        /// Gets or sets the version of the application. 
+        /// Gets or sets the version of the application.
         /// </summary>
+#nullable disable
         public string AppVersion { get; set; }
+
+#nullable restore
 
         /// <summary>
         /// Enable the functionality to load layout in backend and remove data from hidden components before task completion

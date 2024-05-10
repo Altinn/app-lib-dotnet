@@ -8,6 +8,7 @@ namespace Altinn.App.Core.Models
     /// </summary>
     public class UserContext
     {
+#nullable disable
         /// <summary>
         /// Gets or sets the social security number
         /// </summary>
@@ -33,6 +34,8 @@ namespace Altinn.App.Core.Models
         /// </summary>
         public ClaimsPrincipal User { get; set; }
 
+#nullable restore
+
         /// <summary>
         /// Gets or sets the ID of the user
         /// </summary>
@@ -44,7 +47,7 @@ namespace Altinn.App.Core.Models
         public int PartyId { get; set; }
 
         /// <summary>
-        /// Gets or sets the current 
+        /// Gets or sets the current
         /// </summary>
         public int AuthenticationLevel { get; set; }
     }

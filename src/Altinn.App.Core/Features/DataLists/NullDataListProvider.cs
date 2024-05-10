@@ -1,9 +1,9 @@
-﻿using Altinn.App.Core.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Altinn.App.Core.Models;
 
 namespace Altinn.App.Core.Features.DataLists
 {
@@ -20,7 +20,9 @@ namespace Altinn.App.Core.Features.DataLists
         /// <inheritdoc/>
         public Task<DataList> GetDataListAsync(string? language, Dictionary<string, string> keyValuePairs)
         {
+#nullable disable
             return Task.FromResult(new DataList() { ListItems = null });
+#nullable restore
         }
     }
 }

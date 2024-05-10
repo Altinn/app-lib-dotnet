@@ -1,4 +1,4 @@
-﻿namespace Altinn.App.Core.Extensions
+namespace Altinn.App.Core.Extensions
 {
     /// <summary>
     /// Extension methods for string
@@ -29,7 +29,7 @@
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <returns>true if it contains exactly one, false if it contains zero or more than one</returns>
         public static bool ContainsExactlyOne(this string s, char ch)

@@ -1,4 +1,4 @@
-﻿#nullable disable
+#nullable disable
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace Altinn.App.Api.Infrastructure.Health
@@ -14,10 +14,12 @@ namespace Altinn.App.Api.Infrastructure.Health
         /// <param name="context">The healtcheck context</param>
         /// <param name="cancellationToken">The cancellationtoken</param>
         /// <returns>The health check result</returns>
-        public Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
+        public Task<HealthCheckResult> CheckHealthAsync(
+            HealthCheckContext context,
+            CancellationToken cancellationToken = default
+        )
         {
-            return Task.FromResult(
-                HealthCheckResult.Healthy("A healthy result."));
+            return Task.FromResult(HealthCheckResult.Healthy("A healthy result."));
         }
     }
 }

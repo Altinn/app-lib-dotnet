@@ -43,7 +43,10 @@ public class ProcessEngineTest : IDisposable
     public async Task StartProcess_returns_unsuccessful_when_process_already_started()
     {
         ProcessEngine processEngine = GetProcessEngine();
-        Instance instance = new Instance() { Process = new ProcessState() { CurrentTask = new ProcessElementInfo() { ElementId = "Task_1" } } };
+        Instance instance = new Instance()
+        {
+            Process = new ProcessState() { CurrentTask = new ProcessElementInfo() { ElementId = "Task_1" } }
+        };
         ProcessStartRequest processStartRequest = new ProcessStartRequest() { Instance = instance };
         ProcessChangeResult result = await processEngine.GenerateProcessStartEvents(processStartRequest);
         result.Success.Should().BeFalse();
@@ -58,7 +61,11 @@ public class ProcessEngineTest : IDisposable
         processReaderMock.Setup(r => r.GetStartEventIds()).Returns(new List<string>() { "StartEvent_1" });
         ProcessEngine processEngine = GetProcessEngine(processReaderMock);
         Instance instance = new Instance();
-        ProcessStartRequest processStartRequest = new ProcessStartRequest() { Instance = instance, StartEventId = "NotTheStartEventYouAreLookingFor" };
+        ProcessStartRequest processStartRequest = new ProcessStartRequest()
+        {
+            Instance = instance,
+            StartEventId = "NotTheStartEventYouAreLookingFor"
+        };
         ProcessChangeResult result = await processEngine.GenerateProcessStartEvents(processStartRequest);
         _processReaderMock.Verify(r => r.GetStartEventIds(), Times.Once);
         result.Success.Should().BeFalse();
@@ -70,19 +77,18 @@ public class ProcessEngineTest : IDisposable
     public async Task StartProcess_starts_process_and_moves_to_first_task_without_event_dispatch_when_dryrun()
     {
         ProcessEngine processEngine = GetProcessEngine();
-        Instance instance = new Instance()
-        {
-            InstanceOwner = new InstanceOwner()
-            {
-                PartyId = "1337"
-            }
-        };
-        ClaimsPrincipal user = new(new ClaimsIdentity(new List<Claim>()
-        {
-            new(AltinnCoreClaimTypes.UserId, "1337"),
-            new(AltinnCoreClaimTypes.AuthenticationLevel, "2"),
-            new(AltinnCoreClaimTypes.Org, "tdd"),
-        }));
+        Instance instance = new Instance() { InstanceOwner = new InstanceOwner() { PartyId = "1337" } };
+        ClaimsPrincipal user =
+            new(
+                new ClaimsIdentity(
+                    new List<Claim>()
+                    {
+                        new(AltinnCoreClaimTypes.UserId, "1337"),
+                        new(AltinnCoreClaimTypes.AuthenticationLevel, "2"),
+                        new(AltinnCoreClaimTypes.Org, "tdd"),
+                    }
+                )
+            );
         ProcessStartRequest processStartRequest = new ProcessStartRequest() { Instance = instance, User = user };
         ProcessChangeResult result = await processEngine.GenerateProcessStartEvents(processStartRequest);
         _processReaderMock.Verify(r => r.GetStartEventIds(), Times.Once);
@@ -97,19 +103,18 @@ public class ProcessEngineTest : IDisposable
     public async Task StartProcess_starts_process_and_moves_to_first_task()
     {
         ProcessEngine processEngine = GetProcessEngine();
-        Instance instance = new Instance()
-        {
-            InstanceOwner = new InstanceOwner()
-            {
-                PartyId = "1337"
-            }
-        };
-        ClaimsPrincipal user = new(new ClaimsIdentity(new List<Claim>()
-        {
-            new(AltinnCoreClaimTypes.UserId, "1337"),
-            new(AltinnCoreClaimTypes.AuthenticationLevel, "2"),
-            new(AltinnCoreClaimTypes.Org, "tdd"),
-        }));
+        Instance instance = new Instance() { InstanceOwner = new InstanceOwner() { PartyId = "1337" } };
+        ClaimsPrincipal user =
+            new(
+                new ClaimsIdentity(
+                    new List<Claim>()
+                    {
+                        new(AltinnCoreClaimTypes.UserId, "1337"),
+                        new(AltinnCoreClaimTypes.AuthenticationLevel, "2"),
+                        new(AltinnCoreClaimTypes.Org, "tdd"),
+                    }
+                )
+            );
         ProcessStartRequest processStartRequest = new ProcessStartRequest() { Instance = instance, User = user };
         ProcessChangeResult result = await processEngine.GenerateProcessStartEvents(processStartRequest);
         await processEngine.HandleEventsAndUpdateStorage(instance, null, result.ProcessStateChange?.Events);
@@ -120,10 +125,7 @@ public class ProcessEngineTest : IDisposable
         _processNavigatorMock.Verify(n => n.GetNextTask(It.IsAny<Instance>(), "StartEvent_1", null), Times.Once);
         var expectedInstance = new Instance()
         {
-            InstanceOwner = new InstanceOwner()
-            {
-                PartyId = "1337"
-            },
+            InstanceOwner = new InstanceOwner() { PartyId = "1337" },
             Process = new ProcessState()
             {
                 CurrentTask = new ProcessElementInfo()
@@ -156,14 +158,10 @@ public class ProcessEngineTest : IDisposable
                     {
                         ElementId = "StartEvent_1",
                         Flow = 1,
-                        Validated = new()
-                        {
-                            CanCompleteTask = false
-                        }
+                        Validated = new() { CanCompleteTask = false }
                     }
                 }
             },
-
             new()
             {
                 EventType = InstanceEventType.process_StartTask.ToString(),
@@ -183,23 +181,26 @@ public class ProcessEngineTest : IDisposable
                         Name = "Utfylling",
                         AltinnTaskType = "data",
                         Flow = 2,
-                        Validated = new()
-                        {
-                            CanCompleteTask = false
-                        }
+                        Validated = new() { CanCompleteTask = false }
                     }
                 }
             }
         };
 
-        _processEventHandlingDelegatorMock.Verify(d => d.HandleEvents(
-            It.Is<Instance>(i => CompareInstance(expectedInstance, i)),
-            It.IsAny<Dictionary<string, string>>(),
-            It.Is<List<InstanceEvent>>(l => CompareInstanceEvents(expectedInstanceEvents, l))));
+        _processEventHandlingDelegatorMock.Verify(d =>
+            d.HandleEvents(
+                It.Is<Instance>(i => CompareInstance(expectedInstance, i)),
+                It.IsAny<Dictionary<string, string>>(),
+                It.Is<List<InstanceEvent>>(l => CompareInstanceEvents(expectedInstanceEvents, l))
+            )
+        );
 
-        _processEventDispatcherMock.Verify(d => d.DispatchToStorage(
-            It.Is<Instance>(i => CompareInstance(expectedInstance, i)),
-            It.Is<List<InstanceEvent>>(l => CompareInstanceEvents(expectedInstanceEvents, l))));
+        _processEventDispatcherMock.Verify(d =>
+            d.DispatchToStorage(
+                It.Is<Instance>(i => CompareInstance(expectedInstance, i)),
+                It.Is<List<InstanceEvent>>(l => CompareInstanceEvents(expectedInstanceEvents, l))
+            )
+        );
 
         result.Success.Should().BeTrue();
     }
@@ -208,21 +209,25 @@ public class ProcessEngineTest : IDisposable
     public async Task StartProcess_starts_process_and_moves_to_first_task_with_prefill()
     {
         ProcessEngine processEngine = GetProcessEngine();
-        Instance instance = new Instance()
-        {
-            InstanceOwner = new InstanceOwner()
-            {
-                PartyId = "1337"
-            }
-        };
-        ClaimsPrincipal user = new(new ClaimsIdentity(new List<Claim>()
-        {
-            new(AltinnCoreClaimTypes.UserId, "1337"),
-            new(AltinnCoreClaimTypes.AuthenticationLevel, "2"),
-            new(AltinnCoreClaimTypes.Org, "tdd"),
-        }));
+        Instance instance = new Instance() { InstanceOwner = new InstanceOwner() { PartyId = "1337" } };
+        ClaimsPrincipal user =
+            new(
+                new ClaimsIdentity(
+                    new List<Claim>()
+                    {
+                        new(AltinnCoreClaimTypes.UserId, "1337"),
+                        new(AltinnCoreClaimTypes.AuthenticationLevel, "2"),
+                        new(AltinnCoreClaimTypes.Org, "tdd"),
+                    }
+                )
+            );
         var prefill = new Dictionary<string, string>() { { "test", "test" } };
-        ProcessStartRequest processStartRequest = new ProcessStartRequest() { Instance = instance, User = user, Prefill = prefill };
+        ProcessStartRequest processStartRequest = new ProcessStartRequest()
+        {
+            Instance = instance,
+            User = user,
+            Prefill = prefill
+        };
         ProcessChangeResult result = await processEngine.GenerateProcessStartEvents(processStartRequest);
         await processEngine.HandleEventsAndUpdateStorage(instance, prefill, result.ProcessStateChange?.Events);
         _processReaderMock.Verify(r => r.GetStartEventIds(), Times.Once);
@@ -232,10 +237,7 @@ public class ProcessEngineTest : IDisposable
         _processNavigatorMock.Verify(n => n.GetNextTask(It.IsAny<Instance>(), "StartEvent_1", null), Times.Once);
         var expectedInstance = new Instance()
         {
-            InstanceOwner = new InstanceOwner()
-            {
-                PartyId = "1337"
-            },
+            InstanceOwner = new InstanceOwner() { PartyId = "1337" },
             Process = new ProcessState()
             {
                 CurrentTask = new ProcessElementInfo()
@@ -268,14 +270,10 @@ public class ProcessEngineTest : IDisposable
                     {
                         ElementId = "StartEvent_1",
                         Flow = 1,
-                        Validated = new()
-                        {
-                            CanCompleteTask = false
-                        }
+                        Validated = new() { CanCompleteTask = false }
                     }
                 }
             },
-
             new()
             {
                 EventType = InstanceEventType.process_StartTask.ToString(),
@@ -295,23 +293,26 @@ public class ProcessEngineTest : IDisposable
                         Name = "Utfylling",
                         AltinnTaskType = "data",
                         Flow = 2,
-                        Validated = new()
-                        {
-                            CanCompleteTask = false
-                        }
+                        Validated = new() { CanCompleteTask = false }
                     }
                 }
             }
         };
 
-        _processEventHandlingDelegatorMock.Verify(d => d.HandleEvents(
-            It.Is<Instance>(i => CompareInstance(expectedInstance, i)),
-            It.IsAny<Dictionary<string, string>>(),
-            It.Is<List<InstanceEvent>>(l => CompareInstanceEvents(expectedInstanceEvents, l))));
+        _processEventHandlingDelegatorMock.Verify(d =>
+            d.HandleEvents(
+                It.Is<Instance>(i => CompareInstance(expectedInstance, i)),
+                It.IsAny<Dictionary<string, string>>(),
+                It.Is<List<InstanceEvent>>(l => CompareInstanceEvents(expectedInstanceEvents, l))
+            )
+        );
 
-        _processEventDispatcherMock.Verify(d => d.DispatchToStorage(
-            It.Is<Instance>(i => CompareInstance(expectedInstance, i)),
-            It.Is<List<InstanceEvent>>(l => CompareInstanceEvents(l, expectedInstanceEvents))));
+        _processEventDispatcherMock.Verify(d =>
+            d.DispatchToStorage(
+                It.Is<Instance>(i => CompareInstance(expectedInstance, i)),
+                It.Is<List<InstanceEvent>>(l => CompareInstanceEvents(l, expectedInstanceEvents))
+            )
+        );
 
         result.Success.Should().BeTrue();
     }
@@ -345,10 +346,7 @@ public class ProcessEngineTest : IDisposable
     {
         var expectedInstance = new Instance()
         {
-            InstanceOwner = new InstanceOwner()
-            {
-                PartyId = "1337"
-            },
+            InstanceOwner = new InstanceOwner() { PartyId = "1337" },
             Process = new ProcessState()
             {
                 CurrentTask = null,
@@ -358,20 +356,18 @@ public class ProcessEngineTest : IDisposable
         };
         Mock<IUserAction> userActionMock = new Mock<IUserAction>(MockBehavior.Strict);
         userActionMock.Setup(u => u.Id).Returns("sign");
-        userActionMock.Setup(u => u.HandleAction(It.IsAny<UserActionContext>())).ReturnsAsync(UserActionResult.FailureResult(
-            error: new ActionError()
-            {
-                Code = "NoUserId",
-                Message = "User id is missing in token"
-            },
-            errorType: ProcessErrorType.Unauthorized));
+        userActionMock
+            .Setup(u => u.HandleAction(It.IsAny<UserActionContext>()))
+            .ReturnsAsync(
+                UserActionResult.FailureResult(
+                    error: new ActionError() { Code = "NoUserId", Message = "User id is missing in token" },
+                    errorType: ProcessErrorType.Unauthorized
+                )
+            );
         ProcessEngine processEngine = GetProcessEngine(null, expectedInstance, [userActionMock.Object]);
         Instance instance = new Instance()
         {
-            InstanceOwner = new()
-            {
-                PartyId = "1337"
-            },
+            InstanceOwner = new() { PartyId = "1337" },
             Process = new ProcessState()
             {
                 StartEvent = "StartEvent_1",
@@ -380,18 +376,18 @@ public class ProcessEngineTest : IDisposable
                     ElementId = "Task_2",
                     AltinnTaskType = "confirmation",
                     Flow = 3,
-                    Validated = new()
-                    {
-                        CanCompleteTask = true
-                    }
+                    Validated = new() { CanCompleteTask = true }
                 }
             }
         };
-        ClaimsPrincipal user = new(new ClaimsIdentity(new List<Claim>()
+        ClaimsPrincipal user =
+            new(new ClaimsIdentity(new List<Claim>() { new(AltinnCoreClaimTypes.AuthenticationLevel, "2"), }));
+        ProcessNextRequest processNextRequest = new ProcessNextRequest()
         {
-            new(AltinnCoreClaimTypes.AuthenticationLevel, "2"),
-        }));
-        ProcessNextRequest processNextRequest = new ProcessNextRequest() { Instance = instance, User = user, Action = "sign" };
+            Instance = instance,
+            User = user,
+            Action = "sign"
+        };
         ProcessChangeResult result = await processEngine.Next(processNextRequest);
         result.Success.Should().BeFalse();
         result.ErrorMessage.Should().Be($"Action handler for action sign failed!");
@@ -403,10 +399,7 @@ public class ProcessEngineTest : IDisposable
     {
         var expectedInstance = new Instance()
         {
-            InstanceOwner = new InstanceOwner()
-            {
-                PartyId = "1337"
-            },
+            InstanceOwner = new InstanceOwner() { PartyId = "1337" },
             Process = new ProcessState()
             {
                 CurrentTask = new ProcessElementInfo()
@@ -423,10 +416,7 @@ public class ProcessEngineTest : IDisposable
         ProcessEngine processEngine = GetProcessEngine(null, expectedInstance);
         Instance instance = new Instance()
         {
-            InstanceOwner = new()
-            {
-                PartyId = "1337"
-            },
+            InstanceOwner = new() { PartyId = "1337" },
             Process = new ProcessState()
             {
                 StartEvent = "StartEvent_1",
@@ -435,20 +425,22 @@ public class ProcessEngineTest : IDisposable
                     ElementId = "Task_1",
                     AltinnTaskType = "data",
                     Flow = 2,
-                    Validated = new()
-                    {
-                        CanCompleteTask = true
-                    }
+                    Validated = new() { CanCompleteTask = true }
                 }
             }
         };
         ProcessState originalProcessState = instance.Process.Copy();
-        ClaimsPrincipal user = new(new ClaimsIdentity(new List<Claim>()
-        {
-            new(AltinnCoreClaimTypes.UserId, "1337"),
-            new(AltinnCoreClaimTypes.AuthenticationLevel, "2"),
-            new(AltinnCoreClaimTypes.Org, "tdd"),
-        }));
+        ClaimsPrincipal user =
+            new(
+                new ClaimsIdentity(
+                    new List<Claim>()
+                    {
+                        new(AltinnCoreClaimTypes.UserId, "1337"),
+                        new(AltinnCoreClaimTypes.AuthenticationLevel, "2"),
+                        new(AltinnCoreClaimTypes.Org, "tdd"),
+                    }
+                )
+            );
         ProcessNextRequest processNextRequest = new ProcessNextRequest() { Instance = instance, User = user };
         ProcessChangeResult result = await processEngine.Next(processNextRequest);
         _processReaderMock.Verify(r => r.IsProcessTask("Task_1"), Times.Once);
@@ -477,14 +469,10 @@ public class ProcessEngineTest : IDisposable
                         ElementId = "Task_1",
                         Flow = 2,
                         AltinnTaskType = "data",
-                        Validated = new()
-                        {
-                            CanCompleteTask = true
-                        }
+                        Validated = new() { CanCompleteTask = true }
                     }
                 }
             },
-
             new()
             {
                 EventType = InstanceEventType.process_StartTask.ToString(),
@@ -510,25 +498,36 @@ public class ProcessEngineTest : IDisposable
             }
         };
 
-        _processEventHandlingDelegatorMock.Verify(d => d.HandleEvents(
-            It.Is<Instance>(i => CompareInstance(expectedInstance, i)),
-            It.IsAny<Dictionary<string, string>>(),
-            It.Is<List<InstanceEvent>>(l => CompareInstanceEvents(expectedInstanceEvents, l))));
+        _processEventHandlingDelegatorMock.Verify(d =>
+            d.HandleEvents(
+                It.Is<Instance>(i => CompareInstance(expectedInstance, i)),
+                It.IsAny<Dictionary<string, string>>(),
+                It.Is<List<InstanceEvent>>(l => CompareInstanceEvents(expectedInstanceEvents, l))
+            )
+        );
 
-        _processEventDispatcherMock.Verify(d => d.DispatchToStorage(
-            It.Is<Instance>(i => CompareInstance(expectedInstance, i)),
-            It.Is<List<InstanceEvent>>(l => CompareInstanceEvents(expectedInstanceEvents, l))));
+        _processEventDispatcherMock.Verify(d =>
+            d.DispatchToStorage(
+                It.Is<Instance>(i => CompareInstance(expectedInstance, i)),
+                It.Is<List<InstanceEvent>>(l => CompareInstanceEvents(expectedInstanceEvents, l))
+            )
+        );
 
-        _processEventDispatcherMock.Verify(d => d.RegisterEventWithEventsComponent(It.Is<Instance>(i => CompareInstance(expectedInstance, i))));
+        _processEventDispatcherMock.Verify(d =>
+            d.RegisterEventWithEventsComponent(It.Is<Instance>(i => CompareInstance(expectedInstance, i)))
+        );
 
         result.Success.Should().BeTrue();
-        result.ProcessStateChange.Should().BeEquivalentTo(
-            new ProcessStateChange()
-            {
-                Events = expectedInstanceEvents,
-                NewProcessState = expectedInstance.Process,
-                OldProcessState = originalProcessState
-            });
+        result
+            .ProcessStateChange.Should()
+            .BeEquivalentTo(
+                new ProcessStateChange()
+                {
+                    Events = expectedInstanceEvents,
+                    NewProcessState = expectedInstance.Process,
+                    OldProcessState = originalProcessState
+                }
+            );
     }
 
     [Fact]
@@ -536,10 +535,7 @@ public class ProcessEngineTest : IDisposable
     {
         var expectedInstance = new Instance()
         {
-            InstanceOwner = new InstanceOwner()
-            {
-                PartyId = "1337"
-            },
+            InstanceOwner = new InstanceOwner() { PartyId = "1337" },
             Process = new ProcessState()
             {
                 CurrentTask = new ProcessElementInfo()
@@ -556,10 +552,7 @@ public class ProcessEngineTest : IDisposable
         ProcessEngine processEngine = GetProcessEngine(null, expectedInstance);
         Instance instance = new Instance()
         {
-            InstanceOwner = new()
-            {
-                PartyId = "1337"
-            },
+            InstanceOwner = new() { PartyId = "1337" },
             Process = new ProcessState()
             {
                 StartEvent = "StartEvent_1",
@@ -568,21 +561,28 @@ public class ProcessEngineTest : IDisposable
                     ElementId = "Task_1",
                     AltinnTaskType = "data",
                     Flow = 2,
-                    Validated = new()
-                    {
-                        CanCompleteTask = true
-                    }
+                    Validated = new() { CanCompleteTask = true }
                 }
             }
         };
         ProcessState originalProcessState = instance.Process.Copy();
-        ClaimsPrincipal user = new(new ClaimsIdentity(new List<Claim>()
+        ClaimsPrincipal user =
+            new(
+                new ClaimsIdentity(
+                    new List<Claim>()
+                    {
+                        new(AltinnCoreClaimTypes.UserId, "1337"),
+                        new(AltinnCoreClaimTypes.AuthenticationLevel, "2"),
+                        new(AltinnCoreClaimTypes.Org, "tdd"),
+                    }
+                )
+            );
+        ProcessNextRequest processNextRequest = new ProcessNextRequest()
         {
-            new(AltinnCoreClaimTypes.UserId, "1337"),
-            new(AltinnCoreClaimTypes.AuthenticationLevel, "2"),
-            new(AltinnCoreClaimTypes.Org, "tdd"),
-        }));
-        ProcessNextRequest processNextRequest = new ProcessNextRequest() { Instance = instance, User = user, Action = "reject" };
+            Instance = instance,
+            User = user,
+            Action = "reject"
+        };
         ProcessChangeResult result = await processEngine.Next(processNextRequest);
         _processReaderMock.Verify(r => r.IsProcessTask("Task_1"), Times.Once);
         _processReaderMock.Verify(r => r.IsEndEvent("Task_2"), Times.Once);
@@ -609,14 +609,10 @@ public class ProcessEngineTest : IDisposable
                         ElementId = "Task_1",
                         Flow = 2,
                         AltinnTaskType = "data",
-                        Validated = new()
-                        {
-                            CanCompleteTask = true
-                        }
+                        Validated = new() { CanCompleteTask = true }
                     }
                 }
             },
-
             new()
             {
                 EventType = InstanceEventType.process_StartTask.ToString(),
@@ -642,25 +638,36 @@ public class ProcessEngineTest : IDisposable
             }
         };
 
-        _processEventHandlingDelegatorMock.Verify(d => d.HandleEvents(
-            It.Is<Instance>(i => CompareInstance(expectedInstance, i)),
-            It.IsAny<Dictionary<string, string>>(),
-            It.Is<List<InstanceEvent>>(l => CompareInstanceEvents(expectedInstanceEvents, l))));
+        _processEventHandlingDelegatorMock.Verify(d =>
+            d.HandleEvents(
+                It.Is<Instance>(i => CompareInstance(expectedInstance, i)),
+                It.IsAny<Dictionary<string, string>>(),
+                It.Is<List<InstanceEvent>>(l => CompareInstanceEvents(expectedInstanceEvents, l))
+            )
+        );
 
-        _processEventDispatcherMock.Verify(d => d.DispatchToStorage(
-            It.Is<Instance>(i => CompareInstance(expectedInstance, i)),
-            It.Is<List<InstanceEvent>>(l => CompareInstanceEvents(expectedInstanceEvents, l))));
+        _processEventDispatcherMock.Verify(d =>
+            d.DispatchToStorage(
+                It.Is<Instance>(i => CompareInstance(expectedInstance, i)),
+                It.Is<List<InstanceEvent>>(l => CompareInstanceEvents(expectedInstanceEvents, l))
+            )
+        );
 
-        _processEventDispatcherMock.Verify(d => d.RegisterEventWithEventsComponent(It.Is<Instance>(i => CompareInstance(expectedInstance, i))));
+        _processEventDispatcherMock.Verify(d =>
+            d.RegisterEventWithEventsComponent(It.Is<Instance>(i => CompareInstance(expectedInstance, i)))
+        );
 
         result.Success.Should().BeTrue();
-        result.ProcessStateChange.Should().BeEquivalentTo(
-            new ProcessStateChange()
-            {
-                Events = expectedInstanceEvents,
-                NewProcessState = expectedInstance.Process,
-                OldProcessState = originalProcessState
-            });
+        result
+            .ProcessStateChange.Should()
+            .BeEquivalentTo(
+                new ProcessStateChange()
+                {
+                    Events = expectedInstanceEvents,
+                    NewProcessState = expectedInstance.Process,
+                    OldProcessState = originalProcessState
+                }
+            );
     }
 
     [Fact]
@@ -668,10 +675,7 @@ public class ProcessEngineTest : IDisposable
     {
         var expectedInstance = new Instance()
         {
-            InstanceOwner = new InstanceOwner()
-            {
-                PartyId = "1337"
-            },
+            InstanceOwner = new InstanceOwner() { PartyId = "1337" },
             Process = new ProcessState()
             {
                 CurrentTask = null,
@@ -682,10 +686,7 @@ public class ProcessEngineTest : IDisposable
         ProcessEngine processEngine = GetProcessEngine(null, expectedInstance);
         Instance instance = new Instance()
         {
-            InstanceOwner = new()
-            {
-                PartyId = "1337"
-            },
+            InstanceOwner = new() { PartyId = "1337" },
             Process = new ProcessState()
             {
                 StartEvent = "StartEvent_1",
@@ -694,19 +695,21 @@ public class ProcessEngineTest : IDisposable
                     ElementId = "Task_2",
                     AltinnTaskType = "confirmation",
                     Flow = 3,
-                    Validated = new()
-                    {
-                        CanCompleteTask = true
-                    }
+                    Validated = new() { CanCompleteTask = true }
                 }
             }
         };
         ProcessState originalProcessState = instance.Process.Copy();
-        ClaimsPrincipal user = new(new ClaimsIdentity(new List<Claim>()
-        {
-            new(AltinnCoreClaimTypes.UserId, "1337"),
-            new(AltinnCoreClaimTypes.AuthenticationLevel, "2"),
-        }));
+        ClaimsPrincipal user =
+            new(
+                new ClaimsIdentity(
+                    new List<Claim>()
+                    {
+                        new(AltinnCoreClaimTypes.UserId, "1337"),
+                        new(AltinnCoreClaimTypes.AuthenticationLevel, "2"),
+                    }
+                )
+            );
         ProcessNextRequest processNextRequest = new ProcessNextRequest() { Instance = instance, User = user };
         ProcessChangeResult result = await processEngine.Next(processNextRequest);
         _processReaderMock.Verify(r => r.IsProcessTask("Task_2"), Times.Once);
@@ -734,14 +737,10 @@ public class ProcessEngineTest : IDisposable
                         ElementId = "Task_2",
                         Flow = 3,
                         AltinnTaskType = "confirmation",
-                        Validated = new()
-                        {
-                            CanCompleteTask = true
-                        }
+                        Validated = new() { CanCompleteTask = true }
                     }
                 }
             },
-
             new()
             {
                 EventType = InstanceEventType.process_EndEvent.ToString(),
@@ -778,25 +777,36 @@ public class ProcessEngineTest : IDisposable
             }
         };
 
-        _processEventHandlingDelegatorMock.Verify(d => d.HandleEvents(
-            It.Is<Instance>(i => CompareInstance(expectedInstance, i)),
-            It.IsAny<Dictionary<string, string>>(),
-            It.Is<List<InstanceEvent>>(l => CompareInstanceEvents(expectedInstanceEvents, l))));
+        _processEventHandlingDelegatorMock.Verify(d =>
+            d.HandleEvents(
+                It.Is<Instance>(i => CompareInstance(expectedInstance, i)),
+                It.IsAny<Dictionary<string, string>>(),
+                It.Is<List<InstanceEvent>>(l => CompareInstanceEvents(expectedInstanceEvents, l))
+            )
+        );
 
-        _processEventDispatcherMock.Verify(d => d.DispatchToStorage(
-            It.Is<Instance>(i => CompareInstance(expectedInstance, i)),
-            It.Is<List<InstanceEvent>>(l => CompareInstanceEvents(expectedInstanceEvents, l))));
+        _processEventDispatcherMock.Verify(d =>
+            d.DispatchToStorage(
+                It.Is<Instance>(i => CompareInstance(expectedInstance, i)),
+                It.Is<List<InstanceEvent>>(l => CompareInstanceEvents(expectedInstanceEvents, l))
+            )
+        );
 
-        _processEventDispatcherMock.Verify(d => d.RegisterEventWithEventsComponent(It.Is<Instance>(i => CompareInstance(expectedInstance, i))));
+        _processEventDispatcherMock.Verify(d =>
+            d.RegisterEventWithEventsComponent(It.Is<Instance>(i => CompareInstance(expectedInstance, i)))
+        );
 
         result.Success.Should().BeTrue();
-        result.ProcessStateChange.Should().BeEquivalentTo(
-            new ProcessStateChange()
-            {
-                Events = expectedInstanceEvents,
-                NewProcessState = expectedInstance.Process,
-                OldProcessState = originalProcessState
-            });
+        result
+            .ProcessStateChange.Should()
+            .BeEquivalentTo(
+                new ProcessStateChange()
+                {
+                    Events = expectedInstanceEvents,
+                    NewProcessState = expectedInstance.Process,
+                    OldProcessState = originalProcessState
+                }
+            );
     }
 
     [Fact]
@@ -804,10 +814,7 @@ public class ProcessEngineTest : IDisposable
     {
         Instance instance = new Instance()
         {
-            InstanceOwner = new InstanceOwner()
-            {
-                PartyId = "1337"
-            },
+            InstanceOwner = new InstanceOwner() { PartyId = "1337" },
             Process = new ProcessState()
             {
                 StartEvent = "StartEvent_1",
@@ -816,20 +823,14 @@ public class ProcessEngineTest : IDisposable
                     ElementId = "Task_1",
                     Flow = 3,
                     AltinnTaskType = "confirmation",
-                    Validated = new()
-                    {
-                        CanCompleteTask = true
-                    }
+                    Validated = new() { CanCompleteTask = true }
                 }
             }
         };
         Instance updatedInstance = new Instance()
         {
             Org = "ttd",
-            InstanceOwner = new InstanceOwner()
-            {
-                PartyId = "1337"
-            },
+            InstanceOwner = new InstanceOwner() { PartyId = "1337" },
             Process = new ProcessState()
             {
                 StartEvent = "StartEvent_1",
@@ -838,17 +839,11 @@ public class ProcessEngineTest : IDisposable
                     ElementId = "Task_1",
                     Flow = 3,
                     AltinnTaskType = "confirmation",
-                    Validated = new()
-                    {
-                        CanCompleteTask = true
-                    }
+                    Validated = new() { CanCompleteTask = true }
                 }
             }
         };
-        Dictionary<string, string> prefill = new Dictionary<string, string>()
-        {
-            { "test", "test" }
-        };
+        Dictionary<string, string> prefill = new Dictionary<string, string>() { { "test", "test" } };
         List<InstanceEvent> events = new List<InstanceEvent>()
         {
             new()
@@ -869,35 +864,42 @@ public class ProcessEngineTest : IDisposable
                         ElementId = "Task_1",
                         Flow = 2,
                         AltinnTaskType = "data",
-                        Validated = new()
-                        {
-                            CanCompleteTask = true
-                        }
+                        Validated = new() { CanCompleteTask = true }
                     }
                 }
             }
         };
         ProcessEngine processEngine = GetProcessEngine(null, updatedInstance);
-        ProcessStartRequest processStartRequest = new ProcessStartRequest()
-        {
-            Instance = instance,
-            Prefill = prefill,
-        };
-        Instance result = await processEngine.HandleEventsAndUpdateStorage(processStartRequest.Instance, processStartRequest.Prefill, events);
+        ProcessStartRequest processStartRequest = new ProcessStartRequest() { Instance = instance, Prefill = prefill, };
+        Instance result = await processEngine.HandleEventsAndUpdateStorage(
+            processStartRequest.Instance,
+            processStartRequest.Prefill,
+            events
+        );
 
-        _processEventHandlingDelegatorMock.Verify(d => d.HandleEvents(
-            It.Is<Instance>(i => CompareInstance(instance, i)),
-            It.IsAny<Dictionary<string, string>>(),
-            It.Is<List<InstanceEvent>>(l => CompareInstanceEvents(events, l))));
+        _processEventHandlingDelegatorMock.Verify(d =>
+            d.HandleEvents(
+                It.Is<Instance>(i => CompareInstance(instance, i)),
+                It.IsAny<Dictionary<string, string>>(),
+                It.Is<List<InstanceEvent>>(l => CompareInstanceEvents(events, l))
+            )
+        );
 
-        _processEventDispatcherMock.Verify(d => d.DispatchToStorage(
-            It.Is<Instance>(i => CompareInstance(instance, i)),
-            It.Is<List<InstanceEvent>>(l => CompareInstanceEvents(events, l))));
+        _processEventDispatcherMock.Verify(d =>
+            d.DispatchToStorage(
+                It.Is<Instance>(i => CompareInstance(instance, i)),
+                It.Is<List<InstanceEvent>>(l => CompareInstanceEvents(events, l))
+            )
+        );
 
         result.Should().Be(updatedInstance);
     }
 
-    private ProcessEngine GetProcessEngine(Mock<IProcessReader>? processReaderMock = null, Instance? updatedInstance = null, List<IUserAction>? userActions = null)
+    private ProcessEngine GetProcessEngine(
+        Mock<IProcessReader>? processReaderMock = null,
+        Instance? updatedInstance = null,
+        List<IUserAction>? userActions = null
+    )
     {
         if (processReaderMock == null)
         {
@@ -916,57 +918,57 @@ public class ProcessEngineTest : IDisposable
             _processReaderMock = processReaderMock;
         }
 
-        _profileMock.Setup(p => p.GetUserProfile(1337)).ReturnsAsync(() => new UserProfile()
-        {
-            UserId = 1337,
-            Email = "test@example.com",
-            Party = new Party()
-            {
-                SSN = "22927774937"
-            }
-        });
-        _processNavigatorMock.Setup(
-                pn => pn.GetNextTask(It.IsAny<Instance>(), "StartEvent_1", It.IsAny<string?>()))
-            .ReturnsAsync(() => new ProcessTask()
-            {
-                Id = "Task_1",
-                Incoming = new List<string> { "Flow_1" },
-                Outgoing = new List<string> { "Flow_2" },
-                Name = "Utfylling",
-                ExtensionElements = new()
-                {
-                    TaskExtension = new()
+        _profileMock
+            .Setup(p => p.GetUserProfile(1337))
+            .ReturnsAsync(
+                () =>
+                    new UserProfile()
                     {
-                        TaskType = "data"
+                        UserId = 1337,
+                        Email = "test@example.com",
+                        Party = new Party() { SSN = "22927774937" }
                     }
-                }
-            });
-        _processNavigatorMock.Setup(
-                pn => pn.GetNextTask(It.IsAny<Instance>(), "Task_1", It.IsAny<string?>()))
-            .ReturnsAsync(() => new ProcessTask()
-            {
-                Id = "Task_2",
-                Incoming = new List<string> { "Flow_2" },
-                Outgoing = new List<string> { "Flow_3" },
-                Name = "Bekreft",
-                ExtensionElements = new()
-                {
-                    TaskExtension = new()
+            );
+        _processNavigatorMock
+            .Setup(pn => pn.GetNextTask(It.IsAny<Instance>(), "StartEvent_1", It.IsAny<string?>()))
+            .ReturnsAsync(
+                () =>
+                    new ProcessTask()
                     {
-                        TaskType = "confirmation"
+                        Id = "Task_1",
+                        Incoming = new List<string> { "Flow_1" },
+                        Outgoing = new List<string> { "Flow_2" },
+                        Name = "Utfylling",
+                        ExtensionElements = new() { TaskExtension = new() { TaskType = "data" } }
                     }
-                }
-            });
-        _processNavigatorMock.Setup(
-                pn => pn.GetNextTask(It.IsAny<Instance>(), "Task_2", It.IsAny<string?>()))
-            .ReturnsAsync(() => new EndEvent()
-            {
-                Id = "EndEvent_1",
-                Incoming = new List<string> { "Flow_3" }
-            });
+            );
+        _processNavigatorMock
+            .Setup(pn => pn.GetNextTask(It.IsAny<Instance>(), "Task_1", It.IsAny<string?>()))
+            .ReturnsAsync(
+                () =>
+                    new ProcessTask()
+                    {
+                        Id = "Task_2",
+                        Incoming = new List<string> { "Flow_2" },
+                        Outgoing = new List<string> { "Flow_3" },
+                        Name = "Bekreft",
+                        ExtensionElements = new() { TaskExtension = new() { TaskType = "confirmation" } }
+                    }
+            );
+        _processNavigatorMock
+            .Setup(pn => pn.GetNextTask(It.IsAny<Instance>(), "Task_2", It.IsAny<string?>()))
+            .ReturnsAsync(
+                () =>
+                    new EndEvent()
+                    {
+                        Id = "EndEvent_1",
+                        Incoming = new List<string> { "Flow_3" }
+                    }
+            );
         if (updatedInstance is not null)
         {
-            _processEventDispatcherMock.Setup(d => d.DispatchToStorage(It.IsAny<Instance>(), It.IsAny<List<InstanceEvent>>()))
+            _processEventDispatcherMock
+                .Setup(d => d.DispatchToStorage(It.IsAny<Instance>(), It.IsAny<List<InstanceEvent>>()))
                 .ReturnsAsync(() => updatedInstance);
         }
 
@@ -977,7 +979,8 @@ public class ProcessEngineTest : IDisposable
             _processEventHandlingDelegatorMock.Object,
             _processEventDispatcherMock.Object,
             _processTaskInitializerMock.Object,
-            new UserActionService(userActions ?? []));
+            new UserActionService(userActions ?? [])
+        );
     }
 
     public void Dispose()

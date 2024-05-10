@@ -1,7 +1,10 @@
-﻿using System.Net.Http.Headers;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Text.Json;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Api.Tests.Utils;
 using Altinn.App.Core.Configuration;
+using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -15,6 +18,12 @@ namespace Altinn.App.Api.Tests;
 
 public class ApiTestBase
 {
+    protected static readonly JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true,
+    };
+
     protected readonly ITestOutputHelper _outputHelper;
     private readonly WebApplicationFactory<Program> _factory;
 
@@ -41,37 +50,39 @@ public class ApiTestBase
         string appRootPath = TestData.GetApplicationDirectory(org, app);
         string appSettingsPath = Path.Join(appRootPath, "appsettings.json");
 
-        var client = _factory.WithWebHostBuilder(builder =>
-        {
-            var configuration = new ConfigurationBuilder()
-            .AddJsonFile(appSettingsPath)
-            .Build();
+        var client = _factory
+            .WithWebHostBuilder(builder =>
+            {
+                var configuration = new ConfigurationBuilder().AddJsonFile(appSettingsPath).Build();
 
-            configuration.GetSection("AppSettings:AppBasePath").Value = appRootPath;
-            IConfigurationSection appSettingSection = configuration.GetSection("AppSettings");
+                configuration.GetSection("AppSettings:AppBasePath").Value = appRootPath;
+                IConfigurationSection appSettingSection = configuration.GetSection("AppSettings");
 
-            builder.ConfigureLogging(ConfigureFakeLogging);
+                builder.ConfigureLogging(ConfigureFakeLogging);
 
-            builder.ConfigureServices(services => services.Configure<AppSettings>(appSettingSection));
-            builder.ConfigureTestServices(services => OverrideServicesForAllTests(services));
-            builder.ConfigureTestServices(OverrideServicesForThisTest);
-            builder.ConfigureTestServices(ConfigureFakeHttpClientHandler);
-        }).CreateClient(new WebApplicationFactoryClientOptions() { AllowAutoRedirect = false });
+                builder.ConfigureServices(services => services.Configure<AppSettings>(appSettingSection));
+                builder.ConfigureTestServices(services => OverrideServicesForAllTests(services));
+                builder.ConfigureTestServices(OverrideServicesForThisTest);
+                builder.ConfigureTestServices(ConfigureFakeHttpClientHandler);
+            })
+            .CreateClient(new WebApplicationFactoryClientOptions() { AllowAutoRedirect = false });
 
         return client;
     }
 
     private void ConfigureFakeLogging(ILoggingBuilder builder)
     {
-        builder.ClearProviders()
+        builder
+            .ClearProviders()
             .AddFakeLogging(options =>
             {
                 options.OutputSink = (message) => _outputHelper.WriteLine(message);
-                options.OutputFormatter = log => $"""
-                [{ShortLogLevel(log.Level)}] {log.Category}:
-                {log.Message}{(log.Exception is not null ? "\n" : "")}{log.Exception}
-
-                """;
+                options.OutputFormatter = log =>
+                    $"""
+                    [{ShortLogLevel(log.Level)}] {log.Category}:
+                    {log.Message}{(log.Exception is not null ? "\n" : "")}{log.Exception}
+                    
+                    """;
             });
     }
 
@@ -99,8 +110,6 @@ public class ApiTestBase
         var httpClientDescriptor = services.Single(d => d.ServiceType == typeof(HttpClient));
         services.Remove(httpClientDescriptor);
 
-
-
         // Add the new HttpClient as singleton
         services.AddSingleton<IHttpClientFactory>(sp =>
         {
@@ -111,7 +120,41 @@ public class ApiTestBase
                 .Returns(sp.GetRequiredService<HttpClient>());
             return clientFactoryMock.Object;
         });
-        services.AddSingleton<HttpClient>(sp => new HttpClient(new MockHttpMessageHandler(SendAsync, sp.GetRequiredService<ILogger<MockHttpMessageHandler>>())));
+        services.AddSingleton<HttpClient>(sp => new HttpClient(
+            new MockHttpMessageHandler(SendAsync, sp.GetRequiredService<ILogger<MockHttpMessageHandler>>())
+        ));
+    }
+
+    /// <summary>
+    /// Set this in your test class constructor
+    /// </summary>
+    protected async Task<T> VerifyStatusAndDeserialize<T>(
+        HttpResponseMessage response,
+        HttpStatusCode expectedStatusCode
+    )
+    {
+        // Verify status code
+        response.Should().HaveStatusCode(expectedStatusCode);
+
+        // Deserialize content and log everything if it fails
+        var content = await response.Content.ReadAsStringAsync();
+        try
+        {
+            return JsonSerializer.Deserialize<T>(content, _jsonSerializerOptions)
+                ?? throw new JsonException("Content was \"null\"");
+        }
+        catch (Exception)
+        {
+            _outputHelper.WriteLine(string.Empty);
+            _outputHelper.WriteLine(string.Empty);
+            _outputHelper.WriteLine(
+                $"Failed to deserialize content of {response.RequestMessage?.Method} request to {response.RequestMessage?.RequestUri} as {ReflectionUtils.GetTypeNameWithGenericArguments<T>()}:"
+            );
+
+            _outputHelper.WriteLine(JsonUtils.IndentJson(content));
+            _outputHelper.WriteLine(string.Empty);
+            throw;
+        }
     }
 
     /// <summary>
@@ -127,5 +170,7 @@ public class ApiTestBase
     /// <summary>
     /// Set this to customize the response of HttpClient in your test.
     /// </summary>
-    protected Func<HttpRequestMessage, Task<HttpResponseMessage>> SendAsync { get; set; } = (request) => throw new NotImplementedException("You must set SendAsync in your test when it uses a real http client.");
+    protected Func<HttpRequestMessage, Task<HttpResponseMessage>> SendAsync { get; set; } =
+        (request) =>
+            throw new NotImplementedException("You must set SendAsync in your test when it uses a real http client.");
 }

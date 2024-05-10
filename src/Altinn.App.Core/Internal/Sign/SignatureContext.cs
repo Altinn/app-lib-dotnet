@@ -14,7 +14,12 @@ public class SignatureContext
     /// <param name="signatureDataTypeId">The id of the DataType where the signature should be stored</param>
     /// <param name="signee">The signee</param>
     /// <param name="dataElementSignature">The data element to sign <see cref="DataElementSignature"/></param>
-    public SignatureContext(InstanceIdentifier instanceIdentifier, string signatureDataTypeId, Signee signee, params DataElementSignature[] dataElementSignature)
+    public SignatureContext(
+        InstanceIdentifier instanceIdentifier,
+        string signatureDataTypeId,
+        Signee signee,
+        params DataElementSignature[] dataElementSignature
+    )
     {
         InstanceIdentifier = instanceIdentifier;
         SignatureDataTypeId = signatureDataTypeId;
@@ -29,7 +34,12 @@ public class SignatureContext
     /// <param name="signatureDataTypeId">The id of the DataType where the signature should be stored</param>
     /// <param name="signee">The signee</param>
     /// <param name="dataElementSignatures">The data elements to sign <see cref="DataElementSignature"/></param>
-    public SignatureContext(InstanceIdentifier instanceIdentifier, string signatureDataTypeId, Signee signee, List<DataElementSignature> dataElementSignatures)
+    public SignatureContext(
+        InstanceIdentifier instanceIdentifier,
+        string signatureDataTypeId,
+        Signee signee,
+        List<DataElementSignature> dataElementSignatures
+    )
     {
         InstanceIdentifier = instanceIdentifier;
         SignatureDataTypeId = signatureDataTypeId;
@@ -66,7 +76,10 @@ public class Signee
     /// <summary>
     /// User id of the user performing the signing
     /// </summary>
+#nullable disable
     public string UserId { get; set; }
+
+#nullable restore
 
     /// <summary>
     /// The SSN of the user performing the signing, set if the signer is a person

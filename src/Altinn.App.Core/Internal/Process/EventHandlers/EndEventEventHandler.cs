@@ -1,4 +1,4 @@
-﻿using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
@@ -33,7 +33,9 @@ namespace Altinn.App.Core.Internal.Process.EventHandlers
 
             if (string.IsNullOrEmpty(endEvent))
             {
-                throw new ArgumentException($"End event is not set for instance event {instanceEvent.EventType} {instanceEvent.Id} on instance {instance.Id}.");
+                throw new ArgumentException(
+                    $"End event is not set for instance event {instanceEvent.EventType} {instanceEvent.Id} on instance {instance.Id}."
+                );
             }
 
             await _appEvents.OnEndAppEvent(endEvent, instance);

@@ -1,4 +1,4 @@
-﻿using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
@@ -30,7 +30,10 @@ namespace Altinn.App.Core.Tests.Internal.Process.ProcessTasks.Common
             _appModelMock = new Mock<IAppModel>();
             _appResourcesMock = new Mock<IAppResources>();
             var frontendSettingsMock = new Mock<IOptions<FrontEndSettings>>();
-            _layoutEvaluatorStateInitializerMock = new Mock<LayoutEvaluatorStateInitializer>(MockBehavior.Strict, [_appResourcesMock.Object, frontendSettingsMock.Object]);
+            _layoutEvaluatorStateInitializerMock = new Mock<LayoutEvaluatorStateInitializer>(
+                MockBehavior.Strict,
+                [_appResourcesMock.Object, frontendSettingsMock.Object]
+            );
             _appSettingsMock = Options.Create(new AppSettings());
 
             _processTaskFinalizer = new ProcessTaskFinalizer(
@@ -39,7 +42,8 @@ namespace Altinn.App.Core.Tests.Internal.Process.ProcessTasks.Common
                 _appModelMock.Object,
                 _appResourcesMock.Object,
                 _layoutEvaluatorStateInitializerMock.Object,
-                _appSettingsMock);
+                _appSettingsMock
+            );
         }
 
         [Fact]
@@ -48,7 +52,17 @@ namespace Altinn.App.Core.Tests.Internal.Process.ProcessTasks.Common
             // Arrange
             Instance instance = CreateInstance();
 
-            instance.Data = [new DataElement { Id = Guid.NewGuid().ToString(), References = [new Reference { ValueType = ReferenceType.Task, Value = instance.Process.CurrentTask.ElementId }] }];
+            instance.Data =
+            [
+                new DataElement
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    References =
+                    [
+                        new Reference { ValueType = ReferenceType.Task, Value = instance.Process.CurrentTask.ElementId }
+                    ]
+                }
+            ];
 
             var applicationMetadata = new ApplicationMetadata(instance.AppId)
             {
@@ -72,11 +86,7 @@ namespace Altinn.App.Core.Tests.Internal.Process.ProcessTasks.Common
                 AppId = "ttd/test",
                 Process = new ProcessState
                 {
-                    CurrentTask = new ProcessElementInfo
-                    {
-                        AltinnTaskType = "signing",
-                        ElementId = "EndEvent",
-                    },
+                    CurrentTask = new ProcessElementInfo { AltinnTaskType = "signing", ElementId = "EndEvent", },
                 },
             };
         }

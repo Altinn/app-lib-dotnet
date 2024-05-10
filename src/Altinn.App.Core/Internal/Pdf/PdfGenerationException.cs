@@ -1,4 +1,4 @@
-﻿using System.Runtime.Serialization;
+using System.Runtime.Serialization;
 
 namespace Altinn.App.Core.Internal.Pdf
 {
@@ -11,24 +11,20 @@ namespace Altinn.App.Core.Internal.Pdf
         /// Creates a new Exception of <see cref="PdfGenerationException"/>
         /// Intended to be used when the generation of PDF fails.
         /// </summary>
-        public PdfGenerationException()
-        {
-        }
+        public PdfGenerationException() { }
 
         /// <summary>
         /// Creates a new Exception of <see cref="PdfGenerationException"/>
         /// Intended to be used when the generation of PDF fails.
         /// </summary>
-        public PdfGenerationException(string? message) : base(message)
-        {
-        }
+        public PdfGenerationException(string? message)
+            : base(message) { }
 
         /// <summary>
         /// Creates a new Exception of <see cref="PdfGenerationException"/>
         /// Intended to be used when the generation of PDF fails.
         /// </summary>
-        public PdfGenerationException(string? message, Exception? innerException) : base(message, innerException)
-        {
-        }
+        public PdfGenerationException(string? message, Exception? innerException)
+            : base(message, innerException) { }
     }
 }

@@ -19,12 +19,13 @@ namespace Altinn.App.Core.Implementation
     /// </summary>
     public class AppResourcesSI : IAppResources
     {
-        private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
-        {
-            AllowTrailingCommas = true,
-            ReadCommentHandling = JsonCommentHandling.Skip,
-            PropertyNameCaseInsensitive = true,
-        };
+        private static readonly JsonSerializerOptions _jsonSerializerOptions =
+            new()
+            {
+                AllowTrailingCommas = true,
+                ReadCommentHandling = JsonCommentHandling.Skip,
+                PropertyNameCaseInsensitive = true,
+            };
 
         private readonly AppSettings _settings;
         private readonly IAppMetadata _appMetadata;
@@ -42,7 +43,8 @@ namespace Altinn.App.Core.Implementation
             IOptions<AppSettings> settings,
             IAppMetadata appMetadata,
             IWebHostEnvironment hostingEnvironment,
-            ILogger<AppResourcesSI> logger)
+            ILogger<AppResourcesSI> logger
+        )
         {
             _settings = settings.Value;
             _appMetadata = appMetadata;
@@ -53,7 +55,10 @@ namespace Altinn.App.Core.Implementation
         /// <inheritdoc />
         public byte[] GetText(string org, string app, string textResource)
         {
-            return ReadFileContentsFromLegalPath(_settings.AppBasePath + _settings.ConfigurationFolder + _settings.TextFolder, textResource);
+            return ReadFileContentsFromLegalPath(
+                _settings.AppBasePath + _settings.ConfigurationFolder + _settings.TextFolder,
+                textResource
+            );
         }
 
         /// <inheritdoc />
@@ -71,7 +76,12 @@ namespace Altinn.App.Core.Implementation
 
             using (FileStream fileStream = new(fullFileName, FileMode.Open, FileAccess.Read))
             {
-                TextResource textResource = (await System.Text.Json.JsonSerializer.DeserializeAsync<TextResource>(fileStream, _jsonSerializerOptions))!;
+                TextResource textResource = (
+                    await System.Text.Json.JsonSerializer.DeserializeAsync<TextResource>(
+                        fileStream,
+                        _jsonSerializerOptions
+                    )
+                )!;
                 textResource.Id = $"{org}-{app}-{language}";
                 textResource.Org = org;
                 textResource.Language = language;
@@ -89,10 +99,7 @@ namespace Altinn.App.Core.Implementation
                 Application application = applicationMetadata;
                 if (applicationMetadata.OnEntry != null)
                 {
-                    application.OnEntry = new OnEntryConfig()
-                    {
-                        Show = applicationMetadata.OnEntry.Show
-                    };
+                    application.OnEntry = new OnEntryConfig() { Show = applicationMetadata.OnEntry.Show };
                 }
 
                 return application;
@@ -162,7 +169,11 @@ namespace Altinn.App.Core.Implementation
         /// <inheritdoc />
         public string? GetLayoutSettingsString()
         {
-            string filename = Path.Join(_settings.AppBasePath, _settings.UiFolder, _settings.FormLayoutSettingsFileName);
+            string filename = Path.Join(
+                _settings.AppBasePath,
+                _settings.UiFolder,
+                _settings.FormLayoutSettingsFileName
+            );
             string? filedata = null;
             if (File.Exists(filename))
             {
@@ -175,7 +186,11 @@ namespace Altinn.App.Core.Implementation
         /// <inheritdoc />
         public LayoutSettings GetLayoutSettings()
         {
-            string filename = Path.Join(_settings.AppBasePath, _settings.UiFolder, _settings.FormLayoutSettingsFileName);
+            string filename = Path.Join(
+                _settings.AppBasePath,
+                _settings.UiFolder,
+                _settings.FormLayoutSettingsFileName
+            );
             if (File.Exists(filename))
             {
                 var filedata = File.ReadAllText(filename, Encoding.UTF8);
@@ -234,13 +249,14 @@ namespace Altinn.App.Core.Implementation
         public string GetLayoutSets()
         {
             string filename = Path.Join(_settings.AppBasePath, _settings.UiFolder, _settings.LayoutSetsFileName);
-            string filedata = null;
+            string? filedata = null;
             if (File.Exists(filename))
             {
                 filedata = File.ReadAllText(filename, Encoding.UTF8);
             }
-
+#nullable disable
             return filedata;
+#nullable restore
         }
 
         /// <inheritdoc />
@@ -249,7 +265,10 @@ namespace Altinn.App.Core.Implementation
             string? layoutSetsString = GetLayoutSets();
             if (layoutSetsString is not null)
             {
-                return System.Text.Json.JsonSerializer.Deserialize<LayoutSets>(layoutSetsString, _jsonSerializerOptions);
+                return System.Text.Json.JsonSerializer.Deserialize<LayoutSets>(
+                    layoutSetsString,
+                    _jsonSerializerOptions
+                );
             }
 
             return null;
@@ -288,7 +307,9 @@ namespace Altinn.App.Core.Implementation
             var order = GetLayoutSettingsForSet(layoutSetId)?.Pages?.Order;
             if (order is null)
             {
-                throw new InvalidDataException("No $Pages.Order field found" + (layoutSetId is null ? "" : $" for layoutSet {layoutSetId}"));
+                throw new InvalidDataException(
+                    "No $Pages.Order field found" + (layoutSetId is null ? "" : $" for layoutSet {layoutSetId}")
+                );
             }
 
             var layoutModel = new LayoutModel();
@@ -297,7 +318,11 @@ namespace Altinn.App.Core.Implementation
                 var pageBytes = File.ReadAllBytes(Path.Join(folder, page + ".json"));
                 // Set the PageName using AsyncLocal before deserializing.
                 PageComponentConverter.SetAsyncLocalPageName(page);
-                layoutModel.Pages[page] = System.Text.Json.JsonSerializer.Deserialize<PageComponent>(pageBytes.RemoveBom(), _jsonSerializerOptions) ?? throw new InvalidDataException(page + ".json is \"null\"");
+                layoutModel.Pages[page] =
+                    System.Text.Json.JsonSerializer.Deserialize<PageComponent>(
+                        pageBytes.RemoveBom(),
+                        _jsonSerializerOptions
+                    ) ?? throw new InvalidDataException(page + ".json is \"null\"");
             }
 
             return layoutModel;
@@ -306,7 +331,12 @@ namespace Altinn.App.Core.Implementation
         /// <inheritdoc />
         public string? GetLayoutSettingsStringForSet(string layoutSetId)
         {
-            string filename = Path.Join(_settings.AppBasePath, _settings.UiFolder, layoutSetId, _settings.FormLayoutSettingsFileName);
+            string filename = Path.Join(
+                _settings.AppBasePath,
+                _settings.UiFolder,
+                layoutSetId,
+                _settings.FormLayoutSettingsFileName
+            );
             string? filedata = null;
             if (File.Exists(filename))
             {
@@ -319,7 +349,12 @@ namespace Altinn.App.Core.Implementation
         /// <inheritdoc />
         public LayoutSettings? GetLayoutSettingsForSet(string? layoutSetId)
         {
-            string filename = Path.Join(_settings.AppBasePath, _settings.UiFolder, layoutSetId, _settings.FormLayoutSettingsFileName);
+            string filename = Path.Join(
+                _settings.AppBasePath,
+                _settings.UiFolder,
+                layoutSetId,
+                _settings.FormLayoutSettingsFileName
+            );
             if (File.Exists(filename))
             {
                 string? filedata = null;
@@ -355,13 +390,15 @@ namespace Altinn.App.Core.Implementation
 
         private byte[] ReadFileByte(string fileName)
         {
-            byte[] filedata = null;
+            byte[]? filedata = null;
             if (File.Exists(fileName))
             {
                 filedata = File.ReadAllBytes(fileName);
             }
 
+#nullable disable
             return filedata;
+#nullable restore
         }
 
         private byte[] ReadFileContentsFromLegalPath(string legalPath, string filePath)
@@ -377,7 +414,9 @@ namespace Altinn.App.Core.Implementation
                 return File.ReadAllBytes(fullFileName);
             }
 
+#nullable disable
             return null;
+#nullable restore
         }
 
         /// <inheritdoc />
