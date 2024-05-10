@@ -18,6 +18,7 @@ public class ProcessReader : IProcessReader
     /// Create instance of ProcessReader where process stream is fetched from <see cref="IProcessClient"/>
     /// </summary>
     /// <param name="processClient">Implementation of IProcessClient used to get stream of BPMN process</param>
+    /// <param name="telemetry">Telemetry for metrics and traces.</param>
     /// <exception cref="InvalidOperationException">If BPMN file could not be deserialized</exception>
     public ProcessReader(IProcessClient processClient, Telemetry? telemetry = null)
     {
