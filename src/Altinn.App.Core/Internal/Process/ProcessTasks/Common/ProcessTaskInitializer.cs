@@ -138,7 +138,7 @@ public class ProcessTaskInitializer : IProcessTaskInitializer
             instance.DataValues = updatedInstance.DataValues;
         }
     }
-    
+
     /// <summary>
     /// Removes all data elements generated from a specific task.<br/>
     /// NOTE: This should ideally be called from `Initialize` to clean up the current task (in case this is not the first run),
@@ -152,12 +152,11 @@ public class ProcessTaskInitializer : IProcessTaskInitializer
         AppIdentifier appIdentifier = new(instance.AppId);
         InstanceIdentifier instanceIdentifier = new(instance);
         var dataElements =
-            instance.Data?.Where(de =>
-                de.References?.Exists(r => 
-                    r.ValueType == ReferenceType.Task && r.Value == taskId
-                ) is true
-            ).ToList() 
-            ?? [];
+            instance
+                .Data?.Where(de =>
+                    de.References?.Exists(r => r.ValueType == ReferenceType.Task && r.Value == taskId) is true
+                )
+                .ToList() ?? [];
 
         _logger.LogInformation("Found {} stale data element(s) to delete", dataElements.Count);
 
@@ -172,10 +171,8 @@ public class ProcessTaskInitializer : IProcessTaskInitializer
                 Guid.Parse(dataElement.Id),
                 false
             );
-            
+
             instance.Data?.Remove(dataElement);
         }
-        
-        
     }
 }
