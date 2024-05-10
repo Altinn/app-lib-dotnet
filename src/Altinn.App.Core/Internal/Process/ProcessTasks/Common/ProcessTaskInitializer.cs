@@ -33,13 +33,15 @@ public class ProcessTaskInitializer : IProcessTaskInitializer
     /// <param name="appModel"></param>
     /// <param name="instantiationProcessor"></param>
     /// <param name="instanceClient"></param>
-    public ProcessTaskInitializer(ILogger<ProcessTaskInitializer> logger,
+    public ProcessTaskInitializer(
+        ILogger<ProcessTaskInitializer> logger,
         IAppMetadata appMetadata,
         IDataClient dataClient,
         IPrefill prefillService,
         IAppModel appModel,
         IInstantiationProcessor instantiationProcessor,
-        IInstanceClient instanceClient)
+        IInstanceClient instanceClient
+    )
     {
         _logger = logger;
         _appMetadata = appMetadata;
@@ -143,12 +145,17 @@ public class ProcessTaskInitializer : IProcessTaskInitializer
         InstanceIdentifier instanceIdentifier = new(instance);
         var dataElements =
             instance.Data?.Where(de =>
-                de.References != null
-                && de.References.Exists(r => r.ValueType == ReferenceType.Task && r.Value == taskId)
-            ) ?? Enumerable.Empty<DataElement>();
-        
+                de.References?.Exists(r => 
+                    r.ValueType == ReferenceType.Task && r.Value == taskId
+                ) is true
+            ).ToList() 
+            ?? [];
+
+        _logger.LogInformation("Found {} stale data element(s) to delete", dataElements.Count);
+
         foreach (var dataElement in dataElements)
         {
+            _logger.LogWarning("Deleting stale data element for task {}: {}", taskId, dataElement.BlobStoragePath);
             await _dataClient.DeleteData(
                 appIdentifier.Org,
                 appIdentifier.App,
@@ -157,6 +164,10 @@ public class ProcessTaskInitializer : IProcessTaskInitializer
                 Guid.Parse(dataElement.Id),
                 false
             );
+            
+            instance.Data?.Remove(dataElement);
         }
+        
+        
     }
 }
