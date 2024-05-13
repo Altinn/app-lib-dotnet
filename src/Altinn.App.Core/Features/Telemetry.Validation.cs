@@ -24,8 +24,8 @@ partial class Telemetry
 
         if (activity is not null)
         {
-            activity.SetTag(LabelValidatorType, validator.GetType().Name);
-            activity.SetTag(LabelValidatorSource, validator.ValidationSource);
+            activity.SetTag(InternalLabels.ValidatorType, validator.GetType().Name);
+            activity.SetTag(InternalLabels.ValidatorSource, validator.ValidationSource);
         }
         return activity;
     }
@@ -44,8 +44,8 @@ partial class Telemetry
 
         if (activity is not null)
         {
-            activity.SetTag(LabelValidatorType, validator.GetType().Name);
-            activity.SetTag(LabelValidatorSource, validator.ValidationSource);
+            activity.SetTag(InternalLabels.ValidatorType, validator.GetType().Name);
+            activity.SetTag(InternalLabels.ValidatorSource, validator.ValidationSource);
         }
         return activity;
     }
@@ -65,8 +65,8 @@ partial class Telemetry
 
         if (activity is not null)
         {
-            activity.SetTag(LabelValidatorType, validator.GetType().Name);
-            activity.SetTag(LabelValidatorSource, validator.ValidationSource);
+            activity.SetTag(InternalLabels.ValidatorType, validator.GetType().Name);
+            activity.SetTag(InternalLabels.ValidatorSource, validator.ValidationSource);
         }
 
         return activity;
@@ -75,8 +75,5 @@ partial class Telemetry
     internal static class Validation
     {
         internal const string _prefix = "Validation";
-
-        internal const string LabelValidatorType = "validator.type";
-        internal const string LabelValidatorSource = "validator.source";
     }
 }

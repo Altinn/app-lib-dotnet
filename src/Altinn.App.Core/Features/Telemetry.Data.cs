@@ -16,14 +16,14 @@ partial class Telemetry
             MetricNameDataPatched,
             init: static m =>
             {
-                m.Add(0, new Tag(LabelResult, PatchResult.Success.ToStringFast()));
-                m.Add(0, new Tag(LabelResult, PatchResult.Error.ToStringFast()));
+                m.Add(0, new Tag(InternalLabels.Result, PatchResult.Success.ToStringFast()));
+                m.Add(0, new Tag(InternalLabels.Result, PatchResult.Error.ToStringFast()));
             }
         );
     }
 
     internal void DataPatched(PatchResult result) =>
-        _counters[MetricNameDataPatched].Add(1, new Tag(LabelResult, result.ToStringFast()));
+        _counters[MetricNameDataPatched].Add(1, new Tag(InternalLabels.Result, result.ToStringFast()));
 
     internal Activity? StartDataPatchActivity(Instance instance)
     {
@@ -34,10 +34,7 @@ partial class Telemetry
 
     internal static class Data
     {
-        internal static readonly string LabelResult = "result";
-
         internal const string _prefix = "Data";
-
         internal static readonly string MetricNameDataPatched = Metrics.CreateLibName("data_patched");
 
         [EnumExtensions]

@@ -19,7 +19,11 @@ partial class Telemetry
                 {
                     foreach (var result in OrderResultExtensions.GetValues())
                     {
-                        m.Add(0, new Tag(TypeLabel, type.ToStringFast()), new Tag(ResultLabel, result.ToStringFast()));
+                        m.Add(
+                            0,
+                            new Tag(InternalLabels.TypeLabel, type.ToStringFast()),
+                            new Tag(InternalLabels.Result, result.ToStringFast())
+                        );
                     }
                 }
             }
@@ -29,19 +33,20 @@ partial class Telemetry
     internal Activity? StartNotificationOrderActivity(OrderType type)
     {
         var activity = ActivitySource.StartActivity("Notifications.Order");
-        activity?.SetTag(TypeLabel, type.ToStringFast());
+        activity?.SetTag(InternalLabels.TypeLabel, type.ToStringFast());
         return activity;
     }
 
     internal void RecordNotificationOrder(OrderType type, OrderResult result) =>
         _counters[OrderMetricName]
-            .Add(1, new Tag(TypeLabel, type.ToStringFast()), new Tag(ResultLabel, result.ToStringFast()));
+            .Add(
+                1,
+                new Tag(InternalLabels.TypeLabel, type.ToStringFast()),
+                new Tag(InternalLabels.Result, result.ToStringFast())
+            );
 
     internal static class Notifications
     {
-        internal static readonly string TypeLabel = "type";
-        internal static readonly string ResultLabel = "result";
-
         internal static readonly string OrderMetricName = Metrics.CreateLibName("notification_orders");
 
         [EnumExtensions]

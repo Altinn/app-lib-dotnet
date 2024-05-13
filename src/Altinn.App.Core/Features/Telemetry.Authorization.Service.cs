@@ -13,7 +13,7 @@ partial class Telemetry
         var activity = ActivitySource.StartActivity($"{_prefix}.GetPartyList");
         if (activity is not null)
         {
-            activity.SetTag(AuthorizationLabels.UserId, userId);
+            activity.SetTag(InternalLabels.AuthorizationUserId, userId);
         }
         return activity;
     }
@@ -23,7 +23,7 @@ partial class Telemetry
         var activity = ActivitySource.StartActivity($"{_prefix}.ValidateSelectedParty");
         if (activity is not null)
         {
-            activity.SetTag(AuthorizationLabels.UserId, userId);
+            activity.SetTag(InternalLabels.AuthorizationUserId, userId);
             activity.SetInstanceOwnerPartyId(partyId);
         }
         return activity;
@@ -40,7 +40,7 @@ partial class Telemetry
         {
             activity.SetInstanceId(instanceIdentifier.InstanceGuid);
             activity.SetInstanceOwnerPartyId(instanceIdentifier.InstanceOwnerPartyId);
-            activity.SetTag(AuthorizationLabels.Action, action);
+            activity.SetTag(InternalLabels.AuthorizationAction, action);
             if (taskId is not null)
             {
                 activity.SetTag(Labels.TaskId, taskId);
@@ -59,7 +59,7 @@ partial class Telemetry
         {
             activity.SetInstanceId(instance);
             string actionTypes = string.Join(", ", actions.Select(a => a.Value.ToString()));
-            activity.SetTag(AuthorizationLabels.ActionId, actionTypes);
+            activity.SetTag(InternalLabels.AuthorizationActionId, actionTypes);
         }
         return activity;
     }
@@ -75,10 +75,10 @@ partial class Telemetry
         {
             activity.SetTaskId(taskId);
             if (authorizer.TaskId is not null)
-                activity.SetTag(AuthorizationLabels.AuthorizerTaskId, authorizer.TaskId);
+                activity.SetTag(InternalLabels.AuthorizerTaskId, authorizer.TaskId);
             if (authorizer.Action is not null)
-                activity.SetTag(AuthorizationLabels.AuthorizerAction, authorizer.Action);
-            activity.SetTag(AuthorizationLabels.Action, action);
+                activity.SetTag(InternalLabels.AuthorizerAction, authorizer.Action);
+            activity.SetTag(InternalLabels.AuthorizationAction, action);
         }
         return activity;
     }
@@ -86,14 +86,5 @@ partial class Telemetry
     internal static class AuthorizationService
     {
         internal const string _prefix = "Authorization.Service";
-    }
-
-    internal static class AuthorizationLabels
-    {
-        internal const string UserId = "authorization.userid";
-        internal const string Action = "authorization.action";
-        internal const string ActionId = "authorization.actionid";
-        internal const string AuthorizerAction = "authorization.authorizer.action";
-        internal const string AuthorizerTaskId = "authorization.authorizer.taskid";
     }
 }

@@ -147,6 +147,22 @@ public sealed partial class Telemetry : IDisposable
         public const string UserAuthenticationLevel = "user.authentication_level";
     }
 
+    internal static class InternalLabels
+    {
+        internal const string Result = "result";
+        internal const string TypeLabel = "type";
+        internal const string AuthorizationUserId = "authorization.userid";
+        internal const string AuthorizationAction = "authorization.action";
+        internal const string AuthorizationActionId = "authorization.actionid";
+        internal const string AuthorizerAction = "authorization.authorizer.action";
+        internal const string AuthorizerTaskId = "authorization.authorizer.taskid";
+        internal const string DataGuid = "dataclient.dataguid";
+        internal const string OrganisationNumber = "register_er_client.organisationnumber";
+        internal const string ProfileClientUserId = "profileClient.userId";
+        internal const string ValidatorType = "validator.type";
+        internal const string ValidatorSource = "validator.source";
+    }
+
     private void InitMetricCounter(InitContext context, string name, Action<Counter<long>> init)
     {
         var counter = Meter.CreateCounter<long>(name, unit: null, description: null);

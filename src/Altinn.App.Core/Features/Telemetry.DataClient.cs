@@ -110,7 +110,7 @@ partial class Telemetry
     {
         var activity = ActivitySource.StartActivity($"{_prefix}.LockDataElement");
         activity.SetInstanceId(instanceId);
-        activity?.SetTag(DataClientLabels.DataGuid, dataGuid);
+        activity?.SetTag(InternalLabels.DataGuid, dataGuid);
         return activity;
     }
 
@@ -118,13 +118,8 @@ partial class Telemetry
     {
         var activity = ActivitySource.StartActivity($"{_prefix}.UnlockDataElement");
         activity.SetInstanceId(instanceId);
-        activity?.SetTag(DataClientLabels.DataGuid, dataGuid);
+        activity?.SetTag(InternalLabels.DataGuid, dataGuid);
         return activity;
-    }
-
-    internal static class DataClientLabels
-    {
-        internal const string DataGuid = "DataClient.DataGuid";
     }
 
     internal static class DataClient
