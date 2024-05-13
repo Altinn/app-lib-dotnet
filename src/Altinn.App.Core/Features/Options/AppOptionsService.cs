@@ -32,7 +32,7 @@ namespace Altinn.App.Core.Features.Options
             Dictionary<string, string> keyValuePairs
         )
         {
-            using var activity = _telemetry?.StartGetOptionsAsyncActivity();
+            using var activity = _telemetry?.StartGetOptionsActivity();
             return await _appOpptionsFactory.GetOptionsProvider(optionId).GetAppOptionsAsync(language, keyValuePairs);
         }
 
@@ -44,7 +44,7 @@ namespace Altinn.App.Core.Features.Options
             Dictionary<string, string> keyValuePairs
         )
         {
-            using var activity = _telemetry?.StartGetOptionsAsyncActivity(instanceIdentifier);
+            using var activity = _telemetry?.StartGetOptionsActivity(instanceIdentifier);
             return await _instanceAppOptionsFactory
                 .GetOptionsProvider(optionId)
                 .GetInstanceAppOptionsAsync(instanceIdentifier, language, keyValuePairs);
