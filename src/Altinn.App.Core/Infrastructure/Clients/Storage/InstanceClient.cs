@@ -113,6 +113,10 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             );
             QueryResponse<Instance> queryResponse = await QueryInstances(token, apiUrl);
 
+            if (queryResponse.Count == 0)
+            {
+                return [];
+            }
             List<Instance> instances = [.. queryResponse.Instances];
 
             while (!string.IsNullOrEmpty(queryResponse.Next))
