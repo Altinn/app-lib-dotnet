@@ -67,12 +67,12 @@ namespace Altinn.App.Core.Infrastructure.Clients.Register
         }
 
         /// <inheritdoc />
-        public async Task<Organization?> GetOrganization(string orgNr)
+        public async Task<Organization?> GetOrganization(string OrgNr)
         {
-            using var activity = _telemetry?.StartGetOrganizationActivity(orgNr);
+            using var activity = _telemetry?.StartGetOrganizationActivity(OrgNr);
             Organization? organization = null;
 
-            string endpointUrl = $"organizations/{orgNr}";
+            string endpointUrl = $"organizations/{OrgNr}";
             string token = JwtTokenUtil.GetTokenFromContext(
                 _httpContextAccessor.HttpContext,
                 _settings.RuntimeCookieName
@@ -93,7 +93,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Register
             {
                 _logger.LogError(
                     "Getting organisation with orgnr {OrgNr} failed with statuscode {StatusCode}",
-                    orgNr,
+                    OrgNr,
                     response.StatusCode
                 );
             }
