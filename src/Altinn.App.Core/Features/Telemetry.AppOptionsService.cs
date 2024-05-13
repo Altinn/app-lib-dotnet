@@ -5,12 +5,11 @@ namespace Altinn.App.Core.Features;
 
 partial class Telemetry
 {
-    internal Activity? StartGetOptionsAsyncActivity() =>
-        ActivitySource.StartActivity("AppOptionsService.GetOptionsAsync");
+    internal Activity? StartGetOptionsActivity() => ActivitySource.StartActivity("AppOptionsService.GetOptions");
 
-    internal Activity? StartGetOptionsAsyncActivity(InstanceIdentifier instanceIdentifier)
+    internal Activity? StartGetOptionsActivity(InstanceIdentifier instanceIdentifier)
     {
-        var activity = ActivitySource.StartActivity("AppOptionsService.GetOptionsAsync");
+        var activity = ActivitySource.StartActivity("AppOptionsService.GetOptions");
         activity.SetInstanceId(instanceIdentifier.InstanceGuid);
         return activity;
     }
