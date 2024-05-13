@@ -158,7 +158,7 @@ public sealed partial class Telemetry : IDisposable
         internal const string AuthorizerTaskId = "authorization.authorizer.taskid";
         internal const string DataGuid = "dataclient.dataguid";
         internal const string OrganisationNumber = "register_er_client.organisationnumber";
-        internal const string ProfileClientUserId = "profileClient.userId";
+        internal const string ProfileClientUserId = "profileclient.userId";
         internal const string ValidatorType = "validator.type";
         internal const string ValidatorSource = "validator.source";
     }
