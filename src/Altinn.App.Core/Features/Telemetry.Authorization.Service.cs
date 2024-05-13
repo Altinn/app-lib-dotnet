@@ -6,7 +6,7 @@ using static Altinn.App.Core.Features.Telemetry.AuthorizationService;
 
 namespace Altinn.App.Core.Features;
 
-public partial class Telemetry
+partial class Telemetry
 {
     internal Activity? StartGetPartyListActivity(int userId)
     {

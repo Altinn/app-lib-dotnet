@@ -3,7 +3,7 @@ using static Altinn.App.Core.Features.Telemetry.ApplicationMetadataClient;
 
 namespace Altinn.App.Core.Features;
 
-public partial class Telemetry
+partial class Telemetry
 {
     internal Activity? StartGetApplicationMetadataActivity() => ActivitySource.StartActivity($"{_prefix}.Get");
 
