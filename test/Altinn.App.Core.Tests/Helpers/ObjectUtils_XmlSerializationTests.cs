@@ -80,7 +80,7 @@ public class ObjectUtils_XmlSerializationTests(ITestOutputHelper _output)
         [XmlAttribute("orid")]
         [JsonPropertyName("orid")]
         [BindNever]
-        public static string orid => "30320";
+        public string orid => "30320";
     }
 
     public class StringMedORID
@@ -90,7 +90,7 @@ public class ObjectUtils_XmlSerializationTests(ITestOutputHelper _output)
 
         [XmlAttribute("orid")]
         [BindNever]
-        public static string orid => "30321";
+        public string orid => "30321";
     }
 
     public static TheoryData<decimal?> DecimalTests =>
@@ -212,12 +212,12 @@ public class ObjectUtils_XmlSerializationTests(ITestOutputHelper _output)
         test.DecimalMedOrid.Should().BeNull();
         test.StringMedOrid.Should().NotBeNull();
         test.StringMedOrid!.value.Should().Be(value);
-        StringMedORID.orid.Should().Be("30321");
+        test.StringMedOrid.orid.Should().Be("30321");
         var child = test.Children.Should().ContainSingle().Which;
         child.DecimalMedOrid.Should().BeNull();
         child.StringMedOrid.Should().NotBeNull();
         child.StringMedOrid!.value.Should().Be(value);
-        StringMedORID.orid.Should().Be("30321");
+        child.StringMedOrid.orid.Should().Be("30321");
         child.NormalString.Should().Be(value);
         return test;
     }
@@ -233,7 +233,7 @@ public class ObjectUtils_XmlSerializationTests(ITestOutputHelper _output)
         {
             test.StringMedOrid.Should().NotBeNull();
             test.StringMedOrid!.value.Should().Be(xmlTextValue);
-            StringMedORID.orid.Should().Be("30321");
+            test.StringMedOrid.orid.Should().Be("30321");
         }
 
         test.NormalString.Should().Be(normalValue);
@@ -247,7 +247,7 @@ public class ObjectUtils_XmlSerializationTests(ITestOutputHelper _output)
         {
             child.StringMedOrid.Should().NotBeNull();
             child.StringMedOrid!.value.Should().Be(xmlTextValue);
-            StringMedORID.orid.Should().Be("30321");
+            child.StringMedOrid.orid.Should().Be("30321");
         }
 
         child.NormalString.Should().Be(normalValue);
@@ -328,14 +328,14 @@ public class ObjectUtils_XmlSerializationTests(ITestOutputHelper _output)
         test.StringMedOrid.Should().BeNull();
         test.DecimalMedOrid.Should().NotBeNull();
         test.DecimalMedOrid!.valueNullable.Should().Be(value);
-        NullableDecimalMedORID.orid.Should().Be("30320");
+        test.DecimalMedOrid.orid.Should().Be("30320");
         test.Decimal.Should().Be(value ?? default);
         test.NullableDecimal.Should().Be(value);
         var child = test.Children.Should().ContainSingle().Which;
         child.StringMedOrid.Should().BeNull();
         child.DecimalMedOrid.Should().NotBeNull();
         child.DecimalMedOrid!.valueNullable.Should().Be(value);
-        NullableDecimalMedORID.orid.Should().Be("30320");
+        child.DecimalMedOrid.orid.Should().Be("30320");
         child.Decimal.Should().Be(value ?? default);
         child.NullableDecimal.Should().Be(value);
         return test;
@@ -352,7 +352,7 @@ public class ObjectUtils_XmlSerializationTests(ITestOutputHelper _output)
         {
             test.DecimalMedOrid.Should().NotBeNull();
             test.DecimalMedOrid!.valueNullable.Should().Be(value);
-            NullableDecimalMedORID.orid.Should().Be("30320");
+            test.DecimalMedOrid.orid.Should().Be("30320");
         }
 
         test.Decimal.Should().Be(value ?? default);
@@ -367,7 +367,7 @@ public class ObjectUtils_XmlSerializationTests(ITestOutputHelper _output)
         {
             child.DecimalMedOrid.Should().NotBeNull();
             child.DecimalMedOrid!.valueNullable.Should().Be(value);
-            NullableDecimalMedORID.orid.Should().Be("30320");
+            child.DecimalMedOrid.orid.Should().Be("30320");
         }
 
         child.Decimal.Should().Be(value ?? default);
