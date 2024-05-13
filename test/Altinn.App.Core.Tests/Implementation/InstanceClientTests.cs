@@ -25,7 +25,7 @@ namespace Altinn.App.PlatformServices.Tests.Implementation
         private readonly Mock<HttpMessageHandler> handlerMock;
         private readonly Mock<IHttpContextAccessor> contextAccessor;
         private readonly Mock<ILogger<InstanceClient>> logger;
-        private readonly TelemetryFake telemetry;
+        private readonly TelemetrySink telemetry;
 
         public InstanceClientTests()
         {
@@ -34,7 +34,7 @@ namespace Altinn.App.PlatformServices.Tests.Implementation
             handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
             contextAccessor = new Mock<IHttpContextAccessor>();
             logger = new Mock<ILogger<InstanceClient>>();
-            telemetry = new TelemetryFake();
+            telemetry = new TelemetrySink();
         }
 
         [Fact]

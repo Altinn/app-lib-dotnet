@@ -11,7 +11,7 @@ using Xunit;
 
 namespace Altinn.App.Core.Tests.Mocks;
 
-internal sealed record TelemetryFake : IDisposable
+internal sealed record TelemetrySink : IDisposable
 {
     internal bool IsDisposed { get; private set; }
 
@@ -32,7 +32,7 @@ internal sealed record TelemetryFake : IDisposable
 
     internal IReadOnlyDictionary<string, IReadOnlyList<MetricMeasurement>> CapturedMetrics => _metricValues;
 
-    internal TelemetryFake(string org = "ttd", string name = "test", string version = "v1")
+    internal TelemetrySink(string org = "ttd", string name = "test", string version = "v1")
     {
         var appId = new AppIdentifier(org, name);
         var options = new AppSettings { AppVersion = version, };
@@ -73,7 +73,7 @@ internal sealed record TelemetryFake : IDisposable
             static (instrument, measurement, tagSpan, state) =>
             {
                 Debug.Assert(state is not null);
-                var self = (TelemetryFake)state!;
+                var self = (TelemetrySink)state!;
                 Debug.Assert(self._metricValues[instrument.Name] is List<MetricMeasurement>);
                 var measurements = (List<MetricMeasurement>)self._metricValues[instrument.Name];
                 var tags = new Dictionary<string, object?>(tagSpan.Length);
@@ -125,8 +125,8 @@ internal static class TelemetryDI
 {
     internal static IServiceCollection AddTelemetryFake(this IServiceCollection services)
     {
-        services.AddSingleton(_ => new TelemetryFake());
-        services.AddSingleton<Telemetry>(sp => sp.GetRequiredService<TelemetryFake>().Object);
+        services.AddSingleton(_ => new TelemetrySink());
+        services.AddSingleton<Telemetry>(sp => sp.GetRequiredService<TelemetrySink>().Object);
         return services;
     }
 }
@@ -138,7 +138,7 @@ public class TelemetryDITests
     [InlineData(false)]
     public void TelemetryFake_Is_Disposed(bool materialize)
     {
-        using var scope = TelemetryFake.CreateScope();
+        using var scope = TelemetrySink.CreateScope();
         scope.IsDisposed.Should().BeFalse();
 
         var services = new ServiceCollection();
@@ -149,7 +149,7 @@ public class TelemetryDITests
 
         if (materialize)
         {
-            var fake = sp.GetRequiredService<TelemetryFake>();
+            var fake = sp.GetRequiredService<TelemetrySink>();
             fake.IsDisposed.Should().BeFalse();
             scope.IsDisposed.Should().BeFalse();
             sp.Dispose();

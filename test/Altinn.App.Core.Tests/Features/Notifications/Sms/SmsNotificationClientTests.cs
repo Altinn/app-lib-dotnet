@@ -305,14 +305,14 @@ public class SmsNotificationClientTests
         );
 
         var client = (SmsNotificationClient)sp.GetRequiredService<ISmsNotificationClient>();
-        var telemetryFake = sp.GetService<TelemetryFake>();
+        var telemetryFake = sp.GetService<TelemetrySink>();
         return new(sp, client, telemetryFake);
     }
 
     private readonly record struct Fixture(
         IServiceProvider ServiceProvider,
         SmsNotificationClient Client,
-        TelemetryFake? TelemetryFake
+        TelemetrySink? TelemetryFake
     ) : IDisposable
     {
         public void Dispose()

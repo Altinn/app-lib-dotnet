@@ -303,14 +303,14 @@ public class EmailNotificationClientTests
         );
 
         var client = (EmailNotificationClient)sp.GetRequiredService<IEmailNotificationClient>();
-        var telemetryFake = sp.GetService<TelemetryFake>();
+        var telemetryFake = sp.GetService<TelemetrySink>();
         return new(sp, client, telemetryFake);
     }
 
     private readonly record struct Fixture(
         IServiceProvider ServiceProvider,
         EmailNotificationClient Client,
-        TelemetryFake? Telemetry
+        TelemetrySink? Telemetry
     ) : IDisposable
     {
         public void Dispose()

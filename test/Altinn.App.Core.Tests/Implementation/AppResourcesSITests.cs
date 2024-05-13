@@ -17,7 +17,7 @@ namespace Altinn.App.Core.Tests.Implementation;
 public class AppResourcesSITests
 {
     private readonly string appBasePath = Path.Combine("Implementation", "TestData") + Path.DirectorySeparatorChar;
-    private readonly TelemetryFake telemetry = new();
+    private readonly TelemetrySink telemetry = new();
 
     [Fact]
     public void GetApplication_desrializes_file_from_disk()

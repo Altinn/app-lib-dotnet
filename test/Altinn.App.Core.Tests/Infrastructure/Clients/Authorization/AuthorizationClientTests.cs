@@ -21,7 +21,7 @@ public class AuthorizationClientTests
     [Fact]
     public async Task AuthorizeActions_returns_dictionary_with_one_action_denied()
     {
-        TelemetryFake telemetry = new();
+        TelemetrySink telemetry = new();
         Mock<IPDP> pdpMock = new();
         Mock<HttpContextAccessor> httpContextAccessorMock = new();
         Mock<HttpClient> httpClientMock = new();
@@ -68,7 +68,7 @@ public class AuthorizationClientTests
     [Fact]
     public async Task AuthorizeActions_returns_empty_dictionary_if_no_response_from_pdp()
     {
-        TelemetryFake telemetry = new();
+        TelemetrySink telemetry = new();
         Mock<IPDP> pdpMock = new();
         Mock<HttpContextAccessor> httpContextAccessorMock = new();
         Mock<HttpClient> httpClientMock = new();

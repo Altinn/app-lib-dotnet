@@ -32,7 +32,7 @@ public class PatchServiceTests : IDisposable
     private readonly Mock<IDataProcessor> _dataProcessorMock = new(MockBehavior.Strict);
     private readonly Mock<IAppModel> _appModelMock = new(MockBehavior.Strict);
     private readonly Mock<IAppMetadata> _appMetadataMock = new(MockBehavior.Strict);
-    private readonly TelemetryFake _telemetryMock = new();
+    private readonly TelemetrySink _telemetryMock = new();
 
     // ValidatorMocks
     private readonly Mock<IFormDataValidator> _formDataValidator = new(MockBehavior.Strict);
