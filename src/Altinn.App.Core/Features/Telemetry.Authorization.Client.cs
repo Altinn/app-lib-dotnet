@@ -51,14 +51,14 @@ partial class Telemetry
 
     internal Activity? StartClientAuthorizeActionsActivity(
         Platform.Storage.Interface.Models.Instance instance,
-        List<string> actions
+        List<string> actionIds
     )
     {
         var activity = ActivitySource.StartActivity($"{_prefix}.AuthorizeActions");
         if (activity is not null)
         {
             activity.SetInstanceId(instance);
-            string actionTypes = string.Join(", ", actions);
+            string actionTypes = string.Join(", ", actionIds);
             activity.SetTag(AuthorizationLabels.ActionId, actionTypes);
         }
         return activity;
