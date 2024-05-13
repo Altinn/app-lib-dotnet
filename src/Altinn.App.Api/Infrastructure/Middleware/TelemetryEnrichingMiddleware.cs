@@ -49,10 +49,10 @@ public static class TelemetryEnrichingMiddleware
                     }
                 }
 
-                trace.Activity.SetTag("user.name", userName);
-                trace.Activity.SetTag("user.id", userId);
-                trace.Activity.SetTag("user.party_id", partyId);
-                trace.Activity.SetTag("user.authentication_level", authenticationLevel);
+                trace.Activity.SetTag(Core.Features.Telemetry.Labels.UserName, userName);
+                trace.Activity.SetTag(Core.Features.Telemetry.Labels.UserId, userId);
+                trace.Activity.SetTag(Core.Features.Telemetry.Labels.UserPartyId, partyId);
+                trace.Activity.SetTag(Core.Features.Telemetry.Labels.UserAuthenticationLevel, authenticationLevel);
 
                 if (
                     context.Request.RouteValues.TryGetValue("instanceOwnerPartyId", out var instanceOwnerPartyId)

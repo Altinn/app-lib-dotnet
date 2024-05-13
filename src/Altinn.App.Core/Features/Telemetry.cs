@@ -125,6 +125,26 @@ public sealed partial class Telemetry : IDisposable
         /// Label for the ID of the task.
         /// </summary>
         public static readonly string TaskId = "task.id";
+
+        /// <summary>
+        /// Label for the name of the user.
+        /// </summary>
+        public const string UserName = "user.name";
+
+        /// <summary>
+        /// Label for the ID of the user.
+        /// </summary>
+        public const string UserId = "user.id";
+
+        /// <summary>
+        /// Label for the ID of the party.
+        /// </summary>
+        public const string UserPartyId = "user.party_id";
+
+        /// <summary>
+        /// Label for the authentication level of the user.
+        /// </summary>
+        public const string UserAuthenticationLevel = "user.authentication_level";
     }
 
     private void InitMetricCounter(InitContext context, string name, Action<Counter<long>> init)
