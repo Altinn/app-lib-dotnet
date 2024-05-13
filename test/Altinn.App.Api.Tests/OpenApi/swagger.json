@@ -5519,6 +5519,13 @@
           "action": {
             "type": "string",
             "nullable": true
+          },
+          "ignoredWarnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationIssue"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false

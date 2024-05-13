@@ -13,7 +13,6 @@ using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 using AppProcessState = Altinn.App.Core.Internal.Process.Elements.AppProcessState;
 using IAuthorizationService = Altinn.App.Core.Internal.Auth.IAuthorizationService;
 
@@ -236,13 +235,15 @@ namespace Altinn.App.Api.Controllers
         private async Task<ProblemDetails?> GetValidationProblemDetails(
             Instance instance,
             string currentTaskId,
+            List<ValidationIssue>? ignoredWarnings,
             string? language
         )
         {
             var validationIssues = await _validationService.ValidateInstanceAtTask(instance, currentTaskId, language);
-            var success = validationIssues.TrueForAll(v => v.Severity != ValidationIssueSeverity.Error);
 
-            if (!success)
+            var hasErrors = !validationIssues.TrueForAll(v => v.Severity != ValidationIssueSeverity.Error);
+
+            if (hasErrors)
             {
                 var errorCount = validationIssues.Count(v => v.Severity == ValidationIssueSeverity.Error);
                 return new ProblemDetails()
@@ -251,6 +252,40 @@ namespace Altinn.App.Api.Controllers
                     Status = (int)HttpStatusCode.Conflict,
                     Title = "Validation failed for task",
                     Extensions = new Dictionary<string, object?>() { { "validationIssues", validationIssues }, },
+                };
+            }
+
+            if (ignoredWarnings == null)
+            {
+                return null;
+            }
+
+            var nonIgnoredWarnings = validationIssues
+                .Where(v => v.Severity == ValidationIssueSeverity.Warning)
+                .Where(v =>
+                    ignoredWarnings.Exists(i =>
+                        i.Description == v.Description
+                        && i.Field == v.Field
+                        && i.Code == v.Code
+                        && i.Source == v.Source
+                        && i.DataElementId == v.DataElementId
+                        && i.CustomTextKey == v.CustomTextKey
+                    )
+                )
+                .ToList();
+            if (nonIgnoredWarnings.Count > 0)
+            {
+                return new ProblemDetails
+                {
+                    Detail =
+                        $"{nonIgnoredWarnings.Count} validation warnings found for task {currentTaskId} that are not ignored",
+                    Status = (int)HttpStatusCode.Conflict,
+                    Title = "Validation failed for task",
+                    Extensions = new Dictionary<string, object?>
+                    {
+                        { "validationIssues", validationIssues },
+                        { "nonIgnoredWarnings", nonIgnoredWarnings }
+                    }
                 };
             }
 
@@ -350,7 +385,12 @@ namespace Altinn.App.Api.Controllers
                     User = User,
                     Action = checkedAction
                 };
-                var validationProblem = await GetValidationProblemDetails(instance, currentTaskId, language);
+                var validationProblem = await GetValidationProblemDetails(
+                    instance,
+                    currentTaskId,
+                    processNext?.IgnoredWarnings,
+                    language
+                );
                 if (validationProblem is not null)
                 {
                     return Conflict(validationProblem);
@@ -511,6 +551,7 @@ namespace Altinn.App.Api.Controllers
                 var validationProblem = await GetValidationProblemDetails(
                     instance,
                     instance.Process.CurrentTask.ElementId,
+                    null,
                     language
                 );
                 if (validationProblem is not null)
