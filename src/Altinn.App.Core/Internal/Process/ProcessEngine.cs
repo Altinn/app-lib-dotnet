@@ -132,12 +132,12 @@ public class ProcessEngine : IProcessEngine
             };
         }
 
-        int? userId = request.User.GetUserIdAsInt();
-        IUserAction? actionHandler = _userActionService.GetActionHandler(request.Action);
-
         // Removes existing/stale data elements previously generated from this task
         // TODO: Move this logic to ProcessTaskInitializer.Initialize once the authentication model supports a service/app user with the appropriate scopes
         await _processTaskInitializer.RemoveDataElementsGeneratedFromTask(instance, currentElementId);
+
+        int? userId = request.User.GetUserIdAsInt();
+        IUserAction? actionHandler = _userActionService.GetActionHandler(request.Action);
 
         UserActionResult actionResult = actionHandler is null
             ? UserActionResult.SuccessResult()
