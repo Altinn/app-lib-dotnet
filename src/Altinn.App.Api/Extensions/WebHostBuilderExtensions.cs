@@ -49,16 +49,7 @@ public static class WebHostBuilderExtensions
                     ?? Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT")
                     ?? "Production";
 
-                var (appInsightsKey, appInsightsConnectionString) = ServiceCollectionExtensions.GetAppInsightsConfig(
-                    config,
-                    env
-                );
-                if (
-                    string.IsNullOrWhiteSpace(appInsightsConnectionString) && !string.IsNullOrWhiteSpace(appInsightsKey)
-                )
-                {
-                    appInsightsConnectionString = $"InstrumentationKey={appInsightsKey}";
-                }
+                var appInsightsConnectionString = ServiceCollectionExtensions.GetAppInsightsConfigForOtel(config, env);
 
                 if (!string.IsNullOrWhiteSpace(appInsightsConnectionString))
                 {

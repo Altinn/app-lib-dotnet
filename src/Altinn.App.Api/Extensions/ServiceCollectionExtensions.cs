@@ -158,17 +158,7 @@ namespace Altinn.App.Api.Extensions
             services.AddHostedService<TelemetryInitialization>();
             services.AddSingleton<Telemetry>();
 
-            var (appInsightsKey, appInsightsConnectionString) = GetAppInsightsConfig(config, env.EnvironmentName);
-
-            if (!Guid.TryParse(appInsightsKey, out _))
-            {
-                appInsightsKey = null;
-            }
-
-            if (string.IsNullOrWhiteSpace(appInsightsConnectionString) && !string.IsNullOrWhiteSpace(appInsightsKey))
-            {
-                appInsightsConnectionString = $"InstrumentationKey={appInsightsKey}";
-            }
+            var appInsightsConnectionString = GetAppInsightsConfigForOtel(config, env.EnvironmentName);
 
             var builder = services.GetOrCreateInstanceInServices<IOpenTelemetryBuilder>(
                 () =>
@@ -361,6 +351,26 @@ namespace Altinn.App.Api.Extensions
                 : Environment.GetEnvironmentVariable("ApplicationInsights__ConnectionString");
 
             return (key, connectionString);
+        }
+
+        /// <summary>
+        /// Get Application Insight confirguration for OpenTelemetry.
+        /// </summary>
+        /// <param name="config">config</param>
+        /// <param name="env">env</param>
+        /// <returns>Connection string</returns>
+        internal static string? GetAppInsightsConfigForOtel(IConfiguration config, string env)
+        {
+            var (appInsightsKey, _) = GetAppInsightsConfig(config, env);
+            if (!Guid.TryParse(appInsightsKey, out _))
+            {
+                return null;
+            }
+            else if (!string.IsNullOrWhiteSpace(appInsightsKey))
+            {
+                return $"InstrumentationKey={appInsightsKey}";
+            }
+            return null;
         }
 
         /// <summary>
