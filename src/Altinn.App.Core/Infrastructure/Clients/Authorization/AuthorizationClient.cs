@@ -31,7 +31,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Authorization
         private readonly HttpClient _client;
         private readonly IPDP _pdp;
         private readonly ILogger _logger;
-        private readonly Telemetry _telemetry;
+        private readonly Telemetry? _telemetry;
         private const string ForwardedForHeaderName = "x-forwarded-for";
 
         /// <summary>
@@ -51,7 +51,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Authorization
             IOptionsMonitor<AppSettings> settings,
             IPDP pdp,
             ILogger<AuthorizationClient> logger,
-            Telemetry telemetry
+            Telemetry? telemetry = null
         )
         {
             _httpContextAccessor = httpContextAccessor;
