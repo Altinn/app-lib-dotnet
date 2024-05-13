@@ -159,6 +159,12 @@ namespace Altinn.App.Api.Extensions
             services.AddSingleton<Telemetry>();
 
             var (appInsightsKey, appInsightsConnectionString) = GetAppInsightsConfig(config, env.EnvironmentName);
+
+            if (!Guid.TryParse(appInsightsKey, out _))
+            {
+                appInsightsKey = null;
+            }
+
             if (string.IsNullOrWhiteSpace(appInsightsConnectionString) && !string.IsNullOrWhiteSpace(appInsightsKey))
             {
                 appInsightsConnectionString = $"InstrumentationKey={appInsightsKey}";
