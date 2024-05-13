@@ -22,8 +22,10 @@ partial class Telemetry
 
     internal void ProcessEnded(ProcessStateChange processChange)
     {
-        ArgumentNullException.ThrowIfNull(processChange?.NewProcessState?.Started);
-        ArgumentNullException.ThrowIfNull(processChange?.NewProcessState?.Ended);
+        if (processChange?.NewProcessState?.Started is null || processChange?.NewProcessState?.Ended is null)
+        {
+            return;
+        }
         var state = processChange.NewProcessState;
 
         _counters[MetricNameProcessesEnded].Add(1);
