@@ -31,7 +31,7 @@ public static class TelemetryEnrichingMiddleware
                 int? authenticationLevel = null;
                 foreach (Claim claim in context.User.Claims)
                 {
-                    if (claim.Type.Equals(AltinnCoreClaimTypes.UserName))
+                    if (claim.Type.Equals(AltinnCoreClaimTypes.UserName, StringComparison.InvariantCultureIgnoreCase))
                     {
                         userName = claim.Value;
                     }
