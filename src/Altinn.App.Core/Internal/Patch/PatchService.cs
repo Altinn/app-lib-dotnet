@@ -11,7 +11,7 @@ using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Result;
 using Altinn.Platform.Storage.Interface.Models;
 using Json.Patch;
-using static Altinn.App.Core.Features.Telemetry.Data;
+using static Altinn.App.Core.Features.Telemetry;
 
 namespace Altinn.App.Core.Internal.Patch;
 
@@ -85,7 +85,7 @@ public class PatchService : IPatchService
         var telemetryPatchResult = (
             patchResult.IsSuccess ? Telemetry.Data.PatchResult.Success : Telemetry.Data.PatchResult.Error
         );
-        activity?.SetTag(LabelResult, telemetryPatchResult.ToStringFast());
+        activity?.SetTag(InternalLabels.Result, telemetryPatchResult.ToStringFast());
         _telemetry?.DataPatched(telemetryPatchResult);
 
         if (!patchResult.IsSuccess)

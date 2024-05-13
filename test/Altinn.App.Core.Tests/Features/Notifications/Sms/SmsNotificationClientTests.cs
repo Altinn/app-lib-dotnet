@@ -20,6 +20,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Moq.Protected;
 using Xunit;
+using static Altinn.App.Core.Features.Telemetry;
 
 public class SmsNotificationClientTests
 {
@@ -88,24 +89,15 @@ public class SmsNotificationClientTests
 
             var activity = activities[^1];
             activity.OperationName.Should().Be("Notifications.Order");
-            activity
-                .GetTagItem(Telemetry.Notifications.TypeLabel)
-                .Should()
-                .Be(Telemetry.Notifications.OrderType.Sms.ToStringFast());
+            activity.GetTagItem(InternalLabels.Type).Should().Be(Notifications.OrderType.Sms.ToStringFast());
 
-            var measurements = telemetry.CapturedMetrics.GetValueOrDefault(Telemetry.Notifications.OrderMetricName);
+            var measurements = telemetry.CapturedMetrics.GetValueOrDefault(Notifications.OrderMetricName);
             Assert.NotNull(measurements);
             measurements.Count.Should().Be(1);
             var measurement = measurements[^1];
             measurement.Value.Should().Be(1);
-            measurement
-                .Tags[Telemetry.Notifications.TypeLabel]
-                .Should()
-                .Be(Telemetry.Notifications.OrderType.Sms.ToStringFast());
-            measurement
-                .Tags[Telemetry.Notifications.ResultLabel]
-                .Should()
-                .Be(Telemetry.Notifications.OrderResult.Success.ToStringFast());
+            measurement.Tags[InternalLabels.Type].Should().Be(Notifications.OrderType.Sms.ToStringFast());
+            measurement.Tags[InternalLabels.Result].Should().Be(Notifications.OrderResult.Success.ToStringFast());
         }
     }
 

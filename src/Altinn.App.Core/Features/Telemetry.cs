@@ -150,7 +150,7 @@ public sealed partial class Telemetry : IDisposable
     internal static class InternalLabels
     {
         internal const string Result = "result";
-        internal const string TypeLabel = "type";
+        internal const string Type = "type";
         internal const string AuthorizationUserId = "authorization.userid";
         internal const string AuthorizationAction = "authorization.action";
         internal const string AuthorizationActionId = "authorization.actionid";

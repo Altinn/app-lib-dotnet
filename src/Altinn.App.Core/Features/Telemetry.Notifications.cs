@@ -21,7 +21,7 @@ partial class Telemetry
                     {
                         m.Add(
                             0,
-                            new Tag(InternalLabels.TypeLabel, type.ToStringFast()),
+                            new Tag(InternalLabels.Type, type.ToStringFast()),
                             new Tag(InternalLabels.Result, result.ToStringFast())
                         );
                     }
@@ -33,7 +33,7 @@ partial class Telemetry
     internal Activity? StartNotificationOrderActivity(OrderType type)
     {
         var activity = ActivitySource.StartActivity("Notifications.Order");
-        activity?.SetTag(InternalLabels.TypeLabel, type.ToStringFast());
+        activity?.SetTag(InternalLabels.Type, type.ToStringFast());
         return activity;
     }
 
@@ -41,7 +41,7 @@ partial class Telemetry
         _counters[OrderMetricName]
             .Add(
                 1,
-                new Tag(InternalLabels.TypeLabel, type.ToStringFast()),
+                new Tag(InternalLabels.Type, type.ToStringFast()),
                 new Tag(InternalLabels.Result, result.ToStringFast())
             );
 
