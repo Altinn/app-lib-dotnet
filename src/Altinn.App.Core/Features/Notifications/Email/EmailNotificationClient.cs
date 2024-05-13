@@ -71,7 +71,6 @@ internal sealed class EmailNotificationClient : IEmailNotificationClient
                     throw new JsonException("Couldn't deserialize email notification order response.");
 
                 _telemetry?.RecordNotificationOrder(_orderType, Telemetry.Notifications.OrderResult.Success);
-                activity?.SetStatus(ActivityStatusCode.Ok);
             }
             else
             {
@@ -90,7 +89,6 @@ internal sealed class EmailNotificationClient : IEmailNotificationClient
             _logger.LogError(ex, "Error when processing email notification order");
 
             _telemetry?.RecordNotificationOrder(_orderType, Telemetry.Notifications.OrderResult.Error);
-            activity?.Errored(ex);
 
             throw ex;
         }
