@@ -158,11 +158,11 @@ public class ProcessTaskInitializer : IProcessTaskInitializer
                 )
                 .ToList() ?? [];
 
-        _logger.LogInformation("Found {} stale data element(s) to delete", dataElements.Count);
+        _logger.LogInformation("Found {Count} stale data element(s) to delete", dataElements.Count);
 
         foreach (var dataElement in dataElements)
         {
-            _logger.LogWarning("Deleting stale data element for task {}: {}", taskId, dataElement.BlobStoragePath);
+            _logger.LogWarning("Deleting stale data element for task {TaskId}: {BlobStoragePath}", taskId, dataElement.BlobStoragePath);
             await _dataClient.DeleteData(
                 appIdentifier.Org,
                 appIdentifier.App,
