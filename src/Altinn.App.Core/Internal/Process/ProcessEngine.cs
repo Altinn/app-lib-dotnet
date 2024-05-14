@@ -27,6 +27,7 @@ public class ProcessEngine : IProcessEngine
     private readonly IProcessEventDispatcher _processEventDispatcher;
     private readonly IProcessTaskInitializer _processTaskInitializer;
     private readonly UserActionService _userActionService;
+    private readonly IProcessTaskCleaner _processTaskCleaner;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessEngine"/> class
@@ -37,6 +38,7 @@ public class ProcessEngine : IProcessEngine
     /// <param name="processEventsDelegator">The process events delegator</param>
     /// <param name="processEventDispatcher">The process event dispatcher</param>
     /// <param name="processTaskInitializer">The process tasks initializer</param>
+    /// <param name="processTaskCleaner">The process task cleaner</param>
     /// <param name="userActionService">The action handler factory</param>
     public ProcessEngine(
         IProcessReader processReader,
@@ -45,6 +47,7 @@ public class ProcessEngine : IProcessEngine
         IProcessEventHandlerDelegator processEventsDelegator,
         IProcessEventDispatcher processEventDispatcher,
         IProcessTaskInitializer processTaskInitializer,
+        IProcessTaskCleaner processTaskCleaner,
         UserActionService userActionService
     )
     {
@@ -54,6 +57,7 @@ public class ProcessEngine : IProcessEngine
         _processEventHandlerDelegator = processEventsDelegator;
         _processEventDispatcher = processEventDispatcher;
         _processTaskInitializer = processTaskInitializer;
+        _processTaskCleaner = processTaskCleaner;
         _userActionService = userActionService;
     }
 
@@ -134,7 +138,7 @@ public class ProcessEngine : IProcessEngine
 
         // Removes existing/stale data elements previously generated from this task
         // TODO: Move this logic to ProcessTaskInitializer.Initialize once the authentication model supports a service/app user with the appropriate scopes
-        await _processTaskInitializer.RemoveDataElementsGeneratedFromTask(instance, currentElementId);
+        await _processTaskCleaner.RemoveAllDataElementsGeneratedFromTask(instance, currentElementId);
 
         int? userId = request.User.GetUserIdAsInt();
         IUserAction? actionHandler = _userActionService.GetActionHandler(request.Action);

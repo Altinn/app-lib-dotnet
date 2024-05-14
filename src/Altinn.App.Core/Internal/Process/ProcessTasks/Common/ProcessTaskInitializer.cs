@@ -138,45 +138,4 @@ public class ProcessTaskInitializer : IProcessTaskInitializer
             instance.DataValues = updatedInstance.DataValues;
         }
     }
-
-    /// <summary>
-    /// Removes all data elements generated from a specific task.<br/>
-    /// NOTE: This should ideally be called from `Initialize` to clean up the current task (in case this is not the first run),
-    ///     but we currently cannot guarantee that the initialize-user has the correct permissions to perform cleanup.<br/>
-    /// TODO: Future -> Make private, invoke from `Initialize`, remove from `IProcessTaskInitializer` interface, remove from caller `ProcessEnginge.Next`
-    /// </summary>
-    /// <param name="instance"></param>
-    /// <param name="taskId"></param>
-    public async Task RemoveDataElementsGeneratedFromTask(Instance instance, string taskId)
-    {
-        AppIdentifier appIdentifier = new(instance.AppId);
-        InstanceIdentifier instanceIdentifier = new(instance);
-        var dataElements =
-            instance
-                .Data?.Where(de =>
-                    de.References?.Exists(r => r.ValueType == ReferenceType.Task && r.Value == taskId) is true
-                )
-                .ToList() ?? [];
-
-        _logger.LogInformation("Found {Count} stale data element(s) to delete", dataElements.Count);
-
-        foreach (var dataElement in dataElements)
-        {
-            _logger.LogWarning(
-                "Deleting stale data element for task {TaskId}: {BlobStoragePath}",
-                taskId,
-                dataElement.BlobStoragePath
-            );
-            await _dataClient.DeleteData(
-                appIdentifier.Org,
-                appIdentifier.App,
-                instanceIdentifier.InstanceOwnerPartyId,
-                instanceIdentifier.InstanceGuid,
-                Guid.Parse(dataElement.Id),
-                false
-            );
-
-            instance.Data?.Remove(dataElement);
-        }
-    }
 }
