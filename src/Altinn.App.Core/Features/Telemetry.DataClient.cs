@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using Altinn.Platform.Storage.Interface.Models;
-using static Altinn.App.Core.Features.Telemetry.Data;
+using static Altinn.App.Core.Features.Telemetry.DataClient;
 
 namespace Altinn.App.Core.Features;
 

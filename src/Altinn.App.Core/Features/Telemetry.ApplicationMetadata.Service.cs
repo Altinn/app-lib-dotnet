@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using static Altinn.App.Core.Features.Telemetry.ApplicationMetadataClient;
+using static Altinn.App.Core.Features.Telemetry.ApplicationMetadataService;
 
 namespace Altinn.App.Core.Features;
 

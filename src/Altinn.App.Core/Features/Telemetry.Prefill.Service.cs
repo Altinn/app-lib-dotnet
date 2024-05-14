@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using static Altinn.App.Core.Features.Telemetry.Data;
+using static Altinn.App.Core.Features.Telemetry.PrefillService;
 
 namespace Altinn.App.Core.Features;
 
