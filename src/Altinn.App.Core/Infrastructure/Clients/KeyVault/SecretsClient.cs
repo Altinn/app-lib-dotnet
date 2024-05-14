@@ -3,18 +3,18 @@ using AltinnCore.Authentication.Constants;
 using Microsoft.Azure.KeyVault;
 using Microsoft.Azure.KeyVault.Models;
 using Microsoft.Azure.KeyVault.WebKey;
-using Microsoft.Azure.Services.AppAuthentication;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Clients.ActiveDirectory;
 
 namespace Altinn.App.Core.Infrastructure.Clients.KeyVault
 {
     /// <summary>
     /// Class that handles integration with Azure Key Vault
     /// </summary>
-    public class SecretsClient : ISecretsClient
+    public class SecretsClient : ISecretsClient, IDisposable
     {
         private readonly string _vaultUri;
-        private readonly AzureServiceTokenProvider _azureServiceTokenProvider;
+        private readonly KeyVaultClient _client;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SecretsClient"/> class with a client using the credentials from the key vault settings.
@@ -24,21 +24,28 @@ namespace Altinn.App.Core.Infrastructure.Clients.KeyVault
         /// </param>
         public SecretsClient(IOptions<KeyVaultSettings> keyVaultSettings)
         {
-            string connectionString =
-                $"RunAs=App;AppId={keyVaultSettings.Value.ClientId};"
-                + $"TenantId={keyVaultSettings.Value.TenantId};"
-                + $"AppKey={keyVaultSettings.Value.ClientSecret}";
             _vaultUri = keyVaultSettings.Value.SecretUri;
-            _azureServiceTokenProvider = new AzureServiceTokenProvider(connectionString);
+            _client = new KeyVaultClient(
+                async (string authority, string resource, string scope) =>
+                {
+                    var authContext = new AuthenticationContext(authority);
+                    var credential = new ClientCredential(
+                        keyVaultSettings.Value.ClientId,
+                        keyVaultSettings.Value.ClientSecret
+                    );
+#pragma warning disable CS0618 // Type or member is obsolete
+                    // TODO: this whole thing is obsolete
+                    var result = await authContext.AcquireTokenAsync(resource, credential);
+#pragma warning restore CS0618 // Type or member is obsolete
+                    return result.AccessToken;
+                }
+            );
         }
 
         /// <inheritdoc />
         public async Task<byte[]> GetCertificateAsync(string certificateName)
         {
-            using KeyVaultClient client = new KeyVaultClient(
-                new KeyVaultClient.AuthenticationCallback(_azureServiceTokenProvider.KeyVaultTokenCallback)
-            );
-            CertificateBundle cert = await client.GetCertificateAsync(_vaultUri, certificateName);
+            CertificateBundle cert = await _client.GetCertificateAsync(_vaultUri, certificateName);
 
             return cert.Cer;
         }
@@ -46,32 +53,43 @@ namespace Altinn.App.Core.Infrastructure.Clients.KeyVault
         /// <inheritdoc />
         public async Task<JsonWebKey> GetKeyAsync(string keyName)
         {
-            using KeyVaultClient client = new KeyVaultClient(
-                new KeyVaultClient.AuthenticationCallback(_azureServiceTokenProvider.KeyVaultTokenCallback)
-            );
-            KeyBundle kb = await client.GetKeyAsync(_vaultUri, keyName);
+            KeyBundle kb = await _client.GetKeyAsync(_vaultUri, keyName);
 
             return kb.Key;
         }
 
         /// <inheritdoc />
-        public KeyVaultClient GetKeyVaultClient()
-        {
-            KeyVaultClient client = new KeyVaultClient(
-                new KeyVaultClient.AuthenticationCallback(_azureServiceTokenProvider.KeyVaultTokenCallback)
-            );
-            return client;
-        }
+        public KeyVaultClient GetKeyVaultClient() => _client;
 
         /// <inheritdoc />
         public async Task<string> GetSecretAsync(string secretName)
         {
-            using KeyVaultClient client = new KeyVaultClient(
-                new KeyVaultClient.AuthenticationCallback(_azureServiceTokenProvider.KeyVaultTokenCallback)
-            );
-            SecretBundle sb = await client.GetSecretAsync(_vaultUri, secretName);
+            SecretBundle sb = await _client.GetSecretAsync(_vaultUri, secretName);
 
             return sb.Value;
+        }
+
+        /// <summary>
+        /// Disposes the <see cref="KeyVaultClient"/> used by this instance.
+        /// </summary>()
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Disposes the <see cref="KeyVaultClient"/> used by this instance.
+        /// </summary>
+        /// <param name="disposing"></param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposing)
+            {
+                return;
+            }
+
+            _client.Dispose();
         }
     }
 }
