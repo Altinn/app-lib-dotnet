@@ -847,7 +847,7 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients.Storage
             );
         }
 
-        private static void AssertHttpRequest(
+        private void AssertHttpRequest(
             HttpRequestMessage actual,
             Uri expectedUri,
             HttpMethod method,

@@ -48,7 +48,7 @@ public class PageComponentConverter : JsonConverter<PageComponent>
     /// <summary>
     /// Similar to read, but not nullable, and no pageName hack.
     /// </summary>
-    public static PageComponent ReadNotNull(ref Utf8JsonReader reader, string pageName, JsonSerializerOptions options)
+    public PageComponent ReadNotNull(ref Utf8JsonReader reader, string pageName, JsonSerializerOptions options)
     {
         if (reader.TokenType != JsonTokenType.StartObject)
         {
@@ -82,7 +82,7 @@ public class PageComponentConverter : JsonConverter<PageComponent>
         return page;
     }
 
-    private static PageComponent ReadData(ref Utf8JsonReader reader, string pageName, JsonSerializerOptions options)
+    private PageComponent ReadData(ref Utf8JsonReader reader, string pageName, JsonSerializerOptions options)
     {
         if (reader.TokenType != JsonTokenType.StartObject)
         {
@@ -141,11 +141,10 @@ public class PageComponentConverter : JsonConverter<PageComponent>
         return new PageComponent(pageName, layout, componentLookup, hidden, required, readOnly, additionalProperties);
     }
 
-    private static (
-        List<BaseComponent>,
-        Dictionary<string, BaseComponent>,
-        Dictionary<string, GroupComponent>
-    ) ReadLayout(ref Utf8JsonReader reader, JsonSerializerOptions options)
+    private (List<BaseComponent>, Dictionary<string, BaseComponent>, Dictionary<string, GroupComponent>) ReadLayout(
+        ref Utf8JsonReader reader,
+        JsonSerializerOptions options
+    )
     {
         if (reader.TokenType != JsonTokenType.StartArray)
         {
@@ -234,7 +233,7 @@ public class PageComponentConverter : JsonConverter<PageComponent>
         }
     }
 
-    private static BaseComponent ReadComponent(ref Utf8JsonReader reader, JsonSerializerOptions options)
+    private BaseComponent ReadComponent(ref Utf8JsonReader reader, JsonSerializerOptions options)
     {
         if (reader.TokenType != JsonTokenType.StartObject)
         {

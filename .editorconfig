@@ -94,10 +94,13 @@ csharp_style_prefer_primary_constructors = false:suggestion
 dotnet_diagnostic.CA1848.severity = none
 
 # CA1727: Use PascalCase for named placeholders
-dotnet_diagnostic.CA1727.severity = none
+dotnet_diagnostic.CA1727.severity = suggestion
 
 # CA2254: Template should be a static expression
 dotnet_diagnostic.CA2254.severity = none
+
+# CA1822: Mark members as static
+dotnet_diagnostic.CA1822.severity = suggestion
 
 [Program.cs]
 dotnet_diagnostic.CA1050.severity = none

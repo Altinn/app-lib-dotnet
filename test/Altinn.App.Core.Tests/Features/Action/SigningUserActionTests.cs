@@ -257,7 +257,7 @@ public class SigningUserActionTests
         );
     }
 
-    private static bool AssertSigningContextAsExpected(SignatureContext s1, SignatureContext s2)
+    private bool AssertSigningContextAsExpected(SignatureContext s1, SignatureContext s2)
     {
         s1.Should().BeEquivalentTo(s2);
         return true;

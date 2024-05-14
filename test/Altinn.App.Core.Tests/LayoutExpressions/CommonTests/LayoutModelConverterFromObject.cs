@@ -36,8 +36,9 @@ public class LayoutModelConverterFromObject : JsonConverter<LayoutModel>
             reader.Read();
 
             PageComponentConverter.SetAsyncLocalPageName(pageName);
+            var converter = new PageComponentConverter();
 
-            componentModel.Pages[pageName] = PageComponentConverter.ReadNotNull(ref reader, pageName, options);
+            componentModel.Pages[pageName] = converter.ReadNotNull(ref reader, pageName, options);
         }
 
         return componentModel;

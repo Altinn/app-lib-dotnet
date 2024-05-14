@@ -43,12 +43,7 @@ public class DataModel : IDataModelAccessor
         return null;
     }
 
-    private static object? GetModelDataRecursive(
-        string[] keys,
-        int index,
-        object currentModel,
-        ReadOnlySpan<int> indicies
-    )
+    private object? GetModelDataRecursive(string[] keys, int index, object currentModel, ReadOnlySpan<int> indicies)
     {
         if (index == keys.Length)
         {
@@ -140,7 +135,7 @@ public class DataModel : IDataModelAccessor
         return rowIndices.Length == 0 ? null : rowIndices;
     }
 
-    private static string[] GetResolvedKeysRecursive(
+    private string[] GetResolvedKeysRecursive(
         string[] keyParts,
         object currentModel,
         int currentIndex = 0,
@@ -408,7 +403,7 @@ public class DataModel : IDataModelAccessor
         return VerifyKeyRecursive(key.Split('.'), 0, _serviceModel.GetType());
     }
 
-    private static bool VerifyKeyRecursive(string[] keys, int index, Type currentModel)
+    private bool VerifyKeyRecursive(string[] keys, int index, Type currentModel)
     {
         if (index == keys.Length)
         {

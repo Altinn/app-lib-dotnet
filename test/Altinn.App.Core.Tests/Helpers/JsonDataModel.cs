@@ -35,12 +35,7 @@ public class JsonDataModel : IDataModelAccessor
         return GetModelDataRecursive(key.Split('.'), 0, _modelRoot, indicies);
     }
 
-    private static object? GetModelDataRecursive(
-        string[] keys,
-        int index,
-        JsonNode? currentModel,
-        ReadOnlySpan<int> indicies
-    )
+    private object? GetModelDataRecursive(string[] keys, int index, JsonNode? currentModel, ReadOnlySpan<int> indicies)
     {
         if (currentModel is null)
         {
@@ -119,12 +114,7 @@ public class JsonDataModel : IDataModelAccessor
         return GetModelDataCountRecurs(key.Split('.'), 0, _modelRoot, indicies);
     }
 
-    private static int? GetModelDataCountRecurs(
-        string[] keys,
-        int index,
-        JsonNode? currentModel,
-        ReadOnlySpan<int> indicies
-    )
+    private int? GetModelDataCountRecurs(string[] keys, int index, JsonNode? currentModel, ReadOnlySpan<int> indicies)
     {
         if (index == keys.Length || currentModel is null)
         {
@@ -186,7 +176,7 @@ public class JsonDataModel : IDataModelAccessor
         return GetResolvedKeysRecursive(keyParts, _modelRoot);
     }
 
-    private static string[] GetResolvedKeysRecursive(
+    private string[] GetResolvedKeysRecursive(
         string[] keyParts,
         JsonNode? currentModel,
         int currentIndex = 0,
