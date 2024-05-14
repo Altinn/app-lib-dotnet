@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using Altinn.App.Core.Internal.Process.Authorization;
 using Altinn.App.Core.Models;
-using static Altinn.App.Core.Features.Telemetry.AuthorizationService;
+using static Altinn.App.Core.Features.Telemetry.AuthorizationClient;
 
 namespace Altinn.App.Core.Features;
 
