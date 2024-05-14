@@ -28,6 +28,7 @@ public class ProcessEngineTest : IDisposable
     private readonly Mock<IProcessEventHandlerDelegator> _processEventHandlingDelegatorMock;
     private readonly Mock<IProcessEventDispatcher> _processEventDispatcherMock;
     private readonly Mock<IProcessTaskInitializer> _processTaskInitializerMock;
+    private readonly Mock<IProcessTaskCleaner> _processTaskCleanerMock;
 
     public ProcessEngineTest()
     {
@@ -37,6 +38,7 @@ public class ProcessEngineTest : IDisposable
         _processEventHandlingDelegatorMock = new();
         _processEventDispatcherMock = new();
         _processTaskInitializerMock = new();
+        _processTaskCleanerMock = new();
     }
 
     [Fact]
@@ -447,8 +449,8 @@ public class ProcessEngineTest : IDisposable
         _processReaderMock.Verify(r => r.IsEndEvent("Task_2"), Times.Once);
         _processReaderMock.Verify(r => r.IsProcessTask("Task_2"), Times.Once);
         _processNavigatorMock.Verify(n => n.GetNextTask(It.IsAny<Instance>(), "Task_1", null), Times.Once);
-        _processTaskInitializerMock.Verify(
-            x => x.RemoveDataElementsGeneratedFromTask(It.IsAny<Instance>(), It.IsAny<string>()),
+        _processTaskCleanerMock.Verify(
+            x => x.RemoveAllDataElementsGeneratedFromTask(It.IsAny<Instance>(), It.IsAny<string>()),
             Times.Once
         );
 
@@ -982,6 +984,7 @@ public class ProcessEngineTest : IDisposable
             _processEventHandlingDelegatorMock.Object,
             _processEventDispatcherMock.Object,
             _processTaskInitializerMock.Object,
+            _processTaskCleanerMock.Object,
             new UserActionService(userActions ?? [])
         );
     }
