@@ -21,11 +21,11 @@ public class TelemetryEnrichingMiddleware
         {
             {
                 AltinnCoreClaimTypes.UserName,
-                (claim, activity) => activity.SetTag(Core.Features.Telemetry.Labels.UserName, claim.Value)
+                static (claim, activity) => activity.SetTag(Core.Features.Telemetry.Labels.UserName, claim.Value)
             },
             {
                 AltinnCoreClaimTypes.UserId,
-                (claim, activity) =>
+                static (claim, activity) =>
                 {
                     if (int.TryParse(claim.Value, out var result))
                     {
@@ -35,7 +35,7 @@ public class TelemetryEnrichingMiddleware
             },
             {
                 AltinnCoreClaimTypes.PartyID,
-                (claim, activity) =>
+                static (claim, activity) =>
                 {
                     if (int.TryParse(claim.Value, out var result))
                     {
@@ -45,7 +45,7 @@ public class TelemetryEnrichingMiddleware
             },
             {
                 AltinnCoreClaimTypes.AuthenticationLevel,
-                (claim, activity) =>
+                static (claim, activity) =>
                 {
                     if (int.TryParse(claim.Value, out var result))
                     {
