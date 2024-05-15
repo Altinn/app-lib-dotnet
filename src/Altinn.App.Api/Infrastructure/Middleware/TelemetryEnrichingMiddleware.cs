@@ -1,4 +1,5 @@
 using System.Collections.Frozen;
+using System.Diagnostics;
 using System.Security.Claims;
 using AltinnCore.Authentication.Constants;
 using Microsoft.AspNetCore.Http.Features;
@@ -12,47 +13,43 @@ public class TelemetryEnrichingMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<TelemetryEnrichingMiddleware> _logger;
-    private static readonly FrozenDictionary<string, Action<Claim, TelemetryEnrichingMiddleware>> ClaimActions;
-
-    private string? userName;
-    private int? userId;
-    private int? partyId;
-    private int? authenticationLevel;
+    private static readonly FrozenDictionary<string, Action<Claim, Activity>> ClaimActions;
 
     static TelemetryEnrichingMiddleware()
     {
-        var actions = new Dictionary<string, Action<Claim, TelemetryEnrichingMiddleware>>(
-            StringComparer.OrdinalIgnoreCase
-        )
+        var actions = new Dictionary<string, Action<Claim, Activity>>(StringComparer.OrdinalIgnoreCase)
         {
-            { AltinnCoreClaimTypes.UserName, (claim, middleware) => middleware.userName = claim.Value },
+            {
+                AltinnCoreClaimTypes.UserName,
+                (claim, activity) => activity.SetTag(Core.Features.Telemetry.Labels.UserName, claim.Value)
+            },
             {
                 AltinnCoreClaimTypes.UserId,
-                (claim, middleware) =>
+                (claim, activity) =>
                 {
                     if (int.TryParse(claim.Value, out var result))
                     {
-                        middleware.userId = result;
+                        activity.SetTag(Core.Features.Telemetry.Labels.UserId, result);
                     }
                 }
             },
             {
                 AltinnCoreClaimTypes.PartyID,
-                (claim, middleware) =>
+                (claim, activity) =>
                 {
                     if (int.TryParse(claim.Value, out var result))
                     {
-                        middleware.partyId = result;
+                        activity.SetTag(Core.Features.Telemetry.Labels.UserPartyId, result);
                     }
                 }
             },
             {
                 AltinnCoreClaimTypes.AuthenticationLevel,
-                (claim, middleware) =>
+                (claim, activity) =>
                 {
                     if (int.TryParse(claim.Value, out var result))
                     {
-                        middleware.authenticationLevel = result;
+                        activity.SetTag(Core.Features.Telemetry.Labels.UserAuthenticationLevel, result);
                     }
                 }
             }
@@ -87,18 +84,15 @@ public class TelemetryEnrichingMiddleware
 
         try
         {
+            var activity = trace.Activity;
+
             foreach (var claim in context.User.Claims)
             {
                 if (ClaimActions.TryGetValue(claim.Type, out var action))
                 {
-                    action(claim, this);
+                    action(claim, activity);
                 }
             }
-
-            trace.Activity.SetTag(Core.Features.Telemetry.Labels.UserName, userName);
-            trace.Activity.SetTag(Core.Features.Telemetry.Labels.UserId, userId);
-            trace.Activity.SetTag(Core.Features.Telemetry.Labels.UserPartyId, partyId);
-            trace.Activity.SetTag(Core.Features.Telemetry.Labels.UserAuthenticationLevel, authenticationLevel);
 
             // Set telemetry tags with route values if available.
             if (
@@ -107,17 +101,17 @@ public class TelemetryEnrichingMiddleware
                 && int.TryParse(instanceOwnerPartyId.ToString(), out var instanceOwnerPartyIdInt)
             )
             {
-                trace.Activity.SetTag(Core.Features.Telemetry.Labels.InstanceOwnerPartyId, instanceOwnerPartyIdInt);
+                activity.SetTag(Core.Features.Telemetry.Labels.InstanceOwnerPartyId, instanceOwnerPartyIdInt);
             }
 
             if (context.Request.RouteValues.TryGetValue("instanceGuid", out var instanceGuid) && instanceGuid != null)
             {
-                trace.Activity.SetTag(Core.Features.Telemetry.Labels.InstanceGuid, instanceGuid);
+                activity.SetTag(Core.Features.Telemetry.Labels.InstanceGuid, instanceGuid);
             }
 
             if (context.Request.RouteValues.TryGetValue("dataGuid", out var dataGuid) && dataGuid != null)
             {
-                trace.Activity.SetTag(Core.Features.Telemetry.Labels.DataGuid, dataGuid);
+                activity.SetTag(Core.Features.Telemetry.Labels.DataGuid, dataGuid);
             }
         }
         catch (Exception ex)
