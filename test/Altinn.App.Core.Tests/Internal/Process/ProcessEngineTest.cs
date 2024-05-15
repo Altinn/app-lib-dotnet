@@ -539,7 +539,7 @@ public class ProcessEngineTest : IDisposable
                     ElementId = "Task_2",
                     Flow = 3,
                     AltinnTaskType = "confirmation",
-                    FlowType = ProcessSequenceFlowType.CompleteCurrentMoveToNext.ToString(),
+                    FlowType = ProcessSequenceFlowType.AbandonCurrentMoveToNext.ToString(),
                     Name = "Bekreft"
                 },
                 StartEvent = "StartEvent_1"
@@ -627,7 +627,7 @@ public class ProcessEngineTest : IDisposable
                         ElementId = "Task_2",
                         Name = "Bekreft",
                         AltinnTaskType = "confirmation",
-                        FlowType = ProcessSequenceFlowType.CompleteCurrentMoveToNext.ToString(),
+                        FlowType = ProcessSequenceFlowType.AbandonCurrentMoveToNext.ToString(),
                         Flow = 3
                     }
                 }
