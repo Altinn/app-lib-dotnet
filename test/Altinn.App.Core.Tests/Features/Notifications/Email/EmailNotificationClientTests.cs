@@ -293,7 +293,7 @@ public class EmailNotificationClientTests
 
         if (withTelemetry)
         {
-            services.AddTelemetryFake();
+            services.AddTelemetrySink();
         }
 
         services.AddTransient<IEmailNotificationClient, EmailNotificationClient>();

@@ -295,7 +295,7 @@ public class SmsNotificationClientTests
 
         if (withTelemetry)
         {
-            services.AddTelemetryFake();
+            services.AddTelemetrySink();
         }
 
         services.AddTransient<ISmsNotificationClient, SmsNotificationClient>();

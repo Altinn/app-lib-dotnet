@@ -123,7 +123,7 @@ internal sealed record TelemetrySink : IDisposable
 
 internal static class TelemetryDI
 {
-    internal static IServiceCollection AddTelemetryFake(this IServiceCollection services)
+    internal static IServiceCollection AddTelemetrySink(this IServiceCollection services)
     {
         services.AddSingleton(_ => new TelemetrySink());
         services.AddSingleton<Telemetry>(sp => sp.GetRequiredService<TelemetrySink>().Object);
@@ -142,7 +142,7 @@ public class TelemetryDITests
         scope.IsDisposed.Should().BeFalse();
 
         var services = new ServiceCollection();
-        services.AddTelemetryFake();
+        services.AddTelemetrySink();
         var sp = services.BuildServiceProvider(
             new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true, }
         );
