@@ -36,7 +36,6 @@ public class ProcessEngine : IProcessEngine
     /// <param name="processNavigator">The process navigator</param>
     /// <param name="processEventsDelegator">The process events delegator</param>
     /// <param name="processEventDispatcher">The process event dispatcher</param>
-    /// <param name="processTaskInitializer">The process tasks initializer</param>
     /// <param name="processTaskCleaner">The process task cleaner</param>
     /// <param name="userActionService">The action handler factory</param>
     public ProcessEngine(
