@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Security.Claims;
 using AltinnCore.Authentication.Constants;
 using Microsoft.AspNetCore.Http.Features;
@@ -11,6 +12,54 @@ public class TelemetryEnrichingMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<TelemetryEnrichingMiddleware> _logger;
+    private static readonly FrozenDictionary<string, Action<Claim, TelemetryEnrichingMiddleware>> ClaimActions;
+
+    private string? userName;
+    private int? userId;
+    private int? partyId;
+    private int? authenticationLevel;
+
+    static TelemetryEnrichingMiddleware()
+    {
+        var actions = new Dictionary<string, Action<Claim, TelemetryEnrichingMiddleware>>(
+            StringComparer.OrdinalIgnoreCase
+        )
+        {
+            { AltinnCoreClaimTypes.UserName, (claim, middleware) => middleware.userName = claim.Value },
+            {
+                AltinnCoreClaimTypes.UserId,
+                (claim, middleware) =>
+                {
+                    if (int.TryParse(claim.Value, out var result))
+                    {
+                        middleware.userId = result;
+                    }
+                }
+            },
+            {
+                AltinnCoreClaimTypes.PartyID,
+                (claim, middleware) =>
+                {
+                    if (int.TryParse(claim.Value, out var result))
+                    {
+                        middleware.partyId = result;
+                    }
+                }
+            },
+            {
+                AltinnCoreClaimTypes.AuthenticationLevel,
+                (claim, middleware) =>
+                {
+                    if (int.TryParse(claim.Value, out var result))
+                    {
+                        middleware.authenticationLevel = result;
+                    }
+                }
+            }
+        };
+
+        ClaimActions = actions.ToFrozenDictionary();
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TelemetryEnrichingMiddleware"/> class.
@@ -38,27 +87,11 @@ public class TelemetryEnrichingMiddleware
 
         try
         {
-            string? userName = null;
-            int? userId = null;
-            int? partyId = null;
-            int? authenticationLevel = null;
-
-            var claimActions = new Dictionary<string, Action<Claim>>(StringComparer.OrdinalIgnoreCase)
-            {
-                { AltinnCoreClaimTypes.UserName, claim => userName = claim.Value },
-                { AltinnCoreClaimTypes.UserId, claim => userId = Convert.ToInt32(claim.Value) },
-                { AltinnCoreClaimTypes.PartyID, claim => partyId = Convert.ToInt32(claim.Value) },
-                {
-                    AltinnCoreClaimTypes.AuthenticationLevel,
-                    claim => authenticationLevel = Convert.ToInt32(claim.Value)
-                }
-            };
-
             foreach (var claim in context.User.Claims)
             {
-                if (claimActions.TryGetValue(claim.Type, out var action))
+                if (ClaimActions.TryGetValue(claim.Type, out var action))
                 {
-                    action(claim);
+                    action(claim, this);
                 }
             }
 
