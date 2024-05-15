@@ -27,7 +27,6 @@ public class ProcessEngineTest : IDisposable
     private readonly Mock<IProcessNavigator> _processNavigatorMock;
     private readonly Mock<IProcessEventHandlerDelegator> _processEventHandlingDelegatorMock;
     private readonly Mock<IProcessEventDispatcher> _processEventDispatcherMock;
-    private readonly Mock<IProcessTaskInitializer> _processTaskInitializerMock;
     private readonly Mock<IProcessTaskCleaner> _processTaskCleanerMock;
 
     public ProcessEngineTest()
@@ -37,7 +36,6 @@ public class ProcessEngineTest : IDisposable
         _processNavigatorMock = new();
         _processEventHandlingDelegatorMock = new();
         _processEventDispatcherMock = new();
-        _processTaskInitializerMock = new();
         _processTaskCleanerMock = new();
     }
 
@@ -983,7 +981,6 @@ public class ProcessEngineTest : IDisposable
             _processNavigatorMock.Object,
             _processEventHandlingDelegatorMock.Object,
             _processEventDispatcherMock.Object,
-            _processTaskInitializerMock.Object,
             _processTaskCleanerMock.Object,
             new UserActionService(userActions ?? [])
         );

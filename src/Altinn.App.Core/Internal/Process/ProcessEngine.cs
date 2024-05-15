@@ -25,7 +25,6 @@ public class ProcessEngine : IProcessEngine
     private readonly IProcessNavigator _processNavigator;
     private readonly IProcessEventHandlerDelegator _processEventHandlerDelegator;
     private readonly IProcessEventDispatcher _processEventDispatcher;
-    private readonly IProcessTaskInitializer _processTaskInitializer;
     private readonly UserActionService _userActionService;
     private readonly IProcessTaskCleaner _processTaskCleaner;
 
@@ -46,7 +45,6 @@ public class ProcessEngine : IProcessEngine
         IProcessNavigator processNavigator,
         IProcessEventHandlerDelegator processEventsDelegator,
         IProcessEventDispatcher processEventDispatcher,
-        IProcessTaskInitializer processTaskInitializer,
         IProcessTaskCleaner processTaskCleaner,
         UserActionService userActionService
     )
@@ -56,7 +54,6 @@ public class ProcessEngine : IProcessEngine
         _processNavigator = processNavigator;
         _processEventHandlerDelegator = processEventsDelegator;
         _processEventDispatcher = processEventDispatcher;
-        _processTaskInitializer = processTaskInitializer;
         _processTaskCleaner = processTaskCleaner;
         _userActionService = userActionService;
     }
