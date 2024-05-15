@@ -8,6 +8,13 @@ namespace Altinn.App.Core.Features;
 
 partial class Telemetry
 {
+    /// <summary>
+    /// Prometheus' increase and rate functions do not register the first value as an increase, but rather as the registration.<br/>
+    /// This means that going from 0 (non-existant) to 1 on a counter will register as an increase of 0.<br/>
+    /// In order to workaround this, we initialize to 0 for all metrics here.<br/>
+    /// Github issue can be found <a href="https://github.com/prometheus/prometheus/issues/3806">here</a>.
+    /// </summary>
+    /// <param name="context"></param>
     private void InitNotifications(InitContext context)
     {
         InitMetricCounter(
