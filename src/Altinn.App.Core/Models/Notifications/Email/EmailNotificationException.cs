@@ -14,6 +14,5 @@ public sealed class EmailNotificationException : Exception
         : base(
             $"{message}: StatusCode={response?.StatusCode}\nReason={response?.ReasonPhrase}\nBody={content}\n",
             innerException
-        )
-    { }
+        ) { }
 }
