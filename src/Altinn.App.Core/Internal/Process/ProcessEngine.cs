@@ -5,6 +5,7 @@ using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
+using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
@@ -26,6 +27,7 @@ public class ProcessEngine : IProcessEngine
     private readonly IProcessEventDispatcher _processEventDispatcher;
     private readonly UserActionService _userActionService;
     private readonly Telemetry? _telemetry;
+    private readonly IProcessTaskCleaner _processTaskCleaner;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessEngine"/> class
@@ -33,8 +35,9 @@ public class ProcessEngine : IProcessEngine
     /// <param name="processReader">Process reader service</param>
     /// <param name="profileClient">The profile service</param>
     /// <param name="processNavigator">The process navigator</param>
-    /// <param name="processEventsDelegator"></param>
+    /// <param name="processEventsDelegator">The process events delegator</param>
     /// <param name="processEventDispatcher">The process event dispatcher</param>
+    /// <param name="processTaskCleaner">The process task cleaner</param>
     /// <param name="userActionService">The action handler factory</param>
     /// <param name="telemetry">The telemetry service</param>
     public ProcessEngine(
@@ -43,6 +46,7 @@ public class ProcessEngine : IProcessEngine
         IProcessNavigator processNavigator,
         IProcessEventHandlerDelegator processEventsDelegator,
         IProcessEventDispatcher processEventDispatcher,
+        IProcessTaskCleaner processTaskCleaner,
         UserActionService userActionService,
         Telemetry? telemetry = null
     )
@@ -52,6 +56,7 @@ public class ProcessEngine : IProcessEngine
         _processNavigator = processNavigator;
         _processEventHandlerDelegator = processEventsDelegator;
         _processEventDispatcher = processEventDispatcher;
+        _processTaskCleaner = processTaskCleaner;
         _userActionService = userActionService;
         _telemetry = telemetry;
     }
@@ -137,8 +142,11 @@ public class ProcessEngine : IProcessEngine
             };
         }
 
-        int? userId = request.User.GetUserIdAsInt();
+        // Removes existing/stale data elements previously generated from this task
+        // TODO: Move this logic to ProcessTaskInitializer.Initialize once the authentication model supports a service/app user with the appropriate scopes
+        await _processTaskCleaner.RemoveAllDataElementsGeneratedFromTask(instance, currentElementId);
 
+        int? userId = request.User.GetUserIdAsInt();
         IUserAction? actionHandler = _userActionService.GetActionHandler(request.Action);
 
         UserActionResult actionResult = actionHandler is null
