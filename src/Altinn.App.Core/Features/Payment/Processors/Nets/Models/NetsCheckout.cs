@@ -88,7 +88,7 @@ internal class NetsCheckout
     /// <summary>
     /// Defines the appearance of the checkout page.
     /// </summary>
-    public NetsApparence Appearance { get; set; }
+    public NetsApparence? Appearance { get; set; }
 
     /// <summary>
     /// Merchant's three-letter checkout country code (ISO 3166-1), for example GBR. See also the list of supported languages.
