@@ -108,7 +108,7 @@ namespace Altinn.App.Core.Implementation
                     var httpContext =
                         _httpContextAccessor.HttpContext
                         ?? throw new Exception(
-                            "HttpContext is unexpectedly null, need HttpContext to get current user"
+                            "Could not get HttpContext - must be in a request context to get current user"
                         );
                     int userId = AuthenticationHelper.GetUserId(httpContext);
                     UserProfile? userProfile = userId != 0 ? await _profileClient.GetUserProfile(userId) : null;
