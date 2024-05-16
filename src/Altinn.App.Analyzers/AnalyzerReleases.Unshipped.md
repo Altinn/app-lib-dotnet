@@ -5,8 +5,8 @@
 
 Rule ID | Category | Severity | Notes
 --------|----------|----------|-------
-ALTINN001 | General | Error | Project not found
-ALTINN002 | Metadata | Error | App metadata file not found
-ALTINN003 | Metadata | Error | App metadata file parsing
-ALTINN004 | Metadata | Error | Classref not resolved
-ALTINN999 | General | Error | Unknown error
+ALTINN001 | General | Warning | Project not found
+ALTINN002 | Metadata | Warning | App metadata file not found
+ALTINN003 | Metadata | Warning | App metadata file parsing
+ALTINN004 | Metadata | Warning | Classref not resolved
+ALTINN999 | General | Warning | Unknown error
