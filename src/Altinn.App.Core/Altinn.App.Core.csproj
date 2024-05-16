@@ -26,6 +26,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Altinn.App.Analyzers\Altinn.App.Analyzers.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="None" />
+    <None Include="$(OutputPath)\Altinn.App.Analyzers.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="true" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="Altinn.App.Core.Tests" />
     <InternalsVisibleTo Include="Altinn.App.Api.Tests" />
     <InternalsVisibleTo Include="Altinn.App.Api" />
