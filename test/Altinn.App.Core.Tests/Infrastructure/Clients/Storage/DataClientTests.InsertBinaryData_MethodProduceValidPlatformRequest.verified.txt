@@ -1,0 +1,32 @@
+﻿[
+  {
+    HasRemoteParent: false,
+    OperationName: DataClient.InsertBinaryData,
+    DisplayName: DataClient.InsertBinaryData,
+    Source: {
+      Name: test,
+      Version: v1
+    },
+    StartTimeUtc: DateTime_1,
+    RootId: Guid_1,
+    Tags: [],
+    TagObjects: [
+      {
+        instance.guid: Guid_2
+      }
+    ],
+    Context: {
+      TraceId: {},
+      SpanId: {},
+      TraceFlags: Recorded,
+      IsRemote: false
+    },
+    SpanId: {},
+    TraceId: {},
+    Recorded: true,
+    IsAllDataRequested: true,
+    ActivityTraceFlags: Recorded,
+    IsStopped: true,
+    IdFormat: W3C
+  }
+]
