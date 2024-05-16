@@ -103,7 +103,7 @@ internal class NetsCheckout
 /// <summary>
 /// Defines the appearance of the checkout page.
 /// </summary>
-public class NetsApparence
+internal class NetsApparence
 {
     /// <summary>
     /// Controls what is displayed on the checkout page.
@@ -134,7 +134,7 @@ public class NetsApparence
     /// <summary>
     /// Controls what text is displayed on the checkout page.
     /// </summary>
-    public class NetsTextOptions
+    internal class NetsTextOptions
     {
         /// <summary>
         /// Overrides payment button text. The following predefined values are allowed: pay, purchase, order, book, reserve, signup, storecard, subscribe, accept. The payment button text is localized.
@@ -146,7 +146,7 @@ public class NetsApparence
 /// <summary>
 /// Configures which consumer types should be accepted. Defaults to 'B2C'.These options are ignore if the property merchantHandlesConsumerData is set to true.
 /// </summary>
-public class NetsConsumerType
+internal class NetsConsumerType
 {
     /// <summary>
     /// The checkout form defaults to this consumer type when first loaded.
@@ -162,7 +162,7 @@ public class NetsConsumerType
 /// <summary>
 /// Properties related to shipping of packets.
 /// </summary>
-public class NetsShipping
+internal class NetsShipping
 {
     /// <summary>
     /// Not documented in API doc why this is duplicated in the shipping object
@@ -183,7 +183,7 @@ public class NetsShipping
 /// <summary>
 /// An array of countries that limits the set of countries available for shipping. If left unspecified, all countries supported by Easy Checkout will be available for shipping on the checkout page.
 /// </summary>
-public class NetsShippingCountry
+internal class NetsShippingCountry
 {
     /// <summary>
     /// A three-letter country code (ISO 3166-1), for example GBR. See also the list of supported countries.

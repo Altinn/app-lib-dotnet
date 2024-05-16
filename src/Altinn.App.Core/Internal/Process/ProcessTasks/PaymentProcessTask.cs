@@ -11,7 +11,7 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks
     /// <summary>
     /// Represents the process task responsible for collecting user payment.
     /// </summary>
-    internal class PaymentProcessTask : IProcessTask
+    internal sealed class PaymentProcessTask : IProcessTask
     {
         private readonly IPdfService _pdfService;
         private readonly IDataClient _dataClient;
