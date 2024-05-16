@@ -6,30 +6,35 @@ internal static class Diagnostics
 {
     internal static readonly DiagnosticDescriptor UnknownError = Error(
         "ALTINN999",
+        Category.General,
         "Unknown analyzer error",
         "Unknown error occurred during analysis: '{0}' {1}"
     );
 
-    internal static readonly DiagnosticDescriptor ProjectNotFoundError = Error(
+    internal static readonly DiagnosticDescriptor ProjectNotFoundWarning = Warning(
         "ALTINN001",
+        Category.General,
         "Altinn app project not found",
         "While starting analysis, we couldn't find the project directory - contact support"
     );
 
-    internal static readonly DiagnosticDescriptor ApplicationMetadataFileNotFoundError = Error(
+    internal static readonly DiagnosticDescriptor ApplicationMetadataFileNotFoundWarning = Warning(
         "ALTINN002",
+        Category.Metadata,
         "Altinn app metadata file not found",
         "Could not find application metadata file at 'config/applicationmetadata.json'"
     );
 
-    internal static readonly DiagnosticDescriptor FailedToParseApplicationMetadataError = Error(
+    internal static readonly DiagnosticDescriptor FailedToParseApplicationMetadataWarning = Warning(
         "ALTINN003",
+        Category.Metadata,
         "Altinn app metadata file couldn't be parsed",
         "Could not parse application metadata file at 'config/applicationmetadata.json': '{0}' {1}"
     );
 
-    internal static readonly DiagnosticDescriptor DataTypeClassRefInvalidError = Error(
+    internal static readonly DiagnosticDescriptor DataTypeClassRefInvalidWarning = Warning(
         "ALTINN004",
+        Category.Metadata,
         "Data type class reference could not be found",
         "Class reference '{0}' for data type '{1}' could not be found"
     );
@@ -49,11 +54,11 @@ internal static class Diagnostics
     private const string DocsRoot = "https://docs.altinn.studio/app/development/analysis/";
     private const string RulesRoot = DocsRoot + "rules/";
 
-    private static DiagnosticDescriptor Warning(string id, string title, string messageFormat) =>
-        Create(id, title, messageFormat, Category.General, DiagnosticSeverity.Warning);
+    private static DiagnosticDescriptor Warning(string id, string category, string title, string messageFormat) =>
+        Create(id, title, messageFormat, category, DiagnosticSeverity.Warning);
 
-    private static DiagnosticDescriptor Error(string id, string title, string messageFormat) =>
-        Create(id, title, messageFormat, Category.General, DiagnosticSeverity.Error);
+    private static DiagnosticDescriptor Error(string id, string category, string title, string messageFormat) =>
+        Create(id, title, messageFormat, category, DiagnosticSeverity.Error);
 
     private static DiagnosticDescriptor Create(
         string id,
@@ -66,5 +71,6 @@ internal static class Diagnostics
     private static class Category
     {
         public const string General = nameof(General);
+        public const string Metadata = nameof(Metadata);
     }
 }
