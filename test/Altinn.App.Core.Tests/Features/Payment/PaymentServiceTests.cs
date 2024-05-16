@@ -39,6 +39,8 @@ public class PaymentServiceTests
         OrderDetails orderDetails = CreateOrderDetails();
         AltinnPaymentConfiguration paymentConfiguration = CreatePaymentConfiguration();
         PaymentInformation paymentInformation = CreatePaymentInformation();
+        PaymentDetails paymentDetails =
+            paymentInformation.PaymentDetails ?? throw new NullReferenceException("PaymentDetails should not be null");
         const string language = "nb";
 
         _orderDetailsCalculator.Setup(p => p.CalculateOrderDetails(instance, language)).ReturnsAsync(orderDetails);
@@ -49,9 +51,7 @@ public class PaymentServiceTests
             .Setup(ds => ds.InsertJsonObject(It.IsAny<InstanceIdentifier>(), It.IsAny<string>(), It.IsAny<object>()))
             .ReturnsAsync(new DataElement());
         _paymentProcessor.Setup(pp => pp.PaymentProcessorId).Returns(orderDetails.PaymentProcessorId);
-        _paymentProcessor
-            .Setup(p => p.StartPayment(instance, orderDetails, language))
-            .ReturnsAsync(paymentInformation.PaymentDetails);
+        _paymentProcessor.Setup(p => p.StartPayment(instance, orderDetails, language)).ReturnsAsync(paymentDetails);
 
         // Act
         (PaymentInformation paymentInformationResult, bool alreadyPaid) = await _paymentService.StartPayment(
@@ -172,6 +172,8 @@ public class PaymentServiceTests
         OrderDetails orderDetails = CreateOrderDetails();
         AltinnPaymentConfiguration paymentConfiguration = CreatePaymentConfiguration();
         PaymentInformation paymentInformation = CreatePaymentInformation();
+        PaymentDetails paymentDetails =
+            paymentInformation.PaymentDetails ?? throw new NullReferenceException("PaymentDetails should not be null");
         const string language = "nb";
 
         _orderDetailsCalculator.Setup(p => p.CalculateOrderDetails(instance, language)).ReturnsAsync(orderDetails);
@@ -182,9 +184,7 @@ public class PaymentServiceTests
             .Setup(ds => ds.InsertJsonObject(It.IsAny<InstanceIdentifier>(), It.IsAny<string>(), It.IsAny<object>()))
             .ThrowsAsync(new Exception());
         _paymentProcessor.Setup(pp => pp.PaymentProcessorId).Returns(orderDetails.PaymentProcessorId);
-        _paymentProcessor
-            .Setup(pp => pp.StartPayment(instance, orderDetails, language))
-            .ReturnsAsync(paymentInformation.PaymentDetails);
+        _paymentProcessor.Setup(pp => pp.StartPayment(instance, orderDetails, language)).ReturnsAsync(paymentDetails);
 
         // Act & Assert
         await Assert.ThrowsAsync<Exception>(
@@ -316,6 +316,8 @@ public class PaymentServiceTests
         AltinnPaymentConfiguration paymentConfiguration = CreatePaymentConfiguration();
         OrderDetails orderDetails = CreateOrderDetails();
         PaymentInformation paymentInformation = CreatePaymentInformation();
+        PaymentDetails paymentDetails =
+            paymentInformation.PaymentDetails ?? throw new NullReferenceException("PaymentDetails should not be null");
         const string language = "nb";
 
         paymentInformation.Status = PaymentStatus.Cancelled;
@@ -344,9 +346,7 @@ public class PaymentServiceTests
             .Setup(pp => pp.TerminatePayment(It.IsAny<Instance>(), It.IsAny<PaymentInformation>()))
             .ReturnsAsync(true);
 
-        _paymentProcessor
-            .Setup(x => x.StartPayment(instance, orderDetails, language))
-            .ReturnsAsync(paymentInformation.PaymentDetails);
+        _paymentProcessor.Setup(x => x.StartPayment(instance, orderDetails, language)).ReturnsAsync(paymentDetails);
 
         // Act
         await _paymentService.StartPayment(instance, paymentConfiguration, language);
@@ -367,6 +367,8 @@ public class PaymentServiceTests
         OrderDetails orderDetails = CreateOrderDetails();
         AltinnPaymentConfiguration paymentConfiguration = CreatePaymentConfiguration();
         PaymentInformation paymentInformation = CreatePaymentInformation();
+        PaymentDetails paymentDetails =
+            paymentInformation.PaymentDetails ?? throw new NullReferenceException("PaymentDetails should not be null");
         const string language = "nb";
 
         _orderDetailsCalculator.Setup(p => p.CalculateOrderDetails(instance, language)).ReturnsAsync(orderDetails);
@@ -374,9 +376,7 @@ public class PaymentServiceTests
             .Setup(ds => ds.InsertJsonObject(It.IsAny<InstanceIdentifier>(), It.IsAny<string>(), It.IsAny<object>()))
             .ReturnsAsync(new DataElement());
         _paymentProcessor.Setup(pp => pp.PaymentProcessorId).Returns(orderDetails.PaymentProcessorId);
-        _paymentProcessor
-            .Setup(p => p.StartPayment(instance, orderDetails, language))
-            .ReturnsAsync(paymentInformation.PaymentDetails);
+        _paymentProcessor.Setup(p => p.StartPayment(instance, orderDetails, language)).ReturnsAsync(paymentDetails);
 
         _dataService
             .Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
