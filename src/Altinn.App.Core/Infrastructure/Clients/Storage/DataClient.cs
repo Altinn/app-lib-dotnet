@@ -101,7 +101,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
 
             _logger.Log(
                 LogLevel.Error,
-                "unable to save form data for instance{0} due to response {1}",
+                "unable to save form data for instance {InstanceId} due to response {StatusCode}",
                 instance.Id,
                 response.StatusCode
             );
@@ -147,9 +147,13 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         // to avoid issue introduced with .Net when MS introduced BOM by default
         // when serializing ref. https://github.com/dotnet/runtime/issues/63585
         // Will be fixed with  https://github.com/dotnet/runtime/pull/75637
-        private static void Serialize<T>(T dataToSerialize, Type type, MemoryStream targetStream)
+        internal static void Serialize<T>(T dataToSerialize, Type type, Stream targetStream)
         {
-            XmlWriterSettings xmlWriterSettings = new XmlWriterSettings() { Encoding = new UTF8Encoding(false) };
+            XmlWriterSettings xmlWriterSettings = new XmlWriterSettings()
+            {
+                Encoding = new UTF8Encoding(false),
+                NewLineHandling = NewLineHandling.None,
+            };
             XmlWriter xmlWriter = XmlWriter.Create(targetStream, xmlWriterSettings);
 
             XmlSerializer serializer = new(type);
@@ -179,7 +183,9 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             }
             else if (response.StatusCode == HttpStatusCode.NotFound)
             {
+#nullable disable
                 return null;
+#nullable restore
             }
 
             throw await PlatformHttpException.CreateAsync(response);
@@ -451,6 +457,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             string apiUrl = $"{_platformSettings.ApiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}";
             string token = _userTokenProvider.GetUserToken();
             StreamContent content = new StreamContent(stream);
+            ArgumentNullException.ThrowIfNull(contentType);
             content.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
             content.Headers.ContentDisposition = new ContentDispositionHeaderValue(DispositionTypeNames.Attachment)
             {

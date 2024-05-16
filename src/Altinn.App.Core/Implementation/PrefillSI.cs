@@ -86,7 +86,7 @@ namespace Altinn.App.Core.Implementation
                 allowOverwrite = allowOverwriteToken.ToObject<bool>();
             }
 
-            Party party = await _altinnPartyClientClient.GetParty(int.Parse(partyId));
+            Party? party = await _altinnPartyClientClient.GetParty(int.Parse(partyId));
             if (party == null)
             {
                 string errorMessage = $"Could find party for partyId: {partyId}";
@@ -110,7 +110,7 @@ namespace Altinn.App.Core.Implementation
                         JObject userProfileJsonObject = JObject.FromObject(userProfile);
                         _logger.LogInformation($"Started prefill from {USER_PROFILE_KEY}");
                         LoopThroughDictionaryAndAssignValuesToDataModel(
-                            SwapKeyValuesForPrefil(userProfileDict),
+                            SwapKeyValuesForPrefill(userProfileDict),
                             userProfileJsonObject,
                             dataModel
                         );
@@ -138,7 +138,7 @@ namespace Altinn.App.Core.Implementation
                         JObject orgJsonObject = JObject.FromObject(org);
                         _logger.LogInformation($"Started prefill from {ER_KEY}");
                         LoopThroughDictionaryAndAssignValuesToDataModel(
-                            SwapKeyValuesForPrefil(enhetsregisterPrefill),
+                            SwapKeyValuesForPrefill(enhetsregisterPrefill),
                             orgJsonObject,
                             dataModel
                         );
@@ -165,7 +165,7 @@ namespace Altinn.App.Core.Implementation
                         JObject personJsonObject = JObject.FromObject(person);
                         _logger.LogInformation($"Started prefill from {DSF_KEY}");
                         LoopThroughDictionaryAndAssignValuesToDataModel(
-                            SwapKeyValuesForPrefil(folkeregisterPrefill),
+                            SwapKeyValuesForPrefill(folkeregisterPrefill),
                             personJsonObject,
                             dataModel
                         );
@@ -184,7 +184,7 @@ namespace Altinn.App.Core.Implementation
         /// </summary>
         private void AssignValueToDataModel(
             string[] keys,
-            JToken value,
+            JToken? value,
             object currentObject,
             int index = 0,
             bool continueOnError = false
@@ -215,6 +215,8 @@ namespace Altinn.App.Core.Implementation
                 {
                     if (propertyValue == null || allowOverwrite)
                     {
+                        ArgumentNullException.ThrowIfNull(value);
+
                         // create instance of the property type defined in the datamodel
                         var instance = value.ToObject(property.PropertyType);
 
@@ -286,7 +288,7 @@ namespace Altinn.App.Core.Implementation
             }
         }
 
-        private Dictionary<string, string> SwapKeyValuesForPrefil(Dictionary<string, string> externalPrefil)
+        private Dictionary<string, string> SwapKeyValuesForPrefill(Dictionary<string, string> externalPrefil)
         {
             return externalPrefil.ToDictionary(x => x.Value, x => x.Key);
         }

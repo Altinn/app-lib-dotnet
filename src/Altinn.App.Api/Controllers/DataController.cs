@@ -226,6 +226,11 @@ namespace Altinn.App.Api.Controllers
                         return BadRequest(await GetErrorDetails(validationIssues));
                     }
 
+                    if (streamContent.Headers.ContentType is null)
+                    {
+                        return StatusCode(500, "Content-Type not defined");
+                    }
+
                     fileStream.Seek(0, SeekOrigin.Begin);
                     return await CreateBinaryData(
                         instance,
@@ -581,7 +586,7 @@ namespace Altinn.App.Api.Controllers
             }
         }
 
-        private ActionResult ExceptionResponse(Exception exception, string message)
+        private ObjectResult ExceptionResponse(Exception exception, string message)
         {
             _logger.LogError(exception, message);
 
@@ -662,6 +667,7 @@ namespace Altinn.App.Api.Controllers
             int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
 
             ObjectUtils.InitializeAltinnRowId(appModel);
+            ObjectUtils.PrepareModelForXmlStorage(appModel);
 
             DataElement dataElement = await _dataClient.InsertFormData(
                 appModel,
@@ -897,6 +903,7 @@ namespace Altinn.App.Api.Controllers
             await UpdateDataValuesOnInstance(instance, dataType.Id, serviceModel);
 
             ObjectUtils.InitializeAltinnRowId(serviceModel);
+            ObjectUtils.PrepareModelForXmlStorage(serviceModel);
 
             // Save Formdata to database
             DataElement updatedDataElement = await _dataClient.UpdateData(

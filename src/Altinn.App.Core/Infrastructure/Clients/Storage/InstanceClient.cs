@@ -10,6 +10,7 @@ using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using AltinnCore.Authentication.Utils;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
@@ -95,21 +96,13 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         /// <inheritdoc />
         public async Task<List<Instance>> GetInstances(Dictionary<string, StringValues> queryParams)
         {
-            StringBuilder apiUrl = new($"instances?");
-
-            foreach (var queryParameter in queryParams)
-            {
-                foreach (string value in queryParameter.Value)
-                {
-                    apiUrl.Append($"&{queryParameter.Key}={value}");
-                }
-            }
+            var apiUrl = QueryHelpers.AddQueryString("instances", queryParams);
 
             string token = JwtTokenUtil.GetTokenFromContext(
                 _httpContextAccessor.HttpContext,
                 _settings.RuntimeCookieName
             );
-            QueryResponse<Instance> queryResponse = await QueryInstances(token, apiUrl.ToString());
+            QueryResponse<Instance> queryResponse = await QueryInstances(token, apiUrl);
 
             if (queryResponse.Count == 0)
             {
@@ -251,7 +244,9 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             _logger.LogError(
                 $"Could not update read status for instance {instanceOwnerPartyId}/{instanceGuid}. Request failed with status code {response.StatusCode}"
             );
+#nullable disable
             return null;
+#nullable restore
         }
 
         /// <inheritdoc/>

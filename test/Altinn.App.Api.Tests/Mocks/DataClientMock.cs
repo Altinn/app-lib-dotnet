@@ -1,12 +1,14 @@
 using System.Text.Json;
-using System.Xml.Serialization;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Core.Extensions;
+using Altinn.App.Core.Helpers.Serialization;
+using Altinn.App.Core.Infrastructure.Clients.Storage;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using DataElement = Altinn.Platform.Storage.Interface.Models.DataElement;
 
 namespace App.IntegrationTests.Mocks.Services
@@ -19,9 +21,16 @@ namespace App.IntegrationTests.Mocks.Services
         private static readonly JsonSerializerOptions _jsonSerializerOptions =
             new() { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
-        public DataClientMock(IAppMetadata appMetadata, IHttpContextAccessor httpContextAccessor)
+        private readonly ILogger<DataClientMock> _logger;
+
+        public DataClientMock(
+            IAppMetadata appMetadata,
+            IHttpContextAccessor httpContextAccessor,
+            ILogger<DataClientMock> logger
+        )
         {
             _httpContextAccessor = httpContextAccessor;
+            _logger = logger;
             _appMetadata = appMetadata;
         }
 
@@ -149,7 +158,7 @@ namespace App.IntegrationTests.Mocks.Services
             return list;
         }
 
-        public Task<object> GetFormData(
+        public async Task<object> GetFormData(
             Guid instanceGuid,
             Type type,
             string org,
@@ -159,24 +168,13 @@ namespace App.IntegrationTests.Mocks.Services
         )
         {
             string dataPath = TestData.GetDataBlobPath(org, app, instanceOwnerPartyId, instanceGuid, dataId);
+            using var sourceStream = File.Open(dataPath, FileMode.OpenOrCreate);
 
-            XmlSerializer serializer = new(type);
-            try
-            {
-                using FileStream sourceStream = File.Open(dataPath, FileMode.OpenOrCreate);
+            ModelDeserializer deserializer = new(_logger, type);
+            var formData = await deserializer.DeserializeAsync(sourceStream, "application/xml");
 
-                var formData = serializer.Deserialize(sourceStream);
-                return formData != null
-                    ? Task.FromResult(formData)
-                    : throw new Exception("Unable to deserialize form data");
-            }
-            catch
-            {
-                var formData = Activator.CreateInstance(type);
-                if (formData != null)
-                    Task.FromResult(formData);
-                throw;
-            }
+            // var formData = serializer.Deserialize(sourceStream);
+            return formData ?? throw new Exception("Unable to deserialize form data");
         }
 
         public async Task<DataElement> InsertFormData<T>(
@@ -222,8 +220,7 @@ namespace App.IntegrationTests.Mocks.Services
 
                 using (Stream stream = File.Open(dataPath + @"blob/" + dataGuid, FileMode.Create, FileAccess.ReadWrite))
                 {
-                    XmlSerializer serializer = new(type);
-                    serializer.Serialize(stream, dataToSerialize);
+                    DataClient.Serialize(dataToSerialize, type, stream);
                 }
 
                 WriteDataElementToFile(dataElement, org, app, instanceOwnerPartyId);
@@ -246,6 +243,7 @@ namespace App.IntegrationTests.Mocks.Services
             Guid dataGuid
         )
         {
+            ArgumentNullException.ThrowIfNull(dataToSerialize);
             string dataPath = TestData.GetDataDirectory(org, app, instanceOwnerPartyId, instanceGuid);
 
             DataElement? dataElement = GetDataElements(org, app, instanceOwnerPartyId, instanceGuid)
@@ -268,8 +266,7 @@ namespace App.IntegrationTests.Mocks.Services
                 )
             )
             {
-                XmlSerializer serializer = new(type);
-                serializer.Serialize(stream, dataToSerialize);
+                DataClient.Serialize(dataToSerialize, type, stream);
             }
 
             dataElement.LastChanged = DateTime.UtcNow;
@@ -409,7 +406,7 @@ namespace App.IntegrationTests.Mocks.Services
             string instanceId,
             string dataType,
             string contentType,
-            string filename,
+            string? filename,
             Stream stream,
             string? generatedFromTask = null
         )

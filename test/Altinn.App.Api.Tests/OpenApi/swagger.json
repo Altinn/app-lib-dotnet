@@ -5602,20 +5602,6 @@
         },
         "additionalProperties": false
       },
-      "JsonPointer": {
-        "type": "object",
-        "properties": {
-          "segments": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PointerSegment"
-            },
-            "nullable": true,
-            "readOnly": true
-          }
-        },
-        "additionalProperties": false
-      },
       "Logo": {
         "type": "object",
         "properties": {
@@ -5745,24 +5731,34 @@
         },
         "additionalProperties": false
       },
-      "PatchOperation": {
-        "type": "object",
-        "properties": {
-          "op": {
-            "$ref": "#/components/schemas/OperationType"
-          },
-          "from": {
-            "$ref": "#/components/schemas/JsonPointer"
-          },
-          "path": {
-            "$ref": "#/components/schemas/JsonPointer"
-          },
-          "value": {
-            "$ref": "#/components/schemas/JsonNode"
-          }
+        "PatchOperation": {
+            "type": "object",
+            "properties": {
+                "op": {
+                    "$ref": "#/components/schemas/OperationType"
+                },
+                "from": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "nullable": true,
+                    "readOnly": true
+                },
+                "path": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "nullable": true,
+                    "readOnly": true
+                },
+                "value": {
+                    "$ref": "#/components/schemas/JsonNode"
+                }
+            },
+            "additionalProperties": false
         },
-        "additionalProperties": false
-      },
       "Payer": {
         "type": "object",
         "properties": {
@@ -5967,17 +5963,6 @@
           "number": {
             "type": "string",
             "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "PointerSegment": {
-        "type": "object",
-        "properties": {
-          "value": {
-            "type": "string",
-            "nullable": true,
-            "readOnly": true
           }
         },
         "additionalProperties": false
