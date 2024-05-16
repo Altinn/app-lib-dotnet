@@ -141,7 +141,9 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
                 // Remove the shadow fields from the data
                 data =
                     JsonSerializer.Deserialize(serializedData, modelType)
-                    ?? throw new JsonException("Could not deserialize back datamodel after removing shadow fields");
+                    ?? throw new JsonException(
+                        "Could not deserialize back datamodel after removing shadow fields. Data was \"null\""
+                    );
             }
         }
         // remove AltinnRowIds
