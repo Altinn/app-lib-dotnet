@@ -159,6 +159,9 @@ public class NetsConsumerType
     public List<string>? SupportedTypes { get; set; }
 }
 
+/// <summary>
+/// Properties related to shipping of packets.
+/// </summary>
 public class NetsShipping
 {
     /// <summary>

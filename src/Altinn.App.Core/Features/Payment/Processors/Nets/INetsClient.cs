@@ -1,4 +1,4 @@
-﻿using Altinn.App.Core.Features.Payment.Processors.Nets.Models;
+using Altinn.App.Core.Features.Payment.Processors.Nets.Models;
 
 namespace Altinn.App.Core.Features.Payment.Processors.Nets
 {
@@ -25,7 +25,6 @@ namespace Altinn.App.Core.Features.Payment.Processors.Nets
         /// Terminate a payment that has not been captured.
         /// </summary>
         /// <param name="paymentId"></param>
-        /// <param name="amount"></param>
         /// <returns></returns>
         Task<bool> TerminatePayment(string paymentId);
     }

@@ -31,7 +31,7 @@ public class PaymentUserActionTests
     private readonly Mock<IPaymentService> _paymentServiceMock = new();
 
     [Fact]
-    public async void HandleAction_returns_redirect_result_correctly()
+    public async Task HandleAction_returns_redirect_result_correctly()
     {
         // Arrange
         Instance instance = CreateInstance();
@@ -70,7 +70,7 @@ public class PaymentUserActionTests
     }
 
     [Fact]
-    public async void HandleAction_returns_success_result_when_no_redirect_url()
+    public async Task HandleAction_returns_success_result_when_no_redirect_url()
     {
         // Arrange
         Instance instance = CreateInstance();
@@ -107,7 +107,7 @@ public class PaymentUserActionTests
     }
 
     [Fact]
-    public async void HandleAction_returns_failure_result_when_already_paid()
+    public async Task HandleAction_returns_failure_result_when_already_paid()
     {
         // Arrange
         Instance instance = CreateInstance();

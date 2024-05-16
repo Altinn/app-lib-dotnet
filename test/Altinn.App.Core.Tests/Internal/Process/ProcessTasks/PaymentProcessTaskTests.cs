@@ -1,4 +1,4 @@
-﻿using Altinn.App.Core.Features.Payment.Exceptions;
+using Altinn.App.Core.Features.Payment.Exceptions;
 using Altinn.App.Core.Features.Payment.Services;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Pdf;

@@ -1,4 +1,4 @@
-﻿namespace Altinn.App.Core.Features.Payment.Models
+namespace Altinn.App.Core.Features.Payment.Models
 {
     /// <summary>
     /// Represents payment information for a transaction.

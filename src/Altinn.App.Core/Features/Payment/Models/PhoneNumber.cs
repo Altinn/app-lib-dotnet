@@ -1,4 +1,4 @@
-﻿namespace Altinn.App.Core.Features.Payment.Models;
+namespace Altinn.App.Core.Features.Payment.Models;
 
 /// <summary>
 /// Represents a phone number.

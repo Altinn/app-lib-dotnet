@@ -1,4 +1,4 @@
-﻿namespace Altinn.App.Core.Features.Payment.Exceptions
+namespace Altinn.App.Core.Features.Payment.Exceptions
 {
     /// <summary>
     /// Represents an exception that is thrown when an error occurs during payment processing.

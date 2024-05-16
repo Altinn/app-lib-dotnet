@@ -1,4 +1,4 @@
-﻿using Altinn.App.Core.Features.Payment.Models;
+using Altinn.App.Core.Features.Payment.Models;
 using Altinn.App.Core.Features.Payment.Services;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Process;

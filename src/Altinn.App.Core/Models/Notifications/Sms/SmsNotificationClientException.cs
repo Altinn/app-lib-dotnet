@@ -14,5 +14,6 @@ public sealed class SmsNotificationException : Exception
         : base(
             $"{message}: StatusCode={response?.StatusCode}\nReason={response?.ReasonPhrase}\nBody={content}\n",
             innerException
-        ) { }
+        )
+    { }
 }
