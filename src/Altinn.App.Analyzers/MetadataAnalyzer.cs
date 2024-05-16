@@ -28,7 +28,7 @@ internal sealed class MetadataAnalyzer : DiagnosticAnalyzer
             )
         )
         {
-            context.ReportDiagnostic(Diagnostic.Create(Diagnostics.ProjectNotFoundError, Location.None));
+            context.ReportDiagnostic(Diagnostic.Create(Diagnostics.ProjectNotFound, Location.None));
             return;
         }
 
@@ -37,9 +37,7 @@ internal sealed class MetadataAnalyzer : DiagnosticAnalyzer
         var file = Path.Combine(projectDir, "config/applicationmetadata.json");
         if (!File.Exists(file))
         {
-            context.ReportDiagnostic(
-                Diagnostic.Create(Diagnostics.ApplicationMetadataFileNotFoundError, Location.None)
-            );
+            context.ReportDiagnostic(Diagnostic.Create(Diagnostics.ApplicationMetadataFileNotFound, Location.None));
             return;
         }
 
@@ -72,7 +70,7 @@ internal sealed class MetadataAnalyzer : DiagnosticAnalyzer
                     // TODO: create location
                     // Location.Create(file, TextSpan.FromBounds(..), LinePositionSpan);
                     context.ReportDiagnostic(
-                        Diagnostic.Create(Diagnostics.DataTypeClassRefInvalidError, Location.None, classRef, dataTypeId)
+                        Diagnostic.Create(Diagnostics.DataTypeClassRefInvalid, Location.None, classRef, dataTypeId)
                     );
                 }
             }
@@ -81,7 +79,7 @@ internal sealed class MetadataAnalyzer : DiagnosticAnalyzer
         {
             context.ReportDiagnostic(
                 Diagnostic.Create(
-                    Diagnostics.FailedToParseApplicationMetadataError,
+                    Diagnostics.FailedToParseApplicationMetadata,
                     Location.None,
                     ex.Message,
                     ex.StackTrace

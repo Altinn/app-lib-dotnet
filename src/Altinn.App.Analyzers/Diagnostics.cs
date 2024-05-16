@@ -4,35 +4,35 @@ namespace Altinn.App.Analyzers;
 
 internal static class Diagnostics
 {
-    internal static readonly DiagnosticDescriptor UnknownError = Error(
+    internal static readonly DiagnosticDescriptor UnknownError = Warning(
         "ALTINN999",
         Category.General,
         "Unknown analyzer error",
         "Unknown error occurred during analysis: '{0}' {1}"
     );
 
-    internal static readonly DiagnosticDescriptor ProjectNotFoundWarning = Warning(
+    internal static readonly DiagnosticDescriptor ProjectNotFound = Warning(
         "ALTINN001",
         Category.General,
         "Altinn app project not found",
         "While starting analysis, we couldn't find the project directory - contact support"
     );
 
-    internal static readonly DiagnosticDescriptor ApplicationMetadataFileNotFoundWarning = Warning(
+    internal static readonly DiagnosticDescriptor ApplicationMetadataFileNotFound = Warning(
         "ALTINN002",
         Category.Metadata,
         "Altinn app metadata file not found",
         "Could not find application metadata file at 'config/applicationmetadata.json'"
     );
 
-    internal static readonly DiagnosticDescriptor FailedToParseApplicationMetadataWarning = Warning(
+    internal static readonly DiagnosticDescriptor FailedToParseApplicationMetadata = Warning(
         "ALTINN003",
         Category.Metadata,
         "Altinn app metadata file couldn't be parsed",
         "Could not parse application metadata file at 'config/applicationmetadata.json': '{0}' {1}"
     );
 
-    internal static readonly DiagnosticDescriptor DataTypeClassRefInvalidWarning = Warning(
+    internal static readonly DiagnosticDescriptor DataTypeClassRefInvalid = Warning(
         "ALTINN004",
         Category.Metadata,
         "Data type class reference could not be found",
@@ -56,9 +56,6 @@ internal static class Diagnostics
 
     private static DiagnosticDescriptor Warning(string id, string category, string title, string messageFormat) =>
         Create(id, title, messageFormat, category, DiagnosticSeverity.Warning);
-
-    private static DiagnosticDescriptor Error(string id, string category, string title, string messageFormat) =>
-        Create(id, title, messageFormat, category, DiagnosticSeverity.Error);
 
     private static DiagnosticDescriptor Create(
         string id,
