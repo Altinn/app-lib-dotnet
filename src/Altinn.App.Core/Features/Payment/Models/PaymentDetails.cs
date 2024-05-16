@@ -1,6 +1,3 @@
-using System.Text.Json.Serialization;
-using Altinn.App.Core.Features.Payment.Processors.Nets.Models;
-
 namespace Altinn.App.Core.Features.Payment.Models;
 
 /// <summary>
