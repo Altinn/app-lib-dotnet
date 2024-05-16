@@ -26,7 +26,7 @@ public class OrderDetails
     public required List<PaymentOrderLine> OrderLines { get; set; }
 
     /// <summary>
-    /// Used to tell payment processor if the payer should be a person, company or any of the two. How this is used can vary between payment processors.
+    /// Used to tell payment processor if the payer should be a person, company or any of the two. How this is used/respected can vary between payment processors.
     /// </summary>
     public PayerType[]? AllowedPayerTypes { get; set; }
 
