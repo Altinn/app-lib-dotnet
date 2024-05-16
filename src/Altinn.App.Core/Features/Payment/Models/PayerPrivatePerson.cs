@@ -1,7 +1,7 @@
 namespace Altinn.App.Core.Features.Payment.Models;
 
 /// <summary>
-/// Represents a private person making the payment.
+/// Private person making the payment.
 /// </summary>
 public class PayerPrivatePerson
 {

@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Altinn.App.Core.Features.Payment.Models
 {
     /// <summary>
-    /// Represents the status of a payment.
+    /// The status of a payment.
     /// </summary>
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum PaymentStatus

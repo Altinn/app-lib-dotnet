@@ -1,7 +1,7 @@
 namespace Altinn.App.Core.Features.Payment.Models;
 
 /// <summary>
-/// Represents the details of an invoice.
+/// The details of an invoice.
 /// </summary>
 public class InvoiceDetails
 {

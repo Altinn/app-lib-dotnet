@@ -1,22 +1,22 @@
 namespace Altinn.App.Core.Features.Payment.Models
 {
     /// <summary>
-    /// Represents payment information for a transaction.
+    /// The payment information for a transaction.
     /// </summary>
     public class PaymentInformation
     {
         /// <summary>
-        /// Gets or sets the taskId of the payment task this payment information is associated with.
+        /// The taskId of the payment task this payment information is associated with.
         /// </summary>
         public required string TaskId { get; set; }
 
         /// <summary>
-        /// Gets or sets the status of the payment.
+        /// The status of the payment.
         /// </summary>
         public required PaymentStatus Status { get; set; }
 
         /// <summary>
-        /// Gets or sets the order details for the transaction.
+        /// The order details for the transaction.
         /// </summary>
         public required OrderDetails OrderDetails { get; set; }
 

@@ -1,7 +1,7 @@
 namespace Altinn.App.Core.Features.Payment.Models;
 
 /// <summary>
-/// Represents the details of a card.
+/// The details of a payment card.
 /// </summary>
 public class CardDetails
 {

@@ -1,7 +1,7 @@
 namespace Altinn.App.Core.Features.Payment.Models;
 
 /// <summary>
-/// Represents the receiver of a payment. Used in receipt.
+/// The receiver of the payment. Used in receipt.
 /// </summary>
 public class PaymentReceiver
 {

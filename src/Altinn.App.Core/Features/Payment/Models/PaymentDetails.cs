@@ -9,12 +9,12 @@ namespace Altinn.App.Core.Features.Payment.Models;
 public class PaymentDetails
 {
     /// <summary>
-    /// Gets or sets the payment reference for the transaction.
+    /// The payment reference for the transaction.
     /// </summary>
     public required string PaymentId { get; set; }
 
     /// <summary>
-    /// Gets or sets the redirect URL for the payment. Used to redirect the user to payment processors GUI.
+    /// The redirect URL for the payment. Used to redirect the user to payment processors GUI.
     /// </summary>
     public string? RedirectUrl { get; set; }
 

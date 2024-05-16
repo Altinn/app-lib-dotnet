@@ -1,7 +1,7 @@
 namespace Altinn.App.Core.Features.Payment.Models;
 
 /// <summary>
-/// Represents a company making the payment.
+/// Company making the payment.
 /// </summary>
 public class PayerCompany
 {
