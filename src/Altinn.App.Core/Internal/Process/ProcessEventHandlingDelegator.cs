@@ -57,55 +57,76 @@ namespace Altinn.App.Core.Internal.Process
             {
                 if (Enum.TryParse(instanceEvent.EventType, true, out InstanceEventType eventType))
                 {
-                    string? taskId = instanceEvent.ProcessInfo?.CurrentTask?.ElementId;
-                    if (instanceEvent.ProcessInfo?.CurrentTask != null && string.IsNullOrEmpty(taskId))
+                    if (instanceEvent.ProcessInfo?.CurrentTask != null)
                     {
-                        throw new ProcessException(
-                            $"Unable to parse taskId from CurrentTask on instance event {eventType} ({instanceEvent.Id})"
-                        );
+                        await HandleTaskEvent(instance, eventType, instanceEvent.ProcessInfo.CurrentTask, prefill);
                     }
-
-                    string? altinnTaskType = instanceEvent.ProcessInfo?.CurrentTask?.AltinnTaskType;
-
-                    switch (eventType)
+                    else
                     {
-                        case InstanceEventType.process_StartEvent:
-                            break;
-                        case InstanceEventType.process_StartTask:
-                            // ! TODO: figure out why taskId can be null here
-                            await _startTaskEventHandler.Execute(
-                                GetProcessTaskInstance(altinnTaskType),
-                                taskId!,
-                                instance,
-                                prefill
-                            );
-                            break;
-                        case InstanceEventType.process_EndTask:
-                            // ! TODO: figure out why taskId can be null here
-                            await _endTaskEventHandler.Execute(
-                                GetProcessTaskInstance(altinnTaskType),
-                                taskId!,
-                                instance
-                            );
-                            break;
-                        case InstanceEventType.process_AbandonTask:
-                            // InstanceEventType is set to Abandon when action performed is `Reject`. This is to keep backwards compatability with existing code that only should be run when a task is abandoned/rejected.
-                            // ! TODO: figure out why taskId can be null here
-                            await _abandonTaskEventHandler.Execute(
-                                GetProcessTaskInstance(altinnTaskType),
-                                taskId!,
-                                instance
-                            );
-                            break;
-                        case InstanceEventType.process_EndEvent:
-                            await _endEventHandler.Execute(instanceEvent, instance);
-                            break;
+                        await HandleNonTaskEvent(instance, eventType, instanceEvent);
                     }
                 }
                 else
                 {
                     _logger.LogError("Unable to parse instanceEvent eventType {EventType}", instanceEvent.EventType);
                 }
+            }
+        }
+
+        private async Task HandleTaskEvent(
+            Instance instance,
+            InstanceEventType eventType,
+            ProcessElementInfo currentTask,
+            Dictionary<string, string>? prefill
+        )
+        {
+            string taskId = currentTask.ElementId;
+            string altinnTaskType = currentTask.AltinnTaskType;
+
+            switch (eventType)
+            {
+                case InstanceEventType.process_StartTask:
+                    await _startTaskEventHandler.Execute(
+                        GetProcessTaskInstance(altinnTaskType),
+                        taskId,
+                        instance,
+                        prefill
+                    );
+                    break;
+                case InstanceEventType.process_EndTask:
+                    await _endTaskEventHandler.Execute(GetProcessTaskInstance(altinnTaskType), taskId, instance);
+                    break;
+                case InstanceEventType.process_AbandonTask:
+                    // InstanceEventType is set to Abandon when action performed is `Reject`. This is to keep backwards compatability with existing code that only should be run when a task is abandoned/rejected.
+                    await _abandonTaskEventHandler.Execute(GetProcessTaskInstance(altinnTaskType), taskId, instance);
+                    break;
+
+                default:
+                    _logger.LogInformation(
+                        "No handler found for task eventType {EventType}. Won't do anything.",
+                        eventType
+                    );
+                    break;
+            }
+        }
+
+        private async Task HandleNonTaskEvent(
+            Instance instance,
+            InstanceEventType eventType,
+            InstanceEvent instanceEvent
+        )
+        {
+            switch (eventType)
+            {
+                case InstanceEventType.process_StartEvent:
+                    break;
+
+                case InstanceEventType.process_EndEvent:
+                    await _endEventHandler.Execute(instanceEvent, instance);
+                    break;
+                default:
+                    _logger.LogInformation("No handler found for eventType {EventType}. Won't do anything.", eventType);
+                    break;
             }
         }
 

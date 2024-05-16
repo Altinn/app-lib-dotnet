@@ -533,17 +533,7 @@ public class ProcessEventHandlingTests
             new InstanceEvent()
             {
                 EventType = InstanceEventType.process_EndEvent.ToString(),
-                ProcessInfo = new()
-                {
-                    CurrentTask = new()
-                    {
-                        ElementId = "Task_2",
-                        AltinnTaskType = "confirmation",
-                        Name = "Bekreft",
-                        Flow = 2
-                    },
-                    EndEvent = "EndEvent"
-                }
+                ProcessInfo = new() { CurrentTask = null, EndEvent = "EndEvent" }
             }
         };
 
