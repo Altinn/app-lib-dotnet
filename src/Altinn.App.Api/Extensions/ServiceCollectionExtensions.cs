@@ -15,7 +15,7 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.FeatureManagement;
 using Microsoft.IdentityModel.Tokens;
-using OpenTelemetry;
+using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -49,7 +49,7 @@ namespace Altinn.App.Api.Extensions
         /// <param name="services">The <see cref="IServiceCollection"/> being built.</param>
         /// <param name="config">A reference to the current <see cref="IConfiguration"/> object.</param>
         /// <param name="env">A reference to the current <see cref="IWebHostEnvironment"/> object.</param>
-        public static AltinnAppBuilder AddAltinnAppServices(
+        public static void AddAltinnAppServices(
             this IServiceCollection services,
             IConfiguration config,
             IWebHostEnvironment env
@@ -64,12 +64,11 @@ namespace Altinn.App.Api.Extensions
             services.ConfigureDataProtection();
 
             var useOpenTelemetrySetting = config.GetValue<bool?>("AppSettings:UseOpenTelemetry");
-            IOpenTelemetryBuilder? openTelemetryBuilder = null;
 
             // Use Application Insights as default, opt in to use Open Telemetry
             if (useOpenTelemetrySetting is true)
             {
-                openTelemetryBuilder = AddOpenTelemetry(services, config, env);
+                AddOpenTelemetry(services, config, env);
             }
             else
             {
@@ -91,12 +90,6 @@ namespace Altinn.App.Api.Extensions
             services.AddHttpClient<AuthorizationApiClient>();
 
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-
-            var builder = services.GetOrCreateInstanceInServices<AltinnAppBuilder>(
-                () => new AltinnAppBuilder(openTelemetryBuilder)
-            );
-
-            return builder;
         }
 
         /// <summary>
@@ -111,10 +104,7 @@ namespace Altinn.App.Api.Extensions
             IWebHostEnvironment env
         )
         {
-            var (applicationInsightsKey, applicationInsightsConnectionString) = GetAppInsightsConfig(
-                config,
-                env.EnvironmentName
-            );
+            var (applicationInsightsKey, applicationInsightsConnectionString) = GetAppInsightsConfig(config, env);
 
             if (
                 !string.IsNullOrEmpty(applicationInsightsKey)
@@ -143,7 +133,7 @@ namespace Altinn.App.Api.Extensions
             }
         }
 
-        private static IOpenTelemetryBuilder AddOpenTelemetry(
+        private static void AddOpenTelemetry(
             IServiceCollection services,
             IConfiguration config,
             IWebHostEnvironment env
@@ -158,87 +148,100 @@ namespace Altinn.App.Api.Extensions
             services.AddHostedService<TelemetryInitialization>();
             services.AddSingleton<Telemetry>();
 
-            var appInsightsConnectionString = GetAppInsightsConfigForOtel(config, env.EnvironmentName);
+            var appInsightsConnectionString = GetAppInsightsConnectionStringForOtel(config, env);
 
-            var builder = services.GetOrCreateInstanceInServices<IOpenTelemetryBuilder>(
-                () =>
-                    services
-                        .AddOpenTelemetry()
-                        .ConfigureResource(r =>
-                            r.AddService(
-                                serviceName: appId,
-                                serviceVersion: appVersion,
-                                serviceInstanceId: Environment.MachineName
-                            )
-                        )
-                        .WithTracing(builder =>
+            var builder = services
+                .AddOpenTelemetry()
+                .ConfigureResource(r =>
+                    r.AddService(
+                        serviceName: appId,
+                        serviceVersion: appVersion,
+                        serviceInstanceId: Environment.MachineName
+                    )
+                )
+                .WithTracing(builder =>
+                {
+                    if (env.IsDevelopment())
+                    {
+                        builder.SetSampler(new AlwaysOnSampler());
+                    }
+
+                    builder = builder
+                        .AddSource(appId)
+                        .AddHttpClientInstrumentation(opts =>
                         {
-                            if (env.IsDevelopment())
-                            {
-                                builder.SetSampler(new AlwaysOnSampler());
-                            }
-
-                            builder = builder
-                                .AddSource(appId)
-                                .AddHttpClientInstrumentation(opts =>
-                                {
-                                    opts.RecordException = true;
-                                })
-                                .AddAspNetCoreInstrumentation(opts =>
-                                {
-                                    opts.RecordException = true;
-                                });
-
-                            if (!string.IsNullOrWhiteSpace(appInsightsConnectionString))
-                            {
-                                builder = builder.AddAzureMonitorTraceExporter(options =>
-                                {
-                                    options.ConnectionString = appInsightsConnectionString;
-                                });
-                            }
-                            else
-                            {
-                                builder = builder.AddOtlpExporter();
-                            }
+                            opts.RecordException = true;
                         })
-                        .WithMetrics(builder =>
+                        .AddAspNetCoreInstrumentation(opts =>
                         {
-                            builder = builder
-                                .AddMeter(appId)
-                                .AddRuntimeInstrumentation()
-                                .AddHttpClientInstrumentation()
-                                .AddAspNetCoreInstrumentation();
+                            opts.RecordException = true;
+                        });
 
-                            if (!string.IsNullOrWhiteSpace(appInsightsConnectionString))
+                    if (!string.IsNullOrWhiteSpace(appInsightsConnectionString))
+                    {
+                        builder = builder.AddAzureMonitorTraceExporter(options =>
+                        {
+                            options.ConnectionString = appInsightsConnectionString;
+                        });
+                    }
+                    else
+                    {
+                        builder = builder.AddOtlpExporter();
+                    }
+                })
+                .WithMetrics(builder =>
+                {
+                    builder = builder
+                        .AddMeter(appId)
+                        .AddRuntimeInstrumentation()
+                        .AddHttpClientInstrumentation()
+                        .AddAspNetCoreInstrumentation();
+
+                    if (!string.IsNullOrWhiteSpace(appInsightsConnectionString))
+                    {
+                        builder = builder.AddAzureMonitorMetricExporter(options =>
+                        {
+                            options.ConnectionString = appInsightsConnectionString;
+                        });
+                    }
+                    else
+                    {
+                        builder = builder.AddOtlpExporter(
+                            (_, readerOptions) =>
                             {
-                                builder = builder.AddAzureMonitorMetricExporter(options =>
+                                if (env.IsDevelopment())
                                 {
-                                    options.ConnectionString = appInsightsConnectionString;
-                                });
+                                    // Export interval should be set by env var when running in real environments
+                                    // but locally it's nice to receive metrics more often than the default 60s
+                                    readerOptions.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds =
+                                        10_000;
+                                    readerOptions.PeriodicExportingMetricReaderOptions.ExportTimeoutMilliseconds =
+                                        8_000;
+                                }
                             }
-                            else
-                            {
-                                builder = builder.AddOtlpExporter(
-                                    (_, readerOptions) =>
-                                    {
-                                        if (env.IsDevelopment())
-                                        {
-                                            // Export interval should be set by env var when running in real environments
-                                            // but locally it's nice to receive metrics more often than the default 60s
-                                            readerOptions
-                                                .PeriodicExportingMetricReaderOptions
-                                                .ExportIntervalMilliseconds = 10_000;
-                                            readerOptions
-                                                .PeriodicExportingMetricReaderOptions
-                                                .ExportTimeoutMilliseconds = 8_000;
-                                        }
-                                    }
-                                );
-                            }
-                        })
-            );
+                        );
+                    }
+                });
 
-            return builder;
+            services.AddLogging(logging =>
+            {
+                logging.AddOpenTelemetry(options =>
+                {
+                    options.IncludeFormattedMessage = true;
+
+                    if (!string.IsNullOrWhiteSpace(appInsightsConnectionString))
+                    {
+                        options.AddAzureMonitorLogExporter(options =>
+                        {
+                            options.ConnectionString = appInsightsConnectionString;
+                        });
+                    }
+                    else
+                    {
+                        options.AddOtlpExporter();
+                    }
+                });
+            });
         }
 
         private sealed class TelemetryInitialization(Telemetry telemetry, MeterProvider meterProvider) : IHostedService
@@ -334,15 +337,12 @@ namespace Altinn.App.Api.Extensions
             services.TryAddSingleton<ValidateAntiforgeryTokenIfAuthCookieAuthorizationFilter>();
         }
 
-        /// <summary>
-        /// Get Application Insights configuration from environment variables or appsettings.json.
-        /// </summary>
-        /// <param name="config">config</param>
-        /// <param name="env">env</param>
-        /// <returns></returns>
-        internal static (string? Key, string? ConnectionString) GetAppInsightsConfig(IConfiguration config, string env)
+        private static (string? Key, string? ConnectionString) GetAppInsightsConfig(
+            IConfiguration config,
+            IHostEnvironment env
+        )
         {
-            var isDevelopment = string.Equals(env, "Development", StringComparison.OrdinalIgnoreCase);
+            var isDevelopment = env.IsDevelopment();
             string? key = isDevelopment
                 ? config["ApplicationInsights:InstrumentationKey"]
                 : Environment.GetEnvironmentVariable("ApplicationInsights__InstrumentationKey");
@@ -353,82 +353,24 @@ namespace Altinn.App.Api.Extensions
             return (key, connectionString);
         }
 
-        /// <summary>
-        /// Get Application Insight confirguration for OpenTelemetry.
-        /// </summary>
-        /// <param name="config">config</param>
-        /// <param name="env">env</param>
-        /// <returns>Connection string</returns>
-        internal static string? GetAppInsightsConfigForOtel(IConfiguration config, string env)
+        private static string? GetAppInsightsConnectionStringForOtel(IConfiguration config, IHostEnvironment env)
         {
-            var (appInsightsKey, _) = GetAppInsightsConfig(config, env);
-            if (!Guid.TryParse(appInsightsKey, out _))
+            var (key, connString) = GetAppInsightsConfig(config, env);
+            if (string.IsNullOrWhiteSpace(connString))
+            {
+                connString = Environment.GetEnvironmentVariable("APPLICATIONINSIGHTS_CONNECTION_STRING");
+            }
+            if (!string.IsNullOrWhiteSpace(connString))
+            {
+                return connString;
+            }
+
+            if (!Guid.TryParse(key, out _))
             {
                 return null;
             }
-            else if (!string.IsNullOrWhiteSpace(appInsightsKey))
-            {
-                return $"InstrumentationKey={appInsightsKey}";
-            }
-            return null;
-        }
 
-        /// <summary>
-        /// Stores an instance of type T in the service collection, or returns the existing instance if it already exists.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="services">collection</param>
-        /// <param name="factory">factory</param>
-        /// <returns></returns>
-        /// <exception cref="InvalidOperationException">Invalid registration</exception>
-        internal static T GetOrCreateInstanceInServices<T>(this IServiceCollection services, Func<T> factory)
-            where T : class
-        {
-            var name = typeof(T).Name;
-
-            var existingInstanceRegistration = services.LastOrDefault(s => s.ServiceType == typeof(T));
-            T instance;
-            if (existingInstanceRegistration is not null)
-            {
-                if (existingInstanceRegistration.ImplementationInstance is not T existingInstance)
-                {
-                    throw new InvalidOperationException($"{name} was already registered, but not correctly");
-                }
-                instance = existingInstance;
-            }
-            else
-            {
-                instance = factory();
-                services.AddSingleton<T>(instance);
-            }
-
-            return instance;
-        }
-
-        /// <summary>
-        /// Get an instance of type T from the service collection.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="services">services</param>
-        /// <returns></returns>
-        /// <exception cref="InvalidOperationException">Invalid registration</exception>
-        internal static T GetInstanceInServices<T>(this IServiceCollection services)
-            where T : class
-        {
-            var name = typeof(T).Name;
-
-            var existingInstanceRegistration = services.LastOrDefault(s => s.ServiceType == typeof(T));
-            if (existingInstanceRegistration is null)
-            {
-                throw new InvalidOperationException($"{name} was not registered");
-            }
-
-            if (existingInstanceRegistration.ImplementationInstance is not T instance)
-            {
-                throw new InvalidOperationException($"{name} was registered, but not correctly");
-            }
-
-            return instance;
+            return $"InstrumentationKey={key}";
         }
     }
 }
