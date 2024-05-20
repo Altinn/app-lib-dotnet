@@ -32,7 +32,7 @@ internal sealed record TelemetrySink : IDisposable
 
     internal IReadOnlyDictionary<string, IReadOnlyList<MetricMeasurement>> CapturedMetrics => _metricValues;
 
-    internal string GetSnapshot() => new TelemetrySnapshot(CapturedActivities, CapturedMetrics).AsSnapShotString();
+    internal TelemetrySnapshot GetSnapshot() => new(CapturedActivities, CapturedMetrics);
 
     internal TelemetrySink(string org = "ttd", string name = "test", string version = "v1")
     {
@@ -123,28 +123,18 @@ internal sealed record TelemetrySink : IDisposable
     }
 }
 
-internal sealed class TelemetrySnapshot(
+internal class TelemetrySnapshot(
     IEnumerable<Activity>? activities,
     IReadOnlyDictionary<string, IReadOnlyList<MetricMeasurement>>? metrics
 )
 {
-    private readonly IEnumerable<string>? ActivityNames = activities?.Select(a => a.DisplayName);
-    private readonly IEnumerable<string>? MetricNames = metrics?.Keys;
-    private readonly IEnumerable<ActivityIdFormat>? IdFormats = activities?.Select(a => a.IdFormat);
-    private readonly IEnumerable<KeyValuePair<string, object?>>? Tags = activities?.SelectMany(a => a.TagObjects);
-
-    internal string AsSnapShotString()
-    {
-        var activityNamesStr = ActivityNames != null ? string.Join("\n\t", ActivityNames) : "None";
-        var metricNamesStr = MetricNames != null ? string.Join("\n\t", MetricNames) : "None";
-        var idFormatsStr = IdFormats != null ? string.Join("\n\t", IdFormats) : "None";
-        var tagsStr = Tags != null ? string.Join("\n\t", Tags.Select(tag => $"({tag.Key}: {tag.Value})")) : "None";
-
-        return $"ActivityNames:\n\t{activityNamesStr}\n"
-            + $"MetricNames:\n\t{metricNamesStr}\n"
-            + $"IdFormats:\n\t{idFormatsStr}\n"
-            + $"Tags:\n\t{tagsStr}";
-    }
+    // Properties must be public to be accessible for Verify.Xunit
+    public IEnumerable<string>? ActivityNames { get; set; } = activities?.Select(a => a.DisplayName);
+    public IEnumerable<string>? MetricNames = metrics?.Keys;
+    public IEnumerable<ActivityIdFormat>? IdFormats = activities?.Select(a => a.IdFormat);
+    public IEnumerable<KeyValuePair<string, string?>>? Tags = activities
+        ?.SelectMany(a => a.TagObjects)
+        .Select(tag => new KeyValuePair<string, string?>(tag.Key, tag.Value?.ToString()));
 }
 
 internal static class TelemetryDI

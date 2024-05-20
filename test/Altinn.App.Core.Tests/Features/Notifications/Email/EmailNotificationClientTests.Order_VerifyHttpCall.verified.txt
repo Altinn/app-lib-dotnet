@@ -15,10 +15,10 @@
   ],
   Tags: [
     {
-      instance.guid: Guid_1
+      type: email
     }
   ],
   ActivityNames: [
-    DataClient.InsertBinaryData
+    Notifications.Order
   ]
 }
