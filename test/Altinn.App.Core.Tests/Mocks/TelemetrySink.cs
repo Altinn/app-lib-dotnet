@@ -138,7 +138,7 @@ internal sealed class TelemetrySnapshot(
         var activityNamesStr = ActivityNames != null ? string.Join(", ", ActivityNames) : "None";
         var metricNamesStr = MetricNames != null ? string.Join(", ", MetricNames) : "None";
         var idFormatsStr = IdFormats != null ? string.Join(", ", IdFormats) : "None";
-        var tagsStr = Tags != null ? string.Join(", ", Tags.Select(tag => $"{tag.Key}")) : "None";
+        var tagsStr = Tags != null ? string.Join(", ", Tags.Select(tag => $"{tag.Key}: {tag.Value}")) : "None";
 
         return $"ActivityNames: {activityNamesStr}\n"
             + $"MetricNames: {metricNamesStr}\n"

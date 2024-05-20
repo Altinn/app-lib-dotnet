@@ -58,7 +58,7 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients.Storage
             );
 
             var stream = new MemoryStream(Encoding.UTF8.GetBytes("This is not a pdf, but no one here will care."));
-            var instanceIdentifier = new InstanceIdentifier(323413, Guid.NewGuid());
+            var instanceIdentifier = new InstanceIdentifier(323413, Guid.Parse("dd96a93c-ead5-4ead-ab84-f6939782e856"));
             Uri expectedUri = new Uri(
                 $"{apiStorageEndpoint}instances/{instanceIdentifier}/data?dataType=catstories",
                 UriKind.RelativeOrAbsolute
