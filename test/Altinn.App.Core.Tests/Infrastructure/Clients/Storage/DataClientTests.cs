@@ -38,19 +38,12 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients.Storage
             logger = new NullLogger<DataClient>();
         }
 
-        [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        public async Task InsertBinaryData_MethodProduceValidPlatformRequest(bool useTelemetry)
+        [Fact]
+        public async Task InsertBinaryData_MethodProduceValidPlatformRequest()
         {
             // Arrange
             HttpRequestMessage? platformRequest = null;
-            TelemetrySink? telemetrySink = null;
-
-            if (useTelemetry)
-            {
-                telemetrySink = new TelemetrySink();
-            }
+            TelemetrySink telemetrySink = new();
 
             var target = GetDataClient(
                 async (HttpRequestMessage request, CancellationToken token) =>
@@ -86,15 +79,7 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients.Storage
             Assert.NotNull(platformRequest);
             AssertHttpRequest(platformRequest, expectedUri, HttpMethod.Post, "\"a cats story.pdf\"", "application/pdf");
 
-            if (useTelemetry)
-            {
-                Assert.NotNull(telemetrySink);
-
-                var settings = new VerifySettings();
-                settings.IgnoreMember("Duration");
-                settings.IgnoreMember("Id");
-                await Verify(telemetrySink.CapturedActivities, settings);
-            }
+            await Verify(telemetrySink.GetSnapshot());
         }
 
         [Fact]

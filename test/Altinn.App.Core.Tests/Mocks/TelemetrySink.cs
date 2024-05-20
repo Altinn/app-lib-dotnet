@@ -7,7 +7,7 @@ using Altinn.App.Core.Models;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Xunit;
+using static Altinn.App.Core.Tests.Mocks.TelemetrySink;
 
 namespace Altinn.App.Core.Tests.Mocks;
 
@@ -31,6 +31,8 @@ internal sealed record TelemetrySink : IDisposable
     internal IEnumerable<Activity> CapturedActivities => _activities;
 
     internal IReadOnlyDictionary<string, IReadOnlyList<MetricMeasurement>> CapturedMetrics => _metricValues;
+
+    internal string GetSnapshot() => new TelemetrySnapshot(CapturedActivities, CapturedMetrics).AsSnapShotString();
 
     internal TelemetrySink(string org = "ttd", string name = "test", string version = "v1")
     {
@@ -118,6 +120,30 @@ internal sealed record TelemetrySink : IDisposable
         var scope = new Scope();
         Scopes.TryAdd(scope, default).Should().BeTrue();
         return scope;
+    }
+}
+
+internal sealed class TelemetrySnapshot(
+    IEnumerable<Activity>? activities,
+    IReadOnlyDictionary<string, IReadOnlyList<MetricMeasurement>>? metrics
+)
+{
+    private readonly IEnumerable<string>? ActivityNames = activities?.Select(a => a.DisplayName);
+    private readonly IEnumerable<string>? MetricNames = metrics?.Keys;
+    private readonly IEnumerable<ActivityIdFormat>? IdFormats = activities?.Select(a => a.IdFormat);
+    private readonly IEnumerable<KeyValuePair<string, object?>>? Tags = activities?.SelectMany(a => a.TagObjects);
+
+    internal string AsSnapShotString()
+    {
+        var activityNamesStr = ActivityNames != null ? string.Join(", ", ActivityNames) : "None";
+        var metricNamesStr = MetricNames != null ? string.Join(", ", MetricNames) : "None";
+        var idFormatsStr = IdFormats != null ? string.Join(", ", IdFormats) : "None";
+        var tagsStr = Tags != null ? string.Join(", ", Tags.Select(tag => $"{tag.Key}")) : "None";
+
+        return $"ActivityNames: {activityNamesStr}\n"
+            + $"MetricNames: {metricNamesStr}\n"
+            + $"IdFormats: {idFormatsStr}\n"
+            + $"Tags: {tagsStr}";
     }
 }
 
