@@ -78,8 +78,8 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients.Storage
 
             Assert.NotNull(platformRequest);
             AssertHttpRequest(platformRequest, expectedUri, HttpMethod.Post, "\"a cats story.pdf\"", "application/pdf");
-            var snapshot = telemetrySink.GetSnapshot();
-            await Verify(snapshot);
+
+            await Verify(telemetrySink.GetSnapshot());
         }
 
         [Fact]
