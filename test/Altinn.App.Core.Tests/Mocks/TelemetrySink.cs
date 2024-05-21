@@ -133,7 +133,10 @@ internal class TelemetrySnapshot(
     {
         ActivityName = a.DisplayName,
         Tags = a.TagObjects.Select(tag => new KeyValuePair<string, string?>(tag.Key, tag.Value?.ToString())),
-        a.IdFormat
+        a.IdFormat,
+        a.Status,
+        a.Events,
+        a.Kind
     });
     public readonly IEnumerable<KeyValuePair<string, IReadOnlyList<MetricMeasurement>>>? Metrics = metrics
         ?.Select(m => new KeyValuePair<string, IReadOnlyList<MetricMeasurement>>(m.Key, m.Value))
