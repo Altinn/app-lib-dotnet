@@ -1,4 +1,7 @@
 ﻿{
+  ActivityNames: [
+    DataClient.InsertBinaryData
+  ],
   MetricNames: [
     altinn_app_lib_instances_duration,
     altinn_app_lib_processes_created,
@@ -17,8 +20,5 @@
     {
       instance.guid: Guid_1
     }
-  ],
-  ActivityNames: [
-    DataClient.InsertBinaryData
   ]
 }
