@@ -24,10 +24,8 @@ using static Altinn.App.Core.Features.Telemetry;
 
 public class SmsNotificationClientTests
 {
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public async Task Order_VerifyHttpCall(bool includeTelemetry)
+    [Fact]
+    public async Task Order_VerifyHttpCall()
     {
         // Arrange
         var smsNotification = new SmsNotification
@@ -69,8 +67,8 @@ public class SmsNotificationClientTests
 
         using var httpClient = new HttpClient(handlerMock.Object);
 
-        using var fixture = CreateFixture(httpClient, includeTelemetry);
-        var (_, client, telemetry) = fixture;
+        using var fixture = CreateFixture(httpClient, true);
+        var (_, client, telemetrySink) = fixture;
 
         // Act
         _ = await client.Order(smsNotification, default);
@@ -81,24 +79,7 @@ public class SmsNotificationClientTests
         capturedRequest!.RequestUri.Should().NotBeNull();
         capturedRequest!.RequestUri!.ToString().Should().Be(expectedUri);
 
-        if (includeTelemetry)
-        {
-            Assert.NotNull(telemetry);
-            var activities = telemetry.CapturedActivities.ToArray();
-            activities.Length.Should().Be(1);
-
-            var activity = activities[^1];
-            activity.OperationName.Should().Be("Notifications.Order");
-            activity.GetTagItem(InternalLabels.Type).Should().Be(Notifications.OrderType.Sms.ToStringFast());
-
-            var measurements = telemetry.CapturedMetrics.GetValueOrDefault(Notifications.OrderMetricName);
-            Assert.NotNull(measurements);
-            measurements.Count.Should().Be(1);
-            var measurement = measurements[^1];
-            measurement.Value.Should().Be(1);
-            measurement.Tags[InternalLabels.Type].Should().Be(Notifications.OrderType.Sms.ToStringFast());
-            measurement.Tags[InternalLabels.Result].Should().Be(Notifications.OrderResult.Success.ToStringFast());
-        }
+        await Verify(telemetrySink?.GetSnapshot());
     }
 
     [Fact]
