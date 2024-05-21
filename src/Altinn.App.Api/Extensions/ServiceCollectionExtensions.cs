@@ -161,11 +161,6 @@ namespace Altinn.App.Api.Extensions
                 )
                 .WithTracing(builder =>
                 {
-                    if (env.IsDevelopment())
-                    {
-                        builder.SetSampler(new AlwaysOnSampler());
-                    }
-
                     builder = builder
                         .AddSource(appId)
                         .AddHttpClientInstrumentation(opts =>
@@ -206,20 +201,7 @@ namespace Altinn.App.Api.Extensions
                     }
                     else
                     {
-                        builder = builder.AddOtlpExporter(
-                            (_, readerOptions) =>
-                            {
-                                if (env.IsDevelopment())
-                                {
-                                    // Export interval should be set by env var when running in real environments
-                                    // but locally it's nice to receive metrics more often than the default 60s
-                                    readerOptions.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds =
-                                        10_000;
-                                    readerOptions.PeriodicExportingMetricReaderOptions.ExportTimeoutMilliseconds =
-                                        8_000;
-                                }
-                            }
-                        );
+                        builder = builder.AddOtlpExporter();
                     }
                 });
 
@@ -253,7 +235,7 @@ namespace Altinn.App.Api.Extensions
                 // 'increase' in Prometheus will not interpret 'none' -> 1 as a delta/increase,
                 // so when querying the increase within a range, there may be 1 less sample than expected.
                 // So here we let the metrics be initialized to 0,
-                // and then run collection/flush on the otel MeterProvider to make sure they are exported.
+                // and then run collection/flush on the OTel MeterProvider to make sure they are exported.
                 // The first time we then increment the metric, it will count as a change from 0 -> 1
                 telemetry.Init();
                 if (!meterProvider.ForceFlush(10_000))
