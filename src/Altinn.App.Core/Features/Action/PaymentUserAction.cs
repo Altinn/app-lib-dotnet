@@ -22,9 +22,6 @@ namespace Altinn.App.Core.Features.Action
         /// <summary>
         /// Initializes a new instance of the <see cref="PaymentUserAction"/> class
         /// </summary>
-        /// <param name="processReader"></param>
-        /// <param name="paymentService"></param>
-        /// <param name="logger"></param>
         public PaymentUserAction(
             IProcessReader processReader,
             IPaymentService paymentService,
@@ -36,9 +33,7 @@ namespace Altinn.App.Core.Features.Action
             _logger = logger;
         }
 
-        /// <summary>
-        /// Gets the id of the user action
-        /// </summary>
+        /// <inheritdoc />
         public string Id => "pay";
 
         /// <inheritdoc />

@@ -43,7 +43,7 @@ internal class PaymentService : IPaymentService
         string? language
     )
     {
-        _logger.LogInformation("Starting payment for instance {instanceId}.", instance.Id);
+        _logger.LogInformation("Starting payment for instance {InstanceId}.", instance.Id);
 
         if (_orderDetailsCalculator == null)
         {
@@ -54,7 +54,7 @@ internal class PaymentService : IPaymentService
 
         ValidateConfig(paymentConfiguration);
 
-        _logger.LogInformation("Payment config is valid for instance {instanceId}.", instance.Id);
+        _logger.LogInformation("Payment config is valid for instance {InstanceId}.", instance.Id);
         string dataTypeId = paymentConfiguration.PaymentDataType!;
 
         (Guid dataElementId, PaymentInformation? existingPaymentInformation) =
@@ -64,7 +64,7 @@ internal class PaymentService : IPaymentService
             if (existingPaymentInformation.Status != PaymentStatus.Paid)
             {
                 _logger.LogWarning(
-                    "Payment with payment id {paymentId} already started for instance {instanceId}. Trying to cancel before creating new payment.",
+                    "Payment with payment id {PaymentId} already started for instance {InstanceId}. Trying to cancel before creating new payment.",
                     existingPaymentInformation.PaymentDetails.PaymentId,
                     instance.Id
                 );
@@ -73,7 +73,7 @@ internal class PaymentService : IPaymentService
             else
             {
                 _logger.LogWarning(
-                    "Payment with payment id {paymentId} already paid for instance {instanceId}. Cannot start new payment.",
+                    "Payment with payment id {PaymentId} already paid for instance {InstanceId}. Cannot start new payment.",
                     existingPaymentInformation.PaymentDetails.PaymentId,
                     instance.Id
                 );
@@ -90,7 +90,7 @@ internal class PaymentService : IPaymentService
             );
 
         _logger.LogInformation(
-            "Payment processor {paymentProviderId} will be used for payment for instance {instanceId}.",
+            "Payment processor {PaymentProviderId} will be used for payment for instance {InstanceId}.",
             paymentProcessor.PaymentProcessorId,
             instance.Id
         );
@@ -103,12 +103,12 @@ internal class PaymentService : IPaymentService
 
         if (startedPayment != null)
         {
-            _logger.LogInformation("Payment started successfully for instance {instanceId}.", instance.Id);
+            _logger.LogInformation("Payment started successfully for instance {InstanceId}.", instance.Id);
         }
         else
         {
             _logger.LogInformation(
-                "Skipping starting payment since order sum is zero for instance {instanceId}.",
+                "Skipping starting payment since order sum is zero for instance {InstanceId}.",
                 instance.Id
             );
         }
@@ -133,7 +133,7 @@ internal class PaymentService : IPaymentService
         string? language
     )
     {
-        _logger.LogInformation("Checking payment status for instance {instanceId}.", instance.Id);
+        _logger.LogInformation("Checking payment status for instance {InstanceId}.", instance.Id);
 
         if (_orderDetailsCalculator == null)
         {
@@ -153,7 +153,7 @@ internal class PaymentService : IPaymentService
         if (paymentInformation == null)
         {
             _logger.LogInformation(
-                "No payment information stored yet for instance {instanceId}. Returning uninitialized result.",
+                "No payment information stored yet for instance {InstanceId}. Returning uninitialized result.",
                 instance.Id
             );
 
@@ -172,7 +172,7 @@ internal class PaymentService : IPaymentService
         if (paymentInformation.Status == PaymentStatus.Skipped)
         {
             _logger.LogInformation(
-                "Payment status is '{skipped}' for instance {instanceId}. Won't ask payment processor for status.",
+                "Payment status is '{Skipped}' for instance {InstanceId}. Won't ask payment processor for status.",
                 PaymentStatus.Skipped.ToString(),
                 instance.Id
             );
@@ -195,7 +195,7 @@ internal class PaymentService : IPaymentService
         paymentInformation.PaymentDetails = updatedPaymentDetails;
 
         _logger.LogInformation(
-            "Updated payment status is {status} for instance {instanceId}.",
+            "Updated payment status is {Status} for instance {InstanceId}.",
             paymentInformation.Status.ToString(),
             instance.Id
         );
@@ -262,7 +262,7 @@ internal class PaymentService : IPaymentService
         }
 
         _logger.LogDebug(
-            "Payment {paymentReference} cancelled for instance {instanceId}. Deleting payment information.",
+            "Payment {PaymentReference} cancelled for instance {InstanceId}. Deleting payment information.",
             paymentId,
             instance.Id
         );
@@ -270,7 +270,7 @@ internal class PaymentService : IPaymentService
         await _dataService.DeleteById(new InstanceIdentifier(instance), dataElementId);
 
         _logger.LogDebug(
-            "Payment information for payment {paymentReference} deleted for instance {instanceId}.",
+            "Payment information for payment {PaymentReference} deleted for instance {InstanceId}.",
             paymentId,
             instance.Id
         );
