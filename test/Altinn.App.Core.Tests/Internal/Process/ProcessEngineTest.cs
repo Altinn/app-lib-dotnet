@@ -909,7 +909,6 @@ public class ProcessEngineTest : IDisposable
         TelemetrySink? telemetrySink = null
     )
     {
-        telemetrySink ??= new TelemetrySink();
         if (processReaderMock == null)
         {
             _processReaderMock = new();
