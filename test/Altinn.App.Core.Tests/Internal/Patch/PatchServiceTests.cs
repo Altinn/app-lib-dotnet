@@ -14,7 +14,6 @@ using Json.Patch;
 using Json.Pointer;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Xunit;
 using DataType = Altinn.Platform.Storage.Interface.Models.DataType;
 
 namespace Altinn.App.Core.Tests.Internal.Patch;
@@ -32,7 +31,7 @@ public class PatchServiceTests : IDisposable
     private readonly Mock<IDataProcessor> _dataProcessorMock = new(MockBehavior.Strict);
     private readonly Mock<IAppModel> _appModelMock = new(MockBehavior.Strict);
     private readonly Mock<IAppMetadata> _appMetadataMock = new(MockBehavior.Strict);
-    private readonly TelemetrySink _telemetryMock = new();
+    private readonly TelemetrySink _telemetrySink = new();
 
     // ValidatorMocks
     private readonly Mock<IFormDataValidator> _formDataValidator = new(MockBehavior.Strict);
@@ -78,15 +77,15 @@ public class PatchServiceTests : IDisposable
             _dataClientMock.Object,
             _appModelMock.Object,
             _appMetadataMock.Object,
-            _vLoggerMock.Object,
-            _telemetryMock.Object
+            _vLoggerMock.Object
         );
         _patchService = new PatchService(
             _appMetadataMock.Object,
             _dataClientMock.Object,
             validationService,
             new List<IDataProcessor> { _dataProcessorMock.Object },
-            _appModelMock.Object
+            _appModelMock.Object,
+            _telemetrySink.Object
         );
     }
 
@@ -174,6 +173,8 @@ public class PatchServiceTests : IDisposable
         _dataProcessorMock.Verify(d =>
             d.ProcessDataWrite(It.IsAny<Instance>(), It.IsAny<Guid>(), It.IsAny<MyModel>(), It.IsAny<MyModel?>(), null)
         );
+
+        await Verify(_telemetrySink.GetSnapshot());
     }
 
     [Fact]
@@ -317,6 +318,6 @@ public class PatchServiceTests : IDisposable
 
     public void Dispose()
     {
-        _telemetryMock.Dispose();
+        _telemetrySink.Dispose();
     }
 }
