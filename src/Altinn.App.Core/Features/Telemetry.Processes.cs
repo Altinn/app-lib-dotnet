@@ -9,7 +9,7 @@ partial class Telemetry
 {
     private void InitProcesses(InitContext context)
     {
-        InitMetricCounter(context, MetricNameProcessesCreated, static m => m.Add(0));
+        InitMetricCounter(context, MetricNameProcessesStarted, static m => m.Add(0));
         InitMetricCounter(context, MetricNameProcessesEnded, static m => m.Add(0));
 
         InitMetricHistogram(context, MetricNameProcessesDuration);
@@ -17,7 +17,7 @@ partial class Telemetry
 
     internal void ProcessStarted()
     {
-        _counters[MetricNameProcessesCreated].Add(1);
+        _counters[MetricNameProcessesStarted].Add(1);
     }
 
     internal void ProcessEnded(ProcessStateChange processChange)
@@ -60,7 +60,7 @@ partial class Telemetry
     {
         internal const string _prefix = "Process";
 
-        internal static readonly string MetricNameProcessesCreated = Metrics.CreateLibName("processes_created");
+        internal static readonly string MetricNameProcessesStarted = Metrics.CreateLibName("processes_started");
         internal static readonly string MetricNameProcessesEnded = Metrics.CreateLibName("processes_ended");
         internal static readonly string MetricNameProcessesDuration = Metrics.CreateLibName("processes_duration");
     }

@@ -7,7 +7,7 @@
   ],
   Metrics: [
     {
-      altinn_app_lib_processes_created: [
+      altinn_app_lib_processes_started: [
         {
           Value: 1
         }

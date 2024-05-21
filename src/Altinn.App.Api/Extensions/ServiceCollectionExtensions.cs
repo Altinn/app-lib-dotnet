@@ -150,7 +150,7 @@ namespace Altinn.App.Api.Extensions
 
             var appInsightsConnectionString = GetAppInsightsConnectionStringForOtel(config, env);
 
-            var builder = services
+            services
                 .AddOpenTelemetry()
                 .ConfigureResource(r =>
                     r.AddService(
