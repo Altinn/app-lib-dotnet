@@ -129,12 +129,15 @@ internal class TelemetrySnapshot(
 )
 {
     // Properties must be public to be accessible for Verify.Xunit
-    public readonly IEnumerable<string>? ActivityNames = activities?.Select(a => a.DisplayName);
-    public readonly IEnumerable<string>? MetricNames = metrics?.Keys;
-    public readonly IEnumerable<ActivityIdFormat>? IdFormats = activities?.Select(a => a.IdFormat);
-    public readonly IEnumerable<KeyValuePair<string, string?>>? Tags = activities
-        ?.SelectMany(a => a.TagObjects)
-        .Select(tag => new KeyValuePair<string, string?>(tag.Key, tag.Value?.ToString()));
+    public readonly IEnumerable<object>? Activities = activities?.Select(a => new
+    {
+        ActivityName = a.DisplayName,
+        Tags = a.TagObjects.Select(tag => new KeyValuePair<string, string?>(tag.Key, tag.Value?.ToString())),
+        a.IdFormat
+    });
+    public readonly IEnumerable<KeyValuePair<string, IReadOnlyList<MetricMeasurement>>>? Metrics = metrics
+        ?.Select(m => new KeyValuePair<string, IReadOnlyList<MetricMeasurement>>(m.Key, m.Value))
+        .Where(x => x.Value.Count != 0);
 }
 
 internal static class TelemetryDI

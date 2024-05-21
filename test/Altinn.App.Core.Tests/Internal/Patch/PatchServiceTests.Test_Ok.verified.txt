@@ -1,27 +1,28 @@
 ﻿{
-  ActivityNames: [
-    Data.Patch
-  ],
-  MetricNames: [
-    altinn_app_lib_instances_duration,
-    altinn_app_lib_processes_created,
-    altinn_app_lib_instances_completed,
-    altinn_app_lib_processes_duration,
-    altinn_app_lib_data_patched,
-    altinn_app_lib_instances_deleted,
-    altinn_app_lib_processes_ended,
-    altinn_app_lib_notification_orders,
-    altinn_app_lib_instances_created
-  ],
-  IdFormats: [
-    W3C
-  ],
-  Tags: [
+  Activities: [
     {
-      instance.guid: Guid_1
-    },
+      ActivityName: Data.Patch,
+      Tags: [
+        {
+          instance.guid: Guid_1
+        },
+        {
+          result: success
+        }
+      ],
+      IdFormat: W3C
+    }
+  ],
+  Metrics: [
     {
-      result: success
+      altinn_app_lib_data_patched: [
+        {
+          Value: 1,
+          Tags: {
+            result: success
+          }
+        }
+      ]
     }
   ]
 }
