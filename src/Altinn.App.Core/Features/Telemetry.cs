@@ -12,8 +12,8 @@ namespace Altinn.App.Core.Features;
 /// </summary>
 public sealed partial class Telemetry : IDisposable
 {
-    private bool _disposed;
-    private bool _isInitialized;
+    internal bool IsDisposed;
+    internal bool IsInitialized;
     private readonly object _lock = new();
 
     // /// <summary>
@@ -59,9 +59,9 @@ public sealed partial class Telemetry : IDisposable
     {
         lock (_lock)
         {
-            if (_isInitialized)
+            if (IsInitialized)
                 return;
-            _isInitialized = true;
+            IsInitialized = true;
 
             var counters = new Dictionary<string, Counter<long>>();
             var histograms = new Dictionary<string, Histogram<double>>();
@@ -183,10 +183,10 @@ public sealed partial class Telemetry : IDisposable
     {
         lock (_lock)
         {
-            if (_disposed)
+            if (IsDisposed)
                 return;
 
-            _disposed = true;
+            IsDisposed = true;
             ActivitySource?.Dispose();
             Meter?.Dispose();
         }

@@ -15,16 +15,11 @@ public static class WebHostBuilderExtensions
     public static void ConfigureAppWebHost(this IWebHostBuilder builder, string[] args)
     {
         builder.ConfigureAppConfiguration(
-            (_, configBuilder) =>
+            (context, configBuilder) =>
             {
                 var config = new List<KeyValuePair<string, string?>>();
 
-                var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-                if (string.IsNullOrWhiteSpace(environment))
-                    environment = Environments.Production;
-
-                var isDevelopment = environment == Environments.Development;
-                if (isDevelopment)
+                if (context.HostingEnvironment.IsDevelopment())
                 {
                     config.Add(new("OTEL_TRACES_SAMPLER", "always_on"));
                     config.Add(new("OTEL_METRIC_EXPORT_INTERVAL", "10000"));
