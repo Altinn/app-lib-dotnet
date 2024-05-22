@@ -1,5 +1,6 @@
 using Altinn.App.Core.Features.Payment.Exceptions;
 using Altinn.App.Core.Features.Payment.Services;
+using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Process;
@@ -135,6 +136,89 @@ public class PaymentProcessTaskTests
 
             // Assert
             _paymentServiceMock.Verify(x => x.CancelAndDelete(instance, altinnTaskExtension.PaymentConfiguration));
+        }
+
+        [Fact]
+        public async Task End_PaymentConfigurationIsNull_ShouldThrowApplicationConfigException()
+        {
+            _processReaderMock
+                .Setup(pr => pr.GetAltinnTaskExtension(It.IsAny<string>()))
+                .Returns((AltinnTaskExtension?)null);
+
+            Func<Task> act = async () => await _paymentProcessTask.End("taskId", new Instance());
+
+            await act.Should().ThrowAsync<ApplicationConfigException>().WithMessage("*PaymentConfig is missing*");
+        }
+
+        [Fact]
+        public async Task End_PaymentDataTypeIsNullOrWhitespace_ShouldThrowApplicationConfigException()
+        {
+            _processReaderMock
+                .Setup(pr => pr.GetAltinnTaskExtension(It.IsAny<string>()))
+                .Returns(
+                    new AltinnTaskExtension
+                    {
+                        PaymentConfiguration = new AltinnPaymentConfiguration { PaymentDataType = "" }
+                    }
+                );
+
+            Func<Task> act = async () => await _paymentProcessTask.End("taskId", new Instance());
+
+            await act.Should().ThrowAsync<ApplicationConfigException>().WithMessage("*PaymentDataType is missing*");
+        }
+
+        [Fact]
+        public async Task End_ValidConfiguration_ShouldNotThrow()
+        {
+            _processReaderMock
+                .Setup(pr => pr.GetAltinnTaskExtension(It.IsAny<string>()))
+                .Returns(
+                    new AltinnTaskExtension
+                    {
+                        PaymentConfiguration = new AltinnPaymentConfiguration { PaymentDataType = "paymentDataType" }
+                    }
+                );
+
+            _paymentServiceMock
+                .Setup(ps => ps.IsPaymentCompleted(It.IsAny<Instance>(), It.IsAny<AltinnPaymentConfiguration>()))
+                .ReturnsAsync(true);
+
+            _pdfServiceMock
+                .Setup(ps => ps.GeneratePdf(It.IsAny<Instance>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new MemoryStream());
+
+            Func<Task> act = async () => await _paymentProcessTask.End("taskId", new Instance());
+
+            await act.Should().NotThrowAsync();
+        }
+
+        [Fact]
+        public async Task Abandon_PaymentConfigurationIsNull_ShouldThrowApplicationConfigException()
+        {
+            _processReaderMock
+                .Setup(pr => pr.GetAltinnTaskExtension(It.IsAny<string>()))
+                .Returns((AltinnTaskExtension?)null);
+
+            Func<Task> act = async () => await _paymentProcessTask.Abandon("taskId", new Instance());
+
+            await act.Should().ThrowAsync<ApplicationConfigException>().WithMessage("*PaymentConfig is missing*");
+        }
+
+        [Fact]
+        public async Task Abandon_ValidConfiguration_ShouldNotThrow()
+        {
+            _processReaderMock
+                .Setup(pr => pr.GetAltinnTaskExtension(It.IsAny<string>()))
+                .Returns(
+                    new AltinnTaskExtension
+                    {
+                        PaymentConfiguration = new AltinnPaymentConfiguration { PaymentDataType = "paymentDataType" }
+                    }
+                );
+
+            Func<Task> act = async () => await _paymentProcessTask.Abandon("taskId", new Instance());
+
+            await act.Should().NotThrowAsync();
         }
 
         private static Instance CreateInstance()
