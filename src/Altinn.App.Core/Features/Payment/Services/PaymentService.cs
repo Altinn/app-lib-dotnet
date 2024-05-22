@@ -101,17 +101,12 @@ internal class PaymentService : IPaymentService
                 ? await paymentProcessor.StartPayment(instance, orderDetails, language)
                 : null;
 
-        if (startedPayment != null)
-        {
-            _logger.LogInformation("Payment started successfully for instance {InstanceId}.", instance.Id);
-        }
-        else
-        {
-            _logger.LogInformation(
-                "Skipping starting payment since order sum is zero for instance {InstanceId}.",
-                instance.Id
-            );
-        }
+        _logger.LogInformation(
+            startedPayment != null
+                ? "Payment started successfully for instance {InstanceId}."
+                : "Skipping starting payment since order sum is zero for instance {InstanceId}.",
+            instance.Id
+        );
 
         PaymentInformation paymentInformation =
             new()
