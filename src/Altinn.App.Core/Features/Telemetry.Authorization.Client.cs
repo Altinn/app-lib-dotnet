@@ -12,7 +12,7 @@ partial class Telemetry
         var activity = ActivitySource.StartActivity($"{_prefix}.GetPartyList");
         if (activity is not null)
         {
-            activity.SetTag(InternalLabels.AuthorizationUserId, userId);
+            activity.SetUserId(userId);
         }
         return activity;
     }
@@ -22,7 +22,7 @@ partial class Telemetry
         var activity = ActivitySource.StartActivity($"{_prefix}.ValidateSelectedParty");
         if (activity is not null)
         {
-            activity.SetTag(InternalLabels.AuthorizationUserId, userId);
+            activity.SetUserId(userId);
             activity.SetInstanceOwnerPartyId(partyId);
         }
         return activity;
@@ -40,25 +40,17 @@ partial class Telemetry
             activity.SetInstanceId(instanceIdentifier.InstanceGuid);
             activity.SetInstanceOwnerPartyId(instanceIdentifier.InstanceOwnerPartyId);
             activity.SetTag(InternalLabels.AuthorizationAction, action);
-            if (taskId is not null)
-            {
-                activity.SetTag(Labels.TaskId, taskId);
-            }
+            activity.SetTaskId(taskId);
         }
         return activity;
     }
 
-    internal Activity? StartClientAuthorizeActionsActivity(
-        Platform.Storage.Interface.Models.Instance instance,
-        List<string> actionIds
-    )
+    internal Activity? StartClientAuthorizeActionsActivity(Platform.Storage.Interface.Models.Instance instance)
     {
         var activity = ActivitySource.StartActivity($"{_prefix}.AuthorizeActions");
         if (activity is not null)
         {
             activity.SetInstanceId(instance);
-            string actionTypes = string.Join(", ", actionIds);
-            activity.SetTag(InternalLabels.AuthorizationActionId, actionTypes);
         }
         return activity;
     }

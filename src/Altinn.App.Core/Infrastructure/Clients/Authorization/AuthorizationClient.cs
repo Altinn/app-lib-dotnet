@@ -171,7 +171,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Authorization
             List<string> actions
         )
         {
-            using var activity = _telemetry?.StartClientAuthorizeActionsActivity(instance, actions);
+            using var activity = _telemetry?.StartClientAuthorizeActionsActivity(instance);
             XacmlJsonRequestRoot request = MultiDecisionHelper.CreateMultiDecisionRequest(user, instance, actions);
             XacmlJsonResponse response = await _pdp.GetDecisionForRequest(request);
             if (response?.Response == null)

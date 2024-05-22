@@ -10,16 +10,20 @@ namespace Altinn.App.Core.Features;
 /// <summary>
 /// Used for creating traces and metrics for the app.
 /// </summary>
+/// NOTE: this class holds all labels, metrics and trace datastructures for OTel based instrumentation.
+/// There are a couple of reasons to do this
+/// * Decouple metric lifetime from the objects that use them (since they are often scoped/transient)
+/// * Create a logical boundary to emphasize that telemetry and label names are considered public contract, subject to semver same as the rest of the code
+///   * Reason being that users may refer to these names in alerts, dashboards, saved queries etc
+/// * Minimize cluttering of "business logic" with instrumentation code
+///
+/// Watch out for high cardinality when choosing tags. Most timeseries and tracing databases
+/// do not handle high cardinality well.
 public sealed partial class Telemetry : IDisposable
 {
     internal bool IsDisposed;
     internal bool IsInitialized;
     private readonly object _lock = new();
-
-    // /// <summary>
-    // /// Object for managing counters for the app.
-    // /// </summary>
-    // public readonly CountersRegistry Counters;
 
     /// <summary>
     /// Gets the ActivitySource for the app.
@@ -47,7 +51,6 @@ public sealed partial class Telemetry : IDisposable
         var appVersion = appSettings.Value.AppVersion;
         ActivitySource = new ActivitySource(appId, appVersion);
         Meter = new Meter(appId, appVersion);
-        // Counters = new(this);
 
         _counters = FrozenDictionary<string, Counter<long>>.Empty;
         _histograms = FrozenDictionary<string, Histogram<double>>.Empty;
@@ -73,6 +76,11 @@ public sealed partial class Telemetry : IDisposable
             InitProcesses(context);
             InitValidation(context);
 
+            // NOTE: This Telemetry class is registered as a singleton
+            // Metrics could be kept in fields of the respective objects that use them for instrumentation
+            // but most of these objects have scoped or transient lifetime, which would be inefficient.
+            // So instead they are kept in frozen dicts here and looked up as they are incremented.
+            // Another option would be to keep them as plain fields here
             _counters = counters.ToFrozenDictionary();
             _histograms = histograms.ToFrozenDictionary();
         }
@@ -145,26 +153,30 @@ public sealed partial class Telemetry : IDisposable
         /// Label for the authentication level of the user.
         /// </summary>
         public const string UserAuthenticationLevel = "user.authentication_level";
+
+        /// <summary>
+        /// Label for the organisation number.
+        /// </summary>
+        public const string OrganisationNumber = "organisation.number";
     }
 
     internal static class InternalLabels
     {
         internal const string Result = "result";
         internal const string Type = "type";
-        internal const string AuthorizationUserId = "authorization.userid";
         internal const string AuthorizationAction = "authorization.action";
-        internal const string AuthorizationActionId = "authorization.actionid";
         internal const string AuthorizerAction = "authorization.authorizer.action";
-        internal const string AuthorizerTaskId = "authorization.authorizer.taskid";
-        internal const string DataGuid = "dataclient.dataguid";
-        internal const string OrganisationNumber = "register_er_client.organisationnumber";
-        internal const string ProfileClientUserId = "profileclient.userId";
+        internal const string AuthorizerTaskId = "authorization.authorizer.task_id";
         internal const string ValidatorType = "validator.type";
         internal const string ValidatorSource = "validator.source";
     }
 
     private void InitMetricCounter(InitContext context, string name, Action<Counter<long>> init)
     {
+        // NOTE: There is an initialization function here mostly to zero-init counters.
+        // This is useful in a prometheus-setting due to the 'increase' operator being a bit strange:
+        // * none -> 1 does not count as an increase
+        // * 0 -> 1 does count as an increase
         var counter = Meter.CreateCounter<long>(name, unit: null, description: null);
         context.Counters.Add(name, counter);
         init(counter);

@@ -10,7 +10,7 @@ partial class Telemetry
 {
     /// <summary>
     /// Prometheus' increase and rate functions do not register the first value as an increase, but rather as the registration.<br/>
-    /// This means that going from 0 (non-existant) to 1 on a counter will register as an increase of 0.<br/>
+    /// This means that going from none (non-existant) to 1 on a counter will register as an increase of 0.<br/>
     /// In order to workaround this, we initialize to 0 for all metrics here.<br/>
     /// Github issue can be found <a href="https://github.com/prometheus/prometheus/issues/3806">here</a>.
     /// </summary>
@@ -19,7 +19,7 @@ partial class Telemetry
     {
         InitMetricCounter(
             context,
-            OrderMetricName,
+            MetricNameOrder,
             init: static m =>
             {
                 foreach (var type in OrderTypeExtensions.GetValues())
@@ -45,7 +45,7 @@ partial class Telemetry
     }
 
     internal void RecordNotificationOrder(OrderType type, OrderResult result) =>
-        _counters[OrderMetricName]
+        _counters[MetricNameOrder]
             .Add(
                 1,
                 new Tag(InternalLabels.Type, type.ToStringFast()),
@@ -54,7 +54,7 @@ partial class Telemetry
 
     internal static class Notifications
     {
-        internal static readonly string OrderMetricName = Metrics.CreateLibName("notification_orders");
+        internal static readonly string MetricNameOrder = Metrics.CreateLibName("notification_orders");
 
         [EnumExtensions]
         internal enum OrderResult

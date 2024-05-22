@@ -13,7 +13,7 @@ partial class Telemetry
         var activity = ActivitySource.StartActivity($"{_prefix}.GetPartyList");
         if (activity is not null)
         {
-            activity.SetTag(InternalLabels.AuthorizationUserId, userId);
+            activity.SetUserId(userId);
         }
         return activity;
     }
@@ -23,7 +23,7 @@ partial class Telemetry
         var activity = ActivitySource.StartActivity($"{_prefix}.ValidateSelectedParty");
         if (activity is not null)
         {
-            activity.SetTag(InternalLabels.AuthorizationUserId, userId);
+            activity.SetUserId(userId);
             activity.SetInstanceOwnerPartyId(partyId);
         }
         return activity;
@@ -41,10 +41,7 @@ partial class Telemetry
             activity.SetInstanceId(instanceIdentifier.InstanceGuid);
             activity.SetInstanceOwnerPartyId(instanceIdentifier.InstanceOwnerPartyId);
             activity.SetTag(InternalLabels.AuthorizationAction, action);
-            if (taskId is not null)
-            {
-                activity.SetTag(Labels.TaskId, taskId);
-            }
+            activity.SetTaskId(taskId);
         }
         return activity;
     }
@@ -58,8 +55,17 @@ partial class Telemetry
         if (activity is not null)
         {
             activity.SetInstanceId(instance);
-            string actionTypes = string.Join(", ", actions.Select(a => a.Value.ToString()));
-            activity.SetTag(InternalLabels.AuthorizationActionId, actionTypes);
+
+            var now = DateTimeOffset.UtcNow;
+            ActivityTagsCollection tags = new([new("actions.count", actions.Count),]);
+            for (int i = 0; i < actions.Count; i++)
+            {
+                var action = actions[i];
+                tags.Add(new($"actions.{i}.value", action.Value));
+                tags.Add(new($"actions.{i}.type", action.ActionType.ToString()));
+            }
+
+            activity.AddEvent(new ActivityEvent("actions", now, tags));
         }
         return activity;
     }

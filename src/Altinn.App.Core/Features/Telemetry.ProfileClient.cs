@@ -7,7 +7,7 @@ partial class Telemetry
     internal Activity? StartGetUserProfileActivity(int? userId)
     {
         var activity = ActivitySource.StartActivity("ProfileClient.GetUserProfile");
-        activity?.SetTag(InternalLabels.ProfileClientUserId, userId);
+        activity?.SetUserId(userId);
         return activity;
     }
 }

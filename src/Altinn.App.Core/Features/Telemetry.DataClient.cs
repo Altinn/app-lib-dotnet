@@ -110,7 +110,7 @@ partial class Telemetry
     {
         var activity = ActivitySource.StartActivity($"{_prefix}.LockDataElement");
         activity.SetInstanceId(instanceId);
-        activity?.SetTag(InternalLabels.DataGuid, dataGuid);
+        activity.SetDataElementId(dataGuid);
         return activity;
     }
 
@@ -118,7 +118,7 @@ partial class Telemetry
     {
         var activity = ActivitySource.StartActivity($"{_prefix}.UnlockDataElement");
         activity.SetInstanceId(instanceId);
-        activity?.SetTag(InternalLabels.DataGuid, dataGuid);
+        activity.SetDataElementId(dataGuid);
         return activity;
     }
 

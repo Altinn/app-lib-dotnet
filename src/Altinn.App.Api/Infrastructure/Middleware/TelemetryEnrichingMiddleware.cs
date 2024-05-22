@@ -1,6 +1,7 @@
 using System.Collections.Frozen;
 using System.Diagnostics;
 using System.Security.Claims;
+using Altinn.App.Core.Features;
 using AltinnCore.Authentication.Constants;
 using Microsoft.AspNetCore.Http.Features;
 
@@ -19,17 +20,14 @@ public class TelemetryEnrichingMiddleware
     {
         var actions = new Dictionary<string, Action<Claim, Activity>>(StringComparer.OrdinalIgnoreCase)
         {
-            {
-                AltinnCoreClaimTypes.UserName,
-                static (claim, activity) => activity.SetTag(Core.Features.Telemetry.Labels.UserName, claim.Value)
-            },
+            { AltinnCoreClaimTypes.UserName, static (claim, activity) => activity.SetUsername(claim.Value) },
             {
                 AltinnCoreClaimTypes.UserId,
                 static (claim, activity) =>
                 {
                     if (int.TryParse(claim.Value, out var result))
                     {
-                        activity.SetTag(Core.Features.Telemetry.Labels.UserId, result);
+                        activity.SetUserId(result);
                     }
                 }
             },
@@ -39,7 +37,7 @@ public class TelemetryEnrichingMiddleware
                 {
                     if (int.TryParse(claim.Value, out var result))
                     {
-                        activity.SetTag(Core.Features.Telemetry.Labels.UserPartyId, result);
+                        activity.SetUserPartyId(result);
                     }
                 }
             },
@@ -49,7 +47,7 @@ public class TelemetryEnrichingMiddleware
                 {
                     if (int.TryParse(claim.Value, out var result))
                     {
-                        activity.SetTag(Core.Features.Telemetry.Labels.UserAuthenticationLevel, result);
+                        activity.SetAuthenticationLevel(result);
                     }
                 }
             }
@@ -101,17 +99,20 @@ public class TelemetryEnrichingMiddleware
                 && int.TryParse(instanceOwnerPartyId.ToString(), out var instanceOwnerPartyIdInt)
             )
             {
-                activity.SetTag(Core.Features.Telemetry.Labels.InstanceOwnerPartyId, instanceOwnerPartyIdInt);
+                activity.SetInstanceOwnerPartyId(instanceOwnerPartyIdInt);
             }
 
-            if (context.Request.RouteValues.TryGetValue("instanceGuid", out var instanceGuid) && instanceGuid != null)
+            var routeValues = context.Request.RouteValues;
+            if (
+                routeValues.TryGetValue("instanceGuid", out var instanceGuidObj) && instanceGuidObj is Guid instanceGuid
+            )
             {
-                activity.SetTag(Core.Features.Telemetry.Labels.InstanceGuid, instanceGuid);
+                activity.SetInstanceId(instanceGuid);
             }
 
-            if (context.Request.RouteValues.TryGetValue("dataGuid", out var dataGuid) && dataGuid != null)
+            if (routeValues.TryGetValue("dataGuid", out var dataGuidObj) && dataGuidObj is Guid dataGuid)
             {
-                activity.SetTag(Core.Features.Telemetry.Labels.DataGuid, dataGuid);
+                activity.SetDataElementId(dataGuid);
             }
         }
         catch (Exception ex)

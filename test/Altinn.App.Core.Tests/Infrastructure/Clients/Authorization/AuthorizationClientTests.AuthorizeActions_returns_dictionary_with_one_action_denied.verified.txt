@@ -5,9 +5,6 @@
       Tags: [
         {
           instance.guid: Guid_1
-        },
-        {
-          authorization.actionid: read, write, complete, lookup
         }
       ],
       IdFormat: W3C
