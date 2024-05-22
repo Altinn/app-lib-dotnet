@@ -10,7 +10,7 @@ partial class Telemetry
     internal Activity? StartGetOptionsActivity(InstanceIdentifier instanceIdentifier)
     {
         var activity = ActivitySource.StartActivity("AppOptionsService.GetOptions");
-        activity.SetInstanceId(instanceIdentifier.InstanceGuid);
+        activity?.SetInstanceId(instanceIdentifier.InstanceGuid);
         return activity;
     }
 }

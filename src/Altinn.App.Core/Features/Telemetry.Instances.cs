@@ -42,21 +42,21 @@ partial class Telemetry
     internal Activity? StartGetInstanceByGuidActivity(Guid? instanceGuid = null)
     {
         var activity = ActivitySource.StartActivity($"{_prefix}.GetInstanceByGuid");
-        activity.SetInstanceId(instanceGuid);
+        activity?.SetInstanceId(instanceGuid);
         return activity;
     }
 
     internal Activity? StartGetInstanceByInstanceActivity(Guid? instanceGuid = null)
     {
         var activity = ActivitySource.StartActivity($"{_prefix}.GetInstanceByInstance");
-        activity.SetInstanceId(instanceGuid);
+        activity?.SetInstanceId(instanceGuid);
         return activity;
     }
 
     internal Activity? StartGetInstancesActivity(Guid? instanceGuid = null)
     {
         var activity = ActivitySource.StartActivity($"{_prefix}.GetInstances");
-        activity.SetInstanceId(instanceGuid);
+        activity?.SetInstanceId(instanceGuid);
         return activity;
     }
 
@@ -71,55 +71,55 @@ partial class Telemetry
     internal Activity? StartDeleteInstanceActivity(Guid instanceGuid, int instanceOwnerPartyId)
     {
         var activity = ActivitySource.StartActivity($"{_prefix}.Delete");
-        activity.SetInstanceId(instanceGuid);
-        activity.SetInstanceOwnerPartyId(instanceOwnerPartyId);
+        activity?.SetInstanceId(instanceGuid);
+        activity?.SetInstanceOwnerPartyId(instanceOwnerPartyId);
         return activity;
     }
 
     internal Activity? StartUpdateProcessActivity(Instance instance)
     {
         var activity = ActivitySource.StartActivity($"{_prefix}.UpdateProcess");
-        activity.SetInstanceId(instance);
+        activity?.SetInstanceId(instance);
         return activity;
     }
 
     internal Activity? StartCompleteConfirmationActivity(Guid instanceGuid, int instanceOwnerPartyId)
     {
         var activity = ActivitySource.StartActivity($"{_prefix}.CompleteConfirmation");
-        activity.SetInstanceId(instanceGuid);
-        activity.SetInstanceOwnerPartyId(instanceOwnerPartyId);
+        activity?.SetInstanceId(instanceGuid);
+        activity?.SetInstanceOwnerPartyId(instanceOwnerPartyId);
         return activity;
     }
 
     internal Activity? StartUpdateReadStatusActivity(Guid instanceGuid, int instanceOwnerPartyId)
     {
         var activity = ActivitySource.StartActivity($"{_prefix}.UpdateReadStatus");
-        activity.SetInstanceId(instanceGuid);
-        activity.SetInstanceOwnerPartyId(instanceOwnerPartyId);
+        activity?.SetInstanceId(instanceGuid);
+        activity?.SetInstanceOwnerPartyId(instanceOwnerPartyId);
         return activity;
     }
 
     internal Activity? StartUpdateSubStatusActivity(Guid instanceGuid, int instanceOwnerPartyId)
     {
         var activity = ActivitySource.StartActivity($"{_prefix}.UpdateSubStatus");
-        activity.SetInstanceId(instanceGuid);
-        activity.SetInstanceOwnerPartyId(instanceOwnerPartyId);
+        activity?.SetInstanceId(instanceGuid);
+        activity?.SetInstanceOwnerPartyId(instanceOwnerPartyId);
         return activity;
     }
 
     internal Activity? StartUpdatePresentationTextActivity(Guid instanceGuid, int instanceOwnerPartyId)
     {
         var activity = ActivitySource.StartActivity($"{_prefix}.UpdatePresentationText");
-        activity.SetInstanceId(instanceGuid);
-        activity.SetInstanceOwnerPartyId(instanceOwnerPartyId);
+        activity?.SetInstanceId(instanceGuid);
+        activity?.SetInstanceOwnerPartyId(instanceOwnerPartyId);
         return activity;
     }
 
     internal Activity? StartUpdateDataValuesActivity(Guid instanceGuid, int instanceOwnerPartyId)
     {
         var activity = ActivitySource.StartActivity($"{_prefix}.UpdateDataValues");
-        activity.SetInstanceId(instanceGuid);
-        activity.SetInstanceOwnerPartyId(instanceOwnerPartyId);
+        activity?.SetInstanceId(instanceGuid);
+        activity?.SetInstanceOwnerPartyId(instanceOwnerPartyId);
         return activity;
     }
 

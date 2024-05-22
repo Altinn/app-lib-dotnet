@@ -10,7 +10,7 @@ partial class Telemetry
     internal Activity? StartPrefillDataModelActivity(string? partyId)
     {
         var activity = ActivitySource.StartActivity($"{_prefix}.PrefillDataModelWithId");
-        activity.SetInstanceOwnerPartyId(partyId);
+        activity?.SetInstanceOwnerPartyId(partyId);
         return activity;
     }
 

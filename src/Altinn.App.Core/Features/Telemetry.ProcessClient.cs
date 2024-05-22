@@ -10,8 +10,8 @@ partial class Telemetry
     internal Activity? StartGetProcessHistoryActivity(string? instanceId, string? instanceOwnerPartyId)
     {
         var activity = ActivitySource.StartActivity("ProcessClient.GetProcessHistory");
-        activity.SetInstanceId(instanceId);
-        activity.SetInstanceOwnerPartyId(instanceOwnerPartyId);
+        activity?.SetInstanceId(instanceId);
+        activity?.SetInstanceOwnerPartyId(instanceOwnerPartyId);
         return activity;
     }
 }

@@ -28,7 +28,7 @@ partial class Telemetry
     internal Activity? StartDataPatchActivity(Instance instance)
     {
         var activity = ActivitySource.StartActivity($"{_prefix}.Patch");
-        activity.SetInstanceId(instance);
+        activity?.SetInstanceId(instance);
         return activity;
     }
 

@@ -13,8 +13,8 @@ partial class Telemetry
         ArgumentException.ThrowIfNullOrWhiteSpace(taskId);
 
         var activity = ActivitySource.StartActivity($"{_prefix}.ValidateInstanceAtTask");
-        activity.SetTaskId(taskId);
-        activity.SetInstanceId(instance);
+        activity?.SetTaskId(taskId);
+        activity?.SetInstanceId(instance);
         return activity;
     }
 
@@ -22,19 +22,17 @@ partial class Telemetry
     {
         var activity = ActivitySource.StartActivity($"{_prefix}.RunTaskValidator");
 
-        if (activity is not null)
-        {
-            activity.SetTag(InternalLabels.ValidatorType, validator.GetType().Name);
-            activity.SetTag(InternalLabels.ValidatorSource, validator.ValidationSource);
-        }
+        activity?.SetTag(InternalLabels.ValidatorType, validator.GetType().Name);
+        activity?.SetTag(InternalLabels.ValidatorSource, validator.ValidationSource);
+
         return activity;
     }
 
     internal Activity? StartValidateDataElementActivity(Instance instance, DataElement dataElement)
     {
         var activity = ActivitySource.StartActivity($"{_prefix}.ValidateDataElement");
-        activity.SetInstanceId(instance);
-        activity.SetDataElementId(dataElement);
+        activity?.SetInstanceId(instance);
+        activity?.SetDataElementId(dataElement);
         return activity;
     }
 
@@ -42,11 +40,9 @@ partial class Telemetry
     {
         var activity = ActivitySource.StartActivity($"{_prefix}.RunDataElementValidator");
 
-        if (activity is not null)
-        {
-            activity.SetTag(InternalLabels.ValidatorType, validator.GetType().Name);
-            activity.SetTag(InternalLabels.ValidatorSource, validator.ValidationSource);
-        }
+        activity?.SetTag(InternalLabels.ValidatorType, validator.GetType().Name);
+        activity?.SetTag(InternalLabels.ValidatorSource, validator.ValidationSource);
+
         return activity;
     }
 
@@ -54,8 +50,8 @@ partial class Telemetry
     {
         var activity = ActivitySource.StartActivity($"{_prefix}.ValidateFormData");
 
-        activity.SetInstanceId(instance);
-        activity.SetDataElementId(dataElement);
+        activity?.SetInstanceId(instance);
+        activity?.SetDataElementId(dataElement);
         return activity;
     }
 
@@ -63,11 +59,8 @@ partial class Telemetry
     {
         var activity = ActivitySource.StartActivity($"{_prefix}.RunFormDataValidator");
 
-        if (activity is not null)
-        {
-            activity.SetTag(InternalLabels.ValidatorType, validator.GetType().Name);
-            activity.SetTag(InternalLabels.ValidatorSource, validator.ValidationSource);
-        }
+        activity?.SetTag(InternalLabels.ValidatorType, validator.GetType().Name);
+        activity?.SetTag(InternalLabels.ValidatorSource, validator.ValidationSource);
 
         return activity;
     }

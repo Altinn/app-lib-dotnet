@@ -11,21 +11,15 @@ partial class Telemetry
     internal Activity? StartGetPartyListActivity(int userId)
     {
         var activity = ActivitySource.StartActivity($"{_prefix}.GetPartyList");
-        if (activity is not null)
-        {
-            activity.SetUserId(userId);
-        }
+        activity?.SetUserId(userId);
         return activity;
     }
 
     internal Activity? StartValidateSelectedPartyActivity(int userId, int partyId)
     {
         var activity = ActivitySource.StartActivity($"{_prefix}.ValidateSelectedParty");
-        if (activity is not null)
-        {
-            activity.SetUserId(userId);
-            activity.SetInstanceOwnerPartyId(partyId);
-        }
+        activity?.SetUserId(userId);
+        activity?.SetInstanceOwnerPartyId(partyId);
         return activity;
     }
 
@@ -36,13 +30,11 @@ partial class Telemetry
     )
     {
         var activity = ActivitySource.StartActivity($"{_prefix}.AuthorizeAction");
-        if (activity is not null)
-        {
-            activity.SetInstanceId(instanceIdentifier.InstanceGuid);
-            activity.SetInstanceOwnerPartyId(instanceIdentifier.InstanceOwnerPartyId);
-            activity.SetTag(InternalLabels.AuthorizationAction, action);
-            activity.SetTaskId(taskId);
-        }
+
+        activity?.SetInstanceId(instanceIdentifier.InstanceGuid);
+        activity?.SetInstanceOwnerPartyId(instanceIdentifier.InstanceOwnerPartyId);
+        activity?.SetTag(InternalLabels.AuthorizationAction, action);
+        activity?.SetTaskId(taskId);
         return activity;
     }
 
@@ -55,7 +47,6 @@ partial class Telemetry
         if (activity is not null)
         {
             activity.SetInstanceId(instance);
-
             var now = DateTimeOffset.UtcNow;
             ActivityTagsCollection tags = new([new("actions.count", actions.Count),]);
             for (int i = 0; i < actions.Count; i++)

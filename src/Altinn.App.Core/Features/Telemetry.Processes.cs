@@ -36,21 +36,21 @@ partial class Telemetry
     internal Activity? StartProcessStartActivity(Instance instance)
     {
         var activity = ActivitySource.StartActivity($"{_prefix}.Start");
-        activity.SetInstanceId(instance);
+        activity?.SetInstanceId(instance);
         return activity;
     }
 
     internal Activity? StartProcessNextActivity(Instance instance)
     {
         var activity = ActivitySource.StartActivity($"{_prefix}.Next");
-        activity.SetInstanceId(instance);
+        activity?.SetInstanceId(instance);
         return activity;
     }
 
     internal Activity? StartProcessEndActivity(Instance instance)
     {
         var activity = ActivitySource.StartActivity($"{_prefix}.End");
-        activity.SetInstanceId(instance);
+        activity?.SetInstanceId(instance);
         return activity;
     }
 

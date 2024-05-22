@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Net.Security;
 using Altinn.Platform.Storage.Interface.Models;
 using OpenTelemetry.Trace;
 using Labels = Altinn.App.Core.Features.Telemetry.Labels;
@@ -17,11 +16,11 @@ public static class TelemetryActivityExtensions
     /// <param name="activity">Activity</param>
     /// <param name="userId">User ID</param>
     /// <returns>Activity</returns>
-    public static Activity? SetUserId(this Activity? activity, int? userId)
+    public static Activity SetUserId(this Activity activity, int? userId)
     {
         if (userId is not null)
         {
-            activity?.SetTag(Labels.UserId, userId.Value);
+            activity.SetTag(Labels.UserId, userId.Value);
         }
         return activity;
     }
@@ -32,11 +31,11 @@ public static class TelemetryActivityExtensions
     /// <param name="activity">Activity</param>
     /// <param name="userPartyId">User party ID</param>
     /// <returns>Activity</returns>
-    public static Activity? SetUserPartyId(this Activity? activity, int? userPartyId)
+    public static Activity SetUserPartyId(this Activity activity, int? userPartyId)
     {
         if (userPartyId is not null)
         {
-            activity?.SetTag(Labels.UserPartyId, userPartyId.Value);
+            activity.SetTag(Labels.UserPartyId, userPartyId.Value);
         }
         return activity;
     }
@@ -47,11 +46,11 @@ public static class TelemetryActivityExtensions
     /// <param name="activity">Activity</param>
     /// <param name="username">Username</param>
     /// <returns>Activity</returns>
-    public static Activity? SetUsername(this Activity? activity, string? username)
+    public static Activity SetUsername(this Activity activity, string? username)
     {
         if (!string.IsNullOrWhiteSpace(username))
         {
-            activity?.SetTag(Labels.UserName, username);
+            activity.SetTag(Labels.UserName, username);
         }
         return activity;
     }
@@ -62,11 +61,11 @@ public static class TelemetryActivityExtensions
     /// <param name="activity">Activity</param>
     /// <param name="authenticationLevel">Authentication level</param>
     /// <returns>Activity</returns>
-    public static Activity? SetAuthenticationLevel(this Activity? activity, int? authenticationLevel)
+    public static Activity SetAuthenticationLevel(this Activity activity, int? authenticationLevel)
     {
         if (authenticationLevel is not null)
         {
-            activity?.SetTag(Labels.UserAuthenticationLevel, authenticationLevel.Value);
+            activity.SetTag(Labels.UserAuthenticationLevel, authenticationLevel.Value);
         }
         return activity;
     }
@@ -77,12 +76,12 @@ public static class TelemetryActivityExtensions
     /// <param name="activity">Activity</param>
     /// <param name="instance">Instance</param>
     /// <returns>Activity</returns>
-    public static Activity? SetInstanceId(this Activity? activity, Instance? instance)
+    public static Activity SetInstanceId(this Activity activity, Instance? instance)
     {
         if (instance?.Id is not null)
         {
             Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
-            activity?.SetTag(Labels.InstanceGuid, instanceGuid);
+            activity.SetTag(Labels.InstanceGuid, instanceGuid);
         }
         return activity;
     }
@@ -93,12 +92,12 @@ public static class TelemetryActivityExtensions
     /// <param name="activity">Activity</param>
     /// <param name="instanceId">Instance ID</param>
     /// <returns>Activity</returns>
-    public static Activity? SetInstanceId(this Activity? activity, string? instanceId)
+    public static Activity SetInstanceId(this Activity activity, string? instanceId)
     {
         if (!string.IsNullOrWhiteSpace(instanceId))
         {
             Guid instanceGuid = Guid.Parse(instanceId.Split("/")[1]);
-            activity?.SetTag(Labels.InstanceGuid, instanceGuid);
+            activity.SetTag(Labels.InstanceGuid, instanceGuid);
         }
         return activity;
     }
@@ -109,11 +108,11 @@ public static class TelemetryActivityExtensions
     /// <param name="activity">Activity</param>
     /// <param name="instanceGuid">Instance GUID</param>
     /// <returns>Activity</returns>
-    public static Activity? SetInstanceId(this Activity? activity, Guid? instanceGuid)
+    public static Activity SetInstanceId(this Activity activity, Guid? instanceGuid)
     {
         if (instanceGuid is not null)
         {
-            activity?.SetTag(Labels.InstanceGuid, instanceGuid.Value);
+            activity.SetTag(Labels.InstanceGuid, instanceGuid.Value);
         }
 
         return activity;
@@ -125,11 +124,11 @@ public static class TelemetryActivityExtensions
     /// <param name="activity">Activity</param>
     /// <param name="instanceOwnerPartyId">Instance owner Party ID</param>
     /// <returns>Activity</returns>
-    public static Activity? SetInstanceOwnerPartyId(this Activity? activity, int? instanceOwnerPartyId)
+    public static Activity SetInstanceOwnerPartyId(this Activity activity, int? instanceOwnerPartyId)
     {
         if (instanceOwnerPartyId is not null)
         {
-            activity?.SetTag(Labels.InstanceOwnerPartyId, instanceOwnerPartyId.Value);
+            activity.SetTag(Labels.InstanceOwnerPartyId, instanceOwnerPartyId.Value);
         }
 
         return activity;
@@ -141,11 +140,11 @@ public static class TelemetryActivityExtensions
     /// <param name="activity">Activity</param>
     /// <param name="instanceOwnerPartyId">Instance owner Party ID</param>
     /// <returns>Activity</returns>
-    public static Activity? SetInstanceOwnerPartyId(this Activity? activity, string? instanceOwnerPartyId)
+    public static Activity SetInstanceOwnerPartyId(this Activity activity, string? instanceOwnerPartyId)
     {
         if (!string.IsNullOrWhiteSpace(instanceOwnerPartyId))
         {
-            activity?.SetTag(Labels.InstanceOwnerPartyId, instanceOwnerPartyId);
+            activity.SetTag(Labels.InstanceOwnerPartyId, instanceOwnerPartyId);
         }
 
         return activity;
@@ -157,12 +156,12 @@ public static class TelemetryActivityExtensions
     /// <param name="activity">Activity</param>
     /// <param name="dataElement">Data element</param>
     /// <returns>Activity</returns>
-    public static Activity? SetDataElementId(this Activity? activity, DataElement? dataElement)
+    public static Activity SetDataElementId(this Activity activity, DataElement? dataElement)
     {
         if (dataElement?.Id is not null)
         {
             Guid dataGuid = Guid.Parse(dataElement.Id);
-            activity?.SetTag(Labels.DataGuid, dataGuid);
+            activity.SetTag(Labels.DataGuid, dataGuid);
         }
 
         return activity;
@@ -174,12 +173,12 @@ public static class TelemetryActivityExtensions
     /// <param name="activity">Activity</param>
     /// <param name="dataElementId">Data element ID</param>
     /// <returns>Activity</returns>
-    public static Activity? SetDataElementId(this Activity? activity, string? dataElementId)
+    public static Activity SetDataElementId(this Activity activity, string? dataElementId)
     {
         if (!string.IsNullOrWhiteSpace(dataElementId))
         {
             Guid dataGuid = Guid.Parse(dataElementId);
-            activity?.SetTag(Labels.DataGuid, dataGuid);
+            activity.SetTag(Labels.DataGuid, dataGuid);
         }
 
         return activity;
@@ -191,11 +190,11 @@ public static class TelemetryActivityExtensions
     /// <param name="activity">Activity</param>
     /// <param name="dataElementId">Data element ID</param>
     /// <returns>Activity</returns>
-    public static Activity? SetDataElementId(this Activity? activity, Guid? dataElementId)
+    public static Activity SetDataElementId(this Activity activity, Guid? dataElementId)
     {
         if (dataElementId is not null)
         {
-            activity?.SetTag(Labels.DataGuid, dataElementId.Value);
+            activity.SetTag(Labels.DataGuid, dataElementId.Value);
         }
 
         return activity;
@@ -207,11 +206,11 @@ public static class TelemetryActivityExtensions
     /// <param name="activity">Activity</param>
     /// <param name="taskId">Task ID</param>
     /// <returns>Activity</returns>
-    public static Activity? SetTaskId(this Activity? activity, string? taskId)
+    public static Activity SetTaskId(this Activity activity, string? taskId)
     {
         if (!string.IsNullOrWhiteSpace(taskId))
         {
-            activity?.SetTag(Labels.TaskId, taskId);
+            activity.SetTag(Labels.TaskId, taskId);
         }
 
         return activity;
@@ -223,11 +222,11 @@ public static class TelemetryActivityExtensions
     /// <param name="activity">Activity</param>
     /// <param name="organisationNumber">Organisation number</param>
     /// <returns>Activity</returns>
-    public static Activity? SetOrganisationNumber(this Activity? activity, string? organisationNumber)
+    public static Activity SetOrganisationNumber(this Activity activity, string? organisationNumber)
     {
         if (!string.IsNullOrWhiteSpace(organisationNumber))
         {
-            activity?.SetTag(Labels.OrganisationNumber, organisationNumber);
+            activity.SetTag(Labels.OrganisationNumber, organisationNumber);
         }
 
         return activity;
@@ -244,9 +243,9 @@ public static class TelemetryActivityExtensions
     /// <param name="activity">Activity</param>
     /// <param name="exception">Exception</param>
     /// <param name="error">Error message</param>
-    internal static void Errored(this Activity? activity, Exception? exception = null, string? error = null)
+    internal static void Errored(this Activity activity, Exception? exception = null, string? error = null)
     {
-        activity?.SetStatus(ActivityStatusCode.Error, error);
-        activity?.RecordException(exception);
+        activity.SetStatus(ActivityStatusCode.Error, error);
+        activity.RecordException(exception);
     }
 }

@@ -10,7 +10,7 @@ partial class Telemetry
     internal Activity? StartDataListActivity(InstanceIdentifier instanceIdentifier)
     {
         var activity = ActivitySource.StartActivity("DataList.GetWithId");
-        activity.SetInstanceId(instanceIdentifier.InstanceGuid);
+        activity?.SetInstanceId(instanceIdentifier.InstanceGuid);
         return activity;
     }
 }
