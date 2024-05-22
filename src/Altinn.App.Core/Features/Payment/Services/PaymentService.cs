@@ -53,8 +53,6 @@ internal class PaymentService : IPaymentService
         }
 
         ValidateConfig(paymentConfiguration);
-
-        _logger.LogInformation("Payment config is valid for instance {InstanceId}.", instance.Id);
         string dataTypeId = paymentConfiguration.PaymentDataType!;
 
         (Guid dataElementId, PaymentInformation? existingPaymentInformation) =
@@ -89,12 +87,6 @@ internal class PaymentService : IPaymentService
                 $"Payment processor with ID '{orderDetails.PaymentProcessorId}' not found for instance {instance.Id}."
             );
 
-        _logger.LogInformation(
-            "Payment processor {PaymentProviderId} will be used for payment for instance {InstanceId}.",
-            paymentProcessor.PaymentProcessorId,
-            instance.Id
-        );
-
         //If the sum of the order is 0, we can skip invoking the payment processor.
         PaymentDetails? startedPayment =
             orderDetails.TotalPriceIncVat > 0
@@ -103,8 +95,9 @@ internal class PaymentService : IPaymentService
 
         _logger.LogInformation(
             startedPayment != null
-                ? "Payment started successfully for instance {InstanceId}."
-                : "Skipping starting payment since order sum is zero for instance {InstanceId}.",
+                ? "Payment started successfully using {PaymentProcessorId} for instance {InstanceId}."
+                : "Skipping starting payment using {PaymentProcessorId} since order sum is zero for instance {InstanceId}.",
+            paymentProcessor.PaymentProcessorId,
             instance.Id
         );
 

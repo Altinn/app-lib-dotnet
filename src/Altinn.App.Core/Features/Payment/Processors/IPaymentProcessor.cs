@@ -28,7 +28,7 @@ public interface IPaymentProcessor
     /// </summary>
     public Task<(PaymentStatus status, PaymentDetails paymentDetails)> GetPaymentStatus(
         Instance instance,
-        string paymentReference,
+        string paymentId,
         decimal expectedTotalIncVat,
         string? language
     );
