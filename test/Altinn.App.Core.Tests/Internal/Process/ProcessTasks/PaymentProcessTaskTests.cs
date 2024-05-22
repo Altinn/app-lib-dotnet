@@ -183,9 +183,10 @@ public class PaymentProcessTaskTests
                 .Setup(ps => ps.IsPaymentCompleted(It.IsAny<Instance>(), It.IsAny<AltinnPaymentConfiguration>()))
                 .ReturnsAsync(true);
 
+            using var memoryStream = new MemoryStream();
             _pdfServiceMock
                 .Setup(ps => ps.GeneratePdf(It.IsAny<Instance>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new MemoryStream());
+                .ReturnsAsync(memoryStream);
 
             Func<Task> act = async () => await _paymentProcessTask.End("taskId", new Instance());
 
