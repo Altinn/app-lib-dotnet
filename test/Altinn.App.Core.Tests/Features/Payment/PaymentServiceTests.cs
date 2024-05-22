@@ -398,6 +398,117 @@ public class PaymentServiceTests
         _dataService.Verify(ds => ds.DeleteById(It.IsAny<InstanceIdentifier>(), It.IsAny<Guid>()), Times.Never);
     }
 
+    [Fact]
+    public async Task StartPayment_ShouldThrowPaymentException_WhenOrderDetailsCalculatorIsNull()
+    {
+        // Arrange
+        Instance instance = CreateInstance();
+        AltinnPaymentConfiguration paymentConfiguration = new() { PaymentDataType = "paymentDataType" };
+
+        IPaymentProcessor[] paymentProcessors = []; //No payment processor added.
+        var paymentService = new PaymentService(paymentProcessors, _dataService.Object, _logger.Object);
+
+        // Act
+        Func<Task> act = async () => await paymentService.StartPayment(instance, paymentConfiguration, "en");
+
+        // Assert
+        await act.Should()
+            .ThrowAsync<PaymentException>()
+            .WithMessage(
+                "You must add an implementation of the IOrderDetailsCalculator interface to the DI container. See payment related documentation."
+            );
+    }
+
+    [Fact]
+    public async Task CheckAndStorePaymentStatus_ShouldThrowPaymentException_WhenOrderDetailsCalculatorIsNull()
+    {
+        // Arrange
+        IPaymentProcessor[] paymentProcessors = [];
+        var paymentService = new PaymentService(paymentProcessors, _dataService.Object, _logger.Object);
+        Instance instance = CreateInstance();
+        var paymentConfiguration = new AltinnPaymentConfiguration { PaymentDataType = "paymentDataType" };
+
+        // Act
+        Func<Task> act = async () =>
+            await paymentService.CheckAndStorePaymentStatus(instance, paymentConfiguration, "en");
+
+        // Assert
+        await act.Should()
+            .ThrowAsync<PaymentException>()
+            .WithMessage(
+                "You must add an implementation of the IOrderDetailsCalculator interface to the DI container. See payment related documentation."
+            );
+    }
+
+    [Fact]
+    public async Task IsPaymentCompleted_ShouldThrowPaymentException_WhenPaymentInformationNotFound()
+    {
+        // Arrange
+        Instance instance = CreateInstance();
+        AltinnPaymentConfiguration paymentConfiguration = CreatePaymentConfiguration();
+
+        string paymentDataType =
+            paymentConfiguration.PaymentDataType
+            ?? throw new Exception("PaymentDataType should not be null. Fix test.");
+
+        _dataService
+            .Setup(ds => ds.GetByType<PaymentInformation>(instance, paymentDataType))
+            .ReturnsAsync((Guid.NewGuid(), null));
+
+        // Act
+        Func<Task> act = async () => await _paymentService.IsPaymentCompleted(instance, paymentConfiguration);
+
+        // Assert
+        await act.Should().ThrowAsync<PaymentException>().WithMessage("Payment information not found.");
+    }
+
+    [Fact]
+    public async Task IsPaymentCompleted_ShouldReturnTrue_WhenPaymentStatusIsPaidOrSkipped()
+    {
+        // Arrange
+        Instance instance = CreateInstance();
+        AltinnPaymentConfiguration paymentConfiguration = CreatePaymentConfiguration();
+        PaymentInformation paymentInformation = CreatePaymentInformation();
+        paymentInformation.Status = PaymentStatus.Paid;
+
+        string paymentDataType =
+            paymentConfiguration.PaymentDataType
+            ?? throw new Exception("PaymentDataType should not be null. Fix test.");
+
+        _dataService
+            .Setup(ds => ds.GetByType<PaymentInformation>(instance, paymentDataType))
+            .ReturnsAsync((Guid.NewGuid(), paymentInformation));
+
+        // Act
+        bool result = await _paymentService.IsPaymentCompleted(instance, paymentConfiguration);
+
+        // Assert
+        result.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task IsPaymentCompleted_ShouldReturnFalse_WhenPaymentStatusIsNotPaidOrSkipped()
+    {
+        // Arrange
+        Instance instance = CreateInstance();
+        AltinnPaymentConfiguration paymentConfiguration = CreatePaymentConfiguration();
+        PaymentInformation paymentInformation = CreatePaymentInformation();
+
+        string paymentDataType =
+            paymentConfiguration.PaymentDataType
+            ?? throw new Exception("PaymentDataType should not be null. Fix test.");
+
+        _dataService
+            .Setup(ds => ds.GetByType<PaymentInformation>(instance, paymentDataType))
+            .ReturnsAsync((Guid.NewGuid(), paymentInformation));
+
+        // Act
+        var result = await _paymentService.IsPaymentCompleted(instance, paymentConfiguration);
+
+        // Assert
+        result.Should().BeFalse();
+    }
+
     private static PaymentInformation CreatePaymentInformation()
     {
         return new PaymentInformation
