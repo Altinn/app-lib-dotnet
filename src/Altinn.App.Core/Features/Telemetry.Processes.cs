@@ -49,8 +49,6 @@ partial class Telemetry
 
     internal Activity? StartProcessEndActivity(Instance instance)
     {
-        ArgumentNullException.ThrowIfNull(instance?.Process);
-
         var activity = ActivitySource.StartActivity($"{_prefix}.End");
         activity.SetInstanceId(instance);
         return activity;

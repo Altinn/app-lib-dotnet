@@ -226,7 +226,11 @@ namespace Altinn.App.Api.Extensions
             });
         }
 
-        private sealed class TelemetryInitialization(Telemetry telemetry, MeterProvider meterProvider) : IHostedService
+        private sealed class TelemetryInitialization(
+            ILogger<TelemetryInitialization> logger,
+            Telemetry telemetry,
+            MeterProvider meterProvider
+        ) : IHostedService
         {
             public Task StartAsync(CancellationToken cancellationToken)
             {
@@ -238,9 +242,16 @@ namespace Altinn.App.Api.Extensions
                 // and then run collection/flush on the OTel MeterProvider to make sure they are exported.
                 // The first time we then increment the metric, it will count as a change from 0 -> 1
                 telemetry.Init();
-                if (!meterProvider.ForceFlush(10_000))
+                try
                 {
-                    throw new Exception("Couldn't initialize Telemetry service");
+                    if (!meterProvider.ForceFlush(10_000))
+                    {
+                        logger.LogWarning("Failed to flush metrics after 10 seconds");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Failed to flush metrics");
                 }
                 return Task.CompletedTask;
             }
