@@ -1,3 +1,5 @@
+using System.Text;
+using Microsoft.CodeAnalysis.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -42,11 +44,22 @@ internal sealed class MetadataAnalyzer : DiagnosticAnalyzer
             return;
         }
 
+        SourceText? sourceText = null;
         try
         {
             var jsonText = File.ReadAllText(file);
 #pragma warning restore RS1035 // Do not use APIs banned for analyzers
-            var metadata = JObject.Parse(jsonText) ?? throw new Exception("Deserialization returned 'null'");
+            sourceText = SourceText.From(jsonText, Encoding.UTF8);
+
+            using var reader = new JsonTextReader(new StringReader(jsonText));
+
+            JsonLoadSettings loadSettings = new JsonLoadSettings()
+            {
+                CommentHandling = CommentHandling.Ignore,
+                LineInfoHandling = LineInfoHandling.Load
+            };
+
+            var metadata = JObject.Load(reader, loadSettings);
             var dataTypes =
                 (metadata.GetValue("dataTypes") as JArray) ?? throw new JsonException("Failed to parse 'dataTypes'");
 
@@ -68,10 +81,15 @@ internal sealed class MetadataAnalyzer : DiagnosticAnalyzer
 
                 if (classRefSymbol is null)
                 {
-                    // TODO: create location
-                    // Location.Create(file, TextSpan.FromBounds(..), LinePositionSpan);
+                    if (classRefToken is null)
+                        throw new JsonException("classRef was null");
                     context.ReportDiagnostic(
-                        Diagnostic.Create(Diagnostics.DataTypeClassRefInvalid, Location.None, classRef, dataTypeId)
+                        Diagnostic.Create(
+                            Diagnostics.DataTypeClassRefInvalid,
+                            GetLocation(file, classRef, classRefToken, sourceText),
+                            classRef,
+                            dataTypeId
+                        )
                     );
                 }
             }
@@ -81,12 +99,35 @@ internal sealed class MetadataAnalyzer : DiagnosticAnalyzer
             context.ReportDiagnostic(
                 Diagnostic.Create(
                     Diagnostics.FailedToParseApplicationMetadata,
-                    Location.None,
+                    sourceText is not null ? GetLocation(file, sourceText) : Location.None,
                     ex.Message,
                     ex.StackTrace
                 )
             );
             return;
         }
+    }
+
+    private static Location GetLocation(string file, SourceText sourceText)
+    {
+        var lines = sourceText.Lines;
+        var textSpan = TextSpan.FromBounds(0, lines[lines.Count - 1].End);
+        return Location.Create(file, textSpan, lines.GetLinePositionSpan(textSpan));
+    }
+
+    private static Location GetLocation(string file, string value, JToken token, SourceText sourceText)
+    {
+        var lineInfo = token as IJsonLineInfo;
+        if (lineInfo is null || lineInfo.HasLineInfo() is false)
+            throw new Exception("Could not get LineInfo from token in JSON");
+
+        var lines = sourceText.Lines;
+        var line = lines[lineInfo.LineNumber - 1];
+        var textSpan = TextSpan.FromBounds(
+            line.Start + lineInfo.LinePosition - value.Length - 1,
+            line.Start + lineInfo.LinePosition - 1
+        );
+
+        return Location.Create(file, textSpan, lines.GetLinePositionSpan(textSpan));
     }
 }
