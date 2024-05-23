@@ -38,9 +38,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Altinn.App.Analyzers\Altinn.App.Analyzers.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="None" CopyToOutputDirectory="Always" />
-    <None Include="$(OutputPath)\Altinn.App.Analyzers.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="true" />
-    <None Include="$(OutputPath)\Newtonsoft.Json.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="true" />
+    <ProjectReference Include="..\Altinn.App.Analyzers\Altinn.App.Analyzers.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="None" />
+    <None Include="..\Altinn.App.Analyzers\bin\$(Configuration)\netstandard2.0\Altinn.App.Analyzers.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="true" />
+    <None Include="..\Altinn.App.Analyzers\bin\$(Configuration)\netstandard2.0\Newtonsoft.Json.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="true" />
   </ItemGroup>
 
   <ItemGroup>
