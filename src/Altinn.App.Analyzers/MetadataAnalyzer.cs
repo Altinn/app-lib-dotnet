@@ -34,6 +34,7 @@ internal sealed class MetadataAnalyzer : DiagnosticAnalyzer
 
 #pragma warning disable RS1035 // Do not use APIs banned for analyzers
         // On compilation end, it is not totally unreasonable to read a file
+        // TODO: in the future, it would be nice if app projects used `<AdditionalFiles .. />`
         var file = Path.Combine(projectDir, "config/applicationmetadata.json");
         if (!File.Exists(file))
         {
