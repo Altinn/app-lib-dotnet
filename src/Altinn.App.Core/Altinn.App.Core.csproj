@@ -40,6 +40,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Altinn.App.Analyzers\Altinn.App.Analyzers.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="None" CopyToOutputDirectory="Always" />
     <None Include="$(OutputPath)\Altinn.App.Analyzers.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="true" />
+    <None Include="$(OutputPath)\Newtonsoft.Json.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="true" />
   </ItemGroup>
 
   <ItemGroup>
