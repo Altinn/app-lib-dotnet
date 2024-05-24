@@ -38,9 +38,6 @@ internal class NetsCreatePayment
     /// </summary>
     public NetsNotifications? Notifications { get; set; }
 
-    //TODO: Add subscription
-    //TODO: Add unscheduledSubscription
-
     /// <summary>
     /// Specifies payment methods configuration to be used for this payment, ignored if empty or null.
     /// </summary>
