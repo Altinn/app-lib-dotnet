@@ -119,6 +119,9 @@ dotnet_diagnostic.CA1825.severity = warning
 # IDE0052: Remove unread private member
 dotnet_diagnostic.IDE0052.severity = warning
 
+# For https://github.com/shuebner/ClosedTypeHierarchyDiagnosticSuppressor
+dotnet_diagnostic.CTH001.suppress_on_record_hierarchies = true
+
 # CA1848: Use the LoggerMessage delegates
 dotnet_diagnostic.CA1848.severity = none
 

@@ -1,0 +1,15 @@
+﻿[
+  {
+    Id: ALTINN999,
+    Title: Unknown analyzer error,
+    Severity: Warning,
+    WarningLevel: 1,
+    Location: None,
+    HelpLink: https://docs.altinn.studio/app/development/analysis/rules/ALTINN999,
+    MessageFormat: Unknown error occurred during analysis, contact support: '{0}' {1},
+    Message:
+Unknown error occurred during analysis, contact support: 'Correct_Diagnostic_On_Unhandled_Exception: On compilation'    at Altinn.App.Analyzers.Tests.MetadataAnalyzerTests.<>c.<Correct_Diagnostic_On_Unhandled_Exception>b__3_0() in {ProjectDirectory}MetadataAnalyzerTests.cs:line 39
+   at Altinn.App.Analyzers.MetadataAnalyzer.OnCompilation(CompilationAnalysisContext compilationAnalysisContext) in {SolutionDirectory}src\Altinn.App.Analyzers\MetadataAnalyzer.cs:line 37,
+    Category: General
+  }
+]
