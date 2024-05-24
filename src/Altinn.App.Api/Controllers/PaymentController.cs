@@ -76,6 +76,7 @@ public class PaymentController : ControllerBase
             paymentConfiguration,
             language
         );
+
         return Ok(paymentInformation);
     }
 
