@@ -42,7 +42,7 @@ public class PaymentController : Controller
     }
 
     /// <summary>
-    /// Get updated payment information for the instance. Will contact the payment provider to check the status of the payment. Will throw an exception if payment related services have not been added to the application service collection. See payment related documentation.
+    /// Get updated payment information for the instance. Will contact the payment processor to check the status of the payment. Current task must be a payment task. See payment related documentation.
     /// </summary>
     /// <param name="org">unique identifier of the organisation responsible for the app</param>
     /// <param name="app">application identifier which is unique within an organisation</param>
