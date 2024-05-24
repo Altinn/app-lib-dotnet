@@ -32,10 +32,10 @@
                     <altinn:taskType>payment</altinn:taskType>
                     <altinn:actions>
                         <altinn:action>pay</altinn:action>
+                        <altinn:action>confirm</altinn:action>
                         <altinn:action>reject</altinn:action>
                     </altinn:actions>
                     <altinn:paymentConfig>
-                        <altinn:paymentProcessorId>Nets Easy</altinn:paymentProcessorId>
                         <altinn:paymentDataType>paymentInformation</altinn:paymentDataType>
                     </altinn:paymentConfig>
                 </altinn:taskExtension>
