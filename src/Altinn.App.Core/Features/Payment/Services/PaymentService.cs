@@ -57,18 +57,10 @@ internal class PaymentService : IPaymentService
 
         (Guid dataElementId, PaymentInformation? existingPaymentInformation) =
             await _dataService.GetByType<PaymentInformation>(instance, dataTypeId);
+
         if (existingPaymentInformation?.PaymentDetails != null)
         {
-            if (existingPaymentInformation.Status != PaymentStatus.Paid)
-            {
-                _logger.LogWarning(
-                    "Payment with payment id {PaymentId} already started for instance {InstanceId}. Trying to cancel before creating new payment.",
-                    existingPaymentInformation.PaymentDetails.PaymentId,
-                    instance.Id
-                );
-                await CancelAndDelete(instance, dataElementId, existingPaymentInformation);
-            }
-            else
+            if (existingPaymentInformation.Status == PaymentStatus.Paid)
             {
                 _logger.LogWarning(
                     "Payment with payment id {PaymentId} already paid for instance {InstanceId}. Cannot start new payment.",
@@ -78,6 +70,14 @@ internal class PaymentService : IPaymentService
 
                 return (existingPaymentInformation, true);
             }
+
+            _logger.LogWarning(
+                "Payment with payment id {PaymentId} already started for instance {InstanceId}. Trying to cancel before creating new payment.",
+                existingPaymentInformation.PaymentDetails.PaymentId,
+                instance.Id
+            );
+
+            await CancelAndDelete(instance, dataElementId, existingPaymentInformation);
         }
 
         OrderDetails orderDetails = await _orderDetailsCalculator.CalculateOrderDetails(instance, language);
@@ -218,7 +218,10 @@ internal class PaymentService : IPaymentService
     }
 
     /// <inheritdoc/>
-    public async Task CancelAndDelete(Instance instance, AltinnPaymentConfiguration paymentConfiguration)
+    public async Task CancelAndDeleteAnyExistingPayment(
+        Instance instance,
+        AltinnPaymentConfiguration paymentConfiguration
+    )
     {
         ValidateConfig(paymentConfiguration);
 
@@ -236,32 +239,34 @@ internal class PaymentService : IPaymentService
 
     private async Task CancelAndDelete(Instance instance, Guid dataElementId, PaymentInformation paymentInformation)
     {
-        string paymentProcessorId = paymentInformation.OrderDetails.PaymentProcessorId;
-        IPaymentProcessor paymentProcessor =
-            _paymentProcessors.FirstOrDefault(pp => pp.PaymentProcessorId == paymentProcessorId)
-            ?? throw new PaymentException($"Payment processor with ID '{paymentProcessorId}' not found.");
-
-        bool success = await paymentProcessor.TerminatePayment(instance, paymentInformation);
-        string paymentId = paymentInformation.PaymentDetails?.PaymentId ?? "missing";
-
-        if (!success)
+        if (paymentInformation.Status == PaymentStatus.Paid)
         {
-            throw new PaymentException($"Unable to cancel existing {paymentProcessorId} payment with ID: {paymentId}.");
+            _logger.LogDebug("Payment already paid for instance {InstanceId}. Aborting cancellation.", instance.Id);
+            return;
         }
 
-        _logger.LogDebug(
-            "Payment {PaymentReference} cancelled for instance {InstanceId}. Deleting payment information.",
-            paymentId,
-            instance.Id
-        );
+        if (paymentInformation.Status != PaymentStatus.Skipped)
+        {
+            string paymentProcessorId = paymentInformation.OrderDetails.PaymentProcessorId;
+            IPaymentProcessor paymentProcessor =
+                _paymentProcessors.FirstOrDefault(pp => pp.PaymentProcessorId == paymentProcessorId)
+                ?? throw new PaymentException($"Payment processor with ID '{paymentProcessorId}' not found.");
+
+            bool success = await paymentProcessor.TerminatePayment(instance, paymentInformation);
+            string paymentId = paymentInformation.PaymentDetails?.PaymentId ?? "missing";
+
+            if (!success)
+            {
+                throw new PaymentException(
+                    $"Unable to cancel existing {paymentProcessorId} payment with ID: {paymentId}."
+                );
+            }
+
+            _logger.LogDebug("Payment {PaymentId} cancelled for instance {InstanceId}.", paymentId, instance.Id);
+        }
 
         await _dataService.DeleteById(new InstanceIdentifier(instance), dataElementId);
-
-        _logger.LogDebug(
-            "Payment information for payment {PaymentReference} deleted for instance {InstanceId}.",
-            paymentId,
-            instance.Id
-        );
+        _logger.LogDebug("Payment information for deleted for instance {InstanceId}.", instance.Id);
     }
 
     private static void ValidateConfig(AltinnPaymentConfiguration paymentConfiguration)

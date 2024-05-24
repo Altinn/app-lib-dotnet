@@ -39,14 +39,25 @@ public class PaymentProcessTaskTests
         }
 
         [Fact]
-        public async Task Start_ShouldReturnCompletedTask()
+        public async Task Start_ShouldCancelAndDelete()
         {
-            // Arrange
             Instance instance = CreateInstance();
             string taskId = instance.Process.CurrentTask.ElementId;
 
+            var altinnTaskExtension = new AltinnTaskExtension
+            {
+                PaymentConfiguration = new AltinnPaymentConfiguration { PaymentDataType = "paymentDataType" }
+            };
+
+            _processReaderMock.Setup(x => x.GetAltinnTaskExtension(It.IsAny<string>())).Returns(altinnTaskExtension);
+
             // Act
             await _paymentProcessTask.Start(taskId, instance);
+
+            // Assert
+            _paymentServiceMock.Verify(x =>
+                x.CancelAndDeleteAnyExistingPayment(instance, altinnTaskExtension.PaymentConfiguration)
+            );
         }
 
         [Fact]
@@ -135,7 +146,9 @@ public class PaymentProcessTaskTests
             await _paymentProcessTask.Abandon(taskId, instance);
 
             // Assert
-            _paymentServiceMock.Verify(x => x.CancelAndDelete(instance, altinnTaskExtension.PaymentConfiguration));
+            _paymentServiceMock.Verify(x =>
+                x.CancelAndDeleteAnyExistingPayment(instance, altinnTaskExtension.PaymentConfiguration)
+            );
         }
 
         [Fact]

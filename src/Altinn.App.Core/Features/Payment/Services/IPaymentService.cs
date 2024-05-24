@@ -35,6 +35,6 @@ namespace Altinn.App.Core.Features.Payment.Services
         /// <summary>
         /// Cancel payment with payment processor and delete internal payment information.
         /// </summary>
-        Task CancelAndDelete(Instance instance, AltinnPaymentConfiguration paymentConfiguration);
+        Task CancelAndDeleteAnyExistingPayment(Instance instance, AltinnPaymentConfiguration paymentConfiguration);
     }
 }
