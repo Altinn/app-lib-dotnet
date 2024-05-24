@@ -174,7 +174,7 @@ internal class NetsPaymentProcessor : IPaymentProcessor
         string? languageCode = language switch
         {
             "nb" => "nb-NO",
-            "nn" => "nn-NO",
+            "nn" => "nb-NO", //No support for Nynorsk. Using Bokmål.
             _ => null
         };
 
