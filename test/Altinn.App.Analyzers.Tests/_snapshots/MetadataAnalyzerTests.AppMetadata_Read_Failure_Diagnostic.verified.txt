@@ -4,12 +4,12 @@
     Title: Altinn app metadata file could not be opened/read,
     Severity: Warning,
     WarningLevel: 1,
-    Location: ExternalFile({CurrentDirectory}App\config\applicationmetadata.json@1:1),
+    Location: ExternalFile({CurrentDirectory}App/config/applicationmetadata.json@1:1),
     HelpLink: https://docs.altinn.studio/app/development/analysis/rules/ALTINN003,
     MessageFormat: Could not open and read the application metdata file: '{0}' {1},
     Message:
 Could not open and read the application metdata file: 'AppMetadata_Read_Failure_Diagnostic: On appmetadata read'    at Altinn.App.Analyzers.Tests.MetadataAnalyzerTests.<>c.<AppMetadata_Read_Failure_Diagnostic>b__4_0() in {ProjectDirectory}MetadataAnalyzerTests.cs:line 57
-   at Altinn.App.Analyzers.ApplicationMetadataFileReader.Read(MetadataAnalyzerContext& context) in {SolutionDirectory}src\Altinn.App.Analyzers\ApplicationMetadataFileReader.cs:line 33,
+   at Altinn.App.Analyzers.ApplicationMetadataFileReader.Read(MetadataAnalyzerContext& context) in {SolutionDirectory}src/Altinn.App.Analyzers/ApplicationMetadataFileReader.cs:line 33,
     Category: Metadata
   }
 ]

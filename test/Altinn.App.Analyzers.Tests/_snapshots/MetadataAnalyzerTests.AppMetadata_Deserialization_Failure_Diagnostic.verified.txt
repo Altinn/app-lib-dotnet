@@ -4,12 +4,12 @@
     Title: Altinn app metadata file couldn't be parsed,
     Severity: Warning,
     WarningLevel: 1,
-    Location: ExternalFile({CurrentDirectory}App\config\applicationmetadata.json@1:1),
+    Location: ExternalFile({CurrentDirectory}App/config/applicationmetadata.json@1:1),
     HelpLink: https://docs.altinn.studio/app/development/analysis/rules/ALTINN004,
     MessageFormat: Could not parse application metadata file: '{0}' {1},
     Message:
 Could not parse application metadata file: 'AppMetadata_Deserialization_Failure_Diagnostic: On appmetadata deserialization'    at Altinn.App.Analyzers.Tests.MetadataAnalyzerTests.<>c.<AppMetadata_Deserialization_Failure_Diagnostic>b__5_0() in {ProjectDirectory}MetadataAnalyzerTests.cs:line 76
-   at Altinn.App.Analyzers.ApplicationMetadataFileReader.Read(MetadataAnalyzerContext& context) in {SolutionDirectory}src\Altinn.App.Analyzers\ApplicationMetadataFileReader.cs:line 49,
+   at Altinn.App.Analyzers.ApplicationMetadataFileReader.Read(MetadataAnalyzerContext& context) in {SolutionDirectory}src/Altinn.App.Analyzers/ApplicationMetadataFileReader.cs:line 49,
     Category: Metadata
   }
 ]
