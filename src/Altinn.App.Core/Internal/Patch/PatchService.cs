@@ -90,9 +90,7 @@ public class PatchService : IPatchService
 
         if (!patchResult.IsSuccess)
         {
-            bool testOperationFailed =
-                patchResult.Error?.Contains("is not equal to the indicated value.")
-                ?? throw new Exception("JsonPatch failed, but no error message was provided");
+            bool testOperationFailed = patchResult.Error.Contains("is not equal to the indicated value.");
             return new DataPatchError()
             {
                 Title = testOperationFailed ? "Precondition in patch failed" : "Patch Operation Failed",
