@@ -3,7 +3,7 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace Altinn.App.Analyzers;
 
-public abstract record ApplicationMetadataResult
+internal abstract record ApplicationMetadataResult
 {
     private ApplicationMetadataResult() { }
 
@@ -18,7 +18,7 @@ public abstract record ApplicationMetadataResult
         : ApplicationMetadataResult;
 }
 
-public static class ApplicationMetadataFileReader
+internal static class ApplicationMetadataFileReader
 {
     public static readonly string ApplicationMetadataFilePath = Path.Combine("config", "applicationmetadata.json");
 
