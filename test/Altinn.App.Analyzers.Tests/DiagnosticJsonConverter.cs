@@ -37,5 +37,6 @@ internal sealed class DiagnosticJsonConverter : WriteOnlyJsonConverter<Diagnosti
 
 file static class StringExtensions
 {
+    // To make slashes consistent across OS in Verify snapshots..
     public static string NormalizeSlashes(this string value) => value.Replace('\\', '/');
 }
