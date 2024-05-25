@@ -23,7 +23,12 @@ public class PatchServiceTests : IDisposable
     // Test data
     private static readonly Guid DataGuid = new("12345678-1234-1234-1234-123456789123");
 
-    private readonly Instance _instance = new() { Id = "1337/12345678-1234-1234-1234-12345678912a" };
+    private readonly Instance _instance =
+        new()
+        {
+            Id = "1337/12345678-1234-1234-1234-12345678912a",
+            Process = new ProcessState { CurrentTask = new ProcessElementInfo { Name = "Task_1" } }
+        };
 
     // Service mocks
     private readonly Mock<ILogger<ValidationService>> _vLoggerMock = new(MockBehavior.Loose);
@@ -68,9 +73,10 @@ public class PatchServiceTests : IDisposable
             .ReturnsAsync(_dataElement)
             .Verifiable();
         var validatorFactory = new ValidatorFactory(
-            Enumerable.Empty<ITaskValidator>(),
-            new List<IDataElementValidator>() { _dataElementValidator.Object },
-            new List<IFormDataValidator>() { _formDataValidator.Object }
+            [],
+            [_dataElementValidator.Object],
+            [_formDataValidator.Object],
+            []
         );
         var validationService = new ValidationService(
             validatorFactory,

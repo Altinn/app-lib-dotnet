@@ -1,3 +1,4 @@
+using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Layout.Components;
 
 namespace Altinn.App.Core.Models.Layout;
@@ -53,5 +54,46 @@ public class LayoutModel
                 foreach (var n in groupNode.Children)
                     nodes.Push(n);
         }
+    }
+
+    /// <summary>
+    /// </summary>
+    /// <returns>Enumerable </returns>
+    public bool HasExternalModelReferences()
+    {
+        foreach (var component in GetComponents())
+        {
+            // check external bindings
+            foreach (var binding in component.DataModelBindings.Values)
+            {
+                if (binding.DataType is not null)
+                {
+                    return true;
+                }
+            }
+
+            // check expressions
+            if (
+                HasExternalModelReferences(component.Hidden)
+                || HasExternalModelReferences(component.ReadOnly)
+                || HasExternalModelReferences(component.Required)
+            )
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool HasExternalModelReferences(Expression? expression)
+    {
+        return IsDataModelExpressionWithTwoAruments(expression)
+            || (expression?.Args?.TrueForAll(HasExternalModelReferences) ?? false);
+    }
+
+    private static bool IsDataModelExpressionWithTwoAruments(Expression? expression)
+    {
+        return expression is { Function: ExpressionFunction.dataModel, Args: [_, _] };
     }
 }

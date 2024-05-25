@@ -486,11 +486,12 @@ public class PageComponentConverter : JsonConverter<PageComponent>
                 throw new JsonException();
             }
 
+            // ! Token type is PropertyName so value is a string
             var propertyName = reader.GetString()!;
             reader.Read();
             modelBindings[propertyName] = reader.TokenType switch
             {
-                JsonTokenType.String => new ModelBinding { Field = reader.GetString()! },
+                JsonTokenType.String => new ModelBinding { Field = reader.GetString() ?? throw new JsonException(), },
                 JsonTokenType.StartObject => JsonSerializer.Deserialize<ModelBinding>(ref reader),
                 _ => throw new JsonException()
             };

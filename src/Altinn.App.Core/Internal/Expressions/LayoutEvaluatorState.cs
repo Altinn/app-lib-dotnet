@@ -17,6 +17,7 @@ public class LayoutEvaluatorState
     private readonly FrontEndSettings _frontEndSettings;
     private readonly Instance _instanceContext;
     private readonly string? _gatewayAction;
+    private readonly string? _language;
     private readonly ComponentContext[]? _pageContexts;
 
     /// <summary>
@@ -27,7 +28,8 @@ public class LayoutEvaluatorState
         LayoutModel componentModel,
         FrontEndSettings frontEndSettings,
         Instance instance,
-        string? gatewayAction = null
+        string? gatewayAction = null,
+        string? language = null
     )
     {
         _dataModel = dataModel;
@@ -35,6 +37,7 @@ public class LayoutEvaluatorState
         _frontEndSettings = frontEndSettings;
         _instanceContext = instance;
         _gatewayAction = gatewayAction;
+        _language = language;
 
         if (dataModel is not null && componentModel is not null)
         {
@@ -192,14 +195,9 @@ public class LayoutEvaluatorState
     /// <summary>
     /// Get field from dataModel with key and context
     /// </summary>
-    public object? GetModelData(ModelBinding? key, ComponentContext? context = null)
+    public object? GetModelData(ModelBinding key, ComponentContext? context = null)
     {
-        if (key is null)
-        {
-            throw new ArgumentException("Cannot lookup dataModel null");
-        }
-
-        return _dataModel.GetModelData(key.Value, context?.RowIndices);
+        return _dataModel.GetModelData(key, context?.RowIndices);
     }
 
     /// <summary>

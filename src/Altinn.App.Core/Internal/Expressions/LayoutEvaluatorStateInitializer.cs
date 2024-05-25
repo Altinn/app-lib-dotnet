@@ -34,6 +34,8 @@ public class LayoutEvaluatorStateInitializer
     /// <summary>
     /// Initialize LayoutEvaluatorState with given Instance, data object and layoutSetId
     /// </summary>
+    // TODO: Mark Obsolete
+    // [Obsolete("Use the overload with List<KeyValuePair<DataElement, object>> instead")]
     public virtual Task<LayoutEvaluatorState> Init(
         Instance instance,
         object data,
@@ -44,6 +46,23 @@ public class LayoutEvaluatorStateInitializer
         var layouts = _appResources.GetLayoutModel(layoutSetId);
         return Task.FromResult(
             new LayoutEvaluatorState(new DataModel(data), layouts, _frontEndSettings, instance, gatewayAction)
+        );
+    }
+
+    /// <summary>
+    /// Initialize LayoutEvaluatorState with given Instance, data object and layoutSetId
+    /// </summary>
+    public virtual Task<LayoutEvaluatorState> Init(
+        Instance instance,
+        List<KeyValuePair<DataElement, object>> data,
+        string? layoutSetId,
+        string? gatewayAction = null,
+        string? language = null
+    )
+    {
+        var layouts = _appResources.GetLayoutModel(layoutSetId);
+        return Task.FromResult(
+            new LayoutEvaluatorState(new DataModel(data), layouts, _frontEndSettings, instance, gatewayAction, language)
         );
     }
 }

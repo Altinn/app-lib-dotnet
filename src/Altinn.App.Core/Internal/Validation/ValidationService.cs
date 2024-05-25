@@ -14,11 +14,10 @@ namespace Altinn.App.Core.Internal.Validation;
 public class ValidationService : IValidationService
 {
     private readonly IValidatorFactory _validatorFactory;
-    private readonly IDataClient _dataClient;
-    private readonly IAppModel _appModel;
     private readonly IAppMetadata _appMetadata;
     private readonly ILogger<ValidationService> _logger;
     private readonly Telemetry? _telemetry;
+    private readonly CachedDataClient _dataCache;
 
     /// <summary>
     /// Constructor with DI services
@@ -33,11 +32,10 @@ public class ValidationService : IValidationService
     )
     {
         _validatorFactory = validatorFactory;
-        _dataClient = dataClient;
-        _appModel = appModel;
         _appMetadata = appMetadata;
         _logger = logger;
         _telemetry = telemetry;
+        _dataCache = new CachedDataClient(dataClient, appMetadata, appModel);
     }
 
     /// <inheritdoc/>
@@ -69,9 +67,72 @@ public class ValidationService : IValidationService
             )
         );
 
-        List<ValidationIssue>[][] lists = await Task.WhenAll(taskIssuesTask, dataIssuesTask);
+        // Run multiple form data validators
+        var (_, multipleValidatorTasks) = RunMultipleFormDataValidators(instance, taskId, null, null, null, language);
+
+        var lists = await Task.WhenAll(taskIssuesTask, dataIssuesTask, Task.WhenAll(multipleValidatorTasks));
         // Flatten the list of lists to a single list of issues
         return lists.SelectMany(x => x.SelectMany(y => y)).ToList();
+    }
+
+    private (List<string>, IEnumerable<Task<List<ValidationIssue>>>) RunMultipleFormDataValidators(
+        Instance instance,
+        string taskId,
+        DataElement? primaryDataElement,
+        object? currentData,
+        object? previousData,
+        string? language
+    )
+    {
+        var multipleFormDataValidators = _validatorFactory.GetMultipleFormDataValidators(taskId);
+        if (primaryDataElement is not null)
+        {
+            ArgumentNullException.ThrowIfNull(currentData);
+            ArgumentNullException.ThrowIfNull(previousData);
+            _dataCache.Set(primaryDataElement, currentData);
+            multipleFormDataValidators = multipleFormDataValidators
+                .Where(mfdv => mfdv.HasRelevantChanges(instance, taskId, primaryDataElement, currentData, previousData))
+                .ToList();
+        }
+
+        var validationIssueTasks = multipleFormDataValidators.Select(async mfdv =>
+        {
+            try
+            {
+                _logger.LogDebug(
+                    "Start running validator {ValidatorName} on task {TaskId} in instance {InstanceId}",
+                    mfdv.ValidationSource,
+                    taskId,
+                    instance.Id
+                );
+                var dataElements = await mfdv.GetRequiredDataElementsForValidation(instance, taskId);
+
+                // prefetch all data elements before running validation
+                var data = (
+                    await Task.WhenAll(
+                        dataElements.Select(async de => KeyValuePair.Create(de, await _dataCache.Get(instance, de)))
+                    )
+                ).ToList();
+
+                var issues = await mfdv.ValidateFormData(instance, taskId, data, language);
+                issues.ForEach(i => i.Source = mfdv.ValidationSource); // Ensure that the source is set to the validator source
+                return issues;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(
+                    e,
+                    "Error while running validator {ValidatorName} on task {TaskId} in instance {InstanceId}",
+                    mfdv.ValidationSource,
+                    taskId,
+                    instance.Id
+                );
+                throw;
+            }
+        });
+        var validationSources = multipleFormDataValidators.Select(mfdv => mfdv.ValidationSource).ToList();
+
+        return (validationSources, validationIssueTasks);
     }
 
     private Task<List<ValidationIssue>[]> RunTaskValidators(Instance instance, string taskId, string? language)
@@ -85,8 +146,8 @@ public class ValidationService : IValidationService
                 try
                 {
                     _logger.LogDebug(
-                        "Start running validator {validatorName} on task {taskId} in instance {instanceId}",
-                        v.GetType().Name,
+                        "Start running validator {ValidatorName} on task {TaskId} in instance {InstanceId}",
+                        v.ValidationSource,
                         taskId,
                         instance.Id
                     );
@@ -98,8 +159,8 @@ public class ValidationService : IValidationService
                 {
                     _logger.LogError(
                         e,
-                        "Error while running validator {validatorName} on task {taskId} in instance {instanceId}",
-                        v.GetType().Name,
+                        "Error while running validator {ValidatorName} on task {TaskId} in instance {InstanceId}",
+                        v.ValidationSource,
                         taskId,
                         instance.Id
                     );
@@ -135,19 +196,7 @@ public class ValidationService : IValidationService
         // Run extra validation on form data elements with app logic
         if (dataType.AppLogic?.ClassRef is not null)
         {
-            Type modelType = _appModel.GetModelType(dataType.AppLogic.ClassRef);
-
-            Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
-            string app = instance.AppId.Split("/")[1];
-            int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
-            var data = await _dataClient.GetFormData(
-                instanceGuid,
-                modelType,
-                instance.Org,
-                app,
-                instanceOwnerPartyId,
-                Guid.Parse(dataElement.Id)
-            ); // TODO: Add method that accepts instance and dataElement
+            var data = await _dataCache.Get(instance, dataElement);
             var formDataIssuesDictionary = await ValidateFormData(
                 instance,
                 dataElement,
@@ -184,7 +233,7 @@ public class ValidationService : IValidationService
                 {
                     _logger.LogDebug(
                         "Start running validator {validatorName} on {dataType} for data element {dataElementId} in instance {instanceId}",
-                        v.GetType().Name,
+                        v.ValidationSource,
                         dataElement.DataType,
                         dataElement.Id,
                         instance.Id
@@ -198,7 +247,7 @@ public class ValidationService : IValidationService
                     _logger.LogError(
                         e,
                         "Error while running validator {validatorName} on {dataType} for data element {dataElementId} in instance {instanceId}",
-                        v.GetType().Name,
+                        v.ValidationSource,
                         dataElement.DataType,
                         dataElement.Id,
                         instance.Id
@@ -237,39 +286,56 @@ public class ValidationService : IValidationService
             .Where(dv => previousData is null || dv.HasRelevantChanges(data, previousData))
             .ToArray();
 
-        var issuesLists = await Task.WhenAll(
-            dataValidators.Select(async v =>
+        var validationTasks = dataValidators.Select(async v =>
+        {
+            using var activity = _telemetry?.StartRunFormDataValidatorActivity(v);
+            try
             {
-                using var activity = _telemetry?.StartRunFormDataValidatorActivity(v);
-                try
-                {
-                    _logger.LogDebug(
-                        "Start running validator {validatorName} on {dataType} for data element {dataElementId} in instance {instanceId}",
-                        v.GetType().Name,
-                        dataElement.DataType,
-                        dataElement.Id,
-                        instance.Id
-                    );
-                    var issues = await v.ValidateFormData(instance, dataElement, data, language);
-                    issues.ForEach(i => i.Source = v.ValidationSource); // Ensure that the Source is set to the ValidatorSource
-                    return issues;
-                }
-                catch (Exception e)
-                {
-                    _logger.LogError(
-                        e,
-                        "Error while running validator {validatorName} on {dataType} for data element {dataElementId} in instance {instanceId}",
-                        v.GetType().Name,
-                        dataElement.DataType,
-                        dataElement.Id,
-                        instance.Id
-                    );
-                    activity?.Errored(e);
-                    throw;
-                }
-            })
-        );
+                _logger.LogDebug(
+                    "Start running validator {ValidatorName} on {DataType} for data element {DataElementId} in instance {InstanceId}",
+                    v.ValidationSource,
+                    dataElement.DataType,
+                    dataElement.Id,
+                    instance.Id
+                );
+                var issues = await v.ValidateFormData(instance, dataElement, data, language);
+                issues.ForEach(i => i.Source = v.ValidationSource); // Ensure that the Source is set to the ValidatorSource
+                return issues;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(
+                    e,
+                    "Error while running validator {ValidatorName} on {DataType} for data element {DataElementId} in instance {InstanceId}",
+                    v.ValidationSource,
+                    dataElement.DataType,
+                    dataElement.Id,
+                    instance.Id
+                );
+                activity?.Errored(e);
+                throw;
+            }
+        });
 
-        return dataValidators.Zip(issuesLists).ToDictionary(kv => kv.First.ValidationSource, kv => kv.Second);
+        var validationSources = dataValidators.Select(d => d.ValidationSource).ToList();
+
+        // Only run here for incremental validation. Full validation is done in <see cref="ValidateTask"/>
+        if (previousData is not null)
+        {
+            var (validationSourcesFromMultiple, multipleValidatorTasks) = RunMultipleFormDataValidators(
+                instance,
+                instance.Process.CurrentTask.ElementId,
+                dataElement,
+                data,
+                previousData,
+                language
+            );
+            validationSources.AddRange(validationSourcesFromMultiple);
+            validationTasks = validationTasks.Concat<Task<List<ValidationIssue>>>(multipleValidatorTasks);
+        }
+
+        var issuesLists = await Task.WhenAll(validationTasks);
+
+        return validationSources.Zip(issuesLists).ToDictionary(kv => kv.First, kv => kv.Second);
     }
 }

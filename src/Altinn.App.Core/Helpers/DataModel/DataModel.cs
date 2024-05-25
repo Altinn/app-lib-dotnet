@@ -1,8 +1,10 @@
 using System.Collections;
+using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using Altinn.App.Core.Models.Layout;
+using Altinn.Platform.Storage.Interface.Models;
 using Newtonsoft.Json;
 
 namespace Altinn.App.Core.Helpers.DataModel;
@@ -12,26 +14,63 @@ namespace Altinn.App.Core.Helpers.DataModel;
 /// </summary>
 public class DataModel : IDataModelAccessor
 {
-    private readonly object _serviceModel;
+    private readonly object _defaultServiceModel;
+    private readonly Dictionary<string, object> _dataModels = new();
 
     /// <summary>
     /// Constructor that wraps a PCOC data model, and gives extra tool for working with the data
     /// </summary>
+    // TODO: Mark Obsolete
+    // [Obsolete("Use the constructor that takes a list of data elements to support multiple data models")]
     public DataModel(object serviceModel)
     {
-        _serviceModel = serviceModel;
+        _defaultServiceModel = serviceModel;
+    }
+
+    /// <summary>
+    /// </summary>
+    /// <param name="dataModels"></param>
+    public DataModel(IEnumerable<KeyValuePair<DataElement, object>> dataModels)
+    {
+        foreach (var (dataElement, data) in dataModels)
+        {
+            if (_defaultServiceModel is null)
+            {
+                _defaultServiceModel = data;
+            }
+
+            _dataModels.Add(dataElement.DataType, data);
+        }
+
+        Debug.Assert(_defaultServiceModel is not null);
+    }
+
+    private object ServiceModel(ModelBinding key)
+    {
+        if (key.DataType == null)
+        {
+            return _defaultServiceModel;
+        }
+
+        if (_dataModels.TryGetValue(key.DataType, out var dataModel))
+        {
+            Debug.Assert(dataModel is not null);
+            return dataModel;
+        }
+
+        throw new Exception($"Could not find data model for type {key.DataType}");
     }
 
     /// <inheritdoc />
     public object? GetModelData(ModelBinding key, ReadOnlySpan<int> indicies = default)
     {
-        return GetModelDataRecursive(key.Field.Split('.'), 0, _serviceModel, indicies);
+        return GetModelDataRecursive(key.Field.Split('.'), 0, ServiceModel(key), indicies);
     }
 
     /// <inheritdoc />
     public int? GetModelDataCount(ModelBinding key, ReadOnlySpan<int> indicies = default)
     {
-        if (GetModelDataRecursive(key.Field.Split('.'), 0, _serviceModel, indicies) is IEnumerable childEnum)
+        if (GetModelDataRecursive(key.Field.Split('.'), 0, ServiceModel(key), indicies) is IEnumerable childEnum)
         {
             int retCount = 0;
             foreach (var _ in childEnum)
@@ -97,13 +136,13 @@ public class DataModel : IDataModelAccessor
     /// <inheritdoc />
     public ModelBinding[] GetResolvedKeys(ModelBinding key)
     {
-        if (_serviceModel is null)
+        if (ServiceModel(key) is null)
         {
             return [];
         }
 
         var keyParts = key.Field.Split('.');
-        return GetResolvedKeysRecursive(key, keyParts, _serviceModel);
+        return GetResolvedKeysRecursive(key, keyParts, ServiceModel(key));
     }
 
     internal static string JoinFieldKeyParts(string? currentKey, string? key)
@@ -300,7 +339,7 @@ public class DataModel : IDataModelAccessor
         }
 
         var ret = new List<string>();
-        AddIndiciesRecursive(ret, _serviceModel.GetType(), key.Field.Split('.'), indicies, indicies);
+        AddIndiciesRecursive(ret, ServiceModel(key).GetType(), key.Field.Split('.'), indicies, indicies);
         return key with { Field = string.Join('.', ret) };
     }
 
@@ -342,7 +381,7 @@ public class DataModel : IDataModelAccessor
         var keys = keys_split[0..^1];
         var (lastKey, lastGroupIndex) = ParseKeyPart(keys_split[^1]);
 
-        var containingObject = GetModelDataRecursive(keys, 0, _serviceModel, default);
+        var containingObject = GetModelDataRecursive(keys, 0, ServiceModel(key), default);
         if (containingObject is null)
         {
             // Already empty field
@@ -401,7 +440,7 @@ public class DataModel : IDataModelAccessor
     /// <inheritdoc />
     public bool VerifyKey(ModelBinding key)
     {
-        return VerifyKeyRecursive(key.Field.Split('.'), 0, _serviceModel.GetType());
+        return VerifyKeyRecursive(key.Field.Split('.'), 0, ServiceModel(key).GetType());
     }
 
     private bool VerifyKeyRecursive(string[] keys, int index, Type currentModel)

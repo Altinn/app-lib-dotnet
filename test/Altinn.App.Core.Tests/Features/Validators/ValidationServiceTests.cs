@@ -53,7 +53,8 @@ public class ValidationServiceTests : IDisposable
             InstanceOwner = new InstanceOwner() { PartyId = DefaultPartyId.ToString(), },
             Org = DefaultOrg,
             AppId = DefaultAppId,
-            Data = new List<DataElement>() { DefaultDataElement, }
+            Data = [DefaultDataElement],
+            Process = new ProcessState { CurrentTask = new ProcessElementInfo { Name = "Task1" } }
         };
 
     private static readonly ApplicationMetadata DefaultAppMetadata =

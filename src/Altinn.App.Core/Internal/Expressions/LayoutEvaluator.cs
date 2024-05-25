@@ -132,14 +132,14 @@ public static class LayoutEvaluator
     /// </summary>
     public static List<ValidationIssue> RunLayoutValidationsForRequired(
         LayoutEvaluatorState state,
-        string dataElementId
+        string defaultDataElementId
     )
     {
         var validationIssues = new List<ValidationIssue>();
 
         foreach (var context in state.GetComponentContexts())
         {
-            RunLayoutValidationsForRequiredRecurs(validationIssues, state, dataElementId, context);
+            RunLayoutValidationsForRequiredRecurs(validationIssues, state, defaultDataElementId, context);
         }
 
         return validationIssues;
@@ -148,7 +148,7 @@ public static class LayoutEvaluator
     private static void RunLayoutValidationsForRequiredRecurs(
         List<ValidationIssue> validationIssues,
         LayoutEvaluatorState state,
-        string dataElementId,
+        string defaultDataElementId,
         ComponentContext context
     )
     {
@@ -156,7 +156,7 @@ public static class LayoutEvaluator
         {
             foreach (var childContext in context.ChildContexts)
             {
-                RunLayoutValidationsForRequiredRecurs(validationIssues, state, dataElementId, childContext);
+                RunLayoutValidationsForRequiredRecurs(validationIssues, state, defaultDataElementId, childContext);
             }
 
             var required = ExpressionEvaluator.EvaluateBooleanExpression(state, context, "required", false);
@@ -171,7 +171,7 @@ public static class LayoutEvaluator
                             new ValidationIssue()
                             {
                                 Severity = ValidationIssueSeverity.Error,
-                                DataElementId = dataElementId, //TODO: get dataelmentId from the field
+                                DataElementId = field.DataType ?? defaultDataElementId,
                                 Field = field.Field,
                                 Description = $"{field.Field} is required in component with id {context.Component.Id}",
                                 Code = "required",
