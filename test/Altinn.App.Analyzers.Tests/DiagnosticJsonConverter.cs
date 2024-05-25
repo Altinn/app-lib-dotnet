@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using VerifyTests;
 
 namespace Altinn.App.Analyzers.Tests;
 
@@ -10,26 +11,31 @@ internal sealed class DiagnosticJsonConverter : WriteOnlyJsonConverter<Diagnosti
         writer.WriteStartObject();
         writer.WriteMember(value, value.Id, "Id");
         var descriptor = value.Descriptor;
-        writer.WriteMember(value, descriptor.Title.ToString(), "Title");
+        writer.WriteMember(value, descriptor.Title.ToString().NormalizeSlashes(), "Title");
         writer.WriteMember(value, value.Severity.ToString(), "Severity");
         writer.WriteMember(value, value.WarningLevel, "WarningLevel");
-        writer.WriteMember(value, value.Location.ToString(), "Location");
+        writer.WriteMember(value, value.Location.ToString().NormalizeSlashes(), "Location");
         var description = descriptor.Description.ToString();
         if (!string.IsNullOrWhiteSpace(description))
         {
-            writer.WriteMember(value, description, "Description");
+            writer.WriteMember(value, description.NormalizeSlashes(), "Description");
         }
 
         var help = descriptor.HelpLinkUri;
         if (!string.IsNullOrWhiteSpace(help))
         {
-            writer.WriteMember(value, help, "HelpLink");
+            writer.WriteMember(value, help.NormalizeSlashes(), "HelpLink");
         }
 
-        writer.WriteMember(value, descriptor.MessageFormat.ToString(), "MessageFormat");
-        writer.WriteMember(value, value.GetMessage(), "Message");
+        writer.WriteMember(value, descriptor.MessageFormat.ToString().NormalizeSlashes(), "MessageFormat");
+        writer.WriteMember(value, value.GetMessage().NormalizeSlashes(), "Message");
         writer.WriteMember(value, descriptor.Category, "Category");
         writer.WriteMember(value, descriptor.CustomTags, "CustomTags");
         writer.WriteEndObject();
     }
+}
+
+file static class StringExtensions
+{
+    public static string NormalizeSlashes(this string value) => value.Replace('\\', '/');
 }
