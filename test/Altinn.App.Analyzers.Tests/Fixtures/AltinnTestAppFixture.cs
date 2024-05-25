@@ -9,6 +9,12 @@ using Xunit.Abstractions;
 
 namespace Altinn.App.Analyzers.Tests.Fixtures;
 
+// This fixture is used to provide a test app Roslyn workspace for the analyzers to run on.
+// The test app is a real blank Altinn app in the "testapp/" folder.
+// Initializing the fixture is expensive, and can take anywhere between 5-20 seconds on my machine currently,
+// so currently tests run in a "global collection" to avoid re-initializing the fixture for each test.
+// It also gives us some flexibility in that we can make physical changes to project files.
+
 [CollectionDefinition(nameof(AltinnTestAppCollection), DisableParallelization = true)]
 public class AltinnTestAppCollection : ICollectionFixture<AltinnTestAppFixture> { }
 
