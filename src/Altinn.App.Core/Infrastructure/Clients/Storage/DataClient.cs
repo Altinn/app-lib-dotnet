@@ -100,7 +100,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             if (response.IsSuccessStatusCode)
             {
                 string instanceData = await response.Content.ReadAsStringAsync();
-                // ! TODO: this non-forgiving operator should be removed for the next major release
+                // ! TODO: this null-forgiving operator should be fixed/removed for the next major release
                 dataElement = JsonConvert.DeserializeObject<DataElement>(instanceData)!;
 
                 return dataElement;
@@ -144,7 +144,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             if (response.IsSuccessStatusCode)
             {
                 string instanceData = await response.Content.ReadAsStringAsync();
-                // ! TODO: this non-forgiving operator should be removed for the next major release
+                // ! TODO: this null-forgiving operator should be fixed/removed for the next major release
                 DataElement dataElement = JsonConvert.DeserializeObject<DataElement>(instanceData)!;
                 return dataElement;
             }
@@ -374,7 +374,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             if (response.IsSuccessStatusCode)
             {
                 string instancedata = await response.Content.ReadAsStringAsync();
-                // ! TODO: this non-forgiving operator should be removed for the next major release
+                // ! TODO: this null-forgiving operator should be fixed/removed for the next major release
                 dataElement = JsonConvert.DeserializeObject<DataElement>(instancedata)!;
 
                 return dataElement;
@@ -421,7 +421,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             if (response.IsSuccessStatusCode)
             {
                 string instancedata = await response.Content.ReadAsStringAsync();
-                // ! TODO: this non-forgiving operator should be removed for the next major release
+                // ! TODO: this null-forgiving operator should be fixed/removed for the next major release
                 dataElement = JsonConvert.DeserializeObject<DataElement>(instancedata)!;
 
                 return dataElement;
@@ -455,7 +455,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             if (response.IsSuccessStatusCode)
             {
                 string instancedata = await response.Content.ReadAsStringAsync();
-                // ! TODO: this non-forgiving operator should be removed for the next major release
+                // ! TODO: this null-forgiving operator should be fixed/removed for the next major release
                 DataElement dataElement = JsonConvert.DeserializeObject<DataElement>(instancedata)!;
 
                 return dataElement;
@@ -492,7 +492,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             if (response.IsSuccessStatusCode)
             {
                 string instancedata = await response.Content.ReadAsStringAsync();
-                // ! TODO: this non-forgiving operator should be removed for the next major release
+                // ! TODO: this null-forgiving operator should be fixed/removed for the next major release
                 DataElement dataElement = JsonConvert.DeserializeObject<DataElement>(instancedata)!;
 
                 return dataElement;
@@ -517,7 +517,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
 
             if (response.IsSuccessStatusCode)
             {
-                // ! TODO: this non-forgiving operator should be removed for the next major release
+                // ! TODO: this null-forgiving operator should be fixed/removed for the next major release
                 DataElement result = JsonConvert.DeserializeObject<DataElement>(
                     await response.Content.ReadAsStringAsync()
                 )!;
@@ -544,7 +544,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             HttpResponseMessage response = await _client.PutAsync(token, apiUrl, content: null);
             if (response.IsSuccessStatusCode)
             {
-                // ! TODO: this non-forgiving operator should be removed for the next major release
+                // ! TODO: this null-forgiving operator should be fixed/removed for the next major release
                 DataElement result = JsonConvert.DeserializeObject<DataElement>(
                     await response.Content.ReadAsStringAsync()
                 )!;
@@ -578,7 +578,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             HttpResponseMessage response = await _client.DeleteAsync(token, apiUrl);
             if (response.IsSuccessStatusCode)
             {
-                // ! TODO: this non-forgiving operator should be removed for the next major release
+                // ! TODO: this null-forgiving operator should be fixed/removed for the next major release
                 DataElement result = JsonConvert.DeserializeObject<DataElement>(
                     await response.Content.ReadAsStringAsync()
                 )!;

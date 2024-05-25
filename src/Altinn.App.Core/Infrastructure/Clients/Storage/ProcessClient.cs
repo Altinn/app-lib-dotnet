@@ -92,7 +92,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             if (response.IsSuccessStatusCode)
             {
                 string eventData = await response.Content.ReadAsStringAsync();
-                // ! TODO: this non-forgiving operator should be removed for the next major release
+                // ! TODO: this null-forgiving operator should be fixed/removed for the next major release
                 ProcessHistoryList processHistoryList = JsonConvert.DeserializeObject<ProcessHistoryList>(eventData)!;
 
                 return processHistoryList;

@@ -34,7 +34,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.KeyVault
         public Task<JsonWebKey> GetKeyAsync(string keyName)
         {
             string token = GetTokenFromSecrets(keyName);
-            // ! TODO: this non-forgiving operator should be removed for the next major release
+            // ! TODO: this null-forgiving operator should be fixed/removed for the next major release
             JsonWebKey key = JsonSerializer.Deserialize<JsonWebKey>(token)!;
             return Task.FromResult(key);
         }
