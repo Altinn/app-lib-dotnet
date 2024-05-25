@@ -3,15 +3,15 @@ using Newtonsoft.Json.Linq;
 
 namespace Altinn.App.Analyzers;
 
-public readonly record struct ParsedJsonValue<T>(T Value, IJsonLineInfo LineInfo);
+internal readonly record struct ParsedJsonValue<T>(T Value, IJsonLineInfo LineInfo);
 
-public sealed record ApplicationMetadata(ParsedJsonValue<IReadOnlyList<DataTypeInfo>> DataTypes);
+internal sealed record ApplicationMetadata(ParsedJsonValue<IReadOnlyList<DataTypeInfo>> DataTypes);
 
-public sealed record DataTypeInfo(ParsedJsonValue<string> Id, ParsedJsonValue<AppLogicInfo>? AppLogic);
+internal sealed record DataTypeInfo(ParsedJsonValue<string> Id, ParsedJsonValue<AppLogicInfo>? AppLogic);
 
-public sealed record AppLogicInfo(ParsedJsonValue<string> ClassRef);
+internal sealed record AppLogicInfo(ParsedJsonValue<string> ClassRef);
 
-public static class ApplicationMetadataJsonReader
+internal static class ApplicationMetadataJsonReader
 {
     public static ApplicationMetadata Read(string json)
     {

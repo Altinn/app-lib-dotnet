@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 namespace Altinn.App.Analyzers;
 
-public readonly record struct MetadataAnalyzerContext(
+internal readonly record struct MetadataAnalyzerContext(
     CompilationAnalysisContext CompilationAnalysisContext,
     string ProjectDir,
     Action? OnApplicationMetadataReadBefore,
@@ -52,38 +52,7 @@ public sealed class MetadataAnalyzer : DiagnosticAnalyzer
                 OnApplicationMetadataDeserializationBefore
             );
 
-            var metadataResult = ApplicationMetadataFileReader.Read(in context);
-            switch (metadataResult)
-            {
-                case ApplicationMetadataResult.Content result:
-                    AnalyzeApplicationMetadata(in context, result);
-                    break;
-                case ApplicationMetadataResult.FileNotFound result:
-                    context.ReportDiagnostic(
-                        Diagnostic.Create(Diagnostics.ApplicationMetadataFileNotFound, Location.None, result.FilePath)
-                    );
-                    break;
-                case ApplicationMetadataResult.CouldNotReadFile result:
-                    context.ReportDiagnostic(
-                        Diagnostic.Create(
-                            Diagnostics.ApplicationMetadataFileNotReadable,
-                            GetLocation(result.FilePath),
-                            result.Exception.Message,
-                            result.Exception.StackTrace
-                        )
-                    );
-                    break;
-                case ApplicationMetadataResult.CouldNotParse result:
-                    context.ReportDiagnostic(
-                        Diagnostic.Create(
-                            Diagnostics.FailedToParseApplicationMetadata,
-                            GetLocation(result.FilePath, result.SourceText),
-                            result.Exception.Message,
-                            result.Exception.StackTrace
-                        )
-                    );
-                    break;
-            }
+            AnalyzeApplicationMetadata(in context);
         }
         catch (Exception ex)
         {
@@ -93,7 +62,43 @@ public sealed class MetadataAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private void AnalyzeApplicationMetadata(
+    private static void AnalyzeApplicationMetadata(in MetadataAnalyzerContext context)
+    {
+        var metadataResult = ApplicationMetadataFileReader.Read(in context);
+        switch (metadataResult)
+        {
+            case ApplicationMetadataResult.Content result:
+                AnalyzeApplicationMetadataContent(in context, result);
+                break;
+            case ApplicationMetadataResult.FileNotFound result:
+                context.ReportDiagnostic(
+                    Diagnostic.Create(Diagnostics.ApplicationMetadataFileNotFound, Location.None, result.FilePath)
+                );
+                break;
+            case ApplicationMetadataResult.CouldNotReadFile result:
+                context.ReportDiagnostic(
+                    Diagnostic.Create(
+                        Diagnostics.ApplicationMetadataFileNotReadable,
+                        GetLocation(result.FilePath),
+                        result.Exception.Message,
+                        result.Exception.StackTrace
+                    )
+                );
+                break;
+            case ApplicationMetadataResult.CouldNotParse result:
+                context.ReportDiagnostic(
+                    Diagnostic.Create(
+                        Diagnostics.FailedToParseApplicationMetadata,
+                        GetLocation(result.FilePath, result.SourceText),
+                        result.Exception.Message,
+                        result.Exception.StackTrace
+                    )
+                );
+                break;
+        }
+    }
+
+    private static void AnalyzeApplicationMetadataContent(
         in MetadataAnalyzerContext context,
         ApplicationMetadataResult.Content content
     )
