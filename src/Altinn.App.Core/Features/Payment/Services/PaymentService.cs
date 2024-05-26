@@ -1,7 +1,6 @@
 using Altinn.App.Core.Features.Payment.Exceptions;
 using Altinn.App.Core.Features.Payment.Models;
 using Altinn.App.Core.Features.Payment.Processors;
-using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models;
@@ -52,9 +51,8 @@ internal class PaymentService : IPaymentService
             );
         }
 
-        ValidateConfig(paymentConfiguration);
-        // ! TODO: restructure code to avoid assertion (it is validated above)
-        string dataTypeId = paymentConfiguration.PaymentDataType!;
+        var validPaymentConfiguration = paymentConfiguration.Validate();
+        string dataTypeId = validPaymentConfiguration.PaymentDataType;
 
         (Guid dataElementId, PaymentInformation? existingPaymentInformation) =
             await _dataService.GetByType<PaymentInformation>(instance, dataTypeId);
@@ -131,10 +129,9 @@ internal class PaymentService : IPaymentService
             );
         }
 
-        ValidateConfig(paymentConfiguration);
+        var validPaymentConfiguration = paymentConfiguration.Validate();
 
-        // ! TODO: restructure code to avoid assertion (it is validated above)
-        string dataTypeId = paymentConfiguration.PaymentDataType!;
+        string dataTypeId = validPaymentConfiguration.PaymentDataType;
         (Guid dataElementId, PaymentInformation? paymentInformation) = await _dataService.GetByType<PaymentInformation>(
             instance,
             dataTypeId
@@ -206,10 +203,9 @@ internal class PaymentService : IPaymentService
     /// <inheritdoc/>
     public async Task<bool> IsPaymentCompleted(Instance instance, AltinnPaymentConfiguration paymentConfiguration)
     {
-        ValidateConfig(paymentConfiguration);
+        var validPaymentConfiguration = paymentConfiguration.Validate();
 
-        // ! TODO: restructure code to avoid assertion (it is validated above)
-        string dataTypeId = paymentConfiguration.PaymentDataType!;
+        string dataTypeId = validPaymentConfiguration.PaymentDataType;
         (Guid _, PaymentInformation? paymentInformation) = await _dataService.GetByType<PaymentInformation>(
             instance,
             dataTypeId
@@ -229,10 +225,9 @@ internal class PaymentService : IPaymentService
         AltinnPaymentConfiguration paymentConfiguration
     )
     {
-        ValidateConfig(paymentConfiguration);
+        var validPaymentConfiguration = paymentConfiguration.Validate();
 
-        // ! TODO: restructure code to avoid assertion (it is validated above)
-        string dataTypeId = paymentConfiguration.PaymentDataType!;
+        string dataTypeId = validPaymentConfiguration.PaymentDataType;
         (Guid dataElementId, PaymentInformation? paymentInformation) = await _dataService.GetByType<PaymentInformation>(
             instance,
             dataTypeId
@@ -274,22 +269,5 @@ internal class PaymentService : IPaymentService
 
         await _dataService.DeleteById(new InstanceIdentifier(instance), dataElementId);
         _logger.LogDebug("Payment information for deleted for instance {InstanceId}.", instance.Id);
-    }
-
-    private static void ValidateConfig(AltinnPaymentConfiguration paymentConfiguration)
-    {
-        List<string> errorMessages = [];
-
-        if (string.IsNullOrWhiteSpace(paymentConfiguration.PaymentDataType))
-        {
-            errorMessages.Add("PaymentDataType is missing.");
-        }
-
-        if (errorMessages.Count != 0)
-        {
-            throw new ApplicationConfigException(
-                "Payment process task configuration is not valid: " + string.Join(",\n", errorMessages)
-            );
-        }
     }
 }
