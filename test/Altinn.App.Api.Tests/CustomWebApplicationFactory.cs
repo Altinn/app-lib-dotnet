@@ -25,11 +25,14 @@ public class ApiTestBase
     };
 
     protected readonly ITestOutputHelper _outputHelper;
-    private readonly WebApplicationFactory<Program> _factory;
+    private WebApplicationFactory<Program> _factory;
+
+    protected IServiceProvider Services { get; private set; }
 
     public ApiTestBase(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper)
     {
         _factory = factory;
+        Services = _factory.Services;
         _outputHelper = outputHelper;
     }
 
@@ -50,22 +53,23 @@ public class ApiTestBase
         string appRootPath = TestData.GetApplicationDirectory(org, app);
         string appSettingsPath = Path.Join(appRootPath, "appsettings.json");
 
-        var client = _factory
-            .WithWebHostBuilder(builder =>
-            {
-                var configuration = new ConfigurationBuilder().AddJsonFile(appSettingsPath).Build();
+        var factory = _factory.WithWebHostBuilder(builder =>
+        {
+            var configuration = new ConfigurationBuilder().AddJsonFile(appSettingsPath).Build();
 
-                configuration.GetSection("AppSettings:AppBasePath").Value = appRootPath;
-                IConfigurationSection appSettingSection = configuration.GetSection("AppSettings");
+            configuration.GetSection("AppSettings:AppBasePath").Value = appRootPath;
+            IConfigurationSection appSettingSection = configuration.GetSection("AppSettings");
 
-                builder.ConfigureLogging(ConfigureFakeLogging);
+            builder.ConfigureLogging(ConfigureFakeLogging);
 
-                builder.ConfigureServices(services => services.Configure<AppSettings>(appSettingSection));
-                builder.ConfigureTestServices(services => OverrideServicesForAllTests(services));
-                builder.ConfigureTestServices(OverrideServicesForThisTest);
-                builder.ConfigureTestServices(ConfigureFakeHttpClientHandler);
-            })
-            .CreateClient(new WebApplicationFactoryClientOptions() { AllowAutoRedirect = false });
+            builder.ConfigureServices(services => services.Configure<AppSettings>(appSettingSection));
+            builder.ConfigureTestServices(services => OverrideServicesForAllTests(services));
+            builder.ConfigureTestServices(OverrideServicesForThisTest);
+            builder.ConfigureTestServices(ConfigureFakeHttpClientHandler);
+        });
+        Services = factory.Services;
+
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions() { AllowAutoRedirect = false });
 
         return client;
     }

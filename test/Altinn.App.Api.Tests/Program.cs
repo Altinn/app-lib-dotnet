@@ -40,6 +40,7 @@ builder.Configuration.AddJsonFile(
     Path.Join(TestData.GetTestDataRootDirectory(), "apps", "tdd", "contributer-restriction", "appsettings.json")
 );
 builder.Configuration.GetSection("MetricsSettings:Enabled").Value = "false";
+builder.Configuration.GetSection("AppSettings:UseOpenTelemetry").Value = "true";
 
 ConfigureServices(builder.Services, builder.Configuration);
 ConfigureMockServices(builder.Services, builder.Configuration);
