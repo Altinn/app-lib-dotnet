@@ -44,7 +44,7 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks
         public async Task Start(string taskId, Instance instance)
         {
             AltinnPaymentConfiguration paymentConfiguration = GetAltinnPaymentConfiguration(taskId);
-            await _paymentService.CancelAndDeleteAnyExistingPayment(instance, paymentConfiguration);
+            await _paymentService.CancelAndDeleteAnyExistingPayment(instance, paymentConfiguration.Validate());
         }
 
         /// <inheritdoc/>
@@ -52,7 +52,7 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks
         {
             AltinnPaymentConfiguration paymentConfiguration = GetAltinnPaymentConfiguration(taskId);
 
-            if (!await _paymentService.IsPaymentCompleted(instance, paymentConfiguration))
+            if (!await _paymentService.IsPaymentCompleted(instance, paymentConfiguration.Validate()))
                 throw new PaymentException("The payment is not completed.");
 
             Stream pdfStream = await _pdfService.GeneratePdf(instance, taskId, CancellationToken.None);
@@ -73,7 +73,7 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks
         public async Task Abandon(string taskId, Instance instance)
         {
             AltinnPaymentConfiguration paymentConfiguration = GetAltinnPaymentConfiguration(taskId);
-            await _paymentService.CancelAndDeleteAnyExistingPayment(instance, paymentConfiguration);
+            await _paymentService.CancelAndDeleteAnyExistingPayment(instance, paymentConfiguration.Validate());
         }
 
         private AltinnPaymentConfiguration GetAltinnPaymentConfiguration(string taskId)

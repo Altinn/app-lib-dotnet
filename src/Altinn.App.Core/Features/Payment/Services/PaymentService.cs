@@ -38,7 +38,7 @@ internal class PaymentService : IPaymentService
     /// <inheritdoc/>
     public async Task<(PaymentInformation paymentInformation, bool alreadyPaid)> StartPayment(
         Instance instance,
-        AltinnPaymentConfiguration paymentConfiguration,
+        ValidAltinnPaymentConfiguration paymentConfiguration,
         string? language
     )
     {
@@ -51,8 +51,7 @@ internal class PaymentService : IPaymentService
             );
         }
 
-        var validPaymentConfiguration = paymentConfiguration.Validate();
-        string dataTypeId = validPaymentConfiguration.PaymentDataType;
+        string dataTypeId = paymentConfiguration.PaymentDataType;
 
         (Guid dataElementId, PaymentInformation? existingPaymentInformation) =
             await _dataService.GetByType<PaymentInformation>(instance, dataTypeId);
@@ -116,7 +115,7 @@ internal class PaymentService : IPaymentService
     /// <inheritdoc/>
     public async Task<PaymentInformation> CheckAndStorePaymentStatus(
         Instance instance,
-        AltinnPaymentConfiguration paymentConfiguration,
+        ValidAltinnPaymentConfiguration paymentConfiguration,
         string? language
     )
     {
@@ -129,9 +128,7 @@ internal class PaymentService : IPaymentService
             );
         }
 
-        var validPaymentConfiguration = paymentConfiguration.Validate();
-
-        string dataTypeId = validPaymentConfiguration.PaymentDataType;
+        string dataTypeId = paymentConfiguration.PaymentDataType;
         (Guid dataElementId, PaymentInformation? paymentInformation) = await _dataService.GetByType<PaymentInformation>(
             instance,
             dataTypeId
@@ -201,11 +198,9 @@ internal class PaymentService : IPaymentService
     }
 
     /// <inheritdoc/>
-    public async Task<bool> IsPaymentCompleted(Instance instance, AltinnPaymentConfiguration paymentConfiguration)
+    public async Task<bool> IsPaymentCompleted(Instance instance, ValidAltinnPaymentConfiguration paymentConfiguration)
     {
-        var validPaymentConfiguration = paymentConfiguration.Validate();
-
-        string dataTypeId = validPaymentConfiguration.PaymentDataType;
+        string dataTypeId = paymentConfiguration.PaymentDataType;
         (Guid _, PaymentInformation? paymentInformation) = await _dataService.GetByType<PaymentInformation>(
             instance,
             dataTypeId
@@ -222,12 +217,10 @@ internal class PaymentService : IPaymentService
     /// <inheritdoc/>
     public async Task CancelAndDeleteAnyExistingPayment(
         Instance instance,
-        AltinnPaymentConfiguration paymentConfiguration
+        ValidAltinnPaymentConfiguration paymentConfiguration
     )
     {
-        var validPaymentConfiguration = paymentConfiguration.Validate();
-
-        string dataTypeId = validPaymentConfiguration.PaymentDataType;
+        string dataTypeId = paymentConfiguration.PaymentDataType;
         (Guid dataElementId, PaymentInformation? paymentInformation) = await _dataService.GetByType<PaymentInformation>(
             instance,
             dataTypeId
