@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Altinn.App.Api.Controllers;
 using Altinn.App.Api.Helpers;
 using Altinn.App.Api.Infrastructure.Filters;
@@ -15,6 +16,8 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.FeatureManagement;
 using Microsoft.IdentityModel.Tokens;
+using OpenTelemetry;
+using OpenTelemetry.Context.Propagation;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
@@ -148,6 +151,14 @@ namespace Altinn.App.Api.Extensions
             services.AddHostedService<TelemetryInitialization>();
             services.AddSingleton<Telemetry>();
 
+            // This bit of code makes ASP.NET Core spans always root.
+            // Depending on infrastructure used and how the application is exposed/called,
+            // it might be a good idea to be in control of the root span (and therefore the size, baggage etch)
+            // Taken from: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/issues/1773
+            _ = Sdk.SuppressInstrumentation; // Just to trigger static constructor. The static constructor in Sdk initializes Propagators.DefaultTextMapPropagator which we depend on below
+            Sdk.SetDefaultTextMapPropagator(new OtelPropagator(Propagators.DefaultTextMapPropagator));
+            DistributedContextPropagator.Current = new AspNetCorePropagator();
+
             var appInsightsConnectionString = GetAppInsightsConnectionStringForOtel(config, env);
 
             services
@@ -257,6 +268,69 @@ namespace Altinn.App.Api.Extensions
             }
 
             public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+        }
+
+        internal sealed class OtelPropagator : TextMapPropagator
+        {
+            private readonly TextMapPropagator inner;
+
+            public OtelPropagator(TextMapPropagator inner) => this.inner = inner;
+
+            public override ISet<string> Fields => inner.Fields;
+
+            public override PropagationContext Extract<T>(
+                PropagationContext context,
+                T carrier,
+                Func<T, string, IEnumerable<string>> getter
+            )
+            {
+                if (carrier is HttpRequest req)
+                    return default;
+                return inner.Extract(context, carrier, getter);
+            }
+
+            public override void Inject<T>(PropagationContext context, T carrier, Action<T, string, string> setter) =>
+                inner.Inject(context, carrier, setter);
+        }
+
+        internal sealed class AspNetCorePropagator : DistributedContextPropagator
+        {
+            private readonly DistributedContextPropagator inner;
+
+            public AspNetCorePropagator() => this.inner = CreateDefaultPropagator();
+
+            public override IReadOnlyCollection<string> Fields => inner.Fields;
+
+            public override IEnumerable<KeyValuePair<string, string?>>? ExtractBaggage(
+                object? carrier,
+                PropagatorGetterCallback? getter
+            )
+            {
+                if (carrier is IHeaderDictionary)
+                    return null;
+
+                return inner.ExtractBaggage(carrier, getter);
+            }
+
+            public override void ExtractTraceIdAndState(
+                object? carrier,
+                PropagatorGetterCallback? getter,
+                out string? traceId,
+                out string? traceState
+            )
+            {
+                if (carrier is IHeaderDictionary)
+                {
+                    traceId = null;
+                    traceState = null;
+                    return;
+                }
+
+                inner.ExtractTraceIdAndState(carrier, getter, out traceId, out traceState);
+            }
+
+            public override void Inject(Activity? activity, object? carrier, PropagatorSetterCallback? setter) =>
+                inner.Inject(activity, carrier, setter);
         }
 
         private static void AddAuthorizationPolicies(IServiceCollection services)
