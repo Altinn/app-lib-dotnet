@@ -243,7 +243,7 @@ namespace Altinn.App.Api.Extensions
             MeterProvider meterProvider
         ) : IHostedService
         {
-            public Task StartAsync(CancellationToken cancellationToken)
+            public async Task StartAsync(CancellationToken cancellationToken)
             {
                 // This codepath for initialization is here only because it makes it a lot easier to
                 // query the metrics from Prometheus using 'increase' without the appearance of a "missed" sample.
@@ -255,16 +255,32 @@ namespace Altinn.App.Api.Extensions
                 telemetry.Init();
                 try
                 {
-                    if (!meterProvider.ForceFlush(10_000))
+                    var task = Task.Factory.StartNew(
+                        () =>
+                        {
+                            if (!meterProvider.ForceFlush(10_000))
+                            {
+                                logger.LogInformation("Failed to flush metrics after 10 seconds");
+                            }
+                        },
+                        cancellationToken,
+                        // Long running to avoid doing this blocking on a "normal" thread pool thread
+                        TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach,
+                        TaskScheduler.Default
+                    );
+                    if (await Task.WhenAny(task, Task.Delay(500, cancellationToken)) != task)
                     {
-                        logger.LogWarning("Failed to flush metrics after 10 seconds");
+                        logger.LogInformation(
+                            "Tried to flush metrics within 0.5 seconds but it was taking too long, proceeding with startup"
+                        );
                     }
                 }
                 catch (Exception ex)
                 {
+                    if (ex is OperationCanceledException)
+                        return;
                     logger.LogWarning(ex, "Failed to flush metrics");
                 }
-                return Task.CompletedTask;
             }
 
             public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
@@ -272,11 +288,11 @@ namespace Altinn.App.Api.Extensions
 
         internal sealed class OtelPropagator : TextMapPropagator
         {
-            private readonly TextMapPropagator inner;
+            private readonly TextMapPropagator _inner;
 
-            public OtelPropagator(TextMapPropagator inner) => this.inner = inner;
+            public OtelPropagator(TextMapPropagator inner) => _inner = inner;
 
-            public override ISet<string> Fields => inner.Fields;
+            public override ISet<string> Fields => _inner.Fields;
 
             public override PropagationContext Extract<T>(
                 PropagationContext context,
@@ -284,22 +300,22 @@ namespace Altinn.App.Api.Extensions
                 Func<T, string, IEnumerable<string>> getter
             )
             {
-                if (carrier is HttpRequest req)
+                if (carrier is HttpRequest)
                     return default;
-                return inner.Extract(context, carrier, getter);
+                return _inner.Extract(context, carrier, getter);
             }
 
             public override void Inject<T>(PropagationContext context, T carrier, Action<T, string, string> setter) =>
-                inner.Inject(context, carrier, setter);
+                _inner.Inject(context, carrier, setter);
         }
 
         internal sealed class AspNetCorePropagator : DistributedContextPropagator
         {
-            private readonly DistributedContextPropagator inner;
+            private readonly DistributedContextPropagator _inner;
 
-            public AspNetCorePropagator() => this.inner = CreateDefaultPropagator();
+            public AspNetCorePropagator() => _inner = CreateDefaultPropagator();
 
-            public override IReadOnlyCollection<string> Fields => inner.Fields;
+            public override IReadOnlyCollection<string> Fields => _inner.Fields;
 
             public override IEnumerable<KeyValuePair<string, string?>>? ExtractBaggage(
                 object? carrier,
@@ -309,7 +325,7 @@ namespace Altinn.App.Api.Extensions
                 if (carrier is IHeaderDictionary)
                     return null;
 
-                return inner.ExtractBaggage(carrier, getter);
+                return _inner.ExtractBaggage(carrier, getter);
             }
 
             public override void ExtractTraceIdAndState(
@@ -326,11 +342,11 @@ namespace Altinn.App.Api.Extensions
                     return;
                 }
 
-                inner.ExtractTraceIdAndState(carrier, getter, out traceId, out traceState);
+                _inner.ExtractTraceIdAndState(carrier, getter, out traceId, out traceState);
             }
 
             public override void Inject(Activity? activity, object? carrier, PropagatorSetterCallback? setter) =>
-                inner.Inject(activity, carrier, setter);
+                _inner.Inject(activity, carrier, setter);
         }
 
         private static void AddAuthorizationPolicies(IServiceCollection services)

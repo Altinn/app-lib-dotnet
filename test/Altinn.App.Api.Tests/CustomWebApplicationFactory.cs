@@ -28,7 +28,7 @@ public class ApiTestBase
     };
 
     protected readonly ITestOutputHelper _outputHelper;
-    private WebApplicationFactory<Program> _factory;
+    private readonly WebApplicationFactory<Program> _factory;
 
     protected IServiceProvider Services { get; private set; }
 
@@ -63,7 +63,7 @@ public class ApiTestBase
             configuration.GetSection("AppSettings:AppBasePath").Value = appRootPath;
             IConfigurationSection appSettingSection = configuration.GetSection("AppSettings");
 
-            builder.ConfigureLogging(ConfigureFakeLogging);
+            builder.ConfigureLogging(logging => ConfigureFakeLogging(logging, _outputHelper));
 
             builder.ConfigureServices(services => services.Configure<AppSettings>(appSettingSection));
             builder.ConfigureTestServices(services => OverrideServicesForAllTests(services));
@@ -72,15 +72,9 @@ public class ApiTestBase
         });
         Services = factory.Services;
 
-        HttpClient client;
-        if (includeTraceContext)
-        {
-            client = factory.CreateDefaultClient(new DiagnosticHandler());
-        }
-        else
-        {
-            client = factory.CreateClient(new WebApplicationFactoryClientOptions() { AllowAutoRedirect = false });
-        }
+        var client = includeTraceContext
+            ? factory.CreateDefaultClient(new DiagnosticHandler())
+            : factory.CreateClient(new WebApplicationFactoryClientOptions() { AllowAutoRedirect = false });
 
         return client;
     }
@@ -106,13 +100,22 @@ public class ApiTestBase
         }
     }
 
-    private void ConfigureFakeLogging(ILoggingBuilder builder)
+    public static void ConfigureFakeLogging(ILoggingBuilder builder, ITestOutputHelper? outputHelper = null)
     {
         builder
             .ClearProviders()
             .AddFakeLogging(options =>
             {
-                options.OutputSink = (message) => _outputHelper.WriteLine(message);
+                options.OutputSink = message => outputHelper?.WriteLine(message);
+                if (outputHelper is null)
+                {
+                    options.FilteredLevels = new HashSet<LogLevel>
+                    {
+                        LogLevel.Warning,
+                        LogLevel.Error,
+                        LogLevel.Critical
+                    };
+                }
                 options.OutputFormatter = log =>
                     $"""
                     [{ShortLogLevel(log.Level)}] {log.Category}:
