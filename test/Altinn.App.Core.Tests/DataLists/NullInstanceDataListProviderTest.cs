@@ -3,22 +3,21 @@ using Altinn.App.Core.Features.DataLists;
 using Altinn.App.Core.Models;
 using FluentAssertions;
 
-namespace Altinn.App.PlatformServices.Tests.DataLists
-{
-    public class NullInstanceDataListProviderTest
-    {
-        [Fact]
-        public async Task Constructor_InitializedWithEmptyValues()
-        {
-            var provider = new NullInstanceDataListProvider();
+namespace Altinn.App.PlatformServices.Tests.DataLists;
 
-            provider.Id.Should().Be(string.Empty);
-            var options = await provider.GetInstanceDataListAsync(
-                new InstanceIdentifier(12345, Guid.NewGuid()),
-                "nb",
-                new Dictionary<string, string>()
-            );
-            options.ListItems.Should().BeNull();
-        }
+public class NullInstanceDataListProviderTest
+{
+    [Fact]
+    public async Task Constructor_InitializedWithEmptyValues()
+    {
+        var provider = new NullInstanceDataListProvider();
+
+        provider.Id.Should().Be(string.Empty);
+        var options = await provider.GetInstanceDataListAsync(
+            new InstanceIdentifier(12345, Guid.NewGuid()),
+            "nb",
+            new Dictionary<string, string>()
+        );
+        options.ListItems.Should().BeNull();
     }
 }
