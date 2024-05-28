@@ -4,7 +4,6 @@ using Altinn.App.Core.Internal.App;
 using FluentAssertions;
 using Microsoft.FeatureManagement;
 using Moq;
-using Xunit;
 
 namespace Altinn.App.Core.Tests.Internal.App
 {

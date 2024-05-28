@@ -9,7 +9,6 @@ using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Options;
 using Moq;
-using Xunit;
 
 namespace Altinn.App.Core.Tests.Internal.Process.ProcessTasks.Common
 {

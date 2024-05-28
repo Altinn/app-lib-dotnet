@@ -1,6 +1,3 @@
-using Altinn.App.Core.Models;
-using Newtonsoft.Json;
-
 namespace Altinn.App.Core.Configuration
 {
     /// <summary>

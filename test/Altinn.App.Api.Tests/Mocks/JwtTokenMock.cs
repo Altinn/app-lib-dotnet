@@ -1,6 +1,4 @@
-using System;
 using System.IdentityModel.Tokens.Jwt;
-using System.IO;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.IdentityModel.Tokens;

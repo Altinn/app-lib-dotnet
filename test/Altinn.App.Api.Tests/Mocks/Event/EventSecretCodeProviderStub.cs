@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using Altinn.App.Core.Internal.Events;
 
 namespace Altinn.App.Api.Tests.Mocks.Event

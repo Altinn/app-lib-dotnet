@@ -3,8 +3,6 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Events;
 using Altinn.App.Core.Models;
 using FluentAssertions;
-using Moq;
-using Xunit;
 
 namespace Altinn.App.PlatformServices.Tests.Internal.Events
 {

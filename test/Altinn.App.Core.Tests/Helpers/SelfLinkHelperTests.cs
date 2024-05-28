@@ -2,7 +2,6 @@ using Altinn.App.Core.Helpers;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
 using Moq;
-using Xunit;
 
 namespace Altinn.App.Core.Tests.Helpers
 {

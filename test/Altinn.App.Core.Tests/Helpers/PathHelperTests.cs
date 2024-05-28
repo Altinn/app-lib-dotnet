@@ -1,6 +1,5 @@
 #nullable disable
 using Altinn.App.Core.Helpers;
-using Xunit;
 
 namespace Altinn.App.PlatformServices.Tests.Helpers
 {

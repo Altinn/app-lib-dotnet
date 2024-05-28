@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Altinn.App.Api.Tests.Mocks.Authentication

@@ -4,7 +4,6 @@ using Altinn.App.Core.Infrastructure.Clients.Events;
 using Altinn.App.Core.Internal.Events;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 
 namespace Altinn.App.PlatformServices.Tests.Extensions
 {

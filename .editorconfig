@@ -104,6 +104,9 @@ csharp_style_prefer_primary_constructors = false:suggestion
 # Naming rule violation
 dotnet_diagnostic.IDE1006.severity = error
 
+# Unused usings
+dotnet_diagnostic.IDE0005.severity = error
+
 # CA1848: Use the LoggerMessage delegates
 dotnet_diagnostic.CA1848.severity = none
 

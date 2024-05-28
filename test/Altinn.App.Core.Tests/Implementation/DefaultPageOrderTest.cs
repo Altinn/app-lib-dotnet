@@ -3,7 +3,6 @@ using Altinn.App.Core.Features.PageOrder;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Models;
 using Moq;
-using Xunit;
 
 namespace Altinn.App.PlatformServices.Tests.Implementation
 {

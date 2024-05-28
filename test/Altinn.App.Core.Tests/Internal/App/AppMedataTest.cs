@@ -3,7 +3,6 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using Altinn.App.Common.Tests;
 using Altinn.App.Core.Configuration;
-using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
@@ -11,7 +10,6 @@ using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Microsoft.FeatureManagement;
 using Moq;
-using Xunit;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Altinn.App.Core.Tests.Internal.App

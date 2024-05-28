@@ -1,4 +1,3 @@
-using System.Runtime.Serialization;
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 

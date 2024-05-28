@@ -16,7 +16,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Moq;
 using Moq.Protected;
-using Xunit;
 using IAppResources = Altinn.App.Core.Internal.App.IAppResources;
 
 namespace Altinn.App.Api.Tests.Controllers

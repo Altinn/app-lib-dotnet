@@ -1,4 +1,3 @@
-using System.Reflection;
 using Altinn.Platform.Storage.Interface.Models;
 using Newtonsoft.Json;
 

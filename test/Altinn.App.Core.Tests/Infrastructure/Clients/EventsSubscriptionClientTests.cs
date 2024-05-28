@@ -9,7 +9,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Moq.Protected;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Altinn.App.PlatformServices.Tests.Infrastructure.Clients

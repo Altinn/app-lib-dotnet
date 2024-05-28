@@ -3,7 +3,6 @@ using Altinn.App.Core.Features.Options;
 using Altinn.App.Core.Features.Options.Altinn2Provider;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 
 namespace Altinn.App.Core.Tests.Features.Options.Altinn2Provider
 {

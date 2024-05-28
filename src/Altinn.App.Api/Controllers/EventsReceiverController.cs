@@ -1,13 +1,10 @@
 #nullable disable
 using System.Text.Json;
-using System.Threading.Tasks;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Events;
 using Altinn.App.Core.Models;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Api.Controllers

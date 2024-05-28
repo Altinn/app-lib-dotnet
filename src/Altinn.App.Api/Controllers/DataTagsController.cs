@@ -3,7 +3,6 @@ using System.Text.RegularExpressions;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Constants;
-using Altinn.App.Core.Infrastructure.Clients;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.Platform.Storage.Interface.Models;

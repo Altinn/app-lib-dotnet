@@ -4,7 +4,6 @@ using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Moq;
-using Xunit;
 
 namespace Altinn.App.Core.Tests.Internal.Data
 {

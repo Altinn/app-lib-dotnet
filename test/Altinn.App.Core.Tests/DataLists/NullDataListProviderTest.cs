@@ -1,7 +1,6 @@
 #nullable disable
 using Altinn.App.Core.Features.DataLists;
 using FluentAssertions;
-using Xunit;
 
 namespace Altinn.App.PlatformServices.Tests.DataLists
 {

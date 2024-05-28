@@ -12,7 +12,6 @@ using Altinn.Common.AccessTokenClient.Services;
 using Altinn.Platform.Register.Models;
 using Microsoft.Extensions.Options;
 using Moq;
-using Xunit;
 
 namespace Altinn.App.Core.Tests.Implementation
 {

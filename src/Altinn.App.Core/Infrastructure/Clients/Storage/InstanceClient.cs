@@ -16,7 +16,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
-using static Altinn.App.Core.Features.Telemetry.Instances;
 
 namespace Altinn.App.Core.Infrastructure.Clients.Storage
 {

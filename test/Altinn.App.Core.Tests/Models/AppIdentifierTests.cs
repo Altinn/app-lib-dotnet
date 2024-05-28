@@ -1,7 +1,6 @@
 #nullable disable
 using Altinn.App.Core.Models;
 using FluentAssertions;
-using Xunit;
 
 #pragma warning disable CA1806 // Do not ignore method results
 

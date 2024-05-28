@@ -2,7 +2,6 @@
 using Altinn.App.Core.Features.DataLists;
 using Altinn.App.Core.Models;
 using FluentAssertions;
-using Xunit;
 
 namespace Altinn.App.PlatformServices.Tests.DataLists
 {

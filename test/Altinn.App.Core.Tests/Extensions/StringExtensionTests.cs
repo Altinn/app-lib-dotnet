@@ -1,6 +1,5 @@
 #nullable disable
 using Altinn.App.Core.Extensions;
-using Xunit;
 
 namespace Altinn.App.PlatformServices.Tests.Extensions
 {

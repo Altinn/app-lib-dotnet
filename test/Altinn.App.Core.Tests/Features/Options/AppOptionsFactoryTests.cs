@@ -3,7 +3,6 @@ using Altinn.App.Core.Features.Options;
 using Altinn.App.Core.Models;
 using FluentAssertions;
 using Moq;
-using Xunit;
 
 namespace Altinn.App.Core.Tests.Features.Options
 {

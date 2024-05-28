@@ -13,7 +13,6 @@ using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 using AppProcessState = Altinn.App.Core.Internal.Process.Elements.AppProcessState;
 using IAuthorizationService = Altinn.App.Core.Internal.Auth.IAuthorizationService;
 
