@@ -5,9 +5,14 @@ namespace Altinn.App.Analyzers;
 
 internal readonly record struct ParsedJsonValue<T>(T Value, IJsonLineInfo LineInfo);
 
-internal sealed record ApplicationMetadata(ParsedJsonValue<IReadOnlyList<DataTypeInfo>> DataTypes);
+internal sealed record ApplicationMetadata(
+    ParsedJsonValue<IReadOnlyList<DataTypeInfo>> DataTypes,
+    OnEntryInfo? OnEntry = null
+);
 
 internal sealed record DataTypeInfo(ParsedJsonValue<string> Id, ParsedJsonValue<AppLogicInfo>? AppLogic);
+
+internal sealed record OnEntryInfo(ParsedJsonValue<string> Show);
 
 internal sealed record AppLogicInfo(ParsedJsonValue<string> ClassRef);
 
@@ -49,7 +54,15 @@ internal static class ApplicationMetadataJsonReader
             dataTypeInfo.Add(new DataTypeInfo(dataTypeId, appLogic));
         }
 
-        return new ApplicationMetadata(dataTypes);
+        var onEntryObj = metadata.GetValue("onEntry") as JObject;
+        OnEntryInfo? onEntry = null;
+        if (onEntryObj is not null)
+        {
+            var show = onEntryObj.GetStringValue("show");
+            onEntry = new OnEntryInfo(show);
+        }
+
+        return new ApplicationMetadata(dataTypes, onEntry);
     }
 
     private static ParsedJsonValue<string> GetStringValue(this JObject obj, string propertyName)

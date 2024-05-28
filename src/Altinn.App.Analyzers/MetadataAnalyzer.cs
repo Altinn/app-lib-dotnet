@@ -129,6 +129,8 @@ public sealed class MetadataAnalyzer : DiagnosticAnalyzer
         }
     }
 
+    private static void AnalyzeLayoutMetadata(in MetadataAnalyzerContext context) { }
+
     private static Location GetLocation(string file)
     {
         return Location.Create(
