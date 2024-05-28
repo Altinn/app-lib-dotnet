@@ -7,7 +7,7 @@ namespace Altinn.App.Api.Helpers.RequestHandling
     /// </summary>
     public class RequestPartValidator
     {
-        private readonly Application appInfo;
+        private readonly Application _appInfo;
 
         /// <summary>
         /// Initialises a new instance of the <see cref="RequestPartValidator"/> class with the given application info.
@@ -15,7 +15,7 @@ namespace Altinn.App.Api.Helpers.RequestHandling
         /// <param name="appInfo">The application metadata to use when validating a <see cref="RequestPart"/>.</param>
         public RequestPartValidator(Application appInfo)
         {
-            this.appInfo = appInfo;
+            _appInfo = appInfo;
         }
 
         /// <summary>
@@ -36,7 +36,7 @@ namespace Altinn.App.Api.Helpers.RequestHandling
             }
             else
             {
-                DataType? dataType = appInfo.DataTypes.Find(e => e.Id == part.Name);
+                DataType? dataType = _appInfo.DataTypes.Find(e => e.Id == part.Name);
                 if (dataType == null)
                 {
                     return $"Multipart section named, '{part.Name}' does not correspond to an element type in application metadata";
@@ -97,7 +97,7 @@ namespace Altinn.App.Api.Helpers.RequestHandling
                 }
             }
 
-            foreach (DataType dataType in appInfo.DataTypes)
+            foreach (DataType dataType in _appInfo.DataTypes)
             {
                 if (dataType.MaxCount > 0)
                 {

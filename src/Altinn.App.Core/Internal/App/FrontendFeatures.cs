@@ -8,30 +8,30 @@ namespace Altinn.App.Core.Internal.App
     /// </summary>
     public class FrontendFeatures : IFrontendFeatures
     {
-        private readonly Dictionary<string, bool> features = new();
+        private readonly Dictionary<string, bool> _features = new();
 
         /// <summary>
         /// Default implementation of IFrontendFeatures
         /// </summary>
         public FrontendFeatures(IFeatureManager featureManager)
         {
-            features.Add("footer", true);
-            features.Add("processActions", true);
+            _features.Add("footer", true);
+            _features.Add("processActions", true);
 
             if (featureManager.IsEnabledAsync(FeatureFlags.JsonObjectInDataResponse).Result)
             {
-                features.Add("jsonObjectInDataResponse", true);
+                _features.Add("jsonObjectInDataResponse", true);
             }
             else
             {
-                features.Add("jsonObjectInDataResponse", false);
+                _features.Add("jsonObjectInDataResponse", false);
             }
         }
 
         /// <inheritdoc />
         public Task<Dictionary<string, bool>> GetFrontendFeatures()
         {
-            return Task.FromResult(features);
+            return Task.FromResult(_features);
         }
     }
 }

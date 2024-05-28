@@ -4,7 +4,6 @@ using Altinn.App.Core.Extensions;
 using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
-using Microsoft.AspNetCore.Http;
 
 namespace Altinn.App.Api.Infrastructure.Telemetry
 {
@@ -14,7 +13,7 @@ namespace Altinn.App.Api.Infrastructure.Telemetry
     [ExcludeFromCodeCoverage]
     public class IdentityTelemetryFilter : ITelemetryProcessor
     {
-        private ITelemetryProcessor Next { get; set; }
+        private ITelemetryProcessor _next { get; set; }
 
         private readonly IHttpContextAccessor _httpContextAccessor;
 
@@ -23,7 +22,7 @@ namespace Altinn.App.Api.Infrastructure.Telemetry
         /// </summary>
         public IdentityTelemetryFilter(ITelemetryProcessor next, IHttpContextAccessor httpContextAccessor)
         {
-            Next = next;
+            _next = next;
             _httpContextAccessor = httpContextAccessor;
         }
 
@@ -58,7 +57,7 @@ namespace Altinn.App.Api.Infrastructure.Telemetry
                 }
             }
 
-            Next.Process(item);
+            _next.Process(item);
         }
     }
 }

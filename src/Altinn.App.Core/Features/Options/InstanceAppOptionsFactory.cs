@@ -11,10 +11,10 @@ namespace Altinn.App.Core.Features.Options
         /// </summary>
         public InstanceAppOptionsFactory(IEnumerable<IInstanceAppOptionsProvider> instanceAppOptionsProviders)
         {
-            InstanceAppOptionsProviders = instanceAppOptionsProviders;
+            _instanceAppOptionsProviders = instanceAppOptionsProviders;
         }
 
-        private IEnumerable<IInstanceAppOptionsProvider> InstanceAppOptionsProviders { get; }
+        private IEnumerable<IInstanceAppOptionsProvider> _instanceAppOptionsProviders { get; }
 
         /// <summary>
         /// Finds the implementation of IInstanceAppOptionsProvider based on the options id
@@ -23,7 +23,7 @@ namespace Altinn.App.Core.Features.Options
         /// <param name="optionsId">Id matching the options requested.</param>
         public IInstanceAppOptionsProvider GetOptionsProvider(string optionsId)
         {
-            foreach (var instanceAppOptionProvider in InstanceAppOptionsProviders)
+            foreach (var instanceAppOptionProvider in _instanceAppOptionsProviders)
             {
                 if (!instanceAppOptionProvider.Id.Equals(optionsId, StringComparison.OrdinalIgnoreCase))
                 {

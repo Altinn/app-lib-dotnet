@@ -24,7 +24,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly HttpClient _client;
         private readonly IMemoryCache _memoryCache;
-        private readonly MemoryCacheEntryOptions cacheEntryOptions;
+        private readonly MemoryCacheEntryOptions _cacheEntryOptions;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TextClient"/> class.
@@ -56,7 +56,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
             _client = httpClient;
 
             _memoryCache = memoryCache;
-            cacheEntryOptions = new MemoryCacheEntryOptions()
+            _cacheEntryOptions = new MemoryCacheEntryOptions()
                 .SetPriority(CacheItemPriority.High)
                 .SetAbsoluteExpiration(new TimeSpan(0, 0, settings.Value.CacheResourceLifeTimeInSeconds));
         }
@@ -80,7 +80,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
                 if (response.StatusCode == System.Net.HttpStatusCode.OK)
                 {
                     textResource = await JsonSerializerPermissive.DeserializeAsync<TextResource>(response.Content);
-                    _memoryCache.Set(cacheKey, textResource, cacheEntryOptions);
+                    _memoryCache.Set(cacheKey, textResource, _cacheEntryOptions);
                 }
                 else
                 {

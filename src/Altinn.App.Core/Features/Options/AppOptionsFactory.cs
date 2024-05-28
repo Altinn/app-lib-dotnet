@@ -13,10 +13,10 @@ namespace Altinn.App.Core.Features.Options
         /// </summary>
         public AppOptionsFactory(IEnumerable<IAppOptionsProvider> appOptionsProviders)
         {
-            AppOptionsProviders = appOptionsProviders;
+            _appOptionsProviders = appOptionsProviders;
         }
 
-        private IEnumerable<IAppOptionsProvider> AppOptionsProviders { get; }
+        private IEnumerable<IAppOptionsProvider> _appOptionsProviders { get; }
 
         /// <summary>
         /// Finds the implementation of IAppOptionsProvider based on the options id
@@ -27,7 +27,7 @@ namespace Altinn.App.Core.Features.Options
         {
             bool isDefault = optionsId == DEFAULT_PROVIDER_NAME;
 
-            foreach (var appOptionProvider in AppOptionsProviders)
+            foreach (var appOptionProvider in _appOptionsProviders)
             {
                 if (!appOptionProvider.Id.Equals(optionsId, StringComparison.OrdinalIgnoreCase))
                 {

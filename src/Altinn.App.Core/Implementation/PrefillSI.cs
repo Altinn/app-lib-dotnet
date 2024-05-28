@@ -22,11 +22,11 @@ namespace Altinn.App.Core.Implementation
         private readonly IAltinnPartyClient _altinnPartyClientClient;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly Telemetry? _telemetry;
-        private static readonly string ER_KEY = "ER";
-        private static readonly string DSF_KEY = "DSF";
-        private static readonly string USER_PROFILE_KEY = "UserProfile";
-        private static readonly string ALLOW_OVERWRITE_KEY = "allowOverwrite";
-        private bool allowOverwrite = false;
+        private static readonly string _erKey = "ER";
+        private static readonly string _dsfKey = "DSF";
+        private static readonly string _userProfileKey = "UserProfile";
+        private static readonly string _allowOverwriteKey = "allowOverwrite";
+        private bool _allowOverwrite = false;
 
         /// <summary>
         /// Creates a new instance of the <see cref="PrefillSI"/> class
@@ -87,10 +87,10 @@ namespace Altinn.App.Core.Implementation
             }
 
             JObject prefillConfiguration = JObject.Parse(jsonConfig);
-            JToken? allowOverwriteToken = prefillConfiguration.SelectToken(ALLOW_OVERWRITE_KEY);
+            JToken? allowOverwriteToken = prefillConfiguration.SelectToken(_allowOverwriteKey);
             if (allowOverwriteToken != null)
             {
-                allowOverwrite = allowOverwriteToken.ToObject<bool>();
+                _allowOverwrite = allowOverwriteToken.ToObject<bool>();
             }
 
             Party? party = await _altinnPartyClientClient.GetParty(int.Parse(partyId));
@@ -102,7 +102,7 @@ namespace Altinn.App.Core.Implementation
             }
 
             // Prefill from user profile
-            JToken? profilePrefill = prefillConfiguration.SelectToken(USER_PROFILE_KEY);
+            JToken? profilePrefill = prefillConfiguration.SelectToken(_userProfileKey);
 
             if (profilePrefill != null)
             {
@@ -122,7 +122,7 @@ namespace Altinn.App.Core.Implementation
                     if (userProfile != null)
                     {
                         JObject userProfileJsonObject = JObject.FromObject(userProfile);
-                        _logger.LogInformation($"Started prefill from {USER_PROFILE_KEY}");
+                        _logger.LogInformation($"Started prefill from {_userProfileKey}");
                         LoopThroughDictionaryAndAssignValuesToDataModel(
                             SwapKeyValuesForPrefill(userProfileDict),
                             userProfileJsonObject,
@@ -132,14 +132,14 @@ namespace Altinn.App.Core.Implementation
                     else
                     {
                         string errorMessage =
-                            $"Could not  prefill from {USER_PROFILE_KEY}, user profile is not defined.";
+                            $"Could not  prefill from {_userProfileKey}, user profile is not defined.";
                         _logger.LogError(errorMessage);
                     }
                 }
             }
 
             // Prefill from ER (enhetsregisteret)
-            JToken? enhetsregisteret = prefillConfiguration.SelectToken(ER_KEY);
+            JToken? enhetsregisteret = prefillConfiguration.SelectToken(_erKey);
             if (enhetsregisteret != null)
             {
                 var enhetsregisterPrefill =
@@ -152,7 +152,7 @@ namespace Altinn.App.Core.Implementation
                     if (org != null)
                     {
                         JObject orgJsonObject = JObject.FromObject(org);
-                        _logger.LogInformation($"Started prefill from {ER_KEY}");
+                        _logger.LogInformation($"Started prefill from {_erKey}");
                         LoopThroughDictionaryAndAssignValuesToDataModel(
                             SwapKeyValuesForPrefill(enhetsregisterPrefill),
                             orgJsonObject,
@@ -161,14 +161,14 @@ namespace Altinn.App.Core.Implementation
                     }
                     else
                     {
-                        string errorMessage = $"Could not  prefill from {ER_KEY}, organisation is not defined.";
+                        string errorMessage = $"Could not  prefill from {_erKey}, organisation is not defined.";
                         _logger.LogError(errorMessage);
                     }
                 }
             }
 
             // Prefill from DSF (det sentrale folkeregisteret)
-            JToken? folkeregisteret = prefillConfiguration.SelectToken(DSF_KEY);
+            JToken? folkeregisteret = prefillConfiguration.SelectToken(_dsfKey);
             if (folkeregisteret != null)
             {
                 var folkeregisterPrefill =
@@ -181,7 +181,7 @@ namespace Altinn.App.Core.Implementation
                     if (person != null)
                     {
                         JObject personJsonObject = JObject.FromObject(person);
-                        _logger.LogInformation($"Started prefill from {DSF_KEY}");
+                        _logger.LogInformation($"Started prefill from {_dsfKey}");
                         LoopThroughDictionaryAndAssignValuesToDataModel(
                             SwapKeyValuesForPrefill(folkeregisterPrefill),
                             personJsonObject,
@@ -190,7 +190,7 @@ namespace Altinn.App.Core.Implementation
                     }
                     else
                     {
-                        string errorMessage = $"Could not  prefill from {DSF_KEY}, person is not defined.";
+                        string errorMessage = $"Could not  prefill from {_dsfKey}, person is not defined.";
                         _logger.LogError(errorMessage);
                     }
                 }
@@ -231,7 +231,7 @@ namespace Altinn.App.Core.Implementation
                 object? propertyValue = property.GetValue(currentObject, null);
                 if (isLastKey)
                 {
-                    if (propertyValue == null || allowOverwrite)
+                    if (propertyValue == null || _allowOverwrite)
                     {
                         ArgumentNullException.ThrowIfNull(value);
 

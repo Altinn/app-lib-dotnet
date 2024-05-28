@@ -17,10 +17,10 @@ namespace Altinn.App.Core.Features.DataLists
         /// </summary>
         public DataListsFactory(IEnumerable<IDataListProvider> dataListProviders)
         {
-            DataListProviders = dataListProviders;
+            _dataListProviders = dataListProviders;
         }
 
-        private IEnumerable<IDataListProvider> DataListProviders { get; }
+        private IEnumerable<IDataListProvider> _dataListProviders { get; }
 
         /// <summary>
         /// Finds the implementation of IDataListsProvider based on the options id
@@ -29,7 +29,7 @@ namespace Altinn.App.Core.Features.DataLists
         /// <param name="listId">Id matching the options requested.</param>
         public IDataListProvider GetDataListProvider(string listId)
         {
-            foreach (var dataListProvider in DataListProviders)
+            foreach (var dataListProvider in _dataListProviders)
             {
                 if (dataListProvider.Id.ToLower().Equals(listId.ToLower()))
                 {

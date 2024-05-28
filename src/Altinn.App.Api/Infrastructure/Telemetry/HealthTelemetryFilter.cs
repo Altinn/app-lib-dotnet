@@ -12,14 +12,14 @@ namespace Altinn.App.Api.Infrastructure.Telemetry
     [ExcludeFromCodeCoverage]
     public class HealthTelemetryFilter : ITelemetryProcessor
     {
-        private ITelemetryProcessor Next { get; set; }
+        private ITelemetryProcessor _next { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HealthTelemetryFilter"/> class.
         /// </summary>
         public HealthTelemetryFilter(ITelemetryProcessor next)
         {
-            Next = next;
+            _next = next;
         }
 
         /// <inheritdoc/>
@@ -30,7 +30,7 @@ namespace Altinn.App.Api.Infrastructure.Telemetry
                 return;
             }
 
-            Next.Process(item);
+            _next.Process(item);
         }
 
         private static bool ExcludeItemTelemetry(ITelemetry item)

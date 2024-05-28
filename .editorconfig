@@ -16,50 +16,61 @@ dotnet_separate_import_directive_groups = false
 
 #### Naming styles ####
 
-# Naming rules
-
-dotnet_naming_rule.interface_should_be_begins_with_i.severity = suggestion
-dotnet_naming_rule.interface_should_be_begins_with_i.symbols = interface
-dotnet_naming_rule.interface_should_be_begins_with_i.style = begins_with_i
-
-dotnet_naming_rule.types_should_be_pascal_case.severity = suggestion
-dotnet_naming_rule.types_should_be_pascal_case.symbols = types
-dotnet_naming_rule.types_should_be_pascal_case.style = pascal_case
-
-dotnet_naming_rule.non_field_members_should_be_pascal_case.severity = suggestion
-dotnet_naming_rule.non_field_members_should_be_pascal_case.symbols = non_field_members
-dotnet_naming_rule.non_field_members_should_be_pascal_case.style = pascal_case
-
-# Symbol specifications
-
+# Interfaces start with 'I'
 dotnet_naming_symbols.interface.applicable_kinds = interface
-dotnet_naming_symbols.interface.applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected
-dotnet_naming_symbols.interface.required_modifiers =
-
-dotnet_naming_symbols.types.applicable_kinds = class, struct, interface, enum
-dotnet_naming_symbols.types.applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected
-dotnet_naming_symbols.types.required_modifiers =
-
-dotnet_naming_symbols.non_field_members.applicable_kinds = property, event, method
-dotnet_naming_symbols.non_field_members.applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected
-dotnet_naming_symbols.non_field_members.required_modifiers =
-
-# Naming styles
-
 dotnet_naming_style.begins_with_i.required_prefix = I
 dotnet_naming_style.begins_with_i.required_suffix =
 dotnet_naming_style.begins_with_i.word_separator =
 dotnet_naming_style.begins_with_i.capitalization = pascal_case
+dotnet_naming_rule.interface_should_be_begins_with_i.severity = warning
+dotnet_naming_rule.interface_should_be_begins_with_i.symbols = interface
+dotnet_naming_rule.interface_should_be_begins_with_i.style = begins_with_i
+
+# Types should be PascalCase
+dotnet_naming_symbols.types.applicable_kinds = class, struct, interface, enum, namespace, delegate
+dotnet_naming_rule.types_should_be_pascal_case.severity = warning
+dotnet_naming_rule.types_should_be_pascal_case.symbols = types
+dotnet_naming_rule.types_should_be_pascal_case.style = pascal_case
+
+# Non-private members should be PascalCase
+dotnet_naming_symbols.non_private_members.applicable_kinds = property, event, field
+dotnet_naming_symbols.non_private_members.applicable_accessibilities = public, internal, protected, protected_internal
+dotnet_naming_rule.non_private_members_should_be_pascal_case.severity = warning
+dotnet_naming_rule.non_private_members_should_be_pascal_case.symbols = non_private_members
+dotnet_naming_rule.non_private_members_should_be_pascal_case.style = pascal_case
+
+# All methods should be PascalCase
+dotnet_naming_symbols.methods.applicable_kinds = method, local_function
+dotnet_naming_rule.methods_should_be_pascal_case.severity = warning
+dotnet_naming_rule.methods_should_be_pascal_case.symbols = methods
+dotnet_naming_rule.methods_should_be_pascal_case.style = pascal_case
+
+# Private member should be '_' prefixed and camelCase
+dotnet_naming_symbols.private_members.applicable_kinds = property, event, field
+dotnet_naming_symbols.private_members.applicable_accessibilities = private, private_protected
+dotnet_naming_style.__prefixed_camel_case.required_prefix = _
+dotnet_naming_style.__prefixed_camel_case.required_suffix =
+dotnet_naming_style.__prefixed_camel_case.word_separator =
+dotnet_naming_style.__prefixed_camel_case.capitalization = camel_case
+dotnet_naming_rule.private_members_should_be___prefixed_camel_case.severity = warning
+dotnet_naming_rule.private_members_should_be___prefixed_camel_case.symbols = private_members
+dotnet_naming_rule.private_members_should_be___prefixed_camel_case.style = __prefixed_camel_case
+
+# Const fields should be PascalCase
+dotnet_naming_rule.constant_fields_should_be_pascal_case.severity = warning
+dotnet_naming_rule.constant_fields_should_be_pascal_case.symbols  = constant_fields
+dotnet_naming_rule.constant_fields_should_be_pascal_case.style    = pascal_case
+dotnet_naming_symbols.constant_fields.applicable_kinds   = field
+dotnet_naming_symbols.constant_fields.required_modifiers = const
+
+
+# General naming styles
 
 dotnet_naming_style.pascal_case.required_prefix =
 dotnet_naming_style.pascal_case.required_suffix =
 dotnet_naming_style.pascal_case.word_separator =
 dotnet_naming_style.pascal_case.capitalization = pascal_case
 
-dotnet_naming_style.pascal_case.required_prefix =
-dotnet_naming_style.pascal_case.required_suffix =
-dotnet_naming_style.pascal_case.word_separator =
-dotnet_naming_style.pascal_case.capitalization = pascal_case
 dotnet_style_coalesce_expression = true:suggestion
 dotnet_style_null_propagation = true:suggestion
 dotnet_style_prefer_is_null_check_over_reference_equality_method = true:suggestion
@@ -89,6 +100,9 @@ csharp_style_expression_bodied_lambdas = true:silent
 csharp_style_expression_bodied_local_functions = false:silent
 csharp_indent_labels = one_less_than_current
 csharp_style_prefer_primary_constructors = false:suggestion
+
+# Naming rule violation
+dotnet_diagnostic.IDE1006.severity = error
 
 # CA1848: Use the LoggerMessage delegates
 dotnet_diagnostic.CA1848.severity = none

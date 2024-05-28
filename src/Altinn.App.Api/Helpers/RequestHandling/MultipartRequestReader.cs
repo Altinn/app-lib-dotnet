@@ -9,7 +9,7 @@ namespace Altinn.App.Api.Helpers.RequestHandling
     /// </summary>
     public class MultipartRequestReader
     {
-        private readonly HttpRequest request;
+        private readonly HttpRequest _request;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MultipartRequestReader"/> class with a <see cref="HttpRequest"/>.
@@ -17,7 +17,7 @@ namespace Altinn.App.Api.Helpers.RequestHandling
         /// <param name="request">The <see cref="HttpRequest"/> to be read.</param>
         public MultipartRequestReader(HttpRequest request)
         {
-            this.request = request;
+            _request = request;
             Parts = new List<RequestPart>();
             Errors = new List<string>();
         }
@@ -29,8 +29,8 @@ namespace Altinn.App.Api.Helpers.RequestHandling
         {
             get
             {
-                return !string.IsNullOrEmpty(request.ContentType)
-                    && request.ContentType.Contains("multipart/", StringComparison.OrdinalIgnoreCase);
+                return !string.IsNullOrEmpty(_request.ContentType)
+                    && _request.ContentType.Contains("multipart/", StringComparison.OrdinalIgnoreCase);
             }
         }
 
@@ -55,7 +55,7 @@ namespace Altinn.App.Api.Helpers.RequestHandling
                 int partCounter = 0;
                 try
                 {
-                    MultipartReader reader = new MultipartReader(GetBoundary(), request.Body);
+                    MultipartReader reader = new MultipartReader(GetBoundary(), _request.Body);
 
                     MultipartSection? section;
                     while ((section = await reader.ReadNextSectionAsync()) != null)
@@ -122,16 +122,16 @@ namespace Altinn.App.Api.Helpers.RequestHandling
             else
             {
                 // create part of content
-                if (request.ContentType != null)
+                if (_request.ContentType != null)
                 {
-                    Parts.Add(new RequestPart() { ContentType = request.ContentType, Stream = request.Body });
+                    Parts.Add(new RequestPart() { ContentType = _request.ContentType, Stream = _request.Body });
                 }
             }
         }
 
         private string GetBoundary()
         {
-            MediaTypeHeaderValue mediaType = MediaTypeHeaderValue.Parse(request.ContentType);
+            MediaTypeHeaderValue mediaType = MediaTypeHeaderValue.Parse(_request.ContentType);
             return mediaType.Boundary.Value?.Trim('"')
                 ?? throw new Exception("Could not retrieve boundary value from Content-Type header");
         }
