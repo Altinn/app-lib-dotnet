@@ -5,12 +5,15 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Altinn.App.Analyzers;
 using Buildalyzer;
 using Buildalyzer.Workspaces;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Text;
 
 namespace Altinn.App.Benchmarks.Analyzers;
 
@@ -21,6 +24,9 @@ public class AnalyzerBenchmarks
     private Project _project;
     private CompilationWithAnalyzersOptions _options;
     private ImmutableArray<DiagnosticAnalyzer> _analyzers;
+
+    [Params(false, true)]
+    public bool UseAdditionalFiles { get; set; }
 
     [GlobalSetup]
     public void Setup()
@@ -34,13 +40,20 @@ public class AnalyzerBenchmarks
         var solution = _workspace.CurrentSolution;
         _project = solution.Projects.Single(p => p.Name == "App");
 
+        var additionalFiles = ImmutableArray.CreateRange<AdditionalText>(
+            [
+                new TestAdditionalText(Path.Combine(projectDir, "config", "applicationmetadata.json")),
+                new TestAdditionalText(Path.Combine(projectDir, "ui", "layout-sets.json")),
+            ]
+        );
+
         var globalOptions = new Dictionary<string, string>()
         {
             ["build_property.projectdir"] = projectDir
         }.ToImmutableDictionary();
         _options = new CompilationWithAnalyzersOptions(
             new AnalyzerOptions(
-                [],
+                UseAdditionalFiles ? additionalFiles : [],
                 new TestOptionsProvider(
                     ImmutableDictionary<object, AnalyzerConfigOptions>.Empty,
                     new TestAnalyzerConfigOptions(globalOptions)
@@ -69,7 +82,7 @@ public class AnalyzerBenchmarks
         {
             this.SummaryStyle = SummaryStyle.Default.WithRatioStyle(RatioStyle.Trend);
             this.AddDiagnoser(MemoryDiagnoser.Default);
-            this.AddDiagnoser(new DotTraceDiagnoser());
+            // this.AddDiagnoser(new DotTraceDiagnoser());
             this.AddColumn(RankColumn.Arabic);
             this.Orderer = new DefaultOrderer(SummaryOrderPolicy.SlowestToFastest, MethodOrderPolicy.Declared);
         }
@@ -144,5 +157,21 @@ public class AnalyzerBenchmarks
             Options.TryGetValue(key, out value);
 
         public override IEnumerable<string> Keys => Options.Keys;
+    }
+
+    private sealed class TestAdditionalText : AdditionalText
+    {
+        private readonly string _path;
+        private readonly SourceText _sourceText;
+
+        public TestAdditionalText(string path)
+        {
+            _path = path;
+            _sourceText = SourceText.From(File.ReadAllText(path, Encoding.UTF8), Encoding.UTF8);
+        }
+
+        public override string Path => _path;
+
+        public override SourceText GetText(CancellationToken cancellationToken = default) => _sourceText;
     }
 }

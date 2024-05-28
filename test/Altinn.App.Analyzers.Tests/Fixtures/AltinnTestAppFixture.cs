@@ -1,10 +1,12 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using Buildalyzer;
 using Buildalyzer.Workspaces;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Text;
 using Xunit.Abstractions;
 
 namespace Altinn.App.Analyzers.Tests.Fixtures;
@@ -90,6 +92,7 @@ public sealed partial class AltinnTestAppFixture : IDisposable
 
     public async Task<CompilationWithAnalyzers> GetCompilation(
         DiagnosticAnalyzer analyzer,
+        bool includeAdditionalFiles,
         CancellationToken cancellationToken
     )
     {
@@ -102,14 +105,21 @@ public sealed partial class AltinnTestAppFixture : IDisposable
         {
             ["build_property.projectdir"] = _projectDir
         }.ToImmutableDictionary();
+
+        var additionalFiles = ImmutableArray.CreateRange<AdditionalText>(
+            [new TestAdditionalText(Content.ApplicationMetadata), new TestAdditionalText(Content.LayoutSets),]
+        );
+
+        var analyzerOptions = new AnalyzerOptions(
+            includeAdditionalFiles ? additionalFiles : [],
+            new TestOptionsProvider(
+                ImmutableDictionary<object, AnalyzerConfigOptions>.Empty,
+                new TestAnalyzerConfigOptions(globalOptions)
+            )
+        );
+
         var options = new CompilationWithAnalyzersOptions(
-            new AnalyzerOptions(
-                [],
-                new TestOptionsProvider(
-                    ImmutableDictionary<object, AnalyzerConfigOptions>.Empty,
-                    new TestAnalyzerConfigOptions(globalOptions)
-                )
-            ),
+            analyzerOptions,
             static (ex, analyzer, diagnostic) => Assert.Fail($"Analyzer exception due to {diagnostic.Id}: {ex}"),
             concurrentAnalysis: true,
             logAnalyzerExecutionTime: true
@@ -119,6 +129,14 @@ public sealed partial class AltinnTestAppFixture : IDisposable
 
         Assert.NotNull(compilationWithAnalyzers);
         return compilationWithAnalyzers;
+    }
+
+    private sealed class TestAdditionalText(DocumentSelector selector) : AdditionalText
+    {
+        public override string Path => selector.FilePath;
+
+        public override SourceText? GetText(CancellationToken cancellationToken = default) =>
+            SourceText.From(File.ReadAllText(selector.FilePath, Encoding.UTF8), Encoding.UTF8);
     }
 
     public void Dispose()

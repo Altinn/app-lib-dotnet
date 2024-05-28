@@ -1,11 +1,11 @@
 ﻿[
   {
-    Id: ALTINN005,
+    Id: ALTINN0013,
     Title: Data type class reference could not be found,
     Severity: Warning,
     WarningLevel: 1,
     Location: ExternalFile({CurrentDirectory}App/config/applicationmetadata.json@28:22),
-    HelpLink: https://docs.altinn.studio/app/development/analysis/rules/ALTINN005,
+    HelpLink: https://docs.altinn.studio/app/development/analysis/rules/ALTINN0013,
     MessageFormat: Class reference '{0}' for data type '{1}' could not be found,
     Message: Class reference 'Altinn.App.Models.model.model' for data type 'model' could not be found,
     Category: Metadata
