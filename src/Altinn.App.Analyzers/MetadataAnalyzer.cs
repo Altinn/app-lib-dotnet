@@ -1,16 +1,71 @@
+using System.Diagnostics.CodeAnalysis;
+using Altinn.App.Analyzers.ApplicationMetadata;
+using Altinn.App.Analyzers.Json;
+using Altinn.App.Analyzers.Layouts;
 using Microsoft.CodeAnalysis.Text;
-using Newtonsoft.Json;
 
 namespace Altinn.App.Analyzers;
 
-internal readonly record struct MetadataAnalyzerContext(
-    CompilationAnalysisContext CompilationAnalysisContext,
-    string ProjectDir,
-    Action? OnApplicationMetadataReadBefore,
-    Action? OnApplicationMetadataDeserializationBefore
-)
+internal readonly record struct MetadataAnalyzerContext
 {
-    public void ReportDiagnostic(Diagnostic diagnostic) => CompilationAnalysisContext.ReportDiagnostic(diagnostic);
+    private readonly Action<Diagnostic> _reportDiagnostic;
+    private readonly MetadataAnalyzer _analyzer;
+
+    public CancellationToken CancellationToken { get; }
+
+    public string ProjectDir { get; }
+
+    public Compilation Compilation { get; }
+
+    public AdditionalText? AdditionalFile { get; }
+
+    public ImmutableArray<AdditionalText> AdditionalFiles { get; }
+
+    public Action? OnCompilationBefore => _analyzer.OnCompilationBefore;
+    public Action? OnApplicationMetadataReadBefore => _analyzer.OnApplicationMetadataReadBefore;
+    public Action? OnApplicationMetadataDeserializationBefore => _analyzer.OnApplicationMetadataDeserializationBefore;
+    public Action? OnLayoutSetsReadBefore => _analyzer.OnLayoutSetsReadBefore;
+    public Action? OnLayoutSetsDeserializationBefore => _analyzer.OnLayoutSetsDeserializationBefore;
+
+    internal MetadataAnalyzerContext(
+        CompilationAnalysisContext compilationAnalysisContext,
+        string projectDir,
+        MetadataAnalyzer analyzer
+    )
+    {
+        _reportDiagnostic = compilationAnalysisContext.ReportDiagnostic;
+        ProjectDir = projectDir;
+        Compilation = compilationAnalysisContext.Compilation;
+        CancellationToken = compilationAnalysisContext.CancellationToken;
+        AdditionalFiles = compilationAnalysisContext.Options.AdditionalFiles;
+        _analyzer = analyzer;
+    }
+
+    internal MetadataAnalyzerContext(
+        AdditionalFileAnalysisContext additionalFileAnalysisContext,
+        AdditionalText additionalFile,
+        string projectDir,
+        MetadataAnalyzer analyzer
+    )
+    {
+        _reportDiagnostic = additionalFileAnalysisContext.ReportDiagnostic;
+        AdditionalFile = additionalFile;
+        AdditionalFiles = additionalFileAnalysisContext.Options.AdditionalFiles;
+        ProjectDir = projectDir;
+        Compilation = additionalFileAnalysisContext.Compilation;
+        CancellationToken = additionalFileAnalysisContext.CancellationToken;
+        _analyzer = analyzer;
+    }
+
+    public void ReportDiagnostic(Diagnostic diagnostic) => _reportDiagnostic(diagnostic);
+
+    public AdditionalText? GetAdditionlFileEndingWithPath(string path)
+    {
+        if (AdditionalFile is not null && AdditionalFile.Path.EndsWith(path, StringComparison.Ordinal))
+            return AdditionalFile;
+
+        return AdditionalFiles.FirstOrDefault(f => f.Path.EndsWith(path, StringComparison.Ordinal));
+    }
 }
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -21,23 +76,75 @@ public sealed class MetadataAnalyzer : DiagnosticAnalyzer
     public Action? OnCompilationBefore { get; set; }
     public Action? OnApplicationMetadataReadBefore { get; set; }
     public Action? OnApplicationMetadataDeserializationBefore { get; set; }
+    public Action? OnLayoutSetsReadBefore { get; set; }
+    public Action? OnLayoutSetsDeserializationBefore { get; set; }
 
     public override void Initialize(AnalysisContext context)
     {
         var configFlags = GeneratedCodeAnalysisFlags.None;
         context.ConfigureGeneratedCodeAnalysis(configFlags);
         context.EnableConcurrentExecution();
+
         context.RegisterCompilationAction(OnCompilation);
+        context.RegisterAdditionalFileAction(OnAdditionalFileAction);
+    }
+
+    private bool TryGetProjectDir(
+        AnalyzerConfigOptionsProvider optionsProvider,
+        [NotNullWhen(true)] out string? projectDir
+    )
+    {
+        var globalOptions = optionsProvider.GlobalOptions;
+        return globalOptions.TryGetValue("build_property.projectdir", out projectDir);
+    }
+
+    private static readonly string[] _interestingFiles =
+    [
+        ApplicationMetadataFileReader.RelativeFilePath,
+        LayoutSetsFileReader.RelativeFilePath,
+    ];
+
+    private void OnAdditionalFileAction(AdditionalFileAnalysisContext additionalFileAnalysisContext)
+    {
+        try
+        {
+            var file = additionalFileAnalysisContext.AdditionalFile;
+            if (Array.Exists(_interestingFiles, f => file.Path.EndsWith(f, StringComparison.Ordinal)))
+            {
+                var optionsProvider = additionalFileAnalysisContext.Options.AnalyzerConfigOptionsProvider;
+                if (!TryGetProjectDir(optionsProvider, out var projectDir))
+                {
+                    additionalFileAnalysisContext.ReportDiagnostic(
+                        Diagnostic.Create(Diagnostics.ProjectNotFound, Location.None)
+                    );
+                    return;
+                }
+
+                var context = new MetadataAnalyzerContext(additionalFileAnalysisContext, file, projectDir, this);
+
+                AnalyzeApplicationMetadata(in context);
+            }
+        }
+        catch (Exception ex)
+        {
+            if (ex is OperationCanceledException)
+                return;
+            additionalFileAnalysisContext.ReportDiagnostic(
+                Diagnostic.Create(Diagnostics.UnknownError, Location.None, ex.Message, ex.StackTrace)
+            );
+        }
     }
 
     private void OnCompilation(CompilationAnalysisContext compilationAnalysisContext)
     {
+        if (compilationAnalysisContext.Options.AdditionalFiles.Length != 0)
+            return;
         try
         {
             OnCompilationBefore?.Invoke();
 
-            var globalOptions = compilationAnalysisContext.Options.AnalyzerConfigOptionsProvider.GlobalOptions;
-            if (!globalOptions.TryGetValue("build_property.projectdir", out var projectDir))
+            var optionsProvider = compilationAnalysisContext.Options.AnalyzerConfigOptionsProvider;
+            if (!TryGetProjectDir(optionsProvider, out var projectDir))
             {
                 compilationAnalysisContext.ReportDiagnostic(
                     Diagnostic.Create(Diagnostics.ProjectNotFound, Location.None)
@@ -45,17 +152,14 @@ public sealed class MetadataAnalyzer : DiagnosticAnalyzer
                 return;
             }
 
-            var context = new MetadataAnalyzerContext(
-                compilationAnalysisContext,
-                projectDir,
-                OnApplicationMetadataReadBefore,
-                OnApplicationMetadataDeserializationBefore
-            );
+            var context = new MetadataAnalyzerContext(compilationAnalysisContext, projectDir, this);
 
             AnalyzeApplicationMetadata(in context);
         }
         catch (Exception ex)
         {
+            if (ex is OperationCanceledException)
+                return;
             compilationAnalysisContext.ReportDiagnostic(
                 Diagnostic.Create(Diagnostics.UnknownError, Location.None, ex.Message, ex.StackTrace)
             );
@@ -72,13 +176,13 @@ public sealed class MetadataAnalyzer : DiagnosticAnalyzer
                 break;
             case ApplicationMetadataResult.FileNotFound result:
                 context.ReportDiagnostic(
-                    Diagnostic.Create(Diagnostics.ApplicationMetadataFileNotFound, Location.None, result.FilePath)
+                    Diagnostic.Create(Diagnostics.ApplicationMetadata.FileNotFound, Location.None, result.FilePath)
                 );
                 break;
             case ApplicationMetadataResult.CouldNotReadFile result:
                 context.ReportDiagnostic(
                     Diagnostic.Create(
-                        Diagnostics.ApplicationMetadataFileNotReadable,
+                        Diagnostics.ApplicationMetadata.FileNotReadable,
                         GetLocation(result.FilePath),
                         result.Exception.Message,
                         result.Exception.StackTrace
@@ -88,12 +192,24 @@ public sealed class MetadataAnalyzer : DiagnosticAnalyzer
             case ApplicationMetadataResult.CouldNotParse result:
                 context.ReportDiagnostic(
                     Diagnostic.Create(
-                        Diagnostics.FailedToParseApplicationMetadata,
+                        Diagnostics.ApplicationMetadata.ParsingFailure,
                         GetLocation(result.FilePath, result.SourceText),
                         result.Exception.Message,
                         result.Exception.StackTrace
                     )
                 );
+                break;
+            case ApplicationMetadataResult.CouldNotParseField result:
+                context.ReportDiagnostic(
+                    Diagnostic.Create(
+                        Diagnostics.ApplicationMetadata.ParsingFailure,
+                        GetLocation(result.FilePath, result.Token, result.SourceText),
+                        result.Token.PropertyName,
+                        "field"
+                    )
+                );
+                break;
+            case ApplicationMetadataResult.Cancelled:
                 break;
         }
     }
@@ -103,33 +219,150 @@ public sealed class MetadataAnalyzer : DiagnosticAnalyzer
         ApplicationMetadataResult.Content content
     )
     {
+        if (context.CancellationToken.IsCancellationRequested)
+            return;
+
         var (metadata, sourceText, filePath) = content;
-        var analysisContext = context.CompilationAnalysisContext;
 
         foreach (var dataType in metadata.DataTypes.Value)
         {
-            if (dataType.AppLogic is not ParsedJsonValue<AppLogicInfo> appLogic)
+            if (dataType.AppLogic.Value is not { } appLogic)
                 continue;
 
-            var (classRef, lineInfo) = appLogic.Value.ClassRef;
+            var classRef = appLogic.ClassRef;
 
-            var classRefSymbol = analysisContext.Compilation.GetTypeByMetadataName(classRef);
+            var classRefSymbol = context.Compilation.GetTypeByMetadataName(classRef.Value);
 
             if (classRefSymbol is null)
             {
-                analysisContext.ReportDiagnostic(
+                context.ReportDiagnostic(
                     Diagnostic.Create(
-                        Diagnostics.DataTypeClassRefInvalid,
-                        GetLocation(filePath, classRef, lineInfo, sourceText),
-                        classRef,
+                        Diagnostics.ApplicationMetadata.DataTypeClassRefInvalid,
+                        GetLocation(filePath, classRef, sourceText),
+                        classRef.Value,
                         dataType.Id.Value
                     )
                 );
             }
         }
+
+        AnalyzeLayoutMetadata(in context, content);
     }
 
-    private static void AnalyzeLayoutMetadata(in MetadataAnalyzerContext context) { }
+    private static void AnalyzeLayoutMetadata(
+        in MetadataAnalyzerContext context,
+        ApplicationMetadataResult.Content appMetadataContent
+    )
+    {
+        if (context.CancellationToken.IsCancellationRequested)
+            return;
+
+        var layoutsSetResult = LayoutSetsFileReader.Read(in context);
+
+        switch (layoutsSetResult)
+        {
+            case LayoutSetsResult.Content layoutSetsContent:
+                AnalyzeLayoutSetsContent(in context, appMetadataContent, layoutSetsContent);
+                break;
+            case LayoutSetsResult.FileNotFound result:
+                context.ReportDiagnostic(
+                    Diagnostic.Create(Diagnostics.Layouts.FileNotFound, Location.None, result.FilePath)
+                );
+                break;
+            case LayoutSetsResult.CouldNotReadFile result:
+                context.ReportDiagnostic(
+                    Diagnostic.Create(
+                        Diagnostics.Layouts.FileNotReadable,
+                        GetLocation(result.FilePath),
+                        result.Exception.Message,
+                        result.Exception.StackTrace
+                    )
+                );
+                break;
+            case LayoutSetsResult.CouldNotParse result:
+                context.ReportDiagnostic(
+                    Diagnostic.Create(
+                        Diagnostics.Layouts.ParsingFailure,
+                        GetLocation(result.FilePath, result.SourceText),
+                        result.Exception.Message,
+                        result.Exception.StackTrace
+                    )
+                );
+                break;
+            case LayoutSetsResult.CouldNotParseField result:
+                context.ReportDiagnostic(
+                    Diagnostic.Create(
+                        Diagnostics.Layouts.ParsingFailure,
+                        GetLocation(result.FilePath, result.Token, result.SourceText),
+                        result.Token.PropertyName,
+                        "field"
+                    )
+                );
+                break;
+            case LayoutSetsResult.Cancelled:
+                break;
+        }
+    }
+
+    private static void AnalyzeLayoutSetsContent(
+        in MetadataAnalyzerContext context,
+        ApplicationMetadataResult.Content appMetadataContent,
+        LayoutSetsResult.Content layoutSetsContent
+    )
+    {
+        var layoutSets = layoutSetsContent.Value.Sets.Value;
+
+        var onEntry = appMetadataContent.Value.OnEntry.Value;
+        if (onEntry is not null)
+        {
+            var showLayout = onEntry.Show;
+
+            LayoutSetInfo? foundLayoutSet = null;
+            foreach (var layoutSet in layoutSets)
+            {
+                if (layoutSet.Id.Value.Equals(showLayout.Value, StringComparison.Ordinal))
+                {
+                    foundLayoutSet = layoutSet;
+                }
+            }
+            if (foundLayoutSet is null)
+            {
+                context.ReportDiagnostic(
+                    Diagnostic.Create(
+                        Diagnostics.ApplicationMetadata.OnEntryShowRefInvalid,
+                        GetLocation(appMetadataContent.FilePath, showLayout, appMetadataContent.SourceText),
+                        showLayout.Value
+                    )
+                );
+            }
+        }
+
+        foreach (var layoutSet in layoutSets)
+        {
+            var dataType = layoutSet.DataType.Value;
+
+            DataTypeInfo? foundDataTypeInfo = null;
+            foreach (var dataTypeMetadata in appMetadataContent.Value.DataTypes.Value)
+            {
+                if (dataTypeMetadata.Id.Value.Equals(dataType, StringComparison.Ordinal))
+                {
+                    foundDataTypeInfo = dataTypeMetadata;
+                }
+            }
+
+            if (foundDataTypeInfo is null)
+            {
+                context.ReportDiagnostic(
+                    Diagnostic.Create(
+                        Diagnostics.Layouts.DataTypeRefInvalid,
+                        GetLocation(layoutSetsContent.FilePath, layoutSet.DataType, layoutSetsContent.SourceText),
+                        dataType,
+                        layoutSet.Id.Value
+                    )
+                );
+            }
+        }
+    }
 
     private static Location GetLocation(string file)
     {
@@ -147,13 +380,16 @@ public sealed class MetadataAnalyzer : DiagnosticAnalyzer
         return Location.Create(file, textSpan, lines.GetLinePositionSpan(textSpan));
     }
 
-    private static Location GetLocation(string file, string value, IJsonLineInfo lineInfo, SourceText sourceText)
+    private static Location GetLocation(string file, JsonTokenDescriptor token, SourceText sourceText)
     {
+        if (token.LineNumber is null || token.LinePosition is null)
+            return Location.None;
+
         var lines = sourceText.Lines;
-        var line = lines[lineInfo.LineNumber - 1];
+        var line = lines[token.LineNumber.Value - 1];
         var textSpan = TextSpan.FromBounds(
-            line.Start + lineInfo.LinePosition - value.Length - 1,
-            line.Start + lineInfo.LinePosition - 1
+            line.Start + token.LinePosition.Value - 1,
+            line.Start + token.LinePosition.Value - 1
         );
 
         var lineSpan = lines.GetLinePositionSpan(textSpan);
