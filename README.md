@@ -13,6 +13,10 @@ These libraries support the runtime of Altinn apps by
 * Exposing APIs used by service owners and the [frontend (app-frontend-react)](https://github.com/Altinn/app-frontend-react) of an Altinn app
 * Exposing abstractions to interact with features of Altinn Studio and Altinn 3 Platform services
 
+## Contributing
+
+See [/CONTRIBUTING.md](/CONTRIBUTING.md).
+
 ## Architecture
 
 This template is built using .NET
