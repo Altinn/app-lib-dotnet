@@ -857,7 +857,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
     }
 
     [Fact]
-    public async Task Decimals()
+    public async Task Decimals_Which_Lose_Precision_In_Frontend_Work_For_Subsequent_Patches()
     {
         const decimal number = 2.2556390977443609022556390977m;
         // To simulate what happens in frontend - there is only 64bits
@@ -876,13 +876,11 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
             .Returns(
                 (Instance instance, Guid? dataGuid, object data, object? existingData, string language) =>
                 {
-                    if (data is Skjema skjema)
-                    {
-                        Assert.NotNull(skjema.Melding?.TagWithAttribute);
-                        var attr = skjema.Melding.TagWithAttribute;
-                        if (attr.orid is 0 or 34730)
-                            attr.orid = number;
-                    }
+                    var skjema = data.Should().BeOfType<Skjema>().Which;
+                    var attr = skjema.Melding?.TagWithAttribute;
+                    Assert.NotNull(attr);
+                    if (attr.orid is 0 or 34730)
+                        attr.orid = number;
                     return Task.CompletedTask;
                 }
             );
