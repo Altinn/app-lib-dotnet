@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Encodings.Web;
@@ -853,5 +854,69 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
 
         _dataProcessorMock.Verify();
         _formDataValidatorMock.Verify();
+    }
+
+    [Fact]
+    public async Task Decimals()
+    {
+        const decimal number = 2.2556390977443609022556390977m;
+        // To simulate what happens in frontend - there is only 64bits
+        // i.e. JSON.parse('2.2556390977443609022556390977')
+        var jsNumber = (decimal)JsonValue.Parse(number.ToString(CultureInfo.InvariantCulture))!.GetValue<double>();
+        _dataProcessorMock
+            .Setup(p =>
+                p.ProcessDataWrite(
+                    It.IsAny<Instance>(),
+                    It.IsAny<Guid?>(),
+                    It.IsAny<object>(),
+                    It.IsAny<object?>(),
+                    null
+                )
+            )
+            .Returns(
+                (Instance instance, Guid? dataGuid, object data, object? existingData, string language) =>
+                {
+                    if (data is Skjema skjema)
+                    {
+                        Assert.NotNull(skjema.Melding?.TagWithAttribute);
+                        var attr = skjema.Melding.TagWithAttribute;
+                        if (attr.orid is 0 or 34730)
+                            attr.orid = number;
+                    }
+                    return Task.CompletedTask;
+                }
+            );
+
+        var pointer = JsonPointer.Create("melding", "tag-with-attribute");
+        var patch = new JsonPatch(
+            PatchOperation.Test(pointer, JsonNode.Parse("null")),
+            PatchOperation.Add(pointer, JsonNode.Parse("""{"value": "blah" }""")),
+            PatchOperation.Replace(JsonPointer.Create("melding", "name"), JsonNode.Parse("\"Ola Olsen\""))
+        );
+
+        var (_, _, response) = await CallPatchApi<DataPatchResponse>(patch, null, HttpStatusCode.OK);
+
+        var data = response.NewDataModel.Should().BeOfType<JsonElement>().Which;
+        var tagToken = data.GetProperty("melding").GetProperty("tag-with-attribute");
+        tagToken.ValueKind.Should().Be(JsonValueKind.Object);
+        var tag = tagToken.Deserialize<TagWithAttribute>();
+        Assert.NotNull(tag);
+        tag.orid = jsNumber; // If this was a real app, we would be in JS land, this will reflect the lost precision
+        tag.orid.Should().Be(jsNumber);
+
+        pointer = JsonPointer.Create("melding", "tag-with-attribute", "orid");
+        var verifyPatch = new JsonPatch(
+            PatchOperation.Test(pointer, JsonNode.Parse(tag.orid.ToString(CultureInfo.InvariantCulture))),
+            PatchOperation.Replace(pointer, JsonNode.Parse("1.0"))
+        );
+
+        (_, _, response) = await CallPatchApi<DataPatchResponse>(verifyPatch, null, HttpStatusCode.OK);
+
+        data = response.NewDataModel.Should().BeOfType<JsonElement>().Which;
+        tagToken = data.GetProperty("melding").GetProperty("tag-with-attribute");
+        tagToken.ValueKind.Should().Be(JsonValueKind.Object);
+        var updatedTag = tagToken.Deserialize<TagWithAttribute>();
+        Assert.NotNull(updatedTag);
+        updatedTag.orid.Should().Be(1);
     }
 }

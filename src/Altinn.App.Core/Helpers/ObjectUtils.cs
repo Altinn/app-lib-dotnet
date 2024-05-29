@@ -148,6 +148,18 @@ public static class ObjectUtils
                 PrepareModelForXmlStorage(value, depth - 1);
 
                 SetToDefaultIfShouldSerializeFalse(model, prop, methodInfos);
+
+                if (value is decimal decimalValue)
+                {
+                    // This will make sure we only store double precision values in the database
+                    // since frontend/JS doesn't have anything else than 64bit numbers,
+                    // this will make sure that what we store is also what the frontend sees.
+                    var doublePrecisionValue = (decimal)(double)decimalValue;
+                    if (doublePrecisionValue != decimalValue)
+                    {
+                        prop.SetValue(model, doublePrecisionValue);
+                    }
+                }
             }
         }
     }
