@@ -10,6 +10,7 @@ c55ab47f969a67a054b70ee7c82201b2e1f17388 # Altinn app platform services renaming
 9a75afa100f7635c18f82f5c821e281fb6495e2d # Remove BOM on C# files now that .editorconfig states that BOM should not be used (#620) - 137 files changed
 7f562dd57fe7c0299d29f2312b7a84ef170fca78 # Add pipeline job to verify clean dotnet format (#455) - 186 files changed
 5fa3778bd09ed608cdc563e8ee15ff1b9de31201 # Csharpier for more consistent formatting (#533) - 471 files changed
+f1ed9343c6345cf3f72bd3b9b38946176c377013 # Misc project cleanup - props, editorconfig, refactorings, docs (#661) - 482 files changed
 
 # Optional ignores. Stuff that absolutely do make code changes, but make a lot of code changes (which you might want
 # to ignore, depending on what you're looking for). Comment these in if you need them to be ignored:
