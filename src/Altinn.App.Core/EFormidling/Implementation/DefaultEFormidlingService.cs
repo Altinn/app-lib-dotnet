@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.EFormidling.Interface;
@@ -125,6 +126,11 @@ public class DefaultEFormidlingService : IEFormidlingService
         Instance instance
     )
     {
+        if (_appSettings is null)
+        {
+            throw new Exception("AppSettings not initialized");
+        }
+
         DateTime completedTime = DateTime.UtcNow;
 
         Sender digdirSender = new Sender
@@ -211,7 +217,8 @@ public class DefaultEFormidlingService : IEFormidlingService
                 new Guid(dataElement.Id)
             );
 
-            bool successful = await _eFormidlingClient!.UploadAttachment(
+            Debug.Assert(_eFormidlingClient is not null, "This is validated before use");
+            bool successful = await _eFormidlingClient.UploadAttachment(
                 stream,
                 instanceGuid.ToString(),
                 fileName,

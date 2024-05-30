@@ -1,4 +1,3 @@
-#nullable enable
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.EFormidling.Interface;
 using Altinn.App.Core.Internal.App;
@@ -10,7 +9,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
-using Xunit;
 
 namespace Altinn.App.Core.Tests.Internal.Process.ServiceTasks;
 

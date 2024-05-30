@@ -1,5 +1,4 @@
-﻿using System.Security.Claims;
-using System.Xml.Serialization;
+using System.Security.Claims;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
@@ -7,16 +6,12 @@ using Altinn.App.Core.Helpers.Extensions;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Profile;
-using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Profile.Models;
-using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
-using Microsoft.IdentityModel.Tokens;
-using Newtonsoft.Json;
 
 namespace Altinn.App.Core.Internal.Pdf;
 
@@ -33,7 +28,7 @@ public class PdfService : IPdfService
     private readonly IPdfGeneratorClient _pdfGeneratorClient;
     private readonly PdfGeneratorSettings _pdfGeneratorSettings;
     private readonly GeneralSettings _generalSettings;
-
+    private readonly Telemetry? _telemetry;
     private const string PdfElementType = "ref-data-as-pdf";
     private const string PdfContentType = "application/pdf";
 
@@ -47,6 +42,7 @@ public class PdfService : IPdfService
     /// <param name="pdfGeneratorClient">PDF generator client for the experimental PDF generator service</param>
     /// <param name="pdfGeneratorSettings">PDF generator related settings.</param>
     /// <param name="generalSettings">The app general settings.</param>
+    /// <param name="telemetry">Telemetry for metrics and traces.</param>
     public PdfService(
         IAppResources appResources,
         IDataClient dataClient,
@@ -54,7 +50,8 @@ public class PdfService : IPdfService
         IProfileClient profileClient,
         IPdfGeneratorClient pdfGeneratorClient,
         IOptions<PdfGeneratorSettings> pdfGeneratorSettings,
-        IOptions<GeneralSettings> generalSettings
+        IOptions<GeneralSettings> generalSettings,
+        Telemetry? telemetry = null
     )
     {
         _resourceService = appResources;
@@ -64,16 +61,18 @@ public class PdfService : IPdfService
         _pdfGeneratorClient = pdfGeneratorClient;
         _pdfGeneratorSettings = pdfGeneratorSettings.Value;
         _generalSettings = generalSettings.Value;
+        _telemetry = telemetry;
     }
 
     /// <inheritdoc/>
     public async Task GenerateAndStorePdf(Instance instance, string taskId, CancellationToken ct)
     {
+        using var activity = _telemetry?.StartGenerateAndStorePdfActivity(instance, taskId);
         string language = GetOverriddenLanguage();
         // Avoid a costly call if the language is allready overriden by the user
-        language = language.IsNullOrEmpty() ? await GetLanguage() : language;
+        language = string.IsNullOrEmpty(language) ? await GetLanguage() : language;
 
-        var pdfContent = await GeneratePdfContent(instance, taskId, ct, language);
+        var pdfContent = await GeneratePdfContent(instance, taskId, language, ct);
 
         var appIdentifier = new AppIdentifier(instance);
 
@@ -85,18 +84,19 @@ public class PdfService : IPdfService
     /// <inheritdoc/>
     public async Task<Stream> GeneratePdf(Instance instance, string taskId, CancellationToken ct)
     {
+        using var activity = _telemetry?.StartGeneratePdfActivity(instance, taskId);
         var language = GetOverriddenLanguage();
         // Avoid a costly call if the language is allready overriden by the user
-        language = language.IsNullOrEmpty() ? await GetLanguage() : language;
+        language = string.IsNullOrEmpty(language) ? await GetLanguage() : language;
 
-        return await GeneratePdfContent(instance, taskId, ct, language);
+        return await GeneratePdfContent(instance, taskId, language, ct);
     }
 
     private async Task<Stream> GeneratePdfContent(
         Instance instance,
         string taskId,
-        CancellationToken ct,
-        string language
+        string language,
+        CancellationToken ct
     )
     {
         var baseUrl = _generalSettings.FormattedExternalAppBaseUrl(new AppIdentifier(instance));
@@ -137,7 +137,9 @@ public class PdfService : IPdfService
 
         if (userId != null)
         {
-            UserProfile userProfile = await _profileClient.GetUserProfile((int)userId);
+            UserProfile userProfile =
+                await _profileClient.GetUserProfile((int)userId)
+                ?? throw new Exception("Could not get user profile while getting language");
 
             if (!string.IsNullOrEmpty(userProfile.ProfileSettingPreference?.Language))
             {

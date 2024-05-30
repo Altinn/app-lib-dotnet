@@ -22,14 +22,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using Xunit;
 
 namespace Altinn.App.Api.Tests.Controllers;
 
 public class StatelessDataControllerTests
 {
     [Fact]
-    public async void Get_Returns_BadRequest_when_dataType_is_null()
+    public async Task Get_Returns_BadRequest_when_dataType_is_null()
     {
         // Arrange
         var altinnAppModelMock = new Mock<IAppModel>();
@@ -68,7 +67,7 @@ public class StatelessDataControllerTests
     }
 
     [Fact]
-    public async void Get_Returns_BadRequest_when_appResource_classRef_is_null()
+    public async Task Get_Returns_BadRequest_when_appResource_classRef_is_null()
     {
         // Arrange
         var appModelMock = new Mock<IAppModel>();
@@ -136,7 +135,7 @@ public class StatelessDataControllerTests
     }
 
     [Fact]
-    public async void Get_Returns_BadRequest_when_party_header_count_greater_than_one()
+    public async Task Get_Returns_BadRequest_when_party_header_count_greater_than_one()
     {
         // Arrange
         var factory = new StatelessDataControllerWebApplicationFactory();
@@ -164,7 +163,7 @@ public class StatelessDataControllerTests
     }
 
     [Fact]
-    public async void Get_Returns_Forbidden_when_party_has_no_rights()
+    public async Task Get_Returns_Forbidden_when_party_has_no_rights()
     {
         // Arrange
         var factory = new StatelessDataControllerWebApplicationFactory();
@@ -190,7 +189,7 @@ public class StatelessDataControllerTests
     }
 
     [Fact]
-    public async void Get_Returns_BadRequest_when_instance_owner_is_empty_party_header()
+    public async Task Get_Returns_BadRequest_when_instance_owner_is_empty_party_header()
     {
         // Arrange
         var appModelMock = new Mock<IAppModel>();
@@ -228,7 +227,7 @@ public class StatelessDataControllerTests
     }
 
     [Fact]
-    public async void Get_Returns_BadRequest_when_instance_owner_is_empty_user_in_context()
+    public async Task Get_Returns_BadRequest_when_instance_owner_is_empty_user_in_context()
     {
         // Arrange
         var appModelMock = new Mock<IAppModel>();
@@ -272,7 +271,7 @@ public class StatelessDataControllerTests
     }
 
     [Fact]
-    public async void Get_Returns_Forbidden_when_returned_descision_is_Deny()
+    public async Task Get_Returns_Forbidden_when_returned_descision_is_Deny()
     {
         // Arrange
         var appModelMock = new Mock<IAppModel>();
@@ -332,7 +331,7 @@ public class StatelessDataControllerTests
     }
 
     [Fact]
-    public async void Get_Returns_OK_with_appModel()
+    public async Task Get_Returns_OK_with_appModel()
     {
         // Arrange
         var appModelMock = new Mock<IAppModel>();

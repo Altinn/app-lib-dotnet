@@ -14,7 +14,6 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Altinn.App.Api.Tests.Controllers;
@@ -27,7 +26,7 @@ public class ValidateControllerValidateInstanceTests : ApiTestBase, IClassFixtur
     private static readonly Guid InstanceGuid = new("3102f61d-1446-4ca5-9fed-3c7c7d67249c");
     private static readonly string InstanceId = $"{InstanceOwnerPartyId}/{InstanceGuid}";
     private static readonly Guid DataGuid = new("5240d834-dca6-44d3-b99a-1b7ca9b862af");
-    private static readonly JsonSerializerOptions _jsonSerializerOptions =
+    private static new readonly JsonSerializerOptions _jsonSerializerOptions =
         new()
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,

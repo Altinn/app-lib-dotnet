@@ -1,6 +1,3 @@
-using System.Text.Json.Serialization;
-using Altinn.App.Core.Helpers;
-using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Layout.Components;
 
 namespace Altinn.App.Core.Models.Layout;
@@ -48,7 +45,7 @@ public class LayoutModel
     {
         // Use a stack in order to implement a depth first search
         var nodes = new Stack<BaseComponent>(Pages.Values);
-        while (nodes.Any())
+        while (nodes.Count != 0)
         {
             var node = nodes.Pop();
             yield return node;

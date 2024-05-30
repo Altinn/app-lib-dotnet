@@ -12,7 +12,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Xunit;
 
 namespace Altinn.App.Core.Tests.Features.Validators;
 
@@ -201,6 +200,23 @@ public class ValidationServiceTests : IDisposable
             .Verifiable(hasRelevantChanges is null ? Times.Never : Times.AtLeastOnce);
     }
 
+    private void SourcePropertyIsSet(Dictionary<string, List<ValidationIssue>> result)
+    {
+        Assert.All(result.Values, SourcePropertyIsSet);
+    }
+
+    private void SourcePropertyIsSet(List<ValidationIssue> result)
+    {
+        Assert.All(
+            result,
+            issue =>
+            {
+                Assert.NotNull(issue.Source);
+                Assert.NotEqual("[]", issue.Source);
+            }
+        );
+    }
+
     private void SetupDataClient(MyModel data)
     {
         _dataClientMock
@@ -299,6 +315,7 @@ public class ValidationServiceTests : IDisposable
 
         result.Should().ContainKey("specificValidator").WhoseValue.Should().HaveCount(0);
         result.Should().HaveCount(1);
+        SourcePropertyIsSet(result);
     }
 
     [Fact]
@@ -350,6 +367,7 @@ public class ValidationServiceTests : IDisposable
             .Which.CustomTextKey.Should()
             .Be("AlwaysNameNotOla");
         resultData.Should().HaveCount(2);
+        SourcePropertyIsSet(resultData);
     }
 
     [Fact]
@@ -435,6 +453,7 @@ public class ValidationServiceTests : IDisposable
             .Which.Severity.Should()
             .Be(ValidationIssueSeverity.Error);
         taskResult.Should().HaveCount(6);
+        SourcePropertyIsSet(taskResult);
 
         var elementResult = await validationService.ValidateDataElement(
             DefaultInstance,
@@ -463,6 +482,7 @@ public class ValidationServiceTests : IDisposable
             .Which.Severity.Should()
             .Be(ValidationIssueSeverity.Error);
         elementResult.Should().HaveCount(4);
+        SourcePropertyIsSet(elementResult);
 
         var dataResult = await validationService.ValidateFormData(
             DefaultInstance,
@@ -488,6 +508,7 @@ public class ValidationServiceTests : IDisposable
             .Which.Severity.Should()
             .Be(ValidationIssueSeverity.Error);
         dataResult.Should().HaveCount(2);
+        SourcePropertyIsSet(dataResult);
     }
 
     [Fact]

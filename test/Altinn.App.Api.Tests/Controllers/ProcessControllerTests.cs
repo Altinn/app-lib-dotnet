@@ -13,7 +13,6 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Altinn.App.Api.Tests.Controllers;
@@ -27,7 +26,7 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
     private static readonly Guid InstanceGuid = new("5a2fa5ec-f97c-4816-b57a-dc78a981917e");
     private static readonly string InstanceId = $"{InstanceOwnerPartyId}/{InstanceGuid}";
     private static readonly Guid DataGuid = new("cd691c32-ae36-4555-8aee-0b7054a413e4");
-    private static readonly JsonSerializerOptions _jsonSerializerOptions =
+    private static new readonly JsonSerializerOptions _jsonSerializerOptions =
         new()
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,

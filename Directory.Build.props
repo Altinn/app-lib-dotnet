@@ -1,8 +1,20 @@
 <Project>
-    <ItemGroup>
-        <PackageReference Include="CSharpier.MsBuild" Version="0.28.1">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-        </PackageReference>
-    </ItemGroup>
+  <PropertyGroup Condition="'$(DOTNET_TREATWARNINGSASERRORS)' == 'true' OR '$(CI)' == 'true'">
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisMode>Minimum</AnalysisMode>
+    <Features>strict</Features>
+    <!-- <CodeAnalysisTreatWarningsAsErrors>false</CodeAnalysisTreatWarningsAsErrors> -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CSharpier.MsBuild" Version="0.28.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
 </Project>

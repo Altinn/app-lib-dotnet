@@ -19,7 +19,7 @@ namespace Altinn.App.Core.Models.Layout;
 /// </remarks>
 public class PageComponentConverter : JsonConverter<PageComponent>
 {
-    private static readonly AsyncLocal<string?> PageName = new();
+    private static readonly AsyncLocal<string?> _pageName = new();
 
     /// <summary>
     /// Store pageName to be used for deserialization
@@ -32,15 +32,15 @@ public class PageComponentConverter : JsonConverter<PageComponent>
     /// </remarks>
     public static void SetAsyncLocalPageName(string pageName)
     {
-        PageName.Value = pageName;
+        _pageName.Value = pageName;
     }
 
     /// <inheritdoc />
     public override PageComponent? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         // Try to get pagename from metadata in this.AddPageName
-        var pageName = PageName.Value ?? "UnknownPageName";
-        PageName.Value = null;
+        var pageName = _pageName.Value ?? "UnknownPageName";
+        _pageName.Value = null;
 
         return ReadNotNull(ref reader, pageName, options);
     }
@@ -52,7 +52,9 @@ public class PageComponentConverter : JsonConverter<PageComponent>
     {
         if (reader.TokenType != JsonTokenType.StartObject)
         {
-            throw new JsonException();
+            throw new JsonException(
+                $"Unexpected JSON token type '{reader.TokenType}', expected '{nameof(JsonTokenType.StartObject)}'"
+            );
         }
         PageComponent? page = null;
 
@@ -60,10 +62,13 @@ public class PageComponentConverter : JsonConverter<PageComponent>
         {
             if (reader.TokenType != JsonTokenType.PropertyName)
             {
-                throw new JsonException(); //Think this is impossible. After a JsonTokenType.StartObject, everything should be JsonTokenType.PropertyName
+                // Think this is impossible. After a JsonTokenType.StartObject, everything should be JsonTokenType.PropertyName
+                throw new JsonException(
+                    $"Unexpected JSON token type after StartObject: '{reader.TokenType}', expected '{nameof(JsonTokenType.PropertyName)}'"
+                );
             }
 
-            var propertyName = reader.GetString()!;
+            var propertyName = reader.GetString();
             reader.Read();
             if (propertyName == "data")
             {
@@ -86,7 +91,9 @@ public class PageComponentConverter : JsonConverter<PageComponent>
     {
         if (reader.TokenType != JsonTokenType.StartObject)
         {
-            throw new JsonException();
+            throw new JsonException(
+                $"Unexpected JSON token type '{reader.TokenType}', expected '{nameof(JsonTokenType.StartObject)}'"
+            );
         }
 
         List<BaseComponent>? componentListFlat = null;
@@ -105,10 +112,18 @@ public class PageComponentConverter : JsonConverter<PageComponent>
         {
             if (reader.TokenType != JsonTokenType.PropertyName)
             {
-                throw new JsonException(); //Think this is impossible. After a JsonTokenType.StartObject, everything should be JsonTokenType.PropertyName
+                // Think this is impossible. After a JsonTokenType.StartObject, everything should be JsonTokenType.PropertyName
+                throw new JsonException(
+                    $"Unexpected JSON token type after StartObject: '{reader.TokenType}', expected '{nameof(JsonTokenType.PropertyName)}'"
+                );
             }
 
-            var propertyName = reader.GetString()!;
+            var propertyName =
+                reader.GetString()
+                ?? throw new JsonException(
+                    $"Could not read property name from JSON token with type '{nameof(JsonTokenType.PropertyName)}'"
+                );
+
             reader.Read();
             switch (propertyName.ToLowerInvariant())
             {
@@ -136,7 +151,7 @@ public class PageComponentConverter : JsonConverter<PageComponent>
             throw new JsonException("Missing property \"layout\" on layout page");
         }
 
-        var layout = processLayout(componentListFlat, componentLookup, childToGroupMapping);
+        var layout = ProcessLayout(componentListFlat, componentLookup, childToGroupMapping);
 
         return new PageComponent(pageName, layout, componentLookup, hidden, required, readOnly, additionalProperties);
     }
@@ -157,7 +172,7 @@ public class PageComponentConverter : JsonConverter<PageComponent>
 
         while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
         {
-            var component = ReadComponent(ref reader, options)!;
+            var component = ReadComponent(ref reader, options);
 
             // Add component to the collections
             componentListFlat.Add(component);
@@ -171,7 +186,7 @@ public class PageComponentConverter : JsonConverter<PageComponent>
         return (componentListFlat, componentLookup, childToGroupMapping);
     }
 
-    private static List<BaseComponent> processLayout(
+    private static List<BaseComponent> ProcessLayout(
         List<BaseComponent> componentListFlat,
         Dictionary<string, BaseComponent> componentLookup,
         Dictionary<string, GroupComponent> childToGroupMapping
@@ -203,7 +218,7 @@ public class PageComponentConverter : JsonConverter<PageComponent>
         componentLookup[component.Id] = component;
     }
 
-    private static readonly Regex MultiPageIndexRegex = new Regex(
+    private static readonly Regex _multiPageIndexRegex = new Regex(
         @"^(\d+:)?([^\s:]+)$",
         RegexOptions.None,
         TimeSpan.FromSeconds(1)
@@ -211,7 +226,7 @@ public class PageComponentConverter : JsonConverter<PageComponent>
 
     private static string GetIdWithoutMultiPageIndex(string id)
     {
-        var match = MultiPageIndexRegex.Match(id);
+        var match = _multiPageIndexRegex.Match(id);
         return match.Groups[2].Value;
     }
 
@@ -237,7 +252,9 @@ public class PageComponentConverter : JsonConverter<PageComponent>
     {
         if (reader.TokenType != JsonTokenType.StartObject)
         {
-            throw new JsonException();
+            throw new JsonException(
+                $"Unexpected JSON token type '{reader.TokenType}', expected '{nameof(JsonTokenType.StartObject)}'"
+            );
         }
         string? id = null;
         string? type = null;
@@ -264,10 +281,18 @@ public class PageComponentConverter : JsonConverter<PageComponent>
         {
             if (reader.TokenType != JsonTokenType.PropertyName)
             {
-                throw new JsonException(); // Not possiblie?
+                // Think this is impossible. After a JsonTokenType.StartObject, everything should be JsonTokenType.PropertyName
+                throw new JsonException(
+                    $"Unexpected JSON token type after StartObject: '{reader.TokenType}', expected '{nameof(JsonTokenType.PropertyName)}'"
+                );
             }
 
-            var propertyName = reader.GetString()!;
+            var propertyName =
+                reader.GetString()
+                ?? throw new JsonException(
+                    $"Could not read property name from JSON token with type '{nameof(JsonTokenType.PropertyName)}'"
+                );
+
             reader.Read();
             switch (propertyName.ToLowerInvariant())
             {

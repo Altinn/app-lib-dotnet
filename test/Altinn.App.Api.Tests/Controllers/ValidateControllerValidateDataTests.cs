@@ -10,7 +10,6 @@ using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
-using Xunit;
 
 namespace Altinn.App.Api.Tests.Controllers;
 
@@ -146,7 +145,7 @@ public class TestScenariosData : IEnumerable<object[]>
         List<object[]> testData = new List<object[]>();
         foreach (var d in _data)
         {
-            testData.Add(new object[] { d });
+            testData.Add([d]);
         }
 
         return testData.GetEnumerator();

@@ -3,14 +3,13 @@ using Altinn.App.Core.Features.DataProcessing;
 using Altinn.App.PlatformServices.Tests.Implementation.TestResources;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
-using Xunit;
 
 namespace Altinn.App.PlatformServices.Tests.Features.DataProcessing;
 
 public class NullInstantiationProcessTests
 {
     [Fact]
-    public async void NullInstantiationTest_DataCreation_changes_nothing()
+    public async Task NullInstantiationTest_DataCreation_changes_nothing()
     {
         // Arrange
         var nullInstantiation = new NullInstantiationProcessor();

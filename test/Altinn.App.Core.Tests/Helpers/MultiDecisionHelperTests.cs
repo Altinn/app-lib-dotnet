@@ -4,7 +4,6 @@ using Altinn.App.Core.Helpers;
 using Altinn.Authorization.ABAC.Xacml.JsonProfile;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Altinn.App.Core.Tests.Helpers;
@@ -112,7 +111,7 @@ public class MultiDecisionHelperTests
         };
 
         var actions = new List<string>() { "sign", "reject" };
-        Action act = () => MultiDecisionHelper.CreateMultiDecisionRequest(null, instance, actions);
+        Action act = () => MultiDecisionHelper.CreateMultiDecisionRequest(null!, instance, actions);
         act.Should().Throw<ArgumentNullException>().WithMessage("Value cannot be null. (Parameter 'user')");
     }
 
@@ -170,7 +169,7 @@ public class MultiDecisionHelperTests
             { "complete", false },
             { "lookup", false }
         };
-        Action act = () => MultiDecisionHelper.ValidatePdpMultiDecision(actions, null, GetClaims("501337"));
+        Action act = () => MultiDecisionHelper.ValidatePdpMultiDecision(actions, null!, GetClaims("501337"));
         act.Should().Throw<ArgumentNullException>().WithMessage("Value cannot be null. (Parameter 'results')");
     }
 
@@ -185,7 +184,7 @@ public class MultiDecisionHelperTests
             { "complete", false },
             { "lookup", false }
         };
-        Action act = () => MultiDecisionHelper.ValidatePdpMultiDecision(actions, response, null);
+        Action act = () => MultiDecisionHelper.ValidatePdpMultiDecision(actions, response, null!);
         act.Should().Throw<ArgumentNullException>().WithMessage("Value cannot be null. (Parameter 'user')");
     }
 
@@ -234,6 +233,7 @@ public class MultiDecisionHelperTests
         var xacmlJesonRespons = File.ReadAllText(
             Path.Join("Helpers", "TestData", "MultiDecisionHelper", filename + ".json")
         );
-        return JsonSerializer.Deserialize<List<XacmlJsonResult>>(xacmlJesonRespons);
+        return JsonSerializer.Deserialize<List<XacmlJsonResult>>(xacmlJesonRespons)
+            ?? throw new Exception("Deserialization failed for XacmlJsonRespons");
     }
 }

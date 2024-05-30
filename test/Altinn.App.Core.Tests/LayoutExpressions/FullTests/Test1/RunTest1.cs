@@ -2,7 +2,6 @@
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Internal.Expressions;
 using FluentAssertions;
-using Xunit;
 
 namespace Altinn.App.Core.Tests.LayoutExpressions.FullTests.Test1;
 
@@ -47,7 +46,7 @@ public class RunTest1
             "Test1"
         );
         var hidden = LayoutEvaluator.GetHiddenFieldsForRemoval(state);
-        hidden.Should().BeEquivalentTo(new string[] { "some.data.binding2" });
+        hidden.Should().BeEquivalentTo(["some.data.binding2"]);
     }
 
     [Fact]

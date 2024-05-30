@@ -3,7 +3,6 @@ using Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.Platform.Storage.Interface.Models;
 using Moq;
-using Xunit;
 
 namespace Altinn.App.Core.Tests.Internal.Process.EventHandlers.ProcessTask;
 
@@ -21,7 +20,7 @@ public class StartTaskEventHandlerTests
     }
 
     [Fact]
-    public async Task Execute_handles_no_IProcessTaskStart_injected()
+    public async Task Execute_handles_happy_path()
     {
         StartTaskEventHandler steh = new StartTaskEventHandler(
             _processTaskDataLocker.Object,
