@@ -18,5 +18,3 @@ f1ed9343c6345cf3f72bd3b9b38946176c377013 # Misc project cleanup - props, editorc
 # f30340be522c3d6595ebc3b5a211efda439af126 # Enable nullable annotations on Api and Core.Tests (#447) - 171 files changed
 # d9847039cbb79e1bac307c1cc004ff3d92243c4d # Feature/unittestcleanupapp (#3672) - 111 files changed
 # 590e7751010bb7786f5b492b439100d387689b5f # Chore/90 appbase simplified (#18) - 255 files changed
-
-
