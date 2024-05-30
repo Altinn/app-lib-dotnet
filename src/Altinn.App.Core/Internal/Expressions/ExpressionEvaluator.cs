@@ -58,7 +58,7 @@ public static class ExpressionEvaluator
     public static object? EvaluateExpression(
         LayoutEvaluatorState state,
         Expression expr,
-        ComponentContext context,
+        ComponentContext? context,
         object[]? positionalArguments = null
     )
     {
@@ -72,6 +72,7 @@ public static class ExpressionEvaluator
         }
 
         var args = expr.Args.Select(a => EvaluateExpression(state, a, context, positionalArguments)).ToArray();
+        // ! TODO: should find better ways to deal with nulls here for the next major version
         var ret = expr.Function switch
         {
             ExpressionFunction.dataModel => DataModel(args.First()?.ToString(), context, state),
@@ -105,7 +106,7 @@ public static class ExpressionEvaluator
         return ret;
     }
 
-    private static object? DataModel(string? key, ComponentContext context, LayoutEvaluatorState state)
+    private static object? DataModel(string? key, ComponentContext? context, LayoutEvaluatorState state)
     {
         var data = state.GetModelData(key, context);
 
@@ -118,7 +119,7 @@ public static class ExpressionEvaluator
         };
     }
 
-    private static object? Component(object?[] args, ComponentContext context, LayoutEvaluatorState state)
+    private static object? Component(object?[] args, ComponentContext? context, LayoutEvaluatorState state)
     {
         var componentId = args.First()?.ToString();
         if (componentId is null)
@@ -126,7 +127,7 @@ public static class ExpressionEvaluator
             throw new ArgumentException("Cannot lookup component null");
         }
 
-        if (context.Component is null)
+        if (context?.Component is null)
         {
             throw new ArgumentException("The component expression requires a component context");
         }
@@ -305,7 +306,7 @@ public static class ExpressionEvaluator
                     "1" => true,
                     "0" => false,
                     _
-                        => parseNumber(s, throwException: false) switch
+                        => ParseNumber(s, throwException: false) switch
                         {
                             1 => true,
                             0 => false,
@@ -384,7 +385,7 @@ public static class ExpressionEvaluator
                 => throw new ExpressionEvaluatorTypeErrorException(
                     $"Expected number, got value {(ab ? "true" : "false")}"
                 ),
-            string s => parseNumber(s),
+            string s => ParseNumber(s),
             IConvertible c => Convert.ToDouble(c),
             _ => null
         };
@@ -412,11 +413,11 @@ public static class ExpressionEvaluator
         );
     }
 
-    private static readonly Regex numberRegex = new Regex(@"^-?\d+(\.\d+)?$");
+    private static readonly Regex _numberRegex = new Regex(@"^-?\d+(\.\d+)?$");
 
-    private static double? parseNumber(string s, bool throwException = true)
+    private static double? ParseNumber(string s, bool throwException = true)
     {
-        if (numberRegex.IsMatch(s) && double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var d))
+        if (_numberRegex.IsMatch(s) && double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var d))
         {
             return d;
         }

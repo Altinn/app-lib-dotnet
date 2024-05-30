@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Security.Claims;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
@@ -5,6 +6,7 @@ using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
+using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
@@ -25,6 +27,8 @@ public class ProcessEngine : IProcessEngine
     private readonly IProcessEventHandlerDelegator _processEventHandlerDelegator;
     private readonly IProcessEventDispatcher _processEventDispatcher;
     private readonly UserActionService _userActionService;
+    private readonly Telemetry? _telemetry;
+    private readonly IProcessTaskCleaner _processTaskCleaner;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessEngine"/> class
@@ -32,16 +36,20 @@ public class ProcessEngine : IProcessEngine
     /// <param name="processReader">Process reader service</param>
     /// <param name="profileClient">The profile service</param>
     /// <param name="processNavigator">The process navigator</param>
-    /// <param name="processEventsDelegator"></param>
+    /// <param name="processEventsDelegator">The process events delegator</param>
     /// <param name="processEventDispatcher">The process event dispatcher</param>
+    /// <param name="processTaskCleaner">The process task cleaner</param>
     /// <param name="userActionService">The action handler factory</param>
+    /// <param name="telemetry">The telemetry service</param>
     public ProcessEngine(
         IProcessReader processReader,
         IProfileClient profileClient,
         IProcessNavigator processNavigator,
         IProcessEventHandlerDelegator processEventsDelegator,
         IProcessEventDispatcher processEventDispatcher,
-        UserActionService userActionService
+        IProcessTaskCleaner processTaskCleaner,
+        UserActionService userActionService,
+        Telemetry? telemetry = null
     )
     {
         _processReader = processReader;
@@ -49,12 +57,16 @@ public class ProcessEngine : IProcessEngine
         _processNavigator = processNavigator;
         _processEventHandlerDelegator = processEventsDelegator;
         _processEventDispatcher = processEventDispatcher;
+        _processTaskCleaner = processTaskCleaner;
         _userActionService = userActionService;
+        _telemetry = telemetry;
     }
 
     /// <inheritdoc/>
     public async Task<ProcessChangeResult> GenerateProcessStartEvents(ProcessStartRequest processStartRequest)
     {
+        using var activity = _telemetry?.StartProcessStartActivity(processStartRequest.Instance);
+
         if (processStartRequest.Instance.Process != null)
         {
             return new ProcessChangeResult()
@@ -70,7 +82,7 @@ public class ProcessEngine : IProcessEngine
             _processReader.GetStartEventIds(),
             out ProcessError? startEventError
         );
-        if (startEventError != null)
+        if (startEventError is not null)
         {
             return new ProcessChangeResult()
             {
@@ -80,10 +92,16 @@ public class ProcessEngine : IProcessEngine
             };
         }
 
+        // TODO: assert can be removed when we improve nullability annotation in GetValidStartEventOrError
+        Debug.Assert(
+            validStartElement is not null,
+            "validStartElement should always be nonnull when startEventError is null"
+        );
+
         // start process
         ProcessStateChange? startChange = await ProcessStart(
             processStartRequest.Instance,
-            validStartElement!,
+            validStartElement,
             processStartRequest.User
         );
         InstanceEvent? startEvent = startChange?.Events?[0].CopyValues();
@@ -108,12 +126,16 @@ public class ProcessEngine : IProcessEngine
                 Events = events
             };
 
+        _telemetry?.ProcessStarted();
+
         return new ProcessChangeResult() { Success = true, ProcessStateChange = processStateChange };
     }
 
     /// <inheritdoc/>
     public async Task<ProcessChangeResult> Next(ProcessNextRequest request)
     {
+        using var activity = _telemetry?.StartProcessNextActivity(request.Instance);
+
         Instance instance = request.Instance;
         string? currentElementId = instance.Process?.CurrentTask?.ElementId;
 
@@ -127,8 +149,11 @@ public class ProcessEngine : IProcessEngine
             };
         }
 
-        int? userId = request.User.GetUserIdAsInt();
+        // Removes existing/stale data elements previously generated from this task
+        // TODO: Move this logic to ProcessTaskInitializer.Initialize once the authentication model supports a service/app user with the appropriate scopes
+        await _processTaskCleaner.RemoveAllDataElementsGeneratedFromTask(instance, currentElementId);
 
+        int? userId = request.User.GetUserIdAsInt();
         IUserAction? actionHandler = _userActionService.GetActionHandler(request.Action);
 
         UserActionResult actionResult = actionHandler is null
@@ -146,6 +171,11 @@ public class ProcessEngine : IProcessEngine
         }
 
         ProcessStateChange? nextResult = await HandleMoveToNext(instance, request.User, request.Action);
+
+        if (nextResult?.NewProcessState?.Ended is not null)
+        {
+            _telemetry?.ProcessEnded(nextResult);
+        }
 
         return new ProcessChangeResult() { Success = true, ProcessStateChange = nextResult };
     }
@@ -187,6 +217,7 @@ public class ProcessEngine : IProcessEngine
             await GenerateProcessChangeEvent(InstanceEventType.process_StartEvent.ToString(), instance, now, user)
         ];
 
+        // ! TODO: should probably improve nullability handling in the next major version
         return new ProcessStateChange
         {
             OldProcessState = null!,
@@ -257,11 +288,14 @@ public class ProcessEngine : IProcessEngine
         }
 
         // ending process if next element is end event
-        if (_processReader.IsEndEvent(nextElement?.Id))
+        var nextElementId = nextElement?.Id;
+        if (_processReader.IsEndEvent(nextElementId))
         {
+            using var activity = _telemetry?.StartProcessEndActivity(instance);
+
             currentState.CurrentTask = null;
             currentState.Ended = now;
-            currentState.EndEvent = nextElement!.Id;
+            currentState.EndEvent = nextElementId;
 
             events.Add(
                 await GenerateProcessChangeEvent(InstanceEventType.process_EndEvent.ToString(), instance, now, user)
@@ -270,17 +304,24 @@ public class ProcessEngine : IProcessEngine
             // add submit event (to support Altinn2 SBL)
             events.Add(await GenerateProcessChangeEvent(InstanceEventType.Submited.ToString(), instance, now, user));
         }
-        else if (_processReader.IsProcessTask(nextElement?.Id))
+        else if (_processReader.IsProcessTask(nextElementId))
         {
+            if (nextElement is null)
+            {
+                throw new Exception("Next process element was unexpectedly null");
+            }
+
             var task = nextElement as ProcessTask;
             currentState.CurrentTask = new ProcessElementInfo
             {
                 Flow = currentState.CurrentTask?.Flow + 1,
-                ElementId = nextElement!.Id,
-                Name = nextElement!.Name,
+                ElementId = nextElementId,
+                Name = nextElement.Name,
                 Started = now,
                 AltinnTaskType = task?.ExtensionElements?.TaskExtension?.TaskType,
-                FlowType = ProcessSequenceFlowType.CompleteCurrentMoveToNext.ToString(),
+                FlowType = action is "reject"
+                    ? ProcessSequenceFlowType.AbandonCurrentMoveToNext.ToString()
+                    : ProcessSequenceFlowType.CompleteCurrentMoveToNext.ToString(),
                 Validated = null,
             };
 

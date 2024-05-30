@@ -1,4 +1,5 @@
 #nullable disable
+using Altinn.App.Common.Tests;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Implementation;
 using Altinn.App.Core.Internal.App;
@@ -9,13 +10,13 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.FeatureManagement;
 using Moq;
-using Xunit;
 
 namespace Altinn.App.Core.Tests.Implementation;
 
 public class AppResourcesSITests
 {
     private readonly string appBasePath = Path.Combine("Implementation", "TestData") + Path.DirectorySeparatorChar;
+    private readonly TelemetrySink telemetry = new();
 
     [Fact]
     public void GetApplication_desrializes_file_from_disk()
@@ -23,7 +24,13 @@ public class AppResourcesSITests
         AppSettings appSettings = GetAppSettings("AppMetadata", "default.applicationmetadata.json");
         var settings = Microsoft.Extensions.Options.Options.Create<AppSettings>(appSettings);
         IAppMetadata appMetadata = SetupAppMedata(Microsoft.Extensions.Options.Options.Create(appSettings));
-        IAppResources appResources = new AppResourcesSI(settings, appMetadata, null, new NullLogger<AppResourcesSI>());
+        IAppResources appResources = new AppResourcesSI(
+            settings,
+            appMetadata,
+            null,
+            new NullLogger<AppResourcesSI>(),
+            telemetry.Object
+        );
         Application expected = new Application()
         {
             Id = "tdd/bestilling",
@@ -68,7 +75,13 @@ public class AppResourcesSITests
         AppSettings appSettings = GetAppSettings("AppMetadata", "no-on-entry.applicationmetadata.json");
         var settings = Microsoft.Extensions.Options.Options.Create<AppSettings>(appSettings);
         IAppMetadata appMetadata = SetupAppMedata(Microsoft.Extensions.Options.Options.Create(appSettings));
-        IAppResources appResources = new AppResourcesSI(settings, appMetadata, null, new NullLogger<AppResourcesSI>());
+        IAppResources appResources = new AppResourcesSI(
+            settings,
+            appMetadata,
+            null,
+            new NullLogger<AppResourcesSI>(),
+            telemetry.Object
+        );
         Application expected = new Application()
         {
             Id = "tdd/bestilling",
@@ -119,7 +132,13 @@ public class AppResourcesSITests
             Microsoft.Extensions.Options.Options.Create(appSettings),
             appFeaturesMock.Object
         );
-        IAppResources appResources = new AppResourcesSI(settings, appMetadata, null, new NullLogger<AppResourcesSI>());
+        IAppResources appResources = new AppResourcesSI(
+            settings,
+            appMetadata,
+            null,
+            new NullLogger<AppResourcesSI>(),
+            telemetry.Object
+        );
         Application expected = new Application()
         {
             Id = "tdd/bestilling",
@@ -168,7 +187,13 @@ public class AppResourcesSITests
         AppSettings appSettings = GetAppSettings("AppMetadata", "notfound.applicationmetadata.json");
         var settings = Microsoft.Extensions.Options.Options.Create<AppSettings>(appSettings);
         IAppMetadata appMetadata = SetupAppMedata(Microsoft.Extensions.Options.Options.Create(appSettings));
-        IAppResources appResources = new AppResourcesSI(settings, appMetadata, null, new NullLogger<AppResourcesSI>());
+        IAppResources appResources = new AppResourcesSI(
+            settings,
+            appMetadata,
+            null,
+            new NullLogger<AppResourcesSI>(),
+            telemetry.Object
+        );
         Assert.Throws<ApplicationConfigException>(() => appResources.GetApplication());
     }
 
@@ -178,7 +203,13 @@ public class AppResourcesSITests
         AppSettings appSettings = GetAppSettings("AppMetadata", "invalid.applicationmetadata.json");
         var settings = Microsoft.Extensions.Options.Options.Create<AppSettings>(appSettings);
         IAppMetadata appMetadata = SetupAppMedata(Microsoft.Extensions.Options.Options.Create(appSettings));
-        IAppResources appResources = new AppResourcesSI(settings, appMetadata, null, new NullLogger<AppResourcesSI>());
+        IAppResources appResources = new AppResourcesSI(
+            settings,
+            appMetadata,
+            null,
+            new NullLogger<AppResourcesSI>(),
+            telemetry.Object
+        );
         Assert.Throws<ApplicationConfigException>(() => appResources.GetApplication());
     }
 
@@ -188,7 +219,13 @@ public class AppResourcesSITests
         AppSettings appSettings = GetAppSettings(subfolder: "AppPolicy", policyFilename: "policy.xml");
         var settings = Microsoft.Extensions.Options.Options.Create<AppSettings>(appSettings);
         IAppMetadata appMetadata = SetupAppMedata(Microsoft.Extensions.Options.Options.Create(appSettings));
-        IAppResources appResources = new AppResourcesSI(settings, appMetadata, null, new NullLogger<AppResourcesSI>());
+        IAppResources appResources = new AppResourcesSI(
+            settings,
+            appMetadata,
+            null,
+            new NullLogger<AppResourcesSI>(),
+            telemetry.Object
+        );
         string expected = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" + Environment.NewLine + "<root>policy</root>";
         var actual = appResources.GetApplicationXACMLPolicy();
         actual.Should().BeEquivalentTo(expected);
@@ -200,7 +237,13 @@ public class AppResourcesSITests
         AppSettings appSettings = GetAppSettings(subfolder: "AppPolicy", policyFilename: "notfound.xml");
         var settings = Microsoft.Extensions.Options.Options.Create<AppSettings>(appSettings);
         IAppMetadata appMetadata = SetupAppMedata(Microsoft.Extensions.Options.Options.Create(appSettings));
-        IAppResources appResources = new AppResourcesSI(settings, appMetadata, null, new NullLogger<AppResourcesSI>());
+        IAppResources appResources = new AppResourcesSI(
+            settings,
+            appMetadata,
+            null,
+            new NullLogger<AppResourcesSI>(),
+            telemetry.Object
+        );
         var actual = appResources.GetApplicationXACMLPolicy();
         actual.Should().BeNull();
     }
@@ -211,7 +254,13 @@ public class AppResourcesSITests
         AppSettings appSettings = GetAppSettings(subfolder: "AppProcess", bpmnFilename: "process.bpmn");
         var settings = Microsoft.Extensions.Options.Options.Create<AppSettings>(appSettings);
         IAppMetadata appMetadata = SetupAppMedata(Microsoft.Extensions.Options.Options.Create(appSettings));
-        IAppResources appResources = new AppResourcesSI(settings, appMetadata, null, new NullLogger<AppResourcesSI>());
+        IAppResources appResources = new AppResourcesSI(
+            settings,
+            appMetadata,
+            null,
+            new NullLogger<AppResourcesSI>(),
+            telemetry.Object
+        );
         string expected = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" + Environment.NewLine + "<root>process</root>";
         var actual = appResources.GetApplicationBPMNProcess();
         actual.Should().BeEquivalentTo(expected);
@@ -223,7 +272,13 @@ public class AppResourcesSITests
         AppSettings appSettings = GetAppSettings(subfolder: "AppProcess", policyFilename: "notfound.xml");
         var settings = Microsoft.Extensions.Options.Options.Create<AppSettings>(appSettings);
         IAppMetadata appMetadata = SetupAppMedata(Microsoft.Extensions.Options.Options.Create(appSettings));
-        IAppResources appResources = new AppResourcesSI(settings, appMetadata, null, new NullLogger<AppResourcesSI>());
+        IAppResources appResources = new AppResourcesSI(
+            settings,
+            appMetadata,
+            null,
+            new NullLogger<AppResourcesSI>(),
+            telemetry.Object
+        );
         var actual = appResources.GetApplicationBPMNProcess();
         actual.Should().BeNull();
     }

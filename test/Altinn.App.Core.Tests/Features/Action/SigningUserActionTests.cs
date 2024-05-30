@@ -15,7 +15,6 @@ using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using Xunit;
 using Signee = Altinn.App.Core.Internal.Sign.Signee;
 
 namespace Altinn.App.Core.Tests.Features.Action;
@@ -54,6 +53,7 @@ public class SigningUserActionTests
         // Assert
         SignatureContext expected = new SignatureContext(
             new InstanceIdentifier(instance),
+            instance.Process.CurrentTask.ElementId,
             "signature",
             new Signee() { UserId = "1337", PersonNumber = "12345678901" },
             new DataElementSignature("a499c3ef-e88a-436b-8650-1c43e5037ada")
@@ -102,6 +102,7 @@ public class SigningUserActionTests
         // Assert
         SignatureContext expected = new SignatureContext(
             new InstanceIdentifier(instance),
+            instance.Process.CurrentTask.ElementId,
             "signature",
             new Signee() { UserId = "1337", PersonNumber = "12345678901" },
             new DataElementSignature("a499c3ef-e88a-436b-8650-1c43e5037ada")

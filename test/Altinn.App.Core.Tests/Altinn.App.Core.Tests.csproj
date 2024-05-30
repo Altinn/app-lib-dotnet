@@ -42,8 +42,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Verify.Xunit" Version="24.2.0" />
     <PackageReference Include="FluentAssertions" Version="6.12.0" />
-    <PackageReference Include="Microsoft.FeatureManagement.AspNetCore" Version="3.2.0" />
+    <PackageReference Include="Microsoft.FeatureManagement.AspNetCore" Version="3.3.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
     <PackageReference Include="Moq" Version="4.20.70" />
     <PackageReference Include="xunit" Version="2.8.0" />
@@ -57,18 +58,9 @@
     </PackageReference>
   </ItemGroup>
 
-  <ItemGroup Condition="'$(Configuration)'=='Debug'">
-     <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.556">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-    </PackageReference>
-    <AdditionalFiles Include="..\..\stylecop.json">
-      <Link>stylecop.json</Link>
-    </AdditionalFiles>
-  </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\..\src\Altinn.App.Core\Altinn.App.Core.csproj" />
+    <ProjectReference Include="..\Altinn.App.Common.Tests\Altinn.App.Common.Tests.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -108,10 +100,5 @@
   <ItemGroup>
     <Folder Include="LayoutExpressions\CommonTests\exclusive-tests\functions\" />
   </ItemGroup>
-
-  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
-    <CodeAnalysisRuleSet>..\..\Altinn3.ruleset</CodeAnalysisRuleSet>
-  </PropertyGroup>
-
 
 </Project>
