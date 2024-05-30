@@ -34,7 +34,7 @@ Feel free to query existing issues before creating a new one.
 
 ### Versioning
 
-We use semantic versioning. Breaking changes
+We use semantic versioning. So we avoid breaking changes for anything that might break builds or change behavior.
 
 ### Telemetry
 
@@ -43,8 +43,9 @@ When developing new features and code, failure modes should be considered carefu
 such that we can observe that the code works correctly when running locally and in test and production environments.
 See existing code for tips and clues.
 
-Parts of the telemetry is considered public contract and when released in the library.
-Consumers may build alerting and dashboards based on this telemetry, so
+Parts of the telemetry is considered public contract.
+Consumers may build alerting and dashboards based on this telemetry, so if we change names and tags
+that may break things downstream. Names and tags are in the `Telemetry` class.
 
 ### Testing
 
@@ -64,14 +65,14 @@ To manually test changes, simply make your app reference the libraries directly.
 and make sure the relative directory paths work for your setup.
 
 ```csproj
--<PackageReference Include="Altinn.App.Api" Version="8.2.*">
--    <CopyToOutputDirectory>lib\$(TargetFramework)\*.xml</CopyToOutputDirectory>
--</PackageReference>
--<PackageReference Include="Altinn.App.Core" Version="8.2.*" />
-+<ProjectReference Include="../../../app-lib-dotnet/src/Altinn.App.Api/Altinn.App.Api.csproj">
-+    <CopyToOutputDirectory>lib\$(TargetFramework)\*.xml</CopyToOutputDirectory>
-+</ProjectReference>
-+<ProjectReference Include="../../../app-lib-dotnet/src/Altinn.App.Core/Altinn.App.Core.csproj" />
+<!-- <PackageReference Include="Altinn.App.Api" Version="8.2.*">
+    <CopyToOutputDirectory>lib\$(TargetFramework)\*.xml</CopyToOutputDirectory>
+</PackageReference>
+<PackageReference Include="Altinn.App.Core" Version="8.2.*" /> -->
+<ProjectReference Include="../../../app-lib-dotnet/src/Altinn.App.Api/Altinn.App.Api.csproj">
+    <CopyToOutputDirectory>lib\$(TargetFramework)\*.xml</CopyToOutputDirectory>
+</ProjectReference>
+<ProjectReference Include="../../../app-lib-dotnet/src/Altinn.App.Core/Altinn.App.Core.csproj" />
 ```
 
 Make sure [localtest](https://github.com/Altinn/app-localtest) is running
