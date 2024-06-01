@@ -48,7 +48,7 @@ public class ExpressionValidator : IFormDataValidator
     public string ValidationSource => "Expression";
 
     /// <summary>
-    /// Expression validations should always run (it is way to complex to figure out if it should run or not)
+    /// We don't have an efficient way to figure out if changes to the model results in different validations, and frontend ignores this anyway
     /// </summary>
     public bool HasRelevantChanges(object current, object previous) => true;
 
