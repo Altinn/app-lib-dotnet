@@ -36,7 +36,7 @@ public class PageComponentConverter : JsonConverter<PageComponent>
     }
 
     /// <inheritdoc />
-    public override PageComponent? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public override PageComponent Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         // Try to get pagename from metadata in this.AddPageName
         var pageName = _pageName.Value ?? "UnknownPageName";
@@ -131,13 +131,13 @@ public class PageComponentConverter : JsonConverter<PageComponent>
                     (componentListFlat, componentLookup, childToGroupMapping) = ReadLayout(ref reader, options);
                     break;
                 case "hidden":
-                    hidden = ExpressionConverter.ReadNotNull(ref reader, options);
+                    hidden = ExpressionConverter.ReadStatic(ref reader, options);
                     break;
                 case "required":
-                    required = ExpressionConverter.ReadNotNull(ref reader, options);
+                    required = ExpressionConverter.ReadStatic(ref reader, options);
                     break;
                 case "readonly":
-                    readOnly = ExpressionConverter.ReadNotNull(ref reader, options);
+                    readOnly = ExpressionConverter.ReadStatic(ref reader, options);
                     break;
                 default:
                     // read extra properties
@@ -153,7 +153,15 @@ public class PageComponentConverter : JsonConverter<PageComponent>
 
         var layout = ProcessLayout(componentListFlat, componentLookup, childToGroupMapping);
 
-        return new PageComponent(pageName, layout, componentLookup, hidden, required, readOnly, additionalProperties);
+        return new PageComponent(
+            pageName,
+            layout,
+            componentLookup,
+            hidden ?? Expression.False,
+            required ?? Expression.False,
+            readOnly ?? Expression.False,
+            additionalProperties
+        );
     }
 
     private (List<BaseComponent>, Dictionary<string, BaseComponent>, Dictionary<string, GroupComponent>) ReadLayout(
@@ -321,16 +329,16 @@ public class PageComponentConverter : JsonConverter<PageComponent>
                     maxCount = reader.GetInt32();
                     break;
                 case "hidden":
-                    hidden = ExpressionConverter.ReadNotNull(ref reader, options);
+                    hidden = ExpressionConverter.ReadStatic(ref reader, options);
                     break;
                 case "hiddenrow":
-                    hiddenRow = ExpressionConverter.ReadNotNull(ref reader, options);
+                    hiddenRow = ExpressionConverter.ReadStatic(ref reader, options);
                     break;
                 case "required":
-                    required = ExpressionConverter.ReadNotNull(ref reader, options);
+                    required = ExpressionConverter.ReadStatic(ref reader, options);
                     break;
                 case "readonly":
-                    readOnly = ExpressionConverter.ReadNotNull(ref reader, options);
+                    readOnly = ExpressionConverter.ReadStatic(ref reader, options);
                     break;
                 // summary
                 case "componentref":
@@ -379,10 +387,10 @@ public class PageComponentConverter : JsonConverter<PageComponent>
                     new List<BaseComponent>(),
                     children,
                     maxCount,
-                    hidden,
-                    hiddenRow,
-                    required,
-                    readOnly,
+                    hidden ?? Expression.False,
+                    hiddenRow ?? Expression.False,
+                    required ?? Expression.False,
+                    readOnly ?? Expression.False,
                     additionalProperties
                 );
                 return directRepComponent;
@@ -409,10 +417,10 @@ public class PageComponentConverter : JsonConverter<PageComponent>
                         new List<BaseComponent>(),
                         children,
                         maxCount,
-                        hidden,
-                        hiddenRow,
-                        required,
-                        readOnly,
+                        hidden ?? Expression.False,
+                        hiddenRow ?? Expression.False,
+                        required ?? Expression.False,
+                        readOnly ?? Expression.False,
                         additionalProperties
                     );
                     return repComponent;
@@ -425,9 +433,9 @@ public class PageComponentConverter : JsonConverter<PageComponent>
                         dataModelBindings,
                         new List<BaseComponent>(),
                         children,
-                        hidden,
-                        required,
-                        readOnly,
+                        hidden ?? Expression.False,
+                        required ?? Expression.False,
+                        readOnly ?? Expression.False,
                         additionalProperties
                     );
                     return groupComponent;
@@ -439,15 +447,15 @@ public class PageComponentConverter : JsonConverter<PageComponent>
                     dataModelBindings,
                     new List<BaseComponent>(),
                     children,
-                    hidden,
-                    required,
-                    readOnly,
+                    hidden ?? Expression.False,
+                    required ?? Expression.False,
+                    readOnly ?? Expression.False,
                     additionalProperties
                 );
                 return gridComponent;
             case "summary":
                 ValidateSummary(componentRef);
-                return new SummaryComponent(id, type, hidden, componentRef, additionalProperties);
+                return new SummaryComponent(id, type, hidden ?? Expression.False, componentRef, additionalProperties);
             case "checkboxes":
             case "radiobuttons":
             case "dropdown":
@@ -456,9 +464,9 @@ public class PageComponentConverter : JsonConverter<PageComponent>
                     id,
                     type,
                     dataModelBindings,
-                    hidden,
-                    required,
-                    readOnly,
+                    hidden ?? Expression.False,
+                    required ?? Expression.False,
+                    readOnly ?? Expression.False,
                     optionId,
                     literalOptions,
                     optionsSource,
@@ -467,11 +475,19 @@ public class PageComponentConverter : JsonConverter<PageComponent>
                 );
         }
 
-        // Most compoents are handled as BaseComponent
-        return new BaseComponent(id, type, dataModelBindings, hidden, required, readOnly, additionalProperties);
+        // Most components are handled as BaseComponent
+        return new BaseComponent(
+            id,
+            type,
+            dataModelBindings,
+            hidden ?? Expression.False,
+            required ?? Expression.False,
+            readOnly ?? Expression.False,
+            additionalProperties
+        );
     }
 
-    private Dictionary<string, ModelBinding>? DeserializeModelBindings(ref Utf8JsonReader reader)
+    private Dictionary<string, ModelBinding> DeserializeModelBindings(ref Utf8JsonReader reader)
     {
         var modelBindings = new Dictionary<string, ModelBinding>();
         if (reader.TokenType != JsonTokenType.StartObject)

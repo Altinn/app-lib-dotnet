@@ -105,7 +105,7 @@ public class ExpressionValidator : IFormDataValidator
 
                         var isInvalid = ExpressionEvaluator.EvaluateExpression(
                             evaluatorState,
-                            validation.Condition,
+                            validation.Condition.Value,
                             context,
                             positionalArguments
                         );

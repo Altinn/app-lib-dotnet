@@ -8,6 +8,7 @@ using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Models.Layout.Components;
 using Altinn.App.Core.Models.Process;
@@ -255,9 +256,9 @@ public class ExpressionsExclusiveGatewayTests
                                 "Page1",
                                 new List<BaseComponent>(),
                                 new Dictionary<string, BaseComponent>(),
-                                null,
-                                null,
-                                null,
+                                Expression.False,
+                                Expression.False,
+                                Expression.False,
                                 null
                             )
                         }

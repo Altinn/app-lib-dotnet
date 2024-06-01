@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Layout.Components;
 
@@ -6,7 +7,7 @@ namespace Altinn.App.Core.Models.Layout;
 /// <summary>
 /// Class for handeling a full layout/layoutset
 /// </summary>
-public class LayoutModel
+public record LayoutModel
 {
     /// <summary>
     /// Dictionary to hold the different pages that are part of this LayoutModel
@@ -86,13 +87,13 @@ public class LayoutModel
         return false;
     }
 
-    private static bool HasExternalModelReferences(Expression? expression)
+    private static bool HasExternalModelReferences(Expression expression)
     {
-        return IsDataModelExpressionWithTwoAruments(expression)
-            || (expression?.Args?.TrueForAll(HasExternalModelReferences) ?? false);
+        return IsDataModelExpressionWithTwoArguments(expression)
+            || (expression.Args?.TrueForAll(LayoutModel.HasExternalModelReferences) == true);
     }
 
-    private static bool IsDataModelExpressionWithTwoAruments(Expression? expression)
+    private static bool IsDataModelExpressionWithTwoArguments(Expression expression)
     {
         return expression is { Function: ExpressionFunction.dataModel, Args: [_, _] };
     }

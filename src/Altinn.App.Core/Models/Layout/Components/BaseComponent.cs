@@ -11,7 +11,7 @@ namespace Altinn.App.Core.Models.Layout.Components;
 /// Includes <see cref="DataModelBindings" /> that will be initialized to an empty dictionary
 /// for components that don't have them.
 /// </remarks>
-public class BaseComponent
+public record BaseComponent
 {
     /// <summary>
     /// Constructor for <see cref="BaseComponent" />
@@ -20,9 +20,9 @@ public class BaseComponent
         string id,
         string type,
         IReadOnlyDictionary<string, ModelBinding>? dataModelBindings,
-        Expression? hidden,
-        Expression? required,
-        Expression? readOnly,
+        Expression hidden,
+        Expression required,
+        Expression readOnly,
         IReadOnlyDictionary<string, string>? additionalProperties
     )
     {
@@ -60,17 +60,17 @@ public class BaseComponent
     /// <summary>
     /// Layout Expression that can be evaluated to see if component should be hidden
     /// </summary>
-    public Expression? Hidden { get; }
+    public Expression Hidden { get; }
 
     /// <summary>
     /// Layout Expression that can be evaluated to see if component should be required
     /// </summary>
-    public Expression? Required { get; }
+    public Expression Required { get; }
 
     /// <summary>
     /// Layout Expression that can be evaluated to see if component should be read only
     /// </summary>
-    public Expression? ReadOnly { get; }
+    public Expression ReadOnly { get; }
 
     /// <summary>
     /// Data model bindings for the component or group

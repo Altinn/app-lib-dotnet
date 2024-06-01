@@ -71,7 +71,7 @@ public class LayoutEvaluatorState
             page,
             null,
             null,
-            page.Children.Select(c => GenerateComponentContextsRecurs(c, dataModel, Array.Empty<int>())).ToArray()
+            page.Children.Select(c => GenerateComponentContextsRecurs(c, dataModel, [])).ToArray()
         );
 
     private static ComponentContext GenerateComponentContextsRecurs(
@@ -293,9 +293,9 @@ public class LayoutEvaluatorState
         return errors;
     }
 
-    private void GetModelErrorsForExpression(Expression? expr, BaseComponent component, List<string> errors)
+    private void GetModelErrorsForExpression(Expression expr, BaseComponent component, List<string> errors)
     {
-        if (expr == null || expr.Value != null || expr.Args == null || expr.Function == null)
+        if (expr.IsFunctionExpression != true)
         {
             return;
         }
@@ -309,7 +309,7 @@ public class LayoutEvaluatorState
                 );
                 return;
             }
-            var dataType = expr.Args.ElementAtOrDefault(1)?.Value as string;
+            var dataType = expr.Args.ElementAtOrDefault(1).Value as string;
             if (!_dataModel.VerifyKey(new ModelBinding { Field = binding, DataType = dataType }))
             {
                 errors.Add($"Invalid binding \"{binding}\" on component {component.PageId}.{component.Id}");
@@ -340,7 +340,7 @@ public class LayoutEvaluatorState
         if (
             context.Component is RepeatingGroupComponent repGroup
             && context.RowLength is not null
-            && repGroup.HiddenRow is not null
+            && repGroup.HiddenRow.IsFunctionExpression
         )
         {
             var hiddenRows = new List<int>();

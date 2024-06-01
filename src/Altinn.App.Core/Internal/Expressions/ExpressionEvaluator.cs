@@ -23,18 +23,15 @@ public static class ExpressionEvaluator
     {
         try
         {
+            ArgumentNullException.ThrowIfNull(context.Component, nameof(context.Component));
             var expr = property switch
             {
-                "hidden" => context.Component?.Hidden,
-                "hiddenRow"
-                    => context.Component is RepeatingGroupComponent repeatingGroup ? repeatingGroup.HiddenRow : null,
-                "required" => context.Component?.Required,
+                "hidden" => context.Component.Hidden,
+                "hiddenRow" when context.Component is RepeatingGroupComponent repeatingGroup
+                    => repeatingGroup.HiddenRow,
+                "required" => context.Component.Required,
                 _ => throw new ExpressionEvaluatorTypeErrorException($"unknown boolean expression property {property}")
             };
-            if (expr is null)
-            {
-                return defaultReturn;
-            }
 
             return EvaluateExpression(state, expr, context) switch
             {
@@ -63,11 +60,7 @@ public static class ExpressionEvaluator
         object[]? positionalArguments = null
     )
     {
-        if (expr is null)
-        {
-            return null;
-        }
-        if (expr.Function is null || expr.Args is null)
+        if (!expr.IsFunctionExpression)
         {
             return expr.Value;
         }

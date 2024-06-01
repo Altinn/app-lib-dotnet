@@ -138,7 +138,7 @@ public class ExpressionsExclusiveGateway : IProcessExclusiveGateway
     {
         Utf8JsonReader reader = new Utf8JsonReader(Encoding.UTF8.GetBytes(condition));
         reader.Read();
-        var expressionFromCondition = ExpressionConverter.ReadNotNull(ref reader, _jsonSerializerOptions);
+        var expressionFromCondition = ExpressionConverter.ReadStatic(ref reader, _jsonSerializerOptions);
         return expressionFromCondition;
     }
 
