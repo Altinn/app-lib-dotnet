@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text.Json.Serialization;
 using Altinn.App.Core.Helpers;
 using FluentAssertions;
 
@@ -15,11 +17,33 @@ public class ObjectUtilsTests
 
         public decimal? NullableDecimal { get; set; }
 
+        [JsonIgnore]
+        public decimal DecimalIgnore { get; set; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.Always)]
+        public decimal? NullableDecimalIgnore { get; set; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public decimal DecimalNotReallyIgnore { get; set; }
+
         public DateTime? DateTime { get; set; }
 
         public TestClass? Child { get; set; }
 
         public List<TestClass>? Children { get; set; }
+
+        public long Long { get; set; }
+
+        public long? NullableLong { get; set; }
+
+        [JsonIgnore]
+        public long LongIgnore { get; set; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public long LongNotReallyIgnore { get; set; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.Always)]
+        public long? NullableLongIgnore { get; set; }
     }
 
     [Fact]
@@ -269,5 +293,70 @@ public class ObjectUtilsTests
         childArray = test.Child.Child.Children.Should().HaveCount(2).And;
         childArray.ContainSingle(d => d != null).Which.AltinnRowId.Should().Be(Guid.Empty);
         childArray.ContainSingle(d => d == null);
+    }
+
+    [Theory]
+    [InlineData(1, 3, "0.333333333333333")]
+    [InlineData(2, 3, "0.666666666666667")]
+    [InlineData(1, 10, "0.1")]
+    [InlineData(2, 10, "0.2")]
+    [InlineData(3, 10, "0.3")]
+    [InlineData(4, 10, "0.4")]
+    [InlineData(5, 10, "0.5")]
+    [InlineData(6, 10, "0.6")]
+    [InlineData(7, 10, "0.7")]
+    [InlineData(8, 10, "0.8")]
+    [InlineData(9, 10, "0.9")]
+    [InlineData(10, 10, "1")]
+    [InlineData(22, 7, "3.14285714285714")]
+    public void TestDecimalRounding(int numerator, int denominator, string expectedValueString)
+    {
+        // Decimal values in model must be rounded to 15 significant figures to ensure that json conversion is lossless
+        var startValue = decimal.Divide(numerator, denominator);
+        var expectedValue = decimal.Parse(expectedValueString, CultureInfo.InvariantCulture);
+
+        var test = new TestClass()
+        {
+            Decimal = startValue,
+            NullableDecimal = startValue,
+            DecimalIgnore = startValue,
+            NullableDecimalIgnore = startValue,
+            DecimalNotReallyIgnore = startValue,
+        };
+
+        ObjectUtils.PrepareModelForXmlStorage(test);
+
+        test.Decimal.Should().Be(expectedValue);
+        test.NullableDecimal.Should().Be(expectedValue);
+        test.DecimalNotReallyIgnore.Should().Be(expectedValue);
+
+        // Decimal properties with [JsonIgnore] should not be rounded
+        test.DecimalIgnore.Should().Be(startValue);
+        test.NullableDecimalIgnore.Should().Be(startValue);
+    }
+
+    [Fact]
+    public void TestLongRounding()
+    {
+        // Long values in model must be rounded to 15 significant figures to ensure that json conversion is lossless
+        var value = 1234567890123456789L;
+        var roundedValue = 1234567890123460000L;
+        var test = new TestClass()
+        {
+            Long = value,
+            NullableLong = value,
+            LongIgnore = value,
+            NullableLongIgnore = value,
+            LongNotReallyIgnore = value,
+        };
+
+        ObjectUtils.PrepareModelForXmlStorage(test);
+
+        test.Long.Should().Be(roundedValue);
+        test.NullableLong.Should().Be(roundedValue);
+        test.LongNotReallyIgnore.Should().Be(roundedValue);
+
+        test.LongIgnore.Should().Be(value);
+        test.NullableLongIgnore.Should().Be(value);
     }
 }

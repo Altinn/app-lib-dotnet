@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Reflection;
+using System.Text.Json.Serialization;
 using System.Xml.Serialization;
 
 namespace Altinn.App.Core.Helpers;
@@ -27,7 +28,8 @@ public static class ObjectUtils
 
         if (type.Namespace?.StartsWith("System") == true)
         {
-            return; // System.DateTime.Now causes infinite recursion, and we shuldn't recurse into system types anyway.
+            // System.DateTime.Now causes infinite recursion, and we shuldn't recurse into system types anyway.
+            return;
         }
 
         foreach (var prop in type.GetProperties(BindingFlags.Instance | BindingFlags.Public))
@@ -56,7 +58,7 @@ public static class ObjectUtils
                     }
                 }
             }
-            // property does not have an index parameter, nor is a value type, thus we should recurse into the property
+            // property does not have an index parameter, thus we should recurse into the property
             else if (prop.GetIndexParameters().Length == 0)
             {
                 var value = prop.GetValue(model);
@@ -76,6 +78,8 @@ public static class ObjectUtils
     /// * Recursively initialize all <see cref="List{T}"/> properties on the object that are currently null
     /// * Ensure that all string properties with `[XmlTextAttribute]` that are empty or whitespace are set to null
     /// * If a class has `[XmlTextAttribute]` and no value, set the parent property to null (if the other properties has [BindNever] attribute)
+    /// * If a class has a method `bool ShouldSerialize{PropertyName}()`, and it returns false, set the property to null
+    /// * Round all decimal and long to 15 significant digits to avoid precision loss in js frontend
     /// </summary>
     /// <param name="model">The object to mutate</param>
     /// <param name="depth">Remaining recursion depth. To prevent infinite recursion we stop prepeation after this depth. (default matches json serialization)</param>
@@ -92,6 +96,7 @@ public static class ObjectUtils
 
         if (type.Namespace?.StartsWith("System") == true)
         {
+            // System.DateTime.Now causes infinite recursion, and we shuldn't recurse into system types anyway.
             return;
         }
 
@@ -100,13 +105,13 @@ public static class ObjectUtils
         // Iterate over properties of the model
         foreach (var prop in type.GetProperties(BindingFlags.Instance | BindingFlags.Public))
         {
-            // Property has a generic type that is a subtype of List<>
+            // Handle properties of type List
             if (prop.PropertyType.IsGenericType && prop.PropertyType.GetGenericTypeDefinition() == typeof(List<>))
             {
                 var value = prop.GetValue(model);
                 if (value is null)
                 {
-                    // Initialize IList if it has null value (xml deserialization always retrurn emtpy list, not null)
+                    // Initialize List if it has null value (xml deserialization always retrurn emtpy list, not null)
                     prop.SetValue(model, Activator.CreateInstance(prop.PropertyType));
                 }
                 else
@@ -121,50 +126,79 @@ public static class ObjectUtils
                     }
                 }
             }
-            else if (prop.GetIndexParameters().Length > 0)
-            {
-                // Ignore properties with index parameters
-            }
-            else
+            else if (prop.GetIndexParameters().Length == 0)
             {
                 // Property does not have an index parameter, thus we should recurse into the property
                 var value = prop.GetValue(model);
-                if (value is null)
-                    continue;
-                SetToDefaultIfShouldSerializeFalse(model, prop, methodInfos);
 
-                // Set string properties with [XmlText] attribute to null if they are empty or whitespace
-                if (
-                    value is string s
-                    && string.IsNullOrWhiteSpace(s)
-                    && prop.GetCustomAttribute<XmlTextAttribute>() is not null
-                )
+                // Modify values that will get modified in serialization anyways
+                switch (value)
                 {
-                    // Ensure empty strings are set to null
-                    prop.SetValue(model, null);
+                    case decimal decimalValue:
+                        // Frontend will parse json numbers as 64 bit floating point numbers
+                        // This will cause precision loss for numbers with more than 15 significant digits,
+                        // causing issues in PATCH requests where FE don't report the same value as backend stores.
+                        //
+                        // To ensure that we don't pretend to have more precision than we actually have,
+                        // we will round all decimals to 15 significant digits.
+                        // PS: Directly rounding would likely be more efficient, but there was no convenient method for rounding
+                        // decimals to a specific number of significant digits.
+
+                        decimal roundedTo15Decimals = (decimal)(double)decimalValue; // This does rounding to 15 significant figures
+                        if (
+                            roundedTo15Decimals != decimalValue
+                            && prop.GetCustomAttribute<JsonIgnoreAttribute>()
+                                is null
+                                    or { Condition: not JsonIgnoreCondition.Always }
+                        )
+                        {
+                            // TODO: consider logging a warning if rounding is done
+                            //       It should be explicit in backend code.
+                            prop.SetValue(model, roundedTo15Decimals);
+                        }
+                        break;
+                    case long longValue when longValue is > 999_999_999_999_999 or < -999_999_999_999_999:
+                        // Same as with decimals, we need to round longs to 15 digits to avoid precision loss in frontend
+                        long roundedTo15Digits = (long)(decimal)(double)longValue;
+                        if (
+                            roundedTo15Digits != longValue
+                            && prop.GetCustomAttribute<JsonIgnoreAttribute>()
+                                is null
+                                    or { Condition: not JsonIgnoreCondition.Always }
+                        )
+                        {
+                            prop.SetValue(model, roundedTo15Digits);
+                        }
+                        break;
+                    case string stringValue:
+                        if (
+                            string.IsNullOrWhiteSpace(stringValue)
+                            && prop.GetCustomAttribute<XmlTextAttribute>() is not null
+                        )
+                        {
+                            // Set string properties with [XmlText] attribute to null if they are empty or whitespace
+                            // because xml serialzation does this
+                            prop.SetValue(model, null);
+                            value = null;
+                        }
+                        break;
                 }
 
-                // continue recursion over all properties that are NOT null or value types
-                PrepareModelForXmlStorage(value, depth - 1);
-
-                SetToDefaultIfShouldSerializeFalse(model, prop, methodInfos);
-
-                if (value is decimal decimalValue)
+                if (value is not null)
                 {
-                    // This will make sure we only store double precision values in the database
-                    // since frontend/JS doesn't have anything else than 64bit numbers,
-                    // this will make sure that what we store is also what the frontend sees.
-                    var doublePrecisionValue = (decimal)(double)decimalValue;
-                    if (doublePrecisionValue != decimalValue)
+                    // continue recursion over all properties that are NOT null or value types
+                    PrepareModelForXmlStorage(value, depth - 1);
+
+                    if (ShouldSerializeReturnsFalse(model, prop, methodInfos) && prop.SetMethod is not null)
                     {
-                        prop.SetValue(model, doublePrecisionValue);
+                        prop.SetValue(model, null);
                     }
                 }
             }
         }
     }
 
-    private static void SetToDefaultIfShouldSerializeFalse(object model, PropertyInfo prop, MethodInfo[] methodInfos)
+    private static bool ShouldSerializeReturnsFalse(object model, PropertyInfo prop, MethodInfo[] methodInfos)
     {
         string methodName = $"ShouldSerialize{prop.Name}";
 
@@ -172,10 +206,7 @@ public static class ObjectUtils
             .Where(m => m.Name == methodName && m.GetParameters().Length == 0 && m.ReturnType == typeof(bool))
             .SingleElement();
 
-        if (shouldSerializeMethod?.Invoke(model, null) is false)
-        {
-            prop.SetValue(model, default);
-        }
+        return shouldSerializeMethod?.Invoke(model, null) is false;
     }
 
     private static T? SingleElement<T>(this IEnumerable<T> source)
@@ -183,10 +214,10 @@ public static class ObjectUtils
         using var enumerator = source.GetEnumerator();
         if (!enumerator.MoveNext())
         {
-            return default(T);
+            return default;
         }
         var result = enumerator.Current;
-        return enumerator.MoveNext() ? default(T) : result;
+        return enumerator.MoveNext() ? default : result;
     }
 
     /// <summary>
@@ -204,7 +235,8 @@ public static class ObjectUtils
         var type = model.GetType();
         if (type.Namespace?.StartsWith("System") == true)
         {
-            return; // System.DateTime.Now causes infinite recursion, and we shuldn't recurse into system types anyway.
+            // System.DateTime.Now causes infinite recursion, and we shuldn't recurse into system types anyway.
+            return;
         }
 
         foreach (var prop in type.GetProperties())
