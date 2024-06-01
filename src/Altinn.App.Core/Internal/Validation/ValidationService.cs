@@ -67,72 +67,9 @@ public class ValidationService : IValidationService
             )
         );
 
-        // Run multiple form data validators
-        var (_, multipleValidatorTasks) = RunMultipleFormDataValidators(instance, taskId, null, null, null, language);
-
-        var lists = await Task.WhenAll(taskIssuesTask, dataIssuesTask, Task.WhenAll(multipleValidatorTasks));
+        var lists = await Task.WhenAll(taskIssuesTask, dataIssuesTask);
         // Flatten the list of lists to a single list of issues
         return lists.SelectMany(x => x.SelectMany(y => y)).ToList();
-    }
-
-    private (List<string>, IEnumerable<Task<List<ValidationIssue>>>) RunMultipleFormDataValidators(
-        Instance instance,
-        string taskId,
-        DataElement? primaryDataElement,
-        object? currentData,
-        object? previousData,
-        string? language
-    )
-    {
-        var multipleFormDataValidators = _validatorFactory.GetMultipleFormDataValidators(taskId);
-        if (primaryDataElement is not null)
-        {
-            ArgumentNullException.ThrowIfNull(currentData);
-            ArgumentNullException.ThrowIfNull(previousData);
-            _dataCache.Set(primaryDataElement, currentData);
-            multipleFormDataValidators = multipleFormDataValidators
-                .Where(mfdv => mfdv.HasRelevantChanges(instance, taskId, primaryDataElement, currentData, previousData))
-                .ToList();
-        }
-
-        var validationIssueTasks = multipleFormDataValidators.Select(async mfdv =>
-        {
-            try
-            {
-                _logger.LogDebug(
-                    "Start running validator {ValidatorName} on task {TaskId} in instance {InstanceId}",
-                    mfdv.ValidationSource,
-                    taskId,
-                    instance.Id
-                );
-                var dataElements = await mfdv.GetRequiredDataElementsForValidation(instance, taskId);
-
-                // prefetch all data elements before running validation
-                var data = (
-                    await Task.WhenAll(
-                        dataElements.Select(async de => KeyValuePair.Create(de, await _dataCache.Get(instance, de)))
-                    )
-                ).ToList();
-
-                var issues = await mfdv.ValidateFormData(instance, taskId, data, language);
-                issues.ForEach(i => i.Source = mfdv.ValidationSource); // Ensure that the source is set to the validator source
-                return issues;
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(
-                    e,
-                    "Error while running validator {ValidatorName} on task {TaskId} in instance {InstanceId}",
-                    mfdv.ValidationSource,
-                    taskId,
-                    instance.Id
-                );
-                throw;
-            }
-        });
-        var validationSources = multipleFormDataValidators.Select(mfdv => mfdv.ValidationSource).ToList();
-
-        return (validationSources, validationIssueTasks);
     }
 
     private Task<List<ValidationIssue>[]> RunTaskValidators(Instance instance, string taskId, string? language)
@@ -318,21 +255,6 @@ public class ValidationService : IValidationService
         });
 
         var validationSources = dataValidators.Select(d => d.ValidationSource).ToList();
-
-        // Only run here for incremental validation. Full validation is done in <see cref="ValidateTask"/>
-        if (previousData is not null)
-        {
-            var (validationSourcesFromMultiple, multipleValidatorTasks) = RunMultipleFormDataValidators(
-                instance,
-                instance.Process.CurrentTask.ElementId,
-                dataElement,
-                data,
-                previousData,
-                language
-            );
-            validationSources.AddRange(validationSourcesFromMultiple);
-            validationTasks = validationTasks.Concat<Task<List<ValidationIssue>>>(multipleValidatorTasks);
-        }
 
         var issuesLists = await Task.WhenAll(validationTasks);
 

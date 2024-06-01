@@ -21,11 +21,6 @@ public interface IValidatorFactory
     /// Gets all form data validators for a given data element.
     /// </summary>
     public IEnumerable<IFormDataValidator> GetFormDataValidators(string dataTypeId);
-
-    /// <summary>
-    /// Gets all validators that need multiple form data elements to work
-    /// </summary>
-    public IEnumerable<IMultipleFormDataValidator> GetMultipleFormDataValidators(string taskId);
 }
 
 /// <summary>
@@ -36,7 +31,6 @@ public class ValidatorFactory : IValidatorFactory
     private readonly IEnumerable<ITaskValidator> _taskValidators;
     private readonly IEnumerable<IDataElementValidator> _dataElementValidators;
     private readonly IEnumerable<IFormDataValidator> _formDataValidators;
-    private readonly IEnumerable<IMultipleFormDataValidator> _multipleFormDataValidators;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ValidatorFactory"/> class.
@@ -44,14 +38,12 @@ public class ValidatorFactory : IValidatorFactory
     public ValidatorFactory(
         IEnumerable<ITaskValidator> taskValidators,
         IEnumerable<IDataElementValidator> dataElementValidators,
-        IEnumerable<IFormDataValidator> formDataValidators,
-        IEnumerable<IMultipleFormDataValidator> multipleFormDataValidators
+        IEnumerable<IFormDataValidator> formDataValidators
     )
     {
         _taskValidators = taskValidators;
         _dataElementValidators = dataElementValidators;
         _formDataValidators = formDataValidators;
-        _multipleFormDataValidators = multipleFormDataValidators;
     }
 
     /// <inheritdoc />
@@ -70,11 +62,5 @@ public class ValidatorFactory : IValidatorFactory
     public IEnumerable<IFormDataValidator> GetFormDataValidators(string dataTypeId)
     {
         return _formDataValidators.Where(fdv => fdv.DataType == "*" || fdv.DataType == dataTypeId);
-    }
-
-    /// <inheritdoc />
-    public IEnumerable<IMultipleFormDataValidator> GetMultipleFormDataValidators(string taskId)
-    {
-        return _multipleFormDataValidators.Where(mfdv => mfdv.TaskId == "*" || mfdv.TaskId == taskId);
     }
 }

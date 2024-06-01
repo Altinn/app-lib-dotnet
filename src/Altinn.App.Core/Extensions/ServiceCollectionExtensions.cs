@@ -203,7 +203,7 @@ public static class ServiceCollectionExtensions
         services.TryAddTransient<IValidationService, ValidationService>();
         if (configuration.GetSection("AppSettings").Get<AppSettings>()?.RequiredValidation == true)
         {
-            services.AddTransient<IMultipleFormDataValidator, RequiredLayoutValidator>();
+            services.AddTransient<IFormDataValidator, RequiredLayoutValidator>();
         }
 
         if (configuration.GetSection("AppSettings").Get<AppSettings>()?.ExpressionValidation == true)

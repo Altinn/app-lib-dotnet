@@ -54,12 +54,14 @@ public class LayoutEvaluatorStateInitializer
     /// </summary>
     public virtual Task<LayoutEvaluatorState> Init(
         Instance instance,
-        List<KeyValuePair<DataElement, object>> data,
+        DataElement dataElement,
+        object data,
         string? layoutSetId,
         string? gatewayAction = null,
         string? language = null
     )
     {
+        // TODO: Fetch Extra models
         var layouts = _appResources.GetLayoutModel(layoutSetId);
         return Task.FromResult(
             new LayoutEvaluatorState(new DataModel(data), layouts, _frontEndSettings, instance, gatewayAction, language)

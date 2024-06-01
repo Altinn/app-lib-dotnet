@@ -72,12 +72,7 @@ public class PatchServiceTests : IDisposable
             )
             .ReturnsAsync(_dataElement)
             .Verifiable();
-        var validatorFactory = new ValidatorFactory(
-            [],
-            [_dataElementValidator.Object],
-            [_formDataValidator.Object],
-            []
-        );
+        var validatorFactory = new ValidatorFactory([], [_dataElementValidator.Object], [_formDataValidator.Object]);
         var validationService = new ValidationService(
             validatorFactory,
             _dataClientMock.Object,
