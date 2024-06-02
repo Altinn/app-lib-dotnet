@@ -61,6 +61,7 @@ internal class CachedFormDataAccessor : ICachedFormDataAccessor
     /// <typeparam name="TValue">The type of the object to cache</typeparam>
     private sealed class LazyCache<TKey, TValue>
         where TKey : notnull
+        where TValue : notnull
     {
         private readonly ConcurrentDictionary<TKey, Lazy<Task<TValue>>> _cache = new();
 
@@ -73,6 +74,17 @@ internal class CachedFormDataAccessor : ICachedFormDataAccessor
         {
             if (!_cache.TryAdd(key, new Lazy<Task<TValue>>(Task.FromResult(data))))
             {
+                var existing = _cache[key];
+                if (
+                    existing.IsValueCreated
+                    && existing.Value.IsCompletedSuccessfully
+                    && data.Equals(existing.Value.Result)
+                )
+                {
+                    // We are trying to set the same value again, so we can just ignore this
+                    return;
+                }
+
                 throw new InvalidOperationException($"Key {key} already exists in cache");
             }
         }
