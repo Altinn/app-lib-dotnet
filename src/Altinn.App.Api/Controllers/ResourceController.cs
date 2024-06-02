@@ -7,6 +7,7 @@ namespace Altinn.App.Api.Controllers;
 /// <summary>
 /// Controller to handle resources like css, images, javascript included in an app
 /// </summary>
+[ApiController]
 public class ResourceController : ControllerBase
 {
     private readonly IAppResources _appResourceService;
