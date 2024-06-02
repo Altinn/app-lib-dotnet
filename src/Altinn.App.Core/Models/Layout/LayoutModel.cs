@@ -62,19 +62,16 @@ public record LayoutModel
         var externalModelReferences = new HashSet<string>();
         foreach (var component in GetComponents())
         {
-            // check external bindings
-            foreach (var binding in component.DataModelBindings.Values)
-            {
-                if (binding.DataType is not null)
-                {
-                    externalModelReferences.Add(binding.DataType);
-                }
-            }
+            // Add data model references from DataModelBindings
+            externalModelReferences.UnionWith(
+                component.DataModelBindings.Values.Select(d => d.DataType).OfType<string>()
+            );
 
-            //TODO: add more expressions when backend uses them
+            // Add data model references from expressions
             AddExternalModelReferences(component.Hidden, externalModelReferences);
             AddExternalModelReferences(component.ReadOnly, externalModelReferences);
             AddExternalModelReferences(component.Required, externalModelReferences);
+            //TODO: add more expressions when backend uses them
         }
 
         return externalModelReferences;

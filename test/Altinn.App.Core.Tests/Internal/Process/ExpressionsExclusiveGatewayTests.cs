@@ -303,13 +303,7 @@ public class ExpressionsExclusiveGatewayTests
             frontendSettings,
             new CachedFormDataAccessor(_dataClient.Object, _appMetadata.Object, _appModel.Object)
         );
-        return new ExpressionsExclusiveGateway(
-            layoutStateInit,
-            _resources.Object,
-            _appModel.Object,
-            _appMetadata.Object,
-            _dataClient.Object
-        );
+        return new ExpressionsExclusiveGateway(layoutStateInit);
     }
 
     private static string LayoutSetsToString(LayoutSets layoutSets) =>

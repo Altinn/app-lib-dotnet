@@ -1,4 +1,3 @@
-using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
@@ -11,21 +10,13 @@ namespace Altinn.App.Core.Features.Validation.Default;
 public class RequiredLayoutValidator : IFormDataValidator
 {
     private readonly ILayoutEvaluatorStateInitializer _layoutEvaluatorStateInitializer;
-    private readonly IAppResources _appResources;
-    private readonly IAppMetadata _appMetadata;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RequiredLayoutValidator"/> class.
     /// </summary>
-    public RequiredLayoutValidator(
-        ILayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer,
-        IAppResources appResources,
-        IAppMetadata appMetadata
-    )
+    public RequiredLayoutValidator(ILayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer)
     {
         _layoutEvaluatorStateInitializer = layoutEvaluatorStateInitializer;
-        _appResources = appResources;
-        _appMetadata = appMetadata;
     }
 
     /// <summary>

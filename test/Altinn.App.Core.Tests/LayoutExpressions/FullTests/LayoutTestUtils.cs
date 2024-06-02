@@ -12,47 +12,44 @@ using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
-namespace Altinn.App.Core.Tests.LayoutExpressions;
+namespace Altinn.App.Core.Tests.LayoutExpressions.FullTests;
 
 public static class LayoutTestUtils
 {
     private static readonly JsonSerializerOptions _jsonSerializerOptions = new(JsonSerializerDefaults.Web);
 
-    public const string Org = "ttd";
-    public const string App = "test";
-    public const string AppId = $"{Org}/{App}";
-    public const int InstanceOwnerPartyId = 134;
-    public static Guid InstanceGuid = Guid.Parse("12345678-1234-1234-1234-123456789012");
-    public static Guid DataGuid = Guid.Parse("12345678-1234-1234-1234-123456789013");
-    public const string DataTypeId = "default";
-    public const string ClassRef = "NoClass";
-    public const string TaskId = "Task_1";
+    private const string Org = "ttd";
+    private const string App = "test";
+    private const string AppId = $"{Org}/{App}";
+    private const int InstanceOwnerPartyId = 134;
+    private static readonly Guid _instanceGuid = Guid.Parse("12345678-1234-1234-1234-123456789012");
+    private static readonly Guid _dataGuid = Guid.Parse("12345678-1234-1234-1234-123456789013");
+    private const string DataTypeId = "default";
+    private const string ClassRef = "NoClass";
+    private const string TaskId = "Task_1";
 
-    public static ApplicationMetadata ApplicationMetadata =
+    private static readonly ApplicationMetadata _applicationMetadata =
         new(AppId)
         {
-            DataTypes = new List<DataType>()
-            {
-                new()
+            DataTypes =
+            [
+                new DataType()
                 {
                     Id = DataTypeId,
                     TaskId = TaskId,
                     AppLogic = new() { ClassRef = ClassRef }
                 }
-            }
+            ]
         };
 
-    public static Instance Instance =
+    private static readonly Instance _instance =
         new()
         {
-            Id = $"{InstanceOwnerPartyId}/{InstanceGuid}",
+            Id = $"{InstanceOwnerPartyId}/{_instanceGuid}",
             AppId = AppId,
             Org = Org,
             InstanceOwner = new() { PartyId = InstanceOwnerPartyId.ToString() },
-            Data = new()
-            {
-                new() { Id = DataGuid.ToString(), DataType = "default", }
-            }
+            Data = [new DataElement() { Id = _dataGuid.ToString(), DataType = "default", }]
         };
 
     public static async Task<LayoutEvaluatorState> GetLayoutModelTools(object model, string folder)
@@ -61,15 +58,15 @@ public static class LayoutTestUtils
 
         var appMetadata = new Mock<IAppMetadata>(MockBehavior.Strict);
 
-        appMetadata.Setup(am => am.GetApplicationMetadata()).ReturnsAsync(ApplicationMetadata);
+        appMetadata.Setup(am => am.GetApplicationMetadata()).ReturnsAsync(_applicationMetadata);
         var appModel = new Mock<IAppModel>(MockBehavior.Strict);
         var modelType = model.GetType();
         appModel.Setup(am => am.GetModelType(ClassRef)).Returns(modelType);
 
         var data = new Mock<IDataClient>(MockBehavior.Strict);
-        data.Setup(d => d.GetFormData(InstanceGuid, modelType, Org, App, InstanceOwnerPartyId, DataGuid))
+        data.Setup(d => d.GetFormData(_instanceGuid, modelType, Org, App, InstanceOwnerPartyId, _dataGuid))
             .ReturnsAsync(model);
-        services.AddTransient<IDataClient>((sp) => data.Object);
+        services.AddSingleton(data.Object);
 
         var resources = new Mock<IAppResources>();
         var pages = new Dictionary<string, PageComponent>();
@@ -102,6 +99,6 @@ public static class LayoutTestUtils
         using var scope = serviceProvider.CreateScope();
         var initializer = scope.ServiceProvider.GetRequiredService<ILayoutEvaluatorStateInitializer>();
 
-        return await initializer.Init(Instance, TaskId);
+        return await initializer.Init(_instance, TaskId);
     }
 }

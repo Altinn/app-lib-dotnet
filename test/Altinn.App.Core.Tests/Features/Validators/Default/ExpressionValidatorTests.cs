@@ -45,12 +45,7 @@ public class ExpressionValidatorTests
                 new ApplicationMetadata("org/app") { DataTypes = new List<DataType> { new() { Id = "default" } } }
             );
         _appResources.Setup(ar => ar.GetLayoutSetForTask("Task_1")).Returns(new LayoutSet());
-        _validator = new ExpressionValidator(
-            _logger.Object,
-            _appResources.Object,
-            _layoutInitializer.Object,
-            _appMetadata.Object
-        );
+        _validator = new ExpressionValidator(_logger.Object, _appResources.Object, _layoutInitializer.Object);
     }
 
     [Theory]

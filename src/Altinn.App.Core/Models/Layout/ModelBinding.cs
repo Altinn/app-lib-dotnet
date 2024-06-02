@@ -17,7 +17,7 @@ public readonly record struct ModelBinding
 
     /// <summary>
     /// Implicit conversion from string to <see cref="ModelBinding" /> for
-    /// bacwards convenicence
+    /// backwards convenience
     /// </summary>
     public static implicit operator ModelBinding(string field)
     {

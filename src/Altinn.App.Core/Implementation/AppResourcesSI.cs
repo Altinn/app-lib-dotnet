@@ -30,7 +30,6 @@ public class AppResourcesSI : IAppResources
 
     private readonly AppSettings _settings;
     private readonly IAppMetadata _appMetadata;
-    private readonly IWebHostEnvironment _hostingEnvironment;
     private readonly ILogger _logger;
     private readonly Telemetry? _telemetry;
 
@@ -52,7 +51,6 @@ public class AppResourcesSI : IAppResources
     {
         _settings = settings.Value;
         _appMetadata = appMetadata;
-        _hostingEnvironment = hostingEnvironment;
         _logger = logger;
         _telemetry = telemetry;
     }
@@ -81,17 +79,15 @@ public class AppResourcesSI : IAppResources
             return null;
         }
 
-        using (FileStream fileStream = new(fullFileName, FileMode.Open, FileAccess.Read))
-        {
-            TextResource textResource =
-                await System.Text.Json.JsonSerializer.DeserializeAsync<TextResource>(fileStream, _jsonSerializerOptions)
-                ?? throw new System.Text.Json.JsonException("Failed to deserialize text resource");
-            textResource.Id = $"{org}-{app}-{language}";
-            textResource.Org = org;
-            textResource.Language = language;
+        await using FileStream fileStream = new(fullFileName, FileMode.Open, FileAccess.Read);
+        TextResource textResource =
+            await System.Text.Json.JsonSerializer.DeserializeAsync<TextResource>(fileStream, _jsonSerializerOptions)
+            ?? throw new System.Text.Json.JsonException("Failed to deserialize text resource");
+        textResource.Id = $"{org}-{app}-{language}";
+        textResource.Org = org;
+        textResource.Language = language;
 
-            return textResource;
-        }
+        return textResource;
     }
 
     /// <inheritdoc />
@@ -286,7 +282,7 @@ public class AppResourcesSI : IAppResources
     {
         using var activity = _telemetry?.StartGetLayoutSetsForTaskActivity();
         var sets = GetLayoutSet();
-        return sets?.Sets?.FirstOrDefault(s => s?.Tasks?.Contains(taskId) ?? false);
+        return sets?.Sets?.Find(s => s?.Tasks?.Contains(taskId) ?? false);
     }
 
     /// <inheritdoc />
@@ -349,8 +345,8 @@ public class AppResourcesSI : IAppResources
     {
         var appMetadata = _appMetadata.GetApplicationMetadata().Result;
         // First look for the layoutSet.DataType, then look for the first DataType with a classRef
-        return appMetadata.DataTypes.FirstOrDefault(d => layoutSet?.DataType == d.Id)
-            ?? appMetadata.DataTypes.FirstOrDefault(d => d.AppLogic?.ClassRef is not null && d.TaskId == taskId)
+        return appMetadata.DataTypes.Find(d => layoutSet?.DataType == d.Id)
+            ?? appMetadata.DataTypes.Find(d => d.AppLogic?.ClassRef is not null && d.TaskId == taskId)
             ?? throw new InvalidOperationException(
                 $"No data type found for task {taskId} and layoutSet {layoutSet?.Id}"
             );
@@ -387,9 +383,8 @@ public class AppResourcesSI : IAppResources
         );
         if (File.Exists(filename))
         {
-            string? filedata = null;
-            filedata = File.ReadAllText(filename, Encoding.UTF8);
-            LayoutSettings? layoutSettings = JsonConvert.DeserializeObject<LayoutSettings>(filedata);
+            var fileData = File.ReadAllText(filename, Encoding.UTF8);
+            LayoutSettings? layoutSettings = JsonConvert.DeserializeObject<LayoutSettings>(fileData);
             return layoutSettings;
         }
 
