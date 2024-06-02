@@ -144,7 +144,7 @@ public enum ExpressionFunction
     gatewayAction,
 
     /// <summary>
-    /// Gets the currently selected language (or null if not in a context where language is available)
+    /// Gets the currently selected language (or "nb" if not in a context where language is available)
     /// </summary>
     language,
 }

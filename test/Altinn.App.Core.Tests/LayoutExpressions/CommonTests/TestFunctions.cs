@@ -38,6 +38,10 @@ public class TestFunctions
     public void Concat_Theory(ExpressionTestCaseRoot test) => RunTestCase(test);
 
     [Theory]
+    [SharedTest("language")]
+    public void Language_Theory(ExpressionTestCaseRoot test) => RunTestCase(test);
+
+    [Theory]
     [SharedTest("contains")]
     public void Contains_Theory(ExpressionTestCaseRoot test) => RunTestCase(test);
 
@@ -126,7 +130,9 @@ public class TestFunctions
             new JsonDataModel(test.DataModel),
             test.ComponentModel,
             test.FrontEndSettings ?? new(),
-            test.Instance ?? new()
+            test.Instance ?? new(),
+            test.GatewayAction,
+            test.ProfileSettings?.Language
         );
 
         if (test.ExpectsFailure is not null)

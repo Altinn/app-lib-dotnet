@@ -31,7 +31,8 @@ public class TestBackendExclusiveFunctions
             test.ComponentModel,
             test.FrontEndSettings ?? new(),
             test.Instance ?? new(),
-            test.GatewayAction
+            test.GatewayAction,
+            test.ProfileSettings?.Language
         );
 
         if (test.ExpectsFailure is not null)

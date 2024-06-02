@@ -56,10 +56,19 @@ public class ExpressionTestCaseRoot
     [JsonPropertyName("gatewayAction")]
     public string? GatewayAction { get; set; }
 
+    [JsonPropertyName("profileSettings")]
+    public ProfileSettings? ProfileSettings { get; set; }
+
     public override string ToString()
     {
         return $"{Filename}: {Name}";
     }
+}
+
+public class ProfileSettings
+{
+    [JsonPropertyName("language")]
+    public string? Language { get; set; }
 }
 
 public class ComponentContextForTestSpec
