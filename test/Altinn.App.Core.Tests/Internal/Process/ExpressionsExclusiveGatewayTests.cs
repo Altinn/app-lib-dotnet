@@ -55,7 +55,7 @@ public class ExpressionsExclusiveGatewayTests
 
         var data = new DummyModel();
 
-        IProcessExclusiveGateway gateway = SetupExpressionsGateway(dataTypes: dataTypes, formData: data);
+        var gateway = SetupExpressionsGateway(dataTypes: dataTypes, formData: data);
         var outgoingFlows = new List<SequenceFlow>
         {
             new SequenceFlow { Id = "1", ConditionExpression = null, },
@@ -97,7 +97,7 @@ public class ExpressionsExclusiveGatewayTests
         };
 
         var data = new DummyModel();
-        IProcessExclusiveGateway gateway = SetupExpressionsGateway(dataTypes: dataTypes, formData: data);
+        var gateway = SetupExpressionsGateway(dataTypes: dataTypes, formData: data);
         var outgoingFlows = new List<SequenceFlow>
         {
             new SequenceFlow { Id = "1", ConditionExpression = "[\"equals\", [\"gatewayAction\"], \"confirm\"]", },
@@ -154,7 +154,7 @@ public class ExpressionsExclusiveGatewayTests
                 }
             }
         };
-        IProcessExclusiveGateway gateway = SetupExpressionsGateway(
+        var gateway = SetupExpressionsGateway(
             dataTypes: dataTypes,
             formData: formData,
             layoutSets: LayoutSetsToString(layoutSets)
@@ -216,7 +216,7 @@ public class ExpressionsExclusiveGatewayTests
                 }
             }
         };
-        IProcessExclusiveGateway gateway = SetupExpressionsGateway(
+        var gateway = SetupExpressionsGateway(
             dataTypes: dataTypes,
             formData: formData,
             layoutSets: LayoutSetsToString(layoutSets)
@@ -298,7 +298,6 @@ public class ExpressionsExclusiveGatewayTests
 
         var frontendSettings = Options.Create(new FrontEndSettings());
         var layoutStateInit = new LayoutEvaluatorStateInitializer(
-            _appMetadata.Object,
             _resources.Object,
             frontendSettings,
             new CachedFormDataAccessor(_dataClient.Object, _appMetadata.Object, _appModel.Object)

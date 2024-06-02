@@ -14,7 +14,6 @@ namespace Altinn.App.Core.Internal.Expressions;
 public class LayoutEvaluatorStateInitializer : ILayoutEvaluatorStateInitializer
 {
     // Dependency injection properties (set in ctor)
-    private readonly IAppMetadata _appMetadata;
     private readonly IAppResources _appResources;
     private readonly FrontEndSettings _frontEndSettings;
     private readonly ICachedFormDataAccessor _dataAccessor;
@@ -23,13 +22,11 @@ public class LayoutEvaluatorStateInitializer : ILayoutEvaluatorStateInitializer
     /// Constructor with services from dependency injection
     /// </summary>
     public LayoutEvaluatorStateInitializer(
-        IAppMetadata appMetadata,
         IAppResources appResources,
         IOptions<FrontEndSettings> frontEndSettings,
         ICachedFormDataAccessor dataAccessor
     )
     {
-        _appMetadata = appMetadata;
         _appResources = appResources;
         _dataAccessor = dataAccessor;
         _frontEndSettings = frontEndSettings.Value;

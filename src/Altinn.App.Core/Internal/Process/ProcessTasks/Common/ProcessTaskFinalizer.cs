@@ -112,7 +112,6 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
         // Remove hidden data before validation, ignore hidden rows.
         if (_appSettings.Value?.RemoveHiddenData == true)
         {
-            LayoutSet? layoutSet = _appResources.GetLayoutSetForTask(dataType.TaskId);
             LayoutEvaluatorState evaluationState = await _layoutEvaluatorStateInitializer.Init(
                 instance,
                 taskId,

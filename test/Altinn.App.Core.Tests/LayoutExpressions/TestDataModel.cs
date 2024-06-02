@@ -68,7 +68,7 @@ public class TestDataModel
                 new() { Name = new() { Value = "Dolly Duck" } }
             }
         };
-        IDataModelAccessor modelHelper = new DataModel(_dataElement, model, []);
+        var modelHelper = new DataModel(_dataElement, model, []);
         modelHelper.GetModelData("friends.name.value").Should().BeNull();
         modelHelper.GetModelData("friends[0].name.value").Should().Be("Donald Duck");
         modelHelper.GetModelData("friends.name.value", [0]).Should().Be("Donald Duck");
@@ -79,14 +79,14 @@ public class TestDataModel
 
         // Run the same tests with JsonDataModel
         var doc = JsonSerializer.Deserialize<JsonObject>(JsonSerializer.Serialize(model));
-        modelHelper = new JsonDataModel(doc);
-        modelHelper.GetModelData("friends.name.value").Should().BeNull();
-        modelHelper.GetModelData("friends[0].name.value").Should().Be("Donald Duck");
-        modelHelper.GetModelData("friends.name.value", [0]).Should().Be("Donald Duck");
-        modelHelper.GetModelData("friends[0].age").Should().Be(123);
-        modelHelper.GetModelData("friends.age", [0]).Should().Be(123);
-        modelHelper.GetModelData("friends[1].name.value").Should().Be("Dolly Duck");
-        modelHelper.GetModelData("friends.name.value", [1]).Should().Be("Dolly Duck");
+        var jsonModelHelper = new JsonDataModel(doc);
+        jsonModelHelper.GetModelData("friends.name.value").Should().BeNull();
+        jsonModelHelper.GetModelData("friends[0].name.value").Should().Be("Donald Duck");
+        jsonModelHelper.GetModelData("friends.name.value", [0]).Should().Be("Donald Duck");
+        jsonModelHelper.GetModelData("friends[0].age").Should().Be(123);
+        jsonModelHelper.GetModelData("friends.age", [0]).Should().Be(123);
+        jsonModelHelper.GetModelData("friends[1].name.value").Should().Be("Dolly Duck");
+        jsonModelHelper.GetModelData("friends.name.value", [1]).Should().Be("Dolly Duck");
     }
 
     [Fact]
@@ -129,7 +129,7 @@ public class TestDataModel
             }
         };
 
-        IDataModelAccessor modelHelper = new DataModel(_dataElement, model, []);
+        var modelHelper = new DataModel(_dataElement, model, []);
         modelHelper.GetModelData("friends[1].friends[0].name.value").Should().Be("Onkel Skrue");
         modelHelper.GetModelData("friends[1].friends.name.value", [0, 0]).Should().BeNull();
         modelHelper
@@ -147,21 +147,21 @@ public class TestDataModel
 
         // Run the same tests with JsonDataModel
         var doc = JsonSerializer.Deserialize<JsonObject>(JsonSerializer.Serialize(model));
-        modelHelper = new JsonDataModel(doc);
-        modelHelper.GetModelData("friends[1].friends[0].name.value").Should().Be("Onkel Skrue");
-        modelHelper.GetModelData("friends[1].friends.name.value", [0, 0]).Should().BeNull();
-        modelHelper
+        var jsonModelHelper = new JsonDataModel(doc);
+        jsonModelHelper.GetModelData("friends[1].friends[0].name.value").Should().Be("Onkel Skrue");
+        jsonModelHelper.GetModelData("friends[1].friends.name.value", [0, 0]).Should().BeNull();
+        jsonModelHelper
             .GetModelData("friends[1].friends.name.value", [1, 0])
             .Should()
             .BeNull("context indexes should not be used after literal index is used");
-        modelHelper.GetModelData("friends[1].friends.name.value", [1]).Should().BeNull();
-        modelHelper.GetModelData("friends.friends[0].name.value", [1, 4, 5, 7]).Should().Be("Onkel Skrue");
-        modelHelper.GetModelDataCount("friends[1].friends", Array.Empty<int>()).Should().Be(1);
-        modelHelper.GetModelDataCount("friends.friends", [1]).Should().Be(1);
-        modelHelper.GetModelDataCount("friends[1].friends.friends", [1, 0, 0]).Should().BeNull();
-        modelHelper.GetModelDataCount("friends[1].friends[0].friends", [1, 0, 0]).Should().Be(2);
-        modelHelper.GetModelDataCount("friends.friends.friends", [1, 0, 0]).Should().Be(2);
-        modelHelper.GetModelDataCount("friends.friends", [1]).Should().Be(1);
+        jsonModelHelper.GetModelData("friends[1].friends.name.value", [1]).Should().BeNull();
+        jsonModelHelper.GetModelData("friends.friends[0].name.value", [1, 4, 5, 7]).Should().Be("Onkel Skrue");
+        jsonModelHelper.GetModelDataCount("friends[1].friends", Array.Empty<int>()).Should().Be(1);
+        jsonModelHelper.GetModelDataCount("friends.friends", [1]).Should().Be(1);
+        jsonModelHelper.GetModelDataCount("friends[1].friends.friends", [1, 0, 0]).Should().BeNull();
+        jsonModelHelper.GetModelDataCount("friends[1].friends[0].friends", [1, 0, 0]).Should().Be(2);
+        jsonModelHelper.GetModelDataCount("friends.friends.friends", [1, 0, 0]).Should().Be(2);
+        jsonModelHelper.GetModelDataCount("friends.friends", [1]).Should().Be(1);
     }
 
     [Fact]
@@ -188,7 +188,7 @@ public class TestDataModel
                 }
             }
         };
-        IDataModelAccessor modelHelper = new DataModel(_dataElement, model, []);
+        var modelHelper = new DataModel(_dataElement, model, []);
         model.Id.Should().Be(2);
         modelHelper.RemoveField("id", RowRemovalOption.SetToNull);
         model.Id.Should().Be(default);
@@ -273,7 +273,7 @@ public class TestDataModel
 
         // deleteRows = false
         var model1 = JsonSerializer.Deserialize<Model>(serializedModel)!;
-        IDataModelAccessor modelHelper1 = new DataModel(_dataElement, model1, []);
+        var modelHelper1 = new DataModel(_dataElement, model1, []);
 
         modelHelper1.RemoveField("friends[0].friends[0]", RowRemovalOption.SetToNull);
         model1.Friends![0].Friends![0].Should().BeNull();
@@ -287,7 +287,7 @@ public class TestDataModel
 
         // deleteRows = true
         var model2 = JsonSerializer.Deserialize<Model>(serializedModel)!;
-        IDataModelAccessor modelHelper2 = new DataModel(_dataElement, model2, []);
+        var modelHelper2 = new DataModel(_dataElement, model2, []);
 
         modelHelper2.RemoveField("friends[0].friends[0]", RowRemovalOption.DeleteRow);
         model2.Friends![0].Friends!.Count.Should().Be(2);
@@ -350,7 +350,7 @@ public class TestDataModel
     [Fact]
     public void TestAddIndicies()
     {
-        IDataModelAccessor modelHelper = new DataModel(
+        var modelHelper = new DataModel(
             _dataElement,
             new Model
             {
@@ -376,7 +376,7 @@ public class TestDataModel
     [Fact]
     public void AddIndicies_WhenGivenIndexOnNonIndexableProperty_ThrowsError()
     {
-        IDataModelAccessor modelHelper = new DataModel(_dataElement, new Model { Id = 3, }, []);
+        var modelHelper = new DataModel(_dataElement, new Model { Id = 3, }, []);
 
         // Throws because id is not indexable
         modelHelper

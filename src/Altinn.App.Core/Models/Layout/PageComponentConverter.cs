@@ -311,7 +311,6 @@ public class PageComponentConverter : JsonConverter<PageComponent>
                     type = reader.GetString();
                     break;
                 case "datamodelbindings":
-                    // TODO: deserialize directly to make LineNumber and BytePositionInLine to give better errors
                     dataModelBindings = DeserializeModelBindings(ref reader);
                     break;
                 // case "textresourcebindings":
@@ -487,7 +486,7 @@ public class PageComponentConverter : JsonConverter<PageComponent>
         );
     }
 
-    private Dictionary<string, ModelBinding> DeserializeModelBindings(ref Utf8JsonReader reader)
+    private static Dictionary<string, ModelBinding> DeserializeModelBindings(ref Utf8JsonReader reader)
     {
         var modelBindings = new Dictionary<string, ModelBinding>();
         if (reader.TokenType != JsonTokenType.StartObject)

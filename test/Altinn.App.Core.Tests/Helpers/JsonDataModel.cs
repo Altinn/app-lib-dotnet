@@ -178,7 +178,7 @@ public class JsonDataModel : IDataModelAccessor
         return GetResolvedKeysRecursive(key, keyParts, _modelRoot);
     }
 
-    private ModelBinding[] GetResolvedKeysRecursive(
+    private static ModelBinding[] GetResolvedKeysRecursive(
         ModelBinding fullkey,
         string[] keyParts,
         JsonNode? currentModel,
