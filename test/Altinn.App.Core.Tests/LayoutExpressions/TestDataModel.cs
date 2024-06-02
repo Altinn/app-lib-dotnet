@@ -5,6 +5,7 @@ using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Tests.Helpers;
+using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Newtonsoft.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
@@ -13,11 +14,13 @@ namespace Altinn.App.Core.Tests.LayoutExpressions.CSharpTests;
 
 public class TestDataModel
 {
+    private DataElement _dataElement = new();
+
     [Fact]
     public void TestSimpleGet()
     {
         var model = new Model { Name = new() { Value = "myValue" } };
-        var modelHelper = new DataModel(model);
+        var modelHelper = new DataModel(_dataElement, model, []);
         modelHelper.GetModelData("does.not.exist", default).Should().BeNull();
         modelHelper.GetModelData("name.value", default).Should().Be(model.Name.Value);
         modelHelper.GetModelData("name.value", [1, 2, 3]).Should().Be(model.Name.Value);
@@ -26,7 +29,7 @@ public class TestDataModel
     [Fact]
     public void AttributeNoAttriubteCaseSensitive()
     {
-        var modelHelper = new DataModel(new Model { NoAttribute = "asdfsf559", });
+        var modelHelper = new DataModel(_dataElement, new Model { NoAttribute = "asdfsf559", }, []);
         modelHelper.GetModelData("NOATTRIBUTE", default).Should().BeNull("data model lookup is case sensitive");
         modelHelper.GetModelData("noAttribute", default).Should().BeNull();
         modelHelper.GetModelData("NoAttribute", default).Should().Be("asdfsf559");
@@ -35,7 +38,7 @@ public class TestDataModel
     [Fact]
     public void NewtonsoftAttributeWorks()
     {
-        var modelHelper = new DataModel(new Model { OnlyNewtonsoft = "asdfsf559", });
+        var modelHelper = new DataModel(_dataElement, new Model { OnlyNewtonsoft = "asdfsf559", }, []);
         modelHelper
             .GetModelData("OnlyNewtonsoft", default)
             .Should()
@@ -47,7 +50,7 @@ public class TestDataModel
     [Fact]
     public void SystemTextJsonAttributeWorks()
     {
-        var modelHelper = new DataModel(new Model { OnlySystemTextJson = "asdfsf559", });
+        var modelHelper = new DataModel(_dataElement, new Model { OnlySystemTextJson = "asdfsf559", }, []);
         modelHelper
             .GetModelData("OnlySystemTextJson", default)
             .Should()
@@ -71,7 +74,7 @@ public class TestDataModel
                 new() { Name = new() { Value = "Dolly Duck" } }
             }
         };
-        IDataModelAccessor modelHelper = new DataModel(model);
+        IDataModelAccessor modelHelper = new DataModel(_dataElement, model, []);
         modelHelper.GetModelData("friends.name.value", default).Should().BeNull();
         modelHelper.GetModelData("friends[0].name.value", default).Should().Be("Donald Duck");
         modelHelper.GetModelData("friends.name.value", [0]).Should().Be("Donald Duck");
@@ -132,7 +135,7 @@ public class TestDataModel
             }
         };
 
-        IDataModelAccessor modelHelper = new DataModel(model);
+        IDataModelAccessor modelHelper = new DataModel(_dataElement, model, []);
         modelHelper.GetModelData("friends[1].friends[0].name.value", default).Should().Be("Onkel Skrue");
         modelHelper.GetModelData("friends[1].friends.name.value", [0, 0]).Should().BeNull();
         modelHelper
@@ -191,7 +194,7 @@ public class TestDataModel
                 }
             }
         };
-        IDataModelAccessor modelHelper = new DataModel(model);
+        IDataModelAccessor modelHelper = new DataModel(_dataElement, model, []);
         model.Id.Should().Be(2);
         modelHelper.RemoveField("id", RowRemovalOption.SetToNull);
         model.Id.Should().Be(default);
@@ -276,7 +279,7 @@ public class TestDataModel
 
         // deleteRows = false
         var model1 = JsonSerializer.Deserialize<Model>(serializedModel)!;
-        IDataModelAccessor modelHelper1 = new DataModel(model1);
+        IDataModelAccessor modelHelper1 = new DataModel(_dataElement, model1, []);
 
         modelHelper1.RemoveField("friends[0].friends[0]", RowRemovalOption.SetToNull);
         model1.Friends![0].Friends![0].Should().BeNull();
@@ -290,7 +293,7 @@ public class TestDataModel
 
         // deleteRows = true
         var model2 = JsonSerializer.Deserialize<Model>(serializedModel)!;
-        IDataModelAccessor modelHelper2 = new DataModel(model2);
+        IDataModelAccessor modelHelper2 = new DataModel(_dataElement, model2, []);
 
         modelHelper2.RemoveField("friends[0].friends[0]", RowRemovalOption.DeleteRow);
         model2.Friends![0].Friends!.Count.Should().Be(2);
@@ -305,11 +308,13 @@ public class TestDataModel
     public void TestErrorCases()
     {
         var modelHelper = new DataModel(
+            _dataElement,
             new Model
             {
                 Id = 3,
                 Friends = new List<Friend>() { new() { Name = new() { Value = "Ole" }, } }
-            }
+            },
+            []
         );
         modelHelper.Invoking(m => m.GetModelData(".")).Should().Throw<DataModelException>().WithMessage("*empty part*");
         modelHelper.GetModelData("friends[0]").Should().BeOfType<Friend>().Which.Name?.Value.Should().Be("Ole");
@@ -333,11 +338,13 @@ public class TestDataModel
     {
         // Test with erronious model with non-generic IEnumerable (special error for code coverage)
         var modelHelper = new DataModel(
+            _dataElement,
             new
             {
                 // ArrayList is not supported as a data model
                 friends = new ArrayList { 1, 2, 3 }
-            }
+            },
+            []
         );
         modelHelper
             .Invoking(m => m.AddIndicies("friends", [0]))
@@ -350,11 +357,13 @@ public class TestDataModel
     public void TestAddIndicies()
     {
         IDataModelAccessor modelHelper = new DataModel(
+            _dataElement,
             new Model
             {
                 Id = 3,
                 Friends = new List<Friend>() { new() { Name = new() { Value = "Ole" }, } }
-            }
+            },
+            []
         );
 
         // Plain add indicies
@@ -373,7 +382,7 @@ public class TestDataModel
     [Fact]
     public void AddIndicies_WhenGivenIndexOnNonIndexableProperty_ThrowsError()
     {
-        IDataModelAccessor modelHelper = new DataModel(new Model { Id = 3, });
+        IDataModelAccessor modelHelper = new DataModel(_dataElement, new Model { Id = 3, }, []);
 
         // Throws because id is not indexable
         modelHelper
@@ -386,7 +395,7 @@ public class TestDataModel
     [Fact]
     public void RemoveField_WhenValueDoesNotExist_DoNothing()
     {
-        var modelHelper = new DataModel(new Model());
+        var modelHelper = new DataModel(_dataElement, new Model(), []);
 
         // real fields works, no error
         modelHelper.RemoveField("id", RowRemovalOption.SetToNull);

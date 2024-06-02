@@ -78,7 +78,8 @@ public class PatchServiceTests : IDisposable
             _dataClientMock.Object,
             _appModelMock.Object,
             _appMetadataMock.Object,
-            _vLoggerMock.Object
+            _vLoggerMock.Object,
+            new CachedFormDataAccessor(_dataClientMock.Object, _appMetadataMock.Object, _appModelMock.Object)
         );
         _patchService = new PatchService(
             _appMetadataMock.Object,

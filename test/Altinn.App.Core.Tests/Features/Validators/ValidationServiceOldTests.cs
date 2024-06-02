@@ -50,6 +50,7 @@ public class ValidationServiceOldTests
         _serviceCollection.AddSingleton<IDataElementValidator, DefaultDataElementValidator>();
         _serviceCollection.AddSingleton<ITaskValidator, DefaultTaskValidator>();
         _serviceCollection.AddSingleton<IValidatorFactory, ValidatorFactory>();
+        _serviceCollection.AddScoped<ICachedFormDataAccessor, CachedFormDataAccessor>();
         _appMetadataMock.Setup(am => am.GetApplicationMetadata()).ReturnsAsync(_applicationMetadata);
     }
 

@@ -5,21 +5,27 @@ using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Internal.Data;
 
-internal class CachedDataClient
+/// <summary>
+/// Class that caches form data to avoid multiple calls to the data service for a single validation
+///
+/// Must be registered as a scoped service in DI container
+/// </summary>
+internal class CachedFormDataAccessor : ICachedFormDataAccessor
 {
     private readonly IDataClient _dataClient;
     private readonly IAppMetadata _appMetadata;
     private readonly IAppModel _appModel;
     private readonly LazyCache<string, object> _cache = new();
 
-    internal CachedDataClient(IDataClient dataClient, IAppMetadata appMetadata, IAppModel appModel)
+    public CachedFormDataAccessor(IDataClient dataClient, IAppMetadata appMetadata, IAppModel appModel)
     {
         _dataClient = dataClient;
         _appMetadata = appMetadata;
         _appModel = appModel;
     }
 
-    internal async Task<object> Get(Instance instance, DataElement dataElement)
+    /// <inheritdoc />
+    public async Task<object> Get(Instance instance, DataElement dataElement)
     {
         return await _cache.GetOrCreate(
             dataElement.Id,
@@ -42,13 +48,14 @@ internal class CachedDataClient
         );
     }
 
-    internal void Set(DataElement dataElement, object data)
+    /// <inheritdoc />
+    public async Task SetIfMissing(DataElement dataElement, object data)
     {
-        _cache.Set(dataElement.Id, data);
+        await _cache.GetOrCreate(dataElement.Id, (key) => Task.FromResult(data));
     }
 
     /// <summary>
-    ///     Simple wrapper around a ConcurrentDictionary using Lazy to ensure that the valueFactory is only called once
+    /// Simple wrapper around a ConcurrentDictionary using Lazy to ensure that the valueFactory is only called once
     /// </summary>
     /// <typeparam name="TKey">The type of the key in the cache</typeparam>
     /// <typeparam name="TValue">The type of the object to cache</typeparam>

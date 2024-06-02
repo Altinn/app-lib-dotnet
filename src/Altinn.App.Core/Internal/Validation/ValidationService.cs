@@ -17,7 +17,7 @@ public class ValidationService : IValidationService
     private readonly IAppMetadata _appMetadata;
     private readonly ILogger<ValidationService> _logger;
     private readonly Telemetry? _telemetry;
-    private readonly CachedDataClient _dataCache;
+    private readonly ICachedFormDataAccessor _formDataCache;
 
     /// <summary>
     /// Constructor with DI services
@@ -28,14 +28,15 @@ public class ValidationService : IValidationService
         IAppModel appModel,
         IAppMetadata appMetadata,
         ILogger<ValidationService> logger,
+        ICachedFormDataAccessor formDataCache,
         Telemetry? telemetry = null
     )
     {
         _validatorFactory = validatorFactory;
         _appMetadata = appMetadata;
         _logger = logger;
+        _formDataCache = formDataCache;
         _telemetry = telemetry;
-        _dataCache = new CachedDataClient(dataClient, appMetadata, appModel);
     }
 
     /// <inheritdoc/>
@@ -133,7 +134,7 @@ public class ValidationService : IValidationService
         // Run extra validation on form data elements with app logic
         if (dataType.AppLogic?.ClassRef is not null)
         {
-            var data = await _dataCache.Get(instance, dataElement);
+            var data = await _formDataCache.Get(instance, dataElement);
             var formDataIssuesDictionary = await ValidateFormData(
                 instance,
                 dataElement,
@@ -215,6 +216,9 @@ public class ValidationService : IValidationService
         ArgumentNullException.ThrowIfNull(data);
 
         using var activity = _telemetry?.StartValidateFormDataActivity(instance, dataElement);
+
+        // Set data from request instead of fetching the old data.
+        await _formDataCache.SetIfMissing(dataElement, data);
 
         // Locate the relevant data validator services from normal and keyed services
         var dataValidators = _validatorFactory

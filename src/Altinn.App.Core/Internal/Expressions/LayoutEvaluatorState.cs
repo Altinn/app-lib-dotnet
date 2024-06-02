@@ -47,6 +47,11 @@ public class LayoutEvaluatorState
     }
 
     /// <summary>
+    /// Get the default data element for the layout when <see cref="ModelBinding.Field"/> is null
+    /// </summary>
+    public DataElement DefaultDataElement => _dataModel.DefaultDataElement;
+
+    /// <summary>
     /// Get a hierarcy of the different contexts in the component model (remember to iterate <see cref="ComponentContext.ChildContexts" />)
     /// </summary>
     public IEnumerable<ComponentContext> GetComponentContexts()
@@ -295,7 +300,7 @@ public class LayoutEvaluatorState
 
     private void GetModelErrorsForExpression(Expression expr, BaseComponent component, List<string> errors)
     {
-        if (expr.IsFunctionExpression != true)
+        if (!expr.IsFunctionExpression)
         {
             return;
         }
@@ -368,5 +373,18 @@ public class LayoutEvaluatorState
             }
             EvaluateHiddenExpressionRecurs(childContext, hidden || rowIsHidden);
         }
+    }
+
+    /// <summary>
+    /// Get the data element that this ModelBinding is pointing to
+    /// </summary>
+    public DataElement? GetDataElement(ModelBinding field)
+    {
+        if (field.DataType is null)
+        {
+            return DefaultDataElement;
+        }
+        var dataElement = _instanceContext.Data.Find(d => d.DataType == field.DataType);
+        return dataElement;
     }
 }

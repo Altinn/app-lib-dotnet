@@ -311,32 +311,49 @@ public class AppResourcesSI : IAppResources
     }
 
     /// <inheritdoc />
+    [Obsolete("Use GetLayoutModelForTask instead", true)]
     public LayoutModel GetLayoutModel(string? layoutSetId = null)
     {
-        using var activity = _telemetry?.StartGetLayoutModelActivity();
-        string folder = Path.Join(_settings.AppBasePath, _settings.UiFolder, layoutSetId, "layouts");
-        var order = GetLayoutSettingsForSet(layoutSetId)?.Pages?.Order;
-        if (order is null)
-        {
-            throw new InvalidDataException(
-                "No $Pages.Order field found" + (layoutSetId is null ? "" : $" for layoutSet {layoutSetId}")
-            );
-        }
+        throw new NotImplementedException();
+    }
 
-        var layoutModel = new LayoutModel();
+    /// <inheritdoc />
+    public LayoutModel GetLayoutModelForTask(string taskId)
+    {
+        using var activity = _telemetry?.StartGetLayoutModelActivity();
+        var layoutSet = GetLayoutSetForTask(taskId);
+        var order =
+            GetLayoutSettingsForSet(layoutSet?.Id)?.Pages?.Order
+            ?? throw new InvalidDataException(
+                "No $Pages.Order field found" + (layoutSet?.Id is null ? "" : $" for layoutSet {layoutSet.Id}")
+            );
+
+        var pages = new Dictionary<string, PageComponent>();
+        string folder = Path.Join(_settings.AppBasePath, _settings.UiFolder, layoutSet?.Id, "layouts");
         foreach (var page in order)
         {
             var pageBytes = File.ReadAllBytes(Path.Join(folder, page + ".json"));
             // Set the PageName using AsyncLocal before deserializing.
             PageComponentConverter.SetAsyncLocalPageName(page);
-            layoutModel.Pages[page] =
+            pages[page] =
                 System.Text.Json.JsonSerializer.Deserialize<PageComponent>(
                     pageBytes.RemoveBom(),
                     _jsonSerializerOptions
                 ) ?? throw new InvalidDataException(page + ".json is \"null\"");
         }
 
-        return layoutModel;
+        return new LayoutModel() { DefaultDataType = GetDefaultDataType(taskId, layoutSet), Pages = pages, };
+    }
+
+    private DataType GetDefaultDataType(string taskId, LayoutSet? layoutSet)
+    {
+        var appMetadata = _appMetadata.GetApplicationMetadata().Result;
+        // First look for the layoutSet.DataType, then look for the first DataType with a classRef
+        return appMetadata.DataTypes.FirstOrDefault(d => layoutSet?.DataType == d.Id)
+            ?? appMetadata.DataTypes.FirstOrDefault(d => d.AppLogic?.ClassRef is not null && d.TaskId == taskId)
+            ?? throw new InvalidOperationException(
+                $"No data type found for task {taskId} and layoutSet {layoutSet?.Id}"
+            );
     }
 
     /// <inheritdoc />

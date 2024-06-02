@@ -24,6 +24,22 @@ public class ExpressionsExclusiveGatewayTests
     private static readonly JsonSerializerOptions _jsonSerializerOptions =
         new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, WriteIndented = true, };
 
+    private readonly Mock<IAppResources> _resources = new(MockBehavior.Strict);
+    private readonly Mock<IAppModel> _appModel = new(MockBehavior.Strict);
+    private readonly Mock<IAppMetadata> _appMetadata = new(MockBehavior.Strict);
+    private readonly Mock<IDataClient> _dataClient = new(MockBehavior.Strict);
+
+    private const string Org = "ttd";
+    private const string App = "test";
+    private const string AppId = $"{Org}/{App}";
+    private const string TaskId = "Task_1";
+    private static readonly string _classRef = typeof(DummyModel).FullName!;
+
+    public ExpressionsExclusiveGatewayTests()
+    {
+        _appModel.Setup(am => am.GetModelType(_classRef)).Returns(typeof(DummyModel));
+    }
+
     [Fact]
     public async Task FilterAsync_NoExpressions_ReturnsAllFlows()
     {
@@ -36,7 +52,10 @@ public class ExpressionsExclusiveGatewayTests
                 AppLogic = new() { ClassRef = "Altinn.App.Core.Tests.Internal.Process.TestData.DummyModel", }
             }
         };
-        IProcessExclusiveGateway gateway = SetupExpressionsGateway(dataTypes: dataTypes);
+
+        var data = new DummyModel();
+
+        IProcessExclusiveGateway gateway = SetupExpressionsGateway(dataTypes: dataTypes, formData: data);
         var outgoingFlows = new List<SequenceFlow>
         {
             new SequenceFlow { Id = "1", ConditionExpression = null, },
@@ -76,7 +95,9 @@ public class ExpressionsExclusiveGatewayTests
                 AppLogic = new() { ClassRef = "Altinn.App.Core.Tests.Internal.Process.TestData.DummyModel", }
             }
         };
-        IProcessExclusiveGateway gateway = SetupExpressionsGateway(dataTypes: dataTypes);
+
+        var data = new DummyModel();
+        IProcessExclusiveGateway gateway = SetupExpressionsGateway(dataTypes: dataTypes, formData: data);
         var outgoingFlows = new List<SequenceFlow>
         {
             new SequenceFlow { Id = "1", ConditionExpression = "[\"equals\", [\"gatewayAction\"], \"confirm\"]", },
@@ -136,8 +157,7 @@ public class ExpressionsExclusiveGatewayTests
         IProcessExclusiveGateway gateway = SetupExpressionsGateway(
             dataTypes: dataTypes,
             formData: formData,
-            layoutSets: LayoutSetsToString(layoutSets),
-            dataType: formData.GetType()
+            layoutSets: LayoutSetsToString(layoutSets)
         );
         var outgoingFlows = new List<SequenceFlow>
         {
@@ -179,9 +199,10 @@ public class ExpressionsExclusiveGatewayTests
             new()
             {
                 Id = "test",
-                AppLogic = new() { ClassRef = "Altinn.App.Core.Tests.Internal.Process.TestData.NotFound", }
+                AppLogic = new() { ClassRef = "Altinn.App.Core.Tests.Internal.Process.TestData.DummyModel", }
             }
         };
+
         object formData = new DummyModel() { Amount = 1000, Submitter = "test" };
         LayoutSets layoutSets = new LayoutSets()
         {
@@ -198,8 +219,7 @@ public class ExpressionsExclusiveGatewayTests
         IProcessExclusiveGateway gateway = SetupExpressionsGateway(
             dataTypes: dataTypes,
             formData: formData,
-            layoutSets: LayoutSetsToString(layoutSets),
-            dataType: formData.GetType()
+            layoutSets: LayoutSetsToString(layoutSets)
         );
         var outgoingFlows = new List<SequenceFlow>
         {
@@ -214,7 +234,7 @@ public class ExpressionsExclusiveGatewayTests
             Process = new() { CurrentTask = new() { ElementId = "Task_1" } },
             Data = new()
             {
-                new() { Id = "cd9204e7-9b83-41b4-b2f2-9b196b4fafcf", DataType = "aa" }
+                new() { Id = "cd9204e7-9b83-41b4-b2f2-9b196b4fafcf", DataType = "test" }
             }
         };
         var processGatewayInformation = new ProcessGatewayInformation { Action = "confirm", DataTypeId = "aa" };
@@ -227,27 +247,22 @@ public class ExpressionsExclusiveGatewayTests
         Assert.Equal("2", result[0].Id);
     }
 
-    private static ExpressionsExclusiveGateway SetupExpressionsGateway(
+    private ExpressionsExclusiveGateway SetupExpressionsGateway(
         List<DataType> dataTypes,
         string? layoutSets = null,
-        object? formData = null,
-        Type? dataType = null
+        object? formData = null
     )
     {
-        var resources = new Mock<IAppResources>();
-        var appModel = new Mock<IAppModel>();
-        var appMetadata = new Mock<IAppMetadata>();
-        var dataClient = new Mock<IDataClient>();
-
-        resources.Setup(r => r.GetLayoutSets()).Returns(layoutSets ?? string.Empty);
-        appMetadata
+        _resources.Setup(r => r.GetLayoutSets()).Returns(layoutSets ?? string.Empty);
+        _appMetadata
             .Setup(m => m.GetApplicationMetadata())
             .ReturnsAsync(new ApplicationMetadata("ttd/test-app") { DataTypes = dataTypes });
-        resources
-            .Setup(r => r.GetLayoutModel(It.IsAny<string?>()))
+        _resources
+            .Setup(r => r.GetLayoutModelForTask(It.IsAny<string>()))
             .Returns(
                 new LayoutModel()
                 {
+                    DefaultDataType = new() { Id = "test", },
                     Pages = new Dictionary<string, PageComponent>()
                     {
                         {
@@ -267,7 +282,7 @@ public class ExpressionsExclusiveGatewayTests
             );
         if (formData != null)
         {
-            dataClient
+            _dataClient
                 .Setup(d =>
                     d.GetFormData(
                         It.IsAny<Guid>(),
@@ -281,23 +296,19 @@ public class ExpressionsExclusiveGatewayTests
                 .ReturnsAsync(formData);
         }
 
-        if (dataType != null)
-        {
-            appModel.Setup(a => a.GetModelType(dataType.FullName!)).Returns(dataType);
-        }
-
         var frontendSettings = Options.Create(new FrontEndSettings());
         var layoutStateInit = new LayoutEvaluatorStateInitializer(
-            resources.Object,
+            _appMetadata.Object,
+            _resources.Object,
             frontendSettings,
-            dataClient.Object
+            new CachedFormDataAccessor(_dataClient.Object, _appMetadata.Object, _appModel.Object)
         );
         return new ExpressionsExclusiveGateway(
             layoutStateInit,
-            resources.Object,
-            appModel.Object,
-            appMetadata.Object,
-            dataClient.Object
+            _resources.Object,
+            _appModel.Object,
+            _appMetadata.Object,
+            _dataClient.Object
         );
     }
 

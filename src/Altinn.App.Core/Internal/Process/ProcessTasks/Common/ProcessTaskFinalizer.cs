@@ -18,7 +18,7 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
     private readonly IDataClient _dataClient;
     private readonly IAppModel _appModel;
     private readonly IAppResources _appResources;
-    private readonly LayoutEvaluatorStateInitializer _layoutEvaluatorStateInitializer;
+    private readonly ILayoutEvaluatorStateInitializer _layoutEvaluatorStateInitializer;
     private readonly IOptions<AppSettings> _appSettings;
 
     /// <summary>
@@ -35,7 +35,7 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
         IDataClient dataClient,
         IAppModel appModel,
         IAppResources appResources,
-        LayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer,
+        ILayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer,
         IOptions<AppSettings> appSettings
     )
     {
@@ -53,10 +53,15 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
         ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
         List<DataType> connectedDataTypes = applicationMetadata.DataTypes.FindAll(dt => dt.TaskId == taskId);
 
-        await RunRemoveFieldsInModelOnTaskComplete(instance, connectedDataTypes);
+        await RunRemoveFieldsInModelOnTaskComplete(instance, taskId, connectedDataTypes, language: null);
     }
 
-    private async Task RunRemoveFieldsInModelOnTaskComplete(Instance instance, List<DataType> dataTypesToLock)
+    private async Task RunRemoveFieldsInModelOnTaskComplete(
+        Instance instance,
+        string taskId,
+        List<DataType> dataTypesToLock,
+        string? language = null
+    )
     {
         ArgumentNullException.ThrowIfNull(instance.Data);
 
@@ -67,7 +72,14 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
                 .Select(
                     async (d) =>
                     {
-                        await RemoveFieldsOnTaskComplete(instance, dataTypesToLock, d.dataElement, d.dataType);
+                        await RemoveFieldsOnTaskComplete(
+                            instance,
+                            taskId,
+                            dataTypesToLock,
+                            d.dataElement,
+                            d.dataType,
+                            language
+                        );
                     }
                 )
         );
@@ -75,9 +87,11 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
 
     private async Task RemoveFieldsOnTaskComplete(
         Instance instance,
+        string taskId,
         List<DataType> dataTypesToLock,
         DataElement dataElement,
-        DataType dataType
+        DataType dataType,
+        string? language = null
     )
     {
         // Download the data
@@ -101,8 +115,9 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
             LayoutSet? layoutSet = _appResources.GetLayoutSetForTask(dataType.TaskId);
             LayoutEvaluatorState evaluationState = await _layoutEvaluatorStateInitializer.Init(
                 instance,
-                data,
-                layoutSet?.Id
+                taskId,
+                gatewayAction: null,
+                language
             );
             LayoutEvaluator.RemoveHiddenData(evaluationState, RowRemovalOption.Ignore);
         }

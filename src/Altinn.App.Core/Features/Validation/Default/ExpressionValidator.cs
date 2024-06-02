@@ -20,7 +20,7 @@ public class ExpressionValidator : IFormDataValidator
 
     private readonly ILogger<ExpressionValidator> _logger;
     private readonly IAppResources _appResourceService;
-    private readonly LayoutEvaluatorStateInitializer _layoutEvaluatorStateInitializer;
+    private readonly ILayoutEvaluatorStateInitializer _layoutEvaluatorStateInitializer;
     private readonly IAppMetadata _appMetadata;
 
     /// <summary>
@@ -29,7 +29,7 @@ public class ExpressionValidator : IFormDataValidator
     public ExpressionValidator(
         ILogger<ExpressionValidator> logger,
         IAppResources appResourceService,
-        LayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer,
+        ILayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer,
         IAppMetadata appMetadata
     )
     {
@@ -60,6 +60,9 @@ public class ExpressionValidator : IFormDataValidator
         string? language
     )
     {
+        // TODO: Consider not depending on the instance object to get the task
+        //       to follow the same principle as the other validators
+        var taskId = instance.Process.CurrentTask.ElementId;
         var rawValidationConfig = _appResourceService.GetValidationConfiguration(dataElement.DataType);
         if (rawValidationConfig == null)
         {
@@ -72,7 +75,12 @@ public class ExpressionValidator : IFormDataValidator
         var layoutSet = _appResourceService.GetLayoutSetForTask(
             appMetadata.DataTypes.First(dt => dt.Id == dataElement.DataType).TaskId
         );
-        var evaluatorState = await _layoutEvaluatorStateInitializer.Init(instance, data, layoutSet?.Id);
+        var evaluatorState = await _layoutEvaluatorStateInitializer.Init(
+            instance,
+            taskId,
+            gatewayAction: null,
+            language
+        );
         var hiddenFields = LayoutEvaluator.GetHiddenFieldsForRemoval(evaluatorState, true);
 
         var validationIssues = new List<ValidationIssue>();

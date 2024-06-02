@@ -6,7 +6,7 @@ using FluentAssertions;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
-namespace Altinn.App.Core.Tests.LayoutExpressions;
+namespace Altinn.App.Core.Tests.LayoutExpressions.CommonTests;
 
 public class TestFunctions
 {

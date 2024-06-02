@@ -6,7 +6,7 @@ using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Layout;
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Tests.LayoutExpressions;
+namespace Altinn.App.Core.Tests.LayoutExpressions.CommonTests;
 
 public class ExpressionTestCaseRoot
 {

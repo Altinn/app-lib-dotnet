@@ -3,6 +3,7 @@ using System.Text.Json.Nodes;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Models.Layout;
+using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Tests.Helpers;
 
@@ -354,4 +355,6 @@ public class JsonDataModel : IDataModelAccessor
     {
         throw new NotImplementedException("Impossible to verify keys in a json model");
     }
+
+    public DataElement DefaultDataElement => throw new NotImplementedException();
 }

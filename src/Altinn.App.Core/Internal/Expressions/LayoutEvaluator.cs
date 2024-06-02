@@ -130,16 +130,13 @@ public static class LayoutEvaluator
     /// <summary>
     /// Return a list of <see cref="ValidationIssue" /> for the given state and dataElementId
     /// </summary>
-    public static List<ValidationIssue> RunLayoutValidationsForRequired(
-        LayoutEvaluatorState state,
-        string defaultDataElementId
-    )
+    public static List<ValidationIssue> RunLayoutValidationsForRequired(LayoutEvaluatorState state)
     {
         var validationIssues = new List<ValidationIssue>();
 
         foreach (var context in state.GetComponentContexts())
         {
-            RunLayoutValidationsForRequiredRecurs(validationIssues, state, defaultDataElementId, context);
+            RunLayoutValidationsForRequiredRecurs(validationIssues, state, context);
         }
 
         return validationIssues;
@@ -148,7 +145,6 @@ public static class LayoutEvaluator
     private static void RunLayoutValidationsForRequiredRecurs(
         List<ValidationIssue> validationIssues,
         LayoutEvaluatorState state,
-        string defaultDataElementId,
         ComponentContext context
     )
     {
@@ -156,7 +152,7 @@ public static class LayoutEvaluator
         {
             foreach (var childContext in context.ChildContexts)
             {
-                RunLayoutValidationsForRequiredRecurs(validationIssues, state, defaultDataElementId, childContext);
+                RunLayoutValidationsForRequiredRecurs(validationIssues, state, childContext);
             }
 
             var required = ExpressionEvaluator.EvaluateBooleanExpression(state, context, "required", false);
@@ -171,7 +167,7 @@ public static class LayoutEvaluator
                             new ValidationIssue()
                             {
                                 Severity = ValidationIssueSeverity.Error,
-                                DataElementId = field.DataType ?? defaultDataElementId,
+                                DataElementId = state.GetDataElement(field)?.Id,
                                 Field = field.Field,
                                 Description = $"{field.Field} is required in component with id {context.Component.Id}",
                                 Code = "required",

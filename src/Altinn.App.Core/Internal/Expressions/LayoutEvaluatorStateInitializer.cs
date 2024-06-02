@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Internal.App;
@@ -10,33 +11,35 @@ namespace Altinn.App.Core.Internal.Expressions;
 /// <summary>
 /// Utility class for collecting all the services from DI that are needed to initialize <see cref="LayoutEvaluatorState" />
 /// </summary>
-public class LayoutEvaluatorStateInitializer
+public class LayoutEvaluatorStateInitializer : ILayoutEvaluatorStateInitializer
 {
     // Dependency injection properties (set in ctor)
+    private readonly IAppMetadata _appMetadata;
     private readonly IAppResources _appResources;
     private readonly FrontEndSettings _frontEndSettings;
-    private readonly IDataClient _dataClient;
+    private readonly ICachedFormDataAccessor _dataAccessor;
 
     /// <summary>
     /// Constructor with services from dependency injection
     /// </summary>
     public LayoutEvaluatorStateInitializer(
+        IAppMetadata appMetadata,
         IAppResources appResources,
         IOptions<FrontEndSettings> frontEndSettings,
-        IDataClient dataClient
+        ICachedFormDataAccessor dataAccessor
     )
     {
+        _appMetadata = appMetadata;
         _appResources = appResources;
+        _dataAccessor = dataAccessor;
         _frontEndSettings = frontEndSettings.Value;
-        _dataClient = dataClient;
     }
 
     /// <summary>
     /// Initialize LayoutEvaluatorState with given Instance, data object and layoutSetId
     /// </summary>
-    // TODO: Mark Obsolete
-    // [Obsolete("Use the overload with List<KeyValuePair<DataElement, object>> instead")]
-    public virtual Task<LayoutEvaluatorState> Init(
+    [Obsolete("Use the overload with ILayoutEvaluatorStateInitializer instead")]
+    public Task<LayoutEvaluatorState> Init(
         Instance instance,
         object data,
         string? layoutSetId,
@@ -44,27 +47,58 @@ public class LayoutEvaluatorStateInitializer
     )
     {
         var layouts = _appResources.GetLayoutModel(layoutSetId);
+        var dataElement = instance.Data.Find(d => d.DataType == layouts.DefaultDataType.Id);
+        Debug.Assert(dataElement is not null);
         return Task.FromResult(
-            new LayoutEvaluatorState(new DataModel(data), layouts, _frontEndSettings, instance, gatewayAction)
+            new LayoutEvaluatorState(
+                new DataModel(dataElement, data, []),
+                layouts,
+                _frontEndSettings,
+                instance,
+                gatewayAction
+            )
         );
     }
 
-    /// <summary>
-    /// Initialize LayoutEvaluatorState with given Instance, data object and layoutSetId
-    /// </summary>
-    public virtual Task<LayoutEvaluatorState> Init(
+    /// <inheritdoc />
+    public async Task<LayoutEvaluatorState> Init(
         Instance instance,
-        DataElement dataElement,
-        object data,
-        string? layoutSetId,
+        string taskId,
         string? gatewayAction = null,
         string? language = null
     )
     {
-        // TODO: Fetch Extra models
-        var layouts = _appResources.GetLayoutModel(layoutSetId);
-        return Task.FromResult(
-            new LayoutEvaluatorState(new DataModel(data), layouts, _frontEndSettings, instance, gatewayAction, language)
+        var layouts = _appResources.GetLayoutModelForTask(taskId);
+
+        var defaultDataTypeId = layouts.DefaultDataType.Id;
+        var defaultDataElement = instance.Data.Find(d => d.DataType == defaultDataTypeId);
+        if (defaultDataElement is null)
+        {
+            throw new InvalidOperationException($"No data element found for data type {defaultDataTypeId}");
+        }
+
+        var dataTasks = new List<Task<KeyValuePair<DataElement, object>>>();
+        foreach (var dataType in layouts.GetExternalModelReferences())
+        {
+            dataTasks.AddRange(
+                instance
+                    .Data.Where(dataElement => dataElement.DataType == dataType)
+                    .Select(async dataElement =>
+                        KeyValuePair.Create(dataElement, await _dataAccessor.Get(instance, dataElement))
+                    )
+            );
+        }
+
+        var extraModels = await Task.WhenAll(dataTasks);
+
+        var defaultModel = await _dataAccessor.Get(instance, defaultDataElement);
+        return new LayoutEvaluatorState(
+            new DataModel(defaultDataElement, defaultModel, extraModels),
+            layouts,
+            _frontEndSettings,
+            instance,
+            gatewayAction,
+            language
         );
     }
 }

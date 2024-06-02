@@ -29,7 +29,7 @@ public class ExpressionsExclusiveGateway : IProcessExclusiveGateway
     private static readonly JsonSerializerOptions _jsonSerializerOptionsCamelCase =
         new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
-    private readonly LayoutEvaluatorStateInitializer _layoutStateInit;
+    private readonly ILayoutEvaluatorStateInitializer _layoutStateInit;
     private readonly IAppResources _resources;
     private readonly IAppMetadata _appMetadata;
     private readonly IDataClient _dataClient;
@@ -44,7 +44,7 @@ public class ExpressionsExclusiveGateway : IProcessExclusiveGateway
     /// <param name="appMetadata">Service for fetching app metadata</param>
     /// <param name="dataClient">Service for interacting with Platform Storage</param>
     public ExpressionsExclusiveGateway(
-        LayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer,
+        ILayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer,
         IAppResources resources,
         IAppModel appModel,
         IAppMetadata appMetadata,
@@ -70,8 +70,9 @@ public class ExpressionsExclusiveGateway : IProcessExclusiveGateway
     {
         var state = await GetLayoutEvaluatorState(
             instance,
+            instance.Process.CurrentTask.ElementId,
             processGatewayInformation.Action,
-            processGatewayInformation.DataTypeId
+            language: null
         );
 
         return outgoingFlows.Where(outgoingFlow => EvaluateSequenceFlow(state, outgoingFlow)).ToList();
@@ -79,32 +80,12 @@ public class ExpressionsExclusiveGateway : IProcessExclusiveGateway
 
     private async Task<LayoutEvaluatorState> GetLayoutEvaluatorState(
         Instance instance,
-        string? action,
-        string? dataTypeId
+        string taskId,
+        string? gatewayAction,
+        string? language
     )
     {
-        var layoutSet = GetLayoutSet(instance);
-        var (checkedDataTypeId, dataType) = await GetDataType(instance, layoutSet, dataTypeId);
-        object data = new object();
-        if (checkedDataTypeId != null && dataType != null)
-        {
-            InstanceIdentifier instanceIdentifier = new InstanceIdentifier(instance);
-            var dataGuid = GetDataId(instance, checkedDataTypeId);
-            Type dataElementType = dataType;
-            if (dataGuid != null)
-            {
-                data = await _dataClient.GetFormData(
-                    instanceIdentifier.InstanceGuid,
-                    dataElementType,
-                    instance.Org,
-                    instance.AppId.Split("/")[1],
-                    int.Parse(instance.InstanceOwner.PartyId),
-                    dataGuid.Value
-                );
-            }
-        }
-
-        var state = await _layoutStateInit.Init(instance, data, layoutSetId: layoutSet?.Id, gatewayAction: action);
+        var state = await _layoutStateInit.Init(instance, taskId, gatewayAction, language);
         return state;
     }
 
@@ -160,49 +141,8 @@ public class ExpressionsExclusiveGateway : IProcessExclusiveGateway
         return layoutSet;
     }
 
-    //TODO: Find a better home for this method
-    private async Task<(string? DataTypeId, Type? DataTypeClassType)> GetDataType(
-        Instance instance,
-        LayoutSet? layoutSet,
-        string? dataTypeId
-    )
+    private static DataElement? GetDataId(Instance instance, string dataType)
     {
-        DataType? dataType;
-        if (dataTypeId != null)
-        {
-            dataType = (await _appMetadata.GetApplicationMetadata()).DataTypes.Find(d =>
-                d.Id == dataTypeId && d.AppLogic != null
-            );
-        }
-        else if (layoutSet != null)
-        {
-            dataType = (await _appMetadata.GetApplicationMetadata()).DataTypes.Find(d =>
-                d.Id == layoutSet.DataType && d.AppLogic != null
-            );
-        }
-        else
-        {
-            dataType = (await _appMetadata.GetApplicationMetadata()).DataTypes.Find(d =>
-                d.TaskId == instance.Process.CurrentTask.ElementId && d.AppLogic != null
-            );
-        }
-
-        if (dataType != null)
-        {
-            return (dataType.Id, _appModel.GetModelType(dataType.AppLogic.ClassRef));
-        }
-
-        return (null, null);
-    }
-
-    private static Guid? GetDataId(Instance instance, string dataType)
-    {
-        string? dataId = instance.Data.Find(d => d.DataType == dataType)?.Id;
-        if (dataId != null)
-        {
-            return new Guid(dataId);
-        }
-
-        return null;
+        return instance.Data.Find(d => d.DataType == dataType);
     }
 }

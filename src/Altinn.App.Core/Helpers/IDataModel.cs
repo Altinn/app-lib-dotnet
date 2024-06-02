@@ -1,4 +1,5 @@
 using Altinn.App.Core.Models.Layout;
+using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Helpers;
 
@@ -47,6 +48,11 @@ public interface IDataModelAccessor
     /// Verify that a Key is a valid lookup for the datamodel
     /// </summary>
     bool VerifyKey(ModelBinding key);
+
+    /// <summary>
+    /// Get the data element that is used when ModelBinding don't have a <see cref="ModelBinding.Field"/>>
+    /// </summary>
+    DataElement DefaultDataElement { get; }
 }
 
 /// <summary>

@@ -63,7 +63,7 @@ public class RunTest1
             },
             "Test1"
         );
-        var validationIssues = LayoutEvaluator.RunLayoutValidationsForRequired(state, defaultDataElementId: "dummy");
+        var validationIssues = LayoutEvaluator.RunLayoutValidationsForRequired(state);
         validationIssues.Should().BeEmpty();
     }
 
@@ -80,7 +80,7 @@ public class RunTest1
             },
             "Test1"
         );
-        var validationIssues = LayoutEvaluator.RunLayoutValidationsForRequired(state, defaultDataElementId: "dummy");
+        var validationIssues = LayoutEvaluator.RunLayoutValidationsForRequired(state);
         validationIssues
             .Should()
             .BeEquivalentTo(new object[] { new { Code = "required", Field = "some.data.binding3" } });

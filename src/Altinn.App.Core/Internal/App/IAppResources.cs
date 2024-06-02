@@ -126,8 +126,14 @@ public interface IAppResources
     string GetLayoutsForSet(string layoutSetId);
 
     /// <summary>
+    /// Gets the full layout model for the task
+    /// </summary>
+    LayoutModel GetLayoutModelForTask(string taskId);
+
+    /// <summary>
     /// Gets the full layout model for the optional set
     /// </summary>
+    [Obsolete("Use GetLayoutModelForTask instead", true)]
     LayoutModel GetLayoutModel(string? layoutSetId = null);
 
     /// <summary>

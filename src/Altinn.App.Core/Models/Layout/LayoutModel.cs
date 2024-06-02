@@ -1,37 +1,34 @@
 using System.Diagnostics.CodeAnalysis;
 using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Layout.Components;
+using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Models.Layout;
 
 /// <summary>
-/// Class for handeling a full layout/layoutset
+/// Class for handling a full layout/layoutset
 /// </summary>
 public record LayoutModel
 {
     /// <summary>
     /// Dictionary to hold the different pages that are part of this LayoutModel
     /// </summary>
-    public Dictionary<string, PageComponent> Pages { get; init; } = new Dictionary<string, PageComponent>();
+    public required IReadOnlyDictionary<string, PageComponent> Pages { get; init; }
 
     /// <summary>
-    /// Get a page from the <see cref="Pages" /> dictionary
+    /// The default data type for the layout model
     /// </summary>
-    public PageComponent GetPage(string pageName)
-    {
-        if (Pages.TryGetValue(pageName, out var page))
-        {
-            return page;
-        }
-        throw new ArgumentException($"Unknown page name {pageName}");
-    }
+    public required DataType DefaultDataType { get; init; }
 
     /// <summary>
-    /// Get a specific component on a specifc page.
+    /// Get a specific component on a specific page.
     /// </summary>
     public BaseComponent GetComponent(string pageName, string componentId)
     {
-        var page = GetPage(pageName);
+        if (!Pages.TryGetValue(pageName, out var page))
+        {
+            throw new ArgumentException($"Unknown page name {pageName}");
+        }
 
         if (!page.ComponentLookup.TryGetValue(componentId, out var component))
         {
@@ -58,10 +55,11 @@ public record LayoutModel
     }
 
     /// <summary>
+    /// Get all external model references used in the layout model
     /// </summary>
-    /// <returns>Enumerable </returns>
-    public bool HasExternalModelReferences()
+    public IEnumerable<string> GetExternalModelReferences()
     {
+        var externalModelReferences = new HashSet<string>();
         foreach (var component in GetComponents())
         {
             // check external bindings
@@ -69,32 +67,31 @@ public record LayoutModel
             {
                 if (binding.DataType is not null)
                 {
-                    return true;
+                    externalModelReferences.Add(binding.DataType);
                 }
             }
 
-            // check expressions
-            if (
-                HasExternalModelReferences(component.Hidden)
-                || HasExternalModelReferences(component.ReadOnly)
-                || HasExternalModelReferences(component.Required)
-            )
-            {
-                return true;
-            }
+            //TODO: add more expressions when backend uses them
+            AddExternalModelReferences(component.Hidden, externalModelReferences);
+            AddExternalModelReferences(component.ReadOnly, externalModelReferences);
+            AddExternalModelReferences(component.Required, externalModelReferences);
         }
 
-        return false;
+        return externalModelReferences;
     }
 
-    private static bool HasExternalModelReferences(Expression expression)
+    private static void AddExternalModelReferences(Expression expression, HashSet<string> externalModelReferences)
     {
-        return IsDataModelExpressionWithTwoArguments(expression)
-            || (expression.Args?.TrueForAll(LayoutModel.HasExternalModelReferences) == true);
-    }
-
-    private static bool IsDataModelExpressionWithTwoArguments(Expression expression)
-    {
-        return expression is { Function: ExpressionFunction.dataModel, Args: [_, _] };
+        if (
+            expression is
+            { Function: ExpressionFunction.dataModel, Args: [_, { Value: string externalModelReference }] }
+        )
+        {
+            externalModelReferences.Add(externalModelReference);
+        }
+        else
+        {
+            expression.Args?.ForEach(arg => AddExternalModelReferences(arg, externalModelReferences));
+        }
     }
 }

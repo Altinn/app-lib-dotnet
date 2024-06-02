@@ -14,35 +14,28 @@ namespace Altinn.App.Core.Helpers.DataModel;
 /// </summary>
 public class DataModel : IDataModelAccessor
 {
+    private readonly DataElement _defaultDataElement;
     private readonly object _defaultServiceModel;
     private readonly Dictionary<string, object> _dataModels = new();
 
     /// <summary>
-    /// Constructor that wraps a PCOC data model, and gives extra tool for working with the data
+    /// Constructor that wraps a POCO data model, and gives extra tool for working with the data
     /// </summary>
-    // TODO: Mark Obsolete
-    // [Obsolete("Use the constructor that takes a list of data elements to support multiple data models")]
-    public DataModel(object serviceModel)
+    public DataModel(
+        DataElement defaultDataElement,
+        object serviceModel,
+        IEnumerable<KeyValuePair<DataElement, object>> dataModels
+    )
     {
+        ArgumentNullException.ThrowIfNull(defaultDataElement);
+        ArgumentNullException.ThrowIfNull(serviceModel);
+        _defaultDataElement = defaultDataElement;
         _defaultServiceModel = serviceModel;
-    }
 
-    /// <summary>
-    /// </summary>
-    /// <param name="dataModels"></param>
-    public DataModel(IEnumerable<KeyValuePair<DataElement, object>> dataModels)
-    {
         foreach (var (dataElement, data) in dataModels)
         {
-            if (_defaultServiceModel is null)
-            {
-                _defaultServiceModel = data;
-            }
-
             _dataModels.Add(dataElement.DataType, data);
         }
-
-        Debug.Assert(_defaultServiceModel is not null);
     }
 
     private object ServiceModel(ModelBinding key)
@@ -442,6 +435,9 @@ public class DataModel : IDataModelAccessor
     {
         return VerifyKeyRecursive(key.Field.Split('.'), 0, ServiceModel(key).GetType());
     }
+
+    /// <inheritdoc />
+    public DataElement DefaultDataElement => _defaultDataElement;
 
     private bool VerifyKeyRecursive(string[] keys, int index, Type currentModel)
     {

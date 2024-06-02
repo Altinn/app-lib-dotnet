@@ -1,4 +1,3 @@
-#nullable disable
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -12,7 +11,7 @@ using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Models.Validation;
 using Altinn.App.Core.Tests.Helpers;
-using Altinn.App.Core.Tests.LayoutExpressions;
+using Altinn.App.Core.Tests.LayoutExpressions.CommonTests;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
@@ -34,7 +33,7 @@ public class ExpressionValidatorTests
     private readonly IOptions<FrontEndSettings> _frontendSettings = Microsoft.Extensions.Options.Options.Create(
         new FrontEndSettings()
     );
-    private readonly Mock<LayoutEvaluatorStateInitializer> _layoutInitializer;
+    private readonly Mock<ILayoutEvaluatorStateInitializer> _layoutInitializer = new(MockBehavior.Strict);
     private static readonly JsonSerializerOptions _jsonSerializerOptions = new() { WriteIndented = true };
 
     public ExpressionValidatorTests(ITestOutputHelper output)
@@ -45,16 +44,7 @@ public class ExpressionValidatorTests
             .ReturnsAsync(
                 new ApplicationMetadata("org/app") { DataTypes = new List<DataType> { new() { Id = "default" } } }
             );
-        _appResources.Setup(ar => ar.GetLayoutSetForTask(null)).Returns(new LayoutSet());
-        _layoutInitializer = new Mock<LayoutEvaluatorStateInitializer>(
-            MockBehavior.Strict,
-            _appResources.Object,
-            _frontendSettings,
-            _dataClient.Object
-        )
-        {
-            CallBase = false
-        };
+        _appResources.Setup(ar => ar.GetLayoutSetForTask("Task_1")).Returns(new LayoutSet());
         _validator = new ExpressionValidator(
             _logger.Object,
             _appResources.Object,
@@ -72,25 +62,21 @@ public class ExpressionValidatorTests
         _output.WriteLine(JsonSerializer.Serialize(testCase.ValidationConfig, _jsonSerializerOptions));
         _output.WriteLine(JsonSerializer.Serialize(testCase.Expects, _jsonSerializerOptions));
 
-        var instance = new Instance();
-        var dataElement = new DataElement { DataType = "default" };
+        var instance = new Instance() { Process = new() { CurrentTask = new() { ElementId = "Task_1", } } };
+        var dataElement = new DataElement { DataType = "default", };
 
         var dataModel = new JsonDataModel(testCase.FormData);
 
         var evaluatorState = new LayoutEvaluatorState(dataModel, testCase.Layouts, _frontendSettings.Value, instance);
         _layoutInitializer
             .Setup(init =>
-                init.Init(
-                    It.Is<Instance>(i => i == instance),
-                    It.IsAny<object>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>()
-                )
+                init.Init(It.Is<Instance>(i => i == instance), "Task_1", It.IsAny<string>(), It.IsAny<string?>())
             )
             .ReturnsAsync(evaluatorState);
         _appResources
             .Setup(ar => ar.GetValidationConfiguration("default"))
             .Returns(JsonSerializer.Serialize(testCase.ValidationConfig));
+        _appResources.Setup(ar => ar.GetLayoutSetForTask(null!)).Returns(new LayoutSet() { DataType = "default", });
 
         var validationIssues = await _validator.ValidateFormData(instance, dataElement, null!, null);
 
@@ -137,27 +123,27 @@ public class ExpressionTestAttribute : DataAttribute
 
 public class ExpressionValidationTestModel
 {
-    public string Name { get; set; }
+    public required string Name { get; set; }
 
-    public ExpectedObject[] Expects { get; set; }
+    public required ExpectedObject[] Expects { get; set; }
 
-    public JsonElement ValidationConfig { get; set; }
+    public required JsonElement ValidationConfig { get; set; }
 
-    public JsonObject FormData { get; set; }
+    public required JsonObject FormData { get; set; }
 
     [JsonConverter(typeof(LayoutModelConverterFromObject))]
-    public LayoutModel Layouts { get; set; }
+    public required LayoutModel Layouts { get; set; }
 
     public class ExpectedObject
     {
-        public string Message { get; set; }
+        public required string Message { get; set; }
 
         [JsonConverter(typeof(FrontendSeverityConverter))]
-        public ValidationIssueSeverity Severity { get; set; }
+        public required ValidationIssueSeverity Severity { get; set; }
 
-        public string Field { get; set; }
+        public required string Field { get; set; }
 
-        public string ComponentId { get; set; }
+        public required string ComponentId { get; set; }
     }
 
     public override string ToString()

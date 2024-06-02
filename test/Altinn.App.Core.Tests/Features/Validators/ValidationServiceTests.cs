@@ -102,6 +102,7 @@ public class ValidationServiceTests : IDisposable
         _serviceCollection.AddSingleton(_appMetadataMock.Object);
         _appMetadataMock.Setup(a => a.GetApplicationMetadata()).ReturnsAsync(DefaultAppMetadata);
         _serviceCollection.AddSingleton<IValidatorFactory, ValidatorFactory>();
+        _serviceCollection.AddScoped<ICachedFormDataAccessor, CachedFormDataAccessor>();
 
         // NeverUsedValidators
         _serviceCollection.AddSingleton(_taskValidatorNeverMock.Object);
