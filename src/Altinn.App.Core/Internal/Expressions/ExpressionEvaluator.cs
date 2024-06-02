@@ -23,7 +23,7 @@ public static class ExpressionEvaluator
     {
         try
         {
-            ArgumentNullException.ThrowIfNull(context.Component, nameof(context.Component));
+            ArgumentNullException.ThrowIfNull(context.Component);
             var expr = property switch
             {
                 "hidden" => context.Component.Hidden,
@@ -95,6 +95,7 @@ public static class ExpressionEvaluator
             ExpressionFunction.lowerCase => LowerCase(args),
             ExpressionFunction.argv => Argv(args, positionalArguments),
             ExpressionFunction.gatewayAction => state.GetGatewayAction(),
+            ExpressionFunction.language => state.GetLanguage(),
             _ => throw new ExpressionEvaluatorTypeErrorException($"Function \"{expr.Function}\" not implemented"),
         };
         return ret;

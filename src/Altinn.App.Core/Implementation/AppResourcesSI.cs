@@ -292,6 +292,9 @@ public class AppResourcesSI : IAppResources
         Dictionary<string, object> layouts = new Dictionary<string, object>();
 
         string layoutsPath = _settings.AppBasePath + _settings.UiFolder + layoutSetId + "/layouts/";
+
+        PathHelper.EnsureLegalPath(Path.Join(_settings.AppBasePath, _settings.UiFolder), layoutsPath);
+
         if (Directory.Exists(layoutsPath))
         {
             foreach (string file in Directory.GetFiles(layoutsPath))
@@ -362,6 +365,9 @@ public class AppResourcesSI : IAppResources
             layoutSetId,
             _settings.FormLayoutSettingsFileName
         );
+
+        PathHelper.EnsureLegalPath(Path.Join(_settings.AppBasePath, _settings.UiFolder), filename);
+
         string? filedata = null;
         if (File.Exists(filename))
         {
@@ -381,6 +387,9 @@ public class AppResourcesSI : IAppResources
             layoutSetId,
             _settings.FormLayoutSettingsFileName
         );
+
+        PathHelper.EnsureLegalPath(Path.Join(_settings.AppBasePath, _settings.UiFolder), filename);
+
         if (File.Exists(filename))
         {
             var fileData = File.ReadAllText(filename, Encoding.UTF8);

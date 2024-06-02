@@ -17,5 +17,5 @@ public interface ICachedFormDataAccessor
     /// <summary>
     /// In PATCH requests we need to use the new object for the uploaded data element, instead of fetching from <see cref="IDataClient"/>
     /// </summary>
-    Task SetIfMissing(DataElement dataElement, object data);
+    void Set(DataElement dataElement, object data);
 }

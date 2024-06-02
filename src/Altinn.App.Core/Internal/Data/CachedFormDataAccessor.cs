@@ -43,15 +43,15 @@ internal class CachedFormDataAccessor : ICachedFormDataAccessor
                     return await GetFormData(instance, dataElement, dataType);
                 }
 
-                return await GetBinaryData(instance, dataElement, dataType);
+                return await GetBinaryData(instance, dataElement);
             }
         );
     }
 
     /// <inheritdoc />
-    public async Task SetIfMissing(DataElement dataElement, object data)
+    public void Set(DataElement dataElement, object data)
     {
-        await _cache.GetOrCreate(dataElement.Id, (key) => Task.FromResult(data));
+        _cache.Set(dataElement.Id, data);
     }
 
     /// <summary>
@@ -59,7 +59,7 @@ internal class CachedFormDataAccessor : ICachedFormDataAccessor
     /// </summary>
     /// <typeparam name="TKey">The type of the key in the cache</typeparam>
     /// <typeparam name="TValue">The type of the object to cache</typeparam>
-    private class LazyCache<TKey, TValue>
+    private sealed class LazyCache<TKey, TValue>
         where TKey : notnull
     {
         private readonly ConcurrentDictionary<TKey, Lazy<Task<TValue>>> _cache = new();
@@ -78,7 +78,7 @@ internal class CachedFormDataAccessor : ICachedFormDataAccessor
         }
     }
 
-    private async Task<Stream> GetBinaryData(Instance instance, DataElement dataElement, DataType dataType)
+    private async Task<Stream> GetBinaryData(Instance instance, DataElement dataElement)
     {
         var instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
         var app = instance.AppId.Split("/")[1];

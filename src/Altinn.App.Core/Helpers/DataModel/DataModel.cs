@@ -83,7 +83,7 @@ public class DataModel : IDataModelAccessor
         }
 
         var (key, groupIndex) = ParseKeyPart(keys[index]);
-        var prop = currentModel.GetType().GetProperties().FirstOrDefault(p => IsPropertyWithJsonName(p, key));
+        var prop = Array.Find(currentModel.GetType().GetProperties(), p => IsPropertyWithJsonName(p, key));
         var childModel = prop?.GetValue(currentModel);
         if (childModel is null)
         {

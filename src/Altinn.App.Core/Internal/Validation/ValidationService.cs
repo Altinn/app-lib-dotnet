@@ -218,7 +218,7 @@ public class ValidationService : IValidationService
         using var activity = _telemetry?.StartValidateFormDataActivity(instance, dataElement);
 
         // Set data from request instead of fetching the old data.
-        await _formDataCache.SetIfMissing(dataElement, data);
+        _formDataCache.Set(dataElement, data);
 
         // Locate the relevant data validator services from normal and keyed services
         var dataValidators = _validatorFactory

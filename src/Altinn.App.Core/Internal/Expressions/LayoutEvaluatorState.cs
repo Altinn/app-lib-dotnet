@@ -132,6 +132,11 @@ public class LayoutEvaluatorState
     }
 
     /// <summary>
+    /// Gets the current language of the instance viewer
+    /// </summary>
+    public string? GetLanguage() => _language;
+
+    /// <summary>
     /// Get component from componentModel
     /// </summary>
     public BaseComponent GetComponent(string pageName, string componentId)
