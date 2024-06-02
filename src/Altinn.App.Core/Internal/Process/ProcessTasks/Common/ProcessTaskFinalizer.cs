@@ -17,24 +17,16 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
     private readonly IAppMetadata _appMetadata;
     private readonly IDataClient _dataClient;
     private readonly IAppModel _appModel;
-    private readonly IAppResources _appResources;
     private readonly ILayoutEvaluatorStateInitializer _layoutEvaluatorStateInitializer;
     private readonly IOptions<AppSettings> _appSettings;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessTaskFinalizer"/> class.
     /// </summary>
-    /// <param name="appMetadata"></param>
-    /// <param name="dataClient"></param>
-    /// <param name="appModel"></param>
-    /// <param name="appResources"></param>
-    /// <param name="layoutEvaluatorStateInitializer"></param>
-    /// <param name="appSettings"></param>
     public ProcessTaskFinalizer(
         IAppMetadata appMetadata,
         IDataClient dataClient,
         IAppModel appModel,
-        IAppResources appResources,
         ILayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer,
         IOptions<AppSettings> appSettings
     )
@@ -42,7 +34,6 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
         _appMetadata = appMetadata;
         _dataClient = dataClient;
         _appModel = appModel;
-        _appResources = appResources;
         _layoutEvaluatorStateInitializer = layoutEvaluatorStateInitializer;
         _appSettings = appSettings;
     }

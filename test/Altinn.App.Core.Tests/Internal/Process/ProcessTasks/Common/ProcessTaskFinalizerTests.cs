@@ -17,7 +17,6 @@ public class ProcessTaskFinalizerTests
     private readonly Mock<IAppMetadata> _appMetadataMock = new();
     private readonly Mock<IDataClient> _dataClientMock = new();
     private readonly Mock<IAppModel> _appModelMock = new();
-    private readonly Mock<IAppResources> _appResourcesMock = new();
     private readonly Mock<ILayoutEvaluatorStateInitializer> _layoutEvaluatorStateInitializerMock = new();
     private readonly IOptions<AppSettings> _appSettings = Options.Create(new AppSettings());
     private readonly ProcessTaskFinalizer _processTaskFinalizer;
@@ -28,7 +27,6 @@ public class ProcessTaskFinalizerTests
             _appMetadataMock.Object,
             _dataClientMock.Object,
             _appModelMock.Object,
-            _appResourcesMock.Object,
             _layoutEvaluatorStateInitializerMock.Object,
             _appSettings
         );
