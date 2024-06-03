@@ -28,7 +28,7 @@ public class EformidlingStatusCheckEventHandler2 : IEventHandler
 
 #pragma warning disable CS0618
     private readonly IMaskinportenTokenProvider _maskinportenTokenProvider;
-#pragma warning retore CS0618
+#pragma warning restore CS0618
 
     private readonly PlatformSettings _platformSettings;
     private readonly GeneralSettings _generalSettings;
