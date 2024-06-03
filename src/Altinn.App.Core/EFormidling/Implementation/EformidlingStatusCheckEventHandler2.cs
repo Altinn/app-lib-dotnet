@@ -40,7 +40,9 @@ public class EformidlingStatusCheckEventHandler2 : IEventHandler
         IEFormidlingClient eFormidlingClient,
         IHttpClientFactory httpClientFactory,
         ILogger<EformidlingStatusCheckEventHandler2> logger,
+#pragma warning disable CS0618
         IMaskinportenTokenProvider maskinportenTokenProvider,
+#pragma warning restore CS0618
         IOptions<PlatformSettings> platformSettings,
         IOptions<GeneralSettings> generalSettings
     )
