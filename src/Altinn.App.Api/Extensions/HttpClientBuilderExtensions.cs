@@ -1,5 +1,5 @@
+using Altinn.App.Core.Features.Maskinporten;
 using Altinn.App.Core.Features.Maskinporten.Delegates;
-using Altinn.App.Core.Features.MaskinportenAuthentication;
 
 namespace Altinn.App.Api.Extensions;
 

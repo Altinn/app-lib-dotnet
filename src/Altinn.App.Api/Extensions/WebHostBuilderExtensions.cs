@@ -1,6 +1,6 @@
 using Altinn.App.Core.Extensions;
+using Altinn.App.Core.Features.Maskinporten;
 using Altinn.App.Core.Features.Maskinporten.Models;
-using Altinn.App.Core.Features.MaskinportenAuthentication;
 using Microsoft.Extensions.FileProviders;
 
 namespace Altinn.App.Api.Extensions;

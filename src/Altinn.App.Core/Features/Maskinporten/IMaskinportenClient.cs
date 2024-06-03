@@ -1,6 +1,6 @@
 using Altinn.App.Core.Features.Maskinporten.Models;
 
-namespace Altinn.App.Core.Features.MaskinportenAuthentication;
+namespace Altinn.App.Core.Features.Maskinporten;
 
 /// <summary>
 /// Contains logic for handling authorization requests with Maskinporten.

@@ -8,7 +8,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 
-namespace Altinn.App.Core.Features.MaskinportenAuthentication;
+namespace Altinn.App.Core.Features.Maskinporten;
 
 /// <inheritdoc/>
 public sealed class MaskinportenClient : IMaskinportenClient

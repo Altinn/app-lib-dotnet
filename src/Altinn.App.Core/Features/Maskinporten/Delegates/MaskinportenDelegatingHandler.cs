@@ -1,6 +1,5 @@
 using System.Net.Http.Headers;
 using Altinn.App.Core.Features.Maskinporten.Exceptions;
-using Altinn.App.Core.Features.MaskinportenAuthentication;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
