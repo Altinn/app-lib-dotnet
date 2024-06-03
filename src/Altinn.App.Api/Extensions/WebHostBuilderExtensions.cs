@@ -35,15 +35,19 @@ public static class WebHostBuilderExtensions
                     context.Configuration.GetValue<string>("MaskinportenSettingsFilepath")
                     ?? "/mnt/app-secrets/maskinporten-settings.json";
                 string jsonAbsolutePath = Path.GetFullPath(jsonProvidedPath);
-                string jsonDir = Path.GetDirectoryName(jsonAbsolutePath) ?? string.Empty;
-                string jsonFile = Path.GetFileName(jsonAbsolutePath);
 
-                configBuilder.AddJsonFile(
-                    provider: new PhysicalFileProvider(jsonDir),
-                    path: jsonFile,
-                    optional: true,
-                    reloadOnChange: true
-                );
+                if (File.Exists(jsonAbsolutePath))
+                {
+                    string jsonDir = Path.GetDirectoryName(jsonAbsolutePath) ?? string.Empty;
+                    string jsonFile = Path.GetFileName(jsonAbsolutePath);
+
+                    configBuilder.AddJsonFile(
+                        provider: new PhysicalFileProvider(jsonDir),
+                        path: jsonFile,
+                        optional: true,
+                        reloadOnChange: true
+                    );
+                }
 
                 configBuilder.LoadAppConfig(args);
             }

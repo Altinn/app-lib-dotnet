@@ -15,23 +15,24 @@ public class MaskinportenSettingsTest
                 "authority": "https://maskinporten.dev/",
                 "clientId": "test-client",
                 "key": {
-                    "p": "zcLJxgdR1fJSeldQ98TYqms9JAVTvnKZMKFuFEMLhvYxeN56TQ4pxhVgjIYAT7bOMP0HCer1GckoQi6JU8kCLt5QqxFoYQKOytMWYaDVyDFjNswsj02yiDOpaP3gKAz8ei3rVgK_LSPR3jcBV2x68b_Q6PvEMzuX5JWIFsyxPEs",
+                    "p": "5BRHaF0zpryULcbyTf02xZUXMb26Ait8XvU4NsAYCH4iLNkC_zYRJ0X_qb0sJ_WVYecB1-nCV1Qr15KnsaKp1qBOx21_ftHHwdBE12z9KYGe1xQ4ZIXEP0OiR044XQPphRFVjWOF7wQKdoXlTNXCg4B3lo5waBj8eYmMHCxyK6k",
                     "kty": "RSA",
-                    "q": "xmF9b3zrcU76hDw06qT5GlD2HpRQbLK15Px4UwIprZPNQaAoDj6Y4ByUoPPtDatcJQLfXGq-kJsZLUJi0r814AqBpirAF5aMW68sBU-ZocNegQllAxspdCVDcLlcHGTAzIRKQoJ2_URp_nv3HpG6Chym9tZ0nQds_kKZSvhPv9U",
-                    "d": "KUrTzXhxdQ2cSnLKF86hF6cK0UgWPuq-_IWiGzNIGb5DlTfS_UZnQaV1zkwuZlQG2CwOQ5oMdvSS5vQMuipnJtgxgmtGwRkDb-Be4-dCZ7d_WVhY_zxWoPziWWRNsuaxJu3ZJldYvtAY9iviAZgLq0UdenkCHyfb_eBgo9-srqb15f1FUUEtSPhBBJ_Jgfa-NJz4zknkO5NFe8SF4B0LTGkshPGAq2IXnuKaJ077w4JHFMPwRNclePH0PwA6Vkb85msM8FAEwutQPOGQOoleXNNAcRr18tLukmSim23AaATq1-VWnzYFvTxhXdxrQvjEsW4cSQoVmJuJSWi5xpYJYQ",
+                    "q": "yR6wLPzQ35bc0ZIxuzuil9sRpMZhqk2tWe6cV1YkqxSXPDLOjHBPbwdeNdd2qdSY_x0myzIF_KA0xD-Q5YXCMt-8UxJTYKf8TLIxTdRKyW7KQbR0HJ4yNx0DuoXEeeDfLXbMX_TbL_W6N4xHPHiuGvh1Spr4s4JC0Ka1PLK8b2E",
+                    "d": "jR4l-ZW3_eAqTRxmmkYNTGxp8fURn8C9mar5-NatcyR5HfqpofjQIVtGLNfhS-YMkeam8pIXjsdrWrSTIC22uUf4OuNDRWsKEwePYoNO1xNusF-8fOMM7At6qtPpcXk3pEHfEuSjplIOAL9scj2oeF3jqe5eP9l4KHDYLugqkxJz3AoObTBQDykXx3uq_3cjeSBss1XFdEnpD2Br1zR7-sGaEoSIQyT6a8Ulgr1Ah5AHm6KX4LTgPx3NuWLyDqN-L6QxYnv27BC6J-4ehwpf84CO-uolJKcVPvEwBf35LFlBA3JgKaVYyC7SZ5A2y_EBViKhubgOuMm9_2C7o9PyAQ",
                     "e": "AQAB",
                     "use": "sig",
                     "kid": "test-kid",
-                    "qi": "CEMMcrchDDfgy8beXlxg7eR7jWL8quO_UyhMHrCBER_h4yMq3m8Vs5ywFHXMgtk7d_n9IVOYb-g5K7JbEBRcoliTFsy28qOIFF_Mau6oLFpOTZpIYE5XPxqYjib1k3P13Ls8Gr8E1euVXYqCseEs8VpuCLetzkmYvbS_JQzoxAc",
-                    "dp": "awrAyWKZckHkIn02RA-F3_J2Fj0nOdaIV0JD8AqI_qcpSYYD_f42QTRxy-kSVGX3koivlrtC0y1Q4k0vaAUUO6mwMa6WrJEWE_IInLV9Qe5ffOxu6gYzsKOfqF0atfs7hZxJ5676IdOWpJHdAswOkaGGXw5LHZQNCv-3kpTeR00",
+                    "qi": "E-oyO4HWOVxD_d7xZxFltTZDz6ZtLPZFB_KYXYeVFDrO8KZE9kFb4TNlFvrFjv-dHtpNey95gqtOtdNMwdVdZbAKbDdo5LYSJ_rk-4ZVsDusq7FCJ5nmmrxfQ5yNEPqHwgdUfs50v_fV1x8SEDjfWzaaVK5ltqPiUXtpTTLBQIg",
+                    "dp": "yVvJ6y6VgjfszjldBFNv_qHwlz58MJw5sg_mcBfJX_4Tp-pzReNy42xeGXnkuOaM2qE6tGcw5y5tgmV8XUxRiyV-R3y5WbpVFBwOGu6i1vkTxaiZXM3oAz5vz2oUQrJIgO1bzXa28NxtbFQrq1jw4G4Tpjzcqlqc06QGqXzn0vk",
                     "alg": "RS256",
-                    "dq": "mgqPhSeiBt0F5_J8QIuTplyhkEMoZA8s8L8ei45NYKw5ILFFCTKQMM3gl05xj0C1j0O4vyFgEhdtKFi5Nd4l7m8aFzZw7KAJIxRVgVY6_IIg-t-ZoRzRRo-822YDYUTW9Lfwlc6KqMUb7PDDhegwZrOy7k6-RETE3HZIZA-GlXU",
-                    "n": "n3MDr1YU1ok4p7ds8XhhmHe9weYrbQoqOSVyd6oiGsOQjdZ-LSa-LPXLkMXZD8iw2Aq3SqOCCU6k4zRdnMvzeB3Ph8PNvzJypjgXtzVe5Bf_xXiGDq50pZx_hYATqDgNPNzTedK8N2ZicKhWHq5TbrnXkc5agSVlBsNXXk7OMtznTBYlgXD2j0a_5tt4nN3HFBhuwQUqFPNkR1mbaLqJNeVIAusVkPrtKdiYPLRlFWPfuq5svfOI2NBD9Ec3OOYcgYchcLlZz7XGhPD3kBrWl3F9-ot2vi-R_1D19A7kqNhJ92p8p25aAAHrdF6-v1a0sw-FbVFZYfzj4lt4zpgfZw"
+                    "dq": "B5CI7dhAfvhsq9FE35b5oZ6SxlDT4ZT0XTqVVM-fp3Op0JDUpgGfazyqtXm6M98UNhxBlkj2Yq8f7PW7HHbwe_tgWPuKeUs4OSZGpnfCrFrnbps79suYdew4dK6NWkwz-MDMJRvPlrk2XNqA32xmmAsaVkkH67CNlM2AaZ0La2E",
+                    "n": "sy9DZ1U6jfP1UBN2EZTD1DPkajdZsFsXGGVHfbJmH5MFwXbtKlwV_jYjz58YIj1n48OxH7f-Ldgc-fBLz45QU1HbDZPij7q3uYm1ZMTGkPqkY8kHX51TsFOEqzVhNfyc6yVsjlj5KPyyxLyAcx6ixiE2K8vIeuKMVbZCZt605L39ENUsiQ-cfnqp-zo1ihU5xJOQaWV9pGuG4XoLAUIktF6_YPF4pFmSWRHk5aURUfTCvo11n3EUBYJUiJb8AqUt3yqGSoV-4wXir-9oRNjDUtE_QA3eErGKCebtUd6oxzcXcHiGY0npKxt7JQti3jTZRcnkScmmP-XvrQzB6kzSCQ"
                 }
             }
             """;
 
         // Act
+        // TODO: This does NOT deserialize the `JsonWebKey` component from above json string. Works in other projects, whats up?
         var settings = JsonSerializer.Deserialize<MaskinportenSettings>(json);
 
         // Assert
