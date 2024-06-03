@@ -6,6 +6,8 @@ using Altinn.App.Api.Infrastructure.Health;
 using Altinn.App.Api.Infrastructure.Telemetry;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Maskinporten.Models;
+using Altinn.App.Core.Features.MaskinportenAuthentication;
 using Altinn.Common.PEP.Authorization;
 using Altinn.Common.PEP.Clients;
 using AltinnCore.Authentication.JwtCookie;
@@ -14,6 +16,7 @@ using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 using Microsoft.FeatureManagement;
 using Microsoft.IdentityModel.Tokens;
 using OpenTelemetry;
@@ -93,6 +96,29 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<AuthorizationApiClient>();
 
         services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+    }
+
+    /// <summary>
+    /// <para>
+    /// Configures the <see cref="MaskinportenClient"/> service with a configuration object which will be static for the lifetime of the service.
+    /// </para>
+    /// <para>
+    /// If you have already provided a <see cref="MaskinportenSettings"/> configuration, either manually or
+    /// implicitly via <see cref="WebHostBuilderExtensions.ConfigureAppWebHost"/>, this will be overridden.
+    /// </para>
+    /// </summary>
+    /// <param name="configureOptions">
+    /// Action delegate that provides <see cref="MaskinportenSettings"/> configuration for the <see cref="MaskinportenClient"/> service
+    /// </param>
+    public static IServiceCollection ConfigureMaskinportenClient(
+        this IServiceCollection services,
+        Action<MaskinportenSettings> configureOptions
+    )
+    {
+        services.RemoveOptions<MaskinportenSettings>();
+        services.AddOptions<MaskinportenSettings>().Configure(configureOptions).ValidateDataAnnotations();
+
+        return services;
     }
 
     /// <summary>
@@ -401,6 +427,28 @@ public static class ServiceCollectionExtensions
         });
 
         services.TryAddSingleton<ValidateAntiforgeryTokenIfAuthCookieAuthorizationFilter>();
+    }
+
+    internal static ServiceDescriptor? GetOptionsDescriptor<TOptions>(this IServiceCollection services)
+        where TOptions : class
+    {
+        return services.FirstOrDefault(d =>
+            d.ServiceType == typeof(IConfigureOptions<TOptions>)
+            || d.ServiceType == typeof(IOptionsChangeTokenSource<TOptions>)
+        );
+    }
+
+    private static IServiceCollection RemoveOptions<TOptions>(this IServiceCollection services)
+        where TOptions : class
+    {
+        var descriptor = services.GetOptionsDescriptor<TOptions>();
+
+        if (descriptor is not null)
+        {
+            services.Remove(descriptor);
+        }
+
+        return services;
     }
 
     private static (string? Key, string? ConnectionString) GetAppInsightsConfig(

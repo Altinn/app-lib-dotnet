@@ -1,4 +1,7 @@
 using Altinn.App.Core.Extensions;
+using Altinn.App.Core.Features.Maskinporten.Models;
+using Altinn.App.Core.Features.MaskinportenAuthentication;
+using Microsoft.Extensions.FileProviders;
 
 namespace Altinn.App.Api.Extensions;
 
@@ -27,7 +30,37 @@ public static class WebHostBuilderExtensions
                 }
 
                 configBuilder.AddInMemoryCollection(config);
+
+                string jsonProvidedPath =
+                    context.Configuration.GetValue<string>("MaskinportenSettingsFilepath")
+                    ?? "/mnt/app-secrets/maskinporten-settings.json";
+                string jsonAbsolutePath = Path.GetFullPath(jsonProvidedPath);
+                string jsonDir = Path.GetDirectoryName(jsonAbsolutePath) ?? string.Empty;
+                string jsonFile = Path.GetFileName(jsonAbsolutePath);
+
+                configBuilder.AddJsonFile(
+                    provider: new PhysicalFileProvider(jsonDir),
+                    path: jsonFile,
+                    optional: true,
+                    reloadOnChange: true
+                );
+
                 configBuilder.LoadAppConfig(args);
+            }
+        );
+
+        builder.ConfigureServices(
+            (context, services) =>
+            {
+                if (services.GetOptionsDescriptor<MaskinportenSettings>() is null)
+                {
+                    services
+                        .AddOptions<MaskinportenSettings>()
+                        .BindConfiguration("MaskinportenSettings")
+                        .ValidateDataAnnotations();
+                }
+
+                services.AddSingleton<IMaskinportenClient, MaskinportenClient>();
             }
         );
     }
