@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 using Microsoft.IdentityModel.Tokens;
+using JsonWebKeyConverter = Altinn.App.Core.Features.Maskinporten.Converters.JsonWebKeyConverter;
 
 namespace Altinn.App.Core.Features.Maskinporten.Models;
 
@@ -34,5 +35,147 @@ public sealed record MaskinportenSettings
     /// </summary>
     [Required]
     [JsonPropertyName("key")]
+    [JsonConverter(typeof(JsonWebKeyConverter))]
     public required JsonWebKey Key { get; set; }
+}
+
+/// <summary>
+/// Serialization wrapper for a JsonWebKey object
+/// </summary>
+internal sealed record JwkWrapper
+{
+    /// <summary>
+    /// Key type
+    /// </summary>
+    [JsonPropertyName("kty")]
+    public string? Kty { get; set; }
+
+    /// <summary>
+    /// Public key usage
+    /// </summary>
+    [JsonPropertyName("use")]
+    public string? Use { get; set; }
+
+    /// <summary>
+    /// Key ID
+    /// </summary>
+    [JsonPropertyName("kid")]
+    public string? Kid { get; set; }
+
+    /// <summary>
+    /// Algorithm
+    /// </summary>
+    [JsonPropertyName("alg")]
+    public string? Alg { get; set; }
+
+    /// <summary>
+    /// Modulus
+    /// </summary>
+    [JsonPropertyName("n")]
+    public string? N { get; set; }
+
+    /// <summary>
+    /// Exponent
+    /// </summary>
+    [JsonPropertyName("e")]
+    public string? E { get; set; }
+
+    /// <summary>
+    /// Private exponent
+    /// </summary>
+    [JsonPropertyName("d")]
+    public string? D { get; set; }
+
+    /// <summary>
+    /// First prime factor
+    /// </summary>
+    [JsonPropertyName("p")]
+    public string? P { get; set; }
+
+    /// <summary>
+    /// Second prime factor
+    /// </summary>
+    [JsonPropertyName("q")]
+    public string? Q { get; set; }
+
+    /// <summary>
+    /// First CRT coefficient
+    /// </summary>
+    [JsonPropertyName("qi")]
+    public string? Qi { get; set; }
+
+    /// <summary>
+    /// First factor CRT exponent
+    /// </summary>
+    [JsonPropertyName("dp")]
+    public string? Dp { get; set; }
+
+    /// <summary>
+    /// Second factor CRT exponent
+    /// </summary>
+    [JsonPropertyName("dq")]
+    public string? Dq { get; set; }
+
+    /// <summary>
+    /// Validates the contents of this JWK
+    /// </summary>
+    public ValidationResult Validate()
+    {
+        var props = new Dictionary<string, string?>
+        {
+            [nameof(Kty)] = Kty,
+            [nameof(Use)] = Use,
+            [nameof(Kid)] = Kid,
+            [nameof(Alg)] = Alg,
+            [nameof(N)] = N,
+            [nameof(E)] = E,
+            [nameof(D)] = D,
+            [nameof(P)] = P,
+            [nameof(Q)] = Q,
+            [nameof(Qi)] = Qi,
+            [nameof(Dp)] = Dp,
+            [nameof(Dq)] = Dq
+        };
+
+        return new ValidationResult
+        {
+            InvalidProperties = props.Where(x => string.IsNullOrWhiteSpace(x.Value)).Select(x => x.Key).ToList()
+        };
+    }
+
+    /// <summary>
+    /// A <see cref="JsonWebKey"/> instance containing the component data from this record
+    /// </summary>
+    public JsonWebKey ToJsonWebKey()
+    {
+        return new JsonWebKey
+        {
+            Kty = Kty,
+            Use = Use,
+            Kid = Kid,
+            Alg = Alg,
+            N = N,
+            E = E,
+            D = D,
+            P = P,
+            Q = Q,
+            QI = Qi,
+            DP = Dp,
+            DQ = Dq
+        };
+    }
+
+    internal record ValidationResult
+    {
+        public IEnumerable<string>? InvalidProperties { get; set; }
+
+        public bool IsValid() => InvalidProperties.IsNullOrEmpty();
+
+        public override string ToString()
+        {
+            return IsValid()
+                ? "All properties are valid"
+                : $"The following required properties are empty: {string.Join(", ", InvalidProperties ?? [])}";
+        }
+    }
 }
