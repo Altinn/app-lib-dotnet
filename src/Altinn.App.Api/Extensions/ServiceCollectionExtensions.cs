@@ -429,15 +429,6 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<ValidateAntiforgeryTokenIfAuthCookieAuthorizationFilter>();
     }
 
-    internal static ServiceDescriptor? GetOptionsDescriptor<TOptions>(this IServiceCollection services)
-        where TOptions : class
-    {
-        return services.FirstOrDefault(d =>
-            d.ServiceType == typeof(IConfigureOptions<TOptions>)
-            || d.ServiceType == typeof(IOptionsChangeTokenSource<TOptions>)
-        );
-    }
-
     private static IServiceCollection RemoveOptions<TOptions>(this IServiceCollection services)
         where TOptions : class
     {
