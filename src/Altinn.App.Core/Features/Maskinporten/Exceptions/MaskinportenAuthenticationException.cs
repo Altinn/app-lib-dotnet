@@ -5,11 +5,14 @@ namespace Altinn.App.Core.Features.Maskinporten.Exceptions;
 /// </summary>
 public class MaskinportenAuthenticationException : MaskinportenException
 {
+    /// <inheritdoc/>
     public MaskinportenAuthenticationException() { }
 
+    /// <inheritdoc/>
     public MaskinportenAuthenticationException(string? message)
         : base(message) { }
 
+    /// <inheritdoc/>
     public MaskinportenAuthenticationException(string? message, Exception? innerException)
         : base(message, innerException) { }
 }

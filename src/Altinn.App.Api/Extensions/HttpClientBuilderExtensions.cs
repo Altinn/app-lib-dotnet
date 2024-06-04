@@ -18,6 +18,7 @@ public static class HttpClientBuilderExtensions
     /// <see cref="MaskinportenClient.GetAccessToken"/> directly and handling authorization details manually.
     /// </para>
     /// </summary>
+    /// <param name="builder">The Http client builder</param>
     /// <param name="scopes">One or more scopes to claim authorization for with Maskinporten</param>
     public static IHttpClientBuilder UseMaskinportenAuthorization(
         this IHttpClientBuilder builder,

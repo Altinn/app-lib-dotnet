@@ -107,6 +107,7 @@ public static class ServiceCollectionExtensions
     /// implicitly via <see cref="WebHostBuilderExtensions.ConfigureAppWebHost"/>, this will be overridden.
     /// </para>
     /// </summary>
+    /// <param name="services">The service collection</param>
     /// <param name="configureOptions">
     /// Action delegate that provides <see cref="MaskinportenSettings"/> configuration for the <see cref="MaskinportenClient"/> service
     /// </param>

@@ -5,11 +5,14 @@ namespace Altinn.App.Core.Features.Maskinporten.Exceptions;
 /// </summary>
 public class MaskinportenTokenExpiredException : MaskinportenException
 {
+    /// <inheritdoc/>
     public MaskinportenTokenExpiredException() { }
 
+    /// <inheritdoc/>
     public MaskinportenTokenExpiredException(string? message)
         : base(message) { }
 
+    /// <inheritdoc/>
     public MaskinportenTokenExpiredException(string? message, Exception? innerException)
         : base(message, innerException) { }
 }
