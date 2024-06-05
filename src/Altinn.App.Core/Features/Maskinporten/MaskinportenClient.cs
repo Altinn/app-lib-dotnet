@@ -19,7 +19,7 @@ public sealed class MaskinportenClient : IMaskinportenClient
     /// </summary>
     internal const int TokenExpirationMargin = 30;
 
-    private readonly ILogger<MaskinportenClient>? _logger;
+    private readonly ILogger<MaskinportenClient> _logger;
     private readonly IOptionsMonitor<MaskinportenSettings> _options;
     private readonly MemoryCache _tokenCache;
     private readonly IHttpClientFactory _httpClientFactory;
@@ -33,7 +33,7 @@ public sealed class MaskinportenClient : IMaskinportenClient
     public MaskinportenClient(
         IOptionsMonitor<MaskinportenSettings> options,
         IHttpClientFactory httpClientFactory,
-        ILogger<MaskinportenClient>? logger = default
+        ILogger<MaskinportenClient> logger
     )
     {
         _options = options;
@@ -65,11 +65,11 @@ public sealed class MaskinportenClient : IMaskinportenClient
         Debug.Assert(result is MaskinportenTokenResponse or Lazy<Task<MaskinportenTokenResponse>>);
         if (result is Lazy<Task<MaskinportenTokenResponse>> lazy)
         {
-            _logger?.LogDebug("Waiting for token request to resolve with Maskinporten");
+            _logger.LogDebug("Waiting for token request to resolve with Maskinporten");
             return lazy.Value;
         }
 
-        _logger?.LogDebug(
+        _logger.LogDebug(
             "Using cached access token which expires at {ExpiresAt}",
             ((MaskinportenTokenResponse)result).ExpiresAt
         );
@@ -133,7 +133,7 @@ public sealed class MaskinportenClient : IMaskinportenClient
             string jwt = GenerateJwtGrant(formattedScopes);
             FormUrlEncodedContent payload = GenerateAuthenticationPayload(jwt);
 
-            _logger?.LogDebug(
+            _logger.LogDebug(
                 "Sending grant request to Maskinporten: {GrantRequest}",
                 await payload.ReadAsStringAsync(cancellationToken)
             );
@@ -149,7 +149,7 @@ public sealed class MaskinportenClient : IMaskinportenClient
                 await ParseServerResponse(response, cancellationToken)
                 ?? throw new MaskinportenAuthenticationException("Invalid response from Maskinporten");
 
-            _logger?.LogDebug("Token retrieved successfully");
+            _logger.LogDebug("Token retrieved successfully");
             return token;
         }
         catch (MaskinportenException)
