@@ -7,6 +7,7 @@ using Altinn.App.Core.Features.Maskinporten.Models;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Http;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Moq;
@@ -99,7 +100,13 @@ public class MaskinportenClientIntegrationTests
             .Returns(new Mock<IMaskinportenClient>().Object);
         mockProvider
             .Setup(provider => provider.GetService(typeof(MaskinportenDelegatingHandler)))
-            .Returns(new MaskinportenDelegatingHandler(scopes, mockProvider.Object));
+            .Returns(
+                new MaskinportenDelegatingHandler(
+                    scopes,
+                    new Mock<IMaskinportenClient>().Object,
+                    new Mock<ILogger<MaskinportenDelegatingHandler>>().Object
+                )
+            );
 
         var mockBuilder = new Mock<IHttpClientBuilder>();
         mockBuilder.Setup(b => b.Services).Returns(services);

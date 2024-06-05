@@ -47,7 +47,7 @@ public class MaskinportenDelegatingHandlerTest
             .Setup(c => c.GetAccessToken(scopes, It.IsAny<CancellationToken>()))
             .ReturnsAsync(tokenResponse);
 
-        var handler = new MaskinportenDelegatingHandler(scopes, mockProvider.Object, mockLogger.Object)
+        var handler = new MaskinportenDelegatingHandler(scopes, mockMaskinportenClient.Object, mockLogger.Object)
         {
             InnerHandler = innerHandlerMock.Object
         };

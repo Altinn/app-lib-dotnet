@@ -10,7 +10,7 @@ namespace Altinn.App.Core.Features.Maskinporten.Delegates;
 /// </summary>
 internal sealed class MaskinportenDelegatingHandler : DelegatingHandler
 {
-    private readonly ILogger<MaskinportenDelegatingHandler>? _logger;
+    private readonly ILogger<MaskinportenDelegatingHandler> _logger;
     private readonly IEnumerable<string> _scopes;
     private readonly IMaskinportenClient _maskinportenClient;
 
@@ -18,21 +18,17 @@ internal sealed class MaskinportenDelegatingHandler : DelegatingHandler
     /// Creates a new instance of <see cref="MaskinportenDelegatingHandler"/>.
     /// </summary>
     /// <param name="scopes">A list of scopes to claim authorization for with Maskinporten</param>
-    /// <param name="provider">A service provider where an <see cref="IMaskinportenClient"/> service has been registered</param>
+    /// <param name="maskinportenClient">A <see cref="MaskinportenClient"/> instance</param>
     /// <param name="logger">Optional logger interface</param>
     public MaskinportenDelegatingHandler(
         IEnumerable<string> scopes,
-        IServiceProvider provider,
-        ILogger<MaskinportenDelegatingHandler>? logger = default
+        IMaskinportenClient maskinportenClient,
+        ILogger<MaskinportenDelegatingHandler> logger
     )
     {
-        _logger = logger ?? provider.GetService<ILoggerFactory>()?.CreateLogger<MaskinportenDelegatingHandler>();
+        _logger = logger;
         _scopes = scopes;
-        _maskinportenClient =
-            provider.GetService<IMaskinportenClient>()
-            ?? throw new MaskinportenConfigurationException(
-                $"No {nameof(IMaskinportenClient)} service has been registered"
-            );
+        _maskinportenClient = maskinportenClient;
     }
 
     /// <inheritdoc/>
@@ -41,7 +37,7 @@ internal sealed class MaskinportenDelegatingHandler : DelegatingHandler
         CancellationToken cancellationToken
     )
     {
-        _logger?.LogDebug("Executing custom `SendAsync` method; injecting authentication headers");
+        _logger.LogDebug("Executing custom `SendAsync` method; injecting authentication headers");
         var auth = await _maskinportenClient.GetAccessToken(_scopes, cancellationToken);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", auth.AccessToken);
 
