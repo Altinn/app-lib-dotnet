@@ -65,7 +65,7 @@ public class InstancesController : ControllerBase
     private readonly AppSettings _appSettings;
     private readonly IProcessEngine _processEngine;
     private readonly IOrganizationClient _orgClient;
-
+    private readonly IHostEnvironment _env;
     private const long RequestSizeLimit = 2000 * 1024 * 1024;
 
     /// <summary>
@@ -86,7 +86,8 @@ public class InstancesController : ControllerBase
         IPrefill prefillService,
         IProfileClient profileClient,
         IProcessEngine processEngine,
-        IOrganizationClient orgClient
+        IOrganizationClient orgClient,
+        IHostEnvironment env
     )
     {
         _logger = logger;
@@ -104,6 +105,7 @@ public class InstancesController : ControllerBase
         _profileClient = profileClient;
         _processEngine = processEngine;
         _orgClient = orgClient;
+        _env = env;
     }
 
     /// <summary>
@@ -181,6 +183,8 @@ public class InstancesController : ControllerBase
         [FromQuery] int? instanceOwnerPartyId
     )
     {
+        // TODO: update this action as well?
+
         if (string.IsNullOrEmpty(org))
         {
             return BadRequest("The path parameter 'org' cannot be empty");
@@ -386,8 +390,11 @@ public class InstancesController : ControllerBase
 
         ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
 
+        var copyInstanceEnabled =
+            application.CopyInstanceSettings?.Enabled is true || application.ManualInstantiationDisabled;
+
         bool copySourceInstance = !string.IsNullOrEmpty(instansiationInstance.SourceInstanceId);
-        if (copySourceInstance && application.CopyInstanceSettings?.Enabled != true)
+        if (copySourceInstance && !copyInstanceEnabled)
         {
             return BadRequest(
                 "Creating instance based on a copy from an archived instance is not enabled for this app."
@@ -443,6 +450,24 @@ public class InstancesController : ControllerBase
                 (int)HttpStatusCode.Forbidden,
                 $"Party {party.PartyId} is not allowed to instantiate this application {org}/{app}"
             );
+        }
+
+        // TODO: is production enough? I see that tt02 is Staging, unsure about other environments
+        if (_env.IsProduction() && application.ManualInstantiationDisabled)
+        {
+            var orgClaim = User.GetOrg();
+            var orgnNrClaim = User.GetOrgNumber();
+
+            // TODO: does manual instantiation mean that the owner org must instantiate on? Can other orgs?
+            // These are just strings, can they have different formatting/casing?
+            // Claim can come from Maskinporten, the other from app metadata
+            if (orgClaim != application.Org)
+            {
+                return StatusCode(
+                    (int)HttpStatusCode.Forbidden,
+                    $"Manual instantiation is disabled for this application {org}/{app}"
+                );
+            }
         }
 
         Instance instanceTemplate =
