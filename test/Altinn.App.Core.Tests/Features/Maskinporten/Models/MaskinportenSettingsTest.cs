@@ -45,6 +45,8 @@ public class MaskinportenSettingsTest
     public void ShouldValidateJwkAfterDeserializing()
     {
         // Arrange
+
+        // In this case, key.e has empty string value. Which should trigger a JsonException
         var json = """
             {
                 "authority": "https://maskinporten.dev/",
