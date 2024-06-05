@@ -26,7 +26,7 @@ public class EformidlingStatusCheckEventHandler2 : IEventHandler
     private readonly ILogger<EformidlingStatusCheckEventHandler2> _logger;
     private readonly IHttpClientFactory _httpClientFactory;
 
-#pragma warning disable CS0618
+#pragma warning disable CS0618 // 'member' is obsolete:
     private readonly IMaskinportenTokenProvider _maskinportenTokenProvider;
 #pragma warning restore CS0618
 
@@ -40,7 +40,7 @@ public class EformidlingStatusCheckEventHandler2 : IEventHandler
         IEFormidlingClient eFormidlingClient,
         IHttpClientFactory httpClientFactory,
         ILogger<EformidlingStatusCheckEventHandler2> logger,
-#pragma warning disable CS0618
+#pragma warning disable CS0618 // 'member' is obsolete:
         IMaskinportenTokenProvider maskinportenTokenProvider,
 #pragma warning restore CS0618
         IOptions<PlatformSettings> platformSettings,
