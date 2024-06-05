@@ -48,7 +48,7 @@ public class LayoutEvaluatorStateInitializer : ILayoutEvaluatorStateInitializer
         Debug.Assert(dataElement is not null);
         return Task.FromResult(
             new LayoutEvaluatorState(
-                new DataModel(dataElement, data, []),
+                new DataModel([KeyValuePair.Create(dataElement, data)]),
                 layouts,
                 _frontEndSettings,
                 instance,
@@ -88,9 +88,12 @@ public class LayoutEvaluatorStateInitializer : ILayoutEvaluatorStateInitializer
 
         var extraModels = await Task.WhenAll(dataTasks);
 
-        var defaultModel = await _dataAccessor.Get(instance, defaultDataElement);
         return new LayoutEvaluatorState(
-            new DataModel(defaultDataElement, defaultModel, extraModels),
+            new DataModel(
+                extraModels.Append(
+                    KeyValuePair.Create(defaultDataElement, await _dataAccessor.Get(instance, defaultDataElement))
+                )
+            ),
             layouts,
             _frontEndSettings,
             instance,

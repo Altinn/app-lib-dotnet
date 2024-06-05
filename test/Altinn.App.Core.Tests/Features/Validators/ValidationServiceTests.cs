@@ -8,6 +8,7 @@ using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
@@ -90,6 +91,8 @@ public class ValidationServiceTests : IDisposable
     private readonly Mock<IFormDataValidator> _formDataValidatorAlwaysMock =
         new(MockBehavior.Strict) { Name = "alwaysFormDataValidator" };
 
+    private readonly Mock<IHttpContextAccessor> _httpContextAccessorMock = new();
+
     private readonly ServiceCollection _serviceCollection = new();
 
     public ValidationServiceTests()
@@ -103,6 +106,9 @@ public class ValidationServiceTests : IDisposable
         _appMetadataMock.Setup(a => a.GetApplicationMetadata()).ReturnsAsync(DefaultAppMetadata);
         _serviceCollection.AddSingleton<IValidatorFactory, ValidatorFactory>();
         _serviceCollection.AddScoped<ICachedFormDataAccessor, CachedFormDataAccessor>();
+
+        _httpContextAccessorMock.Setup(h => h.HttpContext!.TraceIdentifier).Returns(Guid.NewGuid().ToString());
+        _serviceCollection.AddSingleton(_httpContextAccessorMock.Object);
 
         // NeverUsedValidators
         _serviceCollection.AddSingleton(_taskValidatorNeverMock.Object);

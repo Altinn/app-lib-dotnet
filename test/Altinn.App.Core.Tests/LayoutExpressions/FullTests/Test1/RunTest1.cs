@@ -47,7 +47,7 @@ public class RunTest1
             "Test1"
         );
         var hidden = LayoutEvaluator.GetHiddenFieldsForRemoval(state);
-        hidden.Should().BeEquivalentTo([(ModelBinding)"some.data.binding2"]);
+        hidden.Should().BeEquivalentTo([new ModelBinding { Field = "some.data.binding2", DataType = "default" }]);
     }
 
     [Fact]

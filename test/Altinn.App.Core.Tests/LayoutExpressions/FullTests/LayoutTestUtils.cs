@@ -9,6 +9,7 @@ using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Models.Layout.Components;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
@@ -93,6 +94,11 @@ public static class LayoutTestUtils
         services.AddSingleton(appModel.Object);
         services.AddScoped<ILayoutEvaluatorStateInitializer, LayoutEvaluatorStateInitializer>();
         services.AddScoped<ICachedFormDataAccessor, CachedFormDataAccessor>();
+
+        var httpContextAccessorMock = new Mock<IHttpContextAccessor>();
+        httpContextAccessorMock.SetupGet(c => c.HttpContext!.TraceIdentifier).Returns(Guid.NewGuid().ToString());
+        services.AddSingleton(httpContextAccessorMock.Object);
+
         services.AddOptions<FrontEndSettings>().Configure(fes => fes.Add("test", "value"));
 
         var serviceProvider = services.BuildServiceProvider(validateScopes: true);

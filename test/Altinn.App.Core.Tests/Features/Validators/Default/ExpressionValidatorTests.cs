@@ -12,6 +12,7 @@ using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Models.Validation;
 using Altinn.App.Core.Tests.Helpers;
 using Altinn.App.Core.Tests.LayoutExpressions.CommonTests;
+using Altinn.App.Core.Tests.LayoutExpressions.TestUtilities;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
@@ -60,7 +61,7 @@ public class ExpressionValidatorTests
         var instance = new Instance() { Process = new() { CurrentTask = new() { ElementId = "Task_1", } } };
         var dataElement = new DataElement { DataType = "default", };
 
-        var dataModel = new JsonDataModel(testCase.FormData);
+        var dataModel = DynamicClassBuilder.DataModelFromJsonDocument(testCase.FormData, dataElement);
 
         var evaluatorState = new LayoutEvaluatorState(dataModel, testCase.Layouts, _frontendSettings.Value, instance);
         _layoutInitializer
@@ -116,7 +117,7 @@ public class ExpressionTestAttribute : DataAttribute
     }
 }
 
-public class ExpressionValidationTestModel
+public record ExpressionValidationTestModel
 {
     public required string Name { get; set; }
 
@@ -124,7 +125,7 @@ public class ExpressionValidationTestModel
 
     public required JsonElement ValidationConfig { get; set; }
 
-    public required JsonObject FormData { get; set; }
+    public required JsonElement FormData { get; set; }
 
     [JsonConverter(typeof(LayoutModelConverterFromObject))]
     public required LayoutModel Layouts { get; set; }

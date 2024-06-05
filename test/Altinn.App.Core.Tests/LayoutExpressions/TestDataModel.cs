@@ -1,10 +1,8 @@
 using System.Collections;
-using System.Text.Json.Nodes;
+using System.Text.Json;
 using System.Text.Json.Serialization;
-using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.DataModel;
-using Altinn.App.Core.Models.Layout;
-using Altinn.App.Core.Tests.Helpers;
+using Altinn.App.Core.Tests.LayoutExpressions.TestUtilities;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Newtonsoft.Json;
@@ -14,13 +12,13 @@ namespace Altinn.App.Core.Tests.LayoutExpressions;
 
 public class TestDataModel
 {
-    private readonly DataElement _dataElement = new();
+    private readonly DataElement _dataElement = new() { DataType = "default" };
 
     [Fact]
     public void TestSimpleGet()
     {
         var model = new Model { Name = new() { Value = "myValue" } };
-        var modelHelper = new DataModel(_dataElement, model, []);
+        var modelHelper = new DataModel([KeyValuePair.Create(_dataElement, (object)model)]);
         modelHelper.GetModelData("does.not.exist").Should().BeNull();
         modelHelper.GetModelData("name.value").Should().Be(model.Name.Value);
         modelHelper.GetModelData("name.value", [1, 2, 3]).Should().Be(model.Name.Value);
@@ -29,7 +27,8 @@ public class TestDataModel
     [Fact]
     public void AttributeNoAttriubteCaseSensitive()
     {
-        var modelHelper = new DataModel(_dataElement, new Model { NoAttribute = "asdfsf559", }, []);
+        var model = new Model { NoAttribute = "asdfsf559" };
+        var modelHelper = new DataModel([KeyValuePair.Create(_dataElement, (object)model)]);
         modelHelper.GetModelData("NOATTRIBUTE").Should().BeNull("data model lookup is case sensitive");
         modelHelper.GetModelData("noAttribute").Should().BeNull();
         modelHelper.GetModelData("NoAttribute").Should().Be("asdfsf559");
@@ -38,7 +37,9 @@ public class TestDataModel
     [Fact]
     public void NewtonsoftAttributeWorks()
     {
-        var modelHelper = new DataModel(_dataElement, new Model { OnlyNewtonsoft = "asdfsf559", }, []);
+        var modelHelper = new DataModel(
+            [KeyValuePair.Create(_dataElement, (object)new Model { OnlyNewtonsoft = "asdfsf559", })]
+        );
         modelHelper.GetModelData("OnlyNewtonsoft").Should().BeNull("Attribute should win over property when set");
         modelHelper.GetModelData("ONlyNewtonsoft").Should().BeNull();
         modelHelper.GetModelData("onlyNewtonsoft").Should().Be("asdfsf559");
@@ -47,7 +48,9 @@ public class TestDataModel
     [Fact]
     public void SystemTextJsonAttributeWorks()
     {
-        var modelHelper = new DataModel(_dataElement, new Model { OnlySystemTextJson = "asdfsf559", }, []);
+        var modelHelper = new DataModel(
+            [KeyValuePair.Create<DataElement, object>(_dataElement, new Model { OnlySystemTextJson = "asdfsf559" })]
+        );
         modelHelper.GetModelData("OnlySystemTextJson").Should().BeNull("Attribute should win over property when set");
         modelHelper.GetModelData("onlysystemtextjson").Should().BeNull();
         modelHelper.GetModelData("onlySystemTextJson").Should().Be("asdfsf559");
@@ -68,7 +71,7 @@ public class TestDataModel
                 new() { Name = new() { Value = "Dolly Duck" } }
             }
         };
-        var modelHelper = new DataModel(_dataElement, model, []);
+        var modelHelper = new DataModel([KeyValuePair.Create<DataElement, object>(_dataElement, model)]);
         modelHelper.GetModelData("friends.name.value").Should().BeNull();
         modelHelper.GetModelData("friends[0].name.value").Should().Be("Donald Duck");
         modelHelper.GetModelData("friends.name.value", [0]).Should().Be("Donald Duck");
@@ -78,8 +81,8 @@ public class TestDataModel
         modelHelper.GetModelData("friends.name.value", [1]).Should().Be("Dolly Duck");
 
         // Run the same tests with JsonDataModel
-        var doc = JsonSerializer.Deserialize<JsonObject>(JsonSerializer.Serialize(model));
-        var jsonModelHelper = new JsonDataModel(doc);
+        using var doc = JsonDocument.Parse(JsonSerializer.Serialize(model));
+        var jsonModelHelper = DynamicClassBuilder.DataModelFromJsonDocument(doc.RootElement);
         jsonModelHelper.GetModelData("friends.name.value").Should().BeNull();
         jsonModelHelper.GetModelData("friends[0].name.value").Should().Be("Donald Duck");
         jsonModelHelper.GetModelData("friends.name.value", [0]).Should().Be("Donald Duck");
@@ -100,6 +103,27 @@ public class TestDataModel
                 {
                     Name = new() { Value = "Donald Duck" },
                     Age = 123,
+                    Friends = new List<Friend>
+                    {
+                        new()
+                        {
+                            Name = new() { Value = "Onkel Skrue", },
+                            Age = 2022,
+                            Friends = new List<Friend>
+                            {
+                                new()
+                                {
+                                    Name = new() { Value = "LykkeTiøringen" },
+                                    Age = 23,
+                                },
+                                new()
+                                {
+                                    Name = new() { Value = "Madam mim" },
+                                    Age = 23,
+                                }
+                            },
+                        }
+                    },
                 },
                 new()
                 {
@@ -129,7 +153,7 @@ public class TestDataModel
             }
         };
 
-        var modelHelper = new DataModel(_dataElement, model, []);
+        var modelHelper = new DataModel([KeyValuePair.Create<DataElement, object>(_dataElement, model)]);
         modelHelper.GetModelData("friends[1].friends[0].name.value").Should().Be("Onkel Skrue");
         modelHelper.GetModelData("friends[1].friends.name.value", [0, 0]).Should().BeNull();
         modelHelper
@@ -146,8 +170,8 @@ public class TestDataModel
         modelHelper.GetModelDataCount("friends.friends", [1]).Should().Be(1);
 
         // Run the same tests with JsonDataModel
-        var doc = JsonSerializer.Deserialize<JsonObject>(JsonSerializer.Serialize(model));
-        var jsonModelHelper = new JsonDataModel(doc);
+        using var doc = JsonDocument.Parse(JsonSerializer.Serialize(model));
+        var jsonModelHelper = DynamicClassBuilder.DataModelFromJsonDocument(doc.RootElement);
         jsonModelHelper.GetModelData("friends[1].friends[0].name.value").Should().Be("Onkel Skrue");
         jsonModelHelper.GetModelData("friends[1].friends.name.value", [0, 0]).Should().BeNull();
         jsonModelHelper
@@ -188,7 +212,7 @@ public class TestDataModel
                 }
             }
         };
-        var modelHelper = new DataModel(_dataElement, model, []);
+        var modelHelper = new DataModel([KeyValuePair.Create<DataElement, object>(_dataElement, model)]);
         model.Id.Should().Be(2);
         modelHelper.RemoveField("id", RowRemovalOption.SetToNull);
         model.Id.Should().Be(default);
@@ -273,7 +297,7 @@ public class TestDataModel
 
         // deleteRows = false
         var model1 = JsonSerializer.Deserialize<Model>(serializedModel)!;
-        var modelHelper1 = new DataModel(_dataElement, model1, []);
+        var modelHelper1 = new DataModel([KeyValuePair.Create<DataElement, object>(_dataElement, model1)]);
 
         modelHelper1.RemoveField("friends[0].friends[0]", RowRemovalOption.SetToNull);
         model1.Friends![0].Friends![0].Should().BeNull();
@@ -287,7 +311,7 @@ public class TestDataModel
 
         // deleteRows = true
         var model2 = JsonSerializer.Deserialize<Model>(serializedModel)!;
-        var modelHelper2 = new DataModel(_dataElement, model2, []);
+        var modelHelper2 = new DataModel([KeyValuePair.Create<DataElement, object>(_dataElement, model2)]);
 
         modelHelper2.RemoveField("friends[0].friends[0]", RowRemovalOption.DeleteRow);
         model2.Friends![0].Friends!.Count.Should().Be(2);
@@ -302,13 +326,16 @@ public class TestDataModel
     public void TestErrorCases()
     {
         var modelHelper = new DataModel(
-            _dataElement,
-            new Model
-            {
-                Id = 3,
-                Friends = new List<Friend>() { new() { Name = new() { Value = "Ole" }, } }
-            },
-            []
+            [
+                KeyValuePair.Create<DataElement, object>(
+                    _dataElement,
+                    new Model()
+                    {
+                        Id = 3,
+                        Friends = new List<Friend>() { new() { Name = new() { Value = "Ole" }, } }
+                    }
+                )
+            ]
         );
         modelHelper.Invoking(m => m.GetModelData(".")).Should().Throw<DataModelException>().WithMessage("*empty part*");
         modelHelper.GetModelData("friends[0]").Should().BeOfType<Friend>().Which.Name?.Value.Should().Be("Ole");
@@ -332,13 +359,16 @@ public class TestDataModel
     {
         // Test with erroneous model with non-generic IEnumerable (special error for code coverage)
         var modelHelper = new DataModel(
-            _dataElement,
-            new
-            {
-                // ArrayList is not supported as a data model
-                friends = new ArrayList { 1, 2, 3 }
-            },
-            []
+            [
+                KeyValuePair.Create<DataElement, object>(
+                    _dataElement,
+                    new
+                    {
+                        // ArrayList is not supported as a data model
+                        friends = new ArrayList { 1, 2, 3 }
+                    }
+                )
+            ]
         );
         modelHelper
             .Invoking(m => m.AddIndicies("friends", [0]))
@@ -351,32 +381,37 @@ public class TestDataModel
     public void TestAddIndicies()
     {
         var modelHelper = new DataModel(
-            _dataElement,
-            new Model
-            {
-                Id = 3,
-                Friends = new List<Friend>() { new() { Name = new() { Value = "Ole" }, } }
-            },
-            []
+            [
+                KeyValuePair.Create<DataElement, object>(
+                    _dataElement,
+                    new Model
+                    {
+                        Id = 3,
+                        Friends = new List<Friend>() { new() { Name = new() { Value = "Ole" }, } }
+                    }
+                )
+            ]
         );
 
         // Plain add indicies
-        modelHelper.AddIndicies("friends.friends", [0, 1]).Should().Be((ModelBinding)"friends[0].friends[1]");
+        modelHelper.AddIndicies("friends.friends", [0, 1]).Field.Should().Be("friends[0].friends[1]");
 
         // Ignore extra indicies
-        modelHelper.AddIndicies("friends.friends", [0, 1, 4, 6]).Should().Be((ModelBinding)"friends[0].friends[1]");
+        modelHelper.AddIndicies("friends.friends", [0, 1, 4, 6]).Field.Should().Be("friends[0].friends[1]");
 
         // Don't add indicies if they are specified in input
-        modelHelper.AddIndicies("friends[3]", [0]).Should().Be((ModelBinding)"friends[3]");
+        modelHelper.AddIndicies("friends[3]", [0]).Field.Should().Be("friends[3]");
 
         // First index is ignored if it is explicit
-        modelHelper.AddIndicies("friends[0].friends", [2, 3]).Should().Be((ModelBinding)"friends[0].friends[3]");
+        modelHelper.AddIndicies("friends[0].friends", [2, 3]).Field.Should().Be("friends[0].friends[3]");
     }
 
     [Fact]
     public void AddIndicies_WhenGivenIndexOnNonIndexableProperty_ThrowsError()
     {
-        var modelHelper = new DataModel(_dataElement, new Model { Id = 3, }, []);
+        var modelHelper = new DataModel(
+            [KeyValuePair.Create<DataElement, object>(_dataElement, new Model { Id = 3, })]
+        );
 
         // Throws because id is not indexable
         modelHelper
@@ -389,7 +424,7 @@ public class TestDataModel
     [Fact]
     public void RemoveField_WhenValueDoesNotExist_DoNothing()
     {
-        var modelHelper = new DataModel(_dataElement, new Model(), []);
+        var modelHelper = new DataModel([KeyValuePair.Create<DataElement, object>(_dataElement, new Model())]);
 
         // real fields works, no error
         modelHelper.RemoveField("id", RowRemovalOption.SetToNull);

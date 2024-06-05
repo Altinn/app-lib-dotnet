@@ -200,7 +200,7 @@ public static class ServiceCollectionExtensions
 
     private static void AddValidationServices(IServiceCollection services, IConfiguration configuration)
     {
-        services.AddScoped<ICachedFormDataAccessor, CachedFormDataAccessor>();
+        CachedFormDataAccessor.Register(services);
         services.AddTransient<IValidatorFactory, ValidatorFactory>();
         services.AddScoped<IValidationService, ValidationService>();
         if (configuration.GetSection("AppSettings").Get<AppSettings>()?.RequiredValidation == true)

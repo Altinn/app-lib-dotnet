@@ -105,7 +105,7 @@ public static class ExpressionEvaluator
     {
         var key = args switch
         {
-            [string field] => new ModelBinding { Field = field },
+            [string field] => new ModelBinding { Field = field, DataType = state.DefaultDataElement.DataType },
             [string field, string dataType] => new ModelBinding { Field = field, DataType = dataType },
             [ModelBinding binding] => binding,
             [null] => throw new ExpressionEvaluatorTypeErrorException("Cannot lookup dataModel null"),

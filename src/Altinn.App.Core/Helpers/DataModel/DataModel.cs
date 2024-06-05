@@ -12,7 +12,7 @@ namespace Altinn.App.Core.Helpers.DataModel;
 /// <summary>
 /// Get data fields from a model, using string keys (like "Bedrifter[1].Ansatte[1].Alder")
 /// </summary>
-public class DataModel : IDataModelAccessor
+public class DataModel
 {
     private readonly object _defaultServiceModel;
     private readonly Dictionary<string, object> _dataModels = [];
@@ -20,21 +20,20 @@ public class DataModel : IDataModelAccessor
     /// <summary>
     /// Constructor that wraps a POCO data model, and gives extra tool for working with the data
     /// </summary>
-    public DataModel(
-        DataElement defaultDataElement,
-        object serviceModel,
-        IEnumerable<KeyValuePair<DataElement, object>> dataModels
-    )
+    public DataModel(IEnumerable<KeyValuePair<DataElement, object>> dataModels)
     {
-        ArgumentNullException.ThrowIfNull(defaultDataElement);
-        ArgumentNullException.ThrowIfNull(serviceModel);
-        DefaultDataElement = defaultDataElement;
-        _defaultServiceModel = serviceModel;
-
+        var count = 0;
         foreach (var (dataElement, data) in dataModels)
         {
+            if (count++ == 0)
+            {
+                DefaultDataElement = dataElement;
+                _defaultServiceModel = data;
+            }
             _dataModels.Add(dataElement.DataType, data);
         }
+        Debug.Assert(DefaultDataElement is not null, "DataModel initialized with no data elements");
+        Debug.Assert(_defaultServiceModel is not null, "DataModel initialized with no data");
     }
 
     private object ServiceModel(ModelBinding key)
@@ -318,12 +317,16 @@ public class DataModel : IDataModelAccessor
     {
         if (indicies.Length == 0)
         {
-            return key;
+            return key with { DataType = key.DataType ?? DefaultDataElement.DataType };
         }
 
         var ret = new List<string>();
         AddIndiciesRecursive(ret, ServiceModel(key).GetType(), key.Field.Split('.'), indicies);
-        return key with { Field = string.Join('.', ret) };
+        return new ModelBinding
+        {
+            Field = string.Join('.', ret),
+            DataType = key.DataType ?? DefaultDataElement.DataType
+        };
     }
 
     private static bool IsPropertyWithJsonName(PropertyInfo propertyInfo, string key)

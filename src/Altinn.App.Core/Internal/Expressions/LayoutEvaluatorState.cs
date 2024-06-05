@@ -1,5 +1,6 @@
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Models.Layout.Components;
@@ -12,7 +13,7 @@ namespace Altinn.App.Core.Internal.Expressions;
 /// </summary>
 public class LayoutEvaluatorState
 {
-    private readonly IDataModelAccessor _dataModel;
+    private readonly DataModel _dataModel;
     private readonly LayoutModel _componentModel;
     private readonly FrontEndSettings _frontEndSettings;
     private readonly Instance _instanceContext;
@@ -24,7 +25,7 @@ public class LayoutEvaluatorState
     /// Constructor for LayoutEvaluatorState. Usually called via <see cref="LayoutEvaluatorStateInitializer" /> that can be fetched from dependency injection.
     /// </summary>
     public LayoutEvaluatorState(
-        IDataModelAccessor dataModel,
+        DataModel dataModel,
         LayoutModel componentModel,
         FrontEndSettings frontEndSettings,
         Instance instance,
@@ -63,15 +64,12 @@ public class LayoutEvaluatorState
         return _pageContexts;
     }
 
-    private static ComponentContext[] GenerateComponentContexts(
-        IDataModelAccessor dataModel,
-        LayoutModel componentModel
-    )
+    private static ComponentContext[] GenerateComponentContexts(DataModel dataModel, LayoutModel componentModel)
     {
         return componentModel.Pages.Values.Select(((page) => GeneratePageContext(page, dataModel))).ToArray();
     }
 
-    private static ComponentContext GeneratePageContext(PageComponent page, IDataModelAccessor dataModel) =>
+    private static ComponentContext GeneratePageContext(PageComponent page, DataModel dataModel) =>
         new ComponentContext(
             page,
             null,
@@ -81,7 +79,7 @@ public class LayoutEvaluatorState
 
     private static ComponentContext GenerateComponentContextsRecurs(
         BaseComponent component,
-        IDataModelAccessor dataModel,
+        DataModel dataModel,
         ReadOnlySpan<int> indexes
     )
     {
@@ -159,9 +157,9 @@ public class LayoutEvaluatorState
         {
             throw new ArgumentException($"Unknown page name {pageName}");
         }
-        // Find all decendent contexts that matches componentId and all the given rowIndicies
+        // Find all descendant contexts that matches componentId and all the given rowIndicies
         var matches = pageContext
-            .Decendants.Where(context =>
+            .Descendants.Where(context =>
                 context.Component?.Id == componentId
                 && (
                     context.RowIndices?.Zip(rowIndicies ?? Enumerable.Empty<int>()).All((i) => i.First == i.Second)
@@ -184,7 +182,7 @@ public class LayoutEvaluatorState
         // Find all decendent contexts that matches componentId and all the given rowIndicies
         matches = _pageContexts
             .SelectMany(p =>
-                p.Decendants.Where(context =>
+                p.Descendants.Where(context =>
                     context.Component?.Id == componentId
                     && (
                         context.RowIndices?.Zip(rowIndicies ?? Enumerable.Empty<int>()).All((i) => i.First == i.Second)

@@ -14,6 +14,7 @@ using Altinn.App.Core.Models.Layout.Components;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Tests.Internal.Process.TestData;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Moq;
 
@@ -28,6 +29,7 @@ public class ExpressionsExclusiveGatewayTests
     private readonly Mock<IAppModel> _appModel = new(MockBehavior.Strict);
     private readonly Mock<IAppMetadata> _appMetadata = new(MockBehavior.Strict);
     private readonly Mock<IDataClient> _dataClient = new(MockBehavior.Strict);
+    private readonly Mock<IHttpContextAccessor> _httpContextAccessor = new(MockBehavior.Strict);
 
     private const string Org = "ttd";
     private const string App = "test";
@@ -297,10 +299,18 @@ public class ExpressionsExclusiveGatewayTests
         }
 
         var frontendSettings = Options.Create(new FrontEndSettings());
+
+        _httpContextAccessor.SetupGet(hca => hca.HttpContext!.TraceIdentifier).Returns(Guid.NewGuid().ToString());
+
         var layoutStateInit = new LayoutEvaluatorStateInitializer(
             _resources.Object,
             frontendSettings,
-            new CachedFormDataAccessor(_dataClient.Object, _appMetadata.Object, _appModel.Object)
+            new CachedFormDataAccessor(
+                _dataClient.Object,
+                _appMetadata.Object,
+                _appModel.Object,
+                _httpContextAccessor.Object
+            )
         );
         return new ExpressionsExclusiveGateway(layoutStateInit);
     }

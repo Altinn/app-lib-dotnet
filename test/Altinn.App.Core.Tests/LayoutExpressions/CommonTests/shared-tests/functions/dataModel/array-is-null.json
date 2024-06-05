@@ -5,7 +5,8 @@
   "dataModel": {
     "a": [
       {
-        "value": "ABC"
+        "value": "ABC",
+        "other": null
       },
       {
         "other": "DEF"

@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Internal.Expressions;
 
@@ -59,4 +60,12 @@ public record struct Expression
     /// Static helper to create an expression with the value of false
     /// </summary>
     public static Expression False => new(false);
+
+    /// <summary>
+    /// Overridden for better debugging experience
+    /// </summary>
+    public override string ToString()
+    {
+        return JsonSerializer.Serialize(this);
+    }
 }

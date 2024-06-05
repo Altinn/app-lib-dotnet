@@ -2,6 +2,8 @@ using System.Collections.Concurrent;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Altinn.App.Core.Internal.Data;
 
@@ -15,18 +17,34 @@ internal class CachedFormDataAccessor : ICachedFormDataAccessor
     private readonly IDataClient _dataClient;
     private readonly IAppMetadata _appMetadata;
     private readonly IAppModel _appModel;
+    private readonly IHttpContextAccessor _contextAccessor;
+    private readonly string _requestIdentifier;
     private readonly LazyCache<string, object> _cache = new();
 
-    public CachedFormDataAccessor(IDataClient dataClient, IAppMetadata appMetadata, IAppModel appModel)
+    public CachedFormDataAccessor(
+        IDataClient dataClient,
+        IAppMetadata appMetadata,
+        IAppModel appModel,
+        IHttpContextAccessor contextAccessor
+    )
     {
         _dataClient = dataClient;
         _appMetadata = appMetadata;
         _appModel = appModel;
+        _contextAccessor = contextAccessor;
+        ArgumentNullException.ThrowIfNull(_contextAccessor.HttpContext);
+        _requestIdentifier = _contextAccessor.HttpContext.TraceIdentifier;
     }
 
     /// <inheritdoc />
     public async Task<object> Get(Instance instance, DataElement dataElement)
     {
+        // Be completly sure that the cache is only used in a single http request
+        if (_requestIdentifier != _contextAccessor.HttpContext?.TraceIdentifier)
+        {
+            throw new Exception("Cache can only be used in a single http request");
+        }
+
         return await _cache.GetOrCreate(
             dataElement.Id,
             async _ =>
@@ -121,5 +139,10 @@ internal class CachedFormDataAccessor : ICachedFormDataAccessor
             Guid.Parse(dataElement.Id)
         );
         return data;
+    }
+
+    internal static void Register(IServiceCollection services)
+    {
+        services.AddScoped<ICachedFormDataAccessor, CachedFormDataAccessor>();
     }
 }

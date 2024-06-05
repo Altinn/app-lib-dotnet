@@ -12,6 +12,7 @@ using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Json.Patch;
 using Json.Pointer;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Moq;
 using DataType = Altinn.Platform.Storage.Interface.Models.DataType;
@@ -36,6 +37,7 @@ public class PatchServiceTests : IDisposable
     private readonly Mock<IDataProcessor> _dataProcessorMock = new(MockBehavior.Strict);
     private readonly Mock<IAppModel> _appModelMock = new(MockBehavior.Strict);
     private readonly Mock<IAppMetadata> _appMetadataMock = new(MockBehavior.Strict);
+    private readonly Mock<IHttpContextAccessor> _httpContextAccessorMock = new(MockBehavior.Strict);
     private readonly TelemetrySink _telemetrySink = new();
 
     // ValidatorMocks
@@ -72,6 +74,7 @@ public class PatchServiceTests : IDisposable
             )
             .ReturnsAsync(_dataElement)
             .Verifiable();
+        _httpContextAccessorMock.SetupGet(hca => hca.HttpContext!.TraceIdentifier).Returns(Guid.NewGuid().ToString());
         var validatorFactory = new ValidatorFactory([], [_dataElementValidator.Object], [_formDataValidator.Object]);
         var validationService = new ValidationService(
             validatorFactory,
@@ -79,8 +82,14 @@ public class PatchServiceTests : IDisposable
             _appModelMock.Object,
             _appMetadataMock.Object,
             _vLoggerMock.Object,
-            new CachedFormDataAccessor(_dataClientMock.Object, _appMetadataMock.Object, _appModelMock.Object)
+            new CachedFormDataAccessor(
+                _dataClientMock.Object,
+                _appMetadataMock.Object,
+                _appModelMock.Object,
+                _httpContextAccessorMock.Object
+            )
         );
+
         _patchService = new PatchService(
             _appMetadataMock.Object,
             _dataClientMock.Object,

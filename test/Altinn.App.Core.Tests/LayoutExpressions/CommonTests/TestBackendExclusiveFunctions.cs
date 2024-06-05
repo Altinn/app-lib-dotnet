@@ -1,7 +1,7 @@
 using System.Reflection;
 using System.Text.Json;
 using Altinn.App.Core.Internal.Expressions;
-using Altinn.App.Core.Tests.Helpers;
+using Altinn.App.Core.Tests.LayoutExpressions.TestUtilities;
 using FluentAssertions;
 using Xunit.Abstractions;
 using Xunit.Sdk;
@@ -19,15 +19,16 @@ public class TestBackendExclusiveFunctions
 
     [Theory]
     [ExclusiveTest("gatewayAction")]
-    public void GatewayAction_Theory(ExpressionTestCaseRoot test) => RunTestCase(test);
+    public void GatewayAction_Theory(string _, string testFile) => RunTestCase(testFile);
 
-    private void RunTestCase(ExpressionTestCaseRoot test)
+    private void RunTestCase(string testFile)
     {
+        var test = ReadTestCase(testFile);
         _output.WriteLine($"{test.Filename} in {test.Folder}");
         _output.WriteLine(test.RawJson);
         _output.WriteLine(test.FullPath);
         var state = new LayoutEvaluatorState(
-            new JsonDataModel(test.DataModel),
+            DynamicClassBuilder.DataModelFromJsonDocument(test.DataModel ?? JsonDocument.Parse("{}").RootElement),
             test.ComponentModel,
             test.FrontEndSettings ?? new(),
             test.Instance ?? new(),
@@ -112,13 +113,40 @@ public class TestBackendExclusiveFunctions
             .Should()
             .BeEquivalentTo(jsonTestFolders, "Shared test folders should have a corresponding test method");
     }
+
+    private static readonly JsonSerializerOptions _jsonSerializerOptions =
+        new() { ReadCommentHandling = JsonCommentHandling.Skip, PropertyNamingPolicy = JsonNamingPolicy.CamelCase, };
+
+    private ExpressionTestCaseRoot ReadTestCase(string file)
+    {
+        ExpressionTestCaseRoot testCase = new();
+        var data = File.ReadAllText(file);
+        try
+        {
+            testCase = JsonSerializer.Deserialize<ExpressionTestCaseRoot>(data, _jsonSerializerOptions)!;
+        }
+        catch (Exception e)
+        {
+            using var jsonDocument = JsonDocument.Parse(data);
+
+            testCase.Name = jsonDocument.RootElement.GetProperty("name").GetString();
+            testCase.ExpectsFailure = jsonDocument.RootElement.TryGetProperty("expectsFailure", out var expectsFailure)
+                ? expectsFailure.GetString()
+                : null;
+            testCase.ParsingException = e;
+        }
+
+        testCase.Filename = Path.GetFileName(file);
+        testCase.FullPath = file;
+        testCase.Folder = Path.GetDirectoryName(file);
+        testCase.RawJson = data;
+
+        return testCase;
+    }
 }
 
 public class ExclusiveTestAttribute : DataAttribute
 {
-    private static readonly JsonSerializerOptions _jsonSerializerOptions =
-        new() { ReadCommentHandling = JsonCommentHandling.Skip, PropertyNamingPolicy = JsonNamingPolicy.CamelCase, };
-
     private readonly string _folder;
 
     public ExclusiveTestAttribute(string folder)
@@ -133,32 +161,7 @@ public class ExclusiveTestAttribute : DataAttribute
         );
         foreach (var file in files)
         {
-            ExpressionTestCaseRoot testCase = new();
-            var data = File.ReadAllText(file);
-            try
-            {
-                testCase = JsonSerializer.Deserialize<ExpressionTestCaseRoot>(data, _jsonSerializerOptions)!;
-            }
-            catch (Exception e)
-            {
-                using var jsonDocument = JsonDocument.Parse(data);
-
-                testCase.Name = jsonDocument.RootElement.GetProperty("name").GetString();
-                testCase.ExpectsFailure = jsonDocument.RootElement.TryGetProperty(
-                    "expectsFailure",
-                    out var expectsFailure
-                )
-                    ? expectsFailure.GetString()
-                    : null;
-                testCase.ParsingException = e;
-            }
-
-            testCase.Filename = Path.GetFileName(file);
-            testCase.FullPath = file;
-            testCase.Folder = _folder;
-            testCase.RawJson = data;
-
-            yield return new object[] { testCase };
+            yield return new object[] { Path.GetFileName(file), file };
         }
     }
 }
