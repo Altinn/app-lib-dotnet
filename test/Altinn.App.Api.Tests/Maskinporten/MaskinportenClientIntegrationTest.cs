@@ -2,15 +2,11 @@ using Altinn.App.Api.Extensions;
 using Altinn.App.Api.Tests.TestUtils;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features.Maskinporten;
-using Altinn.App.Core.Features.Maskinporten.Delegates;
 using Altinn.App.Core.Features.Maskinporten.Models;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Http;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using Moq;
 
 namespace Altinn.App.Api.Tests.Maskinporten;
 
@@ -89,33 +85,26 @@ public class MaskinportenClientIntegrationTests
     }
 
     [Fact]
-    public void UseMaskinportenAuthorization_AddsHandler()
+    public async Task UseMaskinportenAuthorization_AddsHandler()
     {
         // Arrange
         var scopes = new[] { "scope1", "scope2" };
         var services = new ServiceCollection();
-        var mockProvider = new Mock<IServiceProvider>();
-        mockProvider
-            .Setup(provider => provider.GetService(typeof(IMaskinportenClient)))
-            .Returns(new Mock<IMaskinportenClient>().Object);
-        mockProvider
-            .Setup(provider => provider.GetService(typeof(MaskinportenDelegatingHandler)))
-            .Returns(
-                new MaskinportenDelegatingHandler(
-                    scopes,
-                    new Mock<IMaskinportenClient>().Object,
-                    new Mock<ILogger<MaskinportenDelegatingHandler>>().Object
-                )
-            );
-
-        var mockBuilder = new Mock<IHttpClientBuilder>();
-        mockBuilder.Setup(b => b.Services).Returns(services);
+        services.AddFakeLogging();
+        services.AddSingleton<IMaskinportenClient, MaskinportenClient>();
+        services.AddHttpClient<DummyHttpClient>().UseMaskinportenAuthorization(scopes);
 
         // Act
-        mockBuilder.Object.UseMaskinportenAuthorization(scopes);
+        await using var serviceProvider = services.BuildServiceProvider();
+        var client = serviceProvider.GetRequiredService<DummyHttpClient>();
 
         // Assert
-        mockProvider.Verify(provider => provider.GetService(typeof(IMaskinportenClient)), Times.Once);
-        services.Should().ContainSingle(s => s.ServiceType == typeof(IConfigureOptions<HttpClientFactoryOptions>));
+        Assert.NotNull(client);
+        // TODO: inspect underlying handler? Verify that the handler is called somehow?
+    }
+
+    private sealed class DummyHttpClient
+    {
+        public DummyHttpClient(HttpClient client) { }
     }
 }
