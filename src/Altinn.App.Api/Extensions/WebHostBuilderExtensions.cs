@@ -31,23 +31,7 @@ public static class WebHostBuilderExtensions
 
                 configBuilder.AddInMemoryCollection(config);
 
-                string jsonProvidedPath =
-                    context.Configuration.GetValue<string>("MaskinportenSettingsFilepath")
-                    ?? "/mnt/app-secrets/maskinporten-settings.json";
-                string jsonAbsolutePath = Path.GetFullPath(jsonProvidedPath);
-
-                if (File.Exists(jsonAbsolutePath))
-                {
-                    string jsonDir = Path.GetDirectoryName(jsonAbsolutePath) ?? string.Empty;
-                    string jsonFile = Path.GetFileName(jsonAbsolutePath);
-
-                    configBuilder.AddJsonFile(
-                        provider: new PhysicalFileProvider(jsonDir),
-                        path: jsonFile,
-                        optional: true,
-                        reloadOnChange: true
-                    );
-                }
+                configBuilder.AddMaskinportenSettingsFile(context);
 
                 configBuilder.LoadAppConfig(args);
             }
@@ -56,16 +40,49 @@ public static class WebHostBuilderExtensions
         builder.ConfigureServices(
             (context, services) =>
             {
-                if (services.GetOptionsDescriptor<MaskinportenSettings>() is null)
-                {
-                    services
-                        .AddOptions<MaskinportenSettings>()
-                        .BindConfiguration("MaskinportenSettings")
-                        .ValidateDataAnnotations();
-                }
-
-                services.AddSingleton<IMaskinportenClient, MaskinportenClient>();
+                services.AddMaskinportenClient();
             }
         );
+    }
+
+    private static IServiceCollection AddMaskinportenClient(this IServiceCollection services)
+    {
+        if (services.GetOptionsDescriptor<MaskinportenSettings>() is null)
+        {
+            services
+                .AddOptions<MaskinportenSettings>()
+                .BindConfiguration("MaskinportenSettings")
+                .ValidateDataAnnotations();
+        }
+
+        services.AddSingleton<IMaskinportenClient, MaskinportenClient>();
+
+        return services;
+    }
+
+    private static IConfigurationBuilder AddMaskinportenSettingsFile(
+        this IConfigurationBuilder configurationBuilder,
+        WebHostBuilderContext context
+    )
+    {
+        string jsonProvidedPath =
+            context.Configuration.GetValue<string>("MaskinportenSettingsFilepath")
+            ?? "/mnt/app-secrets/maskinporten-settings.json";
+        string jsonAbsolutePath = Path.GetFullPath(jsonProvidedPath);
+
+        if (File.Exists(jsonAbsolutePath))
+        {
+            string jsonDir = Path.GetDirectoryName(jsonAbsolutePath) ?? string.Empty;
+            string jsonFile = Path.GetFileName(jsonAbsolutePath);
+
+            configurationBuilder.AddJsonFile(
+                provider: new PhysicalFileProvider(jsonDir),
+                path: jsonFile,
+                optional: true,
+                reloadOnChange: true
+            );
+        }
+
+        return configurationBuilder;
     }
 }
