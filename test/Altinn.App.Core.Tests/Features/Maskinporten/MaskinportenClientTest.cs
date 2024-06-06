@@ -41,6 +41,8 @@ public class MaskinportenClientTests
     public void FormattedScopes_FormatsCorrectly()
     {
         MaskinportenClient.FormattedScopes(["a", "b", "c"]).Should().Be("a b c");
+        MaskinportenClient.FormattedScopes(["a b", "c"]).Should().Be("a b c");
+        MaskinportenClient.FormattedScopes(["a b c"]).Should().Be("a b c");
     }
 
     [Fact]

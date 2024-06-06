@@ -26,24 +26,24 @@ public static class AppBuilder
         }
 
         // 1. AddAltinnAppControllersWithViews
-        Extensions.ServiceCollectionExtensions.AddAltinnAppControllersWithViews(builder.Services);
+        Altinn.App.Api.Extensions.ServiceCollectionExtensions.AddAltinnAppControllersWithViews(builder.Services);
 
         // 2. RegisterCustomAppServices
         registerCustomAppServices?.Invoke(builder.Services);
 
         // 3. AddAltinnAppServices
-        Extensions.ServiceCollectionExtensions.AddAltinnAppServices(
+        Altinn.App.Api.Extensions.ServiceCollectionExtensions.AddAltinnAppServices(
             builder.Services,
             builder.Configuration,
             builder.Environment
         );
 
         // 4. ConfigureAppWebHost
-        Extensions.WebHostBuilderExtensions.ConfigureAppWebHost(builder.WebHost, []);
+        Altinn.App.Api.Extensions.WebHostBuilderExtensions.ConfigureAppWebHost(builder.WebHost, []);
 
         // 5. UseAltinnAppCommonConfiguration
         var app = builder.Build();
-        Extensions.WebApplicationBuilderExtensions.UseAltinnAppCommonConfiguration(app);
+        Altinn.App.Api.Extensions.WebApplicationBuilderExtensions.UseAltinnAppCommonConfiguration(app);
 
         return app;
     }

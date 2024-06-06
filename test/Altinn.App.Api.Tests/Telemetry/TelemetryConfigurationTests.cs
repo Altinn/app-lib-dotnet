@@ -151,7 +151,7 @@ public class TelemetryConfigurationTests
             )
             .Build();
 
-        Extensions.ServiceCollectionExtensions.AddAltinnAppServices(services, config, env);
+        Altinn.App.Api.Extensions.ServiceCollectionExtensions.AddAltinnAppServices(services, config, env);
         services.AddApplicationInsightsTelemetryProcessor<TelemetryProcessor>();
 
         await using (var sp = services.BuildServiceProvider())
@@ -206,7 +206,7 @@ public class TelemetryConfigurationTests
         // Hopefully we can remove all this soon
         services.AddKeyedSingleton<ITelemetryProcessor, TelemetryProcessor>("test");
 
-        Extensions.ServiceCollectionExtensions.AddAltinnAppServices(services, config, env);
+        Altinn.App.Api.Extensions.ServiceCollectionExtensions.AddAltinnAppServices(services, config, env);
 
         await using (var sp = services.BuildServiceProvider())
         {

@@ -10,8 +10,9 @@ namespace Altinn.App.Core.Features.Maskinporten.Delegates;
 /// </summary>
 internal sealed class MaskinportenDelegatingHandler : DelegatingHandler
 {
+    public IEnumerable<string> Scopes { get; init; }
+
     private readonly ILogger<MaskinportenDelegatingHandler> _logger;
-    private readonly IEnumerable<string> _scopes;
     private readonly IMaskinportenClient _maskinportenClient;
 
     /// <summary>
@@ -26,8 +27,8 @@ internal sealed class MaskinportenDelegatingHandler : DelegatingHandler
         ILogger<MaskinportenDelegatingHandler> logger
     )
     {
+        Scopes = scopes;
         _logger = logger;
-        _scopes = scopes;
         _maskinportenClient = maskinportenClient;
     }
 
@@ -38,7 +39,7 @@ internal sealed class MaskinportenDelegatingHandler : DelegatingHandler
     )
     {
         _logger.LogDebug("Executing custom `SendAsync` method; injecting authentication headers");
-        var auth = await _maskinportenClient.GetAccessToken(_scopes, cancellationToken);
+        var auth = await _maskinportenClient.GetAccessToken(Scopes, cancellationToken);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", auth.AccessToken);
 
         return await base.SendAsync(request, cancellationToken);

@@ -1,4 +1,6 @@
+using System.Reflection;
 using Altinn.App.Api.Extensions;
+using Altinn.App.Api.Tests.Extensions;
 using Altinn.App.Api.Tests.TestUtils;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features.Maskinporten;
@@ -88,34 +90,29 @@ public class MaskinportenClientIntegrationTests
         settings.Authority.Should().Be(authority);
     }
 
-    [Fact]
-    public void UseMaskinportenAuthorization_AddsHandler()
+    [Theory]
+    [InlineData("client1", "scope1")]
+    [InlineData("client2", "scope1", "scope2", "scope3")]
+    public void UseMaskinportenAuthorization_AddsHandler_BindsToSpecifiedClient(
+        string clientName,
+        string scope,
+        params string[] additionalScopes
+    )
     {
         // Arrange
-        var scopes = new[] { "scope1", "scope2" };
-        var services = new ServiceCollection();
-        var mockProvider = new Mock<IServiceProvider>();
-        mockProvider
-            .Setup(provider => provider.GetService(typeof(IMaskinportenClient)))
-            .Returns(new Mock<IMaskinportenClient>().Object);
-        mockProvider
-            .Setup(provider => provider.GetService(typeof(MaskinportenDelegatingHandler)))
-            .Returns(
-                new MaskinportenDelegatingHandler(
-                    scopes,
-                    new Mock<IMaskinportenClient>().Object,
-                    new Mock<ILogger<MaskinportenDelegatingHandler>>().Object
-                )
-            );
-
-        var mockBuilder = new Mock<IHttpClientBuilder>();
-        mockBuilder.Setup(b => b.Services).Returns(services);
+        var app = AppBuilder.Build(registerCustomAppServices: services =>
+        {
+            services.AddHttpClient(clientName).UseMaskinportenAuthorization(scope, additionalScopes);
+        });
 
         // Act
-        mockBuilder.Object.UseMaskinportenAuthorization(scopes);
+        var authorizedClient = app.Services.GetRequiredService<IHttpClientFactory>().CreateClient(clientName);
 
         // Assert
-        mockProvider.Verify(provider => provider.GetService(typeof(IMaskinportenClient)), Times.Once);
-        services.Should().ContainSingle(s => s.ServiceType == typeof(IConfigureOptions<HttpClientFactoryOptions>));
+        var inputScopes = new[] { scope }.Concat(additionalScopes);
+        var delegatingHandler = authorizedClient.GetDelegatingHandler<MaskinportenDelegatingHandler>();
+
+        Assert.NotNull(delegatingHandler);
+        delegatingHandler.Scopes.Should().BeEquivalentTo(inputScopes);
     }
 }
