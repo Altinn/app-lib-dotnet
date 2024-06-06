@@ -4,15 +4,11 @@ using Altinn.App.Api.Tests.Extensions;
 using Altinn.App.Api.Tests.TestUtils;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features.Maskinporten;
-using Altinn.App.Core.Features.Maskinporten.Delegates;
 using Altinn.App.Core.Features.Maskinporten.Models;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Http;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using Moq;
 
 namespace Altinn.App.Api.Tests.Maskinporten;
 
@@ -100,19 +96,25 @@ public class MaskinportenClientIntegrationTests
     )
     {
         // Arrange
-        var app = AppBuilder.Build(registerCustomAppServices: services =>
-        {
-            services.AddHttpClient(clientName).UseMaskinportenAuthorization(scope, additionalScopes);
-        });
+        var services = new ServiceCollection();
+        services.AddFakeLogging();
+        services.AddSingleton<IMaskinportenClient, MaskinportenClient>();
+        services.AddHttpClient<DummyHttpClient>().UseMaskinportenAuthorization(scopes);
 
         // Act
-        var authorizedClient = app.Services.GetRequiredService<IHttpClientFactory>().CreateClient(clientName);
+        await using var serviceProvider = services.BuildServiceProvider();
+        var client = serviceProvider.GetRequiredService<DummyHttpClient>();
 
         // Assert
+        Assert.NotNull(client);
         var inputScopes = new[] { scope }.Concat(additionalScopes);
         var delegatingHandler = authorizedClient.GetDelegatingHandler<MaskinportenDelegatingHandler>();
-
         Assert.NotNull(delegatingHandler);
         delegatingHandler.Scopes.Should().BeEquivalentTo(inputScopes);
+    }
+
+    private sealed class DummyHttpClient
+    {
+        public DummyHttpClient(HttpClient client) { }
     }
 }
