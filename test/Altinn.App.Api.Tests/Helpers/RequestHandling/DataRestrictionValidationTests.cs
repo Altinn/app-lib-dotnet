@@ -254,4 +254,14 @@ public class DataRestrictionValidationTests
         valid.Should().BeTrue();
         errors.Should().BeEmpty();
     }
+
+    [Theory]
+    [InlineData("pdf")]
+    [InlineData("PDF")]
+    [InlineData("Pdf")]
+    public void GetFileTypeFromFileName_returns_lowercase_filetype(string filename)
+    {
+        string fileType = DataRestrictionValidation.GetFileTypeFromFileName(filename);
+        fileType.Should().Be("pdf");
+    }
 }
