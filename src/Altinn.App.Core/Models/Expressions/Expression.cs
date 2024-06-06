@@ -12,7 +12,7 @@ namespace Altinn.App.Core.Models.Expressions;
 /// All props are marked as nullable, but a valid instance has either <see cref="Function" /> and <see cref="Args" /> or <see cref="Value" />
 /// </remarks>
 [JsonConverter(typeof(ExpressionConverter))]
-public record struct Expression
+public readonly record struct Expression
 {
     /// <summary>
     ///     Construct a value expression with the given value

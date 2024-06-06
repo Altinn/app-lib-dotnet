@@ -5,7 +5,6 @@ using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using Altinn.App.Core.Models.Layout;
 using Altinn.Platform.Storage.Interface.Models;
-using Newtonsoft.Json;
 
 namespace Altinn.App.Core.Helpers.DataModel;
 
@@ -52,13 +51,23 @@ public class DataModel
         throw new Exception($"Could not find data model for type {key.DataType}");
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Get model data based on key and optionally indicies
+    /// </summary>
+    /// <remarks>
+    /// Inline indicies in the key "Bedrifter[1].Ansatte[1].Alder" will override
+    /// normal indicies, and if both "Bedrifter" and "Ansatte" is lists,
+    /// "Bedrifter[1].Ansatte.Alder", will fail, because the indicies will be reset
+    /// after an inline index is used
+    /// </remarks>
     public object? GetModelData(ModelBinding key, ReadOnlySpan<int> indicies = default)
     {
         return GetModelDataRecursive(key.Field.Split('.'), 0, ServiceModel(key), indicies);
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Get the count of data elements set in a group (enumerable)
+    /// </summary>
     public int? GetModelDataCount(ModelBinding key, ReadOnlySpan<int> indicies = default)
     {
         if (GetModelDataRecursive(key.Field.Split('.'), 0, ServiceModel(key), indicies) is IEnumerable childEnum)
@@ -124,14 +133,23 @@ public class DataModel
         return GetModelDataRecursive(keys, index + 1, elementAt, indicies.Length > 0 ? indicies.Slice(1) : indicies);
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Get an array of all keys in repeating groups that match this key
+    /// </summary>
+    /// <example>
+    /// GetResolvedKeys("data.bedrifter.styre.medlemmer") =>
+    /// [
+    ///     "data.bedrifter[0].styre.medlemmer",
+    ///     "data.bedrifter[1].styre.medlemmer"
+    /// ]
+    /// </example>
     public ModelBinding[] GetResolvedKeys(ModelBinding key)
     {
         var keyParts = key.Field.Split('.');
         return GetResolvedKeysRecursive(key, keyParts, ServiceModel(key));
     }
 
-    internal static string JoinFieldKeyParts(string? currentKey, string? key)
+    private static string JoinFieldKeyParts(string? currentKey, string? key)
     {
         if (String.IsNullOrEmpty(currentKey))
         {
@@ -245,7 +263,7 @@ public class DataModel
 
     private static readonly Regex _keyPartRegex = new Regex(@"^([^\s\[\]\.]+)\[(\d+)\]?$");
 
-    internal static (string key, int? index) ParseKeyPart(string keyPart)
+    private static (string key, int? index) ParseKeyPart(string keyPart)
     {
         if (keyPart.Length == 0)
         {
@@ -312,7 +330,14 @@ public class DataModel
         }
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Return a full dataModelBiding from a context aware binding by adding indicies
+    /// </summary>
+    /// <example>
+    /// key = "bedrift.ansatte.navn"
+    /// indicies = [1,2]
+    /// => "bedrift[1].ansatte[2].navn"
+    /// </example>
     public ModelBinding AddIndicies(ModelBinding key, ReadOnlySpan<int> indicies = default)
     {
         if (indicies.Length == 0)
@@ -348,7 +373,7 @@ public class DataModel
         // To remove dependency on Newtonsoft, while keeping compatibility
         // var newtonsoft_json_attribute = (ca.FirstOrDefault(attr => attr.AttributeType.FullName == "Newtonsoft.Json.JsonPropertyAttribute")?.ConstructorArguments.FirstOrDefault().Value as string);
         if (
-            ca.FirstOrDefault(attr => attr.AttributeType == typeof(JsonPropertyAttribute))
+            ca.FirstOrDefault(attr => attr.AttributeType == typeof(Newtonsoft.Json.JsonPropertyAttribute))
                 ?.ConstructorArguments.FirstOrDefault()
                 .Value
             is string newtonsoftJsonAttribute
@@ -362,7 +387,9 @@ public class DataModel
         return keyName == key;
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Set the value of a field in the model to default (null)
+    /// </summary>
     public void RemoveField(ModelBinding key, RowRemovalOption rowRemovalOption)
     {
         var keysSplit = key.Field.Split('.');
@@ -425,13 +452,17 @@ public class DataModel
         }
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Verify that a key is valid for the model
+    /// </summary>
     public bool VerifyKey(ModelBinding key)
     {
         return VerifyKeyRecursive(key.Field.Split('.'), 0, ServiceModel(key).GetType());
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// The default data element when <see cref="ModelBinding.DataType"/> is not set
+    /// </summary>
     public DataElement DefaultDataElement { get; }
 
     private bool VerifyKeyRecursive(string[] keys, int index, Type currentModel)

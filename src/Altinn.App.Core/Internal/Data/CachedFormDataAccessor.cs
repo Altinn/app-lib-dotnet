@@ -12,7 +12,7 @@ namespace Altinn.App.Core.Internal.Data;
 ///
 /// Must be registered as a scoped service in DI container
 /// </summary>
-internal class CachedFormDataAccessor : ICachedFormDataAccessor
+internal sealed class CachedFormDataAccessor : ICachedFormDataAccessor
 {
     private readonly IDataClient _dataClient;
     private readonly IAppMetadata _appMetadata;
