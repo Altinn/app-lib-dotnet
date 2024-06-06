@@ -19,12 +19,15 @@ public static class HttpClientBuilderExtensions
     /// </para>
     /// </summary>
     /// <param name="builder">The Http client builder</param>
-    /// <param name="scopes">One or more scopes to claim authorization for with Maskinporten</param>
+    /// <param name="scope">The scope to claim authorization for with Maskinporten</param>
+    /// <param name="additionalScopes">Additional scopes as required</param>
     public static IHttpClientBuilder UseMaskinportenAuthorization(
         this IHttpClientBuilder builder,
-        params string[] scopes
+        string scope,
+        params string[] additionalScopes
     )
     {
+        var scopes = new[] { scope }.Concat(additionalScopes);
         return builder.AddHttpMessageHandler(provider => new MaskinportenDelegatingHandler(
             scopes,
             provider.GetRequiredService<IMaskinportenClient>(),
