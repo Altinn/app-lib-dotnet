@@ -259,6 +259,7 @@ public class DataRestrictionValidationTests
     [InlineData("name.pdf")]
     [InlineData("name.PDF")]
     [InlineData("name.Pdf")]
+    [InlineData("my.name.is.pDf")]
     public void GetFileTypeFromFileName_returns_lowercase_filetype(string filename)
     {
         string fileType = DataRestrictionValidation.GetFileTypeFromFileName(filename);
