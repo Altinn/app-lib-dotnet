@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
@@ -90,7 +91,7 @@ public class InstanceClient : IInstanceClient
         using var activity = _telemetry?.StartGetInstanceByInstanceActivity(instanceGuid);
         string app = instance.AppId.Split("/")[1];
         string org = instance.Org;
-        int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
+        int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId, CultureInfo.InvariantCulture);
 
         return await GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
     }
