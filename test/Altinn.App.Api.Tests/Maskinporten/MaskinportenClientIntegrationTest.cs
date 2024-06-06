@@ -1,9 +1,9 @@
-using System.Reflection;
 using Altinn.App.Api.Extensions;
 using Altinn.App.Api.Tests.Extensions;
 using Altinn.App.Api.Tests.TestUtils;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features.Maskinporten;
+using Altinn.App.Core.Features.Maskinporten.Delegates;
 using Altinn.App.Core.Features.Maskinporten.Models;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
@@ -89,8 +89,7 @@ public class MaskinportenClientIntegrationTests
     [Theory]
     [InlineData("client1", "scope1")]
     [InlineData("client2", "scope1", "scope2", "scope3")]
-    public void UseMaskinportenAuthorization_AddsHandler_BindsToSpecifiedClient(
-        string clientName,
+    public async Task UseMaskinportenAuthorization_AddsHandler_BindsToSpecifiedClient(
         string scope,
         params string[] additionalScopes
     )
@@ -99,7 +98,7 @@ public class MaskinportenClientIntegrationTests
         var services = new ServiceCollection();
         services.AddFakeLogging();
         services.AddSingleton<IMaskinportenClient, MaskinportenClient>();
-        services.AddHttpClient<DummyHttpClient>().UseMaskinportenAuthorization(scopes);
+        services.AddHttpClient<DummyHttpClient>().UseMaskinportenAuthorization(scope, additionalScopes);
 
         // Act
         await using var serviceProvider = services.BuildServiceProvider();
@@ -107,14 +106,19 @@ public class MaskinportenClientIntegrationTests
 
         // Assert
         Assert.NotNull(client);
-        var inputScopes = new[] { scope }.Concat(additionalScopes);
-        var delegatingHandler = authorizedClient.GetDelegatingHandler<MaskinportenDelegatingHandler>();
+        var delegatingHandler = client.HttpClient.GetDelegatingHandler<MaskinportenDelegatingHandler>();
         Assert.NotNull(delegatingHandler);
+        var inputScopes = new[] { scope }.Concat(additionalScopes);
         delegatingHandler.Scopes.Should().BeEquivalentTo(inputScopes);
     }
 
     private sealed class DummyHttpClient
     {
-        public DummyHttpClient(HttpClient client) { }
+        public HttpClient HttpClient { get; set; }
+
+        public DummyHttpClient(HttpClient client)
+        {
+            HttpClient = client;
+        }
     }
 }
