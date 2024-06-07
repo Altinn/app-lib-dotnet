@@ -67,6 +67,7 @@ public static class ServiceCollectionExtensions
 
         services.AddPlatformServices(config, env);
         services.AddAppServices(config, env);
+        services.AddMaskinportenClient();
         services.ConfigureDataProtection();
 
         var useOpenTelemetrySetting = config.GetValue<bool?>("AppSettings:UseOpenTelemetry");
@@ -118,6 +119,27 @@ public static class ServiceCollectionExtensions
     {
         services.RemoveOptions<MaskinportenSettings>();
         services.AddOptions<MaskinportenSettings>().Configure(configureOptions).ValidateDataAnnotations();
+
+        return services;
+    }
+
+    /// <summary>
+    /// Adds a singleton <see cref="AddMaskinportenClient"/> service to the service collection.
+    /// Binds <see cref="MaskinportenSettings"/>, either from `appsettings.json` or `maskinporten-settings.json` (if found).
+    /// <br/><br/>Note: This binding happens in <see cref="WebHostBuilderExtensions.AddMaskinportenSettingsFile"/>.
+    /// </summary>
+    /// <param name="services">The service collection</param>
+    private static IServiceCollection AddMaskinportenClient(this IServiceCollection services)
+    {
+        if (services.GetOptionsDescriptor<MaskinportenSettings>() is null)
+        {
+            services
+                .AddOptions<MaskinportenSettings>()
+                .BindConfiguration("MaskinportenSettings")
+                .ValidateDataAnnotations();
+        }
+
+        services.AddSingleton<IMaskinportenClient, MaskinportenClient>();
 
         return services;
     }

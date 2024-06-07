@@ -36,28 +36,6 @@ public static class WebHostBuilderExtensions
                 configBuilder.LoadAppConfig(args);
             }
         );
-
-        builder.ConfigureServices(
-            (context, services) =>
-            {
-                services.AddMaskinportenClient();
-            }
-        );
-    }
-
-    private static IServiceCollection AddMaskinportenClient(this IServiceCollection services)
-    {
-        if (services.GetOptionsDescriptor<MaskinportenSettings>() is null)
-        {
-            services
-                .AddOptions<MaskinportenSettings>()
-                .BindConfiguration("MaskinportenSettings")
-                .ValidateDataAnnotations();
-        }
-
-        services.AddSingleton<IMaskinportenClient, MaskinportenClient>();
-
-        return services;
     }
 
     private static IConfigurationBuilder AddMaskinportenSettingsFile(
