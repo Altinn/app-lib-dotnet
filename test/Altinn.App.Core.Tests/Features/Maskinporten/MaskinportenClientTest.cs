@@ -37,9 +37,9 @@ public class MaskinportenClientTests
 
         _maskinportenClient = new MaskinportenClient(
             _mockOptions.Object,
-            _fakeTimeProvider,
             _mockHttpClientFactory.Object,
-            _mockLogger.Object
+            _mockLogger.Object,
+            _fakeTimeProvider
         );
     }
 

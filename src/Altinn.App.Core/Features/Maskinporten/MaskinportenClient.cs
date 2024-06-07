@@ -30,22 +30,22 @@ public sealed class MaskinportenClient : IMaskinportenClient
     /// Instantiates a new <see cref="MaskinportenClient"/> object.
     /// </summary>
     /// <param name="options">Maskinporten settings.</param>
-    /// <param name="timeProvider">TimeProvider implementation.</param>
     /// <param name="httpClientFactory">HttpClient factory.</param>
-    /// <param name="logger">Optional logger interface.</param>
+    /// <param name="logger">Logger interface.</param>
+    /// /// <param name="timeProvider">Optional TimeProvider implementation.</param>
     public MaskinportenClient(
         IOptionsMonitor<MaskinportenSettings> options,
-        TimeProvider timeProvider,
         IHttpClientFactory httpClientFactory,
-        ILogger<MaskinportenClient> logger
+        ILogger<MaskinportenClient> logger,
+        TimeProvider? timeProvider = null
     )
     {
         _options = options;
-        _timeprovider = timeProvider;
+        _timeprovider = timeProvider ?? TimeProvider.System;
         _logger = logger;
         _httpClientFactory = httpClientFactory;
         _tokenCache = new MemoryCache(
-            new MemoryCacheOptions { SizeLimit = 256, Clock = new SystemClockWrapper(timeProvider) }
+            new MemoryCacheOptions { SizeLimit = 256, Clock = new SystemClockWrapper(_timeprovider) }
         );
     }
 
