@@ -29,7 +29,7 @@ public class JsonWebKeyConverter : JsonConverter<JsonWebKey>
 
             if (reader.TokenType != JsonTokenType.PropertyName)
             {
-                throw new JsonException();
+                throw new JsonException($"Expected object, but found {reader.TokenType}");
             }
 
             string? propertyName = reader.GetString();
