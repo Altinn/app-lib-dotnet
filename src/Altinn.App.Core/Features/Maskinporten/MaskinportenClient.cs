@@ -1,9 +1,7 @@
-using System.Diagnostics;
 using System.Text.Json;
 using Altinn.App.Core.Features.Maskinporten.Exceptions;
 using Altinn.App.Core.Features.Maskinporten.Models;
-using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Internal;
+using Altinn.App.Core.Helpers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -23,8 +21,8 @@ public sealed class MaskinportenClient : IMaskinportenClient
     private readonly ILogger<MaskinportenClient> _logger;
     private readonly IOptionsMonitor<MaskinportenSettings> _options;
     private readonly IHttpClientFactory _httpClientFactory;
-    private readonly MemoryCache _tokenCache;
     private readonly TimeProvider _timeprovider;
+    private readonly LazyRefreshCache<string, MaskinportenTokenResponse> _tokenCache;
 
     /// <summary>
     /// Instantiates a new <see cref="MaskinportenClient"/> object.
@@ -44,88 +42,52 @@ public sealed class MaskinportenClient : IMaskinportenClient
         _timeprovider = timeProvider ?? TimeProvider.System;
         _logger = logger;
         _httpClientFactory = httpClientFactory;
-        _tokenCache = new MemoryCache(
-            new MemoryCacheOptions { SizeLimit = 256, Clock = new SystemClockWrapper(_timeprovider) }
+        _tokenCache = new LazyRefreshCache<string, MaskinportenTokenResponse>(
+            refetchBeforeExpiry: TimeSpan.FromSeconds(10),
+            timeProvider: _timeprovider,
+            maxCacheEntries: 256
         );
     }
 
     /// <inheritdoc/>
-    public Task<MaskinportenTokenResponse> GetAccessToken(
+    public async Task<MaskinportenTokenResponse> GetAccessToken(
         IEnumerable<string> scopes,
         CancellationToken cancellationToken = default
     )
     {
         string formattedScopes = FormattedScopes(scopes);
+        DateTimeOffset referenceTime = _timeprovider.GetUtcNow();
 
-        var result = _tokenCache.GetOrCreate<object>(
+        return await _tokenCache.GetOrCreate(
             formattedScopes,
-            entry =>
+            valueFactory: async () =>
             {
-                entry.SetSize(1);
-                return new Lazy<Task<MaskinportenTokenResponse>>(
-                    () => CacheEntryFactory(formattedScopes, cancellationToken),
-                    LazyThreadSafetyMode.ExecutionAndPublication
-                );
-            }
-        );
+                var token = await HandleMaskinportenAuthentication(formattedScopes, cancellationToken);
+                var now = _timeprovider.GetUtcNow();
 
-        Debug.Assert(result is MaskinportenTokenResponse or Lazy<Task<MaskinportenTokenResponse>>);
-        if (result is Lazy<Task<MaskinportenTokenResponse>> lazy)
-        {
-            _logger.LogDebug("Waiting for token request to resolve with Maskinporten");
-            return lazy.Value;
-        }
-
-        _logger.LogDebug(
-            "Using cached access token which expires at {ExpiresAt}",
-            ((MaskinportenTokenResponse)result).ExpiresAt
-        );
-        return Task.FromResult((MaskinportenTokenResponse)result);
-    }
-
-    /// <summary>
-    /// Factory method that returns a task which will send request a token from Maskinporten, then insert this token
-    /// in the <see cref="_tokenCache"/> before returning it to the caller.
-    /// </summary>
-    /// <param name="formattedScopes">A single space-separated string containing the scopes to authorize for.</param>
-    /// <param name="cancellationToken">An optional cancellation token.</param>
-    /// <exception cref="MaskinportenTokenExpiredException">The token received from Maskinporten has already expired.</exception>
-    private Task<MaskinportenTokenResponse> CacheEntryFactory(
-        string formattedScopes,
-        CancellationToken cancellationToken = default
-    )
-    {
-        return Task.Run(
-            async () =>
-            {
-                var timeBeforeRequest = _timeprovider.GetUtcNow();
-                MaskinportenTokenResponse token = await HandleMaskinportenAuthentication(
-                    formattedScopes,
-                    cancellationToken
-                );
-                var timeAfterRequest = _timeprovider.GetUtcNow();
-
-                var cacheExpiry = timeBeforeRequest.AddSeconds(token.ExpiresIn - TokenExpirationMargin);
-                if (cacheExpiry <= timeAfterRequest)
+                var cacheExpiry = referenceTime.AddSeconds(token.ExpiresIn - TokenExpirationMargin);
+                if (cacheExpiry <= now)
                 {
-                    _tokenCache.Remove(formattedScopes);
                     throw new MaskinportenTokenExpiredException(
                         $"Access token cannot be used because it has a calculated expiration in the past (taking into account a margin of {TokenExpirationMargin} seconds): {token}"
                     );
                 }
 
-                return _tokenCache.Set(
-                    formattedScopes,
-                    token,
-                    new MemoryCacheEntryOptions().SetSize(1).SetAbsoluteExpiration(cacheExpiry)
-                );
+                return token;
             },
-            cancellationToken
+            lifetimeFactory: token =>
+            {
+                var now = _timeprovider.GetUtcNow();
+                var timeSinceTokenCreation = now - referenceTime;
+                var tokenLifespan = TimeSpan.FromSeconds(token.ExpiresIn - TokenExpirationMargin);
+
+                return tokenLifespan - timeSinceTokenCreation;
+            }
         );
     }
 
     /// <summary>
-    /// Handles the sending of grant requests to Maskinporten
+    /// Handles the sending of grant requests to Maskinporten and parsing the returned response
     /// </summary>
     /// <param name="formattedScopes">A single space-separated string containing the scopes to authorize for.</param>
     /// <param name="cancellationToken">An optional cancellation token.</param>
@@ -279,9 +241,4 @@ public sealed class MaskinportenClient : IMaskinportenClient
     /// <param name="scopes">A collection of scopes.</param>
     /// <returns>A single string containing the supplied scopes.</returns>
     internal static string FormattedScopes(IEnumerable<string> scopes) => string.Join(" ", scopes);
-}
-
-internal sealed class SystemClockWrapper(TimeProvider timeProvider) : ISystemClock
-{
-    public DateTimeOffset UtcNow => timeProvider.GetUtcNow();
 }
