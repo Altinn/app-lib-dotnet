@@ -42,79 +42,79 @@ public sealed record MaskinportenSettings
 /// <summary>
 /// Serialization wrapper for a JsonWebKey object
 /// </summary>
-internal sealed record JwkWrapper
+internal readonly record struct JwkWrapper
 {
     /// <summary>
     /// Key type
     /// </summary>
     [JsonPropertyName("kty")]
-    public string? Kty { get; set; }
+    public string? Kty { get; init; }
 
     /// <summary>
     /// Public key usage
     /// </summary>
     [JsonPropertyName("use")]
-    public string? Use { get; set; }
+    public string? Use { get; init; }
 
     /// <summary>
     /// Key ID
     /// </summary>
     [JsonPropertyName("kid")]
-    public string? Kid { get; set; }
+    public string? Kid { get; init; }
 
     /// <summary>
     /// Algorithm
     /// </summary>
     [JsonPropertyName("alg")]
-    public string? Alg { get; set; }
+    public string? Alg { get; init; }
 
     /// <summary>
     /// Modulus
     /// </summary>
     [JsonPropertyName("n")]
-    public string? N { get; set; }
+    public string? N { get; init; }
 
     /// <summary>
     /// Exponent
     /// </summary>
     [JsonPropertyName("e")]
-    public string? E { get; set; }
+    public string? E { get; init; }
 
     /// <summary>
     /// Private exponent
     /// </summary>
     [JsonPropertyName("d")]
-    public string? D { get; set; }
+    public string? D { get; init; }
 
     /// <summary>
     /// First prime factor
     /// </summary>
     [JsonPropertyName("p")]
-    public string? P { get; set; }
+    public string? P { get; init; }
 
     /// <summary>
     /// Second prime factor
     /// </summary>
     [JsonPropertyName("q")]
-    public string? Q { get; set; }
+    public string? Q { get; init; }
 
     /// <summary>
     /// First CRT coefficient
     /// </summary>
     [JsonPropertyName("qi")]
-    public string? Qi { get; set; }
+    public string? Qi { get; init; }
 
     /// <summary>
     /// First factor CRT exponent
     /// </summary>
     [JsonPropertyName("dp")]
-    public string? Dp { get; set; }
+    public string? Dp { get; init; }
 
     /// <summary>
     /// Second factor CRT exponent
     /// </summary>
     [JsonPropertyName("dq")]
-    public string? Dq { get; set; }
+    public string? Dq { get; init; }
 
     /// <summary>
     /// Validates the contents of this JWK
@@ -165,11 +165,11 @@ internal sealed record JwkWrapper
         };
     }
 
-    internal record ValidationResult
+    internal readonly record struct ValidationResult
     {
-        public IEnumerable<string>? InvalidProperties { get; set; }
+        public IEnumerable<string>? InvalidProperties { get; init; }
 
-        public bool IsValid() => InvalidProperties.IsNullOrEmpty();
+        public readonly bool IsValid() => InvalidProperties.IsNullOrEmpty();
 
         public override string ToString()
         {
