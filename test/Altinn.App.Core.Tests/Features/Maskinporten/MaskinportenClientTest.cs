@@ -90,7 +90,7 @@ public class MaskinportenClientTests
             AccessToken = "access-token-content",
             ExpiresIn = 120,
             Scope = MaskinportenClient.FormattedScopes(scopes),
-            TokenType = "-"
+            TokenType = "Bearer"
         };
         var mockHandler = TestHelpers.MockHttpMessageHandlerFactory(tokenResponse);
         var httpClient = new HttpClient(mockHandler.Object);
@@ -112,7 +112,7 @@ public class MaskinportenClientTests
             AccessToken = "expired-access-token",
             ExpiresIn = MaskinportenClient.TokenExpirationMargin,
             Scope = "-",
-            TokenType = "-"
+            TokenType = "Bearer"
         };
 
         var scopes = new List<string> { "scope1", "scope2" };
@@ -141,7 +141,7 @@ public class MaskinportenClientTests
             AccessToken = "2 minute access token content",
             ExpiresIn = 120,
             Scope = MaskinportenClient.FormattedScopes(scopes),
-            TokenType = "-"
+            TokenType = "Bearer"
         };
         var mockHandler = TestHelpers.MockHttpMessageHandlerFactory(tokenResponse);
         var httpClient = new HttpClient(mockHandler.Object);
@@ -165,7 +165,7 @@ public class MaskinportenClientTests
             AccessToken = "Very short lived access token",
             ExpiresIn = MaskinportenClient.TokenExpirationMargin + 1,
             Scope = MaskinportenClient.FormattedScopes(scopes),
-            TokenType = "-"
+            TokenType = "Bearer"
         };
         var mockHandler = TestHelpers.MockHttpMessageHandlerFactory(tokenResponse);
         var httpClient = new HttpClient(mockHandler.Object);
@@ -235,7 +235,7 @@ public class MaskinportenClientTests
             AccessToken = "access-token-content",
             ExpiresIn = 120,
             Scope = "scope1 scope2",
-            TokenType = "-"
+            TokenType = "Bearer"
         };
         var validHttpResponse = new HttpResponseMessage
         {

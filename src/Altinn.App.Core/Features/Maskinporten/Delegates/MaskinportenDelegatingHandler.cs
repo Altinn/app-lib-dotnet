@@ -1,4 +1,5 @@
 using System.Net.Http.Headers;
+using Altinn.App.Core.Features.Maskinporten.Exceptions;
 using Microsoft.Extensions.Logging;
 
 namespace Altinn.App.Core.Features.Maskinporten.Delegates;
@@ -37,9 +38,22 @@ internal sealed class MaskinportenDelegatingHandler : DelegatingHandler
     )
     {
         _logger.LogDebug("Executing custom `SendAsync` method; injecting authentication headers");
+
         var auth = await _maskinportenClient.GetAccessToken(Scopes, cancellationToken);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", auth.AccessToken);
+        if (!auth.TokenType.Equals(TokenTypes.Bearer, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new MaskinportenUnsupportedTokenException(
+                $"Unsupported token type received from Maskinporten: {auth.TokenType}"
+            );
+        }
+
+        request.Headers.Authorization = new AuthenticationHeaderValue(TokenTypes.Bearer, auth.AccessToken);
 
         return await base.SendAsync(request, cancellationToken);
     }
+}
+
+internal static class TokenTypes
+{
+    public const string Bearer = "Bearer";
 }
