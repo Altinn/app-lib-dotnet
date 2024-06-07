@@ -3,6 +3,7 @@ using System.Text.Json;
 using Altinn.App.Core.Features.Maskinporten.Exceptions;
 using Altinn.App.Core.Features.Maskinporten.Models;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Internal;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -21,25 +22,31 @@ public sealed class MaskinportenClient : IMaskinportenClient
 
     private readonly ILogger<MaskinportenClient> _logger;
     private readonly IOptionsMonitor<MaskinportenSettings> _options;
-    private readonly MemoryCache _tokenCache;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly MemoryCache _tokenCache;
+    private readonly TimeProvider _timeprovider;
 
     /// <summary>
     /// Instantiates a new <see cref="MaskinportenClient"/> object.
     /// </summary>
     /// <param name="options">Maskinporten settings.</param>
+    /// <param name="timeProvider">TimeProvider implementation.</param>
     /// <param name="httpClientFactory">HttpClient factory.</param>
     /// <param name="logger">Optional logger interface.</param>
     public MaskinportenClient(
         IOptionsMonitor<MaskinportenSettings> options,
+        TimeProvider timeProvider,
         IHttpClientFactory httpClientFactory,
         ILogger<MaskinportenClient> logger
     )
     {
         _options = options;
+        _timeprovider = timeProvider;
         _logger = logger;
         _httpClientFactory = httpClientFactory;
-        _tokenCache = new MemoryCache(new MemoryCacheOptions { SizeLimit = 256 });
+        _tokenCache = new MemoryCache(
+            new MemoryCacheOptions { SizeLimit = 256, Clock = new SystemClockWrapper(timeProvider) }
+        );
     }
 
     /// <inheritdoc/>
@@ -91,14 +98,15 @@ public sealed class MaskinportenClient : IMaskinportenClient
         return Task.Run(
             async () =>
             {
-                var localTime = DateTime.UtcNow;
+                var timeBeforeRequest = _timeprovider.GetUtcNow();
                 MaskinportenTokenResponse token = await HandleMaskinportenAuthentication(
                     formattedScopes,
                     cancellationToken
                 );
+                var timeAfterRequest = _timeprovider.GetUtcNow();
 
-                var cacheExpiry = localTime.AddSeconds(token.ExpiresIn - TokenExpirationMargin);
-                if (cacheExpiry <= DateTime.UtcNow)
+                var cacheExpiry = timeBeforeRequest.AddSeconds(token.ExpiresIn - TokenExpirationMargin);
+                if (cacheExpiry <= timeAfterRequest)
                 {
                     _tokenCache.Remove(formattedScopes);
                     throw new MaskinportenTokenExpiredException(
@@ -181,14 +189,14 @@ public sealed class MaskinportenClient : IMaskinportenClient
             );
         }
 
-        var now = DateTime.UtcNow;
+        var now = _timeprovider.GetUtcNow();
         var expiry = now.AddMinutes(2);
         var jwtDescriptor = new SecurityTokenDescriptor
         {
             Issuer = settings.ClientId,
             Audience = settings.Authority,
-            IssuedAt = now,
-            Expires = expiry,
+            IssuedAt = now.UtcDateTime,
+            Expires = expiry.UtcDateTime,
             SigningCredentials = new SigningCredentials(settings.Key, SecurityAlgorithms.RsaSha256),
             Claims = new Dictionary<string, object> { ["scope"] = formattedScopes, ["jti"] = Guid.NewGuid().ToString() }
         };
@@ -271,4 +279,9 @@ public sealed class MaskinportenClient : IMaskinportenClient
     /// <param name="scopes">A collection of scopes.</param>
     /// <returns>A single string containing the supplied scopes.</returns>
     internal static string FormattedScopes(IEnumerable<string> scopes) => string.Join(" ", scopes);
+}
+
+internal sealed class SystemClockWrapper(TimeProvider timeProvider) : ISystemClock
+{
+    public DateTimeOffset UtcNow => timeProvider.GetUtcNow();
 }

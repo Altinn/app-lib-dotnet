@@ -7,6 +7,7 @@ using Altinn.App.Core.Features.Maskinporten.Models;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Time.Testing;
 using Moq;
 
 namespace Altinn.App.Core.Tests.Features.Maskinporten;
@@ -16,6 +17,7 @@ public class MaskinportenClientTests
     private readonly Mock<IOptionsMonitor<MaskinportenSettings>> _mockOptions;
     private readonly Mock<IHttpClientFactory> _mockHttpClientFactory;
     private readonly Mock<ILogger<MaskinportenClient>> _mockLogger;
+    private readonly FakeTimeProvider _fakeTimeProvider;
     private readonly MaskinportenClient _maskinportenClient;
     private readonly MaskinportenSettings _maskinportenSettings =
         new()
@@ -30,10 +32,12 @@ public class MaskinportenClientTests
         _mockOptions = new Mock<IOptionsMonitor<MaskinportenSettings>>();
         _mockHttpClientFactory = new Mock<IHttpClientFactory>();
         _mockLogger = new Mock<ILogger<MaskinportenClient>>();
+        _fakeTimeProvider = new FakeTimeProvider(startDateTime: DateTimeOffset.UtcNow);
         _mockOptions.Setup(o => o.CurrentValue).Returns(_maskinportenSettings);
 
         _maskinportenClient = new MaskinportenClient(
             _mockOptions.Object,
+            _fakeTimeProvider,
             _mockHttpClientFactory.Object,
             _mockLogger.Object
         );
@@ -110,7 +114,7 @@ public class MaskinportenClientTests
         var tokenResponse = new MaskinportenTokenResponse
         {
             AccessToken = "expired-access-token",
-            ExpiresIn = MaskinportenClient.TokenExpirationMargin,
+            ExpiresIn = MaskinportenClient.TokenExpirationMargin - 1,
             Scope = "-",
             TokenType = "Bearer"
         };
@@ -149,6 +153,7 @@ public class MaskinportenClientTests
 
         // Act
         var token1 = await _maskinportenClient.GetAccessToken(scopes);
+        _fakeTimeProvider.Advance(TimeSpan.FromMinutes(1));
         var token2 = await _maskinportenClient.GetAccessToken(scopes);
 
         // Assert
@@ -173,7 +178,7 @@ public class MaskinportenClientTests
 
         // Act
         var token1 = await _maskinportenClient.GetAccessToken(scopes);
-        await Task.Delay(1000);
+        _fakeTimeProvider.Advance(TimeSpan.FromSeconds(60));
         var token2 = await _maskinportenClient.GetAccessToken(scopes);
 
         // Assert
