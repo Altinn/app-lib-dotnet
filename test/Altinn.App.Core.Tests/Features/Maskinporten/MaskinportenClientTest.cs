@@ -1,4 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Net;
+using System.Text.Json;
 using Altinn.App.Core.Features.Maskinporten;
 using Altinn.App.Core.Features.Maskinporten.Exceptions;
 using Altinn.App.Core.Features.Maskinporten.Models;
@@ -176,5 +178,81 @@ public class MaskinportenClientTests
 
         // Assert
         token1.Should().NotBeSameAs(token2);
+    }
+
+    [Fact]
+    public async Task ParseServerResponse_ThrowsOn_UnsuccessfulStatusCode()
+    {
+        // Arrange
+        var unauthorizedResponse = new HttpResponseMessage
+        {
+            StatusCode = HttpStatusCode.Unauthorized,
+            Content = new StringContent(string.Empty)
+        };
+
+        // Act
+        Func<Task> act = async () =>
+        {
+            await MaskinportenClient.ParseServerResponse(unauthorizedResponse);
+        };
+
+        // Assert
+        await act.Should()
+            .ThrowAsync<MaskinportenAuthenticationException>()
+            .WithMessage(
+                $"Maskinporten authentication failed with status code {(int)unauthorizedResponse.StatusCode} *"
+            );
+    }
+
+    [Fact]
+    public async Task ParseServerResponse_ThrowsOn_InvalidJson()
+    {
+        // Arrange
+        var invalidJsonResponse = new HttpResponseMessage
+        {
+            StatusCode = HttpStatusCode.OK,
+            Content = new StringContent("Bad json formatting")
+        };
+
+        // Act
+        Func<Task> act = async () =>
+        {
+            await MaskinportenClient.ParseServerResponse(invalidJsonResponse);
+        };
+
+        // Assert
+        await act.Should()
+            .ThrowAsync<MaskinportenAuthenticationException>()
+            .WithMessage("Maskinporten replied with invalid JSON formatting: *");
+    }
+
+    [Fact]
+    public async Task ParseServerResponse_ThrowsOn_DisposedObject()
+    {
+        // Arrange
+        var tokenResponse = new MaskinportenTokenResponse
+        {
+            AccessToken = "access-token-content",
+            ExpiresIn = 120,
+            Scope = "scope1 scope2",
+            TokenType = "-"
+        };
+        var validHttpResponse = new HttpResponseMessage
+        {
+            StatusCode = HttpStatusCode.OK,
+            Content = new StringContent(JsonSerializer.Serialize(tokenResponse))
+        };
+
+        // Act
+        validHttpResponse.Dispose();
+        Func<Task> act = async () =>
+        {
+            await MaskinportenClient.ParseServerResponse(validHttpResponse);
+        };
+
+        // Assert
+        await act.Should()
+            .ThrowAsync<MaskinportenAuthenticationException>()
+            .WithMessage("Authentication with Maskinporten failed: *");
     }
 }

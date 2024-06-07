@@ -3,7 +3,7 @@ namespace Altinn.App.Core.Features.Maskinporten.Exceptions;
 /// <summary>
 /// An exception that indicates the access token has expired when it was in fact expected to be valid
 /// </summary>
-public class MaskinportenTokenExpiredException : MaskinportenException
+public sealed class MaskinportenTokenExpiredException : MaskinportenException
 {
     /// <inheritdoc/>
     public MaskinportenTokenExpiredException() { }

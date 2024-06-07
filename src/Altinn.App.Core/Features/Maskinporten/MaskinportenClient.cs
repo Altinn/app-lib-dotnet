@@ -145,9 +145,7 @@ public sealed class MaskinportenClient : IMaskinportenClient
                 payload,
                 cancellationToken
             );
-            MaskinportenTokenResponse token =
-                await ParseServerResponse(response, cancellationToken)
-                ?? throw new MaskinportenAuthenticationException("Invalid response from Maskinporten");
+            MaskinportenTokenResponse token = await ParseServerResponse(response, cancellationToken);
 
             _logger.LogDebug("Token retrieved successfully");
             return token;
@@ -227,35 +225,38 @@ public sealed class MaskinportenClient : IMaskinportenClient
     /// <returns>A <see cref="MaskinportenTokenResponse"/> for successful requests.</returns>
     /// <exception cref="MaskinportenAuthenticationException">Authentication failed.
     /// This could be caused by an authentication/authorization issue or a myriad of tother circumstances.</exception>
-    private static async Task<MaskinportenTokenResponse> ParseServerResponse(
+    internal static async Task<MaskinportenTokenResponse> ParseServerResponse(
         HttpResponseMessage httpResponse,
         CancellationToken cancellationToken = default
     )
     {
-        string content = await httpResponse.Content.ReadAsStringAsync(cancellationToken);
-
         try
         {
-            if (!httpResponse.IsSuccessStatusCode)
+            string content = await httpResponse.Content.ReadAsStringAsync(cancellationToken);
+
+            try
+            {
+                if (!httpResponse.IsSuccessStatusCode)
+                {
+                    throw new MaskinportenAuthenticationException(
+                        $"Maskinporten authentication failed with status code {(int)httpResponse.StatusCode} ({httpResponse.StatusCode}): {content}"
+                    );
+                }
+
+                return JsonSerializer.Deserialize<MaskinportenTokenResponse>(content)
+                    ?? throw new JsonException("JSON body is null");
+            }
+            catch (JsonException e)
             {
                 throw new MaskinportenAuthenticationException(
-                    $"Maskinporten authentication failed with status code {(int)httpResponse.StatusCode} ({httpResponse.StatusCode}): {content}"
+                    $"Maskinporten replied with invalid JSON formatting: {content}",
+                    e
                 );
             }
-
-            return JsonSerializer.Deserialize<MaskinportenTokenResponse>(content)
-                ?? throw new JsonException("JSON body is null");
         }
         catch (MaskinportenException)
         {
             throw;
-        }
-        catch (JsonException e)
-        {
-            throw new MaskinportenAuthenticationException(
-                $"Maskinporten replied with invalid JSON formatting: {content}",
-                e
-            );
         }
         catch (Exception e)
         {
