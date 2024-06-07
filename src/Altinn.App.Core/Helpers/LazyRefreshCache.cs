@@ -119,19 +119,25 @@ internal sealed class LazyRefreshCache<TKey, TValue>
                     var refreshAt = expiry - _refetchBeforeExpiry;
                     var cacheEntry = new CacheEntry(expiry, refreshAt, value);
 
-                    // Do we need to trim the cache?
-                    var foreshadowingMaxCount = _maxCacheEntries - 1;
-                    if (_maxCacheEntries > 0 && _valueCache.Count >= foreshadowingMaxCount)
+                    // Expired items in _valueCache?
+                    var expiredItems = _valueCache.Where(x => x.Value.Expiry <= now).Select(x => x.Key);
+                    foreach (var expiredKey in expiredItems)
                     {
-                        var oldestEntries = GetOverflowKeys(foreshadowingMaxCount);
+                        _valueCache.TryRemove(expiredKey, out var _);
+                    }
+
+                    // Store the new value in _valueCache
+                    _valueCache.AddOrUpdate(key, cacheEntry, (_, _) => cacheEntry);
+
+                    // Too many items in _valueCache?
+                    if (_maxCacheEntries > 0 && _valueCache.Count > _maxCacheEntries)
+                    {
+                        var oldestEntries = GetOverflowKeys(_maxCacheEntries);
                         foreach (var oldKey in oldestEntries)
                         {
                             _valueCache.TryRemove(oldKey, out var _);
                         }
                     }
-
-                    // Store the new value in the _valueCache
-                    _valueCache.AddOrUpdate(key, cacheEntry, (_, _) => cacheEntry);
 
                     // Remove the Lazy Task from the _taskCache because it is no longer needed
                     // and need to be gone when the cache is refreshed
