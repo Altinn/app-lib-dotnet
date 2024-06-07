@@ -8,7 +8,7 @@ namespace Altinn.App.Core.Features.Maskinporten.Converters;
 /// <summary>
 /// Reads a JSON blob containing a jwk, converting it to a <see cref="JsonWebKey"/> instance
 /// </summary>
-public class JsonWebKeyConverter : JsonConverter<JsonWebKey>
+internal sealed class JsonWebKeyConverter : JsonConverter<JsonWebKey>
 {
     /// <inheritdoc/>
     public override JsonWebKey? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
