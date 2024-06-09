@@ -1,23 +1,25 @@
 using Altinn.App.Core.Helpers;
 using FluentAssertions;
 using Microsoft.Extensions.Time.Testing;
+using Moq;
 
 namespace Altinn.App.Core.Tests.Helpers;
 
 public class LazyRefreshCacheTest
 {
+    private readonly FakeTimeProvider _fakeTime = new();
+
     [Fact]
     public async Task GetOrCreate_ObeysSizeLimit_ImplementsFIFO_Correctly()
     {
         // Arrange
-        var fakeTime = new FakeTimeProvider();
         var cacheSizeLimit = 3;
-        var cache = new LazyRefreshCache<int, int>(fakeTime, TimeSpan.Zero, cacheSizeLimit);
+        var cache = new LazyRefreshCache<int, int>(_fakeTime, TimeSpan.Zero, cacheSizeLimit);
 
         // Act
         for (var i = 0; i < 10; i++)
         {
-            await cache.GetOrCreate(i, () => Task.FromResult(i), s => TimeSpan.FromSeconds(i));
+            await cache.GetOrCreate(i, () => Task.FromResult(i), _ => TimeSpan.FromSeconds(i));
         }
 
         // Assert
@@ -29,21 +31,20 @@ public class LazyRefreshCacheTest
     public async Task GetOrCreate_RefreshesItem_BeforeExpiry_WithinThreshold()
     {
         // Arrange
-        var fakeTime = new FakeTimeProvider();
         var refetchBeforeExpiryThreshold = TimeSpan.FromSeconds(30);
         var itemLifetime = refetchBeforeExpiryThreshold * 2;
-        var cache = new LazyRefreshCache<string, CacheItem>(fakeTime, refetchBeforeExpiryThreshold);
+        var cache = new LazyRefreshCache<string, CacheItem>(_fakeTime, refetchBeforeExpiryThreshold);
 
         // Act
-        var item1 = await cache.GetOrCreate("a", GenerateItemFactory(), GenerateLifetimeFactory(itemLifetime));
+        var item1 = await cache.GetOrCreate("a", GenerateItemFactory(), itemLifetime);
 
-        fakeTime.Advance(refetchBeforeExpiryThreshold);
+        _fakeTime.Advance(refetchBeforeExpiryThreshold);
 
-        var item2 = await cache.GetOrCreate("a", GenerateItemFactory(), GenerateLifetimeFactory(itemLifetime));
+        var item2 = await cache.GetOrCreate("a", GenerateItemFactory(), itemLifetime);
         var item2Expiry = cache.Values.First().Expiry;
-        var item2Now = fakeTime.GetUtcNow();
+        var item2Now = _fakeTime.GetUtcNow();
 
-        var item3 = await cache.GetOrCreate("a", GenerateItemFactory(), GenerateLifetimeFactory(itemLifetime));
+        var item3 = await cache.GetOrCreate("a", GenerateItemFactory(), itemLifetime);
 
         // Assert
         cache.Count.Should().Be(1);
@@ -57,17 +58,16 @@ public class LazyRefreshCacheTest
     public async Task GetOrCreate_RefreshesExpiredItems()
     {
         // Arrange
-        var fakeTime = new FakeTimeProvider();
         var itemLifetime = TimeSpan.FromSeconds(60);
-        var cache = new LazyRefreshCache<string, CacheItem>(fakeTime, TimeSpan.Zero);
+        var cache = new LazyRefreshCache<string, CacheItem>(_fakeTime, TimeSpan.Zero);
 
         // Act
-        var item1 = await cache.GetOrCreate("a", GenerateItemFactory(), GenerateLifetimeFactory(itemLifetime));
-        var item2 = await cache.GetOrCreate("a", GenerateItemFactory(), GenerateLifetimeFactory(itemLifetime));
+        var item1 = await cache.GetOrCreate("a", GenerateItemFactory(), itemLifetime);
+        var item2 = await cache.GetOrCreate("a", GenerateItemFactory(), itemLifetime);
 
-        fakeTime.Advance(itemLifetime);
+        _fakeTime.Advance(itemLifetime);
 
-        var item3 = await cache.GetOrCreate("a", GenerateItemFactory(), GenerateLifetimeFactory(itemLifetime));
+        var item3 = await cache.GetOrCreate("a", GenerateItemFactory(), itemLifetime);
 
         // Assert
         cache.Count.Should().Be(1);
@@ -79,30 +79,83 @@ public class LazyRefreshCacheTest
     public async Task GetOrCreate_EvictsExpiredItems()
     {
         // Arrange
-        var fakeTime = new FakeTimeProvider();
         var itemLifetime = TimeSpan.FromSeconds(60);
-        var cache = new LazyRefreshCache<string, CacheItem>(fakeTime, TimeSpan.Zero);
+        var cache = new LazyRefreshCache<string, CacheItem>(_fakeTime, TimeSpan.Zero);
 
         // Act & Assert
-        await cache.GetOrCreate("a", GenerateItemFactory(), GenerateLifetimeFactory(itemLifetime));
-        await cache.GetOrCreate("b", GenerateItemFactory(), GenerateLifetimeFactory(itemLifetime));
+        await cache.GetOrCreate("a", GenerateItemFactory(), itemLifetime);
+        await cache.GetOrCreate("b", GenerateItemFactory(), itemLifetime);
         cache.Count.Should().Be(2);
 
-        fakeTime.Advance(itemLifetime);
+        _fakeTime.Advance(itemLifetime);
 
-        await cache.GetOrCreate("c", GenerateItemFactory(), GenerateLifetimeFactory(itemLifetime));
+        await cache.GetOrCreate("c", GenerateItemFactory(), itemLifetime);
         cache.Count.Should().Be(1);
     }
 
-    private Func<Task<CacheItem>> GenerateItemFactory(string? contents = default)
+    [Fact]
+    public async Task GetOrCreate_OnlyGeneratesOneItem_DuringStampede()
+    {
+        // Arrange
+        var slowness = TimeSpan.FromSeconds(10);
+        var mockSlowItem = new Mock<ISlowItem>();
+        mockSlowItem.Setup(x => x.Delay()).Returns(Task.Delay(slowness, _fakeTime));
+        var cache = new LazyRefreshCache<string, CacheItem>(_fakeTime, TimeSpan.Zero);
+
+        // Act
+        var tasks = Enumerable
+            .Range(0, 10)
+            .Select(_ =>
+                cache.GetOrCreate("a", GenerateSlowItemFactory(mockSlowItem.Object), TimeSpan.FromSeconds(60))
+            );
+
+        _fakeTime.Advance(slowness);
+
+        var results = await Task.WhenAll(tasks);
+
+        // Assert
+        var firstResult = results.First();
+        results.All(x => ReferenceEquals(x, firstResult)).Should().BeTrue();
+        mockSlowItem.Verify(x => x.Delay(), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetOrCreate_DefaultLifetime_IsForever()
+    {
+        // Arrange
+        var cache = new LazyRefreshCache<string, CacheItem>(_fakeTime, TimeSpan.Zero);
+
+        // Act
+        var item1 = await cache.GetOrCreate("a", GenerateItemFactory("heya"));
+
+        _fakeTime.Advance(TimeSpan.FromDays(365 ^ 2));
+
+        var item2 = await cache.GetOrCreate("a", GenerateItemFactory("buddy"));
+
+        // Assert
+        item1.Should().BeSameAs(item2);
+        cache.Values.Count.Should().Be(1);
+        cache.Values.Select(x => x.Value.Contents).First().Should().Be("heya");
+    }
+
+    private static Func<Task<CacheItem>> GenerateItemFactory(string? contents = default)
     {
         return async () => await Task.FromResult(new CacheItem(contents));
     }
 
-    private Func<CacheItem, TimeSpan> GenerateLifetimeFactory(TimeSpan lifetime)
+    private static Func<Task<CacheItem>> GenerateSlowItemFactory(ISlowItem slowItem, string? contents = default)
     {
-        return _ => lifetime;
+        return async () =>
+        {
+            await slowItem.Delay();
+            return new CacheItem(contents);
+        };
     }
 }
 
 public record CacheItem(string? Contents = default);
+
+public interface ISlowItem
+{
+    public Task Delay();
+}
