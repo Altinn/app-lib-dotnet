@@ -66,7 +66,6 @@ internal sealed class LazyRefreshCache<TKey, TValue>
     /// <param name="key">The cache key</param>
     /// <param name="valueFactory">Factory function to create the value (if not in cache).</param>
     /// <param name="lifetimeFactory">Factory function to calculate the lifetime of the cached value.</param>
-    /// <returns></returns>
     public async Task<TValue> GetOrCreate(
         TKey key,
         Func<Task<TValue>> valueFactory,
@@ -98,6 +97,21 @@ internal sealed class LazyRefreshCache<TKey, TValue>
 
         // No previous value found, so we need to await the task from the initializer cache
         return await GetTaskFromTaskCache(key, valueFactory, lifetimeFactory, now);
+    }
+
+    /// <summary>
+    /// Retrieves a value from the cache, or creates it if not present or expired.
+    /// </summary>
+    /// <param name="key">The cache key</param>
+    /// <param name="valueFactory">Factory function to create the value (if not in cache).</param>
+    /// <param name="lifetime">The lifetime of the cached value.</param>
+    public async Task<TValue> GetOrCreate(TKey key, Func<Task<TValue>> valueFactory, TimeSpan? lifetime = default)
+    {
+        return await GetOrCreate(
+            key: key,
+            valueFactory: valueFactory,
+            lifetimeFactory: _ => lifetime ?? TimeSpan.MaxValue
+        );
     }
 
     private async Task<TValue> GetTaskFromTaskCache(
