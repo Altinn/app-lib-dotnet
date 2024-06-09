@@ -110,7 +110,7 @@ internal sealed class LazyRefreshCache<TKey, TValue>
         return await GetOrCreate(
             key: key,
             valueFactory: valueFactory,
-            lifetimeFactory: _ => lifetime ?? TimeSpan.MaxValue
+            lifetimeFactory: _ => lifetime ?? DateTimeOffset.MaxValue - _timeProvider.GetUtcNow()
         );
     }
 
