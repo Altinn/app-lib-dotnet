@@ -133,11 +133,10 @@ internal sealed class LazyRefreshCache<TKey, TValue>
                     var refreshAt = expiry - _refetchBeforeExpiry;
                     var cacheEntry = new CacheEntry(expiry, refreshAt, value);
 
-                    // Expired items in _valueCache?
-                    var expiredItems = _valueCache.Where(x => x.Value.Expiry <= now).Select(x => x.Key);
-                    foreach (var expiredKey in expiredItems)
+                    // Remove expired items in _valueCache
+                    foreach (var expiredItem in _valueCache.Where(x => x.Value.Expiry <= now))
                     {
-                        _valueCache.TryRemove(expiredKey, out var _);
+                        _valueCache.TryRemove(expiredItem);
                     }
 
                     // Store the new value in _valueCache
@@ -149,7 +148,7 @@ internal sealed class LazyRefreshCache<TKey, TValue>
                         var oldestEntries = GetOverflowKeys(_maxCacheEntries);
                         foreach (var oldKey in oldestEntries)
                         {
-                            _valueCache.TryRemove(oldKey, out var _);
+                            _valueCache.TryRemove(oldKey);
                         }
                     }
 
@@ -167,8 +166,8 @@ internal sealed class LazyRefreshCache<TKey, TValue>
     /// Helper: Gets the overflowing cache entriy keys. Eg. the keys of items that should be removed because cache size is over its limit
     /// </summary>
     /// <param name="cacheSizeLimit">The cache size limit</param>
-    private IEnumerable<TKey> GetOverflowKeys(int cacheSizeLimit)
+    private IEnumerable<KeyValuePair<TKey, CacheEntry>> GetOverflowKeys(int cacheSizeLimit)
     {
-        return _valueCache.OrderBy(x => x.Value.Expiry).Select(x => x.Key).Take(_valueCache.Count - cacheSizeLimit);
+        return _valueCache.OrderBy(x => x.Value.Expiry).Take(_valueCache.Count - cacheSizeLimit);
     }
 }
