@@ -20,6 +20,19 @@ public class MimeTypeMapTests
     }
 
     [Fact]
+    public void GetMimeType_ShouldReturnCorrectMimeType_for_pdf()
+    {
+        // Arrange
+        string extension = ".pdf";
+
+        // Act
+        var mimeType = MimeTypeMap.GetMimeType(extension);
+
+        // Assert
+        mimeType.ToString().Should().BeEquivalentTo("application/pdf");
+    }
+
+    [Fact]
     public void GetMimeType_ShouldReturnCorrectMimeType_for_pdf_without_leading_dot()
     {
         // Arrange
