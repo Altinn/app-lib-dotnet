@@ -178,7 +178,7 @@ internal sealed class LazyRefreshCache<TKey, TValue>
 
                         return value;
                     }
-                    catch (Exception e)
+                    catch (Exception)
                     {
                         postProcessCallback?.Invoke(default, CacheResultType.Error);
                         throw;
