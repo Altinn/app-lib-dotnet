@@ -44,6 +44,8 @@ internal sealed class LazyRefreshCache<TKey, TValue>
     private readonly TimeProvider _timeProvider;
     private readonly TimeSpan _refetchBeforeExpiry;
     private readonly int _maxCacheEntries;
+    private readonly SemaphoreSlim[] _locks;
+    private readonly int _numLocks = 32;
 
     /// <summary>
     /// Instantiates a new <see cref="LazyRefreshCache{TKey,TValue}"/> instance.
@@ -59,6 +61,9 @@ internal sealed class LazyRefreshCache<TKey, TValue>
         _refetchBeforeExpiry = refetchBeforeExpiry;
         _timeProvider = timeProvider;
         _maxCacheEntries = maxCacheEntries;
+
+        // Populate locks array with _numLocks slots
+        _locks = Enumerable.Range(0, _numLocks).Select(_ => new SemaphoreSlim(1)).ToArray();
     }
 
     /// <summary>
@@ -75,38 +80,49 @@ internal sealed class LazyRefreshCache<TKey, TValue>
         Action<TValue?, CacheResultType>? postProcessCallback = default
     )
     {
-        var now = _timeProvider.GetUtcNow();
-        TValue? result;
+        var lockNo = (key.GetHashCode() & 0x7fffffff) % _numLocks;
+        var semaphore = _locks[lockNo];
+        await semaphore.WaitAsync();
 
-        if (_valueCache.TryGetValue(key, out var entry))
+        try
         {
-            // If the entry is still valid (with margin), return it
-            if (entry.RefreshAt > now)
+            var now = _timeProvider.GetUtcNow();
+            TValue? result;
+
+            if (_valueCache.TryGetValue(key, out var entry))
             {
-                postProcessCallback?.Invoke(entry.Value, CacheResultType.Cached);
-                return entry.Value;
+                // If the entry is still valid (with margin), return it
+                if (entry.RefreshAt > now)
+                {
+                    postProcessCallback?.Invoke(entry.Value, CacheResultType.Cached);
+                    return entry.Value;
+                }
+
+                // Kick off a new valueFactory task
+                var cacheTask = GetTaskFromTaskCache(key, valueFactory, lifetimeFactory, now, postProcessCallback);
+
+                // Return previous value without awaiting value if it is still valid
+                if (entry.Expiry > now)
+                {
+                    postProcessCallback?.Invoke(entry.Value, CacheResultType.Refreshed);
+                    return entry.Value;
+                }
+
+                // Await the new value if the previous value has expired
+                result = await cacheTask;
+                postProcessCallback?.Invoke(result, CacheResultType.Expired);
+                return result;
             }
 
-            // Kick off a new valueFactory task
-            var cacheTask = GetTaskFromTaskCache(key, valueFactory, lifetimeFactory, now, postProcessCallback);
-
-            // Return previous value without awaiting value if it is still valid
-            if (entry.Expiry > now)
-            {
-                postProcessCallback?.Invoke(entry.Value, CacheResultType.Refreshed);
-                return entry.Value;
-            }
-
-            // Await the new value if the previous value has expired
-            result = await cacheTask;
+            // No previous value found, so we need to await the task from the initializer cache
+            result = await GetTaskFromTaskCache(key, valueFactory, lifetimeFactory, now);
             postProcessCallback?.Invoke(result, CacheResultType.New);
             return result;
         }
-
-        // No previous value found, so we need to await the task from the initializer cache
-        result = await GetTaskFromTaskCache(key, valueFactory, lifetimeFactory, now);
-        postProcessCallback?.Invoke(result, CacheResultType.New);
-        return result;
+        finally
+        {
+            semaphore.Release();
+        }
     }
 
     /// <summary>
