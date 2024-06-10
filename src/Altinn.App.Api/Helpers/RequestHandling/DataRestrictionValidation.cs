@@ -92,7 +92,7 @@ public static class DataRestrictionValidation
             return (true, errors);
         }
 
-        string filetype = GetFileTypeFromFileName(filename);
+        string filetype = Path.GetExtension(filename);
         var mimeType = MimeTypeMap.GetMimeType(filetype);
 
         if (!request.Headers.TryGetValue("Content-Type", out StringValues contentType))
@@ -163,10 +163,5 @@ public static class DataRestrictionValidation
         filename = filename?.Trim('\"').AsFileName(false);
 
         return filename;
-    }
-
-    internal static string GetFileTypeFromFileName(string filename)
-    {
-        return filename.Split('.')[^1];
     }
 }

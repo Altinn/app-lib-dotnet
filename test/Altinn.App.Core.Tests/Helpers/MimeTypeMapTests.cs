@@ -8,8 +8,8 @@ namespace Altinn.App.Core.Tests.Helpers;
 public class MimeTypeMapTests
 {
     [Theory]
-    [InlineData("pdf")]
-    [InlineData("pDF")]
+    [InlineData(".pdf")]
+    [InlineData(".pDF")]
     public void GetMimeType_ShouldNotBe_CaseSensitive(string extension)
     {
         // Act
