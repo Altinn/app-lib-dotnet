@@ -51,7 +51,7 @@ public class MaskinportenClientIntegrationTests
     }
 
     [Fact]
-    public void ConfigureMaskinportenClient_AddsSingleConfiguration()
+    public void ConfigureMaskinportenClient_LastConfigurationOverwritesOthers()
     {
         // Arrange
         var services = new ServiceCollection();
@@ -73,8 +73,6 @@ public class MaskinportenClientIntegrationTests
         });
 
         // Assert
-        services.GetOptionsDescriptors<MaskinportenSettings>().Should().HaveCount(1);
-
         var serviceProvider = services.BuildServiceProvider();
         var optionsMonitor = serviceProvider.GetRequiredService<IOptionsMonitor<MaskinportenSettings>>();
         Assert.NotNull(optionsMonitor);

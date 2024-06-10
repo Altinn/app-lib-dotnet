@@ -117,7 +117,6 @@ public static class ServiceCollectionExtensions
         Action<MaskinportenSettings> configureOptions
     )
     {
-        services.RemoveOptions<MaskinportenSettings>();
         services.AddOptions<MaskinportenSettings>().Configure(configureOptions).ValidateDataAnnotations();
 
         return services;
