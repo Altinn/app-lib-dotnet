@@ -23,6 +23,7 @@ public sealed class MaskinportenClient : IMaskinportenClient
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly TimeProvider _timeprovider;
     private readonly LazyRefreshCache<string, MaskinportenTokenResponse> _tokenCache;
+    private readonly Telemetry? _telemetry;
 
     /// <summary>
     /// Instantiates a new <see cref="MaskinportenClient"/> object.
@@ -30,15 +31,18 @@ public sealed class MaskinportenClient : IMaskinportenClient
     /// <param name="options">Maskinporten settings.</param>
     /// <param name="httpClientFactory">HttpClient factory.</param>
     /// <param name="logger">Logger interface.</param>
-    /// /// <param name="timeProvider">Optional TimeProvider implementation.</param>
+    /// <param name="timeProvider">Optional TimeProvider implementation.</param>
+    /// <param name="telemetry">Optional telemetry service.</param>
     public MaskinportenClient(
         IOptionsMonitor<MaskinportenSettings> options,
         IHttpClientFactory httpClientFactory,
         ILogger<MaskinportenClient> logger,
-        TimeProvider? timeProvider = null
+        TimeProvider? timeProvider = null,
+        Telemetry? telemetry = null
     )
     {
         _options = options;
+        _telemetry = telemetry;
         _timeprovider = timeProvider ?? TimeProvider.System;
         _logger = logger;
         _httpClientFactory = httpClientFactory;
@@ -57,6 +61,8 @@ public sealed class MaskinportenClient : IMaskinportenClient
     {
         string formattedScopes = FormattedScopes(scopes);
         DateTimeOffset referenceTime = _timeprovider.GetUtcNow();
+
+        _telemetry?.StartGetAccessTokenActivity(_options.CurrentValue.ClientId, formattedScopes);
 
         return await _tokenCache.GetOrCreate(
             formattedScopes,
@@ -82,6 +88,18 @@ public sealed class MaskinportenClient : IMaskinportenClient
                 var tokenLifespan = TimeSpan.FromSeconds(token.ExpiresIn - TokenExpirationMargin);
 
                 return tokenLifespan - timeSinceTokenCreation;
+            },
+            postProcessCallback: (response, type) =>
+            {
+                var requestResult = type switch
+                {
+                    CacheResultType.Cached => Telemetry.Maskinporten.RequestResult.Cached,
+                    CacheResultType.Refreshed => Telemetry.Maskinporten.RequestResult.Refreshed,
+                    CacheResultType.New => Telemetry.Maskinporten.RequestResult.New,
+                    CacheResultType.Error => Telemetry.Maskinporten.RequestResult.Error,
+                    _ => Telemetry.Maskinporten.RequestResult.Error
+                };
+                _telemetry?.RecordMaskinportenTokenRequest(requestResult);
             }
         );
     }

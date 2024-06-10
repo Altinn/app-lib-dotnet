@@ -1,9 +1,10 @@
 using System.Collections.Concurrent;
+using Altinn.App.Core.Features;
 
 namespace Altinn.App.Core.Helpers;
 
 /// <summary>
-/// A therad-safe memory cache that refreshes the values when they are about to expire
+/// A thread-safe memory cache that refreshes the values when they are about to expire
 /// </summary>
 /// <typeparam name="TKey">The cache key</typeparam>
 /// <typeparam name="TValue">The cached value</typeparam>
@@ -63,40 +64,49 @@ internal sealed class LazyRefreshCache<TKey, TValue>
     /// <summary>
     /// Retrieves a value from the cache, or creates it if not present or expired.
     /// </summary>
-    /// <param name="key">The cache key</param>
-    /// <param name="valueFactory">Factory function to create the value (if not in cache).</param>
-    /// <param name="lifetimeFactory">Factory function to calculate the lifetime of the cached value.</param>
+    /// <param name="key">The cache key.</param>
+    /// <param name="valueFactory">Factory method to create the value (if not in cache).</param>
+    /// <param name="lifetimeFactory">Factory method to calculate the lifetime of the cached value.</param>
+    /// <param name="postProcessCallback">Optional post processing callback (for metrics, etc)</param>
     public async Task<TValue> GetOrCreate(
         TKey key,
         Func<Task<TValue>> valueFactory,
-        Func<TValue, TimeSpan> lifetimeFactory
+        Func<TValue, TimeSpan> lifetimeFactory,
+        Action<TValue?, CacheResultType>? postProcessCallback = default
     )
     {
         var now = _timeProvider.GetUtcNow();
+        TValue? result;
 
         if (_valueCache.TryGetValue(key, out var entry))
         {
             // If the entry is still valid (with margin), return it
             if (entry.RefreshAt > now)
             {
+                postProcessCallback?.Invoke(entry.Value, CacheResultType.Cached);
                 return entry.Value;
             }
 
             // Kick off a new valueFactory task
-            var cacheTask = GetTaskFromTaskCache(key, valueFactory, lifetimeFactory, now);
+            var cacheTask = GetTaskFromTaskCache(key, valueFactory, lifetimeFactory, now, postProcessCallback);
 
             // Return previous value without awaiting value if it is still valid
             if (entry.Expiry > now)
             {
+                postProcessCallback?.Invoke(entry.Value, CacheResultType.Refreshed);
                 return entry.Value;
             }
 
             // Await the new value if the previous value has expired
-            return await cacheTask;
+            result = await cacheTask;
+            postProcessCallback?.Invoke(result, CacheResultType.New);
+            return result;
         }
 
         // No previous value found, so we need to await the task from the initializer cache
-        return await GetTaskFromTaskCache(key, valueFactory, lifetimeFactory, now);
+        result = await GetTaskFromTaskCache(key, valueFactory, lifetimeFactory, now);
+        postProcessCallback?.Invoke(result, CacheResultType.New);
+        return result;
     }
 
     /// <summary>
@@ -105,12 +115,19 @@ internal sealed class LazyRefreshCache<TKey, TValue>
     /// <param name="key">The cache key</param>
     /// <param name="valueFactory">Factory function to create the value (if not in cache).</param>
     /// <param name="lifetime">The lifetime of the cached value.</param>
-    public async Task<TValue> GetOrCreate(TKey key, Func<Task<TValue>> valueFactory, TimeSpan? lifetime = default)
+    /// <param name="postProcessCallback">Optional post processing callback (for metrics, etc)</param>
+    public async Task<TValue> GetOrCreate(
+        TKey key,
+        Func<Task<TValue>> valueFactory,
+        TimeSpan? lifetime = default,
+        Action<TValue?, CacheResultType>? postProcessCallback = default
+    )
     {
         return await GetOrCreate(
             key: key,
             valueFactory: valueFactory,
-            lifetimeFactory: _ => lifetime ?? DateTimeOffset.MaxValue - _timeProvider.GetUtcNow()
+            lifetimeFactory: _ => lifetime ?? DateTimeOffset.MaxValue - _timeProvider.GetUtcNow(),
+            postProcessCallback: postProcessCallback
         );
     }
 
@@ -118,7 +135,8 @@ internal sealed class LazyRefreshCache<TKey, TValue>
         TKey key,
         Func<Task<TValue>> valueFactory,
         Func<TValue, TimeSpan> lifetimeFactory,
-        DateTimeOffset now
+        DateTimeOffset now,
+        Action<TValue?, CacheResultType>? postProcessCallback = default
     )
     {
         return await _taskCache
@@ -126,37 +144,45 @@ internal sealed class LazyRefreshCache<TKey, TValue>
                 key,
                 _ => new Lazy<Task<TValue>>(async () =>
                 {
-                    var valueTask = valueFactory();
-                    var value = await valueTask;
-                    var lifetime = lifetimeFactory(value);
-                    var expiry = now + lifetime;
-                    var refreshAt = expiry - _refetchBeforeExpiry;
-                    var cacheEntry = new CacheEntry(expiry, refreshAt, value);
-
-                    // Remove expired items in _valueCache
-                    foreach (var expiredItem in _valueCache.Where(x => x.Value.Expiry <= now))
+                    try
                     {
-                        _valueCache.TryRemove(expiredItem);
-                    }
+                        var valueTask = valueFactory();
+                        var value = await valueTask;
+                        var lifetime = lifetimeFactory(value);
+                        var expiry = now + lifetime;
+                        var refreshAt = expiry - _refetchBeforeExpiry;
+                        var cacheEntry = new CacheEntry(expiry, refreshAt, value);
 
-                    // Store the new value in _valueCache
-                    _valueCache.AddOrUpdate(key, cacheEntry, (_, _) => cacheEntry);
-
-                    // Too many items in _valueCache?
-                    if (_maxCacheEntries > 0 && _valueCache.Count > _maxCacheEntries)
-                    {
-                        var oldestEntries = GetOverflowKeys(_maxCacheEntries);
-                        foreach (var oldKey in oldestEntries)
+                        // Remove expired items in _valueCache
+                        foreach (var expiredItem in _valueCache.Where(x => x.Value.Expiry <= now))
                         {
-                            _valueCache.TryRemove(oldKey);
+                            _valueCache.TryRemove(expiredItem);
                         }
+
+                        // Store the new value in _valueCache
+                        _valueCache.AddOrUpdate(key, cacheEntry, (_, _) => cacheEntry);
+
+                        // Too many items in _valueCache?
+                        if (_maxCacheEntries > 0 && _valueCache.Count > _maxCacheEntries)
+                        {
+                            var oldestEntries = GetOverflowKeys(_maxCacheEntries);
+                            foreach (var oldKey in oldestEntries)
+                            {
+                                _valueCache.TryRemove(oldKey);
+                            }
+                        }
+
+                        // Remove the Lazy Task from the _taskCache because it is no longer needed
+                        // and need to be gone when the cache is refreshed
+                        _taskCache.TryRemove(key, out var _);
+
+                        return value;
                     }
-
-                    // Remove the Lazy Task from the _taskCache because it is no longer needed
-                    // and need to be gone when the cache is refreshed
-                    _taskCache.TryRemove(key, out var _);
-
-                    return value;
+                    catch (Exception e)
+                    {
+                        postProcessCallback?.Invoke(default, CacheResultType.Error);
+                        throw;
+                    }
                 })
             )
             .Value;
@@ -170,4 +196,29 @@ internal sealed class LazyRefreshCache<TKey, TValue>
     {
         return _valueCache.OrderBy(x => x.Value.Expiry).Take(_valueCache.Count - cacheSizeLimit);
     }
+}
+
+public enum CacheResultType
+{
+    /// <summary>
+    /// The item was cached and valid, returned as-is.
+    /// </summary>
+    Cached,
+
+    /// <summary>
+    /// The item as cached and valid, but about to expire.
+    /// Returned as-is, but kicked off a refresh call via factory method.
+    /// </summary>
+    Refreshed,
+
+    /// <summary>
+    /// The item was not in the cache, or had expired.
+    /// A new item was generated via factory method.
+    /// </summary>
+    New,
+
+    /// <summary>
+    /// An error was raised while executing the factory method for a new item.
+    /// </summary>
+    Error
 }
