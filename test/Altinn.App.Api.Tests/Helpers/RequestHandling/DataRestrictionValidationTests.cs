@@ -256,13 +256,12 @@ public class DataRestrictionValidationTests
     }
 
     [Theory]
-    [InlineData("name.pdf")]
-    [InlineData("name.PDF")]
-    [InlineData("name.Pdf")]
-    [InlineData("my.name.is.pDf")]
-    public void GetFileTypeFromFileName_returns_lowercase_filetype(string filename)
+    [InlineData("name.pdf", "pdf")]
+    [InlineData("name.PDF", "PDF")]
+    [InlineData("my.name.is.pdf", "pdf")]
+    public void GetFileTypeFromFileName_returns_lowercase_filetype(string filename, string asExpected)
     {
         string fileType = DataRestrictionValidation.GetFileTypeFromFileName(filename);
-        fileType.Should().Be("pdf");
+        fileType.Should().Be(asExpected);
     }
 }

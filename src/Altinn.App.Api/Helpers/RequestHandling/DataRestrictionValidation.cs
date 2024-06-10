@@ -167,7 +167,6 @@ public static class DataRestrictionValidation
 
     internal static string GetFileTypeFromFileName(string filename)
     {
-        string[] splitFilename = filename.Split('.');
-        return splitFilename[^1].ToLower();
+        return filename.Split('.')[^1];
     }
 }
