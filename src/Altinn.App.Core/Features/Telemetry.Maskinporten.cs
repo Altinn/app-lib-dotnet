@@ -46,9 +46,6 @@ partial class Telemetry
             [Display(Name = "cached")]
             Cached,
 
-            [Display(Name = "refreshed")]
-            Refreshed,
-
             [Display(Name = "new")]
             New,
 

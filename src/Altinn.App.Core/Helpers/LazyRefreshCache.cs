@@ -198,6 +198,9 @@ internal sealed class LazyRefreshCache<TKey, TValue>
     }
 }
 
+/// <summary>
+/// The type of cache result an operation returned
+/// </summary>
 public enum CacheResultType
 {
     /// <summary>
@@ -212,7 +215,13 @@ public enum CacheResultType
     Refreshed,
 
     /// <summary>
-    /// The item was not in the cache, or had expired.
+    /// The item was in the cache, but had expired.
+    /// A new item was generated via factory method.
+    /// </summary>
+    Expired,
+
+    /// <summary>
+    /// The item was not found in the cache.
     /// A new item was generated via factory method.
     /// </summary>
     New,

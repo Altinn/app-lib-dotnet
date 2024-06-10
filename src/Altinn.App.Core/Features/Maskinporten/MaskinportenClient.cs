@@ -93,10 +93,8 @@ public sealed class MaskinportenClient : IMaskinportenClient
             {
                 var requestResult = type switch
                 {
-                    CacheResultType.Cached => Telemetry.Maskinporten.RequestResult.Cached,
-                    CacheResultType.Refreshed => Telemetry.Maskinporten.RequestResult.Refreshed,
-                    CacheResultType.New => Telemetry.Maskinporten.RequestResult.New,
-                    CacheResultType.Error => Telemetry.Maskinporten.RequestResult.Error,
+                    CacheResultType.Cached or CacheResultType.Refreshed => Telemetry.Maskinporten.RequestResult.Cached,
+                    CacheResultType.Expired or CacheResultType.New => Telemetry.Maskinporten.RequestResult.New,
                     _ => Telemetry.Maskinporten.RequestResult.Error
                 };
                 _telemetry?.RecordMaskinportenTokenRequest(requestResult);
