@@ -96,27 +96,46 @@ public class LazyRefreshCacheTest
     [Fact]
     public async Task GetOrCreate_OnlyGeneratesOneItem_DuringStampede()
     {
-        // Arrange
-        var slowness = TimeSpan.FromSeconds(10);
-        var mockSlowItem = new Mock<ISlowItem>();
-        mockSlowItem.Setup(x => x.Delay()).Returns(Task.Delay(slowness, _fakeTime));
-        var cache = new LazyRefreshCache<string, CacheItem>(_fakeTime, TimeSpan.Zero);
+        for (int i = 0; i < 100; i++)
+        {
+            FakeTimeProvider fakeTime = new();
 
-        // Act
-        var tasks = Enumerable
-            .Range(0, 10)
-            .Select(_ =>
-                cache.GetOrCreate("a", GenerateSlowItemFactory(mockSlowItem.Object), TimeSpan.FromSeconds(60))
-            );
+            // Arrange
+            var slowness = TimeSpan.FromSeconds(10);
+            var mockSlowItem = new Mock<ISlowItem>();
+            mockSlowItem.Setup(x => x.Delay()).Returns(Task.Delay(slowness, fakeTime));
+            var value = mockSlowItem.Object;
+            var cache = new LazyRefreshCache<string, CacheItem>(fakeTime, TimeSpan.Zero);
 
-        _fakeTime.Advance(slowness);
+            long spinLock = 0;
 
-        var results = await Task.WhenAll(tasks);
+            // Act
+            var tasks = Enumerable
+                .Range(0, 10)
+                .Select(_ =>
+                    Task.Run(() =>
+                    {
+                        while (Interlocked.Read(ref spinLock) == 0)
+                        {
+                            // Spin
+                        }
+                        return cache.GetOrCreate("a", GenerateSlowItemFactory(value), TimeSpan.FromSeconds(60));
+                    })
+                )
+                .ToArray();
 
-        // Assert
-        var firstResult = results.First();
-        results.All(x => ReferenceEquals(x, firstResult)).Should().BeTrue();
-        mockSlowItem.Verify(x => x.Delay(), Times.Once);
+            await Task.Delay(10);
+            Interlocked.Exchange(ref spinLock, 1);
+
+            fakeTime.Advance(slowness);
+
+            var results = await Task.WhenAll(tasks);
+
+            // Assert
+            var firstResult = results.First();
+            results.All(x => ReferenceEquals(x, firstResult)).Should().BeTrue($"Failed during {i}");
+            mockSlowItem.Verify(x => x.Delay(), Times.Once);
+        }
     }
 
     [Fact]
