@@ -14,7 +14,7 @@ public class RefreshCacheTest
     {
         // Arrange
         var cacheSizeLimit = 3;
-        var cache = new RefreshCache<int, int>(_fakeTime, TimeSpan.Zero, cacheSizeLimit);
+        var cache = new RefreshCache<int, int>(_fakeTime, cacheSizeLimit);
 
         // Act
         for (var i = 0; i < 10; i++)
@@ -28,46 +28,19 @@ public class RefreshCacheTest
     }
 
     [Fact]
-    public async Task GetOrCreate_RefreshesItem_BeforeExpiry_WithinThreshold()
-    {
-        // Arrange
-        var refetchBeforeExpiryThreshold = TimeSpan.FromSeconds(30);
-        var itemLifetime = refetchBeforeExpiryThreshold * 2;
-        var cache = new RefreshCache<string, CacheItem>(_fakeTime, refetchBeforeExpiryThreshold);
-
-        // Act
-        var item1 = await cache.GetOrCreate("a", GenerateItemFactory(), itemLifetime);
-
-        _fakeTime.Advance(refetchBeforeExpiryThreshold);
-
-        var item2 = await cache.GetOrCreate("a", GenerateItemFactory(), itemLifetime);
-        var item2Expiry = cache.Values.First().Expiry;
-        var item2Now = _fakeTime.GetUtcNow();
-
-        var item3 = await cache.GetOrCreate("a", GenerateItemFactory(), itemLifetime);
-
-        // Assert
-        cache.Count.Should().Be(1);
-        item1.Should().BeSameAs(item2);
-        item3.Should().NotBeSameAs(item2);
-
-        item2Expiry.Should().BeAfter(item2Now);
-    }
-
-    [Fact]
     public async Task GetOrCreate_RefreshesExpiredItems()
     {
         // Arrange
         var itemLifetime = TimeSpan.FromSeconds(60);
-        var cache = new RefreshCache<string, CacheItem>(_fakeTime, TimeSpan.Zero);
+        var cache = new RefreshCache<string, CacheItem>(_fakeTime);
 
         // Act
-        var item1 = await cache.GetOrCreate("a", GenerateItemFactory(), itemLifetime);
-        var item2 = await cache.GetOrCreate("a", GenerateItemFactory(), itemLifetime);
+        var item1 = await cache.GetOrCreate("a", GenerateItemFactory(), _ => itemLifetime);
+        var item2 = await cache.GetOrCreate("a", GenerateItemFactory(), _ => itemLifetime);
 
         _fakeTime.Advance(itemLifetime);
 
-        var item3 = await cache.GetOrCreate("a", GenerateItemFactory(), itemLifetime);
+        var item3 = await cache.GetOrCreate("a", GenerateItemFactory(), _ => itemLifetime);
 
         // Assert
         cache.Count.Should().Be(1);
@@ -80,16 +53,16 @@ public class RefreshCacheTest
     {
         // Arrange
         var itemLifetime = TimeSpan.FromSeconds(60);
-        var cache = new RefreshCache<string, CacheItem>(_fakeTime, TimeSpan.Zero);
+        var cache = new RefreshCache<string, CacheItem>(_fakeTime);
 
         // Act & Assert
-        await cache.GetOrCreate("a", GenerateItemFactory(), itemLifetime);
-        await cache.GetOrCreate("b", GenerateItemFactory(), itemLifetime);
+        await cache.GetOrCreate("a", GenerateItemFactory(), _ => itemLifetime);
+        await cache.GetOrCreate("b", GenerateItemFactory(), _ => itemLifetime);
         cache.Count.Should().Be(2);
 
         _fakeTime.Advance(itemLifetime);
 
-        await cache.GetOrCreate("c", GenerateItemFactory(), itemLifetime);
+        await cache.GetOrCreate("c", GenerateItemFactory(), _ => itemLifetime);
         cache.Count.Should().Be(1);
     }
 
@@ -105,7 +78,7 @@ public class RefreshCacheTest
             var mockSlowItem = new Mock<ISlowItem>();
             mockSlowItem.Setup(x => x.Delay()).Returns(Task.Delay(slowness, fakeTime));
             var value = mockSlowItem.Object;
-            var cache = new RefreshCache<string, CacheItem>(fakeTime, TimeSpan.Zero);
+            var cache = new RefreshCache<string, CacheItem>(fakeTime);
 
             long spinLock = 0;
 
@@ -119,7 +92,7 @@ public class RefreshCacheTest
                         {
                             // Spin
                         }
-                        return cache.GetOrCreate("a", GenerateSlowItemFactory(value), TimeSpan.FromSeconds(60));
+                        return cache.GetOrCreate("a", GenerateSlowItemFactory(value), _ => TimeSpan.FromSeconds(60));
                     })
                 )
                 .ToArray();
@@ -138,24 +111,6 @@ public class RefreshCacheTest
         }
     }
 
-    [Fact]
-    public async Task GetOrCreate_DefaultLifetime_IsForever()
-    {
-        // Arrange
-        var cache = new RefreshCache<string, CacheItem>(_fakeTime, TimeSpan.Zero);
-
-        // Act
-        var item1 = await cache.GetOrCreate("a", GenerateItemFactory("heya"));
-
-        _fakeTime.Advance(TimeSpan.FromDays(365 ^ 2));
-
-        var item2 = await cache.GetOrCreate("a", GenerateItemFactory("buddy"));
-
-        // Assert
-        item1.Should().BeSameAs(item2);
-        cache.Values.Count.Should().Be(1);
-        cache.Values.Select(x => x.Value.Contents).First().Should().Be("heya");
-    }
 
     private static Func<Task<CacheItem>> GenerateItemFactory(string? contents = default)
     {

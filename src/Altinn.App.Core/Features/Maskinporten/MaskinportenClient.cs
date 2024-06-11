@@ -47,7 +47,6 @@ public sealed class MaskinportenClient : IMaskinportenClient
         _logger = logger;
         _httpClientFactory = httpClientFactory;
         _tokenCache = new RefreshCache<string, MaskinportenTokenResponse>(
-            refetchBeforeExpiry: TimeSpan.FromSeconds(10),
             timeProvider: _timeprovider,
             maxCacheEntries: 256
         );
@@ -93,8 +92,8 @@ public sealed class MaskinportenClient : IMaskinportenClient
             {
                 var requestResult = type switch
                 {
-                    CacheResultType.Cached or CacheResultType.Refreshed => Telemetry.Maskinporten.RequestResult.Cached,
-                    CacheResultType.Expired or CacheResultType.New => Telemetry.Maskinporten.RequestResult.New,
+                    CacheResultType.Cached => Telemetry.Maskinporten.RequestResult.Cached,
+                    CacheResultType.New => Telemetry.Maskinporten.RequestResult.New,
                     _ => Telemetry.Maskinporten.RequestResult.Error
                 };
                 _telemetry?.RecordMaskinportenTokenRequest(requestResult);
