@@ -96,9 +96,13 @@ public class MaskinportenClientTests
             Scope = MaskinportenClient.FormattedScopes(scopes),
             TokenType = "Bearer"
         };
-        var mockHandler = TestHelpers.MockHttpMessageHandlerFactory(tokenResponse);
-        var httpClient = new HttpClient(mockHandler.Object);
-        _mockHttpClientFactory.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(httpClient);
+        _mockHttpClientFactory
+            .Setup(x => x.CreateClient(It.IsAny<string>()))
+            .Returns(() =>
+            {
+                var mockHandler = TestHelpers.MockHttpMessageHandlerFactory(tokenResponse);
+                return new HttpClient(mockHandler.Object);
+            });
 
         // Act
         var result = await _maskinportenClient.GetAccessToken(scopes);
@@ -111,6 +115,7 @@ public class MaskinportenClientTests
     public async Task GetAccessToken_ThrowsExceptionWhenTokenIsExpired()
     {
         // Arrange
+        var scopes = new List<string> { "scope1", "scope2" };
         var tokenResponse = new MaskinportenTokenResponse
         {
             AccessToken = "expired-access-token",
@@ -119,11 +124,13 @@ public class MaskinportenClientTests
             TokenType = "Bearer"
         };
 
-        var scopes = new List<string> { "scope1", "scope2" };
-        var mockHandler = TestHelpers.MockHttpMessageHandlerFactory(tokenResponse);
-
-        var httpClient = new HttpClient(mockHandler.Object);
-        _mockHttpClientFactory.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(httpClient);
+        _mockHttpClientFactory
+            .Setup(x => x.CreateClient(It.IsAny<string>()))
+            .Returns(() =>
+            {
+                var mockHandler = TestHelpers.MockHttpMessageHandlerFactory(tokenResponse);
+                return new HttpClient(mockHandler.Object);
+            });
 
         // Act
         Func<Task> act = async () =>
@@ -147,9 +154,13 @@ public class MaskinportenClientTests
             Scope = MaskinportenClient.FormattedScopes(scopes),
             TokenType = "Bearer"
         };
-        var mockHandler = TestHelpers.MockHttpMessageHandlerFactory(tokenResponse);
-        var httpClient = new HttpClient(mockHandler.Object);
-        _mockHttpClientFactory.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(httpClient);
+        _mockHttpClientFactory
+            .Setup(x => x.CreateClient(It.IsAny<string>()))
+            .Returns(() =>
+            {
+                var mockHandler = TestHelpers.MockHttpMessageHandlerFactory(tokenResponse);
+                return new HttpClient(mockHandler.Object);
+            });
 
         // Act
         var token1 = await _maskinportenClient.GetAccessToken(scopes);
@@ -172,9 +183,13 @@ public class MaskinportenClientTests
             Scope = MaskinportenClient.FormattedScopes(scopes),
             TokenType = "Bearer"
         };
-        var mockHandler = TestHelpers.MockHttpMessageHandlerFactory(tokenResponse);
-        var httpClient = new HttpClient(mockHandler.Object);
-        _mockHttpClientFactory.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(httpClient);
+        _mockHttpClientFactory
+            .Setup(x => x.CreateClient(It.IsAny<string>()))
+            .Returns(() =>
+            {
+                var mockHandler = TestHelpers.MockHttpMessageHandlerFactory(tokenResponse);
+                return new HttpClient(mockHandler.Object);
+            });
 
         // Act
         var token1 = await _maskinportenClient.GetAccessToken(scopes);
