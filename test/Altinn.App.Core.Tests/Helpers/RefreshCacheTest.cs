@@ -5,7 +5,7 @@ using Moq;
 
 namespace Altinn.App.Core.Tests.Helpers;
 
-public class LazyRefreshCacheTest
+public class RefreshCacheTest
 {
     private readonly FakeTimeProvider _fakeTime = new();
 
@@ -14,7 +14,7 @@ public class LazyRefreshCacheTest
     {
         // Arrange
         var cacheSizeLimit = 3;
-        var cache = new LazyRefreshCache<int, int>(_fakeTime, TimeSpan.Zero, cacheSizeLimit);
+        var cache = new RefreshCache<int, int>(_fakeTime, TimeSpan.Zero, cacheSizeLimit);
 
         // Act
         for (var i = 0; i < 10; i++)
@@ -33,7 +33,7 @@ public class LazyRefreshCacheTest
         // Arrange
         var refetchBeforeExpiryThreshold = TimeSpan.FromSeconds(30);
         var itemLifetime = refetchBeforeExpiryThreshold * 2;
-        var cache = new LazyRefreshCache<string, CacheItem>(_fakeTime, refetchBeforeExpiryThreshold);
+        var cache = new RefreshCache<string, CacheItem>(_fakeTime, refetchBeforeExpiryThreshold);
 
         // Act
         var item1 = await cache.GetOrCreate("a", GenerateItemFactory(), itemLifetime);
@@ -59,7 +59,7 @@ public class LazyRefreshCacheTest
     {
         // Arrange
         var itemLifetime = TimeSpan.FromSeconds(60);
-        var cache = new LazyRefreshCache<string, CacheItem>(_fakeTime, TimeSpan.Zero);
+        var cache = new RefreshCache<string, CacheItem>(_fakeTime, TimeSpan.Zero);
 
         // Act
         var item1 = await cache.GetOrCreate("a", GenerateItemFactory(), itemLifetime);
@@ -80,7 +80,7 @@ public class LazyRefreshCacheTest
     {
         // Arrange
         var itemLifetime = TimeSpan.FromSeconds(60);
-        var cache = new LazyRefreshCache<string, CacheItem>(_fakeTime, TimeSpan.Zero);
+        var cache = new RefreshCache<string, CacheItem>(_fakeTime, TimeSpan.Zero);
 
         // Act & Assert
         await cache.GetOrCreate("a", GenerateItemFactory(), itemLifetime);
@@ -105,7 +105,7 @@ public class LazyRefreshCacheTest
             var mockSlowItem = new Mock<ISlowItem>();
             mockSlowItem.Setup(x => x.Delay()).Returns(Task.Delay(slowness, fakeTime));
             var value = mockSlowItem.Object;
-            var cache = new LazyRefreshCache<string, CacheItem>(fakeTime, TimeSpan.Zero);
+            var cache = new RefreshCache<string, CacheItem>(fakeTime, TimeSpan.Zero);
 
             long spinLock = 0;
 
@@ -142,7 +142,7 @@ public class LazyRefreshCacheTest
     public async Task GetOrCreate_DefaultLifetime_IsForever()
     {
         // Arrange
-        var cache = new LazyRefreshCache<string, CacheItem>(_fakeTime, TimeSpan.Zero);
+        var cache = new RefreshCache<string, CacheItem>(_fakeTime, TimeSpan.Zero);
 
         // Act
         var item1 = await cache.GetOrCreate("a", GenerateItemFactory("heya"));

@@ -22,7 +22,7 @@ public sealed class MaskinportenClient : IMaskinportenClient
     private readonly IOptionsMonitor<MaskinportenSettings> _options;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly TimeProvider _timeprovider;
-    private readonly LazyRefreshCache<string, MaskinportenTokenResponse> _tokenCache;
+    private readonly RefreshCache<string, MaskinportenTokenResponse> _tokenCache;
     private readonly Telemetry? _telemetry;
 
     /// <summary>
@@ -46,7 +46,7 @@ public sealed class MaskinportenClient : IMaskinportenClient
         _timeprovider = timeProvider ?? TimeProvider.System;
         _logger = logger;
         _httpClientFactory = httpClientFactory;
-        _tokenCache = new LazyRefreshCache<string, MaskinportenTokenResponse>(
+        _tokenCache = new RefreshCache<string, MaskinportenTokenResponse>(
             refetchBeforeExpiry: TimeSpan.FromSeconds(10),
             timeProvider: _timeprovider,
             maxCacheEntries: 256
@@ -125,7 +125,7 @@ public sealed class MaskinportenClient : IMaskinportenClient
             );
 
             string tokenAuthority = _options.CurrentValue.Authority.Trim('/');
-            HttpClient client = _httpClientFactory.CreateClient();
+            using HttpClient client = _httpClientFactory.CreateClient();
             using HttpResponseMessage response = await client.PostAsync(
                 $"{tokenAuthority}/token",
                 payload,

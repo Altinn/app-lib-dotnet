@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using Altinn.App.Core.Features;
 
 namespace Altinn.App.Core.Helpers;
 
@@ -8,47 +7,42 @@ namespace Altinn.App.Core.Helpers;
 /// </summary>
 /// <typeparam name="TKey">The cache key</typeparam>
 /// <typeparam name="TValue">The cached value</typeparam>
-internal sealed class LazyRefreshCache<TKey, TValue>
+internal sealed class RefreshCache<TKey, TValue>
     where TKey : notnull
 {
     /// <summary>
     /// The number of items in the cache
     /// </summary>
-    public int Count => _valueCache.Count;
+    public int Count => _cache.Count;
 
     /// <summary>
     /// Gets a collection containing the keys in the cache
     /// </summary>
-    public ICollection<TKey> Keys => _valueCache.Keys;
+    public ICollection<TKey> Keys => _cache.Keys;
 
     /// <summary>
     /// Gets a collection containing the entries in the cache
     /// </summary>
-    public ICollection<CacheEntry> Values => _valueCache.Values;
+    public ICollection<CacheEntry> Values => _cache.Values;
 
     /// <summary>
-    /// Value type to store the cached values with their expiry time in the concurrent dictionary
+    /// Record to store the cached values with their expiry and refresh times
     /// </summary>
     public record CacheEntry(DateTimeOffset Expiry, DateTimeOffset RefreshAt, TValue Value);
 
     /// <summary>
-    /// Cache the tasks that fetch the values, so that we can await them in a thread-safe manner
+    /// The collection that holds all cached items
     /// </summary>
-    private readonly ConcurrentDictionary<TKey, Lazy<Task<TValue>>> _taskCache = new();
+    private readonly ConcurrentDictionary<TKey, CacheEntry> _cache = new();
 
-    /// <summary>
-    /// Cache the real values. This is separate so that we can reuse the cached values while fetching new ones
-    /// </summary>
-    private readonly ConcurrentDictionary<TKey, CacheEntry> _valueCache = new();
-
+    private const int NumLocks = 32;
     private readonly TimeProvider _timeProvider;
     private readonly TimeSpan _refetchBeforeExpiry;
     private readonly int _maxCacheEntries;
     private readonly SemaphoreSlim[] _locks;
-    private readonly int _numLocks = 32;
 
     /// <summary>
-    /// Instantiates a new <see cref="LazyRefreshCache{TKey,TValue}"/> instance.
+    /// Instantiates a new <see cref="RefreshCache{TKey,TValue}"/> instance.
     /// </summary>
     /// <param name="timeProvider">The timeprovider service.</param>
     /// <param name="refetchBeforeExpiry">The threshold at which to refresh cache entries <em>before</em> they expire.</param>
@@ -56,14 +50,14 @@ internal sealed class LazyRefreshCache<TKey, TValue>
     /// Maximum entries to store in cache. If evictions are required, FIFO policy will be used.
     /// To allow unlimited cache entries, set this value to zero.
     /// </param>
-    public LazyRefreshCache(TimeProvider timeProvider, TimeSpan refetchBeforeExpiry, int maxCacheEntries = 0)
+    public RefreshCache(TimeProvider timeProvider, TimeSpan refetchBeforeExpiry, int maxCacheEntries = 0)
     {
         _refetchBeforeExpiry = refetchBeforeExpiry;
         _timeProvider = timeProvider;
         _maxCacheEntries = maxCacheEntries;
 
         // Populate locks array with _numLocks slots
-        _locks = Enumerable.Range(0, _numLocks).Select(_ => new SemaphoreSlim(1)).ToArray();
+        _locks = Enumerable.Range(0, NumLocks).Select(_ => new SemaphoreSlim(1)).ToArray();
     }
 
     /// <summary>
@@ -80,7 +74,7 @@ internal sealed class LazyRefreshCache<TKey, TValue>
         Action<TValue?, CacheResultType>? postProcessCallback = default
     )
     {
-        var lockNo = (key.GetHashCode() & 0x7fffffff) % _numLocks;
+        var lockNo = (key.GetHashCode() & 0x7fffffff) % NumLocks;
         var semaphore = _locks[lockNo];
         await semaphore.WaitAsync();
 
@@ -89,7 +83,7 @@ internal sealed class LazyRefreshCache<TKey, TValue>
             var now = _timeProvider.GetUtcNow();
             TValue? result;
 
-            if (_valueCache.TryGetValue(key, out var entry))
+            if (_cache.TryGetValue(key, out var entry))
             {
                 // If the entry is still valid (with margin), return it
                 if (entry.RefreshAt > now)
@@ -99,7 +93,13 @@ internal sealed class LazyRefreshCache<TKey, TValue>
                 }
 
                 // Kick off a new valueFactory task
-                var cacheTask = GetTaskFromTaskCache(key, valueFactory, lifetimeFactory, now, postProcessCallback);
+                var cacheTask = GenerateItemAndUpdateCache(
+                    key,
+                    valueFactory,
+                    lifetimeFactory,
+                    now,
+                    postProcessCallback
+                );
 
                 // Return previous value without awaiting value if it is still valid
                 if (entry.Expiry > now)
@@ -115,7 +115,7 @@ internal sealed class LazyRefreshCache<TKey, TValue>
             }
 
             // No previous value found, so we need to await the task from the initializer cache
-            result = await GetTaskFromTaskCache(key, valueFactory, lifetimeFactory, now);
+            result = await GenerateItemAndUpdateCache(key, valueFactory, lifetimeFactory, now, postProcessCallback);
             postProcessCallback?.Invoke(result, CacheResultType.New);
             return result;
         }
@@ -147,70 +147,57 @@ internal sealed class LazyRefreshCache<TKey, TValue>
         );
     }
 
-    private async Task<TValue> GetTaskFromTaskCache(
+    private async Task<TValue> GenerateItemAndUpdateCache(
         TKey key,
         Func<Task<TValue>> valueFactory,
         Func<TValue, TimeSpan> lifetimeFactory,
         DateTimeOffset now,
-        Action<TValue?, CacheResultType>? postProcessCallback = default
+        Action<TValue?, CacheResultType>? processingErrorCallback = default
     )
     {
-        return await _taskCache
-            .GetOrAdd(
-                key,
-                _ => new Lazy<Task<TValue>>(async () =>
+        try
+        {
+            var value = await valueFactory();
+            var lifetime = lifetimeFactory(value);
+            var expiry = now + lifetime;
+            var refreshAt = expiry - _refetchBeforeExpiry;
+            var cacheEntry = new CacheEntry(expiry, refreshAt, value);
+
+            // Remove expired items
+            foreach (var expiredItem in _cache.Where(x => x.Value.Expiry <= now))
+            {
+                _cache.TryRemove(expiredItem);
+            }
+
+            // Store the new value
+            _cache.AddOrUpdate(key, cacheEntry, (_, _) => cacheEntry);
+
+            // Too many items? Prune old ones
+            if (_maxCacheEntries > 0 && _cache.Count > _maxCacheEntries)
+            {
+                var oldestItems = GetOverflowItems_FIFO(_maxCacheEntries);
+                foreach (var oldItem in oldestItems)
                 {
-                    try
-                    {
-                        var valueTask = valueFactory();
-                        var value = await valueTask;
-                        var lifetime = lifetimeFactory(value);
-                        var expiry = now + lifetime;
-                        var refreshAt = expiry - _refetchBeforeExpiry;
-                        var cacheEntry = new CacheEntry(expiry, refreshAt, value);
+                    _cache.TryRemove(oldItem);
+                }
+            }
 
-                        // Remove expired items in _valueCache
-                        foreach (var expiredItem in _valueCache.Where(x => x.Value.Expiry <= now))
-                        {
-                            _valueCache.TryRemove(expiredItem);
-                        }
-
-                        // Store the new value in _valueCache
-                        _valueCache.AddOrUpdate(key, cacheEntry, (_, _) => cacheEntry);
-
-                        // Too many items in _valueCache?
-                        if (_maxCacheEntries > 0 && _valueCache.Count > _maxCacheEntries)
-                        {
-                            var oldestEntries = GetOverflowKeys(_maxCacheEntries);
-                            foreach (var oldKey in oldestEntries)
-                            {
-                                _valueCache.TryRemove(oldKey);
-                            }
-                        }
-
-                        // Remove the Lazy Task from the _taskCache because it is no longer needed
-                        // and need to be gone when the cache is refreshed
-                        _taskCache.TryRemove(key, out var _);
-
-                        return value;
-                    }
-                    catch (Exception)
-                    {
-                        postProcessCallback?.Invoke(default, CacheResultType.Error);
-                        throw;
-                    }
-                })
-            )
-            .Value;
+            return value;
+        }
+        catch (Exception)
+        {
+            processingErrorCallback?.Invoke(default, CacheResultType.Error);
+            throw;
+        }
     }
 
     /// <summary>
-    /// Helper: Gets the overflowing cache entriy keys. Eg. the keys of items that should be removed because cache size is over its limit
+    /// Helper: Gets the overflowing cache entries. Eg. the items that should be removed because cache size is over its limit
     /// </summary>
     /// <param name="cacheSizeLimit">The cache size limit</param>
-    private IEnumerable<KeyValuePair<TKey, CacheEntry>> GetOverflowKeys(int cacheSizeLimit)
+    private IEnumerable<KeyValuePair<TKey, CacheEntry>> GetOverflowItems_FIFO(int cacheSizeLimit)
     {
-        return _valueCache.OrderBy(x => x.Value.Expiry).Take(_valueCache.Count - cacheSizeLimit);
+        return _cache.OrderBy(x => x.Value.Expiry).Take(_cache.Count - cacheSizeLimit);
     }
 }
 
