@@ -398,7 +398,7 @@ public static class ExpressionEvaluator
             return PrepareBooleanArg(args[0]) ? args[1] : null;
         }
 
-        if (args.Length > 2 && !"else".Equals(args[2] as string, StringComparison.Ordinal))
+        if (args.Length > 2 && !"else".Equals(args[2] as string, StringComparison.OrdinalIgnoreCase))
         {
             throw new ExpressionEvaluatorTypeErrorException("Expected third argument to be \"else\"");
         }

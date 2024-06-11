@@ -134,7 +134,7 @@ public class DataController : ControllerBase
             Application application = await _appMetadata.GetApplicationMetadata();
 
             DataType? dataTypeFromMetadata = application.DataTypes.First(e =>
-                e.Id.Equals(dataType, StringComparison.Ordinal)
+                e.Id.Equals(dataType, StringComparison.OrdinalIgnoreCase)
             );
 
             if (dataTypeFromMetadata == null)
