@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Globalization;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.Platform.Storage.Interface.Models;
@@ -112,7 +113,7 @@ internal sealed class CachedFormDataAccessor : ICachedFormDataAccessor
     {
         var instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
         var app = instance.AppId.Split("/")[1];
-        var instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
+        var instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId, CultureInfo.InvariantCulture);
         var data = await _dataClient.GetBinaryData(
             instance.Org,
             app,
@@ -129,7 +130,7 @@ internal sealed class CachedFormDataAccessor : ICachedFormDataAccessor
 
         var instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
         var app = instance.AppId.Split("/")[1];
-        var instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId);
+        var instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId, CultureInfo.InvariantCulture);
         var data = await _dataClient.GetFormData(
             instanceGuid,
             modelType,
