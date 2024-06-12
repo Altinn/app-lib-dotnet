@@ -175,7 +175,7 @@ public sealed class MaskinportenClient : IMaskinportenClient
             Audience = settings.Authority,
             IssuedAt = now.UtcDateTime,
             Expires = expiry.UtcDateTime,
-            SigningCredentials = new SigningCredentials(settings.Key, SecurityAlgorithms.RsaSha256),
+            SigningCredentials = new SigningCredentials(settings.GetJsonWebKey(), SecurityAlgorithms.RsaSha256),
             Claims = new Dictionary<string, object> { ["scope"] = formattedScopes, ["jti"] = Guid.NewGuid().ToString() }
         };
 

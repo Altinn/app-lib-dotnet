@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
+using Altinn.App.Core.Features.Maskinporten.Exceptions;
 using Microsoft.IdentityModel.Tokens;
 using JsonWebKeyConverter = Altinn.App.Core.Features.Maskinporten.Converters.JsonWebKeyConverter;
 
@@ -33,16 +34,66 @@ public sealed record MaskinportenSettings
     /// <summary>
     /// The private key used to authenticate with Maskinporten, in JWK format.
     /// </summary>
-    [Required]
-    [JsonPropertyName("key")]
-    [JsonConverter(typeof(JsonWebKeyConverter))]
-    public required JsonWebKey Key { get; set; }
+    [JsonPropertyName("jwk")]
+    public JwkWrapper? Jwk { get; set; }
+
+    /// <summary>
+    /// The private key used to authenticate with Maskinporten, in Base64 encoded JWK format.
+    /// </summary>
+    [JsonPropertyName("jwkBase64")]
+    public string? JwkBase64 { get; set; }
+
+    private JsonWebKey? _jsonWebKey;
+
+    /// <summary>
+    /// The parsed version of <see cref="Jwk"/>/<see cref="JwkBase64"/> as a <see cref="JsonWebKey"/> instance.
+    /// </summary>
+    public JsonWebKey GetJsonWebKey()
+    {
+        if (_jsonWebKey is not null)
+        {
+            return _jsonWebKey;
+        }
+
+        _jsonWebKey = ConvertJwk();
+        return _jsonWebKey;
+    }
+
+    /// <summary>
+    /// Convert <see cref="Jwk"/>/<see cref="JwkBase64"/> to a <see cref="JsonWebKey"/> instance. Caches the result.
+    /// </summary>
+    internal JsonWebKey ConvertJwk()
+    {
+        JsonWebKey? jwk = null;
+
+        // Got jwk
+        if (Jwk is not null)
+        {
+            jwk = JsonWebKeyConverter.FromJwkWrapper(Jwk);
+        }
+
+        // Got possible base64 encoded string
+        if (!string.IsNullOrWhiteSpace(JwkBase64))
+        {
+            jwk = JsonWebKeyConverter.FromBase64String(JwkBase64);
+        }
+
+        // Got nothing
+        if (jwk is null)
+        {
+            throw new MaskinportenConfigurationException(
+                $"No private key configured, neither MaskinportenSettings.{nameof(Jwk)} nor MaskinportenSettings.{nameof(JwkBase64)} was supplied."
+            );
+        }
+
+        return jwk;
+    }
 }
 
 /// <summary>
 /// Serialization wrapper for a JsonWebKey object
 /// </summary>
-internal readonly record struct JwkWrapper
+public record JwkWrapper
 {
     /// <summary>
     /// Key type
@@ -165,12 +216,24 @@ internal readonly record struct JwkWrapper
         };
     }
 
-    internal readonly record struct ValidationResult
+    /// <summary>
+    /// A record that holds the result of a <see cref="JwkWrapper.Validate"/> call
+    /// </summary>
+    public readonly record struct ValidationResult
     {
+        /// <summary>
+        /// A collection of properties that are considered to be invalid
+        /// </summary>
         public IEnumerable<string>? InvalidProperties { get; init; }
 
-        public readonly bool IsValid() => InvalidProperties.IsNullOrEmpty();
+        /// <summary>
+        /// Shorthand: Is the object in a valid state?
+        /// </summary>
+        public bool IsValid() => InvalidProperties.IsNullOrEmpty();
 
+        /// <summary>
+        /// Helpful summary of the result
+        /// </summary>
         public override string ToString()
         {
             return IsValid()

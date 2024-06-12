@@ -35,7 +35,7 @@ public class MaskinportenClientIntegrationTests
             {
                 config.ClientId = clientId;
                 config.Authority = authority;
-                config.Key = new JsonWebKey();
+                config.JwkBase64 = "gibberish";
             });
         });
 
@@ -63,13 +63,13 @@ public class MaskinportenClientIntegrationTests
         {
             config.ClientId = "this should be overwritten";
             config.Authority = "ditto";
-            config.Key = new JsonWebKey();
+            config.JwkBase64 = "gibberish";
         });
         services.ConfigureMaskinportenClient(config =>
         {
             config.ClientId = clientId;
             config.Authority = authority;
-            config.Key = new JsonWebKey();
+            config.JwkBase64 = "gibberish";
         });
 
         // Assert
@@ -110,13 +110,8 @@ public class MaskinportenClientIntegrationTests
         delegatingHandler.Scopes.Should().BeEquivalentTo(inputScopes);
     }
 
-    private sealed class DummyHttpClient
+    private sealed class DummyHttpClient(HttpClient client)
     {
-        public HttpClient HttpClient { get; set; }
-
-        public DummyHttpClient(HttpClient client)
-        {
-            HttpClient = client;
-        }
+        public HttpClient HttpClient { get; set; } = client;
     }
 }

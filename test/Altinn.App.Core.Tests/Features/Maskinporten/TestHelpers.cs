@@ -71,12 +71,6 @@ internal static class TestHelpers
         return (mockMaskinportenClient, handler);
     }
 
-    public static JsonWebKey JsonWebKeyFactory()
-    {
-        var rsaPubkey = new RsaSecurityKey(RSA.Create(2048).ExportParameters(true)) { KeyId = "kid1" };
-        return JsonWebKeyConverter.ConvertFromRSASecurityKey(rsaPubkey);
-    }
-
     public static async Task<Dictionary<string, string>> ParseFormUrlEncodedContent(FormUrlEncodedContent formData)
     {
         var content = await formData.ReadAsStringAsync();

@@ -1,78 +1,74 @@
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Altinn.App.Core.Features.Maskinporten.Exceptions;
 using Altinn.App.Core.Features.Maskinporten.Models;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Altinn.App.Core.Features.Maskinporten.Converters;
 
 /// <summary>
-/// Reads a JSON blob containing a jwk, converting it to a <see cref="JsonWebKey"/> instance
+/// Utility class that facilitates <see cref="JsonWebKey"/> conversion
 /// </summary>
-internal sealed class JsonWebKeyConverter : JsonConverter<JsonWebKey>
+internal static class JsonWebKeyConverter
 {
-    /// <inheritdoc/>
-    public override JsonWebKey? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    /// <summary>
+    /// Creates a <see cref="JsonWebKey"/> instance from the supplied <see cref="MaskinportenSettings.Jwk"/> object.
+    /// </summary>
+    public static JsonWebKey FromJwkWrapper(JwkWrapper jwk)
     {
-        if (reader.TokenType != JsonTokenType.StartObject)
-        {
-            throw new JsonException();
-        }
-
-        var jwk = new JwkWrapper();
-
-        while (reader.Read())
-        {
-            if (reader.TokenType == JsonTokenType.EndObject)
-            {
-                break;
-            }
-
-            if (reader.TokenType != JsonTokenType.PropertyName)
-            {
-                throw new JsonException($"Expected object, but found {reader.TokenType}");
-            }
-
-            string? propertyName = reader.GetString();
-            reader.Read();
-
-            if (reader.TokenType != JsonTokenType.String)
-            {
-                reader.Skip();
-                continue;
-            }
-
-            string? propertyValue = reader.GetString();
-
-            jwk = propertyName switch
-            {
-                "p" => jwk with { P = propertyValue },
-                "kty" => jwk with { Kty = propertyValue },
-                "q" => jwk with { Q = propertyValue },
-                "d" => jwk with { D = propertyValue },
-                "e" => jwk with { E = propertyValue },
-                "use" => jwk with { Use = propertyValue },
-                "kid" => jwk with { Kid = propertyValue },
-                "qi" => jwk with { Qi = propertyValue },
-                "dp" => jwk with { Dp = propertyValue },
-                "alg" => jwk with { Alg = propertyValue },
-                "dq" => jwk with { Dq = propertyValue },
-                "n" => jwk with { N = propertyValue },
-                _ => jwk
-            };
-        }
-
+        // Validate
         var validationResult = jwk.Validate();
-
-        return validationResult.IsValid()
-            ? jwk.ToJsonWebKey()
-            : throw new JsonException(
-                $"The JsonWebKey is invalid after deserialization, not all required properties were found: {validationResult}"
+        if (!validationResult.IsValid())
+        {
+            throw new MaskinportenConfigurationException(
+                $"The MaskinportenSettings.{nameof(MaskinportenSettings.Jwk)} JsonWebKey is invalid after deserialization, not all required properties were found: {validationResult}"
             );
+        }
+
+        return jwk.ToJsonWebKey();
     }
 
-    /// <inheritdoc/>
-    public override void Write(Utf8JsonWriter writer, JsonWebKey value, JsonSerializerOptions options)
+    /// <summary>
+    /// Creates a <see cref="JsonWebKey"/> instance from the supplied <see cref="MaskinportenSettings.JwkBase64"/> object.
+    /// </summary>
+    public static JsonWebKey FromBase64String(string jwkBase64)
     {
-        throw new NotImplementedException();
+        JwkWrapper jwk;
+        try
+        {
+            string decoded = Encoding.UTF8.GetString(System.Convert.FromBase64String(jwkBase64));
+            var deserialized =
+                JsonSerializer.Deserialize<JwkWrapper>(decoded)
+                ?? throw new MaskinportenConfigurationException(
+                    $"Literal null value for property MaskinportenSettings.{nameof(MaskinportenSettings.JwkBase64)}."
+                );
+            jwk = deserialized;
+        }
+        catch (JsonException e)
+        {
+            throw new MaskinportenConfigurationException(
+                $"Error parsing MaskinportenSettings.{nameof(MaskinportenSettings.JwkBase64)} JSON structure: {e.Message}",
+                e
+            );
+        }
+        catch (Exception e)
+        {
+            throw new MaskinportenConfigurationException(
+                $"Error decoding MaskinportenSettings.{nameof(MaskinportenSettings.JwkBase64)} from base64: {e.Message}",
+                e
+            );
+        }
+
+        // Validate
+        var validationResult = jwk.Validate();
+        if (!validationResult.IsValid())
+        {
+            throw new MaskinportenConfigurationException(
+                $"The MaskinportenSettings.{nameof(MaskinportenSettings.Jwk)} JsonWebKey is invalid after deserialization, not all required properties were found: {validationResult}"
+            );
+        }
+
+        return jwk.ToJsonWebKey();
     }
 }
