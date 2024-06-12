@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Diagnostics;
+using System.Globalization;
 using System.Reflection;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
@@ -274,7 +275,7 @@ public class DataModel
             return (keyPart, null);
         }
         var match = _keyPartRegex.Match(keyPart);
-        return (match.Groups[1].Value, int.Parse(match.Groups[2].Value));
+        return (match.Groups[1].Value, int.Parse(match.Groups[2].Value, CultureInfo.InvariantCulture));
     }
 
     private static void AddIndiciesRecursive(
