@@ -48,7 +48,7 @@ public class TestInvalid
         act.Should().Throw<Exception>().WithMessage(testCase.ExpectsFailure);
     }
 
-    private InvalidTestCase LoadData(string testName, string folder)
+    private static InvalidTestCase LoadData(string testName, string folder)
     {
         var data = File.ReadAllText(Path.Join(folder, testName));
         using var document = JsonDocument.Parse(data);

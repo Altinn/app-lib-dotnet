@@ -19,7 +19,11 @@ public class TestBackendExclusiveFunctions
         _output = output;
     }
 
-    private ExpressionTestCaseRoot LoadTestCase(string testName, string folder)
+    [Theory]
+    [ExclusiveTest("gatewayAction")]
+    public void GatewayAction_Theory(string testName, string folder) => RunTestCase(testName, folder);
+
+    private static ExpressionTestCaseRoot LoadTestCase(string testName, string folder)
     {
         var file = Path.Join(folder, testName);
 
@@ -47,10 +51,6 @@ public class TestBackendExclusiveFunctions
 
         return testCase;
     }
-
-    [Theory]
-    [ExclusiveTest("gatewayAction")]
-    public void GatewayAction_Theory(string testName, string folder) => RunTestCase(testName, folder);
 
     private void RunTestCase(string testName, string folder)
     {

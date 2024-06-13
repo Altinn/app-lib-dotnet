@@ -23,7 +23,23 @@ public class TestContextList
         _output = output;
     }
 
-    public ContextListRoot LoadTestData(string testName, string folder)
+    [Theory]
+    [SharedTestContextList("simple")]
+    public void Simple_Theory(string testName, string folder) => RunTestCase(testName, folder);
+
+    [Theory]
+    [SharedTestContextList("groups")]
+    public void Group_Theory(string testName, string folder) => RunTestCase(testName, folder);
+
+    [Theory]
+    [SharedTestContextList("nonRepeatingGroups")]
+    public void NonRepeatingGroup_Theory(string testName, string folder) => RunTestCase(testName, folder);
+
+    [Theory]
+    [SharedTestContextList("recursiveGroups")]
+    public void RecursiveGroup_Theory(string testName, string folder) => RunTestCase(testName, folder);
+
+    private static ContextListRoot LoadTestData(string testName, string folder)
     {
         ContextListRoot testCase = new();
         var data = File.ReadAllText(Path.Join(folder, testName));
@@ -42,22 +58,6 @@ public class TestContextList
         testCase.RawJson = data;
         return testCase;
     }
-
-    [Theory]
-    [SharedTestContextList("simple")]
-    public void Simple_Theory(string testName, string folder) => RunTestCase(testName, folder);
-
-    [Theory]
-    [SharedTestContextList("groups")]
-    public void Group_Theory(string testName, string folder) => RunTestCase(testName, folder);
-
-    [Theory]
-    [SharedTestContextList("nonRepeatingGroups")]
-    public void NonRepeatingGroup_Theory(string testName, string folder) => RunTestCase(testName, folder);
-
-    [Theory]
-    [SharedTestContextList("recursiveGroups")]
-    public void RecursiveGroup_Theory(string testName, string folder) => RunTestCase(testName, folder);
 
     private void RunTestCase(string filename, string folder)
     {

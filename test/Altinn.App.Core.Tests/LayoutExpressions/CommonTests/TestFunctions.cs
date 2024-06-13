@@ -19,32 +19,6 @@ public class TestFunctions
         _output = output;
     }
 
-    public ExpressionTestCaseRoot LoadTestCase(string file, string folder)
-    {
-        ExpressionTestCaseRoot testCase = new();
-        var data = File.ReadAllText(Path.Join(folder, file));
-        try
-        {
-            testCase = JsonSerializer.Deserialize<ExpressionTestCaseRoot>(data, _jsonSerializerOptions)!;
-        }
-        catch (Exception e)
-        {
-            using var jsonDocument = JsonDocument.Parse(data);
-
-            testCase.Name = jsonDocument.RootElement.GetProperty("name").GetString();
-            testCase.ExpectsFailure = jsonDocument.RootElement.TryGetProperty("expectsFailure", out var expectsFailure)
-                ? expectsFailure.GetString()
-                : null;
-            testCase.ParsingException = e;
-        }
-
-        testCase.Filename = Path.GetFileName(file);
-        testCase.FullPath = file;
-        testCase.Folder = folder;
-        testCase.RawJson = data;
-        return testCase;
-    }
-
     [Theory]
     [SharedTest("and")]
     public void And_Theory(string testName, string folder) => RunTestCase(testName, folder);
@@ -144,6 +118,32 @@ public class TestFunctions
     [Theory]
     [SharedTest("round")]
     public void Round_Theory(string testName, string folder) => RunTestCase(testName, folder);
+
+    private static ExpressionTestCaseRoot LoadTestCase(string file, string folder)
+    {
+        ExpressionTestCaseRoot testCase = new();
+        var data = File.ReadAllText(Path.Join(folder, file));
+        try
+        {
+            testCase = JsonSerializer.Deserialize<ExpressionTestCaseRoot>(data, _jsonSerializerOptions)!;
+        }
+        catch (Exception e)
+        {
+            using var jsonDocument = JsonDocument.Parse(data);
+
+            testCase.Name = jsonDocument.RootElement.GetProperty("name").GetString();
+            testCase.ExpectsFailure = jsonDocument.RootElement.TryGetProperty("expectsFailure", out var expectsFailure)
+                ? expectsFailure.GetString()
+                : null;
+            testCase.ParsingException = e;
+        }
+
+        testCase.Filename = Path.GetFileName(file);
+        testCase.FullPath = file;
+        testCase.Folder = folder;
+        testCase.RawJson = data;
+        return testCase;
+    }
 
     private void RunTestCase(string testName, string folder)
     {
