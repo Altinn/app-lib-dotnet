@@ -11,8 +11,10 @@ using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Models.Validation;
 using Altinn.App.Core.Tests.Helpers;
+using Altinn.App.Core.Tests.LayoutExpressions;
 using Altinn.App.Core.Tests.LayoutExpressions.CommonTests;
 using Altinn.App.Core.Tests.LayoutExpressions.TestUtilities;
+using Altinn.App.Core.Tests.TestUtils;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
@@ -49,14 +51,29 @@ public class ExpressionValidatorTests
         _validator = new ExpressionValidator(_logger.Object, _appResources.Object, _layoutInitializer.Object);
     }
 
-    [Theory]
-    [ExpressionTest]
-    public async Task RunExpressionValidationTest(ExpressionValidationTestModel testCase)
+    public ExpressionValidationTestModel LoadData(string fileName, string folder)
     {
-        _output.WriteLine($"Running test: {testCase.Name}");
-        _output.WriteLine(JsonSerializer.Serialize(testCase.FormData, _jsonSerializerOptions));
-        _output.WriteLine(JsonSerializer.Serialize(testCase.ValidationConfig, _jsonSerializerOptions));
-        _output.WriteLine(JsonSerializer.Serialize(testCase.Expects, _jsonSerializerOptions));
+        var data = File.ReadAllText(Path.Join(folder, fileName));
+        return JsonSerializer.Deserialize<ExpressionValidationTestModel>(data, _jsonSerializerOptions)!;
+    }
+
+    [Theory]
+    [FileNamesInFolderData("Features/Validators/expression-validation-tests/backend")]
+    public async Task RunExpressionValidationTestsForBackend(string fileName, string folder)
+    {
+        await RunExpressionValidationTest(fileName, folder);
+    }
+
+    [Theory]
+    [FileNamesInFolderData(["Features", "Validators", "expression-validation-tests", "shared"])]
+    public async Task RunExpressionValidationTestsForShared(string fileName, string folder)
+    {
+        await RunExpressionValidationTest(fileName, folder);
+    }
+
+    private async Task RunExpressionValidationTest(string fileName, string folder)
+    {
+        var testCase = LoadData(fileName, folder);
 
         var instance = new Instance() { Process = new() { CurrentTask = new() { ElementId = "Task_1", } } };
         var dataElement = new DataElement { DataType = "default", };
@@ -94,56 +111,37 @@ public class ExpressionValidatorTests
     }
 }
 
-public class ExpressionTestAttribute : DataAttribute
-{
-    private static readonly JsonSerializerOptions _jsonSerializerOptions =
-        new() { ReadCommentHandling = JsonCommentHandling.Skip, PropertyNamingPolicy = JsonNamingPolicy.CamelCase, };
-
-    public override IEnumerable<object[]> GetData(MethodInfo methodInfo)
-    {
-        var files = Directory
-            .GetFiles(Path.Join("Features", "Validators", "expression-validation-tests", "shared"))
-            .Concat(Directory.GetFiles(Path.Join("Features", "Validators", "expression-validation-tests", "backend")));
-
-        foreach (var file in files)
-        {
-            var data = File.ReadAllText(file);
-            ExpressionValidationTestModel testCase = JsonSerializer.Deserialize<ExpressionValidationTestModel>(
-                data,
-                _jsonSerializerOptions
-            )!;
-            yield return new object[] { testCase };
-        }
-    }
-}
-
 public record ExpressionValidationTestModel
 {
+    [JsonPropertyName("name")]
     public required string Name { get; set; }
 
+    [JsonPropertyName("expects")]
     public required ExpectedObject[] Expects { get; set; }
 
+    [JsonPropertyName("validationConfig")]
     public required JsonElement ValidationConfig { get; set; }
 
+    [JsonPropertyName("formData")]
     public required JsonElement FormData { get; set; }
 
+    [JsonPropertyName("layouts")]
     [JsonConverter(typeof(LayoutModelConverterFromObject))]
     public required LayoutModel Layouts { get; set; }
 
     public class ExpectedObject
     {
+        [JsonPropertyName("message")]
         public required string Message { get; set; }
 
+        [JsonPropertyName("severity")]
         [JsonConverter(typeof(FrontendSeverityConverter))]
         public required ValidationIssueSeverity Severity { get; set; }
 
+        [JsonPropertyName("field")]
         public required string Field { get; set; }
 
+        [JsonPropertyName("componentId")]
         public required string ComponentId { get; set; }
-    }
-
-    public override string ToString()
-    {
-        return Name;
     }
 }
