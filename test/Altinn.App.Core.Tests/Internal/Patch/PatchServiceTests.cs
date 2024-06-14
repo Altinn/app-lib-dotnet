@@ -70,6 +70,7 @@ public class PatchServiceTests : IDisposable
         var validatorFactory = new ValidatorFactory(
             Enumerable.Empty<ITaskValidator>(),
             new List<IDataElementValidator>() { _dataElementValidator.Object },
+            Enumerable.Empty<IFileUploadValidator>(),
             new List<IFormDataValidator>() { _formDataValidator.Object }
         );
         var validationService = new ValidationService(

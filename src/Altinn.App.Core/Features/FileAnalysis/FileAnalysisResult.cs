@@ -1,5 +1,3 @@
-using Altinn.App.Core.Features.FileAnalyzis;
-
 namespace Altinn.App.Core.Features.FileAnalysis;
 
 /// <summary>
@@ -8,7 +6,7 @@ namespace Altinn.App.Core.Features.FileAnalysis;
 public class FileAnalysisResult
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="FileAnalysisService"/> class.
+    /// Initializes a new instance of the <see cref="FileAnalysisResult"/> class.
     /// </summary>
     public FileAnalysisResult(string analyserId)
     {

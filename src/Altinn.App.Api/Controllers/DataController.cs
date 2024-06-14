@@ -8,8 +8,6 @@ using Altinn.App.Api.Models;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
-using Altinn.App.Core.Features.FileAnalysis;
-using Altinn.App.Core.Features.FileAnalyzis;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
@@ -50,8 +48,7 @@ public class DataController : ControllerBase
     private readonly IAppResources _appResourcesService;
     private readonly IAppMetadata _appMetadata;
     private readonly IPrefill _prefillService;
-    private readonly IFileAnalysisService _fileAnalyserService;
-    private readonly IFileValidationService _fileValidationService;
+    private readonly IValidationService _validationService;
     private readonly IFeatureManager _featureManager;
     private readonly IPatchService _patchService;
 
@@ -67,11 +64,10 @@ public class DataController : ControllerBase
     /// <param name="dataProcessors">Services implementing logic during data read/write</param>
     /// <param name="appModel">Service for generating app model</param>
     /// <param name="appResourcesService">The apps resource service</param>
+    /// <param name="prefillService">A service with prefill related logic.</param>
+    /// <param name="validationService">The validation service</param>
     /// <param name="appMetadata">The app metadata service</param>
     /// <param name="featureManager">The feature manager controlling enabled features.</param>
-    /// <param name="prefillService">A service with prefill related logic.</param>
-    /// <param name="fileAnalyserService">Service used to analyse files uploaded.</param>
-    /// <param name="fileValidationService">Service used to validate files uploaded.</param>
     /// <param name="patchService">Service for applying a json patch to a json serializable object</param>
     public DataController(
         ILogger<DataController> logger,
@@ -82,8 +78,7 @@ public class DataController : ControllerBase
         IAppModel appModel,
         IAppResources appResourcesService,
         IPrefill prefillService,
-        IFileAnalysisService fileAnalyserService,
-        IFileValidationService fileValidationService,
+        IValidationService validationService,
         IAppMetadata appMetadata,
         IFeatureManager featureManager,
         IPatchService patchService
@@ -99,8 +94,7 @@ public class DataController : ControllerBase
         _appResourcesService = appResourcesService;
         _appMetadata = appMetadata;
         _prefillService = prefillService;
-        _fileAnalyserService = fileAnalyserService;
-        _fileValidationService = fileValidationService;
+        _validationService = validationService;
         _featureManager = featureManager;
         _patchService = patchService;
     }
@@ -113,6 +107,7 @@ public class DataController : ControllerBase
     /// <param name="instanceOwnerPartyId">unique id of the party that this the owner of the instance</param>
     /// <param name="instanceGuid">unique id to identify the instance</param>
     /// <param name="dataType">identifies the data element type to create</param>
+    /// <param name="language">optionally provide current language code</param>
     /// <returns>A list is returned if multiple elements are created.</returns>
     [Authorize(Policy = AuthzConstants.POLICY_INSTANCE_WRITE)]
     [HttpPost]
@@ -124,7 +119,8 @@ public class DataController : ControllerBase
         [FromRoute] string app,
         [FromRoute] int instanceOwnerPartyId,
         [FromRoute] Guid instanceGuid,
-        [FromQuery] string dataType
+        [FromQuery] string dataType,
+        [FromQuery] string? language = null
     )
     {
         /* The Body of the request is read much later when it has been made sure it is worth it. */
@@ -179,7 +175,7 @@ public class DataController : ControllerBase
 
                 StreamContent streamContent = Request.CreateContentStream();
 
-                using Stream fileStream = new MemoryStream();
+                using MemoryStream fileStream = new MemoryStream();
                 await streamContent.CopyToAsync(fileStream);
                 if (fileStream.Length == 0)
                 {
@@ -197,27 +193,16 @@ public class DataController : ControllerBase
                 bool parseSuccess = Request.Headers.TryGetValue("Content-Disposition", out StringValues headerValues);
                 string? filename = parseSuccess ? DataRestrictionValidation.GetFileNameFromHeader(headerValues) : null;
 
-                IEnumerable<FileAnalysisResult> fileAnalysisResults = new List<FileAnalysisResult>();
-                if (FileAnalysisEnabledForDataType(dataTypeFromMetadata))
-                {
-                    fileAnalysisResults = await _fileAnalyserService.Analyse(
-                        dataTypeFromMetadata,
-                        fileStream,
-                        filename
-                    );
-                }
+                var validationIssues = await _validationService.ValidateFileUpload(
+                    instance,
+                    dataTypeFromMetadata,
+                    fileStream.ToArray(),
+                    filename,
+                    streamContent.Headers.ContentType?.ToString(),
+                    language
+                );
 
-                bool fileValidationSuccess = true;
-                List<ValidationIssue> validationIssues = new();
-                if (FileValidationEnabledForDataType(dataTypeFromMetadata))
-                {
-                    (fileValidationSuccess, validationIssues) = await _fileValidationService.Validate(
-                        dataTypeFromMetadata,
-                        fileAnalysisResults
-                    );
-                }
-
-                if (!fileValidationSuccess)
+                if (validationIssues.Exists(v => v.Severity == ValidationIssueSeverity.Error))
                 {
                     return BadRequest(await GetErrorDetails(validationIssues));
                 }
@@ -259,17 +244,6 @@ public class DataController : ControllerBase
         return await _featureManager.IsEnabledAsync(FeatureFlags.JsonObjectInDataResponse)
             ? errors
             : string.Join(";", errors.Select(x => x.Description));
-    }
-
-    private static bool FileAnalysisEnabledForDataType(DataType dataTypeFromMetadata)
-    {
-        return dataTypeFromMetadata.EnabledFileAnalysers != null && dataTypeFromMetadata.EnabledFileAnalysers.Count > 0;
-    }
-
-    private static bool FileValidationEnabledForDataType(DataType dataTypeFromMetadata)
-    {
-        return dataTypeFromMetadata.EnabledFileValidators != null
-            && dataTypeFromMetadata.EnabledFileValidators.Count > 0;
     }
 
     /// <summary>

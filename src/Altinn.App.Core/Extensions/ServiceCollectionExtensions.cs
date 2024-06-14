@@ -3,7 +3,6 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Features.DataLists;
 using Altinn.App.Core.Features.DataProcessing;
-using Altinn.App.Core.Features.FileAnalyzis;
 using Altinn.App.Core.Features.Notifications.Email;
 using Altinn.App.Core.Features.Notifications.Sms;
 using Altinn.App.Core.Features.Options;
@@ -183,8 +182,6 @@ public static class ServiceCollectionExtensions
         AddEventServices(services);
         AddNotificationServices(services);
         AddProcessServices(services);
-        AddFileAnalyserServices(services);
-        AddFileValidatorServices(services);
 
         if (!env.IsDevelopment())
         {
@@ -215,6 +212,9 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IDataElementValidator, DefaultDataElementValidator>();
         services.AddTransient<ITaskValidator, LegacyIInstanceValidatorTaskValidator>();
         services.AddTransient<ITaskValidator, DefaultTaskValidator>();
+
+        // This ensures support for IFileAnalyser and IFileValidator
+        services.AddTransient<IFileUploadValidator, LegacyFileAnalyzerValidator>();
     }
 
     /// <summary>
@@ -334,17 +334,5 @@ public static class ServiceCollectionExtensions
         services.TryAddTransient<UserActionService>();
         services.AddTransient<IUserAction, SigningUserAction>();
         services.AddTransientUserActionAuthorizerForActionInAllTasks<UniqueSignatureAuthorizer>("sign");
-    }
-
-    private static void AddFileAnalyserServices(IServiceCollection services)
-    {
-        services.TryAddTransient<IFileAnalysisService, FileAnalysisService>();
-        services.TryAddTransient<IFileAnalyserFactory, FileAnalyserFactory>();
-    }
-
-    private static void AddFileValidatorServices(IServiceCollection services)
-    {
-        services.TryAddTransient<IFileValidationService, FileValidationService>();
-        services.TryAddTransient<IFileValidatorFactory, FileValidatorFactory>();
     }
 }
