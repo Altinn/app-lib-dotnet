@@ -10,24 +10,13 @@ namespace Altinn.App.Core.Features.Validation;
 /// Simple wrapper for validation of form data that does the type checking for you.
 /// </summary>
 /// <typeparam name="TModel">The type of the model this class will validate</typeparam>
-// TODO: Consider marking this as obsolete and use the new GenericFormDataValidator2 instead
-//[Obsolete("Use GenericFormDataValidator2 instead")]
-public abstract class GenericFormDataValidator<TModel> : IFormDataValidator
+public abstract class GenericFormDataValidator2<TModel> : IFormDataValidator
 {
-    /// <summary>
-    /// Constructor to force the DataType to be set.
-    /// </summary>
-    /// <param name="dataType">The data type this validator should run on</param>
-    protected GenericFormDataValidator(string dataType)
-    {
-        DataType = dataType;
-    }
-
-    /// <inheritdoc />
-    public string DataType { get; private init; }
-
     // ReSharper disable once StaticMemberInGenericType
     private static readonly AsyncLocal<List<ValidationIssue>> _validationIssues = new();
+
+    /// <inheritdoc />
+    public abstract string DataType { get; }
 
     /// <summary>
     /// Default implementation that calls the same method with TModel arguments.
