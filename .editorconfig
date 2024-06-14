@@ -113,6 +113,9 @@ dotnet_diagnostic.IDE1006.severity = error
 # Unused usings
 dotnet_diagnostic.IDE0005.severity = suggestion
 
+# For https://github.com/shuebner/ClosedTypeHierarchyDiagnosticSuppressor
+dotnet_diagnostic.CTH001.suppress_on_record_hierarchies = true
+
 # CA1848: Use the LoggerMessage delegates
 dotnet_diagnostic.CA1848.severity = none
 
