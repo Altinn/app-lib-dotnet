@@ -52,6 +52,10 @@ public class TestFunctions
     public void DataModel_Theory(string testName, string folder) => RunTestCase(testName, folder);
 
     [Theory]
+    [SharedTest("dataModelMultiple")]
+    public void DataModelMultiple_Theory(string testName, string folder) => RunTestCase(testName, folder);
+
+    [Theory]
     [SharedTest("endsWith")]
     public void EndsWith_Theory(string testName, string folder) => RunTestCase(testName, folder);
 

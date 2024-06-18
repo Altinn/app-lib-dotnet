@@ -36,7 +36,7 @@ public class DataModel
         Debug.Assert(_defaultServiceModel is not null, "DataModel initialized with no data");
     }
 
-    private object ServiceModel(ModelBinding key)
+    private object? ServiceModel(ModelBinding key)
     {
         if (key.DataType == null)
         {
@@ -49,7 +49,7 @@ public class DataModel
             return dataModel;
         }
 
-        throw new Exception($"Could not find data model for type {key.DataType}");
+        return null;
     }
 
     /// <summary>
@@ -84,9 +84,9 @@ public class DataModel
         return null;
     }
 
-    private object? GetModelDataRecursive(string[] keys, int index, object currentModel, ReadOnlySpan<int> indicies)
+    private object? GetModelDataRecursive(string[] keys, int index, object? currentModel, ReadOnlySpan<int> indicies)
     {
-        if (index == keys.Length)
+        if (index == keys.Length || currentModel is null)
         {
             return currentModel;
         }
@@ -345,9 +345,14 @@ public class DataModel
         {
             return key with { DataType = key.DataType ?? DefaultDataElement.DataType };
         }
+        var serviceModel = ServiceModel(key);
+        if (serviceModel is null)
+        {
+            throw new DataModelException("Could not find service model for dataType " + key.DataType);
+        }
 
         var ret = new List<string>();
-        AddIndiciesRecursive(ret, ServiceModel(key).GetType(), key.Field.Split('.'), indicies);
+        AddIndiciesRecursive(ret, serviceModel.GetType(), key.Field.Split('.'), indicies);
         return new ModelBinding
         {
             Field = string.Join('.', ret),
@@ -458,7 +463,12 @@ public class DataModel
     /// </summary>
     public bool VerifyKey(ModelBinding key)
     {
-        return VerifyKeyRecursive(key.Field.Split('.'), 0, ServiceModel(key).GetType());
+        var serviceModel = ServiceModel(key);
+        if (serviceModel is null)
+        {
+            return false;
+        }
+        return VerifyKeyRecursive(key.Field.Split('.'), 0, serviceModel.GetType());
     }
 
     /// <summary>

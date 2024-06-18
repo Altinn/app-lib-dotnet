@@ -311,7 +311,7 @@ public class PageComponentConverter : JsonConverter<PageComponent>
                     type = reader.GetString();
                     break;
                 case "datamodelbindings":
-                    dataModelBindings = DeserializeModelBindings(ref reader);
+                    dataModelBindings = DeserializeModelBindings(ref reader, options);
                     break;
                 // case "textresourcebindings":
                 //     break;
@@ -486,7 +486,10 @@ public class PageComponentConverter : JsonConverter<PageComponent>
         );
     }
 
-    private static Dictionary<string, ModelBinding> DeserializeModelBindings(ref Utf8JsonReader reader)
+    private static Dictionary<string, ModelBinding> DeserializeModelBindings(
+        ref Utf8JsonReader reader,
+        JsonSerializerOptions options
+    )
     {
         var modelBindings = new Dictionary<string, ModelBinding>();
         if (reader.TokenType != JsonTokenType.StartObject)
@@ -507,7 +510,7 @@ public class PageComponentConverter : JsonConverter<PageComponent>
             modelBindings[propertyName] = reader.TokenType switch
             {
                 JsonTokenType.String => new ModelBinding { Field = reader.GetString() ?? throw new JsonException(), },
-                JsonTokenType.StartObject => JsonSerializer.Deserialize<ModelBinding>(ref reader),
+                JsonTokenType.StartObject => JsonSerializer.Deserialize<ModelBinding>(ref reader, options),
                 _ => throw new JsonException()
             };
         }
