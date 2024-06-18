@@ -155,8 +155,13 @@ public class TestFunctions
         _output.WriteLine($"{test.Filename} in {test.Folder}");
         _output.WriteLine(test.RawJson);
         _output.WriteLine(test.FullPath);
+
+        var dataModel = test.DataModels is null
+            ? DynamicClassBuilder.DataModelFromJsonDocument(test.DataModel ?? JsonDocument.Parse("{}").RootElement)
+            : DynamicClassBuilder.DataModelFromJsonDocument(test.DataModels);
+
         var state = new LayoutEvaluatorState(
-            DynamicClassBuilder.DataModelFromJsonDocument(test.DataModel ?? JsonDocument.Parse("{}").RootElement),
+            dataModel,
             test.ComponentModel,
             test.FrontEndSettings ?? new(),
             test.Instance ?? new(),
