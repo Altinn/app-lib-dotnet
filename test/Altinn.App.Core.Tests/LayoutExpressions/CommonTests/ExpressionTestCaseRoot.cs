@@ -46,6 +46,9 @@ public class ExpressionTestCaseRoot
     [JsonPropertyName("dataModel")]
     public JsonElement? DataModel { get; set; }
 
+    [JsonPropertyName("dataModels")]
+    public List<DataModelAndElement>? DataModels { get; set; }
+
     [JsonPropertyName("frontendSettings")]
     public FrontEndSettings? FrontEndSettings { get; set; }
 
@@ -62,6 +65,15 @@ public class ExpressionTestCaseRoot
     {
         return $"{Filename}: {Name}";
     }
+}
+
+public class DataModelAndElement
+{
+    [JsonPropertyName("dataElement")]
+    public required DataElement DataElement { get; set; }
+
+    [JsonPropertyName("data")]
+    public required JsonElement Data { get; set; }
 }
 
 public class ProfileSettings
