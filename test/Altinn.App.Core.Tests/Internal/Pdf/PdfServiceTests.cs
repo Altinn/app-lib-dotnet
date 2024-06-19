@@ -248,48 +248,56 @@ public class PdfServiceTests
     }
 
     [Fact]
-    public async Task GetLanguage_ShouldReturnLanguageFromHttpContext()
+    public async Task GetLanguage_ShouldReturnLanguageFromUserPreference()
     {
         // Arrange
-        DefaultHttpContext httpContext = new();
-        httpContext.Request.Headers.Append("Accept-Language", LanguageConst.Bokmål);
-        _httpContextAccessor.Setup(s => s.HttpContext!).Returns(httpContext);
+        var profileMock = new Mock<IProfileClient>();
+        profileMock
+            .Setup(s => s.GetUserProfile(It.IsAny<int>()))
+            .Returns(
+                Task.FromResult<UserProfile?>(
+                    new UserProfile
+                    {
+                        UserId = 123,
+                        ProfileSettingPreference = new ProfileSettingPreference { Language = LanguageConst.English }
+                    }
+                )
+            );
+        var user = new ClaimsPrincipal(new ClaimsIdentity([new(AltinnCoreClaimTypes.UserId, "123")], "TestAuthType"));
 
-        var target = SetupPdfService(httpContentAccessor: _httpContextAccessor);
+        var target = SetupPdfService(profile: profileMock);
 
         // Act
-        var language = await target.GetLanguage(httpContext);
+        var language = await target.GetLanguage(user);
+
+        // Assert
+        language.Should().Be(LanguageConst.English);
+    }
+
+    [Fact]
+    public async Task GetLanguage_NoLanguageInUserPreference_ShouldReturnBokmål()
+    {
+        // Arrange
+        var user = new ClaimsPrincipal(new ClaimsIdentity([new(AltinnCoreClaimTypes.UserId, "123")], "TestAuthType"));
+
+        var target = SetupPdfService();
+
+        // Act
+        var language = await target.GetLanguage(user);
 
         // Assert
         language.Should().Be(LanguageConst.Bokmål);
     }
 
     [Fact]
-    public async Task GetLanguage_NoLanguageInHttpContext_ShouldReturnBokmål()
+    public async Task GetLanguage_UserIsNull_ShouldReturnBokmål()
     {
         // Arrange
-        DefaultHttpContext httpContext = new();
-        _httpContextAccessor.Setup(s => s.HttpContext!).Returns(httpContext);
-
-        var target = SetupPdfService(httpContentAccessor: _httpContextAccessor);
+        ClaimsPrincipal? user = null;
+        var target = SetupPdfService();
 
         // Act
-        var language = await target.GetLanguage(httpContext);
-
-        // Assert
-        language.Should().Be(LanguageConst.Bokmål);
-    }
-
-    [Fact]
-    public async Task GetLanguage_HttpContextIsNull_ShouldReturnBokmål()
-    {
-        // Arrange
-        _httpContextAccessor.Setup(s => s.HttpContext).Returns(null as HttpContext);
-
-        var target = SetupPdfService(httpContentAccessor: _httpContextAccessor);
-
-        // Act
-        var language = await target.GetLanguage(null);
+        var language = await target.GetLanguage(user);
 
         // Assert
         language.Should().Be(LanguageConst.Bokmål);
@@ -299,21 +307,15 @@ public class PdfServiceTests
     public async Task GetLanguage_UserProfileIsNull_ShouldThrow()
     {
         // Arrange
-        var userId = 123;
+        var user = new ClaimsPrincipal(new ClaimsIdentity([new(AltinnCoreClaimTypes.UserId, "123")], "TestAuthType"));
 
-        var httpContext = new DefaultHttpContext
-        {
-            User = new ClaimsPrincipal(
-                new ClaimsIdentity([new(AltinnCoreClaimTypes.UserId, userId.ToString())], "TestAuthType")
-            )
-        };
+        var profileMock = new Mock<IProfileClient>();
+        profileMock.Setup(s => s.GetUserProfile(It.IsAny<int>())).Returns(Task.FromResult<UserProfile?>(null));
 
-        _profile.Setup(s => s.GetUserProfile(It.IsAny<int>())).Returns(Task.FromResult<UserProfile?>(null));
-
-        var target = SetupPdfService(profile: _profile);
+        var target = SetupPdfService(profile: profileMock);
 
         // Act
-        var func = async () => await target.GetLanguage(httpContext);
+        var func = async () => await target.GetLanguage(user);
 
         // Assert
         await func.Should().ThrowAsync<Exception>().WithMessage("Could not get user profile while getting language");
@@ -323,13 +325,10 @@ public class PdfServiceTests
     public void GetOverridenLanguage_ShouldReturnLanguageFromQuery()
     {
         // Arrange
-        DefaultHttpContext httpContext = new();
-        httpContext.Request.Query = new QueryCollection(
-            new Dictionary<string, StringValues> { { "lang", LanguageConst.Bokmål } }
-        );
+        var queries = new QueryCollection(new Dictionary<string, StringValues> { { "lang", LanguageConst.Bokmål } });
 
         // Act
-        var language = PdfService.GetOverriddenLanguage(httpContext);
+        var language = PdfService.GetOverriddenLanguage(queries);
 
         // Assert
         language.Should().Be(LanguageConst.Bokmål);
@@ -339,10 +338,10 @@ public class PdfServiceTests
     public void GetOverridenLanguage_HttpContextIsNull_ShouldReturnNull()
     {
         // Arrange
-        HttpContext? httpContext = null;
+        QueryCollection? queries = null;
 
         // Act
-        var language = PdfService.GetOverriddenLanguage(httpContext);
+        var language = PdfService.GetOverriddenLanguage(queries);
 
         // Assert
         language.Should().BeNull();
@@ -352,10 +351,10 @@ public class PdfServiceTests
     public void GetOverridenLanguage_NoLanguageInQuery_ShouldReturnNull()
     {
         // Arrange
-        DefaultHttpContext httpContext = new();
+        IQueryCollection queries = new QueryCollection();
 
         // Act
-        var language = PdfService.GetOverriddenLanguage(httpContext);
+        var language = PdfService.GetOverriddenLanguage(queries);
 
         // Assert
         language.Should().BeNull();

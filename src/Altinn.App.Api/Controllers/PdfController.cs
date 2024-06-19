@@ -78,6 +78,8 @@ public class PdfController : ControllerBase
             return NotFound();
         }
 
+        var t = HttpContext;
+
         var instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
         string? taskId = instance.Process?.CurrentTask?.ElementId;
         if (instance == null || taskId == null)

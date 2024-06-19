@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
@@ -70,8 +71,10 @@ public class PdfService : IPdfService
         using var activity = _telemetry?.StartGenerateAndStorePdfActivity(instance, taskId);
 
         HttpContext? httpContext = _httpContextAccessor.HttpContext;
+        var queries = httpContext?.Request.Query;
+        var user = httpContext?.User;
 
-        var language = GetOverriddenLanguage(httpContext) ?? await GetLanguage(httpContext);
+        var language = GetOverriddenLanguage(queries) ?? await GetLanguage(user);
 
         var pdfContent = await GeneratePdfContent(instance, taskId, language, ct);
 
@@ -88,8 +91,10 @@ public class PdfService : IPdfService
         using var activity = _telemetry?.StartGeneratePdfActivity(instance, taskId);
 
         HttpContext? httpContext = _httpContextAccessor.HttpContext;
+        var queries = httpContext?.Request.Query;
+        var user = httpContext?.User;
 
-        var language = GetOverriddenLanguage(httpContext) ?? await GetLanguage(httpContext);
+        var language = GetOverriddenLanguage(queries) ?? await GetLanguage(user);
 
         return await GeneratePdfContent(instance, taskId, language, ct);
     }
@@ -130,16 +135,16 @@ public class PdfService : IPdfService
         return new Uri(url);
     }
 
-    internal async Task<string> GetLanguage(HttpContext? httpContext)
+    internal async Task<string> GetLanguage(ClaimsPrincipal? user)
     {
         string language = LanguageConst.Bokmål;
 
-        if (httpContext is null)
+        if (user is null)
         {
             return language;
         }
 
-        int? userId = httpContext.User.GetUserIdAsInt();
+        int? userId = user.GetUserIdAsInt();
 
         if (userId is not null)
         {
@@ -156,16 +161,16 @@ public class PdfService : IPdfService
         return language;
     }
 
-    internal static string? GetOverriddenLanguage(HttpContext? httpContext)
+    internal static string? GetOverriddenLanguage(IQueryCollection? queries)
     {
-        if (httpContext is null)
+        if (queries is null)
         {
             return null;
         }
 
         if (
-            httpContext.Request.Query.TryGetValue("language", out StringValues queryLanguage)
-            || httpContext.Request.Query.TryGetValue("lang", out queryLanguage)
+            queries.TryGetValue("language", out StringValues queryLanguage)
+            || queries.TryGetValue("lang", out queryLanguage)
         )
         {
             return queryLanguage.ToString();
