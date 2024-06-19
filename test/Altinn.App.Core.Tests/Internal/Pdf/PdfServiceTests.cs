@@ -5,6 +5,7 @@ using Altinn.App.Core.Infrastructure.Clients.Pdf;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.PlatformServices.Tests.Helpers;
@@ -26,14 +27,15 @@ public class PdfServiceTests
     private readonly Mock<IHttpContextAccessor> _httpContextAccessor = new();
     private readonly Mock<IPdfGeneratorClient> _pdfGeneratorClient = new();
     private readonly Mock<IProfileClient> _profile = new();
-    private readonly IOptions<PdfGeneratorSettings> _pdfGeneratorSettingsOptions =
-        Microsoft.Extensions.Options.Options.Create<PdfGeneratorSettings>(new() { });
+    private readonly IOptions<PdfGeneratorSettings> _pdfGeneratorSettingsOptions = Options.Create<PdfGeneratorSettings>(
+        new() { }
+    );
 
-    private readonly IOptions<GeneralSettings> _generalSettingsOptions =
-        Microsoft.Extensions.Options.Options.Create<GeneralSettings>(new() { HostName = HostName });
+    private readonly IOptions<GeneralSettings> _generalSettingsOptions = Options.Create<GeneralSettings>(
+        new() { HostName = HostName }
+    );
 
-    private readonly IOptions<PlatformSettings> _platformSettingsOptions =
-        Microsoft.Extensions.Options.Options.Create<PlatformSettings>(new() { });
+    private readonly IOptions<PlatformSettings> _platformSettingsOptions = Options.Create<PlatformSettings>(new() { });
 
     private readonly Mock<IUserTokenProvider> _userTokenProvider;
 
@@ -42,9 +44,9 @@ public class PdfServiceTests
         var resource = new TextResource()
         {
             Id = "digdir-not-really-an-app-nb",
-            Language = "nb",
+            Language = LanguageConst.Bokmål,
             Org = "digdir",
-            Resources = new List<TextResourceElement>()
+            Resources = []
         };
         _appResources
             .Setup(s => s.GetTexts(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
