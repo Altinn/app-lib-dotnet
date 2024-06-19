@@ -278,9 +278,24 @@ public class PdfServiceTests
     public async Task GetLanguage_NoLanguageInUserPreference_ShouldReturnBokmål()
     {
         // Arrange
+        var profileMock = new Mock<IProfileClient>();
+        profileMock
+            .Setup(s => s.GetUserProfile(It.IsAny<int>()))
+            .Returns(
+                Task.FromResult<UserProfile?>(
+                    new UserProfile
+                    {
+                        UserId = 123,
+                        ProfileSettingPreference = new ProfileSettingPreference
+                        {
+                            /* No language preference set*/
+                        }
+                    }
+                )
+            );
         var user = new ClaimsPrincipal(new ClaimsIdentity([new(AltinnCoreClaimTypes.UserId, "123")], "TestAuthType"));
 
-        var target = SetupPdfService();
+        var target = SetupPdfService(profile: profileMock);
 
         // Act
         var language = await target.GetLanguage(user);
