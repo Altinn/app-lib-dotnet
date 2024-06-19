@@ -2,7 +2,6 @@ using System.Net;
 using System.Security.Claims;
 using Altinn.App.Common.Tests;
 using Altinn.App.Core.Configuration;
-using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Infrastructure.Clients.Pdf;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Auth;
@@ -300,13 +299,14 @@ public class PdfServiceTests
     public async Task GetLanguage_UserProfileIsNull_ShouldThrow()
     {
         // Arrange
-        var userId = 123; // Example user ID
-        var claims = new List<Claim> { new(AltinnCoreClaimTypes.UserId, userId.ToString()) };
+        var userId = 123;
 
-        var identity = new ClaimsIdentity(claims, "TestAuthType");
-        var claimsPrincipal = new ClaimsPrincipal(identity);
-
-        var httpContext = new DefaultHttpContext { User = claimsPrincipal };
+        var httpContext = new DefaultHttpContext
+        {
+            User = new ClaimsPrincipal(
+                new ClaimsIdentity([new(AltinnCoreClaimTypes.UserId, userId.ToString())], "TestAuthType")
+            )
+        };
 
         _profile.Setup(s => s.GetUserProfile(It.IsAny<int>())).Returns(Task.FromResult<UserProfile?>(null));
 
