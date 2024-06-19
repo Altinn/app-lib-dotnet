@@ -16,7 +16,7 @@ public class JoinedAppOptionsTests
     private readonly Mock<IAppOptionsFileHandler> _fileHandlerMock = new(MockBehavior.Strict);
     private readonly ServiceCollection _serviceCollection = new();
 
-    private string _language = LanguageConst.Bokmål;
+    private readonly string _language = LanguageConst.Bokmål;
     private static readonly List<AppOption> _appOptionsCountries =
     [
         new AppOption { Value = "no", Label = "Norway" },
