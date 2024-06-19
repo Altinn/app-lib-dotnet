@@ -1,5 +1,4 @@
 using Altinn.App.Core.Configuration;
-using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Layout;

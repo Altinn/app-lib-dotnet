@@ -75,7 +75,7 @@ public class LayoutEvaluatorStateInitializer : ILayoutEvaluatorStateInitializer
         }
 
         var dataTasks = new List<Task<KeyValuePair<DataElement, object>>>();
-        foreach (var dataType in layouts.GetExternalModelReferences())
+        foreach (var dataType in layouts.GetReferencedDataTypeIds())
         {
             dataTasks.AddRange(
                 instance
@@ -89,11 +89,7 @@ public class LayoutEvaluatorStateInitializer : ILayoutEvaluatorStateInitializer
         var extraModels = await Task.WhenAll(dataTasks);
 
         return new LayoutEvaluatorState(
-            new DataModel(
-                extraModels.Append(
-                    KeyValuePair.Create(defaultDataElement, await _dataAccessor.Get(instance, defaultDataElement))
-                )
-            ),
+            new DataModel(extraModels),
             layouts,
             _frontEndSettings,
             instance,

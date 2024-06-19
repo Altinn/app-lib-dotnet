@@ -56,7 +56,7 @@ public record LayoutModel
     /// <summary>
     /// Get all external model references used in the layout model
     /// </summary>
-    public IEnumerable<string> GetExternalModelReferences()
+    public IEnumerable<string> GetReferencedDataTypeIds()
     {
         var externalModelReferences = new HashSet<string>();
         foreach (var component in GetComponents())
@@ -73,7 +73,9 @@ public record LayoutModel
             //TODO: add more expressions when backend uses them
         }
 
-        return externalModelReferences;
+        //Ensure that the defaultData type is first in the resulting enumerable.
+        externalModelReferences.Remove(DefaultDataType.Id);
+        return externalModelReferences.Prepend(DefaultDataType.Id);
     }
 
     private static void AddExternalModelReferences(Expression expression, HashSet<string> externalModelReferences)
