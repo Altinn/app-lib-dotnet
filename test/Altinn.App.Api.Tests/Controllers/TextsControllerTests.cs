@@ -1,4 +1,3 @@
-using System.Drawing.Text;
 using Altinn.App.Api.Controllers;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Language;
