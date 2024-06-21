@@ -39,7 +39,8 @@
       "EnableFileScan": false,
       "ValidationErrorOnPendingFileScan": false,
       "EnabledFileAnalysers": [],
-      "EnabledFileValidators": []
+      "EnabledFileValidators": [],
+      "AllowedKeysForUserDefinedMetadata": null
     },
     {
       "Id": "ref-data-as-pdf",
@@ -58,7 +59,8 @@
       "EnableFileScan": false,
       "ValidationErrorOnPendingFileScan": false,
       "EnabledFileAnalysers": [],
-      "EnabledFileValidators": []
+      "EnabledFileValidators": [],
+      "AllowedKeysForUserDefinedMetadata": null
     }
   ],
   "PartyTypesAllowed": {
