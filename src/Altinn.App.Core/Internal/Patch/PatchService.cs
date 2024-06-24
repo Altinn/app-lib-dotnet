@@ -125,12 +125,23 @@ public class PatchService : IPatchService
         ObjectUtils.InitializeAltinnRowId(result.Ok);
         ObjectUtils.PrepareModelForXmlStorage(result.Ok);
 
-        var validationIssues = await _validationService.ValidateFormData(
+        List<DataElementChange> changes =
+        [
+            new DataElementChange
+            {
+                DataElement = dataElement,
+                PreviousValue = oldModel,
+                CurrentValue = result.Ok
+            }
+        ];
+        var dataAccessor = new CachedInstanceDataAccessor(_dataClient, _appMetadata, _appModel);
+        dataAccessor.Set(dataElement, result.Ok);
+
+        var validationIssues = await _validationService.ValidateIncrementalFormData(
             instance,
-            dataElement,
-            dataType,
-            result.Ok,
-            oldModel,
+            instance.Process.CurrentTask.Name,
+            changes,
+            dataAccessor,
             ignoredValidators,
             language
         );

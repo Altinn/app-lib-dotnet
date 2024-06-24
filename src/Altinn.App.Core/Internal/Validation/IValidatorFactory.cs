@@ -1,4 +1,6 @@
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Validation.Wrappers;
+using Altinn.App.Core.Internal.App;
 
 namespace Altinn.App.Core.Internal.Validation;
 
@@ -10,17 +12,7 @@ public interface IValidatorFactory
     /// <summary>
     /// Gets all task validators for a given task.
     /// </summary>
-    public IEnumerable<ITaskValidator> GetTaskValidators(string taskId);
-
-    /// <summary>
-    /// Gets all data element validators for a given data element.
-    /// </summary>
-    public IEnumerable<IDataElementValidator> GetDataElementValidators(string dataTypeId);
-
-    /// <summary>
-    /// Gets all form data validators for a given data element.
-    /// </summary>
-    public IEnumerable<IFormDataValidator> GetFormDataValidators(string dataTypeId);
+    public IEnumerable<IValidator> GetValidators(string taskId);
 }
 
 /// <summary>
@@ -31,6 +23,8 @@ public class ValidatorFactory : IValidatorFactory
     private readonly IEnumerable<ITaskValidator> _taskValidators;
     private readonly IEnumerable<IDataElementValidator> _dataElementValidators;
     private readonly IEnumerable<IFormDataValidator> _formDataValidators;
+    private readonly IEnumerable<IValidator> _validators;
+    private readonly IAppMetadata _appMetadata;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ValidatorFactory"/> class.
@@ -38,29 +32,49 @@ public class ValidatorFactory : IValidatorFactory
     public ValidatorFactory(
         IEnumerable<ITaskValidator> taskValidators,
         IEnumerable<IDataElementValidator> dataElementValidators,
-        IEnumerable<IFormDataValidator> formDataValidators
+        IEnumerable<IFormDataValidator> formDataValidators,
+        IEnumerable<IValidator> validators,
+        IAppMetadata appMetadata
     )
     {
         _taskValidators = taskValidators;
         _dataElementValidators = dataElementValidators;
         _formDataValidators = formDataValidators;
+        _validators = validators;
+        _appMetadata = appMetadata;
     }
 
-    /// <inheritdoc />
-    public IEnumerable<ITaskValidator> GetTaskValidators(string taskId)
+    private IEnumerable<ITaskValidator> GetTaskValidators(string taskId)
     {
         return _taskValidators.Where(tv => tv.TaskId == "*" || tv.TaskId == taskId);
     }
 
-    /// <inheritdoc />
-    public IEnumerable<IDataElementValidator> GetDataElementValidators(string dataTypeId)
+    private IEnumerable<IDataElementValidator> GetDataElementValidators(string dataTypeId)
     {
         return _dataElementValidators.Where(dev => dev.DataType == "*" || dev.DataType == dataTypeId);
     }
 
-    /// <inheritdoc />
-    public IEnumerable<IFormDataValidator> GetFormDataValidators(string dataTypeId)
+    private IEnumerable<IFormDataValidator> GetFormDataValidators(string dataTypeId)
     {
         return _formDataValidators.Where(fdv => fdv.DataType == "*" || fdv.DataType == dataTypeId);
+    }
+
+    public IEnumerable<IValidator> GetValidators(string taskId)
+    {
+        var validators = new List<IValidator>();
+        validators.AddRange(_validators);
+        validators.AddRange(GetTaskValidators(taskId).Select(tv => new TaskValidatorWrapper(tv)));
+        var dataTypes = _appMetadata.GetApplicationMetadata().Result.DataTypes.Where(dt => dt.TaskId == taskId);
+        foreach (var dataType in dataTypes)
+        {
+            validators.AddRange(
+                GetDataElementValidators(dataType.Id).Select(dev => new DataElementValidatorWrapper(dev, dataType))
+            );
+            validators.AddRange(
+                GetFormDataValidators(dataType.Id).Select(fdv => new FormDataValidatorWrapper(fdv, dataType))
+            );
+        }
+
+        return validators;
     }
 }

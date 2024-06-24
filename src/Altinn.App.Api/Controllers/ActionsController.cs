@@ -5,6 +5,7 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Validation;
@@ -33,24 +34,19 @@ public class ActionsController : ControllerBase
     private readonly IValidationService _validationService;
     private readonly IDataClient _dataClient;
     private readonly IAppMetadata _appMetadata;
+    private readonly IAppModel _appModel;
 
     /// <summary>
     /// Create new instance of the <see cref="ActionsController"/> class
     /// </summary>
-    /// <param name="authorization">The authorization service</param>
-    /// <param name="instanceClient">The instance client</param>
-    /// <param name="userActionService">The user action service</param>
-    /// <param name="validationService">Service for performing validations of user data</param>
-    /// <param name="dataClient">Client for accessing data in storage</param>
-    /// <param name="appMetadata">Service for getting application metadata</param>
     public ActionsController(
         IAuthorizationService authorization,
         IInstanceClient instanceClient,
         UserActionService userActionService,
         IValidationService validationService,
         IDataClient dataClient,
-        IAppMetadata appMetadata
-    )
+        IAppMetadata appMetadata,
+        IAppModel appModel)
     {
         _authorization = authorization;
         _instanceClient = instanceClient;
@@ -58,6 +54,7 @@ public class ActionsController : ControllerBase
         _validationService = validationService;
         _dataClient = dataClient;
         _appMetadata = appMetadata;
+        _appModel = appModel;
     }
 
     /// <summary>
@@ -166,7 +163,7 @@ public class ActionsController : ControllerBase
         {
             await SaveChangedModels(instance, result.UpdatedDataModels);
         }
-
+        IInstanceDataAccessor dataAccessor = new CachedInstanceDataAccessor(_dataClient, _appMetadata, _appModel);
         return new OkObjectResult(
             new UserActionResponse()
             {
@@ -175,6 +172,7 @@ public class ActionsController : ControllerBase
                 UpdatedValidationIssues = await GetValidations(
                     instance,
                     result.UpdatedDataModels,
+                    dataAccessor,
                     actionRequest.IgnoredValidators,
                     language
                 ),
@@ -212,11 +210,12 @@ public class ActionsController : ControllerBase
     private async Task<Dictionary<string, Dictionary<string, List<ValidationIssue>>>?> GetValidations(
         Instance instance,
         Dictionary<string, object>? resultUpdatedDataModels,
+        IInstanceDataAccessor dataAccessor,
         List<string>? ignoredValidators,
         string? language
     )
     {
-        if (resultUpdatedDataModels is null || resultUpdatedDataModels.Count < 1)
+        if (resultUpdatedDataModels is null || resultUpdatedDataModels.Count == 0)
         {
             return null;
         }
@@ -249,20 +248,22 @@ public class ActionsController : ControllerBase
                 Guid.Parse(dataElement.Id)
             );
 
-            var validationIssues = await _validationService.ValidateFormData(
-                instance,
-                dataElement,
-                dataType,
-                newModel,
-                oldData,
-                ignoredValidators,
-                language
-            );
             if (validationIssues.Count > 0)
             {
                 updatedValidationIssues.Add(elementId, validationIssues);
             }
         }
+
+        var taskId = instance.Process.CurrentTask.ElementId;
+        var validationIssues = await _validationService.ValidateIncrementalFormData(instance, taskId, changes,
+            dataAccessor, ignoredValidators, language);
+
+
+
+
+
+
+
 
         return updatedValidationIssues;
     }
