@@ -1,0 +1,129 @@
+using System.Net;
+using System.Net.Http.Headers;
+using System.Text.Json;
+using Altinn.App.Api.Models;
+using Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models;
+using Altinn.App.Api.Tests.Utils;
+using Altinn.App.Core.Features;
+using Altinn.Platform.Storage.Interface.Models;
+using FluentAssertions;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
+using Moq;
+using Xunit;
+using Xunit.Abstractions;
+
+namespace Altinn.App.Api.Tests.Controllers;
+
+public class UserDefinedMetadataControllerTests : ApiTestBase, IClassFixture<WebApplicationFactory<Program>>
+{
+    private const string Org = "tdd";
+    private const string App = "contributer-restriction";
+    private const int InstanceOwnerPartyId = 501337;
+
+    public UserDefinedMetadataControllerTests(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper)
+        : base(factory, outputHelper) { }
+
+    [Fact]
+    public async Task PutCustomMetadata_HappyPath_ReturnsOk()
+    {
+        HttpClient client = GetHttpClient();
+        (string instanceId, string dataGuid) = await CreateInstanceAndDataElement();
+
+        // Update custom metadata
+        using var updateCustomMetadataContent = new StringContent(
+            """{"userDefinedMetadata": [{ "key" : "TheKey", "value": "TheValue" }] }""",
+            System.Text.Encoding.UTF8,
+            "application/json"
+        );
+
+        HttpResponseMessage response = await client.PutAsync(
+            $"/{Org}/{App}/instances/{instanceId}/data/{dataGuid}/user-defined-metadata",
+            updateCustomMetadataContent
+        );
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        // Verify stored data
+        HttpResponseMessage readDataElementResponse = await client.GetAsync(
+            $"/{Org}/{App}/instances/{instanceId}/data/{dataGuid}/user-defined-metadata"
+        );
+
+        var readDataElementResponseParsed = await VerifyStatusAndDeserialize<UserDefinedMetadataDto>(
+            readDataElementResponse,
+            HttpStatusCode.OK
+        );
+
+        readDataElementResponseParsed
+            .UserDefinedMetadata.Should()
+            .BeEquivalentTo(
+                new List<KeyValueEntry>
+                {
+                    new() { Key = "TheKey", Value = "TheValue" }
+                }
+            );
+    }
+
+    [Fact]
+    public async Task PutCustomMetadata_DuplicatedKey_ReturnsBadRequest()
+    {
+        HttpClient client = GetHttpClient();
+        (string instanceId, string dataGuid) = await CreateInstanceAndDataElement();
+
+        // Update custom metadata
+        using var updateCustomMetadataContent = new StringContent(
+            """{"userDefinedMetadata": [{ "key" : "TheKey", "value": "TheValue" }, { "key": "TheKey", "value": "TheValue" }] }""",
+            System.Text.Encoding.UTF8,
+            "application/json"
+        );
+
+        HttpResponseMessage response = await client.PutAsync(
+            $"/{Org}/{App}/instances/{instanceId}/data/{dataGuid}/user-defined-metadata",
+            updateCustomMetadataContent
+        );
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    private async Task<(string instanceId, string dataGuid)> CreateInstanceAndDataElement()
+    {
+        HttpClient client = GetHttpClient();
+
+        // Create instance
+        HttpResponseMessage createResponse = await client.PostAsync(
+            $"{Org}/{App}/instances/?instanceOwnerPartyId={InstanceOwnerPartyId}",
+            null
+        );
+
+        var createdInstance = await VerifyStatusAndDeserialize<Instance>(createResponse, HttpStatusCode.Created);
+        string? instanceId = createdInstance.Id;
+
+        // Create data element (not sure why it isn't created when the instance is created, autoCreate is true)
+        using var createDataElementContent = new StringContent(
+            """{"melding":{"name": "Ola Normann"}}""",
+            System.Text.Encoding.UTF8,
+            "application/json"
+        );
+
+        HttpResponseMessage createDataElementResponse = await client.PostAsync(
+            $"/{Org}/{App}/instances/{instanceId}/data?dataType=default",
+            createDataElementContent
+        );
+
+        var createDataElementResponseParsed = await VerifyStatusAndDeserialize<DataElement>(
+            createDataElementResponse,
+            HttpStatusCode.Created
+        );
+
+        string? dataGuid = createDataElementResponseParsed.Id;
+        return (instanceId, dataGuid);
+    }
+
+    private HttpClient GetHttpClient()
+    {
+        HttpClient client = GetRootedClient(Org, App);
+        string token = PrincipalUtil.GetToken(1337, null);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return client;
+    }
+}

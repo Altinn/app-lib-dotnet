@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Net;
 using System.Security.Claims;
 using System.Text.Json;
+using Altinn.App.Api.Helpers;
 using Altinn.App.Api.Helpers.RequestHandling;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
@@ -144,7 +145,7 @@ public class DataController : ControllerBase
                 );
             }
 
-            if (!IsValidContributer(dataTypeFromMetadata, User))
+            if (!ValidContributorHelper.IsValidContributor(dataTypeFromMetadata, User))
             {
                 return Forbid();
             }
@@ -989,47 +990,6 @@ public class DataController : ControllerBase
         }
 
         return true;
-    }
-
-    private static bool IsValidContributer(DataType dataType, ClaimsPrincipal user)
-    {
-        if (dataType.AllowedContributers == null || dataType.AllowedContributers.Count == 0)
-        {
-            return true;
-        }
-
-        foreach (string item in dataType.AllowedContributers)
-        {
-            string key = item.Split(':')[0];
-            string value = item.Split(':')[1];
-
-            switch (key.ToLowerInvariant())
-            {
-                case "org":
-                    if (value.Equals(user.GetOrg(), StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true;
-                    }
-
-                    break;
-                case "orgno":
-                    if (
-                        value.Equals(
-                            user.GetOrgNumber()?.ToString(CultureInfo.InvariantCulture),
-                            StringComparison.Ordinal
-                        )
-                    )
-                    {
-                        return true;
-                    }
-
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        return false;
     }
 
     private ObjectResult Problem(DataPatchError error)
