@@ -52,7 +52,7 @@ public class DataListsController : ControllerBase
     /// <param name="instanceOwnerPartyId">unique id of the party that is the owner of the instance</param>
     /// <param name="instanceGuid">unique id to identify the instance</param>
     /// <param name="id">The datalistId</param>
-    /// <param name="queryParams">Query parameteres supplied</param>
+    /// <param name="queryParams">Query parameters supplied</param>
     /// <param name="language">The language selected by the user.</param>
     /// <returns>A <see cref="Task{TResult}"/> representing the result of the asynchronous operation.</returns>
     [HttpGet]
