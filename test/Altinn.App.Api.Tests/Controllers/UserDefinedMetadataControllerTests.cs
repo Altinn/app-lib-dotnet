@@ -72,7 +72,7 @@ public class UserDefinedMetadataControllerTests : ApiTestBase, IClassFixture<Web
 
         // Update custom metadata
         using var updateCustomMetadataContent = new StringContent(
-            """{"userDefinedMetadata": [{ "key" : "TheKey", "value": "TheValue" }, { "key": "TheKey", "value": "TheValue" }] }""",
+            """{"userDefinedMetadata": [{ "key" : "DuplicatedKey", "value": "TheValue" }, { "key": "DuplicatedKey", "value": "TheValue" }] }""",
             System.Text.Encoding.UTF8,
             "application/json"
         );
@@ -83,6 +83,33 @@ public class UserDefinedMetadataControllerTests : ApiTestBase, IClassFixture<Web
         );
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        string responseMessage = await response.Content.ReadAsStringAsync();
+        responseMessage.Should().Contain("The following keys are duplicated: DuplicatedKey");
+    }
+
+    [Fact]
+    public async Task PutCustomMetadata_NotAllowedKey_ReturnsBadRequest()
+    {
+        HttpClient client = GetHttpClient();
+        (string instanceId, string dataGuid) = await CreateInstanceAndDataElement();
+
+        // Update custom metadata
+        using var updateCustomMetadataContent = new StringContent(
+            """{"userDefinedMetadata": [{ "key" : "SomeKeyThatIsNotAllowed", "value": "TheValue" }, { "key": "TheKey", "value": "TheValue" }] }""",
+            System.Text.Encoding.UTF8,
+            "application/json"
+        );
+
+        HttpResponseMessage response = await client.PutAsync(
+            $"/{Org}/{App}/instances/{instanceId}/data/{dataGuid}/user-defined-metadata",
+            updateCustomMetadataContent
+        );
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        string responseMessage = await response.Content.ReadAsStringAsync();
+        responseMessage.Should().Contain("The following keys are not allowed: SomeKeyThatIsNotAllowed");
     }
 
     private async Task<(string instanceId, string dataGuid)> CreateInstanceAndDataElement()
