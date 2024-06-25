@@ -19,7 +19,7 @@ public class UserDefinedMetadataControllerTests : ApiTestBase, IClassFixture<Web
         : base(factory, outputHelper) { }
 
     [Fact]
-    public async Task PutCustomMetadata_HappyPath_ReturnsOk()
+    public async Task PutUserDefinedMetadata_HappyPath_ReturnsOk()
     {
         HttpClient client = GetHttpClient();
         (string instanceId, string dataGuid) = await CreateInstanceAndDataElement(client);
@@ -59,7 +59,7 @@ public class UserDefinedMetadataControllerTests : ApiTestBase, IClassFixture<Web
     }
 
     [Fact]
-    public async Task PutCustomMetadata_DuplicatedKey_ReturnsBadRequest()
+    public async Task PutUserDefinedMetadata_DuplicatedKey_ReturnsBadRequest()
     {
         HttpClient client = GetHttpClient();
         (string instanceId, string dataGuid) = await CreateInstanceAndDataElement(client);
@@ -83,7 +83,7 @@ public class UserDefinedMetadataControllerTests : ApiTestBase, IClassFixture<Web
     }
 
     [Fact]
-    public async Task PutCustomMetadata_NotAllowedKey_ReturnsBadRequest()
+    public async Task PutUserDefinedMetadata_NotAllowedKey_ReturnsBadRequest()
     {
         HttpClient client = GetHttpClient();
         (string instanceId, string dataGuid) = await CreateInstanceAndDataElement(client);
@@ -107,7 +107,7 @@ public class UserDefinedMetadataControllerTests : ApiTestBase, IClassFixture<Web
     }
 
     [Fact]
-    public async Task PutCustomMetadata_InvalidDataElementId_ReturnsNotFound()
+    public async Task PutUserDefinedMetadata_InvalidDataElementId_ReturnsNotFound()
     {
         HttpClient client = GetHttpClient();
 
