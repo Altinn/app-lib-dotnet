@@ -28,7 +28,6 @@ public class UserDefinedMetadataController : ControllerBase
     private readonly IInstanceClient _instanceClient;
     private readonly IDataClient _dataClient;
     private readonly IAppMetadata _appMetadata;
-    private readonly ILogger<UserDefinedMetadataController> _logger;
 
     /// <summary>
     /// Initialize a new instance of <see cref="DataTagsController"/> with the given services.
@@ -36,18 +35,15 @@ public class UserDefinedMetadataController : ControllerBase
     /// <param name="instanceClient">A client that can be used to send instance requests to storage.</param>
     /// <param name="dataClient">A client that can be used to send data requests to storage.</param>
     /// <param name="appMetadata">The app metadata service</param>
-    /// <param name="logger">A logger</param>
     public UserDefinedMetadataController(
         IInstanceClient instanceClient,
         IDataClient dataClient,
-        IAppMetadata appMetadata,
-        ILogger<UserDefinedMetadataController> logger
+        IAppMetadata appMetadata
     )
     {
         _instanceClient = instanceClient;
         _dataClient = dataClient;
         _appMetadata = appMetadata;
-        _logger = logger;
     }
 
     /// <summary>
