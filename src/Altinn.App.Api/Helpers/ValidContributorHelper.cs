@@ -13,7 +13,7 @@ internal static class ValidContributorHelper
 {
     internal static bool IsValidContributor(DataType dataType, string? org, int? orgNr)
     {
-        if (dataType.AllowedContributers == null || dataType.AllowedContributers.Count == 0)
+        if (dataType.AllowedContributers is null || dataType.AllowedContributers.Count == 0)
         {
             return true;
         }
