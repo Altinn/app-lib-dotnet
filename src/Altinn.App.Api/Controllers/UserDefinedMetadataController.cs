@@ -73,7 +73,7 @@ public class UserDefinedMetadataController : ControllerBase
 
         if (dataElement == null)
         {
-            return NotFound("Unable to find data element based on the given parameters."); //TODO: Problem details?
+            return NotFound("Unable to find data element based on the given parameters.");
         }
 
         UserDefinedMetadataDto userDefinedMetadataDto = new() { UserDefinedMetadata = dataElement.UserDefinedMetadata };
