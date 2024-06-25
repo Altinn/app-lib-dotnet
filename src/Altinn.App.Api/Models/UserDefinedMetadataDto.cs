@@ -14,16 +14,4 @@ public class UserDefinedMetadataDto
     /// </summary>
     [JsonPropertyName("userDefinedMetadata")]
     public List<KeyValueEntry> UserDefinedMetadata { get; init; } = [];
-
-    /// <summary>
-    /// Validates that all keys in the CustomMetadata list are unique.
-    /// </summary>
-    public List<string> FindDuplicatedKeys()
-    {
-        return UserDefinedMetadata
-            .GroupBy(entry => entry.Key)
-            .Where(group => group.Count() > 1)
-            .Select(group => group.Key)
-            .ToList();
-    }
 }

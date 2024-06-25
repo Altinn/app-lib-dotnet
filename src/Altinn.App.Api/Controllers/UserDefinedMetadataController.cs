@@ -104,7 +104,12 @@ public class UserDefinedMetadataController : ControllerBase
         [FromBody] UserDefinedMetadataDto userDefinedMetadataDto
     )
     {
-        List<string> duplicatedKeys = userDefinedMetadataDto.FindDuplicatedKeys();
+        List<string> duplicatedKeys = userDefinedMetadataDto
+            .UserDefinedMetadata.GroupBy(entry => entry.Key)
+            .Where(group => group.Count() > 1)
+            .Select(group => group.Key)
+            .ToList();
+
         if (duplicatedKeys.Count > 0)
         {
             return BadRequest($"The following keys are duplicated: {string.Join(", ", duplicatedKeys)}");
@@ -115,7 +120,7 @@ public class UserDefinedMetadataController : ControllerBase
             m.Id.Equals(dataGuid.ToString(), StringComparison.OrdinalIgnoreCase)
         );
 
-        if (dataElement == null)
+        if (dataElement is null)
         {
             return NotFound("Unable to find data element based on the given parameters.");
         }
@@ -125,7 +130,7 @@ public class UserDefinedMetadataController : ControllerBase
             e.Id.Equals(dataElement.DataType, StringComparison.OrdinalIgnoreCase)
         );
 
-        if (dataTypeFromMetadata == null)
+        if (dataTypeFromMetadata is null)
         {
             throw new ApplicationConfigException(
                 $"Element type {dataElement.DataType} not allowed for instance {instanceOwnerPartyId}/{instanceGuid}, but is the used data type for data element {dataElement.Id}. Please check the app metadata for allowed data types for this instance."
