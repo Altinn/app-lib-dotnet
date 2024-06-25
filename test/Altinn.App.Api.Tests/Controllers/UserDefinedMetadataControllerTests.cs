@@ -28,7 +28,7 @@ public class UserDefinedMetadataControllerTests : ApiTestBase, IClassFixture<Web
     public async Task PutCustomMetadata_HappyPath_ReturnsOk()
     {
         HttpClient client = GetHttpClient();
-        (string instanceId, string dataGuid) = await CreateInstanceAndDataElement();
+        (string instanceId, string dataGuid) = await CreateInstanceAndDataElement(client);
 
         // Update custom metadata
         using var updateCustomMetadataContent = new StringContent(
@@ -68,7 +68,7 @@ public class UserDefinedMetadataControllerTests : ApiTestBase, IClassFixture<Web
     public async Task PutCustomMetadata_DuplicatedKey_ReturnsBadRequest()
     {
         HttpClient client = GetHttpClient();
-        (string instanceId, string dataGuid) = await CreateInstanceAndDataElement();
+        (string instanceId, string dataGuid) = await CreateInstanceAndDataElement(client);
 
         // Update custom metadata
         using var updateCustomMetadataContent = new StringContent(
@@ -92,7 +92,7 @@ public class UserDefinedMetadataControllerTests : ApiTestBase, IClassFixture<Web
     public async Task PutCustomMetadata_NotAllowedKey_ReturnsBadRequest()
     {
         HttpClient client = GetHttpClient();
-        (string instanceId, string dataGuid) = await CreateInstanceAndDataElement();
+        (string instanceId, string dataGuid) = await CreateInstanceAndDataElement(client);
 
         // Update custom metadata
         using var updateCustomMetadataContent = new StringContent(
@@ -112,10 +112,40 @@ public class UserDefinedMetadataControllerTests : ApiTestBase, IClassFixture<Web
         responseMessage.Should().Contain("The following keys are not allowed: SomeKeyThatIsNotAllowed");
     }
 
-    private async Task<(string instanceId, string dataGuid)> CreateInstanceAndDataElement()
+    [Fact]
+    public async Task PutCustomMetadata_InvalidDataElementId_ReturnsNotFound()
     {
         HttpClient client = GetHttpClient();
 
+        // Create instance
+        HttpResponseMessage createResponse = await client.PostAsync(
+            $"{Org}/{App}/instances/?instanceOwnerPartyId={InstanceOwnerPartyId}",
+            null
+        );
+
+        var createdInstance = await VerifyStatusAndDeserialize<Instance>(createResponse, HttpStatusCode.Created);
+        string? instanceId = createdInstance.Id;
+
+        // Update custom metadata
+        using var updateCustomMetadataContent = new StringContent(
+            """{"userDefinedMetadata": [{ "key" : "SomeKeyThatIsNotAllowed", "value": "TheValue" }, { "key": "TheKey", "value": "TheValue" }] }""",
+            System.Text.Encoding.UTF8,
+            "application/json"
+        );
+
+        HttpResponseMessage response = await client.PutAsync(
+            $"/{Org}/{App}/instances/{instanceId}/data/{Guid.NewGuid()}/user-defined-metadata",
+            updateCustomMetadataContent
+        );
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+
+        string responseMessage = await response.Content.ReadAsStringAsync();
+        responseMessage.Should().Contain("Unable to find data element based on the given parameters.");
+    }
+
+    private async Task<(string instanceId, string dataGuid)> CreateInstanceAndDataElement(HttpClient client)
+    {
         // Create instance
         HttpResponseMessage createResponse = await client.PostAsync(
             $"{Org}/{App}/instances/?instanceOwnerPartyId={InstanceOwnerPartyId}",
