@@ -17,6 +17,7 @@ namespace Altinn.App.Api.Controllers;
 /// This controller class provides action methods for endpoints related to the metadata resource on data elements.
 /// </summary>
 [AutoValidateAntiforgeryTokenIfAuthCookie]
+[ApiController]
 [Produces(MediaTypeNames.Application.Json)]
 [Consumes(MediaTypeNames.Application.Json)]
 [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
