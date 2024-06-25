@@ -1,6 +1,4 @@
 ﻿using System.Globalization;
-using System.Security.Claims;
-using Altinn.App.Core.Extensions;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Api.Helpers;
@@ -13,7 +11,7 @@ namespace Altinn.App.Api.Helpers;
 /// </remarks>
 internal static class ValidContributorHelper
 {
-    internal static bool IsValidContributor(DataType dataType, ClaimsPrincipal user)
+    internal static bool IsValidContributor(DataType dataType, string? org, int? orgNr)
     {
         if (dataType.AllowedContributers == null || dataType.AllowedContributers.Count == 0)
         {
@@ -28,19 +26,14 @@ internal static class ValidContributorHelper
             switch (key.ToLowerInvariant())
             {
                 case "org":
-                    if (value.Equals(user.GetOrg(), StringComparison.OrdinalIgnoreCase))
+                    if (value.Equals(org, StringComparison.OrdinalIgnoreCase))
                     {
                         return true;
                     }
 
                     break;
                 case "orgno":
-                    if (
-                        value.Equals(
-                            user.GetOrgNumber()?.ToString(CultureInfo.InvariantCulture),
-                            StringComparison.Ordinal
-                        )
-                    )
+                    if (value.Equals(orgNr?.ToString(CultureInfo.InvariantCulture), StringComparison.OrdinalIgnoreCase))
                     {
                         return true;
                     }

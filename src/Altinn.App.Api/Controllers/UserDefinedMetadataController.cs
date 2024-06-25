@@ -3,6 +3,7 @@ using Altinn.App.Api.Helpers;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Constants;
+using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
@@ -134,7 +135,7 @@ public class UserDefinedMetadataController : ControllerBase
             );
         }
 
-        if (!ValidContributorHelper.IsValidContributor(dataTypeFromMetadata, User))
+        if (!ValidContributorHelper.IsValidContributor(dataTypeFromMetadata, User.GetOrg(), User.GetOrgNumber()))
         {
             return Forbid();
         }

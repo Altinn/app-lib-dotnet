@@ -145,7 +145,7 @@ public class DataController : ControllerBase
                 );
             }
 
-            if (!ValidContributorHelper.IsValidContributor(dataTypeFromMetadata, User))
+            if (!ValidContributorHelper.IsValidContributor(dataTypeFromMetadata, User.GetOrg(), User.GetOrgNumber()))
             {
                 return Forbid();
             }
