@@ -48,7 +48,7 @@ public class UserDefinedMetadataController : ControllerBase
     }
 
     /// <summary>
-    /// Retrieves metadata associated with the given data element.
+    /// Retrieves user defined metadata associated with the given data element.
     /// </summary>
     /// <param name="org">The short name for the application owner.</param>
     /// <param name="app">The name of the application.</param>
@@ -72,7 +72,7 @@ public class UserDefinedMetadataController : ControllerBase
             m.Id.Equals(dataGuid.ToString(), StringComparison.OrdinalIgnoreCase)
         );
 
-        if (dataElement == null)
+        if (dataElement is null)
         {
             return NotFound("Unable to find data element based on the given parameters.");
         }
@@ -83,7 +83,7 @@ public class UserDefinedMetadataController : ControllerBase
     }
 
     /// <summary>
-    /// Update metadata associated with the given data element.
+    /// Update user defined metadata associated with the given data element.
     /// </summary>
     /// <param name="org">The short name for the application owner.</param>
     /// <param name="app">The name of the application.</param>
