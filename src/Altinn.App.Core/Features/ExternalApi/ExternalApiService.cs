@@ -1,3 +1,4 @@
+using Altinn.App.Core.Models;
 using Microsoft.Extensions.Logging;
 
 namespace Altinn.App.Core.Features.ExternalApi;
@@ -11,8 +12,9 @@ public interface IExternalApiService
     /// Get data for an external api
     /// </summary>
     /// <param name="externalApiId"></param>
+    /// <param name="instanceIdentifier"></param>
     /// <returns>An arbitrary json data object</returns>
-    Task<object?> GetExternalApiData(string externalApiId);
+    Task<object?> GetExternalApiData(string externalApiId, InstanceIdentifier instanceIdentifier);
 }
 
 /// <summary>
@@ -35,11 +37,11 @@ public class ExternalApiService : IExternalApiService
     }
 
     /// <inheritdoc/>
-    public async Task<object?> GetExternalApiData(string externalApiId)
+    public async Task<object?> GetExternalApiData(string externalApiId, InstanceIdentifier instanceIdentifier)
     {
         _logger.LogInformation("Getting data for external api with id {ExternalApiId}", externalApiId);
         var externalApiClient = _externalApiFactory.GetExternalApiClient(externalApiId);
 
-        return await externalApiClient.GetExternalApiDataAsync(externalApiId);
+        return await externalApiClient.GetExternalApiDataAsync(instanceIdentifier);
     }
 }

@@ -1,3 +1,5 @@
+using Altinn.App.Core.Models;
+
 namespace Altinn.App.Core.Features.ExternalApi;
 
 /// <summary>
@@ -13,7 +15,7 @@ public interface IExternalApiClient
     /// <summary>
     /// Fetches data from the external api
     /// </summary>
-    /// <param name="externalApiId"></param>
+    /// <param name="instanceIdentifier"></param>
     /// <returns></returns>
-    Task<object?> GetExternalApiDataAsync(string externalApiId);
+    Task<object?> GetExternalApiDataAsync(InstanceIdentifier instanceIdentifier);
 }

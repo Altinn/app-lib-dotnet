@@ -15,10 +15,7 @@ public class ExternalApiFactory
     /// </summary>
     /// <param name="logger"></param>
     /// <param name="externalApiClients"></param>
-    public ExternalApiFactory(
-        ILogger<ExternalApiFactory> logger,
-        IEnumerable<IExternalApiClient> externalApiClients
-    )
+    public ExternalApiFactory(ILogger<ExternalApiFactory> logger, IEnumerable<IExternalApiClient> externalApiClients)
     {
         _logger = logger;
         ExternalApiClients = externalApiClients;
@@ -37,9 +34,7 @@ public class ExternalApiFactory
         if (client == null)
         {
             _logger.LogWarning("No external client found for external API with id {ExternalApiId}", externalApiId);
-            throw new KeyNotFoundException(
-                $"No external api client found for external API with id {externalApiId}"
-            );
+            throw new KeyNotFoundException($"No external api client found for external API with id {externalApiId}");
         }
 
         return client;
