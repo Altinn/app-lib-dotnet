@@ -1,3 +1,4 @@
+using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features.DataLists;
 using Altinn.App.Core.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -58,7 +59,7 @@ public class DataListsController : ControllerBase
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [Authorize(Policy = "InstanceRead")]
+    [Authorize(Policy = AuthzConstants.POLICY_INSTANCE_READ)]
     [Route("/{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/datalists/{id}")]
     public async Task<IActionResult> Get(
         [FromRoute] int instanceOwnerPartyId,
