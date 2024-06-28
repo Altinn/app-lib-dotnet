@@ -56,6 +56,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
 using IProcessEngine = Altinn.App.Core.Internal.Process.IProcessEngine;
 using IProcessReader = Altinn.App.Core.Internal.Process.IProcessReader;
@@ -346,5 +347,20 @@ public static class ServiceCollectionExtensions
     {
         services.TryAddTransient<IFileValidationService, FileValidationService>();
         services.TryAddTransient<IFileValidatorFactory, FileValidatorFactory>();
+    }
+
+    internal static IEnumerable<ServiceDescriptor> GetOptionsDescriptors<TOptions>(this IServiceCollection services)
+        where TOptions : class
+    {
+        return services.Where(d =>
+            d.ServiceType == typeof(IConfigureOptions<TOptions>)
+            || d.ServiceType == typeof(IOptionsChangeTokenSource<TOptions>)
+        );
+    }
+
+    internal static ServiceDescriptor? GetOptionsDescriptor<TOptions>(this IServiceCollection services)
+        where TOptions : class
+    {
+        return services.GetOptionsDescriptors<TOptions>().FirstOrDefault();
     }
 }
