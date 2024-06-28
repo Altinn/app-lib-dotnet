@@ -8,7 +8,7 @@ namespace Altinn.App.Core.Features.ExternalApi;
 public class ExternalApiFactory
 {
     private readonly ILogger<ExternalApiFactory> _logger;
-    private IEnumerable<IExternalApiClient> ExternalApiClients { get; }
+    private IEnumerable<IExternalApiClient> _externalApiClients { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ExternalApiFactory"/> class.
@@ -18,7 +18,7 @@ public class ExternalApiFactory
     public ExternalApiFactory(ILogger<ExternalApiFactory> logger, IEnumerable<IExternalApiClient> externalApiClients)
     {
         _logger = logger;
-        ExternalApiClients = externalApiClients;
+        _externalApiClients = externalApiClients;
     }
 
     /// <summary>
@@ -27,7 +27,7 @@ public class ExternalApiFactory
     /// <param name="externalApiId"></param>
     public IExternalApiClient GetExternalApiClient(string externalApiId)
     {
-        IExternalApiClient? client = ExternalApiClients.FirstOrDefault(e =>
+        IExternalApiClient? client = _externalApiClients.FirstOrDefault(e =>
             e.Id.Equals(externalApiId, StringComparison.OrdinalIgnoreCase)
         );
 
