@@ -249,7 +249,7 @@ public class ProcessController : ControllerBase
         string? language
     )
     {
-        var dataAcceesor = new CachedInstanceDataAccessor(_dataClient, _appMetadata, _appModel);
+        var dataAcceesor = new CachedInstanceDataAccessor(instance, _dataClient, _appMetadata, _appModel);
         var validationIssues = await _validationService.ValidateInstanceAtTask(
             instance,
             currentTaskId,

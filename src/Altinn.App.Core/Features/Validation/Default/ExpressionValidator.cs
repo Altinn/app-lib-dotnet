@@ -44,7 +44,7 @@ public class ExpressionValidator : IFormDataValidator
     /// <summary>
     /// This validator has the code "Expression" and this is known by the frontend, who may request this validator to not run for incremental validation.
     /// </summary>
-    public string ValidationSource => "Expression";
+    public string ValidationSource => ValidationIssueSources.Expression;
 
     /// <summary>
     /// Expression validations should always run (it is way to complex to figure out if it should run or not)
@@ -122,7 +122,6 @@ public class ExpressionValidator : IFormDataValidator
                                 Severity = validation.Severity ?? ValidationIssueSeverity.Error,
                                 CustomTextKey = validation.Message,
                                 Code = validation.Message,
-                                Source = ValidationIssueSources.Expression,
                             };
                             validationIssues.Add(validationIssue);
                         }

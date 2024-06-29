@@ -7,6 +7,9 @@ namespace Altinn.App.Core.Models.Validation;
 /// </summary>
 public class ValidationIssueWithSource
 {
+    /// <summary>
+    /// Construct an instance of <see cref="ValidationIssueWithSource"/> from a normal <see cref="ValidationIssue"/> without source
+    /// </summary>
     public ValidationIssueWithSource(ValidationIssue issue, string source)
     {
         Severity = issue.Severity;

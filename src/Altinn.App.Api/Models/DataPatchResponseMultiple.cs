@@ -11,7 +11,7 @@ public class DataPatchResponseMultiple
     /// <summary>
     /// The validation issues that were found during the patch operation.
     /// </summary>
-    public required Dictionary<string, List<ValidationIssue>> ValidationIssues { get; init; }
+    public required Dictionary<string, List<ValidationIssueWithSource>> ValidationIssues { get; init; }
 
     /// <summary>
     /// The current data in all data models updated by the patch operation.

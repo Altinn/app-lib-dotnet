@@ -46,7 +46,8 @@ public class ActionsController : ControllerBase
         IValidationService validationService,
         IDataClient dataClient,
         IAppMetadata appMetadata,
-        IAppModel appModel)
+        IAppModel appModel
+    )
     {
         _authorization = authorization;
         _instanceClient = instanceClient;
@@ -159,30 +160,40 @@ public class ActionsController : ControllerBase
             );
         }
 
+        var dataAccessor = new CachedInstanceDataAccessor(instance, _dataClient, _appMetadata, _appModel);
+        Dictionary<string, Dictionary<string, List<ValidationIssueWithSource>>>? validationIssues = null;
+
         if (result.UpdatedDataModels is { Count: > 0 })
         {
-            await SaveChangedModels(instance, result.UpdatedDataModels);
+            var changes = await SaveChangedModels(instance, dataAccessor, result.UpdatedDataModels);
+
+            validationIssues = await GetValidations(
+                instance,
+                dataAccessor,
+                changes,
+                actionRequest.IgnoredValidators,
+                language
+            );
         }
-        IInstanceDataAccessor dataAccessor = new CachedInstanceDataAccessor(_dataClient, _appMetadata, _appModel);
-        return new OkObjectResult(
+
+        return Ok(
             new UserActionResponse()
             {
                 ClientActions = result.ClientActions,
                 UpdatedDataModels = result.UpdatedDataModels,
-                UpdatedValidationIssues = await GetValidations(
-                    instance,
-                    result.UpdatedDataModels,
-                    dataAccessor,
-                    actionRequest.IgnoredValidators,
-                    language
-                ),
+                UpdatedValidationIssues = validationIssues,
                 RedirectUrl = result.RedirectUrl,
             }
         );
     }
 
-    private async Task SaveChangedModels(Instance instance, Dictionary<string, object> resultUpdatedDataModels)
+    private async Task<List<DataElementChange>> SaveChangedModels(
+        Instance instance,
+        CachedInstanceDataAccessor dataAccessor,
+        Dictionary<string, object> resultUpdatedDataModels
+    )
     {
+        var changes = new List<DataElementChange>();
         var instanceIdentifier = new InstanceIdentifier(instance);
         foreach (var (elementId, newModel) in resultUpdatedDataModels)
         {
@@ -190,11 +201,12 @@ public class ActionsController : ControllerBase
             {
                 continue;
             }
+            var dataElement = instance.Data.First(d => d.Id.Equals(elementId, StringComparison.OrdinalIgnoreCase));
+            var previousData = await dataAccessor.Get(dataElement);
 
             ObjectUtils.InitializeAltinnRowId(newModel);
             ObjectUtils.PrepareModelForXmlStorage(newModel);
 
-            var dataElement = instance.Data.First(d => d.Id.Equals(elementId, StringComparison.OrdinalIgnoreCase));
             await _dataClient.UpdateData(
                 newModel,
                 instanceIdentifier.InstanceGuid,
@@ -204,66 +216,67 @@ public class ActionsController : ControllerBase
                 instanceIdentifier.InstanceOwnerPartyId,
                 Guid.Parse(dataElement.Id)
             );
+            // update dataAccessor to use the changed data
+            dataAccessor.Set(dataElement, newModel);
+            // add change to list
+            changes.Add(
+                new DataElementChange
+                {
+                    DataElement = dataElement,
+                    PreviousValue = previousData,
+                    CurrentValue = newModel,
+                }
+            );
         }
+        return changes;
     }
 
-    private async Task<Dictionary<string, Dictionary<string, List<ValidationIssue>>>?> GetValidations(
+    private async Task<Dictionary<string, Dictionary<string, List<ValidationIssueWithSource>>>?> GetValidations(
         Instance instance,
-        Dictionary<string, object>? resultUpdatedDataModels,
         IInstanceDataAccessor dataAccessor,
+        List<DataElementChange> changes,
         List<string>? ignoredValidators,
         string? language
     )
     {
-        if (resultUpdatedDataModels is null || resultUpdatedDataModels.Count == 0)
-        {
-            return null;
-        }
-
-        var instanceIdentifier = new InstanceIdentifier(instance);
-        var application = await _appMetadata.GetApplicationMetadata();
-
-        var updatedValidationIssues = new Dictionary<string, Dictionary<string, List<ValidationIssue>>>();
-
-        // TODO: Consider validating models in parallel
-        foreach (var (elementId, newModel) in resultUpdatedDataModels)
-        {
-            if (newModel is null)
-            {
-                continue;
-            }
-
-            var dataElement = instance.Data.First(d => d.Id.Equals(elementId, StringComparison.OrdinalIgnoreCase));
-            var dataType = application.DataTypes.First(d =>
-                d.Id.Equals(dataElement.DataType, StringComparison.OrdinalIgnoreCase)
-            );
-
-            // TODO: Consider rewriting so that we get the original data the IUserAction have requested instead of fetching it again
-            var oldData = await _dataClient.GetFormData(
-                instanceIdentifier.InstanceGuid,
-                newModel.GetType(),
-                instance.Org,
-                instance.AppId.Split('/')[1],
-                instanceIdentifier.InstanceOwnerPartyId,
-                Guid.Parse(dataElement.Id)
-            );
-
-            if (validationIssues.Count > 0)
-            {
-                updatedValidationIssues.Add(elementId, validationIssues);
-            }
-        }
-
         var taskId = instance.Process.CurrentTask.ElementId;
-        var validationIssues = await _validationService.ValidateIncrementalFormData(instance, taskId, changes,
-            dataAccessor, ignoredValidators, language);
+        var validationIssues = await _validationService.ValidateIncrementalFormData(
+            instance,
+            taskId,
+            changes,
+            dataAccessor,
+            ignoredValidators,
+            language
+        );
 
+        // For historical reasons the validation issues from actions controller is separated per data element
+        // The easiest way was to keep this behaviour to improve compatibility with older frontend versions
+        return PartitionValidationIssuesByDataElement(validationIssues);
+    }
 
-
-
-
-
-
+    private Dictionary<
+        string,
+        Dictionary<string, List<ValidationIssueWithSource>>
+    > PartitionValidationIssuesByDataElement(Dictionary<string, List<ValidationIssueWithSource>> validationIssues)
+    {
+        var updatedValidationIssues = new Dictionary<string, Dictionary<string, List<ValidationIssueWithSource>>>();
+        foreach (var (validationSource, issuesFromSource) in validationIssues)
+        {
+            foreach (var issue in issuesFromSource)
+            {
+                if (!updatedValidationIssues.TryGetValue(issue.DataElementId ?? "", out var elementIssues))
+                {
+                    elementIssues = new Dictionary<string, List<ValidationIssueWithSource>>();
+                    updatedValidationIssues[issue.DataElementId ?? ""] = elementIssues;
+                }
+                if (!elementIssues.TryGetValue(validationSource, out var sourceIssues))
+                {
+                    sourceIssues = new List<ValidationIssueWithSource>();
+                    elementIssues[validationSource] = sourceIssues;
+                }
+                sourceIssues.Add(issue);
+            }
+        }
 
         return updatedValidationIssues;
     }

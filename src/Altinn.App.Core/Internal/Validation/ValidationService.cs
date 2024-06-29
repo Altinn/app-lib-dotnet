@@ -104,40 +104,30 @@ public class ValidationService : IValidationService
 
         // Run task validations (but don't await yet)
         var validators = _validatorFactory.GetValidators(taskId);
-        var validationTasks = validators.Select(async v =>
+        var validationTasks = validators.Select(async validator =>
         {
-            using var validatorActivity = _telemetry?.StartRunValidatorActivity(v);
+            using var validatorActivity = _telemetry?.StartRunValidatorActivity(validator);
             try
             {
-                if (v is IIncrementalValidator incrementalValidator)
+                var hasRelevantChanges = await validator.HasRelevantChanges(instance, taskId, changes, dataAccessor);
+                validatorActivity?.SetTag(Telemetry.InternalLabels.ValidatorRelevantChanges, hasRelevantChanges);
+                if (hasRelevantChanges)
                 {
-                    var hasRelevantChanges = await incrementalValidator.HasRelevantChanges(
-                        instance,
-                        taskId,
-                        language,
-                        changes,
-                        dataAccessor
-                    );
-                    validatorActivity?.SetTag(Telemetry.InternalLabels.ValidatorRelevantChanges, hasRelevantChanges);
-                    if (hasRelevantChanges)
-                    {
-                        var issues = await incrementalValidator.Validate(instance, taskId, language, dataAccessor);
-                        var issuesWithSource = issues
-                            .Select(i => new ValidationIssueWithSource(i, v.ValidationSource))
-                            .ToList();
-                        return KeyValuePair.Create(v.ValidationSource, issuesWithSource);
-                    }
-                    else { }
+                    var issues = await validator.Validate(instance, taskId, language, dataAccessor);
+                    var issuesWithSource = issues
+                        .Select(i => new ValidationIssueWithSource(i, validator.ValidationSource))
+                        .ToList();
+                    return KeyValuePair.Create(validator.ValidationSource, issuesWithSource);
                 }
 
-                return KeyValuePair.Create(v.ValidationSource, new List<ValidationIssueWithSource>());
+                return KeyValuePair.Create(validator.ValidationSource, new List<ValidationIssueWithSource>());
             }
             catch (Exception e)
             {
                 _logger.LogError(
                     e,
                     "Error while running validator {validatorName} on task {taskId} in instance {instanceId}",
-                    v.GetType().Name,
+                    validator.GetType().Name,
                     taskId,
                     instance.Id
                 );

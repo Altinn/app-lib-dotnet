@@ -15,20 +15,33 @@ namespace Altinn.App.Core.Internal.Data;
 /// </summary>
 internal sealed class CachedInstanceDataAccessor : IInstanceDataAccessor
 {
+    private readonly string _org;
+    private readonly string _app;
+    private readonly Guid _instanceGuid;
+    private readonly int _instanceOwnerPartyId;
     private readonly IDataClient _dataClient;
     private readonly IAppMetadata _appMetadata;
     private readonly IAppModel _appModel;
     private readonly LazyCache<string, object> _cache = new();
 
-    public CachedInstanceDataAccessor(IDataClient dataClient, IAppMetadata appMetadata, IAppModel appModel)
+    public CachedInstanceDataAccessor(
+        Instance instance,
+        IDataClient dataClient,
+        IAppMetadata appMetadata,
+        IAppModel appModel
+    )
     {
+        _org = instance.Org;
+        _app = instance.AppId.Split("/")[1];
+        _instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
+        _instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId, CultureInfo.InvariantCulture);
         _dataClient = dataClient;
         _appMetadata = appMetadata;
         _appModel = appModel;
     }
 
     /// <inheritdoc />
-    public async Task<object> Get(Instance instance, DataElement dataElement)
+    public async Task<object> Get(DataElement dataElement)
     {
         return await _cache.GetOrCreate(
             dataElement.Id,
@@ -43,10 +56,10 @@ internal sealed class CachedInstanceDataAccessor : IInstanceDataAccessor
 
                 if (dataType.AppLogic?.ClassRef != null)
                 {
-                    return await GetFormData(instance, dataElement, dataType);
+                    return await GetFormData(dataElement, dataType);
                 }
 
-                return await GetBinaryData(instance, dataElement);
+                return await GetBinaryData(dataElement);
             }
         );
     }
@@ -74,57 +87,51 @@ internal sealed class CachedInstanceDataAccessor : IInstanceDataAccessor
 
         public async Task<TValue> GetOrCreate(TKey key, Func<TKey, Task<TValue>> valueFactory)
         {
-            return await _cache.GetOrAdd(key, innerKey => new Lazy<Task<TValue>>(() => valueFactory(innerKey))).Value;
+            Task<TValue> task;
+            lock (_cache)
+            {
+                task = _cache.GetOrAdd(key, innerKey => new Lazy<Task<TValue>>(() => valueFactory(innerKey))).Value;
+            }
+            ;
+            return await task;
         }
 
         public void Set(TKey key, TValue data)
         {
-            if (!_cache.TryAdd(key, new Lazy<Task<TValue>>(Task.FromResult(data))))
+            lock (_cache)
             {
-                var existing = _cache[key];
-                if (
-                    existing.IsValueCreated
-                    && existing.Value.IsCompletedSuccessfully
-                    && data.Equals(existing.Value.Result)
-                )
-                {
-                    // We are trying to set the same value again, so we can just ignore this
-                    return;
-                }
-
-                throw new InvalidOperationException($"Key {key} already exists in cache");
+                _cache.AddOrUpdate(
+                    key,
+                    _ => new Lazy<Task<TValue>>(Task.FromResult(data)),
+                    (_, _) => new Lazy<Task<TValue>>(Task.FromResult(data))
+                );
             }
         }
     }
 
-    private async Task<Stream> GetBinaryData(Instance instance, DataElement dataElement)
+    private async Task<Stream> GetBinaryData(DataElement dataElement)
     {
-        var instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
-        var app = instance.AppId.Split("/")[1];
-        var instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId, CultureInfo.InvariantCulture);
+        ;
         var data = await _dataClient.GetBinaryData(
-            instance.Org,
-            app,
-            instanceOwnerPartyId,
-            instanceGuid,
+            _org,
+            _app,
+            _instanceOwnerPartyId,
+            _instanceGuid,
             Guid.Parse(dataElement.Id)
         );
         return data;
     }
 
-    private async Task<object> GetFormData(Instance instance, DataElement dataElement, DataType dataType)
+    private async Task<object> GetFormData(DataElement dataElement, DataType dataType)
     {
         var modelType = _appModel.GetModelType(dataType.AppLogic.ClassRef);
 
-        var instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
-        var app = instance.AppId.Split("/")[1];
-        var instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId, CultureInfo.InvariantCulture);
         var data = await _dataClient.GetFormData(
-            instanceGuid,
+            _instanceGuid,
             modelType,
-            instance.Org,
-            app,
-            instanceOwnerPartyId,
+            _org,
+            _app,
+            _instanceOwnerPartyId,
             Guid.Parse(dataElement.Id)
         );
         return data;

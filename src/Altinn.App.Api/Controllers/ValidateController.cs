@@ -76,7 +76,7 @@ public class ValidateController : ControllerBase
 
         try
         {
-            var dataAccessor = new CachedInstanceDataAccessor(_dataClient, _appMetadata, _appModel);
+            var dataAccessor = new CachedInstanceDataAccessor(instance, _dataClient, _appMetadata, _appModel);
             List<ValidationIssueWithSource> messages = await _validationService.ValidateInstanceAtTask(
                 instance,
                 taskId,
@@ -148,7 +148,7 @@ public class ValidateController : ControllerBase
             throw new ValidationException("Unknown element type.");
         }
 
-        var dataAccessor = new CachedInstanceDataAccessor(_dataClient, _appMetadata, _appModel);
+        var dataAccessor = new CachedInstanceDataAccessor(instance, _dataClient, _appMetadata, _appModel);
 
         // TODO: Consider filtering so that only relevant issues are reported.
         messages.AddRange(

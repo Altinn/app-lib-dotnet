@@ -1,7 +1,10 @@
 using System.Collections;
 using Altinn.App.Api.Controllers;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.AppModel;
+using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models;
@@ -76,21 +79,24 @@ public class TestScenariosData : IEnumerable<object[]>
                     new DataType { Id = "0fc98a23-fe31-4ef5-8fb9-dd3f479354cd", TaskId = "1234" }
                 }
             },
-            ReceivedValidationIssues = new List<ValidationIssue>(),
-            ExpectedValidationIssues = new List<ValidationIssue>
+            ReceivedValidationIssues = new List<ValidationIssueWithSource>(),
+            ExpectedValidationIssues = new List<ValidationIssueWithSource>
             {
-                new ValidationIssue
-                {
-                    Code = ValidationIssueCodes.DataElementCodes.DataElementValidatedAtWrongTask,
-                    Severity = ValidationIssueSeverity.Warning,
-                    DataElementId = "0fc98a23-fe31-4ef5-8fb9-dd3f479354cd",
-                    Description = AppTextHelper.GetAppText(
-                        ValidationIssueCodes.DataElementCodes.DataElementValidatedAtWrongTask,
-                        new Dictionary<string, Dictionary<string, string>>(),
-                        null,
-                        "nb"
-                    )
-                }
+                new(
+                    new ValidationIssue
+                    {
+                        Code = ValidationIssueCodes.DataElementCodes.DataElementValidatedAtWrongTask,
+                        Severity = ValidationIssueSeverity.Warning,
+                        DataElementId = "0fc98a23-fe31-4ef5-8fb9-dd3f479354cd",
+                        Description = AppTextHelper.GetAppText(
+                            ValidationIssueCodes.DataElementCodes.DataElementValidatedAtWrongTask,
+                            new Dictionary<string, Dictionary<string, string>>(),
+                            null,
+                            "nb"
+                        )
+                    },
+                    "source"
+                )
             },
             ExpectedResult = typeof(OkObjectResult)
         },
@@ -100,6 +106,8 @@ public class TestScenariosData : IEnumerable<object[]>
             DataGuid = Guid.ParseExact("0fc98a23-fe31-4ef5-8fb9-dd3f479354cd", "D"),
             ReceivedInstance = new Instance
             {
+                AppId = "ttd/test",
+                Org = "ttd",
                 Process = new ProcessState
                 {
                     CurrentTask = new ProcessElementInfo { ElementId = "0fc98a23-fe31-4ef5-8fb9-dd3f479354cd" }
@@ -120,21 +128,27 @@ public class TestScenariosData : IEnumerable<object[]>
                     new DataType { Id = "0fc98a23-fe31-4ef5-8fb9-dd3f479354cd", TaskId = "1234" }
                 }
             },
-            ReceivedValidationIssues = new List<ValidationIssue>
+            ReceivedValidationIssues = new List<ValidationIssueWithSource>
             {
-                new ValidationIssue
-                {
-                    Code = ValidationIssueCodes.DataElementCodes.DataElementTooLarge,
-                    Severity = ValidationIssueSeverity.Fixed
-                }
+                new ValidationIssueWithSource(
+                    new()
+                    {
+                        Code = ValidationIssueCodes.DataElementCodes.DataElementTooLarge,
+                        Severity = ValidationIssueSeverity.Fixed
+                    },
+                    "source"
+                )
             },
-            ExpectedValidationIssues = new List<ValidationIssue>
+            ExpectedValidationIssues = new List<ValidationIssueWithSource>
             {
-                new ValidationIssue
-                {
-                    Code = ValidationIssueCodes.DataElementCodes.DataElementTooLarge,
-                    Severity = ValidationIssueSeverity.Fixed
-                }
+                new ValidationIssueWithSource(
+                    new()
+                    {
+                        Code = ValidationIssueCodes.DataElementCodes.DataElementTooLarge,
+                        Severity = ValidationIssueSeverity.Fixed
+                    },
+                    "source"
+                )
             },
             ExpectedResult = typeof(OkObjectResult)
         }
@@ -159,6 +173,12 @@ public class TestScenariosData : IEnumerable<object[]>
 
 public class ValidationControllerValidateDataTests
 {
+    private readonly Mock<IInstanceClient> _instanceMock = new();
+    private readonly Mock<IAppMetadata> _appMetadataMock = new();
+    private readonly Mock<IValidationService> _validationMock = new();
+    private readonly Mock<IDataClient> _dataClientMock = new();
+    private readonly Mock<IAppModel> _appModelMock = new();
+
     [Theory]
     [ClassData(typeof(TestScenariosData))]
     public async Task TestValidateData(ValidateDataTestScenario testScenario)
@@ -168,7 +188,15 @@ public class ValidationControllerValidateDataTests
         const string app = "app-test";
         const int instanceOwnerId = 1337;
 
-        var validateController = SetupController(app, org, instanceOwnerId, testScenario);
+        SetupMocks(app, org, instanceOwnerId, testScenario);
+        var validateController = new ValidateController(
+            _instanceMock.Object,
+            _validationMock.Object,
+            _appMetadataMock.Object,
+            _dataClientMock.Object,
+            _appModelMock.Object
+        );
+        ;
 
         // Act and Assert
         if (testScenario.ExpectedExceptionMessage == null)
@@ -198,41 +226,17 @@ public class ValidationControllerValidateDataTests
         }
     }
 
-    private static ValidateController SetupController(
-        string app,
-        string org,
-        int instanceOwnerId,
-        ValidateDataTestScenario testScenario
-    )
+    private void SetupMocks(string app, string org, int instanceOwnerId, ValidateDataTestScenario testScenario)
     {
-        (
-            Mock<IInstanceClient> instanceMock,
-            Mock<IAppMetadata> appResourceMock,
-            Mock<IValidationService> validationMock
-        ) = SetupMocks(app, org, instanceOwnerId, testScenario);
-
-        return new ValidateController(instanceMock.Object, validationMock.Object, appResourceMock.Object);
-    }
-
-    private static (Mock<IInstanceClient>, Mock<IAppMetadata>, Mock<IValidationService>) SetupMocks(
-        string app,
-        string org,
-        int instanceOwnerId,
-        ValidateDataTestScenario testScenario
-    )
-    {
-        var instanceMock = new Mock<IInstanceClient>();
-        var appMetadataMock = new Mock<IAppMetadata>();
-        var validationMock = new Mock<IValidationService>();
         if (testScenario.ReceivedInstance != null)
         {
-            instanceMock
+            _instanceMock
                 .Setup(i => i.GetInstance(app, org, instanceOwnerId, testScenario.InstanceId))
                 .Returns(Task.FromResult<Instance>(testScenario.ReceivedInstance));
         }
         if (testScenario.ReceivedApplication != null)
         {
-            appMetadataMock.Setup(a => a.GetApplicationMetadata()).ReturnsAsync(testScenario.ReceivedApplication);
+            _appMetadataMock.Setup(a => a.GetApplicationMetadata()).ReturnsAsync(testScenario.ReceivedApplication);
         }
 
         if (
@@ -241,19 +245,17 @@ public class ValidationControllerValidateDataTests
             && testScenario.ReceivedValidationIssues != null
         )
         {
-            validationMock
+            _validationMock
                 .Setup(v =>
-                    v.ValidateDataElement(
+                    v.ValidateInstanceAtTask(
                         testScenario.ReceivedInstance,
-                        testScenario.ReceivedInstance.Data.First(),
-                        testScenario.ReceivedApplication.DataTypes.First(),
+                        "Task_1",
+                        It.IsAny<IInstanceDataAccessor>(),
                         null
                     )
                 )
-                .Returns(Task.FromResult<List<ValidationIssue>>(testScenario.ReceivedValidationIssues));
+                .ReturnsAsync(testScenario.ReceivedValidationIssues);
         }
-
-        return (instanceMock, appMetadataMock, validationMock);
     }
 }
 
@@ -269,10 +271,10 @@ public class ValidateDataTestScenario
     public Guid DataGuid { get; init; } = Guid.NewGuid();
     public Instance? ReceivedInstance { get; init; }
     public ApplicationMetadata? ReceivedApplication { get; init; }
-    public List<ValidationIssue>? ReceivedValidationIssues { get; init; }
+    public List<ValidationIssueWithSource>? ReceivedValidationIssues { get; init; }
     public string? ExpectedExceptionMessage { get; init; }
     public Type? ExpectedResult { get; init; }
-    public List<ValidationIssue>? ExpectedValidationIssues { get; init; }
+    public List<ValidationIssueWithSource>? ExpectedValidationIssues { get; init; }
 
     public override string ToString()
     {

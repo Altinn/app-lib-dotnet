@@ -36,7 +36,7 @@ public class RequiredLayoutValidator : IFormDataValidator
     /// <summary>
     /// This validator has the code "Required" and this is known by the frontend, who may request this validator to not run for incremental validation.
     /// </summary>
-    public string ValidationSource => "Required";
+    public string ValidationSource => ValidationIssueSources.Required;
 
     /// <summary>
     /// Always run for incremental validation

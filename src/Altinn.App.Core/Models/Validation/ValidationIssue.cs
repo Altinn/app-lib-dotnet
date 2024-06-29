@@ -68,7 +68,7 @@ public class ValidationIssue
     /// </summary>
     [JsonProperty(PropertyName = "source")]
     [JsonPropertyName("source")]
-    [Obsolete("source is set automatically by the validation service")]
+    [Obsolete("Source is set automatically by the validation service. Setting it explicitly will be an error in v9")]
     public string? Source { get; set; }
 
     /// <summary>

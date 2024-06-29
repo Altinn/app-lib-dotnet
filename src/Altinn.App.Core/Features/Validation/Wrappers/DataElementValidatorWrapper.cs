@@ -3,7 +3,10 @@ using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Features.Validation.Wrappers;
 
-public class DataElementValidatorWrapper : IValidator
+/// <summary>
+/// Wrap the old <see cref="IDataElementValidator"/> interface to the new <see cref="IValidator"/> interface.
+/// </summary>
+internal class DataElementValidatorWrapper : IValidator
 {
     private readonly IDataElementValidator _dataElementValidator;
     private readonly DataType _dataType;
@@ -43,5 +46,17 @@ public class DataElementValidatorWrapper : IValidator
         }
 
         return issues;
+    }
+
+    /// <inheritdoc />
+    public Task<bool> HasRelevantChanges(
+        Instance instance,
+        string taskId,
+        List<DataElementChange> changes,
+        IInstanceDataAccessor instanceDataAccessor
+    )
+    {
+        // DataElementValidator did not previously implement incremental validation, so we always return false
+        return Task.FromResult(false);
     }
 }

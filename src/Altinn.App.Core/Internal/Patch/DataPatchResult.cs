@@ -15,5 +15,5 @@ public class DataPatchResult
     /// <summary>
     /// The current data model after the patch operation.
     /// </summary>
-    public required object NewDataModel { get; init; }
+    public required Dictionary<Guid, object> NewDataModels { get; init; }
 }
