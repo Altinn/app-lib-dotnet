@@ -59,6 +59,10 @@ public class ValidatorFactory : IValidatorFactory
         return _formDataValidators.Where(fdv => fdv.DataType == "*" || fdv.DataType == dataTypeId);
     }
 
+    /// <summary>
+    /// Get all validators for a given task. Wrap <see cref="ITaskValidator"/>, <see cref="IDataElementValidator"/> and <see cref="IFormDataValidator"/>
+    /// so that they behave as <see cref="IValidator"/>.
+    /// </summary>
     public IEnumerable<IValidator> GetValidators(string taskId)
     {
         var validators = new List<IValidator>();

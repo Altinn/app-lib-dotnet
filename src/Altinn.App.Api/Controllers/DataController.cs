@@ -511,6 +511,13 @@ public class DataController : ControllerBase
                 );
             }
 
+            CachedInstanceDataAccessor dataAccessor = new CachedInstanceDataAccessor(
+                instance,
+                _dataClient,
+                _appMetadata,
+                _appModel
+            );
+
             foreach (Guid dataGuid in dataPatchRequest.Patches.Keys)
             {
                 var dataElement = instance.Data.First(m => m.Id.Equals(dataGuid.ToString(), StringComparison.Ordinal));
@@ -534,7 +541,7 @@ public class DataController : ControllerBase
                 }
             }
 
-            ServiceResult<DataPatchResultMultiple, DataPatchError> res = await _patchService.ApplyPatches(
+            ServiceResult<DataPatchResult, DataPatchError> res = await _patchService.ApplyPatches(
                 instance,
                 dataPatchRequest.Patches,
                 language,
@@ -556,7 +563,7 @@ public class DataController : ControllerBase
                 return Ok(
                     new DataPatchResponse
                     {
-                        NewDataModel = res.Ok.NewDataModel,
+                        NewDataModel = res.Ok.NewDataModels,
                         ValidationIssues = res.Ok.ValidationIssues
                     }
                 );
@@ -568,7 +575,7 @@ public class DataController : ControllerBase
         {
             return HandlePlatformHttpException(
                 e,
-                $"Unable to update data element {dataGuid} for instance {instanceOwnerPartyId}/{instanceGuid}"
+                $"Unable to update data element {string.Join(", ", dataPatchRequest.Patches.Keys)} for instance {instanceOwnerPartyId}/{instanceGuid}"
             );
         }
     }
