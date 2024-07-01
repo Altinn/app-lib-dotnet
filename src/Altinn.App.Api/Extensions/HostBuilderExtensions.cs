@@ -11,36 +11,34 @@ public static class HostBuilderExtensions
     /// <summary>
     /// Add KeyVault as a configuration provider. Requires that the kvSetting section is present in the configuration and throws an exception if not. See documentation for secret handling in Altinn apps.
     /// </summary>
+    /// <remarks>Use </remarks>
     /// <param name="builder"></param>
     /// <exception cref="ApplicationConfigException"></exception>
-    public static void AddKeyVaultAsConfigProvider(IHostBuilder builder)
+    public static void AddKeyVaultAsConfigProvider(this IHostApplicationBuilder builder)
     {
-        builder.ConfigureAppConfiguration(
-            (context, configuration) =>
-            {
-                IConfigurationSection section = context.Configuration.GetSection("kvSetting");
-                var keyVaultUri = section.GetValue<string>("SecretUri");
-                var clientId = section.GetValue<string>("ClientId");
-                var clientSecret = section.GetValue<string>("ClientSecret");
-                var tenantId = section.GetValue<string>("TenantId");
+        IConfigurationManager configuration = builder.Configuration;
+        IConfigurationSection section = configuration.GetSection("kvSetting");
 
-                if (
-                    string.IsNullOrWhiteSpace(keyVaultUri)
-                    || string.IsNullOrWhiteSpace(clientId)
-                    || string.IsNullOrWhiteSpace(clientSecret)
-                    || string.IsNullOrWhiteSpace(tenantId)
-                )
-                {
-                    throw new ApplicationConfigException(
-                        "Attempted to add KeyVault as a configuration provider, but the required settings for authenticating with KeyVault are missing. Please check the configuration."
-                    );
-                }
+        var keyVaultUri = section.GetValue<string>("SecretUri");
+        var clientId = section.GetValue<string>("ClientId");
+        var clientSecret = section.GetValue<string>("ClientSecret");
+        var tenantId = section.GetValue<string>("TenantId");
 
-                configuration.AddAzureKeyVault(
-                    new Uri(keyVaultUri),
-                    new ClientSecretCredential(tenantId, clientId, clientSecret)
-                );
-            }
+        if (
+            string.IsNullOrWhiteSpace(keyVaultUri)
+            || string.IsNullOrWhiteSpace(clientId)
+            || string.IsNullOrWhiteSpace(clientSecret)
+            || string.IsNullOrWhiteSpace(tenantId)
+        )
+        {
+            throw new ApplicationConfigException(
+                "Attempted to add KeyVault as a configuration provider, but the required settings for authenticating with KeyVault are missing. Please check the configuration."
+            );
+        }
+
+        builder.Configuration.AddAzureKeyVault(
+            new Uri(keyVaultUri),
+            new ClientSecretCredential(tenantId, clientId, clientSecret)
         );
     }
 }
