@@ -1,8 +1,4 @@
 using Altinn.App.Core.Extensions;
-using Altinn.App.Core.Internal.App;
-using AltinnCore.Authentication.Constants;
-using Azure.Identity;
-using Azure.Security.KeyVault.Secrets;
 
 namespace Altinn.App.Api.Extensions;
 
