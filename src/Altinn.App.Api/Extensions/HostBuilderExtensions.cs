@@ -14,7 +14,7 @@ public static class HostBuilderExtensions
     /// <remarks>Use </remarks>
     /// <param name="builder"></param>
     /// <exception cref="ApplicationConfigException"></exception>
-    public static void AddKeyVaultAsConfigProvider(this IHostApplicationBuilder builder)
+    public static void AddAzureKeyVaultAsConfigProvider(this IHostApplicationBuilder builder)
     {
         IConfigurationManager configuration = builder.Configuration;
         IConfigurationSection section = configuration.GetSection("kvSetting");
