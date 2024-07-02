@@ -3,6 +3,7 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Features.DataLists;
 using Altinn.App.Core.Features.DataProcessing;
+using Altinn.App.Core.Features.ExternalApi;
 using Altinn.App.Core.Features.FileAnalyzis;
 using Altinn.App.Core.Features.Notifications.Email;
 using Altinn.App.Core.Features.Notifications.Sms;
@@ -176,6 +177,7 @@ public static class ServiceCollectionExtensions
         services.Configure<PdfGeneratorSettings>(configuration.GetSection(nameof(PdfGeneratorSettings)));
 
         AddAppOptions(services);
+        AddExternalApis(services);
         AddActionServices(services);
         AddPdfServices(services);
         AddNetsPaymentServices(services, configuration);
@@ -296,6 +298,13 @@ public static class ServiceCollectionExtensions
 
         // Services related to instance aware and secure app options
         services.TryAddTransient<InstanceAppOptionsFactory>();
+    }
+
+    private static void AddExternalApis(IServiceCollection services)
+    {
+        services.AddTransient<IExternalApiService, ExternalApiService>();
+
+        services.TryAddTransient<ExternalApiFactory>();
     }
 
     private static void AddProcessServices(IServiceCollection services)
