@@ -31,6 +31,7 @@ public class ExternalApiController : ControllerBase
     /// <param name="instanceOwnerPartyId">The instance owner party id</param>
     /// <param name="instanceGuid">The instance guid</param>
     /// <param name="externalApiId">The id of the external api</param>
+    /// <param name="queryParams">The query parameters to pass to the external api endpoint</param>
     /// <returns>The data for the external api</returns>
     [HttpGet]
     [Authorize(Policy = AuthzConstants.POLICY_INSTANCE_READ)]
@@ -40,23 +41,27 @@ public class ExternalApiController : ControllerBase
     public async Task<IActionResult> Get(
         [FromRoute] int instanceOwnerPartyId,
         [FromRoute] Guid instanceGuid,
-        [FromRoute] string externalApiId
+        [FromRoute] string externalApiId,
+        [FromQuery] Dictionary<string, string> queryParams
     )
     {
-        _logger.LogInformation("Getting data for external api with id {ExternalApiId}", externalApiId);
-
         var instanceIdentifier = new InstanceIdentifier(instanceOwnerPartyId, instanceGuid);
 
         try
         {
-            var externalApiData = await _externalApiService.GetExternalApiData(externalApiId, instanceIdentifier);
+            var externalApiData = await _externalApiService.GetExternalApiData(
+                externalApiId,
+                instanceIdentifier,
+                queryParams
+            );
             return Ok(externalApiData);
         }
         catch (Exception e)
         {
             if (e is KeyNotFoundException)
             {
-                return NotFound();
+                _logger.LogWarning(e, "External api not found");
+                return StatusCode(404, "External api not found");
             }
 
             return StatusCode(500, "An error occurred while fetching data from an external api.");

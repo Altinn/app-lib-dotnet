@@ -16,6 +16,10 @@ public interface IExternalApiClient
     /// Fetches data from the external api
     /// </summary>
     /// <param name="instanceIdentifier"></param>
-    /// <returns></returns>
-    Task<object?> GetExternalApiDataAsync(InstanceIdentifier instanceIdentifier);
+    /// <param name="queryParams"></param>
+    /// <returns>An arbitrary object</returns>
+    Task<object?> GetExternalApiDataAsync(
+        InstanceIdentifier instanceIdentifier,
+        Dictionary<string, string> queryParams
+    );
 }
