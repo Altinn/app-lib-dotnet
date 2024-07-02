@@ -1,4 +1,5 @@
 using Altinn.App.Core.Models;
+using Microsoft.AspNetCore.Connections;
 using Microsoft.Extensions.Logging;
 
 namespace Altinn.App.Core.Features.ExternalApi;
@@ -13,8 +14,13 @@ public interface IExternalApiService
     /// </summary>
     /// <param name="externalApiId"></param>
     /// <param name="instanceIdentifier"></param>
+    /// <param name="queryParams"></param>
     /// <returns>An arbitrary json data object</returns>
-    Task<object?> GetExternalApiData(string externalApiId, InstanceIdentifier instanceIdentifier);
+    Task<object?> GetExternalApiData(
+        string externalApiId,
+        InstanceIdentifier instanceIdentifier,
+        Dictionary<string, string> queryParams
+    );
 }
 
 /// <summary>
@@ -37,11 +43,15 @@ public class ExternalApiService : IExternalApiService
     }
 
     /// <inheritdoc/>
-    public async Task<object?> GetExternalApiData(string externalApiId, InstanceIdentifier instanceIdentifier)
+    public async Task<object?> GetExternalApiData(
+        string externalApiId,
+        InstanceIdentifier instanceIdentifier,
+        Dictionary<string, string> queryParams
+    )
     {
-        _logger.LogInformation("Getting data for external api with id {ExternalApiId}", externalApiId);
         var externalApiClient = _externalApiFactory.GetExternalApiClient(externalApiId);
+        _logger.LogInformation("Getting data from external api with id {ExternalApiId}", externalApiId);
 
-        return await externalApiClient.GetExternalApiDataAsync(instanceIdentifier);
+        return await externalApiClient.GetExternalApiDataAsync(instanceIdentifier, queryParams);
     }
 }
