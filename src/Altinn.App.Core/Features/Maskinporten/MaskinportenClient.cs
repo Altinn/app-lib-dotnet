@@ -18,8 +18,8 @@ public sealed class MaskinportenClient : IMaskinportenClient
     /// </summary>
     internal const int TokenExpirationMargin = 30;
 
-    private static HybridCacheEntryOptions _defaultCacheExpiration = CacheExpiry(TimeSpan.FromSeconds(60));
-
+    private const string CacheKeySalt = "maskinportenScope-";
+    private static readonly HybridCacheEntryOptions _defaultCacheExpiration = CacheExpiry(TimeSpan.FromSeconds(60));
     private readonly ILogger<MaskinportenClient> _logger;
     private readonly IOptionsMonitor<MaskinportenSettings> _options;
     private readonly IHttpClientFactory _httpClientFactory;
@@ -60,12 +60,13 @@ public sealed class MaskinportenClient : IMaskinportenClient
     )
     {
         string formattedScopes = FormattedScopes(scopes);
+        string cacheKey = $"{CacheKeySalt}_{formattedScopes}";
         DateTimeOffset referenceTime = _timeprovider.GetUtcNow();
 
         _telemetry?.StartGetAccessTokenActivity(_options.CurrentValue.ClientId, formattedScopes);
 
         var result = await _tokenCache.GetOrCreateAsync(
-            formattedScopes,
+            cacheKey,
             async cancel =>
             {
                 // Fetch token
@@ -95,7 +96,7 @@ public sealed class MaskinportenClient : IMaskinportenClient
         {
             result = result with { HasSetExpiration = true };
             await _tokenCache.SetAsync(
-                formattedScopes,
+                cacheKey,
                 result,
                 options: CacheExpiry(result.Expiration),
                 token: cancellationToken
