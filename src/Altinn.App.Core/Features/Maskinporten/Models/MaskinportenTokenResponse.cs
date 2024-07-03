@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
@@ -6,6 +7,7 @@ namespace Altinn.App.Core.Features.Maskinporten.Models;
 /// <summary>
 /// The response received from Maskinporten after a successful grant request.
 /// </summary>
+[ImmutableObject(true)]
 public sealed partial record MaskinportenTokenResponse
 {
     private static readonly Regex _jwtStructurePattern = JwtRegexFactory();

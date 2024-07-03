@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Altinn.App.Core.Features.Maskinporten.Exceptions;
 using Altinn.App.Core.Features.Maskinporten.Models;
-using Altinn.App.Core.Helpers;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -18,11 +18,13 @@ public sealed class MaskinportenClient : IMaskinportenClient
     /// </summary>
     internal const int TokenExpirationMargin = 30;
 
+    private static HybridCacheEntryOptions _defaultCacheExpiration = CacheExpiry(TimeSpan.FromSeconds(60));
+
     private readonly ILogger<MaskinportenClient> _logger;
     private readonly IOptionsMonitor<MaskinportenSettings> _options;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly TimeProvider _timeprovider;
-    private readonly RefreshCache<string, MaskinportenTokenResponse> _tokenCache;
+    private readonly HybridCache _tokenCache;
     private readonly Telemetry? _telemetry;
 
     /// <summary>
@@ -30,12 +32,14 @@ public sealed class MaskinportenClient : IMaskinportenClient
     /// </summary>
     /// <param name="options">Maskinporten settings.</param>
     /// <param name="httpClientFactory">HttpClient factory.</param>
+    /// <param name="tokenCache">Token cache store.</param>
     /// <param name="logger">Logger interface.</param>
     /// <param name="timeProvider">Optional TimeProvider implementation.</param>
     /// <param name="telemetry">Optional telemetry service.</param>
     public MaskinportenClient(
         IOptionsMonitor<MaskinportenSettings> options,
         IHttpClientFactory httpClientFactory,
+        HybridCache tokenCache,
         ILogger<MaskinportenClient> logger,
         TimeProvider? timeProvider = null,
         Telemetry? telemetry = null
@@ -46,10 +50,7 @@ public sealed class MaskinportenClient : IMaskinportenClient
         _timeprovider = timeProvider ?? TimeProvider.System;
         _logger = logger;
         _httpClientFactory = httpClientFactory;
-        _tokenCache = new RefreshCache<string, MaskinportenTokenResponse>(
-            timeProvider: _timeprovider,
-            maxCacheEntries: 256
-        );
+        _tokenCache = tokenCache;
     }
 
     /// <inheritdoc/>
@@ -63,13 +64,13 @@ public sealed class MaskinportenClient : IMaskinportenClient
 
         _telemetry?.StartGetAccessTokenActivity(_options.CurrentValue.ClientId, formattedScopes);
 
-        return await _tokenCache.GetOrCreate(
+        var result = await _tokenCache.GetOrCreateAsync(
             formattedScopes,
-            valueFactory: async () =>
+            async cancel =>
             {
-                var token = await HandleMaskinportenAuthentication(formattedScopes, cancellationToken);
+                // Fetch token
+                var token = await HandleMaskinportenAuthentication(formattedScopes, cancel);
                 var now = _timeprovider.GetUtcNow();
-
                 var cacheExpiry = referenceTime.AddSeconds(token.ExpiresIn - TokenExpirationMargin);
                 if (cacheExpiry <= now)
                 {
@@ -78,27 +79,30 @@ public sealed class MaskinportenClient : IMaskinportenClient
                     );
                 }
 
-                return token;
+                // Wrap and return
+                return new TokenCacheEntry(
+                    Token: token,
+                    Expiration: cacheExpiry - referenceTime,
+                    HasSetExpiration: false
+                );
             },
-            lifetimeFactory: token =>
-            {
-                var now = _timeprovider.GetUtcNow();
-                var timeSinceTokenCreation = now - referenceTime;
-                var tokenLifespan = TimeSpan.FromSeconds(token.ExpiresIn - TokenExpirationMargin);
-
-                return tokenLifespan - timeSinceTokenCreation;
-            },
-            postProcessCallback: (response, type) =>
-            {
-                var requestResult = type switch
-                {
-                    CacheResultType.Cached => Telemetry.Maskinporten.RequestResult.Cached,
-                    CacheResultType.New => Telemetry.Maskinporten.RequestResult.New,
-                    _ => Telemetry.Maskinporten.RequestResult.Error
-                };
-                _telemetry?.RecordMaskinportenTokenRequest(requestResult);
-            }
+            token: cancellationToken,
+            options: _defaultCacheExpiration
         );
+
+        // Update cache with token expiration if applicable
+        if (result.HasSetExpiration is false)
+        {
+            result = result with { HasSetExpiration = true };
+            await _tokenCache.SetAsync(
+                formattedScopes,
+                result,
+                options: CacheExpiry(result.Expiration),
+                token: cancellationToken
+            );
+        }
+
+        return result.Token;
     }
 
     /// <summary>
@@ -256,4 +260,13 @@ public sealed class MaskinportenClient : IMaskinportenClient
     /// <param name="scopes">A collection of scopes.</param>
     /// <returns>A single string containing the supplied scopes.</returns>
     internal static string FormattedScopes(IEnumerable<string> scopes) => string.Join(" ", scopes);
+
+    internal static HybridCacheEntryOptions CacheExpiry(TimeSpan localExpiry, TimeSpan? overallExpiry = null)
+    {
+        return new HybridCacheEntryOptions
+        {
+            LocalCacheExpiration = localExpiry,
+            Expiration = overallExpiry ?? localExpiry
+        };
+    }
 }

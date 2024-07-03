@@ -5,6 +5,9 @@ using Altinn.App.Core.Features.Maskinporten;
 using Altinn.App.Core.Features.Maskinporten.Exceptions;
 using Altinn.App.Core.Features.Maskinporten.Models;
 using FluentAssertions;
+using Microsoft.Extensions.Caching.Hybrid;
+using Microsoft.Extensions.Caching.Hybrid.Internal;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
@@ -16,7 +19,6 @@ public class MaskinportenClientTests
 {
     private readonly Mock<IOptionsMonitor<MaskinportenSettings>> _mockOptions;
     private readonly Mock<IHttpClientFactory> _mockHttpClientFactory;
-    private readonly Mock<ILogger<MaskinportenClient>> _mockLogger;
     private readonly FakeTimeProvider _fakeTimeProvider;
     private readonly MaskinportenClient _maskinportenClient;
     private readonly MaskinportenSettings _maskinportenSettings =
@@ -30,16 +32,24 @@ public class MaskinportenClientTests
 
     public MaskinportenClientTests()
     {
-        _mockOptions = new Mock<IOptionsMonitor<MaskinportenSettings>>();
         _mockHttpClientFactory = new Mock<IHttpClientFactory>();
-        _mockLogger = new Mock<ILogger<MaskinportenClient>>();
         _fakeTimeProvider = new FakeTimeProvider(startDateTime: DateTimeOffset.UtcNow);
-        _mockOptions.Setup(o => o.CurrentValue).Returns(_maskinportenSettings);
+
+        var app = Api.Tests.TestUtils.AppBuilder.Build(registerCustomAppServices: services =>
+            // TODO: This doesn't seem to do the trick
+            services.AddSingleton<TimeProvider>(_fakeTimeProvider)
+        );
+
+        var tokenCache = app.Services.GetRequiredService<HybridCache>();
+        var mockLogger = new Mock<ILogger<MaskinportenClient>>();
+        var mockOptions = new Mock<IOptionsMonitor<MaskinportenSettings>>();
+        mockOptions.Setup(o => o.CurrentValue).Returns(_maskinportenSettings);
 
         _maskinportenClient = new MaskinportenClient(
-            _mockOptions.Object,
+            mockOptions.Object,
             _mockHttpClientFactory.Object,
-            _mockLogger.Object,
+            tokenCache,
+            mockLogger.Object,
             _fakeTimeProvider
         );
     }
@@ -194,7 +204,7 @@ public class MaskinportenClientTests
 
         // Act
         var token1 = await _maskinportenClient.GetAccessToken(scopes);
-        _fakeTimeProvider.Advance(TimeSpan.FromSeconds(60));
+        _fakeTimeProvider.Advance(TimeSpan.FromSeconds(10));
         var token2 = await _maskinportenClient.GetAccessToken(scopes);
 
         // Assert
