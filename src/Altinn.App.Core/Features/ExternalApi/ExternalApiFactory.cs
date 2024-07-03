@@ -3,9 +3,20 @@ using Microsoft.Extensions.Logging;
 namespace Altinn.App.Core.Features.ExternalApi;
 
 /// <summary>
+/// Interface of factory class for resolving <see cref="IExternalApiClient"/> implementations
+/// </summary>
+public interface IExternalApiFactory
+{
+    /// <summary>
+    /// Finds the implementation of <see cref="IExternalApiClient"/> based on the external api id
+    /// </summary>
+    IExternalApiClient GetExternalApiClient(string externalApiId);
+}
+
+/// <summary>
 /// Factory class for resolving <see cref="IExternalApiClient"/> implementations
 /// </summary>
-public class ExternalApiFactory
+public class ExternalApiFactory : IExternalApiFactory
 {
     private readonly ILogger<ExternalApiFactory> _logger;
     private IEnumerable<IExternalApiClient> _externalApiClients { get; }
@@ -21,13 +32,11 @@ public class ExternalApiFactory
         _externalApiClients = externalApiClients;
     }
 
-    /// <summary>
-    ///  Finds the implementation of IExternalApiClient based on the external api id
-    /// </summary>
+    /// <inheritdoc/>
     /// <param name="externalApiId"></param>
     public IExternalApiClient GetExternalApiClient(string externalApiId)
     {
-        IExternalApiClient? client = _externalApiClients.FirstOrDefault(e =>
+        var client = _externalApiClients.FirstOrDefault(e =>
             e.Id.Equals(externalApiId, StringComparison.OrdinalIgnoreCase)
         );
 

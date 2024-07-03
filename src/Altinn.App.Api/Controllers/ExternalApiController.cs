@@ -60,8 +60,8 @@ public class ExternalApiController : ControllerBase
         {
             if (e is KeyNotFoundException)
             {
-                _logger.LogWarning(e, "External api not found");
-                return StatusCode(404, "External api not found");
+                _logger.LogWarning(e, "External api not found.");
+                return StatusCode(404, "External api not found.");
             }
 
             return StatusCode(500, "An error occurred while fetching data from an external api.");
