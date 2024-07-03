@@ -87,20 +87,18 @@ public class MaskinportenClientIntegrationTests
     [Theory]
     [InlineData("client1", "scope1")]
     [InlineData("client2", "scope1", "scope2", "scope3")]
-    public async Task UseMaskinportenAuthorization_AddsHandler_BindsToSpecifiedClient(
+    public void UseMaskinportenAuthorization_AddsHandler_BindsToSpecifiedClient(
         string scope,
         params string[] additionalScopes
     )
     {
         // Arrange
-        var services = new ServiceCollection();
-        services.AddFakeLogging();
-        services.AddSingleton<IMaskinportenClient, MaskinportenClient>();
-        services.AddHttpClient<DummyHttpClient>().UseMaskinportenAuthorization(scope, additionalScopes);
+        var app = AppBuilder.Build(registerCustomAppServices: services =>
+            services.AddHttpClient<DummyHttpClient>().UseMaskinportenAuthorization(scope, additionalScopes)
+        );
 
         // Act
-        await using var serviceProvider = services.BuildServiceProvider();
-        var client = serviceProvider.GetRequiredService<DummyHttpClient>();
+        var client = app.Services.GetRequiredService<DummyHttpClient>();
 
         // Assert
         Assert.NotNull(client);
