@@ -6,8 +6,9 @@ using Altinn.App.Core.Features.Maskinporten.Exceptions;
 using Altinn.App.Core.Features.Maskinporten.Models;
 using FluentAssertions;
 using Microsoft.Extensions.Caching.Hybrid;
-using Microsoft.Extensions.Caching.Hybrid.Internal;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Internal;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
@@ -17,9 +18,13 @@ namespace Altinn.App.Core.Tests.Features.Maskinporten;
 
 public class MaskinportenClientTests
 {
-    private readonly Mock<IOptionsMonitor<MaskinportenSettings>> _mockOptions;
+    private sealed class FakeTime(DateTimeOffset startDateTime) : FakeTimeProvider(startDateTime), ISystemClock
+    {
+        public DateTimeOffset UtcNow => GetUtcNow();
+    }
+
     private readonly Mock<IHttpClientFactory> _mockHttpClientFactory;
-    private readonly FakeTimeProvider _fakeTimeProvider;
+    private readonly FakeTime _fakeTimeProvider;
     private readonly MaskinportenClient _maskinportenClient;
     private readonly MaskinportenSettings _maskinportenSettings =
         new()
@@ -33,11 +38,10 @@ public class MaskinportenClientTests
     public MaskinportenClientTests()
     {
         _mockHttpClientFactory = new Mock<IHttpClientFactory>();
-        _fakeTimeProvider = new FakeTimeProvider(startDateTime: DateTimeOffset.UtcNow);
+        _fakeTimeProvider = new FakeTime(DateTimeOffset.UtcNow);
 
         var app = Api.Tests.TestUtils.AppBuilder.Build(registerCustomAppServices: services =>
-            // TODO: This doesn't seem to do the trick
-            services.AddSingleton<TimeProvider>(_fakeTimeProvider)
+            services.Configure<MemoryCacheOptions>(options => options.Clock = _fakeTimeProvider)
         );
 
         var tokenCache = app.Services.GetRequiredService<HybridCache>();
