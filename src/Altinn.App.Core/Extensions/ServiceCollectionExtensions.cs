@@ -179,7 +179,7 @@ public static class ServiceCollectionExtensions
         AddAppOptions(services);
         AddActionServices(services);
         AddPdfServices(services);
-        AddPaymentServices(services, configuration);
+        AddPaymentServices(services, configuration, env);
         AddSignatureServices(services);
         AddEventServices(services);
         AddNotificationServices(services);
@@ -264,14 +264,21 @@ public static class ServiceCollectionExtensions
 #pragma warning restore CS0618 // Type or member is obsolete
     }
 
-    private static void AddPaymentServices(this IServiceCollection services, IConfiguration configuration)
+    private static void AddPaymentServices(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        IHostEnvironment env
+    )
     {
         services.AddTransient<IPaymentService, PaymentService>();
         services.AddTransient<IProcessTask, PaymentProcessTask>();
         services.AddTransient<IUserAction, PaymentUserAction>();
 
         // Fake Payment Processor used for automatic frontend tests
-        services.AddTransient<IPaymentProcessor, FakePaymentProcessor>();
+        if (!env.IsProduction())
+        {
+            services.AddTransient<IPaymentProcessor, FakePaymentProcessor>();
+        }
 
         // Nets Easy
         IConfigurationSection configurationSection = configuration.GetSection("NetsPaymentSettings");
