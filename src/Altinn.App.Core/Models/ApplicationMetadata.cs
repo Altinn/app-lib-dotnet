@@ -71,6 +71,6 @@ public class ApplicationMetadata : Application
     [System.Text.Json.Serialization.JsonExtensionData]
     public Dictionary<string, object>? UnmappedProperties { get; set; }
 
-    /// TEMP
-    public bool ManualInstantiationDisabled => true;
+    /// ! TEMP
+    public List<string> InstantiationAllowedBy { get; set; } = null!;
 }

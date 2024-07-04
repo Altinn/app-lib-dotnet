@@ -184,8 +184,6 @@ public class InstancesController : ControllerBase
         [FromQuery] int? instanceOwnerPartyId
     )
     {
-        // TODO: update this action as well?
-
         if (string.IsNullOrEmpty(org))
         {
             return BadRequest("The path parameter 'org' cannot be empty");
@@ -195,6 +193,10 @@ public class InstancesController : ControllerBase
         {
             return BadRequest("The path parameter 'app' cannot be empty");
         }
+
+        ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
+        if (VerifyInstantiationPermissions(application, org, app) is ActionResult instantiationForbiddenResult)
+            return instantiationForbiddenResult;
 
         MultipartRequestReader parsedRequest = new MultipartRequestReader(Request);
         await parsedRequest.Read();
@@ -251,7 +253,6 @@ public class InstancesController : ControllerBase
             };
         }
 
-        ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
         RequestPartValidator requestValidator = new(application);
         string? multipartError = requestValidator.ValidateParts(parsedRequest.Parts);
 
@@ -363,6 +364,40 @@ public class InstancesController : ControllerBase
         return Created(url, instance);
     }
 
+    private ObjectResult? VerifyInstantiationPermissions(
+        ApplicationMetadata application,
+        string org,
+        string app,
+        bool isCopy = false
+    )
+    {
+        if (_env.IsProduction() && application.InstantiationAllowedBy?.Count is > 0)
+        {
+            var orgClaim = User.GetOrg();
+            var orgClaimIsValid = !string.IsNullOrWhiteSpace(orgClaim);
+            if (!orgClaimIsValid && isCopy)
+                return null; // Normal users should still be allowed to copy existing instances
+
+            if (string.IsNullOrWhiteSpace(orgClaim))
+            {
+                return StatusCode(
+                    (int)HttpStatusCode.Forbidden,
+                    $"Current user must be authenticated as an organization"
+                );
+            }
+
+            if (!application.InstantiationAllowedBy.Any(o => orgClaim.Equals(o, StringComparison.OrdinalIgnoreCase)))
+            {
+                return StatusCode(
+                    (int)HttpStatusCode.Forbidden,
+                    $"Manual instantiation is disabled for this application {org}/{app}"
+                );
+            }
+        }
+
+        return null;
+    }
+
     /// <summary>
     /// Simplified Instanciation with support for fieldprefill
     /// </summary>
@@ -392,12 +427,17 @@ public class InstancesController : ControllerBase
             return BadRequest("The path parameter 'app' cannot be empty");
         }
 
-        ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
-
-        var copyInstanceEnabled =
-            application.CopyInstanceSettings?.Enabled is true || application.ManualInstantiationDisabled;
-
         bool copySourceInstance = !string.IsNullOrEmpty(instansiationInstance.SourceInstanceId);
+
+        ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
+        if (
+            VerifyInstantiationPermissions(application, org, app, isCopy: copySourceInstance)
+            is ActionResult instantiationForbiddenResult
+        )
+            return instantiationForbiddenResult;
+
+        var copyInstanceEnabled = application.CopyInstanceSettings?.Enabled is true;
+
         if (copySourceInstance && !copyInstanceEnabled)
         {
             return BadRequest(
@@ -460,24 +500,6 @@ public class InstancesController : ControllerBase
             );
         }
 
-        // TODO: is production enough? I see that tt02 is Staging, unsure about other environments
-        if (_env.IsProduction() && application.ManualInstantiationDisabled)
-        {
-            var orgClaim = User.GetOrg();
-            var orgnNrClaim = User.GetOrgNumber();
-
-            // TODO: does manual instantiation mean that the owner org must instantiate on? Can other orgs?
-            // These are just strings, can they have different formatting/casing?
-            // Claim can come from Maskinporten, the other from app metadata
-            if (orgClaim != application.Org)
-            {
-                return StatusCode(
-                    (int)HttpStatusCode.Forbidden,
-                    $"Manual instantiation is disabled for this application {org}/{app}"
-                );
-            }
-        }
-
         Instance instanceTemplate =
             new()
             {
@@ -531,7 +553,7 @@ public class InstancesController : ControllerBase
                     );
                 }
 
-                if (!source.Status.IsArchived)
+                if (source.Status?.IsArchived is not true)
                 {
                     return BadRequest("It is not possible to copy an instance that isn't archived.");
                 }
