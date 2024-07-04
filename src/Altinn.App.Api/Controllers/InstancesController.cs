@@ -195,8 +195,8 @@ public class InstancesController : ControllerBase
         }
 
         ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
-        if (VerifyInstantiationPermissions(application, org, app) is ActionResult instantiationForbiddenResult)
-            return instantiationForbiddenResult;
+        if (VerifyInstantiationPermissions(application, org, app) is { } verificationResult)
+            return verificationResult;
 
         MultipartRequestReader parsedRequest = new MultipartRequestReader(Request);
         await parsedRequest.Read();
@@ -416,18 +416,15 @@ public class InstancesController : ControllerBase
             return BadRequest("The path parameter 'app' cannot be empty");
         }
 
-        bool copySourceInstance = !string.IsNullOrEmpty(instansiationInstance.SourceInstanceId);
+        bool isCopyRequest = !string.IsNullOrEmpty(instansiationInstance.SourceInstanceId);
 
         ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
-        if (
-            VerifyInstantiationPermissions(application, org, app, isCopy: copySourceInstance)
-            is ActionResult instantiationForbiddenResult
-        )
-            return instantiationForbiddenResult;
+        if (VerifyInstantiationPermissions(application, org, app, isCopy: isCopyRequest) is { } verificationResult)
+            return verificationResult;
 
         var copyInstanceEnabled = application.CopyInstanceSettings?.Enabled is true;
 
-        if (copySourceInstance && !copyInstanceEnabled)
+        if (isCopyRequest && !copyInstanceEnabled)
         {
             return BadRequest(
                 "Creating instance based on a copy from an archived instance is not enabled for this app."
@@ -466,7 +463,7 @@ public class InstancesController : ControllerBase
         }
 
         if (
-            copySourceInstance
+            isCopyRequest
             && party.PartyId.ToString(CultureInfo.InvariantCulture)
                 != instansiationInstance.SourceInstanceId.Split("/")[0]
         )
@@ -525,7 +522,7 @@ public class InstancesController : ControllerBase
 
             Instance? source = null;
 
-            if (copySourceInstance)
+            if (isCopyRequest)
             {
                 string[] sourceSplit = instansiationInstance.SourceInstanceId.Split("/");
                 Guid sourceInstanceGuid = Guid.Parse(sourceSplit[1]);
@@ -550,7 +547,7 @@ public class InstancesController : ControllerBase
 
             instance = await _instanceClient.CreateInstance(org, app, instanceTemplate);
 
-            if (copySourceInstance && source is not null)
+            if (isCopyRequest && source is not null)
             {
                 await CopyDataFromSourceInstance(application, instance, source);
             }

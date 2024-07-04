@@ -49,7 +49,6 @@ public class PepWithPDPAuthorizationMockSI : Altinn.Common.PEP.Interfaces.IPDP
     {
         try
         {
-            var requestJson = JsonConvert.SerializeObject(xacmlJsonRequest);
             XacmlContextRequest decisionRequest = XacmlJsonXmlConverter.ConvertRequest(xacmlJsonRequest.Request);
             decisionRequest = await Enrich(decisionRequest);
 
