@@ -209,7 +209,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         string app = "contributer-restriction";
         int instanceOwnerPartyId = 501337;
         this.OverrideServicesForThisTest = services =>
-            services.AddSingleton(new AppMetadataMutationHook(app => app.InstantiationAllowedBy = [org]));
+            services.AddSingleton(new AppMetadataMutationHook(app => app.DisallowUserInstantiation = true));
         HttpClient client = GetRootedClient(org, app);
         string token = PrincipalUtil.GetToken(1337, null);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -242,7 +242,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         string app = "contributer-restriction";
         int instanceOwnerPartyId = 501337;
         this.OverrideServicesForThisTest = services =>
-            services.AddSingleton(new AppMetadataMutationHook(app => app.InstantiationAllowedBy = [org]));
+            services.AddSingleton(new AppMetadataMutationHook(app => app.DisallowUserInstantiation = true));
         HttpClient client = GetRootedClient(org, app);
         string token = PrincipalUtil.GetToken(1337, null);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -278,7 +278,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         this.OverrideServicesForThisTest = services =>
         {
             services.AddSingleton(pdfMock.Object);
-            services.AddSingleton(new AppMetadataMutationHook(app => app.InstantiationAllowedBy = [org]));
+            services.AddSingleton(new AppMetadataMutationHook(app => app.DisallowUserInstantiation = true));
         };
         HttpClient client = GetRootedClient(org, app);
 

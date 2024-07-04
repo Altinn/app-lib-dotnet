@@ -371,28 +371,17 @@ public class InstancesController : ControllerBase
         bool isCopy = false
     )
     {
-        if (_env.IsProduction() && application.InstantiationAllowedBy?.Count is > 0)
+        if (_env.IsProduction() && application.DisallowUserInstantiation)
         {
-            var orgClaim = User.GetOrg();
-            var orgClaimIsValid = !string.IsNullOrWhiteSpace(orgClaim);
-            if (!orgClaimIsValid && isCopy)
-                return null; // Normal users should still be allowed to copy existing instances
+            var orgClaimIsValid = !string.IsNullOrWhiteSpace(User.GetOrg());
 
-            if (string.IsNullOrWhiteSpace(orgClaim))
-            {
-                return StatusCode(
-                    (int)HttpStatusCode.Forbidden,
-                    $"Current user must be authenticated as an organization"
-                );
-            }
+            if (orgClaimIsValid || isCopy)
+                return null;
 
-            if (!application.InstantiationAllowedBy.Any(o => orgClaim.Equals(o, StringComparison.OrdinalIgnoreCase)))
-            {
-                return StatusCode(
-                    (int)HttpStatusCode.Forbidden,
-                    $"Manual instantiation is disabled for this application {org}/{app}"
-                );
-            }
+            return StatusCode(
+                (int)HttpStatusCode.Forbidden,
+                $"User instantiation is disabled for this application {org}/{app}"
+            );
         }
 
         return null;

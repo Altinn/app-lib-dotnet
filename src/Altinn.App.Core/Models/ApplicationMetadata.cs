@@ -72,5 +72,5 @@ public class ApplicationMetadata : Application
     public Dictionary<string, object>? UnmappedProperties { get; set; }
 
     /// ! TEMP
-    public List<string> InstantiationAllowedBy { get; set; } = null!;
+    public bool DisallowUserInstantiation { get; set; }
 }
