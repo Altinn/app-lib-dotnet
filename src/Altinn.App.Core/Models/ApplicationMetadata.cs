@@ -70,7 +70,4 @@ public class ApplicationMetadata : Application
     /// </summary>
     [System.Text.Json.Serialization.JsonExtensionData]
     public Dictionary<string, object>? UnmappedProperties { get; set; }
-
-    /// ! TEMP
-    public bool DisallowUserInstantiation { get; set; }
 }

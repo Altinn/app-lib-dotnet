@@ -3079,8 +3079,6 @@ components:
         altinnNugetVersion:
           type: string
           nullable: true
-        disallowUserInstantiation:
-          type: boolean
       additionalProperties: { }
     CalculationResult:
       type: object

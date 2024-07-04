@@ -4991,9 +4991,6 @@
           "altinnNugetVersion": {
             "type": "string",
             "nullable": true
-          },
-          "disallowUserInstantiation": {
-            "type": "boolean"
           }
         },
         "additionalProperties": { }
