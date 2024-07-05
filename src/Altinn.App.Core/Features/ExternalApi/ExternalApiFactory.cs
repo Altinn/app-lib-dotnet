@@ -16,7 +16,7 @@ public interface IExternalApiFactory
 /// <summary>
 /// Factory class for resolving <see cref="IExternalApiClient"/> implementations
 /// </summary>
-public class ExternalApiFactory : IExternalApiFactory
+internal sealed class ExternalApiFactory : IExternalApiFactory
 {
     private readonly ILogger<ExternalApiFactory> _logger;
     private IEnumerable<IExternalApiClient> _externalApiClients { get; }
@@ -40,7 +40,7 @@ public class ExternalApiFactory : IExternalApiFactory
             e.Id.Equals(externalApiId, StringComparison.OrdinalIgnoreCase)
         );
 
-        if (client == null)
+        if (client is null)
         {
             _logger.LogWarning("No external client found for external API with id {ExternalApiId}", externalApiId);
             throw new KeyNotFoundException($"No external api client found for external API with id {externalApiId}");
