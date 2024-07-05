@@ -68,7 +68,7 @@ public class UserDefinedMetadataController : ControllerBase
     )
     {
         Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
-        DataElement? dataElement = instance.Data.FirstOrDefault(m =>
+        DataElement? dataElement = instance.Data.Find(m =>
             m.Id.Equals(dataGuid.ToString(), StringComparison.OrdinalIgnoreCase)
         );
 
@@ -116,7 +116,7 @@ public class UserDefinedMetadataController : ControllerBase
         }
 
         Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
-        DataElement? dataElement = instance.Data.FirstOrDefault(m =>
+        DataElement? dataElement = instance.Data.Find(m =>
             m.Id.Equals(dataGuid.ToString(), StringComparison.OrdinalIgnoreCase)
         );
 

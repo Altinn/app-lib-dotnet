@@ -7,7 +7,7 @@ namespace Altinn.App.Api.Helpers;
 /// Helper class for validating if a user is a valid contributor to a data type.
 /// </summary>
 /// <remarks>
-/// TODO: The concept of inline authorization of valid contributors is not widely used and is likely not the best approach for doing authorization on the data type level, but there is no support for it yet in the policy based authorization, so keeping for now.
+/// The concept of inline authorization of valid contributors is not widely used and is likely not the best approach for doing authorization on the data type level, but there is no support for it yet in the policy based authorization, so keeping for now.
 /// </remarks>
 internal static class ValidContributorHelper
 {

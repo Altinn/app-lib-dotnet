@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.Net;
-using System.Security.Claims;
 using System.Text.Json;
 using Altinn.App.Api.Helpers;
 using Altinn.App.Api.Helpers.RequestHandling;
