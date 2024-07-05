@@ -1,5 +1,4 @@
 using Altinn.App.Core.Models;
-using Microsoft.AspNetCore.Connections;
 using Microsoft.Extensions.Logging;
 
 namespace Altinn.App.Core.Features.ExternalApi;
@@ -40,8 +39,13 @@ public class ExternalApiService(ILogger<ExternalApiService> logger, IExternalApi
     )
     {
         var externalApiClient = _externalApiFactory.GetExternalApiClient(externalApiId);
-        _logger.LogInformation("Getting data from external api with id {ExternalApiId}", externalApiId);
+        if (externalApiClient is null)
+        {
+            _logger.LogWarning("External api with id {ExternalApiId} not found", externalApiId);
+            throw new KeyNotFoundException($"External api with id {externalApiId} not found");
+        }
 
+        _logger.LogInformation("Getting data from external api with id {ExternalApiId}", externalApiId);
         return await externalApiClient.GetExternalApiDataAsync(instanceIdentifier, queryParams);
     }
 }
