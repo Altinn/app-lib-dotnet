@@ -30,7 +30,7 @@ public class ExternalApiControllerTests
 
         _externalApiServiceMock
             .Setup(s => s.GetExternalApiData(externalApiId, It.IsAny<InstanceIdentifier>(), queryParams))
-            .ReturnsAsync(externalApiData);
+            .ReturnsAsync(new ExternalApiDataResult(externalApiData, true));
 
         var controller = new ExternalApiController(_loggerMock.Object, _externalApiServiceMock.Object);
 
@@ -53,7 +53,7 @@ public class ExternalApiControllerTests
 
         _externalApiServiceMock
             .Setup(s => s.GetExternalApiData(externalApiId, It.IsAny<InstanceIdentifier>(), queryParams))
-            .Throws<KeyNotFoundException>();
+            .ReturnsAsync(new ExternalApiDataResult(null, false));
 
         var controller = new ExternalApiController(_loggerMock.Object, _externalApiServiceMock.Object);
 
@@ -61,8 +61,8 @@ public class ExternalApiControllerTests
         var result = await controller.Get(1, Guid.NewGuid(), externalApiId, queryParams);
 
         // Assert
-        result.Should().BeOfType<ObjectResult>();
-        var objectResult = result as ObjectResult;
+        result.Should().BeOfType<NotFoundObjectResult>();
+        var objectResult = result as NotFoundObjectResult;
         objectResult?.StatusCode.Should().Be((int)HttpStatusCode.NotFound);
         objectResult?.Value.Should().Be("External api not found.");
     }
@@ -80,13 +80,9 @@ public class ExternalApiControllerTests
 
         var controller = new ExternalApiController(_loggerMock.Object, _externalApiServiceMock.Object);
 
-        // Act
-        var result = await controller.Get(1, Guid.NewGuid(), externalApiId, queryParams);
-
-        // Assert
-        result.Should().BeOfType<ObjectResult>();
-        var objectResult = result as ObjectResult;
-        objectResult?.StatusCode.Should().Be((int)HttpStatusCode.InternalServerError);
-        objectResult?.Value.Should().Be("An error occurred while fetching data from an external api.");
+        // Act & Assert
+        await Assert.ThrowsAsync<Exception>(
+            async () => await controller.Get(1, Guid.NewGuid(), externalApiId, queryParams)
+        );
     }
 }

@@ -48,7 +48,7 @@ public class ExternalApiServiceTests
 
         // Assert
         data.Should().NotBeNull();
-        data.Should().Be(externalApiResultData);
+        data.Should().BeEquivalentTo(new ExternalApiDataResult(externalApiResultData, true));
         _externalApiClientMock.Verify(
             c => c.GetExternalApiDataAsync(_instanceIdentifierMock.Object, queryParams),
             Times.Once

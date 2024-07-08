@@ -4,6 +4,11 @@ using Microsoft.Extensions.Logging;
 namespace Altinn.App.Core.Features.ExternalApi;
 
 /// <summary>
+/// Result of external api data retrieval
+/// </summary>
+sealed public record ExternalApiDataResult(object? Data, bool WasExternalApiFound);
+
+/// <summary>
 /// Interface for handling external api data
 /// </summary>
 public interface IExternalApiService
@@ -15,7 +20,7 @@ public interface IExternalApiService
     /// <param name="instanceIdentifier"></param>
     /// <param name="queryParams"></param>
     /// <returns>An arbitrary json data object</returns>
-    Task<object?> GetExternalApiData(
+    Task<ExternalApiDataResult> GetExternalApiData(
         string externalApiId,
         InstanceIdentifier instanceIdentifier,
         Dictionary<string, string> queryParams
@@ -32,7 +37,7 @@ public class ExternalApiService(ILogger<ExternalApiService> logger, IExternalApi
     private readonly IExternalApiFactory _externalApiFactory = externalApiFactory;
 
     /// <inheritdoc/>
-    public async Task<object?> GetExternalApiData(
+    public async Task<ExternalApiDataResult> GetExternalApiData(
         string externalApiId,
         InstanceIdentifier instanceIdentifier,
         Dictionary<string, string> queryParams
@@ -42,10 +47,11 @@ public class ExternalApiService(ILogger<ExternalApiService> logger, IExternalApi
         if (externalApiClient is null)
         {
             _logger.LogWarning("External api with id {ExternalApiId} not found", externalApiId);
-            throw new KeyNotFoundException($"External api with id {externalApiId} not found");
+            return new ExternalApiDataResult(null, false);
         }
 
         _logger.LogInformation("Getting data from external api with id {ExternalApiId}", externalApiId);
-        return await externalApiClient.GetExternalApiDataAsync(instanceIdentifier, queryParams);
+        var result = await externalApiClient.GetExternalApiDataAsync(instanceIdentifier, queryParams);
+        return new ExternalApiDataResult(result, true);
     }
 }

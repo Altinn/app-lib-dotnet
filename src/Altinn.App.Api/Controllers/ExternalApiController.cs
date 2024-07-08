@@ -1,3 +1,4 @@
+using System.Net;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features.ExternalApi;
 using Altinn.App.Core.Models;
@@ -46,25 +47,18 @@ public class ExternalApiController : ControllerBase
     )
     {
         var instanceIdentifier = new InstanceIdentifier(instanceOwnerPartyId, instanceGuid);
+        var (externalApiData, wasExternalApiFound) = await _externalApiService.GetExternalApiData(
+            externalApiId,
+            instanceIdentifier,
+            queryParams
+        );
 
-        try
+        if (!wasExternalApiFound)
         {
-            var externalApiData = await _externalApiService.GetExternalApiData(
-                externalApiId,
-                instanceIdentifier,
-                queryParams
-            );
-            return Ok(externalApiData);
+            _logger.LogWarning("External api not found.");
+            return NotFound("External api not found.");
         }
-        catch (Exception e)
-        {
-            if (e is KeyNotFoundException)
-            {
-                _logger.LogWarning(e, "External api not found.");
-                return StatusCode(404, "External api not found.");
-            }
 
-            return StatusCode(500, "An error occurred while fetching data from an external api.");
-        }
+        return Ok(externalApiData);
     }
 }

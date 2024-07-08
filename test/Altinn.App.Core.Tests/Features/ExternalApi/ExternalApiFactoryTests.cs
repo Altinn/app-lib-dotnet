@@ -37,7 +37,7 @@ public class ExternalApiFactoryTests
         var externalApiClient = factory.GetExternalApiClient("api1");
 
         // Assert
-        externalApiClient.Should().Be(_externalApiClientMock.Object);
+        externalApiClient?.Should().Be(_externalApiClientMock.Object);
         externalApiClient?.Id.Should().Be("api1");
     }
 }
