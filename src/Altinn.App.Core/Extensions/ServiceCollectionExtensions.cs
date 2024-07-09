@@ -317,7 +317,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddTransient<IExternalApiService, ExternalApiService>();
 
-        services.TryAddTransient<ExternalApiFactory>();
+        services.TryAddTransient<IExternalApiFactory, ExternalApiFactory>();
     }
 
     private static void AddProcessServices(IServiceCollection services)
