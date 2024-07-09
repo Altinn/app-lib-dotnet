@@ -62,14 +62,19 @@ public class ExternalApiServiceTests
         string externalApiId = "unknown";
         Dictionary<string, string> queryParams = [];
 
-        _externalApiFactoryMock.Setup(f => f.GetExternalApiClient(externalApiId)).Throws<KeyNotFoundException>();
+        _externalApiFactoryMock.Setup(f => f.GetExternalApiClient(externalApiId)).Returns((IExternalApiClient?)null);
         var externalApiService = new ExternalApiService(_loggerMock.Object, _externalApiFactoryMock.Object);
 
-        // Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(
-            async () =>
-                await externalApiService.GetExternalApiData(externalApiId, _instanceIdentifierMock.Object, queryParams)
+        // Act
+        var result = await externalApiService.GetExternalApiData(
+            externalApiId,
+            _instanceIdentifierMock.Object,
+            queryParams
         );
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Should().BeEquivalentTo(new ExternalApiDataResult(null, false));
     }
 
     [Fact]

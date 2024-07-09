@@ -85,4 +85,29 @@ public class ExternalApiControllerTests
             async () => await controller.Get(1, Guid.NewGuid(), externalApiId, queryParams)
         );
     }
+
+    [Fact]
+    public async Task Get_ShouldReturnStatusCode_WhenExternalApiServiceThrowsHttpRequestException()
+    {
+        // Arrange
+        string externalApiId = "apiId";
+        Dictionary<string, string> queryParams = [];
+
+        _externalApiServiceMock
+            .Setup(s => s.GetExternalApiData(externalApiId, It.IsAny<InstanceIdentifier>(), queryParams))
+            .ThrowsAsync(
+                new HttpRequestException("Error message", new HttpRequestException(), HttpStatusCode.BadRequest)
+            );
+
+        var controller = new ExternalApiController(_loggerMock.Object, _externalApiServiceMock.Object);
+
+        // Act
+        var result = await controller.Get(1, Guid.NewGuid(), externalApiId, queryParams);
+
+        // Assert
+        result.Should().BeOfType<ObjectResult>();
+        var objectResult = result as ObjectResult;
+        objectResult?.StatusCode.Should().Be((int)HttpStatusCode.BadRequest);
+        objectResult?.Value.Should().Be("Error message");
+    }
 }
