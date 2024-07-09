@@ -47,18 +47,30 @@ public class ExternalApiController : ControllerBase
     )
     {
         var instanceIdentifier = new InstanceIdentifier(instanceOwnerPartyId, instanceGuid);
-        var (externalApiData, wasExternalApiFound) = await _externalApiService.GetExternalApiData(
-            externalApiId,
-            instanceIdentifier,
-            queryParams
-        );
-
-        if (!wasExternalApiFound)
+        try
         {
-            _logger.LogWarning("External api not found.");
-            return NotFound("External api not found.");
-        }
+            var (externalApiData, wasExternalApiFound) = await _externalApiService.GetExternalApiData(
+                externalApiId,
+                instanceIdentifier,
+                queryParams
+            );
 
-        return Ok(externalApiData);
+            if (!wasExternalApiFound)
+            {
+                _logger.LogWarning("External api not found.");
+                return NotFound("External api not found.");
+            }
+
+            return Ok(externalApiData);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "Error when calling external api.");
+            if (ex.StatusCode.HasValue)
+            {
+                return StatusCode((int)ex.StatusCode.Value, ex.Message);
+            }
+            return StatusCode((int)HttpStatusCode.InternalServerError, "An error occurred when calling external api.");
+        }
     }
 }
