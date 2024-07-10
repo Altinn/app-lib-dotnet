@@ -38,10 +38,10 @@ public class ExternalApiControllerTests
         var result = await controller.Get(1, Guid.NewGuid(), externalApiId, queryParams);
 
         // Assert
-        result.Should().BeOfType<OkObjectResult>();
         var okResult = result as OkObjectResult;
-        okResult?.StatusCode.Should().Be((int)HttpStatusCode.OK);
-        okResult?.Value.Should().Be(externalApiData);
+        Assert.NotNull(okResult);
+        okResult.StatusCode.Should().Be((int)HttpStatusCode.OK);
+        okResult.Value.Should().Be(externalApiData);
     }
 
     [Fact]
@@ -61,14 +61,14 @@ public class ExternalApiControllerTests
         var result = await controller.Get(1, Guid.NewGuid(), externalApiId, queryParams);
 
         // Assert
-        result.Should().BeOfType<BadRequestObjectResult>();
         var objectResult = result as BadRequestObjectResult;
-        objectResult?.StatusCode.Should().Be((int)HttpStatusCode.BadRequest);
-        objectResult?.Value.Should().Be($"External api with id '{externalApiId}' not found.");
+        Assert.NotNull(objectResult);
+        objectResult.StatusCode.Should().Be((int)HttpStatusCode.BadRequest);
+        objectResult.Value.Should().Be($"External api with id '{externalApiId}' not found.");
     }
 
     [Fact]
-    public async Task Get_ShouldThrowException_WhenExternalApiServiceThrowsException()
+    public async Task Get_ShouldReturnHttpStatus500_WhenExternalApiServiceThrowsUnhandledException()
     {
         //Arrange
         string externalApiId = "apiId";
@@ -76,14 +76,18 @@ public class ExternalApiControllerTests
 
         _externalApiServiceMock
             .Setup(s => s.GetExternalApiData(externalApiId, It.IsAny<InstanceIdentifier>(), queryParams))
-            .Throws<Exception>();
+            .ThrowsAsync(new Exception("Error message"));
 
         var controller = new ExternalApiController(_loggerMock.Object, _externalApiServiceMock.Object);
 
-        // Act & Assert
-        await Assert.ThrowsAsync<Exception>(
-            async () => await controller.Get(1, Guid.NewGuid(), externalApiId, queryParams)
-        );
+        // Act
+        var result = await controller.Get(1, Guid.NewGuid(), externalApiId, queryParams);
+
+        // Assert
+        var objectResult = result as ObjectResult;
+        Assert.NotNull(objectResult);
+        objectResult.StatusCode.Should().Be((int)HttpStatusCode.InternalServerError);
+        objectResult.Value.Should().Match(x => ((string)x).EndsWith("Error message"));
     }
 
     [Fact]
@@ -105,9 +109,9 @@ public class ExternalApiControllerTests
         var result = await controller.Get(1, Guid.NewGuid(), externalApiId, queryParams);
 
         // Assert
-        result.Should().BeOfType<ObjectResult>();
         var objectResult = result as ObjectResult;
-        objectResult?.StatusCode.Should().Be((int)HttpStatusCode.BadRequest);
-        objectResult?.Value.Should().Be("Error message");
+        Assert.NotNull(objectResult);
+        objectResult.StatusCode.Should().Be((int)HttpStatusCode.BadRequest);
+        objectResult.Value.Should().Be("Error message");
     }
 }
