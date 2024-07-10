@@ -70,7 +70,17 @@ public class ExternalApiController : ControllerBase
             {
                 return StatusCode((int)ex.StatusCode.Value, ex.Message);
             }
-            return StatusCode((int)HttpStatusCode.InternalServerError, "An error occurred when calling external api.");
+            return StatusCode(
+                (int)HttpStatusCode.InternalServerError,
+                $"An error occurred when calling external api: {ex.Message}"
+            );
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(
+                (int)HttpStatusCode.InternalServerError,
+                $"An error occurred when calling external api: {ex.Message}"
+            );
         }
     }
 }
