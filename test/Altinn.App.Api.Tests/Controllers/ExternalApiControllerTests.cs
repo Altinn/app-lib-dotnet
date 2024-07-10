@@ -90,8 +90,12 @@ public class ExternalApiControllerTests
         objectResult.Value.Should().Match(x => ((string)x).EndsWith("Error message"));
     }
 
-    [Fact]
-    public async Task Get_ShouldReturnStatusCode_WhenExternalApiServiceThrowsHttpRequestException()
+    [Theory]
+    [InlineData("Error message")]
+    [InlineData("")]
+    public async Task Get_ShouldReturnStatusCode_AndFallbackToDefaultMessage_WhenExternalApiServiceThrowsHttpRequestException(
+        string errorMessage
+    )
     {
         // Arrange
         string externalApiId = "apiId";
@@ -99,9 +103,7 @@ public class ExternalApiControllerTests
 
         _externalApiServiceMock
             .Setup(s => s.GetExternalApiData(externalApiId, It.IsAny<InstanceIdentifier>(), queryParams))
-            .ThrowsAsync(
-                new HttpRequestException("Error message", new HttpRequestException(), HttpStatusCode.BadRequest)
-            );
+            .ThrowsAsync(new HttpRequestException(errorMessage, new HttpRequestException(), HttpStatusCode.BadRequest));
 
         var controller = new ExternalApiController(_loggerMock.Object, _externalApiServiceMock.Object);
 
@@ -112,6 +114,13 @@ public class ExternalApiControllerTests
         var objectResult = result as ObjectResult;
         Assert.NotNull(objectResult);
         objectResult.StatusCode.Should().Be((int)HttpStatusCode.BadRequest);
-        objectResult.Value.Should().Be("Error message");
+
+        objectResult
+            .Value.Should()
+            .Be(
+                string.IsNullOrWhiteSpace(errorMessage)
+                    ? "An error occurred when calling external api"
+                    : "Error message"
+            );
     }
 }
