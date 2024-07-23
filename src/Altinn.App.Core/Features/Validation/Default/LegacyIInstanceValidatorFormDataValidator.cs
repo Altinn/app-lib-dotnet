@@ -70,8 +70,7 @@ public class LegacyIInstanceValidatorFormDataValidator : IFormDataValidator
             instance,
             dataElement,
             _generalSettings,
-            data.GetType(),
-            ValidationIssueSources.Custom
+            data.GetType()
         );
     }
 }

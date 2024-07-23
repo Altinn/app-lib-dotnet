@@ -62,6 +62,8 @@ public class ValidationServiceTests : IDisposable
     private readonly Mock<ILogger<ValidationService>> _loggerMock = new();
     private readonly Mock<IDataClient> _dataClientMock = new(MockBehavior.Strict);
 
+    private readonly IInstanceDataAccessor _dataAccessor;
+
     private readonly Mock<IAppModel> _appModelMock = new(MockBehavior.Strict);
     private readonly Mock<IAppMetadata> _appMetadataMock = new(MockBehavior.Strict);
 
@@ -93,6 +95,12 @@ public class ValidationServiceTests : IDisposable
 
     public ValidationServiceTests()
     {
+        _dataAccessor = new CachedInstanceDataAccessor(
+            DefaultInstance,
+            _dataClientMock.Object,
+            _appMetadataMock.Object,
+            _appModelMock.Object
+        );
         _serviceCollection.AddSingleton(_loggerMock.Object);
         _serviceCollection.AddSingleton(_dataClientMock.Object);
         _serviceCollection.AddSingleton<IValidationService, ValidationService>();
@@ -200,12 +208,12 @@ public class ValidationServiceTests : IDisposable
             .Verifiable(hasRelevantChanges is null ? Times.Never : Times.AtLeastOnce);
     }
 
-    private void SourcePropertyIsSet(Dictionary<string, List<ValidationIssue>> result)
+    private void SourcePropertyIsSet(Dictionary<string, List<ValidationIssueWithSource>> result)
     {
         Assert.All(result.Values, SourcePropertyIsSet);
     }
 
-    private void SourcePropertyIsSet(List<ValidationIssue> result)
+    private void SourcePropertyIsSet(List<ValidationIssueWithSource> result)
     {
         Assert.All(
             result,
@@ -248,27 +256,13 @@ public class ValidationServiceTests : IDisposable
         var data = new MyModel { Name = "Ola" };
         SetupDataClient(data);
 
-        var resultTask = await validatorService.ValidateInstanceAtTask(DefaultInstance, DefaultTaskId, DefaultLanguage);
+        var resultTask = await validatorService.ValidateInstanceAtTask(
+            DefaultInstance,
+            DefaultTaskId,
+            _dataAccessor,
+            DefaultLanguage
+        );
         resultTask.Should().BeEmpty();
-
-        var resultElement = await validatorService.ValidateDataElement(
-            DefaultInstance,
-            DefaultDataElement,
-            DefaultDataType,
-            DefaultLanguage
-        );
-        resultElement.Should().BeEmpty();
-
-        var resultData = await validatorService.ValidateFormData(
-            DefaultInstance,
-            DefaultDataElement,
-            DefaultDataType,
-            data,
-            null,
-            null,
-            DefaultLanguage
-        );
-        resultData.Should().BeEmpty();
     }
 
     [Fact]
@@ -303,12 +297,19 @@ public class ValidationServiceTests : IDisposable
         var validatorService = serviceProvider.GetRequiredService<IValidationService>();
         var data = new MyModel { Name = "Ola" };
         var previousData = new MyModel() { Name = "Kari" };
-        var result = await validatorService.ValidateFormData(
+        var result = await validatorService.ValidateIncrementalFormData(
             DefaultInstance,
-            DefaultDataElement,
-            DefaultDataType,
-            data,
-            previousData,
+            "Task_1",
+            new List<DataElementChange>
+            {
+                new()
+                {
+                    DataElement = DefaultDataElement,
+                    PreviousValue = previousData,
+                    CurrentValue = data
+                }
+            },
+            _dataAccessor,
             null,
             DefaultLanguage
         );
@@ -342,13 +343,26 @@ public class ValidationServiceTests : IDisposable
         await using var serviceProvider = _serviceCollection.BuildServiceProvider();
 
         var validatorService = serviceProvider.GetRequiredService<IValidationService>();
-        var data = new MyModel { Name = "Kari" };
-        var resultData = await validatorService.ValidateFormData(
+        var dataAccessor = new CachedInstanceDataAccessor(
             DefaultInstance,
-            DefaultDataElement,
-            DefaultDataType,
-            data,
-            null,
+            _dataClientMock.Object,
+            _appMetadataMock.Object,
+            _appModelMock.Object
+        );
+        var data = new MyModel { Name = "Kari" };
+        dataAccessor.Set(DefaultDataElement, data);
+        var resultData = await validatorService.ValidateIncrementalFormData(
+            DefaultInstance,
+            "Task_1",
+            [
+                new DataElementChange()
+                {
+                    DataElement = DefaultDataElement,
+                    CurrentValue = data,
+                    PreviousValue = data,
+                }
+            ],
+            dataAccessor,
             null,
             DefaultLanguage
         );
@@ -413,12 +427,20 @@ public class ValidationServiceTests : IDisposable
         var data = new MyModel();
         SetupDataClient(data);
 
-        using var serviceProvider = _serviceCollection.BuildServiceProvider();
+        await using var serviceProvider = _serviceCollection.BuildServiceProvider();
         var validationService = serviceProvider.GetRequiredService<IValidationService>();
+
+        var dataAccessor = new CachedInstanceDataAccessor(
+            DefaultInstance,
+            _dataClientMock.Object,
+            _appMetadataMock.Object,
+            _appModelMock.Object
+        );
 
         var taskResult = await validationService.ValidateInstanceAtTask(
             DefaultInstance,
             DefaultTaskId,
+            dataAccessor,
             DefaultLanguage
         );
 
@@ -454,61 +476,6 @@ public class ValidationServiceTests : IDisposable
             .Be(ValidationIssueSeverity.Error);
         taskResult.Should().HaveCount(6);
         SourcePropertyIsSet(taskResult);
-
-        var elementResult = await validationService.ValidateDataElement(
-            DefaultInstance,
-            DefaultDataElement,
-            DefaultDataType,
-            DefaultLanguage
-        );
-        elementResult
-            .Should()
-            .Contain(i => i.Code == "data_element_validator")
-            .Which.Severity.Should()
-            .Be(ValidationIssueSeverity.Error);
-        elementResult
-            .Should()
-            .Contain(i => i.Code == "data_element_validator_always")
-            .Which.Severity.Should()
-            .Be(ValidationIssueSeverity.Error);
-        elementResult
-            .Should()
-            .Contain(i => i.Code == "form_data_validator")
-            .Which.Severity.Should()
-            .Be(ValidationIssueSeverity.Error);
-        elementResult
-            .Should()
-            .Contain(i => i.Code == "form_data_validator_always")
-            .Which.Severity.Should()
-            .Be(ValidationIssueSeverity.Error);
-        elementResult.Should().HaveCount(4);
-        SourcePropertyIsSet(elementResult);
-
-        var dataResult = await validationService.ValidateFormData(
-            DefaultInstance,
-            DefaultDataElement,
-            DefaultDataType,
-            data,
-            null,
-            null,
-            DefaultLanguage
-        );
-        dataResult
-            .Should()
-            .ContainKey("specificValidator")
-            .WhoseValue.Should()
-            .ContainSingle(i => i.Code == "form_data_validator")
-            .Which.Severity.Should()
-            .Be(ValidationIssueSeverity.Error);
-        dataResult
-            .Should()
-            .ContainKey("alwaysUsedValidator")
-            .WhoseValue.Should()
-            .ContainSingle(i => i.Code == "form_data_validator_always")
-            .Which.Severity.Should()
-            .Be(ValidationIssueSeverity.Error);
-        dataResult.Should().HaveCount(2);
-        SourcePropertyIsSet(dataResult);
     }
 
     [Fact]
@@ -529,10 +496,15 @@ public class ValidationServiceTests : IDisposable
         var data = new MyModel();
         SetupDataClient(data);
 
-        using var serviceProvider = _serviceCollection.BuildServiceProvider();
+        await using var serviceProvider = _serviceCollection.BuildServiceProvider();
         var validationService = serviceProvider.GetRequiredService<IValidationService>();
 
-        var result = await validationService.ValidateInstanceAtTask(DefaultInstance, DefaultTaskId, DefaultLanguage);
+        var result = await validationService.ValidateInstanceAtTask(
+            DefaultInstance,
+            DefaultTaskId,
+            _dataAccessor,
+            DefaultLanguage
+        );
 
         result.Should().BeEmpty();
     }
@@ -550,6 +522,11 @@ public class ValidationServiceTests : IDisposable
         _taskValidatorAlwaysMock.Verify();
         _dataElementValidatorAlwaysMock.Verify();
         _formDataValidatorAlwaysMock.Verify();
+
+        _dataClientMock.Verify();
+        _appMetadataMock.Verify();
+        _appModelMock.Verify();
+        _loggerMock.Verify();
 
         _dataClientMock.Verify();
     }

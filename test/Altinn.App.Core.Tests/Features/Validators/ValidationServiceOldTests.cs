@@ -62,11 +62,12 @@ public class ValidationServiceOldTests
         var instance = new Instance();
         var dataType = new DataType() { EnableFileScan = true };
         var dataElement = new DataElement() { DataType = "test", FileScanResult = FileScanResult.Infected };
+        var dataAccessor = new Mock<IInstanceDataAccessor>();
 
-        List<ValidationIssue> validationIssues = await validationService.ValidateDataElement(
+        List<ValidationIssueWithSource> validationIssues = await validationService.ValidateInstanceAtTask(
             instance,
-            dataElement,
-            dataType,
+            "Task_1",
+            dataAccessor.Object,
             null
         );
 
@@ -86,13 +87,15 @@ public class ValidationServiceOldTests
             AppLogic = null,
             EnableFileScan = true
         };
-        var instance = new Instance() { };
         var dataElement = new DataElement() { DataType = "test", FileScanResult = FileScanResult.Pending, };
+        var instance = new Instance() { Data = [dataElement] };
 
-        List<ValidationIssue> validationIssues = await validationService.ValidateDataElement(
+        var dataAccessorMock = new Mock<IInstanceDataAccessor>();
+
+        List<ValidationIssueWithSource> validationIssues = await validationService.ValidateInstanceAtTask(
             instance,
-            dataElement,
-            dataType,
+            "Task_1",
+            dataAccessorMock.Object,
             null
         );
 
@@ -108,11 +111,12 @@ public class ValidationServiceOldTests
         var instance = new Instance();
         var dataType = new DataType() { EnableFileScan = true, ValidationErrorOnPendingFileScan = true };
         var dataElement = new DataElement() { DataType = "test", FileScanResult = FileScanResult.Pending };
+        var dataAccessorMock = new Mock<IInstanceDataAccessor>();
 
-        List<ValidationIssue> validationIssues = await validationService.ValidateDataElement(
+        List<ValidationIssueWithSource> validationIssues = await validationService.ValidateInstanceAtTask(
             instance,
-            dataElement,
-            dataType,
+            "Task_1",
+            dataAccessorMock.Object,
             null
         );
 
@@ -125,14 +129,21 @@ public class ValidationServiceOldTests
         await using var serviceProvider = _serviceCollection.BuildServiceProvider();
         IValidationService validationService = serviceProvider.GetRequiredService<IValidationService>();
 
-        var instance = new Instance();
         var dataType = new DataType() { EnableFileScan = true, ValidationErrorOnPendingFileScan = true };
         var dataElement = new DataElement() { DataType = "test", FileScanResult = FileScanResult.Clean, };
+        var instance = new Instance()
+        {
+            AppId = "ttd/test-app",
+            Org = "ttd",
+            Data = [dataElement]
+        };
 
-        List<ValidationIssue> validationIssues = await validationService.ValidateDataElement(
+        var dataAccessorMock = new Mock<IInstanceDataAccessor>();
+
+        List<ValidationIssueWithSource> validationIssues = await validationService.ValidateInstanceAtTask(
             instance,
-            dataElement,
-            dataType,
+            "Task_1",
+            dataAccessorMock.Object,
             null
         );
 
@@ -172,8 +183,9 @@ public class ValidationServiceOldTests
             },
             Process = new ProcessState { CurrentTask = new ProcessElementInfo { Name = "Task_1" } }
         };
+        var dataAccessorMock = new Mock<IInstanceDataAccessor>();
 
-        var issues = await validationService.ValidateInstanceAtTask(instance, taskId, null);
+        var issues = await validationService.ValidateInstanceAtTask(instance, taskId, dataAccessorMock.Object, null);
         issues.Should().BeEmpty();
 
         // instance.Process?.CurrentTask?.Validated.CanCompleteTask.Should().BeTrue();
@@ -223,8 +235,9 @@ public class ValidationServiceOldTests
             },
             Process = new ProcessState { CurrentTask = new ProcessElementInfo { Name = "Task_1" } }
         };
+        var dataAccessorMock = new Mock<IInstanceDataAccessor>();
 
-        var issues = await validationService.ValidateInstanceAtTask(instance, taskId, null);
+        var issues = await validationService.ValidateInstanceAtTask(instance, taskId, dataAccessorMock.Object, null);
         issues.Should().HaveCount(1);
         issues.Should().ContainSingle(i => i.Code == ValidationIssueCodes.InstanceCodes.TooManyDataElementsOfType);
 
