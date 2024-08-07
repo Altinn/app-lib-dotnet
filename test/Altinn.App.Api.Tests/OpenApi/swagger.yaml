@@ -3063,6 +3063,8 @@ components:
           $ref: '#/components/schemas/MessageBoxConfig'
         copyInstanceSettings:
           $ref: '#/components/schemas/CopyInstanceSettings'
+        disallowUserInstantiation:
+          type: boolean
         id:
           type: string
           nullable: true
