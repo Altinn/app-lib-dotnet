@@ -15,6 +15,7 @@ using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using AppProcessState = Altinn.App.Core.Internal.Process.Elements.AppProcessState;
 using IAuthorizationService = Altinn.App.Core.Internal.Auth.IAuthorizationService;
 
@@ -523,7 +524,13 @@ public class ProcessController : ControllerBase
                     User = User,
                     Action = altinnTaskType
                 };
-                var result = await _processEngine.Next(request);
+
+                ProcessChangeResult result = await _processEngine.Next(request);
+
+                _logger.LogDebug(
+                    "Complete process next action completed. Result: {Result}",
+                    JsonConvert.SerializeObject(result)
+                );
 
                 if (!result.Success)
                 {
@@ -704,6 +711,8 @@ public class ProcessController : ControllerBase
                 return "write";
             case "confirmation":
                 return "confirm";
+            case "signing":
+                return "sign";
             default:
                 // Not any known task type, so assume it is an action type
                 return actionOrTaskType;
