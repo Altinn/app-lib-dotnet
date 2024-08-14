@@ -6,7 +6,6 @@ using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
-using OrderDetails = Altinn.App.Core.Features.Payment.Models.OrderDetails;
 
 namespace Altinn.App.Core.Features.Payment.Processors.Nets;
 
@@ -82,6 +81,8 @@ internal class NetsPaymentProcessor : IPaymentProcessor
                 TermsUrl = _settings.TermsUrl,
                 ReturnUrl = altinnAppUrl,
                 CancelUrl = altinnAppUrl,
+                Consumer = NetsMapper.MapConsumerDetails(orderDetails.Payer),
+                MerchantHandlesConsumerData = orderDetails.Payer != null,
                 ConsumerType = new NetsConsumerType
                 {
                     SupportedTypes = NetsMapper.MapConsumerTypes(orderDetails.AllowedPayerTypes),
