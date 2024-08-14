@@ -64,7 +64,7 @@ public class ValidationService : IValidationService
                 var issues = await v.Validate(instance, taskId, language, dataAccessor);
                 return KeyValuePair.Create(
                     v.ValidationSource,
-                    issues.Select(issue => new ValidationIssueWithSource(issue, v.ValidationSource))
+                    issues.Select(issue => ValidationIssueWithSource.FromIssue(issue, v.ValidationSource))
                 );
             }
             catch (Exception e)
@@ -102,8 +102,14 @@ public class ValidationService : IValidationService
 
         using var activity = _telemetry?.StartValidateIncrementalActivity(instance, taskId, changes);
 
+        var validators = _validatorFactory
+            .GetValidators(taskId)
+            .Where(v => !(ignoredValidators?.Contains(v.ValidationSource) ?? false))
+            .ToArray();
+
+        ThrowIfDuplicateValidators(validators, taskId);
+
         // Run task validations (but don't await yet)
-        var validators = _validatorFactory.GetValidators(taskId);
         var validationTasks = validators.Select(async validator =>
         {
             using var validatorActivity = _telemetry?.StartRunValidatorActivity(validator);
@@ -115,12 +121,15 @@ public class ValidationService : IValidationService
                 {
                     var issues = await validator.Validate(instance, taskId, language, dataAccessor);
                     var issuesWithSource = issues
-                        .Select(i => new ValidationIssueWithSource(i, validator.ValidationSource))
+                        .Select(i => ValidationIssueWithSource.FromIssue(i, validator.ValidationSource))
                         .ToList();
-                    return KeyValuePair.Create(validator.ValidationSource, issuesWithSource);
+                    return new KeyValuePair<string, List<ValidationIssueWithSource>?>(
+                        validator.ValidationSource,
+                        issuesWithSource
+                    );
                 }
 
-                return KeyValuePair.Create(validator.ValidationSource, new List<ValidationIssueWithSource>());
+                return new KeyValuePair<string, List<ValidationIssueWithSource>?>();
             }
             catch (Exception e)
             {
@@ -138,6 +147,21 @@ public class ValidationService : IValidationService
 
         var lists = await Task.WhenAll(validationTasks);
 
-        return lists.ToDictionary(kv => kv.Key, kv => kv.Value);
+        // ! Value is null if no relevant changes. Filter out these before return with ! because ofType don't filter nullables.
+        return lists.Where(k => k.Value is not null).ToDictionary(kv => kv.Key, kv => kv.Value!);
+    }
+
+    private void ThrowIfDuplicateValidators(IValidator[] validators, string taskId)
+    {
+        var sourceNames = validators
+            .Select(v => v.ValidationSource)
+            .Distinct(StringComparer.InvariantCultureIgnoreCase);
+        if (sourceNames.Count() != validators.Length)
+        {
+            var sources = string.Join('\n', validators.Select(v => $"{v.ValidationSource} {v.GetType().FullName}"));
+            throw new InvalidOperationException(
+                $"Duplicate validators found for task {taskId}. Ensure that each validator has a unique ValidationSource.\n\n{sources}"
+            );
+        }
     }
 }

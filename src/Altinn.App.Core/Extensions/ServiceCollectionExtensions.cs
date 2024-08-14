@@ -216,9 +216,7 @@ public static class ServiceCollectionExtensions
             services.AddTransient<IFormDataValidator, ExpressionValidator>();
         }
         services.AddTransient<IFormDataValidator, DataAnnotationValidator>();
-        services.AddTransient<IFormDataValidator, LegacyIInstanceValidatorFormDataValidator>();
         services.AddTransient<IDataElementValidator, DefaultDataElementValidator>();
-        services.AddTransient<ITaskValidator, LegacyIInstanceValidatorTaskValidator>();
         services.AddTransient<ITaskValidator, DefaultTaskValidator>();
     }
 

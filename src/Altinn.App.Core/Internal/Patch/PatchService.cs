@@ -154,7 +154,7 @@ internal class PatchService : IPatchService
 
         var validationIssues = await _validationService.ValidateIncrementalFormData(
             instance,
-            instance.Process.CurrentTask.Name,
+            instance.Process.CurrentTask.ElementId,
             changes,
             dataAccessor,
             ignoredValidators,

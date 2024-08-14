@@ -8,18 +8,21 @@ namespace Altinn.App.Core.Models.Validation;
 public class ValidationIssueWithSource
 {
     /// <summary>
-    /// Construct an instance of <see cref="ValidationIssueWithSource"/> from a normal <see cref="ValidationIssue"/> without source
+    /// Converter function to create a <see cref="ValidationIssueWithSource"/> from a <see cref="ValidationIssue"/> and adding a source.
     /// </summary>
-    public ValidationIssueWithSource(ValidationIssue issue, string source)
+    public static ValidationIssueWithSource FromIssue(ValidationIssue issue, string source)
     {
-        Severity = issue.Severity;
-        DataElementId = issue.DataElementId;
-        Field = issue.Field;
-        Code = issue.Code;
-        Description = issue.Description;
-        Source = source;
-        CustomTextKey = issue.CustomTextKey;
-        CustomTextParams = issue.CustomTextParams;
+        return new ValidationIssueWithSource
+        {
+            Severity = issue.Severity,
+            DataElementId = issue.DataElementId,
+            Field = issue.Field,
+            Code = issue.Code,
+            Description = issue.Description,
+            Source = source,
+            CustomTextKey = issue.CustomTextKey,
+            CustomTextParams = issue.CustomTextParams,
+        };
     }
 
     /// <summary>
@@ -35,7 +38,7 @@ public class ValidationIssueWithSource
     /// </remarks>
     [JsonPropertyName("severity")]
     [JsonConverter(typeof(JsonNumberEnumConverter<ValidationIssueSeverity>))]
-    public ValidationIssueSeverity Severity { get; set; }
+    public required ValidationIssueSeverity Severity { get; set; }
 
     /// <summary>
     /// The unique id of the data element of a given instance with the identified issue.
@@ -54,19 +57,19 @@ public class ValidationIssueWithSource
     /// Eg:
     /// </summary>
     [JsonPropertyName("code")]
-    public string? Code { get; set; }
+    public required string? Code { get; set; }
 
     /// <summary>
     /// A human readable description of the issue.
     /// </summary>
     [JsonPropertyName("description")]
-    public string? Description { get; set; }
+    public required string? Description { get; set; }
 
     /// <summary>
     /// The short name of the class that crated the message (set automatically after return of list)
     /// </summary>
     [JsonPropertyName("source")]
-    public string Source { get; set; }
+    public required string Source { get; set; }
 
     /// <summary>
     /// The custom text key to use for the localized text in the frontend.

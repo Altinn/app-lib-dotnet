@@ -54,6 +54,7 @@ public class ValidationIssue
     /// </summary>
     [JsonProperty(PropertyName = "code")]
     [JsonPropertyName("code")]
+    // TODO: Make this required for v9
     public string? Code { get; set; }
 
     /// <summary>
@@ -61,6 +62,7 @@ public class ValidationIssue
     /// </summary>
     [JsonProperty(PropertyName = "description")]
     [JsonPropertyName("description")]
+    // TODO: Make this required for v9
     public string? Description { get; set; }
 
     /// <summary>

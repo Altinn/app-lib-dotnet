@@ -9,16 +9,22 @@ namespace Altinn.App.Core.Features.Validation.Wrappers;
 internal class DataElementValidatorWrapper : IValidator
 {
     private readonly IDataElementValidator _dataElementValidator;
-    private readonly DataType _dataType;
+    private readonly string _taskId;
+    private readonly List<DataType> _dataTypes;
 
-    public DataElementValidatorWrapper(IDataElementValidator dataElementValidator, DataType dataType)
+    public DataElementValidatorWrapper(
+        IDataElementValidator dataElementValidator,
+        string taskId,
+        List<DataType> dataTypes
+    )
     {
         _dataElementValidator = dataElementValidator;
-        _dataType = dataType;
+        _taskId = taskId;
+        _dataTypes = dataTypes;
     }
 
     /// <inheritdoc />
-    public string TaskId => _dataType.TaskId;
+    public string TaskId => _taskId;
 
     /// <inheritdoc />
     public string ValidationSource => _dataElementValidator.ValidationSource;
@@ -34,15 +40,26 @@ internal class DataElementValidatorWrapper : IValidator
     )
     {
         var issues = new List<ValidationIssue>();
-        foreach (var dataElement in instance.Data.Where(d => d.DataType == _dataElementValidator.DataType))
+        var validateAllElements = _dataElementValidator.DataType == "*";
+        foreach (var dataElement in instance.Data)
         {
-            var dataElementValidationResult = await _dataElementValidator.ValidateDataElement(
-                instance,
-                dataElement,
-                _dataType,
-                language
-            );
-            issues.AddRange(dataElementValidationResult);
+            if (validateAllElements || _dataElementValidator.DataType == dataElement.DataType)
+            {
+                var dataType = _dataTypes.Find(d => d.Id == dataElement.DataType);
+                if (dataType is null)
+                {
+                    throw new InvalidOperationException(
+                        $"DataType {dataElement.DataType} not found in dataTypes from applicationmetadata"
+                    );
+                }
+                var dataElementValidationResult = await _dataElementValidator.ValidateDataElement(
+                    instance,
+                    dataElement,
+                    dataType,
+                    language
+                );
+                issues.AddRange(dataElementValidationResult);
+            }
         }
 
         return issues;

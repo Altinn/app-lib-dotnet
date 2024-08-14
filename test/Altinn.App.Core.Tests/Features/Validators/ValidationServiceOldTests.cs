@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Validation.Default;
 using Altinn.App.Core.Features.Validation.Helpers;
@@ -20,9 +21,9 @@ namespace Altinn.App.Core.Tests.Features.Validators;
 public class ValidationServiceOldTests
 {
     private readonly Mock<ILogger<ValidationService>> _loggerMock = new();
-    private readonly Mock<IDataClient> _dataClientMock = new();
-    private readonly Mock<IAppModel> _appModelMock = new();
-    private readonly Mock<IAppMetadata> _appMetadataMock = new();
+    private readonly Mock<IDataClient> _dataClientMock = new(MockBehavior.Strict);
+    private readonly Mock<IAppModel> _appModelMock = new(MockBehavior.Strict);
+    private readonly Mock<IAppMetadata> _appMetadataMock = new(MockBehavior.Strict);
     private readonly ServiceCollection _serviceCollection = new();
 
     private readonly ApplicationMetadata _applicationMetadata =
@@ -50,6 +51,7 @@ public class ValidationServiceOldTests
         _serviceCollection.AddSingleton<IDataElementValidator, DefaultDataElementValidator>();
         _serviceCollection.AddSingleton<ITaskValidator, DefaultTaskValidator>();
         _serviceCollection.AddSingleton<IValidatorFactory, ValidatorFactory>();
+        _serviceCollection.AddSingleton(Microsoft.Extensions.Options.Options.Create(new GeneralSettings()));
         _appMetadataMock.Setup(am => am.GetApplicationMetadata()).ReturnsAsync(_applicationMetadata);
     }
 
@@ -59,9 +61,15 @@ public class ValidationServiceOldTests
         await using var serviceProvider = _serviceCollection.BuildServiceProvider();
         IValidationService validationService = serviceProvider.GetRequiredService<IValidationService>();
 
-        var instance = new Instance();
-        var dataType = new DataType() { EnableFileScan = true };
-        var dataElement = new DataElement() { DataType = "test", FileScanResult = FileScanResult.Infected };
+        var dataType = new DataType()
+        {
+            Id = "testScan",
+            TaskId = "Task_1",
+            EnableFileScan = true
+        };
+        _applicationMetadata.DataTypes.Add(dataType);
+        var dataElement = new DataElement() { DataType = "testScan", FileScanResult = FileScanResult.Infected };
+        var instance = new Instance() { Data = [dataElement] };
         var dataAccessor = new Mock<IInstanceDataAccessor>();
 
         List<ValidationIssueWithSource> validationIssues = await validationService.ValidateInstanceAtTask(
@@ -71,7 +79,7 @@ public class ValidationServiceOldTests
             null
         );
 
-        validationIssues.FirstOrDefault(vi => vi.Code == "DataElementFileInfected").Should().NotBeNull();
+        validationIssues.Should().ContainSingle(vi => vi.Code == "DataElementFileInfected");
     }
 
     [Fact]
@@ -108,9 +116,16 @@ public class ValidationServiceOldTests
         await using var serviceProvider = _serviceCollection.BuildServiceProvider();
         IValidationService validationService = serviceProvider.GetRequiredService<IValidationService>();
 
-        var instance = new Instance();
-        var dataType = new DataType() { EnableFileScan = true, ValidationErrorOnPendingFileScan = true };
-        var dataElement = new DataElement() { DataType = "test", FileScanResult = FileScanResult.Pending };
+        var dataType = new DataType()
+        {
+            Id = "testScan",
+            TaskId = "Task_1",
+            EnableFileScan = true,
+            ValidationErrorOnPendingFileScan = true
+        };
+        _applicationMetadata.DataTypes.Add(dataType);
+        var dataElement = new DataElement() { DataType = "testScan", FileScanResult = FileScanResult.Pending };
+        var instance = new Instance() { Data = [dataElement], };
         var dataAccessorMock = new Mock<IInstanceDataAccessor>();
 
         List<ValidationIssueWithSource> validationIssues = await validationService.ValidateInstanceAtTask(
@@ -120,7 +135,7 @@ public class ValidationServiceOldTests
             null
         );
 
-        validationIssues.FirstOrDefault(vi => vi.Code == "DataElementFileScanPending").Should().NotBeNull();
+        validationIssues.Should().ContainSingle(vi => vi.Code == "DataElementFileScanPending");
     }
 
     [Fact]
@@ -181,7 +196,7 @@ public class ValidationServiceOldTests
             {
                 new() { DataType = "data", ContentType = "application/json" },
             },
-            Process = new ProcessState { CurrentTask = new ProcessElementInfo { Name = "Task_1" } }
+            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "Task_1" } }
         };
         var dataAccessorMock = new Mock<IInstanceDataAccessor>();
 
@@ -233,16 +248,13 @@ public class ValidationServiceOldTests
                     ContentType = "application/json"
                 },
             },
-            Process = new ProcessState { CurrentTask = new ProcessElementInfo { Name = "Task_1" } }
+            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "Task_1" } }
         };
         var dataAccessorMock = new Mock<IInstanceDataAccessor>();
 
         var issues = await validationService.ValidateInstanceAtTask(instance, taskId, dataAccessorMock.Object, null);
         issues.Should().HaveCount(1);
         issues.Should().ContainSingle(i => i.Code == ValidationIssueCodes.InstanceCodes.TooManyDataElementsOfType);
-
-        // instance.Process?.CurrentTask?.Validated.CanCompleteTask.Should().BeFalse();
-        // instance.Process?.CurrentTask?.Validated.Timestamp.Should().NotBeNull();
     }
 
     [Fact]

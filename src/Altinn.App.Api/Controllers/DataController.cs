@@ -487,7 +487,7 @@ public class DataController : ControllerBase
     /// <param name="language">The language selected by the user.</param>
     /// <returns>A response object with the new full model and validation issues from all the groups that run</returns>
     [Authorize(Policy = AuthzConstants.POLICY_INSTANCE_WRITE)]
-    [HttpPatch]
+    [HttpPatch("")]
     [ProducesResponseType(typeof(DataPatchResponseMultiple), 200)]
     [ProducesResponseType(typeof(ProblemDetails), 409)]
     [ProducesResponseType(typeof(ProblemDetails), 422)]
@@ -561,9 +561,9 @@ public class DataController : ControllerBase
                 }
 
                 return Ok(
-                    new DataPatchResponse
+                    new DataPatchResponseMultiple()
                     {
-                        NewDataModel = res.Ok.NewDataModels,
+                        NewDataModels = res.Ok.NewDataModels,
                         ValidationIssues = res.Ok.ValidationIssues
                     }
                 );

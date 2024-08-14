@@ -8,20 +8,22 @@ using Altinn.Platform.Storage.Interface.Models;
 /// </summary>
 internal class FormDataValidatorWrapper : IValidator
 {
-    private readonly IFormDataValidator _dataElementValidator;
-    private readonly DataType _dataType;
+    private readonly IFormDataValidator _formDataValidator;
+    private readonly string _taskId;
+    private readonly List<DataType> _dataTypes;
 
-    public FormDataValidatorWrapper(IFormDataValidator dataElementValidator, DataType dataType)
+    public FormDataValidatorWrapper(IFormDataValidator formDataValidator, string taskId, List<DataType> dataTypes)
     {
-        _dataElementValidator = dataElementValidator;
-        _dataType = dataType;
+        _formDataValidator = formDataValidator;
+        _taskId = taskId;
+        _dataTypes = dataTypes;
     }
 
     /// <inheritdoc />
-    public string TaskId => _dataType.TaskId;
+    public string TaskId => _taskId;
 
     /// <inheritdoc />
-    public string ValidationSource => _dataElementValidator.ValidationSource;
+    public string ValidationSource => _formDataValidator.ValidationSource;
 
     /// <summary>
     /// Run all legacy <see cref="IDataElementValidator"/> instances for the given <see cref="DataType"/>.
@@ -34,10 +36,16 @@ internal class FormDataValidatorWrapper : IValidator
     )
     {
         var issues = new List<ValidationIssue>();
-        foreach (var dataElement in instance.Data.Where(d => d.DataType == _dataElementValidator.DataType))
+        var validateAllElements = _formDataValidator.DataType == "*";
+        foreach (var dataElement in instance.Data)
         {
+            if (!validateAllElements && _formDataValidator.DataType != dataElement.DataType)
+            {
+                continue;
+            }
+
             var data = await instanceDataAccessor.Get(dataElement);
-            var dataElementValidationResult = await _dataElementValidator.ValidateFormData(
+            var dataElementValidationResult = await _formDataValidator.ValidateFormData(
                 instance,
                 dataElement,
                 data,
@@ -59,16 +67,11 @@ internal class FormDataValidatorWrapper : IValidator
     {
         try
         {
-            if (changes.All(c => c.DataElement.DataType != _dataType.Id))
-            {
-                return Task.FromResult(false);
-            }
-
             foreach (var change in changes)
             {
                 if (
-                    _dataElementValidator.DataType == change.DataElement.DataType
-                    && _dataElementValidator.HasRelevantChanges(change.CurrentValue, change.PreviousValue)
+                    (_formDataValidator.DataType == "*" || _formDataValidator.DataType == change.DataElement.DataType)
+                    && _formDataValidator.HasRelevantChanges(change.CurrentValue, change.PreviousValue)
                 )
                 {
                     return Task.FromResult(true);

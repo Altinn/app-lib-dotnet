@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
@@ -27,18 +28,18 @@ public class ValidationServiceTests : IDisposable
     }
 
     private const int DefaultPartyId = 234;
-    private static readonly Guid DefaultInstanceId = Guid.NewGuid();
-    private static readonly Guid DefaultDataElementId = Guid.NewGuid();
+    private static readonly Guid _defaultInstanceId = Guid.NewGuid();
+    private static readonly Guid _defaultDataElementId = Guid.NewGuid();
     private const string DefaultTaskId = "Task_1";
     private const string DefaultOrg = "org";
     private const string DefaultApp = "app";
     private const string DefaultAppId = $"{DefaultOrg}/{DefaultApp}";
     private const string DefaultLanguage = "defaultLanguageCode";
 
-    private static readonly DataElement DefaultDataElement =
-        new() { Id = DefaultDataElementId.ToString(), DataType = "MyType", };
+    private static readonly DataElement _defaultDataElement =
+        new() { Id = _defaultDataElementId.ToString(), DataType = "MyType", };
 
-    private static readonly DataType DefaultDataType =
+    private static readonly DataType _defaultDataType =
         new()
         {
             Id = "MyType",
@@ -46,18 +47,29 @@ public class ValidationServiceTests : IDisposable
             AppLogic = new ApplicationLogic { ClassRef = typeof(MyModel).FullName }
         };
 
-    private static readonly Instance DefaultInstance =
+    private static readonly DataType _neverataType =
         new()
         {
-            Id = $"{DefaultPartyId}/{DefaultInstanceId}",
+            Id = "never",
+            TaskId = DefaultTaskId,
+            AppLogic = new ApplicationLogic { ClassRef = typeof(MyModel).FullName }
+        };
+
+    private static readonly Instance _defaultInstance =
+        new()
+        {
+            Id = $"{DefaultPartyId}/{_defaultInstanceId}",
             InstanceOwner = new InstanceOwner() { PartyId = DefaultPartyId.ToString(), },
             Org = DefaultOrg,
             AppId = DefaultAppId,
-            Data = new List<DataElement>() { DefaultDataElement, }
+            Data = new List<DataElement>() { _defaultDataElement, }
         };
 
-    private static readonly ApplicationMetadata DefaultAppMetadata =
-        new(DefaultAppId) { DataTypes = new List<DataType> { DefaultDataType, }, };
+    private static readonly ApplicationMetadata _defaultAppMetadata =
+        new(DefaultAppId)
+        {
+            DataTypes = new List<DataType> { _defaultDataType, _neverataType },
+        };
 
     private readonly Mock<ILogger<ValidationService>> _loggerMock = new();
     private readonly Mock<IDataClient> _dataClientMock = new(MockBehavior.Strict);
@@ -96,7 +108,7 @@ public class ValidationServiceTests : IDisposable
     public ValidationServiceTests()
     {
         _dataAccessor = new CachedInstanceDataAccessor(
-            DefaultInstance,
+            _defaultInstance,
             _dataClientMock.Object,
             _appMetadataMock.Object,
             _appModelMock.Object
@@ -107,8 +119,10 @@ public class ValidationServiceTests : IDisposable
         _serviceCollection.AddSingleton(_appModelMock.Object);
         _appModelMock.Setup(a => a.GetModelType(typeof(MyModel).FullName!)).Returns(typeof(MyModel));
         _serviceCollection.AddSingleton(_appMetadataMock.Object);
-        _appMetadataMock.Setup(a => a.GetApplicationMetadata()).ReturnsAsync(DefaultAppMetadata);
+        _appMetadataMock.Setup(a => a.GetApplicationMetadata()).ReturnsAsync(_defaultAppMetadata);
         _serviceCollection.AddSingleton<IValidatorFactory, ValidatorFactory>();
+
+        _serviceCollection.AddSingleton(Microsoft.Extensions.Options.Options.Create(new GeneralSettings()));
 
         // NeverUsedValidators
         _serviceCollection.AddSingleton(_taskValidatorNeverMock.Object);
@@ -122,9 +136,9 @@ public class ValidationServiceTests : IDisposable
         _serviceCollection.AddSingleton(_taskValidatorMock.Object);
         SetupTaskValidatorType(_taskValidatorMock, DefaultTaskId, "specificTaskValidator");
         _serviceCollection.AddSingleton(_dataElementValidatorMock.Object);
-        SetupDataElementValidatorType(_dataElementValidatorMock, DefaultDataType.Id, "specificDataElementValidator");
+        SetupDataElementValidatorType(_dataElementValidatorMock, _defaultDataType.Id, "specificDataElementValidator");
         _serviceCollection.AddSingleton(_formDataValidatorMock.Object);
-        SetupFormDataValidatorType(_formDataValidatorMock, DefaultDataType.Id, "specificValidator");
+        SetupFormDataValidatorType(_formDataValidatorMock, _defaultDataType.Id, "specificValidator");
 
         // AlwaysUsedValidators
         _serviceCollection.AddSingleton(_taskValidatorAlwaysMock.Object);
@@ -148,7 +162,7 @@ public class ValidationServiceTests : IDisposable
     )
     {
         taskValidatorMock
-            .Setup(v => v.ValidateTask(DefaultInstance, DefaultTaskId, DefaultLanguage))
+            .Setup(v => v.ValidateTask(_defaultInstance, DefaultTaskId, DefaultLanguage))
             .ReturnsAsync(validationIssues)
             .Verifiable(times ?? Times.Once());
     }
@@ -170,7 +184,7 @@ public class ValidationServiceTests : IDisposable
     )
     {
         dataElementValidatorMock
-            .Setup(v => v.ValidateDataElement(DefaultInstance, DefaultDataElement, DefaultDataType, DefaultLanguage))
+            .Setup(v => v.ValidateDataElement(_defaultInstance, _defaultDataElement, _defaultDataType, DefaultLanguage))
             .ReturnsAsync(validationIssues)
             .Verifiable(times ?? Times.Once());
     }
@@ -197,7 +211,7 @@ public class ValidationServiceTests : IDisposable
     {
         // ValidateFormData
         formDataValidatorMock
-            .Setup(v => v.ValidateFormData(DefaultInstance, DefaultDataElement, It.IsAny<MyModel>(), DefaultLanguage))
+            .Setup(v => v.ValidateFormData(_defaultInstance, _defaultDataElement, It.IsAny<MyModel>(), DefaultLanguage))
             .ReturnsAsync((Instance instance, DataElement dataElement, MyModel data, string? language) => func(data))
             .Verifiable(hasRelevantChanges is not false ? (times ?? Times.Once()) : Times.Never());
 
@@ -230,12 +244,12 @@ public class ValidationServiceTests : IDisposable
         _dataClientMock
             .Setup(d =>
                 d.GetFormData(
-                    DefaultInstanceId,
+                    _defaultInstanceId,
                     data.GetType(),
                     DefaultOrg,
                     DefaultApp,
                     DefaultPartyId,
-                    DefaultDataElementId
+                    _defaultDataElementId
                 )
             )
             .ReturnsAsync(data)
@@ -253,11 +267,9 @@ public class ValidationServiceTests : IDisposable
         await using var serviceProvider = _serviceCollection.BuildServiceProvider();
 
         var validatorService = serviceProvider.GetRequiredService<IValidationService>();
-        var data = new MyModel { Name = "Ola" };
-        SetupDataClient(data);
 
         var resultTask = await validatorService.ValidateInstanceAtTask(
-            DefaultInstance,
+            _defaultInstance,
             DefaultTaskId,
             _dataAccessor,
             DefaultLanguage
@@ -297,14 +309,15 @@ public class ValidationServiceTests : IDisposable
         var validatorService = serviceProvider.GetRequiredService<IValidationService>();
         var data = new MyModel { Name = "Ola" };
         var previousData = new MyModel() { Name = "Kari" };
+        SetupDataClient(data);
         var result = await validatorService.ValidateIncrementalFormData(
-            DefaultInstance,
+            _defaultInstance,
             "Task_1",
             new List<DataElementChange>
             {
                 new()
                 {
-                    DataElement = DefaultDataElement,
+                    DataElement = _defaultDataElement,
                     PreviousValue = previousData,
                     CurrentValue = data
                 }
@@ -324,7 +337,7 @@ public class ValidationServiceTests : IDisposable
     {
         SetupFormDataValidatorReturn(
             _formDataValidatorMock,
-            hasRelevantChanges: null,
+            hasRelevantChanges: true,
             model => new List<ValidationIssue>
             {
                 new() { Severity = ValidationIssueSeverity.Error, CustomTextKey = "NameNotOla" }
@@ -333,7 +346,7 @@ public class ValidationServiceTests : IDisposable
 
         SetupFormDataValidatorReturn(
             _formDataValidatorAlwaysMock,
-            hasRelevantChanges: null,
+            hasRelevantChanges: true,
             model => new List<ValidationIssue>
             {
                 new() { Severity = ValidationIssueSeverity.Error, CustomTextKey = "AlwaysNameNotOla" }
@@ -344,20 +357,20 @@ public class ValidationServiceTests : IDisposable
 
         var validatorService = serviceProvider.GetRequiredService<IValidationService>();
         var dataAccessor = new CachedInstanceDataAccessor(
-            DefaultInstance,
+            _defaultInstance,
             _dataClientMock.Object,
             _appMetadataMock.Object,
             _appModelMock.Object
         );
         var data = new MyModel { Name = "Kari" };
-        dataAccessor.Set(DefaultDataElement, data);
+        dataAccessor.Set(_defaultDataElement, data);
         var resultData = await validatorService.ValidateIncrementalFormData(
-            DefaultInstance,
+            _defaultInstance,
             "Task_1",
             [
                 new DataElementChange()
                 {
-                    DataElement = DefaultDataElement,
+                    DataElement = _defaultDataElement,
                     CurrentValue = data,
                     PreviousValue = data,
                 }
@@ -402,26 +415,26 @@ public class ValidationServiceTests : IDisposable
         SetupDataElementValidatorReturn(
             _dataElementValidatorMock,
             CreateIssues("data_element_validator"),
-            Times.Exactly(2)
+            Times.Once()
         );
         SetupDataElementValidatorReturn(
             _dataElementValidatorAlwaysMock,
             CreateIssues("data_element_validator_always"),
-            Times.Exactly(2)
+            Times.Once()
         );
 
         SetupFormDataValidatorReturn(
             _formDataValidatorMock,
             hasRelevantChanges: null, /* should not call HasRelevantChanges */
             model => CreateIssues("form_data_validator"),
-            Times.Exactly(3)
+            Times.Once()
         );
 
         SetupFormDataValidatorReturn(
             _formDataValidatorAlwaysMock,
             hasRelevantChanges: null, /* should not call HasRelevantChanges */
             model => CreateIssues("form_data_validator_always"),
-            Times.Exactly(3)
+            Times.Once()
         );
 
         var data = new MyModel();
@@ -431,14 +444,14 @@ public class ValidationServiceTests : IDisposable
         var validationService = serviceProvider.GetRequiredService<IValidationService>();
 
         var dataAccessor = new CachedInstanceDataAccessor(
-            DefaultInstance,
+            _defaultInstance,
             _dataClientMock.Object,
             _appMetadataMock.Object,
             _appModelMock.Object
         );
 
         var taskResult = await validationService.ValidateInstanceAtTask(
-            DefaultInstance,
+            _defaultInstance,
             DefaultTaskId,
             dataAccessor,
             DefaultLanguage
@@ -500,7 +513,7 @@ public class ValidationServiceTests : IDisposable
         var validationService = serviceProvider.GetRequiredService<IValidationService>();
 
         var result = await validationService.ValidateInstanceAtTask(
-            DefaultInstance,
+            _defaultInstance,
             DefaultTaskId,
             _dataAccessor,
             DefaultLanguage

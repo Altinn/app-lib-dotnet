@@ -160,8 +160,8 @@ public class ValidateController : ControllerBase
         // Should this be a BadRequest instead?
         if (!dataType.TaskId.Equals(taskId, StringComparison.OrdinalIgnoreCase))
         {
-            ValidationIssueWithSource message = new ValidationIssueWithSource(
-                new ValidationIssue
+            ValidationIssueWithSource message =
+                new()
                 {
                     Code = ValidationIssueCodes.DataElementCodes.DataElementValidatedAtWrongTask,
                     Severity = ValidationIssueSeverity.Warning,
@@ -169,9 +169,8 @@ public class ValidateController : ControllerBase
                     Description = $"Data element for task {dataType.TaskId} validated while currentTask is {taskId}",
                     CustomTextKey = ValidationIssueCodes.DataElementCodes.DataElementValidatedAtWrongTask,
                     CustomTextParams = new List<string>() { dataType.TaskId, taskId },
-                },
-                GetType().FullName ?? String.Empty
-            );
+                    Source = GetType().FullName ?? String.Empty
+                };
             messages.Add(message);
         }
 
