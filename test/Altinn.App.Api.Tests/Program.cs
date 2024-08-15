@@ -18,6 +18,7 @@ using Altinn.App.Core.Internal.Registers;
 using AltinnCore.Authentication.JwtCookie;
 using App.IntegrationTests.Mocks.Services;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -26,14 +27,15 @@ using Microsoft.OpenApi.Models;
 // This file should be as close to the Program.cs file in the app template
 // as possible to ensure we test the configuration of the dependency injection
 // container in this project.
-// External interfaces like Platform related services, Authenication, Authorization
+// External interfaces like Platform related services, Authentication, Authorization
 // external api's etc. should be mocked.
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(
     new WebApplicationOptions()
     {
         ApplicationName = "Altinn.App.Api.Tests",
-        WebRootPath = Path.Join(TestData.GetTestDataRootDirectory(), "apps", "tdd", "contributer-restriction")
+        WebRootPath = Path.Join(TestData.GetTestDataRootDirectory(), "apps", "tdd", "contributer-restriction"),
+        EnvironmentName = "Production",
     }
 );
 
@@ -102,7 +104,7 @@ void Configure()
     app.UseAltinnAppCommonConfiguration();
 }
 
-// This "hack" (documentet by Microsoft) is done to
+// This "hack" (documented by Microsoft) is done to
 // make the Program class public and available for
 // integration tests.
 public partial class Program { }
