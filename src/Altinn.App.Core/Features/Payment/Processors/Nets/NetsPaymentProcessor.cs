@@ -154,9 +154,9 @@ internal class NetsPaymentProcessor : IPaymentProcessor
         PaymentStatus status = chargedAmount > 0 ? PaymentStatus.Paid : PaymentStatus.Created;
         NetsPaymentDetails? paymentPaymentDetails = payment.PaymentDetails;
 
-        var checkout =
+        NetsCheckoutUrls checkout =
             payment.Checkout ?? throw new PaymentException("Checkout information is missing in the response from Nets");
-        var checkoutUrl =
+        string checkoutUrl =
             checkout.Url ?? throw new PaymentException("Checkout URL is missing in the response from Nets");
 
         PaymentDetails paymentDetails =
