@@ -345,10 +345,12 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IProcessTask, FeedbackProcessTask>();
         services.AddTransient<IProcessTask, SigningProcessTask>();
         services.AddTransient<IProcessTask, NullTypeProcessTask>();
-
         //SERVICE TASKS
         services.AddTransient<IServiceTask, PdfServiceTask>();
+        services.AddTransient<IProcessTask, PdfServiceTaskV2>();
+
         services.AddTransient<IServiceTask, EformidlingServiceTask>();
+        services.AddTransient<IProcessTask, EFormidlingServiceTaskV2>();
     }
 
     private static void AddActionServices(IServiceCollection services)

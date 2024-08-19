@@ -62,7 +62,7 @@ public class ProcessReader : IProcessReader
     public List<ProcessTask> GetProcessTasks()
     {
         using var activity = _telemetry?.StartGetProcessTasksActivity();
-        return _definitions.Process.Tasks;
+        return [.. _definitions.Process.Tasks, .. _definitions.Process.ServiceTasks];
     }
 
     /// <inheritdoc />

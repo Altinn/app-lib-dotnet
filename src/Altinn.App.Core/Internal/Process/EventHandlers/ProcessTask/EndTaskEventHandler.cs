@@ -51,7 +51,7 @@ public class EndTaskEventHandler : IEndTaskEventHandler
         await RunAppDefinedProcessTaskEndHandlers(taskId, instance);
         await _processTaskDataLocker.Lock(taskId, instance);
 
-        //These two services are scheduled to be removed and replaced by services tasks defined in the processfile.
+        //These two services are scheduled to be removed and replaced by services tasks defined in the process file.
         try
         {
             await _pdfServiceTask.Execute(taskId, instance);
