@@ -48,6 +48,13 @@ internal class NetsPaymentProcessor : IPaymentProcessor
         string baseUrl = _generalSettings.FormattedExternalAppBaseUrl(new AppIdentifier(instance));
         var altinnAppUrl = $"{baseUrl}#/instance/{instanceIdentifier}";
 
+        if (_settings.MerchantHandlesConsumerData == true && orderDetails.Payer is null)
+        {
+            throw new PaymentException(
+                "Payer is missing in orderDetails. MerchantHandlesConsumerData is set to true. Payer must be provided."
+            );
+        }
+
         var payment = new NetsCreatePayment()
         {
             Order = new NetsOrder
@@ -82,7 +89,7 @@ internal class NetsPaymentProcessor : IPaymentProcessor
                 ReturnUrl = altinnAppUrl,
                 CancelUrl = altinnAppUrl,
                 Consumer = NetsMapper.MapConsumerDetails(orderDetails.Payer),
-                MerchantHandlesConsumerData = orderDetails.Payer != null,
+                MerchantHandlesConsumerData = _settings.MerchantHandlesConsumerData ?? orderDetails.Payer is not null,
                 ConsumerType = new NetsConsumerType
                 {
                     SupportedTypes = NetsMapper.MapConsumerTypes(orderDetails.AllowedPayerTypes),
