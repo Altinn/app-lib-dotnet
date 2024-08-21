@@ -3,12 +3,14 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Features.DataLists;
 using Altinn.App.Core.Features.DataProcessing;
+using Altinn.App.Core.Features.ExternalApi;
 using Altinn.App.Core.Features.FileAnalyzis;
 using Altinn.App.Core.Features.Notifications.Email;
 using Altinn.App.Core.Features.Notifications.Sms;
 using Altinn.App.Core.Features.Options;
 using Altinn.App.Core.Features.PageOrder;
 using Altinn.App.Core.Features.Payment.Processors;
+using Altinn.App.Core.Features.Payment.Processors.FakePaymentProcessor;
 using Altinn.App.Core.Features.Payment.Processors.Nets;
 using Altinn.App.Core.Features.Payment.Services;
 using Altinn.App.Core.Features.Pdf;
@@ -56,6 +58,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
 using IProcessEngine = Altinn.App.Core.Internal.Process.IProcessEngine;
 using IProcessReader = Altinn.App.Core.Internal.Process.IProcessReader;
@@ -103,6 +106,7 @@ public static class ServiceCollectionExtensions
 #pragma warning restore CS0618 // Type or member is obsolete
         services.AddHttpClient<IProcessClient, ProcessClient>();
         services.AddHttpClient<IPersonClient, PersonClient>();
+        services.AddHybridCache();
 
         services.TryAddTransient<IUserTokenProvider, UserTokenProvider>();
         services.TryAddTransient<IAccessTokenGenerator, AccessTokenGenerator>();
@@ -176,9 +180,10 @@ public static class ServiceCollectionExtensions
         services.Configure<PdfGeneratorSettings>(configuration.GetSection(nameof(PdfGeneratorSettings)));
 
         AddAppOptions(services);
+        AddExternalApis(services);
         AddActionServices(services);
         AddPdfServices(services);
-        AddNetsPaymentServices(services, configuration);
+        AddPaymentServices(services, configuration, env);
         AddSignatureServices(services);
         AddEventServices(services);
         AddNotificationServices(services);
@@ -263,20 +268,30 @@ public static class ServiceCollectionExtensions
 #pragma warning restore CS0618 // Type or member is obsolete
     }
 
-    private static void AddNetsPaymentServices(this IServiceCollection services, IConfiguration configuration)
+    private static void AddPaymentServices(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        IHostEnvironment env
+    )
     {
-        IConfigurationSection configurationSection = configuration.GetSection("NetsPaymentSettings");
+        services.AddTransient<IPaymentService, PaymentService>();
+        services.AddTransient<IProcessTask, PaymentProcessTask>();
+        services.AddTransient<IUserAction, PaymentUserAction>();
 
+        // Fake Payment Processor used for automatic frontend tests
+        if (!env.IsProduction())
+        {
+            services.AddTransient<IPaymentProcessor, FakePaymentProcessor>();
+        }
+
+        // Nets Easy
+        IConfigurationSection configurationSection = configuration.GetSection("NetsPaymentSettings");
         if (configurationSection.Exists())
         {
             services.Configure<NetsPaymentSettings>(configurationSection);
             services.AddHttpClient<INetsClient, NetsClient>();
             services.AddTransient<IPaymentProcessor, NetsPaymentProcessor>();
         }
-
-        services.AddTransient<IPaymentService, PaymentService>();
-        services.AddTransient<IProcessTask, PaymentProcessTask>();
-        services.AddTransient<IUserAction, PaymentUserAction>();
     }
 
     private static void AddSignatureServices(IServiceCollection services)
@@ -296,6 +311,13 @@ public static class ServiceCollectionExtensions
 
         // Services related to instance aware and secure app options
         services.TryAddTransient<InstanceAppOptionsFactory>();
+    }
+
+    private static void AddExternalApis(IServiceCollection services)
+    {
+        services.AddTransient<IExternalApiService, ExternalApiService>();
+
+        services.TryAddTransient<IExternalApiFactory, ExternalApiFactory>();
     }
 
     private static void AddProcessServices(IServiceCollection services)
@@ -346,5 +368,20 @@ public static class ServiceCollectionExtensions
     {
         services.TryAddTransient<IFileValidationService, FileValidationService>();
         services.TryAddTransient<IFileValidatorFactory, FileValidatorFactory>();
+    }
+
+    internal static IEnumerable<ServiceDescriptor> GetOptionsDescriptors<TOptions>(this IServiceCollection services)
+        where TOptions : class
+    {
+        return services.Where(d =>
+            d.ServiceType == typeof(IConfigureOptions<TOptions>)
+            || d.ServiceType == typeof(IOptionsChangeTokenSource<TOptions>)
+        );
+    }
+
+    internal static ServiceDescriptor? GetOptionsDescriptor<TOptions>(this IServiceCollection services)
+        where TOptions : class
+    {
+        return services.GetOptionsDescriptors<TOptions>().FirstOrDefault();
     }
 }

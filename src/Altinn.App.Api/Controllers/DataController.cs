@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Net;
-using System.Security.Claims;
 using System.Text.Json;
+using Altinn.App.Api.Helpers;
 using Altinn.App.Api.Helpers.RequestHandling;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
@@ -108,7 +108,7 @@ public class DataController : ControllerBase
     /// <summary>
     /// Creates and instantiates a data element of a given element-type. Clients can upload the data element in the request content.
     /// </summary>
-    /// <param name="org">unique identfier of the organisation responsible for the app</param>
+    /// <param name="org">unique identifier of the organisation responsible for the app</param>
     /// <param name="app">application identifier which is unique within an organisation</param>
     /// <param name="instanceOwnerPartyId">unique id of the party that this the owner of the instance</param>
     /// <param name="instanceGuid">unique id to identify the instance</param>
@@ -144,7 +144,7 @@ public class DataController : ControllerBase
                 );
             }
 
-            if (!IsValidContributer(dataTypeFromMetadata, User))
+            if (!ValidContributorHelper.IsValidContributor(dataTypeFromMetadata, User.GetOrg(), User.GetOrgNumber()))
             {
                 return Forbid();
             }
@@ -273,9 +273,9 @@ public class DataController : ControllerBase
     }
 
     /// <summary>
-    /// Gets a data element from storage and applies business logic if nessesary.
+    /// Gets a data element from storage and applies business logic if necessary.
     /// </summary>
-    /// <param name="org">unique identfier of the organisation responsible for the app</param>
+    /// <param name="org">unique identifier of the organisation responsible for the app</param>
     /// <param name="app">application identifier which is unique within an organisation</param>
     /// <param name="instanceOwnerPartyId">unique id of the party that is the owner of the instance</param>
     /// <param name="instanceGuid">unique id to identify the instance</param>
@@ -989,47 +989,6 @@ public class DataController : ControllerBase
         }
 
         return true;
-    }
-
-    private static bool IsValidContributer(DataType dataType, ClaimsPrincipal user)
-    {
-        if (dataType.AllowedContributers == null || dataType.AllowedContributers.Count == 0)
-        {
-            return true;
-        }
-
-        foreach (string item in dataType.AllowedContributers)
-        {
-            string key = item.Split(':')[0];
-            string value = item.Split(':')[1];
-
-            switch (key.ToLowerInvariant())
-            {
-                case "org":
-                    if (value.Equals(user.GetOrg(), StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true;
-                    }
-
-                    break;
-                case "orgno":
-                    if (
-                        value.Equals(
-                            user.GetOrgNumber()?.ToString(CultureInfo.InvariantCulture),
-                            StringComparison.Ordinal
-                        )
-                    )
-                    {
-                        return true;
-                    }
-
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        return false;
     }
 
     private ObjectResult Problem(DataPatchError error)
