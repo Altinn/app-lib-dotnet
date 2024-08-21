@@ -41,7 +41,9 @@ using Altinn.App.Core.Internal.Process.Authorization;
 using Altinn.App.Core.Internal.Process.EventHandlers;
 using Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
-using Altinn.App.Core.Internal.Process.ServiceTasks;
+using Altinn.App.Core.Internal.Process.ProcessTasks.Common;
+using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
+using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.Legacy;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Internal.Secrets;
 using Altinn.App.Core.Internal.Sign;
@@ -345,12 +347,13 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IProcessTask, FeedbackProcessTask>();
         services.AddTransient<IProcessTask, SigningProcessTask>();
         services.AddTransient<IProcessTask, NullTypeProcessTask>();
-        //SERVICE TASKS
-        services.AddTransient<IServiceTask, PdfServiceTask>();
-        services.AddTransient<IProcessTask, PdfServiceTaskV2>();
 
-        services.AddTransient<IServiceTask, EformidlingServiceTask>();
-        services.AddTransient<IProcessTask, EFormidlingServiceTaskV2>();
+        //SERVICE TASKS
+        services.AddTransient<IPdfServiceTaskLegacy, PdfServiceTaskLegacy>();
+        services.AddTransient<IEFormidlingServiceTaskLegacy, EformidlingServiceTaskLegacy>();
+
+        services.AddTransient<IServiceTask, PdfServiceTask>();
+        services.AddTransient<IServiceTask, EFormidlingServiceTask>();
     }
 
     private static void AddActionServices(IServiceCollection services)

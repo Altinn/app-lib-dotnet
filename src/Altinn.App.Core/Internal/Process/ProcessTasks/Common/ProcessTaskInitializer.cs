@@ -10,7 +10,7 @@ using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
 
-namespace Altinn.App.Core.Internal.Process.ProcessTasks;
+namespace Altinn.App.Core.Internal.Process.ProcessTasks.Common;
 
 /// <inheritdoc/>
 public class ProcessTaskInitializer : IProcessTaskInitializer

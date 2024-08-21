@@ -47,6 +47,14 @@ partial class Telemetry
         return activity;
     }
 
+    internal Activity? StartProcessExecuteServiceTaskActivity(Instance instance, string serviceTaskType)
+    {
+        var activity = ActivitySource.StartActivity($"{Prefix}.ExecuteServiceTask");
+        activity?.SetInstanceId(instance);
+        activity?.SetTag(InternalLabels.ServiceTaskType, serviceTaskType);
+        return activity;
+    }
+
     internal Activity? StartProcessEndActivity(Instance instance)
     {
         var activity = ActivitySource.StartActivity($"{Prefix}.End");

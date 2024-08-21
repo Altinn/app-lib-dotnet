@@ -6,6 +6,8 @@ using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
+using Altinn.App.Core.Internal.Process.ProcessTasks.Common;
+using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
@@ -321,15 +323,12 @@ public class ProcessEngineTest : IDisposable
     }
 
     [Fact]
-    public async Task Next_returns_unsuccessful_when_process_null()
+    public async Task Next_throws_unsuccessful_when_process_null()
     {
         ProcessEngine processEngine = GetProcessEngine();
         Instance instance = new Instance() { Process = null };
         ProcessNextRequest processNextRequest = new ProcessNextRequest() { Instance = instance };
-        ProcessChangeResult result = await processEngine.Next(processNextRequest);
-        result.Success.Should().BeFalse();
-        result.ErrorMessage.Should().Be("Instance does not have current task information!");
-        result.ErrorType.Should().Be(ProcessErrorType.Conflict);
+        await Assert.ThrowsAsync<ProcessException>(async () => await processEngine.Next(processNextRequest));
     }
 
     [Fact]
@@ -979,6 +978,13 @@ public class ProcessEngineTest : IDisposable
                 .ReturnsAsync(() => updatedInstance);
         }
 
+        var pdfServiceTaskMock = new Mock<IPdfServiceTask>();
+        pdfServiceTaskMock.Setup(p => p.Type).Returns("pdf");
+        var eFormidlingServiceTaskMock = new Mock<IEFormidlingServiceTask>();
+        eFormidlingServiceTaskMock.Setup(p => p.Type).Returns("eFormidling");
+
+        List<IServiceTask> serviceTasks = [pdfServiceTaskMock.Object, eFormidlingServiceTaskMock.Object];
+
         return new ProcessEngine(
             _processReaderMock.Object,
             _profileMock.Object,
@@ -987,6 +993,7 @@ public class ProcessEngineTest : IDisposable
             _processEventDispatcherMock.Object,
             _processTaskCleanerMock.Object,
             new UserActionService(userActions ?? []),
+            serviceTasks,
             telemetrySink?.Object
         );
     }

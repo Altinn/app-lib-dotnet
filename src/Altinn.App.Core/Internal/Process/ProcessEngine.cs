@@ -7,6 +7,8 @@ using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
+using Altinn.App.Core.Internal.Process.ProcessTasks.Common;
+using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
@@ -27,20 +29,13 @@ public class ProcessEngine : IProcessEngine
     private readonly IProcessEventHandlerDelegator _processEventHandlerDelegator;
     private readonly IProcessEventDispatcher _processEventDispatcher;
     private readonly UserActionService _userActionService;
+    private readonly IEnumerable<IServiceTask> _serviceTasks;
     private readonly Telemetry? _telemetry;
     private readonly IProcessTaskCleaner _processTaskCleaner;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ProcessEngine"/> class
+    /// Initializes a new instance of the <see cref="ProcessEngine"/> class.
     /// </summary>
-    /// <param name="processReader">Process reader service</param>
-    /// <param name="profileClient">The profile service</param>
-    /// <param name="processNavigator">The process navigator</param>
-    /// <param name="processEventsDelegator">The process events delegator</param>
-    /// <param name="processEventDispatcher">The process event dispatcher</param>
-    /// <param name="processTaskCleaner">The process task cleaner</param>
-    /// <param name="userActionService">The action handler factory</param>
-    /// <param name="telemetry">The telemetry service</param>
     public ProcessEngine(
         IProcessReader processReader,
         IProfileClient profileClient,
@@ -49,6 +44,7 @@ public class ProcessEngine : IProcessEngine
         IProcessEventDispatcher processEventDispatcher,
         IProcessTaskCleaner processTaskCleaner,
         UserActionService userActionService,
+        IEnumerable<IServiceTask> serviceTasks,
         Telemetry? telemetry = null
     )
     {
@@ -59,6 +55,7 @@ public class ProcessEngine : IProcessEngine
         _processEventDispatcher = processEventDispatcher;
         _processTaskCleaner = processTaskCleaner;
         _userActionService = userActionService;
+        _serviceTasks = serviceTasks;
         _telemetry = telemetry;
     }
 
@@ -137,7 +134,8 @@ public class ProcessEngine : IProcessEngine
         using var activity = _telemetry?.StartProcessNextActivity(request.Instance);
 
         Instance instance = request.Instance;
-        string? currentElementId = instance.Process?.CurrentTask?.ElementId;
+        ProcessState process = instance.Process ?? throw new ProcessException("Instance does not have a process.");
+        string? currentElementId = process.CurrentTask?.ElementId;
 
         if (currentElementId == null)
         {
@@ -154,20 +152,55 @@ public class ProcessEngine : IProcessEngine
         await _processTaskCleaner.RemoveAllDataElementsGeneratedFromTask(instance, currentElementId);
 
         int? userId = request.User.GetUserIdAsInt();
-        IUserAction? actionHandler = _userActionService.GetActionHandler(request.Action);
+        string? action = request.Action;
+        string altinnTaskType = instance.Process.CurrentTask.AltinnTaskType;
 
-        UserActionResult actionResult = actionHandler is null
-            ? UserActionResult.SuccessResult()
-            : await actionHandler.HandleAction(new UserActionContext(request.Instance, userId));
-
-        if (actionResult.ResultType != ResultType.Success)
+        IUserAction? userActionHandler = _userActionService.GetActionHandler(action);
+        if (userActionHandler is not null)
         {
-            return new ProcessChangeResult()
+            UserActionResult actionResult = await userActionHandler.HandleAction(
+                new UserActionContext(request.Instance, userId)
+            );
+
+            if (actionResult.ResultType != ResultType.Success)
             {
-                Success = false,
-                ErrorMessage = $"Action handler for action {request.Action} failed!",
-                ErrorType = actionResult.ErrorType
-            };
+                return new ProcessChangeResult()
+                {
+                    Success = false,
+                    ErrorMessage = $"Action handler for action {action} failed!",
+                    ErrorType = actionResult.ErrorType
+                };
+            }
+        }
+        else
+        {
+            IServiceTask? serviceTask = _serviceTasks.FirstOrDefault(t =>
+                t.Type.Equals(altinnTaskType, StringComparison.OrdinalIgnoreCase)
+            );
+
+            if (serviceTask is not null)
+            {
+                using Activity? serviceTaskActivity = _telemetry?.StartProcessExecuteServiceTaskActivity(
+                    instance,
+                    altinnTaskType
+                );
+
+                try
+                {
+                    await serviceTask.Execute(currentElementId, instance);
+                }
+                catch (Exception ex)
+                {
+                    serviceTaskActivity?.Errored(ex);
+
+                    return new ProcessChangeResult()
+                    {
+                        Success = false,
+                        ErrorMessage = $"Server action {altinnTaskType} failed!",
+                        ErrorType = ProcessErrorType.Internal
+                    };
+                }
+            }
         }
 
         ProcessStateChange? nextResult = await HandleMoveToNext(instance, request.User, request.Action);
@@ -382,5 +415,14 @@ public class ProcessEngine : IProcessEngine
         await _processEventDispatcher.RegisterEventWithEventsComponent(instance);
 
         return processStateChange;
+    }
+
+    private IServiceTask? GetServiceTask(string altinnTaskType, string? action)
+    {
+        // If action is not null the request is meant to run a user action, not a server action.
+        if (!string.IsNullOrEmpty(action))
+            return null;
+
+        return _serviceTasks.FirstOrDefault(t => t.Type.Equals(altinnTaskType, StringComparison.OrdinalIgnoreCase));
     }
 }

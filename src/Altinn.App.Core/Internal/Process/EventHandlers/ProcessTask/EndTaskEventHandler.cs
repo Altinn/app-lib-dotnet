@@ -1,6 +1,7 @@
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
-using Altinn.App.Core.Internal.Process.ServiceTasks;
+using Altinn.App.Core.Internal.Process.ProcessTasks.Common;
+using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.Legacy;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
 
@@ -13,8 +14,8 @@ public class EndTaskEventHandler : IEndTaskEventHandler
 {
     private readonly IProcessTaskDataLocker _processTaskDataLocker;
     private readonly IProcessTaskFinalizer _processTaskFinisher;
-    private readonly IServiceTask _pdfServiceTask;
-    private readonly IServiceTask _eformidlingServiceTask;
+    private readonly IPdfServiceTaskLegacy _pdfServiceTaskLegacy;
+    private readonly IEFormidlingServiceTaskLegacy _eformidlingServiceTaskLegacy;
     private readonly IEnumerable<IProcessTaskEnd> _processTaskEnds;
     private readonly ILogger<EndTaskEventHandler> _logger;
 
@@ -24,19 +25,16 @@ public class EndTaskEventHandler : IEndTaskEventHandler
     public EndTaskEventHandler(
         IProcessTaskDataLocker processTaskDataLocker,
         IProcessTaskFinalizer processTaskFinisher,
-        IEnumerable<IServiceTask> serviceTasks,
         IEnumerable<IProcessTaskEnd> processTaskEnds,
-        ILogger<EndTaskEventHandler> logger
+        ILogger<EndTaskEventHandler> logger,
+        IPdfServiceTaskLegacy pdfServiceTaskLegacy,
+        IEFormidlingServiceTaskLegacy eformidlingServiceTaskLegacy
     )
     {
         _processTaskDataLocker = processTaskDataLocker;
         _processTaskFinisher = processTaskFinisher;
-        _pdfServiceTask =
-            serviceTasks.FirstOrDefault(x => x is IPdfServiceTask)
-            ?? throw new InvalidOperationException("PdfServiceTask not found in serviceTasks");
-        _eformidlingServiceTask =
-            serviceTasks.FirstOrDefault(x => x is IEformidlingServiceTask)
-            ?? throw new InvalidOperationException("EformidlingServiceTask not found in serviceTasks");
+        _pdfServiceTaskLegacy = pdfServiceTaskLegacy;
+        _eformidlingServiceTaskLegacy = eformidlingServiceTaskLegacy;
         _processTaskEnds = processTaskEnds;
         _logger = logger;
     }
@@ -54,7 +52,7 @@ public class EndTaskEventHandler : IEndTaskEventHandler
         //These two services are scheduled to be removed and replaced by services tasks defined in the process file.
         try
         {
-            await _pdfServiceTask.Execute(taskId, instance);
+            await _pdfServiceTaskLegacy.Execute(taskId, instance);
         }
         catch (Exception e)
         {
@@ -63,7 +61,7 @@ public class EndTaskEventHandler : IEndTaskEventHandler
             throw;
         }
 
-        await _eformidlingServiceTask.Execute(taskId, instance);
+        await _eformidlingServiceTaskLegacy.Execute(taskId, instance);
     }
 
     /// <summary>
