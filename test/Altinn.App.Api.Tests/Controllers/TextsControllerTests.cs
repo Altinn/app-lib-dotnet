@@ -16,7 +16,7 @@ public class TextsControllerTests
         // Arrange
         const string org = "ttd";
         const string app = "unit-app";
-        string language = LanguageConst.Bokmål;
+        string language = LanguageConst.Nb;
 
         TextResource expected = new TextResource
         {
@@ -50,12 +50,12 @@ public class TextsControllerTests
         // Arrange
         const string org = "ttd";
         const string app = "unit-app";
-        string language = LanguageConst.English;
+        string language = LanguageConst.En;
 
         TextResource expected = new TextResource
         {
             Id = "test",
-            Language = LanguageConst.Bokmål,
+            Language = LanguageConst.Nb,
             Org = org,
             Resources = new List<TextResourceElement>
             {
@@ -66,7 +66,7 @@ public class TextsControllerTests
         var appResourceMock = new Mock<IAppResources>();
         appResourceMock.Setup(a => a.GetTexts(org, app, language)).Returns(Task.FromResult<TextResource?>(null));
         appResourceMock
-            .Setup(a => a.GetTexts(org, app, LanguageConst.Bokmål))
+            .Setup(a => a.GetTexts(org, app, LanguageConst.Nb))
             .Returns(Task.FromResult<TextResource?>(null));
         // Act
         var controller = new TextsController(appResourceMock.Object);
@@ -77,7 +77,7 @@ public class TextsControllerTests
         result.Result.Should().BeOfType<NotFoundResult>();
         resultValue.Should().BeNull();
         appResourceMock.Verify(a => a.GetTexts(org, app, language), Times.Once);
-        appResourceMock.Verify(a => a.GetTexts(org, app, LanguageConst.Bokmål), Times.Once);
+        appResourceMock.Verify(a => a.GetTexts(org, app, LanguageConst.Nb), Times.Once);
         appResourceMock.VerifyNoOtherCalls();
     }
 

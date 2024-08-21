@@ -41,9 +41,9 @@ public class TextsController : ControllerBase
 
         TextResource? textResource = await _appResources.GetTexts(org, app, language);
 
-        if (textResource == null && language != LanguageConst.Bokmål)
+        if (textResource == null && language != LanguageConst.Nb)
         {
-            textResource = await _appResources.GetTexts(org, app, LanguageConst.Bokmål);
+            textResource = await _appResources.GetTexts(org, app, LanguageConst.Nb);
         }
 
         if (textResource == null)

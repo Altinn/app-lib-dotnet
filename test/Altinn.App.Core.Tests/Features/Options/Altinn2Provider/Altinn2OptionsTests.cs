@@ -64,7 +64,7 @@ public class Altinn2OptionsTests
             providers.Count().Should().Be(1);
             var optionsProvider = providers.Single(p => p.Id == "ASF_Land1");
             var landOptions = await optionsProvider.GetAppOptionsAsync(
-                LanguageConst.Bokmål,
+                LanguageConst.Nb,
                 new Dictionary<string, string>()
             );
             landOptions.Options.Should().HaveCountGreaterThan(4, "ASF_Land needs to have more than 4 countries");
@@ -90,7 +90,7 @@ public class Altinn2OptionsTests
             providers.Count().Should().Be(1);
             var optionsProvider = providers.Single(p => p.Id == "ASF_Land1");
             var landOptions = await optionsProvider.GetAppOptionsAsync(
-                LanguageConst.English,
+                LanguageConst.En,
                 new Dictionary<string, string>()
             );
             landOptions.Options.Should().HaveCountGreaterThan(4, "ASF_Land needs to have more than 4 countries");
@@ -117,7 +117,7 @@ public class Altinn2OptionsTests
             providers.Count().Should().Be(1);
             var optionsProvider = providers.Single(p => p.Id == "OnlyNorway");
             var landOptions = await optionsProvider.GetAppOptionsAsync(
-                LanguageConst.Bokmål,
+                LanguageConst.Nb,
                 new Dictionary<string, string>()
             );
             landOptions.Options.Should().HaveCount(1, "We filter out only norway");
@@ -144,7 +144,7 @@ public class Altinn2OptionsTests
             providers.Count().Should().Be(1);
             var optionsProvider = providers.Single(p => p.Id == "OnlyNorway");
             var landOptions = await optionsProvider.GetAppOptionsAsync(
-                LanguageConst.Bokmål,
+                LanguageConst.Nb,
                 new Dictionary<string, string>()
             );
             landOptions.Options.Should().HaveCount(1, "We filter out only norway");

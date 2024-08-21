@@ -48,7 +48,7 @@ public class PdfServiceTests
         var resource = new TextResource()
         {
             Id = "digdir-not-really-an-app-nb",
-            Language = LanguageConst.Bokmål,
+            Language = LanguageConst.Nb,
             Org = "digdir",
             Resources = []
         };
@@ -259,7 +259,7 @@ public class PdfServiceTests
                     new UserProfile
                     {
                         UserId = 123,
-                        ProfileSettingPreference = new ProfileSettingPreference { Language = LanguageConst.English }
+                        ProfileSettingPreference = new ProfileSettingPreference { Language = LanguageConst.En }
                     }
                 )
             );
@@ -271,7 +271,7 @@ public class PdfServiceTests
         var language = await target.GetLanguage(user);
 
         // Assert
-        language.Should().Be(LanguageConst.English);
+        language.Should().Be(LanguageConst.En);
     }
 
     [Fact]
@@ -301,7 +301,7 @@ public class PdfServiceTests
         var language = await target.GetLanguage(user);
 
         // Assert
-        language.Should().Be(LanguageConst.Bokmål);
+        language.Should().Be(LanguageConst.Nb);
     }
 
     [Fact]
@@ -315,7 +315,7 @@ public class PdfServiceTests
         var language = await target.GetLanguage(user);
 
         // Assert
-        language.Should().Be(LanguageConst.Bokmål);
+        language.Should().Be(LanguageConst.Nb);
     }
 
     [Fact]
@@ -340,13 +340,13 @@ public class PdfServiceTests
     public void GetOverridenLanguage_ShouldReturnLanguageFromQuery()
     {
         // Arrange
-        var queries = new QueryCollection(new Dictionary<string, StringValues> { { "lang", LanguageConst.Bokmål } });
+        var queries = new QueryCollection(new Dictionary<string, StringValues> { { "lang", LanguageConst.Nb } });
 
         // Act
         var language = PdfService.GetOverriddenLanguage(queries);
 
         // Assert
-        language.Should().Be(LanguageConst.Bokmål);
+        language.Should().Be(LanguageConst.Nb);
     }
 
     [Fact]

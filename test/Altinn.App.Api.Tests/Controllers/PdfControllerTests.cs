@@ -73,7 +73,7 @@ public class PdfControllerTests
         );
 
         var httpContextAccessor = new Mock<IHttpContextAccessor>();
-        httpContextAccessor.Setup(x => x.HttpContext!.Request!.Query["lang"]).Returns(LanguageConst.Bokmål);
+        httpContextAccessor.Setup(x => x.HttpContext!.Request!.Query["lang"]).Returns(LanguageConst.Nb);
 
         var handler = new Mock<HttpMessageHandler>();
         var httpClient = new HttpClient(handler.Object);
@@ -123,7 +123,7 @@ public class PdfControllerTests
         );
 
         var httpContextAccessor = new Mock<IHttpContextAccessor>();
-        httpContextAccessor.Setup(x => x.HttpContext!.Request!.Query["lang"]).Returns(LanguageConst.Bokmål);
+        httpContextAccessor.Setup(x => x.HttpContext!.Request!.Query["lang"]).Returns(LanguageConst.Nb);
         string? frontendVersion = null;
         httpContextAccessor
             .Setup(x => x.HttpContext!.Request!.Cookies.TryGetValue("frontendVersion", out frontendVersion))
@@ -202,7 +202,7 @@ public class PdfControllerTests
         );
 
         var httpContextAccessor = new Mock<IHttpContextAccessor>();
-        httpContextAccessor.Setup(x => x.HttpContext!.Request!.Query["lang"]).Returns(LanguageConst.Bokmål);
+        httpContextAccessor.Setup(x => x.HttpContext!.Request!.Query["lang"]).Returns(LanguageConst.Nb);
         string? frontendVersion = "https://altinncdn.no/toolkits/altinn-app-frontend/3/";
         httpContextAccessor
             .Setup(x => x.HttpContext!.Request!.Cookies.TryGetValue("frontendVersion", out frontendVersion))
@@ -283,7 +283,7 @@ public class PdfControllerTests
         );
 
         var httpContextAccessor = new Mock<IHttpContextAccessor>();
-        httpContextAccessor.Setup(x => x.HttpContext!.Request!.Query["lang"]).Returns(LanguageConst.Bokmål);
+        httpContextAccessor.Setup(x => x.HttpContext!.Request!.Query["lang"]).Returns(LanguageConst.Nb);
         string? frontendVersion = "https://altinncdn.no/toolkits/altinn-app-frontend/3/";
         httpContextAccessor
             .Setup(x => x.HttpContext!.Request!.Cookies.TryGetValue("frontendVersion", out frontendVersion))

@@ -16,7 +16,7 @@ public class NullInstanceDataListProviderTest
         provider.Id.Should().Be(string.Empty);
         var options = await provider.GetInstanceDataListAsync(
             new InstanceIdentifier(12345, Guid.NewGuid()),
-            LanguageConst.Bokmål,
+            LanguageConst.Nb,
             new Dictionary<string, string>()
         );
         options.ListItems.Should().BeNull();

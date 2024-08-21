@@ -85,7 +85,7 @@ public class OptionsController : ControllerBase
         AppOptions appOptions = await _appOptionsService.GetOptionsAsync(
             instanceIdentifier,
             optionsId,
-            language ?? LanguageConst.Bokmål,
+            language ?? LanguageConst.Nb,
             queryParams
         );
 

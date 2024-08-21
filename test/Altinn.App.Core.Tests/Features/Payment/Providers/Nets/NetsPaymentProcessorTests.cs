@@ -60,7 +60,7 @@ public class NetsPaymentProcessorTests
             );
 
         // Act
-        PaymentDetails result = await _processor.StartPayment(instance, orderDetails, LanguageConst.Bokmål);
+        PaymentDetails result = await _processor.StartPayment(instance, orderDetails, LanguageConst.Nb);
 
         // Assert
         Assert.NotNull(result);
@@ -117,7 +117,7 @@ public class NetsPaymentProcessorTests
             );
 
         // Act
-        PaymentDetails result = await _processor.StartPayment(instance, orderDetails, LanguageConst.Bokmål);
+        PaymentDetails result = await _processor.StartPayment(instance, orderDetails, LanguageConst.Nb);
 
         // Assert
         result.Should().NotBeNull();
@@ -200,7 +200,7 @@ public class NetsPaymentProcessorTests
         Instance instance = CreateInstance();
         const string paymentReference = "12345";
         const decimal expectedTotalIncVat = 100;
-        string language = LanguageConst.Bokmål;
+        string language = LanguageConst.Nb;
 
         _netsClientMock
             .Setup(x => x.RetrievePayment(paymentReference))

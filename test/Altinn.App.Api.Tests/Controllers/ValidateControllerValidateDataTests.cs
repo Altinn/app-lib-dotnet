@@ -89,7 +89,7 @@ public class TestScenariosData : IEnumerable<object[]>
                         ValidationIssueCodes.DataElementCodes.DataElementValidatedAtWrongTask,
                         new Dictionary<string, Dictionary<string, string>>(),
                         null,
-                        LanguageConst.Bokmål
+                        LanguageConst.Nb
                     )
                 }
             },

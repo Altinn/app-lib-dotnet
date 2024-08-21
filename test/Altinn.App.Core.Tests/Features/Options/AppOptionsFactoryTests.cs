@@ -99,7 +99,7 @@ public class AppOptionsFactoryTests
         IAppOptionsProvider optionsProvider = factory.GetOptionsProvider("Country");
 
         AppOptions options = await optionsProvider.GetAppOptionsAsync(
-            LanguageConst.Bokmål,
+            LanguageConst.Nb,
             new Dictionary<string, string>() { { "key", "value" } }
         );
         options.Parameters.First(x => x.Key == "key").Value.Should().Be("value");

@@ -671,7 +671,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
     {
         _dataProcessorMock
             .Setup(p =>
-                p.ProcessDataRead(It.IsAny<Instance>(), It.IsAny<Guid>(), It.IsAny<Skjema>(), LanguageConst.Nynorsk)
+                p.ProcessDataRead(It.IsAny<Instance>(), It.IsAny<Guid>(), It.IsAny<Skjema>(), LanguageConst.Nn)
             )
             .Returns(
                 (Instance instance, Guid dataGuid, Skjema skjema, string language) =>

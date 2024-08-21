@@ -45,7 +45,7 @@ public class TextClientTest
     {
         // Arrange
         _memoryCache.Remove("org-app-nb");
-        TextResource texts = new TextResource { Language = LanguageConst.Bokmål };
+        TextResource texts = new TextResource { Language = LanguageConst.Nb };
 
         HttpResponseMessage httpResponseMessage = new HttpResponseMessage
         {
@@ -76,7 +76,7 @@ public class TextClientTest
     {
         // Arrange
         _memoryCache.Remove("org-app-nb");
-        TextResource texts = new TextResource { Language = LanguageConst.Bokmål };
+        TextResource texts = new TextResource { Language = LanguageConst.Nb };
         _memoryCache.Set("org-app-nb", texts);
 
         InitializeMocks(new HttpResponseMessage(), "texts");

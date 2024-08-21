@@ -137,7 +137,7 @@ public class PdfService : IPdfService
 
     internal async Task<string> GetLanguage(ClaimsPrincipal? user)
     {
-        string language = LanguageConst.Bokmål;
+        string language = LanguageConst.Nb;
 
         if (user is null)
         {
@@ -183,10 +183,10 @@ public class PdfService : IPdfService
     {
         TextResource? textResource = await _resourceService.GetTexts(org, app, language);
 
-        if (textResource == null && language != LanguageConst.Bokmål)
+        if (textResource == null && language != LanguageConst.Nb)
         {
             // fallback to norwegian if texts does not exist
-            textResource = await _resourceService.GetTexts(org, app, LanguageConst.Bokmål);
+            textResource = await _resourceService.GetTexts(org, app, LanguageConst.Nb);
         }
 
         return textResource;

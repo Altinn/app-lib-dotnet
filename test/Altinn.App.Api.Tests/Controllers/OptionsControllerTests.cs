@@ -119,7 +119,7 @@ public class OptionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
 
         var headerValue = response.Headers.GetValues("Altinn-DownstreamParameters");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        headerValue.Should().NotContain(LanguageConst.Bokmål);
+        headerValue.Should().NotContain(LanguageConst.Nb);
     }
 
     [Fact]
