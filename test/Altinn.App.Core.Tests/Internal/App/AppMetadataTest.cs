@@ -379,7 +379,7 @@ public class AppMetadataTest
     }
 
     [Fact]
-    public async Task GetApplicationMetadata_logo_can_intstantiate_with_source_and_DisplayAppOwnerNameInHeader()
+    public async Task GetApplicationMetadata_logo_can_instantiate_with_source_and_DisplayAppOwnerNameInHeader()
     {
         var featureManagerMock = new Mock<IFeatureManager>();
         FrontendFeatures frontendFeatures = new(featureManagerMock.Object);
@@ -442,6 +442,20 @@ public class AppMetadataTest
         var actual = await appMetadata.GetApplicationMetadata();
         actual.Should().NotBeNull();
         actual.Should().BeEquivalentTo(expected);
+    }
+
+    [Fact]
+    public async Task GetApplicationMetadata_should_include_registered_externalApiIds()
+    {
+        string[] externalApiIds = ["api1", "api2"];
+        AppSettings appSettings = GetAppSettings("AppMetadata", "default.applicationmetadata.json");
+        var externalApiFactoryMock = new Mock<IExternalApiFactory>();
+        externalApiFactoryMock.Setup(f => f.GetAllExternalApiIds()).Returns(externalApiIds);
+
+        IAppMetadata appMetadata = SetupAppMetadata(Options.Create(appSettings), externalApiFactoryMock.Object);
+
+        var actual = await appMetadata.GetApplicationMetadata();
+        actual.ExternalApiIds.Should().BeEquivalentTo(externalApiIds);
     }
 
     [Fact]
