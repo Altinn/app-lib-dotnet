@@ -14,7 +14,7 @@ using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Altinn.App.Core.Tests.Internal.App;
 
-public class AppMedataTest
+public class AppMetadataTest
 {
     private static readonly JsonSerializerOptions _jsonSerializerOptions =
         new() { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
@@ -31,7 +31,7 @@ public class AppMedataTest
 
         AppSettings appSettings = GetAppSettings("AppMetadata", "default.applicationmetadata.json");
 
-        IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings), null, null, telemetrySink);
+        IAppMetadata appMetadata = SetupAppMetadata(Options.Create(appSettings), null, null, telemetrySink);
         ApplicationMetadata expected =
             new("tdd/bestilling")
             {
@@ -83,7 +83,7 @@ public class AppMedataTest
         Dictionary<string, bool> enabledFrontendFeatures = await frontendFeatures.GetFrontendFeatures();
 
         AppSettings appSettings = GetAppSettings("AppMetadata", "eformid.applicationmetadata.json");
-        IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
+        IAppMetadata appMetadata = SetupAppMetadata(Options.Create(appSettings));
         ApplicationMetadata expected =
             new("tdd/bestilling")
             {
@@ -146,7 +146,7 @@ public class AppMedataTest
         appFeaturesMock
             .Setup(af => af.GetFrontendFeatures())
             .ReturnsAsync(new Dictionary<string, bool>() { { "footer", true } });
-        IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings), null, appFeaturesMock.Object);
+        IAppMetadata appMetadata = SetupAppMetadata(Options.Create(appSettings), null, appFeaturesMock.Object);
         ApplicationMetadata expected =
             new("tdd/bestilling")
             {
@@ -203,7 +203,7 @@ public class AppMedataTest
             "AppMetadata",
             "onentry-legacy-selectoptions.applicationmetadata.json"
         );
-        IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
+        IAppMetadata appMetadata = SetupAppMetadata(Options.Create(appSettings));
         ApplicationMetadata expected =
             new("tdd/bestilling")
             {
@@ -264,7 +264,7 @@ public class AppMedataTest
         Dictionary<string, bool> enabledFrontendFeatures = await frontendFeatures.GetFrontendFeatures();
 
         AppSettings appSettings = GetAppSettings("AppMetadata", "onentry-new-selectoptions.applicationmetadata.json");
-        IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
+        IAppMetadata appMetadata = SetupAppMetadata(Options.Create(appSettings));
         ApplicationMetadata expected = new ApplicationMetadata("tdd/bestilling")
         {
             Id = "tdd/bestilling",
@@ -326,7 +326,7 @@ public class AppMedataTest
             "AppMetadata",
             "onentry-prefer-new-selectoptions.applicationmetadata.json"
         );
-        IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
+        IAppMetadata appMetadata = SetupAppMetadata(Options.Create(appSettings));
         ApplicationMetadata expected = new ApplicationMetadata("tdd/bestilling")
         {
             Id = "tdd/bestilling",
@@ -386,7 +386,7 @@ public class AppMedataTest
         Dictionary<string, bool> enabledFrontendFeatures = await frontendFeatures.GetFrontendFeatures();
 
         AppSettings appSettings = GetAppSettings("AppMetadata", "logo-org-source.applicationmetadata.json");
-        IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
+        IAppMetadata appMetadata = SetupAppMetadata(Options.Create(appSettings));
         ApplicationMetadata expected =
             new("tdd/bestilling")
             {
@@ -448,7 +448,7 @@ public class AppMedataTest
     public async Task GetApplicationMetadata_deserializes_unmapped_properties()
     {
         AppSettings appSettings = GetAppSettings("AppMetadata", "unmapped-properties.applicationmetadata.json");
-        IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
+        IAppMetadata appMetadata = SetupAppMetadata(Options.Create(appSettings));
         var actual = await appMetadata.GetApplicationMetadata();
         actual.Should().NotBeNull();
         actual.UnmappedProperties.Should().NotBeNull();
@@ -460,7 +460,7 @@ public class AppMedataTest
     public async Task GetApplicationMetadata_deserialize_serialize_unmapped_properties()
     {
         AppSettings appSettings = GetAppSettings("AppMetadata", "unmapped-properties.applicationmetadata.json");
-        IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
+        IAppMetadata appMetadata = SetupAppMetadata(Options.Create(appSettings));
         var appMetadataObj = await appMetadata.GetApplicationMetadata();
         string serialized = JsonSerializer.Serialize(appMetadataObj, _jsonSerializerOptions);
         string expected = File.ReadAllText(
@@ -477,7 +477,7 @@ public class AppMedataTest
     public async Task GetApplicationMetadata_throws_ApplicationConfigException_if_file_not_found()
     {
         AppSettings appSettings = GetAppSettings("AppMetadata", "notfound.applicationmetadata.json");
-        IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
+        IAppMetadata appMetadata = SetupAppMetadata(Options.Create(appSettings));
         await Assert.ThrowsAsync<ApplicationConfigException>(appMetadata.GetApplicationMetadata);
     }
 
@@ -485,7 +485,7 @@ public class AppMedataTest
     public async Task GetApplicationMetadata_throw_ApplicationConfigException_if_deserialization_fails()
     {
         AppSettings appSettings = GetAppSettings("AppMetadata", "invalid.applicationmetadata.json");
-        IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
+        IAppMetadata appMetadata = SetupAppMetadata(Options.Create(appSettings));
         await Assert.ThrowsAsync<ApplicationConfigException>(appMetadata.GetApplicationMetadata);
     }
 
@@ -493,7 +493,7 @@ public class AppMedataTest
     public async Task GetApplicationMetadata_throws_ApplicationConfigException_if_deserialization_fails_due_to_string_in_int()
     {
         AppSettings appSettings = GetAppSettings("AppMetadata", "invalid-int.applicationmetadata.json");
-        IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
+        IAppMetadata appMetadata = SetupAppMetadata(Options.Create(appSettings));
         await Assert.ThrowsAsync<ApplicationConfigException>(appMetadata.GetApplicationMetadata);
     }
 
@@ -501,7 +501,7 @@ public class AppMedataTest
     public async Task GetApplicationXACMLPolicy_return_policyfile_as_string()
     {
         AppSettings appSettings = GetAppSettings(subfolder: "AppPolicy", policyFilename: "policy.xml");
-        IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
+        IAppMetadata appMetadata = SetupAppMetadata(Options.Create(appSettings));
         string expected = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" + Environment.NewLine + "<root>policy</root>";
         var actual = await appMetadata.GetApplicationXACMLPolicy();
         actual.Should().BeEquivalentTo(expected);
@@ -511,7 +511,7 @@ public class AppMedataTest
     public async Task GetApplicationXACMLPolicy_throws_FileNotFoundException_if_file_not_found()
     {
         AppSettings appSettings = GetAppSettings(subfolder: "AppPolicy", policyFilename: "notfound.xml");
-        IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
+        IAppMetadata appMetadata = SetupAppMetadata(Options.Create(appSettings));
         await Assert.ThrowsAsync<FileNotFoundException>(appMetadata.GetApplicationXACMLPolicy);
     }
 
@@ -519,7 +519,7 @@ public class AppMedataTest
     public async Task GetApplicationBPMNProcess_return_process_as_string()
     {
         AppSettings appSettings = GetAppSettings(subfolder: "AppProcess", bpmnFilename: "process.bpmn");
-        IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
+        IAppMetadata appMetadata = SetupAppMetadata(Options.Create(appSettings));
         string expected = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" + Environment.NewLine + "<root>process</root>";
         var actual = await appMetadata.GetApplicationBPMNProcess();
         actual.Should().BeEquivalentTo(expected);
@@ -529,7 +529,7 @@ public class AppMedataTest
     public async Task GetApplicationBPMNProcess_throws_ApplicationConfigException_if_file_not_found()
     {
         AppSettings appSettings = GetAppSettings(subfolder: "AppProcess", policyFilename: "notfound.xml");
-        IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
+        IAppMetadata appMetadata = SetupAppMetadata(Options.Create(appSettings));
         await Assert.ThrowsAsync<ApplicationConfigException>(appMetadata.GetApplicationBPMNProcess);
     }
 
@@ -553,7 +553,7 @@ public class AppMedataTest
         return appSettings;
     }
 
-    private static IAppMetadata SetupAppMedata(
+    private static IAppMetadata SetupAppMetadata(
         IOptions<AppSettings> appsettings,
         IExternalApiFactory? externalApiFactory = null,
         IFrontendFeatures? frontendFeatures = null,

@@ -25,7 +25,7 @@ public class AppResourcesSITests
     {
         AppSettings appSettings = GetAppSettings("AppMetadata", "default.applicationmetadata.json");
         var settings = Options.Create(appSettings);
-        IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
+        IAppMetadata appMetadata = SetupAppMetadata(Options.Create(appSettings));
         AppResourcesSI appResources =
             new(settings, appMetadata, null, new NullLogger<AppResourcesSI>(), _telemetry.Object);
         Application expected =
@@ -72,7 +72,7 @@ public class AppResourcesSITests
     {
         AppSettings appSettings = GetAppSettings("AppMetadata", "no-on-entry.applicationmetadata.json");
         var settings = Options.Create(appSettings);
-        IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
+        IAppMetadata appMetadata = SetupAppMetadata(Options.Create(appSettings));
         AppResourcesSI appResources =
             new(settings, appMetadata, null, new NullLogger<AppResourcesSI>(), _telemetry.Object);
         Application expected = new Application()
@@ -121,7 +121,7 @@ public class AppResourcesSITests
             .Setup(af => af.GetFrontendFeatures())
             .ReturnsAsync(new Dictionary<string, bool>() { { "footer", true } });
         var settings = Options.Create(appSettings);
-        IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings), appFeaturesMock.Object);
+        IAppMetadata appMetadata = SetupAppMetadata(Options.Create(appSettings), appFeaturesMock.Object);
         AppResourcesSI appResources =
             new(settings, appMetadata, null, new NullLogger<AppResourcesSI>(), _telemetry.Object);
         Application expected =
@@ -172,7 +172,7 @@ public class AppResourcesSITests
     {
         AppSettings appSettings = GetAppSettings("AppMetadata", "notfound.applicationmetadata.json");
         var settings = Options.Create(appSettings);
-        IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
+        IAppMetadata appMetadata = SetupAppMetadata(Options.Create(appSettings));
         IAppResources appResources = new AppResourcesSI(
             settings,
             appMetadata,
@@ -188,7 +188,7 @@ public class AppResourcesSITests
     {
         AppSettings appSettings = GetAppSettings("AppMetadata", "invalid.applicationmetadata.json");
         var settings = Options.Create(appSettings);
-        IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
+        IAppMetadata appMetadata = SetupAppMetadata(Options.Create(appSettings));
         IAppResources appResources = new AppResourcesSI(
             settings,
             appMetadata,
@@ -204,7 +204,7 @@ public class AppResourcesSITests
     {
         AppSettings appSettings = GetAppSettings(subfolder: "AppPolicy", policyFilename: "policy.xml");
         var settings = Options.Create(appSettings);
-        IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
+        IAppMetadata appMetadata = SetupAppMetadata(Options.Create(appSettings));
         IAppResources appResources = new AppResourcesSI(
             settings,
             appMetadata,
@@ -222,7 +222,7 @@ public class AppResourcesSITests
     {
         AppSettings appSettings = GetAppSettings(subfolder: "AppPolicy", policyFilename: "notfound.xml");
         var settings = Options.Create(appSettings);
-        IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
+        IAppMetadata appMetadata = SetupAppMetadata(Options.Create(appSettings));
         IAppResources appResources = new AppResourcesSI(
             settings,
             appMetadata,
@@ -239,7 +239,7 @@ public class AppResourcesSITests
     {
         AppSettings appSettings = GetAppSettings(subfolder: "AppProcess", bpmnFilename: "process.bpmn");
         var settings = Options.Create(appSettings);
-        IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
+        IAppMetadata appMetadata = SetupAppMetadata(Options.Create(appSettings));
         IAppResources appResources = new AppResourcesSI(
             settings,
             appMetadata,
@@ -257,7 +257,7 @@ public class AppResourcesSITests
     {
         AppSettings appSettings = GetAppSettings(subfolder: "AppProcess", policyFilename: "notfound.xml");
         var settings = Options.Create(appSettings);
-        IAppMetadata appMetadata = SetupAppMedata(Options.Create(appSettings));
+        IAppMetadata appMetadata = SetupAppMetadata(Options.Create(appSettings));
         IAppResources appResources = new AppResourcesSI(
             settings,
             appMetadata,
@@ -289,7 +289,7 @@ public class AppResourcesSITests
         return appSettings;
     }
 
-    private static IAppMetadata SetupAppMedata(
+    private static IAppMetadata SetupAppMetadata(
         IOptions<AppSettings> appsettings,
         IFrontendFeatures frontendFeatures = null
     )
