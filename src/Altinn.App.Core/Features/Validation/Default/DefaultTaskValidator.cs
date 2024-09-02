@@ -50,7 +50,8 @@ public class DefaultTaskValidator : ITaskValidator
                 {
                     Code = ValidationIssueCodes.InstanceCodes.TooFewDataElementsOfType,
                     Severity = ValidationIssueSeverity.Error,
-                    Description = ValidationIssueCodes.InstanceCodes.TooFewDataElementsOfType,
+                    Description =
+                        $"Too few elements of type {dataType.Id}. Expected at least {dataType.MinCount}, found {elements.Count}",
                     Field = dataType.Id
                 };
                 messages.Add(message);

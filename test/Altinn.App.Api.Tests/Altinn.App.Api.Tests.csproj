@@ -48,4 +48,9 @@
     </None>
     <None Include="C:\dev\nugets\app-lib-dotnet\test\Altinn.App.Api.Tests\.editorconfig" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Data\apps\ttd\"/>
+    <Folder Include="Data\Instances\ttd\"/>
+  </ItemGroup>
 </Project>

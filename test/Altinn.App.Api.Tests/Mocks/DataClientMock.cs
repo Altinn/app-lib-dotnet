@@ -484,7 +484,7 @@ public class DataClientMock : IDataClient
         DataElement? element = dataElement.FirstOrDefault(d => d.Id == dataGuid.ToString());
         if (element is null)
         {
-            throw new Exception("Data element not found.");
+            throw new Exception($"Data element {dataGuid} not found.");
         }
         element.Locked = true;
         WriteDataElementToFile(element, org, app, instanceIdentifier.InstanceOwnerPartyId);
