@@ -140,7 +140,7 @@ public class ProcessEngine : IProcessEngine
     /// <inheritdoc/>
     public async Task<ProcessChangeResult> Next(ProcessNextRequest request)
     {
-        using var activity = _telemetry?.StartProcessNextActivity(request.Instance);
+        using var activity = _telemetry?.StartProcessNextActivity(request.Instance, request.Action);
 
         Instance instance = request.Instance;
         string? currentElementId = instance.Process?.CurrentTask?.ElementId;

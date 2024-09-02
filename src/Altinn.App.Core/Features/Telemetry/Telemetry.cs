@@ -182,6 +182,7 @@ public sealed partial class Telemetry : IDisposable
         internal const string ValidatorSource = "validator.source";
 
         internal const string ProcessErrorType = "process.error.type";
+        internal const string ProcessAction = "process.action";
     }
 
     private void InitMetricCounter(InitContext context, string name, Action<Counter<long>> init)

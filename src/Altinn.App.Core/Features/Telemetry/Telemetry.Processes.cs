@@ -40,10 +40,11 @@ partial class Telemetry
         return activity;
     }
 
-    internal Activity? StartProcessNextActivity(Instance instance)
+    internal Activity? StartProcessNextActivity(Instance instance, string? action)
     {
         var activity = ActivitySource.StartActivity($"{Prefix}.Next");
         activity?.SetInstanceId(instance);
+        activity?.SetTag(InternalLabels.ProcessAction, action);
         return activity;
     }
 
