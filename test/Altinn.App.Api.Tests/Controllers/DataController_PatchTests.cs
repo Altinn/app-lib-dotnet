@@ -8,6 +8,7 @@ using Altinn.App.Api.Models;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models;
 using Altinn.App.Api.Tests.Utils;
+using Altinn.App.Common.Tests;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Models.Validation;
@@ -198,6 +199,13 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
     [Fact]
     public async Task InvalidTestValue_ReturnsConflict()
     {
+        this.OverrideServicesForThisTest = (services) =>
+        {
+            services.AddTelemetrySink(
+                shouldAlsoListenToActivities: (_, source) => source.Name == "Microsoft.AspNetCore"
+            );
+        };
+
         // Update data element
         var patch = new JsonPatch(
             PatchOperation.Test(
@@ -208,10 +216,18 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
         );
 
         var (_, _, parsedResponse) = await CallPatchApi<ProblemDetails>(patch, null, HttpStatusCode.Conflict);
+        var telemetry = this.Services.GetRequiredService<TelemetrySink>();
 
         parsedResponse.Detail.Should().Be("Path `/melding/name` is not equal to the indicated value.");
 
         _dataProcessorMock.VerifyNoOtherCalls();
+
+        telemetry.TryFlush();
+        // Some tags are added after the telemetry is captured, I don't know any mechanism to wait for that,
+        // so for now we just wait a little bit and hopefully that makes the race condition less likely
+        await Task.Delay(100);
+        var activities = telemetry.CapturedActivities;
+        await Verify(telemetry.GetSnapshot(activities));
     }
 
     [Fact]

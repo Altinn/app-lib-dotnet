@@ -70,6 +70,9 @@ public sealed record TelemetrySink : IDisposable
     public TelemetrySnapshot GetSnapshot(Activity activity) =>
         new([activity], new Dictionary<string, IReadOnlyList<MetricMeasurement>>());
 
+    public TelemetrySnapshot GetSnapshot(IEnumerable<Activity> activities) =>
+        new(activities, new Dictionary<string, IReadOnlyList<MetricMeasurement>>());
+
     public void TryFlush()
     {
         Assert.NotNull(_serviceProvider);
