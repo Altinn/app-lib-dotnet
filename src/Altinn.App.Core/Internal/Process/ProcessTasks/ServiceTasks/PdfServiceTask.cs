@@ -39,19 +39,6 @@ public class PdfServiceTask : IPdfServiceTask
         _logger.LogDebug("Successfully called PdfService for PDF Service Task {TaskId}.", taskId);
     }
 
-    private ValidAltinnPdfConfiguration GetValidAltinnPdfConfiguration(string taskId)
-    {
-        AltinnTaskExtension? altinnTaskExtension = _processReader.GetAltinnTaskExtension(taskId);
-        AltinnPdfConfiguration? pdfConfiguration = altinnTaskExtension?.PdfConfiguration;
-
-        if (pdfConfiguration == null)
-        {
-            throw new ApplicationConfigException("PdfConfig is missing in the PDF service task configuration.");
-        }
-
-        return pdfConfiguration.Validate();
-    }
-
     /// <inheritdoc />
     public Task Start(string taskId, Instance instance)
     {
@@ -81,5 +68,18 @@ public class PdfServiceTask : IPdfServiceTask
     public Task Abandon(string taskId, Instance instance)
     {
         return Task.CompletedTask;
+    }
+
+    private ValidAltinnPdfConfiguration GetValidAltinnPdfConfiguration(string taskId)
+    {
+        AltinnTaskExtension? altinnTaskExtension = _processReader.GetAltinnTaskExtension(taskId);
+        AltinnPdfConfiguration? pdfConfiguration = altinnTaskExtension?.PdfConfiguration;
+
+        if (pdfConfiguration == null)
+        {
+            throw new ApplicationConfigException("PdfConfig is missing in the PDF service task configuration.");
+        }
+
+        return pdfConfiguration.Validate();
     }
 }
