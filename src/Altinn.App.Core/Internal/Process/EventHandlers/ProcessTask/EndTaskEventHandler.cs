@@ -49,7 +49,7 @@ public class EndTaskEventHandler : IEndTaskEventHandler
         await RunAppDefinedProcessTaskEndHandlers(taskId, instance);
         await _processTaskDataLocker.Lock(taskId, instance);
 
-        //These two services are scheduled to be removed and replaced by services tasks defined in the process file.
+        //These two services are scheduled to be removed in a major version. Pdf and eFormidling have been implemented as service tasks and can be added to the app using the process bpmn file.
         try
         {
             await _pdfServiceTaskLegacy.Execute(taskId, instance);

@@ -31,7 +31,7 @@ public class PdfServiceTaskTests : ApiTestBase, IClassFixture<WebApplicationFact
         using HttpClient client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
 
         //Run process next
-        HttpResponseMessage nextResponse = await client.PutAsync(
+        using HttpResponseMessage nextResponse = await client.PutAsync(
             $"{Org}/{App}/instances/{_instanceId}/process/next?language={Language}",
             null
         );
@@ -64,14 +64,14 @@ public class PdfServiceTaskTests : ApiTestBase, IClassFixture<WebApplicationFact
         using HttpClient client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
 
         //Run process next
-        HttpResponseMessage firstNextResponse = await client.PutAsync(
+        using HttpResponseMessage firstNextResponse = await client.PutAsync(
             $"{Org}/{App}/instances/{_instanceId}/process/next?language={Language}",
             null
         );
         firstNextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
 
         //Run process next again to actually execute the service task
-        HttpResponseMessage secondNextResponse = await client.PutAsync(
+        using HttpResponseMessage secondNextResponse = await client.PutAsync(
             $"{Org}/{App}/instances/{_instanceId}/process/next?lang={Language}",
             null
         );
@@ -104,14 +104,14 @@ public class PdfServiceTaskTests : ApiTestBase, IClassFixture<WebApplicationFact
         using HttpClient client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
 
         //Run process next
-        HttpResponseMessage firstNextResponse = await client.PutAsync(
+        using HttpResponseMessage firstNextResponse = await client.PutAsync(
             $"{Org}/{App}/instances/{_instanceId}/process/next?language={Language}",
             null
         );
         firstNextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
 
         //Run process next again to actually execute the service task
-        HttpResponseMessage secondNextResponse = await client.PutAsync(
+        using HttpResponseMessage secondNextResponse = await client.PutAsync(
             $"{Org}/{App}/instances/{_instanceId}/process/next?lang={Language}",
             null
         );

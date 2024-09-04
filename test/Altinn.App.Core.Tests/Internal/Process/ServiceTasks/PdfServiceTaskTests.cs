@@ -1,4 +1,5 @@
 ﻿using Altinn.App.Core.Internal.Pdf;
+using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
@@ -10,6 +11,7 @@ public class PdfServiceTaskTests
 {
     private readonly Mock<ILogger<PdfServiceTask>> _loggerMock;
     private readonly Mock<IPdfService> _pdfServiceMock;
+    private readonly Mock<IProcessReader> _processReaderMock;
 
     private readonly PdfServiceTask _serviceTask;
 
@@ -17,8 +19,9 @@ public class PdfServiceTaskTests
     {
         _loggerMock = new Mock<ILogger<PdfServiceTask>>();
         _pdfServiceMock = new Mock<IPdfService>();
+        _processReaderMock = new Mock<IProcessReader>();
 
-        _serviceTask = new PdfServiceTask(_loggerMock.Object, _pdfServiceMock.Object);
+        _serviceTask = new PdfServiceTask(_loggerMock.Object, _pdfServiceMock.Object, _processReaderMock.Object);
     }
 
     [Fact]

@@ -140,6 +140,12 @@ public class ProcessReader : IProcessReader
             return task;
         }
 
+        ServiceTask? serviceTask = _definitions.Process.ServiceTasks.Find(t => t.Id == elementId);
+        if (serviceTask != null)
+        {
+            return serviceTask;
+        }
+
         EndEvent? endEvent = _definitions.Process.EndEvents.Find(e => e.Id == elementId);
         if (endEvent != null)
         {

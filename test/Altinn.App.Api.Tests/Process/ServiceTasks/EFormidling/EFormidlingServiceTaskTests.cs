@@ -55,7 +55,7 @@ public class EFormidlingServiceTaskTests : ApiTestBase, IClassFixture<WebApplica
         using HttpClient client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
 
         //Run process next
-        HttpResponseMessage nextResponse = await client.PutAsync(
+        using HttpResponseMessage nextResponse = await client.PutAsync(
             $"{Org}/{App}/instances/{_instanceId}/process/next?language={Language}",
             null
         );
@@ -88,14 +88,14 @@ public class EFormidlingServiceTaskTests : ApiTestBase, IClassFixture<WebApplica
         using HttpClient client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
 
         //Run process next to move from PdfServiceTask to EFormidlingServiceTask
-        HttpResponseMessage firstNextResponse = await client.PutAsync(
+        using HttpResponseMessage firstNextResponse = await client.PutAsync(
             $"{Org}/{App}/instances/{_instanceId}/process/next?language={Language}",
             null
         );
         firstNextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
 
         //Run process next again to execute the EFormidlingServiceTask
-        HttpResponseMessage secondNextResponse = await client.PutAsync(
+        using HttpResponseMessage secondNextResponse = await client.PutAsync(
             $"{Org}/{App}/instances/{_instanceId}/process/next?lang={Language}",
             null
         );
@@ -131,7 +131,7 @@ public class EFormidlingServiceTaskTests : ApiTestBase, IClassFixture<WebApplica
         using HttpClient client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
 
         //Run process next to move from PdfServiceTask to EFormidlingServiceTask
-        HttpResponseMessage firstNextResponse = await client.PutAsync(
+        using HttpResponseMessage firstNextResponse = await client.PutAsync(
             $"{Org}/{App}/instances/{_instanceId}/process/next?language={Language}",
             null
         );
@@ -143,7 +143,7 @@ public class EFormidlingServiceTaskTests : ApiTestBase, IClassFixture<WebApplica
             .ThrowsAsync(new Exception());
 
         //Run process next again to execute the EFormidlingServiceTask
-        HttpResponseMessage secondNextResponse = await client.PutAsync(
+        using HttpResponseMessage secondNextResponse = await client.PutAsync(
             $"{Org}/{App}/instances/{_instanceId}/process/next?lang={Language}",
             null
         );
