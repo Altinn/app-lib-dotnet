@@ -1,6 +1,3 @@
-using System.Xml.Serialization;
-using Altinn.App.Core.Internal.Process.Elements.Base;
-
 namespace Altinn.App.Core.Internal.Process.Elements;
 
 /// <summary>

@@ -6,7 +6,6 @@ using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
-using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.App.Core.Internal.Process.ProcessTasks.Common;
 using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 using Altinn.App.Core.Internal.Profile;
@@ -433,14 +432,5 @@ public class ProcessEngine : IProcessEngine
         await _processEventDispatcher.RegisterEventWithEventsComponent(instance);
 
         return processStateChange;
-    }
-
-    private IServiceTask? GetServiceTask(string altinnTaskType, string? action)
-    {
-        // If action is not null the request is meant to run a user action, not a server action.
-        if (!string.IsNullOrEmpty(action))
-            return null;
-
-        return _serviceTasks.FirstOrDefault(t => t.Type.Equals(altinnTaskType, StringComparison.OrdinalIgnoreCase));
     }
 }

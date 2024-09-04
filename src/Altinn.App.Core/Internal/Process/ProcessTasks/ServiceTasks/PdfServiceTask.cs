@@ -46,7 +46,7 @@ public class PdfServiceTask : IPdfServiceTask
 
         foreach (string pdfTaskId in config.TaskIds)
         {
-            ProcessTask? processElement = _processReader.GetProcessTasks().FirstOrDefault(x => x.Id == pdfTaskId);
+            ProcessTask? processElement = _processReader.GetProcessTasks().Find(x => x.Id == pdfTaskId);
             if (processElement == null)
             {
                 throw new ProcessException(

@@ -15,7 +15,6 @@ internal interface IEFormidlingServiceTask : IServiceTask { }
 public class EFormidlingServiceTask : IEFormidlingServiceTask
 {
     private readonly ILogger<EFormidlingServiceTask> _logger;
-    private readonly IInstanceClient _instanceClient;
     private readonly IEFormidlingService? _eFormidlingService;
     private readonly IOptions<AppSettings>? _appSettings;
 
@@ -30,7 +29,6 @@ public class EFormidlingServiceTask : IEFormidlingServiceTask
     )
     {
         _logger = logger;
-        _instanceClient = instanceClient;
         _eFormidlingService = eFormidlingService;
         _appSettings = appSettings;
     }
