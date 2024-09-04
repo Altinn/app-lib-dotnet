@@ -170,16 +170,17 @@ public class ProcessEngine : IProcessEngine
                 new UserActionContext(request.Instance, userId)
             );
 
-        if (actionResult.ResultType != ResultType.Success)
-        {
-            var result = new ProcessChangeResult()
+            if (actionResult.ResultType != ResultType.Success)
             {
-                Success = false,
-                ErrorMessage = $"Action handler for action {request.Action} failed!",
-                ErrorType = actionResult.ErrorType
-            };
-            activity?.SetProcessChangeResult(result);
-            return result;
+                var result = new ProcessChangeResult()
+                {
+                    Success = false,
+                    ErrorMessage = $"Action handler for action {request.Action} failed!",
+                    ErrorType = actionResult.ErrorType
+                };
+                activity?.SetProcessChangeResult(result);
+                return result;
+            }
         }
         else
         {
