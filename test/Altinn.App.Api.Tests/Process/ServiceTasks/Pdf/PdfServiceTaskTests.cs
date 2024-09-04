@@ -6,7 +6,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit.Abstractions;
 
-namespace Altinn.App.Api.Tests.ProcessEngine.ServiceTasks.Pdf;
+namespace Altinn.App.Api.Tests.Process.ServiceTasks.Pdf;
 
 public class PdfServiceTaskTests : ApiTestBase, IClassFixture<WebApplicationFactory<Program>>
 {
@@ -53,7 +53,12 @@ public class PdfServiceTaskTests : ApiTestBase, IClassFixture<WebApplicationFact
             message.RequestUri!.PathAndQuery.Should().Be($"/pdf");
             sendAsyncCalled = true;
 
-            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
+            return Task.FromResult(
+                new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("this is the binary pdf content"),
+                }
+            );
         };
 
         using HttpClient client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
@@ -79,5 +84,51 @@ public class PdfServiceTaskTests : ApiTestBase, IClassFixture<WebApplicationFact
         _outputHelper.WriteLine(nextResponseContent);
         var processState = JsonConvert.DeserializeObject<ProcessState>(nextResponseContent);
         processState.CurrentTask.AltinnTaskType.Should().Be("eFormidling");
+    }
+
+    [Fact]
+    public async Task Does_Not_Change_Task_When_Pdf_Fails()
+    {
+        var sendAsyncCalled = false;
+
+        // Mock HttpClient for the expected pdf service call
+        SendAsync = message =>
+        {
+            message.RequestUri!.PathAndQuery.Should().Be($"/pdf");
+            sendAsyncCalled = true;
+
+            //Simulate failing PDF service
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
+        };
+
+        using HttpClient client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
+
+        //Run process next
+        HttpResponseMessage firstNextResponse = await client.PutAsync(
+            $"{Org}/{App}/instances/{_instanceId}/process/next?language={Language}",
+            null
+        );
+        firstNextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
+
+        //Run process next again to actually execute the service task
+        HttpResponseMessage secondNextResponse = await client.PutAsync(
+            $"{Org}/{App}/instances/{_instanceId}/process/next?lang={Language}",
+            null
+        );
+
+        secondNextResponse.Should().HaveStatusCode(HttpStatusCode.InternalServerError);
+        sendAsyncCalled.Should().BeTrue();
+
+        // Check that the process has been moved to the next task
+        string nextResponseContent = await secondNextResponse.Content.ReadAsStringAsync();
+        _outputHelper.WriteLine(nextResponseContent);
+        nextResponseContent
+            .Should()
+            .Be("{\"title\":\"Internal server error\",\"status\":500,\"detail\":\"Server action pdf failed!\"}");
+
+        //Double check that process did not move to the next task
+        Instance instance = await TestData.GetInstance(Org, App, InstanceOwnerPartyId, _instanceGuid);
+        instance.Process.CurrentTask.ElementId.Should().Be("Task_2");
+        instance.Process.CurrentTask.AltinnTaskType.Should().Be("pdf");
     }
 }

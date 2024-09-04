@@ -1,7 +1,6 @@
 ﻿using System.Net;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Core.EFormidling.Interface;
-using Altinn.App.Core.Internal.Process;
 using Altinn.Platform.Storage.Interface.Models;
 using Argon;
 using FluentAssertions;
@@ -10,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Xunit.Abstractions;
 
-namespace Altinn.App.Api.Tests.ProcessEngine.ServiceTasks.EFormidling;
+namespace Altinn.App.Api.Tests.Process.ServiceTasks.EFormidling;
 
 public class EFormidlingServiceTaskTests : ApiTestBase, IClassFixture<WebApplicationFactory<Program>>
 {
@@ -21,10 +20,15 @@ public class EFormidlingServiceTaskTests : ApiTestBase, IClassFixture<WebApplica
     private static readonly Guid _instanceGuid = new("b1af1cfd-db99-45f9-9625-9dfa1223485f");
     private static readonly string _instanceId = $"{InstanceOwnerPartyId}/{_instanceGuid}";
 
+    private readonly Mock<IEFormidlingService> _eFormidlingServiceMock = new Mock<IEFormidlingService>();
+
     public EFormidlingServiceTaskTests(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper)
         : base(factory, outputHelper)
     {
-        OverrideServicesForAllTests = (services) => services.AddSingleton(new Mock<IEFormidlingService>().Object);
+        OverrideServicesForAllTests = (services) =>
+        {
+            services.AddSingleton(_eFormidlingServiceMock.Object);
+        };
 
         TestData.DeleteInstanceAndData(Org, App, InstanceOwnerPartyId, _instanceGuid);
         TestData.PrepareInstance(Org, App, InstanceOwnerPartyId, _instanceGuid);
@@ -37,7 +41,12 @@ public class EFormidlingServiceTaskTests : ApiTestBase, IClassFixture<WebApplica
         {
             if (message.RequestUri!.PathAndQuery.Contains("pdf"))
             {
-                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
+                return Task.FromResult(
+                    new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent("this is the binary pdf content"),
+                    }
+                );
             }
 
             throw new Exception($"Not mocked http request: {message.RequestUri!.PathAndQuery}");
@@ -65,7 +74,12 @@ public class EFormidlingServiceTaskTests : ApiTestBase, IClassFixture<WebApplica
         {
             if (message.RequestUri!.PathAndQuery.Contains("pdf"))
             {
-                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
+                return Task.FromResult(
+                    new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent("this is the binary pdf content"),
+                    }
+                );
             }
 
             throw new Exception($"Not mocked http request: {message.RequestUri!.PathAndQuery}");
@@ -80,9 +94,8 @@ public class EFormidlingServiceTaskTests : ApiTestBase, IClassFixture<WebApplica
         );
         firstNextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
 
-        using HttpClient client2 = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
         //Run process next again to execute the EFormidlingServiceTask
-        HttpResponseMessage secondNextResponse = await client2.PutAsync(
+        HttpResponseMessage secondNextResponse = await client.PutAsync(
             $"{Org}/{App}/instances/{_instanceId}/process/next?lang={Language}",
             null
         );
@@ -94,5 +107,52 @@ public class EFormidlingServiceTaskTests : ApiTestBase, IClassFixture<WebApplica
         _outputHelper.WriteLine(nextResponseContent);
         var processState = JsonConvert.DeserializeObject<ProcessState>(nextResponseContent);
         processState.Ended.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task Does_Not_Change_Task_When_EFormidling_Fails()
+    {
+        // Make sure a request to eFormidling is made
+        SendAsync = message =>
+        {
+            if (message.RequestUri!.PathAndQuery.Contains("pdf"))
+            {
+                return Task.FromResult(
+                    new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent("this is the binary pdf content"),
+                    }
+                );
+            }
+
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
+        };
+
+        using HttpClient client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
+
+        //Run process next to move from PdfServiceTask to EFormidlingServiceTask
+        HttpResponseMessage firstNextResponse = await client.PutAsync(
+            $"{Org}/{App}/instances/{_instanceId}/process/next?language={Language}",
+            null
+        );
+        firstNextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
+
+        //Setup eFormidling service to throw exception
+        _eFormidlingServiceMock
+            .Setup(x => x.SendEFormidlingShipment(It.IsAny<Instance>()))
+            .ThrowsAsync(new Exception());
+
+        //Run process next again to execute the EFormidlingServiceTask
+        HttpResponseMessage secondNextResponse = await client.PutAsync(
+            $"{Org}/{App}/instances/{_instanceId}/process/next?lang={Language}",
+            null
+        );
+
+        secondNextResponse.Should().HaveStatusCode(HttpStatusCode.InternalServerError);
+
+        // Check that the process has been moved to end task
+        Instance instance = await TestData.GetInstance(Org, App, InstanceOwnerPartyId, _instanceGuid);
+        instance.Process.CurrentTask.ElementId.Should().Be("Task_3");
+        instance.Process.CurrentTask.AltinnTaskType.Should().Be("eFormidling");
     }
 }

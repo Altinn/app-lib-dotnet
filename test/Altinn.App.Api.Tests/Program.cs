@@ -13,8 +13,10 @@ using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Events;
 using Altinn.App.Core.Internal.Instances;
+using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
+using Altinn.App.Core.Internal.Sign;
 using AltinnCore.Authentication.JwtCookie;
 using App.IntegrationTests.Mocks.Services;
 using Microsoft.AspNetCore.Builder;
@@ -88,6 +90,9 @@ void ConfigureMockServices(IServiceCollection services, ConfigurationManager con
     services.AddTransient<IProfileClient, ProfileClientMock>();
     services.AddTransient<IInstanceEventClient, InstanceEventClientMock>();
     services.AddTransient<IAppModel, AppModelMock>();
+    services.AddTransient<IProcessClient, ProcessClientMock>();
+    services.AddTransient<IEventsClient, EventsClientMock>();
+    services.AddTransient<ISignClient, SignClientMock>();
 }
 
 void Configure()
