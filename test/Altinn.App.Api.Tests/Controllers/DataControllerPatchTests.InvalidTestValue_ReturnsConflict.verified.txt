@@ -1,49 +1,6 @@
 ﻿{
   Activities: [
     {
-      ActivityName: POST {org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/actions,
-      Tags: [
-        {
-          server.address: localhost
-        },
-        {
-          http.request.method: POST
-        },
-        {
-          url.scheme: http
-        },
-        {
-          url.path: /tdd/task-action/instances/1337/b1135209-628e-4a6e-9efd-e4282068ef41/actions
-        },
-        {
-          network.protocol.version: 1.1
-        },
-        {
-          user.id: 409
-        },
-        {
-          user.name: User409
-        },
-        {
-          user.authentication.method: Mock
-        },
-        {
-          user.authentication.level: 3
-        },
-        {
-          instance.owner.party.id: 1337
-        },
-        {
-          http.route: {org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/actions
-        },
-        {
-          http.response.status_code: 409
-        }
-      ],
-      IdFormat: W3C,
-      Kind: Server
-    },
-    {
       ActivityName: Data.Patch,
       Tags: [
         {

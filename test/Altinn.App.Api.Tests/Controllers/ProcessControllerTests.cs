@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Altinn.App.Api.Models;
 using Altinn.App.Api.Tests.Data;
+using Altinn.App.Common.Tests;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Models.Validation;
@@ -189,6 +190,13 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
     [Fact]
     public async Task RunProcessNext_PdfFails_DataIsUnlocked()
     {
+        this.OverrideServicesForThisTest = (services) =>
+        {
+            services.AddTelemetrySink(
+                shouldAlsoListenToActivities: (_, source) => source.Name == "Microsoft.AspNetCore"
+            );
+        };
+
         bool sendAsyncCalled = false;
         var dataElementPath = TestData.GetDataElementPath(Org, App, InstanceOwnerPartyId, InstanceGuid, DataGuid);
 
@@ -218,15 +226,31 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         nextResponse.Should().HaveStatusCode(HttpStatusCode.InternalServerError);
         sendAsyncCalled.Should().BeTrue();
 
+        var telemetry = this.Services.GetRequiredService<TelemetrySink>();
+
         // Verify that the instance is not locked after pdf failed
         var unLockedInstanceString = await File.ReadAllTextAsync(dataElementPath);
         var unLockedInstance = JsonSerializer.Deserialize<DataElement>(unLockedInstanceString, _jsonSerializerOptions)!;
         unLockedInstance.Locked.Should().BeFalse();
+
+        telemetry.TryFlush();
+        // Some tags are added after the telemetry is captured, I don't know any mechanism to wait for that,
+        // so for now we just wait a little bit and hopefully that makes the race condition less likely
+        await Task.Delay(100);
+        var activities = telemetry.CapturedActivities;
+        await Verify(telemetry.GetSnapshot(activities));
     }
 
     [Fact]
     public async Task RunProcessNext_FailingValidator_ReturnsValidationErrors()
     {
+        this.OverrideServicesForThisTest = (services) =>
+        {
+            services.AddTelemetrySink(
+                shouldAlsoListenToActivities: (_, source) => source.Name == "Microsoft.AspNetCore"
+            );
+        };
+
         var dataValidator = new Mock<IFormDataValidator>(MockBehavior.Strict);
         dataValidator.Setup(v => v.DataType).Returns("*");
         dataValidator.Setup(v => v.ValidationSource).Returns("test-source");
@@ -268,10 +292,19 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
                 && p.GetProperty("description").GetString() == "test-description"
             );
 
+        var telemetry = this.Services.GetRequiredService<TelemetrySink>();
+
         // Verify that the instance is not updated
         var instance = await TestData.GetInstance(Org, App, InstanceOwnerPartyId, InstanceGuid);
         instance.Process.CurrentTask.Should().NotBeNull();
         instance.Process.CurrentTask!.ElementId.Should().Be("Task_1");
+
+        telemetry.TryFlush();
+        // Some tags are added after the telemetry is captured, I don't know any mechanism to wait for that,
+        // so for now we just wait a little bit and hopefully that makes the race condition less likely
+        await Task.Delay(100);
+        var activities = telemetry.CapturedActivities;
+        await Verify(telemetry.GetSnapshot(activities));
     }
 
     [Fact]
