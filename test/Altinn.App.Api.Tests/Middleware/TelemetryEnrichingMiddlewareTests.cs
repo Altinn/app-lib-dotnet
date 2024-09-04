@@ -57,7 +57,7 @@ public class TelemetryEnrichingMiddlewareTests : ApiTestBase, IClassFixture<WebA
         Assert.Null(activity.Parent);
         Assert.Null(activity.ParentId);
         Assert.Equal(default, activity.ParentSpanId);
-
+        await Task.Delay(100);
         await Verify(telemetry.GetSnapshot(activity));
     }
 
@@ -82,6 +82,7 @@ public class TelemetryEnrichingMiddlewareTests : ApiTestBase, IClassFixture<WebA
         Assert.Null(activity.Parent);
         Assert.Null(activity.ParentId);
         Assert.Equal(default, activity.ParentSpanId);
+        await Task.Delay(100);
         await Verify(telemetry.GetSnapshot(activity)).ScrubMember(Telemetry.Labels.UserPartyId);
     }
 
@@ -110,6 +111,7 @@ public class TelemetryEnrichingMiddlewareTests : ApiTestBase, IClassFixture<WebA
         Assert.Null(activity.Parent);
         Assert.Null(activity.ParentId);
         Assert.Equal(default, activity.ParentSpanId);
+        await Task.Delay(100);
         await Verify(telemetry.GetSnapshot(activity)).ScrubMember(Telemetry.Labels.UserPartyId);
     }
 }
