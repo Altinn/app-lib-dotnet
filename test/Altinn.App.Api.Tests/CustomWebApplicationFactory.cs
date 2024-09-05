@@ -37,15 +37,14 @@ public class ApiTestBase
 
     protected IServiceProvider Services { get; private set; }
 
-    protected Guid TestId => Services.GetRequiredService<TestId>().Value;
-
     protected Func<IServiceProvider, Activity, bool> ActivityFilter =>
-        (_, activity) =>
+        static (sp, activity) =>
         {
             var current = activity;
+            var thisTestId = sp.GetRequiredService<TestId>().Value;
             do
             {
-                if (current.GetTagItem(nameof(TestId)) is Guid testId && testId == this.TestId)
+                if (current.GetTagItem(nameof(TestId)) is Guid testId && testId == thisTestId)
                     return true;
                 current = current.Parent;
             } while (current is not null);
