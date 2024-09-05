@@ -49,7 +49,27 @@ public static class TelemetryDI
 public sealed record TelemetrySink : IDisposable
 {
     private long _disposal = 0;
-    public bool IsDisposed => Interlocked.Read(ref _disposal) == 1;
+    public bool IsDisposed
+    {
+        get
+        {
+            var isDisposed = Interlocked.Read(ref _disposal) == 1;
+            if (!isDisposed && _serviceProvider is not null)
+            {
+                try
+                {
+                    _ = _serviceProvider.GetService<TelemetrySink>();
+                }
+                catch (ObjectDisposedException)
+                {
+                    // If IServiceProvider is disposed, then we can't process anything else
+                    return true;
+                }
+            }
+
+            return isDisposed;
+        }
+    }
 
     public static ConcurrentDictionary<Scope, byte> Scopes { get; } = [];
 
@@ -171,6 +191,7 @@ public sealed record TelemetrySink : IDisposable
             {
                 if (IsDisposed)
                     return;
+
                 if (activityFilter is not null && !activityFilter(_serviceProvider!, activity))
                     return;
                 _activities.Add(activity);
