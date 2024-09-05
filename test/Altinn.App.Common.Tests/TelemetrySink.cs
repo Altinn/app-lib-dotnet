@@ -48,7 +48,8 @@ public static class TelemetryDI
 
 public sealed record TelemetrySink : IDisposable
 {
-    public bool IsDisposed { get; private set; }
+    private long _disposal = 0;
+    public bool IsDisposed => Interlocked.Read(ref _disposal) == 1;
 
     public static ConcurrentDictionary<Scope, byte> Scopes { get; } = [];
 
@@ -155,19 +156,21 @@ public sealed record TelemetrySink : IDisposable
         {
             ShouldListenTo = (activitySource) =>
             {
+                if (IsDisposed)
+                    return false;
                 var sameSource = ReferenceEquals(activitySource, Object.ActivitySource);
                 return sameSource || (shouldAlsoListenToActivities?.Invoke(_serviceProvider!, activitySource) ?? false);
             },
             Sample = (ref ActivityCreationOptions<ActivityContext> options) =>
-                ActivitySamplingResult.AllDataAndRecorded,
-            ActivityStarted = activity =>
             {
-                // if (activityFilter is not null && !activityFilter(_serviceProvider!, activity))
-                //     return;
-                // _activities.Add(activity);
+                if (IsDisposed)
+                    return ActivitySamplingResult.None;
+                return ActivitySamplingResult.AllDataAndRecorded;
             },
             ActivityStopped = activity =>
             {
+                if (IsDisposed)
+                    return;
                 if (activityFilter is not null && !activityFilter(_serviceProvider!, activity))
                     return;
                 _activities.Add(activity);
@@ -181,6 +184,8 @@ public sealed record TelemetrySink : IDisposable
         {
             InstrumentPublished = (instrument, listener) =>
             {
+                if (IsDisposed)
+                    return;
                 var sameSource = ReferenceEquals(instrument.Meter, Object.Meter);
                 if (
                     !sameSource
@@ -202,6 +207,8 @@ public sealed record TelemetrySink : IDisposable
             {
                 Debug.Assert(state is not null);
                 var self = (TelemetrySink)state!;
+                if (self.IsDisposed)
+                    return;
                 Debug.Assert(self._metricValues[instrument.Name] is List<MetricMeasurement>);
                 var measurements = (List<MetricMeasurement>)self._metricValues[instrument.Name];
                 var tags = new Dictionary<string, object?>(tagSpan.Length);
@@ -223,14 +230,16 @@ public sealed record TelemetrySink : IDisposable
 
     public void Dispose()
     {
-        ActivityListener.Dispose();
-        MeterListener.Dispose();
-        Object.Dispose();
-        IsDisposed = true;
-
-        foreach (var (scope, _) in Scopes)
+        if (Interlocked.CompareExchange(ref _disposal, 1, 0) == 0)
         {
-            scope.IsDisposed = true;
+            ActivityListener.Dispose();
+            MeterListener.Dispose();
+            Object.Dispose();
+
+            foreach (var (scope, _) in Scopes)
+            {
+                scope.IsDisposed = true;
+            }
         }
     }
 
