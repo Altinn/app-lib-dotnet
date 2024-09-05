@@ -21,9 +21,9 @@ public static class TelemetryDI
         string org = "ttd",
         string name = "test",
         string version = "v1",
-        Func<IServiceProvider, ActivitySource, bool>? shouldAlsoListenToActivities = null,
-        Func<IServiceProvider, Meter, bool>? shouldAlsoListenToMetrics = null,
-        Func<IServiceProvider, Activity, bool>? activityFilter = null
+        Func<TestId?, ActivitySource, bool>? shouldAlsoListenToActivities = null,
+        Func<TestId?, Meter, bool>? shouldAlsoListenToMetrics = null,
+        Func<TestId?, Activity, bool>? activityFilter = null
     )
     {
         var telemetryRegistration = services.FirstOrDefault(s => s.ServiceType == typeof(Telemetry));
@@ -49,27 +49,7 @@ public static class TelemetryDI
 public sealed record TelemetrySink : IDisposable
 {
     private long _disposal = 0;
-    public bool IsDisposed
-    {
-        get
-        {
-            var isDisposed = Interlocked.Read(ref _disposal) == 1;
-            if (!isDisposed && _serviceProvider is not null)
-            {
-                try
-                {
-                    _ = _serviceProvider.GetService<TelemetrySink>();
-                }
-                catch (ObjectDisposedException)
-                {
-                    // If IServiceProvider is disposed, then we can't process anything else
-                    return true;
-                }
-            }
-
-            return isDisposed;
-        }
-    }
+    public bool IsDisposed => Interlocked.Read(ref _disposal) == 1;
 
     public static ConcurrentDictionary<Scope, byte> Scopes { get; } = [];
 
@@ -154,9 +134,9 @@ public sealed record TelemetrySink : IDisposable
         string name = "test",
         string version = "v1",
         Telemetry? telemetry = null,
-        Func<IServiceProvider, ActivitySource, bool>? shouldAlsoListenToActivities = null,
-        Func<IServiceProvider, Meter, bool>? shouldAlsoListenToMetrics = null,
-        Func<IServiceProvider, Activity, bool>? activityFilter = null
+        Func<TestId?, ActivitySource, bool>? shouldAlsoListenToActivities = null,
+        Func<TestId?, Meter, bool>? shouldAlsoListenToMetrics = null,
+        Func<TestId?, Activity, bool>? activityFilter = null
     )
     {
         _serviceProvider = serviceProvider;
@@ -166,6 +146,8 @@ public sealed record TelemetrySink : IDisposable
             Assert.NotNull(_serviceProvider);
         if (activityFilter is not null)
             Assert.NotNull(_serviceProvider);
+
+        var testId = serviceProvider?.GetService<TestId>();
 
         var appId = new AppIdentifier(org, name);
         var options = new AppSettings { AppVersion = version, };
@@ -179,7 +161,7 @@ public sealed record TelemetrySink : IDisposable
                 if (IsDisposed)
                     return false;
                 var sameSource = ReferenceEquals(activitySource, Object.ActivitySource);
-                return sameSource || (shouldAlsoListenToActivities?.Invoke(_serviceProvider!, activitySource) ?? false);
+                return sameSource || (shouldAlsoListenToActivities?.Invoke(testId, activitySource) ?? false);
             },
             Sample = (ref ActivityCreationOptions<ActivityContext> options) =>
             {
@@ -192,7 +174,7 @@ public sealed record TelemetrySink : IDisposable
                 if (IsDisposed)
                     return;
 
-                if (activityFilter is not null && !activityFilter(_serviceProvider!, activity))
+                if (activityFilter is not null && !activityFilter(testId, activity))
                     return;
                 _activities.Add(activity);
                 if (activity.Kind == ActivityKind.Server)
@@ -210,10 +192,7 @@ public sealed record TelemetrySink : IDisposable
                 var sameSource = ReferenceEquals(instrument.Meter, Object.Meter);
                 if (
                     !sameSource
-                    && (
-                        shouldAlsoListenToMetrics is null
-                        || !shouldAlsoListenToMetrics(serviceProvider!, instrument.Meter)
-                    )
+                    && (shouldAlsoListenToMetrics is null || !shouldAlsoListenToMetrics(testId, instrument.Meter))
                 )
                 {
                     return;

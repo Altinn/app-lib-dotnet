@@ -23,28 +23,26 @@ using Xunit.Abstractions;
 
 namespace Altinn.App.Api.Tests;
 
-public sealed record TestId(Guid Value);
-
 public class ApiTestBase
 {
-    protected static readonly JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions
+    protected static readonly JsonSerializerOptions JsonSerializerOptions = new JsonSerializerOptions
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         PropertyNameCaseInsensitive = true,
     };
 
-    protected readonly ITestOutputHelper _outputHelper;
+    protected readonly ITestOutputHelper OutputHelper;
     private readonly WebApplicationFactory<Program> _factory;
 
     protected IServiceProvider Services { get; private set; }
 
-    protected readonly Func<IServiceProvider, Activity, bool> ActivityFilter = static (sp, activity) =>
+    protected readonly Func<TestId?, Activity, bool> ActivityFilter = static (thisTestId, activity) =>
     {
-        var thisTestId = sp.GetRequiredService<TestId>().Value;
+        Assert.NotNull(thisTestId);
         var current = activity;
         do
         {
-            if (current.GetTagItem(nameof(TestId)) is Guid testId && testId == thisTestId)
+            if (current.GetTagItem(nameof(TestId)) is Guid testId && testId == thisTestId.Value)
                 return true;
             current = current.Parent;
         } while (current is not null);
@@ -56,7 +54,7 @@ public class ApiTestBase
     {
         _factory = factory;
         Services = _factory.Services;
-        _outputHelper = outputHelper;
+        OutputHelper = outputHelper;
     }
 
     internal class ApiTestBaseStartupFilter : IStartupFilter
@@ -121,7 +119,7 @@ public class ApiTestBase
             configuration.GetSection("AppSettings:AppBasePath").Value = appRootPath;
             IConfigurationSection appSettingSection = configuration.GetSection("AppSettings");
 
-            builder.ConfigureLogging(logging => ConfigureFakeLogging(logging, _outputHelper));
+            builder.ConfigureLogging(logging => ConfigureFakeLogging(logging, OutputHelper));
 
             builder.ConfigureServices(services => services.Configure<AppSettings>(appSettingSection));
             builder.ConfigureTestServices(services => OverrideServicesForAllTests(services));
@@ -238,19 +236,19 @@ public class ApiTestBase
         var content = await response.Content.ReadAsStringAsync();
         try
         {
-            return JsonSerializer.Deserialize<T>(content, _jsonSerializerOptions)
+            return JsonSerializer.Deserialize<T>(content, JsonSerializerOptions)
                 ?? throw new JsonException("Content was \"null\"");
         }
         catch (Exception)
         {
-            _outputHelper.WriteLine(string.Empty);
-            _outputHelper.WriteLine(string.Empty);
-            _outputHelper.WriteLine(
+            OutputHelper.WriteLine(string.Empty);
+            OutputHelper.WriteLine(string.Empty);
+            OutputHelper.WriteLine(
                 $"Failed to deserialize content of {response.RequestMessage?.Method} request to {response.RequestMessage?.RequestUri} as {ReflectionUtils.GetTypeNameWithGenericArguments<T>()}:"
             );
 
-            _outputHelper.WriteLine(JsonUtils.IndentJson(content));
-            _outputHelper.WriteLine(string.Empty);
+            OutputHelper.WriteLine(JsonUtils.IndentJson(content));
+            OutputHelper.WriteLine(string.Empty);
             throw;
         }
     }
