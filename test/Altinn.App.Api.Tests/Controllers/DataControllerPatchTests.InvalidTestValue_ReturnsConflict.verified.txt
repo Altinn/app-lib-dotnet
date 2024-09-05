@@ -1,18 +1,6 @@
 ﻿{
   Activities: [
     {
-      ActivityName: Data.Patch,
-      Tags: [
-        {
-          instance.guid: Guid_1
-        },
-        {
-          result: error
-        }
-      ],
-      IdFormat: W3C
-    },
-    {
       ActivityName: PATCH {org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/data/{dataGuid:guid},
       Tags: [
         {
@@ -29,6 +17,9 @@
         },
         {
           network.protocol.version: 1.1
+        },
+        {
+          TestId: Guid_1
         },
         {
           user.id: 1337
@@ -63,6 +54,18 @@
       ],
       IdFormat: W3C,
       Kind: Server
+    },
+    {
+      ActivityName: Data.Patch,
+      Tags: [
+        {
+          instance.guid: Guid_2
+        },
+        {
+          result: error
+        }
+      ],
+      IdFormat: W3C
     }
   ],
   Metrics: []

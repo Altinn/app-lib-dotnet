@@ -6,7 +6,10 @@ using Altinn.App.Api.Tests.Data;
 using Altinn.App.Api.Tests.Utils;
 using Altinn.App.Core.Configuration;
 using FluentAssertions;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
@@ -18,6 +21,8 @@ using OpenTelemetry.Context.Propagation;
 using Xunit.Abstractions;
 
 namespace Altinn.App.Api.Tests;
+
+public sealed record TestId(Guid Value);
 
 public class ApiTestBase
 {
@@ -32,11 +37,65 @@ public class ApiTestBase
 
     protected IServiceProvider Services { get; private set; }
 
+    protected Guid TestId => Services.GetRequiredService<TestId>().Value;
+
+    protected Func<IServiceProvider, Activity, bool> ActivityFilter =>
+        (_, activity) =>
+        {
+            var current = activity;
+            do
+            {
+                if (current.GetTagItem(nameof(TestId)) is Guid testId && testId == this.TestId)
+                    return true;
+                current = current.Parent;
+            } while (current is not null);
+
+            return false;
+        };
+
     public ApiTestBase(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper)
     {
         _factory = factory;
         Services = _factory.Services;
         _outputHelper = outputHelper;
+    }
+
+    internal class ApiTestBaseStartupFilter : IStartupFilter
+    {
+        private readonly TestId _testId;
+
+        public ApiTestBaseStartupFilter(TestId testId) => _testId = testId;
+
+        public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next)
+        {
+            return builder =>
+            {
+                builder.UseMiddleware<AddTestIdTagMiddleware>(_testId.Value);
+                next(builder);
+            };
+        }
+    }
+
+    private sealed class AddTestIdTagMiddleware
+    {
+        private readonly RequestDelegate _next;
+        private readonly Guid _testId;
+
+        public AddTestIdTagMiddleware(RequestDelegate next, Guid testId)
+        {
+            _next = next;
+            _testId = testId;
+        }
+
+        public Task Invoke(HttpContext httpContext)
+        {
+            var activity = httpContext.Features.GetRequiredFeature<IHttpActivityFeature>()?.Activity;
+            if (activity is not null)
+            {
+                activity.AddTag(nameof(TestId), _testId);
+            }
+            return _next(httpContext);
+        }
     }
 
     public HttpClient GetRootedClient(string org, string app, int userId, int? partyId, int authenticationLevel = 2)

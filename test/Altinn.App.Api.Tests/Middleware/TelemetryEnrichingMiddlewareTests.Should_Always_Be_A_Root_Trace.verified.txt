@@ -19,6 +19,9 @@
           network.protocol.version: 1.1
         },
         {
+          TestId: Guid_1
+        },
+        {
           user.id: 10
         },
         {

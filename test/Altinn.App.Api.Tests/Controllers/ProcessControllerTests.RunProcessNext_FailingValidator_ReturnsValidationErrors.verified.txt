@@ -40,20 +40,19 @@
           instance.owner.party.id: 500600
         },
         {
-          problem.title: Process next failed.
+          problem.title: Validation failed for task
         },
         {
-          problem.status: 500
+          problem.status: 409
         },
         {
           http.route: {org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/process/next
         },
         {
-          http.response.status_code: 500
+          http.response.status_code: 409
         }
       ],
       IdFormat: W3C,
-      Status: Error,
       Kind: Server
     },
     {
@@ -211,95 +210,13 @@
       IdFormat: W3C
     },
     {
-      ActivityName: Process.Next,
+      ActivityName: Validation.RunFormDataValidator,
       Tags: [
         {
-          instance.guid: Guid_2
+          validator.type: IFormDataValidatorProxy
         },
         {
-          process.action: write
-        }
-      ],
-      IdFormat: W3C
-    },
-    {
-      ActivityName: ProcessReader.GetNextElements,
-      IdFormat: W3C
-    },
-    {
-      ActivityName: ProcessReader.GetAllFlowElements,
-      IdFormat: W3C
-    },
-    {
-      ActivityName: ProcessReader.GetStartEvents,
-      IdFormat: W3C
-    },
-    {
-      ActivityName: ProcessReader.GetProcessTasks,
-      IdFormat: W3C
-    },
-    {
-      ActivityName: ProcessReader.GetExclusiveGateways,
-      IdFormat: W3C
-    },
-    {
-      ActivityName: ProcessReader.GetEndEvents,
-      IdFormat: W3C
-    },
-    {
-      ActivityName: ProcessReader.GetSequenceFlows,
-      IdFormat: W3C
-    },
-    {
-      ActivityName: ProcessReader.IsProcessTask,
-      IdFormat: W3C
-    },
-    {
-      ActivityName: ProcessReader.GetProcessTaskIds,
-      IdFormat: W3C
-    },
-    {
-      ActivityName: ProcessReader.GetProcessTasks,
-      IdFormat: W3C
-    },
-    {
-      ActivityName: ProcessReader.IsEndEvent,
-      IdFormat: W3C
-    },
-    {
-      ActivityName: ProcessReader.GetEndEventIds,
-      IdFormat: W3C
-    },
-    {
-      ActivityName: ProcessReader.GetEndEvents,
-      IdFormat: W3C
-    },
-    {
-      ActivityName: Process.End,
-      Tags: [
-        {
-          instance.guid: Guid_2
-        }
-      ],
-      IdFormat: W3C
-    },
-    {
-      ActivityName: Process.HandleEvents,
-      Tags: [
-        {
-          instance.guid: Guid_2
-        }
-      ],
-      IdFormat: W3C
-    },
-    {
-      ActivityName: PdfService.GenerateAndStorePdf,
-      Tags: [
-        {
-          instance.guid: Guid_2
-        },
-        {
-          task.id: Task_1
+          validator.source: test-source
         }
       ],
       IdFormat: W3C

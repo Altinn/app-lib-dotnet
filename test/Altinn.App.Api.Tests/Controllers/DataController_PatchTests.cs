@@ -202,7 +202,8 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
         this.OverrideServicesForThisTest = (services) =>
         {
             services.AddTelemetrySink(
-                shouldAlsoListenToActivities: (_, source) => source.Name == "Microsoft.AspNetCore"
+                shouldAlsoListenToActivities: (sp, source) => source.Name == "Microsoft.AspNetCore",
+                activityFilter: this.ActivityFilter
             );
         };
 
@@ -222,12 +223,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
 
         _dataProcessorMock.VerifyNoOtherCalls();
 
-        telemetry.TryFlush();
-        // Some tags are added after the telemetry is captured, I don't know any mechanism to wait for that,
-        // so for now we just wait a little bit and hopefully that makes the race condition less likely
-        await Task.Delay(100);
-        var activities = telemetry.CapturedActivities;
-        await Verify(telemetry.GetSnapshot(activities));
+        await telemetry.WaitAndSnapshotActivities();
     }
 
     [Fact]

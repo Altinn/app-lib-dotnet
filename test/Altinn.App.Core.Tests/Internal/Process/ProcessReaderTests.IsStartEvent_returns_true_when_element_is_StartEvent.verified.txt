@@ -1,7 +1,7 @@
 ﻿{
   Activities: [
     {
-      ActivityName: ProcessReader.GetStartEvents,
+      ActivityName: ProcessReader.IsStartEvent,
       IdFormat: W3C
     },
     {
@@ -9,7 +9,7 @@
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.IsStartEvent,
+      ActivityName: ProcessReader.GetStartEvents,
       IdFormat: W3C
     }
   ],

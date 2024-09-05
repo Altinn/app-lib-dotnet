@@ -41,6 +41,9 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(
 
 ApiTestBase.ConfigureFakeLogging(builder.Logging);
 
+builder.Services.AddSingleton<TestId>(_ => new TestId(Guid.NewGuid()));
+builder.Services.AddSingleton<IStartupFilter, ApiTestBase.ApiTestBaseStartupFilter>();
+
 builder.Configuration.AddJsonFile(
     Path.Join(TestData.GetTestDataRootDirectory(), "apps", "tdd", "contributer-restriction", "appsettings.json")
 );

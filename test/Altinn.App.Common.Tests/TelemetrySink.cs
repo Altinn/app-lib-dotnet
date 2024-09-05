@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using System.Runtime.CompilerServices;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Models;
@@ -21,7 +22,8 @@ public static class TelemetryDI
         string name = "test",
         string version = "v1",
         Func<IServiceProvider, ActivitySource, bool>? shouldAlsoListenToActivities = null,
-        Func<IServiceProvider, Meter, bool>? shouldAlsoListenToMetrics = null
+        Func<IServiceProvider, Meter, bool>? shouldAlsoListenToMetrics = null,
+        Func<IServiceProvider, Activity, bool>? activityFilter = null
     )
     {
         var telemetryRegistration = services.FirstOrDefault(s => s.ServiceType == typeof(Telemetry));
@@ -35,7 +37,8 @@ public static class TelemetryDI
             version,
             telemetry: null,
             shouldAlsoListenToActivities,
-            shouldAlsoListenToMetrics
+            shouldAlsoListenToMetrics,
+            activityFilter
         ));
         services.AddSingleton<Telemetry>(sp => sp.GetRequiredService<TelemetrySink>().Object);
 
@@ -61,7 +64,7 @@ public sealed record TelemetrySink : IDisposable
 
     public readonly record struct MetricMeasurement(long Value, IReadOnlyDictionary<string, object?> Tags);
 
-    public IEnumerable<Activity> CapturedActivities => _activities;
+    public IEnumerable<Activity> CapturedActivities => _activities.OrderBy(a => a.StartTimeUtc).ToArray();
 
     public IReadOnlyDictionary<string, IReadOnlyList<MetricMeasurement>> CapturedMetrics => _metricValues;
 
@@ -72,6 +75,34 @@ public sealed record TelemetrySink : IDisposable
 
     public TelemetrySnapshot GetSnapshot(IEnumerable<Activity> activities) =>
         new(activities, new Dictionary<string, IReadOnlyList<MetricMeasurement>>());
+
+    public async Task WaitAndSnapshot(
+        Activity activity,
+        Func<SettingsTask, SettingsTask>? configure = null,
+        VerifySettings? settings = null,
+        [CallerFilePath] string sourceFile = ""
+    ) => await WaitAndSnapshot([activity], configure, settings, sourceFile);
+
+    public async Task WaitAndSnapshotActivities(
+        Func<SettingsTask, SettingsTask>? configure = null,
+        VerifySettings? settings = null,
+        [CallerFilePath] string sourceFile = ""
+    ) => await WaitAndSnapshot(CapturedActivities, configure, settings, sourceFile);
+
+    public async Task WaitAndSnapshot(
+        IEnumerable<Activity> activities,
+        Func<SettingsTask, SettingsTask>? configure = null,
+        VerifySettings? settings = null,
+        [CallerFilePath] string sourceFile = ""
+    )
+    {
+        TryFlush();
+        await Task.Delay(100);
+        var task = Verify(GetSnapshot(activities), settings: settings, sourceFile: sourceFile);
+        if (configure is not null)
+            task = configure(task);
+        await task;
+    }
 
     public void TryFlush()
     {
@@ -93,13 +124,16 @@ public sealed record TelemetrySink : IDisposable
         string version = "v1",
         Telemetry? telemetry = null,
         Func<IServiceProvider, ActivitySource, bool>? shouldAlsoListenToActivities = null,
-        Func<IServiceProvider, Meter, bool>? shouldAlsoListenToMetrics = null
+        Func<IServiceProvider, Meter, bool>? shouldAlsoListenToMetrics = null,
+        Func<IServiceProvider, Activity, bool>? activityFilter = null
     )
     {
         _serviceProvider = serviceProvider;
         if (shouldAlsoListenToActivities is not null)
             Assert.NotNull(_serviceProvider);
         if (shouldAlsoListenToMetrics is not null)
+            Assert.NotNull(_serviceProvider);
+        if (activityFilter is not null)
             Assert.NotNull(_serviceProvider);
 
         var appId = new AppIdentifier(org, name);
@@ -118,6 +152,14 @@ public sealed record TelemetrySink : IDisposable
                 ActivitySamplingResult.AllDataAndRecorded,
             ActivityStarted = activity =>
             {
+                // if (activityFilter is not null && !activityFilter(_serviceProvider!, activity))
+                //     return;
+                // _activities.Add(activity);
+            },
+            ActivityStopped = activity =>
+            {
+                if (activityFilter is not null && !activityFilter(_serviceProvider!, activity))
+                    return;
                 _activities.Add(activity);
             },
         };

@@ -193,7 +193,8 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         this.OverrideServicesForThisTest = (services) =>
         {
             services.AddTelemetrySink(
-                shouldAlsoListenToActivities: (_, source) => source.Name == "Microsoft.AspNetCore"
+                shouldAlsoListenToActivities: (sp, source) => source.Name == "Microsoft.AspNetCore",
+                activityFilter: this.ActivityFilter
             );
         };
 
@@ -233,24 +234,12 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         var unLockedInstance = JsonSerializer.Deserialize<DataElement>(unLockedInstanceString, _jsonSerializerOptions)!;
         unLockedInstance.Locked.Should().BeFalse();
 
-        telemetry.TryFlush();
-        // Some tags are added after the telemetry is captured, I don't know any mechanism to wait for that,
-        // so for now we just wait a little bit and hopefully that makes the race condition less likely
-        await Task.Delay(100);
-        var activities = telemetry.CapturedActivities;
-        await Verify(telemetry.GetSnapshot(activities));
+        await telemetry.WaitAndSnapshotActivities();
     }
 
     [Fact]
     public async Task RunProcessNext_FailingValidator_ReturnsValidationErrors()
     {
-        this.OverrideServicesForThisTest = (services) =>
-        {
-            services.AddTelemetrySink(
-                shouldAlsoListenToActivities: (_, source) => source.Name == "Microsoft.AspNetCore"
-            );
-        };
-
         var dataValidator = new Mock<IFormDataValidator>(MockBehavior.Strict);
         dataValidator.Setup(v => v.DataType).Returns("*");
         dataValidator.Setup(v => v.ValidationSource).Returns("test-source");
@@ -277,6 +266,10 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         OverrideServicesForThisTest = (services) =>
         {
             services.AddSingleton(dataValidator.Object);
+            services.AddTelemetrySink(
+                shouldAlsoListenToActivities: (sp, source) => source.Name == "Microsoft.AspNetCore",
+                activityFilter: this.ActivityFilter
+            );
         };
         using var client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
         var nextResponse = await client.PutAsync($"{Org}/{App}/instances/{InstanceId}/process/next", null);
@@ -299,12 +292,7 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         instance.Process.CurrentTask.Should().NotBeNull();
         instance.Process.CurrentTask!.ElementId.Should().Be("Task_1");
 
-        telemetry.TryFlush();
-        // Some tags are added after the telemetry is captured, I don't know any mechanism to wait for that,
-        // so for now we just wait a little bit and hopefully that makes the race condition less likely
-        await Task.Delay(100);
-        var activities = telemetry.CapturedActivities;
-        await Verify(telemetry.GetSnapshot(activities));
+        await telemetry.WaitAndSnapshotActivities();
     }
 
     [Fact]
