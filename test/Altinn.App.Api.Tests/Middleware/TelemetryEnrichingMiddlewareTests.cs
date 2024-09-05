@@ -46,6 +46,7 @@ public class TelemetryEnrichingMiddlewareTests : ApiTestBase, IClassFixture<WebA
 
         var (telemetry, request) = AnalyzeTelemetry(token);
         await request();
+        await Task.Delay(100); // It can take some time for ASP.NET Core to fully annotate the activities
         telemetry.TryFlush();
         var activities = telemetry.CapturedActivities;
         var activity = Assert.Single(
@@ -71,6 +72,7 @@ public class TelemetryEnrichingMiddlewareTests : ApiTestBase, IClassFixture<WebA
 
         var (telemetry, request) = AnalyzeTelemetry(token);
         await request();
+        await Task.Delay(100); // It can take some time for ASP.NET Core to fully annotate the activities
         telemetry.TryFlush();
         var activities = telemetry.CapturedActivities;
         var activity = Assert.Single(
@@ -100,6 +102,7 @@ public class TelemetryEnrichingMiddlewareTests : ApiTestBase, IClassFixture<WebA
             Assert.NotNull(parentActivity);
             await request();
         }
+        await Task.Delay(100); // It can take some time for ASP.NET Core to fully annotate the activities
         telemetry.TryFlush();
         var activities = telemetry.CapturedActivities;
         var activity = Assert.Single(

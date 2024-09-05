@@ -1,6 +1,10 @@
 ﻿{
   Activities: [
     {
+      ActivityName: Process.HandleEvents,
+      IdFormat: W3C
+    },
+    {
       ActivityName: Process.Start,
       IdFormat: W3C,
       Status: Ok,
@@ -25,10 +29,6 @@
           ]
         }
       ]
-    },
-    {
-      ActivityName: Process.HandleEvents,
-      IdFormat: W3C
     },
     {
       ActivityName: Process.StoreEvents,

@@ -64,7 +64,8 @@ public sealed record TelemetrySink : IDisposable
 
     public readonly record struct MetricMeasurement(long Value, IReadOnlyDictionary<string, object?> Tags);
 
-    public IEnumerable<Activity> CapturedActivities => _activities.OrderBy(a => a.StartTimeUtc).ToArray();
+    public IEnumerable<Activity> CapturedActivities =>
+        _activities.OrderBy(a => a.OperationName).ThenBy(a => a.StartTimeUtc).ToArray();
 
     public IReadOnlyDictionary<string, IReadOnlyList<MetricMeasurement>> CapturedMetrics => _metricValues;
 
@@ -97,7 +98,7 @@ public sealed record TelemetrySink : IDisposable
     )
     {
         TryFlush();
-        await Task.Delay(100);
+        await Task.Delay(100); // It can take some time for ASP.NET Core to fully annotate the activities
         var task = Verify(GetSnapshot(activities), settings: settings, sourceFile: sourceFile);
         if (configure is not null)
             task = configure(task);
@@ -249,6 +250,7 @@ public class TelemetrySnapshot(
         Tags = a
             .TagObjects.Select(tag => new KeyValuePair<string, string?>(tag.Key, tag.Value?.ToString()))
             .Where(tag => tag.Key != "_MS.ProcessedByMetricExtractors")
+            .OrderBy(tag => tag.Key)
             .ToList(),
         a.IdFormat,
         a.Status,
