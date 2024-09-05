@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net.Http.Headers;
 using Altinn.App.Api.Tests.Mocks;
 using Altinn.App.Api.Tests.Utils;
@@ -46,13 +47,10 @@ public class TelemetryEnrichingMiddlewareTests : ApiTestBase, IClassFixture<WebA
 
         var (telemetry, request) = AnalyzeTelemetry(token);
         await request();
-        await Task.Delay(100); // It can take some time for ASP.NET Core to fully annotate the activities
-        telemetry.TryFlush();
+        await telemetry.WaitForServerActivity();
+
         var activities = telemetry.CapturedActivities;
-        var activity = Assert.Single(
-            activities,
-            a => a.TagObjects.Any(t => t.Key == Telemetry.Labels.OrganisationName && (t.Value as string) == org)
-        );
+        var activity = Assert.Single(activities, a => a.Kind == ActivityKind.Server);
         Assert.True(activity.IsAllDataRequested);
         Assert.True(activity.Recorded);
         Assert.Equal("Microsoft.AspNetCore", activity.Source.Name);
@@ -60,7 +58,7 @@ public class TelemetryEnrichingMiddlewareTests : ApiTestBase, IClassFixture<WebA
         Assert.Null(activity.ParentId);
         Assert.Equal(default, activity.ParentSpanId);
 
-        await telemetry.WaitAndSnapshot(activity);
+        await telemetry.Snapshot(activity);
     }
 
     [Fact]
@@ -72,13 +70,10 @@ public class TelemetryEnrichingMiddlewareTests : ApiTestBase, IClassFixture<WebA
 
         var (telemetry, request) = AnalyzeTelemetry(token);
         await request();
-        await Task.Delay(100); // It can take some time for ASP.NET Core to fully annotate the activities
-        telemetry.TryFlush();
+        await telemetry.WaitForServerActivity();
+
         var activities = telemetry.CapturedActivities;
-        var activity = Assert.Single(
-            activities,
-            a => a.TagObjects.Any(t => t.Key == Telemetry.Labels.UserPartyId && (t.Value as int?) == partyId)
-        );
+        var activity = Assert.Single(activities, a => a.Kind == ActivityKind.Server);
         Assert.True(activity.IsAllDataRequested);
         Assert.True(activity.Recorded);
         Assert.Equal("Microsoft.AspNetCore", activity.Source.Name);
@@ -86,7 +81,7 @@ public class TelemetryEnrichingMiddlewareTests : ApiTestBase, IClassFixture<WebA
         Assert.Null(activity.ParentId);
         Assert.Equal(default, activity.ParentSpanId);
 
-        await telemetry.WaitAndSnapshot(activity, c => c.ScrubMember(Telemetry.Labels.UserPartyId));
+        await telemetry.Snapshot(activity, c => c.ScrubMember(Telemetry.Labels.UserPartyId));
     }
 
     [Fact]
@@ -102,13 +97,10 @@ public class TelemetryEnrichingMiddlewareTests : ApiTestBase, IClassFixture<WebA
             Assert.NotNull(parentActivity);
             await request();
         }
-        await Task.Delay(100); // It can take some time for ASP.NET Core to fully annotate the activities
-        telemetry.TryFlush();
+        await telemetry.WaitForServerActivity();
+
         var activities = telemetry.CapturedActivities;
-        var activity = Assert.Single(
-            activities,
-            a => a.TagObjects.Any(t => t.Key == Telemetry.Labels.UserPartyId && (t.Value as int?) == partyId)
-        );
+        var activity = Assert.Single(activities, a => a.Kind == ActivityKind.Server);
         Assert.True(activity.IsAllDataRequested);
         Assert.True(activity.Recorded);
         Assert.Equal("Microsoft.AspNetCore", activity.Source.Name);
@@ -116,6 +108,6 @@ public class TelemetryEnrichingMiddlewareTests : ApiTestBase, IClassFixture<WebA
         Assert.Null(activity.ParentId);
         Assert.Equal(default, activity.ParentSpanId);
 
-        await telemetry.WaitAndSnapshot(activity, c => c.ScrubMember(Telemetry.Labels.UserPartyId));
+        await telemetry.Snapshot(activity, c => c.ScrubMember(Telemetry.Labels.UserPartyId));
     }
 }

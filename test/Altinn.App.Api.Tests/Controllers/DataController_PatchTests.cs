@@ -223,7 +223,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
 
         _dataProcessorMock.VerifyNoOtherCalls();
 
-        await telemetry.WaitAndSnapshotActivities();
+        await telemetry.SnapshotActivities();
     }
 
     [Fact]

@@ -38,20 +38,19 @@ public class ApiTestBase
 
     protected IServiceProvider Services { get; private set; }
 
-    protected Func<IServiceProvider, Activity, bool> ActivityFilter =>
-        static (sp, activity) =>
+    protected readonly Func<IServiceProvider, Activity, bool> ActivityFilter = static (sp, activity) =>
+    {
+        var thisTestId = sp.GetRequiredService<TestId>().Value;
+        var current = activity;
+        do
         {
-            var current = activity;
-            var thisTestId = sp.GetRequiredService<TestId>().Value;
-            do
-            {
-                if (current.GetTagItem(nameof(TestId)) is Guid testId && testId == thisTestId)
-                    return true;
-                current = current.Parent;
-            } while (current is not null);
+            if (current.GetTagItem(nameof(TestId)) is Guid testId && testId == thisTestId)
+                return true;
+            current = current.Parent;
+        } while (current is not null);
 
-            return false;
-        };
+        return false;
+    };
 
     public ApiTestBase(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper)
     {
@@ -180,7 +179,7 @@ public class ApiTestBase
                     $"""
                     [{ShortLogLevel(log.Level)}] {log.Category}:
                     {log.Message}{(log.Exception is not null ? "\n" : "")}{log.Exception}
-
+                    
                     """;
             });
     }

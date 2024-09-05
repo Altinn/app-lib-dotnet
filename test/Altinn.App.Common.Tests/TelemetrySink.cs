@@ -58,6 +58,11 @@ public sealed record TelemetrySink : IDisposable
 
     public MeterListener MeterListener { get; }
 
+    private bool _waitForServerActivity = true;
+    private readonly TaskCompletionSource _serverActivityTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    public async Task WaitForServerActivity() => await _serverActivityTcs.Task;
+
     private readonly ConcurrentBag<Activity> _activities = [];
     private readonly ConcurrentDictionary<string, IReadOnlyList<MetricMeasurement>> _metricValues = [];
     private readonly IServiceProvider? _serviceProvider;
@@ -77,20 +82,25 @@ public sealed record TelemetrySink : IDisposable
     public TelemetrySnapshot GetSnapshot(IEnumerable<Activity> activities) =>
         new(activities, new Dictionary<string, IReadOnlyList<MetricMeasurement>>());
 
-    public async Task WaitAndSnapshot(
+    public async Task Snapshot(
         Activity activity,
         Func<SettingsTask, SettingsTask>? configure = null,
         VerifySettings? settings = null,
         [CallerFilePath] string sourceFile = ""
-    ) => await WaitAndSnapshot([activity], configure, settings, sourceFile);
+    ) => await SnapshotActivitiesInternal([activity], configure, settings, sourceFile);
 
-    public async Task WaitAndSnapshotActivities(
+    public async Task SnapshotActivities(
         Func<SettingsTask, SettingsTask>? configure = null,
         VerifySettings? settings = null,
         [CallerFilePath] string sourceFile = ""
-    ) => await WaitAndSnapshot(CapturedActivities, configure, settings, sourceFile);
+    )
+    {
+        if (_waitForServerActivity)
+            await _serverActivityTcs.Task;
+        await SnapshotActivitiesInternal(CapturedActivities, configure, settings, sourceFile);
+    }
 
-    public async Task WaitAndSnapshot(
+    private async Task SnapshotActivitiesInternal(
         IEnumerable<Activity> activities,
         Func<SettingsTask, SettingsTask>? configure = null,
         VerifySettings? settings = null,
@@ -98,7 +108,6 @@ public sealed record TelemetrySink : IDisposable
     )
     {
         TryFlush();
-        await Task.Delay(100); // It can take some time for ASP.NET Core to fully annotate the activities
         var task = Verify(GetSnapshot(activities), settings: settings, sourceFile: sourceFile);
         if (configure is not null)
             task = configure(task);
@@ -162,6 +171,8 @@ public sealed record TelemetrySink : IDisposable
                 if (activityFilter is not null && !activityFilter(_serviceProvider!, activity))
                     return;
                 _activities.Add(activity);
+                if (activity.Kind == ActivityKind.Server)
+                    _serverActivityTcs.TrySetResult();
             },
         };
         ActivitySource.AddActivityListener(ActivityListener);
