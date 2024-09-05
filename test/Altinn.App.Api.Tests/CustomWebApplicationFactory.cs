@@ -130,7 +130,7 @@ public class ApiTestBase
             builder.ConfigureTestServices(ConfigureFakeHttpClientHandler);
         });
         var services = Services = factory.Services;
-        _ = services.GetService<TelemetrySink>();
+        _ = services.GetService<TelemetrySink>(); // The sink starts listening when it is constructed, so we make sure to construct here
 
         var client = includeTraceContext
             ? factory.CreateDefaultClient(new DiagnosticHandler())
@@ -180,7 +180,7 @@ public class ApiTestBase
                     $"""
                     [{ShortLogLevel(log.Level)}] {log.Category}:
                     {log.Message}{(log.Exception is not null ? "\n" : "")}{log.Exception}
-                    
+
                     """;
             });
     }
