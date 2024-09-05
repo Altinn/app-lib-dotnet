@@ -190,7 +190,7 @@ public class ProcessNavigatorTests
     }
 
     [Fact]
-    public async Task GetNextTask_runs_custom_filter_and_returns_empty_list_if_all_filtered_out()
+    public async Task GetNextTask_runs_custom_filter_and_throws_exception_when_no_paths_are_found()
     {
         IProcessNavigator processNavigator = SetupProcessNavigator(
             "simple-gateway-with-join-gateway.bpmn",
@@ -205,8 +205,7 @@ public class ProcessNavigatorTests
             DataValues = new Dictionary<string, string>() { { "choose1", "Flow4" }, { "choose2", "Bar" } }
         };
 
-        ProcessElement nextElements = await processNavigator.GetNextTask(i, "Task1", null);
-        nextElements.Should().BeNull();
+        await Assert.ThrowsAsync<ProcessException>(async () => await processNavigator.GetNextTask(i, "Task1", null));
     }
 
     [Fact]

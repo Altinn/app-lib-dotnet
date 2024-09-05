@@ -308,7 +308,7 @@ public class ProcessEngine : IProcessEngine
         // ending process if next element is end event
         if (nextElement is null)
         {
-            throw new Exception("Next process element was unexpectedly null");
+            throw new ProcessException("Next process element was unexpectedly null");
         }
         var nextElementId = nextElement.Id;
         if (_processReader.IsEndEvent(nextElementId))
