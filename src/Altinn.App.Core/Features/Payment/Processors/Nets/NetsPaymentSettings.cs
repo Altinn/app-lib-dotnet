@@ -36,7 +36,7 @@ public class NetsPaymentSettings
     public bool? MerchantHandlesConsumerData { get; set; }
 
     /// <summary>
-    /// This is a one-to-one mapping of Nets Easy payment methods configuration property.
+    /// This is mapped directly into the Nets Easy PaymentMethodsConfiguration property on the create payment model.
     ///
     /// Specifies payment methods configuration to be used for this payment, ignored if empty or null.
     ///
