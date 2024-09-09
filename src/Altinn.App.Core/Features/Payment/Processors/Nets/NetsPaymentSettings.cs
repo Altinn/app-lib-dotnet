@@ -67,6 +67,6 @@ public class NetsPaymentSettings
         /// Indicates that the specified payment method/type is allowed to be used for this payment, defaults to true.
         /// If one or more payment method/type is configured in the parent array then this value will be considered false for any other payment method that the parent array doesn't cover.
         /// </summary>
-        public required bool Enabled { get; set; }
+        public required bool Enabled { get; set; } = true;
     }
 }
