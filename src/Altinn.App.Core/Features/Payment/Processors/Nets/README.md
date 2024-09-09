@@ -8,8 +8,8 @@ The client code and models are based on the following API documentation:
 ### API Models Information
 
 The models used in API calls to Nets Easy were manually created based on the JSON examples in the Nets API
-documentation. Since they were written by
-hand, there might be some unintentional differences from the actual API objects (bugs).
+documentation. Since they were written by hand, there might be some unintentional differences from the actual API
+objects (bugs).
 
 Refer back to the official API docs for the most up-to-date information.
 
