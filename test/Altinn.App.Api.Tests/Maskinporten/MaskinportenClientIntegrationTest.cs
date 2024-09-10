@@ -100,11 +100,13 @@ public class MaskinportenClientIntegrationTests
         ];
 
         // Act
-        var app = AppBuilder.Build(configData: configData,
+        var app = AppBuilder.Build(
+            configData: configData,
             registerCustomAppServices: services =>
             {
                 services.ConfigureMaskinportenClient("CustomMaskinportenSettings");
-            });
+            }
+        );
 
         // Assert
         var optionsMonitor = app.Services.GetRequiredService<IOptionsMonitor<MaskinportenSettings>>();
