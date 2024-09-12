@@ -10,7 +10,9 @@ public class EnumSerializationTests
     [Fact]
     public void EnsureSerializationPolicyOnEnums()
     {
-        var assemblies = AppDomain.CurrentDomain.GetAssemblies().Where(a => a.FullName is not null && a.FullName.StartsWith("Altinn.App.Core"));
+        var assemblies = AppDomain
+            .CurrentDomain.GetAssemblies()
+            .Where(a => a.FullName is not null && a.FullName.StartsWith("Altinn.App.Core"));
         var enumTypes = GetEnumTypesFromAssemblies(assemblies);
         var nonCompliantEnums = new List<string>();
 
@@ -18,10 +20,10 @@ public class EnumSerializationTests
         {
             var jsonConverterAttribute = enumType.GetCustomAttribute<JsonConverterAttribute>();
             if (jsonConverterAttribute == null)
-                {
-                    string enumInfo = enumType.FullName ?? GetEnumInfo(enumType);
-                    nonCompliantEnums.Add(enumInfo);
-                }
+            {
+                string enumInfo = enumType.FullName ?? GetEnumInfo(enumType);
+                nonCompliantEnums.Add(enumInfo);
+            }
         }
 
         Assert.Empty(nonCompliantEnums);
