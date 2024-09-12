@@ -1,4 +1,3 @@
-#nullable disable
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.EFormidling;
@@ -216,6 +215,57 @@ public class DefaultEFormidlingServiceTests
         appMetadata.VerifyNoOtherCalls();
 
         result.IsCompletedSuccessfully.Should().BeTrue();
+    }
+
+    [Theory]
+    // Filename does not have a prefix for any data type, but collides with previous test-1.txt file, so it skips
+    [InlineData("test.txt", "a", false, "test.txt", "test-2.txt")]
+    // App logic data types, always gets the {dataType}.xml name (and skips existing indexes)
+    [InlineData("test.txt", "a", true, "a.xml", "a-2.xml")]
+    // Filename gets "{dataType}-" prefix if the given name is a prefix of another type
+    [InlineData("abc.txt", "a", false, "a-abc.txt", "a-abc-1.txt")]
+    // Filename does not get "{dataType}-" prefix if the given name is a prefix of only the same type
+    [InlineData("abc.txt", "ab", false, "ab-abc.txt", "ab-abc-1.txt")]
+    // Filename is null without applogic, so just use the dataType, and add suffix for uniqueness
+    [InlineData(null, "ab", false, "ab", "ab-1")]
+    // Filename is null, but with app logic, so use {dataType}.xml
+    [InlineData(null, "ab", true, "ab.xml", "ab-1.xml")]
+    // Filename prefixes dataType c, so it gets the {dataType}- prefix
+    [InlineData("car.txt", "a", false, "a-car.txt", "a-car-1.txt")]
+    // Filename prefixes dataType c, but is the same as the dataType, so it doesn't get {dataType}- prefix
+    [InlineData("car.txt", "c", false, "car.txt", "car-1.txt")]
+    public void UniqueFileName(
+        string? fileName,
+        string dataTypeId,
+        bool hasAppLogic,
+        string expected1,
+        string expected2
+    )
+    {
+        var dataTypeIds = new List<string> { "a", "ab", "c" };
+        var usedFileNames = new HashSet<string> { "test-1.txt", "a-1.xml" };
+
+        var uniqueFileName = DefaultEFormidlingService.GetUniqueFileName(
+            fileName,
+            dataTypeId,
+            hasAppLogic,
+            dataTypeIds,
+            usedFileNames
+        );
+        usedFileNames.Add(uniqueFileName);
+
+        uniqueFileName.Should().Be(expected1);
+
+        uniqueFileName = DefaultEFormidlingService.GetUniqueFileName(
+            fileName,
+            dataTypeId,
+            hasAppLogic,
+            dataTypeIds,
+            usedFileNames
+        );
+        usedFileNames.Add(uniqueFileName);
+
+        uniqueFileName.Should().Be(expected2);
     }
 
     [Fact]

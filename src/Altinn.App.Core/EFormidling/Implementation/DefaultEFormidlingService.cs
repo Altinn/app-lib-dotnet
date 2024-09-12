@@ -260,7 +260,7 @@ public class DefaultEFormidlingService : IEFormidlingService
         }
     }
 
-    private static string GetUniqueFileName(
+    internal static string GetUniqueFileName(
         string? fileName,
         string dataTypeId,
         bool hasAppLogic,
@@ -279,8 +279,9 @@ public class DefaultEFormidlingService : IEFormidlingService
             fileName = dataTypeId;
         }
         else if (
-            dataTypeIds.Any(id => fileName.StartsWith(id, StringComparison.OrdinalIgnoreCase))
-            && !fileName.StartsWith(dataTypeId, StringComparison.OrdinalIgnoreCase)
+            !dataTypeIds.TrueForAll(id =>
+                id == dataTypeId || !fileName.StartsWith(id, StringComparison.OrdinalIgnoreCase)
+            )
         )
         {
             // If the file starts with another data types id, prepend the current data type id to avoid stealing the counter-less filename from the AppLogic data element.
