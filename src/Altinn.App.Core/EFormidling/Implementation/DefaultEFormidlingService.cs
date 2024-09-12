@@ -204,8 +204,7 @@ public class DefaultEFormidlingService : IEFormidlingService
         int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId, CultureInfo.InvariantCulture);
 
         // Keep track of already used file names to ensure they are unique. eFormidling does not allow duplicate filenames.
-        var usedFileNames = new HashSet<string>();
-        usedFileNames.Add(eformidlingMetadataFilename);
+        HashSet<string> usedFileNames = [eformidlingMetadataFilename];
 
         List<string> dataTypeIds = applicationMetadata.DataTypes.Select(x => x.Id).ToList();
 
