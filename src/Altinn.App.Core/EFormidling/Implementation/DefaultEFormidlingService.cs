@@ -101,14 +101,14 @@ public class DefaultEFormidlingService : IEFormidlingService
         StandardBusinessDocument sbd = await ConstructStandardBusinessDocument(instanceGuid, instance);
         await _eFormidlingClient.CreateMessage(sbd, requestHeaders);
 
-        (string metadataName, Stream stream) = await _eFormidlingMetadata.GenerateEFormidlingMetadata(instance);
+        (string metadataFilename, Stream stream) = await _eFormidlingMetadata.GenerateEFormidlingMetadata(instance);
 
         using (stream)
         {
-            await _eFormidlingClient.UploadAttachment(stream, instanceGuid, metadataName, requestHeaders);
+            await _eFormidlingClient.UploadAttachment(stream, instanceGuid, metadataFilename, requestHeaders);
         }
 
-        await SendInstanceData(instance, requestHeaders);
+        await SendInstanceData(instance, requestHeaders, metadataFilename);
 
         try
         {
@@ -192,12 +192,23 @@ public class DefaultEFormidlingService : IEFormidlingService
         return sbd;
     }
 
-    private async Task SendInstanceData(Instance instance, Dictionary<string, string> requestHeaders)
+    private async Task SendInstanceData(
+        Instance instance,
+        Dictionary<string, string> requestHeaders,
+        string eformidlingMetadataFilename
+    )
     {
         ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
 
         Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
         int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId, CultureInfo.InvariantCulture);
+
+        // Keep track of already used file names to ensure they are unique. eFormidling does not allow duplicate filenames.
+        var usedFileNames = new HashSet<string>();
+        usedFileNames.Add(eformidlingMetadataFilename);
+
+        List<string> dataTypeIds = applicationMetadata.DataTypes.Select(x => x.Id).ToList();
+
         foreach (DataElement dataElement in instance.Data)
         {
             if (!applicationMetadata.EFormidling.DataTypes.Contains(dataElement.DataType))
@@ -205,11 +216,23 @@ public class DefaultEFormidlingService : IEFormidlingService
                 continue;
             }
 
-            bool appLogic = applicationMetadata.DataTypes.Any(d =>
-                d.Id == dataElement.DataType && d.AppLogic?.ClassRef != null
-            );
+            DataType dataType =
+                applicationMetadata.DataTypes.Find(d => d.Id == dataElement.DataType)
+                ?? throw new InvalidOperationException(
+                    $"DataType {dataElement.DataType} not found in application metadata"
+                );
 
-            string fileName = appLogic ? $"{dataElement.DataType}.xml" : dataElement.Filename;
+            bool hasAppLogic = dataType.AppLogic?.ClassRef is not null;
+
+            string uniqueFileName = GetUniqueFileName(
+                dataElement.Filename,
+                dataType.Id,
+                hasAppLogic,
+                dataTypeIds,
+                usedFileNames
+            );
+            usedFileNames.Add(uniqueFileName);
+
             await using Stream stream = await _dataClient.GetBinaryData(
                 applicationMetadata.Org,
                 applicationMetadata.AppIdentifier.App,
@@ -222,7 +245,7 @@ public class DefaultEFormidlingService : IEFormidlingService
             bool successful = await _eFormidlingClient.UploadAttachment(
                 stream,
                 instanceGuid.ToString(),
-                fileName,
+                uniqueFileName,
                 requestHeaders
             );
 
@@ -235,5 +258,48 @@ public class DefaultEFormidlingService : IEFormidlingService
                 );
             }
         }
+    }
+
+    private static string GetUniqueFileName(
+        string? fileName,
+        string dataTypeId,
+        bool hasAppLogic,
+        List<string> dataTypeIds,
+        HashSet<string> usedFileNames
+    )
+    {
+        if (hasAppLogic)
+        {
+            // Data types with classRef should get filename based on DataType.
+            fileName = $"{dataTypeId}.xml";
+        }
+        else if (string.IsNullOrWhiteSpace(fileName))
+        {
+            // If no filename is set, default to DataType.
+            fileName = dataTypeId;
+        }
+        else if (
+            dataTypeIds.Any(id => fileName.StartsWith(id, StringComparison.OrdinalIgnoreCase))
+            && !fileName.StartsWith(dataTypeId, StringComparison.OrdinalIgnoreCase)
+        )
+        {
+            // If the file starts with another data types id, prepend the current data type id to avoid stealing the counter-less filename from the AppLogic data element.
+            fileName = $"{dataTypeId}-{fileName}";
+        }
+        string name = Path.GetFileNameWithoutExtension(fileName);
+        string extension = Path.GetExtension(fileName);
+
+        // Handle the case where there's no extension.
+        string uniqueFileName = string.IsNullOrEmpty(extension) ? name : $"{name}{extension}";
+        var counter = 1;
+
+        // Generate unique file name.
+        while (usedFileNames.Contains(uniqueFileName))
+        {
+            uniqueFileName = string.IsNullOrEmpty(extension) ? $"{name}-{counter}" : $"{name}-{counter}{extension}";
+            counter++;
+        }
+
+        return uniqueFileName;
     }
 }
