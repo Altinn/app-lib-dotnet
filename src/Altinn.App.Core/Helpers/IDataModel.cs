@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Altinn.App.Core.Helpers;
 
 /// <summary>
@@ -50,6 +52,7 @@ public interface IDataModelAccessor
 /// <summary>
 /// Option for how to handle row removal
 /// </summary>
+[JsonConverter(typeof(JsonNumberEnumConverter<RowRemovalOption>))]
 public enum RowRemovalOption
 {
     /// <summary>

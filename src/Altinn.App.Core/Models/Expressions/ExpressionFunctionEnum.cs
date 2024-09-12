@@ -1,8 +1,11 @@
+using System.Text.Json.Serialization;
+
 namespace Altinn.App.Core.Models.Expressions;
 
 /// <summary>
 /// Enumeration for valid functions in Layout Expressions
 /// </summary>
+[JsonConverter(typeof(JsonNumberEnumConverter<ExpressionFunction>))]
 public enum ExpressionFunction
 {
     /// <summary>

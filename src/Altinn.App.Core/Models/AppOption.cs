@@ -48,6 +48,7 @@ public class AppOption
 /// The type of the value for Json serialization
 /// Application developers must set this, if they want options that isn't strings.
 /// </summary>
+[JsonConverter(typeof(JsonNumberEnumConverter<AppOptionValueType>))]
 public enum AppOptionValueType
 {
     /// <summary>

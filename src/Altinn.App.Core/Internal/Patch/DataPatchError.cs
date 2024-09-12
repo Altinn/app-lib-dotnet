@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Altinn.App.Core.Internal.Patch;
 
 /// <summary>
@@ -29,6 +31,7 @@ public class DataPatchError
 /// <summary>
 /// The type of error that occurred during a data patch operation.
 /// </summary>
+[JsonConverter(typeof(JsonNumberEnumConverter<DataPatchErrorType>))]
 public enum DataPatchErrorType
 {
     /// <summary>

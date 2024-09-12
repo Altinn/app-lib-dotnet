@@ -1,8 +1,11 @@
+using System.Text.Json.Serialization;
+
 namespace Altinn.App.Core.Models.Validation;
 
 /// <summary>
 /// Specifies the severity of a validation issue
 /// </summary>
+[JsonConverter(typeof(JsonNumberEnumConverter<ValidationIssueSeverity>))]
 public enum ValidationIssueSeverity
 {
     /// <summary>

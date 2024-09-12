@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
 
 namespace Altinn.App.Core.Models.Process;
 
@@ -33,6 +34,7 @@ public class ProcessChangeResult
 /// <summary>
 /// Types of errors that can occur during a process change
 /// </summary>
+[JsonConverter(typeof(JsonNumberEnumConverter<ProcessErrorType>))]
 public enum ProcessErrorType
 {
     /// <summary>

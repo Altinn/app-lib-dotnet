@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Altinn.App.Core.Models.Process;
 
 namespace Altinn.App.Core.Models.UserAction;
@@ -5,6 +6,7 @@ namespace Altinn.App.Core.Models.UserAction;
 /// <summary>
 /// Represents the result of a user action
 /// </summary>
+[JsonConverter(typeof(JsonNumberEnumConverter<ResultType>))]
 public enum ResultType
 {
     /// <summary>

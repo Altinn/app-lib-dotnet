@@ -1,8 +1,11 @@
+using System.Text.Json.Serialization;
+
 namespace Altinn.App.Core.Internal.Process;
 
 /// <summary>
 /// Defines the
 /// </summary>
+[JsonConverter(typeof(JsonNumberEnumConverter<ProcessSequenceFlowType>))]
 public enum ProcessSequenceFlowType
 {
     /// <summary>
