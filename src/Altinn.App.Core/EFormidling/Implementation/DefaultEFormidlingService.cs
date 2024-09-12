@@ -210,7 +210,7 @@ public class DefaultEFormidlingService : IEFormidlingService
             );
 
             string fileName = appLogic ? $"{dataElement.DataType}.xml" : dataElement.Filename;
-            using Stream stream = await _dataClient.GetBinaryData(
+            await using Stream stream = await _dataClient.GetBinaryData(
                 applicationMetadata.Org,
                 applicationMetadata.AppIdentifier.App,
                 instanceOwnerPartyId,
