@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
+using System.Text.Json.Serialization;
 using NetEscapades.EnumGenerators;
 using static Altinn.App.Core.Features.Telemetry.Maskinporten;
 using Tag = System.Collections.Generic.KeyValuePair<string, object?>;
@@ -41,6 +42,7 @@ partial class Telemetry
         internal static readonly string MetricNameTokenRequest = Metrics.CreateLibName("maskinporten_token_requests");
 
         [EnumExtensions]
+        [JsonConverter(typeof(JsonNumberEnumConverter<RequestResult>))]
         internal enum RequestResult
         {
             [Display(Name = "cached")]

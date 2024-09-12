@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
+using System.Text.Json.Serialization;
 using Altinn.Platform.Storage.Interface.Models;
 using NetEscapades.EnumGenerators;
 using static Altinn.App.Core.Features.Telemetry.Data;
@@ -38,6 +39,7 @@ partial class Telemetry
         internal static readonly string MetricNameDataPatched = Metrics.CreateLibName("data_patched");
 
         [EnumExtensions]
+        [JsonConverter(typeof(JsonNumberEnumConverter<PatchResult>))]
         internal enum PatchResult
         {
             [Display(Name = "success")]

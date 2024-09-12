@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
+using System.Text.Json.Serialization;
 using NetEscapades.EnumGenerators;
 using static Altinn.App.Core.Features.Telemetry.Notifications;
 using Tag = System.Collections.Generic.KeyValuePair<string, object?>;
@@ -57,6 +58,7 @@ partial class Telemetry
         internal static readonly string MetricNameOrder = Metrics.CreateLibName("notification_orders");
 
         [EnumExtensions]
+        [JsonConverter(typeof(JsonNumberEnumConverter<OrderResult>))]
         internal enum OrderResult
         {
             [Display(Name = "success")]
@@ -67,6 +69,7 @@ partial class Telemetry
         }
 
         [EnumExtensions]
+        [JsonConverter(typeof(JsonNumberEnumConverter<OrderResult>))]
         internal enum OrderType
         {
             [Display(Name = "sms")]
