@@ -37,7 +37,7 @@ public class EnumSerializationTests
         return $"{typeName} (in {namespaceName}, Assembly: {assemblyName})";
     }
 
-    private IEnumerable<Type> GetEnumTypesFromAssemblies(IEnumerable<Assembly> assemblies)
+    private static IEnumerable<Type> GetEnumTypesFromAssemblies(IEnumerable<Assembly> assemblies)
     {
         return assemblies
             .SelectMany(assembly => assembly.GetTypes())
