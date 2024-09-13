@@ -208,7 +208,7 @@ public class DefaultEFormidlingService : IEFormidlingService
 
         List<string> dataTypeIds = applicationMetadata.DataTypes.Select(x => x.Id).ToList();
 
-        foreach (DataElement dataElement in instance.Data)
+        foreach (DataElement dataElement in instance.Data.OrderBy(x => x.Created))
         {
             if (!applicationMetadata.EFormidling.DataTypes.Contains(dataElement.DataType))
             {
