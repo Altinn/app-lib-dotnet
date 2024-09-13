@@ -1,7 +1,5 @@
 using System.Reflection;
 using System.Text.Json.Serialization;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace Altinn.App.Core.Tests.Internal;
 
@@ -19,7 +17,7 @@ public class EnumSerializationTests
         foreach (var enumType in enumTypes)
         {
             var jsonConverterAttribute = enumType.GetCustomAttribute<JsonConverterAttribute>();
-            if (jsonConverterAttribute == null)
+            if (jsonConverterAttribute is null)
             {
                 string enumInfo = enumType.FullName ?? GetEnumInfo(enumType);
                 nonCompliantEnums.Add(enumInfo);
@@ -41,6 +39,6 @@ public class EnumSerializationTests
     {
         return assemblies
             .SelectMany(assembly => assembly.GetTypes())
-            .Where(t => t.IsEnum && t.Namespace != null && t.Namespace.StartsWith("Altinn.App.Core"));
+            .Where(t => t.IsEnum && t.Namespace is not null && t.Namespace.StartsWith("Altinn.App.Core"));
     }
 }
