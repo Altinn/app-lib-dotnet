@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Altinn.App.Core.Features;
 using Altinn.Platform.Storage.Interface.Models;
 
@@ -15,6 +16,7 @@ public interface ILayoutEvaluatorStateInitializer
     /// </summary>
     Task<LayoutEvaluatorState> Init(
         IInstanceDataAccessor dataAccessor,
+        ClaimsPrincipal? user,
         string? taskId,
         string? gatewayAction = null,
         string? language = null

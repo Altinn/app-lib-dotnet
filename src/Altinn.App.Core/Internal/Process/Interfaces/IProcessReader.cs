@@ -112,6 +112,13 @@ public interface IProcessReader
     public ProcessElement? GetFlowElement(string? elementId);
 
     /// <summary>
+    /// Get list of actions that can be authorized for the given elementId
+    /// </summary>
+    /// <param name="elementId"></param>
+    /// <returns></returns>
+    public IReadOnlyList<AltinnAction> GetAltinnActions(string elementId);
+
+    /// <summary>
     /// Returns all available ProcessElements
     /// </summary>
     /// <returns><see cref="ProcessElement"/></returns>

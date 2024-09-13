@@ -8,6 +8,7 @@ using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Process;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.AspNetCore.Http;
 
 namespace Altinn.App.Core.Internal.Process;
 
@@ -25,6 +26,7 @@ public class ExpressionsExclusiveGateway : IProcessExclusiveGateway
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         };
 
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILayoutEvaluatorStateInitializer _layoutStateInit;
 
     private readonly IAppResources _resources;
@@ -33,10 +35,12 @@ public class ExpressionsExclusiveGateway : IProcessExclusiveGateway
     /// Constructor for <see cref="ExpressionsExclusiveGateway" />
     /// </summary>
     public ExpressionsExclusiveGateway(
+        IHttpContextAccessor httpContextAccessor,
         ILayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer,
         IAppResources resources
     )
     {
+        _httpContextAccessor = httpContextAccessor;
         _layoutStateInit = layoutEvaluatorStateInitializer;
         _resources = resources;
     }
@@ -54,6 +58,7 @@ public class ExpressionsExclusiveGateway : IProcessExclusiveGateway
     {
         var state = await _layoutStateInit.Init(
             dataAccessor,
+            _httpContextAccessor.HttpContext?.User,
             taskId: null, // don't load layout for task
             processGatewayInformation.Action,
             language: null

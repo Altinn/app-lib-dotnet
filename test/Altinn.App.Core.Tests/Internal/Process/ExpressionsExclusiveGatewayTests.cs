@@ -280,7 +280,7 @@ public class ExpressionsExclusiveGatewayTests
             _appMetadata.Object,
             frontendSettings
         );
-        return (new ExpressionsExclusiveGateway(layoutStateInit, _resources.Object), dataAccessor);
+        return (new ExpressionsExclusiveGateway(TODO, layoutStateInit, _resources.Object), dataAccessor);
     }
 
     private static string LayoutSetsToString(LayoutSets layoutSets) =>

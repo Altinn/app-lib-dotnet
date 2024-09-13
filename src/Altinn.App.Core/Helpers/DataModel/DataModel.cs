@@ -24,13 +24,16 @@ public class DataModel
         {
             var dataTypeId = dataElement.DataType;
             var dataType = appMetadata.DataTypes.Find(d => d.Id == dataTypeId);
+            // Only data elements with maxCount 1 can be accessed by type
+            // subform elements must be accessed by id
             if (dataType is { MaxCount: 1, AppLogic.ClassRef: not null })
             {
                 _dataIdsByType.TryAdd(dataElement.DataType, dataElement);
             }
             else
             {
-                _dataIdsByType.TryAdd(dataElement.Id, null);
+                // Mark the element as not accessible by type
+                _dataIdsByType.TryAdd(dataElement.DataType, null);
             }
         }
     }

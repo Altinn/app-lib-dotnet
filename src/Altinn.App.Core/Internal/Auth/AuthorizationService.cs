@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
+using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Authorization;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
@@ -16,6 +17,7 @@ namespace Altinn.App.Core.Internal.Auth;
 public class AuthorizationService : IAuthorizationService
 {
     private readonly IAuthorizationClient _authorizationClient;
+    private readonly IProcessReader _processReader;
     private readonly IEnumerable<IUserActionAuthorizerProvider> _userActionAuthorizers;
     private readonly Telemetry? _telemetry;
 
@@ -28,11 +30,13 @@ public class AuthorizationService : IAuthorizationService
     public AuthorizationService(
         IAuthorizationClient authorizationClient,
         IEnumerable<IUserActionAuthorizerProvider> userActionAuthorizers,
+        IProcessReader processReader,
         Telemetry? telemetry = null
     )
     {
         _authorizationClient = authorizationClient;
         _userActionAuthorizers = userActionAuthorizers;
+        _processReader = processReader;
         _telemetry = telemetry;
     }
 
@@ -85,10 +89,10 @@ public class AuthorizationService : IAuthorizationService
     public async Task<List<UserAction>> AuthorizeActions(
         Instance instance,
         ClaimsPrincipal user,
-        List<AltinnAction> actions
+        IReadOnlyList<AltinnAction> actions
     )
     {
-        using var activity = _telemetry?.StartAuthorizeActionsActivity(instance, actions);
+        using var activity = _telemetry?.StartAuthorizeActionsActivity(instance);
         var authDecisions = await _authorizationClient.AuthorizeActions(
             instance,
             user,
@@ -106,6 +110,7 @@ public class AuthorizationService : IAuthorizationService
                 }
             );
         }
+        Telemetry.AddAuthorizedActionsEvent(activity, authorizedActions);
 
         return authorizedActions;
     }
@@ -120,5 +125,12 @@ public class AuthorizationService : IAuthorizationService
             || (authorizer.TaskId == null && authorizer.Action == action)
             || (authorizer.TaskId == taskId && authorizer.Action == null)
             || (authorizer.TaskId == taskId && authorizer.Action == action);
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<UserAction>> GetAuthorizedActions(Instance instance, ClaimsPrincipal user)
+    {
+        IReadOnlyList<AltinnAction> actions = _processReader.GetAltinnActions(instance.Process.CurrentTask.ElementId);
+        return await AuthorizeActions(instance, user, actions);
     }
 }

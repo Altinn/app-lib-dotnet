@@ -3,6 +3,7 @@ using Altinn.App.Common.Tests;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Internal.Auth;
+using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Authorization;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
@@ -16,6 +17,9 @@ namespace Altinn.App.Core.Tests.Internal.Auth;
 
 public class AuthorizationServiceTests
 {
+    private readonly Mock<IProcessReader> _processReaderMock = new(MockBehavior.Strict);
+    private readonly Mock<IAuthorizationClient> _authorizationClientMock = new(MockBehavior.Strict);
+
     [Fact]
     public async Task GetPartyList_returns_party_list_from_AuthorizationClient()
     {
@@ -24,12 +28,12 @@ public class AuthorizationServiceTests
         TelemetrySink telemetrySink = new();
 
         // Arrange
-        Mock<IAuthorizationClient> authorizationClientMock = new Mock<IAuthorizationClient>();
         List<Party> partyList = new List<Party>();
-        authorizationClientMock.Setup(a => a.GetPartyList(userId)).ReturnsAsync(partyList);
+        _authorizationClientMock.Setup(a => a.GetPartyList(userId)).ReturnsAsync(partyList);
         AuthorizationService authorizationService = new AuthorizationService(
-            authorizationClientMock.Object,
-            new List<IUserActionAuthorizerProvider>(),
+            _authorizationClientMock.Object,
+            [],
+            _processReaderMock.Object,
             telemetrySink.Object
         );
 
@@ -38,7 +42,7 @@ public class AuthorizationServiceTests
 
         // Assert
         result.Should().BeSameAs(partyList);
-        authorizationClientMock.Verify(a => a.GetPartyList(userId), Times.Once);
+        _authorizationClientMock.Verify(a => a.GetPartyList(userId), Times.Once);
 
         await Verify(telemetrySink.GetSnapshot());
     }
@@ -51,11 +55,11 @@ public class AuthorizationServiceTests
         int partyId = 1338;
 
         // Arrange
-        Mock<IAuthorizationClient> authorizationClientMock = new Mock<IAuthorizationClient>();
-        authorizationClientMock.Setup(a => a.ValidateSelectedParty(userId, partyId)).ReturnsAsync(true);
+        _authorizationClientMock.Setup(a => a.ValidateSelectedParty(userId, partyId)).ReturnsAsync(true);
         AuthorizationService authorizationService = new AuthorizationService(
-            authorizationClientMock.Object,
-            new List<IUserActionAuthorizerProvider>()
+            _authorizationClientMock.Object,
+            [],
+            _processReaderMock.Object
         );
 
         // Act
@@ -63,7 +67,7 @@ public class AuthorizationServiceTests
 
         // Assert
         result.Should().BeTrue();
-        authorizationClientMock.Verify(a => a.ValidateSelectedParty(userId, partyId), Times.Once);
+        _authorizationClientMock.Verify(a => a.ValidateSelectedParty(userId, partyId), Times.Once);
     }
 
     [Fact]
@@ -80,13 +84,13 @@ public class AuthorizationServiceTests
         string taskId = "taskId";
 
         // Arrange
-        Mock<IAuthorizationClient> authorizationClientMock = new Mock<IAuthorizationClient>();
-        authorizationClientMock
+        _authorizationClientMock
             .Setup(a => a.AuthorizeAction(appIdentifier, instanceIdentifier, user, action, taskId))
             .ReturnsAsync(true);
         AuthorizationService authorizationService = new AuthorizationService(
-            authorizationClientMock.Object,
-            new List<IUserActionAuthorizerProvider>()
+            _authorizationClientMock.Object,
+            [],
+            _processReaderMock.Object
         );
 
         // Act
@@ -100,7 +104,7 @@ public class AuthorizationServiceTests
 
         // Assert
         result.Should().BeTrue();
-        authorizationClientMock.Verify(
+        _authorizationClientMock.Verify(
             a => a.AuthorizeAction(appIdentifier, instanceIdentifier, user, action, taskId),
             Times.Once
         );
@@ -120,13 +124,13 @@ public class AuthorizationServiceTests
         string taskId = "taskId";
 
         // Arrange
-        Mock<IAuthorizationClient> authorizationClientMock = new Mock<IAuthorizationClient>();
-        authorizationClientMock
+        _authorizationClientMock
             .Setup(a => a.AuthorizeAction(appIdentifier, instanceIdentifier, user, action, taskId))
             .ReturnsAsync(false);
         AuthorizationService authorizationService = new AuthorizationService(
-            authorizationClientMock.Object,
-            new List<IUserActionAuthorizerProvider>()
+            _authorizationClientMock.Object,
+            [],
+            _processReaderMock.Object
         );
 
         // Act
@@ -140,7 +144,7 @@ public class AuthorizationServiceTests
 
         // Assert
         result.Should().BeFalse();
-        authorizationClientMock.Verify(
+        _authorizationClientMock.Verify(
             a => a.AuthorizeAction(appIdentifier, instanceIdentifier, user, action, taskId),
             Times.Once
         );
@@ -160,8 +164,7 @@ public class AuthorizationServiceTests
         string taskId = "taskId";
 
         // Arrange
-        Mock<IAuthorizationClient> authorizationClientMock = new Mock<IAuthorizationClient>();
-        authorizationClientMock
+        _authorizationClientMock
             .Setup(a => a.AuthorizeAction(appIdentifier, instanceIdentifier, user, action, taskId))
             .ReturnsAsync(true);
 
@@ -176,8 +179,9 @@ public class AuthorizationServiceTests
         );
 
         AuthorizationService authorizationService = new AuthorizationService(
-            authorizationClientMock.Object,
-            new List<IUserActionAuthorizerProvider>() { userActionAuthorizerProvider }
+            _authorizationClientMock.Object,
+            [userActionAuthorizerProvider],
+            _processReaderMock.Object
         );
 
         // Act
@@ -191,7 +195,7 @@ public class AuthorizationServiceTests
 
         // Assert
         result.Should().BeFalse();
-        authorizationClientMock.Verify(
+        _authorizationClientMock.Verify(
             a => a.AuthorizeAction(appIdentifier, instanceIdentifier, user, action, taskId),
             Times.Once
         );
@@ -212,8 +216,7 @@ public class AuthorizationServiceTests
         string taskId = "taskId";
 
         // Arrange
-        Mock<IAuthorizationClient> authorizationClientMock = new Mock<IAuthorizationClient>();
-        authorizationClientMock
+        _authorizationClientMock
             .Setup(a => a.AuthorizeAction(appIdentifier, instanceIdentifier, user, action, taskId))
             .ReturnsAsync(false);
 
@@ -228,8 +231,9 @@ public class AuthorizationServiceTests
         );
 
         AuthorizationService authorizationService = new AuthorizationService(
-            authorizationClientMock.Object,
-            new List<IUserActionAuthorizerProvider>() { userActionAuthorizerProvider }
+            _authorizationClientMock.Object,
+            [userActionAuthorizerProvider],
+            _processReaderMock.Object
         );
 
         // Act
@@ -243,7 +247,7 @@ public class AuthorizationServiceTests
 
         // Assert
         result.Should().BeFalse();
-        authorizationClientMock.Verify(
+        _authorizationClientMock.Verify(
             a => a.AuthorizeAction(appIdentifier, instanceIdentifier, user, action, taskId),
             Times.Once
         );
@@ -264,8 +268,7 @@ public class AuthorizationServiceTests
         string taskId = "taskId";
 
         // Arrange
-        Mock<IAuthorizationClient> authorizationClientMock = new Mock<IAuthorizationClient>();
-        authorizationClientMock
+        _authorizationClientMock
             .Setup(a => a.AuthorizeAction(appIdentifier, instanceIdentifier, user, action, taskId))
             .ReturnsAsync(true);
 
@@ -289,12 +292,9 @@ public class AuthorizationServiceTests
         );
 
         AuthorizationService authorizationService = new AuthorizationService(
-            authorizationClientMock.Object,
-            new List<IUserActionAuthorizerProvider>()
-            {
-                userActionAuthorizerOneProvider,
-                userActionAuthorizerTwoProvider
-            }
+            _authorizationClientMock.Object,
+            [userActionAuthorizerOneProvider, userActionAuthorizerTwoProvider],
+            _processReaderMock.Object
         );
 
         // Act
@@ -308,7 +308,7 @@ public class AuthorizationServiceTests
 
         // Assert
         result.Should().BeTrue();
-        authorizationClientMock.Verify(
+        _authorizationClientMock.Verify(
             a => a.AuthorizeAction(appIdentifier, instanceIdentifier, user, action, taskId),
             Times.Once
         );
@@ -330,8 +330,7 @@ public class AuthorizationServiceTests
         string taskId = "taskId";
 
         // Arrange
-        Mock<IAuthorizationClient> authorizationClientMock = new Mock<IAuthorizationClient>();
-        authorizationClientMock
+        _authorizationClientMock
             .Setup(a => a.AuthorizeAction(appIdentifier, instanceIdentifier, user, action, taskId))
             .ReturnsAsync(true);
 
@@ -366,13 +365,9 @@ public class AuthorizationServiceTests
         );
 
         AuthorizationService authorizationService = new AuthorizationService(
-            authorizationClientMock.Object,
-            new List<IUserActionAuthorizerProvider>()
-            {
-                userActionAuthorizerOneProvider,
-                userActionAuthorizerTwoProvider,
-                userActionAuthorizerThreeProvider
-            }
+            _authorizationClientMock.Object,
+            [userActionAuthorizerOneProvider, userActionAuthorizerTwoProvider, userActionAuthorizerThreeProvider],
+            _processReaderMock.Object
         );
 
         // Act
@@ -386,7 +381,7 @@ public class AuthorizationServiceTests
 
         // Assert
         result.Should().BeTrue();
-        authorizationClientMock.Verify(
+        _authorizationClientMock.Verify(
             a => a.AuthorizeAction(appIdentifier, instanceIdentifier, user, action, taskId),
             Times.Once
         );
@@ -418,8 +413,7 @@ public class AuthorizationServiceTests
         string taskId = "taskId";
 
         // Arrange
-        Mock<IAuthorizationClient> authorizationClientMock = new Mock<IAuthorizationClient>();
-        authorizationClientMock
+        _authorizationClientMock
             .Setup(a => a.AuthorizeAction(appIdentifier, instanceIdentifier, user, action, taskId))
             .ReturnsAsync(true);
 
@@ -454,13 +448,9 @@ public class AuthorizationServiceTests
         );
 
         AuthorizationService authorizationService = new AuthorizationService(
-            authorizationClientMock.Object,
-            new List<IUserActionAuthorizerProvider>()
-            {
-                userActionAuthorizerOneProvider,
-                userActionAuthorizerTwoProvider,
-                userActionAuthorizerThreeProvider
-            }
+            _authorizationClientMock.Object,
+            [userActionAuthorizerOneProvider, userActionAuthorizerTwoProvider, userActionAuthorizerThreeProvider],
+            _processReaderMock.Object
         );
 
         // Actπ
@@ -474,7 +464,7 @@ public class AuthorizationServiceTests
 
         // Assert
         result.Should().BeTrue();
-        authorizationClientMock.Verify(
+        _authorizationClientMock.Verify(
             a => a.AuthorizeAction(appIdentifier, instanceIdentifier, user, action, taskId),
             Times.Once
         );
@@ -502,8 +492,7 @@ public class AuthorizationServiceTests
         var actionsStrings = new List<string>() { "read", "write", "brew-coffee", "drink-coffee" };
 
         // Arrange
-        Mock<IAuthorizationClient> authorizationClientMock = new Mock<IAuthorizationClient>();
-        authorizationClientMock
+        _authorizationClientMock
             .Setup(a => a.AuthorizeActions(instance, user, actionsStrings))
             .ReturnsAsync(
                 new Dictionary<string, bool>()
@@ -516,8 +505,9 @@ public class AuthorizationServiceTests
             );
 
         AuthorizationService authorizationService = new AuthorizationService(
-            authorizationClientMock.Object,
-            new List<IUserActionAuthorizerProvider>()
+            _authorizationClientMock.Object,
+            [],
+            _processReaderMock.Object
         );
 
         // Act
@@ -553,7 +543,7 @@ public class AuthorizationServiceTests
 
         // Assert
         result.Should().BeEquivalentTo(expected);
-        authorizationClientMock.Verify(a => a.AuthorizeActions(instance, user, actionsStrings), Times.Once);
-        authorizationClientMock.VerifyNoOtherCalls();
+        _authorizationClientMock.Verify(a => a.AuthorizeActions(instance, user, actionsStrings), Times.Once);
+        _authorizationClientMock.VerifyNoOtherCalls();
     }
 }

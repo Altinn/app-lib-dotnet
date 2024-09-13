@@ -156,6 +156,18 @@ public class ProcessReader : IProcessReader
     }
 
     /// <inheritdoc />
+    public IReadOnlyList<AltinnAction> GetAltinnActions(string elementId)
+    {
+        var task = _definitions.Process.Tasks.Find(t => t.Id == elementId);
+        return
+        [
+            new AltinnAction("read"),
+            new AltinnAction("write"),
+            .. task?.ExtensionElements?.TaskExtension?.AltinnActions ?? []
+        ];
+    }
+
+    /// <inheritdoc />
     public List<ProcessElement> GetNextElements(string? currentElementId)
     {
         using var activity = _telemetry?.StartGetNextElementsActivity();

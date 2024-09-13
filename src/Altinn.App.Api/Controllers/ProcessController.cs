@@ -615,22 +615,14 @@ public class ProcessController : ControllerBase
         AppProcessState appProcessState = new AppProcessState(processState);
         if (appProcessState.CurrentTask?.ElementId != null)
         {
-            var flowElement = _processReader.GetFlowElement(appProcessState.CurrentTask.ElementId);
-            if (flowElement is ProcessTask processTask)
-            {
-                appProcessState.CurrentTask.Actions = new Dictionary<string, bool>();
-                List<AltinnAction> actions = new List<AltinnAction>() { new("read"), new("write") };
-                actions.AddRange(
-                    processTask.ExtensionElements?.TaskExtension?.AltinnActions ?? new List<AltinnAction>()
-                );
-                var authDecisions = await AuthorizeActions(actions, instance);
-                appProcessState.CurrentTask.Actions = authDecisions
-                    .Where(a => a.ActionType == ActionType.ProcessAction)
-                    .ToDictionary(a => a.Id, a => a.Authorized);
-                appProcessState.CurrentTask.HasReadAccess = authDecisions.Single(a => a.Id == "read").Authorized;
-                appProcessState.CurrentTask.HasWriteAccess = authDecisions.Single(a => a.Id == "write").Authorized;
-                appProcessState.CurrentTask.UserActions = authDecisions;
-            }
+            appProcessState.CurrentTask.Actions = new Dictionary<string, bool>();
+            var authDecisions = await _authorization.GetAuthorizedActions(instance, HttpContext.User);
+            appProcessState.CurrentTask.Actions = authDecisions
+                .Where(a => a.ActionType == ActionType.ProcessAction)
+                .ToDictionary(a => a.Id, a => a.Authorized);
+            appProcessState.CurrentTask.HasReadAccess = authDecisions.Single(a => a.Id == "read").Authorized;
+            appProcessState.CurrentTask.HasWriteAccess = authDecisions.Single(a => a.Id == "write").Authorized;
+            appProcessState.CurrentTask.UserActions = authDecisions;
         }
 
         var processTasks = new List<AppProcessTaskTypeInfo>();
@@ -707,11 +699,6 @@ public class ProcessController : ControllerBase
             action,
             taskId
         );
-    }
-
-    private async Task<List<UserAction>> AuthorizeActions(List<AltinnAction> actions, Instance instance)
-    {
-        return await _authorization.AuthorizeActions(instance, HttpContext.User, actions);
     }
 
     private static string EnsureActionNotTaskType(string actionOrTaskType)

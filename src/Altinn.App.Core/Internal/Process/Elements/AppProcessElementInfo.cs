@@ -45,7 +45,7 @@ public class AppProcessElementInfo : ProcessElementInfo
     /// List of available actions for a task, both user and process tasks
     /// </summary>
     [JsonPropertyName(name: "userActions")]
-    public List<UserAction> UserActions { get; set; }
+    public IReadOnlyList<UserAction> UserActions { get; set; }
 
     /// <summary>
     /// Indicates if the user has read access to the task.

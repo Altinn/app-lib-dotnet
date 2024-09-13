@@ -30,12 +30,6 @@ public interface IAuthorizationService
     /// <summary>
     /// Check if the user is authorized to perform the given action on the given instance.
     /// </summary>
-    /// <param name="appIdentifier"></param>
-    /// <param name="instanceIdentifier"></param>
-    /// <param name="user"></param>
-    /// <param name="action"></param>
-    /// <param name="taskId"></param>
-    /// <returns></returns>
     Task<bool> AuthorizeAction(
         AppIdentifier appIdentifier,
         InstanceIdentifier instanceIdentifier,
@@ -47,9 +41,15 @@ public interface IAuthorizationService
     /// <summary>
     /// Check if the user is authorized to perform the given actions on the given instance.
     /// </summary>
-    /// <param name="instance"></param>
-    /// <param name="user"></param>
-    /// <param name="actions"></param>
     /// <returns>Dictionary with actions and the auth decision</returns>
-    Task<List<UserAction>> AuthorizeActions(Instance instance, ClaimsPrincipal user, List<AltinnAction> actions);
+    Task<List<UserAction>> AuthorizeActions(
+        Instance instance,
+        ClaimsPrincipal user,
+        IReadOnlyList<AltinnAction> actions
+    );
+
+    /// <summary>
+    /// Get the list of authorized actions for the given instance and user.
+    /// </summary>
+    Task<IReadOnlyList<UserAction>> GetAuthorizedActions(Instance instance, ClaimsPrincipal user);
 }

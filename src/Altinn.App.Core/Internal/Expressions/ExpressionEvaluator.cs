@@ -99,10 +99,24 @@ public static class ExpressionEvaluator
             ExpressionFunction.lowerCase => LowerCase(args),
             ExpressionFunction.argv => Argv(args, positionalArguments),
             ExpressionFunction.gatewayAction => state.GetGatewayAction(),
+            ExpressionFunction.authContext => AuthContext(args, state),
             ExpressionFunction.language => state.GetLanguage() ?? "nb",
             _ => throw new ExpressionEvaluatorTypeErrorException($"Function \"{expr.Function}\" not implemented"),
         };
         return ret;
+    }
+
+    private static async Task<bool?> AuthContext(object?[] args, LayoutEvaluatorState state)
+    {
+        var action = args switch
+        {
+            [string a] => a,
+            _
+                => throw new ExpressionEvaluatorTypeErrorException(
+                    $"Expected [\"authContext\", string] to have 1 string, got {args.Length} where the first was of type {args[0]?.GetType().Name}"
+                )
+        };
+        return await state.IsUserAuthorized(action);
     }
 
     private static async Task<object?> DataModel(object?[] args, ComponentContext context, LayoutEvaluatorState state)

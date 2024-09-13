@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using Altinn.App.Core.Internal.Process.Authorization;
-using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models;
 using static Altinn.App.Core.Features.Telemetry.AuthorizationService;
 
@@ -38,27 +37,34 @@ partial class Telemetry
         return activity;
     }
 
-    internal Activity? StartAuthorizeActionsActivity(
-        Platform.Storage.Interface.Models.Instance instance,
-        List<AltinnAction> actions
-    )
+    internal Activity? StartAuthorizeActionsActivity(Platform.Storage.Interface.Models.Instance instance)
     {
         var activity = ActivitySource.StartActivity($"{Prefix}.AuthorizeActions");
-        if (activity is not null)
-        {
-            activity.SetInstanceId(instance);
-            var now = DateTimeOffset.UtcNow;
-            ActivityTagsCollection tags = new([new("actions.count", actions.Count),]);
-            for (int i = 0; i < actions.Count; i++)
-            {
-                var action = actions[i];
-                tags.Add(new($"actions.{i}.value", action.Value));
-                tags.Add(new($"actions.{i}.type", action.ActionType.ToString()));
-            }
+        activity?.SetInstanceId(instance);
 
-            activity.AddEvent(new ActivityEvent("actions", now, tags));
-        }
         return activity;
+    }
+
+    internal static void AddAuthorizedActionsEvent(
+        Activity? activity,
+        List<Internal.Process.Elements.UserAction> actions
+    )
+    {
+        if (activity is null)
+        {
+            return;
+        }
+        var now = DateTimeOffset.UtcNow;
+        ActivityTagsCollection tags = new([new("actions.count", actions.Count),]);
+        for (int i = 0; i < actions.Count; i++)
+        {
+            var action = actions[i];
+            tags.Add(new($"actions.{i}.value", action.Id));
+            tags.Add(new($"actions.{i}.type", action.ActionType.ToString()));
+            tags.Add(new($"actions.{i}.authorized", action.Authorized));
+        }
+
+        activity.AddEvent(new ActivityEvent("actions", now, tags));
     }
 
     internal Activity? StartIsAuthorizerActivity(

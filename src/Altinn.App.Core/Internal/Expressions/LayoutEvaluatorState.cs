@@ -1,6 +1,9 @@
+using System.Security.Claims;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers.DataModel;
+using Altinn.App.Core.Internal.Auth;
+using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Layout;
@@ -20,6 +23,7 @@ public class LayoutEvaluatorState
     private readonly Instance _instanceContext;
     private readonly string? _gatewayAction;
     private readonly string? _language;
+    private readonly Lazy<Task<IReadOnlyList<UserAction>?>> _userActions;
     private readonly Lazy<Task<List<ComponentContext>>?> _rootContext;
 
     /// <summary>
@@ -27,6 +31,8 @@ public class LayoutEvaluatorState
     /// </summary>
     public LayoutEvaluatorState(
         IInstanceDataAccessor dataAccessor,
+        IAuthorizationService authorizationService,
+        ClaimsPrincipal? user,
         LayoutModel? componentModel,
         FrontEndSettings frontEndSettings,
         ApplicationMetadata applicationMetadata,
@@ -41,6 +47,13 @@ public class LayoutEvaluatorState
         _gatewayAction = gatewayAction;
         _language = language;
         _rootContext = new(() => _componentModel?.GenerateComponentContexts(_instanceContext, _dataModel));
+        _userActions = new(
+            () =>
+                user is null
+                    ? Task.FromResult<IReadOnlyList<UserAction>?>(null)
+                    : authorizationService.GetAuthorizedActions(_instanceContext, user)
+                        as Task<IReadOnlyList<UserAction>?>
+        );
     }
 
     /// <summary>
@@ -193,6 +206,14 @@ public class LayoutEvaluatorState
     public string? GetGatewayAction()
     {
         return _gatewayAction;
+    }
+
+    /// <summary>
+    /// Figure out if a user is authorized to perform a given action
+    /// </summary>
+    public async Task<bool?> IsUserAuthorized(string action)
+    {
+        return (await _userActions.Value)?.Any(a => a.Id == action);
     }
 
     /// <summary>

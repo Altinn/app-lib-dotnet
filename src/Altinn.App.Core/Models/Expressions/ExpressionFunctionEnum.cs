@@ -147,4 +147,9 @@ public enum ExpressionFunction
     /// Gets the currently selected language (or "nb" if not in a context where language is available)
     /// </summary>
     language,
+
+    /// <summary>
+    /// Figure out if a user is authorized to perform an action
+    /// </summary>
+    authContext
 }

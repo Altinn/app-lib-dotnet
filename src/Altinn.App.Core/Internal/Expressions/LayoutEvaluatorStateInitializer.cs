@@ -1,10 +1,13 @@
 using System.Diagnostics;
+using System.Security.Claims;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Layout;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Internal.Expressions;
@@ -17,6 +20,8 @@ public class LayoutEvaluatorStateInitializer : ILayoutEvaluatorStateInitializer
     // Dependency injection properties (set in ctor)
     private readonly IAppResources _appResources;
     private readonly IAppMetadata _appMetadata;
+    private readonly IAuthorizationService _authorizationService;
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly FrontEndSettings _frontEndSettings;
 
     /// <summary>
@@ -25,11 +30,15 @@ public class LayoutEvaluatorStateInitializer : ILayoutEvaluatorStateInitializer
     public LayoutEvaluatorStateInitializer(
         IAppResources appResources,
         IAppMetadata appMetadata,
-        IOptions<FrontEndSettings> frontEndSettings
+        IOptions<FrontEndSettings> frontEndSettings,
+        IAuthorizationService authorizationService,
+        IHttpContextAccessor httpContextAccessor
     )
     {
         _appResources = appResources;
         _appMetadata = appMetadata;
+        _authorizationService = authorizationService;
+        _httpContextAccessor = httpContextAccessor;
         _frontEndSettings = frontEndSettings.Value;
     }
 
@@ -93,20 +102,39 @@ public class LayoutEvaluatorStateInitializer : ILayoutEvaluatorStateInitializer
         Debug.Assert(dataElement is not null);
         var appMetadata = await _appMetadata.GetApplicationMetadata();
         var dataAccessor = new SingleDataElementAccessor(instance, dataElement, data);
-        return new LayoutEvaluatorState(dataAccessor, layouts, _frontEndSettings, appMetadata, gatewayAction);
+        return new LayoutEvaluatorState(
+            dataAccessor,
+            _authorizationService,
+            _httpContextAccessor.HttpContext?.User,
+            layouts,
+            _frontEndSettings,
+            appMetadata,
+            gatewayAction
+        );
     }
 
     /// <inheritdoc />
     public async Task<LayoutEvaluatorState> Init(
         IInstanceDataAccessor dataAccessor,
+        ClaimsPrincipal? user,
         string? taskId,
         string? gatewayAction = null,
         string? language = null
     )
     {
         LayoutModel? layouts = taskId is not null ? _appResources.GetLayoutModelForTask(taskId) : null;
+
         var appMetadata = await _appMetadata.GetApplicationMetadata();
 
-        return new LayoutEvaluatorState(dataAccessor, layouts, _frontEndSettings, appMetadata, gatewayAction, language);
+        return new LayoutEvaluatorState(
+            dataAccessor,
+            _authorizationService,
+            user,
+            layouts,
+            _frontEndSettings,
+            appMetadata,
+            gatewayAction,
+            language
+        );
     }
 }
