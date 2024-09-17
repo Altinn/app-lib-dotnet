@@ -3,6 +3,7 @@ using Altinn.App.Core.Constants;
 using Altinn.App.Core.EFormidling;
 using Altinn.App.Core.EFormidling.Implementation;
 using Altinn.App.Core.EFormidling.Interface;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Data;
@@ -13,6 +14,8 @@ using Altinn.Common.EFormidlingClient;
 using Altinn.Common.EFormidlingClient.Models.SBD;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -21,11 +24,42 @@ namespace Altinn.App.Core.Tests.Eformidling.Implementation;
 
 public class DefaultEFormidlingServiceTests
 {
-    [Fact]
-    public void SendEFormidlingShipment()
+    private const string EFormidlingMetadataFilename = "arkivmelding.xml";
+    private const string ModelDataType = "model";
+    private const string FileAttachmentsDataType = "file-attachments";
+
+    private readonly record struct Fixture(
+        IServiceProvider ServiceProvider,
+        Instance Instance,
+        Guid InstanceGuid,
+        DefaultEFormidlingService Service
+    ) : IDisposable
     {
-        // Arrange
-        var logger = new NullLogger<DefaultEFormidlingService>();
+        public Mock<T> Mock<T>()
+            where T : class => Moq.Mock.Get(ServiceProvider.GetRequiredService<T>());
+
+        public void Dispose()
+        {
+            if (ServiceProvider is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
+        }
+    }
+
+    private Fixture CreateFixture(
+        IReadOnlyList<DataElement>? data = null,
+        Action<Mock<IEFormidlingClient>>? setupEFormidlingClient = null
+    )
+    {
+        var services = new ServiceCollection();
+        services.AddAppImplementationFactory();
+        services.AddLogging(logging =>
+        {
+            logging.ClearProviders();
+            logging.AddProvider(NullLoggerProvider.Instance);
+        });
+
         var userTokenProvider = new Mock<IUserTokenProvider>();
         var appMetadata = new Mock<IAppMetadata>();
         var dataClient = new Mock<IDataClient>();
@@ -39,56 +73,55 @@ public class DefaultEFormidlingServiceTests
         var tokenGenerator = new Mock<IAccessTokenGenerator>();
         var eFormidlingMetadata = new Mock<IEFormidlingMetadata>();
 
-        const string eFormidlingMetadataFilename = "arkivmelding.xml";
-        const string modelDataType = "model";
-        const string fileAttachmentsDataType = "file-attachments";
         var instanceGuid = Guid.Parse("41C1099C-7EDD-47F5-AD1F-6267B497796F");
         var instance = new Instance
         {
             Id = $"1337/{instanceGuid}",
             InstanceOwner = new InstanceOwner { PartyId = "1337" },
             Data =
-            [
-                new DataElement { Id = Guid.NewGuid().ToString(), DataType = modelDataType },
-                new DataElement
-                {
-                    Id = Guid.NewGuid().ToString(),
-                    DataType = fileAttachmentsDataType,
-                    Filename = "attachment.txt",
-                },
-                new DataElement
-                {
-                    Id = Guid.NewGuid().ToString(),
-                    DataType = fileAttachmentsDataType,
-                    Filename = "attachment.txt",
-                },
-                new DataElement
-                {
-                    Id = Guid.NewGuid().ToString(),
-                    DataType = fileAttachmentsDataType,
-                    Filename = "no-extension",
-                },
-                new DataElement
-                {
-                    Id = Guid.NewGuid().ToString(),
-                    DataType = fileAttachmentsDataType,
-                    Filename = null,
-                },
-                //Same filename as the eFormidling metadata file.
-                new DataElement
-                {
-                    Id = Guid.NewGuid().ToString(),
-                    DataType = fileAttachmentsDataType,
-                    Filename = eFormidlingMetadataFilename,
-                },
-                //Same filename as model data type.
-                new DataElement
-                {
-                    Id = Guid.NewGuid().ToString(),
-                    DataType = fileAttachmentsDataType,
-                    Filename = modelDataType + ".xml",
-                },
-            ],
+                data?.ToList()
+                ??
+                [
+                    new DataElement { Id = Guid.NewGuid().ToString(), DataType = ModelDataType, },
+                    new DataElement
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        DataType = FileAttachmentsDataType,
+                        Filename = "attachment.txt"
+                    },
+                    new DataElement
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        DataType = FileAttachmentsDataType,
+                        Filename = "attachment.txt"
+                    },
+                    new DataElement
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        DataType = FileAttachmentsDataType,
+                        Filename = "no-extension"
+                    },
+                    new DataElement
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        DataType = FileAttachmentsDataType,
+                        Filename = null
+                    },
+                    //Same filename as the eFormidling metadata file.
+                    new DataElement
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        DataType = FileAttachmentsDataType,
+                        Filename = EFormidlingMetadataFilename
+                    },
+                    //Same filename as model data type.
+                    new DataElement
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        DataType = FileAttachmentsDataType,
+                        Filename = ModelDataType + ".xml"
+                    }
+                ]
         };
 
         appMetadata
@@ -101,10 +134,10 @@ public class DefaultEFormidlingServiceTests
                     [
                         new DataType
                         {
-                            Id = modelDataType,
-                            AppLogic = new ApplicationLogic { ClassRef = "SomeClass" },
+                            Id = ModelDataType,
+                            AppLogic = new ApplicationLogic { ClassRef = "SomeClass" }
                         },
-                        new DataType { Id = fileAttachmentsDataType },
+                        new DataType { Id = FileAttachmentsDataType }
                     ],
                     EFormidling = new EFormidlingContract
                     {
@@ -113,8 +146,8 @@ public class DefaultEFormidlingServiceTests
                         TypeVersion = "v8",
                         Type = "arkivmelding",
                         SecurityLevel = 3,
-                        DataTypes = [modelDataType, fileAttachmentsDataType],
-                    },
+                        DataTypes = [ModelDataType, FileAttachmentsDataType]
+                    }
                 }
             );
         tokenGenerator.Setup(t => t.GenerateAccessToken("ttd", "test-app")).Returns("access-token");
@@ -124,7 +157,7 @@ public class DefaultEFormidlingServiceTests
             .Setup(em => em.GenerateEFormidlingMetadata(instance))
             .ReturnsAsync(() =>
             {
-                return (eFormidlingMetadataFilename, Stream.Null);
+                return (EFormidlingMetadataFilename, Stream.Null);
             });
         dataClient
             .Setup(x =>
@@ -138,19 +171,32 @@ public class DefaultEFormidlingServiceTests
             )
             .ReturnsAsync(Stream.Null);
 
-        var defaultEformidlingService = new DefaultEFormidlingService(
-            logger,
-            userTokenProvider.Object,
-            appMetadata.Object,
-            dataClient.Object,
-            eFormidlingReceivers.Object,
-            eventClient.Object,
-            appSettings,
-            platformSettings,
-            eFormidlingClient.Object,
-            tokenGenerator.Object,
-            eFormidlingMetadata.Object
-        );
+        setupEFormidlingClient?.Invoke(eFormidlingClient);
+
+        services.AddTransient(_ => userTokenProvider.Object);
+        services.AddTransient(_ => appMetadata.Object);
+        services.AddTransient(_ => dataClient.Object);
+        services.AddTransient(_ => eFormidlingReceivers.Object);
+        services.AddTransient(_ => eventClient.Object);
+        services.AddTransient(_ => appSettings);
+        services.AddTransient(_ => platformSettings);
+        services.AddTransient(_ => eFormidlingClient.Object);
+        services.AddTransient(_ => tokenGenerator.Object);
+        services.AddTransient(_ => eFormidlingMetadata.Object);
+
+        services.AddTransient<IEFormidlingService, DefaultEFormidlingService>();
+
+        var serviceProvider = services.BuildServiceProvider();
+        var service = serviceProvider.GetRequiredService<IEFormidlingService>();
+        return new(serviceProvider, instance, instanceGuid, (DefaultEFormidlingService)service);
+    }
+
+    [Fact]
+    public void SendEFormidlingShipment()
+    {
+        // Arrange
+        using var fixture = CreateFixture();
+        var (sp, instance, instanceGuid, defaultEformidlingService) = fixture;
 
         // Act
         var result = defaultEformidlingService.SendEFormidlingShipment(instance);
@@ -163,17 +209,18 @@ public class DefaultEFormidlingServiceTests
             { General.SubscriptionKeyHeaderName, "subscription-key" },
         };
 
-        appMetadata.Verify(a => a.GetApplicationMetadata());
-        tokenGenerator.Verify(t => t.GenerateAccessToken("ttd", "test-app"));
-        userTokenProvider.Verify(u => u.GetUserToken());
-        eFormidlingReceivers.Verify(er => er.GetEFormidlingReceivers(instance));
-        eFormidlingMetadata.Verify(em => em.GenerateEFormidlingMetadata(instance));
+        fixture.Mock<IAppMetadata>().Verify(a => a.GetApplicationMetadata());
+        fixture.Mock<IAccessTokenGenerator>().Verify(t => t.GenerateAccessToken("ttd", "test-app"));
+        fixture.Mock<IUserTokenProvider>().Verify(u => u.GetUserToken());
+        fixture.Mock<IEFormidlingReceivers>().Verify(er => er.GetEFormidlingReceivers(instance));
+        fixture.Mock<IEFormidlingMetadata>().Verify(em => em.GenerateEFormidlingMetadata(instance));
+        var eFormidlingClient = fixture.Mock<IEFormidlingClient>();
         eFormidlingClient.Verify(ec => ec.CreateMessage(It.IsAny<StandardBusinessDocument>(), expectedReqHeaders));
         eFormidlingClient.Verify(ec =>
-            ec.UploadAttachment(Stream.Null, instanceGuid.ToString(), eFormidlingMetadataFilename, expectedReqHeaders)
+            ec.UploadAttachment(Stream.Null, instanceGuid.ToString(), EFormidlingMetadataFilename, expectedReqHeaders)
         );
         eFormidlingClient.Verify(ec =>
-            ec.UploadAttachment(Stream.Null, instanceGuid.ToString(), $"{modelDataType}.xml", expectedReqHeaders)
+            ec.UploadAttachment(Stream.Null, instanceGuid.ToString(), $"{ModelDataType}.xml", expectedReqHeaders)
         );
         eFormidlingClient.Verify(ec =>
             ec.UploadAttachment(Stream.Null, instanceGuid.ToString(), "attachment.txt", expectedReqHeaders)
@@ -185,13 +232,13 @@ public class DefaultEFormidlingServiceTests
             ec.UploadAttachment(Stream.Null, instanceGuid.ToString(), "no-extension", expectedReqHeaders)
         );
         eFormidlingClient.Verify(ec =>
-            ec.UploadAttachment(Stream.Null, instanceGuid.ToString(), fileAttachmentsDataType, expectedReqHeaders)
+            ec.UploadAttachment(Stream.Null, instanceGuid.ToString(), FileAttachmentsDataType, expectedReqHeaders)
         );
         eFormidlingClient.Verify(ec =>
             ec.UploadAttachment(
                 Stream.Null,
                 instanceGuid.ToString(),
-                $"{Path.GetFileNameWithoutExtension(eFormidlingMetadataFilename)}-1.xml",
+                $"{Path.GetFileNameWithoutExtension(EFormidlingMetadataFilename)}-1.xml",
                 expectedReqHeaders
             )
         );
@@ -199,20 +246,22 @@ public class DefaultEFormidlingServiceTests
             ec.UploadAttachment(
                 Stream.Null,
                 instanceGuid.ToString(),
-                $"{fileAttachmentsDataType}-{modelDataType}.xml",
+                $"{FileAttachmentsDataType}-{ModelDataType}.xml",
                 expectedReqHeaders
             )
         );
 
         eFormidlingClient.Verify(ec => ec.SendMessage(instanceGuid.ToString(), expectedReqHeaders));
-        eventClient.Verify(e => e.AddEvent(EformidlingConstants.CheckInstanceStatusEventType, instance));
+        fixture
+            .Mock<IEventsClient>()
+            .Verify(e => e.AddEvent(EformidlingConstants.CheckInstanceStatusEventType, instance));
 
         eFormidlingClient.VerifyNoOtherCalls();
-        eventClient.VerifyNoOtherCalls();
-        tokenGenerator.VerifyNoOtherCalls();
-        userTokenProvider.VerifyNoOtherCalls();
-        eFormidlingReceivers.VerifyNoOtherCalls();
-        appMetadata.VerifyNoOtherCalls();
+        fixture.Mock<IEventsClient>().VerifyNoOtherCalls();
+        fixture.Mock<IAccessTokenGenerator>().VerifyNoOtherCalls();
+        fixture.Mock<IUserTokenProvider>().VerifyNoOtherCalls();
+        fixture.Mock<IEFormidlingReceivers>().VerifyNoOtherCalls();
+        fixture.Mock<IAppMetadata>().VerifyNoOtherCalls();
 
         result.IsCompletedSuccessfully.Should().BeTrue();
     }
@@ -272,76 +321,20 @@ public class DefaultEFormidlingServiceTests
     public void SendEFormidlingShipment_throws_exception_if_send_fails()
     {
         // Arrange
-        var logger = new NullLogger<DefaultEFormidlingService>();
-        var userTokenProvider = new Mock<IUserTokenProvider>();
-        var appMetadata = new Mock<IAppMetadata>();
-        var dataClient = new Mock<IDataClient>();
-        var eFormidlingReceivers = new Mock<IEFormidlingReceivers>();
-        var eventClient = new Mock<IEventsClient>();
-        var appSettings = Options.Create(
-            new AppSettings { RuntimeCookieName = "AltinnStudioRuntime", EFormidlingSender = "980123456" }
-        );
-        var platformSettings = Options.Create(new PlatformSettings { SubscriptionKey = "subscription-key" });
-        var eFormidlingClient = new Mock<IEFormidlingClient>();
-        var tokenGenerator = new Mock<IAccessTokenGenerator>();
-        var eFormidlingMetadata = new Mock<IEFormidlingMetadata>();
-        var instanceGuid = Guid.Parse("41C1099C-7EDD-47F5-AD1F-6267B497796F");
-        var instance = new Instance
-        {
-            Id = $"1337/{instanceGuid}",
-            InstanceOwner = new InstanceOwner { PartyId = "1337" },
-            Data = new List<DataElement>(),
-        };
-
-        appMetadata
-            .Setup(a => a.GetApplicationMetadata())
-            .ReturnsAsync(
-                new ApplicationMetadata("ttd/test-app")
-                {
-                    Org = "ttd",
-                    EFormidling = new EFormidlingContract
-                    {
-                        Process = "urn:no:difi:profile:arkivmelding:plan:3.0",
-                        Standard = "urn:no:difi:arkivmelding:xsd::arkivmelding",
-                        TypeVersion = "v8",
-                        Type = "arkivmelding",
-                        SecurityLevel = 3,
-                        DataTypes = new List<string>(),
-                    },
-                    DataTypes = [],
-                }
-            );
-        tokenGenerator.Setup(t => t.GenerateAccessToken("ttd", "test-app")).Returns("access-token");
-        userTokenProvider.Setup(u => u.GetUserToken()).Returns("authz-token");
-        eFormidlingReceivers.Setup(er => er.GetEFormidlingReceivers(instance)).ReturnsAsync(new List<Receiver>());
-        eFormidlingMetadata
-            .Setup(em => em.GenerateEFormidlingMetadata(instance))
-            .ReturnsAsync(() =>
+        using var fixture = CreateFixture(
+            data: [],
+            setupEFormidlingClient: static eFormidlingClient =>
             {
-                return ("arkivmelding.xml", Stream.Null);
-            });
-        eFormidlingClient
-            .Setup(ec => ec.SendMessage(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>()))
-            .ThrowsAsync(new Exception("XUnit expected exception"));
-
-        var defaultEformidlingService = new DefaultEFormidlingService(
-            logger,
-            userTokenProvider.Object,
-            appMetadata.Object,
-            dataClient.Object,
-            eFormidlingReceivers.Object,
-            eventClient.Object,
-            appSettings,
-            platformSettings,
-            eFormidlingClient.Object,
-            tokenGenerator.Object,
-            eFormidlingMetadata.Object
+                eFormidlingClient
+                    .Setup(ec => ec.SendMessage(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>()))
+                    .ThrowsAsync(new Exception("XUnit expected exception"));
+            }
         );
+        var (sp, instance, instanceGuid, defaultEformidlingService) = fixture;
 
         // Act
         var result = defaultEformidlingService.SendEFormidlingShipment(instance);
 
-        // Assert
         // Assert
         var expectedReqHeaders = new Dictionary<string, string>
         {
@@ -350,23 +343,24 @@ public class DefaultEFormidlingServiceTests
             { General.SubscriptionKeyHeaderName, "subscription-key" },
         };
 
-        appMetadata.Verify(a => a.GetApplicationMetadata());
-        tokenGenerator.Verify(t => t.GenerateAccessToken("ttd", "test-app"));
-        userTokenProvider.Verify(u => u.GetUserToken());
-        eFormidlingReceivers.Verify(er => er.GetEFormidlingReceivers(instance));
-        eFormidlingMetadata.Verify(em => em.GenerateEFormidlingMetadata(instance));
+        fixture.Mock<IAppMetadata>().Verify(a => a.GetApplicationMetadata());
+        fixture.Mock<IAccessTokenGenerator>().Verify(t => t.GenerateAccessToken("ttd", "test-app"));
+        fixture.Mock<IUserTokenProvider>().Verify(u => u.GetUserToken());
+        fixture.Mock<IEFormidlingReceivers>().Verify(er => er.GetEFormidlingReceivers(instance));
+        fixture.Mock<IEFormidlingMetadata>().Verify(em => em.GenerateEFormidlingMetadata(instance));
+        var eFormidlingClient = fixture.Mock<IEFormidlingClient>();
         eFormidlingClient.Verify(ec => ec.CreateMessage(It.IsAny<StandardBusinessDocument>(), expectedReqHeaders));
         eFormidlingClient.Verify(ec =>
-            ec.UploadAttachment(Stream.Null, instanceGuid.ToString(), "arkivmelding.xml", expectedReqHeaders)
+            ec.UploadAttachment(Stream.Null, instanceGuid.ToString(), EFormidlingMetadataFilename, expectedReqHeaders)
         );
         eFormidlingClient.Verify(ec => ec.SendMessage(instanceGuid.ToString(), expectedReqHeaders));
 
         eFormidlingClient.VerifyNoOtherCalls();
-        eventClient.VerifyNoOtherCalls();
-        tokenGenerator.VerifyNoOtherCalls();
-        userTokenProvider.VerifyNoOtherCalls();
-        eFormidlingReceivers.VerifyNoOtherCalls();
-        appMetadata.VerifyNoOtherCalls();
+        fixture.Mock<IEventsClient>().VerifyNoOtherCalls();
+        fixture.Mock<IAccessTokenGenerator>().VerifyNoOtherCalls();
+        fixture.Mock<IUserTokenProvider>().VerifyNoOtherCalls();
+        fixture.Mock<IEFormidlingReceivers>().VerifyNoOtherCalls();
+        fixture.Mock<IAppMetadata>().VerifyNoOtherCalls();
 
         result.IsCompletedSuccessfully.Should().BeFalse();
     }
