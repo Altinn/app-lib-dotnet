@@ -3,6 +3,7 @@ using System.Globalization;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.EFormidling.Interface;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Data;
@@ -42,13 +43,12 @@ public class DefaultEFormidlingService : IEFormidlingService
         IUserTokenProvider userTokenProvider,
         IAppMetadata appMetadata,
         IDataClient dataClient,
-        IEFormidlingReceivers eFormidlingReceivers,
         IEventsClient eventClient,
+        IServiceProvider sp,
         IOptions<AppSettings>? appSettings = null,
         IOptions<PlatformSettings>? platformSettings = null,
         IEFormidlingClient? eFormidlingClient = null,
-        IAccessTokenGenerator? tokenGenerator = null,
-        IEFormidlingMetadata? eFormidlingMetadata = null
+        IAccessTokenGenerator? tokenGenerator = null
     )
     {
         _logger = logger;
@@ -57,10 +57,10 @@ public class DefaultEFormidlingService : IEFormidlingService
         _platformSettings = platformSettings?.Value;
         _userTokenProvider = userTokenProvider;
         _eFormidlingClient = eFormidlingClient;
-        _eFormidlingMetadata = eFormidlingMetadata;
+        _eFormidlingMetadata = sp.GetAppImplementation<IEFormidlingMetadata>();
+        _eFormidlingReceivers = sp.GetRequiredAppImplementation<IEFormidlingReceivers>();
         _appMetadata = appMetadata;
         _dataClient = dataClient;
-        _eFormidlingReceivers = eFormidlingReceivers;
         _eventClient = eventClient;
     }
 
