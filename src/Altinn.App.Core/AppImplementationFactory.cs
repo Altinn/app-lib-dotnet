@@ -1,46 +1,57 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Altinn.App.Core.Features;
+
+/// <summary>
+/// Marker attribute for interfaces that are meant to be implemented by apps.
+/// </summary>
+[AttributeUsage(AttributeTargets.Interface, AllowMultiple = false)]
+internal sealed class ImplementableByAppsAttribute : Attribute { }
 
 internal static class AppImplementationFactoryExtensions
 {
     public static IServiceCollection AddAppImplementationFactory(this IServiceCollection services)
     {
-        // Wherever we inject user/app-implemented interfaces,
-        // we should be in a context where there is a scope
-        // * ASP.NET Core request scope
-        // * Background processing scope (i.e. IServiceTask in the future)
-        // If code tries to resolve an implementation outside of a scope,
-        // it will throw an exception.
-        services.AddScoped<AppImplementationFactory>();
+        services.AddSingleton<AppImplementationFactory.DIScopeHolder>(sp =>
+            new(sp.GetRequiredService<IHttpContextAccessor>().HttpContext?.RequestServices)
+        );
+        services.AddSingleton<AppImplementationFactory>();
         return services;
     }
 
-    public static T GetRequiredAppImplementation<T>(this IServiceProvider sp)
-        where T : class => sp.GetRequiredService<AppImplementationFactory>().GetRequiredImplementation<T>();
-
-    public static T? GetAppImplementation<T>(this IServiceProvider sp)
-        where T : class => sp.GetRequiredService<AppImplementationFactory>().GetImplementation<T>();
-
-    public static IEnumerable<T> GetAppImplementations<T>(this IServiceProvider sp)
-        where T : class => sp.GetRequiredService<AppImplementationFactory>().GetImplementations<T>();
+    public static IServiceCollection AddTestAppImplementationFactory(this IServiceCollection services)
+    {
+        services.AddSingleton<AppImplementationFactory.DIScopeHolder>(sp => new(sp));
+        services.AddSingleton<AppImplementationFactory>();
+        return services;
+    }
 }
 
-file sealed class AppImplementationFactory
+internal sealed class AppImplementationFactory
 {
-    private readonly IServiceProvider _sp;
+    internal sealed record DIScopeHolder(IServiceProvider? ScopedServiceProvider);
 
-    public AppImplementationFactory(IServiceProvider serviceProvider)
+    private readonly DIScopeHolder _diScopeHolder;
+
+    public AppImplementationFactory(DIScopeHolder diScopeHolder)
     {
-        _sp = serviceProvider;
+        _diScopeHolder = diScopeHolder;
     }
 
-    public T GetRequiredImplementation<T>()
+    private IServiceProvider _sp =>
+        // Right now we are just using the HttpContext to get the current scope,
+        // in the future we might not be always running in a web context,
+        // at that point we need to replace this
+        _diScopeHolder.ScopedServiceProvider
+        ?? throw new InvalidOperationException("Couldn't resolve DI container from current context");
+
+    public T GetRequired<T>()
         where T : class => _sp.GetRequiredService<T>();
 
-    public T? GetImplementation<T>()
+    public T? Get<T>()
         where T : class => _sp.GetService<T>();
 
-    public IEnumerable<T> GetImplementations<T>()
+    public IEnumerable<T> GetAll<T>()
         where T : class => _sp.GetServices<T>();
 }

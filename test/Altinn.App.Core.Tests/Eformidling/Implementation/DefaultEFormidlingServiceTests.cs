@@ -15,6 +15,7 @@ using Altinn.Common.EFormidlingClient.Models.SBD;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -28,32 +29,34 @@ public class DefaultEFormidlingServiceTests
     private const string ModelDataType = "model";
     private const string FileAttachmentsDataType = "file-attachments";
 
-    private readonly record struct Fixture(
-        IServiceProvider ServiceProvider,
-        Instance Instance,
-        Guid InstanceGuid,
-        DefaultEFormidlingService Service
-    ) : IDisposable
+    private readonly record struct Fixture(IServiceProvider ServiceProvider, Instance Instance, Guid InstanceGuid)
+        : IAsyncDisposable
     {
         public Mock<T> Mock<T>()
             where T : class => Moq.Mock.Get(ServiceProvider.GetRequiredService<T>());
 
-        public void Dispose()
+        public ValueTask DisposeAsync()
         {
-            if (ServiceProvider is IDisposable disposable)
+            switch (ServiceProvider)
             {
-                disposable.Dispose();
+                case IAsyncDisposable disposable:
+                    return disposable.DisposeAsync();
+                case IDisposable disposable:
+                    disposable.Dispose();
+                    break;
             }
+            return default;
         }
     }
 
     private Fixture CreateFixture(
+        ServiceCollection? services = null,
         IReadOnlyList<DataElement>? data = null,
         Action<Mock<IEFormidlingClient>>? setupEFormidlingClient = null
     )
     {
-        var services = new ServiceCollection();
-        services.AddAppImplementationFactory();
+        services ??= new ServiceCollection();
+        services.AddTestAppImplementationFactory();
         services.AddLogging(logging =>
         {
             logging.ClearProviders();
@@ -63,6 +66,7 @@ public class DefaultEFormidlingServiceTests
         var userTokenProvider = new Mock<IUserTokenProvider>();
         var appMetadata = new Mock<IAppMetadata>();
         var dataClient = new Mock<IDataClient>();
+        var eFormidlingMetadata = new Mock<IEFormidlingMetadata>();
         var eFormidlingReceivers = new Mock<IEFormidlingReceivers>();
         var eventClient = new Mock<IEventsClient>();
         var appSettings = Options.Create(
@@ -71,7 +75,6 @@ public class DefaultEFormidlingServiceTests
         var platformSettings = Options.Create(new PlatformSettings { SubscriptionKey = "subscription-key" });
         var eFormidlingClient = new Mock<IEFormidlingClient>();
         var tokenGenerator = new Mock<IAccessTokenGenerator>();
-        var eFormidlingMetadata = new Mock<IEFormidlingMetadata>();
 
         var instanceGuid = Guid.Parse("41C1099C-7EDD-47F5-AD1F-6267B497796F");
         var instance = new Instance
@@ -173,30 +176,32 @@ public class DefaultEFormidlingServiceTests
 
         setupEFormidlingClient?.Invoke(eFormidlingClient);
 
-        services.AddTransient(_ => userTokenProvider.Object);
-        services.AddTransient(_ => appMetadata.Object);
-        services.AddTransient(_ => dataClient.Object);
-        services.AddTransient(_ => eFormidlingReceivers.Object);
-        services.AddTransient(_ => eventClient.Object);
-        services.AddTransient(_ => appSettings);
-        services.AddTransient(_ => platformSettings);
-        services.AddTransient(_ => eFormidlingClient.Object);
-        services.AddTransient(_ => tokenGenerator.Object);
-        services.AddTransient(_ => eFormidlingMetadata.Object);
+        services.TryAddTransient(_ => userTokenProvider.Object);
+        services.TryAddTransient(_ => appMetadata.Object);
+        services.TryAddTransient(_ => dataClient.Object);
+        services.TryAddTransient(_ => eFormidlingReceivers.Object);
+        services.TryAddTransient(_ => eventClient.Object);
+        services.TryAddTransient(_ => appSettings);
+        services.TryAddTransient(_ => platformSettings);
+        services.TryAddTransient(_ => eFormidlingClient.Object);
+        services.TryAddTransient(_ => tokenGenerator.Object);
+        services.TryAddTransient(_ => eFormidlingMetadata.Object);
 
-        services.AddTransient<IEFormidlingService, DefaultEFormidlingService>();
+        services.TryAddTransient<IEFormidlingService, DefaultEFormidlingService>();
 
-        var serviceProvider = services.BuildServiceProvider();
-        var service = serviceProvider.GetRequiredService<IEFormidlingService>();
-        return new(serviceProvider, instance, instanceGuid, (DefaultEFormidlingService)service);
+        var serviceProvider = services.BuildServiceProvider(
+            new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true, }
+        );
+        return new(serviceProvider, instance, instanceGuid);
     }
 
     [Fact]
-    public void SendEFormidlingShipment()
+    public async Task SendEFormidlingShipment()
     {
         // Arrange
-        using var fixture = CreateFixture();
-        var (sp, instance, instanceGuid, defaultEformidlingService) = fixture;
+        await using var fixture = CreateFixture();
+        var (sp, instance, instanceGuid) = fixture;
+        var defaultEformidlingService = sp.GetRequiredService<IEFormidlingService>();
 
         // Act
         var result = defaultEformidlingService.SendEFormidlingShipment(instance);
@@ -318,10 +323,10 @@ public class DefaultEFormidlingServiceTests
     }
 
     [Fact]
-    public void SendEFormidlingShipment_throws_exception_if_send_fails()
+    public async Task SendEFormidlingShipment_throws_exception_if_send_fails()
     {
         // Arrange
-        using var fixture = CreateFixture(
+        await using var fixture = CreateFixture(
             data: [],
             setupEFormidlingClient: static eFormidlingClient =>
             {
@@ -330,7 +335,8 @@ public class DefaultEFormidlingServiceTests
                     .ThrowsAsync(new Exception("XUnit expected exception"));
             }
         );
-        var (sp, instance, instanceGuid, defaultEformidlingService) = fixture;
+        var (sp, instance, instanceGuid) = fixture;
+        var defaultEformidlingService = sp.GetRequiredService<IEFormidlingService>();
 
         // Act
         var result = defaultEformidlingService.SendEFormidlingShipment(instance);
@@ -363,5 +369,42 @@ public class DefaultEFormidlingServiceTests
         fixture.Mock<IAppMetadata>().VerifyNoOtherCalls();
 
         result.IsCompletedSuccessfully.Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData(ServiceLifetime.Transient, ServiceLifetime.Transient)]
+    [InlineData(ServiceLifetime.Transient, ServiceLifetime.Scoped)]
+    [InlineData(ServiceLifetime.Transient, ServiceLifetime.Singleton)]
+    [InlineData(ServiceLifetime.Scoped, ServiceLifetime.Transient)]
+    [InlineData(ServiceLifetime.Scoped, ServiceLifetime.Scoped)]
+    [InlineData(ServiceLifetime.Scoped, ServiceLifetime.Singleton)]
+    [InlineData(ServiceLifetime.Singleton, ServiceLifetime.Transient)]
+    [InlineData(ServiceLifetime.Singleton, ServiceLifetime.Scoped)]
+    [InlineData(ServiceLifetime.Singleton, ServiceLifetime.Singleton)]
+    public async Task Test_App_Dependency_Lifetimes(ServiceLifetime implLifetime, ServiceLifetime serviceLifetime)
+    {
+        // Arrange
+        var services = new ServiceCollection
+        {
+            new ServiceDescriptor(
+                typeof(IEFormidlingMetadata),
+                _ => new Mock<IEFormidlingMetadata>().Object,
+                implLifetime
+            ),
+            new ServiceDescriptor(
+                typeof(IEFormidlingReceivers),
+                _ => new Mock<IEFormidlingReceivers>().Object,
+                implLifetime
+            ),
+            new ServiceDescriptor(typeof(IEFormidlingService), typeof(DefaultEFormidlingService), serviceLifetime)
+        };
+
+        // Act
+        await using var fixture = CreateFixture(services);
+        await using var scope = fixture.ServiceProvider.CreateAsyncScope();
+
+        // Assert
+        var svc = scope.ServiceProvider.GetService<IEFormidlingService>();
+        svc.Should().NotBeNull();
     }
 }
