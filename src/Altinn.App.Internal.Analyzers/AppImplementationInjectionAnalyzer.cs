@@ -26,7 +26,7 @@ file static class Diagnostics
     public static readonly DiagnosticDescriptor DangerousConstructorInjection = Error(
         "ALTINNINT0001",
         Category.General,
-        "Dangerious constructor injection",
+        "Dangerous constructor injection",
         "Service interface '{0}' is injected into the constructor of '{1}'."
             + " This is dangerous as we couple the lifetime of '{1}' to the lifetime of the implementation of '{0}'."
             + " Use the 'AppImplementationFactory' to instantiate app implementations lazily instead."
@@ -35,7 +35,7 @@ file static class Diagnostics
     public static readonly DiagnosticDescriptor DangerousServiceProviderServiceResolution = Error(
         "ALTINNINT0002",
         Category.General,
-        "Dangerious 'IServiceProvider' service resolution",
+        "Dangerous 'IServiceProvider' service resolution",
         "App implementable service interface '{0}' is resolved through 'IServiceProvider'."
             + " App implementable interfaces are only meant to be resolved through 'AppImplementationFactory'."
     );
