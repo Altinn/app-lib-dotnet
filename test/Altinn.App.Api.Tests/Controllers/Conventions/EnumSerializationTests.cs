@@ -51,14 +51,7 @@ public class EnumSerializationTests : ApiTestBase, IClassFixture<WebApplicationF
                 .AddJsonOptions(options =>
                 {
                     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-                })
-                .AddJsonOptions(
-                    "EnumAsNumber",
-                    options =>
-                    {
-                        options.JsonSerializerOptions.Converters.Add(new EnumToNumberJsonConverterFactory());
-                    }
-                );
+                });
 
             services.AddSingleton<IConfigureOptions<MvcOptions>>(sp =>
             {
