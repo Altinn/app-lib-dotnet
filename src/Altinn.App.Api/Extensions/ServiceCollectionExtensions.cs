@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Altinn.App.Api.Controllers;
+using Altinn.App.Api.Controllers.Conventions;
 using Altinn.App.Api.Helpers;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Infrastructure.Health;
@@ -47,6 +48,14 @@ public static class ServiceCollectionExtensions
         mvcBuilder
             .AddApplicationPart(typeof(InstancesController).Assembly)
             .AddXmlSerializerFormatters()
+            .AddJsonOptions(
+                "EnumAsNumber",
+                options =>
+                {
+                    options.JsonSerializerOptions.Converters.Add(new EnumToNumberJsonConverterFactory());
+                    options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+                }
+            )
             .AddJsonOptions(options =>
             {
                 options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
