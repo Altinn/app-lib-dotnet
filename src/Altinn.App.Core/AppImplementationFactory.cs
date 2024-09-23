@@ -13,37 +13,34 @@ internal static class AppImplementationFactoryExtensions
 {
     public static IServiceCollection AddAppImplementationFactory(this IServiceCollection services)
     {
-        services.AddSingleton<AppImplementationFactory.DIScopeHolder>(sp =>
-            new(sp.GetRequiredService<IHttpContextAccessor>().HttpContext?.RequestServices)
-        );
-        services.AddSingleton<AppImplementationFactory>();
+        services.AddSingleton<AppImplementationFactory>(sp => new(sp, testMode: false));
         return services;
     }
 
     public static IServiceCollection AddTestAppImplementationFactory(this IServiceCollection services)
     {
-        services.AddSingleton<AppImplementationFactory.DIScopeHolder>(sp => new(sp));
-        services.AddSingleton<AppImplementationFactory>();
+        services.AddSingleton<AppImplementationFactory>(sp => new(sp, testMode: true));
         return services;
     }
 }
 
 internal sealed class AppImplementationFactory
 {
-    internal sealed record DIScopeHolder(IServiceProvider? ScopedServiceProvider);
+    private readonly Func<IServiceProvider?> _getServiceProvider;
 
-    private readonly DIScopeHolder _diScopeHolder;
-
-    public AppImplementationFactory(DIScopeHolder diScopeHolder)
+    public AppImplementationFactory(IServiceProvider sp, bool testMode)
     {
-        _diScopeHolder = diScopeHolder;
+        if (testMode)
+            _getServiceProvider = () => sp;
+        else
+            // Right now we are just using the HttpContext to get the current scope,
+            // in the future we might not be always running in a web context,
+            // at that point we need to replace this
+            _getServiceProvider = () => sp.GetRequiredService<IHttpContextAccessor>().HttpContext?.RequestServices;
     }
 
     private IServiceProvider _sp =>
-        // Right now we are just using the HttpContext to get the current scope,
-        // in the future we might not be always running in a web context,
-        // at that point we need to replace this
-        _diScopeHolder.ScopedServiceProvider
+        _getServiceProvider()
         ?? throw new InvalidOperationException("Couldn't resolve DI container from current context");
 
     public T GetRequired<T>()
