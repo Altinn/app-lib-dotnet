@@ -21,7 +21,7 @@ internal class PdfGeneratorRequestOptions
     public string HeaderTemplate { get; set; } = string.Empty;
 
     /// <summary>
-    /// HTML template for the print footer. Has the same constraints and support for special classes as {@link PDFOptions.headerTemplate}.
+    /// HTML template for the print footer. Has the same constraints and support for special classes as HeaderTemplate.
     /// </summary>
     public string FooterTemplate { get; set; } = string.Empty;
 
