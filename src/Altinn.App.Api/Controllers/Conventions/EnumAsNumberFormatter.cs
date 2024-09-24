@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Altinn.App.Api.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
 
@@ -14,6 +15,16 @@ internal class EnumAsNumberFormatter : SystemTextJsonOutputFormatter
     }
 
     internal string SettingsName { get; }
+
+    public override bool CanWriteResult(OutputFormatterCanWriteContext context)
+    {
+        if (context.HttpContext.GetJsonSettingsName() != SettingsName)
+        {
+            return false;
+        }
+
+        return base.CanWriteResult(context);
+    }
 
     private static JsonSerializerOptions CreateSerializerOptions(JsonOptions options)
     {
