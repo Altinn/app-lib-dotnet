@@ -15,6 +15,8 @@ internal class PdfGeneratorRequest
     /// </summary>
     public PdfGeneratorRequestOptions Options { get; set; } = new();
 
+    public List<PdfStylesContent> AddStyleTag { get; set; } = new();
+
     /// <summary>
     /// Indicate whether javascript should be enabled. Default is true. This is also required when the HTML
     /// is created by a React application.
@@ -30,4 +32,14 @@ internal class PdfGeneratorRequest
     /// Provides a list of cookies Puppeteer will need to create before sending the request.
     /// </summary>
     public List<PdfGeneratorCookieOptions> Cookies { get; set; } = new();
+}
+
+internal class PdfStylesContent
+{
+    public string Content { get; set; } = string.Empty;
+}
+
+internal class PdfStylesUrl
+{
+    public string Url { get; set; } = string.Empty;
 }

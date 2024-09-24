@@ -4,6 +4,7 @@ using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Models.Pdf;
+using Altinn.Common.EFormidlingClient.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 
@@ -57,7 +58,37 @@ public class PdfGeneratorClient : IPdfGeneratorClient
             new()
             {
                 Url = uri.AbsoluteUri,
-                WaitFor = hasWaitForSelector ? _pdfGeneratorSettings.WaitForSelector : _pdfGeneratorSettings.WaitForTime
+                WaitFor = hasWaitForSelector
+                    ? _pdfGeneratorSettings.WaitForSelector
+                    : _pdfGeneratorSettings.WaitForTime,
+                Options =
+                {
+                    PrintBackground = true,
+                    OmitBackground = false,
+                },
+                AddStyleTag = new List<PdfStylesContent>
+                {
+                    new PdfStylesContent { Content = "* { background-color: transparent; !important}" },
+                    new PdfStylesContent
+                    {
+                        Content =
+                            @"body {
+                                background-image: url('https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/i/e68661bc-4ef3-4c17-8f56-2e06183279b3/d8q8eqc-d4be5479-bd0c-4be4-9ee7-7cf2906f947e.png') !important;
+                                background-repeat: repeat;
+                                background-size: 33% !important;
+                            }"
+                    },
+                    // new PdfStylesContent
+                    // {
+                    //     Content =
+                    //         "body::before { background-image: url('https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/3cd770b2-3e49-4672-99fb-8483b9dd9bf0/dfn315j-b5208ab6-567f-420d-9abc-898f4a57c7ce.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcLzNjZDc3MGIyLTNlNDktNDY3Mi05OWZiLTg0ODNiOWRkOWJmMFwvZGZuMzE1ai1iNTIwOGFiNi01NjdmLTQyMGQtOWFiYy04OThmNGE1N2M3Y2UucG5nIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.4HfH5RyMinroPECN5o8PdVJPQgHe4fjoG8db5P3xRlI'); position: absolute; z-index: 10; width: 100%; height: 100%; content: ''; background-repeat: repeat; background-size: 30%;}"
+                    // }
+                    // new PdfStylesUrl
+                    // {
+                    //     Url =
+                    //         "https://interactive-examples.mdn.mozilla.net/live-examples/css-examples/text-decoration/text-decoration-color.css"
+                    // },
+                },
             };
 
         generatorRequest.Cookies.Add(

@@ -15,6 +15,8 @@ internal class PdfGeneratorRequestOptions
     /// </summary>
     public bool PrintBackground { get; set; } = true;
 
+    public bool OmitBackground { get; set; }
+
     /// <summary>
     /// Defines the page size. Default is A4.
     /// </summary>
