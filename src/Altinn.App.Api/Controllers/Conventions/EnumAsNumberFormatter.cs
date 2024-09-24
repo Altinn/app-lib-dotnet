@@ -32,12 +32,13 @@ internal class EnumToNumberJsonConverterFactory : JsonConverterFactory
 
     public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
     {
-        return (JsonConverter)
-            Activator.CreateInstance(typeof(EnumToNumberJsonConverter<>).MakeGenericType(typeToConvert));
+        var instance =
+            Activator.CreateInstance(typeof(EnumToNumberJsonConverter<>).MakeGenericType(typeToConvert))
+            ?? throw new InvalidOperationException($"Failed to create converter for type {typeToConvert.FullName}");
+        return (JsonConverter)instance;
     }
 }
 
-// Custom JSON converter for enums
 internal class EnumToNumberJsonConverter<TEnum> : JsonConverter<TEnum>
     where TEnum : struct, Enum
 {
@@ -54,6 +55,6 @@ internal class EnumToNumberJsonConverter<TEnum> : JsonConverter<TEnum>
 
     public override void Write(Utf8JsonWriter writer, TEnum value, JsonSerializerOptions options)
     {
-        writer.WriteNumberValue(Convert.ToInt32(value));
+        writer.WriteNumberValue(Convert.ToInt32(value, System.Globalization.CultureInfo.InvariantCulture));
     }
 }
