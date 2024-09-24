@@ -4,6 +4,7 @@ using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Models.Pdf;
+using Altinn.Common.EFormidlingClient.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 
@@ -52,12 +53,27 @@ public class PdfGeneratorClient : IPdfGeneratorClient
     /// <inheritdoc/>
     public async Task<Stream> GeneratePdf(Uri uri, CancellationToken ct)
     {
+        return await GeneratePdf(uri, null, ct);
+    }
+
+    /// <inheritdoc/>
+    public async Task<Stream> GeneratePdf(Uri uri, string? FooterContent, CancellationToken ct)
+    {
         bool hasWaitForSelector = !string.IsNullOrWhiteSpace(_pdfGeneratorSettings.WaitForSelector);
+        bool footer = _pdfGeneratorSettings.Footer;
         PdfGeneratorRequest generatorRequest =
             new()
             {
                 Url = uri.AbsoluteUri,
-                WaitFor = hasWaitForSelector ? _pdfGeneratorSettings.WaitForSelector : _pdfGeneratorSettings.WaitForTime
+                WaitFor = hasWaitForSelector
+                    ? _pdfGeneratorSettings.WaitForSelector
+                    : _pdfGeneratorSettings.WaitForTime,
+                Options =
+                {
+                    HeaderTemplate = "<span/>",
+                    FooterTemplate = FooterContent ?? "<span/>",
+                    DisplayHeaderFooter = footer,
+                },
             };
 
         generatorRequest.Cookies.Add(

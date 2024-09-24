@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Claims;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Extensions;
@@ -113,7 +114,9 @@ public class PdfService : IPdfService
 
         Uri uri = BuildUri(baseUrl, pagePath, language);
 
-        Stream pdfContent = await _pdfGeneratorClient.GeneratePdf(uri, ct);
+        string footerContent = GetFooterContent(instance);
+
+        Stream pdfContent = await _pdfGeneratorClient.GeneratePdf(uri, footerContent, ct);
 
         return pdfContent;
     }
@@ -224,5 +227,30 @@ public class PdfService : IPdfService
     {
         fileName = Uri.EscapeDataString(fileName.AsFileName(false));
         return fileName;
+    }
+
+    private string GetFooterContent(Instance instance)
+    {
+        string altinnReferenceId = instance.Id.Split("/")[1];
+        string dateGenerated = DateTimeOffset.UtcNow.ToString("g", new CultureInfo("nb-NO"));
+        string footerTemplate =
+            $@"<div style='font-family: Inter; font-size: 12px; width: 100%; display: flex; flex-direction: column; gap: 12px; padding: 0 70px 0 70px;'>
+                <span class='title'></span>
+                <div style='width: 100%; display: flex; flex-direction: row; align-items: center'>
+                    <div
+                        id='header-template'
+                        style='color: #F00; font-weight: 700; border: 1px solid #F00; padding: 7px 9px;'
+                    >
+                        <span>{dateGenerated} </span>
+                        <span>ID: {altinnReferenceId}</span>
+                    </div>
+                    <span style='margin-left: auto;'>
+                        <span class='pageNumber'></span>
+                        /
+                        <span class='totalPages'></span>
+                    </span>
+                </div>
+            </div>";
+        return footerTemplate;
     }
 }
