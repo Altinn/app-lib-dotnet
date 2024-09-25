@@ -114,7 +114,7 @@ public class PdfService : IPdfService
 
         Uri uri = BuildUri(baseUrl, pagePath, language);
 
-        bool displayFooter = _pdfGeneratorSettings.Footer;
+        bool displayFooter = _pdfGeneratorSettings.DisplayFooter;
         string? footerContent = displayFooter ? GetFooterContent(instance) : null;
 
         Stream pdfContent = await _pdfGeneratorClient.GeneratePdf(uri, footerContent, ct);

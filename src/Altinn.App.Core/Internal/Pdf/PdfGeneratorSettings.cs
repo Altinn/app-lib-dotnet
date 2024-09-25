@@ -28,5 +28,5 @@ public class PdfGeneratorSettings
     /// <summary>
     /// Shows a footer on each page in the PDF with the date, altinn-referance, page number and total pages.
     /// </summary>
-    public bool Footer { get; set; }
+    public bool DisplayFooter { get; set; }
 }
