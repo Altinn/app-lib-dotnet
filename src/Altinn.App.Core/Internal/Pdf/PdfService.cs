@@ -114,7 +114,8 @@ public class PdfService : IPdfService
 
         Uri uri = BuildUri(baseUrl, pagePath, language);
 
-        string footerContent = GetFooterContent(instance);
+        bool displayFooter = _pdfGeneratorSettings.Footer;
+        string? footerContent = displayFooter ? GetFooterContent(instance) : null;
 
         Stream pdfContent = await _pdfGeneratorClient.GeneratePdf(uri, footerContent, ct);
 
@@ -229,10 +230,16 @@ public class PdfService : IPdfService
         return fileName;
     }
 
-    private string GetFooterContent(Instance instance)
+    private static string GetFooterContent(Instance instance)
     {
-        string altinnReferenceId = instance.Id.Split("/")[1];
-        string dateGenerated = DateTimeOffset.UtcNow.ToString("g", new CultureInfo("nb-NO"));
+        // Convert to Norwegian timezone (Europe/Oslo)
+        TimeZoneInfo norwegianTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Europe/Oslo");
+        DateTimeOffset norwegianNow = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, norwegianTimeZone);
+
+        string dateGenerated = norwegianNow.ToString("G", new CultureInfo("nb-NO"));
+
+        string altinnReferenceId = instance.Id.Split("/")[1].Split("-")[4];
+
         string footerTemplate =
             $@"<div style='font-family: Inter; font-size: 12px; width: 100%; display: flex; flex-direction: column; gap: 12px; padding: 0 70px 0 70px;'>
                 <span class='title'></span>

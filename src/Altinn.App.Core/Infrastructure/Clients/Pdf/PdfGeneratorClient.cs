@@ -60,7 +60,6 @@ public class PdfGeneratorClient : IPdfGeneratorClient
     public async Task<Stream> GeneratePdf(Uri uri, string? FooterContent, CancellationToken ct)
     {
         bool hasWaitForSelector = !string.IsNullOrWhiteSpace(_pdfGeneratorSettings.WaitForSelector);
-        bool displayFooter = _pdfGeneratorSettings.Footer;
         PdfGeneratorRequest generatorRequest =
             new()
             {
@@ -72,7 +71,7 @@ public class PdfGeneratorClient : IPdfGeneratorClient
                 {
                     HeaderTemplate = "<div/>",
                     FooterTemplate = FooterContent ?? "<div/>",
-                    DisplayHeaderFooter = displayFooter,
+                    DisplayHeaderFooter = FooterContent != null,
                 },
             };
 
