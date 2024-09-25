@@ -232,7 +232,6 @@ public class PdfService : IPdfService
 
     private static string GetFooterContent(Instance instance)
     {
-        // Convert to Norwegian timezone (Europe/Oslo)
         TimeZoneInfo norwegianTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Europe/Oslo");
         DateTimeOffset norwegianNow = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, norwegianTimeZone);
 
