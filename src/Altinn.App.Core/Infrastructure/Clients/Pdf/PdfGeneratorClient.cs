@@ -4,7 +4,6 @@ using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Models.Pdf;
-using Altinn.Common.EFormidlingClient.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 
