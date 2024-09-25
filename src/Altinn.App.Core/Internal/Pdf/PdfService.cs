@@ -249,7 +249,7 @@ public class PdfService : IPdfService
                         style='color: #F00; font-weight: 700; border: 1px solid #F00; padding: 7px 9px;'
                     >
                         <span>{dateGenerated} </span>
-                        <span>ID: {altinnReferenceId}</span>
+                        <span>ID:{altinnReferenceId}</span>
                     </div>
                     <span style='margin-left: auto;'>
                         <span class='pageNumber'></span>
