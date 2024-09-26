@@ -134,7 +134,9 @@ public class PdfServiceTests
     {
         // Arrange
         TelemetrySink telemetrySink = new();
-        _pdfGeneratorClient.Setup(s => s.GeneratePdf(It.IsAny<Uri>(), It.IsAny<CancellationToken>()));
+        _pdfGeneratorClient.Setup(s =>
+            s.GeneratePdf(It.IsAny<Uri>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())
+        );
         _generalSettingsOptions.Value.ExternalAppBaseUrl = "https://{org}.apps.{hostName}/{org}/{app}";
 
         var target = SetupPdfService(
@@ -164,6 +166,7 @@ public class PdfServiceTests
                         && u.AbsoluteUri.Contains(instance.AppId)
                         && u.AbsoluteUri.Contains(instance.Id)
                     ),
+                    It.Is<string?>(s => s == null),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Once
@@ -189,7 +192,9 @@ public class PdfServiceTests
     public async Task GenerateAndStorePdf_with_generatedFrom()
     {
         // Arrange
-        _pdfGeneratorClient.Setup(s => s.GeneratePdf(It.IsAny<Uri>(), It.IsAny<CancellationToken>()));
+        _pdfGeneratorClient.Setup(s =>
+            s.GeneratePdf(It.IsAny<Uri>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())
+        );
 
         _generalSettingsOptions.Value.ExternalAppBaseUrl = "https://{org}.apps.{hostName}/{org}/{app}";
 
@@ -228,6 +233,7 @@ public class PdfServiceTests
                         && u.AbsoluteUri.Contains(instance.AppId)
                         && u.AbsoluteUri.Contains(instance.Id)
                     ),
+                    It.Is<string?>(s => s == null),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Once
