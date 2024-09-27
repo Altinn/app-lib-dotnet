@@ -15,5 +15,5 @@ public interface IPdfGeneratorClient
     /// Generates a PDF.
     /// </summary>
     /// <returns>A stream with the binary content of the generated PDF with a footer</returns>
-    Task<Stream> GeneratePdf(Uri uri, string? FooterContent, CancellationToken ct);
+    Task<Stream> GeneratePdf(Uri uri, string? footerContent, CancellationToken ct);
 }
