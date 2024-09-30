@@ -3,6 +3,7 @@ using Altinn.App.Api.Controllers;
 using Altinn.App.Api.Helpers;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Infrastructure.Health;
+using Altinn.App.Api.Infrastructure.Middleware;
 using Altinn.App.Api.Infrastructure.Telemetry;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
@@ -17,7 +18,6 @@ using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Options;
 using Microsoft.FeatureManagement;
 using Microsoft.IdentityModel.Tokens;
 using OpenTelemetry;
@@ -40,7 +40,10 @@ public static class ServiceCollectionExtensions
     public static void AddAltinnAppControllersWithViews(this IServiceCollection services)
     {
         // Add API controllers from Altinn.App.Api
-        IMvcBuilder mvcBuilder = services.AddControllersWithViews();
+        IMvcBuilder mvcBuilder = services.AddControllersWithViews(options =>
+        {
+            options.Filters.Add<TelemetryEnrichingResultFilter>();
+        });
         mvcBuilder
             .AddApplicationPart(typeof(InstancesController).Assembly)
             .AddXmlSerializerFormatters()
@@ -124,19 +127,36 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
+    /// <para>
+    /// Binds a <see cref="MaskinportenClient"/> configuration to the supplied config section path.
+    /// </para>
+    /// <para>
+    /// If you have already provided a <see cref="MaskinportenSettings"/> configuration, either manually or
+    /// implicitly via <see cref="WebHostBuilderExtensions.ConfigureAppWebHost"/>, this will be overridden.
+    /// </para>
+    /// </summary>
+    /// <param name="services">The service collection</param>
+    /// <param name="configSectionPath">The configuration section path (Eg. "MaskinportenSettings")</param>
+    public static IServiceCollection ConfigureMaskinportenClient(
+        this IServiceCollection services,
+        string configSectionPath
+    )
+    {
+        services.AddOptions<MaskinportenSettings>().BindConfiguration(configSectionPath).ValidateDataAnnotations();
+
+        return services;
+    }
+
+    /// <summary>
     /// Adds a singleton <see cref="AddMaskinportenClient"/> service to the service collection.
-    /// Binds <see cref="MaskinportenSettings"/>, either from `appsettings.json` or `maskinporten-settings.json` (if found).
-    /// <br/><br/>Note: This binding happens in <see cref="WebHostBuilderExtensions.AddMaskinportenSettingsFile"/>.
+    /// If no <see cref="MaskinportenSettings"/> configuration is found, it binds one to the path "MaskinportenSettings".
     /// </summary>
     /// <param name="services">The service collection</param>
     private static IServiceCollection AddMaskinportenClient(this IServiceCollection services)
     {
         if (services.GetOptionsDescriptor<MaskinportenSettings>() is null)
         {
-            services
-                .AddOptions<MaskinportenSettings>()
-                .BindConfiguration("MaskinportenSettings")
-                .ValidateDataAnnotations();
+            services.ConfigureMaskinportenClient("MaskinportenSettings");
         }
 
         services.AddSingleton<IMaskinportenClient, MaskinportenClient>();
@@ -430,7 +450,7 @@ public static class ServiceCollectionExtensions
                     ValidateAudience = false,
                     RequireExpirationTime = true,
                     ValidateLifetime = true,
-                    ClockSkew = TimeSpan.Zero
+                    ClockSkew = TimeSpan.Zero,
                 };
                 options.JwtCookieName = Altinn.App.Core.Constants.General.RuntimeCookieName;
                 options.MetadataAddress = config["AppSettings:OpenIdWellKnownEndpoint"];

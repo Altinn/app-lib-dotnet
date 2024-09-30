@@ -61,7 +61,7 @@ public class EFormidlingServiceTaskTests : ApiTestBase, IClassFixture<WebApplica
         );
 
         string nextResponseContent = await nextResponse.Content.ReadAsStringAsync();
-        _outputHelper.WriteLine(nextResponseContent);
+        OutputHelper.WriteLine(nextResponseContent);
 
         nextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
     }
@@ -104,7 +104,7 @@ public class EFormidlingServiceTaskTests : ApiTestBase, IClassFixture<WebApplica
 
         // Check that the process has been moved to end task
         string nextResponseContent = await secondNextResponse.Content.ReadAsStringAsync();
-        _outputHelper.WriteLine(nextResponseContent);
+        OutputHelper.WriteLine(nextResponseContent);
         var processState = JsonConvert.DeserializeObject<ProcessState>(nextResponseContent);
         processState.Ended.Should().NotBeNull();
     }

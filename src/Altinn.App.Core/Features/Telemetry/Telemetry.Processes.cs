@@ -66,7 +66,7 @@ partial class Telemetry
     {
         var activity = ActivitySource.StartActivity($"{Prefix}.ExecuteServiceTask");
         activity?.SetInstanceId(instance);
-        activity?.SetTag(InternalLabels.ServiceTaskType, serviceTaskType);
+        activity?.SetTag(InternalLabels.ProcessServiceTaskType, serviceTaskType);
         return activity;
     }
 

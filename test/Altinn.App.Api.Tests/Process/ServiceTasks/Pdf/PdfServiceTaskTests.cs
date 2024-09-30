@@ -37,7 +37,7 @@ public class PdfServiceTaskTests : ApiTestBase, IClassFixture<WebApplicationFact
         );
 
         string nextResponseContent = await nextResponse.Content.ReadAsStringAsync();
-        _outputHelper.WriteLine(nextResponseContent);
+        OutputHelper.WriteLine(nextResponseContent);
 
         nextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
     }
@@ -81,7 +81,7 @@ public class PdfServiceTaskTests : ApiTestBase, IClassFixture<WebApplicationFact
 
         // Check that the process has been moved to the next task
         string nextResponseContent = await secondNextResponse.Content.ReadAsStringAsync();
-        _outputHelper.WriteLine(nextResponseContent);
+        OutputHelper.WriteLine(nextResponseContent);
         var processState = JsonConvert.DeserializeObject<ProcessState>(nextResponseContent);
         processState.CurrentTask.AltinnTaskType.Should().Be("eFormidling");
     }
@@ -121,7 +121,7 @@ public class PdfServiceTaskTests : ApiTestBase, IClassFixture<WebApplicationFact
 
         // Check that the process has been moved to the next task
         string nextResponseContent = await secondNextResponse.Content.ReadAsStringAsync();
-        _outputHelper.WriteLine(nextResponseContent);
+        OutputHelper.WriteLine(nextResponseContent);
         nextResponseContent
             .Should()
             .Be("{\"title\":\"Internal server error\",\"status\":500,\"detail\":\"Server action pdf failed!\"}");
