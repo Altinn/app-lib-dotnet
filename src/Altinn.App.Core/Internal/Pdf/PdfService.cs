@@ -36,7 +36,6 @@ public class PdfService : IPdfService
     private const string PdfElementType = "ref-data-as-pdf";
     private const string PdfContentType = "application/pdf";
 
-
     /// <summary>
     /// Initializes a new instance of the <see cref="PdfService"/> class.
     /// </summary>
@@ -239,10 +238,13 @@ public class PdfService : IPdfService
     private string GetFooterContent(Instance instance)
     {
         TimeZoneInfo timeZone = TimeZoneInfo.Utc;
-        try {
+        try
+        {
             // attempt to set timezone to norwegian
             timeZone = TimeZoneInfo.FindSystemTimeZoneById("Europe/Oslo");
-        } catch (Exception e) {
+        }
+        catch (Exception e)
+        {
             _logger.LogWarning($"Could not find timezone Europe/Oslo. Defaulting to UTC. {e.Message}");
         }
 

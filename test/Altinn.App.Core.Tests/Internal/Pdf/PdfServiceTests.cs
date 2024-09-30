@@ -14,8 +14,10 @@ using Altinn.App.PlatformServices.Tests.Mocks;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using AltinnCore.Authentication.Constants;
+using Castle.Core.Logging;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using Moq;
@@ -42,6 +44,8 @@ public class PdfServiceTests
     private readonly IOptions<PlatformSettings> _platformSettingsOptions = Options.Create<PlatformSettings>(new() { });
 
     private readonly Mock<IUserTokenProvider> _userTokenProvider;
+
+    private readonly Mock<ILogger<PdfService>> _logger = new();
 
     public PdfServiceTests()
     {
@@ -400,6 +404,7 @@ public class PdfServiceTests
             pdfGeneratorClient?.Object ?? _pdfGeneratorClient.Object,
             pdfGeneratorSettingsOptions ?? _pdfGeneratorSettingsOptions,
             generalSettingsOptions ?? _generalSettingsOptions,
+            _logger.Object,
             telemetrySink?.Object
         );
     }
