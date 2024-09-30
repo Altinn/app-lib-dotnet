@@ -93,6 +93,7 @@ public class ValidationServiceTests : IDisposable
 
     public ValidationServiceTests()
     {
+        _serviceCollection.AddTestAppImplementationFactory();
         _serviceCollection.AddSingleton(_loggerMock.Object);
         _serviceCollection.AddSingleton(_dataClientMock.Object);
         _serviceCollection.AddSingleton<IValidationService, ValidationService>();

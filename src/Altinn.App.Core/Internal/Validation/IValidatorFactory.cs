@@ -1,4 +1,5 @@
 using Altinn.App.Core.Features;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Altinn.App.Core.Internal.Validation;
 
@@ -28,39 +29,34 @@ public interface IValidatorFactory
 /// </summary>
 public class ValidatorFactory : IValidatorFactory
 {
-    private readonly IEnumerable<ITaskValidator> _taskValidators;
-    private readonly IEnumerable<IDataElementValidator> _dataElementValidators;
-    private readonly IEnumerable<IFormDataValidator> _formDataValidators;
+    private readonly AppImplementationFactory _factory;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ValidatorFactory"/> class.
     /// </summary>
-    public ValidatorFactory(
-        IEnumerable<ITaskValidator> taskValidators,
-        IEnumerable<IDataElementValidator> dataElementValidators,
-        IEnumerable<IFormDataValidator> formDataValidators
-    )
+    public ValidatorFactory(IServiceProvider sp)
     {
-        _taskValidators = taskValidators;
-        _dataElementValidators = dataElementValidators;
-        _formDataValidators = formDataValidators;
+        _factory = sp.GetRequiredService<AppImplementationFactory>();
     }
 
     /// <inheritdoc />
     public IEnumerable<ITaskValidator> GetTaskValidators(string taskId)
     {
-        return _taskValidators.Where(tv => tv.TaskId == "*" || tv.TaskId == taskId);
+        var validators = _factory.GetAll<ITaskValidator>();
+        return validators.Where(tv => tv.TaskId == "*" || tv.TaskId == taskId);
     }
 
     /// <inheritdoc />
     public IEnumerable<IDataElementValidator> GetDataElementValidators(string dataTypeId)
     {
-        return _dataElementValidators.Where(dev => dev.DataType == "*" || dev.DataType == dataTypeId);
+        var validators = _factory.GetAll<IDataElementValidator>();
+        return validators.Where(dev => dev.DataType == "*" || dev.DataType == dataTypeId);
     }
 
     /// <inheritdoc />
     public IEnumerable<IFormDataValidator> GetFormDataValidators(string dataTypeId)
     {
-        return _formDataValidators.Where(fdv => fdv.DataType == "*" || fdv.DataType == dataTypeId);
+        var validators = _factory.GetAll<IFormDataValidator>();
+        return validators.Where(fdv => fdv.DataType == "*" || fdv.DataType == dataTypeId);
     }
 }

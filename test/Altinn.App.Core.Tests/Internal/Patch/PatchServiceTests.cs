@@ -12,6 +12,7 @@ using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Json.Patch;
 using Json.Pointer;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using DataType = Altinn.Platform.Storage.Interface.Models.DataType;
@@ -21,7 +22,7 @@ namespace Altinn.App.Core.Tests.Internal.Patch;
 public class PatchServiceTests : IDisposable
 {
     // Test data
-    private static readonly Guid DataGuid = new("12345678-1234-1234-1234-123456789123");
+    private static readonly Guid _dataGuid = new("12345678-1234-1234-1234-123456789123");
 
     private readonly Instance _instance = new() { Id = "1337/12345678-1234-1234-1234-12345678912a" };
 
@@ -36,6 +37,8 @@ public class PatchServiceTests : IDisposable
     // ValidatorMocks
     private readonly Mock<IFormDataValidator> _formDataValidator = new(MockBehavior.Strict);
     private readonly Mock<IDataElementValidator> _dataElementValidator = new(MockBehavior.Strict);
+
+    private readonly IServiceProvider _serviceProvider;
 
     // System under test
     private readonly PatchService _patchService;
@@ -67,11 +70,15 @@ public class PatchServiceTests : IDisposable
             )
             .ReturnsAsync(_dataElement)
             .Verifiable();
-        var validatorFactory = new ValidatorFactory(
-            Enumerable.Empty<ITaskValidator>(),
-            new List<IDataElementValidator>() { _dataElementValidator.Object },
-            new List<IFormDataValidator>() { _formDataValidator.Object }
+
+        var services = new ServiceCollection();
+        services.AddTestAppImplementationFactory();
+        services.AddSingleton<IDataElementValidator>(_dataElementValidator.Object);
+        services.AddSingleton<IFormDataValidator>(_formDataValidator.Object);
+        _serviceProvider = services.BuildServiceProvider(
+            new ServiceProviderOptions() { ValidateOnBuild = true, ValidateScopes = true }
         );
+        var validatorFactory = new ValidatorFactory(_serviceProvider);
         var validationService = new ValidationService(
             validatorFactory,
             _dataClientMock.Object,
@@ -96,7 +103,7 @@ public class PatchServiceTests : IDisposable
             AppLogic = new() { ClassRef = "Altinn.App.Core.Tests.Internal.Patch.PatchServiceTests+MyModel" }
         };
 
-    private readonly DataElement _dataElement = new() { Id = DataGuid.ToString(), DataType = "dataTypeId" };
+    private readonly DataElement _dataElement = new() { Id = _dataGuid.ToString(), DataType = "dataTypeId" };
 
     private class MyModel
     {
@@ -319,5 +326,7 @@ public class PatchServiceTests : IDisposable
     public void Dispose()
     {
         _telemetrySink.Dispose();
+        if (_serviceProvider is IDisposable disposable)
+            disposable.Dispose();
     }
 }

@@ -8,6 +8,7 @@ namespace Altinn.App.Core.Features;
 /// Interface for handling validation of form data.
 /// (i.e. dataElements with AppLogic defined
 /// </summary>
+[ImplementableByApps]
 public interface IFormDataValidator
 {
     /// <summary>
