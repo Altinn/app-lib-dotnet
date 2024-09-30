@@ -43,6 +43,7 @@ public class ValidationServiceTests : IAsyncLifetime
         _services.AddFakeLoggingWithXunit(output);
         _services.AddScoped<IValidatorFactory, ValidatorFactory>();
         _services.AddSingleton(_appMetadataMock.Object);
+        _services.AddTestAppImplementationFactory();
 
         _appMetadataMock.Setup(am => am.GetApplicationMetadata()).ReturnsAsync(_appMetadata);
         _serviceProvider = new(() => _services.BuildServiceProvider());

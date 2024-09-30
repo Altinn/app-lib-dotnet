@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 
 namespace Altinn.App.Internal.Analyzers;
 
@@ -94,6 +94,11 @@ public sealed class AppImplementationInjectionAnalyzer : DiagnosticAnalyzer
         var serviceProviderType = context.SemanticModel.Compilation.GetTypeByMetadataName("System.IServiceProvider");
         if (serviceProviderType is null)
             return;
+        var enumerableType = context
+            .SemanticModel.Compilation.GetTypeByMetadataName("System.Collections.Generic.IEnumerable`1")
+            ?.ConstructUnboundGenericType();
+        if (enumerableType is null)
+            return;
 
         var arguments = invocation.ArgumentList.Arguments;
         bool isLongFormExtMethodCall = false;
@@ -115,6 +120,8 @@ public sealed class AppImplementationInjectionAnalyzer : DiagnosticAnalyzer
                 return;
         }
 
+        // System.Diagnostics.Debugger.Launch();
+
         // check the generic form, e.g. GetService<T>()
         TypeSyntax? typeSyntax = null;
         var typeArgumentList = invocation.DescendantNodes().OfType<TypeArgumentListSyntax>().FirstOrDefault();
@@ -131,12 +138,19 @@ public sealed class AppImplementationInjectionAnalyzer : DiagnosticAnalyzer
                 typeSyntax = typeOfExpression.Type;
         }
 
-        if (typeSyntax is null)
+        if (typeSyntax is null or PredefinedTypeSyntax)
             return;
 
-        var typeInfo = context.SemanticModel.GetTypeInfo(typeSyntax, context.CancellationToken).Type;
-        if (typeInfo == null)
+        var typeInfoSymbol = context.SemanticModel.GetTypeInfo(typeSyntax, context.CancellationToken).Type;
+        if (typeInfoSymbol is not INamedTypeSymbol typeInfo)
             return;
+
+        if (typeInfo.IsGenericType && _symbolComparer.Equals(typeInfo.ConstructUnboundGenericType(), enumerableType))
+        {
+            if (typeInfo.TypeArguments.FirstOrDefault() is not INamedTypeSymbol innerType)
+                return;
+            typeInfo = innerType;
+        }
 
         if (
             typeInfo.TypeKind == TypeKind.Interface
@@ -156,25 +170,47 @@ public sealed class AppImplementationInjectionAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeConstructors(SyntaxNodeAnalysisContext context)
     {
         var node = (ConstructorDeclarationSyntax)context.Node;
+        var constructorComments = node.GetLeadingTrivia().ToFullString();
 
         // This code ensures that classes dont inject app implementable interfaces eagerly
+
+        var enumerableType = context
+            .SemanticModel.Compilation.GetTypeByMetadataName("System.Collections.Generic.IEnumerable`1")
+            ?.ConstructUnboundGenericType();
+        if (enumerableType is null)
+            return;
 
         var appImplementableTypesReferenced = new Dictionary<ITypeSymbol, CSharpSyntaxNode>(4, _symbolComparer);
         static void Process(
             SyntaxNodeAnalysisContext context,
             ExpressionSyntax syntax,
-            Dictionary<ITypeSymbol, CSharpSyntaxNode> typesReferenced
+            Dictionary<ITypeSymbol, CSharpSyntaxNode> typesReferenced,
+            INamedTypeSymbol enumerableType
         )
         {
-            var type = context.SemanticModel.GetTypeInfo(syntax, context.CancellationToken).Type;
-            if (type is null || type.TypeKind != TypeKind.Interface)
-                return;
-            if (typesReferenced.ContainsKey(type))
-                return;
-            if (!type.GetAttributes().Any(attr => attr.AttributeClass?.Name == MarkerAttributeName))
+            if (syntax is PredefinedTypeSyntax)
                 return;
 
-            typesReferenced.Add(type, syntax);
+            var typeInfo =
+                context.SemanticModel.GetSymbolInfo(syntax, context.CancellationToken).Symbol as INamedTypeSymbol;
+            if (typeInfo is null)
+                return;
+            if (
+                typeInfo.IsGenericType && _symbolComparer.Equals(typeInfo.ConstructUnboundGenericType(), enumerableType)
+            )
+            {
+                if (typeInfo.TypeArguments.FirstOrDefault() is not INamedTypeSymbol innerType)
+                    return;
+                typeInfo = innerType;
+            }
+            if (typeInfo.TypeKind != TypeKind.Interface)
+                return;
+            if (typesReferenced.ContainsKey(typeInfo))
+                return;
+            if (!typeInfo.GetAttributes().Any(attr => attr.AttributeClass?.Name == MarkerAttributeName))
+                return;
+
+            typesReferenced.Add(typeInfo, syntax);
         }
 
         foreach (var parameter in node.ParameterList.Parameters)
@@ -183,7 +219,7 @@ public sealed class AppImplementationInjectionAnalyzer : DiagnosticAnalyzer
             if (identifier is null)
                 continue;
 
-            Process(context, identifier, appImplementableTypesReferenced);
+            Process(context, identifier, appImplementableTypesReferenced, enumerableType);
         }
 
         if (node.Body is not null)
@@ -191,7 +227,7 @@ public sealed class AppImplementationInjectionAnalyzer : DiagnosticAnalyzer
             var identifiers = node.Body.DescendantNodes().OfType<IdentifierNameSyntax>();
             foreach (var identifier in identifiers)
             {
-                Process(context, identifier, appImplementableTypesReferenced);
+                Process(context, identifier, appImplementableTypesReferenced, enumerableType);
             }
         }
 
@@ -203,6 +239,13 @@ public sealed class AppImplementationInjectionAnalyzer : DiagnosticAnalyzer
                 reference.Key.Name,
                 node.Identifier.ValueText
             );
+            var referenceComments = reference.Value.GetLeadingTrivia().ToFullString();
+
+            if (
+                constructorComments.IndexOf("altinn:injection:ignore", StringComparison.Ordinal) != -1
+                || referenceComments.IndexOf("altinn:injection:ignore", StringComparison.Ordinal) != -1
+            )
+                return;
 
             context.ReportDiagnostic(diagnostic);
         }

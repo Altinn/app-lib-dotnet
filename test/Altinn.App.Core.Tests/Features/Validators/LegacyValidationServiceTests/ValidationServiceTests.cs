@@ -137,6 +137,7 @@ public sealed class ValidationServiceTests : IDisposable
             _defaultAppMetadata,
             _modelSerialization
         );
+        _serviceCollection.AddTestAppImplementationFactory();
         _serviceCollection.AddSingleton(_loggerMock.Object);
         _serviceCollection.AddSingleton(_dataClientMock.Object);
         _serviceCollection.AddSingleton<IValidationService, ValidationService>();
