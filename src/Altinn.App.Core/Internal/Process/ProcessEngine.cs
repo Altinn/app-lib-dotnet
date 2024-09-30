@@ -202,12 +202,14 @@ public class ProcessEngine : IProcessEngine
                 {
                     serviceTaskActivity?.Errored(ex);
 
-                    return new ProcessChangeResult()
+                    var result = new ProcessChangeResult()
                     {
                         Success = false,
                         ErrorMessage = $"Server action {altinnTaskType} failed!",
                         ErrorType = ProcessErrorType.Internal
                     };
+                    activity?.SetProcessChangeResult(result);
+                    return result;
                 }
             }
         }
