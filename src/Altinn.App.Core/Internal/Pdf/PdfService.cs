@@ -240,21 +240,21 @@ public class PdfService : IPdfService
         string altinnReferenceId = instance.Id.Split("/")[1].Split("-")[4];
 
         string footerTemplate =
-            $@"<div style='font-family: Inter; font-size: 12px; width: 100%; display: flex; flex-direction: column; gap: 12px; padding: 0 70px 0 70px;'>
-                <span class='title'></span>
-                <div style='width: 100%; display: flex; flex-direction: row; align-items: center'>
+            $@"<div style='font-family: Inter; font-size: 12px; width: 100%; display: flex; flex-direction: row; align-items: center; gap: 12px; padding: 0 70px 0 70px;'>
+                <div style='display: flex; flex-direction: row; width: 100%; align-items: center'>
+                    <span class='title'></span>
                     <div
                         id='header-template'
-                        style='color: #F00; font-weight: 700; border: 1px solid #F00; padding: 7px 9px;'
+                        style='color: #F00; font-weight: 700; border: 1px solid #F00; padding: 6px 8px; margin-left: auto;'
                     >
                         <span>{dateGenerated} </span>
                         <span>ID:{altinnReferenceId}</span>
                     </div>
-                    <span style='margin-left: auto;'>
-                        <span class='pageNumber'></span>
-                        /
-                        <span class='totalPages'></span>
-                    </span>
+                </div>
+                <div style='display: flex; flex-direction-row; align-items: center;'>
+                    <span class='pageNumber'></span>
+                    /
+                    <span class='totalPages'></span>
                 </div>
             </div>";
         return footerTemplate;
