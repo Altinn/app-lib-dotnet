@@ -17,8 +17,8 @@ using FluentAssertions;
 using Json.Patch;
 using Json.Pointer;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Moq;
 using DataType = Altinn.Platform.Storage.Interface.Models.DataType;
 
@@ -53,6 +53,8 @@ public sealed class PatchServiceTests : IDisposable
     private readonly Mock<IFormDataValidator> _formDataValidator = new(MockBehavior.Strict);
     private readonly Mock<IDataElementValidator> _dataElementValidator = new(MockBehavior.Strict);
 
+    private readonly IServiceProvider _serviceProvider;
+
     // System under test
     private readonly InternalPatchService _patchService;
     private readonly ModelSerializationService _modelSerializationService;
@@ -85,16 +87,19 @@ public sealed class PatchServiceTests : IDisposable
             )
             .ReturnsAsync(_dataElement)
             .Verifiable();
+
         _webHostEnvironment.SetupGet(whe => whe.EnvironmentName).Returns("Development");
-        var validatorFactory = new ValidatorFactory(
-            [],
-            Options.Create(new GeneralSettings()),
-            [_dataElementValidator.Object],
-            [_formDataValidator.Object],
-            [],
-            [],
-            _appMetadataMock.Object
+        var services = new ServiceCollection();
+        services.AddTestAppImplementationFactory();
+        services.AddSingleton<IDataElementValidator>(_dataElementValidator.Object);
+        services.AddSingleton<IFormDataValidator>(_formDataValidator.Object);
+        services.AddSingleton<IValidatorFactory, ValidatorFactory>();
+        services.AddSingleton(_appMetadataMock.Object);
+        services.Configure<GeneralSettings>(_ => { });
+        _serviceProvider = services.BuildServiceProvider(
+            new ServiceProviderOptions() { ValidateOnBuild = true, ValidateScopes = true }
         );
+        var validatorFactory = _serviceProvider.GetRequiredService<IValidatorFactory>();
         var validationService = new ValidationService(validatorFactory, _vLoggerMock.Object);
 
         _modelSerializationService = new ModelSerializationService(_appModelMock.Object);
@@ -306,5 +311,7 @@ public sealed class PatchServiceTests : IDisposable
     public void Dispose()
     {
         _telemetrySink.Dispose();
+        if (_serviceProvider is IDisposable disposable)
+            disposable.Dispose();
     }
 }
