@@ -12,6 +12,7 @@ using Altinn.App.Core.Models;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 
@@ -29,10 +30,12 @@ public class PdfService : IPdfService
 
     private readonly IPdfGeneratorClient _pdfGeneratorClient;
     private readonly PdfGeneratorSettings _pdfGeneratorSettings;
+    private readonly ILogger<PdfService> _logger;
     private readonly GeneralSettings _generalSettings;
     private readonly Telemetry? _telemetry;
     private const string PdfElementType = "ref-data-as-pdf";
     private const string PdfContentType = "application/pdf";
+
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PdfService"/> class.
@@ -44,6 +47,7 @@ public class PdfService : IPdfService
     /// <param name="pdfGeneratorClient">PDF generator client for the experimental PDF generator service</param>
     /// <param name="pdfGeneratorSettings">PDF generator related settings.</param>
     /// <param name="generalSettings">The app general settings.</param>
+    /// <param name="logger">The logger.</param>
     /// <param name="telemetry">Telemetry for metrics and traces.</param>
     public PdfService(
         IAppResources appResources,
@@ -53,6 +57,7 @@ public class PdfService : IPdfService
         IPdfGeneratorClient pdfGeneratorClient,
         IOptions<PdfGeneratorSettings> pdfGeneratorSettings,
         IOptions<GeneralSettings> generalSettings,
+        ILogger<PdfService> logger,
         Telemetry? telemetry = null
     )
     {
@@ -63,6 +68,7 @@ public class PdfService : IPdfService
         _pdfGeneratorClient = pdfGeneratorClient;
         _pdfGeneratorSettings = pdfGeneratorSettings.Value;
         _generalSettings = generalSettings.Value;
+        _logger = logger;
         _telemetry = telemetry;
     }
 
@@ -230,13 +236,19 @@ public class PdfService : IPdfService
         return fileName;
     }
 
-    private static string GetFooterContent(Instance instance)
+    private string GetFooterContent(Instance instance)
     {
-        TimeZoneInfo norwegianTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Europe/Oslo");
-        DateTimeOffset norwegianNow = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, norwegianTimeZone);
+        TimeZoneInfo timeZone = TimeZoneInfo.Utc;
+        try {
+            // attempt to set timezone to norwegian
+            timeZone = TimeZoneInfo.FindSystemTimeZoneById("Europe/Oslo");
+        } catch (Exception e) {
+            _logger.LogWarning($"Could not find timezone Europe/Oslo. Defaulting to UTC. {e.Message}");
+        }
 
-        string dateGenerated = norwegianNow.ToString("G", new CultureInfo("nb-NO"));
+        DateTimeOffset now = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, timeZone);
 
+        string dateGenerated = now.ToString("G", new CultureInfo("nb-NO"));
         string altinnReferenceId = instance.Id.Split("/")[1].Split("-")[4];
 
         string footerTemplate =
