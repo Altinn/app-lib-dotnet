@@ -243,7 +243,7 @@ public class PdfService : IPdfService
             // attempt to set timezone to norwegian
             timeZone = TimeZoneInfo.FindSystemTimeZoneById("Europe/Oslo");
         }
-        catch (Exception e)
+        catch (TimeZoneNotFoundException e)
         {
             _logger.LogWarning($"Could not find timezone Europe/Oslo. Defaulting to UTC. {e.Message}");
         }
