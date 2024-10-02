@@ -4,11 +4,12 @@ using Altinn.App.Core.Internal.Sign;
 
 namespace Altinn.App.Core.Features.Signing;
 
-internal sealed class SigningService(ISigneeLogic signeeLogic)
+internal sealed class SigningService(ISigneeLogic signeeLogic, /*ISignClient signClient, IInstanceClient instanceClient, IAppMetadata appMetadata,*/ Telemetry telemetry)
 {
 
     internal void AssignSignees()
     {
+        using var activity = telemetry.StartAssignSigneesActivity();
         List<SigneeState> state = /*StorageClient.GetSignState ??*/ [];
         signeeLogic.Execute(); // CQRS is probably overkill
         foreach(Signee signee in signeeLogic.GetSignees())
@@ -39,6 +40,7 @@ internal sealed class SigningService(ISigneeLogic signeeLogic)
 
     internal List<Signee> ReadSignees()
     {
+        using var activity = telemetry.StartReadSigneesActivity();
         // TODO: Get signees from state
 
         // TODO: Get signees from policy
@@ -46,15 +48,16 @@ internal sealed class SigningService(ISigneeLogic signeeLogic)
         throw new NotImplementedException();
     }
 
-    internal void Sign(Signee signee)
+    internal async Task Sign(Signee signee)
     {
+        using var activity = telemetry.StartSignActivity();
         // var state = StorageClient.GetSignState(...);
         try
         {
             // SigneeState signeeState = state.FirstOrDefault(s => s.Id == signee.UserId)
             // if(signeeState.hasSigned is false)
             // {
-            //      signClient.SignDataElements(...);
+            //      await signClient.SignDataElements();
             //      signeeState.hasSigned = true;
             // }
             // if(signeeState.IsTaskOwnerNotified is false)
