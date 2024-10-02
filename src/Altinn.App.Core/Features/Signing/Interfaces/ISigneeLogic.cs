@@ -1,9 +1,8 @@
-using System.Reflection.Metadata.Ecma335;
 using Altinn.App.Core.Internal.Sign;
 
 namespace Altinn.App.Core.Features.Signing.Interfaces;
 /// <summary>
-/// TODO: populate
+/// Interface for implementing app specific logic for deriving signees
 /// </summary>
 public interface ISigneeLogic{
     /// <summary>
@@ -11,8 +10,8 @@ public interface ISigneeLogic{
     /// </summary>
     void Execute();
     /// <summary>
-    /// TODO: populate
+    /// Method to retrieve the signees for a task.
     /// </summary>
-    /// <returns></returns>
+    /// <returns>A list of <see cref="Signee"/>. </returns>
     List<Signee> GetSignees();
 }
