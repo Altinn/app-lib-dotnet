@@ -5,6 +5,7 @@ using Altinn.App.Core.Features.Validation.Helpers;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Features.Validation.Default;
@@ -14,19 +15,21 @@ namespace Altinn.App.Core.Features.Validation.Default;
 /// </summary>
 public class LegacyIInstanceValidatorFormDataValidator : IFormDataValidator
 {
-    private readonly IInstanceValidator? _instanceValidator;
     private readonly GeneralSettings _generalSettings;
+    private readonly AppImplementationFactory _appImplementationFactory;
+
+    private IInstanceValidator? _instanceValidator => _appImplementationFactory.Get<IInstanceValidator>();
 
     /// <summary>
     /// constructor
     /// </summary>
     public LegacyIInstanceValidatorFormDataValidator(
         IOptions<GeneralSettings> generalSettings,
-        IInstanceValidator? instanceValidator = null
+        IServiceProvider serviceProvider
     )
     {
-        _instanceValidator = instanceValidator;
         _generalSettings = generalSettings.Value;
+        _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
     }
 
     /// <summary>
@@ -58,13 +61,14 @@ public class LegacyIInstanceValidatorFormDataValidator : IFormDataValidator
         string? language
     )
     {
-        if (_instanceValidator is null)
+        var instanceValidator = _instanceValidator;
+        if (instanceValidator is null)
         {
-            return new List<ValidationIssue>();
+            return [];
         }
 
         var modelState = new ModelStateDictionary();
-        await _instanceValidator.ValidateData(data, modelState);
+        await instanceValidator.ValidateData(data, modelState);
         return ModelStateHelpers.ModelStateToIssueList(
             modelState,
             instance,

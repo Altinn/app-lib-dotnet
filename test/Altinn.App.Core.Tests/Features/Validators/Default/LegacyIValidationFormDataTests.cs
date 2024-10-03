@@ -1,4 +1,3 @@
-#nullable disable
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Configuration;
@@ -8,34 +7,47 @@ using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
 namespace Altinn.App.Core.Tests.Features.Validators.Default;
 
 public class LegacyIValidationFormDataTests
 {
-    private readonly LegacyIInstanceValidatorFormDataValidator _validator;
-    private readonly Mock<IInstanceValidator> _instanceValidator = new();
-
-    public LegacyIValidationFormDataTests()
+    private sealed record Fixture(IServiceProvider ServiceProvider) : IDisposable
     {
-        var generalSettings = new GeneralSettings();
-        _validator = new LegacyIInstanceValidatorFormDataValidator(
-            Microsoft.Extensions.Options.Options.Create(generalSettings),
-            _instanceValidator.Object
+        public void Dispose() => (ServiceProvider as IDisposable)?.Dispose();
+    }
+
+    private static Fixture CreateFixture(bool addInstanceValidator = true)
+    {
+        var services = new ServiceCollection();
+        services.AddTestAppImplementationFactory();
+        services.AddOptions<GeneralSettings>().Configure(_ => { });
+
+        if (addInstanceValidator)
+        {
+            var mock = new Mock<IInstanceValidator>();
+            services.AddTransient<IInstanceValidator>(_ => mock.Object);
+        }
+
+        services.AddTransient<IFormDataValidator, LegacyIInstanceValidatorFormDataValidator>();
+
+        var serviceProvider = services.BuildServiceProvider(
+            new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }
         );
+
+        return new Fixture(serviceProvider);
     }
 
     [Fact]
     public async Task ValidateFormData_NoErrors()
     {
         // Arrange
+        using var fixture = CreateFixture(addInstanceValidator: false);
         var data = new object();
 
-        var validator = new LegacyIInstanceValidatorFormDataValidator(
-            Microsoft.Extensions.Options.Options.Create(new GeneralSettings()),
-            null
-        );
+        var validator = fixture.ServiceProvider.GetRequiredService<IFormDataValidator>();
         validator.HasRelevantChanges(data, data).Should().BeFalse();
 
         // Act
@@ -49,9 +61,13 @@ public class LegacyIValidationFormDataTests
     public async Task ValidateFormData_WithErrors()
     {
         // Arrange
+        using var fixture = CreateFixture();
         var data = new object();
 
-        _instanceValidator
+        var instanceValidator = Mock.Get(
+            fixture.ServiceProvider.GetRequiredService<AppImplementationFactory>().GetRequired<IInstanceValidator>()
+        );
+        instanceValidator
             .Setup(iv => iv.ValidateData(It.IsAny<object>(), It.IsAny<ModelStateDictionary>()))
             .Callback(
                 (object _, ModelStateDictionary modelState) =>
@@ -62,7 +78,8 @@ public class LegacyIValidationFormDataTests
             );
 
         // Act
-        var result = await _validator.ValidateFormData(new Instance(), new DataElement(), data, null);
+        var validator = fixture.ServiceProvider.GetRequiredService<IFormDataValidator>();
+        var result = await validator.ValidateFormData(new Instance(), new DataElement(), data, null);
 
         // Assert
         result
@@ -124,9 +141,13 @@ public class LegacyIValidationFormDataTests
     public async Task ValidateErrorAndMappingWithCustomModel(string errorKey, string field, string errorMessage)
     {
         // Arrange
+        using var fixture = CreateFixture();
         var data = new TestModel();
 
-        _instanceValidator
+        var instanceValidator = Mock.Get(
+            fixture.ServiceProvider.GetRequiredService<AppImplementationFactory>().GetRequired<IInstanceValidator>()
+        );
+        instanceValidator
             .Setup(iv => iv.ValidateData(It.IsAny<object>(), It.IsAny<ModelStateDictionary>()))
             .Callback(
                 (object _, ModelStateDictionary modelState) =>
@@ -137,7 +158,8 @@ public class LegacyIValidationFormDataTests
             );
 
         // Act
-        var result = await _validator.ValidateFormData(new Instance(), new DataElement(), data, null);
+        var validator = fixture.ServiceProvider.GetRequiredService<IFormDataValidator>();
+        var result = await validator.ValidateFormData(new Instance(), new DataElement(), data, null);
 
         // Assert
         result.Should().HaveCount(2);

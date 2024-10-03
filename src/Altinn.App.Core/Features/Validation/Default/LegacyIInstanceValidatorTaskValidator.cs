@@ -5,6 +5,7 @@ using Altinn.App.Core.Features.Validation.Helpers;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Features.Validation.Default;
@@ -14,19 +15,21 @@ namespace Altinn.App.Core.Features.Validation.Default;
 /// </summary>
 public class LegacyIInstanceValidatorTaskValidator : ITaskValidator
 {
-    private readonly IInstanceValidator? _instanceValidator;
     private readonly GeneralSettings _generalSettings;
+    private readonly AppImplementationFactory _appImplementationFactory;
+
+    private IInstanceValidator? _instanceValidator => _appImplementationFactory.Get<IInstanceValidator>();
 
     /// <summary>
     /// Constructor
     /// </summary>
     public LegacyIInstanceValidatorTaskValidator(
         IOptions<GeneralSettings> generalSettings,
-        IInstanceValidator? instanceValidator = null
+        IServiceProvider serviceProvider
     )
     {
-        _instanceValidator = instanceValidator;
         _generalSettings = generalSettings.Value;
+        _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
     }
 
     /// <summary>
@@ -48,13 +51,14 @@ public class LegacyIInstanceValidatorTaskValidator : ITaskValidator
     /// <inheritdoc />
     public async Task<List<ValidationIssue>> ValidateTask(Instance instance, string taskId, string? language)
     {
-        if (_instanceValidator is null)
+        var instanceValidator = _instanceValidator;
+        if (instanceValidator is null)
         {
-            return new List<ValidationIssue>();
+            return [];
         }
 
         var modelState = new ModelStateDictionary();
-        await _instanceValidator.ValidateTask(instance, taskId, modelState);
+        await instanceValidator.ValidateTask(instance, taskId, modelState);
         return ModelStateHelpers.MapModelStateToIssueList(modelState, instance, _generalSettings);
     }
 }
