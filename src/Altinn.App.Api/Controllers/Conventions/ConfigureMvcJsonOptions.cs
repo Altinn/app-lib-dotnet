@@ -16,10 +16,7 @@ public class ConfigureMvcJsonOptions : IConfigureOptions<MvcOptions>
     /// </summary>
     /// <param name="jsonSettingsName">The name of the JSON settings to be used for enum-to-number conversion.</param>
     /// <param name="jsonOptions">An <see cref="IOptionsMonitor{TOptions}"/> to access the named JSON options.</param>
-    public ConfigureMvcJsonOptions(
-        string jsonSettingsName,
-        IOptionsMonitor<JsonOptions> jsonOptions
-    )
+    public ConfigureMvcJsonOptions(string jsonSettingsName, IOptionsMonitor<JsonOptions> jsonOptions)
     {
         _jsonSettingsName = jsonSettingsName;
         _jsonOptions = jsonOptions;

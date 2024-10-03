@@ -44,6 +44,7 @@ public static class ServiceCollectionExtensions
         IMvcBuilder mvcBuilder = services.AddControllersWithViews(options =>
         {
             options.Filters.Add<TelemetryEnrichingResultFilter>();
+            options.Conventions.Add(new AltinnControllerConventions());
         });
         mvcBuilder
             .AddApplicationPart(typeof(InstancesController).Assembly)

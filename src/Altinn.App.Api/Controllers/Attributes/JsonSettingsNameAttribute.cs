@@ -1,7 +1,9 @@
+using Microsoft.AspNetCore.Mvc.Filters;
+
 namespace Altinn.App.Api.Controllers.Attributes;
 
 [AttributeUsage(AttributeTargets.Class)]
-internal class JsonSettingsNameAttribute : Attribute
+internal class JsonSettingsNameAttribute : Attribute, IFilterMetadata
 {
     internal JsonSettingsNameAttribute(string name)
     {
