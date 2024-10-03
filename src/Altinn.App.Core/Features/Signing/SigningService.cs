@@ -4,26 +4,35 @@ using Altinn.App.Core.Internal.Sign;
 
 namespace Altinn.App.Core.Features.Signing;
 
-internal sealed class SigningService(ISigneeLogic signeeLogic, /*ISignClient signClient, IInstanceClient instanceClient, IAppMetadata appMetadata,*/ Telemetry telemetry)
+internal sealed class SigningService(
+    ISigneeLogic signeeLogic, /*ISignClient signClient, IInstanceClient instanceClient, IAppMetadata appMetadata,*/
+    Telemetry telemetry
+)
 {
-
     internal void AssignSignees()
     {
         using var activity = telemetry.StartAssignSigneesActivity();
-        List<SigneeState> state = /*StorageClient.GetSignState ??*/ [];
+        List<SigneeState> state = /*StorageClient.GetSignState ??*/
+        [];
         signeeLogic.Execute(); // CQRS is probably overkill
-        foreach(Signee signee in signeeLogic.GetSignees())
+        foreach (Signee signee in signeeLogic.GetSignees())
         {
-            SigneeState signeeState = state.FirstOrDefault(s => s.Id == signee.UserId) ?? new SigneeState(id: signee.UserId, displayName: /*TODO: get name of org/person*/"");
+            SigneeState signeeState =
+                state.FirstOrDefault(s => s.Id == signee.UserId)
+                ?? new SigneeState(
+                    id: signee.UserId,
+                    displayName: /*TODO: get name of org/person*/
+                    ""
+                );
             try
             {
-                if(signeeState.IsDelegated is false)
+                if (signeeState.IsDelegated is false)
                 {
                     //TODO: delegateSignAction
                     signeeState.IsDelegated = true;
                 }
 
-                if(signeeState.IsNotified is false)
+                if (signeeState.IsNotified is false)
                 {
                     //TODO: sendCorrespondance
                     signeeState.IsNotified = true;
@@ -65,6 +74,7 @@ internal sealed class SigningService(ISigneeLogic signeeLogic, /*ISignClient sig
             //      correspondanceClient.SendMessage(...);
             //      signeeState.IsTaskOwnerNotified = true;
             // }
+            await Task.CompletedTask;
         }
         catch
         {

@@ -701,6 +701,7 @@ public class ProcessController : ControllerBase
         {
             case "data":
             case "feedback":
+            case "signing":
                 return "write";
             case "confirmation":
                 return "confirm";

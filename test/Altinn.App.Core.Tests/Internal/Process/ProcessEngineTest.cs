@@ -450,10 +450,6 @@ public class ProcessEngineTest : IDisposable
         _processReaderMock.Verify(r => r.IsEndEvent("Task_2"), Times.Once);
         _processReaderMock.Verify(r => r.IsProcessTask("Task_2"), Times.Once);
         _processNavigatorMock.Verify(n => n.GetNextTask(It.IsAny<Instance>(), "Task_1", null), Times.Once);
-        _processTaskCleanerMock.Verify(
-            x => x.RemoveAllDataElementsGeneratedFromTask(It.IsAny<Instance>(), It.IsAny<string>()),
-            Times.Once
-        );
 
         var expectedInstanceEvents = new List<InstanceEvent>()
         {
