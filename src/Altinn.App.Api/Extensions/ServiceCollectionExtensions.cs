@@ -49,7 +49,7 @@ public static class ServiceCollectionExtensions
             .AddApplicationPart(typeof(InstancesController).Assembly)
             .AddXmlSerializerFormatters()
             .AddJsonOptions(
-                "EnumAsNumber",
+                "AltinnApi",
                 options =>
                 {
                     options.JsonSerializerOptions.Converters.Add(new JsonNumberEnumConverterFactory());

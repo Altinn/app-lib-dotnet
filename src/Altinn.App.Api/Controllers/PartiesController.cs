@@ -22,7 +22,7 @@ namespace Altinn.App.Api.Controllers;
 /// </summary>
 [Authorize]
 [ApiController]
-[JsonSettingsName("EnumAsNumber")]
+[JsonSettingsName("AltinnApi")]
 public class PartiesController : ControllerBase
 {
     private readonly IAuthorizationClient _authorizationClient;
