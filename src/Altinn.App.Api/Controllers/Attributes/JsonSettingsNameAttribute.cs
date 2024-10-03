@@ -12,3 +12,8 @@ internal class JsonSettingsNameAttribute : Attribute, IFilterMetadata
 
     internal string Name { get; }
 }
+
+internal static class JsonSettingNames
+{
+    internal const string ALTINN_API = "AltinnApi";
+}

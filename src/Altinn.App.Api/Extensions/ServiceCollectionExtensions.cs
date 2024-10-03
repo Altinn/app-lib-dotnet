@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Altinn.App.Api.Controllers;
+using Altinn.App.Api.Controllers.Attributes;
 using Altinn.App.Api.Controllers.Conventions;
 using Altinn.App.Api.Helpers;
 using Altinn.App.Api.Infrastructure.Filters;
@@ -50,7 +51,7 @@ public static class ServiceCollectionExtensions
             .AddApplicationPart(typeof(InstancesController).Assembly)
             .AddXmlSerializerFormatters()
             .AddJsonOptions(
-                "AltinnApi",
+                JsonSettingNames.ALTINN_API,
                 options =>
                 {
                     options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
