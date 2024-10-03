@@ -24,7 +24,8 @@ public class ConfigureMvcJsonOptions : IConfigureOptions<MvcOptions>
     }
 
     /// <summary>
-    /// Configures the MVC options to use the EnumAsNumberFormatter for the specified JSON settings.
+    /// Configures the MVC options to use the <see cref="AltinnApiJsonFormatter"/> for the specified JSON settings.
+    /// Makes sure to add to the formatter after the default <see cref="SystemTextJsonOutputFormatter"/> .
     /// </summary>
     /// <param name="options">The <see cref="MvcOptions"/> to configure.</param>
     public void Configure(MvcOptions options)
