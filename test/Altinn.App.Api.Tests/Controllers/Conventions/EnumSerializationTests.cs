@@ -1,7 +1,6 @@
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Altinn.App.Api.Controllers.Conventions;
 using Altinn.App.Api.Extensions;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Auth;
@@ -9,11 +8,8 @@ using Altinn.App.Core.Models;
 using Altinn.Platform.Register.Enums;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Moq;
 using Xunit.Abstractions;
 
@@ -52,12 +48,6 @@ public class EnumSerializationTests : ApiTestBase, IClassFixture<WebApplicationF
                 {
                     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
                 });
-
-            services.AddSingleton<IConfigureOptions<MvcOptions>>(sp =>
-            {
-                var options = sp.GetRequiredService<IOptionsMonitor<JsonOptions>>();
-                return new ConfigureMvcJsonOptions("EnumAsNumber", options);
-            });
 
             services.AddScoped(_ => _authorizationClientMock.Object);
             services.AddScoped(_ => _appMetadataMock.Object);

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Api.Controllers.Conventions;
@@ -29,6 +30,18 @@ public class ConfigureMvcJsonOptions : IConfigureOptions<MvcOptions>
     public void Configure(MvcOptions options)
     {
         var jsonOptions = _jsonOptions.Get(_jsonSettingsName);
-        options.OutputFormatters.Insert(0, new EnumAsNumberFormatter(_jsonSettingsName, jsonOptions));
+        var indexOfDefaultJsonFormatter =
+            options
+                .OutputFormatters.Select((formatter, index) => (formatter, index))
+                .Where(f => f.formatter is SystemTextJsonOutputFormatter)
+                .Select(f => f.index + 1)
+                .FirstOrDefault() - 1;
+        if (indexOfDefaultJsonFormatter < 0)
+            throw new InvalidOperationException("Could not find the default JSON output formatter");
+
+        options.OutputFormatters.Insert(
+            indexOfDefaultJsonFormatter,
+            AltinnApiJsonFormatter.CreateFormatter(_jsonSettingsName, jsonOptions)
+        );
     }
 }

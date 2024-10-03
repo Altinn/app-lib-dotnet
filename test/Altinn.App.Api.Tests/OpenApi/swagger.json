@@ -76,17 +76,17 @@
           "200": {
             "description": "OK",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserActionResponse"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UserActionResponse"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserActionResponse"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/UserActionResponse"
                 }
@@ -96,17 +96,17 @@
           "400": {
             "description": "Bad Request",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
@@ -162,6 +162,14 @@
           "200": {
             "description": "OK",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ApplicationLanguage"
+                  }
+                }
+              },
               "application/json": {
                 "schema": {
                   "type": "array",
@@ -171,14 +179,6 @@
                 }
               },
               "text/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ApplicationLanguage"
-                  }
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "type": "array",
                   "items": {
@@ -245,17 +245,17 @@
           "200": {
             "description": "OK",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationMetadata"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApplicationMetadata"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApplicationMetadata"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/ApplicationMetadata"
                 }
@@ -292,17 +292,17 @@
           "200": {
             "description": "OK",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
               "application/json": {
                 "schema": {
                   "type": "string"
                 }
               },
               "text/json": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "type": "string"
                 }
@@ -349,17 +349,17 @@
           "200": {
             "description": "OK",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
               "application/json": {
                 "schema": {
                   "type": "string"
                 }
               },
               "text/json": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "type": "string"
                 }
@@ -559,17 +559,17 @@
           "201": {
             "description": "Created",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataElement"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DataElement"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DataElement"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/DataElement"
                 }
@@ -720,17 +720,17 @@
           "201": {
             "description": "Created",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataElement"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DataElement"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DataElement"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/DataElement"
                 }
@@ -750,17 +750,17 @@
           "200": {
             "description": "OK",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalculationResult"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CalculationResult"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CalculationResult"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/CalculationResult"
                 }
@@ -848,17 +848,17 @@
           "200": {
             "description": "OK",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataPatchResponse"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DataPatchResponse"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DataPatchResponse"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/DataPatchResponse"
                 }
@@ -868,17 +868,17 @@
           "409": {
             "description": "Conflict",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
@@ -898,17 +898,17 @@
           "422": {
             "description": "Unprocessable Content",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
@@ -1111,17 +1111,17 @@
           "404": {
             "description": "Not Found",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
@@ -1472,17 +1472,17 @@
           "404": {
             "description": "Not Found",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
@@ -1547,17 +1547,17 @@
           "200": {
             "description": "OK",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstanceFileScanResult"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/InstanceFileScanResult"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InstanceFileScanResult"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/InstanceFileScanResult"
                 }
@@ -1567,17 +1567,17 @@
           "404": {
             "description": "Not Found",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
@@ -2211,17 +2211,17 @@
           "404": {
             "description": "Not Found",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
@@ -2329,6 +2329,14 @@
           "200": {
             "description": "OK",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
               "application/json": {
                 "schema": {
                   "type": "array",
@@ -2338,14 +2346,6 @@
                 }
               },
               "text/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "type": "array",
                   "items": {
@@ -2542,17 +2542,17 @@
           "200": {
             "description": "OK",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentInformation"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PaymentInformation"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaymentInformation"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/PaymentInformation"
                 }
@@ -2572,17 +2572,17 @@
           "404": {
             "description": "Not Found",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
@@ -2654,17 +2654,17 @@
           "200": {
             "description": "OK",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDetails"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OrderDetails"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrderDetails"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/OrderDetails"
                 }
@@ -2684,17 +2684,17 @@
           "404": {
             "description": "Not Found",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
@@ -2816,17 +2816,17 @@
           "200": {
             "description": "OK",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppProcessState"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AppProcessState"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AppProcessState"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/AppProcessState"
                 }
@@ -2836,17 +2836,17 @@
           "404": {
             "description": "Not Found",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
@@ -2918,17 +2918,17 @@
           "200": {
             "description": "OK",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppProcessState"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AppProcessState"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AppProcessState"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/AppProcessState"
                 }
@@ -2938,17 +2938,17 @@
           "404": {
             "description": "Not Found",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
@@ -2968,17 +2968,17 @@
           "409": {
             "description": "Conflict",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
@@ -3043,6 +3043,14 @@
           "200": {
             "description": "OK",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
               "application/json": {
                 "schema": {
                   "type": "array",
@@ -3052,14 +3060,6 @@
                 }
               },
               "text/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "type": "array",
                   "items": {
@@ -3088,17 +3088,17 @@
           "409": {
             "description": "Conflict",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
@@ -3210,17 +3210,17 @@
           "200": {
             "description": "OK",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppProcessState"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AppProcessState"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AppProcessState"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/AppProcessState"
                 }
@@ -3230,17 +3230,17 @@
           "404": {
             "description": "Not Found",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
@@ -3260,17 +3260,17 @@
           "409": {
             "description": "Conflict",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
@@ -3342,17 +3342,17 @@
           "200": {
             "description": "OK",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppProcessState"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AppProcessState"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AppProcessState"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/AppProcessState"
                 }
@@ -3362,17 +3362,17 @@
           "404": {
             "description": "Not Found",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
@@ -3392,17 +3392,17 @@
           "409": {
             "description": "Conflict",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
@@ -3535,17 +3535,17 @@
           "200": {
             "description": "OK",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
               "application/json": {
                 "schema": {
                   "type": "string"
                 }
               },
               "text/json": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "type": "string"
                 }
@@ -3565,17 +3565,17 @@
           "400": {
             "description": "Bad Request",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
@@ -3991,17 +3991,17 @@
           "200": {
             "description": "OK",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataElement"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DataElement"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DataElement"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/DataElement"
                 }
@@ -4067,17 +4067,17 @@
           "200": {
             "description": "OK",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataElement"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DataElement"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DataElement"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/DataElement"
                 }
@@ -4138,17 +4138,17 @@
           "200": {
             "description": "OK",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataElement"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DataElement"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DataElement"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/DataElement"
                 }
@@ -4207,17 +4207,17 @@
           "200": {
             "description": "OK",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataElement"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DataElement"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DataElement"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/DataElement"
                 }
@@ -4307,6 +4307,14 @@
           "200": {
             "description": "OK",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
               "application/json": {
                 "schema": {
                   "type": "array",
@@ -4316,14 +4324,6 @@
                 }
               },
               "text/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "type": "array",
                   "items": {
@@ -4388,17 +4388,17 @@
           "200": {
             "description": "OK",
             "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/TextResource"
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TextResource"
                 }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TextResource"
-                }
-              },
-              "text/plain": {
                 "schema": {
                   "$ref": "#/components/schemas/TextResource"
                 }
