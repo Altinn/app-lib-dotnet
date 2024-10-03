@@ -53,7 +53,6 @@ public static class ServiceCollectionExtensions
                 "AltinnApi",
                 options =>
                 {
-                    options.JsonSerializerOptions.Converters.Add(new JsonNumberEnumConverterFactory());
                     options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
                 }
             )
