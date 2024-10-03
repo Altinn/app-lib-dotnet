@@ -52,7 +52,7 @@ public static class ServiceCollectionExtensions
                 "EnumAsNumber",
                 options =>
                 {
-                    options.JsonSerializerOptions.Converters.Add(new EnumToNumberJsonConverterFactory());
+                    options.JsonSerializerOptions.Converters.Add(new JsonNumberEnumConverterFactory());
                     options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
                 }
             )
