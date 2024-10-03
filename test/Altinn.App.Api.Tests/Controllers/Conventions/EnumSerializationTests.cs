@@ -56,8 +56,7 @@ public class EnumSerializationTests : ApiTestBase, IClassFixture<WebApplicationF
             services.AddSingleton<IConfigureOptions<MvcOptions>>(sp =>
             {
                 var options = sp.GetRequiredService<IOptionsMonitor<JsonOptions>>();
-                var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
-                return new ConfigureMvcJsonOptions("EnumAsNumber", options, loggerFactory);
+                return new ConfigureMvcJsonOptions("EnumAsNumber", options);
             });
 
             services.AddScoped(_ => _authorizationClientMock.Object);
