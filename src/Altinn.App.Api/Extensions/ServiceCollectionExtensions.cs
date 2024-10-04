@@ -51,7 +51,7 @@ public static class ServiceCollectionExtensions
             .AddApplicationPart(typeof(InstancesController).Assembly)
             .AddXmlSerializerFormatters()
             .AddJsonOptions(
-                JsonSettingNames.ALTINN_API,
+                JsonSettingNames.AltinnApi,
                 options =>
                 {
                     options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;

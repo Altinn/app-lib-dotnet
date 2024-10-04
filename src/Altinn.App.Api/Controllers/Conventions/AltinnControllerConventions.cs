@@ -7,6 +7,6 @@ internal class AltinnControllerConventions : IControllerModelConvention
 {
     public void Apply(ControllerModel controller)
     {
-        controller.Filters.Add(new JsonSettingsNameAttribute(JsonSettingNames.ALTINN_API));
+        controller.Filters.Add(new JsonSettingsNameAttribute(JsonSettingNames.AltinnApi));
     }
 }
