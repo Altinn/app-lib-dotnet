@@ -14,7 +14,7 @@ public class AltinnApiJsonFormatterTests
     public void CreateFormatter_WhenEncoderIsNull_SetsUnsafeRelaxedJsonEscaping()
     {
         // Arrange
-        string settingsName = "AltinnApi";
+        string settingsName = JsonSettingNames.AltinnApi;
         var serializerOptions = new JsonSerializerOptions
         {
             Encoder = null,
@@ -35,7 +35,7 @@ public class AltinnApiJsonFormatterTests
     public void CreateFormatter_WhenEncoderIsNotNull_PreservesEncoder()
     {
         // Arrange
-        string settingsName = "AltinnApi";
+        string settingsName = JsonSettingNames.AltinnApi;
         var originalEncoder = JavaScriptEncoder.Default;
         var serializerOptions = new JsonSerializerOptions
         {

@@ -2,6 +2,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
+using Altinn.App.Api.Controllers.Attributes;
 using Altinn.App.Api.Controllers.Conventions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
@@ -14,7 +15,7 @@ public class ConfigureMvcJsonOptionsTests
     public void Configure_InsertsCustomFormatterWithCorrectSettings()
     {
         // Arrange
-        var jsonSettingsName = "AltinnApi";
+        var jsonSettingsName = JsonSettingNames.AltinnApi;
         var configureOptions = new ConfigureMvcJsonOptions(jsonSettingsName);
         var mvcOptions = new MvcOptions();
 
