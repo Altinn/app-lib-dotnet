@@ -33,13 +33,10 @@ public class ConfigureMvcJsonOptions : IConfigureOptions<MvcOptions>
         var defaultJsonFormatter =
             options.OutputFormatters.OfType<SystemTextJsonOutputFormatter>().FirstOrDefault()
             ?? throw new InvalidOperationException("Could not find the default JSON output formatter");
+
         var indexOfDefaultJsonFormatter = options.OutputFormatters.IndexOf(defaultJsonFormatter);
 
-        var defaultSerializerOptions = defaultJsonFormatter.SerializerOptions;
-        var serializerOptions = new JsonSerializerOptions(defaultSerializerOptions)
-        {
-            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-        };
+        var serializerOptions = new JsonSerializerOptions(defaultJsonFormatter.SerializerOptions);
 
         // Remove the JsonStringEnumConverter to serialize enums as numbers
         var enumConverter = serializerOptions.Converters.OfType<JsonStringEnumConverter>().FirstOrDefault();

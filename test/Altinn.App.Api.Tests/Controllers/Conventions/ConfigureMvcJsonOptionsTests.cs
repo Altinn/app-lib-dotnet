@@ -52,11 +52,5 @@ public class ConfigureMvcJsonOptionsTests
         );
 
         Assert.NotNull(customSerializerOptions.Encoder);
-
-        string testString = "<>&\"'©";
-        string expectedEncodedString = JavaScriptEncoder.UnsafeRelaxedJsonEscaping.Encode(testString);
-        string actualEncodedString = customSerializerOptions.Encoder.Encode(testString);
-
-        Assert.Equal(expectedEncodedString, actualEncodedString);
     }
 }
