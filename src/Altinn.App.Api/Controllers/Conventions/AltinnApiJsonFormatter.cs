@@ -26,19 +26,17 @@ internal sealed class AltinnApiJsonFormatter : SystemTextJsonOutputFormatter
         return base.CanWriteResult(context);
     }
 
-    internal static AltinnApiJsonFormatter CreateFormatter(string settingsName, JsonOptions jsonOptions)
+    internal static AltinnApiJsonFormatter CreateFormatter(string settingsName, JsonSerializerOptions serializerOptions)
     {
-        var jsonSerializerOptions = jsonOptions.JsonSerializerOptions;
-
-        if (jsonSerializerOptions.Encoder is null)
+        if (serializerOptions.Encoder is null)
         {
             // If the user hasn't explicitly configured the encoder, use the less strict encoder that does not encode all non-ASCII characters.
-            jsonSerializerOptions = new JsonSerializerOptions(jsonSerializerOptions)
+            serializerOptions = new JsonSerializerOptions(serializerOptions)
             {
                 Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
             };
         }
 
-        return new AltinnApiJsonFormatter(settingsName, jsonSerializerOptions);
+        return new AltinnApiJsonFormatter(settingsName, serializerOptions);
     }
 }
