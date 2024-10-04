@@ -1,5 +1,4 @@
 using System.Globalization;
-using Altinn.App.Api.Controllers.Attributes;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
