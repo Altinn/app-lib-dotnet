@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -15,6 +16,7 @@ using Xunit.Abstractions;
 
 namespace Altinn.App.Core.Tests.Helpers;
 
+[SuppressMessage("Performance", "CA1822:Mark members as static")]
 public class ObjectUtils_XmlSerializationTests(ITestOutputHelper _output)
 {
     private readonly Mock<ILogger> _loggerMock = new();

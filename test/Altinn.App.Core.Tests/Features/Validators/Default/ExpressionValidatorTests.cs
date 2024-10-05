@@ -48,7 +48,7 @@ public class ExpressionValidatorTests
     private static readonly JsonSerializerOptions _jsonSerializerOptions =
         new() { ReadCommentHandling = JsonCommentHandling.Skip, PropertyNamingPolicy = JsonNamingPolicy.CamelCase, };
 
-    public ExpressionValidationTestModel LoadData(string fileName, string folder)
+    public static ExpressionValidationTestModel LoadData(string fileName, string folder)
     {
         var data = File.ReadAllText(Path.Join(folder, fileName));
         return JsonSerializer.Deserialize<ExpressionValidationTestModel>(data, _jsonSerializerOptions)!;

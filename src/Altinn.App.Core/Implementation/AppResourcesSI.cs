@@ -8,7 +8,6 @@ using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Models.Layout.Components;
 using Altinn.Platform.Storage.Interface.Models;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -30,7 +29,6 @@ public class AppResourcesSI : IAppResources
 
     private readonly AppSettings _settings;
     private readonly IAppMetadata _appMetadata;
-    private readonly IWebHostEnvironment _hostingEnvironment;
     private readonly ILogger _logger;
     private readonly Telemetry? _telemetry;
 
@@ -39,20 +37,17 @@ public class AppResourcesSI : IAppResources
     /// </summary>
     /// <param name="settings">The app repository settings.</param>
     /// <param name="appMetadata">App metadata service</param>
-    /// <param name="hostingEnvironment">The hosting environment</param>
     /// <param name="logger">A logger from the built in logger factory.</param>
     /// <param name="telemetry">Telemetry for traces and metrics.</param>
     public AppResourcesSI(
         IOptions<AppSettings> settings,
         IAppMetadata appMetadata,
-        IWebHostEnvironment hostingEnvironment,
         ILogger<AppResourcesSI> logger,
         Telemetry? telemetry = null
     )
     {
         _settings = settings.Value;
         _appMetadata = appMetadata;
-        _hostingEnvironment = hostingEnvironment;
         _logger = logger;
         _telemetry = telemetry;
     }
@@ -403,7 +398,7 @@ public class AppResourcesSI : IAppResources
         return ReadFileByte(filename);
     }
 
-    private byte[] ReadFileByte(string fileName)
+    private static byte[] ReadFileByte(string fileName)
     {
         byte[]? filedata = null;
         if (File.Exists(fileName))
@@ -416,7 +411,7 @@ public class AppResourcesSI : IAppResources
 #nullable restore
     }
 
-    private byte[] ReadFileContentsFromLegalPath(string legalPath, string filePath)
+    private static byte[] ReadFileContentsFromLegalPath(string legalPath, string filePath)
     {
         var fullFileName = legalPath + filePath;
         if (!PathHelper.ValidateLegalFilePath(legalPath, fullFileName))

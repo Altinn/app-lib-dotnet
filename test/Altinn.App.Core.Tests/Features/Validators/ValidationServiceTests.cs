@@ -15,7 +15,7 @@ using Moq;
 
 namespace Altinn.App.Core.Tests.Features.Validators;
 
-public class ValidationServiceTests : IDisposable
+public sealed class ValidationServiceTests : IDisposable
 {
     private class MyModel
     {
@@ -127,13 +127,17 @@ public class ValidationServiceTests : IDisposable
         SetupFormDataValidatorType(_formDataValidatorAlwaysMock, "*", "alwaysUsedValidator");
     }
 
-    private void SetupTaskValidatorType(Mock<ITaskValidator> taskValidatorMock, string taskId, string validationSource)
+    private static void SetupTaskValidatorType(
+        Mock<ITaskValidator> taskValidatorMock,
+        string taskId,
+        string validationSource
+    )
     {
         taskValidatorMock.Setup(v => v.TaskId).Returns(taskId);
         taskValidatorMock.Setup(v => v.ValidationSource).Returns(validationSource);
     }
 
-    private void SetupTaskValidatorReturn(
+    private static void SetupTaskValidatorReturn(
         Mock<ITaskValidator> taskValidatorMock,
         List<ValidationIssue> validationIssues,
         Times? times = default
@@ -145,7 +149,7 @@ public class ValidationServiceTests : IDisposable
             .Verifiable(times ?? Times.Once());
     }
 
-    private void SetupDataElementValidatorType(
+    private static void SetupDataElementValidatorType(
         Mock<IDataElementValidator> taskValidatorMock,
         string dataType,
         string validationSource
@@ -155,7 +159,7 @@ public class ValidationServiceTests : IDisposable
         taskValidatorMock.Setup(v => v.ValidationSource).Returns(validationSource);
     }
 
-    private void SetupDataElementValidatorReturn(
+    private static void SetupDataElementValidatorReturn(
         Mock<IDataElementValidator> dataElementValidatorMock,
         List<ValidationIssue> validationIssues,
         Times? times = default
@@ -167,7 +171,7 @@ public class ValidationServiceTests : IDisposable
             .Verifiable(times ?? Times.Once());
     }
 
-    private void SetupFormDataValidatorType(
+    private static void SetupFormDataValidatorType(
         Mock<IFormDataValidator> formDataValidatorMock,
         string dataType,
         string validationSource
@@ -180,7 +184,7 @@ public class ValidationServiceTests : IDisposable
         formDataValidatorMock.Setup(v => v.ValidationSource).Returns(validationSource);
     }
 
-    private void SetupFormDataValidatorReturn(
+    private static void SetupFormDataValidatorReturn(
         Mock<IFormDataValidator> formDataValidatorMock,
         bool? hasRelevantChanges,
         Func<MyModel, List<ValidationIssue>> func,

@@ -12,7 +12,7 @@ public class SwaggerIncludeXmlCommentsTestDouble
         _bools.Add(b);
     }
 
-    public void IncludeXmlCommentsFailingTestDouble(string s, bool b)
+    public static void IncludeXmlCommentsFailingTestDouble(string s, bool b)
     {
         throw new Exception("xUnit expected exception");
     }

@@ -77,10 +77,10 @@ public sealed record TelemetrySink : IDisposable
 
     public TelemetrySnapshot GetSnapshot() => new(CapturedActivities, CapturedMetrics);
 
-    public TelemetrySnapshot GetSnapshot(Activity activity) =>
+    public static TelemetrySnapshot GetSnapshot(Activity activity) =>
         new([activity], new Dictionary<string, IReadOnlyList<MetricMeasurement>>());
 
-    public TelemetrySnapshot GetSnapshot(IEnumerable<Activity> activities) =>
+    public static TelemetrySnapshot GetSnapshot(IEnumerable<Activity> activities) =>
         new(activities, new Dictionary<string, IReadOnlyList<MetricMeasurement>>());
 
     public async Task Snapshot(

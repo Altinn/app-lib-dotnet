@@ -13,7 +13,7 @@ using Moq;
 
 namespace Altinn.App.Core.Tests.Features.Validators.Default;
 
-public class DataAnnotationValidatorTests : IClassFixture<DataAnnotationsTestFixture>
+public sealed class DataAnnotationValidatorTests : IClassFixture<DataAnnotationsTestFixture>
 {
     private readonly DataAnnotationValidator _validator;
 
@@ -168,7 +168,7 @@ public class DataAnnotationValidatorTests : IClassFixture<DataAnnotationsTestFix
 ///
 /// A full WebApplicationFactory seemed a little overkill, so we just use a WebApplicationBuilder.
 /// </summary>
-public class DataAnnotationsTestFixture : IAsyncDisposable
+public sealed class DataAnnotationsTestFixture : IAsyncDisposable
 {
     public const string DataType = "test";
 

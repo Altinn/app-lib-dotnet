@@ -1,53 +1,92 @@
 using System.Numerics;
 using System.Text.Json;
 using Altinn.App.Core.Internal.Expressions;
+using FluentAssertions;
 using Xunit.Abstractions;
 
 namespace Altinn.App.Core.Tests.LayoutExpressions.ExpressionEvaluatorTests;
 
 public class EqualTests(ITestOutputHelper outputHelper)
 {
-    public static TheoryData<object> GetNumericTestData(double value) =>
+    public static TheoryData<Type, object?> GetNumericTestData(double value) =>
         new()
         {
-            value,
-            (byte)value,
-            (sbyte)value,
-            (short)value,
-            (ushort)value,
-            (int)value,
-            (uint)value,
-            (long)value,
-            (ulong)value,
-            (float)value,
-            (decimal)value,
+            { typeof(double), value },
+            { typeof(byte), (byte)Math.Abs(value) },
+            { typeof(sbyte), (sbyte)value },
+            { typeof(short), (short)value },
+            { typeof(ushort), (ushort)value },
+            { typeof(int), (int)value },
+            { typeof(uint), (uint)Math.Abs(value) },
+            { typeof(long), (long)value },
+            { typeof(ulong), (ulong)Math.Abs(value) },
+            { typeof(float), (float)value },
+            { typeof(decimal), (decimal)value },
+            { typeof(double?), value },
+            { typeof(byte?), (byte?)Math.Abs(value) },
+            { typeof(sbyte?), (sbyte?)value },
+            { typeof(short?), (short?)value },
+            { typeof(ushort?), (ushort?)Math.Abs(value) },
+            { typeof(int?), (int?)value },
+            { typeof(uint?), (uint?)Math.Abs(value) },
+            { typeof(long?), (long?)value },
+            { typeof(ulong?), (ulong?)Math.Abs(value) },
+            { typeof(float?), (float?)value },
+            { typeof(decimal?), (decimal?)value },
             // (BigInteger)value, // Not supported by JsonSerializer
         };
 
-    public static TheoryData<object> GetExoticTypes =>
+    public static TheoryData<Type, object?> GetNullNumericData() =>
         new()
         {
-            "123",
-            true,
-            false,
-            "",
-            DateTime.Now,
-            DateOnly.FromDateTime(DateTime.Now),
-            TimeOnly.FromDateTime(DateTime.Now),
+            { typeof(double?), (double?)null },
+            { typeof(byte?), (byte?)null },
+            { typeof(sbyte?), (sbyte?)null },
+            { typeof(short?), (short?)null },
+            { typeof(ushort?), (ushort?)null },
+            { typeof(int?), (int?)null },
+            { typeof(uint?), (uint?)null },
+            { typeof(long?), (long?)null },
+            { typeof(ulong?), (ulong?)null },
+            { typeof(float?), (float?)null },
+            { typeof(decimal?), (decimal?)null },
+        };
+
+    public static TheoryData<Type, object> GetExoticTypes =>
+        new()
+        {
+            { typeof(string), "123" },
+            { typeof(bool), true },
+            { typeof(bool), false },
+            { typeof(string), "" },
+            { typeof(DateTime), DateTime.Now },
+            { typeof(DateOnly), DateOnly.FromDateTime(DateTime.Now) },
+            { typeof(TimeOnly), TimeOnly.FromDateTime(DateTime.Now) },
         };
 
     [Theory]
     [MemberData(nameof(GetNumericTestData), 123.0)]
     [MemberData(nameof(GetNumericTestData), 0.5)]
-    [MemberData(nameof(GetNumericTestData), -123.0)]
+    [MemberData(nameof(GetNumericTestData), -11.0)]
+    [MemberData(nameof(GetNullNumericData))]
     [MemberData(nameof(GetExoticTypes))]
-    public void ToStringForEquals_AgreesWithJsonSerializer(object? value)
+    public void ToStringForEquals_AgreesWithJsonSerializer(Type type, object? value)
     {
-        outputHelper.WriteLine($"Object of type {value?.GetType().FullName ?? "null"}:");
+        outputHelper.WriteLine($"Object of type {type.Name}:");
         outputHelper.WriteLine($"   value:{value}");
         outputHelper.WriteLine($"   json: {JsonSerializer.Serialize(value)}");
         // Verify that the EqualsToString method returns the same value as the JsonSerializer.
-        var json = value is string ? value : JsonSerializer.Serialize(value);
+        // apart from the issue of:
+        var json = value switch
+        {
+            // null: Json returns "null", while ToStringForEquals returns C# null
+            null => null,
+            // strings: Json adds "" around the string, while ToStringForEquals does not
+            string => value,
+            // In remaining cases use JsonSerializer to get numbers ++ formatted as strings
+            _ => JsonSerializer.Serialize(value)
+        };
+
         var toStringForEquals = ExpressionEvaluator.ToStringForEquals(value);
         Assert.Equal(json, toStringForEquals);
     }

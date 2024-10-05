@@ -27,7 +27,7 @@ public class ProfileClientTests
         public ValueTask DisposeAsync() => ServiceProvider.DisposeAsync();
     }
 
-    private Fixture BuildFixture(Func<UserProfile?>? userProfileFactory = null)
+    private static Fixture BuildFixture(Func<UserProfile?>? userProfileFactory = null)
     {
         var services = new ServiceCollection();
 

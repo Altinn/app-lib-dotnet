@@ -220,6 +220,7 @@ public class TestFunctions
         // This is just a way to ensure that all folders have test methods associcated.
         var jsonTestFolders = Directory
             .GetDirectories(Path.Join("LayoutExpressions", "CommonTests", "shared-tests", "functions"))
+            .Where(d => Directory.GetFiles(d).Length > 0)
             .Select(d => Path.GetFileName(d))
             .OrderBy(s => s)
             .ToArray();
@@ -232,10 +233,9 @@ public class TestFunctions
             )
             .OrderBy(s => s)
             .OfType<string>()
+            .OrderBy(d => d)
             .ToArray();
-        testMethods
-            .Should()
-            .BeEquivalentTo(jsonTestFolders, "Shared test folders should have a corresponding test method");
+        testMethods.Should().Equal(jsonTestFolders, "Shared test folders should have a corresponding test method");
     }
 }
 

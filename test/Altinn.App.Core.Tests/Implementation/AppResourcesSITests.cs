@@ -26,8 +26,7 @@ public class AppResourcesSITests
         AppSettings appSettings = GetAppSettings("AppMetadata", "default.applicationmetadata.json");
         var settings = Options.Create(appSettings);
         IAppMetadata appMetadata = SetupAppMetadata(Options.Create(appSettings));
-        AppResourcesSI appResources =
-            new(settings, appMetadata, null, new NullLogger<AppResourcesSI>(), _telemetry.Object);
+        AppResourcesSI appResources = new(settings, appMetadata, new NullLogger<AppResourcesSI>(), _telemetry.Object);
         Application expected =
             new()
             {
@@ -73,8 +72,7 @@ public class AppResourcesSITests
         AppSettings appSettings = GetAppSettings("AppMetadata", "no-on-entry.applicationmetadata.json");
         var settings = Options.Create(appSettings);
         IAppMetadata appMetadata = SetupAppMetadata(Options.Create(appSettings));
-        AppResourcesSI appResources =
-            new(settings, appMetadata, null, new NullLogger<AppResourcesSI>(), _telemetry.Object);
+        AppResourcesSI appResources = new(settings, appMetadata, new NullLogger<AppResourcesSI>(), _telemetry.Object);
         Application expected = new Application()
         {
             Id = "tdd/bestilling",
@@ -122,8 +120,7 @@ public class AppResourcesSITests
             .ReturnsAsync(new Dictionary<string, bool>() { { "footer", true } });
         var settings = Options.Create(appSettings);
         IAppMetadata appMetadata = SetupAppMetadata(Options.Create(appSettings), appFeaturesMock.Object);
-        AppResourcesSI appResources =
-            new(settings, appMetadata, null, new NullLogger<AppResourcesSI>(), _telemetry.Object);
+        AppResourcesSI appResources = new(settings, appMetadata, new NullLogger<AppResourcesSI>(), _telemetry.Object);
         Application expected =
             new()
             {
@@ -176,7 +173,6 @@ public class AppResourcesSITests
         IAppResources appResources = new AppResourcesSI(
             settings,
             appMetadata,
-            null,
             new NullLogger<AppResourcesSI>(),
             _telemetry.Object
         );
@@ -192,7 +188,6 @@ public class AppResourcesSITests
         IAppResources appResources = new AppResourcesSI(
             settings,
             appMetadata,
-            null,
             new NullLogger<AppResourcesSI>(),
             _telemetry.Object
         );
@@ -208,7 +203,6 @@ public class AppResourcesSITests
         IAppResources appResources = new AppResourcesSI(
             settings,
             appMetadata,
-            null,
             new NullLogger<AppResourcesSI>(),
             _telemetry.Object
         );
@@ -226,7 +220,6 @@ public class AppResourcesSITests
         IAppResources appResources = new AppResourcesSI(
             settings,
             appMetadata,
-            null,
             new NullLogger<AppResourcesSI>(),
             _telemetry.Object
         );
@@ -243,7 +236,6 @@ public class AppResourcesSITests
         IAppResources appResources = new AppResourcesSI(
             settings,
             appMetadata,
-            null,
             new NullLogger<AppResourcesSI>(),
             _telemetry.Object
         );
@@ -261,7 +253,6 @@ public class AppResourcesSITests
         IAppResources appResources = new AppResourcesSI(
             settings,
             appMetadata,
-            null,
             new NullLogger<AppResourcesSI>(),
             _telemetry.Object
         );

@@ -344,7 +344,7 @@ public class TelemetryConfigurationTests
         Assert.Equal(timeoutToUse, options.ExportTimeoutMilliseconds);
     }
 
-    private Sampler GetSampler(TracerProvider provider)
+    private static Sampler GetSampler(TracerProvider provider)
     {
         var property =
             provider.GetType().GetProperty("Sampler", BindingFlags.Instance | BindingFlags.NonPublic)

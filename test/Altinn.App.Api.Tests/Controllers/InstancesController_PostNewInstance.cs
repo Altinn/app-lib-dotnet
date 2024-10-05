@@ -82,7 +82,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         readDataElementResponseParsed.Melding!.Name.Should().Be(testName);
     }
 
-    private async Task<Instance> CreateInstanceSimplified(
+    private static async Task<Instance> CreateInstanceSimplified(
         string org,
         string app,
         int instanceOwnerPartyId,

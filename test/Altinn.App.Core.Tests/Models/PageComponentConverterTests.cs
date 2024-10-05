@@ -37,13 +37,13 @@ public class PageComponentConverterTests
         }
     }
 
-    private PageComponentConverterTestModel LoadData(string fileName, string folder)
+    private static PageComponentConverterTestModel LoadData(string fileName, string folder)
     {
         var data = File.ReadAllText(Path.Join(folder, fileName));
         return JsonSerializer.Deserialize<PageComponentConverterTestModel>(data, _jsonSerializerOptions)!;
     }
 
-    private HierarchyTestModel[] GenerateTestHierarchy(GroupComponent group)
+    private static HierarchyTestModel[] GenerateTestHierarchy(GroupComponent group)
     {
         var children = new List<HierarchyTestModel>();
         foreach (var child in group.Children)

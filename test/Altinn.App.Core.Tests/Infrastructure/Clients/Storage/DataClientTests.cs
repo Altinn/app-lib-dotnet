@@ -847,7 +847,7 @@ public class DataClientTests
         );
     }
 
-    private void AssertHttpRequest(
+    private static void AssertHttpRequest(
         HttpRequestMessage actual,
         Uri expectedUri,
         HttpMethod method,
