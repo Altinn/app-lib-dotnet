@@ -1,9 +1,9 @@
 using System.Text.Encodings.Web;
-using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using Altinn.App.Api.Controllers.Attributes;
 using Altinn.App.Api.Controllers.Conventions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
 
 namespace Altinn.App.Api.Tests.Controllers.Conventions;
@@ -11,40 +11,18 @@ namespace Altinn.App.Api.Tests.Controllers.Conventions;
 public class AltinnApiJsonFormatterTests
 {
     [Fact]
-    public void CreateFormatter_WhenEncoderIsNull_SetsUnsafeRelaxedJsonEscaping()
-    {
-        // Arrange
-        string settingsName = JsonSettingNames.AltinnApi;
-        var serializerOptions = new JsonSerializerOptions
-        {
-            Encoder = null,
-            TypeInfoResolver = new DefaultJsonTypeInfoResolver()
-        };
-
-        // Act
-        var formatter = AltinnApiJsonFormatter.CreateFormatter(settingsName, serializerOptions);
-
-        // Assert
-        Assert.NotNull(formatter);
-        Assert.Equal(settingsName, formatter.SettingsName);
-        Assert.NotNull(formatter.SerializerOptions.Encoder);
-        Assert.Equal(JavaScriptEncoder.UnsafeRelaxedJsonEscaping, formatter.SerializerOptions.Encoder);
-    }
-
-    [Fact]
     public void CreateFormatter_WhenEncoderIsNotNull_PreservesEncoder()
     {
         // Arrange
         string settingsName = JsonSettingNames.AltinnApi;
         var originalEncoder = JavaScriptEncoder.Default;
-        var serializerOptions = new JsonSerializerOptions
-        {
-            Encoder = originalEncoder,
-            TypeInfoResolver = new DefaultJsonTypeInfoResolver()
-        };
+
+        var jsonOptions = new JsonOptions();
+        jsonOptions.JsonSerializerOptions.Encoder = originalEncoder;
+        jsonOptions.JsonSerializerOptions.TypeInfoResolver = new DefaultJsonTypeInfoResolver();
 
         // Act
-        var formatter = AltinnApiJsonFormatter.CreateFormatter(settingsName, serializerOptions);
+        var formatter = AltinnApiJsonFormatter.CreateFormatter(settingsName, jsonOptions);
 
         // Assert
         Assert.NotNull(formatter);
@@ -57,10 +35,11 @@ public class AltinnApiJsonFormatterTests
     {
         // Arrange
         string settingsName = JsonSettingNames.AltinnApi;
-        var formatter = AltinnApiJsonFormatter.CreateFormatter(
-            settingsName,
-            new JsonSerializerOptions() { TypeInfoResolver = new DefaultJsonTypeInfoResolver() }
-        );
+
+        var jsonOptions = new JsonOptions();
+        jsonOptions.JsonSerializerOptions.TypeInfoResolver = new DefaultJsonTypeInfoResolver();
+
+        var formatter = AltinnApiJsonFormatter.CreateFormatter(settingsName, jsonOptions);
 
         var httpContext = new DefaultHttpContext();
 

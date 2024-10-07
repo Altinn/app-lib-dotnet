@@ -1,6 +1,3 @@
-using System.Text.Encodings.Web;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.Extensions.Options;
@@ -13,14 +10,17 @@ namespace Altinn.App.Api.Controllers.Conventions;
 public class ConfigureMvcJsonOptions : IConfigureOptions<MvcOptions>
 {
     private readonly string _jsonSettingsName;
+    private readonly IOptionsMonitor<JsonOptions> _jsonOptions;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ConfigureMvcJsonOptions"/> class.
     /// </summary>
     /// <param name="jsonSettingsName">The name of the JSON settings to be used for enum-to-number conversion.</param>
-    public ConfigureMvcJsonOptions(string jsonSettingsName)
+    /// /// <param name="jsonOptions">An <see cref="IOptionsMonitor{TOptions}"/> to access the named JSON options.</param>
+    public ConfigureMvcJsonOptions(string jsonSettingsName, IOptionsMonitor<JsonOptions> jsonOptions)
     {
         _jsonSettingsName = jsonSettingsName;
+        _jsonOptions = jsonOptions;
     }
 
     /// <summary>
@@ -36,16 +36,10 @@ public class ConfigureMvcJsonOptions : IConfigureOptions<MvcOptions>
 
         var indexOfDefaultJsonFormatter = options.OutputFormatters.IndexOf(defaultJsonFormatter);
 
-        var serializerOptions = new JsonSerializerOptions(defaultJsonFormatter.SerializerOptions);
-
-        // Remove the JsonStringEnumConverter to serialize enums as numbers
-        var enumConverter = serializerOptions.Converters.OfType<JsonStringEnumConverter>().FirstOrDefault();
-        if (enumConverter is not null)
-        {
-            serializerOptions.Converters.Remove(enumConverter);
-        }
-
-        var customFormatter = AltinnApiJsonFormatter.CreateFormatter(_jsonSettingsName, serializerOptions);
-        options.OutputFormatters.Insert(indexOfDefaultJsonFormatter, customFormatter);
+        var jsonOptions = _jsonOptions.Get(_jsonSettingsName);
+        options.OutputFormatters.Insert(
+            indexOfDefaultJsonFormatter,
+            AltinnApiJsonFormatter.CreateFormatter(_jsonSettingsName, jsonOptions)
+        );
     }
 }

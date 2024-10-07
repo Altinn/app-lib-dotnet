@@ -19,7 +19,8 @@ internal static class MvcBuilderExtensions
 
         builder.Services.AddSingleton<IConfigureOptions<MvcOptions>>(sp =>
         {
-            return new ConfigureMvcJsonOptions(settingsName);
+            var options = sp.GetRequiredService<IOptionsMonitor<JsonOptions>>();
+            return new ConfigureMvcJsonOptions(settingsName, options);
         });
 
         return builder;

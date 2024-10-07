@@ -6,6 +6,7 @@ using Altinn.App.Api.Controllers.Attributes;
 using Altinn.App.Api.Controllers.Conventions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
+using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Api.Tests.Controllers.Conventions;
 
@@ -16,7 +17,12 @@ public class ConfigureMvcJsonOptionsTests
     {
         // Arrange
         var jsonSettingsName = JsonSettingNames.AltinnApi;
-        var configureOptions = new ConfigureMvcJsonOptions(jsonSettingsName);
+        var jsonOptions = new JsonOptions();
+        jsonOptions.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+        jsonOptions.JsonSerializerOptions.TypeInfoResolver = new DefaultJsonTypeInfoResolver();
+
+        var optionsMonitor = new TestOptionsMonitor<JsonOptions>(jsonOptions);
+        var configureOptions = new ConfigureMvcJsonOptions(jsonSettingsName, optionsMonitor);
         var mvcOptions = new MvcOptions();
 
         // Create default JsonSerializerOptions with JsonStringEnumConverter
@@ -52,5 +58,23 @@ public class ConfigureMvcJsonOptionsTests
         );
 
         Assert.NotNull(customSerializerOptions.Encoder);
+    }
+}
+
+public class TestOptionsMonitor<TOptions> : IOptionsMonitor<TOptions>
+{
+    public TestOptionsMonitor(TOptions currentValue)
+    {
+        CurrentValue = currentValue;
+    }
+
+    public TOptions CurrentValue { get; }
+
+    public TOptions Get(string? name) => CurrentValue;
+
+    public IDisposable OnChange(Action<TOptions, string> listener)
+    {
+        // No-op for testing purposes
+        return null!;
     }
 }

@@ -1,6 +1,7 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using Altinn.App.Api.Extensions;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
 
 namespace Altinn.App.Api.Controllers.Conventions;
@@ -25,17 +26,19 @@ internal sealed class AltinnApiJsonFormatter : SystemTextJsonOutputFormatter
         return base.CanWriteResult(context);
     }
 
-    internal static AltinnApiJsonFormatter CreateFormatter(string settingsName, JsonSerializerOptions serializerOptions)
+    internal static AltinnApiJsonFormatter CreateFormatter(string settingsName, JsonOptions jsonOptions)
     {
-        if (serializerOptions.Encoder is null)
+        var jsonSerializerOptions = jsonOptions.JsonSerializerOptions;
+
+        if (jsonSerializerOptions.Encoder is null)
         {
             // If the user hasn't explicitly configured the encoder, use the less strict encoder that does not encode all non-ASCII characters.
-            serializerOptions = new JsonSerializerOptions(serializerOptions)
+            jsonSerializerOptions = new JsonSerializerOptions(jsonSerializerOptions)
             {
                 Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
             };
         }
 
-        return new AltinnApiJsonFormatter(settingsName, serializerOptions);
+        return new AltinnApiJsonFormatter(settingsName, jsonSerializerOptions);
     }
 }

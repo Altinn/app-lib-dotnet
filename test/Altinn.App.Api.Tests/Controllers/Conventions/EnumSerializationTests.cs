@@ -46,6 +46,7 @@ public class EnumSerializationTests : ApiTestBase, IClassFixture<WebApplicationF
                 .AddControllers()
                 .AddJsonOptions(options =>
                 {
+                    options.JsonSerializerOptions.Converters.Add(new CustomConverterFactory());
                     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
                 });
 
@@ -67,6 +68,7 @@ public class EnumSerializationTests : ApiTestBase, IClassFixture<WebApplicationF
         );
         response.Should().HaveStatusCode(HttpStatusCode.OK);
         var content = await response.Content.ReadAsStringAsync();
+
         var partyTypeEnumJson = JsonDocument
             .Parse(content)
             .RootElement.GetProperty("validParties")
@@ -78,5 +80,52 @@ public class EnumSerializationTests : ApiTestBase, IClassFixture<WebApplicationF
         partyTypeEnumJson.Should().NotBeNull();
         partyTypeEnumJson.TryGetInt32(out var partyTypeJsonValue);
         partyTypeJsonValue.Should().Be(1, "PartyTypesAllowed should be serialized as its numeric value");
+    }
+}
+
+public class CustomConverterFactory : JsonConverterFactory
+{
+    public override bool CanConvert(Type typeToConvert) => typeToConvert is not null;
+
+    public override JsonConverter? CreateConverter(Type typeToConvert, JsonSerializerOptions options)
+    {
+        var converterType = typeof(CustomConverter<>).MakeGenericType(typeToConvert);
+        return (JsonConverter)Activator.CreateInstance(converterType)!;
+    }
+}
+
+public class CustomConverter<T> : JsonConverter<T>
+{
+    public override T? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (typeof(T).IsEnum)
+        {
+            var enumString = reader.GetString();
+
+            if (Enum.TryParse(typeof(T), enumString, out var enumValue))
+            {
+                return (T)enumValue;
+            }
+            else
+            {
+                throw new JsonException($"Unable to convert \"{enumString}\" to enum \"{typeof(T)}\".");
+            }
+        }
+        else
+        {
+            return JsonSerializer.Deserialize<T>(ref reader, options);
+        }
+    }
+
+    public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
+    {
+        if (value is Enum)
+        {
+            writer.WriteStringValue(value.ToString());
+        }
+        else
+        {
+            JsonSerializer.Serialize(writer, value, value!.GetType(), options);
+        }
     }
 }
