@@ -65,4 +65,41 @@ public class AltinnApiJsonFormatterTests
         // Assert
         Assert.True(canWrite);
     }
+
+    [Fact]
+    public void CanWriteResult_SettingsNameMisMatch_ReturnsFalse()
+    {
+        // Arrange
+        string formatterSettingsName = "FormatterSettingName";
+        string endpointSettingsName = "EndpointSettingName";
+
+        var jsonOptions = new JsonOptions();
+        jsonOptions.JsonSerializerOptions.TypeInfoResolver = new DefaultJsonTypeInfoResolver();
+
+        var formatter = AltinnApiJsonFormatter.CreateFormatter(formatterSettingsName, jsonOptions);
+
+        var httpContext = new DefaultHttpContext();
+
+        // Create an Endpoint with JsonSettingsNameAttribute with a different name
+        var endpoint = new Endpoint(
+            requestDelegate: null,
+            metadata: new EndpointMetadataCollection(new JsonSettingsNameAttribute(endpointSettingsName)),
+            displayName: null
+        );
+
+        httpContext.SetEndpoint(endpoint);
+
+        var context = new OutputFormatterWriteContext(
+            httpContext,
+            (stream, encoding) => new StreamWriter(stream, encoding),
+            typeof(object),
+            new object()
+        );
+
+        // Act
+        bool canWrite = formatter.CanWriteResult(context);
+
+        // Assert
+        Assert.False(canWrite);
+    }
 }

@@ -17,12 +17,7 @@ public class ConfigureMvcJsonOptionsTests
     {
         // Arrange
         var jsonSettingsName = JsonSettingNames.AltinnApi;
-        var jsonOptions = new JsonOptions();
-        jsonOptions.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-        jsonOptions.JsonSerializerOptions.TypeInfoResolver = new DefaultJsonTypeInfoResolver();
-
-        var optionsMonitor = new TestOptionsMonitor<JsonOptions>(jsonOptions);
-        var configureOptions = new ConfigureMvcJsonOptions(jsonSettingsName, optionsMonitor);
+        ConfigureMvcJsonOptions configureOptions = GetConfigureOptionsForTest(jsonSettingsName);
         var mvcOptions = new MvcOptions();
 
         // Create default JsonSerializerOptions with JsonStringEnumConverter
@@ -58,6 +53,27 @@ public class ConfigureMvcJsonOptionsTests
         );
 
         Assert.NotNull(customSerializerOptions.Encoder);
+    }
+
+    [Fact]
+    public void Configure_NoDefaultOutputFormatter_ThrowsInvalidOperationException()
+    {
+        ConfigureMvcJsonOptions configureOptions = GetConfigureOptionsForTest(JsonSettingNames.AltinnApi);
+
+        var mvcOptions = new MvcOptions();
+
+        Assert.Throws<InvalidOperationException>(() => configureOptions.Configure(mvcOptions));
+    }
+
+    private static ConfigureMvcJsonOptions GetConfigureOptionsForTest(string jsonSettingsName)
+    {
+        var jsonOptions = new JsonOptions();
+        jsonOptions.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+        jsonOptions.JsonSerializerOptions.TypeInfoResolver = new DefaultJsonTypeInfoResolver();
+
+        var optionsMonitor = new TestOptionsMonitor<JsonOptions>(jsonOptions);
+        var configureOptions = new ConfigureMvcJsonOptions(jsonSettingsName, optionsMonitor);
+        return configureOptions;
     }
 }
 
