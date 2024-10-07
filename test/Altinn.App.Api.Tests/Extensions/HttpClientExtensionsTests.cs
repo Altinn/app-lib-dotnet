@@ -68,7 +68,7 @@ public class HttpClientExtensionsTests
         var primaryHandler = new HttpClientHandler();
         var innerHandler = new DelegatingHandlerStub(primaryHandler);
         var targetHandler = new CustomDelegatingHandler(innerHandler);
-        var httpClient = new HttpClient(targetHandler);
+        using var httpClient = new HttpClient(targetHandler);
 
         // Act
         var result = httpClient.GetDelegatingHandler<DelegatingHandlerStub>();
