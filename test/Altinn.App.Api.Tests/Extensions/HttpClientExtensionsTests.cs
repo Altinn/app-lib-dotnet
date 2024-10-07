@@ -8,7 +8,7 @@ public class HttpClientExtensionsTests
         // Arrange
         var primaryHandler = new HttpClientHandler();
         var targetHandler = new CustomDelegatingHandler(primaryHandler);
-        var httpClient = new HttpClient(targetHandler);
+        using var httpClient = new HttpClient(targetHandler);
 
         // Act
         var result = httpClient.GetDelegatingHandler<CustomDelegatingHandler>();
@@ -24,7 +24,7 @@ public class HttpClientExtensionsTests
         // Arrange
         var primaryHandler = new HttpClientHandler();
         var someOtherHandler = new DelegatingHandlerStub(primaryHandler);
-        var httpClient = new HttpClient(someOtherHandler);
+        using var httpClient = new HttpClient(someOtherHandler);
 
         // Act
         var result = httpClient.GetDelegatingHandler<CustomDelegatingHandler>();
@@ -37,7 +37,7 @@ public class HttpClientExtensionsTests
     public void GetDelegatingHandler_InitialHandlerIsNotDelegatingHandler_ReturnsNull()
     {
         // Arrange
-        var httpClient = new HttpClient(new HttpClientHandler());
+        using var httpClient = new HttpClient(new HttpClientHandler());
 
         // Act
         var result = httpClient.GetDelegatingHandler<DelegatingHandler>();
@@ -52,7 +52,7 @@ public class HttpClientExtensionsTests
         // Arrange
         var primaryHandler = new HttpClientHandler();
         var outerHandler = new DelegatingHandlerStub(primaryHandler);
-        var httpClient = new HttpClient(outerHandler);
+        using var httpClient = new HttpClient(outerHandler);
 
         // Act
         var result = httpClient.GetDelegatingHandler<CustomDelegatingHandler>();
