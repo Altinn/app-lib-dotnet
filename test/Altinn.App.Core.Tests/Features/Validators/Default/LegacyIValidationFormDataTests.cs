@@ -16,6 +16,9 @@ public class LegacyIValidationFormDataTests
 {
     private sealed record Fixture(IServiceProvider ServiceProvider) : IDisposable
     {
+        public Mock<T> Mock<T>()
+            where T : class => Moq.Mock.Get(ServiceProvider.GetRequiredService<T>());
+
         public void Dispose() => (ServiceProvider as IDisposable)?.Dispose();
     }
 
@@ -64,9 +67,7 @@ public class LegacyIValidationFormDataTests
         using var fixture = CreateFixture();
         var data = new object();
 
-        var instanceValidator = Mock.Get(
-            fixture.ServiceProvider.GetRequiredService<AppImplementationFactory>().GetRequired<IInstanceValidator>()
-        );
+        var instanceValidator = fixture.Mock<IInstanceValidator>();
         instanceValidator
             .Setup(iv => iv.ValidateData(It.IsAny<object>(), It.IsAny<ModelStateDictionary>()))
             .Callback(
@@ -144,9 +145,7 @@ public class LegacyIValidationFormDataTests
         using var fixture = CreateFixture();
         var data = new TestModel();
 
-        var instanceValidator = Mock.Get(
-            fixture.ServiceProvider.GetRequiredService<AppImplementationFactory>().GetRequired<IInstanceValidator>()
-        );
+        var instanceValidator = fixture.Mock<IInstanceValidator>();
         instanceValidator
             .Setup(iv => iv.ValidateData(It.IsAny<object>(), It.IsAny<ModelStateDictionary>()))
             .Callback(

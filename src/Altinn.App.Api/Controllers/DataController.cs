@@ -45,7 +45,6 @@ public class DataController : ControllerBase
     private readonly IDataClient _dataClient;
     private readonly IEnumerable<IDataProcessor> _dataProcessors;
     private readonly IInstanceClient _instanceClient;
-    private readonly IInstantiationProcessor _instantiationProcessor;
     private readonly IAppModel _appModel;
     private readonly IAppResources _appResourcesService;
     private readonly IAppMetadata _appMetadata;
@@ -54,7 +53,7 @@ public class DataController : ControllerBase
     private readonly IFileValidationService _fileValidationService;
     private readonly IFeatureManager _featureManager;
     private readonly IPatchService _patchService;
-
+    private readonly AppImplementationFactory _appImplementationFactory;
     private const long REQUEST_SIZE_LIMIT = 2000 * 1024 * 1024;
 
     /// <summary>
@@ -62,7 +61,6 @@ public class DataController : ControllerBase
     /// </summary>
     /// <param name="logger">logger</param>
     /// <param name="instanceClient">instance service to store instances</param>
-    /// <param name="instantiationProcessor">Instantiation processor</param>
     /// <param name="dataClient">A service with access to data storage.</param>
     /// <param name="dataProcessors">Services implementing logic during data read/write</param>
     /// <param name="appModel">Service for generating app model</param>
@@ -73,10 +71,10 @@ public class DataController : ControllerBase
     /// <param name="fileAnalyserService">Service used to analyse files uploaded.</param>
     /// <param name="fileValidationService">Service used to validate files uploaded.</param>
     /// <param name="patchService">Service for applying a json patch to a json serializable object</param>
+    /// <param name="serviceProvider">Service provider</param>
     public DataController(
         ILogger<DataController> logger,
         IInstanceClient instanceClient,
-        IInstantiationProcessor instantiationProcessor,
         IDataClient dataClient,
         IEnumerable<IDataProcessor> dataProcessors,
         IAppModel appModel,
@@ -86,13 +84,13 @@ public class DataController : ControllerBase
         IFileValidationService fileValidationService,
         IAppMetadata appMetadata,
         IFeatureManager featureManager,
-        IPatchService patchService
+        IPatchService patchService,
+        IServiceProvider serviceProvider
     )
     {
         _logger = logger;
 
         _instanceClient = instanceClient;
-        _instantiationProcessor = instantiationProcessor;
         _dataClient = dataClient;
         _dataProcessors = dataProcessors;
         _appModel = appModel;
@@ -103,6 +101,7 @@ public class DataController : ControllerBase
         _fileValidationService = fileValidationService;
         _featureManager = featureManager;
         _patchService = patchService;
+        _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
     }
 
     /// <summary>
@@ -657,7 +656,8 @@ public class DataController : ControllerBase
         // runs prefill from repo configuration if config exists
         await _prefillService.PrefillDataModel(instance.InstanceOwner.PartyId, dataType, appModel);
 
-        await _instantiationProcessor.DataCreation(instance, appModel, null);
+        var instantiationProcessor = _appImplementationFactory.GetRequired<IInstantiationProcessor>();
+        await instantiationProcessor.DataCreation(instance, appModel, null);
 
         await UpdatePresentationTextsOnInstance(instance, dataType, appModel);
         await UpdateDataValuesOnInstance(instance, dataType, appModel);
