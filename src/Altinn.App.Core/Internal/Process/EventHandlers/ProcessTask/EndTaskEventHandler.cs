@@ -2,6 +2,7 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.App.Core.Internal.Process.ServiceTasks;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask;
@@ -15,7 +16,7 @@ public class EndTaskEventHandler : IEndTaskEventHandler
     private readonly IProcessTaskFinalizer _processTaskFinisher;
     private readonly IServiceTask _pdfServiceTask;
     private readonly IServiceTask _eformidlingServiceTask;
-    private readonly IEnumerable<IProcessTaskEnd> _processTaskEnds;
+    private readonly AppImplementationFactory _appImplementationFactory;
     private readonly ILogger<EndTaskEventHandler> _logger;
 
     /// <summary>
@@ -25,7 +26,7 @@ public class EndTaskEventHandler : IEndTaskEventHandler
         IProcessTaskDataLocker processTaskDataLocker,
         IProcessTaskFinalizer processTaskFinisher,
         IEnumerable<IServiceTask> serviceTasks,
-        IEnumerable<IProcessTaskEnd> processTaskEnds,
+        IServiceProvider serviceProvider,
         ILogger<EndTaskEventHandler> logger
     )
     {
@@ -37,7 +38,7 @@ public class EndTaskEventHandler : IEndTaskEventHandler
         _eformidlingServiceTask =
             serviceTasks.FirstOrDefault(x => x is IEformidlingServiceTask)
             ?? throw new InvalidOperationException("EformidlingServiceTask not found in serviceTasks");
-        _processTaskEnds = processTaskEnds;
+        _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
         _logger = logger;
     }
 
@@ -80,7 +81,8 @@ public class EndTaskEventHandler : IEndTaskEventHandler
     /// </summary>
     private async Task RunAppDefinedProcessTaskEndHandlers(string endEvent, Instance instance)
     {
-        foreach (IProcessTaskEnd taskEnd in _processTaskEnds)
+        var handlers = _appImplementationFactory.GetAll<IProcessTaskEnd>();
+        foreach (IProcessTaskEnd taskEnd in handlers)
         {
             await taskEnd.End(endEvent, instance);
         }
