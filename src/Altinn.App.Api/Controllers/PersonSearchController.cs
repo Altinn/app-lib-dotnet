@@ -35,11 +35,11 @@ public class PersonSearchControllerController : ControllerBase
     /// </summary>
     /// <param name="personSearchRequest">Payload that contains params for executing a person search.</param>
     /// <param name="cancellationToken"></param>
-    /// <returns>A <see cref="PersonDto"/> object.</returns>
+    /// <returns>A <see cref="PersonSearchResponse"/> object.</returns>
     [HttpPost]
     [ProducesResponseType(typeof(Person), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<PersonDto>> SearchForPerson(
+    public async Task<ActionResult<PersonSearchResponse>> SearchForPerson(
         [FromBody] PersonSearchRequest personSearchRequest,
         CancellationToken cancellationToken
     )

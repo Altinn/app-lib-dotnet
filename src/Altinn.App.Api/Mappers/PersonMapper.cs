@@ -5,9 +5,9 @@ namespace Altinn.App.Api.Mappers;
 
 internal static class PersonMapper
 {
-    public static PersonDto MapToDto(Person person)
+    public static PersonSearchResponse MapToDto(Person person)
     {
-        return new PersonDto
+        return new PersonSearchResponse
         {
             Ssn = person.SSN,
             Name = person.Name,

@@ -78,11 +78,11 @@ public class PersonSearchControllerTests : ApiTestBase, IClassFixture<WebApplica
 
         string responseContent = await response.Content.ReadAsStringAsync();
         OutputHelper.WriteLine(responseContent);
-        var personDto = JsonSerializer.Deserialize<PersonDto>(responseContent, _jsonSerializerOptions);
+        var personDto = JsonSerializer.Deserialize<PersonSearchResponse>(responseContent, _jsonSerializerOptions);
 
         personDto.Should().NotBeNull();
-        personDto.Ssn.Should().Be("12345678901");
-        personDto.LastName.Should().Be("Normann");
+        personDto?.Ssn.Should().Be("12345678901");
+        personDto?.LastName.Should().Be("Normann");
     }
 
     [Fact]
