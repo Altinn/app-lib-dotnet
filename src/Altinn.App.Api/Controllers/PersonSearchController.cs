@@ -1,6 +1,5 @@
 using System.Net.Mime;
 using Altinn.App.Api.Infrastructure.Filters;
-using Altinn.App.Api.Mappers;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.Platform.Register.Models;
@@ -37,7 +36,7 @@ public class PersonSearchControllerController : ControllerBase
     /// <param name="cancellationToken"></param>
     /// <returns>A <see cref="PersonSearchResponse"/> object.</returns>
     [HttpPost]
-    [ProducesResponseType(typeof(Person), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PersonSearchResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<PersonSearchResponse>> SearchForPerson(
         [FromBody] PersonSearchRequest personSearchRequest,
@@ -50,6 +49,6 @@ public class PersonSearchControllerController : ControllerBase
             cancellationToken
         );
 
-        return person is null ? NotFound() : PersonMapper.MapToDto(person);
+        return person is null ? NotFound() : PersonSearchResponse.MapFromPerson(person);
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace Altinn.App.Api.Models;
+﻿using Altinn.Platform.Register.Models;
+
+namespace Altinn.App.Api.Models;
 
 /// <summary>
 /// Represents a person
@@ -29,4 +31,19 @@ public class PersonSearchResponse
     /// Gets or sets the last name
     /// </summary>
     public required string LastName { get; init; }
+
+    /// <summary>
+    /// Maps a person to a person search response
+    /// </summary>
+    public static PersonSearchResponse MapFromPerson(Person person)
+    {
+        return new PersonSearchResponse()
+        {
+            Ssn = person.SSN,
+            Name = person.Name,
+            FirstName = person.FirstName,
+            MiddleName = person.MiddleName,
+            LastName = person.LastName,
+        };
+    }
 }
