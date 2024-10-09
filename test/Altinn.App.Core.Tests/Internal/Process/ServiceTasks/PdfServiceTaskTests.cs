@@ -9,19 +9,16 @@ namespace Altinn.App.Core.Tests.Internal.Process.ServiceTasks;
 
 public class PdfServiceTaskTests
 {
-    private readonly Mock<ILogger<PdfServiceTask>> _loggerMock;
     private readonly Mock<IPdfService> _pdfServiceMock;
-    private readonly Mock<IProcessReader> _processReaderMock;
-
     private readonly PdfServiceTask _serviceTask;
 
     public PdfServiceTaskTests()
     {
-        _loggerMock = new Mock<ILogger<PdfServiceTask>>();
+        Mock<ILogger<PdfServiceTask>> loggerMock = new();
+        Mock<IProcessReader> processReaderMock = new();
         _pdfServiceMock = new Mock<IPdfService>();
-        _processReaderMock = new Mock<IProcessReader>();
 
-        _serviceTask = new PdfServiceTask(_loggerMock.Object, _pdfServiceMock.Object, _processReaderMock.Object);
+        _serviceTask = new PdfServiceTask(loggerMock.Object, _pdfServiceMock.Object, processReaderMock.Object);
     }
 
     [Fact]

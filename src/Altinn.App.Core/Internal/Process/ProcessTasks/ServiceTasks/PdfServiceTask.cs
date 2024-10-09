@@ -44,15 +44,16 @@ public class PdfServiceTask : IPdfServiceTask
     {
         ValidAltinnPdfConfiguration config = GetValidAltinnPdfConfiguration(taskId);
 
-        foreach (string pdfTaskId in config.TaskIds)
+        List<ProcessTask> processTasks = _processReader.GetProcessTasks();
+        List<string> missingTaskIds = config
+            .TaskIds.Where(taskToIncludeInPdf => processTasks.All(x => x.Id != taskToIncludeInPdf))
+            .ToList();
+
+        if (missingTaskIds.Count > 0)
         {
-            ProcessTask? processElement = _processReader.GetProcessTasks().Find(x => x.Id == pdfTaskId);
-            if (processElement == null)
-            {
-                throw new ProcessException(
-                    $"The task ID {pdfTaskId} specified in the PDF configuration does not exist in the process BPMN."
-                );
-            }
+            throw new ProcessException(
+                $"Some of the tasks configured to be included in the PDF were not found in the BPMN process definition: {string.Join(", ", missingTaskIds)}."
+            );
         }
 
         return Task.CompletedTask;
