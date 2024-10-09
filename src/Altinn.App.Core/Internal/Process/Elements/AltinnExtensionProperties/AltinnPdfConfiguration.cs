@@ -14,7 +14,7 @@ public class AltinnPdfConfiguration
     /// </summary>
     [XmlArray(ElementName = "tasksToIncludeInPdf", Namespace = "http://altinn.no/process", IsNullable = true)]
     [XmlArrayItem(ElementName = "task", Namespace = "http://altinn.no/process")]
-    public List<string> TaskIds { get; set; } = [];
+    public List<string> TaskIdsToIncludeInPdf { get; set; } = [];
 
     /// <summary>
     /// Set the filename of the PDF. Supports text resource keys for language support.
@@ -26,7 +26,7 @@ public class AltinnPdfConfiguration
     {
         List<string>? errorMessages = null;
 
-        List<string> taskIds = TaskIds;
+        List<string> taskIds = TaskIdsToIncludeInPdf;
         string? filename = Filename;
 
         if (
