@@ -314,20 +314,16 @@ public class AppResourcesSI : IAppResources
     public LayoutModel GetLayoutModel(string? layoutSetId = null)
     {
         using var activity = _telemetry?.StartGetLayoutModelActivity();
-
-        var layoutModel = new LayoutModel();
-        if (layoutSetId is null)
-        {
-            return layoutModel;
-        }
-
         string folder = Path.Join(_settings.AppBasePath, _settings.UiFolder, layoutSetId, "layouts");
-        List<string>? order = GetLayoutSettingsForSet(layoutSetId)?.Pages?.Order;
+        var order = GetLayoutSettingsForSet(layoutSetId)?.Pages?.Order;
         if (order is null)
         {
-            throw new InvalidDataException("No $Pages.Order field found for layoutSet {layoutSetId}");
+            throw new InvalidDataException(
+                "No $Pages.Order field found" + (layoutSetId is null ? "" : $" for layoutSet {layoutSetId}")
+            );
         }
 
+        var layoutModel = new LayoutModel();
         foreach (var page in order)
         {
             var pageBytes = File.ReadAllBytes(Path.Join(folder, page + ".json"));
