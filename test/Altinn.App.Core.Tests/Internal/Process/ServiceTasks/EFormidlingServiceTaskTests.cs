@@ -28,7 +28,6 @@ public class EFormidlingServiceTaskTests
 
         _serviceTask = new EFormidlingServiceTask(
             _loggerMock.Object,
-            _instanceClientMock.Object,
             _eFormidlingServiceMock.Object,
             _appSettingsMock.Object
         );
@@ -70,12 +69,7 @@ public class EFormidlingServiceTaskTests
         var appSettings = new AppSettings { EnableEFormidling = true };
         _appSettingsMock.Setup(x => x.Value).Returns(appSettings);
 
-        var serviceTask = new EFormidlingServiceTask(
-            _loggerMock.Object,
-            _instanceClientMock.Object,
-            null,
-            _appSettingsMock.Object
-        );
+        var serviceTask = new EFormidlingServiceTask(_loggerMock.Object, null, _appSettingsMock.Object);
 
         // Act & Assert
         await Assert.ThrowsAsync<ProcessException>(() => serviceTask.Execute("taskId", instance));
