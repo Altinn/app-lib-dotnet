@@ -162,26 +162,8 @@ public class ProcessEngine : IProcessEngine
         string? action = request.Action;
         string altinnTaskType = instance.Process.CurrentTask.AltinnTaskType;
 
-        IUserAction? userActionHandler = _userActionService.GetActionHandler(action);
-        if (userActionHandler is not null)
-        {
-            UserActionResult actionResult = await userActionHandler.HandleAction(
-                new UserActionContext(request.Instance, userId)
-            );
-
-            if (actionResult.ResultType != ResultType.Success)
-            {
-                var result = new ProcessChangeResult()
-                {
-                    Success = false,
-                    ErrorMessage = $"Action handler for action {request.Action} failed!",
-                    ErrorType = actionResult.ErrorType
-                };
-                activity?.SetProcessChangeResult(result);
-                return result;
-            }
-        }
-        else
+        // If the action is 'reject', we should not run any service task and there is no need to check for a user action handler, since 'reject' doesn't have one.
+        if (action is not "reject")
         {
             IServiceTask? serviceTask = _serviceTasks.FirstOrDefault(t =>
                 t.Type.Equals(altinnTaskType, StringComparison.OrdinalIgnoreCase)
@@ -189,6 +171,19 @@ public class ProcessEngine : IProcessEngine
 
             if (serviceTask is not null)
             {
+                if (action is not "write")
+                {
+                    var result = new ProcessChangeResult()
+                    {
+                        Success = false,
+                        ErrorMessage =
+                            $"Server tasks ({altinnTaskType}) do not support running user actions! Received action param {action}.",
+                        ErrorType = ProcessErrorType.Conflict
+                    };
+                    activity?.SetProcessChangeResult(result);
+                    return result;
+                }
+
                 using Activity? serviceTaskActivity = _telemetry?.StartProcessExecuteServiceTaskActivity(
                     instance,
                     altinnTaskType
@@ -210,6 +205,28 @@ public class ProcessEngine : IProcessEngine
                     };
                     activity?.SetProcessChangeResult(result);
                     return result;
+                }
+            }
+            else
+            {
+                IUserAction? userActionHandler = _userActionService.GetActionHandler(action);
+                if (userActionHandler is not null)
+                {
+                    UserActionResult actionResult = await userActionHandler.HandleAction(
+                        new UserActionContext(request.Instance, userId)
+                    );
+
+                    if (actionResult.ResultType != ResultType.Success)
+                    {
+                        var result = new ProcessChangeResult()
+                        {
+                            Success = false,
+                            ErrorMessage = $"Action handler for action {request.Action} failed!",
+                            ErrorType = actionResult.ErrorType
+                        };
+                        activity?.SetProcessChangeResult(result);
+                        return result;
+                    }
                 }
             }
         }
@@ -422,16 +439,18 @@ public class ProcessEngine : IProcessEngine
 
     private async Task<ProcessStateChange?> HandleMoveToNext(Instance instance, ClaimsPrincipal user, string? action)
     {
-        ProcessStateChange? processStateChange = await ProcessNext(instance, user, action);
-
-        if (processStateChange == null)
         {
+            ProcessStateChange? processStateChange = await ProcessNext(instance, user, action);
+
+            if (processStateChange == null)
+            {
+                return processStateChange;
+            }
+
+            instance = await HandleEventsAndUpdateStorage(instance, null, processStateChange.Events);
+            await _processEventDispatcher.RegisterEventWithEventsComponent(instance);
+
             return processStateChange;
         }
-
-        instance = await HandleEventsAndUpdateStorage(instance, null, processStateChange.Events);
-        await _processEventDispatcher.RegisterEventWithEventsComponent(instance);
-
-        return processStateChange;
     }
 }

@@ -1,4 +1,6 @@
 ﻿using System.Net;
+using System.Text;
+using Altinn.App.Api.Models;
 using Altinn.App.Api.Tests.Data;
 using Altinn.Platform.Storage.Interface.Models;
 using Argon;
@@ -40,6 +42,44 @@ public class PdfServiceTaskTests : ApiTestBase, IClassFixture<WebApplicationFact
         OutputHelper.WriteLine(nextResponseContent);
 
         nextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task Can_Reject_PdfServiceTask_When_Reject_Configured()
+    {
+        using HttpClient client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
+
+        //Run process next to enter PDF task
+        using HttpResponseMessage nextResponse = await client.PutAsync(
+            $"{Org}/{App}/instances/{_instanceId}/process/next?language={Language}",
+            null
+        );
+
+        string nextResponseContent = await nextResponse.Content.ReadAsStringAsync();
+        OutputHelper.WriteLine(nextResponseContent);
+
+        nextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
+
+        //Run process next with reject to return to data task
+
+        var rejectProcessNext = new ProcessNext { Action = "reject" };
+        using var rejectContent = new StringContent(
+            JsonConvert.SerializeObject(rejectProcessNext),
+            Encoding.UTF8,
+            "application/json"
+        );
+
+        using HttpResponseMessage rejectResponse = await client.PutAsync(
+            $"{Org}/{App}/instances/{_instanceId}/process/next?language={Language}",
+            rejectContent
+        );
+
+        rejectResponse.Should().HaveStatusCode(HttpStatusCode.OK);
+
+        //Double check that process moved back to the data task
+        Instance instance = await TestData.GetInstance(Org, App, InstanceOwnerPartyId, _instanceGuid);
+        instance.Process.CurrentTask.ElementId.Should().Be("Task_1");
+        instance.Process.CurrentTask.AltinnTaskType.Should().Be("data");
     }
 
     [Fact]
