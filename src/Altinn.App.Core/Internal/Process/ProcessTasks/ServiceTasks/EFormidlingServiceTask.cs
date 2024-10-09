@@ -1,6 +1,5 @@
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.EFormidling.Interface;
-using Altinn.App.Core.Internal.Instances;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -23,7 +22,6 @@ public class EFormidlingServiceTask : IEFormidlingServiceTask
     /// </summary>
     public EFormidlingServiceTask(
         ILogger<EFormidlingServiceTask> logger,
-        IInstanceClient instanceClient,
         IEFormidlingService? eFormidlingService = null,
         IOptions<AppSettings>? appSettings = null
     )
@@ -39,7 +37,6 @@ public class EFormidlingServiceTask : IEFormidlingServiceTask
     /// <inheritdoc/>
     public async Task Execute(string taskId, Instance instance)
     {
-        //TODO: Keep only if we want to be able to disable eFormidling in specific environments, as was possible in the previous implementation?
         if (_appSettings?.Value.EnableEFormidling is false)
         {
             _logger.LogWarning(
