@@ -182,20 +182,38 @@ public class EndTaskEventHandlerTests
     }
 
     [Fact]
-    public void Throws_If_Missing_Pdf_ServiceTask()
+    public async Task Throws_If_Missing_Pdf_ServiceTask()
     {
         using var fixture = Fixture.Create([], addPdfServiceTask: false);
 
-        var ex = Assert.Throws<InvalidOperationException>(() => fixture.Handler);
+        var eteh = fixture.Handler;
+
+        var instance = new Instance() { Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d", AppId = "ttd/test", };
+
+        var taskId = "Task_1";
+        Mock<IProcessTask> mockProcessTask = new();
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            async () => await eteh.Execute(mockProcessTask.Object, taskId, instance)
+        );
         Assert.Equal("PdfServiceTask not found in serviceTasks", ex.Message);
     }
 
     [Fact]
-    public void Throws_If_Missing_Eformidling_ServiceTask()
+    public async Task Throws_If_Missing_Eformidling_ServiceTask()
     {
         using var fixture = Fixture.Create([], addEformidlingServiceTask: false);
 
-        var ex = Assert.Throws<InvalidOperationException>(() => fixture.Handler);
+        var eteh = fixture.Handler;
+
+        var instance = new Instance() { Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d", AppId = "ttd/test", };
+
+        var taskId = "Task_1";
+        Mock<IProcessTask> mockProcessTask = new();
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            async () => await eteh.Execute(mockProcessTask.Object, taskId, instance)
+        );
         Assert.Equal("EformidlingServiceTask not found in serviceTasks", ex.Message);
     }
 }

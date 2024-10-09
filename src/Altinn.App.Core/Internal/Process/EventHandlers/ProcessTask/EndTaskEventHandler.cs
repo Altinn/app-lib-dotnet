@@ -14,8 +14,6 @@ public class EndTaskEventHandler : IEndTaskEventHandler
 {
     private readonly IProcessTaskDataLocker _processTaskDataLocker;
     private readonly IProcessTaskFinalizer _processTaskFinisher;
-    private readonly IServiceTask _pdfServiceTask;
-    private readonly IServiceTask _eformidlingServiceTask;
     private readonly AppImplementationFactory _appImplementationFactory;
     private readonly ILogger<EndTaskEventHandler> _logger;
 
@@ -25,19 +23,12 @@ public class EndTaskEventHandler : IEndTaskEventHandler
     public EndTaskEventHandler(
         IProcessTaskDataLocker processTaskDataLocker,
         IProcessTaskFinalizer processTaskFinisher,
-        IEnumerable<IServiceTask> serviceTasks,
         IServiceProvider serviceProvider,
         ILogger<EndTaskEventHandler> logger
     )
     {
         _processTaskDataLocker = processTaskDataLocker;
         _processTaskFinisher = processTaskFinisher;
-        _pdfServiceTask =
-            serviceTasks.FirstOrDefault(x => x is IPdfServiceTask)
-            ?? throw new InvalidOperationException("PdfServiceTask not found in serviceTasks");
-        _eformidlingServiceTask =
-            serviceTasks.FirstOrDefault(x => x is IEformidlingServiceTask)
-            ?? throw new InvalidOperationException("EformidlingServiceTask not found in serviceTasks");
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
         _logger = logger;
     }
@@ -47,6 +38,14 @@ public class EndTaskEventHandler : IEndTaskEventHandler
     /// </summary>
     public async Task Execute(IProcessTask processTask, string taskId, Instance instance)
     {
+        var serviceTasks = _appImplementationFactory.GetAll<IServiceTask>();
+        var pdfServiceTask =
+            serviceTasks.FirstOrDefault(x => x is IPdfServiceTask)
+            ?? throw new InvalidOperationException("PdfServiceTask not found in serviceTasks");
+        var eformidlingServiceTask =
+            serviceTasks.FirstOrDefault(x => x is IEformidlingServiceTask)
+            ?? throw new InvalidOperationException("EformidlingServiceTask not found in serviceTasks");
+
         await processTask.End(taskId, instance);
         await _processTaskFinisher.Finalize(taskId, instance);
         await RunAppDefinedProcessTaskEndHandlers(taskId, instance);
@@ -55,7 +54,7 @@ public class EndTaskEventHandler : IEndTaskEventHandler
         //These two services are scheduled to be removed and replaced by services tasks defined in the processfile.
         try
         {
-            await _pdfServiceTask.Execute(taskId, instance);
+            await pdfServiceTask.Execute(taskId, instance);
         }
         catch (Exception e)
         {
@@ -66,7 +65,7 @@ public class EndTaskEventHandler : IEndTaskEventHandler
 
         try
         {
-            await _eformidlingServiceTask.Execute(taskId, instance);
+            await eformidlingServiceTask.Execute(taskId, instance);
         }
         catch (Exception e)
         {
