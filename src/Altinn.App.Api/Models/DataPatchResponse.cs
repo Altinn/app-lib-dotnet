@@ -1,5 +1,6 @@
 using Altinn.App.Api.Controllers;
 using Altinn.App.Core.Models.Validation;
+using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Api.Models;
 
@@ -17,4 +18,9 @@ public class DataPatchResponse
     /// The current data model after the patch operation.
     /// </summary>
     public required object NewDataModel { get; init; }
+
+    /// <summary>
+    /// The instance object after patching. Used for frontend to detect added or removed data elements.
+    /// </summary>
+    public required Instance Instance { get; set; }
 }
