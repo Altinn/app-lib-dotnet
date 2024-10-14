@@ -439,18 +439,16 @@ public class ProcessEngine : IProcessEngine
 
     private async Task<ProcessStateChange?> HandleMoveToNext(Instance instance, ClaimsPrincipal user, string? action)
     {
+        ProcessStateChange? processStateChange = await ProcessNext(instance, user, action);
+
+        if (processStateChange == null)
         {
-            ProcessStateChange? processStateChange = await ProcessNext(instance, user, action);
-
-            if (processStateChange == null)
-            {
-                return processStateChange;
-            }
-
-            instance = await HandleEventsAndUpdateStorage(instance, null, processStateChange.Events);
-            await _processEventDispatcher.RegisterEventWithEventsComponent(instance);
-
             return processStateChange;
         }
+
+        instance = await HandleEventsAndUpdateStorage(instance, null, processStateChange.Events);
+        await _processEventDispatcher.RegisterEventWithEventsComponent(instance);
+
+        return processStateChange;
     }
 }
