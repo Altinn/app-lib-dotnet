@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Xml.Serialization;
 
 namespace Altinn.App.Core.Helpers;
@@ -7,7 +8,7 @@ namespace Altinn.App.Core.Helpers;
 /// <summary>
 /// Utilities for working with model instances
 /// </summary>
-public static class ObjectUtils
+public static partial class ObjectUtils
 {
     /// <summary>
     /// Set empty Guid properties named "AltinnRowId" to a new random guid
@@ -137,14 +138,31 @@ public static class ObjectUtils
                 SetToDefaultIfShouldSerializeFalse(model, prop, methodInfos);
 
                 // Set string properties with [XmlText] attribute to null if they are empty or whitespace
-                if (
-                    value is string s
-                    && string.IsNullOrWhiteSpace(s)
-                    && prop.GetCustomAttribute<XmlTextAttribute>() is not null
-                )
+                if (value is string s)
                 {
-                    // Ensure empty strings are set to null
-                    prop.SetValue(model, null);
+                    if (string.IsNullOrWhiteSpace(s))
+                    {
+                        if (prop.GetCustomAttribute<XmlTextAttribute>() is not null)
+                        {
+                            // Ensure empty strings are set to null
+                            prop.SetValue(model, null);
+                        }
+                    }
+                    else
+                    {
+                        var xmlRegex = XmlInvalidCharsRegex();
+                        if (prop.SetMethod is not null)
+                        {
+                            // Remove invalid xml characters
+                            prop.SetValue(model, xmlRegex.Replace(s, "�"));
+                        }
+                        else if (xmlRegex.IsMatch(s))
+                        {
+                            throw new InvalidOperationException(
+                                $"Property {prop.Name} of datamodel contains invalid xml characters"
+                            );
+                        }
+                    }
                 }
 
                 // continue recursion over all properties that are NOT null or value types
@@ -154,6 +172,11 @@ public static class ObjectUtils
             }
         }
     }
+
+    [GeneratedRegex(
+        @"(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F\uFEFF\uFFFE\uFFFF]"
+    )]
+    private static partial Regex XmlInvalidCharsRegex();
 
     private static void SetToDefaultIfShouldSerializeFalse(object model, PropertyInfo prop, MethodInfo[] methodInfos)
     {

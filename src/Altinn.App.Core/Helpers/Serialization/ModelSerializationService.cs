@@ -90,7 +90,7 @@ public class ModelSerializationService
         using XmlWriter xmlWriter = XmlWriter.Create(memoryStream, xmlWriterSettings);
 
         XmlSerializer serializer = _xmlSerializer.GetSerializer(modelType);
-        serializer.Serialize(xmlWriter, model);
+        serializer.Serialize(xmlWriter, model); // TODO: sanitate
         return memoryStream.ToArray().AsMemory().RemoveBom();
     }
 
