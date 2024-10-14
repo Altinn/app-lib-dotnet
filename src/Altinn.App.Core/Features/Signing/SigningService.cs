@@ -1,4 +1,6 @@
+using System.Data;
 using Altinn.App.Core.Features.Signing.Interfaces;
+using Altinn.App.Core.Features.Signing.Mocks;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Internal.Sign;
 
@@ -21,8 +23,8 @@ internal sealed class SigningService(
                 state.FirstOrDefault(s => s.Id == signee.UserId)
                 ?? new SigneeState(
                     id: signee.UserId,
-                    displayName: /*TODO: get name of org/person*/
-                    ""
+                    displayName: "" /*TODO: get name of org/person*/,
+                    taskId: "" //TODO: get current task
                 );
             try
             {
@@ -32,8 +34,10 @@ internal sealed class SigningService(
                     signeeState.IsDelegated = true;
                 }
 
-                if (signeeState.IsNotified is false)
+                if (signeeState.IsNotified is false) // Should we handle send failure in external service
                 {
+                    //TODO: use notifications api for this if we are notifying the signees
+                    //TODO:
                     //TODO: sendCorrespondance
                     signeeState.IsNotified = true;
                 }
@@ -69,10 +73,24 @@ internal sealed class SigningService(
             //      await signClient.SignDataElements();
             //      signeeState.hasSigned = true;
             // }
-            // if(signeeState.IsTaskOwnerNotified is false)
+            // if(signeeState.IsReceiptSent is false)
             // {
+                    var correspondanceClient = new CorrespondanceClientMock();
+                    var correspondence = new BaseCorrespondenceExt
+                    {
+                        ResourceId  = "",
+                        Sender = "",
+                        SendersReference = "",
+                        VisibleFrom = DateTimeOffset.Now
+                    };
+                    var request = new InitializeCorrespondenceRequestMock
+                    {
+                        Correspondence = correspondence,
+                        Recipients = [/*SigneeState.Id*/],
+                        ExistingAttachments = [] // TODO: all relevant documents
+                    };
             //      correspondanceClient.SendMessage(...);
-            //      signeeState.IsTaskOwnerNotified = true;
+            //      signeeState.IsReceiptSent = true;
             // }
             await Task.CompletedTask;
         }
