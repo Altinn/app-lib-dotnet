@@ -135,8 +135,8 @@ public class ObjectUtils_XmlSerializationTests(ITestOutputHelper _output)
     [Fact]
     public void TestInvalidXmlCharsAreHandled()
     {
-        var input = "''";
-        var output = "'�'";
+        var input = "'\u0002'"; // Represents start of text (␂)
+        var output = "'\uFFFD'"; // Represents replacement character (�)
 
         var test = new YttersteObjekt { NormalString = input, };
 
