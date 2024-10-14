@@ -4,6 +4,10 @@ using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Helpers.Serialization;
+using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
 using Altinn.App.Core.Internal.Process.ProcessTasks.Common;
@@ -31,6 +35,10 @@ public class ProcessEngine : IProcessEngine
     private readonly IEnumerable<IServiceTask> _serviceTasks;
     private readonly Telemetry? _telemetry;
     private readonly IProcessTaskCleaner _processTaskCleaner;
+    private readonly IDataClient _dataClient;
+    private readonly IInstanceClient _instanceClient;
+    private readonly ModelSerializationService _modelSerialization;
+    private readonly IAppMetadata _appMetadata;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessEngine"/> class.
@@ -43,6 +51,10 @@ public class ProcessEngine : IProcessEngine
         IProcessEventDispatcher processEventDispatcher,
         IProcessTaskCleaner processTaskCleaner,
         UserActionService userActionService,
+        IDataClient dataClient,
+        IInstanceClient instanceClient,
+        ModelSerializationService modelSerialization,
+        IAppMetadata appMetadata,
         IEnumerable<IServiceTask> serviceTasks,
         Telemetry? telemetry = null
     )
@@ -54,6 +66,10 @@ public class ProcessEngine : IProcessEngine
         _processEventDispatcher = processEventDispatcher;
         _processTaskCleaner = processTaskCleaner;
         _userActionService = userActionService;
+        _dataClient = dataClient;
+        _instanceClient = instanceClient;
+        _modelSerialization = modelSerialization;
+        _appMetadata = appMetadata;
         _serviceTasks = serviceTasks;
         _telemetry = telemetry;
     }
@@ -161,6 +177,13 @@ public class ProcessEngine : IProcessEngine
         int? userId = request.User.GetUserIdAsInt();
         string? action = request.Action;
         string altinnTaskType = instance.Process.CurrentTask.AltinnTaskType;
+        var cachedDataMutator = new CachedInstanceDataAccessor(
+            instance,
+            _dataClient,
+            _instanceClient,
+            _appMetadata,
+            _modelSerialization
+        );
 
         // If the action is 'reject', we should not run any service task and there is no need to check for a user action handler, since 'reject' doesn't have one.
         if (action is not "reject")
@@ -213,7 +236,7 @@ public class ProcessEngine : IProcessEngine
                 if (userActionHandler is not null)
                 {
                     UserActionResult actionResult = await userActionHandler.HandleAction(
-                        new UserActionContext(request.Instance, userId)
+                        new UserActionContext(cachedDataMutator, userId)
                     );
 
                     if (actionResult.ResultType != ResultType.Success)
@@ -230,6 +253,10 @@ public class ProcessEngine : IProcessEngine
                 }
             }
         }
+
+        List<DataElementChange> changes = cachedDataMutator.GetDataElementChanges(initializeAltinnRowId: false);
+        await cachedDataMutator.UpdateInstanceData(changes);
+        await cachedDataMutator.SaveChanges(changes);
 
         ProcessStateChange? nextResult = await HandleMoveToNext(instance, request.User, request.Action);
 
