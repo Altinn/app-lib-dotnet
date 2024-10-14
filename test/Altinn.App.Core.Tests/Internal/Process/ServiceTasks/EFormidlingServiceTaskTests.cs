@@ -12,20 +12,13 @@ namespace Altinn.App.Core.Tests.Internal.Process.ServiceTasks;
 
 public class EFormidlingServiceTaskTests
 {
-    private readonly Mock<ILogger<EFormidlingServiceTask>> _loggerMock;
-    private readonly Mock<IInstanceClient> _instanceClientMock;
-    private readonly Mock<IEFormidlingService> _eFormidlingServiceMock;
-    private readonly Mock<IOptions<AppSettings>> _appSettingsMock;
-
+    private readonly Mock<ILogger<EFormidlingServiceTask>> _loggerMock = new();
+    private readonly Mock<IEFormidlingService> _eFormidlingServiceMock = new();
+    private readonly Mock<IOptions<AppSettings>> _appSettingsMock = new();
     private readonly EFormidlingServiceTask _serviceTask;
 
     public EFormidlingServiceTaskTests()
     {
-        _loggerMock = new Mock<ILogger<EFormidlingServiceTask>>();
-        _instanceClientMock = new Mock<IInstanceClient>();
-        _eFormidlingServiceMock = new Mock<IEFormidlingService>();
-        _appSettingsMock = new Mock<IOptions<AppSettings>>();
-
         _serviceTask = new EFormidlingServiceTask(
             _loggerMock.Object,
             _eFormidlingServiceMock.Object,
@@ -51,7 +44,11 @@ public class EFormidlingServiceTaskTests
                     LogLevel.Warning,
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>(
-                        (v, t) => v.ToString()!.Contains("EFormidling is not enabled in appsettings.json")
+                        (v, t) =>
+                            v.ToString()!
+                                .Contains(
+                                    "EFormidling has been added as a service task in the BPMN process definition but is not enabled in appsettings.json. No eFormidling shipment will be sent, but the service task will be completed."
+                                )
                     ),
                     It.IsAny<Exception>(),
                     It.Is<Func<It.IsAnyType, Exception?, string>>((v, t) => true)
