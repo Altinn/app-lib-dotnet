@@ -170,6 +170,8 @@ public static partial class ObjectUtils
         }
     }
 
+    // Regex copied from: https://stackoverflow.com/a/961504
+    // Which is based on spec: https://www.w3.org/TR/xml/#charsets
     [GeneratedRegex(
         @"(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F\uFEFF\uFFFE\uFFFF]"
     )]
