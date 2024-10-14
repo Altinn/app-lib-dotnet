@@ -154,7 +154,7 @@ public static partial class ObjectUtils
                         if (prop.SetMethod is not null)
                         {
                             // Remove invalid xml characters
-                            prop.SetValue(model, xmlRegex.Replace(s, "�"));
+                            prop.SetValue(model, xmlRegex.Replace(s, "\uFFFD")); // \uFFFD is the unicode replacement character �
                         }
                         else if (xmlRegex.IsMatch(s))
                         {
