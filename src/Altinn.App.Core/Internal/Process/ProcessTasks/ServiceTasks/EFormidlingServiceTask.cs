@@ -40,7 +40,7 @@ public class EFormidlingServiceTask : IEFormidlingServiceTask
         if (_appSettings?.Value.EnableEFormidling is false)
         {
             _logger.LogWarning(
-                "EFormidling is not enabled in appsettings.json. No eFormidling shipment will be sent, but the service task will be completed."
+                "EFormidling has been added as a service task in the BPMN process definition but is not enabled in appsettings.json. No eFormidling shipment will be sent, but the service task will be completed."
             );
             return;
         }
