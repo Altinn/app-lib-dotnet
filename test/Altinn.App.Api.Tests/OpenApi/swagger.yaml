@@ -1719,12 +1719,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PersonSearchResponse'
-        '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetails'
   '/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/process':
     get:
       tags:
@@ -4042,20 +4036,7 @@ components:
         - Cancelled
         - Skipped
       type: string
-    PersonSearchRequest:
-      required:
-        - lastName
-        - socialSecurityNumber
-      type: object
-      properties:
-        socialSecurityNumber:
-          type: string
-          nullable: true
-        lastName:
-          type: string
-          nullable: true
-      additionalProperties: false
-    PersonSearchResponse:
+    PersonDetails:
       required:
         - lastName
         - name
@@ -4077,6 +4058,27 @@ components:
         lastName:
           type: string
           nullable: true
+      additionalProperties: false
+    PersonSearchRequest:
+      required:
+        - lastName
+        - socialSecurityNumber
+      type: object
+      properties:
+        socialSecurityNumber:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+      additionalProperties: false
+    PersonSearchResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        personDetails:
+          $ref: '#/components/schemas/PersonDetails'
       additionalProperties: false
     PhoneNumber:
       type: object

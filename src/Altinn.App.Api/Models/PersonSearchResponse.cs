@@ -3,41 +3,69 @@
 namespace Altinn.App.Api.Models;
 
 /// <summary>
-/// Represents a person
+/// Contains the result of a person search request.
 /// </summary>
 public class PersonSearchResponse
 {
     /// <summary>
-    /// Gets or sets the social security number
+    /// Creates a new instance of <see cref="PersonSearchResponse"/> from a person and sets the <see cref="Success"/> and <see cref="PersonDetails"/> properties accordingly.
+    /// </summary>
+    public static PersonSearchResponse CreateFromPerson(Person? person)
+    {
+        return new PersonSearchResponse
+        {
+            Success = person is not null,
+            PersonDetails = person is not null ? PersonDetails.MapFromPerson(person) : null
+        };
+    }
+
+    /// <summary>
+    /// Indicates whether a person was found or not.
+    /// </summary>
+    public bool Success { get; init; }
+
+    /// <summary>
+    /// Contains details about the person found by the search. Null if no person was found.
+    /// </summary>
+    public PersonDetails? PersonDetails { get; init; }
+}
+
+/// <summary>
+/// Contains details about a person
+/// </summary>
+public class PersonDetails
+{
+    /// <summary>
+    /// The social security number
     /// </summary>
     public required string Ssn { get; init; }
 
     /// <summary>
-    /// Gets or sets a persons name
+    /// The full name
     /// </summary>
     public required string Name { get; init; }
 
     /// <summary>
-    /// Gets or sets the first name
+    /// The first name
     /// </summary>
     public string? FirstName { get; init; }
 
     /// <summary>
-    /// Gets or sets the middle name
+    /// The middle name
     /// </summary>
     public string? MiddleName { get; init; }
 
     /// <summary>
-    /// Gets or sets the last name
+    /// The last name
     /// </summary>
     public required string LastName { get; init; }
 
     /// <summary>
-    /// Maps a person to a person search response
+    /// Maps a person to person details
     /// </summary>
-    public static PersonSearchResponse MapFromPerson(Person person)
+    public static PersonDetails MapFromPerson(Person person)
     {
-        return new PersonSearchResponse()
+        return new PersonDetails
         {
             Ssn = person.SSN,
             Name = person.Name,

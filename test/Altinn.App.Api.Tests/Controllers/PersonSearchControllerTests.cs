@@ -78,11 +78,16 @@ public class PersonSearchControllerTests : ApiTestBase, IClassFixture<WebApplica
 
         string responseContent = await response.Content.ReadAsStringAsync();
         OutputHelper.WriteLine(responseContent);
-        var personDto = JsonSerializer.Deserialize<PersonSearchResponse>(responseContent, _jsonSerializerOptions);
+        var personSearchResponse = JsonSerializer.Deserialize<PersonSearchResponse>(
+            responseContent,
+            _jsonSerializerOptions
+        );
 
-        personDto.Should().NotBeNull();
-        personDto?.Ssn.Should().Be("12345678901");
-        personDto?.LastName.Should().Be("Normann");
+        personSearchResponse.Should().NotBeNull();
+        personSearchResponse?.Success.Should().BeTrue();
+        personSearchResponse?.PersonDetails.Should().NotBeNull();
+        personSearchResponse?.PersonDetails?.Ssn.Should().Be("12345678901");
+        personSearchResponse?.PersonDetails?.LastName.Should().Be("Normann");
     }
 
     [Fact]
@@ -110,7 +115,18 @@ public class PersonSearchControllerTests : ApiTestBase, IClassFixture<WebApplica
         HttpResponseMessage response = await client.PostAsync($"{Org}/{App}/api/v1/person-search", requestContent);
 
         sendAsyncCalled.Should().BeTrue();
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        string responseContent = await response.Content.ReadAsStringAsync();
+        OutputHelper.WriteLine(responseContent);
+        var personSearchResponse = JsonSerializer.Deserialize<PersonSearchResponse>(
+            responseContent,
+            _jsonSerializerOptions
+        );
+
+        personSearchResponse.Should().NotBeNull();
+        personSearchResponse?.Success.Should().BeFalse();
+        personSearchResponse?.PersonDetails.Should().BeNull();
     }
 
     private HttpClient GetHttpClient()

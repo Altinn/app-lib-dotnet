@@ -37,7 +37,6 @@ public class PersonSearchControllerController : ControllerBase
     /// <returns>A <see cref="PersonSearchResponse"/> object.</returns>
     [HttpPost]
     [ProducesResponseType(typeof(PersonSearchResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<PersonSearchResponse>> SearchForPerson(
         [FromBody] PersonSearchRequest personSearchRequest,
         CancellationToken cancellationToken
@@ -49,6 +48,6 @@ public class PersonSearchControllerController : ControllerBase
             cancellationToken
         );
 
-        return person is null ? NotFound() : PersonSearchResponse.MapFromPerson(person);
+        return Ok(PersonSearchResponse.CreateFromPerson(person));
     }
 }

@@ -2813,16 +2813,6 @@
                 }
               }
             }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
           }
         }
       }
@@ -6334,25 +6324,7 @@
         ],
         "type": "string"
       },
-      "PersonSearchRequest": {
-        "required": [
-          "lastName",
-          "socialSecurityNumber"
-        ],
-        "type": "object",
-        "properties": {
-          "socialSecurityNumber": {
-            "type": "string",
-            "nullable": true
-          },
-          "lastName": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "PersonSearchResponse": {
+      "PersonDetails": {
         "required": [
           "lastName",
           "name",
@@ -6379,6 +6351,36 @@
           "lastName": {
             "type": "string",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonSearchRequest": {
+        "required": [
+          "lastName",
+          "socialSecurityNumber"
+        ],
+        "type": "object",
+        "properties": {
+          "socialSecurityNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonSearchResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "personDetails": {
+            "$ref": "#/components/schemas/PersonDetails"
           }
         },
         "additionalProperties": false
