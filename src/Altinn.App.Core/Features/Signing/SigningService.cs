@@ -1,4 +1,3 @@
-using System.Data;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Mocks;
 using Altinn.App.Core.Features.Signing.Models;
@@ -8,10 +7,12 @@ namespace Altinn.App.Core.Features.Signing;
 
 internal sealed class SigningService(
     ISigneeLogic signeeLogic, /*ISignClient signClient, IInstanceClient instanceClient, IAppMetadata appMetadata,*/
-    Telemetry telemetry
+    Telemetry telemetry,
+    ISmsNotificationClient? smsNotificationClient = null,
+    IEmailNotificationClient? emailNotificationClient = null
 )
 {
-    internal void AssignSignees()
+    internal async void AssignSignees(CancellationToken cancellationToken)
     {
         using var activity = telemetry.StartAssignSigneesActivity();
         List<SigneeState> state = /*StorageClient.GetSignState ??*/
@@ -23,7 +24,7 @@ internal sealed class SigningService(
                 state.FirstOrDefault(s => s.Id == signee.UserId)
                 ?? new SigneeState(
                     id: signee.UserId,
-                    displayName: "" /*TODO: get name of org/person*/,
+                    displayName: "", /*TODO: get name of org/person*/
                     taskId: "" //TODO: get current task
                 );
             try
@@ -34,11 +35,9 @@ internal sealed class SigningService(
                     signeeState.IsDelegated = true;
                 }
 
-                if (signeeState.IsNotified is false) // Should we handle send failure in external service
+                if (signeeState.IsNotified is false)
                 {
-                    //TODO: use notifications api for this if we are notifying the signees
-                    //TODO:
-                    //TODO: sendCorrespondance
+                    await TrySendNotification(smsNotificationClient, emailNotificationClient, cancellationToken);
                     signeeState.IsNotified = true;
                 }
             }
@@ -75,20 +74,22 @@ internal sealed class SigningService(
             // }
             // if(signeeState.IsReceiptSent is false)
             // {
-                    var correspondanceClient = new CorrespondanceClientMock();
-                    var correspondence = new BaseCorrespondenceExt
-                    {
-                        ResourceId  = "",
-                        Sender = "",
-                        SendersReference = "",
-                        VisibleFrom = DateTimeOffset.Now
-                    };
-                    var request = new InitializeCorrespondenceRequestMock
-                    {
-                        Correspondence = correspondence,
-                        Recipients = [/*SigneeState.Id*/],
-                        ExistingAttachments = [] // TODO: all relevant documents
-                    };
+            var correspondanceClient = new CorrespondanceClientMock();
+            var correspondence = new BaseCorrespondenceExt
+            {
+                ResourceId = "",
+                Sender = "",
+                SendersReference = "",
+                VisibleFrom = DateTimeOffset.Now
+            };
+            var request = new InitializeCorrespondenceRequestMock
+            {
+                Correspondence = correspondence,
+                Recipients =
+                [ /*SigneeState.Id*/
+                ],
+                ExistingAttachments = [] // TODO: all relevant documents
+            };
             //      correspondanceClient.SendMessage(...);
             //      signeeState.IsReceiptSent = true;
             // }
@@ -103,5 +104,44 @@ internal sealed class SigningService(
             // StorageClient.SetSignState(state);
         }
         throw new NotImplementedException();
+    }
+
+    private static async Task TrySendNotification(
+        ISmsNotificationClient? smsNotificationClient,
+        IEmailNotificationClient? emailNotificationClient,
+        CancellationToken cancellationToken
+    )
+    {
+        await Task.CompletedTask;
+        throw new NotImplementedException();
+        //TODO: implement fully
+        // if (smsNotificationClient is null && emailNotificationClient is null)
+        // {
+        //     throw new InvalidOperationException("Unable to send Notification. Neither Sms nor Email notification service available.");
+        // }
+
+        // if (smsNotificationClient is not null)
+        // {
+        //     var notification = new SmsNotification()
+        //     {
+        //         Body = "",
+        //         Recipients = [new SmsRecipient("", "", "")],
+        //         SenderNumber = "",
+        //         SendersReference = ""
+        //     };
+        //     await smsNotificationClient.Order(notification, cancellationToken);
+        // }
+
+        // if (emailNotificationClient is not null)
+        // {
+        //     var notification = new EmailNotification
+        //     {
+        //         Body = "",
+        //         Recipients = [new EmailRecipient("")],
+        //         Subject = "",
+        //         SendersReference = ""
+        //     };
+        //     await emailNotificationClient.Order(notification, cancellationToken);
+        // }
     }
 }
