@@ -7,14 +7,19 @@ internal sealed class SigneeState
     /// </summary>
     /// <param name="id">The identifier of the signee.</param>
     /// <param name="displayName">The display name of the signee.</param>
-    internal SigneeState(string id, string displayName)
+    /// <param name="taskId">The task associated with the signee state.</param>
+    internal SigneeState(string id, string displayName, string taskId)
     {
         Id = id;
         DisplayName = displayName;
+        TaskId = taskId;
     }
 
     /// <summary>The identifier of the signee.</summary>
     internal string Id { get; }
+
+    /// <summary>The task associated with the signee state.</summary>
+    internal string TaskId { get; set; }
 
     /// <summary>The display name of the signee.</summary>
     internal string DisplayName { get; }
@@ -28,6 +33,6 @@ internal sealed class SigneeState
     /// <summary>Indicates whether the signee has signed.</summary>
     internal bool HasSigned { get; set; }
 
-    /// <summary>Indicates whether the signature has been notified to the process task owner.</summary>
-    internal bool IsTaskOwnerNotified { get; set; }
+    /// <summary>Indicates whether the receipt for the signature has been send to the signee.</summary>
+    internal bool IsReceiptSent { get; set; }
 }
