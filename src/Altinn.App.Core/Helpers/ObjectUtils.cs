@@ -147,17 +147,14 @@ public static partial class ObjectUtils
                     }
                     else
                     {
-                        var xmlRegex = XmlInvalidCharsRegex();
                         if (prop.SetMethod is not null)
                         {
+                            // If a property doesn't have a setter, it hopefully doesn't have user input,
+                            // and therefore it far less likely to have invalid XML chars. If that were the case
+                            // we will still just error out when serializing to XML
+
                             // Remove invalid xml characters
-                            prop.SetValue(model, xmlRegex.Replace(s, "\uFFFD")); // \uFFFD is the unicode replacement character �
-                        }
-                        else if (xmlRegex.IsMatch(s))
-                        {
-                            throw new InvalidOperationException(
-                                $"Property {prop.Name} of datamodel contains invalid xml characters"
-                            );
+                            prop.SetValue(model, XmlInvalidCharsRegex().Replace(s, "\uFFFD")); // \uFFFD is the unicode replacement character �
                         }
                     }
                 }
