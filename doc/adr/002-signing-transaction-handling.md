@@ -51,8 +51,8 @@ List the pros and cons with the alternatives. This should be in regards to the d
 ### A1
 
 -   Good, because this alternative adheres to all descision drivers
+-   Bad, because it does not fullfill the B4 decision driver, leading to unnecessary traffic.
 
 ### A2
 
 -   Good, because it adheres to all **must** decision drivers.
--   Bad, because it does not fullfill the B4 decision driver, leading to unnecessary traffic.
