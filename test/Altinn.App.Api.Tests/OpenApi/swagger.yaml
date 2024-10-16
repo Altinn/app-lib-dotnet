@@ -1943,6 +1943,33 @@ paths:
       responses:
         '200':
           description: OK
+  '/{org}/{app}/api/v1/person-search':
+    post:
+      tags:
+        - PersonSearchController
+      parameters:
+        - name: org
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: app
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PersonSearchRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonSearchResponse'
   '/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/process':
     get:
       tags:
@@ -4415,6 +4442,50 @@ components:
         - Cancelled
         - Skipped
       type: string
+    PersonDetails:
+      required:
+        - lastName
+        - name
+        - ssn
+      type: object
+      properties:
+        ssn:
+          type: string
+          nullable: true
+        name:
+          type: string
+          nullable: true
+        firstName:
+          type: string
+          nullable: true
+        middleName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+      additionalProperties: false
+    PersonSearchRequest:
+      required:
+        - lastName
+        - socialSecurityNumber
+      type: object
+      properties:
+        socialSecurityNumber:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+      additionalProperties: false
+    PersonSearchResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        personDetails:
+          $ref: '#/components/schemas/PersonDetails'
+      additionalProperties: false
     PhoneNumber:
       type: object
       properties:
