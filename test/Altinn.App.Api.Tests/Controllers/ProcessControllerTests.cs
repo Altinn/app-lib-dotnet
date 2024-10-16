@@ -607,13 +607,14 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         };
         SendAsync = message =>
         {
+            ArgumentNullException.ThrowIfNull(message.RequestUri);
             message
                 .RequestUri.PathAndQuery.Should()
                 .Be($"/storage/api/v1/instances/{InstanceOwnerPartyId}/{_instanceGuid}/process/history");
             return Task.FromResult(
                 new HttpResponseMessage(HttpStatusCode.OK)
                 {
-                    Content = new StringContent(JsonConvert.SerializeObject(processList)),// Api uses Newtonsoft.Json
+                    Content = new StringContent(JsonConvert.SerializeObject(processList)), // Api uses Newtonsoft.Json
                 }
             );
         };
