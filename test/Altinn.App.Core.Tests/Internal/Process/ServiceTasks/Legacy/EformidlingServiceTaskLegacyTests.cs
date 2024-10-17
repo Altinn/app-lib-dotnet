@@ -2,7 +2,7 @@ using Altinn.App.Core.Configuration;
 using Altinn.App.Core.EFormidling.Interface;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Instances;
-using Altinn.App.Core.Internal.Process.ServiceTasks;
+using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.Legacy;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
@@ -12,16 +12,16 @@ using Moq;
 
 namespace Altinn.App.Core.Tests.Internal.Process.ServiceTasks;
 
-public class EformidlingServiceTaskTests
+public class EformidlingServiceTaskLegacyTests
 {
-    private readonly ILogger<EformidlingServiceTask> _logger;
+    private readonly ILogger<EformidlingServiceTaskLegacy> _logger;
     private readonly Mock<IAppMetadata> _appMetadata;
     private readonly Mock<IInstanceClient> _instanceClient;
     private readonly Mock<IEFormidlingService> _eFormidlingService;
 
-    public EformidlingServiceTaskTests()
+    public EformidlingServiceTaskLegacyTests()
     {
-        _logger = NullLogger<EformidlingServiceTask>.Instance;
+        _logger = NullLogger<EformidlingServiceTaskLegacy>.Instance;
         _appMetadata = new Mock<IAppMetadata>();
         _instanceClient = new Mock<IInstanceClient>();
         _eFormidlingService = new Mock<IEFormidlingService>();
@@ -123,12 +123,12 @@ public class EformidlingServiceTaskTests
         _eFormidlingService.VerifyNoOtherCalls();
     }
 
-    public EformidlingServiceTask GetEformidlingServiceTask(
+    public EformidlingServiceTaskLegacy GetEformidlingServiceTask(
         AppSettings? appSettings,
         IEFormidlingService? eFormidlingService = null
     )
     {
-        return new EformidlingServiceTask(
+        return new EformidlingServiceTaskLegacy(
             _logger,
             _appMetadata.Object,
             _instanceClient.Object,
