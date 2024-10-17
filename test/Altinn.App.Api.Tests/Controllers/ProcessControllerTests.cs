@@ -425,7 +425,7 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
             ArgumentNullException.ThrowIfNull(message.RequestUri);
             message
                 .RequestUri.PathAndQuery.Should()
-                .Be($"/storage/api/v1/instances/{InstanceOwnerPartyId}/{_instanceGuid}/process/history");
+                .Be($"/storage/api/v1/instances/{InstanceOwnerPartyId}/{InstanceGuid}/process/history");
             return Task.FromResult(
                 new HttpResponseMessage(HttpStatusCode.OK)
                 {
@@ -434,7 +434,7 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
             );
         };
         HttpClient client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
-        string url = $"/{Org}/{App}/instances/{InstanceOwnerPartyId}/{_instanceGuid}/process/history";
+        string url = $"/{Org}/{App}/instances/{InstanceOwnerPartyId}/{InstanceGuid}/process/history";
 
         HttpResponseMessage response = await client.GetAsync(url);
 
