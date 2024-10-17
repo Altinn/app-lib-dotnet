@@ -18,14 +18,21 @@ public sealed class MaskinportenClient : IMaskinportenClient
     /// </summary>
     internal const int TokenExpirationMargin = 30;
 
+    internal const string VariantDefault = "default";
+    internal const string VariantInternal = "internal";
+
     private const string CacheKeySalt = "maskinportenScope-";
     private static readonly HybridCacheEntryOptions _defaultCacheExpiration = CacheExpiry(TimeSpan.FromSeconds(60));
     private readonly ILogger<MaskinportenClient> _logger;
+    private readonly string _variant;
     private readonly IOptionsMonitor<MaskinportenSettings> _options;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly TimeProvider _timeprovider;
     private readonly HybridCache _tokenCache;
     private readonly Telemetry? _telemetry;
+
+    private MaskinportenSettings _settings =>
+        _options.Get(_variant == VariantDefault ? Microsoft.Extensions.Options.Options.DefaultName : _variant);
 
     /// <summary>
     /// Instantiates a new <see cref="MaskinportenClient"/> object.
@@ -37,6 +44,7 @@ public sealed class MaskinportenClient : IMaskinportenClient
     /// <param name="timeProvider">Optional TimeProvider implementation.</param>
     /// <param name="telemetry">Optional telemetry service.</param>
     public MaskinportenClient(
+        string variant,
         IOptionsMonitor<MaskinportenSettings> options,
         IHttpClientFactory httpClientFactory,
         HybridCache tokenCache,
@@ -45,6 +53,10 @@ public sealed class MaskinportenClient : IMaskinportenClient
         Telemetry? telemetry = null
     )
     {
+        if (variant != VariantDefault && variant != VariantInternal)
+            throw new ArgumentException($"Invalid variant '{variant}' provided to MaskinportenClient");
+
+        _variant = variant;
         _options = options;
         _telemetry = telemetry;
         _timeprovider = timeProvider ?? TimeProvider.System;
@@ -63,7 +75,7 @@ public sealed class MaskinportenClient : IMaskinportenClient
         string cacheKey = $"{CacheKeySalt}_{formattedScopes}";
         DateTimeOffset referenceTime = _timeprovider.GetUtcNow();
 
-        _telemetry?.StartGetAccessTokenActivity(_options.CurrentValue.ClientId, formattedScopes);
+        _telemetry?.StartGetAccessTokenActivity(_settings.ClientId, formattedScopes);
 
         var result = await _tokenCache.GetOrCreateAsync(
             cacheKey,
@@ -128,7 +140,7 @@ public sealed class MaskinportenClient : IMaskinportenClient
                 await payload.ReadAsStringAsync(cancellationToken)
             );
 
-            string tokenAuthority = _options.CurrentValue.Authority.Trim('/');
+            string tokenAuthority = _settings.Authority.Trim('/');
             using HttpClient client = _httpClientFactory.CreateClient();
             using HttpResponseMessage response = await client.PostAsync(
                 $"{tokenAuthority}/token",
@@ -161,7 +173,7 @@ public sealed class MaskinportenClient : IMaskinportenClient
         MaskinportenSettings? settings;
         try
         {
-            settings = _options.CurrentValue;
+            settings = _settings;
         }
         catch (OptionsValidationException e)
         {

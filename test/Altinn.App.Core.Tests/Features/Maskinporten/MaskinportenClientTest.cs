@@ -9,8 +9,6 @@ using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Internal;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 using Moq;
 
@@ -41,21 +39,20 @@ public class MaskinportenClientTests
         _fakeTimeProvider = new FakeTime(DateTimeOffset.UtcNow);
 
         var app = Api.Tests.TestUtils.AppBuilder.Build(registerCustomAppServices: services =>
-            services.Configure<MemoryCacheOptions>(options => options.Clock = _fakeTimeProvider)
-        );
+        {
+            services.AddSingleton(_mockHttpClientFactory.Object);
+            services.Configure<MemoryCacheOptions>(options => options.Clock = _fakeTimeProvider);
+            services.Configure<MaskinportenSettings>(options =>
+            {
+                options.Authority = _maskinportenSettings.Authority;
+                options.ClientId = _maskinportenSettings.ClientId;
+                options.JwkBase64 = _maskinportenSettings.JwkBase64;
+            });
+        });
 
         var tokenCache = app.Services.GetRequiredService<HybridCache>();
-        var mockLogger = new Mock<ILogger<MaskinportenClient>>();
-        var mockOptions = new Mock<IOptionsMonitor<MaskinportenSettings>>();
-        mockOptions.Setup(o => o.CurrentValue).Returns(_maskinportenSettings);
 
-        _maskinportenClient = new MaskinportenClient(
-            mockOptions.Object,
-            _mockHttpClientFactory.Object,
-            tokenCache,
-            mockLogger.Object,
-            _fakeTimeProvider
-        );
+        _maskinportenClient = (MaskinportenClient)app.Services.GetRequiredService<IMaskinportenClient>();
     }
 
     [Fact]

@@ -81,7 +81,6 @@ public static class ServiceCollectionExtensions
 
         services.AddPlatformServices(config, env);
         services.AddAppServices(config, env);
-        services.AddMaskinportenClient();
         services.ConfigureDataProtection();
 
         var useOpenTelemetrySetting = config.GetValue<bool?>("AppSettings:UseOpenTelemetry");
@@ -95,6 +94,10 @@ public static class ServiceCollectionExtensions
         {
             AddApplicationInsights(services, config, env);
         }
+
+        // This needs to happen after AddApplicationInsights, since it uses keyed services,
+        // due to a bug in app insights: https://github.com/microsoft/ApplicationInsights-dotnet/issues/2828
+        services.AddMaskinportenClient();
 
         AddAuthenticationScheme(services, config, env);
         AddAuthorizationPolicies(services);
@@ -169,7 +172,18 @@ public static class ServiceCollectionExtensions
             services.ConfigureMaskinportenClient("MaskinportenSettings");
         }
 
-        services.AddSingleton<IMaskinportenClient, MaskinportenClient>();
+        services
+            .AddOptions<MaskinportenSettings>(MaskinportenClient.VariantInternal)
+            .BindConfiguration("MaskinportenSettingsInternal")
+            .ValidateDataAnnotations();
+
+        services.AddSingleton<IMaskinportenClient>(sp =>
+            ActivatorUtilities.CreateInstance<MaskinportenClient>(sp, MaskinportenClient.VariantDefault)
+        );
+        services.AddKeyedSingleton<IMaskinportenClient>(
+            MaskinportenClient.VariantInternal,
+            (sp, key) => ActivatorUtilities.CreateInstance<MaskinportenClient>(sp, MaskinportenClient.VariantInternal)
+        );
 
         return services;
     }
