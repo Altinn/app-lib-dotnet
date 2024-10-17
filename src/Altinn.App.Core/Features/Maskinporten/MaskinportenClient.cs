@@ -10,7 +10,7 @@ using Microsoft.IdentityModel.Tokens;
 namespace Altinn.App.Core.Features.Maskinporten;
 
 /// <inheritdoc/>
-public sealed class MaskinportenClient : IMaskinportenClient
+internal sealed class MaskinportenClient : IMaskinportenClient
 {
     /// <summary>
     /// The margin to take into consideration when determining if a token has expired (seconds).
@@ -21,22 +21,24 @@ public sealed class MaskinportenClient : IMaskinportenClient
     internal const string VariantDefault = "default";
     internal const string VariantInternal = "internal";
 
-    private const string CacheKeySalt = "maskinportenScope-";
+    private readonly string _cacheKeySalt;
     private static readonly HybridCacheEntryOptions _defaultCacheExpiration = CacheExpiry(TimeSpan.FromSeconds(60));
     private readonly ILogger<MaskinportenClient> _logger;
-    private readonly string _variant;
     private readonly IOptionsMonitor<MaskinportenSettings> _options;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly TimeProvider _timeprovider;
     private readonly HybridCache _tokenCache;
     private readonly Telemetry? _telemetry;
 
-    private MaskinportenSettings _settings =>
-        _options.Get(_variant == VariantDefault ? Microsoft.Extensions.Options.Options.DefaultName : _variant);
+    internal readonly string Variant;
+
+    internal MaskinportenSettings Settings =>
+        _options.Get(Variant == VariantDefault ? Microsoft.Extensions.Options.Options.DefaultName : Variant);
 
     /// <summary>
     /// Instantiates a new <see cref="MaskinportenClient"/> object.
     /// </summary>
+    /// <param name="variant">Variant.</param>
     /// <param name="options">Maskinporten settings.</param>
     /// <param name="httpClientFactory">HttpClient factory.</param>
     /// <param name="tokenCache">Token cache store.</param>
@@ -56,7 +58,8 @@ public sealed class MaskinportenClient : IMaskinportenClient
         if (variant != VariantDefault && variant != VariantInternal)
             throw new ArgumentException($"Invalid variant '{variant}' provided to MaskinportenClient");
 
-        _variant = variant;
+        Variant = variant;
+        _cacheKeySalt = $"maskinportenScope-{variant}";
         _options = options;
         _telemetry = telemetry;
         _timeprovider = timeProvider ?? TimeProvider.System;
@@ -72,10 +75,10 @@ public sealed class MaskinportenClient : IMaskinportenClient
     )
     {
         string formattedScopes = FormattedScopes(scopes);
-        string cacheKey = $"{CacheKeySalt}_{formattedScopes}";
+        string cacheKey = $"{_cacheKeySalt}_{formattedScopes}";
         DateTimeOffset referenceTime = _timeprovider.GetUtcNow();
 
-        _telemetry?.StartGetAccessTokenActivity(_settings.ClientId, formattedScopes);
+        _telemetry?.StartGetAccessTokenActivity(Settings.ClientId, formattedScopes);
 
         var result = await _tokenCache.GetOrCreateAsync(
             cacheKey,
@@ -140,7 +143,7 @@ public sealed class MaskinportenClient : IMaskinportenClient
                 await payload.ReadAsStringAsync(cancellationToken)
             );
 
-            string tokenAuthority = _settings.Authority.Trim('/');
+            string tokenAuthority = Settings.Authority.Trim('/');
             using HttpClient client = _httpClientFactory.CreateClient();
             using HttpResponseMessage response = await client.PostAsync(
                 $"{tokenAuthority}/token",
@@ -173,7 +176,7 @@ public sealed class MaskinportenClient : IMaskinportenClient
         MaskinportenSettings? settings;
         try
         {
-            settings = _settings;
+            settings = Settings;
         }
         catch (OptionsValidationException e)
         {

@@ -10,6 +10,7 @@ using Altinn.App.Api.Infrastructure.Telemetry;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Correspondence;
 using Altinn.App.Core.Features.Maskinporten;
 using Altinn.App.Core.Features.Maskinporten.Models;
 using Altinn.Common.PEP.Authorization;
@@ -98,6 +99,7 @@ public static class ServiceCollectionExtensions
         // This needs to happen after AddApplicationInsights, since it uses keyed services,
         // due to a bug in app insights: https://github.com/microsoft/ApplicationInsights-dotnet/issues/2828
         services.AddMaskinportenClient();
+        services.AddCorrespondenceClient();
 
         AddAuthenticationScheme(services, config, env);
         AddAuthorizationPolicies(services);
