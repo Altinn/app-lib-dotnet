@@ -1394,6 +1394,33 @@ paths:
             text/xml:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
+  '/{org}/{app}/api/v1/organisations/{orgNr}':
+    get:
+      tags:
+        - OrganisationSearch
+      parameters:
+        - name: orgNr
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: org
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: app
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganisationSearchResponse'
   '/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/pages/order':
     post:
       tags:
@@ -3874,6 +3901,27 @@ components:
           type: number
           format: double
           readOnly: true
+      additionalProperties: false
+    OrganisationDetails:
+      required:
+        - name
+        - orgNr
+      type: object
+      properties:
+        orgNr:
+          type: string
+          nullable: true
+        name:
+          type: string
+          nullable: true
+      additionalProperties: false
+    OrganisationSearchResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        organisationDetails:
+          $ref: '#/components/schemas/OrganisationDetails'
       additionalProperties: false
     PartyTypesAllowed:
       type: object
