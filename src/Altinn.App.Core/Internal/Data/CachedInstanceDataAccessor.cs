@@ -94,6 +94,11 @@ internal sealed class CachedInstanceDataAccessor : IInstanceDataMutator
     /// <inheritdoc />
     public async Task<ReadOnlyMemory<byte>> GetBinaryData(DataElementIdentifier dataElementIdentifier)
     {
+        if (_instanceOwnerPartyId == 0 || _instanceGuid == Guid.Empty)
+        {
+            throw new InvalidOperationException("Cannot access instance data before it has been created");
+        }
+
         var appMetadata = await _appMetadata.GetApplicationMetadata();
 
         return await _binaryCache.GetOrCreate(
@@ -233,6 +238,11 @@ internal sealed class CachedInstanceDataAccessor : IInstanceDataMutator
 
     internal async Task UpdateInstanceData(List<DataElementChange> changes)
     {
+        if (_instanceOwnerPartyId == 0 || _instanceGuid == Guid.Empty)
+        {
+            throw new InvalidOperationException("Cannot access instance data before it has been created");
+        }
+
         var tasks = new List<Task>();
         ConcurrentBag<DataElement> createdDataElements = new();
         // We need to create data elements here, so that we can set them correctly on the instance
