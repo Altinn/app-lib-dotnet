@@ -12,7 +12,7 @@ using Xunit.Abstractions;
 
 namespace Altinn.App.Api.Tests.Controllers;
 
-public class OrganisationSearchControllerTests : ApiTestBase, IClassFixture<WebApplicationFactory<Program>>
+public class LookupOrganisationControllerTests : ApiTestBase, IClassFixture<WebApplicationFactory<Program>>
 {
     private const string Org = "tdd";
     private const string App = "contributer-restriction";
@@ -26,11 +26,11 @@ public class OrganisationSearchControllerTests : ApiTestBase, IClassFixture<WebA
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
         };
 
-    public OrganisationSearchControllerTests(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper)
+    public LookupOrganisationControllerTests(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper)
         : base(factory, outputHelper) { }
 
     [Fact]
-    public async Task Get_OrganisationSearch_WithValidOrgNr_Returns_OrganisationSearchResponse()
+    public async Task Get_LookupOrganisation_WithValidOrgNr_Returns_LookupOrganisationResponse()
     {
         HttpClient client = GetHttpClient();
         var orgNr = "123456789";
@@ -79,20 +79,20 @@ public class OrganisationSearchControllerTests : ApiTestBase, IClassFixture<WebA
 
         string responseContent = await response.Content.ReadAsStringAsync();
         OutputHelper.WriteLine(responseContent);
-        var orgSearchResponse = JsonSerializer.Deserialize<OrganisationSearchResponse>(
+        var orgLookupResponse = JsonSerializer.Deserialize<LookupOrganisationResponse>(
             responseContent,
             _jsonSerializerOptions
         );
 
-        orgSearchResponse.Should().NotBeNull();
-        orgSearchResponse?.Success.Should().BeTrue();
-        orgSearchResponse?.OrganisationDetails.Should().NotBeNull();
-        orgSearchResponse?.OrganisationDetails?.OrgNr.Should().Be(orgNr);
-        orgSearchResponse?.OrganisationDetails?.Name.Should().Be(orgName);
+        orgLookupResponse.Should().NotBeNull();
+        orgLookupResponse?.Success.Should().BeTrue();
+        orgLookupResponse?.OrganisationDetails.Should().NotBeNull();
+        orgLookupResponse?.OrganisationDetails?.OrgNr.Should().Be(orgNr);
+        orgLookupResponse?.OrganisationDetails?.Name.Should().Be(orgName);
     }
 
     [Fact]
-    public async Task Get_OrganisationSearch_NotFound_Returned_Correctly()
+    public async Task Get_LookupOrganisation_NotFound_Returned_Correctly()
     {
         HttpClient client = GetHttpClient();
 
@@ -114,14 +114,14 @@ public class OrganisationSearchControllerTests : ApiTestBase, IClassFixture<WebA
 
         string responseContent = await response.Content.ReadAsStringAsync();
         OutputHelper.WriteLine(responseContent);
-        var orgSearchResponse = JsonSerializer.Deserialize<OrganisationSearchResponse>(
+        var orgLookupResponse = JsonSerializer.Deserialize<LookupOrganisationResponse>(
             responseContent,
             _jsonSerializerOptions
         );
 
-        orgSearchResponse.Should().NotBeNull();
-        orgSearchResponse?.Success.Should().BeFalse();
-        orgSearchResponse?.OrganisationDetails.Should().BeNull();
+        orgLookupResponse.Should().NotBeNull();
+        orgLookupResponse?.Success.Should().BeFalse();
+        orgLookupResponse?.OrganisationDetails.Should().BeNull();
     }
 
     private HttpClient GetHttpClient()

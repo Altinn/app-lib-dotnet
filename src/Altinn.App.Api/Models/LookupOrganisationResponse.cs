@@ -3,16 +3,16 @@ using Altinn.Platform.Register.Models;
 namespace Altinn.App.Api.Models;
 
 /// <summary>
-/// Contains the result of a search for an organisation.
+/// Contains the result of an organisation lookup.
 /// </summary>
-public class OrganisationSearchResponse
+public class LookupOrganisationResponse
 {
     /// <summary>
-    /// Creates a new instance of <see cref="OrganisationSearchResponse"/> from a person and sets the <see cref="Success"/> and <see cref="PersonDetails"/> properties accordingly.
+    /// Creates a new instance of <see cref="LookupOrganisationResponse"/> from a person and sets the <see cref="Success"/> and <see cref="PersonDetails"/> properties accordingly.
     /// </summary>
-    public static OrganisationSearchResponse CreateFromOrganisation(Organization? organisation)
+    public static LookupOrganisationResponse CreateFromOrganisation(Organization? organisation)
     {
-        return new OrganisationSearchResponse
+        return new LookupOrganisationResponse
         {
             Success = organisation is not null,
             OrganisationDetails = organisation is not null
@@ -27,7 +27,7 @@ public class OrganisationSearchResponse
     public bool Success { get; init; }
 
     /// <summary>
-    /// Contains details about the person found by the search. Null if no person was found.
+    /// Contains details about the person found by the lookup. Null if no person was found.
     /// </summary>
     public OrganisationDetails? OrganisationDetails { get; init; }
 }
