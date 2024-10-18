@@ -2083,6 +2083,52 @@
         }
       }
     },
+    "/{org}/{app}/api/v1/lookup/person": {
+      "post": {
+        "tags": [
+          "LookupPerson"
+        ],
+        "parameters": [
+          {
+            "name": "org",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "app",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LookupPersonRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LookupPersonResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/{org}/{app}/api/options/{optionsId}": {
       "get": {
         "tags": [
@@ -2767,52 +2813,6 @@
         "responses": {
           "200": {
             "description": "OK"
-          }
-        }
-      }
-    },
-    "/{org}/{app}/api/v1/person-search": {
-      "post": {
-        "tags": [
-          "PersonSearchController"
-        ],
-        "parameters": [
-          {
-            "name": "org",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "app",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PersonSearchRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PersonSearchResponse"
-                }
-              }
-            }
           }
         }
       }
@@ -5967,6 +5967,36 @@
         },
         "additionalProperties": false
       },
+      "LookupPersonRequest": {
+        "required": [
+          "lastName",
+          "socialSecurityNumber"
+        ],
+        "type": "object",
+        "properties": {
+          "socialSecurityNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "LookupPersonResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "personDetails": {
+            "$ref": "#/components/schemas/PersonDetails"
+          }
+        },
+        "additionalProperties": false
+      },
       "MessageBoxConfig": {
         "type": "object",
         "properties": {
@@ -6351,36 +6381,6 @@
           "lastName": {
             "type": "string",
             "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "PersonSearchRequest": {
-        "required": [
-          "lastName",
-          "socialSecurityNumber"
-        ],
-        "type": "object",
-        "properties": {
-          "socialSecurityNumber": {
-            "type": "string",
-            "nullable": true
-          },
-          "lastName": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "PersonSearchResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "personDetails": {
-            "$ref": "#/components/schemas/PersonDetails"
           }
         },
         "additionalProperties": false

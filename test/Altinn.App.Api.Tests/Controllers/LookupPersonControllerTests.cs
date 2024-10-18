@@ -12,7 +12,7 @@ using Xunit.Abstractions;
 
 namespace Altinn.App.Api.Tests.Controllers;
 
-public class PersonSearchControllerTests : ApiTestBase, IClassFixture<WebApplicationFactory<Program>>
+public class LookupPersonControllerTests : ApiTestBase, IClassFixture<WebApplicationFactory<Program>>
 {
     private const string Org = "tdd";
     private const string App = "contributer-restriction";
@@ -26,7 +26,7 @@ public class PersonSearchControllerTests : ApiTestBase, IClassFixture<WebApplica
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
         };
 
-    public PersonSearchControllerTests(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper)
+    public LookupPersonControllerTests(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper)
         : base(factory, outputHelper) { }
 
     [Fact]
@@ -78,7 +78,7 @@ public class PersonSearchControllerTests : ApiTestBase, IClassFixture<WebApplica
 
         string responseContent = await response.Content.ReadAsStringAsync();
         OutputHelper.WriteLine(responseContent);
-        var personSearchResponse = JsonSerializer.Deserialize<PersonSearchResponse>(
+        var personSearchResponse = JsonSerializer.Deserialize<LookupPersonResponse>(
             responseContent,
             _jsonSerializerOptions
         );
@@ -119,7 +119,7 @@ public class PersonSearchControllerTests : ApiTestBase, IClassFixture<WebApplica
 
         string responseContent = await response.Content.ReadAsStringAsync();
         OutputHelper.WriteLine(responseContent);
-        var personSearchResponse = JsonSerializer.Deserialize<PersonSearchResponse>(
+        var personSearchResponse = JsonSerializer.Deserialize<LookupPersonResponse>(
             responseContent,
             _jsonSerializerOptions
         );
