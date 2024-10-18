@@ -5,14 +5,14 @@ namespace Altinn.App.Api.Models;
 /// <summary>
 /// Contains the result of a person search request.
 /// </summary>
-public class PersonSearchResponse
+public class LookupPersonResponse
 {
     /// <summary>
-    /// Creates a new instance of <see cref="PersonSearchResponse"/> from a person and sets the <see cref="Success"/> and <see cref="PersonDetails"/> properties accordingly.
+    /// Creates a new instance of <see cref="LookupPersonResponse"/> from a person and sets the <see cref="Success"/> and <see cref="PersonDetails"/> properties accordingly.
     /// </summary>
-    public static PersonSearchResponse CreateFromPerson(Person? person)
+    public static LookupPersonResponse CreateFromPerson(Person? person)
     {
-        return new PersonSearchResponse
+        return new LookupPersonResponse
         {
             Success = person is not null,
             PersonDetails = person is not null ? PersonDetails.MapFromPerson(person) : null,
