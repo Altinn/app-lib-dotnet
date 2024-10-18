@@ -3,7 +3,7 @@
 /// <summary>
 /// Data transfer object for the request to search for a person.
 /// </summary>
-public class PersonSearchRequest
+public class LookupPersonRequest
 {
     /// <summary>
     /// The social security number of the person to search for.
