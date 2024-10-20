@@ -113,11 +113,11 @@ public sealed class ValidationServiceTests : IDisposable
     public ValidationServiceTests()
     {
         _modelSerialization = new ModelSerializationService(_appModelMock.Object);
-        _dataAccessor = new CachedInstanceDataAccessor(
+        _dataAccessor = new InstanceDataUnitOfWork(
             _defaultInstance,
             _dataClientMock.Object,
             _instanceClientMock.Object,
-            _appMetadataMock.Object,
+            _defaultAppMetadata,
             _modelSerialization
         );
         _serviceCollection.AddSingleton(_loggerMock.Object);
@@ -374,11 +374,11 @@ public sealed class ValidationServiceTests : IDisposable
             }
         ];
         SetupDataClient(data);
-        var dataAccessor = new CachedInstanceDataAccessor(
+        var dataAccessor = new InstanceDataUnitOfWork(
             _defaultInstance,
             _dataClientMock.Object,
             _instanceClientMock.Object,
-            _appMetadataMock.Object,
+            _defaultAppMetadata,
             _modelSerialization
         );
         var resultData = await validatorService.ValidateIncrementalFormData(
@@ -453,11 +453,11 @@ public sealed class ValidationServiceTests : IDisposable
         await using var serviceProvider = _serviceCollection.BuildServiceProvider();
         var validationService = serviceProvider.GetRequiredService<IValidationService>();
 
-        var dataAccessor = new CachedInstanceDataAccessor(
+        var dataAccessor = new InstanceDataUnitOfWork(
             _defaultInstance,
             _dataClientMock.Object,
             _instanceClientMock.Object,
-            _appMetadataMock.Object,
+            _defaultAppMetadata,
             _modelSerialization
         );
 

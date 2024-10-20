@@ -855,11 +855,11 @@ public class DataController : ControllerBase
 
         var serviceModel = deserializationResult.Ok;
 
-        var dataMutator = new CachedInstanceDataAccessor(
+        var dataMutator = new InstanceDataUnitOfWork(
             instance,
             _dataClient,
             _instanceClient,
-            _appMetadata,
+            await _appMetadata.GetApplicationMetadata(),
             _modelDeserializer
         );
         // Get the previous service model for dataProcessing to work

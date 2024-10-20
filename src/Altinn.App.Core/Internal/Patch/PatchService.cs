@@ -70,11 +70,11 @@ internal class PatchService : IPatchService
     {
         using var activity = _telemetry?.StartDataPatchActivity(instance);
 
-        var dataAccessor = new CachedInstanceDataAccessor(
+        var dataAccessor = new InstanceDataUnitOfWork(
             instance,
             _dataClient,
             _instanceClient,
-            _appMetadata,
+            await _appMetadata.GetApplicationMetadata(),
             _modelSerializationService
         );
 

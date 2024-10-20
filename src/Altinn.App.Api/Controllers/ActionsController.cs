@@ -126,11 +126,11 @@ public class ActionsController : ControllerBase
             return Forbid();
         }
 
-        var dataMutator = new CachedInstanceDataAccessor(
+        var dataMutator = new InstanceDataUnitOfWork(
             instance,
             _dataClient,
             _instanceClient,
-            _appMetadata,
+            await _appMetadata.GetApplicationMetadata(),
             _modelSerialization
         );
         UserActionContext userActionContext =
