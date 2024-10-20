@@ -9,6 +9,7 @@ using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Result;
+using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using Json.Patch;
 using Microsoft.AspNetCore.Hosting;
@@ -139,7 +140,7 @@ internal class PatchService : IPatchService
                     PreviousFormData = oldModel,
                     CurrentFormData = newModel,
                     PreviousBinaryData = await dataAccessor.GetBinaryData(dataElementIdentifier),
-                    CurrentBinaryData = null,
+                    CurrentBinaryData = null, // Set this after DataProcessors have run
                 }
             );
         }
@@ -200,6 +201,24 @@ internal class PatchService : IPatchService
             UpdatedData = updatedData,
             ValidationIssues = validationIssues,
         };
+    }
+
+    public async Task<List<ValidationSourcePair>> RunIncrementalValidation(
+        IInstanceDataAccessor dataAccessor,
+        string taskId,
+        List<DataElementChange> changes,
+        List<string>? ignoredValidators,
+        string? language
+    )
+    {
+        return await _validationService.ValidateIncrementalFormData(
+            dataAccessor.Instance,
+            dataAccessor,
+            taskId,
+            changes,
+            ignoredValidators,
+            language
+        );
     }
 
     public async Task RunDataProcessors(

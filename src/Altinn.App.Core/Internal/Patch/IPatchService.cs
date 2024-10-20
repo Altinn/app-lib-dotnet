@@ -1,5 +1,6 @@
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Models.Result;
+using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using Json.Patch;
 
@@ -27,6 +28,17 @@ public interface IPatchService
         IInstanceDataMutator dataMutator,
         List<DataElementChange> changes,
         string taskId,
+        string? language
+    );
+
+    /// <summary>
+    /// Runs incremental validation on the changes.
+    /// </summary>
+    Task<List<ValidationSourcePair>> RunIncrementalValidation(
+        IInstanceDataAccessor dataAccessor,
+        string taskId,
+        List<DataElementChange> changes,
+        List<string>? ignoredValidators,
         string? language
     );
 }
