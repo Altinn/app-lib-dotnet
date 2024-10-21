@@ -8,14 +8,13 @@ using System.Xml.Serialization;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Newtonsoft.Json;
 
-namespace Altinn.App.Models.model
+namespace Altinn.App.Models.model;
+
+[XmlRoot(ElementName = "Model")]
+public class Model
 {
-    [XmlRoot(ElementName = "Model")]
-    public class Model
-    {
-        [XmlElement("Navn", Order = 1)]
-        [JsonProperty("Navn")]
-        [JsonPropertyName("Navn")]
-        public string Navn { get; set; }
-    }
+    [XmlElement("Navn", Order = 1)]
+    [JsonProperty(nameof(Navn))]
+    [JsonPropertyName(nameof(Navn))]
+    public string Navn { get; set; }
 }
