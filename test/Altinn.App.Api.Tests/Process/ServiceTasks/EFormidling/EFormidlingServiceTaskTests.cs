@@ -1,6 +1,8 @@
 ﻿using System.Net;
 using Altinn.App.Api.Tests.Data;
+using Altinn.App.Api.Tests.Mocks;
 using Altinn.App.Core.EFormidling.Interface;
+using Altinn.App.Core.Internal.Process;
 using Altinn.Platform.Storage.Interface.Models;
 using Argon;
 using FluentAssertions;
@@ -28,6 +30,7 @@ public class EFormidlingServiceTaskTests : ApiTestBase, IClassFixture<WebApplica
         OverrideServicesForAllTests = (services) =>
         {
             services.AddSingleton(_eFormidlingServiceMock.Object);
+            services.AddTransient<IProcessClient, ProcessClientMock>();
         };
 
         TestData.DeleteInstanceAndData(Org, App, InstanceOwnerPartyId, _instanceGuid);
