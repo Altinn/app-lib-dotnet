@@ -46,7 +46,7 @@ public class PdfServiceTask : IPdfServiceTask
 
         List<ProcessTask> processTasks = _processReader.GetProcessTasks();
         List<string> missingTaskIds = config
-            .TaskIds.Where(taskToIncludeInPdf => processTasks.All(x => x.Id != taskToIncludeInPdf))
+            .TaskIds.Where(taskToIncludeInPdf => processTasks.TrueForAll(x => x.Id != taskToIncludeInPdf))
             .ToList();
 
         if (missingTaskIds.Count > 0)
