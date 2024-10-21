@@ -150,7 +150,7 @@ public class InstanceClientMockSi : IInstanceClient
     private static string GetInstancePath(int instanceOwnerPartyId, Guid instanceGuid)
     {
         string[] paths = Directory.GetFiles(
-            TestData.GetInstancesDirectory(),
+            Path.Join(TestData.GetTestDataRootDirectory(), "Instances"),
             instanceGuid + ".json",
             SearchOption.AllDirectories
         );
@@ -165,21 +165,13 @@ public class InstanceClientMockSi : IInstanceClient
 
     private static string GetInstancePath(string app, string org, int instanceOwnerId, Guid instanceId)
     {
-        return Path.Combine(
-            TestData.GetInstancesDirectory(),
-            org,
-            app,
-            instanceOwnerId.ToString(),
-            instanceId + ".json"
-        );
+        return Path.Combine(TestData.GetInstancesDirectory(org, app), instanceOwnerId.ToString(), instanceId + ".json");
     }
 
     private static string GetDataPath(string org, string app, int instanceOwnerId, Guid instanceGuid)
     {
         return Path.Combine(
-                TestData.GetInstancesDirectory(),
-                org,
-                app,
+                TestData.GetInstancesDirectory(org, app),
                 instanceOwnerId.ToString(),
                 instanceGuid.ToString()
             ) + Path.DirectorySeparatorChar;
@@ -480,7 +472,7 @@ public class InstanceClientMockSi : IInstanceClient
 
         List<Instance> instances = new();
 
-        string instancesPath = TestData.GetInstancesDirectory();
+        string instancesPath = Path.Join(TestData.GetTestDataRootDirectory(), "Instances");
 
         int fileDepth = 4;
 
