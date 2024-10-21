@@ -10,22 +10,14 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
 
-namespace Altinn.App.Core.Tests.Internal.Process.ServiceTasks;
+namespace Altinn.App.Core.Tests.Internal.Process.ServiceTasks.Legacy;
 
 public class EformidlingServiceTaskLegacyTests
 {
-    private readonly ILogger<EformidlingServiceTaskLegacy> _logger;
-    private readonly Mock<IAppMetadata> _appMetadata;
-    private readonly Mock<IInstanceClient> _instanceClient;
-    private readonly Mock<IEFormidlingService> _eFormidlingService;
-
-    public EformidlingServiceTaskLegacyTests()
-    {
-        _logger = NullLogger<EformidlingServiceTaskLegacy>.Instance;
-        _appMetadata = new Mock<IAppMetadata>();
-        _instanceClient = new Mock<IInstanceClient>();
-        _eFormidlingService = new Mock<IEFormidlingService>();
-    }
+    private readonly ILogger<EformidlingServiceTaskLegacy> _logger = NullLogger<EformidlingServiceTaskLegacy>.Instance;
+    private readonly Mock<IAppMetadata> _appMetadata = new();
+    private readonly Mock<IInstanceClient> _instanceClient = new();
+    private readonly Mock<IEFormidlingService> _eFormidlingService = new();
 
     [Fact]
     public async Task Execute_EFormidlingIsEnabledAndSendAfterTaskIdMatchesCurrentTask_EFormidlingShipment_is_sent()
