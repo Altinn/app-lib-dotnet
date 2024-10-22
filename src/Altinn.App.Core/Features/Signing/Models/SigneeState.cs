@@ -5,24 +5,37 @@ internal sealed class SigneeState
     /// <summary>
     /// Create a new instance of the <see cref="SigneeState"/> class
     /// </summary>
-    /// <param name="id">The identifier of the signee.</param>
+    /// <param name="partyId">The identifier of the signee.</param>
     /// <param name="displayName">The display name of the signee.</param>
     /// <param name="taskId">The task associated with the signee state.</param>
-    internal SigneeState(string id, string displayName, string taskId)
+    /// <param name="organisationNumber">Should contain organisation number if the signee is a organisation.</param>
+    /// <param name="socialSecurityNumber">Should contain social security number if the signee is a person.</param>
+    internal SigneeState(
+        string taskId,
+        string partyId,
+        string displayName,
+        string? organisationNumber = null,
+        string? socialSecurityNumber = null
+    )
     {
-        Id = id;
-        DisplayName = displayName;
         TaskId = taskId;
+        PartyId = partyId;
+        DisplayName = displayName;
+        OrganisationNumber = organisationNumber;
+        SocialSecurityNumber = socialSecurityNumber;
     }
 
     /// <summary>The identifier of the signee.</summary>
-    internal string Id { get; }
+    internal string PartyId { get; }
 
     /// <summary>The task associated with the signee state.</summary>
     internal string TaskId { get; set; }
 
     /// <summary>The display name of the signee.</summary>
     internal string DisplayName { get; }
+
+    internal string? OrganisationNumber { get; init; }
+    internal string? SocialSecurityNumber { get; init; }
 
     /// <summary>Indicates whether signee has been delegated rights to sign.</summary>
     internal bool IsDelegated { get; set; }
