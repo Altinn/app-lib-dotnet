@@ -5,13 +5,28 @@ using System.Text.RegularExpressions;
 namespace Altinn.App.Core.Features.Maskinporten.Models;
 
 /// <summary>
+/// Contains masking logic for JWTs
+/// </summary>
+internal static partial class JwtMasking
+{
+    internal static Regex JwtRegex => JwtRegexFactory();
+
+    internal static string MaskSignature(string accessToken)
+    {
+        var accessTokenMatch = JwtRegex.Match(accessToken);
+        return accessTokenMatch.Success ? $"{accessTokenMatch.Groups[1]}.{accessTokenMatch.Groups[2]}.xxx" : "<masked>";
+    }
+
+    [GeneratedRegex(@"^(.+)\.(.+)\.(.+)$", RegexOptions.Multiline)]
+    private static partial Regex JwtRegexFactory();
+}
+
+/// <summary>
 /// The response received from Maskinporten after a successful grant request.
 /// </summary>
 [ImmutableObject(true)]
-public sealed partial record MaskinportenTokenResponse
+public sealed record MaskinportenTokenResponse
 {
-    private static readonly Regex _jwtStructurePattern = JwtRegexFactory();
-
     /// <summary>
     /// The JWT access token to be used in the Authorization header for downstream requests.
     /// </summary>
@@ -57,28 +72,47 @@ public sealed partial record MaskinportenTokenResponse
     /// </summary>
     public override string ToString()
     {
-        var accessTokenMatch = _jwtStructurePattern.Match(AccessToken);
-        var maskedToken = accessTokenMatch.Success
-            ? $"{accessTokenMatch.Groups[1]}.{accessTokenMatch.Groups[2]}.xxx"
-            : "<masked>";
+        var maskedToken = JwtMasking.MaskSignature(AccessToken);
         return $"{nameof(AccessToken)}: {maskedToken}, {nameof(TokenType)}: {TokenType}, {nameof(Scope)}: {Scope}, {nameof(ExpiresIn)}: {ExpiresIn}, {nameof(ExpiresAt)}: {ExpiresAt}";
     }
 
-    [GeneratedRegex(@"^(.+)\.(.+)\.(.+)$", RegexOptions.Multiline)]
-    private static partial Regex JwtRegexFactory();
+    // [GeneratedRegex(@"^(.+)\.(.+)\.(.+)$", RegexOptions.Multiline)]
+    // private static partial Regex JwtRegexFactory();
 }
 
 /// <summary>
-/// The response received from Maskinporten after exchanging a Maskinporten token for an Altinn token.
+/// The response received from Altinn Authentication after exchanging a Maskinporten token for an Altinn token.
 /// </summary>
-/// <param name="AccessToken"></param>
-/// <param name="ExpiresAt"></param>
 [ImmutableObject(true)]
-public sealed record MaskinportenAltinnExchangedTokenResponse(string AccessToken, DateTime ExpiresAt)
+public sealed record MaskinportenAltinnExchangedTokenResponse
 {
+    /// <summary>
+    /// The JWT access token to be used in the Authorization header for downstream requests.
+    /// </summary>
+    public required string AccessToken { get; init; }
+
+    /// <summary>
+    /// The instant in time when the token expires.
+    /// </summary>
+    public required DateTime ExpiresAt { get; init; }
+
+    /// <summary>
+    /// The scope(s) associated with the authorization token (<see cref="AccessToken"/>).
+    /// </summary>
+    public required string? Scope { get; init; }
+
     /// <summary>
     /// Is the token expired?
     /// </summary>
     public bool IsExpired(TimeProvider? timeProvider = null) =>
         ExpiresAt < (timeProvider?.GetUtcNow().UtcDateTime ?? DateTime.UtcNow);
+
+    /// <summary>
+    /// Stringifies the content of this instance, while masking the JWT signature part of <see cref="AccessToken"/>
+    /// </summary>
+    public override string ToString()
+    {
+        var maskedToken = JwtMasking.MaskSignature(AccessToken);
+        return $"{nameof(AccessToken)}: {maskedToken}, {nameof(Scope)}: {Scope}, {nameof(ExpiresAt)}: {ExpiresAt}";
+    }
 }

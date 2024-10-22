@@ -31,4 +31,15 @@ public static class HttpClientBuilderExtensions
         var factory = ActivatorUtilities.CreateFactory<MaskinportenDelegatingHandler>([typeof(IEnumerable<string>),]);
         return builder.AddHttpMessageHandler(provider => factory(provider, [scopes]));
     }
+
+    public static IHttpClientBuilder UseAltinnMaskinportenAuthorization(
+        this IHttpClientBuilder builder,
+        string scope,
+        params string[] additionalScopes
+    )
+    {
+        throw new NotImplementedException();
+        // TODO: Implement this. Consider alternative names.
+        // TODO: Make `MaskinportenDelegatingHandler take a `TokenAuthority` enum as a parameter.
+    }
 }

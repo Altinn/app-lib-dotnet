@@ -23,7 +23,7 @@ public class MaskinportenDelegatingHandlerTest
             }
         );
         var httpClient = new HttpClient(handler);
-        var request = new HttpRequestMessage(HttpMethod.Get, "https://unittesting.to.nowhere");
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://some-maskinporten-url/token");
 
         // Act
         await httpClient.SendAsync(request);

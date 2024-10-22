@@ -21,6 +21,17 @@ partial class Telemetry
                 }
             }
         );
+        InitMetricCounter(
+            context,
+            MetricNameTokenExchangeRequest,
+            init: static m =>
+            {
+                foreach (var result in RequestResultExtensions.GetValues())
+                {
+                    m.Add(0, new Tag(InternalLabels.Result, result.ToStringFast()));
+                }
+            }
+        );
     }
 
     internal Activity? StartGetAccessTokenActivity(string variant, string clientId, string scopes)
@@ -46,9 +57,17 @@ partial class Telemetry
         _counters[MetricNameTokenRequest].Add(1, new Tag(InternalLabels.Result, result.ToStringFast()));
     }
 
+    internal void RecordMaskinportenAltinnTokenExchangeRequest(RequestResult result)
+    {
+        _counters[MetricNameTokenExchangeRequest].Add(1, new Tag(InternalLabels.Result, result.ToStringFast()));
+    }
+
     internal static class Maskinporten
     {
         internal static readonly string MetricNameTokenRequest = Metrics.CreateLibName("maskinporten_token_requests");
+        internal static readonly string MetricNameTokenExchangeRequest = Metrics.CreateLibName(
+            "maskinporten_altinn_exchange_requests"
+        );
 
         [EnumExtensions]
         internal enum RequestResult
