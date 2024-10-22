@@ -39,20 +39,18 @@ public sealed partial record MaskinportenTokenResponse
     /// <summary>
     /// Convenience conversion of <see cref="ExpiresIn"/> to an actual instant in time.
     /// </summary>
-    public DateTime ExpiresAt => _createdAt.AddSeconds(ExpiresIn);
+    public DateTime ExpiresAt => CreatedAt.AddSeconds(ExpiresIn);
 
     /// <summary>
     /// Internal tracker used by <see cref="ExpiresAt"/> to calculate an expiry <see cref="DateTime"/>.
     /// </summary>
-    private readonly DateTime _createdAt = DateTime.UtcNow;
+    internal DateTime CreatedAt { get; init; } = DateTime.UtcNow;
 
     /// <summary>
     /// Is the token expired?
     /// </summary>
-    public bool IsExpired()
-    {
-        return ExpiresAt < DateTime.UtcNow;
-    }
+    public bool IsExpired(TimeProvider? timeProvider = null) =>
+        ExpiresAt < (timeProvider?.GetUtcNow().UtcDateTime ?? DateTime.UtcNow);
 
     /// <summary>
     /// Stringifies the content of this instance, while masking the JWT signature part of <see cref="AccessToken"/>
@@ -68,4 +66,19 @@ public sealed partial record MaskinportenTokenResponse
 
     [GeneratedRegex(@"^(.+)\.(.+)\.(.+)$", RegexOptions.Multiline)]
     private static partial Regex JwtRegexFactory();
+}
+
+/// <summary>
+/// The response received from Maskinporten after exchanging a Maskinporten token for an Altinn token.
+/// </summary>
+/// <param name="AccessToken"></param>
+/// <param name="ExpiresAt"></param>
+[ImmutableObject(true)]
+public sealed record MaskinportenAltinnExchangedTokenResponse(string AccessToken, DateTime ExpiresAt)
+{
+    /// <summary>
+    /// Is the token expired?
+    /// </summary>
+    public bool IsExpired(TimeProvider? timeProvider = null) =>
+        ExpiresAt < (timeProvider?.GetUtcNow().UtcDateTime ?? DateTime.UtcNow);
 }

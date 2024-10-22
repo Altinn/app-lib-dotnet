@@ -23,9 +23,19 @@ partial class Telemetry
         );
     }
 
-    internal Activity? StartGetAccessTokenActivity(string clientId, string scopes)
+    internal Activity? StartGetAccessTokenActivity(string variant, string clientId, string scopes)
     {
         var activity = ActivitySource.StartActivity("Maskinporten.GetAccessToken");
+        activity?.SetTag("maskinporten.variant", variant);
+        activity?.SetTag("maskinporten.scopes", scopes);
+        activity?.SetTag("maskinporten.client_id", clientId);
+        return activity;
+    }
+
+    internal Activity? StartGetAltinnExchangedAccessTokenActivity(string variant, string clientId, string scopes)
+    {
+        var activity = ActivitySource.StartActivity("Maskinporten.GetAltinnExchangedAccessToken");
+        activity?.SetTag("maskinporten.variant", variant);
         activity?.SetTag("maskinporten.scopes", scopes);
         activity?.SetTag("maskinporten.client_id", clientId);
         return activity;

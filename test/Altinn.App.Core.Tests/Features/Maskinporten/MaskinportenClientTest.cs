@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Text.Json;
+using Altinn.App.Api.Tests.Utils;
 using Altinn.App.Core.Features.Maskinporten;
 using Altinn.App.Core.Features.Maskinporten.Exceptions;
 using Altinn.App.Core.Features.Maskinporten.Models;
@@ -55,12 +56,13 @@ public class MaskinportenClientTests
         public static Fixture Create()
         {
             var mockHttpClientFactory = new Mock<IHttpClientFactory>();
-            var fakeTimeProvider = new FakeTime(DateTimeOffset.UtcNow);
+            var fakeTimeProvider = new FakeTime(new DateTimeOffset(2024, 1, 1, 10, 0, 0, TimeSpan.Zero));
 
             var app = Api.Tests.TestUtils.AppBuilder.Build(registerCustomAppServices: services =>
             {
                 services.AddSingleton(mockHttpClientFactory.Object);
                 services.Configure<MemoryCacheOptions>(options => options.Clock = fakeTimeProvider);
+                services.AddSingleton<TimeProvider>(fakeTimeProvider);
                 services.AddSingleton(fakeTimeProvider);
 
                 services.Configure<MaskinportenSettings>(options =>
@@ -163,7 +165,8 @@ public class MaskinportenClientTests
             AccessToken = "access-token-content",
             ExpiresIn = 120,
             Scope = MaskinportenClient.FormattedScopes(scopes),
-            TokenType = "Bearer"
+            TokenType = "Bearer",
+            CreatedAt = fixture.FakeTime.GetUtcNow().UtcDateTime
         };
         fixture
             .HttpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>()))
@@ -182,6 +185,39 @@ public class MaskinportenClientTests
 
     [Theory]
     [MemberData(nameof(Variants))]
+    public async Task GetAltinnExchangedToken_ReturnsAToken(string variant)
+    {
+        // Arrange
+        await using var fixture = Fixture.Create();
+        string[] scopes = ["scope1", "scope2"];
+        var tokenResponse = new MaskinportenTokenResponse
+        {
+            AccessToken = "access-token-content",
+            ExpiresIn = 120,
+            Scope = MaskinportenClient.FormattedScopes(scopes),
+            TokenType = "Bearer",
+            CreatedAt = fixture.FakeTime.GetUtcNow().UtcDateTime
+        };
+        var expiresIn = TimeSpan.FromMinutes(30);
+        var altinnToken = PrincipalUtil.GetOrgToken("ttd", "160694123", 3, expiresIn, fixture.FakeTime);
+        fixture
+            .HttpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>()))
+            .Returns(() =>
+            {
+                var mockHandler = TestHelpers.MockHttpMessageHandlerFactory(tokenResponse, altinnToken);
+                return new HttpClient(mockHandler.Object);
+            });
+
+        // Act
+        var result = await fixture.Client(variant).GetAltinnExchangedToken(scopes);
+
+        // Assert
+        result.AccessToken.Should().NotBeNullOrWhiteSpace();
+        result.ExpiresAt.Should().Be(fixture.FakeTime.GetUtcNow().Add(expiresIn).UtcDateTime);
+    }
+
+    [Theory]
+    [MemberData(nameof(Variants))]
     public async Task GetAccessToken_ThrowsExceptionWhenTokenIsExpired(string variant)
     {
         // Arrange
@@ -192,7 +228,8 @@ public class MaskinportenClientTests
             AccessToken = "expired-access-token",
             ExpiresIn = MaskinportenClient.TokenExpirationMargin - 1,
             Scope = "-",
-            TokenType = "Bearer"
+            TokenType = "Bearer",
+            CreatedAt = fixture.FakeTime.GetUtcNow().UtcDateTime
         };
 
         fixture
@@ -225,7 +262,8 @@ public class MaskinportenClientTests
             AccessToken = "2 minute access token content",
             ExpiresIn = 120,
             Scope = MaskinportenClient.FormattedScopes(scopes),
-            TokenType = "Bearer"
+            TokenType = "Bearer",
+            CreatedAt = fixture.FakeTime.GetUtcNow().UtcDateTime
         };
         fixture
             .HttpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>()))
@@ -256,7 +294,8 @@ public class MaskinportenClientTests
             AccessToken = "Very short lived access token",
             ExpiresIn = MaskinportenClient.TokenExpirationMargin + 1,
             Scope = MaskinportenClient.FormattedScopes(scopes),
-            TokenType = "Bearer"
+            TokenType = "Bearer",
+            CreatedAt = fixture.FakeTime.GetUtcNow().UtcDateTime
         };
         fixture
             .HttpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>()))
@@ -330,7 +369,7 @@ public class MaskinportenClientTests
             AccessToken = "access-token-content",
             ExpiresIn = 120,
             Scope = "scope1 scope2",
-            TokenType = "Bearer"
+            TokenType = "Bearer",
         };
         var validHttpResponse = new HttpResponseMessage
         {

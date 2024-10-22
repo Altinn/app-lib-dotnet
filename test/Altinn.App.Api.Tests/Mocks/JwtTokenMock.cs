@@ -16,13 +16,19 @@ public static class JwtTokenMock
     /// <param name="principal">The claims principal to include in the token.</param>
     /// <param name="tokenExipry">How long the token should be valid for.</param>
     /// <returns>A new token.</returns>
-    public static string GenerateToken(ClaimsPrincipal principal, TimeSpan tokenExipry)
+    public static string GenerateToken(
+        ClaimsPrincipal principal,
+        TimeSpan tokenExipry,
+        TimeProvider? timeProvider = null
+    )
     {
         JwtSecurityTokenHandler tokenHandler = new JwtSecurityTokenHandler();
+        var now = timeProvider?.GetUtcNow() ?? DateTimeOffset.UtcNow;
         SecurityTokenDescriptor tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(principal.Identity),
-            Expires = DateTime.UtcNow.AddSeconds(tokenExipry.TotalSeconds),
+            Expires = now.Add(tokenExipry).UtcDateTime,
+            NotBefore = now.UtcDateTime,
             SigningCredentials = GetSigningCredentials(),
             Audience = "altinn.no"
         };

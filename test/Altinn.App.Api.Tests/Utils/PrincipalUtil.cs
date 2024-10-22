@@ -104,7 +104,13 @@ public static class PrincipalUtil
         return token;
     }
 
-    public static string GetOrgToken(string org, string orgNo, int authenticationLevel = 4)
+    public static string GetOrgToken(
+        string org,
+        string orgNo,
+        int authenticationLevel = 4,
+        TimeSpan? expiry = null,
+        TimeProvider? timeProvider = null
+    )
     {
         List<Claim> claims = new List<Claim>();
         string issuer = "www.altinn.no";
@@ -123,7 +129,8 @@ public static class PrincipalUtil
         ClaimsIdentity identity = new ClaimsIdentity("mock");
         identity.AddClaims(claims);
         ClaimsPrincipal principal = new ClaimsPrincipal(identity);
-        string token = JwtTokenMock.GenerateToken(principal, new TimeSpan(1, 1, 1));
+        expiry ??= new TimeSpan(1, 1, 1);
+        string token = JwtTokenMock.GenerateToken(principal, expiry.Value, timeProvider);
 
         return token;
     }

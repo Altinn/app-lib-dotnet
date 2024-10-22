@@ -30,4 +30,15 @@ public interface IMaskinportenClient
         IEnumerable<string> scopes,
         CancellationToken cancellationToken = default
     );
+
+    /// <summary>
+    ///
+    /// </summary>
+    /// <param name="scopes"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    public Task<MaskinportenAltinnExchangedTokenResponse> GetAltinnExchangedToken(
+        IEnumerable<string> scopes,
+        CancellationToken cancellationToken = default
+    );
 }

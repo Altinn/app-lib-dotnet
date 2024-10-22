@@ -1,11 +1,11 @@
+using System.Linq.Expressions;
 using System.Net;
-using System.Security.Cryptography;
 using System.Text.Json;
+using Altinn.App.Api.Tests.Utils;
 using Altinn.App.Core.Features.Maskinporten;
 using Altinn.App.Core.Features.Maskinporten.Delegates;
 using Altinn.App.Core.Features.Maskinporten.Models;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
 using Moq;
 using Moq.Protected;
 
@@ -13,14 +13,22 @@ namespace Altinn.App.Core.Tests.Features.Maskinporten;
 
 internal static class TestHelpers
 {
-    public static Mock<HttpMessageHandler> MockHttpMessageHandlerFactory(MaskinportenTokenResponse tokenResponse)
+    private static readonly Expression<Func<HttpRequestMessage, bool>> _isTokenRequest = req =>
+        req.RequestUri!.PathAndQuery.Contains("token", StringComparison.OrdinalIgnoreCase);
+    private static readonly Expression<Func<HttpRequestMessage, bool>> _isExchangeRequest = req =>
+        req.RequestUri!.PathAndQuery.Contains("exchange/maskinporten", StringComparison.OrdinalIgnoreCase);
+
+    public static Mock<HttpMessageHandler> MockHttpMessageHandlerFactory(
+        MaskinportenTokenResponse tokenResponse,
+        string? altinnToken = null
+    )
     {
         var handlerMock = new Mock<HttpMessageHandler>();
-        handlerMock
-            .Protected()
+        var protectedMock = handlerMock.Protected();
+        protectedMock
             .Setup<Task<HttpResponseMessage>>(
                 "SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.Is(_isTokenRequest),
                 ItExpr.IsAny<CancellationToken>()
             )
             .ReturnsAsync(
@@ -30,6 +38,18 @@ internal static class TestHelpers
                         StatusCode = HttpStatusCode.OK,
                         Content = new StringContent(JsonSerializer.Serialize(tokenResponse))
                     }
+            );
+
+        altinnToken ??= PrincipalUtil.GetOrgToken("ttd", "160694123", 3);
+        protectedMock
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.Is(_isExchangeRequest),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(
+                () =>
+                    new HttpResponseMessage { StatusCode = HttpStatusCode.OK, Content = new StringContent(altinnToken) }
             );
 
         return handlerMock;
@@ -54,7 +74,7 @@ internal static class TestHelpers
             .Protected()
             .Setup<Task<HttpResponseMessage>>(
                 "SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.Is(_isTokenRequest),
                 ItExpr.IsAny<CancellationToken>()
             )
             .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK));
