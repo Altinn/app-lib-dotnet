@@ -1,36 +1,36 @@
 namespace Altinn.App.Core.Features.Signing.Interfaces;
 
 /// <summary>
-/// Interface for implementing app specific logic for deriving signees
+/// Interface for implementing app-specific logic for deriving signees.
 /// </summary>
-public interface ISigneeConfiguration
+public interface ISigneeProvider
 {
     /// <summary>
-    /// This method should return a list of signees for the current siging task.
+    /// Returns a list of signees for the current signing task.
     /// </summary>
-    public Task<SigneeConfigurationResult> GetSigneeConfiguration();
+    Task<SigneesResult> GetSigneesAsync();
 }
 
 /// <summary>
-/// A result containing persons and organisations that should sign and related config for each of them.
+/// A result containing persons and organizations that should sign and related info for each of them.
 /// </summary>
-public class SigneeConfigurationResult
+public class SigneesResult
 {
     /// <summary>
-    /// The signee configurations for persons that should sign.
+    /// The signees who are persons that should sign.
     /// </summary>
-    public required List<PersonSigneeConfig> PersonSigneeConfigs { get; set; }
+    public required List<PersonSignee> PersonSignees { get; set; }
 
     /// <summary>
-    /// The signee configurations for organisations that should sign.
+    /// The signees who are organizations that should sign.
     /// </summary>
-    public required List<OrganisationSigneeConfig> OrgansiationSigneeConfigs { get; set; }
+    public required List<OrganisationSignee> OrganisationSignees { get; set; }
 }
 
 /// <summary>
-/// Configuration for a signee
+/// Base class representing a signee.
 /// </summary>
-public abstract class SigneeConfig
+public abstract class SigneeParty
 {
     /// <summary>
     /// The name of the signee.
@@ -38,15 +38,15 @@ public abstract class SigneeConfig
     public required string DisplayName { get; init; }
 
     /// <summary>
-    /// Notification config.
+    /// Notification configuration.
     /// </summary>
     public required Notification Notification { get; init; }
 }
 
 /// <summary>
-/// Configuration for a signee
+/// Represents a person who is a signee.
 /// </summary>
-public class PersonSigneeConfig : SigneeConfig
+public class PersonSignee : SigneeParty
 {
     /// <summary>
     /// The social security number.
@@ -60,12 +60,12 @@ public class PersonSigneeConfig : SigneeConfig
 }
 
 /// <summary>
-/// Configuration for a signee
+/// Represents an organization that is a signee.
 /// </summary>
-public class OrganisationSigneeConfig : SigneeConfig
+public class OrganisationSignee : SigneeParty
 {
     /// <summary>
-    /// The social security number.
+    /// The organization number.
     /// </summary>
     public required string OrganisationNumber { get; init; }
 }

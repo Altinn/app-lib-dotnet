@@ -8,13 +8,13 @@ using Altinn.Platform.Register.Models;
 namespace Altinn.App.Core.Features.Signing;
 
 internal sealed class SigningService(
-    ISigneeConfiguration signeeConfiguration, /*ISignClient signClient, IInstanceClient instanceClient, IAppMetadata appMetadata,*/
+    ISigneeProvider signeeProvider, /*ISignClient signClient, IInstanceClient instanceClient, IAppMetadata appMetadata,*/
     Telemetry telemetry,
     IPersonClient personClient,
     IOrganizationClient organisationClient,
     IAltinnPartyClient altinnPartyClient,
-    ISmsNotificationClient? smsNotificationClient = null,
-    IEmailNotificationClient? emailNotificationClient = null
+    ISigningDelegationService signingDelegationService,
+    ISigningNotificationService signingNotificationService
 )
 {
     internal async void AssignSignees(CancellationToken ct)
@@ -23,31 +23,32 @@ internal sealed class SigningService(
         List<SigneeState> state = /*StorageClient.GetSignState ??*/
         [];
 
-        SigneeConfigurationResult signeeConfigurationResult = await signeeConfiguration.GetSigneeConfiguration();
-        var personSigneeContainer = await GetPersonSigneeStates(state, signeeConfigurationResult, ct);
-        var organisationSigneeContainer = await GetOrganisationSigneeStates(state, signeeConfigurationResult, ct);
+        SigneesResult signeeResult = await signeeProvider.GetSigneesAsync();
 
-        List<(SigneeState, SigneeConfig)>? signeeContainer = [.. personSigneeContainer, .. organisationSigneeContainer];
+        List<SigneeContext> personSigneeContexts = await GetPersonSigneeContexts(state, signeeResult, ct);
+        List<SigneeContext> organisationSigneeContexts = await GetOrganisationSigneeContexts(state, signeeResult, ct);
 
-        await DelegateSigneeRights(signeeContainer, ct);
-        await NotifySignees(signeeContainer, ct);
+        List<SigneeContext> signeeContexts = [.. personSigneeContexts, .. organisationSigneeContexts];
+
+        await signingDelegationService.DelegateSigneeRights(signeeContexts, ct);
+        await signingNotificationService.NotifySignees(signeeContexts, ct);
 
         // TODO: StorageClient.SetSignState(state);
         throw new NotImplementedException();
     }
 
-    private async Task<List<(SigneeState, SigneeConfig)>> GetPersonSigneeStates(
+    private async Task<List<SigneeContext>> GetPersonSigneeContexts(
         List<SigneeState> state,
-        SigneeConfigurationResult signeeConfigurationResult,
+        SigneesResult signeeResult,
         CancellationToken cancellationToken
     )
     {
-        List<(SigneeState, SigneeConfig)> personSigneeContainer = []; //TODO rename
-        foreach (PersonSigneeConfig personSigneeConfig in signeeConfigurationResult.PersonSigneeConfigs)
+        List<SigneeContext> personSigneeContainer = []; //TODO rename
+        foreach (PersonSignee personSignee in signeeResult.PersonSignees)
         {
             Person? person = await personClient.GetPerson(
-                personSigneeConfig.SocialSecurityNumber,
-                personSigneeConfig.LastName,
+                personSignee.SocialSecurityNumber,
+                personSignee.LastName,
                 cancellationToken
             );
 
@@ -57,7 +58,7 @@ internal sealed class SigningService(
             }
 
             Party? party = await altinnPartyClient.LookupParty(
-                new PartyLookup { Ssn = personSigneeConfig.SocialSecurityNumber }
+                new PartyLookup { Ssn = personSignee.SocialSecurityNumber }
             );
             //TODO: handle null
 
@@ -66,28 +67,28 @@ internal sealed class SigningService(
                 ?? new SigneeState(
                     partyId: party.PartyId,
                     displayName: party.Name,
-                    mobilePhone: personSigneeConfig.Notification.MobileNumber ?? person.MobileNumber,
-                    email: personSigneeConfig.Notification.EmailAddress,
+                    mobilePhone: personSignee.Notification.MobileNumber ?? person.MobileNumber,
+                    email: personSignee.Notification.EmailAddress,
                     taskId: "" //TODO: get current task
                 );
-            personSigneeContainer.Add((signeeState, personSigneeConfig));
+            personSigneeContainer.Add(new SigneeContext(signeeState, personSignee));
         }
         return personSigneeContainer;
     }
 
-    private async Task<List<(SigneeState, SigneeConfig)>> GetOrganisationSigneeStates(
+    private async Task<List<SigneeContext>> GetOrganisationSigneeContexts(
         List<SigneeState> state,
-        SigneeConfigurationResult signeeConfigurationResult,
-        CancellationToken cancellationToken
+        SigneesResult signeeResult,
+        CancellationToken ct
     )
     {
-        List<(SigneeState, SigneeConfig)> organisationSigneeContainer = []; //TODO rename
+        List<SigneeContext> organisationSigneeContainer = []; //TODO rename
         foreach (
-            OrganisationSigneeConfig organisationSigneeConfig in signeeConfigurationResult.OrgansiationSigneeConfigs
+            OrganisationSignee organisationSignee in signeeResult.OrganisationSignees
         )
         {
             Organization? organisation = await organisationClient.GetOrganization(
-                organisationSigneeConfig.OrganisationNumber
+                organisationSignee.OrganisationNumber
             );
 
             if (organisation is null)
@@ -96,7 +97,7 @@ internal sealed class SigningService(
             }
 
             Party? party = await altinnPartyClient.LookupParty(
-                new PartyLookup { OrgNo = organisationSigneeConfig.OrganisationNumber }
+                new PartyLookup { OrgNo = organisationSignee.OrganisationNumber }
             );
             //TODO: handle null
 
@@ -105,50 +106,13 @@ internal sealed class SigningService(
                 ?? new SigneeState(
                     partyId: party.PartyId,
                     displayName: party.Name,
-                    mobilePhone: organisationSigneeConfig.Notification.MobileNumber ?? organisation.MobileNumber,
-                    email: organisationSigneeConfig.Notification.EmailAddress ?? organisation.EMailAddress,
+                    mobilePhone: organisationSignee.Notification.MobileNumber ?? organisation.MobileNumber,
+                    email: organisationSignee.Notification.EmailAddress ?? organisation.EMailAddress,
                     taskId: "" //TODO: get current task
                 );
-            organisationSigneeContainer.Add((signeeState, organisationSigneeConfig));
+            organisationSigneeContainer.Add(new SigneeContext(signeeState, organisationSignee));
         }
         return organisationSigneeContainer;
-    }
-
-    private async Task DelegateSigneeRights(List<(SigneeState, SigneeConfig)> signeeContainer, CancellationToken ct)
-    {
-        foreach ((SigneeState signeeState, SigneeConfig signeeConfig) in signeeContainer)
-            try
-            {
-                if (signeeState.IsDelegated is false)
-                {
-                    //TODO: delegateSignAction
-                    signeeState.IsDelegated = true;
-                }
-            }
-            catch
-            {
-                // TODO: log + telemetry?
-            }
-    }
-
-    private async Task NotifySignees(List<(SigneeState, SigneeConfig)> signeeContainer, CancellationToken ct)
-    {
-        foreach ((SigneeState signeeState, SigneeConfig signeeConfig) in signeeContainer)
-            try
-            {
-                if (signeeState.IsNotified is false)
-                {
-                    if (signeeConfig.Notification.ShouldSendSms)
-                    {
-                        await TrySendSms(smsNotificationClient, signeeConfig.Notification.MobileNumber, ct);
-                        signeeState.IsNotified = true;
-                    }
-                }
-            }
-            catch
-            {
-                // TODO: log + telemetry?
-            }
     }
 
     internal List<Signee> ReadSignees()
@@ -205,83 +169,5 @@ internal sealed class SigningService(
             // StorageClient.SetSignState(state);
         }
         throw new NotImplementedException();
-    }
-
-    private static async Task TrySendSms(
-        ISmsNotificationClient? smsNotificationClient,
-        string smsNumber,
-        CancellationToken cancellationToken
-    )
-    {
-        await Task.CompletedTask;
-        throw new NotImplementedException();
-        //TODO: implement fully
-        // if (smsNotificationClient is null && emailNotificationClient is null)
-        // {
-        //     throw new InvalidOperationException("Unable to send Notification. Neither Sms nor Email notification service available.");
-        // }
-
-        // if (smsNotificationClient is not null)
-        // {
-        //     var notification = new SmsNotification()
-        //     {
-        //         Body = "",
-        //         Recipients = [new SmsRecipient("", "", "")],
-        //         SenderNumber = "",
-        //         SendersReference = ""
-        //     };
-        //     await smsNotificationClient.Order(notification, cancellationToken);
-        // }
-
-        // if (emailNotificationClient is not null)
-        // {
-        //     var notification = new EmailNotification
-        //     {
-        //         Body = "",
-        //         Recipients = [new EmailRecipient("")],
-        //         Subject = "",
-        //         SendersReference = ""
-        //     };
-        //     await emailNotificationClient.Order(notification, cancellationToken);
-        // }
-    }
-
-    private static async Task TrySendEmail(
-        IEmailNotificationClient? emailNotificationClient,
-        string email,
-        CancellationToken cancellationToken
-    )
-    {
-        await Task.CompletedTask;
-        throw new NotImplementedException();
-        //TODO: implement fully
-        // if (smsNotificationClient is null && emailNotificationClient is null)
-        // {
-        //     throw new InvalidOperationException("Unable to send Notification. Neither Sms nor Email notification service available.");
-        // }
-
-        // if (smsNotificationClient is not null)
-        // {
-        //     var notification = new SmsNotification()
-        //     {
-        //         Body = "",
-        //         Recipients = [new SmsRecipient("", "", "")],
-        //         SenderNumber = "",
-        //         SendersReference = ""
-        //     };
-        //     await smsNotificationClient.Order(notification, cancellationToken);
-        // }
-
-        // if (emailNotificationClient is not null)
-        // {
-        //     var notification = new EmailNotification
-        //     {
-        //         Body = "",
-        //         Recipients = [new EmailRecipient("")],
-        //         Subject = "",
-        //         SendersReference = ""
-        //     };
-        //     await emailNotificationClient.Order(notification, cancellationToken);
-        // }
     }
 }
