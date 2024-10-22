@@ -171,11 +171,11 @@ public class ProcessEngine : IProcessEngine
 
         int? userId = request.User.GetUserIdAsInt();
         IUserAction? actionHandler = _userActionService.GetActionHandler(request.Action);
-        var cachedDataMutator = new CachedInstanceDataAccessor(
+        var cachedDataMutator = new InstanceDataUnitOfWork(
             instance,
             _dataClient,
             _instanceClient,
-            _appMetadata,
+            await _appMetadata.GetApplicationMetadata(),
             _modelSerialization
         );
 

@@ -47,27 +47,27 @@ public static class TestData
         return Path.Combine(applicationMetadataPath, "config", "applicationmetadata.json");
     }
 
-    public static string GetInstancesDirectory()
+    public static string GetInstancesDirectory(string org, string app)
     {
         string? testDataDirectory = GetTestDataRootDirectory();
-        return Path.Combine(testDataDirectory!, @"Instances");
+        return Path.Combine(testDataDirectory!, @"Instances", org, app);
     }
 
     public static string GetDataDirectory(string org, string app, int instanceOwnerId, Guid instanceGuid)
     {
-        string instancesDirectory = GetInstancesDirectory();
+        string instancesDirectory = GetInstancesDirectory(org, app);
 
-        return Path.Join(instancesDirectory, org, app, instanceOwnerId.ToString(), instanceGuid.ToString())
+        return Path.Join(instancesDirectory, instanceOwnerId.ToString(), instanceGuid.ToString())
             + Path.DirectorySeparatorChar;
     }
 
     public static (string org, string app) GetInstanceOrgApp(InstanceIdentifier identifier)
     {
-        string instancesDirectory = GetInstancesDirectory();
+        string instancesDirectory = GetTestDataRootDirectory();
         var instanceOwner = identifier.InstanceOwnerPartyId.ToString();
         var instanceId = identifier.InstanceGuid.ToString();
 
-        foreach (var org in Directory.GetDirectories(instancesDirectory))
+        foreach (var org in Directory.GetDirectories(Path.Join(instancesDirectory, "Instances")))
         {
             foreach (var app in Directory.GetDirectories(org))
             {
@@ -136,17 +136,30 @@ public static class TestData
 
     public static void DeleteInstance(string org, string app, int instanceOwnerId, Guid instanceGuid)
     {
-        string instancePath = GetInstancePath(org, app, instanceOwnerId, instanceGuid);
+        // Delete the instance document
+        var instancesDirectory = GetInstancesDirectory(org, app);
+        var instancePath = Path.Join(instancesDirectory, instanceOwnerId.ToString(), instanceGuid + @".json");
         if (File.Exists(instancePath))
         {
             File.Delete(instancePath);
+        }
+        // Empty the data folder, but keep the .pretest files
+        var instanceDataFolder = Path.Join(instancesDirectory, instanceOwnerId.ToString(), instanceGuid.ToString());
+
+        var filesToDelete = Directory
+            .GetFiles(instanceDataFolder, "*", SearchOption.AllDirectories)
+            .Where(file => !file.EndsWith(".pretest.json") && !file.EndsWith(".pretest"));
+
+        foreach (var file in filesToDelete)
+        {
+            File.Delete(file);
         }
     }
 
     public static string GetInstancePath(string org, string app, int instanceOwnerId, Guid instanceGuid)
     {
-        string instancesDirectory = GetInstancesDirectory();
-        return Path.Combine(instancesDirectory, org, app, instanceOwnerId.ToString(), instanceGuid + @".json");
+        string instancesDirectory = GetInstancesDirectory(org, app);
+        return Path.Combine(instancesDirectory, instanceOwnerId.ToString(), instanceGuid + @".json");
     }
 
     public static void PrepareInstance(string org, string app, int instanceOwnerId, Guid instanceGuid)

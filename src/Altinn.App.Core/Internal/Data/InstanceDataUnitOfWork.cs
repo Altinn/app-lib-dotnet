@@ -3,7 +3,6 @@ using System.Globalization;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.Serialization;
-using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
@@ -15,7 +14,7 @@ namespace Altinn.App.Core.Internal.Data;
 ///
 /// Do not add this to the DI container, as it should only be created explicitly because of data leak potential.
 /// </summary>
-internal sealed class CachedInstanceDataAccessor : IInstanceDataMutator
+internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
 {
     // DataClient needs a few arguments to fetch data
     private readonly Guid _instanceGuid;
@@ -24,7 +23,7 @@ internal sealed class CachedInstanceDataAccessor : IInstanceDataMutator
     // Services from DI
     private readonly IDataClient _dataClient;
     private readonly IInstanceClient _instanceClient;
-    private readonly IAppMetadata _appMetadata;
+    private readonly ApplicationMetadata _appMetadata;
     private readonly ModelSerializationService _modelSerializationService;
 
     // Caches
@@ -50,11 +49,11 @@ internal sealed class CachedInstanceDataAccessor : IInstanceDataMutator
     // We want to make sure that the data elements are updated in the instance object
     private readonly ConcurrentBag<DataElement> _savedDataElements = new();
 
-    public CachedInstanceDataAccessor(
+    public InstanceDataUnitOfWork(
         Instance instance,
         IDataClient dataClient,
         IInstanceClient instanceClient,
-        IAppMetadata appMetadata,
+        ApplicationMetadata appMetadata,
         ModelSerializationService modelSerializationService
     )
     {
@@ -99,14 +98,12 @@ internal sealed class CachedInstanceDataAccessor : IInstanceDataMutator
             throw new InvalidOperationException("Cannot access instance data before it has been created");
         }
 
-        var appMetadata = await _appMetadata.GetApplicationMetadata();
-
         return await _binaryCache.GetOrCreate(
             dataElementIdentifier,
             async () =>
                 await _dataClient.GetDataBytes(
-                    appMetadata.AppIdentifier.Org,
-                    appMetadata.AppIdentifier.App,
+                    _appMetadata.AppIdentifier.Org,
+                    _appMetadata.AppIdentifier.App,
                     _instanceOwnerPartyId,
                     _instanceGuid,
                     dataElementIdentifier.Guid
@@ -127,8 +124,7 @@ internal sealed class CachedInstanceDataAccessor : IInstanceDataMutator
     public DataType GetDataType(DataElementIdentifier dataElementIdentifier)
     {
         var dataElement = GetDataElement(dataElementIdentifier);
-        var appMetadata = _appMetadata.GetApplicationMetadata().Result;
-        var dataType = appMetadata.DataTypes.Find(d => d.Id == dataElement.DataType);
+        var dataType = _appMetadata.DataTypes.Find(d => d.Id == dataElement.DataType);
         if (dataType is null)
         {
             throw new InvalidOperationException(
@@ -236,7 +232,7 @@ internal sealed class CachedInstanceDataAccessor : IInstanceDataMutator
         return changes;
     }
 
-    internal async Task UpdateInstanceData(List<DataElementChange> changes)
+    internal async Task<List<DataElement>> UpdateInstanceData(List<DataElementChange> changes)
     {
         if (_instanceOwnerPartyId == 0 || _instanceGuid == Guid.Empty)
         {
@@ -251,8 +247,9 @@ internal sealed class CachedInstanceDataAccessor : IInstanceDataMutator
         // Upload added data elements
         foreach (var (dataType, contentType, filename, data, bytes) in _dataElementsToAdd)
         {
-            async Task InsertBinaryData()
+            async Task InsertDataElement()
             {
+                // Use the BinaryData because we serialize before saving.
                 var dataElement = await _dataClient.InsertBinaryData(
                     Instance.Id,
                     dataType.Id,
@@ -268,10 +265,8 @@ internal sealed class CachedInstanceDataAccessor : IInstanceDataMutator
                 createdDataElements.Add(dataElement);
             }
 
-            tasks.Add(InsertBinaryData());
+            tasks.Add(InsertDataElement());
         }
-
-        var appMetadata = await _appMetadata.GetApplicationMetadata();
 
         // Delete data elements
         foreach (var dataElementId in _dataElementsToDelete)
@@ -279,8 +274,8 @@ internal sealed class CachedInstanceDataAccessor : IInstanceDataMutator
             async Task DeleteData()
             {
                 await _dataClient.DeleteData(
-                    appMetadata.AppIdentifier.Org,
-                    appMetadata.AppIdentifier.App,
+                    _appMetadata.AppIdentifier.Org,
+                    _appMetadata.AppIdentifier.App,
                     _instanceOwnerPartyId,
                     _instanceGuid,
                     dataElementId.Guid,
@@ -305,6 +300,8 @@ internal sealed class CachedInstanceDataAccessor : IInstanceDataMutator
 
         // Add Created data elements to instance
         Instance.Data.AddRange(createdDataElements);
+
+        return createdDataElements.ToList();
     }
 
     internal async Task SaveChanges(List<DataElementChange> changes)
@@ -402,8 +399,7 @@ internal sealed class CachedInstanceDataAccessor : IInstanceDataMutator
 
     private DataType GetDataTypeByString(string dataTypeString)
     {
-        var appMetadata = _appMetadata.GetApplicationMetadata().Result;
-        var dataType = appMetadata.DataTypes.Find(d => d.Id == dataTypeString);
+        var dataType = _appMetadata.DataTypes.Find(d => d.Id == dataTypeString);
         if (dataType is null)
         {
             throw new InvalidOperationException($"Data type {dataTypeString} not found in app metadata");
@@ -426,7 +422,7 @@ internal sealed class CachedInstanceDataAccessor : IInstanceDataMutator
     private async Task UpdatePresentationTextsOnInstance(Instance instance, string dataType, object serviceModel)
     {
         var updatedValues = DataHelper.GetUpdatedDataValues(
-            (await _appMetadata.GetApplicationMetadata()).PresentationFields,
+            _appMetadata.PresentationFields,
             instance.PresentationTexts,
             dataType,
             serviceModel
@@ -445,7 +441,7 @@ internal sealed class CachedInstanceDataAccessor : IInstanceDataMutator
     private async Task UpdateDataValuesOnInstance(Instance instance, string dataType, object serviceModel)
     {
         var updatedValues = DataHelper.GetUpdatedDataValues(
-            (await _appMetadata.GetApplicationMetadata()).DataFields,
+            _appMetadata.DataFields,
             instance.DataValues,
             dataType,
             serviceModel
