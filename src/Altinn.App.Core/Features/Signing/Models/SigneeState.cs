@@ -10,12 +10,16 @@ internal sealed class SigneeState
     /// <param name="taskId">The task associated with the signee state.</param>
     /// <param name="organisationNumber">Should contain organisation number if the signee is a organisation.</param>
     /// <param name="socialSecurityNumber">Should contain social security number if the signee is a person.</param>
+    /// <param name="mobilePhone">TODO</param>
+    /// <param name="email">TODO</param>
     internal SigneeState(
         string taskId,
-        string partyId,
+        int partyId,
         string displayName,
         string? organisationNumber = null,
-        string? socialSecurityNumber = null
+        string? socialSecurityNumber = null,
+        string? mobilePhone = null,
+        string? email = null
     )
     {
         TaskId = taskId;
@@ -26,13 +30,16 @@ internal sealed class SigneeState
     }
 
     /// <summary>The identifier of the signee.</summary>
-    internal string PartyId { get; }
+    internal int PartyId { get; }
 
     /// <summary>The task associated with the signee state.</summary>
     internal string TaskId { get; set; }
 
     /// <summary>The display name of the signee.</summary>
     internal string DisplayName { get; }
+
+    internal string? MobilePhone { get; }
+    internal string? Email { get; }
 
     internal string? OrganisationNumber { get; init; }
     internal string? SocialSecurityNumber { get; init; }
