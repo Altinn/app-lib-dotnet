@@ -40,7 +40,7 @@ public abstract class SigneeConfig
     /// <summary>
     /// Notification config.
     /// </summary>
-    public required NotificationConfiguration NotificationConfiguration { get; init; }
+    public required Notification Notification { get; init; }
 }
 
 /// <summary>
@@ -73,7 +73,7 @@ public class OrganisationSigneeConfig : SigneeConfig
 /// <summary>
 /// Configuration for notifications
 /// </summary>
-public class NotificationConfiguration
+public class Notification
 {
     /// <summary>
     /// Should be true if the signee should be notified by email.
@@ -81,9 +81,9 @@ public class NotificationConfiguration
     public bool ShouldSendEmail { get; set; }
 
     /// <summary>
-    /// Can be used to override what email address to send notifications to. If not set, the email address from the Altinn registry will be used.
+    /// Must be set for a person in order to send email notification. Can be used to override email for organisation, with fallback to registry info.
     /// </summary>
-    public string? NotificationEmailAddressOverride { get; set; }
+    public string? EmailAddress { get; set; }
 
     /// <summary>
     /// Should be true if the signee should be notified by sms.
@@ -93,5 +93,5 @@ public class NotificationConfiguration
     /// <summary>
     /// Can be used to override what mobile number to send notifications to. If not set, the mobile number from the Altinn registry will be used.
     /// </summary>
-    public string? NotificationMobileNumberOverride { get; set; }
+    public string? MobileNumber { get; set; }
 }
