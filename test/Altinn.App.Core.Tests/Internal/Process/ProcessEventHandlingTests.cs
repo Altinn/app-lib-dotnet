@@ -7,6 +7,7 @@ using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.EventHandlers;
 using Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
+using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
@@ -19,12 +20,18 @@ namespace Altinn.App.Core.Tests.Internal.Process;
 
 public class ProcessEventHandlingTests
 {
-    private readonly List<IProcessTask> processTasks =
+    private readonly List<IProcessTask> _processTasks =
     [
         new Mock<DataProcessTask>().Object,
         new Mock<ConfirmationProcessTask>().Object,
         new Mock<FeedbackProcessTask>().Object,
         new Mock<NullTypeProcessTask>().Object,
+    ];
+
+    private readonly List<IServiceTask> _serviceTasks =
+    [
+        new Mock<IPdfServiceTask>().Object,
+        new Mock<IEFormidlingServiceTask>().Object,
     ];
 
     [Fact]
@@ -48,7 +55,8 @@ public class ProcessEventHandlingTests
             endTaskEventHandler.Object,
             abandonTaskEventHandler.Object,
             endEventHandler.Object,
-            processTasks
+            _processTasks,
+            _serviceTasks
         );
 
         ProcessEventDispatcher dispatcher = new ProcessEventDispatcher(
@@ -138,7 +146,8 @@ public class ProcessEventHandlingTests
             endTaskEventHandler.Object,
             abandonTaskEventHandler.Object,
             endEventHandler.Object,
-            processTasks
+            _processTasks,
+            _serviceTasks
         );
 
         ProcessEventDispatcher dispatcher = new ProcessEventDispatcher(
@@ -221,7 +230,8 @@ public class ProcessEventHandlingTests
             endTaskEventHandler.Object,
             abandonTaskEventHandler.Object,
             endEventHandler.Object,
-            processTasks
+            _processTasks,
+            _serviceTasks
         );
 
         ProcessEventDispatcher dispatcher = new ProcessEventDispatcher(
@@ -312,7 +322,8 @@ public class ProcessEventHandlingTests
             endTaskEventHandler.Object,
             abandonTaskEventHandler.Object,
             endEventHandler.Object,
-            processTasks
+            _processTasks,
+            _serviceTasks
         );
 
         ProcessEventDispatcher dispatcher = new ProcessEventDispatcher(
@@ -403,7 +414,8 @@ public class ProcessEventHandlingTests
             endTaskEventHandler.Object,
             abandonTaskEventHandler.Object,
             endEventHandler.Object,
-            processTasks
+            _processTasks,
+            _serviceTasks
         );
 
         ProcessEventDispatcher dispatcher = new ProcessEventDispatcher(
@@ -495,7 +507,8 @@ public class ProcessEventHandlingTests
             endTaskEventHandler.Object,
             abandonTaskEventHandler.Object,
             endEventHandler,
-            processTasks
+            _processTasks,
+            _serviceTasks
         );
 
         ProcessEventDispatcher dispatcher = new ProcessEventDispatcher(
@@ -603,7 +616,8 @@ public class ProcessEventHandlingTests
             endTaskEventHandler.Object,
             abandonTaskEventHandler.Object,
             endEventHandler.Object,
-            processTasks
+            _processTasks,
+            _serviceTasks
         );
 
         ProcessEventDispatcher dispatcher = new ProcessEventDispatcher(
