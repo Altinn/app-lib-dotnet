@@ -1522,6 +1522,33 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/SimpleInstance'
+  '/{org}/{app}/api/v1/organisations/{orgNr}':
+    get:
+      tags:
+        - LookupOrganisation
+      parameters:
+        - name: orgNr
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: org
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: app
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LookupOrganisationResponse'
   '/{org}/{app}/api/v1/lookup/person':
     post:
       tags:
@@ -4175,6 +4202,14 @@ components:
           type: string
           nullable: true
       additionalProperties: false
+    LookupOrganisationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        organisationDetails:
+          $ref: '#/components/schemas/OrganisationDetails'
+      additionalProperties: false
     LookupPersonRequest:
       required:
         - lastName
@@ -4271,6 +4306,19 @@ components:
           type: number
           format: double
           readOnly: true
+      additionalProperties: false
+    OrganisationDetails:
+      required:
+        - name
+        - orgNr
+      type: object
+      properties:
+        orgNr:
+          type: string
+          nullable: true
+        name:
+          type: string
+          nullable: true
       additionalProperties: false
     PartyTypesAllowed:
       type: object
