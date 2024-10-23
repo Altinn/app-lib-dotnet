@@ -121,17 +121,30 @@ public class MaskinportenClientIntegrationTests
     }
 
     [Theory]
-    [InlineData("client1", "scope1")]
-    [InlineData("client2", "scope1", "scope2", "scope3")]
-    public void UseMaskinportenAuthorization_AddsHandler_BindsToSpecifiedClient(
+    [InlineData(nameof(TokenAuthority.Maskinporten), "client1", "scope1")]
+    [InlineData(nameof(TokenAuthority.Maskinporten), "client2", "scope1", "scope2", "scope3")]
+    [InlineData(nameof(TokenAuthority.AltinnTokenExchange), "doesntmatter")]
+    public void UseMaskinportenAuthorisation_AddsHandler_BindsToSpecifiedClient(
+        string tokenAuthority,
         string scope,
         params string[] additionalScopes
     )
     {
         // Arrange
+        Enum.TryParse(tokenAuthority, false, out TokenAuthority actualTokenAuthority);
         var app = AppBuilder.Build(registerCustomAppServices: services =>
-            services.AddHttpClient<DummyHttpClient>().UseMaskinportenAuthorization(scope, additionalScopes)
-        );
+        {
+            _ = actualTokenAuthority switch
+            {
+                TokenAuthority.Maskinporten
+                    => services.AddHttpClient<DummyHttpClient>().UseMaskinportenAuthorisation(scope, additionalScopes),
+                TokenAuthority.AltinnTokenExchange
+                    => services
+                        .AddHttpClient<DummyHttpClient>()
+                        .UseMaskinportenAltinnAuthorisation(scope, additionalScopes),
+                _ => throw new ArgumentException($"Unknown TokenAuthority {tokenAuthority}")
+            };
+        });
 
         // Act
         var client = app.Services.GetRequiredService<DummyHttpClient>();
@@ -142,6 +155,7 @@ public class MaskinportenClientIntegrationTests
         Assert.NotNull(delegatingHandler);
         var inputScopes = new[] { scope }.Concat(additionalScopes);
         delegatingHandler.Scopes.Should().BeEquivalentTo(inputScopes);
+        delegatingHandler.Authority.Should().Be(actualTokenAuthority);
     }
 
     private sealed class DummyHttpClient(HttpClient client)

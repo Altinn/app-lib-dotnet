@@ -1,3 +1,4 @@
+using Altinn.App.Core.Features.Maskinporten;
 using Altinn.App.Core.Features.Maskinporten.Exceptions;
 using Altinn.App.Core.Features.Maskinporten.Models;
 using FluentAssertions;
@@ -13,6 +14,7 @@ public class MaskinportenDelegatingHandlerTest
         // Arrange
         var scopes = new[] { "scope1", "scope2" };
         var (client, handler) = TestHelpers.MockMaskinportenDelegatingHandlerFactory(
+            TokenAuthority.Maskinporten,
             scopes,
             new MaskinportenTokenResponse
             {
@@ -40,6 +42,7 @@ public class MaskinportenDelegatingHandlerTest
     {
         // Arrange
         var (_, handler) = TestHelpers.MockMaskinportenDelegatingHandlerFactory(
+            TokenAuthority.Maskinporten,
             ["scope1", "scope2"],
             new MaskinportenTokenResponse
             {
@@ -50,7 +53,7 @@ public class MaskinportenDelegatingHandlerTest
             }
         );
         var httpClient = new HttpClient(handler);
-        var request = new HttpRequestMessage(HttpMethod.Get, "https://unittesting.to.nowhere");
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://some-maskinporten-url/token");
 
         // Act
         Func<Task> act = async () => await httpClient.SendAsync(request);

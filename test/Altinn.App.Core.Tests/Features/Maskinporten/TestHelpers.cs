@@ -58,7 +58,11 @@ internal static class TestHelpers
     public static (
         Mock<IMaskinportenClient> client,
         MaskinportenDelegatingHandler handler
-    ) MockMaskinportenDelegatingHandlerFactory(IEnumerable<string> scopes, MaskinportenTokenResponse tokenResponse)
+    ) MockMaskinportenDelegatingHandlerFactory(
+        TokenAuthority authority,
+        IEnumerable<string> scopes,
+        MaskinportenTokenResponse tokenResponse
+    )
     {
         var mockProvider = new Mock<IServiceProvider>();
         var innerHandlerMock = new Mock<DelegatingHandler>();
@@ -83,7 +87,12 @@ internal static class TestHelpers
             .Setup(c => c.GetAccessToken(scopes, It.IsAny<CancellationToken>()))
             .ReturnsAsync(tokenResponse);
 
-        var handler = new MaskinportenDelegatingHandler(scopes, mockMaskinportenClient.Object, mockLogger.Object)
+        var handler = new MaskinportenDelegatingHandler(
+            authority,
+            scopes,
+            mockMaskinportenClient.Object,
+            mockLogger.Object
+        )
         {
             InnerHandler = innerHandlerMock.Object
         };

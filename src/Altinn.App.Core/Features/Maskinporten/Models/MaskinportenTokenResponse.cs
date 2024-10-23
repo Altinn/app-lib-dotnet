@@ -21,11 +21,16 @@ internal static partial class JwtMasking
     private static partial Regex JwtRegexFactory();
 }
 
+public interface ITokenResponse
+{
+    string AccessToken { get; init; }
+}
+
 /// <summary>
 /// The response received from Maskinporten after a successful grant request.
 /// </summary>
 [ImmutableObject(true)]
-public sealed record MaskinportenTokenResponse
+public sealed record MaskinportenTokenResponse : ITokenResponse
 {
     /// <summary>
     /// The JWT access token to be used in the Authorization header for downstream requests.
@@ -84,7 +89,7 @@ public sealed record MaskinportenTokenResponse
 /// The response received from Altinn Authentication after exchanging a Maskinporten token for an Altinn token.
 /// </summary>
 [ImmutableObject(true)]
-public sealed record MaskinportenAltinnExchangedTokenResponse
+public sealed record MaskinportenAltinnExchangedTokenResponse : ITokenResponse
 {
     /// <summary>
     /// The JWT access token to be used in the Authorization header for downstream requests.
