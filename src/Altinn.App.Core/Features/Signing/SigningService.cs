@@ -30,6 +30,16 @@ internal sealed class SigningService(
 
         List<SigneeContext> signeeContexts = [.. personSigneeContexts, .. organisationSigneeContexts];
 
+        await ProcessSignees(signeeContexts, ct);
+
+        // TODO: StorageClient.SetSignState(state);
+        throw new NotImplementedException();
+    }
+
+    internal async Task ProcessSignees(List<SigneeContext> signeeContexts, CancellationToken ct)
+    {
+        using var activity = telemetry.StartAssignSigneesActivity();
+
         await signingDelegationService.DelegateSigneeRights(signeeContexts, ct);
         await signingNotificationService.NotifySignees(signeeContexts, ct);
 
@@ -83,9 +93,7 @@ internal sealed class SigningService(
     )
     {
         List<SigneeContext> organisationSigneeContainer = []; //TODO rename
-        foreach (
-            OrganisationSignee organisationSignee in signeeResult.OrganisationSignees
-        )
+        foreach (OrganisationSignee organisationSignee in signeeResult.OrganisationSignees)
         {
             Organization? organisation = await organisationClient.GetOrganization(
                 organisationSignee.OrganisationNumber
@@ -121,6 +129,8 @@ internal sealed class SigningService(
         // TODO: Get signees from state
 
         // TODO: Get signees from policy
+
+        // TODO: Get signees from interface
 
         throw new NotImplementedException();
     }
