@@ -274,7 +274,6 @@ public sealed class ValidationServiceTests : IDisposable
         var validatorService = serviceProvider.GetRequiredService<IValidationService>();
 
         var resultTask = await validatorService.ValidateInstanceAtTask(
-            _defaultInstance,
             _dataAccessor,
             DefaultTaskId,
             null,
@@ -318,18 +317,23 @@ public sealed class ValidationServiceTests : IDisposable
         var previousData = new MyModel() { Name = "Kari" };
         SetupDataClient(data);
         var result = await validatorService.ValidateIncrementalFormData(
-            _defaultInstance,
             _dataAccessor,
             "Task_1",
-            new List<DataElementChange>
-            {
-                new()
-                {
-                    DataElement = _defaultDataElement,
-                    PreviousFormData = previousData,
-                    CurrentFormData = data
-                }
-            },
+            new DataElementChanges(
+                [
+                    new FormDataChange()
+                    {
+                        Type = ChangeType.Updated,
+                        DataElement = _defaultDataElement,
+                        DataType = _defaultDataType,
+                        ContentType = "application/xml",
+                        PreviousFormData = previousData,
+                        CurrentFormData = data,
+                        PreviousBinaryData = null,
+                        CurrentBinaryData = null
+                    }
+                ]
+            ),
             null,
             DefaultLanguage
         );
@@ -364,15 +368,22 @@ public sealed class ValidationServiceTests : IDisposable
 
         var validatorService = serviceProvider.GetRequiredService<IValidationService>();
         var data = new MyModel { Name = "Kari" };
-        List<DataElementChange> dataElementChanges =
-        [
-            new DataElementChange()
-            {
-                DataElement = _defaultDataElement,
-                CurrentFormData = data,
-                PreviousFormData = data,
-            }
-        ];
+        DataElementChanges dataElementChanges =
+            new(
+                [
+                    new FormDataChange()
+                    {
+                        Type = ChangeType.Updated,
+                        DataElement = _defaultDataElement,
+                        DataType = _defaultDataType,
+                        ContentType = "application/xml",
+                        CurrentFormData = data,
+                        PreviousFormData = data,
+                        PreviousBinaryData = null,
+                        CurrentBinaryData = null
+                    }
+                ]
+            );
         SetupDataClient(data);
         var dataAccessor = new InstanceDataUnitOfWork(
             _defaultInstance,
@@ -382,7 +393,6 @@ public sealed class ValidationServiceTests : IDisposable
             _modelSerialization
         );
         var resultData = await validatorService.ValidateIncrementalFormData(
-            _defaultInstance,
             dataAccessor,
             "Task_1",
             dataElementChanges,
@@ -462,7 +472,6 @@ public sealed class ValidationServiceTests : IDisposable
         );
 
         var taskResult = await validationService.ValidateInstanceAtTask(
-            _defaultInstance,
             dataAccessor,
             DefaultTaskId,
             null,
@@ -526,7 +535,6 @@ public sealed class ValidationServiceTests : IDisposable
         var validationService = serviceProvider.GetRequiredService<IValidationService>();
 
         var result = await validationService.ValidateInstanceAtTask(
-            _defaultInstance,
             _dataAccessor,
             DefaultTaskId,
             null,

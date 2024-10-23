@@ -15,7 +15,7 @@ public interface IInstanceDataMutator : IInstanceDataAccessor
     /// Serialization of data is done immediately, so the data object should be in a valid state.
     /// </remarks>
     /// <throws>Throws an InvalidOperationException if the dataType is not found in applicationmetadata</throws>
-    void AddFormDataElement(string dataType, object model);
+    void AddFormDataElement(string dataTypeId, object model);
 
     /// <summary>
     /// Add a new data element without app logic to the instance.
@@ -23,7 +23,7 @@ public interface IInstanceDataMutator : IInstanceDataAccessor
     /// <remarks>
     /// Saving to storage is not done until the instance is saved, so mutations to data might or might not be sendt to storage.
     /// </remarks>
-    void AddAttachmentDataElement(string dataType, string contentType, string? filename, ReadOnlyMemory<byte> bytes);
+    void AddAttachmentDataElement(string dataTypeId, string contentType, string? filename, ReadOnlyMemory<byte> bytes);
 
     /// <summary>
     /// Remove a data element from the instance.

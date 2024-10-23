@@ -257,7 +257,6 @@ public class ProcessController : ControllerBase
             _modelSerialization
         );
         var validationIssues = await _validationService.ValidateInstanceAtTask(
-            instance,
             dataAccessor,
             currentTaskId, // run full validation
             ignoredValidators: null,

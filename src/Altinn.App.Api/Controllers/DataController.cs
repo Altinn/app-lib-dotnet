@@ -344,8 +344,8 @@ public class DataController : ControllerBase
                 Instance = instance,
                 NewDataElementId = Guid.Parse(newDataElement.Id),
                 NewDataModels = finalChanges
-                    .Select(change => new DataModelPairResponse(
-                        Guid.Parse(change.DataElement.Id),
+                    .FormDataChanges.Select(change => new DataModelPairResponse(
+                        change.DataElementIdentifier.Guid,
                         change.CurrentFormData
                     ))
                     .ToList(),
@@ -1033,21 +1033,23 @@ public class DataController : ControllerBase
         // Set the new service model so that dataAccessors see the new state
         dataMutator.SetFormData(dataElement, serviceModel);
 
-        List<DataElementChange> changesFromRequest =
-        [
-            new()
-            {
-                DataElement = dataElement,
-                PreviousFormData = oldServiceModel,
-                CurrentFormData = serviceModel,
-            }
-        ];
+        var requestedChange = new FormDataChange()
+        {
+            Type = ChangeType.Updated,
+            DataElement = dataElement,
+            ContentType = dataElement.ContentType,
+            DataType = dataType,
+            PreviousFormData = oldServiceModel,
+            CurrentFormData = serviceModel,
+            PreviousBinaryData = await dataMutator.GetBinaryData(dataElement),
+            CurrentBinaryData = null, // We don't serialize to xml before running data processors
+        };
 
         // Run data processors keeping track of changes for diff return
         var jsonBeforeDataProcessors = JsonSerializer.Serialize(serviceModel);
         await _patchService.RunDataProcessors(
             dataMutator,
-            changesFromRequest,
+            new DataElementChanges([requestedChange]),
             instance.Process.CurrentTask.ElementId,
             language
         );
