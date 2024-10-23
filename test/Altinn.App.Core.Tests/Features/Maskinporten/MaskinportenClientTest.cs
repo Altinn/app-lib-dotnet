@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
+using System.Security.Claims;
 using System.Text.Json;
 using Altinn.App.Api.Tests.Utils;
 using Altinn.App.Core.Features.Maskinporten;
@@ -124,7 +125,7 @@ public class MaskinportenClientTests
         var jwt = "access-token-content";
 
         // Act
-        var content = MaskinportenClient.GenerateAuthenticationPayload(jwt);
+        var content = MaskinportenClient.AuthenticationPayloadFactory(jwt);
         var parsed = await TestHelpers.ParseFormUrlEncodedContent(content);
 
         // Assert
@@ -160,19 +161,17 @@ public class MaskinportenClientTests
         // Arrange
         await using var fixture = Fixture.Create();
         string[] scopes = ["scope1", "scope2"];
-        var tokenResponse = new MaskinportenTokenResponse
-        {
-            AccessToken = "access-token-content",
-            ExpiresIn = 120,
-            Scope = MaskinportenClient.FormattedScopes(scopes),
-            TokenType = "Bearer",
-            CreatedAt = fixture.FakeTime.GetUtcNow().UtcDateTime
-        };
+        string formattedScopes = MaskinportenClient.FormattedScopes(scopes);
+        var maskinportenTokenResponse = PrincipalUtil.GetMaskinportenToken(
+            scope: formattedScopes,
+            expiry: TimeSpan.FromMinutes(2),
+            fixture.FakeTime
+        );
         fixture
             .HttpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>()))
             .Returns(() =>
             {
-                var mockHandler = TestHelpers.MockHttpMessageHandlerFactory(tokenResponse);
+                var mockHandler = TestHelpers.MockHttpMessageHandlerFactory(maskinportenTokenResponse);
                 return new HttpClient(mockHandler.Object);
             });
 
@@ -180,7 +179,8 @@ public class MaskinportenClientTests
         var result = await fixture.Client(variant).GetAccessToken(scopes);
 
         // Assert
-        result.Should().BeEquivalentTo(tokenResponse, config => config.Excluding(x => x.ExpiresAt));
+        result.AccessToken.Should().BeEquivalentTo(maskinportenTokenResponse.AccessToken);
+        result.Scope.Should().BeEquivalentTo(formattedScopes);
     }
 
     [Theory]
@@ -190,21 +190,21 @@ public class MaskinportenClientTests
         // Arrange
         await using var fixture = Fixture.Create();
         string[] scopes = ["scope1", "scope2"];
-        var tokenResponse = new MaskinportenTokenResponse
-        {
-            AccessToken = "access-token-content",
-            ExpiresIn = 120,
-            Scope = MaskinportenClient.FormattedScopes(scopes),
-            TokenType = "Bearer",
-            CreatedAt = fixture.FakeTime.GetUtcNow().UtcDateTime
-        };
+        var maskinportenTokenResponse = PrincipalUtil.GetMaskinportenToken(
+            scope: MaskinportenClient.FormattedScopes(scopes),
+            expiry: TimeSpan.FromMinutes(2),
+            fixture.FakeTime
+        );
         var expiresIn = TimeSpan.FromMinutes(30);
-        var altinnToken = PrincipalUtil.GetOrgToken("ttd", "160694123", 3, expiresIn, fixture.FakeTime);
+        var altinnAccessToken = PrincipalUtil.GetOrgToken("ttd", "160694123", 3, expiresIn, fixture.FakeTime);
         fixture
             .HttpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>()))
             .Returns(() =>
             {
-                var mockHandler = TestHelpers.MockHttpMessageHandlerFactory(tokenResponse, altinnToken);
+                var mockHandler = TestHelpers.MockHttpMessageHandlerFactory(
+                    maskinportenTokenResponse,
+                    altinnAccessToken
+                );
                 return new HttpClient(mockHandler.Object);
             });
 
@@ -222,28 +222,24 @@ public class MaskinportenClientTests
     {
         // Arrange
         await using var fixture = Fixture.Create();
-        var scopes = new List<string> { "scope1", "scope2" };
-        var tokenResponse = new MaskinportenTokenResponse
-        {
-            AccessToken = "expired-access-token",
-            ExpiresIn = MaskinportenClient.TokenExpirationMargin - 1,
-            Scope = "-",
-            TokenType = "Bearer",
-            CreatedAt = fixture.FakeTime.GetUtcNow().UtcDateTime
-        };
+        var maskinportenTokenResponse = PrincipalUtil.GetMaskinportenToken(
+            scope: "-",
+            expiry: MaskinportenClient.TokenExpirationMargin - TimeSpan.FromSeconds(1),
+            fixture.FakeTime
+        );
 
         fixture
             .HttpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>()))
             .Returns(() =>
             {
-                var mockHandler = TestHelpers.MockHttpMessageHandlerFactory(tokenResponse);
+                var mockHandler = TestHelpers.MockHttpMessageHandlerFactory(maskinportenTokenResponse);
                 return new HttpClient(mockHandler.Object);
             });
 
         // Act
         Func<Task> act = async () =>
         {
-            await fixture.Client(variant).GetAccessToken(scopes);
+            await fixture.Client(variant).GetAccessToken(["scope1", "scope2"]);
         };
 
         // Assert
@@ -257,19 +253,17 @@ public class MaskinportenClientTests
         // Arrange
         await using var fixture = Fixture.Create();
         string[] scopes = ["scope1", "scope2"];
-        var tokenResponse = new MaskinportenTokenResponse
-        {
-            AccessToken = "2 minute access token content",
-            ExpiresIn = 120,
-            Scope = MaskinportenClient.FormattedScopes(scopes),
-            TokenType = "Bearer",
-            CreatedAt = fixture.FakeTime.GetUtcNow().UtcDateTime
-        };
+        var maskinportenTokenResponse = () =>
+            PrincipalUtil.GetMaskinportenToken(
+                scope: MaskinportenClient.FormattedScopes(scopes),
+                expiry: TimeSpan.FromMinutes(2),
+                fixture.FakeTime
+            );
         fixture
             .HttpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>()))
             .Returns(() =>
             {
-                var mockHandler = TestHelpers.MockHttpMessageHandlerFactory(tokenResponse);
+                var mockHandler = TestHelpers.MockHttpMessageHandlerFactory(maskinportenTokenResponse.Invoke());
                 return new HttpClient(mockHandler.Object);
             });
 
@@ -289,19 +283,17 @@ public class MaskinportenClientTests
         // Arrange
         await using var fixture = Fixture.Create();
         string[] scopes = ["scope1", "scope2"];
-        var tokenResponse = new MaskinportenTokenResponse
-        {
-            AccessToken = "Very short lived access token",
-            ExpiresIn = MaskinportenClient.TokenExpirationMargin + 1,
-            Scope = MaskinportenClient.FormattedScopes(scopes),
-            TokenType = "Bearer",
-            CreatedAt = fixture.FakeTime.GetUtcNow().UtcDateTime
-        };
+        var maskinportenTokenResponse = () =>
+            PrincipalUtil.GetMaskinportenToken(
+                scope: MaskinportenClient.FormattedScopes(scopes),
+                expiry: MaskinportenClient.TokenExpirationMargin + TimeSpan.FromSeconds(1),
+                fixture.FakeTime
+            );
         fixture
             .HttpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>()))
             .Returns(() =>
             {
-                var mockHandler = TestHelpers.MockHttpMessageHandlerFactory(tokenResponse);
+                var mockHandler = TestHelpers.MockHttpMessageHandlerFactory(maskinportenTokenResponse.Invoke());
                 return new HttpClient(mockHandler.Object);
             });
 
@@ -364,17 +356,14 @@ public class MaskinportenClientTests
     public async Task ParseServerResponse_ThrowsOn_DisposedObject()
     {
         // Arrange
-        var tokenResponse = new MaskinportenTokenResponse
-        {
-            AccessToken = "access-token-content",
-            ExpiresIn = 120,
-            Scope = "scope1 scope2",
-            TokenType = "Bearer",
-        };
+        var maskinportenTokenResponse = PrincipalUtil.GetMaskinportenToken(
+            scope: "a b",
+            expiry: MaskinportenClient.TokenExpirationMargin + TimeSpan.FromSeconds(1)
+        );
         var validHttpResponse = new HttpResponseMessage
         {
             StatusCode = HttpStatusCode.OK,
-            Content = new StringContent(JsonSerializer.Serialize(tokenResponse))
+            Content = new StringContent(JsonSerializer.Serialize(maskinportenTokenResponse))
         };
 
         // Act

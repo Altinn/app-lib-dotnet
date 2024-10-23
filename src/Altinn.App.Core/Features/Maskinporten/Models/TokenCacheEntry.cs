@@ -2,8 +2,6 @@ using System.ComponentModel;
 
 namespace Altinn.App.Core.Features.Maskinporten.Models;
 
+// `ImmutableObject` prevents serialization with HybridCache
 [ImmutableObject(true)]
-internal sealed record TokenCacheEntry(MaskinportenTokenResponse Token, TimeSpan Expiration, bool HasSetExpiration);
-
-[ImmutableObject(true)]
-internal sealed record ExchangedTokenCacheEntry(MaskinportenAltinnExchangedTokenResponse Token, bool HasSetExpiration);
+internal sealed record TokenCacheEntry(JwtBearerToken Token, TimeSpan ExpiresIn, bool HasSetExpiration);

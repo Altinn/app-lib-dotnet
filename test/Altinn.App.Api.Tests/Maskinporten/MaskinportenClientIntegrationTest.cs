@@ -1,14 +1,13 @@
 using Altinn.App.Api.Extensions;
 using Altinn.App.Api.Tests.Extensions;
 using Altinn.App.Api.Tests.TestUtils;
-using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features.Maskinporten;
+using Altinn.App.Core.Features.Maskinporten.Constants;
 using Altinn.App.Core.Features.Maskinporten.Delegates;
 using Altinn.App.Core.Features.Maskinporten.Models;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 
 namespace Altinn.App.Api.Tests.Maskinporten;
 
@@ -121,9 +120,9 @@ public class MaskinportenClientIntegrationTests
     }
 
     [Theory]
-    [InlineData(nameof(TokenAuthority.Maskinporten), "client1", "scope1")]
-    [InlineData(nameof(TokenAuthority.Maskinporten), "client2", "scope1", "scope2", "scope3")]
-    [InlineData(nameof(TokenAuthority.AltinnTokenExchange), "doesntmatter")]
+    [InlineData(nameof(TokenAuthorities.Maskinporten), "client1", "scope1")]
+    [InlineData(nameof(TokenAuthorities.Maskinporten), "client2", "scope1", "scope2", "scope3")]
+    [InlineData(nameof(TokenAuthorities.AltinnTokenExchange), "doesntmatter")]
     public void UseMaskinportenAuthorisation_AddsHandler_BindsToSpecifiedClient(
         string tokenAuthority,
         string scope,
@@ -131,14 +130,14 @@ public class MaskinportenClientIntegrationTests
     )
     {
         // Arrange
-        Enum.TryParse(tokenAuthority, false, out TokenAuthority actualTokenAuthority);
+        Enum.TryParse(tokenAuthority, false, out TokenAuthorities actualTokenAuthority);
         var app = AppBuilder.Build(registerCustomAppServices: services =>
         {
             _ = actualTokenAuthority switch
             {
-                TokenAuthority.Maskinporten
+                TokenAuthorities.Maskinporten
                     => services.AddHttpClient<DummyHttpClient>().UseMaskinportenAuthorisation(scope, additionalScopes),
-                TokenAuthority.AltinnTokenExchange
+                TokenAuthorities.AltinnTokenExchange
                     => services
                         .AddHttpClient<DummyHttpClient>()
                         .UseMaskinportenAltinnAuthorisation(scope, additionalScopes),
@@ -155,7 +154,7 @@ public class MaskinportenClientIntegrationTests
         Assert.NotNull(delegatingHandler);
         var inputScopes = new[] { scope }.Concat(additionalScopes);
         delegatingHandler.Scopes.Should().BeEquivalentTo(inputScopes);
-        delegatingHandler.Authority.Should().Be(actualTokenAuthority);
+        delegatingHandler.Authorities.Should().Be(actualTokenAuthority);
     }
 
     private sealed class DummyHttpClient(HttpClient client)

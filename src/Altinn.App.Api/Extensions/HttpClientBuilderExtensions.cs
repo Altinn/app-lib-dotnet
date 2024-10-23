@@ -1,4 +1,5 @@
 using Altinn.App.Core.Features.Maskinporten;
+using Altinn.App.Core.Features.Maskinporten.Constants;
 using Altinn.App.Core.Features.Maskinporten.Delegates;
 
 namespace Altinn.App.Api.Extensions;
@@ -27,7 +28,7 @@ public static class HttpClientBuilderExtensions
         params string[] additionalScopes
     )
     {
-        return AddHttpMessageHandler(builder, scope, additionalScopes, TokenAuthority.Maskinporten);
+        return AddHttpMessageHandler(builder, scope, additionalScopes, TokenAuthorities.Maskinporten);
     }
 
     /// <summary>
@@ -50,23 +51,24 @@ public static class HttpClientBuilderExtensions
         params string[] additionalScopes
     )
     {
-        return AddHttpMessageHandler(builder, scope, additionalScopes, TokenAuthority.AltinnTokenExchange);
+        return AddHttpMessageHandler(builder, scope, additionalScopes, TokenAuthorities.AltinnTokenExchange);
     }
 
     private static IHttpClientBuilder AddHttpMessageHandler(
         IHttpClientBuilder builder,
         string scope,
-        string[] additionalScopes,
-        TokenAuthority authority
+        IEnumerable<string> additionalScopes,
+        TokenAuthorities authorities
     )
     {
         var scopes = new[] { scope }.Concat(additionalScopes);
         var factory = ActivatorUtilities.CreateFactory<MaskinportenDelegatingHandler>(
-            [typeof(TokenAuthority), typeof(IEnumerable<string>),]
+            [typeof(TokenAuthorities), typeof(IEnumerable<string>),]
         );
-        return builder.AddHttpMessageHandler(provider => factory(provider, [authority, scopes]));
+        return builder.AddHttpMessageHandler(provider => factory(provider, [authorities, scopes]));
     }
 
+    // TODO: Do we need this? Has anyone actually used this method?
     /// <inheritdoc cref="UseMaskinportenAuthorisation"/>
     [Obsolete("UseMaskinportenAuthorization is deprecated, use UseMaskinportenAuthorisation instead.")]
     public static IHttpClientBuilder UseMaskinportenAuthorization(

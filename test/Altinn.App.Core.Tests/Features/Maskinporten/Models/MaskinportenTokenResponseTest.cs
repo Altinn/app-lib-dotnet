@@ -20,9 +20,7 @@ public class MaskinportenTokenResponseTest
             """;
 
         // Act
-        var beforeCreation = DateTime.UtcNow;
         var token = JsonSerializer.Deserialize<MaskinportenTokenResponse>(json);
-        var afterCreation = DateTime.UtcNow;
 
         // Assert
         Assert.NotNull(token);
@@ -30,6 +28,5 @@ public class MaskinportenTokenResponseTest
         token.TokenType.Should().Be("Bearer");
         token.Scope.Should().Be("anything");
         token.ExpiresIn.Should().Be(120);
-        token.ExpiresAt.Should().BeBefore(afterCreation.AddSeconds(120)).And.BeAfter(beforeCreation.AddSeconds(120));
     }
 }

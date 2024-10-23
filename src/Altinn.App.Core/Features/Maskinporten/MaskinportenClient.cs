@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
+using Altinn.App.Core.Features.Maskinporten.Constants;
 using Altinn.App.Core.Features.Maskinporten.Exceptions;
 using Altinn.App.Core.Features.Maskinporten.Models;
 using Microsoft.Extensions.Caching.Hybrid;
@@ -13,22 +14,6 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Altinn.App.Core.Features.Maskinporten;
 
-/// <summary>
-/// Supported token authorities
-/// </summary>
-internal enum TokenAuthority
-{
-    /// <summary>
-    /// Maskinporten
-    /// </summary>
-    Maskinporten,
-
-    /// <summary>
-    /// Altinn Authentication token exchange
-    /// </summary>
-    AltinnTokenExchange
-}
-
 /// <inheritdoc/>
 internal sealed class MaskinportenClient : IMaskinportenClient
 {
@@ -36,14 +21,20 @@ internal sealed class MaskinportenClient : IMaskinportenClient
     /// The margin to take into consideration when determining if a token has expired (seconds).
     /// <remarks>This value represents the worst-case latency scenario for <em>outbound</em> connections carrying the access token.</remarks>
     /// </summary>
-    internal const int TokenExpirationMargin = 30;
+    internal static TimeSpan TokenExpirationMargin = TimeSpan.FromSeconds(30);
+
+    internal MaskinportenSettings Settings =>
+        _options.Get(Variant == VariantDefault ? Microsoft.Extensions.Options.Options.DefaultName : Variant);
 
     internal const string VariantDefault = "default";
     internal const string VariantInternal = "internal";
+    internal readonly string Variant;
 
     private readonly string _maskinportenCacheKeySalt;
     private readonly string _altinnCacheKeySalt;
-    private static readonly HybridCacheEntryOptions _defaultCacheExpiration = CacheExpiry(TimeSpan.FromSeconds(60));
+    private static readonly HybridCacheEntryOptions _defaultCacheExpiration = CacheExpiryFactory(
+        TimeSpan.FromSeconds(60)
+    );
     private readonly ILogger<MaskinportenClient> _logger;
     private readonly IOptionsMonitor<MaskinportenSettings> _options;
     private readonly PlatformSettings _platformSettings;
@@ -52,15 +43,10 @@ internal sealed class MaskinportenClient : IMaskinportenClient
     private readonly HybridCache _tokenCache;
     private readonly Telemetry? _telemetry;
 
-    internal readonly string Variant;
-
-    internal MaskinportenSettings Settings =>
-        _options.Get(Variant == VariantDefault ? Microsoft.Extensions.Options.Options.DefaultName : Variant);
-
     /// <summary>
     /// Instantiates a new <see cref="MaskinportenClient"/> object.
     /// </summary>
-    /// <param name="variant">Variant.</param>
+    /// <param name="variant">Variant (default/internal).</param>
     /// <param name="options">Maskinporten settings.</param>
     /// <param name="platformSettings">Platform settings.</param>
     /// <param name="httpClientFactory">HttpClient factory.</param>
@@ -95,7 +81,7 @@ internal sealed class MaskinportenClient : IMaskinportenClient
     }
 
     /// <inheritdoc/>
-    public async Task<MaskinportenTokenResponse> GetAccessToken(
+    public async Task<JwtBearerToken> GetAccessToken(
         IEnumerable<string> scopes,
         CancellationToken cancellationToken = default
     )
@@ -114,27 +100,20 @@ internal sealed class MaskinportenClient : IMaskinportenClient
             {
                 state.Self._logger.LogDebug("Token is not in cache, generating new");
 
-                // TODO: Separate the Maskinporten response DTO from our internal domain model
-                MaskinportenTokenResponse token = await state.Self.HandleMaskinportenAuthentication(
+                JwtBearerToken token = await state.Self.HandleMaskinportenAuthentication(
                     state.FormattedScopes,
                     cancellationToken
                 );
 
-                // TODO: Parse JWT token to get the expiration time instead of using reference time
-                DateTimeOffset now = state.Self._timeprovider.GetUtcNow();
-                DateTimeOffset cacheExpiry = state.ReferenceTime.AddSeconds(token.ExpiresIn - TokenExpirationMargin);
-                if (cacheExpiry <= now)
+                var expiresIn = state.Self.GetTokenExpiryWithMargin(token);
+                if (expiresIn <= TimeSpan.Zero)
                 {
                     throw new MaskinportenTokenExpiredException(
                         $"Access token cannot be used because it has a calculated expiration in the past (taking into account a margin of {TokenExpirationMargin} seconds): {token}"
                     );
                 }
 
-                return new TokenCacheEntry(
-                    Token: token,
-                    Expiration: cacheExpiry - state.ReferenceTime,
-                    HasSetExpiration: false
-                );
+                return new TokenCacheEntry(Token: token, ExpiresIn: expiresIn, HasSetExpiration: false);
             },
             cancellationToken: cancellationToken,
             options: _defaultCacheExpiration
@@ -147,7 +126,7 @@ internal sealed class MaskinportenClient : IMaskinportenClient
             await _tokenCache.SetAsync(
                 cacheKey,
                 result,
-                options: CacheExpiry(result.Expiration),
+                options: CacheExpiryFactory(result.ExpiresIn),
                 cancellationToken: cancellationToken
             );
         }
@@ -161,7 +140,7 @@ internal sealed class MaskinportenClient : IMaskinportenClient
     }
 
     /// <inheritdoc/>
-    public async Task<MaskinportenAltinnExchangedTokenResponse> GetAltinnExchangedToken(
+    public async Task<JwtBearerToken> GetAltinnExchangedToken(
         IEnumerable<string> scopes,
         CancellationToken cancellationToken = default
     )
@@ -178,23 +157,21 @@ internal sealed class MaskinportenClient : IMaskinportenClient
             static async (state, cancellationToken) =>
             {
                 state.Self._logger.LogDebug("Token is not in cache, generating new");
-                MaskinportenTokenResponse maskinportenToken = await state.Self.GetAccessToken(
-                    state.Scopes,
-                    cancellationToken
-                );
-                MaskinportenAltinnExchangedTokenResponse token = await state.Self.HandleMaskinportenAltinnTokenExchange(
+                JwtBearerToken maskinportenToken = await state.Self.GetAccessToken(state.Scopes, cancellationToken);
+                JwtBearerToken altinnToken = await state.Self.HandleMaskinportenAltinnTokenExchange(
                     maskinportenToken,
                     cancellationToken
                 );
-                DateTimeOffset now = state.Self._timeprovider.GetUtcNow();
-                if (token.ExpiresAt <= now)
+
+                var expiresIn = state.Self.GetTokenExpiryWithMargin(altinnToken);
+                if (expiresIn <= TimeSpan.Zero)
                 {
                     throw new MaskinportenTokenExpiredException(
-                        $"Exchanged access token cannot be used because it has expired: {token}"
+                        $"Access token cannot be used because it has a calculated expiration in the past (taking into account a margin of {TokenExpirationMargin} seconds): {altinnToken}"
                     );
                 }
 
-                return new ExchangedTokenCacheEntry(Token: token, HasSetExpiration: false);
+                return new TokenCacheEntry(Token: altinnToken, ExpiresIn: expiresIn, HasSetExpiration: false);
             },
             cancellationToken: cancellationToken,
             options: _defaultCacheExpiration
@@ -203,12 +180,11 @@ internal sealed class MaskinportenClient : IMaskinportenClient
         if (result.HasSetExpiration is false)
         {
             _logger.LogDebug("Updating token cache with appropriate expiration");
-            var expiresIn = result.Token.ExpiresAt - _timeprovider.GetUtcNow();
             result = result with { HasSetExpiration = true };
             await _tokenCache.SetAsync(
                 cacheKey,
                 result,
-                options: new HybridCacheEntryOptions { LocalCacheExpiration = expiresIn, Expiration = expiresIn },
+                options: CacheExpiryFactory(result.ExpiresIn),
                 cancellationToken: cancellationToken
             );
         }
@@ -228,15 +204,15 @@ internal sealed class MaskinportenClient : IMaskinportenClient
     /// <param name="cancellationToken">An optional cancellation token.</param>
     /// <returns><inheritdoc cref="GetAccessToken"/></returns>
     /// <exception cref="MaskinportenAuthenticationException"><inheritdoc cref="GetAccessToken"/></exception>
-    private async Task<MaskinportenTokenResponse> HandleMaskinportenAuthentication(
+    private async Task<JwtBearerToken> HandleMaskinportenAuthentication(
         string formattedScopes,
         CancellationToken cancellationToken = default
     )
     {
         try
         {
-            string jwt = GenerateJwtGrant(formattedScopes);
-            FormUrlEncodedContent payload = GenerateAuthenticationPayload(jwt);
+            string jwtGrant = GenerateJwtGrant(formattedScopes);
+            FormUrlEncodedContent payload = AuthenticationPayloadFactory(jwtGrant);
 
             _logger.LogDebug(
                 "Sending grant request to Maskinporten: {GrantRequest}",
@@ -250,12 +226,21 @@ internal sealed class MaskinportenClient : IMaskinportenClient
                 payload,
                 cancellationToken
             );
-            MaskinportenTokenResponse token = await ParseServerResponse(response, cancellationToken);
-            // TODO: Parse the token.AccessToken here
 
-            _logger.LogDebug("Token retrieved successfully: {Token}", token);
+            MaskinportenTokenResponse tokenResponse = await ParseServerResponse(response, cancellationToken);
+            JwtSecurityToken jwt = ParseJwt(tokenResponse.AccessToken, TokenAuthorities.Maskinporten);
+            DateTime expiry = jwt.ValidTo;
+            string? scope = jwt.Claims.FirstOrDefault(c => c.Type == JwtClaimTypes.Scope)?.Value;
+
+            _logger.LogDebug("Token retrieved successfully: {Token}", tokenResponse);
             _telemetry?.RecordMaskinportenTokenRequest(Telemetry.Maskinporten.RequestResult.New);
-            return token;
+
+            return new JwtBearerToken
+            {
+                AccessToken = tokenResponse.AccessToken,
+                ExpiresAt = expiry,
+                Scope = scope
+            };
         }
         catch (MaskinportenException)
         {
@@ -275,8 +260,8 @@ internal sealed class MaskinportenClient : IMaskinportenClient
     /// <param name="cancellationToken">An optional cancellation token.</param>
     /// <returns><inheritdoc cref="GetAltinnExchangedToken"/></returns>
     /// <exception cref="MaskinportenAuthenticationException"><inheritdoc cref="GetAltinnExchangedToken"/></exception>
-    private async Task<MaskinportenAltinnExchangedTokenResponse> HandleMaskinportenAltinnTokenExchange(
-        MaskinportenTokenResponse maskinportenToken,
+    private async Task<JwtBearerToken> HandleMaskinportenAltinnTokenExchange(
+        JwtBearerToken maskinportenToken,
         CancellationToken cancellationToken = default
     )
     {
@@ -301,16 +286,14 @@ internal sealed class MaskinportenClient : IMaskinportenClient
             response.EnsureSuccessStatusCode();
 
             string token = await response.Content.ReadAsStringAsync(cancellationToken);
-
-            // Token comes in as a JWT, parse it to extract some details we need
-            JwtSecurityToken jwt = ParseJwt(token, TokenAuthority.AltinnTokenExchange);
+            JwtSecurityToken jwt = ParseJwt(token, TokenAuthorities.AltinnTokenExchange);
             DateTime expiry = jwt.ValidTo;
-            string? scope = jwt.Claims.FirstOrDefault(c => c.Type == "scope")?.Value;
+            string? scope = jwt.Claims.FirstOrDefault(c => c.Type == JwtClaimTypes.Scope)?.Value;
 
             _logger.LogDebug("Token retrieved successfully");
             _telemetry?.RecordMaskinportenAltinnTokenExchangeRequest(Telemetry.Maskinporten.RequestResult.New);
 
-            return new MaskinportenAltinnExchangedTokenResponse
+            return new JwtBearerToken
             {
                 AccessToken = token,
                 ExpiresAt = expiry,
@@ -358,7 +341,11 @@ internal sealed class MaskinportenClient : IMaskinportenClient
             IssuedAt = now.UtcDateTime,
             Expires = expiry.UtcDateTime,
             SigningCredentials = new SigningCredentials(settings.GetJsonWebKey(), SecurityAlgorithms.RsaSha256),
-            Claims = new Dictionary<string, object> { ["scope"] = formattedScopes, ["jti"] = Guid.NewGuid().ToString() }
+            Claims = new Dictionary<string, object>
+            {
+                [JwtClaimTypes.Scope] = formattedScopes,
+                [JwtClaimTypes.JwtId] = Guid.NewGuid().ToString()
+            }
         };
 
         return new JsonWebTokenHandler().CreateToken(jwtDescriptor);
@@ -374,7 +361,7 @@ internal sealed class MaskinportenClient : IMaskinportenClient
     /// </para>
     /// </summary>
     /// <param name="jwtAssertion">The JWT token generated by <see cref="GenerateJwtGrant"/>.</param>
-    internal static FormUrlEncodedContent GenerateAuthenticationPayload(string jwtAssertion)
+    internal static FormUrlEncodedContent AuthenticationPayloadFactory(string jwtAssertion)
     {
         return new FormUrlEncodedContent(
             new Dictionary<string, string>
@@ -440,7 +427,7 @@ internal sealed class MaskinportenClient : IMaskinportenClient
     /// <returns>A single string containing the supplied scopes.</returns>
     internal static string FormattedScopes(IEnumerable<string> scopes) => string.Join(" ", scopes);
 
-    internal static HybridCacheEntryOptions CacheExpiry(TimeSpan localExpiry, TimeSpan? overallExpiry = null)
+    private static HybridCacheEntryOptions CacheExpiryFactory(TimeSpan localExpiry, TimeSpan? overallExpiry = null)
     {
         return new HybridCacheEntryOptions
         {
@@ -449,7 +436,7 @@ internal sealed class MaskinportenClient : IMaskinportenClient
         };
     }
 
-    internal static JwtSecurityToken ParseJwt(string token, TokenAuthority? authority)
+    private static JwtSecurityToken ParseJwt(string token, TokenAuthorities? authority)
     {
         JwtSecurityTokenHandler handler = new();
         JwtSecurityToken jwt = handler.ReadJwtToken(token);
@@ -457,8 +444,8 @@ internal sealed class MaskinportenClient : IMaskinportenClient
         {
             string errorMessage = authority switch
             {
-                TokenAuthority.Maskinporten => "Invalid JWT payload from Maskinporten",
-                TokenAuthority.AltinnTokenExchange => "Invalid JWT payload from Altinn Authentication token exchange",
+                TokenAuthorities.Maskinporten => "Invalid JWT payload from Maskinporten",
+                TokenAuthorities.AltinnTokenExchange => "Invalid JWT payload from Altinn Authentication token exchange",
                 _ => "Invalid JWT payload"
             };
 
@@ -466,5 +453,10 @@ internal sealed class MaskinportenClient : IMaskinportenClient
         }
 
         return jwt;
+    }
+
+    private TimeSpan GetTokenExpiryWithMargin(JwtBearerToken token)
+    {
+        return token.ExpiresAt - _timeprovider.GetUtcNow() - TokenExpirationMargin;
     }
 }

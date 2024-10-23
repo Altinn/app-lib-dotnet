@@ -3,6 +3,7 @@ using System.Net;
 using System.Text.Json;
 using Altinn.App.Api.Tests.Utils;
 using Altinn.App.Core.Features.Maskinporten;
+using Altinn.App.Core.Features.Maskinporten.Constants;
 using Altinn.App.Core.Features.Maskinporten.Delegates;
 using Altinn.App.Core.Features.Maskinporten.Models;
 using Microsoft.Extensions.Logging;
@@ -19,8 +20,8 @@ internal static class TestHelpers
         req.RequestUri!.PathAndQuery.Contains("exchange/maskinporten", StringComparison.OrdinalIgnoreCase);
 
     public static Mock<HttpMessageHandler> MockHttpMessageHandlerFactory(
-        MaskinportenTokenResponse tokenResponse,
-        string? altinnToken = null
+        MaskinportenTokenResponse maskinportenTokenResponse,
+        string? altinnAccessToken = null
     )
     {
         var handlerMock = new Mock<HttpMessageHandler>();
@@ -36,11 +37,11 @@ internal static class TestHelpers
                     new HttpResponseMessage
                     {
                         StatusCode = HttpStatusCode.OK,
-                        Content = new StringContent(JsonSerializer.Serialize(tokenResponse))
+                        Content = new StringContent(JsonSerializer.Serialize(maskinportenTokenResponse))
                     }
             );
 
-        altinnToken ??= PrincipalUtil.GetOrgToken("ttd", "160694123", 3);
+        altinnAccessToken ??= PrincipalUtil.GetOrgToken("ttd", "160694123", 3);
         protectedMock
             .Setup<Task<HttpResponseMessage>>(
                 "SendAsync",
@@ -49,7 +50,11 @@ internal static class TestHelpers
             )
             .ReturnsAsync(
                 () =>
-                    new HttpResponseMessage { StatusCode = HttpStatusCode.OK, Content = new StringContent(altinnToken) }
+                    new HttpResponseMessage
+                    {
+                        StatusCode = HttpStatusCode.OK,
+                        Content = new StringContent(altinnAccessToken)
+                    }
             );
 
         return handlerMock;
@@ -59,9 +64,9 @@ internal static class TestHelpers
         Mock<IMaskinportenClient> client,
         MaskinportenDelegatingHandler handler
     ) MockMaskinportenDelegatingHandlerFactory(
-        TokenAuthority authority,
+        TokenAuthorities authorities,
         IEnumerable<string> scopes,
-        MaskinportenTokenResponse tokenResponse
+        JwtBearerToken accessToken
     )
     {
         var mockProvider = new Mock<IServiceProvider>();
@@ -85,10 +90,10 @@ internal static class TestHelpers
 
         mockMaskinportenClient
             .Setup(c => c.GetAccessToken(scopes, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(tokenResponse);
+            .ReturnsAsync(accessToken);
 
         var handler = new MaskinportenDelegatingHandler(
-            authority,
+            authorities,
             scopes,
             mockMaskinportenClient.Object,
             mockLogger.Object

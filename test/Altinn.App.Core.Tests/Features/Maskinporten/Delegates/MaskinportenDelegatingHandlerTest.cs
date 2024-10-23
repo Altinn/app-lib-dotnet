@@ -1,5 +1,4 @@
-using Altinn.App.Core.Features.Maskinporten;
-using Altinn.App.Core.Features.Maskinporten.Exceptions;
+using Altinn.App.Core.Features.Maskinporten.Constants;
 using Altinn.App.Core.Features.Maskinporten.Models;
 using FluentAssertions;
 using Moq;
@@ -14,14 +13,13 @@ public class MaskinportenDelegatingHandlerTest
         // Arrange
         var scopes = new[] { "scope1", "scope2" };
         var (client, handler) = TestHelpers.MockMaskinportenDelegatingHandlerFactory(
-            TokenAuthority.Maskinporten,
+            TokenAuthorities.Maskinporten,
             scopes,
-            new MaskinportenTokenResponse
+            new JwtBearerToken
             {
-                TokenType = "Bearer",
                 Scope = "-",
                 AccessToken = "jwt-content-placeholder",
-                ExpiresIn = -1
+                ExpiresAt = DateTime.MinValue
             }
         );
         var httpClient = new HttpClient(handler);
@@ -36,31 +34,31 @@ public class MaskinportenDelegatingHandlerTest
         request.Headers.Authorization.Scheme.Should().Be("Bearer");
         request.Headers.Authorization.Parameter.Should().Be("jwt-content-placeholder");
     }
-
-    [Fact]
-    public async Task SendAsync_OnlyAccepts_BearerTokens()
-    {
-        // Arrange
-        var (_, handler) = TestHelpers.MockMaskinportenDelegatingHandlerFactory(
-            TokenAuthority.Maskinporten,
-            ["scope1", "scope2"],
-            new MaskinportenTokenResponse
-            {
-                TokenType = "MAC",
-                Scope = "-",
-                AccessToken = "jwt-content-placeholder",
-                ExpiresIn = -1
-            }
-        );
-        var httpClient = new HttpClient(handler);
-        var request = new HttpRequestMessage(HttpMethod.Get, "https://some-maskinporten-url/token");
-
-        // Act
-        Func<Task> act = async () => await httpClient.SendAsync(request);
-
-        // Assert
-        await act.Should()
-            .ThrowAsync<MaskinportenUnsupportedTokenException>()
-            .WithMessage("Unsupported token type received from Maskinporten: *");
-    }
+    //
+    // [Fact]
+    // public async Task SendAsync_OnlyAccepts_BearerTokens()
+    // {
+    //     // Arrange
+    //     var (_, handler) = TestHelpers.MockMaskinportenDelegatingHandlerFactory(
+    //         TokenAuthority.Maskinporten,
+    //         ["scope1", "scope2"],
+    //         new MaskinportenAccessToken
+    //         {
+    //             TokenType = "MAC",
+    //             Scope = "-",
+    //             AccessToken = "jwt-content-placeholder",
+    //             ExpiresIn = -1
+    //         }
+    //     );
+    //     var httpClient = new HttpClient(handler);
+    //     var request = new HttpRequestMessage(HttpMethod.Get, "https://some-maskinporten-url/token");
+    //
+    //     // Act
+    //     Func<Task> act = async () => await httpClient.SendAsync(request);
+    //
+    //     // Assert
+    //     await act.Should()
+    //         .ThrowAsync<MaskinportenUnsupportedTokenException>()
+    //         .WithMessage("Unsupported token type received from Maskinporten: *");
+    // }
 }

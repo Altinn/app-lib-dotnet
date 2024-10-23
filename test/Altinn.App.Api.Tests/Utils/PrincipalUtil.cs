@@ -1,5 +1,8 @@
 using System.Security.Claims;
 using Altinn.App.Api.Tests.Mocks;
+using Altinn.App.Core.Features.Maskinporten;
+using Altinn.App.Core.Features.Maskinporten.Constants;
+using Altinn.App.Core.Features.Maskinporten.Models;
 using AltinnCore.Authentication.Constants;
 
 namespace Altinn.App.Api.Tests.Utils;
@@ -133,5 +136,31 @@ public static class PrincipalUtil
         string token = JwtTokenMock.GenerateToken(principal, expiry.Value, timeProvider);
 
         return token;
+    }
+
+    public static MaskinportenTokenResponse GetMaskinportenToken(
+        string scope,
+        TimeSpan? expiry = null,
+        TimeProvider? timeProvider = null
+    )
+    {
+        List<Claim> claims = [];
+        const string issuer = "https://test.maskinporten.no/";
+        claims.Add(new Claim(JwtClaimTypes.Scope, scope, ClaimValueTypes.String, issuer));
+        claims.Add(new Claim(JwtClaimTypes.Maskinporten.AuthenticationMethod, "Mock", ClaimValueTypes.String, issuer));
+
+        ClaimsIdentity identity = new("mock");
+        identity.AddClaims(claims);
+        ClaimsPrincipal principal = new(identity);
+        expiry ??= TimeSpan.FromMinutes(2);
+        string accessToken = JwtTokenMock.GenerateToken(principal, expiry.Value, timeProvider);
+
+        return new MaskinportenTokenResponse
+        {
+            AccessToken = accessToken,
+            ExpiresIn = (int)expiry.Value.TotalSeconds,
+            Scope = scope,
+            TokenType = "Bearer"
+        };
     }
 }
