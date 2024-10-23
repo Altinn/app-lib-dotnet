@@ -11,9 +11,9 @@ public abstract class SigneeParty
     public required string DisplayName { get; init; }
 
     /// <summary>
-    /// Notification configuration.
+    /// Notifications configuration.
     /// </summary>
-    public required Notification Notification { get; init; }
+    public Notifications? Notifications { get; init; }
 }
 
 /// <summary>
@@ -46,6 +46,17 @@ public class OrganisationSignee : SigneeParty
 /// <summary>
 /// Configuration for notifications
 /// </summary>
+public class Notifications
+{
+    /// <summary>
+    /// Notification for when a party has been delegated the rights to sign.
+    /// </summary>
+    public Notification? SignatureTaskReceived { get; set; }
+}
+
+/// <summary>
+/// The notification setup for an event in the signature lifetime.
+/// </summary>
 public class Notification
 {
     /// <summary>
@@ -68,3 +79,4 @@ public class Notification
     /// </summary>
     public string? MobileNumber { get; set; }
 }
+
