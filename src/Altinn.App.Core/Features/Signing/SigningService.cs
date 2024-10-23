@@ -17,7 +17,7 @@ internal sealed class SigningService(
     ISigningNotificationService signingNotificationService
 )
 {
-    internal async void AssignSignees(CancellationToken ct)
+    internal async void AssignSignees(string taskId, CancellationToken ct)
     {
         using var activity = telemetry.StartAssignSigneesActivity();
         List<SigneeState> state = /*StorageClient.GetSignState ??*/
@@ -25,8 +25,8 @@ internal sealed class SigningService(
 
         SigneesResult signeeResult = await signeeProvider.GetSigneesAsync();
 
-        List<SigneeContext> personSigneeContexts = await GetPersonSigneeContexts(state, signeeResult, ct);
-        List<SigneeContext> organisationSigneeContexts = await GetOrganisationSigneeContexts(state, signeeResult, ct);
+        List<SigneeContext> personSigneeContexts = await GetPersonSigneeContexts(taskId, signeeResult, ct);
+        List<SigneeContext> organisationSigneeContexts = await GetOrganisationSigneeContexts(taskId, signeeResult, ct);
 
         List<SigneeContext> signeeContexts = [.. personSigneeContexts, .. organisationSigneeContexts];
 
@@ -48,9 +48,9 @@ internal sealed class SigningService(
     }
 
     private async Task<List<SigneeContext>> GetPersonSigneeContexts(
-        List<SigneeState> state,
+        string taskId,
         SigneesResult signeeResult,
-        CancellationToken cancellationToken
+        CancellationToken ct
     )
     {
         List<SigneeContext> personSigneeContainer = []; //TODO rename
@@ -59,7 +59,7 @@ internal sealed class SigningService(
             Person? person = await personClient.GetPerson(
                 personSignee.SocialSecurityNumber,
                 personSignee.LastName,
-                cancellationToken
+                ct
             );
 
             if (person is null)
@@ -72,22 +72,13 @@ internal sealed class SigningService(
             );
             //TODO: handle null
 
-            SigneeState signeeState =
-                state.FirstOrDefault(s => s.PartyId == s.PartyId)
-                ?? new SigneeState(
-                    partyId: party.PartyId,
-                    displayName: party.Name,
-                    mobilePhone: personSignee.Notification.MobileNumber ?? person.MobileNumber,
-                    email: personSignee.Notification.EmailAddress,
-                    taskId: "" //TODO: get current task
-                );
-            personSigneeContainer.Add(new SigneeContext(signeeState, personSignee));
+            personSigneeContainer.Add(new SigneeContext(taskId, party.PartyId, personSignee, new SigneeState()));
         }
         return personSigneeContainer;
     }
 
     private async Task<List<SigneeContext>> GetOrganisationSigneeContexts(
-        List<SigneeState> state,
+        string taskId,
         SigneesResult signeeResult,
         CancellationToken ct
     )
@@ -109,16 +100,7 @@ internal sealed class SigningService(
             );
             //TODO: handle null
 
-            SigneeState signeeState =
-                state.FirstOrDefault(s => s.PartyId == s.PartyId)
-                ?? new SigneeState(
-                    partyId: party.PartyId,
-                    displayName: party.Name,
-                    mobilePhone: organisationSignee.Notification.MobileNumber ?? organisation.MobileNumber,
-                    email: organisationSignee.Notification.EmailAddress ?? organisation.EMailAddress,
-                    taskId: "" //TODO: get current task
-                );
-            organisationSigneeContainer.Add(new SigneeContext(signeeState, organisationSignee));
+            organisationSigneeContainer.Add(new SigneeContext(taskId, party.PartyId, organisationSignee, new SigneeState()));
         }
         return organisationSigneeContainer;
     }
@@ -129,8 +111,6 @@ internal sealed class SigningService(
         // TODO: Get signees from state
 
         // TODO: Get signees from policy
-
-        // TODO: Get signees from interface
 
         throw new NotImplementedException();
     }
