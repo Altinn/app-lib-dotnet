@@ -9,17 +9,17 @@ namespace Altinn.App.Core.Features.Signing;
 
 internal sealed class SigningService(
     ISigneeProvider signeeProvider, /*ISignClient signClient, IInstanceClient instanceClient, IAppMetadata appMetadata,*/
-    Telemetry telemetry,
     IPersonClient personClient,
     IOrganizationClient organisationClient,
     IAltinnPartyClient altinnPartyClient,
     ISigningDelegationService signingDelegationService,
-    ISigningNotificationService signingNotificationService
+    ISigningNotificationService signingNotificationService,
+    Telemetry? telemetry
 )
 {
     internal async void AssignSignees(string taskId, CancellationToken ct)
     {
-        using var activity = telemetry.StartAssignSigneesActivity();
+        using var activity = telemetry?.StartAssignSigneesActivity();
         List<SigneeState> state = /*StorageClient.GetSignState ??*/
         [];
 
@@ -38,7 +38,7 @@ internal sealed class SigningService(
 
     internal async Task ProcessSignees(List<SigneeContext> signeeContexts, CancellationToken ct)
     {
-        using var activity = telemetry.StartAssignSigneesActivity();
+        using var activity = telemetry?.StartAssignSigneesActivity();
 
         await signingDelegationService.DelegateSigneeRights(signeeContexts, ct);
         await signingNotificationService.NotifySignatureTask(signeeContexts, ct);
@@ -56,11 +56,7 @@ internal sealed class SigningService(
         List<SigneeContext> personSigneeContainer = []; //TODO rename
         foreach (PersonSignee personSignee in signeeResult.PersonSignees)
         {
-            Person? person = await personClient.GetPerson(
-                personSignee.SocialSecurityNumber,
-                personSignee.LastName,
-                ct
-            );
+            Person? person = await personClient.GetPerson(personSignee.SocialSecurityNumber, personSignee.LastName, ct);
 
             if (person is null)
             {
@@ -100,14 +96,16 @@ internal sealed class SigningService(
             );
             //TODO: handle null
 
-            organisationSigneeContainer.Add(new SigneeContext(taskId, party.PartyId, organisationSignee, new SigneeState()));
+            organisationSigneeContainer.Add(
+                new SigneeContext(taskId, party.PartyId, organisationSignee, new SigneeState())
+            );
         }
         return organisationSigneeContainer;
     }
 
     internal List<Signee> ReadSignees()
     {
-        using var activity = telemetry.StartReadSigneesActivity();
+        using var activity = telemetry?.StartReadSigneesActivity();
         // TODO: Get signees from state
 
         // TODO: Get signees from policy
@@ -117,7 +115,7 @@ internal sealed class SigningService(
 
     internal async Task Sign(Signee signee)
     {
-        using var activity = telemetry.StartSignActivity();
+        using var activity = telemetry?.StartSignActivity();
         // var state = StorageClient.GetSignState(...);
         try
         {
