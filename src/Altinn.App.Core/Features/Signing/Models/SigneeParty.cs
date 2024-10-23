@@ -59,24 +59,23 @@ public class Notifications
 /// </summary>
 public class Notification
 {
-    /// <summary>
-    /// Should be true if the signee should be notified by email.
-    /// </summary>
-    public bool ShouldSendEmail { get; set; }
-
-    /// <summary>
-    /// Must be set for a person in order to send email notification. Can be used to override email for organisation, with fallback to registry info.
-    /// </summary>
-    public string? EmailAddress { get; set; }
-
-    /// <summary>
-    /// Should be true if the signee should be notified by sms.
-    /// </summary>
-    public bool ShouldSendSms { get; set; }
-
-    /// <summary>
-    /// Can be used to override what mobile number to send notifications to. If not set, the mobile number from the Altinn registry will be used.
-    /// </summary>
-    public string? MobileNumber { get; set; }
+    public Sms Sms { get; set; }
+    public Email Email { get; set; }
 }
 
+/// <summary>
+/// The sms notification container.
+/// </summary>
+public class Sms
+{
+    public required string MobileNumber { get; set; }
+    public string? Body { get; set; }
+}
+
+/// <summary>
+/// The email notification container.
+/// </summary>
+public class Email
+{
+    public string? EmailAddress { get; set; }
+}

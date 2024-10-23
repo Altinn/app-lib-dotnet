@@ -41,7 +41,7 @@ internal sealed class SigningService(
         using var activity = telemetry.StartAssignSigneesActivity();
 
         await signingDelegationService.DelegateSigneeRights(signeeContexts, ct);
-        await signingNotificationService.NotifySignees(signeeContexts, ct);
+        await signingNotificationService.NotifySignatureTask(signeeContexts, ct);
 
         // TODO: StorageClient.SetSignState(state);
         throw new NotImplementedException();

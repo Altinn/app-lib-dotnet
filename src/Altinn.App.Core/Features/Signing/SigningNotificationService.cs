@@ -11,7 +11,7 @@ internal sealed class SigningNotificationService(
     IEmailNotificationClient? emailNotificationClient = null
 ) : ISigningNotificationService
 {
-    public async Task NotifySignees(List<SigneeContext> signeeContexts, CancellationToken ct)
+    public async Task NotifySignatureTask(List<SigneeContext> signeeContexts, CancellationToken ct)
     {
         foreach (SigneeContext signeeContext in signeeContexts)
         {
@@ -21,7 +21,8 @@ internal sealed class SigningNotificationService(
             {
                 if (state.IsNotified is false)
                 {
-                    if (party.Notification.ShouldSendSms)
+                    Notification? notification = party.Notifications?.SignatureTaskReceived;
+                    if (notification is not null notification.ShouldSendSms)
                     {
                         state.IsNotified = await TrySendSms(party.Notification.MobileNumber, ct);
                     }
