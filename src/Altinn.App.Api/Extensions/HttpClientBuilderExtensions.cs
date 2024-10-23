@@ -21,6 +21,8 @@ public static class HttpClientBuilderExtensions
     /// <param name="builder">The Http client builder</param>
     /// <param name="scope">The scope to claim authorization for with Maskinporten</param>
     /// <param name="additionalScopes">Additional scopes as required</param>
+
+    // TODO: Rename this to British English if possible
     public static IHttpClientBuilder UseMaskinportenAuthorization(
         this IHttpClientBuilder builder,
         string scope,
@@ -32,7 +34,8 @@ public static class HttpClientBuilderExtensions
         return builder.AddHttpMessageHandler(provider => factory(provider, [scopes]));
     }
 
-    public static IHttpClientBuilder UseAltinnMaskinportenAuthorization(
+    // TODO: Rename this to British English if we end up renaming `UseMaskinportenAuthorization`
+    public static IHttpClientBuilder UseMaskinportenAltinnAuthorization(
         this IHttpClientBuilder builder,
         string scope,
         params string[] additionalScopes
