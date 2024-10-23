@@ -16,19 +16,19 @@ internal sealed class SigningNotificationService(
         foreach (SigneeContext signeeContext in signeeContexts)
         {
             SigneeState state = signeeContext.SigneeState;
-            SigneeConfig config = signeeContext.SigneeParty;
+            SigneeParty party = signeeContext.SigneeParty;
             try
             {
                 if (state.IsNotified is false)
                 {
-                    if (config.Notification.ShouldSendSms)
+                    if (party.Notification.ShouldSendSms)
                     {
-                        state.IsNotified = await TrySendSms(config.Notification.MobileNumber, ct);
+                        state.IsNotified = await TrySendSms(party.Notification.MobileNumber, ct);
                     }
 
-                    if (config.Notification.ShouldSendEmail)
+                    if (party.Notification.ShouldSendEmail)
                     {
-                        state.IsNotified = await TrySendEmail(config.Notification.MobileNumber, ct);
+                        state.IsNotified = await TrySendEmail(party.Notification.MobileNumber, ct);
                     }
                 }
             }
