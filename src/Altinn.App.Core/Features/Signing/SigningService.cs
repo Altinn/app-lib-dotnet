@@ -1,3 +1,4 @@
+using Altinn.App.Core.Features.Signing.Exceptions;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Mocks;
 using Altinn.App.Core.Features.Signing.Models;
@@ -17,43 +18,41 @@ internal sealed class SigningService(
     Telemetry? telemetry
 )
 {
-    internal async void AssignSignees(string taskId, CancellationToken ct)
+    internal async Task<List<SigneeContext>> InitializeSignees(string taskId, CancellationToken? ct = null)
     {
         using var activity = telemetry?.StartAssignSigneesActivity();
-        List<SigneeState> state = /*StorageClient.GetSignState ??*/
-        [];
 
-        SigneesResult signeeResult = await signeeProvider.GetSigneesAsync();
+        SigneesResult signeesResult = await signeeProvider.GetSigneesAsync();
 
-        List<SigneeContext> personSigneeContexts = await GetPersonSigneeContexts(taskId, signeeResult, ct);
-        List<SigneeContext> organisationSigneeContexts = await GetOrganisationSigneeContexts(taskId, signeeResult, ct);
-
+        List<SigneeContext> personSigneeContexts = await GetPersonSigneeContexts(taskId, signeesResult, ct);
+        List<SigneeContext> organisationSigneeContexts = await GetOrganisationSigneeContexts(taskId, signeesResult, ct);
         List<SigneeContext> signeeContexts = [.. personSigneeContexts, .. organisationSigneeContexts];
 
-        await ProcessSignees(signeeContexts, ct);
-
-        // TODO: StorageClient.SetSignState(state);
-        throw new NotImplementedException();
+        // TODO: StorageClient.SetSignState(signeeContexts); ?
+        return signeeContexts;
     }
 
-    internal async Task ProcessSignees(List<SigneeContext> signeeContexts, CancellationToken ct)
+    internal async Task<List<SigneeContext>> ProcessSignees(
+        List<SigneeContext> signeeContexts,
+        CancellationToken? ct = null
+    )
     {
         using var activity = telemetry?.StartAssignSigneesActivity();
 
         await signingDelegationService.DelegateSigneeRights(signeeContexts, ct);
         await signingNotificationService.NotifySignatureTask(signeeContexts, ct);
 
-        // TODO: StorageClient.SetSignState(state);
-        throw new NotImplementedException();
+        // TODO: StorageClient.SetSignState(state); ?
+        return signeeContexts;
     }
 
     private async Task<List<SigneeContext>> GetPersonSigneeContexts(
         string taskId,
         SigneesResult signeeResult,
-        CancellationToken ct
+        CancellationToken? ct = null
     )
     {
-        List<SigneeContext> personSigneeContainer = []; //TODO rename
+        List<SigneeContext> personSigneeContexts = [];
         foreach (PersonSignee personSignee in signeeResult.PersonSignees)
         {
             Person? person = await personClient.GetPerson(personSignee.SocialSecurityNumber, personSignee.LastName, ct);
@@ -61,25 +60,35 @@ internal sealed class SigningService(
             if (person is null)
             {
                 //TODO: persist state and throw
+                throw new SignaturePartyNotValidException(
+                    $"Signature party with social security number {personSignee.SocialSecurityNumber} was not found in the registry."
+                );
             }
 
             Party? party = await altinnPartyClient.LookupParty(
                 new PartyLookup { Ssn = personSignee.SocialSecurityNumber }
             );
-            //TODO: handle null
 
-            personSigneeContainer.Add(new SigneeContext(taskId, party.PartyId, personSignee, new SigneeState()));
+            if (party is null)
+            {
+                throw new SignaturePartyNotValidException(
+                    $"No partyId found for signature party with social security number {personSignee.SocialSecurityNumber}."
+                );
+            }
+
+            personSigneeContexts.Add(new SigneeContext(taskId, party.PartyId, personSignee, new SigneeState()));
         }
-        return personSigneeContainer;
+
+        return personSigneeContexts;
     }
 
     private async Task<List<SigneeContext>> GetOrganisationSigneeContexts(
         string taskId,
         SigneesResult signeeResult,
-        CancellationToken ct
+        CancellationToken? ct = null
     )
     {
-        List<SigneeContext> organisationSigneeContainer = []; //TODO rename
+        List<SigneeContext> organisationSigneeContexts = []; //TODO rename
         foreach (OrganisationSignee organisationSignee in signeeResult.OrganisationSignees)
         {
             Organization? organisation = await organisationClient.GetOrganization(
@@ -89,18 +98,35 @@ internal sealed class SigningService(
             if (organisation is null)
             {
                 //TODO: persist state and throw
+                throw new SignaturePartyNotValidException(
+                    $"Signature party with organisation number {organisationSignee.OrganisationNumber} was not found in the registry."
+                );
             }
 
             Party? party = await altinnPartyClient.LookupParty(
                 new PartyLookup { OrgNo = organisationSignee.OrganisationNumber }
             );
-            //TODO: handle null
 
-            organisationSigneeContainer.Add(
+            if (party is null)
+            {
+                throw new SignaturePartyNotValidException(
+                    $"No partyId found for signature party with organisation number {organisationSignee.OrganisationNumber}."
+                );
+            }
+
+            //TODO: Is this the correct place to set email to registry fallback? Maybe move it to notification service?
+            Email? emailNotification = organisationSignee.Notifications?.SignatureTaskReceived?.Email;
+            if (emailNotification is not null && emailNotification.EmailAddress is null)
+            {
+                emailNotification.EmailAddress = organisation.EMailAddress;
+            }
+
+            organisationSigneeContexts.Add(
                 new SigneeContext(taskId, party.PartyId, organisationSignee, new SigneeState())
             );
         }
-        return organisationSigneeContainer;
+
+        return organisationSigneeContexts;
     }
 
     internal List<Signee> ReadSignees()
@@ -113,6 +139,7 @@ internal sealed class SigningService(
         throw new NotImplementedException();
     }
 
+    //TODO: There is already logic for the sign action in the SigningUserAction class. Maybe move most of it here?
     internal async Task Sign(Signee signee)
     {
         using var activity = telemetry?.StartSignActivity();

@@ -11,25 +11,36 @@ internal sealed class SigningNotificationService(
     IEmailNotificationClient? emailNotificationClient = null
 ) : ISigningNotificationService
 {
-    public async Task NotifySignatureTask(List<SigneeContext> signeeContexts, CancellationToken ct)
+    public async Task<List<SigneeContext>> NotifySignatureTask(
+        List<SigneeContext> signeeContexts,
+        CancellationToken? ct = null
+    )
     {
         foreach (SigneeContext signeeContext in signeeContexts)
         {
             SigneeState state = signeeContext.SigneeState;
             SigneeParty party = signeeContext.SigneeParty;
+
             try
             {
-                if (state.IsNotified is false)
-                {
-                    Notification? notification = party.Notifications?.SignatureTaskReceived;
-                    if (notification is not null notification.ShouldSendSms)
-                    {
-                        state.IsNotified = await TrySendSms(party.Notification.MobileNumber, ct);
-                    }
+                Notification? notification = party.Notifications?.SignatureTaskReceived;
 
-                    if (party.Notification.ShouldSendEmail)
+                if (state.SignatureRequestSmsSent is false)
+                {
+                    if (notification?.Sms is not null)
                     {
-                        state.IsNotified = await TrySendEmail(party.Notification.MobileNumber, ct);
+                        state.SignatureRequestSmsSent = await TrySendSms(notification.Sms.MobileNumber, ct);
+                    }
+                }
+
+                if (state.SignatureRequestEmailSent is false)
+                {
+                    if (notification?.Email is not null)
+                    {
+                        state.SignatureRequestEmailSent = await TrySendEmail(
+                            notification.Email?.EmailAddress ?? "HOW TO GET FROM REGISTRY",
+                            ct
+                        );
                     }
                 }
             }
@@ -38,9 +49,11 @@ internal sealed class SigningNotificationService(
                 // TODO: log + telemetry?
             }
         }
+
+        return signeeContexts;
     }
 
-    private async Task<bool> TrySendSms(string recipientNr, CancellationToken ct)
+    private async Task<bool> TrySendSms(string recipientNr, CancellationToken? ct = null)
     {
         // await Task.CompletedTask;
         // throw new NotImplementedException();
@@ -59,7 +72,7 @@ internal sealed class SigningNotificationService(
         };
         try
         {
-            await smsNotificationClient.Order(notification, ct);
+            await smsNotificationClient.Order(notification, ct ?? new CancellationToken());
             return true;
         }
         catch (SmsNotificationException ex)
@@ -69,7 +82,7 @@ internal sealed class SigningNotificationService(
         }
     }
 
-    private async Task<bool> TrySendEmail(string email, CancellationToken ct)
+    private async Task<bool> TrySendEmail(string email, CancellationToken? ct = null)
     {
         if (emailNotificationClient is null)
         {

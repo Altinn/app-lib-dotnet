@@ -4,5 +4,5 @@ namespace Altinn.App.Core.Features.Signing.Interfaces;
 
 internal interface ISigningNotificationService
 {
-    Task NotifySignatureTask(List<SigneeContext> signeeContexts, CancellationToken ct);
+    Task<List<SigneeContext>> NotifySignatureTask(List<SigneeContext> signeeContexts, CancellationToken? ct = null);
 }

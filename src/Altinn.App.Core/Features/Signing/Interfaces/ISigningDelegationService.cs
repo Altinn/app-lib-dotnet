@@ -4,5 +4,8 @@ namespace Altinn.App.Core.Features.Signing;
 
 internal interface ISigningDelegationService
 {
-    internal Task DelegateSigneeRights(List<SigneeContext> signeeContexts, CancellationToken ct);
+    internal Task<List<SigneeContext>> DelegateSigneeRights(
+        List<SigneeContext> signeeContexts,
+        CancellationToken? ct = null
+    );
 }
