@@ -96,7 +96,7 @@ public static class ServiceCollectionExtensions
             AddApplicationInsights(services, config, env);
         }
 
-        // This needs to happen after AddApplicationInsights, since it uses keyed services,
+        // AddMaskinportenClient adds a keyed service. This needs to happen after AddApplicationInsights,
         // due to a bug in app insights: https://github.com/microsoft/ApplicationInsights-dotnet/issues/2828
         services.AddMaskinportenClient();
         services.AddCorrespondenceClient();
@@ -163,7 +163,7 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Adds a singleton <see cref="AddMaskinportenClient"/> service to the service collection.
+    /// Adds a singleton <see cref="IMaskinportenClient"/> service to the service collection.
     /// If no <see cref="MaskinportenSettings"/> configuration is found, it binds one to the path "MaskinportenSettings".
     /// </summary>
     /// <param name="services">The service collection</param>
@@ -187,6 +187,16 @@ public static class ServiceCollectionExtensions
             (sp, key) => ActivatorUtilities.CreateInstance<MaskinportenClient>(sp, MaskinportenClient.VariantInternal)
         );
 
+        return services;
+    }
+
+    /// <summary>
+    /// Adds a <see cref="ICorrespondenceClient"/> service to the service collection.
+    /// </summary>
+    /// <param name="services">The service collection</param>
+    private static IServiceCollection AddCorrespondenceClient(this IServiceCollection services)
+    {
+        services.AddHttpClient<ICorrespondenceClient, CorrespondenceClient>();
         return services;
     }
 

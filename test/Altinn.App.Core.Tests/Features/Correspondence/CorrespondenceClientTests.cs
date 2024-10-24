@@ -23,7 +23,7 @@ public class CorrespondenceClientTests
                 // services.Configure<MemoryCacheOptions>(options => options.Clock = fakeTimeProvider);
                 // services.AddSingleton(fakeTimeProvider);
 
-                services.AddCorrespondenceClient();
+                // services.AddCorrespondenceClient();
             });
 
             return new Fixture(app);

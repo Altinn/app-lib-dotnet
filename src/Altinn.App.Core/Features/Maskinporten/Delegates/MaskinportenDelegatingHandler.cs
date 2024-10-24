@@ -58,8 +58,3 @@ internal sealed class MaskinportenDelegatingHandler : DelegatingHandler
         return await base.SendAsync(request, cancellationToken);
     }
 }
-
-internal static class TokenTypes
-{
-    public const string Bearer = "Bearer";
-}
