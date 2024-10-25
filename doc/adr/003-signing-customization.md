@@ -11,7 +11,7 @@ A3 - Full freedom to compose smaller components into the "signing component" as 
 ## Problem context
 
 There are many use cases we are able to support for signing without requiring a layout-set.
-All other tasks have a layout set. For payment, the layout set was perhaps not needed - we are able to support relevant customer needs because of this.
+All other tasks have a layout set. For payment, the layout set was perhaps not needed - however, we are able to support relevant customer needs that became apparent later.
 
 ## Decision drivers
 
