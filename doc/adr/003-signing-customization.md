@@ -16,18 +16,18 @@ All other tasks have a layout set. For payment, the layout set was perhaps not n
 ## Decision drivers
 
 -   B1: App developers are used to being able to customize the layouts.
--   B2: Altinn Studio as a product should have offer a default "view" for the signing task.
+-   B2: Altinn Studio as a product should offer a default "view" for the signing task.
 -   B3: We should adhere to established standards in our frontend code base.
--   B4: Should be simple/intuitive to maintain the code base.
+-   B4: It should be simple/intuitive to maintain the code base for altinn developers.
 -   B5: We do not know all possible use cases for service owners.
--   B6: Pit of success should be wide and deep - it should be as hard as possible to configure an app into an unstable / not working state. Should be difficult to develop bad UX
+-   B6: Pit of success should be wide and deep - it should be as hard as possible to configure an app into an unstable / not working state. It should be difficult to develop bad UX for app developers.
 -   B7: Backwards compability
 
 ## Alternatives considered
 
--   A1: Use a layout set with a signing component. The signing component itself has limited options for customization, but everything "around" in configurable.
+-   A1: Use a layout set with a signing component. The signing component itself has limited options for customization, but everything else on the task in configurable.
 -   A2: Do not use a layout set - all logic/config is known from and based on the task type
--   A3: Full freedom to compose smaller components into the "signing component" as wanted - with a default configuration provided by studio.
+-   A3: Support composing smaller components into the "signing component" as wanted - with a default configuration provided by studio.
     -   this includes:
         -   yes/no have a list of signees
         -   yes/no have a list of documents
