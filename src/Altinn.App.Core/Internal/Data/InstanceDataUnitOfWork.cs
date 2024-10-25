@@ -42,7 +42,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
 
     // The update functions returns updated data elements.
     // We want to make sure that the data elements are updated in the instance object
-    private readonly ConcurrentBag<DataElement> _savedDataElements = new();
+    private readonly ConcurrentBag<DataElement> _savedDataElements = [];
 
     public InstanceDataUnitOfWork(
         Instance instance,
@@ -131,14 +131,14 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     }
 
     /// <inheritdoc />
-    public FormDataChange AddFormDataElement(string dataTypeString, object model)
+    public FormDataChange AddFormDataElement(string dataTypeId, object model)
     {
         ArgumentNullException.ThrowIfNull(model);
-        var dataType = GetDataTypeByString(dataTypeString);
+        var dataType = GetDataTypeByString(dataTypeId);
         if (dataType.AppLogic?.ClassRef is not { } classRef)
         {
             throw new InvalidOperationException(
-                $"Data type {dataTypeString} does not have a class reference in app metadata"
+                $"Data type {dataTypeId} does not have a class reference in app metadata"
             );
         }
 
@@ -146,7 +146,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         if (modelType.FullName != classRef)
         {
             throw new InvalidOperationException(
-                $"Data object registered for {dataTypeString} is not of type {classRef} as specified in application metadata"
+                $"Data object registered for {dataTypeId} is not of type {classRef} as specified in application metadata"
             );
         }
 
@@ -170,31 +170,31 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
 
     /// <inheritdoc />
     public BinaryChange AddBinaryDataElement(
-        string dataTypeString,
+        string dataTypeId,
         string contentType,
         string? filename,
         ReadOnlyMemory<byte> bytes
     )
     {
-        var dataType = GetDataTypeByString(dataTypeString);
+        var dataType = GetDataTypeByString(dataTypeId);
         if (dataType.AppLogic?.ClassRef is not null)
         {
             throw new InvalidOperationException(
-                $"Data type {dataTypeString} has a AppLogic.ClassRef in app metadata, and is not a binary data element"
+                $"Data type {dataTypeId} has a AppLogic.ClassRef in app metadata, and is not a binary data element"
             );
         }
 
         if (dataType.MaxSize.HasValue && bytes.Length > dataType.MaxSize.Value * 1024 * 1024)
         {
             throw new InvalidOperationException(
-                $"Data element of type {dataTypeString} exceeds the size limit of {dataType.MaxSize} MB"
+                $"Data element of type {dataTypeId} exceeds the size limit of {dataType.MaxSize} MB"
             );
         }
 
         if (dataType.AllowedContentTypes is { Count: > 0 } && !dataType.AllowedContentTypes.Contains(contentType))
         {
             throw new InvalidOperationException(
-                $"Data element of type {dataTypeString} has a Content-Type '{contentType}' which is invalid for element type '{dataTypeString}'"
+                $"Data element of type {dataTypeId} has a Content-Type '{contentType}' which is invalid for element type '{dataTypeId}'"
             );
         }
 
@@ -386,7 +386,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         }
 
         var tasks = new List<Task>();
-        ConcurrentDictionary<DataElementChange, DataElement> createdDataElements = new();
+        ConcurrentDictionary<DataElementChange, DataElement> createdDataElements = [];
         // We need to create data elements here, so that we can set them correctly on the instance
         // Updating and deleting is done in SaveChanges and happen in parallel with validation.
 
@@ -503,7 +503,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     /// </summary>
     private sealed class LazyCache<T>
     {
-        private readonly Dictionary<Guid, Lazy<Task<T>>> _cache = new();
+        private readonly Dictionary<Guid, Lazy<Task<T>>> _cache = [];
 
         public async Task<T> GetOrCreate(DataElementIdentifier key, Func<Task<T>> valueFactory)
         {

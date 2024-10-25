@@ -27,8 +27,8 @@ public static class MultipartRequestReader
     /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     public static async Task<ServiceResult<List<RequestPart>, ProblemDetails>> Read(HttpRequest request)
     {
-        List<RequestPart> parts = new List<RequestPart>();
-        List<string> errors = new List<string>();
+        List<RequestPart> parts = [];
+        List<string> errors = [];
         if (IsMultipart(request))
         {
             int partCounter = 0;
@@ -124,6 +124,17 @@ public static class MultipartRequestReader
                     }
                 );
             }
+            // Else assume the request body is empty
+        }
+
+        if (errors.Count > 0)
+        {
+            return new ProblemDetails()
+            {
+                Title = "Error reading request",
+                Detail = string.Join(", ", errors),
+                Status = StatusCodes.Status400BadRequest,
+            };
         }
 
         return parts;

@@ -169,7 +169,6 @@ public class DataController : ControllerBase
                     ]
                 )
             );
-            ;
         }
 
         return Problem(response.Error);
@@ -436,7 +435,7 @@ public class DataController : ControllerBase
         string? filename
     )
     {
-        List<FileAnalysisResult> fileAnalysisResults = new List<FileAnalysisResult>();
+        List<FileAnalysisResult> fileAnalysisResults = [];
         if (FileAnalysisEnabledForDataType(dataTypeFromMetadata))
         {
             fileAnalysisResults = (

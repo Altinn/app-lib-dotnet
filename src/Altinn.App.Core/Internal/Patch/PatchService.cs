@@ -79,7 +79,7 @@ internal class PatchService : IPatchService
             _modelSerializationService
         );
 
-        List<FormDataChange> changesAfterPatch = new();
+        List<FormDataChange> changesAfterPatch = [];
 
         foreach (var (dataElementGuid, jsonPatch) in patches)
         {
