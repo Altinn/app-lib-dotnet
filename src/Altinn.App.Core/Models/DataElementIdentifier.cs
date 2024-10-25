@@ -30,6 +30,13 @@ public readonly struct DataElementIdentifier : IEquatable<DataElementIdentifier>
         new(Guid.Parse(dataElement.Id), dataElement.Id);
 
     /// <summary>
+    /// Implicit conversion to allow DataElements to be used as DataElementIds,
+    /// but accept and return null values
+    /// </summary>
+    public static implicit operator DataElementIdentifier?(DataElement? dataElement) =>
+        dataElement is null ? default : new(Guid.Parse(dataElement.Id), dataElement.Id);
+
+    /// <summary>
     /// Make the implicit conversion from string (containing a valid guid) to DataElementIdentifier work
     /// </summary>
     public static explicit operator DataElementIdentifier(string id) => new(Guid.Parse(id), id);

@@ -825,6 +825,10 @@ paths:
           schema:
             type: string
             format: uuid
+        - name: language
+          in: query
+          schema:
+            type: string
       responses:
         '200':
           description: OK
@@ -1324,6 +1328,10 @@ paths:
           schema:
             type: integer
             format: int32
+        - name: language
+          in: query
+          schema:
+            type: string
       responses:
         '201':
           description: Created

@@ -199,6 +199,8 @@ public class ProcessEngine : IProcessEngine
         await cachedDataMutator.UpdateInstanceData(changes);
         await cachedDataMutator.SaveChanges(changes);
 
+        // TODO: consider using the same cachedDataMutator for the rest of the process to avoid refetching data from storage
+
         ProcessStateChange? nextResult = await HandleMoveToNext(instance, request.User, request.Action);
 
         if (nextResult?.NewProcessState?.Ended is not null)

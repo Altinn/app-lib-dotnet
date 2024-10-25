@@ -298,17 +298,25 @@ public class DataController : ControllerBase
             }
             else
             {
-                var problem = await CreateBinaryData(dataMutator, dataType);
-                if (problem is not null)
+                var createBinaryResult = await CreateBinaryData(dataMutator, dataType);
+                if (!createBinaryResult.Success)
                 {
-                    return problem;
+                    return createBinaryResult.Error;
                 }
             }
 
-            // Save the posted data and get data element;
             var initialChanges = dataMutator.GetDataElementChanges(initializeAltinnRowId: true);
-            var newDataElements = await dataMutator.UpdateInstanceData(initialChanges);
-            var newDataElement = newDataElements.Single(); // Get the single created element
+            if (initialChanges is not { AllChanges: [var change] })
+            {
+                throw new InvalidOperationException("Expected exactly one change in initialChanges");
+            }
+
+            // Mutates initialChanges and to add DataElement Type = Created
+            await dataMutator.UpdateInstanceData(initialChanges);
+
+            var newDataElement =
+                change.DataElement
+                ?? throw new InvalidOperationException("DataElement not set in dataMutator.UpdateInstanceData");
 
             await _patchService.RunDataProcessors(
                 dataMutator,
@@ -344,9 +352,9 @@ public class DataController : ControllerBase
                 Instance = instance,
                 NewDataElementId = Guid.Parse(newDataElement.Id),
                 NewDataModels = finalChanges
-                    .FormDataChanges.Select(change => new DataModelPairResponse(
-                        change.DataElementIdentifier.Guid,
-                        change.CurrentFormData
+                    .FormDataChanges.Select(formDataChange => new DataModelPairResponse(
+                        formDataChange.DataElementIdentifier.Guid,
+                        formDataChange.CurrentFormData
                     ))
                     .ToList(),
                 ValidationIssues = validationIssues,
@@ -363,7 +371,7 @@ public class DataController : ControllerBase
         }
     }
 
-    private async Task<ProblemDetails?> CreateBinaryData(
+    private async Task<ServiceResult<BinaryChange, ProblemDetails>> CreateBinaryData(
         InstanceDataUnitOfWork dataMutator,
         DataType dataTypeFromMetadata
     )
@@ -377,6 +385,16 @@ public class DataController : ControllerBase
                 .Select(e => ValidationIssueWithSource.FromIssue(e, "DataRestrictionValidation", false))
                 .ToList();
             return new DataPostErrorResponse("Common checks failed", issuesWithSource);
+        }
+
+        if (Request.ContentType is null)
+        {
+            return new ProblemDetails()
+            {
+                Title = "Missing content type",
+                Detail = "The request is missing a content type header.",
+                Status = (int)HttpStatusCode.BadRequest,
+            };
         }
 
         var (bytes, actualLength) = await Request.ReadBodyAsByteArrayAsync(dataTypeFromMetadata.MaxSize * 1024 * 1024);
@@ -403,6 +421,21 @@ public class DataController : ControllerBase
         bool parseSuccess = Request.Headers.TryGetValue("Content-Disposition", out StringValues headerValues);
         string? filename = parseSuccess ? DataRestrictionValidation.GetFileNameFromHeader(headerValues) : null;
 
+        var analysisAndValidationProblem = await RunFileAnalysisAndValidation(dataTypeFromMetadata, bytes, filename);
+        if (analysisAndValidationProblem != null)
+        {
+            return analysisAndValidationProblem;
+        }
+
+        return dataMutator.AddBinaryDataElement(dataTypeFromMetadata.Id, Request.ContentType, filename, bytes);
+    }
+
+    private async Task<ProblemDetails?> RunFileAnalysisAndValidation(
+        DataType dataTypeFromMetadata,
+        byte[] bytes,
+        string? filename
+    )
+    {
         List<FileAnalysisResult> fileAnalysisResults = new List<FileAnalysisResult>();
         if (FileAnalysisEnabledForDataType(dataTypeFromMetadata))
         {
@@ -425,17 +458,7 @@ public class DataController : ControllerBase
         {
             return new DataPostErrorResponse("File validation failed", validationIssues);
         }
-        if (Request.ContentType is null)
-        {
-            return new ProblemDetails()
-            {
-                Title = "Missing content type",
-                Detail = "The request is missing a content type header.",
-                Status = (int)HttpStatusCode.BadRequest,
-            };
-        }
 
-        dataMutator.AddAttachmentDataElement(dataTypeFromMetadata.Id, Request.ContentType, filename, bytes);
         return null;
     }
 
@@ -578,21 +601,7 @@ public class DataController : ControllerBase
                 return await PutFormData(instance, dataElement, dataType, language);
             }
 
-            (bool validationRestrictionSuccess, List<ValidationIssue> errors) =
-                DataRestrictionValidation.CompliesWithDataRestrictions(Request, dataType);
-
-            if (!validationRestrictionSuccess)
-            {
-                return BadRequest(
-                    await GetErrorDetails(
-                        errors
-                            .Select(e => ValidationIssueWithSource.FromIssue(e, "DataRestrictionValidation", false))
-                            .ToList()
-                    )
-                );
-            }
-
-            return await PutBinaryData(instanceOwnerPartyId, instanceGuid, dataGuid);
+            return await PutBinaryData(instanceOwnerPartyId, instanceGuid, dataGuid, dataType);
         }
         catch (PlatformHttpException e)
         {
@@ -745,6 +754,7 @@ public class DataController : ControllerBase
     /// <param name="instanceOwnerPartyId">unique id of the party that is the owner of the instance</param>
     /// <param name="instanceGuid">unique id to identify the instance</param>
     /// <param name="dataGuid">unique id to identify the data element to update</param>
+    /// <param name="language">The currently active language</param>
     /// <returns>The updated data element.</returns>
     [Authorize(Policy = AuthzConstants.POLICY_INSTANCE_WRITE)]
     [HttpDelete("{dataGuid:guid}")]
@@ -753,7 +763,8 @@ public class DataController : ControllerBase
         [FromRoute] string app,
         [FromRoute] int instanceOwnerPartyId,
         [FromRoute] Guid instanceGuid,
-        [FromRoute] Guid dataGuid
+        [FromRoute] Guid dataGuid,
+        [FromQuery] string? language = null
     )
     {
         try
@@ -763,14 +774,37 @@ public class DataController : ControllerBase
             {
                 return Problem(instanceResult.Error);
             }
-            var (instance, dataType, _) = instanceResult.Ok;
+            var (instance, dataType, dataElement) = instanceResult.Ok;
 
             if (DataElementAccessChecker.GetDeleteProblem(instance, dataType, dataGuid, User) is { } accessProblem)
             {
                 return Problem(accessProblem);
             }
 
-            return await DeleteBinaryData(org, app, instanceOwnerPartyId, instanceGuid, dataGuid);
+            var taskId =
+                instance.Process?.CurrentTask?.ElementId
+                ?? throw new InvalidOperationException("Instance have no process");
+
+            var dataMutator = new InstanceDataUnitOfWork(
+                instance,
+                _dataClient,
+                _instanceClient,
+                await _appMetadata.GetApplicationMetadata(),
+                _modelDeserializer
+            );
+
+            dataMutator.RemoveDataElement(dataElement);
+
+            // Get the single change for running data processors
+            var changes = dataMutator.GetDataElementChanges(initializeAltinnRowId: false);
+            await _patchService.RunDataProcessors(dataMutator, changes, taskId, language);
+
+            // Get the updated changes for saving
+            changes = dataMutator.GetDataElementChanges(initializeAltinnRowId: false);
+            await dataMutator.UpdateInstanceData(changes);
+            await dataMutator.SaveChanges(changes);
+
+            return Ok();
         }
         catch (PlatformHttpException e)
         {
@@ -796,37 +830,6 @@ public class DataController : ControllerBase
         }
 
         return StatusCode((int)HttpStatusCode.InternalServerError, $"{message}");
-    }
-
-    private async Task<ActionResult> CreateBinaryData(
-        Instance instanceBefore,
-        string dataType,
-        string contentType,
-        string? filename,
-        Stream fileStream
-    )
-    {
-        int instanceOwnerPartyId = int.Parse(instanceBefore.Id.Split("/")[0], CultureInfo.InvariantCulture);
-        Guid instanceGuid = Guid.Parse(instanceBefore.Id.Split("/")[1]);
-
-        DataElement dataElement = await _dataClient.InsertBinaryData(
-            instanceBefore.Id,
-            dataType,
-            contentType,
-            filename,
-            fileStream
-        );
-
-        if (Guid.Parse(dataElement.Id) == Guid.Empty)
-        {
-            return StatusCode(
-                (int)HttpStatusCode.InternalServerError,
-                $"Cannot store form attachment on instance {instanceOwnerPartyId}/{instanceGuid}"
-            );
-        }
-
-        SelfLinkHelper.SetDataAppSelfLinks(instanceOwnerPartyId, instanceGuid, dataElement, Request);
-        return Created(dataElement.SelfLinks.Apps, dataElement);
     }
 
     /// <summary>
@@ -856,34 +859,6 @@ public class DataController : ControllerBase
         }
 
         return NotFound();
-    }
-
-    private async Task<ActionResult> DeleteBinaryData(
-        string org,
-        string app,
-        int instanceOwnerId,
-        Guid instanceGuid,
-        Guid dataGuid
-    )
-    {
-        bool successfullyDeleted = await _dataClient.DeleteData(
-            org,
-            app,
-            instanceOwnerId,
-            instanceGuid,
-            dataGuid,
-            false
-        );
-
-        if (successfullyDeleted)
-        {
-            return Ok();
-        }
-
-        return StatusCode(
-            (int)HttpStatusCode.InternalServerError,
-            $"Something went wrong when deleting data element {dataGuid} for instance {instanceGuid}"
-        );
     }
 
     private async Task<DataType?> GetDataType(DataElement element)
@@ -981,25 +956,68 @@ public class DataController : ControllerBase
         return Ok(appModel);
     }
 
-    private async Task<ActionResult> PutBinaryData(int instanceOwnerPartyId, Guid instanceGuid, Guid dataGuid)
+    private async Task<ActionResult> PutBinaryData(
+        int instanceOwnerPartyId,
+        Guid instanceGuid,
+        Guid dataGuid,
+        DataType dataType
+    )
     {
-        if (Request.Headers.TryGetValue("Content-Disposition", out StringValues headerValues))
-        {
-            var contentDispositionHeader = ContentDispositionHeaderValue.Parse(headerValues.ToString());
-            _logger.LogInformation("Content-Disposition: {ContentDisposition}", headerValues.ToString());
-            DataElement dataElement = await _dataClient.UpdateBinaryData(
-                new InstanceIdentifier(instanceOwnerPartyId, instanceGuid),
-                Request.ContentType,
-                contentDispositionHeader.FileName.ToString(),
-                dataGuid,
-                Request.Body
-            );
-            SelfLinkHelper.SetDataAppSelfLinks(instanceOwnerPartyId, instanceGuid, dataElement, Request);
+        //TODO: Consider having a rule that disables PUT for binary data elements.
 
-            return Created(dataElement.SelfLinks.Apps, dataElement);
+        (bool validationRestrictionSuccess, List<ValidationIssue> errors) =
+            DataRestrictionValidation.CompliesWithDataRestrictions(Request, dataType);
+
+        if (!validationRestrictionSuccess)
+        {
+            return BadRequest(
+                await GetErrorDetails(
+                    errors
+                        .Select(e => ValidationIssueWithSource.FromIssue(e, "DataRestrictionValidation", false))
+                        .ToList()
+                )
+            );
         }
 
-        return BadRequest("Invalid data provided. Error:  The request must include a Content-Disposition header");
+        if (!Request.Headers.TryGetValue("Content-Disposition", out StringValues headerValues))
+        {
+            return BadRequest("Invalid data provided. Error:  The request must include a Content-Disposition header");
+        }
+
+        var contentDispositionHeader = ContentDispositionHeaderValue.Parse(headerValues.ToString());
+        _logger.LogInformation("Content-Disposition: {ContentDisposition}", headerValues.ToString());
+
+        var (bytes, actualLength) = await Request.ReadBodyAsByteArrayAsync(
+            dataType.MaxSize * 1024 * 1024 ?? REQUEST_SIZE_LIMIT
+        );
+        if (bytes is null)
+        {
+            return BadRequest(
+                $"The request body is too large. The content length is {actualLength} bytes, which exceeds the limit of {dataType.MaxSize} MB"
+            );
+        }
+
+        var analysisAndValidationProblem = await RunFileAnalysisAndValidation(
+            dataType,
+            bytes,
+            contentDispositionHeader.FileName.ToString()
+        );
+        if (analysisAndValidationProblem != null)
+        {
+            return Problem(analysisAndValidationProblem);
+        }
+
+        DataElement dataElement = await _dataClient.UpdateBinaryData(
+            new InstanceIdentifier(instanceOwnerPartyId, instanceGuid),
+            Request.ContentType,
+            contentDispositionHeader.FileName.ToString(),
+            dataGuid,
+            new MemoryAsStream(bytes)
+        );
+
+        SelfLinkHelper.SetDataAppSelfLinks(instanceOwnerPartyId, instanceGuid, dataElement, Request);
+
+        return Created(dataElement.SelfLinks.Apps, dataElement);
     }
 
     private async Task<ActionResult> PutFormData(
@@ -1078,44 +1096,6 @@ public class DataController : ControllerBase
         }
 
         return Created(dataUrl, dataElement);
-    }
-
-    private async Task UpdatePresentationTextsOnInstance(Instance instance, string dataType, object serviceModel)
-    {
-        var updatedValues = DataHelper.GetUpdatedDataValues(
-            (await _appMetadata.GetApplicationMetadata()).PresentationFields,
-            instance.PresentationTexts,
-            dataType,
-            serviceModel
-        );
-
-        if (updatedValues.Count > 0)
-        {
-            await _instanceClient.UpdatePresentationTexts(
-                int.Parse(instance.Id.Split("/")[0], CultureInfo.InvariantCulture),
-                Guid.Parse(instance.Id.Split("/")[1]),
-                new PresentationTexts { Texts = updatedValues }
-            );
-        }
-    }
-
-    private async Task UpdateDataValuesOnInstance(Instance instance, string dataType, object serviceModel)
-    {
-        var updatedValues = DataHelper.GetUpdatedDataValues(
-            (await _appMetadata.GetApplicationMetadata()).DataFields,
-            instance.DataValues,
-            dataType,
-            serviceModel
-        );
-
-        if (updatedValues.Count > 0)
-        {
-            await _instanceClient.UpdateDataValues(
-                int.Parse(instance.Id.Split("/")[0], CultureInfo.InvariantCulture),
-                Guid.Parse(instance.Id.Split("/")[1]),
-                new DataValues { Values = updatedValues }
-            );
-        }
     }
 
     private ActionResult HandlePlatformHttpException(PlatformHttpException e, string defaultMessage)

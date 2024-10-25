@@ -286,4 +286,13 @@ public class ModelSerializationService
             return modelType.Name;
         }
     }
+
+    /// <summary>
+    /// Initialize an empty object of the specified type
+    /// </summary>
+    public object GetEmpty(DataType dataType)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(dataType?.AppLogic?.ClassRef);
+        return _appModel.Create(dataType.AppLogic.ClassRef);
+    }
 }

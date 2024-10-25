@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
@@ -34,16 +35,10 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     private readonly LazyCache<ReadOnlyMemory<byte>> _binaryCache = new();
 
     // Data elements to delete (eg RemoveDataElement(dataElementId)), but not yet deleted from instance or storage
-    private readonly ConcurrentBag<DataElementIdentifier> _dataElementsToDelete = new();
+    private readonly ConcurrentBag<DataElementChange> _changesForDeletion = [];
 
-    // Data elements to add (eg AddFormDataElement(dataTypeString, data)), but not yet added to instance or storage
-    private readonly ConcurrentBag<(
-        DataType dataType,
-        string contentType,
-        string? filename,
-        object? model,
-        ReadOnlyMemory<byte> bytes
-    )> _dataElementsToAdd = new();
+    // Form data not yet saved to storage (thus no dataElementId)
+    private readonly ConcurrentBag<DataElementChange> _changesForCreation = [];
 
     // The update functions returns updated data elements.
     // We want to make sure that the data elements are updated in the instance object
@@ -136,8 +131,9 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     }
 
     /// <inheritdoc />
-    public void AddFormDataElement(string dataTypeString, object model)
+    public FormDataChange AddFormDataElement(string dataTypeString, object model)
     {
+        ArgumentNullException.ThrowIfNull(model);
         var dataType = GetDataTypeByString(dataTypeString);
         if (dataType.AppLogic?.ClassRef is not { } classRef)
         {
@@ -157,11 +153,23 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         ObjectUtils.InitializeAltinnRowId(model);
         var (bytes, contentType) = _modelSerializationService.SerializeToStorage(model, dataType);
 
-        _dataElementsToAdd.Add((dataType, contentType, null, model, bytes));
+        FormDataChange change = new FormDataChange
+        {
+            Type = ChangeType.Created,
+            DataElement = null,
+            DataType = dataType,
+            ContentType = contentType,
+            CurrentFormData = model,
+            PreviousFormData = _modelSerializationService.GetEmpty(dataType),
+            CurrentBinaryData = bytes,
+            PreviousBinaryData = default, // empty memory reference
+        };
+        _changesForCreation.Add(change);
+        return change;
     }
 
     /// <inheritdoc />
-    public void AddAttachmentDataElement(
+    public BinaryChange AddBinaryDataElement(
         string dataTypeString,
         string contentType,
         string? filename,
@@ -175,7 +183,32 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
                 $"Data type {dataTypeString} has a AppLogic.ClassRef in app metadata, and is not a binary data element"
             );
         }
-        _dataElementsToAdd.Add((dataType, contentType, filename, null, bytes));
+
+        if (dataType.MaxSize.HasValue && bytes.Length > dataType.MaxSize.Value * 1024 * 1024)
+        {
+            throw new InvalidOperationException(
+                $"Data element of type {dataTypeString} exceeds the size limit of {dataType.MaxSize} MB"
+            );
+        }
+
+        if (dataType.AllowedContentTypes is { Count: > 0 } && !dataType.AllowedContentTypes.Contains(contentType))
+        {
+            throw new InvalidOperationException(
+                $"Data element of type {dataTypeString} has a Content-Type '{contentType}' which is invalid for element type '{dataTypeString}'"
+            );
+        }
+
+        BinaryChange change = new BinaryChange
+        {
+            Type = ChangeType.Created,
+            DataElement = null, // Not yet saved to storage
+            DataType = dataType,
+            FileName = filename,
+            ContentType = contentType,
+            CurrentBinaryData = bytes,
+        };
+        _changesForCreation.Add(change);
+        return change;
     }
 
     /// <inheritdoc />
@@ -188,51 +221,164 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
                 $"Data element with id {dataElementIdentifier.Id} not found in instance"
             );
         }
-
-        _dataElementsToDelete.Add(dataElementIdentifier);
+        var dataType = GetDataType(dataElementIdentifier);
+        if (dataType.AppLogic?.ClassRef is null)
+        {
+            _changesForDeletion.Add(
+                new BinaryChange()
+                {
+                    Type = ChangeType.Deleted,
+                    DataElement = dataElement,
+                    DataType = dataType,
+                    FileName = dataElement.Filename,
+                    ContentType = dataElement.ContentType,
+                    CurrentBinaryData = default,
+                }
+            );
+        }
+        else
+        {
+            _changesForDeletion.Add(
+                new FormDataChange()
+                {
+                    Type = ChangeType.Deleted,
+                    DataElement = dataElement,
+                    DataType = dataType,
+                    ContentType = dataElement.ContentType,
+                    CurrentFormData = _formDataCache.TryGetCachedValue(dataElementIdentifier, out var cfd)
+                        ? cfd
+                        : _modelSerializationService.GetEmpty(dataType),
+                    PreviousFormData = _modelSerializationService.GetEmpty(dataType),
+                    CurrentBinaryData = null,
+                    PreviousBinaryData = _binaryCache.TryGetCachedValue(dataElementIdentifier, out var value)
+                        ? value
+                        : null,
+                }
+            );
+        }
     }
 
-    public List<DataElementChange> GetDataElementChanges(bool initializeAltinnRowId)
+    public DataElementChanges GetDataElementChanges(bool initializeAltinnRowId)
     {
         var changes = new List<DataElementChange>();
+
+        // Add form data where the CurrentFormData serializes to a different binary than the PreviousBinaryData
         foreach (var dataElement in Instance.Data)
         {
             DataElementIdentifier dataElementIdentifier = dataElement;
-            object? data = _formDataCache.GetCachedValueOrDefault(dataElementIdentifier);
-            // Skip data elements that have not been deserialized into a object
-            if (data is null)
+            if (_changesForDeletion.Any(change => change.DataElementIdentifier == dataElementIdentifier))
+            {
+                // Deleted (and created) changes gets added bellow
                 continue;
+            }
             var dataType = GetDataType(dataElementIdentifier);
-            var previousBinary = _binaryCache.GetCachedValueOrDefault(dataElementIdentifier);
+
+            if (!_formDataCache.TryGetCachedValue(dataElementIdentifier, out object? data))
+            {
+                // We don't support making updates to binary data elements (attachments) in IInstanceDataMutator
+                continue;
+            }
+
+            // The object has form data
+            if (dataType.AppLogic?.ClassRef is null)
+                throw new InvalidOperationException(
+                    $"Data element {dataElementIdentifier.Id} of type {dataType.Id} has cached form data, but no app logic"
+                );
+            var hasCachedBinary = _binaryCache.TryGetCachedValue(
+                dataElementIdentifier,
+                out ReadOnlyMemory<byte> cachedBinary
+            );
+            if (!hasCachedBinary)
+            {
+                throw new InvalidOperationException(
+                    $"Data element {dataElementIdentifier.Id} of type {dataType.Id} has app logic and must be fetched before it is edited"
+                );
+            }
+
             if (initializeAltinnRowId)
             {
                 ObjectUtils.InitializeAltinnRowId(data);
             }
-            var (currentBinary, _) = _modelSerializationService.SerializeToStorage(data, dataType);
-            _binaryCache.Set(dataElementIdentifier, currentBinary);
 
-            if (!currentBinary.Span.SequenceEqual(previousBinary.Span))
+            var (currentBinary, _) = _modelSerializationService.SerializeToStorage(data, dataType);
+
+            if (!currentBinary.Span.SequenceEqual(cachedBinary.Span))
             {
                 changes.Add(
-                    new DataElementChange()
+                    new FormDataChange()
                     {
+                        Type = ChangeType.Updated,
                         DataElement = dataElement,
+                        ContentType = dataElement.ContentType,
+                        DataType = dataType,
                         CurrentFormData = data,
+                        // For patch requests we could get the previous data from the patch, but it's not available here
+                        // and deserializing twice is not a big deal
                         PreviousFormData = _modelSerializationService.DeserializeFromStorage(
-                            previousBinary.Span,
+                            cachedBinary.Span,
                             dataType
                         ),
                         CurrentBinaryData = currentBinary,
-                        PreviousBinaryData = previousBinary,
+                        PreviousBinaryData = cachedBinary,
                     }
                 );
             }
         }
 
-        return changes;
+        // Include the change for data elements that have been added
+        changes.AddRange(_changesForCreation);
+        changes.AddRange(_changesForDeletion);
+
+        return new DataElementChanges(changes);
     }
 
-    internal async Task<List<DataElement>> UpdateInstanceData(List<DataElementChange> changes)
+    private async Task CreateDataElement(
+        ConcurrentDictionary<DataElementChange, DataElement> createdDataElements,
+        DataElementChange change
+    )
+    {
+        var bytes = change switch
+        {
+            BinaryChange bc => bc.CurrentBinaryData,
+            FormDataChange fdc
+                => fdc.CurrentBinaryData
+                    ?? throw new InvalidOperationException("FormDataChange must set CurrentBinaryData before saving"),
+            _ => throw new InvalidOperationException("Change must be of type BinaryChange or FormDataChange")
+        };
+        // Use the BinaryData because we serialize before saving.
+        var dataElement = await _dataClient.InsertBinaryData(
+            Instance.Id,
+            change.DataType.Id,
+            change.ContentType,
+            (change as BinaryChange)?.FileName,
+            new MemoryAsStream(bytes)
+        );
+        _binaryCache.Set(dataElement, bytes);
+        if (change is FormDataChange formDataChange)
+        {
+            _formDataCache.Set(dataElement, formDataChange.CurrentFormData);
+        }
+        createdDataElements.TryAdd(change, dataElement);
+    }
+
+    private async Task UpdateDataElement(
+        DataElementIdentifier dataElementIdentifier,
+        string contentType,
+        string? filename,
+        ReadOnlyMemory<byte> bytes
+    )
+    {
+        var newDataElement = await _dataClient.UpdateBinaryData(
+            new InstanceIdentifier(Instance),
+            contentType,
+            filename,
+            dataElementIdentifier.Guid,
+            new MemoryAsStream(bytes)
+        );
+        _savedDataElements.Add(newDataElement);
+    }
+
+    internal async Task UpdateInstanceData(DataElementChanges changes)
     {
         if (_instanceOwnerPartyId == 0 || _instanceGuid == Guid.Empty)
         {
@@ -240,36 +386,18 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         }
 
         var tasks = new List<Task>();
-        ConcurrentBag<DataElement> createdDataElements = new();
+        ConcurrentDictionary<DataElementChange, DataElement> createdDataElements = new();
         // We need to create data elements here, so that we can set them correctly on the instance
         // Updating and deleting is done in SaveChanges and happen in parallel with validation.
 
         // Upload added data elements
-        foreach (var (dataType, contentType, filename, data, bytes) in _dataElementsToAdd)
+        foreach (var change in _changesForCreation)
         {
-            async Task InsertDataElement()
-            {
-                // Use the BinaryData because we serialize before saving.
-                var dataElement = await _dataClient.InsertBinaryData(
-                    Instance.Id,
-                    dataType.Id,
-                    contentType,
-                    filename,
-                    new MemoryAsStream(bytes)
-                );
-                _binaryCache.Set(dataElement, bytes);
-                if (data is not null)
-                {
-                    _formDataCache.Set(dataElement, data);
-                }
-                createdDataElements.Add(dataElement);
-            }
-
-            tasks.Add(InsertDataElement());
+            tasks.Add(CreateDataElement(createdDataElements, change));
         }
 
         // Delete data elements
-        foreach (var dataElementId in _dataElementsToDelete)
+        foreach (var change in _changesForDeletion)
         {
             async Task DeleteData()
             {
@@ -278,8 +406,8 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
                     _appMetadata.AppIdentifier.App,
                     _instanceOwnerPartyId,
                     _instanceGuid,
-                    dataElementId.Guid,
-                    true
+                    change.DataElementIdentifier.Guid,
+                    false
                 );
             }
 
@@ -288,46 +416,64 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
 
         await Task.WhenAll(tasks);
 
-        //Update DataValues and presentation texts
-        foreach (var change in changes)
-        {
-            await UpdateDataValuesOnInstance(Instance, change.DataElement.DataType, change.CurrentFormData);
-            await UpdatePresentationTextsOnInstance(Instance, change.DataElement.DataType, change.CurrentFormData);
-        }
-
         // Remove deleted data elements from instance.Data
-        Instance.Data.RemoveAll(dataElement => _dataElementsToDelete.Any(d => d.Id == dataElement.Id));
+        Instance.Data.RemoveAll(dataElement => _changesForDeletion.Any(d => d.DataElement?.Id == dataElement.Id));
 
         // Add Created data elements to instance
-        Instance.Data.AddRange(createdDataElements);
+        Instance.Data.AddRange(createdDataElements.Values);
 
-        return createdDataElements.ToList();
+        // update data elements on new elements
+        foreach (var change in changes.AllChanges)
+        {
+            if (change.DataElement is null)
+            {
+                change.DataElement = createdDataElements.TryGetValue(change, out var value)
+                    ? value
+                    : throw new InvalidOperationException(
+                        "DataElementChange without DataElement must be a new data element"
+                    );
+            }
+            if (change is FormDataChange formDataChange)
+            {
+                //Update DataValues and presentation texts
+                // These can not run in parallel with creating the data elements, because they need the data element id
+                await UpdateDataValuesOnInstance(Instance, formDataChange.DataType.Id, formDataChange.CurrentFormData);
+                await UpdatePresentationTextsOnInstance(
+                    Instance,
+                    formDataChange.DataType.Id,
+                    formDataChange.CurrentFormData
+                );
+            }
+        }
     }
 
-    internal async Task SaveChanges(List<DataElementChange> changes)
+    internal async Task SaveChanges(DataElementChanges changes)
     {
         var tasks = new List<Task>();
 
-        foreach (var change in changes)
+        foreach (var change in changes.FormDataChanges)
         {
+            if (change.Type != ChangeType.Updated)
+                continue;
             if (change.CurrentBinaryData is null)
             {
-                throw new InvalidOperationException("Changes sent to SaveChanges must have a CurrentBinaryData value");
+                throw new InvalidOperationException(
+                    "ChangeType.Updated sent to SaveChanges must have a CurrentBinaryData value"
+                );
             }
+            if (change.DataElement is null)
+                throw new InvalidOperationException(
+                    "ChangeType.Updated sent to SaveChanges must have a DataElement value"
+                );
 
-            async Task UpdateDataElement()
-            {
-                var newDataElement = await _dataClient.UpdateBinaryData(
-                    new InstanceIdentifier(Instance),
+            tasks.Add(
+                UpdateDataElement(
+                    change.DataElement,
                     change.DataElement.ContentType,
                     change.DataElement.Filename,
-                    Guid.Parse(change.DataElement.Id),
-                    new MemoryAsStream(change.CurrentBinaryData.Value)
-                );
-                _savedDataElements.Add(newDataElement);
-            }
-
-            tasks.Add(UpdateDataElement());
+                    change.CurrentBinaryData.Value
+                )
+            );
         }
 
         await Task.WhenAll(tasks);
@@ -381,7 +527,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
             }
         }
 
-        public T? GetCachedValueOrDefault(DataElementIdentifier identifier)
+        public bool TryGetCachedValue(DataElementIdentifier identifier, [NotNullWhen(true)] out T? value)
         {
             lock (_cache)
             {
@@ -390,10 +536,12 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
                     && lazyTask is { IsValueCreated: true, Value.IsCompletedSuccessfully: true }
                 )
                 {
-                    return lazyTask.Value.Result;
+                    value = lazyTask.Value.Result ?? throw new InvalidOperationException("Value in cache is null");
+                    return true;
                 }
             }
-            return default;
+            value = default;
+            return false;
         }
     }
 
@@ -408,14 +556,37 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         return dataType;
     }
 
-    internal void VerifyDataElementsUnchanged()
+    internal void VerifyDataElementsUnchangedSincePreviousChanges(DataElementChanges previousChanges)
     {
         var changes = GetDataElementChanges(initializeAltinnRowId: false);
-        if (changes.Count > 0)
+        if (changes.AllChanges.Count != previousChanges.AllChanges.Count)
         {
-            throw new InvalidOperationException(
-                $"Data elements of type {string.Join(", ", changes.Select(c => c.DataElement.DataType).Distinct())} have been changed by validators"
-            );
+            throw new Exception("Number of data elements have changed by validators");
+        }
+
+        foreach (var previousChange in previousChanges.AllChanges)
+        {
+            var currentChange =
+                changes.AllChanges.FirstOrDefault(c => c.DataElement?.Id == previousChange.DataElement?.Id)
+                ?? throw new Exception("Number of data elements have changed by validators");
+
+            var equal = (currentChange, previousChange) switch
+            {
+                (
+                    FormDataChange { CurrentBinaryData.Span: var currentSpan },
+                    FormDataChange { CurrentBinaryData.Span: var previousSpan }
+                )
+                    => currentSpan.SequenceEqual(previousSpan),
+                (BinaryChange current, BinaryChange previous)
+                    => current.CurrentBinaryData.Span.SequenceEqual(previous.CurrentBinaryData.Span),
+                _ => throw new Exception("Data element type has changed by validators")
+            };
+            if (!equal)
+            {
+                throw new Exception(
+                    $"Data element {previousChange.DataType.Id} with id {previousChange.DataElement?.Id} has been changed by validators"
+                );
+            }
         }
     }
 

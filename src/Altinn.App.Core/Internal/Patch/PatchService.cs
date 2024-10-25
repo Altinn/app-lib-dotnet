@@ -26,7 +26,7 @@ internal class PatchService : IPatchService
     private readonly IDataClient _dataClient;
     private readonly IInstanceClient _instanceClient;
     private readonly ModelSerializationService _modelSerializationService;
-    private readonly IWebHostEnvironment _hostingEnvironment;
+    private readonly IHostEnvironment _hostingEnvironment;
     private readonly Telemetry? _telemetry;
     private readonly IValidationService _validationService;
     private readonly IEnumerable<IDataProcessor> _dataProcessors;
@@ -46,7 +46,7 @@ internal class PatchService : IPatchService
         IEnumerable<IDataProcessor> dataProcessors,
         IEnumerable<IDataWriteProcessor> dataWriteProcessors,
         ModelSerializationService modelSerializationService,
-        IWebHostEnvironment hostingEnvironment,
+        IHostEnvironment hostingEnvironment,
         Telemetry? telemetry = null
     )
     {
@@ -176,7 +176,7 @@ internal class PatchService : IPatchService
         if (_hostingEnvironment.IsDevelopment())
         {
             // Ensure that validation did not change the data elements
-            dataAccessor.VerifyDataElementsUnchanged();
+            dataAccessor.VerifyDataElementsUnchangedSincePreviousChanges(changes);
         }
 
         // report back updated and created data elements with appLogic
