@@ -35,7 +35,8 @@ partial class Telemetry
     //     _counters[MetricNameTokenRequest].Add(1, new Tag(InternalLabels.Result, result.ToStringFast()));
     // }
 
-    internal static class Correspondence
+    // TODO: Name this something reasonable
+    internal static class CorrespondenceSomethingUnique
     {
         // internal static readonly string MetricNameTokenRequest = Metrics.CreateLibName("maskinporten_token_requests");
 

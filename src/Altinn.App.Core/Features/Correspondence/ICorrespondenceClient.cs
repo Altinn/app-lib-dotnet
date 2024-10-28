@@ -1,5 +1,3 @@
-using Altinn.App.Core.Features.Correspondence.Models;
-
 namespace Altinn.App.Core.Features.Correspondence;
 
 /// <summary>
@@ -10,8 +8,8 @@ public interface ICorrespondenceClient
     /// <summary>
     /// Sends a correspondence message.
     /// </summary>
-    /// <param name="message">The message to send.</param>
+    /// <param name="content">The message to send.</param>
     /// <param name="cancellationToken">An optional cancellation token.</param>
     /// <returns></returns>
-    Task Send(CorrespondenceMessage message, CancellationToken cancellationToken);
+    Task Send(Models.Correspondence content, CancellationToken cancellationToken);
 }

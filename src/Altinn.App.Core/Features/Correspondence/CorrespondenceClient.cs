@@ -4,7 +4,6 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
-using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Features.Maskinporten;
 using Altinn.App.Core.Features.Maskinporten.Constants;
 using Microsoft.AspNetCore.Mvc;
@@ -39,7 +38,7 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
     }
 
     /// <inheritdoc />
-    public async Task Send(CorrespondenceMessage message, CancellationToken cancellationToken = default)
+    public async Task Send(Models.Correspondence correspondence, CancellationToken cancellationToken = default)
     {
         using Activity? activity = _telemetry.StartSendCorrespondenceActivity();
         HttpResponseMessage? response = null;
@@ -48,12 +47,12 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
         try
         {
             using MultipartFormDataContent content = new();
+            correspondence.Serialize(content);
 
-            message.Serialize(content);
-            foreach (var attachment in message.Content.Attachments ?? [])
-            {
-                content.Add(new StreamContent(attachment.Data), "attachments", attachment.Filename ?? "");
-            }
+            // foreach (var attachment in correspondence.Content.Attachments ?? [])
+            // {
+            //     content.Add(new StreamContent(attachment.Data), "attachments", attachment.Filename ?? "");
+            // }
 
             string uri = _platformSettings.ApiCorrespondenceEndpoint.TrimEnd('/') + "/correspondence/upload";
             using HttpClient client = _httpClientFactory.CreateClient();
@@ -70,7 +69,11 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
             {
                 responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
                 problemDetails = JsonSerializer.Deserialize<ProblemDetails>(responseBody);
+
+                // TODO: handle errors here
             }
+
+            // TODO: handle success here
         }
         catch (Exception ex)
         {
@@ -81,6 +84,8 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
                 problemDetails?.Type
             );
             activity?.Errored(ex);
+
+            // TODO: handle errors here
         }
         finally
         {
