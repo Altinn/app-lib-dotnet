@@ -1212,8 +1212,6 @@ public class InstancesController : ControllerBase
     /// <returns>the instance template or null if none is found</returns>
     private static Instance? ExtractInstanceTemplate(List<RequestPart> parts)
     {
-        Instance? instanceTemplate = null;
-
         RequestPart? instancePart = parts.Find(part => part.Name == "instance");
 
         // assume that first part with no name is an instanceTemplate
@@ -1222,6 +1220,7 @@ public class InstancesController : ControllerBase
             && parts.Count == 1
             && parts[0].ContentType.Contains("application/json")
             && parts[0].Name == null
+            && parts[0].Bytes.Length > 0
         )
         {
             instancePart = parts[0];
@@ -1231,13 +1230,10 @@ public class InstancesController : ControllerBase
         {
             parts.Remove(instancePart);
 
-            instanceTemplate = System.Text.Json.JsonSerializer.Deserialize<Instance>(
-                instancePart.Bytes,
-                _jsonSerializerOptionsWeb
-            );
+            return System.Text.Json.JsonSerializer.Deserialize<Instance>(instancePart.Bytes, _jsonSerializerOptionsWeb);
         }
 
-        return instanceTemplate;
+        return null;
     }
 
     private async Task RegisterEvent(string eventType, Instance instance)
