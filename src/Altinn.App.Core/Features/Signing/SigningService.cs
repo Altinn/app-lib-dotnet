@@ -76,6 +76,12 @@ internal sealed class SigningService(
                 );
             }
 
+            Sms? smsNotification = personSignee.Notifications?.SignatureTaskReceived?.Sms;
+            if (smsNotification is not null && smsNotification.MobileNumber is null)
+            {
+                smsNotification.MobileNumber = person.MobileNumber;
+            }
+
             personSigneeContexts.Add(new SigneeContext(taskId, party.PartyId, personSignee, new SigneeState()));
         }
 
@@ -119,6 +125,12 @@ internal sealed class SigningService(
             if (emailNotification is not null && emailNotification.EmailAddress is null)
             {
                 emailNotification.EmailAddress = organisation.EMailAddress;
+            }
+
+            Sms? smsNotification = organisationSignee.Notifications?.SignatureTaskReceived?.Sms;
+            if (smsNotification is not null && smsNotification.MobileNumber is null)
+            {
+                smsNotification.MobileNumber = organisation.MobileNumber;
             }
 
             organisationSigneeContexts.Add(

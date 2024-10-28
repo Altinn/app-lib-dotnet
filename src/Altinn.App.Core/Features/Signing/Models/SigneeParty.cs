@@ -59,8 +59,15 @@ public class Notifications
 /// </summary>
 public class Notification
 {
-    public Sms Sms { get; set; }
-    public Email Email { get; set; }
+    /// <summary>
+    /// SMS notification configuration. If not null, an SMS will be sent.
+    /// </summary>
+    public Sms? Sms { get; set; }
+
+    /// <summary>
+    /// Email notification configuration. If not null, an email will be sent.
+    /// </summary>
+    public Email? Email { get; set; }
 }
 
 /// <summary>
@@ -68,7 +75,14 @@ public class Notification
 /// </summary>
 public class Sms
 {
-    public required string MobileNumber { get; set; }
+    /// <summary>
+    /// The mobile number to send the sms to. If not set, the registry mobile number will be used.
+    /// </summary>
+    public string? MobileNumber { get; set; }
+
+    /// <summary>
+    /// The body. If not set, a default will be used.
+    /// </summary>
     public string? Body { get; set; }
 }
 
@@ -77,5 +91,18 @@ public class Sms
 /// </summary>
 public class Email
 {
+    /// <summary>
+    /// The email address to send the email to. If not set, the registry email address will be used for organisations. For persons, no email will be sent.
+    /// </summary>
     public string? EmailAddress { get; set; }
+
+    /// <summary>
+    /// The subject. If not set, a default will be used.
+    /// </summary>
+    public string? Subject { get; set; }
+
+    /// <summary>
+    /// The body. If not set, a default will be used.
+    /// </summary>
+    public string? Body { get; set; }
 }

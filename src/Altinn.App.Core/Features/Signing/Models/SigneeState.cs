@@ -9,9 +9,19 @@ internal sealed class SigneeState
     internal bool SignatureRequestSmsSent { get; set; }
 
     /// <summary>
+    /// The reason why the sms was not sent.
+    /// </summary>
+    internal string? SignatureRequestSmsNotSentReason { get; set; }
+
+    /// <summary>
     /// Indicated whether signee has been notified to sign via email.
     /// </summary>
     internal bool SignatureRequestEmailSent { get; set; }
+
+    /// <summary>
+    /// The reason why the email was not sent.
+    /// </summary>
+    internal string? SignatureRequestEmailNotSentReason { get; set; }
 
     // internal bool HasSigned { get; set; } //TODO: Probably don't want to store this here, but rather check for signature documents for this signee and make sure hash is correct?
 
