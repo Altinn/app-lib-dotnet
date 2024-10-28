@@ -20,7 +20,7 @@ All other tasks have a layout set. For payment, the layout set was perhaps not n
 -   B3: We should adhere to established standards in our frontend code base.
 -   B4: It should be simple/intuitive to maintain the code base for altinn developers.
 -   B5: We do not know all possible use cases for service owners.
--   B6: Pit of success should be wide and deep - it should be as hard as possible to configure an app into an unstable / not working state. It should be difficult to develop bad UX for app developers.
+-   B6: Pit of success should be wide and deep - it should be as hard as possible to configure an app into an unstable / not working state. It should be difficult to develop bad UX as an app developer.
 -   B7: Backwards compability
 
 ## Alternatives considered
