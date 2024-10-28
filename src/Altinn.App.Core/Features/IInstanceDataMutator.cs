@@ -33,7 +33,7 @@ public interface IInstanceDataMutator : IInstanceDataAccessor
     /// <remarks>
     /// Saving to storage is not done until the instance is saved, so mutations to data might or might not be sendt to storage.
     /// </remarks>
-    BinaryChange AddBinaryDataElement(
+    BinaryDataChange AddBinaryDataElement(
         string dataTypeId,
         string contentType,
         string? filename,
@@ -46,7 +46,7 @@ public interface IInstanceDataMutator : IInstanceDataAccessor
     /// <remarks>
     /// Saving to storage is not done until the instance is saved, so mutations to data might or might not be sendt to storage.
     /// </remarks>
-    BinaryChange AddBinaryDataElement(
+    BinaryDataChange AddBinaryDataElement(
         DataType dataType,
         string contentType,
         string? filename,

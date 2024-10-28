@@ -25,7 +25,7 @@ public sealed class DataElementChanges
     /// <summary>
     /// Get changes to attachments elements
     /// </summary>
-    public IEnumerable<BinaryChange> BinaryChanges => AllChanges.OfType<BinaryChange>();
+    public IEnumerable<BinaryDataChange> BinaryChanges => AllChanges.OfType<BinaryDataChange>();
 }
 
 /// <summary>
@@ -84,7 +84,7 @@ public enum ChangeType
 /// <summary>
 /// Representation of a change to a binary data element
 /// </summary>
-public sealed class BinaryChange : DataElementChange
+public sealed class BinaryDataChange : DataElementChange
 {
     /// <summary>
     /// The file name of the attachment file

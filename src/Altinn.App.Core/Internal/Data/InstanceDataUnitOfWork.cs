@@ -169,7 +169,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     }
 
     /// <inheritdoc />
-    public BinaryChange AddBinaryDataElement(
+    public BinaryDataChange AddBinaryDataElement(
         string dataTypeId,
         string contentType,
         string? filename,
@@ -198,7 +198,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
             );
         }
 
-        BinaryChange change = new BinaryChange
+        BinaryDataChange change = new BinaryDataChange
         {
             Type = ChangeType.Created,
             DataElement = null, // Not yet saved to storage
@@ -225,7 +225,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         if (dataType.AppLogic?.ClassRef is null)
         {
             _changesForDeletion.Add(
-                new BinaryChange()
+                new BinaryDataChange()
                 {
                     Type = ChangeType.Deleted,
                     DataElement = dataElement,
@@ -339,7 +339,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     {
         var bytes = change switch
         {
-            BinaryChange bc => bc.CurrentBinaryData,
+            BinaryDataChange bc => bc.CurrentBinaryData,
             FormDataChange fdc
                 => fdc.CurrentBinaryData
                     ?? throw new InvalidOperationException("FormDataChange must set CurrentBinaryData before saving"),
@@ -350,7 +350,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
             Instance.Id,
             change.DataType.Id,
             change.ContentType,
-            (change as BinaryChange)?.FileName,
+            (change as BinaryDataChange)?.FileName,
             new MemoryAsStream(bytes)
         );
         _binaryCache.Set(dataElement, bytes);
@@ -577,7 +577,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
                     FormDataChange { CurrentBinaryData.Span: var previousSpan }
                 )
                     => currentSpan.SequenceEqual(previousSpan),
-                (BinaryChange current, BinaryChange previous)
+                (BinaryDataChange current, BinaryDataChange previous)
                     => current.CurrentBinaryData.Span.SequenceEqual(previous.CurrentBinaryData.Span),
                 _ => throw new Exception("Data element type has changed by validators")
             };

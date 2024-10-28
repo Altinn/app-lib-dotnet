@@ -370,7 +370,7 @@ public class DataController : ControllerBase
         }
     }
 
-    private async Task<ServiceResult<BinaryChange, ProblemDetails>> CreateBinaryData(
+    private async Task<ServiceResult<BinaryDataChange, ProblemDetails>> CreateBinaryData(
         InstanceDataUnitOfWork dataMutator,
         DataType dataTypeFromMetadata
     )
