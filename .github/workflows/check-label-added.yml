@@ -13,6 +13,6 @@ jobs:
           script: |
             const labels = context.payload.pull_request.labels;
             const releaseLabels = ["ignore-for-release", "breaking-change", "feature", "bugfix"];
-            if(!releaseLabels.some(r=>labels.includes(r))){
+            if(!releaseLabels.some(r=>labels.some(l=>l.name == r))){
                 core.setFailed(`The PR must have at least one of these labels: ${releaseLabels}`)
             }
