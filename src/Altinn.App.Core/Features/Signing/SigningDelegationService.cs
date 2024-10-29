@@ -1,9 +1,12 @@
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
+using Altinn.App.Core.Internal.AccessManagement;
+using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Features.Signing;
 
-internal sealed class SigningDelegationService() : ISigningDelegationService
+internal sealed class SigningDelegationService(IAccessManagementClient accessManagementClient)
+    : ISigningDelegationService
 {
     public async Task<List<SigneeContext>> DelegateSigneeRights(
         List<SigneeContext> signeeContexts,
@@ -17,7 +20,9 @@ internal sealed class SigningDelegationService() : ISigningDelegationService
             {
                 if (state.IsAccessDelegated is false)
                 {
-                    //TODO: delegateSignAction
+                    string taskId = "123"; // TODO: do not hardcode this..
+                    Instance instance = new(); // TODO: do not hardcode this..
+                    await accessManagementClient.DelegateSignRights(taskId, instance);
                     state.IsAccessDelegated = await Task.FromResult(true);
                 }
             }
