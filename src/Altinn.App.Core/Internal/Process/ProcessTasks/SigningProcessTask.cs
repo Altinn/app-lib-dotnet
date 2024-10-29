@@ -1,4 +1,6 @@
 using Altinn.App.Core.Features.Signing;
+using Altinn.App.Core.Features.Signing.Interfaces;
+using Altinn.App.Core.Features.Signing.Models;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Internal.Process.ProcessTasks;
@@ -8,9 +10,9 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks;
 /// </summary>
 internal sealed class SigningProcessTask : IProcessTask
 {
-    private readonly SigningService _signingService;
+    private readonly ISigningService _signingService;
 
-    public SigningProcessTask(SigningService signingService)
+    public SigningProcessTask(ISigningService signingService)
     {
         _signingService = signingService;
     }
@@ -20,7 +22,7 @@ internal sealed class SigningProcessTask : IProcessTask
     /// <inheritdoc/>
     public async Task Start(string taskId, Instance instance)
     {
-        await _signingService.InitializeSignees(taskId, new CancellationToken());
+        await Task.CompletedTask;
     }
 
     /// <inheritdoc/>

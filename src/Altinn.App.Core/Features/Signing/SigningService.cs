@@ -16,9 +16,9 @@ internal sealed class SigningService(
     ISigningDelegationService signingDelegationService,
     ISigningNotificationService signingNotificationService,
     Telemetry? telemetry
-)
+) : ISigningService
 {
-    internal async Task<List<SigneeContext>> InitializeSignees(string taskId, CancellationToken? ct = null)
+    public async Task<List<SigneeContext>> InitializeSignees(string taskId, CancellationToken? ct = null)
     {
         using var activity = telemetry?.StartAssignSigneesActivity();
 
@@ -32,7 +32,7 @@ internal sealed class SigningService(
         return signeeContexts;
     }
 
-    internal async Task<List<SigneeContext>> ProcessSignees(
+    public async Task<List<SigneeContext>> ProcessSignees(
         List<SigneeContext> signeeContexts,
         CancellationToken? ct = null
     )
@@ -40,6 +40,9 @@ internal sealed class SigningService(
         using var activity = telemetry?.StartAssignSigneesActivity();
 
         await signingDelegationService.DelegateSigneeRights(signeeContexts, ct);
+
+        //TODO: If something fails inside DelegateSigneeRights, abort and don't send notifications. Set error state in SigneeState.
+
         await signingNotificationService.NotifySignatureTask(signeeContexts, ct);
 
         // TODO: StorageClient.SetSignState(state); ?
@@ -55,7 +58,11 @@ internal sealed class SigningService(
         List<SigneeContext> personSigneeContexts = [];
         foreach (PersonSignee personSignee in signeeResult.PersonSignees)
         {
-            Person? person = await personClient.GetPerson(personSignee.SocialSecurityNumber, personSignee.LastName, ct);
+            Person? person = await personClient.GetPerson(
+                personSignee.SocialSecurityNumber,
+                personSignee.LastName,
+                ct ?? new CancellationToken()
+            );
 
             if (person is null)
             {
@@ -76,7 +83,7 @@ internal sealed class SigningService(
                 );
             }
 
-            Sms? smsNotification = personSignee.Notifications?.SignatureTaskReceived?.Sms;
+            Sms? smsNotification = personSignee.Notifications?.OnSignatureTaskReceived?.Sms;
             if (smsNotification is not null && smsNotification.MobileNumber is null)
             {
                 smsNotification.MobileNumber = person.MobileNumber;
@@ -121,13 +128,13 @@ internal sealed class SigningService(
             }
 
             //TODO: Is this the correct place to set email to registry fallback? Maybe move it to notification service?
-            Email? emailNotification = organisationSignee.Notifications?.SignatureTaskReceived?.Email;
+            Email? emailNotification = organisationSignee.Notifications?.OnSignatureTaskReceived?.Email;
             if (emailNotification is not null && emailNotification.EmailAddress is null)
             {
                 emailNotification.EmailAddress = organisation.EMailAddress;
             }
 
-            Sms? smsNotification = organisationSignee.Notifications?.SignatureTaskReceived?.Sms;
+            Sms? smsNotification = organisationSignee.Notifications?.OnSignatureTaskReceived?.Sms;
             if (smsNotification is not null && smsNotification.MobileNumber is null)
             {
                 smsNotification.MobileNumber = organisation.MobileNumber;
@@ -141,7 +148,7 @@ internal sealed class SigningService(
         return organisationSigneeContexts;
     }
 
-    internal List<Signee> ReadSignees()
+    public List<Signee> ReadSignees()
     {
         using var activity = telemetry?.StartReadSigneesActivity();
         // TODO: Get signees from state

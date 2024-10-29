@@ -1,3 +1,4 @@
+using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
 
 namespace Altinn.App.Core.Features.Signing;
@@ -17,15 +18,15 @@ internal sealed class SigningDelegationService() : ISigningDelegationService
                 if (state.IsAccessDelegated is false)
                 {
                     //TODO: delegateSignAction
-                    state.IsAccessDelegated = true;
+                    state.IsAccessDelegated = await Task.FromResult(true);
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // TODO: log + telemetry?
+                state.DelegationFailedReason = "Failed to delegate signee rights: " + ex.Message;
             }
         }
 
-        await Task.CompletedTask;
+        return signeeContexts;
     }
 }

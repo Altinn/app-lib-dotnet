@@ -2,8 +2,15 @@ namespace Altinn.App.Core.Features.Signing.Models;
 
 internal sealed class SigneeState
 {
-    /// <summary>Indicates whether signee has been delegated rights to sign.</summary>
+    /// <summary>
+    /// Indicates whether signee has been delegated rights to sign.
+    /// </summary>
     internal bool IsAccessDelegated { get; set; }
+
+    /// <summary>
+    /// The reason why the delegation failed.
+    /// </summary>
+    internal string? DelegationFailedReason { get; set; }
 
     /// <summary>Indicates whether signee has been notified to sign via sms.</summary>
     internal bool SignatureRequestSmsSent { get; set; }

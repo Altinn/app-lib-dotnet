@@ -1,6 +1,6 @@
 using Altinn.App.Core.Features.Signing.Models;
 
-namespace Altinn.App.Core.Features.Signing;
+namespace Altinn.App.Core.Features.Signing.Interfaces;
 
 internal interface ISigningDelegationService
 {
