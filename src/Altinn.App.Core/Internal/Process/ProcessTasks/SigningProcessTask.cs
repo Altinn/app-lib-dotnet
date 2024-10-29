@@ -1,3 +1,6 @@
+using Altinn.App.Core.Features.Signing;
+using Altinn.App.Core.Features.Signing.Interfaces;
+using Altinn.App.Core.Features.Signing.Models;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Internal.Process.ProcessTasks;
@@ -5,8 +8,15 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks;
 /// <summary>
 /// Represents the process task responsible for signing.
 /// </summary>
-internal class SigningProcessTask : IProcessTask
+internal sealed class SigningProcessTask : IProcessTask
 {
+    private readonly ISigningService _signingService;
+
+    public SigningProcessTask(ISigningService signingService)
+    {
+        _signingService = signingService;
+    }
+
     public string Type => "signing";
 
     /// <inheritdoc/>

@@ -3,35 +3,34 @@ namespace Altinn.App.Core.Features.Signing.Models;
 internal sealed class SigneeState
 {
     /// <summary>
-    /// Create a new instance of the <see cref="SigneeState"/> class
+    /// Indicates whether signee has been delegated rights to sign.
     /// </summary>
-    /// <param name="id">The identifier of the signee.</param>
-    /// <param name="displayName">The display name of the signee.</param>
-    /// <param name="taskId">The task associated with the signee state.</param>
-    internal SigneeState(string id, string displayName, string taskId)
-    {
-        Id = id;
-        DisplayName = displayName;
-        TaskId = taskId;
-    }
+    internal bool IsAccessDelegated { get; set; }
 
-    /// <summary>The identifier of the signee.</summary>
-    internal string Id { get; }
+    /// <summary>
+    /// The reason why the delegation failed.
+    /// </summary>
+    internal string? DelegationFailedReason { get; set; }
 
-    /// <summary>The task associated with the signee state.</summary>
-    internal string TaskId { get; set; }
+    /// <summary>Indicates whether signee has been notified to sign via sms.</summary>
+    internal bool SignatureRequestSmsSent { get; set; }
 
-    /// <summary>The display name of the signee.</summary>
-    internal string DisplayName { get; }
+    /// <summary>
+    /// The reason why the sms was not sent.
+    /// </summary>
+    internal string? SignatureRequestSmsNotSentReason { get; set; }
 
-    /// <summary>Indicates whether signee has been delegated rights to sign.</summary>
-    internal bool IsDelegated { get; set; }
+    /// <summary>
+    /// Indicated whether signee has been notified to sign via email.
+    /// </summary>
+    internal bool SignatureRequestEmailSent { get; set; }
 
-    /// <summary>Indicates whether signee has been notified to sign.</summary>
-    internal bool IsNotified { get; set; }
+    /// <summary>
+    /// The reason why the email was not sent.
+    /// </summary>
+    internal string? SignatureRequestEmailNotSentReason { get; set; }
 
-    /// <summary>Indicates whether the signee has signed.</summary>
-    internal bool HasSigned { get; set; }
+    // internal bool HasSigned { get; set; } //TODO: Probably don't want to store this here, but rather check for signature documents for this signee and make sure hash is correct?
 
     /// <summary>Indicates whether the receipt for the signature has been send to the signee.</summary>
     internal bool IsReceiptSent { get; set; }
