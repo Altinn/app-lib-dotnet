@@ -297,11 +297,60 @@ public class DataController : ControllerBase
             }
             else
             {
-                var createBinaryResult = await CreateBinaryData(dataMutator, dataType);
-                if (!createBinaryResult.Success)
+                (bool validationRestrictionSuccess, List<ValidationIssue> errors) =
+                    DataRestrictionValidation.CompliesWithDataRestrictions(Request, dataType);
+
+                if (!validationRestrictionSuccess)
                 {
-                    return createBinaryResult.Error;
+                    var issuesWithSource = errors
+                        .Select(e => ValidationIssueWithSource.FromIssue(e, "DataRestrictionValidation", false))
+                        .ToList();
+                    return new DataPostErrorResponse("Common checks failed", issuesWithSource);
                 }
+
+                if (Request.ContentType is null)
+                {
+                    return new ProblemDetails()
+                    {
+                        Title = "Missing content type",
+                        Detail = "The request is missing a content type header.",
+                        Status = (int)HttpStatusCode.BadRequest,
+                    };
+                }
+
+                var (bytes, actualLength) = await Request.ReadBodyAsByteArrayAsync(dataType.MaxSize * 1024 * 1024);
+                if (bytes is null)
+                {
+                    return new ProblemDetails()
+                    {
+                        Title = "Request too large",
+                        Detail =
+                            $"The request body is too large. The content length is {actualLength} bytes, which exceeds the limit of {dataType.MaxSize} MB",
+                        Status = (int)HttpStatusCode.RequestEntityTooLarge,
+                    };
+                }
+
+                if (bytes.Length is 0)
+                {
+                    return new ProblemDetails()
+                    {
+                        Title = "Invalid data",
+                        Detail = "Invalid data provided. Error: The file is zero bytes.",
+                        Status = (int)HttpStatusCode.BadRequest,
+                    };
+                }
+
+                bool parseSuccess = Request.Headers.TryGetValue("Content-Disposition", out StringValues headerValues);
+                string? filename = parseSuccess ? DataRestrictionValidation.GetFileNameFromHeader(headerValues) : null;
+
+                var analysisAndValidationProblem = await RunFileAnalysisAndValidation(dataType, bytes, filename);
+                if (analysisAndValidationProblem != null)
+                {
+                    return analysisAndValidationProblem;
+                }
+
+                //schedule the binary data element to be created
+                dataMutator.AddBinaryDataElement(dataType.Id, Request.ContentType, filename, bytes);
             }
 
             var initialChanges = dataMutator.GetDataElementChanges(initializeAltinnRowId: true);
@@ -309,13 +358,6 @@ public class DataController : ControllerBase
             {
                 throw new InvalidOperationException("Expected exactly one change in initialChanges");
             }
-
-            // Mutates initialChanges and to add DataElement Type = Created
-            await dataMutator.UpdateInstanceData(initialChanges);
-
-            var newDataElement =
-                change.DataElement
-                ?? throw new InvalidOperationException("DataElement not set in dataMutator.UpdateInstanceData");
 
             await _patchService.RunDataProcessors(
                 dataMutator,
@@ -346,16 +388,13 @@ public class DataController : ControllerBase
             await saveTask;
             SelfLinkHelper.SetInstanceAppSelfLinks(instance, Request);
 
+            var newDataElement =
+                change.DataElement ?? throw new InvalidOperationException("The change was not updated while saving");
             return new DataPostResponse
             {
                 Instance = instance,
                 NewDataElementId = Guid.Parse(newDataElement.Id),
-                NewDataModels = finalChanges
-                    .FormDataChanges.Select(formDataChange => new DataModelPairResponse(
-                        formDataChange.DataElementIdentifier.Guid,
-                        formDataChange.CurrentFormData
-                    ))
-                    .ToList(),
+                NewDataModels = GetNewDataModels(finalChanges),
                 ValidationIssues = validationIssues,
             };
         }
@@ -370,63 +409,16 @@ public class DataController : ControllerBase
         }
     }
 
-    private async Task<ServiceResult<BinaryDataChange, ProblemDetails>> CreateBinaryData(
-        InstanceDataUnitOfWork dataMutator,
-        DataType dataTypeFromMetadata
-    )
+    private static List<DataModelPairResponse> GetNewDataModels(DataElementChanges finalChanges)
     {
-        (bool validationRestrictionSuccess, List<ValidationIssue> errors) =
-            DataRestrictionValidation.CompliesWithDataRestrictions(Request, dataTypeFromMetadata);
-
-        if (!validationRestrictionSuccess)
-        {
-            var issuesWithSource = errors
-                .Select(e => ValidationIssueWithSource.FromIssue(e, "DataRestrictionValidation", false))
-                .ToList();
-            return new DataPostErrorResponse("Common checks failed", issuesWithSource);
-        }
-
-        if (Request.ContentType is null)
-        {
-            return new ProblemDetails()
-            {
-                Title = "Missing content type",
-                Detail = "The request is missing a content type header.",
-                Status = (int)HttpStatusCode.BadRequest,
-            };
-        }
-
-        var (bytes, actualLength) = await Request.ReadBodyAsByteArrayAsync(dataTypeFromMetadata.MaxSize * 1024 * 1024);
-        if (bytes is null)
-        {
-            return new ProblemDetails()
-            {
-                Title = "Request too large",
-                Detail =
-                    $"The request body is too large. The content length is {actualLength} bytes, which exceeds the limit of {dataTypeFromMetadata.MaxSize} MB",
-                Status = (int)HttpStatusCode.RequestEntityTooLarge,
-            };
-        }
-        if (bytes.Length is 0)
-        {
-            return new ProblemDetails()
-            {
-                Title = "Invalid data",
-                Detail = "Invalid data provided. Error: The file is zero bytes.",
-                Status = (int)HttpStatusCode.BadRequest,
-            };
-        }
-
-        bool parseSuccess = Request.Headers.TryGetValue("Content-Disposition", out StringValues headerValues);
-        string? filename = parseSuccess ? DataRestrictionValidation.GetFileNameFromHeader(headerValues) : null;
-
-        var analysisAndValidationProblem = await RunFileAnalysisAndValidation(dataTypeFromMetadata, bytes, filename);
-        if (analysisAndValidationProblem != null)
-        {
-            return analysisAndValidationProblem;
-        }
-
-        return dataMutator.AddBinaryDataElement(dataTypeFromMetadata.Id, Request.ContentType, filename, bytes);
+        // Return currentFormData for form data changes that are created or updated
+        return finalChanges
+            .FormDataChanges.Where(c => c.Type != ChangeType.Deleted)
+            .Select(formDataChange => new DataModelPairResponse(
+                formDataChange.DataElementIdentifier.Guid,
+                formDataChange.CurrentFormData
+            ))
+            .ToList();
     }
 
     private async Task<ProblemDetails?> RunFileAnalysisAndValidation(
@@ -726,9 +718,7 @@ public class DataController : ControllerBase
                     new DataPatchResponseMultiple()
                     {
                         Instance = res.Ok.Instance,
-                        NewDataModels = res
-                            .Ok.UpdatedData.Select(d => new DataModelPairResponse(d.Identifier.Guid, d.Data))
-                            .ToList(),
+                        NewDataModels = GetNewDataModels(res.Ok.FormDataChanges),
                         ValidationIssues = res.Ok.ValidationIssues
                     }
                 );
@@ -753,16 +743,18 @@ public class DataController : ControllerBase
     /// <param name="instanceOwnerPartyId">unique id of the party that is the owner of the instance</param>
     /// <param name="instanceGuid">unique id to identify the instance</param>
     /// <param name="dataGuid">unique id to identify the data element to update</param>
+    /// <param name="ignoredValidators">comma separated string of validators to ignore</param>
     /// <param name="language">The currently active language</param>
     /// <returns>The updated data element.</returns>
     [Authorize(Policy = AuthzConstants.POLICY_INSTANCE_WRITE)]
     [HttpDelete("{dataGuid:guid}")]
-    public async Task<ActionResult> Delete(
+    public async Task<ActionResult<DataPostResponse>> Delete(
         [FromRoute] string org,
         [FromRoute] string app,
         [FromRoute] int instanceOwnerPartyId,
         [FromRoute] Guid instanceGuid,
         [FromRoute] Guid dataGuid,
+        [FromQuery] string? ignoredValidators = null,
         [FromQuery] string? language = null
     )
     {
@@ -803,7 +795,27 @@ public class DataController : ControllerBase
             await dataMutator.UpdateInstanceData(changes);
             await dataMutator.SaveChanges(changes);
 
-            return Ok();
+            List<ValidationSourcePair> validationIssues = [];
+            if (ignoredValidators is not null)
+            {
+                var ignoredValidatorsList = ignoredValidators.Split(',').Where(v => !string.IsNullOrEmpty(v)).ToList();
+                validationIssues = await _patchService.RunIncrementalValidation(
+                    dataMutator,
+                    instance.Process.CurrentTask.ElementId,
+                    changes,
+                    ignoredValidatorsList,
+                    language
+                );
+            }
+
+            return Ok(
+                new DataDeleteResponse()
+                {
+                    Instance = instance,
+                    ValidationIssues = validationIssues,
+                    NewDataModels = GetNewDataModels(changes),
+                }
+            );
         }
         catch (PlatformHttpException e)
         {

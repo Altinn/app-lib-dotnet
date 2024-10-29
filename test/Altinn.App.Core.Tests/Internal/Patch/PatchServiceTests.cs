@@ -173,14 +173,9 @@ public sealed class PatchServiceTests : IDisposable
         response.Success.Should().BeTrue();
         response.Ok.Should().NotBeNull();
         var res = response.Ok!;
-        var change = res
-            .UpdatedData.Should()
-            .ContainSingle()
-            .Which.Should()
-            .BeOfType<DataPatchResult.DataModelPair>()
-            .Which;
-        change.Identifier.Id.Should().Be(_dataGuid.ToString());
-        change.Data.Should().BeOfType<MyModel>().Subject.Name.Should().Be("Test Testesen");
+        var change = res.FormDataChanges.FormDataChanges.Should().ContainSingle().Which;
+        change.DataElementIdentifier.Id.Should().Be(_dataGuid.ToString());
+        change.CurrentFormData.Should().BeOfType<MyModel>().Subject.Name.Should().Be("Test Testesen");
         var validator = res.ValidationIssues.Should().ContainSingle().Which;
         validator.Source.Should().Be("formDataValidator");
         var issue = validator.Issues.Should().ContainSingle().Which;

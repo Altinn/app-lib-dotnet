@@ -179,34 +179,32 @@ internal class PatchService : IPatchService
             dataAccessor.VerifyDataElementsUnchangedSincePreviousChanges(changes);
         }
 
-        // report back updated and created data elements with appLogic
-        var updatedData = changes
-            .FormDataChanges.Where(change => change.Type is ChangeType.Updated or ChangeType.Created)
-            .Select(change => new DataPatchResult.DataModelPair(
-                change.DataElement
-                    ?? throw new InvalidOperationException(
-                        "DataElement must be set in data changes of type update or created"
-                    ),
-                change.CurrentFormData
-            ))
-            .ToList();
+        var formDataChanges = changes.FormDataChanges.ToList();
 
         // Ensure that all data elements that were patched are included in the updated data
         // (even if they were not changed or the change was reverted by dataProcessor)
         foreach (var patchedElementGuid in patches.Keys)
         {
             var patchedElementId = patchedElementGuid.ToString();
-            if (changes.FormDataChanges.All(c => c.DataElement?.Id != patchedElementId))
+            if (formDataChanges.TrueForAll(c => c.DataElement?.Id != patchedElementId))
             {
-                DataElementIdentifier? dataElement = instance.Data.Find(d => d.Id == patchedElementId);
+                // The element from the patch was not included in the changes, so add it
+                var dataElement = instance.Data.Find(d => d.Id == patchedElementId);
                 if (dataElement is not null)
                 {
-                    // Don't return deleted data elements
-                    updatedData.Add(
-                        new DataPatchResult.DataModelPair(
-                            dataElement.Value,
-                            await dataAccessor.GetFormData(dataElement.Value)
-                        )
+                    // Create a change with the current data of the unchanged element
+                    formDataChanges.Add(
+                        new FormDataChange
+                        {
+                            Type = ChangeType.Updated,
+                            DataElement = dataElement,
+                            ContentType = dataElement.ContentType,
+                            DataType = dataAccessor.GetDataType(dataElement),
+                            PreviousFormData = await dataAccessor.GetFormData(dataElement),
+                            CurrentFormData = await dataAccessor.GetFormData(dataElement),
+                            PreviousBinaryData = await dataAccessor.GetBinaryData(dataElement),
+                            CurrentBinaryData = await dataAccessor.GetBinaryData(dataElement),
+                        }
                     );
                 }
             }
@@ -215,7 +213,7 @@ internal class PatchService : IPatchService
         return new DataPatchResult
         {
             Instance = instance,
-            UpdatedData = updatedData,
+            FormDataChanges = new DataElementChanges(formDataChanges),
             ValidationIssues = validationIssues,
         };
     }
