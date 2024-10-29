@@ -3,7 +3,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models;
 /// <summary>
 /// Available notification channels (methods)
 /// </summary>
-public enum NotificationChannel
+public enum CorrespondenceNotificationChannel
 {
     /// <summary>
     /// The selected channel for the notification is email.

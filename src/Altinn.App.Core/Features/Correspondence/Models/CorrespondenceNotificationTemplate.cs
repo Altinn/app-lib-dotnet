@@ -3,7 +3,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models;
 /// <summary>
 /// The message template to use for notifications
 /// </summary>
-public enum NotificationTemplate
+public enum CorrespondenceNotificationTemplate
 {
     /// <summary>
     /// Fully customizable template (e.g. no template)

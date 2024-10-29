@@ -4,6 +4,7 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
+using Altinn.App.Core.Features.Correspondence.Builder;
 using Altinn.App.Core.Features.Maskinporten;
 using Altinn.App.Core.Features.Maskinporten.Constants;
 using Microsoft.AspNetCore.Mvc;
@@ -91,6 +92,12 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
         {
             response?.Dispose();
         }
+    }
+
+    /// <inheritdoc />
+    public async Task Send(CorrespondenceBuilder builder, CancellationToken cancellationToken)
+    {
+        await Send(builder.Build(), cancellationToken);
     }
 
     private async Task<HttpRequestMessage> AuthenticatedHttpRequestFactory<TContent>(
