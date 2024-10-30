@@ -435,7 +435,6 @@ public sealed class ProcessEngineTest
                 EndEvent = "EndEvent_1",
             },
         };
-        _appMetadataMock.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(new ApplicationMetadata("org/app"));
         Mock<IUserAction> userActionMock = new Mock<IUserAction>(MockBehavior.Strict);
         userActionMock.Setup(u => u.Id).Returns("sign");
         userActionMock
@@ -485,7 +484,6 @@ public sealed class ProcessEngineTest
     [Fact]
     public async Task Next_moves_instance_to_next_task_and_produces_instanceevents()
     {
-        _appMetadataMock.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(new ApplicationMetadata("org/app"));
         var expectedInstance = new Instance()
         {
             Id = _instanceId,
@@ -647,7 +645,6 @@ public sealed class ProcessEngineTest
     [Fact]
     public async Task Next_moves_instance_to_next_task_and_produces_abandon_instanceevent_when_action_reject()
     {
-        _appMetadataMock.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(new ApplicationMetadata("org/app"));
         var expectedInstance = new Instance()
         {
             Id = _instanceId,
@@ -805,7 +802,6 @@ public sealed class ProcessEngineTest
     [Fact]
     public async Task Next_moves_instance_to_end_event_and_ends_proces()
     {
-        _appMetadataMock.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(new ApplicationMetadata("org/app"));
         var expectedInstance = new Instance()
         {
             Id = _instanceId,
@@ -1107,6 +1103,7 @@ public sealed class ProcessEngineTest
             Mock<IInstanceClient> instanceClientMock = new(MockBehavior.Strict);
             Mock<IAppModel> appModelMock = new(MockBehavior.Strict);
             Mock<IAppMetadata> appMetadataMock = new(MockBehavior.Strict);
+            appMetadataMock.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(new ApplicationMetadata("org/app"));
 
             profileMock
                 .Setup(p => p.GetUserProfile(1337))
