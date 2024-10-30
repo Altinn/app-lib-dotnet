@@ -366,6 +366,16 @@ public class DataController : ControllerBase
                 language
             );
 
+            if (dataMutator.AbandonIssues.Count > 1)
+            {
+                return new DataPostErrorResponse(
+                    "Data Processing abandoned",
+                    dataMutator
+                        .AbandonIssues.Select(i => ValidationIssueWithSource.FromIssue(i, "dataProcessing", true))
+                        .ToList()
+                );
+            }
+
             var finalChanges = dataMutator.GetDataElementChanges(initializeAltinnRowId: true);
             await dataMutator.UpdateInstanceData(finalChanges);
             var saveTask = dataMutator.SaveChanges(finalChanges);
@@ -790,6 +800,17 @@ public class DataController : ControllerBase
             var changes = dataMutator.GetDataElementChanges(initializeAltinnRowId: false);
             await _patchService.RunDataProcessors(dataMutator, changes, taskId, language);
 
+            if (dataMutator.AbandonIssues.Count > 1)
+            {
+                return BadRequest(
+                    new DataPostErrorResponse(
+                        "DataProcessing abandoned",
+                        dataMutator
+                            .AbandonIssues.Select(i => ValidationIssueWithSource.FromIssue(i, "dataProcessing", true))
+                            .ToList()
+                    )
+                );
+            }
             // Get the updated changes for saving
             changes = dataMutator.GetDataElementChanges(initializeAltinnRowId: false);
             await dataMutator.UpdateInstanceData(changes);
@@ -1084,6 +1105,18 @@ public class DataController : ControllerBase
         );
         var jsonAfterDataProcessors = JsonSerializer.Serialize(serviceModel);
 
+        if (dataMutator.AbandonIssues.Count > 1)
+        {
+            return BadRequest(
+                new DataPostErrorResponse(
+                    "DataProcessing abandoned",
+                    dataMutator
+                        .AbandonIssues.Select(i => ValidationIssueWithSource.FromIssue(i, "dataProcessing", true))
+                        .ToList()
+                )
+            );
+        }
+
         // Save changes
         var changesAfterDataProcessors = dataMutator.GetDataElementChanges(initializeAltinnRowId: true);
         await dataMutator.UpdateInstanceData(changesAfterDataProcessors);
@@ -1122,21 +1155,22 @@ public class DataController : ControllerBase
 
     private ObjectResult Problem(DataPatchError error)
     {
-        int code = error.ErrorType switch
+        var code = error.ErrorType switch
         {
-            DataPatchErrorType.PatchTestFailed => (int)HttpStatusCode.Conflict,
-            DataPatchErrorType.DeserializationFailed => (int)HttpStatusCode.UnprocessableContent,
-            _ => (int)HttpStatusCode.InternalServerError
+            DataPatchErrorType.PatchTestFailed => HttpStatusCode.Conflict,
+            DataPatchErrorType.DeserializationFailed => HttpStatusCode.UnprocessableContent,
+            DataPatchErrorType.AbandonedRequest => HttpStatusCode.BadRequest,
+            _ => HttpStatusCode.InternalServerError
         };
 
         return StatusCode(
-            code,
+            (int)code,
             new ProblemDetails()
             {
                 Title = error.Title,
                 Detail = error.Detail,
                 Type = "https://datatracker.ietf.org/doc/html/rfc6902/",
-                Status = code,
+                Status = (int)code,
                 Extensions = error.Extensions ?? new Dictionary<string, object?>(StringComparer.Ordinal)
             }
         );

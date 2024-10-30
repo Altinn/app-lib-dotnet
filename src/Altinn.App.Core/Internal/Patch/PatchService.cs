@@ -155,6 +155,20 @@ internal class PatchService : IPatchService
             language
         );
 
+        if (dataAccessor.AbandonIssues.Count > 0)
+        {
+            return new DataPatchError()
+            {
+                Title = "Data processors abandoned the patch",
+                Detail = "Data processors abandoned the patch",
+                ErrorType = DataPatchErrorType.AbandonedRequest,
+                Extensions = new Dictionary<string, object?>()
+                {
+                    { "uploadValidationIssues", dataAccessor.AbandonIssues },
+                } // use same key as in DataPostErrorResponse
+            };
+        }
+
         // Get all changes to data elements by comparing the serialized values
         var changes = dataAccessor.GetDataElementChanges(initializeAltinnRowId: true);
         // Start saving changes in parallel with validation
