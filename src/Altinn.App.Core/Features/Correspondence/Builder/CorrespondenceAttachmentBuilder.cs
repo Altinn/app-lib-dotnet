@@ -100,12 +100,12 @@ public class CorrespondenceAttachmentBuilder
     /// <inheritdoc/>
     public CorrespondenceAttachment Build()
     {
-        NotNull(_filename, "Filename is required");
-        NotNull(_name, "Name is required");
-        NotNull(_sender, "Sender is required");
-        NotNull(_sendersReference, "Senders reference is required");
-        NotNull(_dataType, "Data type is required");
-        NotNull(_data, "Data is required");
+        NotNullOrEmpty(_filename, "Filename is required");
+        NotNullOrEmpty(_name, "Name is required");
+        NotNullOrEmpty(_sender, "Sender is required");
+        NotNullOrEmpty(_sendersReference, "Senders reference is required");
+        NotNullOrEmpty(_dataType, "Data type is required");
+        NotNullOrEmpty(_data, "Data is required");
 
         return new CorrespondenceAttachment
         {

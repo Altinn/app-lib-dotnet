@@ -21,23 +21,23 @@ public class DevExTester
                 CorrespondenceContentBuilder
                     .Create()
                     .WithTitle("Title")
-                    .WithLanguage(LanguageCode<ISO_639_1>.Parse("enc"))
+                    .WithLanguage(LanguageCode<ISO_639_1>.Parse("en"))
                     .WithSummary("Summary")
                     .WithBody("Body")
-                    .WithAttachments(
-                        [
-                            new CorrespondenceAttachment
-                            {
-                                Filename = "file.txt",
-                                Name = "File",
-                                Sender = OrganisationNumber.Parse("123456789"),
-                                SendersReference = "123",
-                                DataType = "text/plain",
-                                DataLocationType = CorrespondenceDataLocationType.ExistingCorrespondenceAttachment,
-                                Data = new MemoryStream(Encoding.UTF8.GetBytes("Hello, World!"))
-                            }
-                        ]
-                    )
+                    // .WithAttachments(
+                    //     [
+                    //         new CorrespondenceAttachment
+                    //         {
+                    //             Filename = "file.txt",
+                    //             Name = "File",
+                    //             Sender = OrganisationNumber.Parse("123456789"),
+                    //             SendersReference = "123",
+                    //             DataType = "text/plain",
+                    //             DataLocationType = CorrespondenceDataLocationType.ExistingCorrespondenceAttachment,
+                    //             Data = new MemoryStream(Encoding.UTF8.GetBytes("Hello, World!"))
+                    //         }
+                    //     ]
+                    // )
                     .WithAttachment(
                         CorrespondenceAttachmentBuilder
                             .Create()
@@ -59,16 +59,16 @@ public class DevExTester
             )
             .WithPropertyList(new Dictionary<string, string> { ["key"] = "value" })
             .WithRequestedPublishTime(DateTimeOffset.Now.AddDays(1))
-            .WithAttachment(
-                CorrespondenceAttachmentBuilder
-                    .Create()
-                    .WithFilename("file.txt")
-                    .WithName("File")
-                    .WithSender(OrganisationNumber.Parse("123456789"))
-                    .WithSendersReference("123")
-                    .WithDataType("text/plain")
-                    .WithData(new MemoryStream(Encoding.UTF8.GetBytes("Hello, World!")))
-            )
+            // .WithAttachment(
+            //     CorrespondenceAttachmentBuilder
+            //         .Create()
+            //         .WithFilename("file.txt")
+            //         .WithName("File")
+            //         .WithSender(OrganisationNumber.Parse("123456789"))
+            //         .WithSendersReference("123")
+            //         .WithDataType("text/plain")
+            //         .WithData(new MemoryStream(Encoding.UTF8.GetBytes("Hello, World!")))
+            // )
             .Build();
     }
 }

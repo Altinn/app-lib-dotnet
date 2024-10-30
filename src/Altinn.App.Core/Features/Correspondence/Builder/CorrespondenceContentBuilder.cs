@@ -78,10 +78,10 @@ public class CorrespondenceContentBuilder
     /// <inheritdoc/>
     public CorrespondenceContent Build()
     {
-        NotNull(_title, "Title is required");
-        NotNull(_language, "Language is required");
-        NotNull(_summary, "Summary is required");
-        NotNull(_body, "Body is required");
+        NotNullOrEmpty(_title, "Title is required");
+        NotNullOrEmpty(_language, "Language is required");
+        NotNullOrEmpty(_summary, "Summary is required");
+        NotNullOrEmpty(_body, "Body is required");
 
         return new CorrespondenceContent
         {

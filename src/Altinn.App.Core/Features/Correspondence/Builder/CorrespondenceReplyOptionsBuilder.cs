@@ -38,7 +38,7 @@ public class CorrespondenceReplyOptionsBuilder
     /// <inheritdoc/>
     public CorrespondenceReplyOptions Build()
     {
-        NotNull(_linkUrl, "Link URL is required");
+        NotNullOrEmpty(_linkUrl, "Link URL is required");
 
         return new CorrespondenceReplyOptions { LinkUrl = _linkUrl, LinkText = _linkText };
     }

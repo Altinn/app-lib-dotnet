@@ -124,7 +124,7 @@ public class CorrespondenceNotificationBuilder
     /// <inheritdoc/>
     public CorrespondenceNotification Build()
     {
-        NotNull(_notificationTemplate, "Notification template is required");
+        NotNullOrEmpty(_notificationTemplate, "Notification template is required");
 
         return new CorrespondenceNotification
         {

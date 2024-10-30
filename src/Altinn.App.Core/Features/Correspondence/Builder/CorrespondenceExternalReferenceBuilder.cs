@@ -38,8 +38,8 @@ public class CorrespondenceExternalReferenceBuilder
     /// <inheritdoc/>
     public CorrespondenceExternalReference Build()
     {
-        NotNull(_referenceType, "Reference type is required");
-        NotNull(_referenceValue, "Reference value is required");
+        NotNullOrEmpty(_referenceType, "Reference type is required");
+        NotNullOrEmpty(_referenceValue, "Reference value is required");
 
         return new CorrespondenceExternalReference
         {

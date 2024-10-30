@@ -17,9 +17,14 @@ public abstract class CorrespondenceBuilderBase
     /// <param name="value">The value to assert</param>
     /// <param name="errorMessage">The error message to throw, if the value was null</param>
     /// <exception cref="CorrespondenceValueException"></exception>
-    internal static void NotNull([NotNull] object? value, string errorMessage)
+    internal static void NotNullOrEmpty([NotNull] object? value, string errorMessage)
     {
         if (value is null)
+        {
+            throw new CorrespondenceValueException(errorMessage);
+        }
+
+        if (value is string str && string.IsNullOrWhiteSpace(str))
         {
             throw new CorrespondenceValueException(errorMessage);
         }
@@ -201,7 +206,7 @@ public class CorrespondenceBuilder
     /// <inheritdoc/>
     public ICorrespondenceBuilderBuild WithAttachments(IReadOnlyList<CorrespondenceAttachment> attachments)
     {
-        NotNull(_content, "Content is required before adding attachments");
+        NotNullOrEmpty(_content, "Content is required before adding attachments");
 
         _content = _content with { Attachments = [.. _content.Attachments ?? [], .. attachments] };
         return this;
@@ -210,13 +215,13 @@ public class CorrespondenceBuilder
     /// <inheritdoc/>
     public Models.Correspondence Build()
     {
-        NotNull(_resourceId, "Resource ID is required");
-        NotNull(_sender, "Sender is required");
-        NotNull(_sendersReference, "Senders reference is required");
-        NotNull(_content, "Content is required");
-        NotNull(_allowSystemDeleteAfter, "AllowSystemDeleteAfter is required");
-        NotNull(_dueDateTime, "DueDateTime is required");
-        NotNull(_recipients, "Recipients is required");
+        NotNullOrEmpty(_resourceId, "Resource ID is required");
+        NotNullOrEmpty(_sender, "Sender is required");
+        NotNullOrEmpty(_sendersReference, "Senders reference is required");
+        NotNullOrEmpty(_content, "Content is required");
+        NotNullOrEmpty(_allowSystemDeleteAfter, "AllowSystemDeleteAfter is required");
+        NotNullOrEmpty(_dueDateTime, "DueDateTime is required");
+        NotNullOrEmpty(_recipients, "Recipients is required");
 
         return new Models.Correspondence
         {

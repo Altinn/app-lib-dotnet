@@ -1,6 +1,8 @@
+using System.Text.RegularExpressions;
+
 namespace Altinn.App.Core.Models;
 
-public readonly struct ISO_639_1 : ILanguageCodeStandard
+public readonly partial struct ISO_639_1 : ILanguageCodeStandard
 {
     public static LanguageCodeValidationResult Validate(string code)
     {
@@ -9,9 +11,14 @@ public readonly struct ISO_639_1 : ILanguageCodeStandard
             errorMessage = "Code value cannot be empty.";
         else if (code.Length != 2)
             errorMessage = $"Invalid code length. Received {code.Length} characters, expected 2 (ISO 639-1).";
+        else if (ValidationRegex().IsMatch(code) is false)
+            errorMessage = "Code value must only contain letters.";
 
         return new LanguageCodeValidationResult(errorMessage is null, errorMessage);
     }
+
+    [GeneratedRegex(@"^[a-zA-Z]{2}$")]
+    private static partial Regex ValidationRegex();
 }
 
 // TODO: Can this
@@ -40,7 +47,7 @@ public readonly struct LanguageCode<TLangCodeStandard> : IEquatable<LanguageCode
 
     private LanguageCode(string code)
     {
-        _code = code;
+        _code = code.ToLowerInvariant();
     }
 
     /// <summary>
