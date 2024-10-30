@@ -1,5 +1,4 @@
 using Altinn.App.Core.Features;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Altinn.App.Core.Internal.Process.Authorization;
 

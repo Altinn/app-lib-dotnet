@@ -719,7 +719,7 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         HttpResponseMessage response = await client.GetAsync(url);
 
         var content = await response.Content.ReadAsStringAsync();
-        OutputHelper.WriteLine(content);
+
         response.Should().HaveStatusCode(HttpStatusCode.OK);
         content
             .Should()
