@@ -30,20 +30,17 @@ internal interface IRightBuilder
     IRightStep BuildRight();
 }
 
-internal sealed class DelegationRequestBuilder
-    :   IDelegatorStep,
-        IRecipientStep,
-        IRightStep,
-        IDelegationCreateStep
+internal sealed class DelegationRequestBuilder : IDelegatorStep, IRecipientStep, IRightStep, IDelegationCreateStep
 {
     private DelegationRequest _delegation;
 
     public DelegationRequestBuilder(string applicationId, string instanceId)
     {
-        _delegation = new DelegationRequest(){ ResourceId = applicationId, InstanceId = instanceId };
+        _delegation = new DelegationRequest() { ResourceId = applicationId, InstanceId = instanceId };
     }
 
-    public static IDelegatorStep CreateBuilder(string applicationId, string instanceId) => new DelegationRequestBuilder(applicationId, instanceId);
+    public static IDelegatorStep CreateBuilder(string applicationId, string instanceId) =>
+        new DelegationRequestBuilder(applicationId, instanceId);
 
     public IRecipientStep WithDelegator(Delegator delegator)
     {

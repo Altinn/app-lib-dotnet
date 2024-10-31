@@ -29,7 +29,13 @@ internal sealed class AccessManagementClient(
 {
     internal void DelegationCheck() { }
 
-    public async Task DelegateSignRights(string taskId, Instance instance, string FromPartyId, string ToPartyId, CancellationToken ct)
+    public async Task DelegateSignRights(
+        string taskId,
+        Instance instance,
+        string FromPartyId,
+        string ToPartyId,
+        CancellationToken ct
+    )
     {
         // TODO: telemetry
         // csharpier-ignore-start
@@ -58,7 +64,7 @@ internal sealed class AccessManagementClient(
         // TODO: telemetry
         HttpResponseMessage? httpResponseMessage = null;
         string? httpContent = null;
-        UrlHelper urlHelper = new (platformSettings);
+        UrlHelper urlHelper = new(platformSettings);
         try
         {
             var application = await appMetadata.GetApplicationMetadata();

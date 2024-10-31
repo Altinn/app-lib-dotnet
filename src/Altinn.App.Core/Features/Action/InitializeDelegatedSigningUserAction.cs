@@ -51,8 +51,10 @@ internal class InitializeDelegatedSigningUserAction : IUserAction
             currentTask.Id
         );
 
-        List<SigneeContext> signeeContexts = await _signingService.InitializeSignees(currentTask.Id);
-        signeeContexts = await _signingService.ProcessSignees(signeeContexts);
+        CancellationToken ct = new();
+
+        List<SigneeContext> signeeContexts = await _signingService.InitializeSignees(currentTask.Id, ct);
+        signeeContexts = await _signingService.ProcessSignees(currentTask.Id, context.Instance, signeeContexts, ct);
 
         //TODO: Return failure result if something failed.
 

@@ -1,5 +1,6 @@
 ﻿using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Internal.Sign;
+using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Features.Signing.Interfaces;
 
@@ -7,7 +8,12 @@ internal interface ISigningService
 {
     Task<List<SigneeContext>> InitializeSignees(string taskId, CancellationToken ct);
 
-    Task<List<SigneeContext>> ProcessSignees(List<SigneeContext> signeeContexts, CancellationToken ct);
+    Task<List<SigneeContext>> ProcessSignees(
+        string taskId,
+        Instance instance,
+        List<SigneeContext> signeeContexts,
+        CancellationToken ct
+    );
 
-    List<Signee> ReadSignees();
+    List<SigneeContext> ReadSignees();
 }
