@@ -5,6 +5,7 @@ using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Internal.Sign;
 using Altinn.Platform.Register.Models;
+using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Features.Signing;
 
@@ -18,7 +19,7 @@ internal sealed class SigningService(
     Telemetry? telemetry
 ) : ISigningService
 {
-    public async Task<List<SigneeContext>> InitializeSignees(string taskId, CancellationToken? ct = null)
+    public async Task<List<SigneeContext>> InitializeSignees(string taskId, CancellationToken ct)
     {
         using var activity = telemetry?.StartAssignSigneesActivity();
 
@@ -33,13 +34,15 @@ internal sealed class SigningService(
     }
 
     public async Task<List<SigneeContext>> ProcessSignees(
+        string taskId,
+        Instance instance,
         List<SigneeContext> signeeContexts,
-        CancellationToken? ct = null
+        CancellationToken ct
     )
     {
         using var activity = telemetry?.StartAssignSigneesActivity();
 
-        await signingDelegationService.DelegateSigneeRights(signeeContexts, ct);
+        await signingDelegationService.DelegateSigneeRights(taskId, instance, signeeContexts, ct);
 
         //TODO: If something fails inside DelegateSigneeRights, abort and don't send notifications. Set error state in SigneeState.
 
@@ -52,17 +55,13 @@ internal sealed class SigningService(
     private async Task<List<SigneeContext>> GetPersonSigneeContexts(
         string taskId,
         SigneesResult signeeResult,
-        CancellationToken? ct = null
+        CancellationToken ct
     )
     {
         List<SigneeContext> personSigneeContexts = [];
         foreach (PersonSignee personSignee in signeeResult.PersonSignees)
         {
-            Person? person = await personClient.GetPerson(
-                personSignee.SocialSecurityNumber,
-                personSignee.LastName,
-                ct ?? new CancellationToken()
-            );
+            Person? person = await personClient.GetPerson(personSignee.SocialSecurityNumber, personSignee.LastName, ct);
 
             if (person is null)
             {
@@ -76,12 +75,11 @@ internal sealed class SigningService(
                 new PartyLookup { Ssn = personSignee.SocialSecurityNumber }
             );
 
-            if (party is null)
-            {
-                throw new SignaturePartyNotValidException(
-                    $"No partyId found for signature party with social security number {personSignee.SocialSecurityNumber}."
+            Guid partyUuid =
+                party.PartyUuid
+                ?? throw new SignaturePartyNotValidException(
+                    $"No partyUuid found for signature party with social security number {personSignee.SocialSecurityNumber}." // TODO: ikke gi ut ssn her?!
                 );
-            }
 
             Sms? smsNotification = personSignee.Notifications?.OnSignatureTaskReceived?.Sms;
             if (smsNotification is not null && smsNotification.MobileNumber is null)
@@ -89,7 +87,7 @@ internal sealed class SigningService(
                 smsNotification.MobileNumber = person.MobileNumber;
             }
 
-            personSigneeContexts.Add(new SigneeContext(taskId, party.PartyId, personSignee, new SigneeState()));
+            personSigneeContexts.Add(new SigneeContext(taskId, partyUuid, personSignee, new SigneeState()));
         }
 
         return personSigneeContexts;
@@ -120,12 +118,11 @@ internal sealed class SigningService(
                 new PartyLookup { OrgNo = organisationSignee.OrganisationNumber }
             );
 
-            if (party is null)
-            {
-                throw new SignaturePartyNotValidException(
+            Guid partyUuid =
+                party.PartyUuid
+                ?? throw new SignaturePartyNotValidException(
                     $"No partyId found for signature party with organisation number {organisationSignee.OrganisationNumber}."
                 );
-            }
 
             //TODO: Is this the correct place to set email to registry fallback? Maybe move it to notification service?
             Email? emailNotification = organisationSignee.Notifications?.OnSignatureTaskReceived?.Email;
@@ -140,15 +137,13 @@ internal sealed class SigningService(
                 smsNotification.MobileNumber = organisation.MobileNumber;
             }
 
-            organisationSigneeContexts.Add(
-                new SigneeContext(taskId, party.PartyId, organisationSignee, new SigneeState())
-            );
+            organisationSigneeContexts.Add(new SigneeContext(taskId, partyUuid, organisationSignee, new SigneeState()));
         }
 
         return organisationSigneeContexts;
     }
 
-    public List<Signee> ReadSignees()
+    public List<SigneeContext> ReadSignees()
     {
         using var activity = telemetry?.StartReadSigneesActivity();
         // TODO: Get signees from state
@@ -159,7 +154,7 @@ internal sealed class SigningService(
     }
 
     //TODO: There is already logic for the sign action in the SigningUserAction class. Maybe move most of it here?
-    internal async Task Sign(Signee signee)
+    internal async Task Sign(SigneeContext signee)
     {
         using var activity = telemetry?.StartSignActivity();
         // var state = StorageClient.GetSignState(...);
