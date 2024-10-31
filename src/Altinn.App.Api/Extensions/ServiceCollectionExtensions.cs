@@ -157,6 +157,7 @@ public static class ServiceCollectionExtensions
         string configSectionPath
     )
     {
+        // TODO: Add support for multiple variants
         services.AddOptions<MaskinportenSettings>().BindConfiguration(configSectionPath).ValidateDataAnnotations();
 
         return services;
@@ -169,6 +170,7 @@ public static class ServiceCollectionExtensions
     /// <param name="services">The service collection</param>
     private static IServiceCollection AddMaskinportenClient(this IServiceCollection services)
     {
+        // TODO: Add support for multiple variants
         if (services.GetOptionsDescriptor<MaskinportenSettings>() is null)
         {
             services.ConfigureMaskinportenClient("MaskinportenSettings");

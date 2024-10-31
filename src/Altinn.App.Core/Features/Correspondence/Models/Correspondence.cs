@@ -193,7 +193,7 @@ public sealed record Correspondence : CorrespondenceBase, ICorrespondence
     /// <summary>
     /// Options for how the recipient can reply to the correspondence
     /// </summary>
-    public IReadOnlyList<CorrespondenceReplyOptions>? ReplyOptions { get; init; }
+    public IReadOnlyList<CorrespondenceReplyOption>? ReplyOptions { get; init; }
 
     /// <summary>
     /// Notifications associated with this correspondence
@@ -379,7 +379,7 @@ public sealed record CorrespondenceExternalReference : CorrespondenceBase, ICorr
 /// <summary>
 /// Methods for recipients to respond to a correspondence, in additon to the normal Read and Confirm operations
 /// </summary>
-public sealed record CorrespondenceReplyOptions : CorrespondenceBase, ICorrespondenceItem
+public sealed record CorrespondenceReplyOption : CorrespondenceBase, ICorrespondenceItem
 {
     /// <summary>
     /// The URL to be used as a reply/response to a correspondence

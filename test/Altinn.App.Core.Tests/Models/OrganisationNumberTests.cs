@@ -6,7 +6,7 @@ namespace Altinn.App.Core.Tests.Models;
 
 public class OrganisationNumberTests
 {
-    static readonly IEnumerable<string> _validOrganisationNumbers =
+    internal static readonly string[] ValidOrganisationNumbers =
     [
         "474103390",
         "593422461",
@@ -33,7 +33,7 @@ public class OrganisationNumberTests
         "085483285"
     ];
 
-    static readonly IEnumerable<string> _invalidOrganisationNumbers =
+    internal static readonly string[] InvalidOrganisationNumbers =
     [
         "474103392",
         "593422460",
@@ -76,7 +76,7 @@ public class OrganisationNumberTests
     [Fact]
     public void ValidNumbersParseOk()
     {
-        foreach (var validOrgNumber in _validOrganisationNumbers)
+        foreach (var validOrgNumber in ValidOrganisationNumbers)
         {
             var orgNumber = OrganisationNumber.Parse(validOrgNumber);
             var orgNumberLocal = orgNumber.Get(OrganisationNumberFormat.Local);
@@ -90,10 +90,25 @@ public class OrganisationNumberTests
     [Fact]
     public void InvalidNumbersThrowException()
     {
-        foreach (var invalidOrgNumber in _invalidOrganisationNumbers)
+        foreach (var invalidOrgNumber in InvalidOrganisationNumbers)
         {
             Action act = () => OrganisationNumber.Parse(invalidOrgNumber);
             act.Should().Throw<FormatException>();
         }
+    }
+
+    [Fact]
+    public void EqualityWorksAsExpected()
+    {
+        var orgNumber1A = OrganisationNumber.Parse(ValidOrganisationNumbers[0]);
+        var orgNumber1B = OrganisationNumber.Parse(ValidOrganisationNumbers[0]);
+        var orgNumber2 = OrganisationNumber.Parse(ValidOrganisationNumbers[2]);
+
+        Assert.True(orgNumber1A == orgNumber1B);
+        Assert.True(orgNumber1A != orgNumber2);
+        Assert.False(orgNumber1A == orgNumber2);
+
+        orgNumber1A.Should().Be(orgNumber1B);
+        orgNumber1A.Should().NotBe(orgNumber2);
     }
 }

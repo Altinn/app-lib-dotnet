@@ -6,104 +6,110 @@ namespace Altinn.App.Core.Features.Correspondence.Builder;
 /// <summary>
 /// Indicates that the <see cref="CorrespondenceBuilder"/> instance is on the <see cref="Models.Correspondence.ResourceId"/> step
 /// </summary>
-public interface ICorrespondenceBuilderResourceId
+public interface ICorrespondenceBuilderNeedsResourceId
 {
     /// <summary>
     /// Sets the Resource Id for the correspondence
     /// </summary>
     /// <param name="resourceId">The resource ID as registered in the Altinn Resource Registry</param>
-    ICorrespondenceBuilderSender WithResourceId(string resourceId);
+    ICorrespondenceBuilderNeedsSender WithResourceId(string resourceId);
 }
 
 /// <summary>
 /// Indicates that the <see cref="CorrespondenceBuilder"/> instance is on the <see cref="Models.Correspondence.Sender"/> step
 /// </summary>
-public interface ICorrespondenceBuilderSender
+public interface ICorrespondenceBuilderNeedsSender
 {
     /// <summary>
     /// Sets the sender of the correspondence
     /// </summary>
     /// <param name="sender">The correspondence sender</param>
-    ICorrespondenceBuilderSendersReference WithSender(OrganisationNumber sender);
+    ICorrespondenceBuilderNeedsSendersReference WithSender(OrganisationNumber sender);
 }
 
 /// <summary>
 /// Indicates that the <see cref="CorrespondenceBuilder"/> instance is on the <see cref="Models.Correspondence.SendersReference"/> step
 /// </summary>
-public interface ICorrespondenceBuilderSendersReference
+public interface ICorrespondenceBuilderNeedsSendersReference
 {
     /// <summary>
     /// Sets the senders reference for the correspondence
     /// </summary>
     /// <param name="sendersReference">The correspondence reference</param>
-    ICorrespondenceBuilderRecipients WithSendersReference(string sendersReference);
+    ICorrespondenceBuilderNeedsRecipients WithSendersReference(string sendersReference);
 }
 
 /// <summary>
 /// Indicates that the <see cref="CorrespondenceBuilder"/> instance is on the <see cref="Models.Correspondence.Recipients"/> step
 /// </summary>
-public interface ICorrespondenceBuilderRecipients
+public interface ICorrespondenceBuilderNeedsRecipients
 {
+    /// <summary>
+    /// Sets the recipient of the correspondence
+    /// </summary>
+    /// <param name="recipient">A recipient</param>
+    ICorrespondenceBuilderNeedsDueDateTime WithRecipient(OrganisationNumber recipient);
+
     /// <summary>
     /// Sets the recipients of the correspondence
     /// </summary>
     /// <param name="recipients">A list of recipients</param>
-    ICorrespondenceBuilderDueDateTime WithRecipients(IReadOnlyList<OrganisationNumber> recipients);
+    ICorrespondenceBuilderNeedsDueDateTime WithRecipients(IReadOnlyList<OrganisationNumber> recipients);
 }
 
 /// <summary>
 /// Indicates that the <see cref="CorrespondenceBuilder"/> instance is on the <see cref="Models.Correspondence.DueDateTime"/> step
 /// </summary>
-public interface ICorrespondenceBuilderDueDateTime
+public interface ICorrespondenceBuilderNeedsDueDateTime
 {
     /// <summary>
     /// Sets due date and time for the correspondence
     /// </summary>
     /// <param name="dueDateTime">The point in time when the correspondence is due</param>
     /// <returns></returns>
-    ICorrespondenceBuilderAllowSystemDeleteAfter WithDueDateTime(DateTimeOffset dueDateTime);
+    ICorrespondenceBuilderNeedsAllowSystemDeleteAfter WithDueDateTime(DateTimeOffset dueDateTime);
 }
 
 /// <summary>
 /// Indicates that the <see cref="CorrespondenceBuilder"/> instance is on the <see cref="Models.Correspondence.AllowSystemDeleteAfter"/> step
 /// </summary>
-public interface ICorrespondenceBuilderAllowSystemDeleteAfter
+public interface ICorrespondenceBuilderNeedsAllowSystemDeleteAfter
 {
     /// <summary>
     /// Sets the date and time when the correspondence can be deleted from the system
     /// </summary>
     /// <param name="allowSystemDeleteAfter">The point in time when the correspondence may be safely deleted</param>
-    ICorrespondenceBuilderContent WithAllowSystemDeleteAfter(DateTimeOffset allowSystemDeleteAfter);
+    ICorrespondenceBuilderNeedsContent WithAllowSystemDeleteAfter(DateTimeOffset allowSystemDeleteAfter);
 }
 
 /// <summary>
 /// Indicates that the <see cref="CorrespondenceBuilder"/> instance is on the <see cref="Models.Correspondence.Content"/> step
 /// </summary>
-public interface ICorrespondenceBuilderContent
+public interface ICorrespondenceBuilderNeedsContent
 {
     /// <summary>
     /// Sets the content of the correspondence
     /// </summary>
     /// <param name="content">The correspondence content</param>
-    ICorrespondenceBuilderBuild WithContent(CorrespondenceContent content);
+    ICorrespondenceBuilderCanBuild WithContent(CorrespondenceContent content);
 
     /// <summary>
     /// Sets the content of the correspondence
     /// </summary>
-    /// <param name="builder">A <see cref="CorrespondenceContentBuilder"/> instance in the <see cref="ICorrespondenceContentBuilderBuild"/> stage</param>
-    ICorrespondenceBuilderBuild WithContent(ICorrespondenceContentBuilderBuild builder);
+    /// <param name="builder">A <see cref="CorrespondenceContentBuilder"/> instance in the <see cref="ICorrespondenceContentBuilderCanBuild"/> stage</param>
+    ICorrespondenceBuilderCanBuild WithContent(ICorrespondenceContentBuilderCanBuild builder);
 }
 
 /// <summary>
 /// Indicates that the <see cref="CorrespondenceBuilder"/> instance has completed all required steps and can proceed to <see cref="CorrespondenceBuilder.Build"/>
 /// </summary>
-public interface ICorrespondenceBuilderBuild
+public interface ICorrespondenceBuilderCanBuild
 {
     /// <summary>
     /// Sets the requested publish time for the correspondence
     /// </summary>
     /// <param name="requestedPublishTime">The point in time when the correspondence should be published</param>
-    ICorrespondenceBuilderBuild WithRequestedPublishTime(DateTimeOffset requestedPublishTime);
+    ICorrespondenceBuilderCanBuild WithRequestedPublishTime(DateTimeOffset requestedPublishTime);
 
     // TODO: This is not fully implemented by Altinn Correspondence yet (Re: Celine @ Team Melding)
     /*
@@ -116,10 +122,31 @@ public interface ICorrespondenceBuilderBuild
     */
 
     /// <summary>
-    /// Sets the external references for the correspondence
+    /// Adds an external reference to the correspondence
+    /// <remarks>
+    /// This method respects any existing references already stored in <see cref="Models.Correspondence.ExternalReferences"/>
+    /// </remarks>
     /// </summary>
-    /// <param name="externalReferences">A list of reference to other items in the Altinn ecosystem</param>
-    ICorrespondenceBuilderBuild WithExternalReferences(
+    /// <param name="externalReference">A <see cref="CorrespondenceExternalReference"/> item</param>
+    ICorrespondenceBuilderCanBuild WithExternalReference(CorrespondenceExternalReference externalReference);
+
+    /// <summary>
+    /// Adds an external reference to the correspondence
+    /// <remarks>
+    /// This method respects any existing references already stored in <see cref="Models.Correspondence.ExternalReferences"/>
+    /// </remarks>
+    /// </summary>
+    /// <param name="builder">A <see cref="CorrespondenceExternalReferenceBuilder"/> instance in the <see cref="ICorrespondenceExternalReferenceBuilderCanBuild"/> stage</param>
+    ICorrespondenceBuilderCanBuild WithExternalReference(ICorrespondenceExternalReferenceBuilderCanBuild builder);
+
+    /// <summary>
+    /// Adds external references to the correspondence
+    /// <remarks>
+    /// This method respects any existing references already stored in <see cref="Models.Correspondence.ExternalReferences"/>
+    /// </remarks>
+    /// </summary>
+    /// <param name="externalReferences">A list of <see cref="CorrespondenceExternalReference"/> items</param>
+    ICorrespondenceBuilderCanBuild WithExternalReferences(
         IReadOnlyList<CorrespondenceExternalReference> externalReferences
     );
 
@@ -127,37 +154,70 @@ public interface ICorrespondenceBuilderBuild
     /// Sets the property list for the correspondence
     /// </summary>
     /// <param name="propertyList">A key-value list of arbitrary properties to associate with the correspondence</param>
-    ICorrespondenceBuilderBuild WithPropertyList(IReadOnlyDictionary<string, string> propertyList);
+    ICorrespondenceBuilderCanBuild WithPropertyList(IReadOnlyDictionary<string, string> propertyList);
 
     /// <summary>
-    /// Sets the reply options for the correspondence
+    /// Adds a reply option to the correspondence
+    /// <remarks>
+    /// This method respects any existing options already stored in <see cref="Models.Correspondence.ReplyOptions"/>
+    /// </remarks>
     /// </summary>
-    /// <param name="replyOptions">A list of options for how the recipient can reply to the correspondence</param>
-    ICorrespondenceBuilderBuild WithReplyOptions(IReadOnlyList<CorrespondenceReplyOptions> replyOptions);
+    /// <param name="replyOption">A <see cref="CorrespondenceReplyOption"/> item</param>
+    ICorrespondenceBuilderCanBuild WithReplyOption(CorrespondenceReplyOption replyOption);
+
+    /// <summary>
+    /// Adds a reply option to the correspondence
+    /// <remarks>
+    /// This method respects any existing options already stored in <see cref="Models.Correspondence.ReplyOptions"/>
+    /// </remarks>
+    /// </summary>
+    /// <param name="builder">A <see cref="CorrespondenceReplyOptionBuilder"/> instance in the <see cref="ICorrespondenceReplyOptionsBuilderCanBuild"/> stage</param>
+    ICorrespondenceBuilderCanBuild WithReplyOption(ICorrespondenceReplyOptionsBuilderCanBuild builder);
+
+    /// <summary>
+    /// Adds reply options to the correspondence
+    /// <remarks>
+    /// This method respects any existing options already stored in <see cref="Models.Correspondence.ReplyOptions"/>
+    /// </remarks>
+    /// </summary>
+    /// <param name="replyOptions">A list of <see cref="CorrespondenceReplyOption"/> items</param>
+    ICorrespondenceBuilderCanBuild WithReplyOptions(IReadOnlyList<CorrespondenceReplyOption> replyOptions);
 
     /// <summary>
     /// Sets the notification for the correspondence
     /// </summary>
     /// <param name="notification">The notification details to be associated with the correspondence</param>
-    ICorrespondenceBuilderBuild WithNotification(CorrespondenceNotification notification);
+    ICorrespondenceBuilderCanBuild WithNotification(CorrespondenceNotification notification);
 
     /// <summary>
     /// Sets the notification for the correspondence
     /// </summary>
-    /// <param name="builder">A <see cref="CorrespondenceNotificationBuilder"/> instance in the <see cref="ICorrespondenceNotificationBuilderBuild"/> stage</param>
-    ICorrespondenceBuilderBuild WithNotification(ICorrespondenceNotificationBuilderBuild builder);
+    /// <param name="builder">A <see cref="CorrespondenceNotificationBuilder"/> instance in the <see cref="ICorrespondenceNotificationBuilderCanBuild"/> stage</param>
+    ICorrespondenceBuilderCanBuild WithNotification(ICorrespondenceNotificationBuilderCanBuild builder);
 
     /// <summary>
     /// Sets whether the correspondence can override reservation against digital communication in KRR
     /// </summary>
     /// <param name="ignoreReservation">A boolean value indicating whether or not reservations can be ignored</param>
-    ICorrespondenceBuilderBuild WithIgnoreReservation(bool ignoreReservation);
+    ICorrespondenceBuilderCanBuild WithIgnoreReservation(bool ignoreReservation);
 
     /// <summary>
-    /// Sets the existing attachments that should be added to the correspondence
+    /// Adds an existing attachment reference to the correspondence
+    /// <remarks>
+    /// This method respects any existing references already stored in <see cref="Models.Correspondence.ExistingAttachments"/>
+    /// </remarks>
     /// </summary>
-    /// <param name="existingAttachments">A list of <see cref="Guid"/>s pointing to existing attachments</param>
-    ICorrespondenceBuilderBuild WithExistingAttachments(IReadOnlyList<Guid> existingAttachments);
+    /// <param name="existingAttachment">A <see cref="Guid"/> item pointing to an existing attachment</param>
+    ICorrespondenceBuilderCanBuild WithExistingAttachment(Guid existingAttachment);
+
+    /// <summary>
+    /// Adds existing attachment references to the correspondence
+    /// <remarks>
+    /// This method respects any existing references already stored in <see cref="Models.Correspondence.ExistingAttachments"/>
+    /// </remarks>
+    /// </summary>
+    /// <param name="existingAttachments">A list of <see cref="Guid"/> items pointing to existing attachments</param>
+    ICorrespondenceBuilderCanBuild WithExistingAttachments(IReadOnlyList<Guid> existingAttachments);
 
     /// <summary>
     /// Adds an attachment to the correspondence
@@ -166,7 +226,7 @@ public interface ICorrespondenceBuilderBuild
     /// </remarks>
     /// </summary>
     /// <param name="attachment">A <see cref="CorrespondenceAttachment"/> item</param>
-    ICorrespondenceBuilderBuild WithAttachment(CorrespondenceAttachment attachment);
+    ICorrespondenceBuilderCanBuild WithAttachment(CorrespondenceAttachment attachment);
 
     /// <summary>
     /// Adds an attachment to the correspondence
@@ -174,8 +234,8 @@ public interface ICorrespondenceBuilderBuild
     /// This method respects any existing attachments already stored in <see cref="CorrespondenceContent.Attachments"/>
     /// </remarks>
     /// </summary>
-    /// <param name="builder">A <see cref="CorrespondenceAttachmentBuilder"/> instance in the <see cref="ICorrespondenceAttachmentBuilderBuild"/> stage</param>
-    ICorrespondenceBuilderBuild WithAttachment(ICorrespondenceAttachmentBuilderBuild builder);
+    /// <param name="builder">A <see cref="CorrespondenceAttachmentBuilder"/> instance in the <see cref="ICorrespondenceAttachmentBuilderCanBuild"/> stage</param>
+    ICorrespondenceBuilderCanBuild WithAttachment(ICorrespondenceAttachmentBuilderCanBuild builder);
 
     /// <summary>
     /// Adds attachments to the correspondence
@@ -184,7 +244,7 @@ public interface ICorrespondenceBuilderBuild
     /// </remarks>
     /// </summary>
     /// <param name="attachments">A List of <see cref="CorrespondenceAttachment"/> items</param>
-    ICorrespondenceBuilderBuild WithAttachments(IReadOnlyList<CorrespondenceAttachment> attachments);
+    ICorrespondenceBuilderCanBuild WithAttachments(IReadOnlyList<CorrespondenceAttachment> attachments);
 
     /// <summary>
     /// Builds the <see cref="Models.Correspondence"/> instance

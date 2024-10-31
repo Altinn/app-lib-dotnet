@@ -3,43 +3,43 @@ using Altinn.App.Core.Features.Correspondence.Models;
 namespace Altinn.App.Core.Features.Correspondence.Builder;
 
 /// <summary>
-/// Builder factory for creating <see cref="CorrespondenceReplyOptions"/> objects
+/// Builder factory for creating <see cref="CorrespondenceReplyOption"/> objects
 /// </summary>
-public class CorrespondenceReplyOptionsBuilder
+public class CorrespondenceReplyOptionBuilder
     : CorrespondenceBuilderBase,
-        ICorrespondenceReplyOptionsBuilderLinkUrl,
-        ICorrespondenceReplyOptionsBuilderBuild
+        ICorrespondenceReplyOptionsBuilderNeedsLinkUrl,
+        ICorrespondenceReplyOptionsBuilderCanBuild
 {
     private string? _linkUrl;
     private string? _linkText;
 
-    private CorrespondenceReplyOptionsBuilder() { }
+    private CorrespondenceReplyOptionBuilder() { }
 
     /// <summary>
-    /// Creates a new <see cref="CorrespondenceReplyOptionsBuilder"/> instance
+    /// Creates a new <see cref="CorrespondenceReplyOptionBuilder"/> instance
     /// </summary>
     /// <returns></returns>
-    public static ICorrespondenceReplyOptionsBuilderLinkUrl Create() => new CorrespondenceReplyOptionsBuilder();
+    public static ICorrespondenceReplyOptionsBuilderNeedsLinkUrl Create() => new CorrespondenceReplyOptionBuilder();
 
     /// <inheritdoc/>
-    public ICorrespondenceReplyOptionsBuilderBuild WithLinkUrl(string linkUrl)
+    public ICorrespondenceReplyOptionsBuilderCanBuild WithLinkUrl(string linkUrl)
     {
         _linkUrl = linkUrl;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceReplyOptionsBuilderBuild WithLinkText(string linkText)
+    public ICorrespondenceReplyOptionsBuilderCanBuild WithLinkText(string linkText)
     {
         _linkText = linkText;
         return this;
     }
 
     /// <inheritdoc/>
-    public CorrespondenceReplyOptions Build()
+    public CorrespondenceReplyOption Build()
     {
         NotNullOrEmpty(_linkUrl, "Link URL is required");
 
-        return new CorrespondenceReplyOptions { LinkUrl = _linkUrl, LinkText = _linkText };
+        return new CorrespondenceReplyOption { LinkUrl = _linkUrl, LinkText = _linkText };
     }
 }

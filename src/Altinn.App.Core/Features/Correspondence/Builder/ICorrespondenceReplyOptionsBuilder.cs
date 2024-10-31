@@ -3,30 +3,30 @@ using Altinn.App.Core.Features.Correspondence.Models;
 namespace Altinn.App.Core.Features.Correspondence.Builder;
 
 /// <summary>
-/// Indicates that the <see cref="CorrespondenceReplyOptionsBuilder"/> instance is on the <see cref="CorrespondenceReplyOptions.LinkUrl"/> step
+/// Indicates that the <see cref="CorrespondenceReplyOptionBuilder"/> instance is on the <see cref="CorrespondenceReplyOption.LinkUrl"/> step
 /// </summary>
-public interface ICorrespondenceReplyOptionsBuilderLinkUrl
+public interface ICorrespondenceReplyOptionsBuilderNeedsLinkUrl
 {
     /// <summary>
     /// Sets the link URL for the reply options
     /// </summary>
     /// <param name="linkUrl">The link URL</param>
-    ICorrespondenceReplyOptionsBuilderBuild WithLinkUrl(string linkUrl);
+    ICorrespondenceReplyOptionsBuilderCanBuild WithLinkUrl(string linkUrl);
 }
 
 /// <summary>
-/// Indicates that the <see cref="CorrespondenceReplyOptionsBuilder"/> instance has completed all required steps and can proceed to <see cref="CorrespondenceReplyOptionsBuilder.Build"/>
+/// Indicates that the <see cref="CorrespondenceReplyOptionBuilder"/> instance has completed all required steps and can proceed to <see cref="CorrespondenceReplyOptionBuilder.Build"/>
 /// </summary>
-public interface ICorrespondenceReplyOptionsBuilderBuild
+public interface ICorrespondenceReplyOptionsBuilderCanBuild
 {
     /// <summary>
     /// Sets the link text for the reply options
     /// </summary>
     /// <param name="linkText">The link text</param>
-    ICorrespondenceReplyOptionsBuilderBuild WithLinkText(string linkText);
+    ICorrespondenceReplyOptionsBuilderCanBuild WithLinkText(string linkText);
 
     /// <summary>
-    /// Builds the <see cref="CorrespondenceReplyOptions"/> instance
+    /// Builds the <see cref="CorrespondenceReplyOption"/> instance
     /// </summary>
-    CorrespondenceReplyOptions Build();
+    CorrespondenceReplyOption Build();
 }

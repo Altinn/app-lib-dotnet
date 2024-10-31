@@ -36,6 +36,7 @@ public static class WebHostBuilderExtensions
         );
     }
 
+    // TODO: Add support for multiple variants of Maskinporten settings files
     private static IConfigurationBuilder AddMaskinportenSettingsFile(
         this IConfigurationBuilder configurationBuilder,
         WebHostBuilderContext context

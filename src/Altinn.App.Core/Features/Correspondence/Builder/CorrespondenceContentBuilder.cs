@@ -8,11 +8,11 @@ namespace Altinn.App.Core.Features.Correspondence.Builder;
 /// </summary>
 public class CorrespondenceContentBuilder
     : CorrespondenceBuilderBase,
-        ICorrespondenceContentBuilderTitle,
-        ICorrespondenceContentBuilderLanguage,
-        ICorrespondenceContentBuilderSummary,
-        ICorrespondenceContentBuilderBody,
-        ICorrespondenceContentBuilderBuild
+        ICorrespondenceContentBuilderNeedsTitle,
+        ICorrespondenceContentBuilderNeedsLanguage,
+        ICorrespondenceContentBuilderNeedsSummary,
+        ICorrespondenceContentBuilderNeedsBody,
+        ICorrespondenceContentBuilderCanBuild
 {
     private string? _title;
     private LanguageCode<ISO_639_1>? _language;
@@ -26,50 +26,50 @@ public class CorrespondenceContentBuilder
     /// Creates a new <see cref="CorrespondenceContentBuilder"/> instance
     /// </summary>
     /// <returns></returns>
-    public static ICorrespondenceContentBuilderTitle Create() => new CorrespondenceContentBuilder();
+    public static ICorrespondenceContentBuilderNeedsTitle Create() => new CorrespondenceContentBuilder();
 
     /// <inheritdoc/>
-    public ICorrespondenceContentBuilderLanguage WithTitle(string title)
+    public ICorrespondenceContentBuilderNeedsLanguage WithTitle(string title)
     {
         _title = title;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceContentBuilderSummary WithLanguage(LanguageCode<ISO_639_1> language)
+    public ICorrespondenceContentBuilderNeedsSummary WithLanguage(LanguageCode<ISO_639_1> language)
     {
         _language = language;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceContentBuilderBody WithSummary(string summary)
+    public ICorrespondenceContentBuilderNeedsBody WithSummary(string summary)
     {
         _summary = summary;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceContentBuilderBuild WithBody(string body)
+    public ICorrespondenceContentBuilderCanBuild WithBody(string body)
     {
         _body = body;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceContentBuilderBuild WithAttachment(CorrespondenceAttachment attachment)
+    public ICorrespondenceContentBuilderCanBuild WithAttachment(CorrespondenceAttachment attachment)
     {
         return WithAttachments([attachment]);
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceContentBuilderBuild WithAttachment(ICorrespondenceAttachmentBuilderBuild builder)
+    public ICorrespondenceContentBuilderCanBuild WithAttachment(ICorrespondenceAttachmentBuilderCanBuild builder)
     {
         return WithAttachments([builder.Build()]);
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceContentBuilderBuild WithAttachments(IReadOnlyList<CorrespondenceAttachment> attachments)
+    public ICorrespondenceContentBuilderCanBuild WithAttachments(IReadOnlyList<CorrespondenceAttachment> attachments)
     {
         _attachments = [.. _attachments ?? [], .. attachments];
         return this;

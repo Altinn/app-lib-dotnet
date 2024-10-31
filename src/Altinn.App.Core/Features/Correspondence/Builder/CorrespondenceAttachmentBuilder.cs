@@ -8,13 +8,13 @@ namespace Altinn.App.Core.Features.Correspondence.Builder;
 /// </summary>
 public class CorrespondenceAttachmentBuilder
     : CorrespondenceBuilderBase,
-        ICorrespondenceAttachmentBuilderFilename,
-        ICorrespondenceAttachmentBuilderName,
-        ICorrespondenceAttachmentBuilderSender,
-        ICorrespondenceAttachmentBuilderSendersReference,
-        ICorrespondenceAttachmentBuilderDataType,
-        ICorrespondenceAttachmentBuilderData,
-        ICorrespondenceAttachmentBuilderBuild
+        ICorrespondenceAttachmentBuilderNeedsFilename,
+        ICorrespondenceAttachmentBuilderNeedsName,
+        ICorrespondenceAttachmentBuilderNeedsSender,
+        ICorrespondenceAttachmentBuilderNeedsSendersReference,
+        ICorrespondenceAttachmentBuilderNeedsDataType,
+        ICorrespondenceAttachmentBuilderNeedsData,
+        ICorrespondenceAttachmentBuilderCanBuild
 {
     private string? _filename;
     private string? _name;
@@ -32,66 +32,68 @@ public class CorrespondenceAttachmentBuilder
     /// <summary>
     /// Creates a new <see cref="CorrespondenceAttachmentBuilder"/> instance
     /// </summary>
-    public static ICorrespondenceAttachmentBuilderFilename Create() => new CorrespondenceAttachmentBuilder();
+    public static ICorrespondenceAttachmentBuilderNeedsFilename Create() => new CorrespondenceAttachmentBuilder();
 
     /// <inheritdoc/>
-    public ICorrespondenceAttachmentBuilderName WithFilename(string filename)
+    public ICorrespondenceAttachmentBuilderNeedsName WithFilename(string filename)
     {
         _filename = filename;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceAttachmentBuilderSender WithName(string name)
+    public ICorrespondenceAttachmentBuilderNeedsSender WithName(string name)
     {
         _name = name;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceAttachmentBuilderSendersReference WithSender(OrganisationNumber sender)
+    public ICorrespondenceAttachmentBuilderNeedsSendersReference WithSender(OrganisationNumber sender)
     {
         _sender = sender;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceAttachmentBuilderDataType WithSendersReference(string sendersReference)
+    public ICorrespondenceAttachmentBuilderNeedsDataType WithSendersReference(string sendersReference)
     {
         _sendersReference = sendersReference;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceAttachmentBuilderData WithDataType(string dataType)
+    public ICorrespondenceAttachmentBuilderNeedsData WithDataType(string dataType)
     {
         _dataType = dataType;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceAttachmentBuilderBuild WithData(Stream data)
+    public ICorrespondenceAttachmentBuilderCanBuild WithData(Stream data)
     {
         _data = data;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceAttachmentBuilderBuild WithRestrictionName(string restrictionName)
+    public ICorrespondenceAttachmentBuilderCanBuild WithRestrictionName(string restrictionName)
     {
         _restrictionName = restrictionName;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceAttachmentBuilderBuild WithIsEncrypted(bool isEncrypted)
+    public ICorrespondenceAttachmentBuilderCanBuild WithIsEncrypted(bool isEncrypted)
     {
         _isEncrypted = isEncrypted;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceAttachmentBuilderBuild WithDataLocationType(CorrespondenceDataLocationType dataLocationType)
+    public ICorrespondenceAttachmentBuilderCanBuild WithDataLocationType(
+        CorrespondenceDataLocationType dataLocationType
+    )
     {
         _dataLocationType = dataLocationType;
         return this;
