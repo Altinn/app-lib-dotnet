@@ -29,7 +29,7 @@ internal interface IRightStep : IDelegationCreateStep
 
 internal interface IDelegationCreateStep
 {
-    DelegationRequest Create();
+    DelegationRequest Build();
 }
 
 internal interface IRightBuilder
@@ -85,7 +85,7 @@ internal sealed class DelegationRequestBuilder
         return new RightBuilder(this);
     }
 
-    public DelegationRequest Create()
+    public DelegationRequest Build()
     {
         DelegationRequest delegation = _delegation;
         _delegation = new DelegationRequest();

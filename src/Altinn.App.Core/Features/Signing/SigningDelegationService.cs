@@ -22,7 +22,9 @@ internal sealed class SigningDelegationService(IAccessManagementClient accessMan
                 {
                     string taskId = "123"; // TODO: do not hardcode this..
                     Instance instance = new(); // TODO: do not hardcode this..
-                    await accessManagementClient.DelegateSignRights(taskId, instance);
+                    string fromPartyId = "from"; // TODO: do not hardcode this..
+                    string toPartyId = "to"; // TODO: do not hardcode this..
+                    await accessManagementClient.DelegateSignRights(taskId, instance, fromPartyId, toPartyId);
                     state.IsAccessDelegated = await Task.FromResult(true);
                 }
             }
