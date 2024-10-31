@@ -6,16 +6,16 @@ namespace Altinn.App.Core.Internal.AccessManagement.Models;
 internal sealed class DelegationRequest
 {
     [JsonPropertyName("from")]
-    internal From? From { get; set; }
+    internal Delegator? From { get; set; }
 
     [JsonPropertyName("to")]
-    internal To? To { get; set; }
+    internal Delegatee? To { get; set; }
 
     [JsonPropertyName("resourceId")]
-    internal string? ResourceId { get; set; }
+    internal required string ResourceId { get; set; }
 
     [JsonPropertyName("instanceId")]
-    internal string? InstanceId { get; set; }
+    internal required string InstanceId { get; set; }
 
     [JsonPropertyName("rights")]
     internal List<RightRequest> Rights { get; set; } = [];

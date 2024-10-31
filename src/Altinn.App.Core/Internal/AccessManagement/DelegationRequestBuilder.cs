@@ -3,24 +3,14 @@ using Altinn.App.Core.Internal.AccessManagement.Models.Shared;
 
 namespace Altinn.App.Core.Internal.AccessManagement;
 
-internal interface IApplicationIdStep
-{
-    IInstanceIdStep WithAppResourceId(string applicationId);
-}
-
-internal interface IInstanceIdStep
-{
-    IDelegatorStep WithInstanceId(string instanceId);
-}
-
 internal interface IDelegatorStep
 {
-    IRecipientStep WithDelegator(From delegator);
+    IRecipientStep WithDelegator(Delegator delegator);
 }
 
 internal interface IRecipientStep
 {
-    IRightStep WithRecipient(To recipient);
+    IRightStep WithRecipient(Delegatee recipient);
 }
 
 internal interface IRightStep : IDelegationCreateStep
@@ -41,41 +31,27 @@ internal interface IRightBuilder
 }
 
 internal sealed class DelegationRequestBuilder
-    : IApplicationIdStep,
-        IInstanceIdStep,
-        IDelegatorStep,
+    :   IDelegatorStep,
         IRecipientStep,
         IRightStep,
         IDelegationCreateStep
 {
-    private DelegationRequest _delegation = new DelegationRequest { Rights = [] };
+    private DelegationRequest _delegation;
 
-    public DelegationRequestBuilder()
+    public DelegationRequestBuilder(string applicationId, string instanceId)
     {
-        _delegation = new DelegationRequest();
+        _delegation = new DelegationRequest(){ ResourceId = applicationId, InstanceId = instanceId };
     }
 
-    public static IApplicationIdStep CreateBuilder() => new DelegationRequestBuilder();
+    public static IDelegatorStep CreateBuilder(string applicationId, string instanceId) => new DelegationRequestBuilder(applicationId, instanceId);
 
-    public IInstanceIdStep WithAppResourceId(string applicationId)
-    {
-        _delegation.ResourceId = applicationId;
-        return this;
-    }
-
-    public IDelegatorStep WithInstanceId(string instanceId)
-    {
-        _delegation.InstanceId = instanceId;
-        return this;
-    }
-
-    public IRecipientStep WithDelegator(From delegator)
+    public IRecipientStep WithDelegator(Delegator delegator)
     {
         _delegation.From = delegator;
         return this;
     }
 
-    public IRightStep WithRecipient(To recipient)
+    public IRightStep WithRecipient(Delegatee recipient)
     {
         _delegation.To = recipient;
         return this;
@@ -88,9 +64,7 @@ internal sealed class DelegationRequestBuilder
 
     public DelegationRequest Build()
     {
-        DelegationRequest delegation = _delegation;
-        _delegation = new DelegationRequest();
-        return delegation;
+        return _delegation;
     }
 
     internal sealed class RightBuilder : IRightBuilder

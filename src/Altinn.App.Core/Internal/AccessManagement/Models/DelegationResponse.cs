@@ -6,10 +6,10 @@ namespace Altinn.App.Core.Internal.AccessManagement.Models;
 internal sealed class DelegationResponse
 {
     [JsonPropertyName("from")]
-    internal From? From { get; set; }
+    internal Delegator? Delegator { get; set; }
 
     [JsonPropertyName("to")]
-    internal To? To { get; set; }
+    internal Delegatee? Delegatee { get; set; }
 
     [JsonPropertyName("resourceId")]
     internal string? ResourceId { get; set; }
@@ -27,7 +27,7 @@ internal sealed class RightResponse
     internal List<Resource> Resource { get; set; } = [];
 
     [JsonPropertyName("action")]
-    internal Action? Action { get; set; }
+    internal AltinnAction? Action { get; set; }
 
     [JsonPropertyName("status")]
     internal string? Status { get; set; }

@@ -1,7 +1,9 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
+using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.AccessManagement.Exceptions;
+using Altinn.App.Core.Internal.AccessManagement.Helpers;
 using Altinn.App.Core.Internal.AccessManagement.Models;
 using Altinn.App.Core.Internal.AccessManagement.Models.Shared;
 using Altinn.App.Core.Internal.App;
@@ -13,7 +15,7 @@ namespace Altinn.App.Core.Internal.AccessManagement;
 
 internal interface IAccessManagementClient
 {
-    public Task DelegateSignRights(string taskId, Instance instance, string FromPartyId, string ToPartyId, CancellationToken ct);
+    public Task<DelegationResponse> DelegateRights(DelegationRequest delegation, CancellationToken ct);
 }
 
 internal sealed class AccessManagementClient(
@@ -21,6 +23,7 @@ internal sealed class AccessManagementClient(
     HttpClient httpClient,
     IAppMetadata appMetadata,
     IAccessTokenGenerator accessTokenGenerator,
+    PlatformSettings platformSettings,
     Telemetry? telemetry = null
 ) : IAccessManagementClient
 {
@@ -30,37 +33,37 @@ internal sealed class AccessManagementClient(
     {
         // TODO: telemetry
         // csharpier-ignore-start
+        string appResourceId = instance.AppId; // TODO: translate app id to altinn resource id
         DelegationRequest delegation = DelegationRequestBuilder
-            .CreateBuilder()
-            .WithAppResourceId(instance.AppId) // TODO: translate app id to altinn resource id
-            .WithInstanceId(instance.Id)
-            .WithDelegator(new From { Type = DelegationConst.Party, Value = FromPartyId })
-            .WithRecipient(new To { Type = DelegationConst.Party, Value = ToPartyId })
+            .CreateBuilder(appResourceId, instance.Id)
+            .WithDelegator(new Delegator { IdType = DelegationConst.Party, Id = FromPartyId })
+            .WithRecipient(new Delegatee { IdType = DelegationConst.Party, Id = ToPartyId })
             .AddRight()
                 .WithAction(DelegationConst.ActionId, ActionType.Read)
-                .AddResource(DelegationConst.Resource, instance.AppId) // TODO: translate app id to altinn resource id
+                .AddResource(DelegationConst.Resource, appResourceId) // TODO: translate app id to altinn resource id
                 .AddResource(DelegationConst.Task, taskId)
                 .BuildRight()
             .AddRight()
                 .WithAction(DelegationConst.ActionId, ActionType.Sign)
-                .AddResource(DelegationConst.Resource, instance.AppId) // TODO: translate app id to altinn resource id
+                .AddResource(DelegationConst.Resource, appResourceId) // TODO: translate app id to altinn resource id
                 .AddResource(DelegationConst.Task, taskId)
                 .BuildRight()
             .Build();
-        await DelegateRights(delegation, instance, ct);
+        await DelegateRights(delegation, ct); // TODO: resource ID
         // csharpier-ignore-end
     }
 
-    internal async Task<DelegationResponse> DelegateRights(DelegationRequest delegation, Instance instance, CancellationToken ct)
+    public async Task<DelegationResponse> DelegateRights(DelegationRequest delegation, CancellationToken ct)
     {
         // TODO: telemetry
         HttpResponseMessage? httpResponseMessage = null;
         string? httpContent = null;
+        UrlHelper urlHelper = new (platformSettings);
         try
         {
             var application = await appMetadata.GetApplicationMetadata();
 
-            var uri = ""; // TODO
+            var uri = urlHelper.CreateInstanceDelegationUrl(delegation.ResourceId, delegation.InstanceId);
             var body = JsonSerializer.Serialize(delegation);
 
             using var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, uri)
@@ -97,6 +100,8 @@ internal sealed class AccessManagementClient(
                 e
             );
             logger.LogError(ex, "Error when processing access management request.");
+
+            // TODO: metrics
 
             throw ex;
         }
