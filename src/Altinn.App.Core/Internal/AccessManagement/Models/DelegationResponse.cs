@@ -3,7 +3,7 @@ using Altinn.App.Core.Internal.AccessManagement.Models.Shared;
 
 namespace Altinn.App.Core.Internal.AccessManagement.Models;
 
-internal sealed class DelegationRequest
+internal sealed class DelegationResponse
 {
     [JsonPropertyName("from")]
     internal From? From { get; set; }
@@ -18,14 +18,17 @@ internal sealed class DelegationRequest
     internal string? InstanceId { get; set; }
 
     [JsonPropertyName("rights")]
-    internal List<RightRequest> Rights { get; set; } = [];
+    internal List<RightResponse> Rights { get; set; } = [];
 }
 
-internal sealed class RightRequest
+internal sealed class RightResponse
 {
     [JsonPropertyName("resource")]
     internal List<Resource> Resource { get; set; } = [];
 
     [JsonPropertyName("action")]
-    internal AltinnAction? Action { get; set; }
+    internal Action? Action { get; set; }
+
+    [JsonPropertyName("status")]
+    internal string? Status { get; set; }
 }

@@ -6,6 +6,6 @@ internal interface ISigningDelegationService
 {
     internal Task<List<SigneeContext>> DelegateSigneeRights(
         List<SigneeContext> signeeContexts,
-        CancellationToken? ct = null
+        CancellationToken ct
     );
 }

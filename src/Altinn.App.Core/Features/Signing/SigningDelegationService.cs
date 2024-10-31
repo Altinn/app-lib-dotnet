@@ -10,7 +10,7 @@ internal sealed class SigningDelegationService(IAccessManagementClient accessMan
 {
     public async Task<List<SigneeContext>> DelegateSigneeRights(
         List<SigneeContext> signeeContexts,
-        CancellationToken? ct = null
+        CancellationToken ct
     )
     {
         foreach (SigneeContext signeeContext in signeeContexts)
@@ -20,11 +20,11 @@ internal sealed class SigningDelegationService(IAccessManagementClient accessMan
             {
                 if (state.IsAccessDelegated is false)
                 {
-                    string taskId = "123"; // TODO: do not hardcode this..
-                    Instance instance = new(); // TODO: do not hardcode this..
-                    string fromPartyId = "from"; // TODO: do not hardcode this..
-                    string toPartyId = "to"; // TODO: do not hardcode this..
-                    await accessManagementClient.DelegateSignRights(taskId, instance, fromPartyId, toPartyId);
+                    string taskId = "123";          // TODO: do not hardcode this..
+                    Instance instance = new();      // TODO: do not hardcode this..
+                    string fromPartyId = "from";    // TODO: do not hardcode this..
+                    string toPartyId = "to";        // TODO: do not hardcode this..
+                    await accessManagementClient.DelegateSignRights(taskId, instance, fromPartyId, toPartyId, ct);
                     state.IsAccessDelegated = await Task.FromResult(true);
                 }
             }

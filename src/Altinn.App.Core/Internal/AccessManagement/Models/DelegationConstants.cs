@@ -1,5 +1,3 @@
-using System;
-
 namespace Altinn.App.Core.Internal.AccessManagement.Models;
 
 // TODO: Get this from altinn urn

@@ -18,7 +18,7 @@ internal sealed class SigningService(
     Telemetry? telemetry
 ) : ISigningService
 {
-    public async Task<List<SigneeContext>> InitializeSignees(string taskId, CancellationToken? ct = null)
+    public async Task<List<SigneeContext>> InitializeSignees(string taskId, CancellationToken ct)
     {
         using var activity = telemetry?.StartAssignSigneesActivity();
 
@@ -34,7 +34,7 @@ internal sealed class SigningService(
 
     public async Task<List<SigneeContext>> ProcessSignees(
         List<SigneeContext> signeeContexts,
-        CancellationToken? ct = null
+        CancellationToken ct
     )
     {
         using var activity = telemetry?.StartAssignSigneesActivity();
@@ -52,7 +52,7 @@ internal sealed class SigningService(
     private async Task<List<SigneeContext>> GetPersonSigneeContexts(
         string taskId,
         SigneesResult signeeResult,
-        CancellationToken? ct = null
+        CancellationToken ct
     )
     {
         List<SigneeContext> personSigneeContexts = [];
@@ -61,7 +61,7 @@ internal sealed class SigningService(
             Person? person = await personClient.GetPerson(
                 personSignee.SocialSecurityNumber,
                 personSignee.LastName,
-                ct ?? new CancellationToken()
+                ct
             );
 
             if (person is null)

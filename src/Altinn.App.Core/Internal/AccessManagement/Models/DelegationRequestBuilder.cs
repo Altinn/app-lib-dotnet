@@ -1,4 +1,5 @@
 using Altinn.App.Core.Internal.AccessManagement.Models;
+using Altinn.App.Core.Internal.AccessManagement.Models.Shared;
 
 namespace Altinn.App.Core.Internal.AccessManagement;
 
@@ -95,7 +96,7 @@ internal sealed class DelegationRequestBuilder
     internal sealed class RightBuilder : IRightBuilder
     {
         private readonly IRightStep _parentBuilder;
-        private readonly Right _right = new Right { Resource = new List<Resource>() };
+        private readonly RightRequest _right = new RightRequest { Resource = new List<Resource>() };
 
         public RightBuilder(IRightStep parentBuilder)
         {
@@ -104,7 +105,7 @@ internal sealed class DelegationRequestBuilder
 
         public IRightBuilder WithAction(string type, string value)
         {
-            _right.Action = new Models.Action { Type = type, Value = value };
+            _right.Action = new AltinnAction { Type = type, Value = value };
             return this;
         }
 
