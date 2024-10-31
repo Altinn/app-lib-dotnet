@@ -356,6 +356,234 @@ paths:
             text/xml:
               schema:
                 $ref: '#/components/schemas/DataElement'
+      deprecated: true
+    patch:
+      tags:
+        - Data
+      parameters:
+        - name: org
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: app
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: instanceOwnerPartyId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - name: instanceGuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: language
+          in: query
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataPatchRequestMultiple'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/DataPatchRequestMultiple'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/DataPatchRequestMultiple'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/DataPatchResponseMultiple'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataPatchResponseMultiple'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/DataPatchResponseMultiple'
+        '409':
+          description: Conflict
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/xml:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '422':
+          description: Unprocessable Content
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/xml:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '400':
+          description: Bad Request
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/xml:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '404':
+          description: Not Found
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/xml:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  '/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataType}':
+    post:
+      tags:
+        - Data
+      parameters:
+        - name: org
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: app
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: instanceOwnerPartyId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - name: instanceGuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: dataType
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: ignoredValidators
+          in: query
+          schema:
+            type: string
+        - name: language
+          in: query
+          schema:
+            type: string
+      responses:
+        '201':
+          description: Created
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/DataPostResponse'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataPostResponse'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/DataPostResponse'
+        '409':
+          description: Conflict
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/xml:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '400':
+          description: Bad Request
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/DataPostErrorResponse'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataPostErrorResponse'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/DataPostErrorResponse'
+        '404':
+          description: Not Found
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/xml:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
   '/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}':
     get:
       tags:
@@ -564,6 +792,7 @@ paths:
             text/xml:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
+      deprecated: true
     delete:
       tags:
         - Data
@@ -596,9 +825,27 @@ paths:
           schema:
             type: string
             format: uuid
+        - name: ignoredValidators
+          in: query
+          schema:
+            type: string
+        - name: language
+          in: query
+          schema:
+            type: string
       responses:
         '200':
           description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/DataPostResponse'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataPostResponse'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/DataPostResponse'
   '/{org}/{app}/api/datalists/{id}':
     get:
       tags:
@@ -1095,6 +1342,10 @@ paths:
           schema:
             type: integer
             format: int32
+        - name: language
+          in: query
+          schema:
+            type: string
       responses:
         '201':
           description: Created
@@ -2172,6 +2423,22 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProcessHistoryList'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessHistoryList'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProcessHistoryList'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ProcessHistoryList'
+            text/xml:
+              schema:
+                $ref: '#/components/schemas/ProcessHistoryList'
   '/{org}/{app}/api/v1/profile/user':
     get:
       tags:
@@ -2434,7 +2701,7 @@ paths:
       responses:
         '200':
           description: OK
-  '/{org}/{app}/api/validationconfig/{id}':
+  '/{org}/{app}/api/validationconfig/{dataTypeId}':
     get:
       tags:
         - Resource
@@ -2449,7 +2716,7 @@ paths:
           required: true
           schema:
             type: string
-        - name: id
+        - name: dataTypeId
           in: path
           required: true
           schema:
@@ -2852,6 +3119,14 @@ paths:
           schema:
             type: string
             format: uuid
+        - name: ignoredValidators
+          in: query
+          schema:
+            type: string
+        - name: onlyIncrementalValidators
+          in: query
+          schema:
+            type: boolean
         - name: language
           in: query
           schema:
@@ -2859,6 +3134,22 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ValidationIssueWithSource'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationIssueWithSource'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ValidationIssueWithSource'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ValidationIssueWithSource'
+            text/xml:
+              schema:
+                $ref: '#/components/schemas/ValidationIssueWithSource'
   '/{org}/{app}/instances/{instanceOwnerId}/{instanceId}/data/{dataGuid}/validate':
     get:
       tags:
@@ -2899,6 +3190,7 @@ paths:
       responses:
         '200':
           description: OK
+      deprecated: true
 components:
   schemas:
     ActionError:
@@ -3047,6 +3339,12 @@ components:
           type: boolean
         autoDeleteOnProcessEnd:
           type: boolean
+        disallowUserCreate:
+          type: boolean
+        disallowUserDelete:
+          type: boolean
+        allowInSubform:
+          type: boolean
         shadowFields:
           $ref: '#/components/schemas/ShadowFields'
       additionalProperties: false
@@ -3117,6 +3415,10 @@ components:
           $ref: '#/components/schemas/MessageBoxConfig'
         copyInstanceSettings:
           $ref: '#/components/schemas/CopyInstanceSettings'
+        storageContainerNumber:
+          type: integer
+          format: int32
+          nullable: true
         disallowUserInstantiation:
           type: boolean
         id:
@@ -3424,6 +3726,15 @@ components:
           type: string
           nullable: true
       additionalProperties: false
+    DataModelPairResponse:
+      type: object
+      properties:
+        dataElementId:
+          type: string
+          format: uuid
+        data:
+          nullable: true
+      additionalProperties: false
     DataPatchRequest:
       required:
         - ignoredValidators
@@ -3438,8 +3749,26 @@ components:
             type: string
           nullable: true
       additionalProperties: false
+    DataPatchRequestMultiple:
+      required:
+        - ignoredValidators
+        - patches
+      type: object
+      properties:
+        patches:
+          type: array
+          items:
+            $ref: '#/components/schemas/PatchListItem'
+          nullable: true
+        ignoredValidators:
+          type: array
+          items:
+            type: string
+          nullable: true
+      additionalProperties: false
     DataPatchResponse:
       required:
+        - instance
         - newDataModel
         - validationIssues
       type: object
@@ -3449,9 +3778,81 @@ components:
           additionalProperties:
             type: array
             items:
-              $ref: '#/components/schemas/ValidationIssue'
+              $ref: '#/components/schemas/ValidationIssueWithSource'
           nullable: true
         newDataModel:
+          nullable: true
+        instance:
+          $ref: '#/components/schemas/Instance'
+      additionalProperties: false
+    DataPatchResponseMultiple:
+      required:
+        - instance
+        - newDataModels
+        - validationIssues
+      type: object
+      properties:
+        validationIssues:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationSourcePair'
+          nullable: true
+        newDataModels:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataModelPairResponse'
+          nullable: true
+        instance:
+          $ref: '#/components/schemas/Instance'
+      additionalProperties: false
+    DataPostErrorResponse:
+      type: object
+      properties:
+        type:
+          type: string
+          nullable: true
+        title:
+          type: string
+          nullable: true
+        status:
+          type: integer
+          format: int32
+          nullable: true
+        detail:
+          type: string
+          nullable: true
+        instance:
+          type: string
+          nullable: true
+        uploadValidationIssues:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationIssueWithSource'
+          nullable: true
+          readOnly: true
+      additionalProperties: { }
+    DataPostResponse:
+      required:
+        - instance
+        - newDataElementId
+        - newDataModels
+        - validationIssues
+      type: object
+      properties:
+        newDataElementId:
+          type: string
+          format: uuid
+        instance:
+          $ref: '#/components/schemas/Instance'
+        validationIssues:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationSourcePair'
+          nullable: true
+        newDataModels:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataModelPairResponse'
           nullable: true
       additionalProperties: false
     DataType:
@@ -3935,6 +4336,15 @@ components:
         subUnit:
           type: boolean
       additionalProperties: false
+    PatchListItem:
+      type: object
+      properties:
+        dataElementId:
+          type: string
+          format: uuid
+        patch:
+          $ref: '#/components/schemas/JsonPatch'
+      additionalProperties: false
     PatchOperation:
       type: object
       properties:
@@ -4188,6 +4598,40 @@ components:
           type: string
           nullable: true
       additionalProperties: false
+    ProcessHistoryItem:
+      type: object
+      properties:
+        eventType:
+          type: string
+          nullable: true
+        elementId:
+          type: string
+          nullable: true
+        occured:
+          type: string
+          format: date-time
+          nullable: true
+        started:
+          type: string
+          format: date-time
+          nullable: true
+        ended:
+          type: string
+          format: date-time
+          nullable: true
+        performedBy:
+          type: string
+          nullable: true
+      additionalProperties: false
+    ProcessHistoryList:
+      type: object
+      properties:
+        processHistory:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProcessHistoryItem'
+          nullable: true
+      additionalProperties: false
     ProcessNext:
       type: object
       properties:
@@ -4384,8 +4828,12 @@ components:
           nullable: true
       additionalProperties: false
     UserActionResponse:
+      required:
+        - instance
       type: object
       properties:
+        instance:
+          $ref: '#/components/schemas/Instance'
         updatedDataModels:
           type: object
           additionalProperties: { }
@@ -4397,7 +4845,7 @@ components:
             additionalProperties:
               type: array
               items:
-                $ref: '#/components/schemas/ValidationIssue'
+                $ref: '#/components/schemas/ValidationIssueWithSource'
             nullable: true
           nullable: true
         clientActions:
@@ -4421,9 +4869,22 @@ components:
             $ref: '#/components/schemas/KeyValueEntry'
           nullable: true
       additionalProperties: false
-    ValidationIssue:
+    ValidationIssueSeverity:
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+      type: integer
+      format: int32
+    ValidationIssueWithSource:
       required:
+        - code
+        - description
         - severity
+        - source
       type: object
       properties:
         severity:
@@ -4443,6 +4904,8 @@ components:
         source:
           type: string
           nullable: true
+        noIncrementalUpdates:
+          type: boolean
         customTextKey:
           type: string
           nullable: true
@@ -4452,16 +4915,18 @@ components:
             type: string
           nullable: true
       additionalProperties: false
-    ValidationIssueSeverity:
-      enum:
-        - 0
-        - 1
-        - 2
-        - 3
-        - 4
-        - 5
-      type: integer
-      format: int32
+    ValidationSourcePair:
+      type: object
+      properties:
+        source:
+          type: string
+          nullable: true
+        issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationIssueWithSource'
+          nullable: true
+      additionalProperties: false
     ValidationStatus:
       type: object
       properties:

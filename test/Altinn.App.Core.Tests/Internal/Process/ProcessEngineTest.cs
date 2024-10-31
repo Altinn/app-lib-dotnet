@@ -1,12 +1,19 @@
 using System.Security.Claims;
+using System.Security.Cryptography.X509Certificates;
 using Altinn.App.Common.Tests;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
+using Altinn.App.Core.Helpers.Serialization;
+using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.AppModel;
+using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.App.Core.Internal.Profile;
+using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
 using Altinn.Platform.Profile.Models;
@@ -17,26 +24,30 @@ using AltinnCore.Authentication.Constants;
 using FluentAssertions;
 using Moq;
 using Newtonsoft.Json;
+using Xunit.Abstractions;
 
 namespace Altinn.App.Core.Tests.Internal.Process;
 
-public class ProcessEngineTest : IDisposable
+public sealed class ProcessEngineTest : IDisposable
 {
-    private Mock<IProcessReader> _processReaderMock;
-    private readonly Mock<IProfileClient> _profileMock;
-    private readonly Mock<IProcessNavigator> _processNavigatorMock;
-    private readonly Mock<IProcessEventHandlerDelegator> _processEventHandlingDelegatorMock;
-    private readonly Mock<IProcessEventDispatcher> _processEventDispatcherMock;
-    private readonly Mock<IProcessTaskCleaner> _processTaskCleanerMock;
+    private readonly ITestOutputHelper _output;
+    private static readonly int _instanceOwnerPartyId = 1337;
+    private static readonly Guid _instanceGuid = new("00000000-DEAD-BABE-0000-001230000000");
+    private static readonly string _instanceId = $"{_instanceOwnerPartyId}/{_instanceGuid}";
+    private readonly Mock<IProcessReader> _processReaderMock = new();
+    private readonly Mock<IProfileClient> _profileMock = new(MockBehavior.Strict);
+    private readonly Mock<IProcessNavigator> _processNavigatorMock = new(MockBehavior.Strict);
+    private readonly Mock<IProcessEventHandlerDelegator> _processEventHandlingDelegatorMock = new();
+    private readonly Mock<IProcessEventDispatcher> _processEventDispatcherMock = new();
+    private readonly Mock<IProcessTaskCleaner> _processTaskCleanerMock = new();
+    private readonly Mock<IDataClient> _dataClientMock = new(MockBehavior.Strict);
+    private readonly Mock<IInstanceClient> _instanceClientMock = new(MockBehavior.Strict);
+    private readonly Mock<IAppModel> _appModelMock = new(MockBehavior.Strict);
+    private readonly Mock<IAppMetadata> _appMetadataMock = new(MockBehavior.Strict);
 
-    public ProcessEngineTest()
+    public ProcessEngineTest(ITestOutputHelper output)
     {
-        _processReaderMock = new();
-        _profileMock = new();
-        _processNavigatorMock = new();
-        _processEventHandlingDelegatorMock = new();
-        _processEventDispatcherMock = new();
-        _processTaskCleanerMock = new();
+        _output = output;
     }
 
     [Fact]
@@ -45,6 +56,8 @@ public class ProcessEngineTest : IDisposable
         ProcessEngine processEngine = GetProcessEngine();
         Instance instance = new Instance()
         {
+            Id = _instanceId,
+            AppId = "org/app",
             Process = new ProcessState() { CurrentTask = new ProcessElementInfo() { ElementId = "Task_1" } }
         };
         ProcessStartRequest processStartRequest = new ProcessStartRequest() { Instance = instance };
@@ -57,10 +70,9 @@ public class ProcessEngineTest : IDisposable
     [Fact]
     public async Task StartProcess_returns_unsuccessful_when_no_matching_startevent_found()
     {
-        Mock<IProcessReader> processReaderMock = new();
-        processReaderMock.Setup(r => r.GetStartEventIds()).Returns(new List<string>() { "StartEvent_1" });
-        ProcessEngine processEngine = GetProcessEngine(processReaderMock);
-        Instance instance = new Instance();
+        _processReaderMock.Setup(r => r.GetStartEventIds()).Returns(new List<string>() { "StartEvent_1" });
+        ProcessEngine processEngine = GetProcessEngine(setupProcessReaderMock: false);
+        Instance instance = new Instance() { Id = _instanceId, AppId = "org/app", };
         ProcessStartRequest processStartRequest = new ProcessStartRequest()
         {
             Instance = instance,
@@ -77,7 +89,12 @@ public class ProcessEngineTest : IDisposable
     public async Task StartProcess_starts_process_and_moves_to_first_task_without_event_dispatch_when_dryrun()
     {
         ProcessEngine processEngine = GetProcessEngine();
-        Instance instance = new Instance() { InstanceOwner = new InstanceOwner() { PartyId = "1337" } };
+        Instance instance = new Instance()
+        {
+            Id = _instanceId,
+            AppId = "org/app",
+            InstanceOwner = new InstanceOwner() { PartyId = "1337" }
+        };
         ClaimsPrincipal user =
             new(
                 new ClaimsIdentity(
@@ -104,7 +121,13 @@ public class ProcessEngineTest : IDisposable
     {
         TelemetrySink telemetrySink = new();
         ProcessEngine processEngine = GetProcessEngine(telemetrySink: telemetrySink);
-        Instance instance = new Instance() { InstanceOwner = new InstanceOwner() { PartyId = "1337" } };
+        Instance instance = new Instance()
+        {
+            Id = _instanceId,
+            AppId = "org/app",
+            InstanceOwner = new InstanceOwner() { PartyId = "1337" },
+            Data = [],
+        };
         ClaimsPrincipal user =
             new(
                 new ClaimsIdentity(
@@ -126,7 +149,10 @@ public class ProcessEngineTest : IDisposable
         _processNavigatorMock.Verify(n => n.GetNextTask(It.IsAny<Instance>(), "StartEvent_1", null), Times.Once);
         var expectedInstance = new Instance()
         {
+            Id = _instanceId,
+            AppId = "org/app",
             InstanceOwner = new InstanceOwner() { PartyId = "1337" },
+            Data = [],
             Process = new ProcessState()
             {
                 CurrentTask = new ProcessElementInfo()
@@ -144,6 +170,7 @@ public class ProcessEngineTest : IDisposable
         {
             new()
             {
+                InstanceId = $"{_instanceOwnerPartyId}/{_instanceGuid}",
                 EventType = InstanceEventType.process_StartEvent.ToString(),
                 InstanceOwnerPartyId = "1337",
                 User = new()
@@ -165,6 +192,7 @@ public class ProcessEngineTest : IDisposable
             },
             new()
             {
+                InstanceId = $"{_instanceOwnerPartyId}/{_instanceGuid}",
                 EventType = InstanceEventType.process_StartTask.ToString(),
                 InstanceOwnerPartyId = "1337",
                 User = new()
@@ -212,7 +240,13 @@ public class ProcessEngineTest : IDisposable
     public async Task StartProcess_starts_process_and_moves_to_first_task_with_prefill()
     {
         ProcessEngine processEngine = GetProcessEngine();
-        Instance instance = new Instance() { InstanceOwner = new InstanceOwner() { PartyId = "1337" } };
+        Instance instance = new Instance()
+        {
+            Id = _instanceId,
+            AppId = "org/app",
+            InstanceOwner = new InstanceOwner() { PartyId = "1337" },
+            Data = [],
+        };
         ClaimsPrincipal user =
             new(
                 new ClaimsIdentity(
@@ -240,7 +274,10 @@ public class ProcessEngineTest : IDisposable
         _processNavigatorMock.Verify(n => n.GetNextTask(It.IsAny<Instance>(), "StartEvent_1", null), Times.Once);
         var expectedInstance = new Instance()
         {
+            Id = _instanceId,
+            AppId = "org/app",
             InstanceOwner = new InstanceOwner() { PartyId = "1337" },
+            Data = [],
             Process = new ProcessState()
             {
                 CurrentTask = new ProcessElementInfo()
@@ -258,6 +295,7 @@ public class ProcessEngineTest : IDisposable
         {
             new()
             {
+                InstanceId = $"{_instanceOwnerPartyId}/{_instanceGuid}",
                 EventType = InstanceEventType.process_StartEvent.ToString(),
                 InstanceOwnerPartyId = "1337",
                 User = new()
@@ -279,6 +317,7 @@ public class ProcessEngineTest : IDisposable
             },
             new()
             {
+                InstanceId = $"{_instanceOwnerPartyId}/{_instanceGuid}",
                 EventType = InstanceEventType.process_StartTask.ToString(),
                 InstanceOwnerPartyId = "1337",
                 User = new()
@@ -324,7 +363,12 @@ public class ProcessEngineTest : IDisposable
     public async Task Next_returns_unsuccessful_when_process_null()
     {
         ProcessEngine processEngine = GetProcessEngine();
-        Instance instance = new Instance() { Process = null };
+        Instance instance = new Instance()
+        {
+            Id = _instanceId,
+            AppId = "org/app",
+            Process = null
+        };
         ProcessNextRequest processNextRequest = new ProcessNextRequest() { Instance = instance };
         ProcessChangeResult result = await processEngine.Next(processNextRequest);
         result.Success.Should().BeFalse();
@@ -336,7 +380,12 @@ public class ProcessEngineTest : IDisposable
     public async Task Next_returns_unsuccessful_when_process_currenttask_null()
     {
         ProcessEngine processEngine = GetProcessEngine();
-        Instance instance = new Instance() { Process = new ProcessState() { CurrentTask = null } };
+        Instance instance = new Instance()
+        {
+            Id = _instanceId,
+            AppId = "org/app",
+            Process = new ProcessState() { CurrentTask = null }
+        };
         ProcessNextRequest processNextRequest = new ProcessNextRequest() { Instance = instance };
         ProcessChangeResult result = await processEngine.Next(processNextRequest);
         result.Success.Should().BeFalse();
@@ -349,7 +398,10 @@ public class ProcessEngineTest : IDisposable
     {
         var expectedInstance = new Instance()
         {
+            Id = _instanceId,
+            AppId = "org/app",
             InstanceOwner = new InstanceOwner() { PartyId = "1337" },
+            Data = [],
             Process = new ProcessState()
             {
                 CurrentTask = null,
@@ -357,6 +409,7 @@ public class ProcessEngineTest : IDisposable
                 EndEvent = "EndEvent_1"
             }
         };
+        _appMetadataMock.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(new ApplicationMetadata("org/app"));
         Mock<IUserAction> userActionMock = new Mock<IUserAction>(MockBehavior.Strict);
         userActionMock.Setup(u => u.Id).Returns("sign");
         userActionMock
@@ -367,10 +420,16 @@ public class ProcessEngineTest : IDisposable
                     errorType: ProcessErrorType.Unauthorized
                 )
             );
-        ProcessEngine processEngine = GetProcessEngine(null, expectedInstance, [userActionMock.Object]);
+        ProcessEngine processEngine = GetProcessEngine(
+            updatedInstance: expectedInstance,
+            userActions: [userActionMock.Object]
+        );
         Instance instance = new Instance()
         {
+            Id = _instanceId,
+            AppId = "org/app",
             InstanceOwner = new() { PartyId = "1337" },
+            Data = [],
             Process = new ProcessState()
             {
                 StartEvent = "StartEvent_1",
@@ -400,9 +459,13 @@ public class ProcessEngineTest : IDisposable
     [Fact]
     public async Task Next_moves_instance_to_next_task_and_produces_instanceevents()
     {
+        _appMetadataMock.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(new ApplicationMetadata("org/app"));
         var expectedInstance = new Instance()
         {
+            Id = _instanceId,
+            AppId = "org/app",
             InstanceOwner = new InstanceOwner() { PartyId = "1337" },
+            Data = [],
             Process = new ProcessState()
             {
                 CurrentTask = new ProcessElementInfo()
@@ -416,10 +479,13 @@ public class ProcessEngineTest : IDisposable
                 StartEvent = "StartEvent_1"
             }
         };
-        ProcessEngine processEngine = GetProcessEngine(null, expectedInstance);
+        ProcessEngine processEngine = GetProcessEngine(updatedInstance: expectedInstance);
         Instance instance = new Instance()
         {
+            Id = _instanceId,
+            AppId = "org/app",
             InstanceOwner = new() { PartyId = "1337" },
+            Data = [],
             Process = new ProcessState()
             {
                 StartEvent = "StartEvent_1",
@@ -455,6 +521,7 @@ public class ProcessEngineTest : IDisposable
         {
             new()
             {
+                InstanceId = $"{_instanceOwnerPartyId}/{_instanceGuid}",
                 EventType = InstanceEventType.process_EndTask.ToString(),
                 InstanceOwnerPartyId = "1337",
                 User = new()
@@ -477,6 +544,7 @@ public class ProcessEngineTest : IDisposable
             },
             new()
             {
+                InstanceId = $"{_instanceOwnerPartyId}/{_instanceGuid}",
                 EventType = InstanceEventType.process_StartTask.ToString(),
                 InstanceOwnerPartyId = "1337",
                 User = new()
@@ -535,9 +603,13 @@ public class ProcessEngineTest : IDisposable
     [Fact]
     public async Task Next_moves_instance_to_next_task_and_produces_abandon_instanceevent_when_action_reject()
     {
+        _appMetadataMock.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(new ApplicationMetadata("org/app"));
         var expectedInstance = new Instance()
         {
+            Id = _instanceId,
+            AppId = "org/app",
             InstanceOwner = new InstanceOwner() { PartyId = "1337" },
+            Data = [],
             Process = new ProcessState()
             {
                 CurrentTask = new ProcessElementInfo()
@@ -551,10 +623,13 @@ public class ProcessEngineTest : IDisposable
                 StartEvent = "StartEvent_1"
             }
         };
-        ProcessEngine processEngine = GetProcessEngine(null, expectedInstance);
+        ProcessEngine processEngine = GetProcessEngine(updatedInstance: expectedInstance);
         Instance instance = new Instance()
         {
+            Id = _instanceId,
+            AppId = "org/app",
             InstanceOwner = new() { PartyId = "1337" },
+            Data = [],
             Process = new ProcessState()
             {
                 StartEvent = "StartEvent_1",
@@ -595,6 +670,7 @@ public class ProcessEngineTest : IDisposable
         {
             new()
             {
+                InstanceId = $"{_instanceOwnerPartyId}/{_instanceGuid}",
                 EventType = InstanceEventType.process_AbandonTask.ToString(),
                 InstanceOwnerPartyId = "1337",
                 User = new()
@@ -617,6 +693,7 @@ public class ProcessEngineTest : IDisposable
             },
             new()
             {
+                InstanceId = $"{_instanceOwnerPartyId}/{_instanceGuid}",
                 EventType = InstanceEventType.process_StartTask.ToString(),
                 InstanceOwnerPartyId = "1337",
                 User = new()
@@ -675,9 +752,13 @@ public class ProcessEngineTest : IDisposable
     [Fact]
     public async Task Next_moves_instance_to_end_event_and_ends_proces()
     {
+        _appMetadataMock.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(new ApplicationMetadata("org/app"));
         var expectedInstance = new Instance()
         {
+            Id = _instanceId,
+            AppId = "org/app",
             InstanceOwner = new InstanceOwner() { PartyId = "1337" },
+            Data = [],
             Process = new ProcessState()
             {
                 CurrentTask = null,
@@ -685,10 +766,13 @@ public class ProcessEngineTest : IDisposable
                 EndEvent = "EndEvent_1"
             }
         };
-        ProcessEngine processEngine = GetProcessEngine(null, expectedInstance);
+        ProcessEngine processEngine = GetProcessEngine(updatedInstance: expectedInstance);
         Instance instance = new Instance()
         {
+            Id = _instanceId,
+            AppId = "org/app",
             InstanceOwner = new() { PartyId = "1337" },
+            Data = [],
             Process = new ProcessState()
             {
                 StartEvent = "StartEvent_1",
@@ -723,6 +807,7 @@ public class ProcessEngineTest : IDisposable
         {
             new()
             {
+                InstanceId = $"{_instanceOwnerPartyId}/{_instanceGuid}",
                 EventType = InstanceEventType.process_EndTask.ToString(),
                 InstanceOwnerPartyId = "1337",
                 User = new()
@@ -745,6 +830,7 @@ public class ProcessEngineTest : IDisposable
             },
             new()
             {
+                InstanceId = $"{_instanceOwnerPartyId}/{_instanceGuid}",
                 EventType = InstanceEventType.process_EndEvent.ToString(),
                 InstanceOwnerPartyId = "1337",
                 User = new()
@@ -762,6 +848,7 @@ public class ProcessEngineTest : IDisposable
             },
             new()
             {
+                InstanceId = $"{_instanceOwnerPartyId}/{_instanceGuid}",
                 EventType = InstanceEventType.Submited.ToString(),
                 InstanceOwnerPartyId = "1337",
                 User = new()
@@ -816,7 +903,10 @@ public class ProcessEngineTest : IDisposable
     {
         Instance instance = new Instance()
         {
+            Id = _instanceId,
+            AppId = "org/app",
             InstanceOwner = new InstanceOwner() { PartyId = "1337" },
+            Data = [],
             Process = new ProcessState()
             {
                 StartEvent = "StartEvent_1",
@@ -831,8 +921,11 @@ public class ProcessEngineTest : IDisposable
         };
         Instance updatedInstance = new Instance()
         {
+            Id = _instanceId,
+            AppId = "org/app",
             Org = "ttd",
             InstanceOwner = new InstanceOwner() { PartyId = "1337" },
+            Data = [],
             Process = new ProcessState()
             {
                 StartEvent = "StartEvent_1",
@@ -850,6 +943,7 @@ public class ProcessEngineTest : IDisposable
         {
             new()
             {
+                InstanceId = $"{_instanceOwnerPartyId}/{_instanceGuid}",
                 EventType = InstanceEventType.process_AbandonTask.ToString(),
                 InstanceOwnerPartyId = "1337",
                 User = new()
@@ -871,7 +965,7 @@ public class ProcessEngineTest : IDisposable
                 }
             }
         };
-        ProcessEngine processEngine = GetProcessEngine(null, updatedInstance);
+        ProcessEngine processEngine = GetProcessEngine(updatedInstance: updatedInstance);
         ProcessStartRequest processStartRequest = new ProcessStartRequest() { Instance = instance, Prefill = prefill, };
         Instance result = await processEngine.HandleEventsAndUpdateStorage(
             processStartRequest.Instance,
@@ -898,15 +992,14 @@ public class ProcessEngineTest : IDisposable
     }
 
     private ProcessEngine GetProcessEngine(
-        Mock<IProcessReader>? processReaderMock = null,
+        bool setupProcessReaderMock = true,
         Instance? updatedInstance = null,
         List<IUserAction>? userActions = null,
         TelemetrySink? telemetrySink = null
     )
     {
-        if (processReaderMock == null)
+        if (setupProcessReaderMock)
         {
-            _processReaderMock = new();
             _processReaderMock.Setup(r => r.GetStartEventIds()).Returns(new List<string>() { "StartEvent_1" });
             _processReaderMock.Setup(r => r.IsProcessTask("StartEvent_1")).Returns(false);
             _processReaderMock.Setup(r => r.IsEndEvent("Task_1")).Returns(false);
@@ -915,10 +1008,6 @@ public class ProcessEngineTest : IDisposable
             _processReaderMock.Setup(r => r.IsProcessTask("EndEvent_1")).Returns(false);
             _processReaderMock.Setup(r => r.IsEndEvent("EndEvent_1")).Returns(true);
             _processReaderMock.Setup(r => r.IsProcessTask("EndEvent_1")).Returns(false);
-        }
-        else
-        {
-            _processReaderMock = processReaderMock;
         }
 
         _profileMock
@@ -983,6 +1072,10 @@ public class ProcessEngineTest : IDisposable
             _processEventDispatcherMock.Object,
             _processTaskCleanerMock.Object,
             new UserActionService(userActions ?? []),
+            _dataClientMock.Object,
+            _instanceClientMock.Object,
+            new ModelSerializationService(_appModelMock.Object, telemetrySink?.Object),
+            _appMetadataMock.Object,
             telemetrySink?.Object
         );
     }
@@ -996,7 +1089,7 @@ public class ProcessEngineTest : IDisposable
         _processEventDispatcherMock.VerifyNoOtherCalls();
     }
 
-    private static bool CompareInstance(Instance expected, Instance actual)
+    private bool CompareInstance(Instance expected, Instance actual)
     {
         expected.Process.Started = actual.Process.Started;
         expected.Process.Ended = actual.Process.Ended;
@@ -1008,7 +1101,7 @@ public class ProcessEngineTest : IDisposable
         return JsonCompare(expected, actual);
     }
 
-    private static bool CompareInstanceEvents(List<InstanceEvent> expected, List<InstanceEvent> actual)
+    private bool CompareInstanceEvents(List<InstanceEvent> expected, List<InstanceEvent> actual)
     {
         for (int i = 0; i < expected.Count; i++)
         {
@@ -1024,7 +1117,7 @@ public class ProcessEngineTest : IDisposable
         return JsonCompare(expected, actual);
     }
 
-    public static bool JsonCompare(object? expected, object? actual)
+    private bool JsonCompare(object? expected, object? actual)
     {
         if (ReferenceEquals(expected, actual))
         {
@@ -1043,6 +1136,11 @@ public class ProcessEngineTest : IDisposable
 
         var expectedJson = JsonConvert.SerializeObject(expected);
         var actualJson = JsonConvert.SerializeObject(actual);
+        _output.WriteLine("Expected:");
+        _output.WriteLine(expectedJson);
+        _output.WriteLine("Actual:");
+        _output.WriteLine(actualJson);
+        _output.WriteLine("");
 
         var jsonCompare = expectedJson == actualJson;
         if (jsonCompare == false)

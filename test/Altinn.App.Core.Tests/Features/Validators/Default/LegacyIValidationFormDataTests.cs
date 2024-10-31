@@ -4,7 +4,10 @@ using System.Text.Json.Serialization;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Validation.Default;
+using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Validation;
+using Altinn.App.Core.Tests.LayoutExpressions.TestUtilities;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -15,86 +18,103 @@ namespace Altinn.App.Core.Tests.Features.Validators.Default;
 public class LegacyIValidationFormDataTests
 {
     private readonly LegacyIInstanceValidatorFormDataValidator _validator;
-    private readonly Mock<IInstanceValidator> _instanceValidator = new();
+    private readonly Mock<IInstanceValidator> _instanceValidator = new(MockBehavior.Strict);
+    private readonly Mock<IAppMetadata> _appMetadata = new(MockBehavior.Strict);
+    private readonly InstanceDataAccessorFake _instanceDataAccessor;
+
+    private readonly ApplicationMetadata _applicationMetadata = new ApplicationMetadata("ttd/test")
+    {
+        Title = new LanguageString() { { "nb", "test" } },
+        DataTypes = new List<DataType>()
+        {
+            new DataType()
+            {
+                Id = "test",
+                TaskId = "Task_1",
+                AppLogic = new() { ClassRef = typeof(TestModel).FullName }
+            },
+        },
+    };
+
+    private readonly Guid _dataId = Guid.NewGuid();
+    private readonly DataElement _dataElement;
+    private readonly Instance _instance;
 
     public LegacyIValidationFormDataTests()
     {
         var generalSettings = new GeneralSettings();
         _validator = new LegacyIInstanceValidatorFormDataValidator(
             Microsoft.Extensions.Options.Options.Create(generalSettings),
-            _instanceValidator.Object
+            _instanceValidator.Object,
+            _appMetadata.Object
         );
-    }
+        _appMetadata.Setup(am => am.GetApplicationMetadata()).ReturnsAsync(_applicationMetadata);
 
-    [Fact]
-    public async Task ValidateFormData_NoErrors()
-    {
-        // Arrange
-        var data = new object();
-
-        var validator = new LegacyIInstanceValidatorFormDataValidator(
-            Microsoft.Extensions.Options.Options.Create(new GeneralSettings()),
-            null
-        );
-        validator.HasRelevantChanges(data, data).Should().BeFalse();
-
-        // Act
-        var result = await validator.ValidateFormData(new Instance(), new DataElement(), data, null);
-
-        // Assert
-        Assert.Empty(result);
+        _dataElement = new DataElement() { DataType = "test", Id = _dataId.ToString(), };
+        _instance = new Instance()
+        {
+            AppId = "test",
+            Org = "test",
+            InstanceOwner = new InstanceOwner() { PartyId = "1", },
+            Data = [_dataElement]
+        };
+        _instanceDataAccessor = new InstanceDataAccessorFake(_instance, _applicationMetadata, "Task_1", "test");
     }
 
     [Fact]
     public async Task ValidateFormData_WithErrors()
     {
         // Arrange
-        var data = new object();
+        var data = new TestModel();
 
         _instanceValidator
-            .Setup(iv => iv.ValidateData(It.IsAny<object>(), It.IsAny<ModelStateDictionary>()))
-            .Callback(
-                (object _, ModelStateDictionary modelState) =>
+            .Setup(iv => iv.ValidateData(It.IsAny<TestModel>(), It.IsAny<ModelStateDictionary>()))
+            .Returns(
+                (TestModel _, ModelStateDictionary modelState) =>
                 {
                     modelState.AddModelError("test", "test");
                     modelState.AddModelError("ddd", "*FIXED*test");
+                    return Task.CompletedTask;
                 }
-            );
+            )
+            .Verifiable(Times.Once);
+
+        _instanceDataAccessor.Add(_dataElement, data);
 
         // Act
-        var result = await _validator.ValidateFormData(new Instance(), new DataElement(), data, null);
+        var result = await _validator.Validate(_instanceDataAccessor, "Task_1", null);
 
         // Assert
         result
             .Should()
             .BeEquivalentTo(
                 JsonSerializer.Deserialize<List<ValidationIssue>>(
-                    """
+                    $$"""
                     [
                         {
                             "severity": 4,
                             "instanceId": null,
-                            "dataElementId": null,
+                            "dataElementId": "{{_dataId}}",
                             "field": "ddd",
                             "code": "test",
                             "description": "test",
-                            "source": "Custom",
                             "customTextKey": null
                         },
                         {
                             "severity": 1,
                             "instanceId": null,
-                            "dataElementId": null,
+                            "dataElementId": "{{_dataId}}",
                             "field": "test",
                             "code": "test",
                             "description": "test",
-                            "source": "Custom",
                             "customTextKey": null
                         }
                     ]
                     """
                 )
             );
+
+        _instanceValidator.Verify();
     }
 
     private class TestModel
@@ -128,16 +148,19 @@ public class LegacyIValidationFormDataTests
 
         _instanceValidator
             .Setup(iv => iv.ValidateData(It.IsAny<object>(), It.IsAny<ModelStateDictionary>()))
-            .Callback(
+            .Returns(
                 (object _, ModelStateDictionary modelState) =>
                 {
                     modelState.AddModelError(errorKey, errorMessage);
                     modelState.AddModelError(errorKey, "*FIXED*" + errorMessage + " Fixed");
+                    return Task.CompletedTask;
                 }
-            );
+            )
+            .Verifiable(Times.Once);
+        _instanceDataAccessor.Add(_dataElement, data);
 
         // Act
-        var result = await _validator.ValidateFormData(new Instance(), new DataElement(), data, null);
+        var result = await _validator.Validate(_instanceDataAccessor, "Task_1", null);
 
         // Assert
         result.Should().HaveCount(2);
@@ -150,5 +173,7 @@ public class LegacyIValidationFormDataTests
         fixedIssue.Field.Should().Be(field);
         fixedIssue.Severity.Should().Be(ValidationIssueSeverity.Fixed);
         fixedIssue.Description.Should().Be(errorMessage + " Fixed");
+
+        _instanceValidator.Verify();
     }
 }

@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using Altinn.App.Api.Models;
+using Altinn.App.Api.Tests.Data;
 using Altinn.App.Api.Tests.Utils;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
@@ -56,6 +57,7 @@ public class UserDefinedMetadataControllerTests : ApiTestBase, IClassFixture<Web
                     new() { Key = "TheKey", Value = "TheValue" }
                 }
             );
+        TestData.DeleteInstanceAndData(Org, App, instanceId);
     }
 
     [Fact]
@@ -80,6 +82,7 @@ public class UserDefinedMetadataControllerTests : ApiTestBase, IClassFixture<Web
 
         string responseMessage = await response.Content.ReadAsStringAsync();
         responseMessage.Should().Contain("The following keys are duplicated: DuplicatedKey");
+        TestData.DeleteInstanceAndData(Org, App, instanceId);
     }
 
     [Fact]
@@ -104,6 +107,7 @@ public class UserDefinedMetadataControllerTests : ApiTestBase, IClassFixture<Web
 
         string responseMessage = await response.Content.ReadAsStringAsync();
         responseMessage.Should().Contain("The following keys are not allowed: SomeKeyThatIsNotAllowed");
+        TestData.DeleteInstanceAndData(Org, App, instanceId);
     }
 
     [Fact]
@@ -147,26 +151,11 @@ public class UserDefinedMetadataControllerTests : ApiTestBase, IClassFixture<Web
         );
 
         var createdInstance = await VerifyStatusAndDeserialize<Instance>(createResponse, HttpStatusCode.Created);
-        string? instanceId = createdInstance.Id;
 
-        // Create data element (not sure why it isn't created when the instance is created, autoCreate is true)
-        using var createDataElementContent = new StringContent(
-            """{"melding":{"name": "Ola Normann"}}""",
-            System.Text.Encoding.UTF8,
-            "application/json"
-        );
+        // DataElement is created automatically by ProcessTaskInitializer since autoCreate=true
+        string dataGuid = createdInstance.Data.First(x => x.DataType.Equals("default")).Id;
+        string instanceId = createdInstance.Id;
 
-        HttpResponseMessage createDataElementResponse = await client.PostAsync(
-            $"/{Org}/{App}/instances/{instanceId}/data?dataType=default",
-            createDataElementContent
-        );
-
-        var createDataElementResponseParsed = await VerifyStatusAndDeserialize<DataElement>(
-            createDataElementResponse,
-            HttpStatusCode.Created
-        );
-
-        string? dataGuid = createDataElementResponseParsed.Id;
         return (instanceId, dataGuid);
     }
 

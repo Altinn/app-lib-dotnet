@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Claims;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Extensions;
@@ -11,6 +12,7 @@ using Altinn.App.Core.Models;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 
@@ -28,6 +30,7 @@ public class PdfService : IPdfService
 
     private readonly IPdfGeneratorClient _pdfGeneratorClient;
     private readonly PdfGeneratorSettings _pdfGeneratorSettings;
+    private readonly ILogger<PdfService> _logger;
     private readonly GeneralSettings _generalSettings;
     private readonly Telemetry? _telemetry;
     private const string PdfElementType = "ref-data-as-pdf";
@@ -43,6 +46,7 @@ public class PdfService : IPdfService
     /// <param name="pdfGeneratorClient">PDF generator client for the experimental PDF generator service</param>
     /// <param name="pdfGeneratorSettings">PDF generator related settings.</param>
     /// <param name="generalSettings">The app general settings.</param>
+    /// <param name="logger">The logger.</param>
     /// <param name="telemetry">Telemetry for metrics and traces.</param>
     public PdfService(
         IAppResources appResources,
@@ -52,6 +56,7 @@ public class PdfService : IPdfService
         IPdfGeneratorClient pdfGeneratorClient,
         IOptions<PdfGeneratorSettings> pdfGeneratorSettings,
         IOptions<GeneralSettings> generalSettings,
+        ILogger<PdfService> logger,
         Telemetry? telemetry = null
     )
     {
@@ -62,6 +67,7 @@ public class PdfService : IPdfService
         _pdfGeneratorClient = pdfGeneratorClient;
         _pdfGeneratorSettings = pdfGeneratorSettings.Value;
         _generalSettings = generalSettings.Value;
+        _logger = logger;
         _telemetry = telemetry;
     }
 
@@ -76,11 +82,10 @@ public class PdfService : IPdfService
 
         var language = GetOverriddenLanguage(queries) ?? await GetLanguage(user);
 
-        var pdfContent = await GeneratePdfContent(instance, taskId, language, ct);
+        TextResource? textResource = await GetTextResource(instance, language);
 
-        var appIdentifier = new AppIdentifier(instance);
+        var pdfContent = await GeneratePdfContent(instance, taskId, language, textResource, ct);
 
-        TextResource? textResource = await GetTextResource(appIdentifier.App, appIdentifier.Org, language);
         string fileName = GetFileName(instance, textResource);
         await _dataClient.InsertBinaryData(instance.Id, PdfElementType, PdfContentType, fileName, pdfContent, taskId);
     }
@@ -96,13 +101,16 @@ public class PdfService : IPdfService
 
         var language = GetOverriddenLanguage(queries) ?? await GetLanguage(user);
 
-        return await GeneratePdfContent(instance, taskId, language, ct);
+        TextResource? textResource = await GetTextResource(instance, language);
+
+        return await GeneratePdfContent(instance, taskId, language, textResource, ct);
     }
 
     private async Task<Stream> GeneratePdfContent(
         Instance instance,
         string taskId,
         string language,
+        TextResource? textResource,
         CancellationToken ct
     )
     {
@@ -113,7 +121,10 @@ public class PdfService : IPdfService
 
         Uri uri = BuildUri(baseUrl, pagePath, language);
 
-        Stream pdfContent = await _pdfGeneratorClient.GeneratePdf(uri, ct);
+        bool displayFooter = _pdfGeneratorSettings.DisplayFooter;
+        string? footerContent = displayFooter ? GetFooterContent(instance, textResource) : null;
+
+        Stream pdfContent = await _pdfGeneratorClient.GeneratePdf(uri, footerContent, ct);
 
         return pdfContent;
     }
@@ -179,8 +190,11 @@ public class PdfService : IPdfService
         return null;
     }
 
-    private async Task<TextResource?> GetTextResource(string app, string org, string language)
+    private async Task<TextResource?> GetTextResource(Instance instance, string language)
     {
+        var appIdentifier = new AppIdentifier(instance);
+        string org = appIdentifier.Org;
+        string app = appIdentifier.App;
         TextResource? textResource = await _resourceService.GetTexts(org, app, language);
 
         if (textResource == null && language != LanguageConst.Nb)
@@ -204,25 +218,80 @@ public class PdfService : IPdfService
             return GetValidFileName(fileName);
         }
 
-        TextResourceElement? titleText =
-            textResource.Resources.Find(textResourceElement =>
-                textResourceElement.Id.Equals("appName", StringComparison.Ordinal)
-            )
-            ?? textResource.Resources.Find(textResourceElement =>
-                textResourceElement.Id.Equals("ServiceName", StringComparison.Ordinal)
-            );
+        string? titleText = GetTitleText(textResource);
 
-        if (titleText is not null && !string.IsNullOrEmpty(titleText.Value))
+        if (!string.IsNullOrEmpty(titleText))
         {
-            fileName = titleText.Value + ".pdf";
+            fileName = titleText + ".pdf";
         }
 
         return GetValidFileName(fileName);
+    }
+
+    private static string? GetTitleText(TextResource? textResource)
+    {
+        if (textResource is not null)
+        {
+            TextResourceElement? titleText =
+                textResource.Resources.Find(textResourceElement =>
+                    textResourceElement.Id.Equals("appName", StringComparison.Ordinal)
+                )
+                ?? textResource.Resources.Find(textResourceElement =>
+                    textResourceElement.Id.Equals("ServiceName", StringComparison.Ordinal)
+                );
+
+            if (titleText is not null)
+            {
+                return titleText.Value;
+            }
+        }
+
+        return null;
     }
 
     private static string GetValidFileName(string fileName)
     {
         fileName = Uri.EscapeDataString(fileName.AsFileName(false));
         return fileName;
+    }
+
+    private string GetFooterContent(Instance instance, TextResource? textResource)
+    {
+        TimeZoneInfo timeZone = TimeZoneInfo.Utc;
+        try
+        {
+            // attempt to set timezone to norwegian
+            timeZone = TimeZoneInfo.FindSystemTimeZoneById("Europe/Oslo");
+        }
+        catch (TimeZoneNotFoundException e)
+        {
+            _logger.LogWarning($"Could not find timezone Europe/Oslo. Defaulting to UTC. {e.Message}");
+        }
+
+        DateTimeOffset now = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, timeZone);
+
+        string title = GetTitleText(textResource) ?? "Altinn";
+        string dateGenerated = now.ToString("G", new CultureInfo("nb-NO"));
+        string altinnReferenceId = instance.Id.Split("/")[1].Split("-")[4];
+
+        string footerTemplate =
+            $@"<div style='font-family: Inter; font-size: 12px; width: 100%; display: flex; flex-direction: row; align-items: center; gap: 12px; padding: 0 70px 0 70px;'>
+                <div style='display: flex; flex-direction: row; width: 100%; align-items: center'>
+                    <span>{title}</span>
+                    <div
+                        id='header-template'
+                        style='color: #F00; font-weight: 700; border: 1px solid #F00; padding: 6px 8px; margin-left: auto;'
+                    >
+                        <span>{dateGenerated} </span>
+                        <span>ID:{altinnReferenceId}</span>
+                    </div>
+                </div>
+                <div style='display: flex; flex-direction-row; align-items: center;'>
+                    <span class='pageNumber'></span>
+                    /
+                    <span class='totalPages'></span>
+                </div>
+            </div>";
+        return footerTemplate;
     }
 }

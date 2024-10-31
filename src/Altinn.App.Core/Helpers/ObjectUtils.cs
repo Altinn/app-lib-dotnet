@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Xml.Serialization;
 
 namespace Altinn.App.Core.Helpers;
@@ -7,7 +8,7 @@ namespace Altinn.App.Core.Helpers;
 /// <summary>
 /// Utilities for working with model instances
 /// </summary>
-public static class ObjectUtils
+public static partial class ObjectUtils
 {
     /// <summary>
     /// Set empty Guid properties named "AltinnRowId" to a new random guid
@@ -73,10 +74,13 @@ public static class ObjectUtils
     /// <summary>
     /// Xml serialization-deserialization does not preserve all properties, and we sometimes need
     /// to know how it looks when it comes back from storage.
+    /// </summary>
+    /// <remarks>
     /// * Recursively initialize all <see cref="List{T}"/> properties on the object that are currently null
     /// * Ensure that all string properties with `[XmlTextAttribute]` that are empty or whitespace are set to null
     /// * If a class has `[XmlTextAttribute]` and no value, set the parent property to null (if the other properties has [BindNever] attribute)
-    /// </summary>
+    /// * If a property has a `ShouldSerialize{PropertyName}` method that returns false, set the property to default value
+    /// </remarks>
     /// <param name="model">The object to mutate</param>
     /// <param name="depth">Remaining recursion depth. To prevent infinite recursion we stop prepeation after this depth. (default matches json serialization)</param>
     public static void PrepareModelForXmlStorage(object model, int depth = 64)
@@ -134,14 +138,25 @@ public static class ObjectUtils
                 SetToDefaultIfShouldSerializeFalse(model, prop, methodInfos);
 
                 // Set string properties with [XmlText] attribute to null if they are empty or whitespace
-                if (
-                    value is string s
-                    && string.IsNullOrWhiteSpace(s)
-                    && prop.GetCustomAttribute<XmlTextAttribute>() is not null
-                )
+                if (value is string s)
                 {
-                    // Ensure empty strings are set to null
-                    prop.SetValue(model, null);
+                    if (string.IsNullOrWhiteSpace(s) && prop.GetCustomAttribute<XmlTextAttribute>() is not null)
+                    {
+                        // Ensure empty strings are set to null
+                        prop.SetValue(model, null);
+                    }
+                    else
+                    {
+                        if (prop.SetMethod is not null)
+                        {
+                            // If a property doesn't have a setter, it hopefully doesn't have user input,
+                            // and therefore it far less likely to have invalid XML chars. If that were the case
+                            // we will still just error out when serializing to XML
+
+                            // Remove invalid xml characters
+                            prop.SetValue(model, XmlInvalidCharsRegex().Replace(s, "\uFFFD")); // \uFFFD is the unicode replacement character �
+                        }
+                    }
                 }
 
                 // continue recursion over all properties that are NOT null or value types
@@ -151,6 +166,13 @@ public static class ObjectUtils
             }
         }
     }
+
+    // Regex copied from: https://stackoverflow.com/a/961504
+    // Which is based on spec: https://www.w3.org/TR/xml/#charsets
+    [GeneratedRegex(
+        @"(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F\uFEFF\uFFFE\uFFFF]"
+    )]
+    private static partial Regex XmlInvalidCharsRegex();
 
     private static void SetToDefaultIfShouldSerializeFalse(object model, PropertyInfo prop, MethodInfo[] methodInfos)
     {
@@ -180,8 +202,10 @@ public static class ObjectUtils
     /// <summary>
     /// Set all <see cref="Guid"/> properties named "AltinnRowId" to Guid.Empty
     /// </summary>
-    public static void RemoveAltinnRowId(object model, int depth = 64)
+    /// <returns>true if any changes to the data has been performed</returns>
+    public static bool RemoveAltinnRowId(object model, int depth = 64)
     {
+        var isModified = false;
         ArgumentNullException.ThrowIfNull(model);
         if (depth < 0)
         {
@@ -192,7 +216,7 @@ public static class ObjectUtils
         var type = model.GetType();
         if (type.Namespace?.StartsWith("System", StringComparison.Ordinal) == true)
         {
-            return; // System.DateTime.Now causes infinite recursion, and we shuldn't recurse into system types anyway.
+            return isModified; // System.DateTime.Now causes infinite recursion, and we shuldn't recurse into system types anyway.
         }
 
         foreach (var prop in type.GetProperties())
@@ -200,6 +224,7 @@ public static class ObjectUtils
             // Handle guid fields named "AltinnRowId"
             if (PropertyIsAltinRowGuid(prop))
             {
+                isModified = true;
                 prop.SetValue(model, Guid.Empty);
             }
             // Recurse into lists
@@ -213,7 +238,7 @@ public static class ObjectUtils
                         // Recurse into values of a list
                         if (item is not null)
                         {
-                            RemoveAltinnRowId(item, depth - 1);
+                            isModified |= RemoveAltinnRowId(item, depth - 1);
                         }
                     }
                 }
@@ -226,10 +251,12 @@ public static class ObjectUtils
                 // continue recursion over all properties
                 if (value is not null)
                 {
-                    RemoveAltinnRowId(value, depth - 1);
+                    isModified |= RemoveAltinnRowId(value, depth - 1);
                 }
             }
         }
+
+        return isModified;
     }
 
     private static bool PropertyIsAltinRowGuid(PropertyInfo prop)

@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features.Validation.Helpers;
+using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -12,9 +13,9 @@ namespace Altinn.App.Core.Features.Validation.Default;
 /// <summary>
 /// Ensures that the old <see cref="IInstanceValidator.ValidateTask(Instance, string, ModelStateDictionary)"/> extension hook is still supported.
 /// </summary>
-public class LegacyIInstanceValidatorTaskValidator : ITaskValidator
+public class LegacyIInstanceValidatorTaskValidator : IValidator
 {
-    private readonly IInstanceValidator? _instanceValidator;
+    private readonly IInstanceValidator _instanceValidator;
     private readonly GeneralSettings _generalSettings;
 
     /// <summary>
@@ -22,7 +23,7 @@ public class LegacyIInstanceValidatorTaskValidator : ITaskValidator
     /// </summary>
     public LegacyIInstanceValidatorTaskValidator(
         IOptions<GeneralSettings> generalSettings,
-        IInstanceValidator? instanceValidator = null
+        IInstanceValidator instanceValidator
     )
     {
         _instanceValidator = instanceValidator;
@@ -39,22 +40,34 @@ public class LegacyIInstanceValidatorTaskValidator : ITaskValidator
     {
         get
         {
-            var type = _instanceValidator?.GetType() ?? GetType();
+            var type = _instanceValidator.GetType();
             Debug.Assert(type.FullName is not null, "FullName does not return null on class/struct types");
             return type.FullName;
         }
     }
 
     /// <inheritdoc />
-    public async Task<List<ValidationIssue>> ValidateTask(Instance instance, string taskId, string? language)
-    {
-        if (_instanceValidator is null)
-        {
-            return new List<ValidationIssue>();
-        }
+    public bool NoIncrementalValidation => true;
 
+    /// <inheritdoc />
+    public async Task<List<ValidationIssue>> Validate(
+        IInstanceDataAccessor dataAccessor,
+        string taskId,
+        string? language
+    )
+    {
         var modelState = new ModelStateDictionary();
-        await _instanceValidator.ValidateTask(instance, taskId, modelState);
-        return ModelStateHelpers.MapModelStateToIssueList(modelState, instance, _generalSettings);
+        await _instanceValidator.ValidateTask(dataAccessor.Instance, taskId, modelState);
+        return ModelStateHelpers.MapModelStateToIssueList(modelState, dataAccessor.Instance, _generalSettings);
+    }
+
+    /// <summary>
+    /// Don't run the legacy Instance validator for incremental validation (it was not running before)
+    /// </summary>
+    public Task<bool> HasRelevantChanges(IInstanceDataAccessor dataAccessor, string taskId, DataElementChanges changes)
+    {
+        throw new NotImplementedException(
+            "Validators with NoIncrementalValidation should not be used for incremental validation"
+        );
     }
 }

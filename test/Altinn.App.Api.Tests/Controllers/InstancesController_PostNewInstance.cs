@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Altinn.App.Api.Models;
+using Altinn.App.Api.Tests.Data;
 using Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models;
 using Altinn.App.Api.Tests.Utils;
 using Altinn.App.Core.Features;
@@ -80,6 +81,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         var readDataElementResponseContent = await readDataElementResponse.Content.ReadAsStringAsync();
         var readDataElementResponseParsed = JsonSerializer.Deserialize<Skjema>(readDataElementResponseContent)!;
         readDataElementResponseParsed.Melding!.Name.Should().Be(testName);
+        TestData.DeleteInstanceAndData(org, app, instanceId);
     }
 
     private async Task<Instance> CreateInstanceSimplified(
@@ -87,15 +89,18 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         string app,
         int instanceOwnerPartyId,
         HttpClient client,
-        string token
+        string token,
+        Dictionary<string, string>? prefill = null
     )
     {
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
+        prefill ??= new();
+
         // Create instance data
         var body = $$"""
                 {
-                    "prefill": {},
+                    "prefill": {{JsonSerializer.Serialize(prefill)}},
                     "instanceOwner": {
                         "partyId": "{{instanceOwnerPartyId}}"
                     }
@@ -137,6 +142,40 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         var readDataElementResponseContent = await readDataElementResponse.Content.ReadAsStringAsync();
         var readDataElementResponseParsed = JsonSerializer.Deserialize<Skjema>(readDataElementResponseContent)!;
         readDataElementResponseParsed.Melding.Should().BeNull(); // No content yet
+        TestData.DeleteInstanceAndData(org, app, instanceId);
+    }
+
+    [Fact]
+    public async Task PostNewInstance_Simplified_With_Prefill()
+    {
+        // Setup test data
+        string org = "tdd";
+        string app = "contributer-restriction";
+        int instanceOwnerPartyId = 501337;
+        HttpClient client = GetRootedClient(org, app);
+        string token = PrincipalUtil.GetToken(1337, null);
+
+        var prefill = new Dictionary<string, string> { { "melding.name", "TestName" }, };
+        var createResponseParsed = await CreateInstanceSimplified(
+            org,
+            app,
+            instanceOwnerPartyId,
+            client,
+            token,
+            prefill
+        );
+        var instanceId = createResponseParsed.Id;
+        createResponseParsed.Data.Should().HaveCount(1, "Create instance should create a data element");
+        var dataGuid = createResponseParsed.Data.First().Id;
+
+        // Verify stored data
+        var readDataElementResponse = await client.GetAsync($"/{org}/{app}/instances/{instanceId}/data/{dataGuid}");
+        readDataElementResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var readDataElementResponseContent = await readDataElementResponse.Content.ReadAsStringAsync();
+        var readDataElementResponseParsed = JsonSerializer.Deserialize<Skjema>(readDataElementResponseContent)!;
+        Assert.NotNull(readDataElementResponseParsed.Melding);
+        readDataElementResponseParsed.Melding.Name.Should().Be("TestName");
+        TestData.DeleteInstanceAndData(org, app, instanceId);
     }
 
     [Fact]
@@ -269,7 +308,9 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
     {
         var pdfMock = new Mock<IPdfGeneratorClient>(MockBehavior.Strict);
         using var pdfReturnStream = new MemoryStream();
-        pdfMock.Setup(p => p.GeneratePdf(It.IsAny<Uri>(), It.IsAny<CancellationToken>())).ReturnsAsync(pdfReturnStream);
+        pdfMock
+            .Setup(p => p.GeneratePdf(It.IsAny<Uri>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(pdfReturnStream);
 
         // Setup test data
         string org = "tdd";
@@ -316,6 +357,14 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         var createResponse = await client.PostAsync($"{org}/{app}/instances/create", content);
         var createResponseContent = await createResponse.Content.ReadAsStringAsync();
         createResponse.StatusCode.Should().Be(HttpStatusCode.Created, createResponseContent);
+
+        TestData.DeleteInstanceAndData(org, app, sourceInstance.Id);
+
+        var createResponseParsed = JsonSerializer.Deserialize<Instance>(createResponseContent, JsonSerializerOptions);
+        if (createResponseParsed is not null)
+        {
+            TestData.DeleteInstanceAndData(org, app, createResponseParsed.Id);
+        }
     }
 
     private async Task UpdateInstanceData(
