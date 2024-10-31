@@ -29,36 +29,6 @@ internal sealed class AccessManagementClient(
 {
     internal void DelegationCheck() { }
 
-    public async Task DelegateSignRights(
-        string taskId,
-        Instance instance,
-        string FromPartyId,
-        string ToPartyId,
-        CancellationToken ct
-    )
-    {
-        // TODO: telemetry
-        // csharpier-ignore-start
-        string appResourceId = instance.AppId; // TODO: translate app id to altinn resource id
-        DelegationRequest delegation = DelegationRequestBuilder
-            .CreateBuilder(appResourceId, instance.Id)
-            .WithDelegator(new Delegator { IdType = DelegationConst.Party, Id = FromPartyId })
-            .WithRecipient(new Delegatee { IdType = DelegationConst.Party, Id = ToPartyId })
-            .AddRight()
-                .WithAction(DelegationConst.ActionId, ActionType.Read)
-                .AddResource(DelegationConst.Resource, appResourceId) // TODO: translate app id to altinn resource id
-                .AddResource(DelegationConst.Task, taskId)
-                .BuildRight()
-            .AddRight()
-                .WithAction(DelegationConst.ActionId, ActionType.Sign)
-                .AddResource(DelegationConst.Resource, appResourceId) // TODO: translate app id to altinn resource id
-                .AddResource(DelegationConst.Task, taskId)
-                .BuildRight()
-            .Build();
-        await DelegateRights(delegation, ct); // TODO: resource ID
-        // csharpier-ignore-end
-    }
-
     public async Task<DelegationResponse> DelegateRights(DelegationRequest delegation, CancellationToken ct)
     {
         // TODO: telemetry
