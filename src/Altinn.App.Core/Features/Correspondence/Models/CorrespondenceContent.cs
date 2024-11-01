@@ -1,0 +1,45 @@
+using Altinn.App.Core.Models;
+
+namespace Altinn.App.Core.Features.Correspondence.Models;
+
+/// <summary>
+/// The message content in a correspondence
+/// </summary>
+public sealed record CorrespondenceContent : CorrespondenceBase, ICorrespondence
+{
+    /// <summary>
+    /// The correspondence message title (subject)
+    /// </summary>
+    public required string Title { get; init; }
+
+    /// <summary>
+    /// The language of the correspondence, specified according to ISO 639-1
+    /// </summary>
+    public required LanguageCode<ISO_639_1> Language { get; init; }
+
+    /// <summary>
+    /// The summary text of the correspondence message
+    /// </summary>
+    public required string Summary { get; init; }
+
+    /// <summary>
+    /// The full text (body) of the correspondence message
+    /// </summary>
+    public required string Body { get; init; }
+
+    /// <summary>
+    /// File attachments to associate with this correspondence
+    /// </summary>
+    public IReadOnlyList<CorrespondenceAttachment>? Attachments { get; init; }
+
+    // TODO: Should this be internal?
+    /// <inheritdoc />
+    public void Serialize(MultipartFormDataContent content)
+    {
+        AddRequired(content, Language.Get(), "Correspondence.Content.Language");
+        AddRequired(content, Title, "Correspondence.Content.MessageTitle");
+        AddRequired(content, Summary, "Correspondence.Content.MessageSummary");
+        AddRequired(content, Body, "Correspondence.Content.MessageBody");
+        SerializeListItems(content, Attachments);
+    }
+}
