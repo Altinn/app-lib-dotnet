@@ -2,19 +2,12 @@ using System.Text;
 using Altinn.App.Core.Features.Correspondence.Builder;
 using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Models;
-using Altinn.App.Core.Tests.Models;
 using FluentAssertions;
 
-namespace Altinn.App.Core.Tests.Features.Correspondence;
+namespace Altinn.App.Core.Tests.Features.Correspondence.Builder;
 
 public class CorrespondenceBuilderTests
 {
-    private static OrganisationNumber GetOrganisationNumber(int index)
-    {
-        var i = index % OrganisationNumberTests.ValidOrganisationNumbers.Length;
-        return OrganisationNumber.Parse(OrganisationNumberTests.ValidOrganisationNumbers[i]);
-    }
-
     private static string StreamReadHelper(Stream stream)
     {
         stream.Position = 0;
@@ -25,8 +18,12 @@ public class CorrespondenceBuilderTests
     public void Build_WithOnlyRequiredProperties_ShouldReturnValidCorrespondence()
     {
         // Arrange
-        OrganisationNumber sender = GetOrganisationNumber(1);
-        IReadOnlyList<OrganisationNumber> recipients = [GetOrganisationNumber(1), GetOrganisationNumber(2)];
+        OrganisationNumber sender = TestHelpers.GetOrganisationNumber(1);
+        IReadOnlyList<OrganisationNumber> recipients =
+        [
+            TestHelpers.GetOrganisationNumber(1),
+            TestHelpers.GetOrganisationNumber(2)
+        ];
         string resourceId = "resource-id";
         string sendersReference = "sender-reference";
         DateTimeOffset dueDateTime = DateTimeOffset.UtcNow.AddDays(30);
@@ -74,12 +71,13 @@ public class CorrespondenceBuilderTests
     public void Build_WithAllProperties_ShouldReturnValidCorrespondence()
     {
         // Arrange
-        var sender = GetOrganisationNumber(1);
-        var recipient = GetOrganisationNumber(2);
+        var sender = TestHelpers.GetOrganisationNumber(1);
+        var recipient = TestHelpers.GetOrganisationNumber(2);
         var data = new
         {
             sender,
             recipient,
+            messageSender = "message-sender",
             resourceId = "resource-id",
             sendersReference = "senders-ref",
             dueDateTime = DateTimeOffset.Now.AddDays(30),
@@ -105,7 +103,9 @@ public class CorrespondenceBuilderTests
                 reminderSmsBody = "reminder-sms-body-1",
                 requestedSendTime = DateTimeOffset.Now.AddDays(1),
                 sendersReference = "notification-senders-ref-1",
-                sendReminder = true
+                sendReminder = true,
+                notificationChannel = CorrespondenceNotificationChannel.EmailPreferred,
+                reminderNotificationChannel = CorrespondenceNotificationChannel.SmsPreferred
             },
             attachments = new[]
             {
@@ -179,7 +179,10 @@ public class CorrespondenceBuilderTests
                     .WithRequestedSendTime(data.notification.requestedSendTime)
                     .WithSendersReference(data.notification.sendersReference)
                     .WithSendReminder(data.notification.sendReminder)
+                    .WithNotificationChannel(data.notification.notificationChannel)
+                    .WithReminderNotificationChannel(data.notification.reminderNotificationChannel)
             )
+            .WithMessageSender(data.messageSender)
             .WithIgnoreReservation(data.ignoreReservation)
             .WithRequestedPublishTime(data.requestedPublishTime)
             .WithPropertyList(data.propertyList)
@@ -265,6 +268,7 @@ public class CorrespondenceBuilderTests
         correspondence.IgnoreReservation.Should().Be(data.ignoreReservation);
         correspondence.RequestedPublishTime.Should().Be(data.requestedPublishTime);
         correspondence.PropertyList.Should().BeEquivalentTo(data.propertyList);
+        correspondence.MessageSender.Should().Be(data.messageSender);
 
         correspondence.Content.Title.Should().Be(data.content.title);
         correspondence.Content.Language.Should().Be(data.content.language);
@@ -294,6 +298,10 @@ public class CorrespondenceBuilderTests
         correspondence.Notification.RequestedSendTime.Should().Be(data.notification.requestedSendTime);
         correspondence.Notification.SendersReference.Should().Be(data.notification.sendersReference);
         correspondence.Notification.SendReminder.Should().Be(data.notification.sendReminder);
+        correspondence.Notification.NotificationChannel.Should().Be(data.notification.notificationChannel);
+        correspondence
+            .Notification.ReminderNotificationChannel.Should()
+            .Be(data.notification.reminderNotificationChannel);
 
         correspondence.ExistingAttachments.Should().BeEquivalentTo(data.existingAttachments);
 

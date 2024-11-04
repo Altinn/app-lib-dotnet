@@ -70,7 +70,7 @@ public sealed record CorrespondenceAttachment : CorrespondenceBase, ICorresponde
         string prefix = $"{typePrefix}[{index}]";
         string sender = Sender.Get(OrganisationNumberFormat.International);
 
-        AddRequired(content, UniqueFileName(), $"{prefix}.FileName");
+        AddRequired(content, UniqueFileName(), $"{prefix}.Filename");
         AddRequired(content, Name, $"{prefix}.Name");
         AddRequired(content, sender, $"{prefix}.Sender");
         AddRequired(content, SendersReference, $"{prefix}.SendersReference");

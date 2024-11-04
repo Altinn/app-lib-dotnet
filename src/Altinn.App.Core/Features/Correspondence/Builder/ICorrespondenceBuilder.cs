@@ -111,15 +111,12 @@ public interface ICorrespondenceBuilderCanBuild
     /// <param name="requestedPublishTime">The point in time when the correspondence should be published</param>
     ICorrespondenceBuilderCanBuild WithRequestedPublishTime(DateTimeOffset requestedPublishTime);
 
-    // TODO: This is not fully implemented by Altinn Correspondence yet (Re: Celine @ Team Melding)
-    /*
     /// <summary>
     /// Set the message sender for the correspondence
     /// </summary>
     /// <param name="messageSender">The name of the message sender</param>
     /// <returns></returns>
-    ICorrespondenceBuilderBuild WithMessageSender(string messageSender);
-    */
+    ICorrespondenceBuilderCanBuild WithMessageSender(string messageSender);
 
     /// <summary>
     /// Adds an external reference to the correspondence

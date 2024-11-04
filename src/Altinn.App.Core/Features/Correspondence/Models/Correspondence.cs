@@ -172,13 +172,10 @@ public sealed record Correspondence : CorrespondenceBase, ICorrespondence
     /// </summary>
     public required IReadOnlyList<OrganisationNumber> Recipients { get; init; }
 
-    // TODO: This is not fully implemented by Altinn Correspondence yet (Re: Celine @ Team Melding)
-    /*
     /// <summary>
     /// An alternative name for the sender of the correspondence. The name will be displayed instead of the organisation name
     /// </summary>
     public string? MessageSender { get; init; }
-    */
 
     /// <summary>
     /// Reference to other items in the Altinn ecosystem
@@ -218,16 +215,11 @@ public sealed record Correspondence : CorrespondenceBase, ICorrespondence
         AddRequired(content, Sender.Get(OrganisationNumberFormat.International), "Correspondence.Sender");
         AddRequired(content, SendersReference, "Correspondence.SendersReference");
         AddRequired(content, AllowSystemDeleteAfter.ToString("O"), "Correspondence.AllowSystemDeleteAfter");
-        //AddIfNotNull(content, MessageSender, "Correspondence.MessageSender");
+        AddIfNotNull(content, MessageSender, "Correspondence.MessageSender");
         AddIfNotNull(content, RequestedPublishTime?.ToString("O"), "Correspondence.RequestedPublishTime");
         AddIfNotNull(content, DueDateTime.ToString("O"), "Correspondence.DueDateTime");
         AddIfNotNull(content, IgnoreReservation?.ToString(), "Correspondence.IgnoreReservation");
-        AddListItems(
-            content,
-            Recipients,
-            x => x.Get(OrganisationNumberFormat.International),
-            i => $"Correspondence.Recipients[{i}]"
-        );
+        AddListItems(content, Recipients, x => x.Get(OrganisationNumberFormat.International), i => $"Recipients[{i}]");
         AddListItems(content, ExistingAttachments, x => x.ToString(), i => $"Correspondence.ExistingAttachments[{i}]");
         AddDictionaryItems(content, PropertyList, x => x, key => $"Correspondence.PropertyList.{key}");
 

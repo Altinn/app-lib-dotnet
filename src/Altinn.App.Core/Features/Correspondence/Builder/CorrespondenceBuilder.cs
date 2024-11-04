@@ -53,8 +53,7 @@ public class CorrespondenceBuilder
     private DateTimeOffset? _dueDateTime;
     private IReadOnlyList<OrganisationNumber>? _recipients;
     private DateTimeOffset? _requestedPublishTime;
-
-    // private string? _messageSender;
+    private string? _messageSender;
     private IReadOnlyList<CorrespondenceExternalReference>? _externalReferences;
     private IReadOnlyDictionary<string, string>? _propertyList;
     private IReadOnlyList<CorrespondenceReplyOption>? _replyOptions;
@@ -137,15 +136,12 @@ public class CorrespondenceBuilder
         return this;
     }
 
-    // TODO: This is not fully implemented by Altinn Correspondence yet (Re: Celine @ Team Melding)
-    /*
     /// <inheritdoc/>
-    public IBuildStep WithMessageSender(string messageSender)
+    public ICorrespondenceBuilderCanBuild WithMessageSender(string messageSender)
     {
         _messageSender = messageSender;
         return this;
     }
-    */
 
     /// <inheritdoc/>
     public ICorrespondenceBuilderCanBuild WithExternalReference(CorrespondenceExternalReference externalReference)
@@ -269,7 +265,7 @@ public class CorrespondenceBuilder
             DueDateTime = _dueDateTime.Value,
             Recipients = _recipients,
             RequestedPublishTime = _requestedPublishTime,
-            // MessageSender = _messageSender,
+            MessageSender = _messageSender,
             ExternalReferences = _externalReferences,
             PropertyList = _propertyList,
             ReplyOptions = _replyOptions,
