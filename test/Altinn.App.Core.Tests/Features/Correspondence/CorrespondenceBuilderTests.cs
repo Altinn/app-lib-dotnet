@@ -9,13 +9,13 @@ namespace Altinn.App.Core.Tests.Features.Correspondence;
 
 public class CorrespondenceBuilderTests
 {
-    static OrganisationNumber GetOrganisationNumber(int index)
+    private static OrganisationNumber GetOrganisationNumber(int index)
     {
         var i = index % OrganisationNumberTests.ValidOrganisationNumbers.Length;
         return OrganisationNumber.Parse(OrganisationNumberTests.ValidOrganisationNumbers[i]);
     }
 
-    static string StreamReadHelper(Stream stream)
+    private static string StreamReadHelper(Stream stream)
     {
         stream.Position = 0;
         return new StreamReader(stream).ReadToEnd();
@@ -70,7 +70,6 @@ public class CorrespondenceBuilderTests
         correspondence.Content.Body.Should().Be(contentBody);
     }
 
-    // TODO: Finish this
     [Fact]
     public void Build_WithAllProperties_ShouldReturnValidCorrespondence()
     {
@@ -83,8 +82,8 @@ public class CorrespondenceBuilderTests
             recipient,
             resourceId = "resource-id",
             sendersReference = "senders-ref",
-            due = DateTimeOffset.Now.AddDays(30),
-            deleteAfter = DateTimeOffset.Now.AddDays(60),
+            dueDateTime = DateTimeOffset.Now.AddDays(30),
+            allowDeleteAfter = DateTimeOffset.Now.AddDays(60),
             ignoreReservation = true,
             requestedPublishTime = DateTimeOffset.Now.AddSeconds(45),
             propertyList = new Dictionary<string, string> { ["prop1"] = "value1", ["prop2"] = "value2" },
@@ -95,34 +94,18 @@ public class CorrespondenceBuilderTests
                 summary = "content-summary",
                 body = "content-body"
             },
-            notifications = new[]
+            notification = new
             {
-                new
-                {
-                    template = CorrespondenceNotificationTemplate.GenericAltinnMessage,
-                    emailSubject = "email-subject-1",
-                    emailBody = "email-body-1",
-                    smsBody = "sms-body-1",
-                    reminderEmailSubject = "reminder-email-subject-1",
-                    reminderEmailBody = "reminder-email-body-1",
-                    reminderSmsBody = "reminder-sms-body-1",
-                    requestedSendTime = DateTimeOffset.Now.AddDays(1),
-                    sendersReference = "notification-senders-ref-1",
-                    sendReminder = true
-                },
-                new
-                {
-                    template = CorrespondenceNotificationTemplate.CustomMessage,
-                    emailSubject = "email-subject-2",
-                    emailBody = "email-body-2",
-                    smsBody = "sms-body-2",
-                    reminderEmailSubject = "reminder-email-subject-2",
-                    reminderEmailBody = "reminder-email-body-2",
-                    reminderSmsBody = "reminder-sms-body-2",
-                    requestedSendTime = DateTimeOffset.Now.AddDays(2),
-                    sendersReference = "notification-senders-ref-2",
-                    sendReminder = false
-                }
+                template = CorrespondenceNotificationTemplate.GenericAltinnMessage,
+                emailSubject = "email-subject-1",
+                emailBody = "email-body-1",
+                smsBody = "sms-body-1",
+                reminderEmailSubject = "reminder-email-subject-1",
+                reminderEmailBody = "reminder-email-body-1",
+                reminderSmsBody = "reminder-sms-body-1",
+                requestedSendTime = DateTimeOffset.Now.AddDays(1),
+                sendersReference = "notification-senders-ref-1",
+                sendReminder = true
             },
             attachments = new[]
             {
@@ -149,18 +132,6 @@ public class CorrespondenceBuilderTests
                     dataLocationType = CorrespondenceDataLocationType.NewCorrespondenceAttachment,
                     isEncrypted = true,
                     restrictionName = "restriction-name-2"
-                },
-                new
-                {
-                    sender,
-                    filename = "file-3.txt",
-                    name = "File 3",
-                    sendersReference = "1234-3",
-                    dataType = "text/plain",
-                    data = "attachment-data-3",
-                    dataLocationType = CorrespondenceDataLocationType.ExisitingExternalStorage,
-                    isEncrypted = false,
-                    restrictionName = "restriction-name-3"
                 }
             },
             existingAttachments = new[] { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() },
@@ -175,8 +146,7 @@ public class CorrespondenceBuilderTests
             replyOptions = new[]
             {
                 new { url = "reply-url-1", text = "reply-text-1" },
-                new { url = "reply-url-2", text = "reply-text-2" },
-                new { url = "reply-url-3", text = "reply-text-3" }
+                new { url = "reply-url-2", text = "reply-text-2" }
             }
         };
 
@@ -186,8 +156,8 @@ public class CorrespondenceBuilderTests
             .WithSender(data.sender)
             .WithSendersReference(data.sendersReference)
             .WithRecipient(data.recipient)
-            .WithDueDateTime(data.due)
-            .WithAllowSystemDeleteAfter(data.deleteAfter)
+            .WithDueDateTime(data.dueDateTime)
+            .WithAllowSystemDeleteAfter(data.allowDeleteAfter)
             .WithContent(
                 CorrespondenceContentBuilder
                     .Create()
@@ -199,31 +169,16 @@ public class CorrespondenceBuilderTests
             .WithNotification(
                 CorrespondenceNotificationBuilder
                     .Create()
-                    .WithNotificationTemplate(data.notifications[0].template)
-                    .WithEmailSubject(data.notifications[0].emailSubject)
-                    .WithEmailBody(data.notifications[0].emailBody)
-                    .WithSmsBody(data.notifications[0].smsBody)
-                    .WithReminderEmailSubject(data.notifications[0].reminderEmailSubject)
-                    .WithReminderEmailBody(data.notifications[0].reminderEmailBody)
-                    .WithReminderSmsBody(data.notifications[0].reminderSmsBody)
-                    .WithRequestedSendTime(data.notifications[0].requestedSendTime)
-                    .WithSendersReference(data.notifications[0].sendersReference)
-                    .WithSendReminder(data.notifications[0].sendReminder)
-            )
-            .WithNotification(
-                new CorrespondenceNotification
-                {
-                    NotificationTemplate = data.notifications[1].template,
-                    EmailSubject = data.notifications[1].emailSubject,
-                    EmailBody = data.notifications[1].emailBody,
-                    SmsBody = data.notifications[1].smsBody,
-                    ReminderEmailSubject = data.notifications[1].reminderEmailSubject,
-                    ReminderEmailBody = data.notifications[1].reminderEmailBody,
-                    ReminderSmsBody = data.notifications[1].reminderSmsBody,
-                    RequestedSendTime = data.notifications[1].requestedSendTime,
-                    SendersReference = data.notifications[1].sendersReference,
-                    SendReminder = data.notifications[1].sendReminder
-                }
+                    .WithNotificationTemplate(data.notification.template)
+                    .WithEmailSubject(data.notification.emailSubject)
+                    .WithEmailBody(data.notification.emailBody)
+                    .WithSmsBody(data.notification.smsBody)
+                    .WithReminderEmailSubject(data.notification.reminderEmailSubject)
+                    .WithReminderEmailBody(data.notification.reminderEmailBody)
+                    .WithReminderSmsBody(data.notification.reminderSmsBody)
+                    .WithRequestedSendTime(data.notification.requestedSendTime)
+                    .WithSendersReference(data.notification.sendersReference)
+                    .WithSendReminder(data.notification.sendReminder)
             )
             .WithIgnoreReservation(data.ignoreReservation)
             .WithRequestedPublishTime(data.requestedPublishTime)
@@ -241,33 +196,19 @@ public class CorrespondenceBuilderTests
                     .WithIsEncrypted(data.attachments[0].isEncrypted)
                     .WithRestrictionName(data.attachments[0].restrictionName)
             )
-            .WithAttachment(
-                new CorrespondenceAttachment
-                {
-                    Filename = data.attachments[1].filename,
-                    Name = data.attachments[1].name,
-                    Sender = data.attachments[1].sender,
-                    SendersReference = data.attachments[1].sendersReference,
-                    DataType = data.attachments[1].dataType,
-                    Data = new MemoryStream(Encoding.UTF8.GetBytes(data.attachments[1].data)),
-                    DataLocationType = data.attachments[1].dataLocationType,
-                    IsEncrypted = data.attachments[1].isEncrypted,
-                    RestrictionName = data.attachments[1].restrictionName
-                }
-            )
             .WithAttachments(
                 [
                     new CorrespondenceAttachment
                     {
-                        Filename = data.attachments[2].filename,
-                        Name = data.attachments[2].name,
-                        Sender = data.attachments[2].sender,
-                        SendersReference = data.attachments[2].sendersReference,
-                        DataType = data.attachments[2].dataType,
-                        Data = new MemoryStream(Encoding.UTF8.GetBytes(data.attachments[2].data)),
-                        DataLocationType = data.attachments[2].dataLocationType,
-                        IsEncrypted = data.attachments[2].isEncrypted,
-                        RestrictionName = data.attachments[2].restrictionName
+                        Filename = data.attachments[1].filename,
+                        Name = data.attachments[1].name,
+                        Sender = data.attachments[1].sender,
+                        SendersReference = data.attachments[1].sendersReference,
+                        DataType = data.attachments[1].dataType,
+                        Data = new MemoryStream(Encoding.UTF8.GetBytes(data.attachments[1].data)),
+                        DataLocationType = data.attachments[1].dataLocationType,
+                        IsEncrypted = data.attachments[1].isEncrypted,
+                        RestrictionName = data.attachments[1].restrictionName
                     }
                 ]
             )
@@ -279,15 +220,8 @@ public class CorrespondenceBuilderTests
                     .WithReferenceType(data.externalReferences[0].type)
                     .WithReferenceValue(data.externalReferences[0].value)
             )
-            .WithExternalReference(
-                new CorrespondenceExternalReference
-                {
-                    ReferenceType = data.externalReferences[1].type,
-                    ReferenceValue = data.externalReferences[1].value
-                }
-            )
             .WithExternalReferences(
-                data.externalReferences.Skip(2)
+                data.externalReferences.Skip(1)
                     .Select(x => new CorrespondenceExternalReference
                     {
                         ReferenceType = x.type,
@@ -301,19 +235,12 @@ public class CorrespondenceBuilderTests
                     .WithLinkUrl(data.replyOptions[0].url)
                     .WithLinkText(data.replyOptions[0].text)
             )
-            .WithReplyOption(
-                CorrespondenceReplyOptionBuilder
-                    .Create()
-                    .WithLinkUrl(data.replyOptions[1].url)
-                    .WithLinkText(data.replyOptions[1].text)
-                    .Build()
-            )
             .WithReplyOptions(
                 [
                     new CorrespondenceReplyOption
                     {
-                        LinkUrl = data.replyOptions[2].url,
-                        LinkText = data.replyOptions[2].text
+                        LinkUrl = data.replyOptions[1].url,
+                        LinkText = data.replyOptions[1].text
                     }
                 ]
             );
@@ -329,7 +256,21 @@ public class CorrespondenceBuilderTests
         Assert.NotNull(correspondence.ExternalReferences);
         Assert.NotNull(correspondence.ReplyOptions);
 
-        correspondence.Content.Attachments.Should().HaveCount(3);
+        correspondence.ResourceId.Should().Be(data.resourceId);
+        correspondence.Sender.Should().Be(data.sender);
+        correspondence.SendersReference.Should().Be(data.sendersReference);
+        correspondence.Recipients.Should().BeEquivalentTo([data.recipient]);
+        correspondence.DueDateTime.Should().Be(data.dueDateTime);
+        correspondence.AllowSystemDeleteAfter.Should().Be(data.allowDeleteAfter);
+        correspondence.IgnoreReservation.Should().Be(data.ignoreReservation);
+        correspondence.RequestedPublishTime.Should().Be(data.requestedPublishTime);
+        correspondence.PropertyList.Should().BeEquivalentTo(data.propertyList);
+
+        correspondence.Content.Title.Should().Be(data.content.title);
+        correspondence.Content.Language.Should().Be(data.content.language);
+        correspondence.Content.Summary.Should().Be(data.content.summary);
+        correspondence.Content.Body.Should().Be(data.content.body);
+        correspondence.Content.Attachments.Should().HaveCount(data.attachments.Length);
         for (int i = 0; i < data.attachments.Length; i++)
         {
             correspondence.Content.Attachments[i].Filename.Should().Be(data.attachments[i].filename);
@@ -343,6 +284,31 @@ public class CorrespondenceBuilderTests
             StreamReadHelper(correspondence.Content.Attachments[i].Data).Should().Be(data.attachments[i].data);
         }
 
-        // TODO: All the other ones
+        correspondence.Notification.NotificationTemplate.Should().Be(data.notification.template);
+        correspondence.Notification.EmailSubject.Should().Be(data.notification.emailSubject);
+        correspondence.Notification.EmailBody.Should().Be(data.notification.emailBody);
+        correspondence.Notification.SmsBody.Should().Be(data.notification.smsBody);
+        correspondence.Notification.ReminderEmailSubject.Should().Be(data.notification.reminderEmailSubject);
+        correspondence.Notification.ReminderEmailBody.Should().Be(data.notification.reminderEmailBody);
+        correspondence.Notification.ReminderSmsBody.Should().Be(data.notification.reminderSmsBody);
+        correspondence.Notification.RequestedSendTime.Should().Be(data.notification.requestedSendTime);
+        correspondence.Notification.SendersReference.Should().Be(data.notification.sendersReference);
+        correspondence.Notification.SendReminder.Should().Be(data.notification.sendReminder);
+
+        correspondence.ExistingAttachments.Should().BeEquivalentTo(data.existingAttachments);
+
+        correspondence.ExternalReferences.Should().HaveCount(data.externalReferences.Length);
+        for (int i = 0; i < data.externalReferences.Length; i++)
+        {
+            correspondence.ExternalReferences[i].ReferenceType.Should().Be(data.externalReferences[i].type);
+            correspondence.ExternalReferences[i].ReferenceValue.Should().Be(data.externalReferences[i].value);
+        }
+
+        correspondence.ReplyOptions.Should().HaveCount(data.replyOptions.Length);
+        for (int i = 0; i < data.replyOptions.Length; i++)
+        {
+            correspondence.ReplyOptions[i].LinkUrl.Should().Be(data.replyOptions[i].url);
+            correspondence.ReplyOptions[i].LinkText.Should().Be(data.replyOptions[i].text);
+        }
     }
 }
