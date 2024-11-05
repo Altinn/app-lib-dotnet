@@ -25,19 +25,7 @@ public interface ICorrespondenceAttachmentBuilderNeedsName
     /// Sets the display name of the attachment
     /// </summary>
     /// <param name="name">The display name</param>
-    ICorrespondenceAttachmentBuilderNeedsSender WithName(string name);
-}
-
-/// <summary>
-/// Indicates that the <see cref="CorrespondenceAttachmentBuilder"/> instance is on the <see cref="CorrespondenceAttachment.Sender"/> step
-/// </summary>
-public interface ICorrespondenceAttachmentBuilderNeedsSender
-{
-    /// <summary>
-    /// Sets the sending organisation of the attachment
-    /// </summary>
-    /// <param name="sender">The organisation number of the sender</param>
-    ICorrespondenceAttachmentBuilderNeedsSendersReference WithSender(OrganisationNumber sender);
+    ICorrespondenceAttachmentBuilderNeedsSendersReference WithName(string name);
 }
 
 /// <summary>

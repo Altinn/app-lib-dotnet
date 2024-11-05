@@ -15,7 +15,6 @@ public class CorrespondenceTest
     public async Task Serialize_ShouldAddCorrectFields()
     {
         // Arrange
-        var mockContent = new Mock<MultipartFormDataContent>();
         var multipartContent = new MultipartFormDataContent();
         var correspondence = new Core.Features.Correspondence.Models.Correspondence
         {
@@ -41,7 +40,6 @@ public class CorrespondenceTest
                         Filename = "filename-1",
                         Name = "name-1",
                         RestrictionName = "restriction-1",
-                        Sender = TestHelpers.GetOrganisationNumber(3),
                         SendersReference = "senders-reference-1",
                         DataType = "application/pdf",
                         Data = new MemoryStream(Encoding.UTF8.GetBytes("data"))
@@ -51,7 +49,6 @@ public class CorrespondenceTest
                         Filename = "filename-2",
                         Name = "name-2",
                         RestrictionName = "restriction-2",
-                        Sender = TestHelpers.GetOrganisationNumber(3),
                         SendersReference = "senders-reference-2",
                         DataType = "plain/text",
                         Data = new MemoryStream(Encoding.UTF8.GetBytes("data")),
@@ -135,14 +132,12 @@ public class CorrespondenceTest
             ["Correspondence.Content.Attachments[0].Filename"] = correspondence.Content.Attachments[0].Filename,
             ["Correspondence.Content.Attachments[0].Name"] = correspondence.Content.Attachments[0].Name,
             ["Correspondence.Content.Attachments[0].RestrictionName"] = correspondence.Content.Attachments[0].RestrictionName!,
-            ["Correspondence.Content.Attachments[0].Sender"] = correspondence.Content.Attachments[0].Sender,
             ["Correspondence.Content.Attachments[0].SendersReference"] = correspondence.Content.Attachments[0].SendersReference,
             ["Correspondence.Content.Attachments[0].DataType"] = correspondence.Content.Attachments[0].DataType,
             ["Correspondence.Content.Attachments[1].Filename"] = correspondence.Content.Attachments[1].Filename,
             ["Correspondence.Content.Attachments[1].Name"] = correspondence.Content.Attachments[1].Name,
             ["Correspondence.Content.Attachments[1].RestrictionName"] = correspondence.Content.Attachments[1].RestrictionName!,
             ["Correspondence.Content.Attachments[1].IsEncrypted"] = correspondence.Content.Attachments[1].IsEncrypted!,
-            ["Correspondence.Content.Attachments[1].Sender"] = correspondence.Content.Attachments[1].Sender,
             ["Correspondence.Content.Attachments[1].SendersReference"] = correspondence.Content.Attachments[1].SendersReference,
             ["Correspondence.Content.Attachments[1].DataType"] = correspondence.Content.Attachments[1].DataType,
             ["Correspondence.ExternalReferences[0].ReferenceType"] = correspondence.ExternalReferences[0].ReferenceType,

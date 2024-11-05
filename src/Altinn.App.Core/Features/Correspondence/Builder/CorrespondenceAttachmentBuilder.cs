@@ -10,7 +10,6 @@ public class CorrespondenceAttachmentBuilder
     : CorrespondenceBuilderBase,
         ICorrespondenceAttachmentBuilderNeedsFilename,
         ICorrespondenceAttachmentBuilderNeedsName,
-        ICorrespondenceAttachmentBuilderNeedsSender,
         ICorrespondenceAttachmentBuilderNeedsSendersReference,
         ICorrespondenceAttachmentBuilderNeedsDataType,
         ICorrespondenceAttachmentBuilderNeedsData,
@@ -18,7 +17,6 @@ public class CorrespondenceAttachmentBuilder
 {
     private string? _filename;
     private string? _name;
-    private OrganisationNumber? _sender;
     private string? _sendersReference;
     private string? _dataType;
     private Stream? _data;
@@ -42,16 +40,9 @@ public class CorrespondenceAttachmentBuilder
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceAttachmentBuilderNeedsSender WithName(string name)
+    public ICorrespondenceAttachmentBuilderNeedsSendersReference WithName(string name)
     {
         _name = name;
-        return this;
-    }
-
-    /// <inheritdoc/>
-    public ICorrespondenceAttachmentBuilderNeedsSendersReference WithSender(OrganisationNumber sender)
-    {
-        _sender = sender;
         return this;
     }
 
@@ -104,7 +95,6 @@ public class CorrespondenceAttachmentBuilder
     {
         NotNullOrEmpty(_filename, "Filename is required");
         NotNullOrEmpty(_name, "Name is required");
-        NotNullOrEmpty(_sender, "Sender is required");
         NotNullOrEmpty(_sendersReference, "Senders reference is required");
         NotNullOrEmpty(_dataType, "Data type is required");
         NotNullOrEmpty(_data, "Data is required");
@@ -113,7 +103,6 @@ public class CorrespondenceAttachmentBuilder
         {
             Filename = _filename,
             Name = _name,
-            Sender = _sender.Value,
             SendersReference = _sendersReference,
             DataType = _dataType,
             Data = _data,

@@ -31,11 +31,6 @@ public sealed record CorrespondenceAttachment : CorrespondenceBase, ICorresponde
     public bool? IsEncrypted { get; init; }
 
     /// <summary>
-    /// The sending organisation of the attachment
-    /// </summary>
-    public required OrganisationNumber Sender { get; init; }
-
-    /// <summary>
     /// A reference value given to the attachment by the creator
     /// </summary>
     public required string SendersReference { get; init; }
@@ -68,11 +63,9 @@ public sealed record CorrespondenceAttachment : CorrespondenceBase, ICorresponde
     {
         const string typePrefix = "Correspondence.Content.Attachments";
         string prefix = $"{typePrefix}[{index}]";
-        string sender = Sender.Get(OrganisationNumberFormat.International);
 
         AddRequired(content, UniqueFileName(), $"{prefix}.Filename");
         AddRequired(content, Name, $"{prefix}.Name");
-        AddRequired(content, sender, $"{prefix}.Sender");
         AddRequired(content, SendersReference, $"{prefix}.SendersReference");
         AddRequired(content, DataType, $"{prefix}.DataType");
         AddRequired(content, DataLocationType.ToString(), $"{prefix}.DataLocationType");
