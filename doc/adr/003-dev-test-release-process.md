@@ -2,7 +2,7 @@
 
 -   Status: Proposed
 -   Deciders: Team
--   Date: 01.11.2024
+-   Date: 15.11.2024
 
 ## Result
 
@@ -51,20 +51,34 @@ Release:
 
 ## Decision drivers
 
-A list of decision drivers. These are points which can differ in importance. If a point is "nice to have" rather than
-"need to have", then prefix the description.
-
-Examples
-
--   B1: The solution make it easier for app developers to develop an app.
--   B2: Nice to have: The solution should be simple to implement for out team.
+B01: We should have high confidence in the code in main
+B02: The state in main should be releasable at all times
+B03: Releases should be automatic
+B04: We should be able to make hotfixes and patch releases to different major/minor versions (e.g. cherrypicking)
+B05: We should measure release and be aware of release cadence over time
+B06: We should set aside time for new features (minor version bumps) to stabilize in a RC phase in addition to previews, before moving on to stable versions
+B07: Automatic tests to achieve high confidence should not be so slow as to be an obstacle for quick hotfix
+B08: We should be able to rollback a release if needed
+B09: Releases should not lead to inconsistencies/errors due to differing versions (i.e. mismatch of static assets on frontend)
+B10: Features should be developed cohesively - considering the full stack of changes needed at a time, to avoid inefficiencies and poor design
+B11: Versioning should be simple to understand, i.e. which versions fit together
+B12: We should be able to test a whole feature during development in a single PR both locally and in tt02
+B13: We should have quick and efficient development cycle and feedback loops
 
 ## Alternatives considered
 
 List the alternatives that were considered as a solution to the problem context.
 
--   A1: A solution to the problem.
--   A2: Another solution to the problem
+* A1:
+  * Refactor into a monorepo (B01, B09, B10, B11?, B12, B13)
+  * Consolidate major.minor version numbers, making them equal between frontend and backend (B11)
+  * PR builds of frontend and backend should be deployed to CDN and [Github Packages NuGet registry](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-nuget-registry) (B01, B02, B10, B12, B13)
+  * Implement [Nerdbank.GitVersioning](https://github.com/dotnet/Nerdbank.GitVersioning) to automate release branches and versions using GitHub Actions with path filters (B02, B03, B04, B06, B08?, B11, B12)
+  * Tag releases with environments (specifically `production`) (B05)
+  * Write pure and decoupled code to improve testability and simplify writing unittests (less mocking, more plain input/output) (B07, B13)
+  * Cover code and components with unittests, while integration tests cover important workflows/user flows (B07, B13)
+  * GitHub Actions workflows to unpublish from CDN and obsolete(?) from NuGet (B08)
+  * Serve frontend from backend, to ensure consistency between artifacts ?????? (B09)
 
 ## Pros and cons
 
@@ -72,11 +86,6 @@ List the pros and cons with the alternatives. This should be in regards to the d
 
 ### A1
 
--   Good, because this alternative adheres to B1.
-    -   Optional explanation as to how.
--   Bad, because it does not fullfill the B2 decision driver.
+* Good, it solves all our problems (????)
+* Bad, it's a lot of work and complicated
 
-### A2
-
--   Good, because this alternative adheres to B2.
--   Bad, because it does not fullfill the B1 decision driver.
