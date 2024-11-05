@@ -9,6 +9,7 @@ using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Result;
+using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using Json.Patch;
 using Microsoft.AspNetCore.Hosting;
@@ -25,7 +26,7 @@ internal class PatchService : IPatchService
     private readonly IDataClient _dataClient;
     private readonly IInstanceClient _instanceClient;
     private readonly ModelSerializationService _modelSerializationService;
-    private readonly IWebHostEnvironment _hostingEnvironment;
+    private readonly IHostEnvironment _hostingEnvironment;
     private readonly Telemetry? _telemetry;
     private readonly IValidationService _validationService;
     private readonly IEnumerable<IDataProcessor> _dataProcessors;
@@ -45,7 +46,7 @@ internal class PatchService : IPatchService
         IEnumerable<IDataProcessor> dataProcessors,
         IEnumerable<IDataWriteProcessor> dataWriteProcessors,
         ModelSerializationService modelSerializationService,
-        IWebHostEnvironment hostingEnvironment,
+        IHostEnvironment hostingEnvironment,
         Telemetry? telemetry = null
     )
     {
@@ -70,15 +71,15 @@ internal class PatchService : IPatchService
     {
         using var activity = _telemetry?.StartDataPatchActivity(instance);
 
-        var dataAccessor = new CachedInstanceDataAccessor(
+        var dataAccessor = new InstanceDataUnitOfWork(
             instance,
             _dataClient,
             _instanceClient,
-            _appMetadata,
+            await _appMetadata.GetApplicationMetadata(),
             _modelSerializationService
         );
 
-        List<DataElementChange> changesAfterPatch = new();
+        List<FormDataChange> changesAfterPatch = [];
 
         foreach (var (dataElementGuid, jsonPatch) in patches)
         {
@@ -133,23 +134,40 @@ internal class PatchService : IPatchService
             dataAccessor.SetFormData(dataElement, newModel);
 
             changesAfterPatch.Add(
-                new DataElementChange
+                new FormDataChange
                 {
+                    Type = ChangeType.Updated,
                     DataElement = dataElement,
+                    ContentType = dataElement.ContentType,
+                    DataType = dataAccessor.GetDataType(dataElementIdentifier),
                     PreviousFormData = oldModel,
                     CurrentFormData = newModel,
                     PreviousBinaryData = await dataAccessor.GetBinaryData(dataElementIdentifier),
-                    CurrentBinaryData = null,
+                    CurrentBinaryData = null, // Set this after DataProcessors have run
                 }
             );
         }
 
         await RunDataProcessors(
             dataAccessor,
-            changesAfterPatch,
+            new DataElementChanges(changesAfterPatch),
             taskId: instance.Process.CurrentTask.ElementId,
             language
         );
+
+        if (dataAccessor.AbandonIssues.Count > 0)
+        {
+            return new DataPatchError()
+            {
+                Title = "Data processors abandoned the patch",
+                Detail = "Data processors abandoned the patch",
+                ErrorType = DataPatchErrorType.AbandonedRequest,
+                Extensions = new Dictionary<string, object?>()
+                {
+                    { "uploadValidationIssues", dataAccessor.AbandonIssues },
+                } // use same key as in DataPostErrorResponse
+            };
+        }
 
         // Get all changes to data elements by comparing the serialized values
         var changes = dataAccessor.GetDataElementChanges(initializeAltinnRowId: true);
@@ -159,7 +177,6 @@ internal class PatchService : IPatchService
         await dataAccessor.UpdateInstanceData(changes);
 
         var validationIssues = await _validationService.ValidateIncrementalFormData(
-            instance,
             dataAccessor,
             instance.Process.CurrentTask.ElementId,
             changes,
@@ -173,55 +190,87 @@ internal class PatchService : IPatchService
         if (_hostingEnvironment.IsDevelopment())
         {
             // Ensure that validation did not change the data elements
-            dataAccessor.VerifyDataElementsUnchanged();
+            dataAccessor.VerifyDataElementsUnchangedSincePreviousChanges(changes);
         }
 
-        var updatedData = changes
-            .Select(change => new DataPatchResult.DataModelPair(change.DataElement, change.CurrentFormData))
-            .ToList();
+        var formDataChanges = changes.FormDataChanges.ToList();
+
         // Ensure that all data elements that were patched are included in the updated data
         // (even if they were not changed or the change was reverted by dataProcessor)
         foreach (var patchedElementGuid in patches.Keys)
         {
-            if (changes.TrueForAll(c => c.DataElement.Id != patchedElementGuid.ToString()))
+            var patchedElementId = patchedElementGuid.ToString();
+            if (formDataChanges.TrueForAll(c => c.DataElement?.Id != patchedElementId))
             {
-                var dataElement =
-                    instance.Data.Find(d => d.Id == patchedElementGuid.ToString())
-                    ?? throw new InvalidOperationException("Data element not found in instance");
-                updatedData.Add(
-                    new DataPatchResult.DataModelPair(dataElement, await dataAccessor.GetFormData(dataElement))
-                );
+                // The element from the patch was not included in the changes, so add it
+                var dataElement = instance.Data.Find(d => d.Id == patchedElementId);
+                if (dataElement is not null)
+                {
+                    // Create a change with the current data of the unchanged element
+                    formDataChanges.Add(
+                        new FormDataChange
+                        {
+                            Type = ChangeType.Updated,
+                            DataElement = dataElement,
+                            ContentType = dataElement.ContentType,
+                            DataType = dataAccessor.GetDataType(dataElement),
+                            PreviousFormData = await dataAccessor.GetFormData(dataElement),
+                            CurrentFormData = await dataAccessor.GetFormData(dataElement),
+                            PreviousBinaryData = await dataAccessor.GetBinaryData(dataElement),
+                            CurrentBinaryData = await dataAccessor.GetBinaryData(dataElement),
+                        }
+                    );
+                }
             }
         }
 
         return new DataPatchResult
         {
             Instance = instance,
-            ChangedDataElements = changes,
-            UpdatedData = updatedData,
+            FormDataChanges = new DataElementChanges(formDataChanges),
             ValidationIssues = validationIssues,
         };
     }
 
+    public async Task<List<ValidationSourcePair>> RunIncrementalValidation(
+        IInstanceDataAccessor dataAccessor,
+        string taskId,
+        DataElementChanges changes,
+        List<string>? ignoredValidators,
+        string? language
+    )
+    {
+        return await _validationService.ValidateIncrementalFormData(
+            dataAccessor,
+            taskId,
+            changes,
+            ignoredValidators,
+            language
+        );
+    }
+
     public async Task RunDataProcessors(
         IInstanceDataMutator dataMutator,
-        List<DataElementChange> changes,
+        DataElementChanges changes,
         string taskId,
         string? language
     )
     {
         foreach (var dataProcessor in _dataProcessors)
         {
-            foreach (var change in changes)
+            foreach (var change in changes.FormDataChanges)
             {
-                var dataElementGuid = Guid.Parse(change.DataElement.Id);
+                if (change.Type != ChangeType.Updated)
+                {
+                    // Don't run IDataProcessor on created or deleted data elements for backwards compatibility
+                    continue;
+                }
                 using var processWriteActivity = _telemetry?.StartDataProcessWriteActivity(dataProcessor);
                 try
                 {
-                    // TODO: Create new dataProcessor interface that takes multiple models at the same time.
                     await dataProcessor.ProcessDataWrite(
                         dataMutator.Instance,
-                        dataElementGuid,
+                        change.DataElementIdentifier.Guid,
                         change.CurrentFormData,
                         change.PreviousFormData,
                         language

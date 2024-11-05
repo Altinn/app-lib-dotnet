@@ -171,17 +171,19 @@ public class ProcessEngine : IProcessEngine
 
         int? userId = request.User.GetUserIdAsInt();
         IUserAction? actionHandler = _userActionService.GetActionHandler(request.Action);
-        var cachedDataMutator = new CachedInstanceDataAccessor(
+        var cachedDataMutator = new InstanceDataUnitOfWork(
             instance,
             _dataClient,
             _instanceClient,
-            _appMetadata,
+            await _appMetadata.GetApplicationMetadata(),
             _modelSerialization
         );
 
         UserActionResult actionResult = actionHandler is null
             ? UserActionResult.SuccessResult()
-            : await actionHandler.HandleAction(new UserActionContext(cachedDataMutator, userId));
+            : await actionHandler.HandleAction(
+                new UserActionContext(cachedDataMutator, userId, language: request.Language)
+            );
 
         if (actionResult.ResultType != ResultType.Success)
         {
@@ -195,9 +197,18 @@ public class ProcessEngine : IProcessEngine
             return result;
         }
 
+        if (cachedDataMutator.AbandonIssues.Count > 0)
+        {
+            throw new Exception(
+                "Abandon issues found in data elements. Abandon issues should be handled by the action handler."
+            );
+        }
+
         var changes = cachedDataMutator.GetDataElementChanges(initializeAltinnRowId: false);
         await cachedDataMutator.UpdateInstanceData(changes);
         await cachedDataMutator.SaveChanges(changes);
+
+        // TODO: consider using the same cachedDataMutator for the rest of the process to avoid refetching data from storage
 
         ProcessStateChange? nextResult = await HandleMoveToNext(instance, request.User, request.Action);
 

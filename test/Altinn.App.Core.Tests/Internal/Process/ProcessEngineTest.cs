@@ -13,6 +13,7 @@ using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.App.Core.Internal.Profile;
+using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
 using Altinn.Platform.Profile.Models;
@@ -368,7 +369,13 @@ public sealed class ProcessEngineTest : IDisposable
             AppId = "org/app",
             Process = null
         };
-        ProcessNextRequest processNextRequest = new ProcessNextRequest() { Instance = instance };
+        ProcessNextRequest processNextRequest = new ProcessNextRequest()
+        {
+            Instance = instance,
+            Action = null,
+            User = null!,
+            Language = null
+        };
         ProcessChangeResult result = await processEngine.Next(processNextRequest);
         result.Success.Should().BeFalse();
         result.ErrorMessage.Should().Be("Instance does not have current task information!");
@@ -385,7 +392,13 @@ public sealed class ProcessEngineTest : IDisposable
             AppId = "org/app",
             Process = new ProcessState() { CurrentTask = null }
         };
-        ProcessNextRequest processNextRequest = new ProcessNextRequest() { Instance = instance };
+        ProcessNextRequest processNextRequest = new ProcessNextRequest()
+        {
+            Instance = instance,
+            User = null!,
+            Action = null,
+            Language = null
+        };
         ProcessChangeResult result = await processEngine.Next(processNextRequest);
         result.Success.Should().BeFalse();
         result.ErrorMessage.Should().Be("Instance does not have current task information!");
@@ -408,6 +421,7 @@ public sealed class ProcessEngineTest : IDisposable
                 EndEvent = "EndEvent_1"
             }
         };
+        _appMetadataMock.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(new ApplicationMetadata("org/app"));
         Mock<IUserAction> userActionMock = new Mock<IUserAction>(MockBehavior.Strict);
         userActionMock.Setup(u => u.Id).Returns("sign");
         userActionMock
@@ -446,7 +460,8 @@ public sealed class ProcessEngineTest : IDisposable
         {
             Instance = instance,
             User = user,
-            Action = "sign"
+            Action = "sign",
+            Language = null
         };
         ProcessChangeResult result = await processEngine.Next(processNextRequest);
         result.Success.Should().BeFalse();
@@ -457,6 +472,7 @@ public sealed class ProcessEngineTest : IDisposable
     [Fact]
     public async Task Next_moves_instance_to_next_task_and_produces_instanceevents()
     {
+        _appMetadataMock.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(new ApplicationMetadata("org/app"));
         var expectedInstance = new Instance()
         {
             Id = _instanceId,
@@ -507,7 +523,13 @@ public sealed class ProcessEngineTest : IDisposable
                     }
                 )
             );
-        ProcessNextRequest processNextRequest = new ProcessNextRequest() { Instance = instance, User = user };
+        ProcessNextRequest processNextRequest = new ProcessNextRequest()
+        {
+            Instance = instance,
+            User = user,
+            Action = null,
+            Language = null
+        };
         ProcessChangeResult result = await processEngine.Next(processNextRequest);
         _processReaderMock.Verify(r => r.IsProcessTask("Task_1"), Times.Once);
         _processReaderMock.Verify(r => r.IsEndEvent("Task_2"), Times.Once);
@@ -604,6 +626,7 @@ public sealed class ProcessEngineTest : IDisposable
     [Fact]
     public async Task Next_moves_instance_to_next_task_and_produces_abandon_instanceevent_when_action_reject()
     {
+        _appMetadataMock.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(new ApplicationMetadata("org/app"));
         var expectedInstance = new Instance()
         {
             Id = _instanceId,
@@ -658,7 +681,8 @@ public sealed class ProcessEngineTest : IDisposable
         {
             Instance = instance,
             User = user,
-            Action = "reject"
+            Action = "reject",
+            Language = null
         };
         ProcessChangeResult result = await processEngine.Next(processNextRequest);
         _processReaderMock.Verify(r => r.IsProcessTask("Task_1"), Times.Once);
@@ -752,6 +776,7 @@ public sealed class ProcessEngineTest : IDisposable
     [Fact]
     public async Task Next_moves_instance_to_end_event_and_ends_proces()
     {
+        _appMetadataMock.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(new ApplicationMetadata("org/app"));
         var expectedInstance = new Instance()
         {
             Id = _instanceId,
@@ -795,7 +820,13 @@ public sealed class ProcessEngineTest : IDisposable
                     }
                 )
             );
-        ProcessNextRequest processNextRequest = new ProcessNextRequest() { Instance = instance, User = user };
+        ProcessNextRequest processNextRequest = new ProcessNextRequest()
+        {
+            Instance = instance,
+            User = user,
+            Action = null,
+            Language = null
+        };
         ProcessChangeResult result = await processEngine.Next(processNextRequest);
         _processReaderMock.Verify(r => r.IsProcessTask("Task_2"), Times.Once);
         _processReaderMock.Verify(r => r.IsEndEvent("EndEvent_1"), Times.Once);

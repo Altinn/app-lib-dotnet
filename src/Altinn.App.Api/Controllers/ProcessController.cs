@@ -249,15 +249,14 @@ public class ProcessController : ControllerBase
         string? language
     )
     {
-        var dataAccessor = new CachedInstanceDataAccessor(
+        var dataAccessor = new InstanceDataUnitOfWork(
             instance,
             _dataClient,
             _instanceClient,
-            _appMetadata,
+            await _appMetadata.GetApplicationMetadata(),
             _modelSerialization
         );
         var validationIssues = await _validationService.ValidateInstanceAtTask(
-            instance,
             dataAccessor,
             currentTaskId, // run full validation
             ignoredValidators: null,
@@ -371,7 +370,8 @@ public class ProcessController : ControllerBase
             {
                 Instance = instance,
                 User = User,
-                Action = checkedAction
+                Action = checkedAction,
+                Language = language
             };
             var validationProblem = await GetValidationProblemDetails(instance, currentTaskId, language);
             if (validationProblem is not null)
@@ -547,7 +547,8 @@ public class ProcessController : ControllerBase
                 {
                     Instance = instance,
                     User = User,
-                    Action = altinnTaskType
+                    Action = altinnTaskType,
+                    Language = language,
                 };
                 var result = await _processEngine.Next(request);
 
@@ -584,7 +585,7 @@ public class ProcessController : ControllerBase
     [HttpGet("history")]
     [Authorize(Policy = AuthzConstants.POLICY_INSTANCE_READ)]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<ActionResult> GetProcessHistory(
+    public async Task<ActionResult<ProcessHistoryList>> GetProcessHistory(
         [FromRoute] int instanceOwnerPartyId,
         [FromRoute] Guid instanceGuid
     )

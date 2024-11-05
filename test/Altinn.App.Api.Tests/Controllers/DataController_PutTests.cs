@@ -64,7 +64,7 @@ public class DataController_PutTests : ApiTestBase, IClassFixture<WebApplication
                 p.ProcessDataWrite(
                     It.IsAny<IInstanceDataMutator>(),
                     It.IsAny<string>(),
-                    It.IsAny<List<DataElementChange>>(),
+                    It.IsAny<DataElementChanges>(),
                     It.IsAny<string?>()
                 )
             )
@@ -100,6 +100,8 @@ public class DataController_PutTests : ApiTestBase, IClassFixture<WebApplication
             HttpStatusCode.OK
         );
         readDataElementResponseParsed.Melding!.Name.Should().Be("Ola Olsen");
+
+        TestData.DeleteInstanceAndData(org, app, instanceId);
 
         _dataProcessor.Verify(
             p =>
@@ -164,7 +166,7 @@ public class DataController_PutTests : ApiTestBase, IClassFixture<WebApplication
                 p.ProcessDataWrite(
                     It.IsAny<IInstanceDataMutator>(),
                     It.IsAny<string>(),
-                    It.IsAny<List<DataElementChange>>(),
+                    It.IsAny<DataElementChanges>(),
                     It.IsAny<string?>()
                 )
             )
@@ -220,6 +222,8 @@ public class DataController_PutTests : ApiTestBase, IClassFixture<WebApplication
         )!;
         readDataElementResponseParsed.Melding!.Name.Should().Be("Ola Olsen");
         readDataElementResponseParsed.Melding.Toggle.Should().BeTrue();
+
+        TestData.DeleteInstanceAndData(org, app, instanceId);
 
         _dataProcessor.Verify();
         _dataWriteProcessor.Verify();
