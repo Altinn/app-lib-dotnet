@@ -18,7 +18,6 @@ public class CorrespondenceContentBuilder
     private LanguageCode<ISO_639_1>? _language;
     private string? _summary;
     private string? _body;
-    private IReadOnlyList<CorrespondenceAttachment>? _attachments;
 
     private CorrespondenceContentBuilder() { }
 
@@ -57,25 +56,6 @@ public class CorrespondenceContentBuilder
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceContentBuilderCanBuild WithAttachment(CorrespondenceAttachment attachment)
-    {
-        return WithAttachments([attachment]);
-    }
-
-    /// <inheritdoc/>
-    public ICorrespondenceContentBuilderCanBuild WithAttachment(ICorrespondenceAttachmentBuilderCanBuild builder)
-    {
-        return WithAttachments([builder.Build()]);
-    }
-
-    /// <inheritdoc/>
-    public ICorrespondenceContentBuilderCanBuild WithAttachments(IReadOnlyList<CorrespondenceAttachment> attachments)
-    {
-        _attachments = [.. _attachments ?? [], .. attachments];
-        return this;
-    }
-
-    /// <inheritdoc/>
     public CorrespondenceContent Build()
     {
         NotNullOrEmpty(_title, "Title is required");
@@ -88,8 +68,7 @@ public class CorrespondenceContentBuilder
             Title = _title,
             Language = _language.Value,
             Summary = _summary,
-            Body = _body,
-            Attachments = _attachments
+            Body = _body
         };
     }
 }

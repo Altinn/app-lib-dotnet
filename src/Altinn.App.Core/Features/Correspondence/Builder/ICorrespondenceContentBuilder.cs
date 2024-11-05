@@ -57,31 +57,6 @@ public interface ICorrespondenceContentBuilderNeedsBody
 public interface ICorrespondenceContentBuilderCanBuild
 {
     /// <summary>
-    /// Adds an attachment to the correspondence content
-    /// <remarks>
-    /// This method respects any existing attachments already stored in <see cref="CorrespondenceContent.Attachments"/></remarks>
-    /// </summary>
-    /// <param name="attachment">A <see cref="CorrespondenceAttachment"/> item</param>
-    ICorrespondenceContentBuilderCanBuild WithAttachment(CorrespondenceAttachment attachment);
-
-    /// <summary>
-    /// Adds an attachment to the correspondence content
-    /// <remarks>
-    /// This method respects any existing attachments already stored in <see cref="CorrespondenceContent.Attachments"/>
-    /// </remarks>
-    /// </summary>
-    /// <param name="builder">A <see cref="CorrespondenceAttachmentBuilder"/> instance in the <see cref="ICorrespondenceAttachmentBuilderCanBuild"/> stage</param>
-    ICorrespondenceContentBuilderCanBuild WithAttachment(ICorrespondenceAttachmentBuilderCanBuild builder);
-
-    /// <summary>
-    /// Adds attachments to the correspondence content
-    /// <remarks>
-    /// This method respects any existing attachments already stored in <see cref="CorrespondenceContent.Attachments"/></remarks>
-    /// </summary>
-    /// <param name="attachments">A List of <see cref="CorrespondenceAttachment"/> items</param>
-    ICorrespondenceContentBuilderCanBuild WithAttachments(IReadOnlyList<CorrespondenceAttachment> attachments);
-
-    /// <summary>
     /// Builds the correspondence content
     /// </summary>
     CorrespondenceContent Build();
