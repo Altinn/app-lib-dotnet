@@ -29,22 +29,30 @@ public static class WebHostBuilderExtensions
 
                 configBuilder.AddInMemoryCollection(config);
 
-                configBuilder.AddMaskinportenSettingsFile(context);
+                configBuilder.AddMaskinportenSettingsFile(
+                    context,
+                    "MaskinportenSettingsFilepath",
+                    "/mnt/app-secrets/maskinporten-settings.json"
+                );
+                configBuilder.AddMaskinportenSettingsFile(
+                    context,
+                    "MaskinportenSettingsInternalFilepath",
+                    "/mnt/app-secrets/maskinporten-settings-internal.json"
+                );
 
                 configBuilder.LoadAppConfig(args);
             }
         );
     }
 
-    // TODO: Add support for multiple variants of Maskinporten settings files
     private static IConfigurationBuilder AddMaskinportenSettingsFile(
         this IConfigurationBuilder configurationBuilder,
-        WebHostBuilderContext context
+        WebHostBuilderContext context,
+        string configurationKey,
+        string defaultFileLocation
     )
     {
-        string jsonProvidedPath =
-            context.Configuration.GetValue<string>("MaskinportenSettingsFilepath")
-            ?? "/mnt/app-secrets/maskinporten-settings.json";
+        string jsonProvidedPath = context.Configuration.GetValue<string>(configurationKey) ?? defaultFileLocation;
         string jsonAbsolutePath = Path.GetFullPath(jsonProvidedPath);
 
         if (File.Exists(jsonAbsolutePath))

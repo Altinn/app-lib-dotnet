@@ -51,7 +51,7 @@ public abstract record CorrespondenceBase
     }
 
     internal static void SerializeListItems<T>(MultipartFormDataContent content, IReadOnlyList<T>? items)
-        where T : ICorrespondenceItem
+        where T : ICorrespondenceItemSerializer
     {
         if (IsEmptyCollection(items))
             return;
@@ -124,11 +124,10 @@ public abstract record CorrespondenceBase
     }
 }
 
-// TODO: It's a bit annoying that this model is named the same as the containing namespace...
 /// <summary>
-/// Data model for an Altinn correspondence
+/// Represents and Altinn Correspondence request
 /// </summary>
-public sealed record Correspondence : CorrespondenceBase, ICorrespondence
+public sealed record CorrespondenceRequest : CorrespondenceBase, ICorrespondenceRequest
 {
     /// <summary>
     /// The Resource Id for the correspondence service
@@ -227,5 +226,13 @@ public sealed record Correspondence : CorrespondenceBase, ICorrespondence
         Notification?.Serialize(content);
         SerializeListItems(content, ExternalReferences);
         SerializeListItems(content, ReplyOptions);
+    }
+
+    /// <inheritdoc/>
+    public MultipartFormDataContent Serialize()
+    {
+        var content = new MultipartFormDataContent();
+        Serialize(content);
+        return content;
     }
 }

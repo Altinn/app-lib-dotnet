@@ -2,8 +2,14 @@ using System.Text.RegularExpressions;
 
 namespace Altinn.App.Core.Models;
 
-public readonly partial struct ISO_639_1 : ILanguageCodeStandard
+#pragma warning disable CA1000
+
+/// <summary>
+/// Specification details for language code ISO 639-1
+/// </summary>
+public readonly partial struct Iso6391 : ILanguageCodeStandard
 {
+    /// <inheritdoc/>
     public static LanguageCodeValidationResult Validate(string code)
     {
         string? errorMessage = null;
@@ -21,12 +27,23 @@ public readonly partial struct ISO_639_1 : ILanguageCodeStandard
     private static partial Regex ValidationRegex();
 }
 
-// TODO: Can this
+/// <summary>
+/// Specifications for language code standards
+/// </summary>
 public interface ILanguageCodeStandard
 {
+    /// <summary>
+    /// Validation instructions for the language code implementation
+    /// </summary>
+    /// <param name="code">The code to validate, e.g. "no" in the case of ISO 639-1</param>
     static abstract LanguageCodeValidationResult Validate(string code);
 };
 
+/// <summary>
+/// The result of a language code validation
+/// </summary>
+/// <param name="IsValid">Is the code valid?</param>
+/// <param name="ErrorMessage">If not valid, what is the reason given?</param>
 public sealed record LanguageCodeValidationResult(bool IsValid, string? ErrorMessage);
 
 /// <summary>

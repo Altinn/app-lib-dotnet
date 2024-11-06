@@ -24,7 +24,7 @@ public interface ICorrespondenceContentBuilderNeedsLanguage
     /// Sets the language of the correspondence content
     /// </summary>
     /// <param name="language"></param>
-    ICorrespondenceContentBuilderNeedsSummary WithLanguage(LanguageCode<ISO_639_1> language);
+    ICorrespondenceContentBuilderNeedsSummary WithLanguage(LanguageCode<Iso6391> language);
 }
 
 /// <summary>

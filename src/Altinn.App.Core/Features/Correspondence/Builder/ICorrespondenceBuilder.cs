@@ -4,7 +4,7 @@ using Altinn.App.Core.Models;
 namespace Altinn.App.Core.Features.Correspondence.Builder;
 
 /// <summary>
-/// Indicates that the <see cref="CorrespondenceBuilder"/> instance is on the <see cref="Models.Correspondence.ResourceId"/> step
+/// Indicates that the <see cref="CorrespondenceBuilder"/> instance is on the <see cref="CorrespondenceRequest.ResourceId"/> step
 /// </summary>
 public interface ICorrespondenceBuilderNeedsResourceId
 {
@@ -16,7 +16,7 @@ public interface ICorrespondenceBuilderNeedsResourceId
 }
 
 /// <summary>
-/// Indicates that the <see cref="CorrespondenceBuilder"/> instance is on the <see cref="Models.Correspondence.Sender"/> step
+/// Indicates that the <see cref="CorrespondenceBuilder"/> instance is on the <see cref="CorrespondenceRequest.Sender"/> step
 /// </summary>
 public interface ICorrespondenceBuilderNeedsSender
 {
@@ -28,7 +28,7 @@ public interface ICorrespondenceBuilderNeedsSender
 }
 
 /// <summary>
-/// Indicates that the <see cref="CorrespondenceBuilder"/> instance is on the <see cref="Models.Correspondence.SendersReference"/> step
+/// Indicates that the <see cref="CorrespondenceBuilder"/> instance is on the <see cref="CorrespondenceRequest.SendersReference"/> step
 /// </summary>
 public interface ICorrespondenceBuilderNeedsSendersReference
 {
@@ -40,7 +40,7 @@ public interface ICorrespondenceBuilderNeedsSendersReference
 }
 
 /// <summary>
-/// Indicates that the <see cref="CorrespondenceBuilder"/> instance is on the <see cref="Models.Correspondence.Recipients"/> step
+/// Indicates that the <see cref="CorrespondenceBuilder"/> instance is on the <see cref="CorrespondenceRequest.Recipients"/> step
 /// </summary>
 public interface ICorrespondenceBuilderNeedsRecipients
 {
@@ -58,7 +58,7 @@ public interface ICorrespondenceBuilderNeedsRecipients
 }
 
 /// <summary>
-/// Indicates that the <see cref="CorrespondenceBuilder"/> instance is on the <see cref="Models.Correspondence.DueDateTime"/> step
+/// Indicates that the <see cref="CorrespondenceBuilder"/> instance is on the <see cref="CorrespondenceRequest.DueDateTime"/> step
 /// </summary>
 public interface ICorrespondenceBuilderNeedsDueDateTime
 {
@@ -71,7 +71,7 @@ public interface ICorrespondenceBuilderNeedsDueDateTime
 }
 
 /// <summary>
-/// Indicates that the <see cref="CorrespondenceBuilder"/> instance is on the <see cref="Models.Correspondence.AllowSystemDeleteAfter"/> step
+/// Indicates that the <see cref="CorrespondenceBuilder"/> instance is on the <see cref="CorrespondenceRequest.AllowSystemDeleteAfter"/> step
 /// </summary>
 public interface ICorrespondenceBuilderNeedsAllowSystemDeleteAfter
 {
@@ -83,7 +83,7 @@ public interface ICorrespondenceBuilderNeedsAllowSystemDeleteAfter
 }
 
 /// <summary>
-/// Indicates that the <see cref="CorrespondenceBuilder"/> instance is on the <see cref="Models.Correspondence.Content"/> step
+/// Indicates that the <see cref="CorrespondenceBuilder"/> instance is on the <see cref="CorrespondenceRequest.Content"/> step
 /// </summary>
 public interface ICorrespondenceBuilderNeedsContent
 {
@@ -121,7 +121,7 @@ public interface ICorrespondenceBuilderCanBuild
     /// <summary>
     /// Adds an external reference to the correspondence
     /// <remarks>
-    /// This method respects any existing references already stored in <see cref="Models.Correspondence.ExternalReferences"/>
+    /// This method respects any existing references already stored in <see cref="CorrespondenceRequest.ExternalReferences"/>
     /// </remarks>
     /// </summary>
     /// <param name="externalReference">A <see cref="CorrespondenceExternalReference"/> item</param>
@@ -130,7 +130,7 @@ public interface ICorrespondenceBuilderCanBuild
     /// <summary>
     /// Adds an external reference to the correspondence
     /// <remarks>
-    /// This method respects any existing references already stored in <see cref="Models.Correspondence.ExternalReferences"/>
+    /// This method respects any existing references already stored in <see cref="CorrespondenceRequest.ExternalReferences"/>
     /// </remarks>
     /// </summary>
     /// <param name="builder">A <see cref="CorrespondenceExternalReferenceBuilder"/> instance in the <see cref="ICorrespondenceExternalReferenceBuilderCanBuild"/> stage</param>
@@ -139,7 +139,7 @@ public interface ICorrespondenceBuilderCanBuild
     /// <summary>
     /// Adds external references to the correspondence
     /// <remarks>
-    /// This method respects any existing references already stored in <see cref="Models.Correspondence.ExternalReferences"/>
+    /// This method respects any existing references already stored in <see cref="CorrespondenceRequest.ExternalReferences"/>
     /// </remarks>
     /// </summary>
     /// <param name="externalReferences">A list of <see cref="CorrespondenceExternalReference"/> items</param>
@@ -156,7 +156,7 @@ public interface ICorrespondenceBuilderCanBuild
     /// <summary>
     /// Adds a reply option to the correspondence
     /// <remarks>
-    /// This method respects any existing options already stored in <see cref="Models.Correspondence.ReplyOptions"/>
+    /// This method respects any existing options already stored in <see cref="CorrespondenceRequest.ReplyOptions"/>
     /// </remarks>
     /// </summary>
     /// <param name="replyOption">A <see cref="CorrespondenceReplyOption"/> item</param>
@@ -165,7 +165,7 @@ public interface ICorrespondenceBuilderCanBuild
     /// <summary>
     /// Adds a reply option to the correspondence
     /// <remarks>
-    /// This method respects any existing options already stored in <see cref="Models.Correspondence.ReplyOptions"/>
+    /// This method respects any existing options already stored in <see cref="CorrespondenceRequest.ReplyOptions"/>
     /// </remarks>
     /// </summary>
     /// <param name="builder">A <see cref="CorrespondenceReplyOptionBuilder"/> instance in the <see cref="ICorrespondenceReplyOptionsBuilderCanBuild"/> stage</param>
@@ -174,7 +174,7 @@ public interface ICorrespondenceBuilderCanBuild
     /// <summary>
     /// Adds reply options to the correspondence
     /// <remarks>
-    /// This method respects any existing options already stored in <see cref="Models.Correspondence.ReplyOptions"/>
+    /// This method respects any existing options already stored in <see cref="CorrespondenceRequest.ReplyOptions"/>
     /// </remarks>
     /// </summary>
     /// <param name="replyOptions">A list of <see cref="CorrespondenceReplyOption"/> items</param>
@@ -201,7 +201,7 @@ public interface ICorrespondenceBuilderCanBuild
     /// <summary>
     /// Adds an existing attachment reference to the correspondence
     /// <remarks>
-    /// This method respects any existing references already stored in <see cref="Models.Correspondence.ExistingAttachments"/>
+    /// This method respects any existing references already stored in <see cref="CorrespondenceRequest.ExistingAttachments"/>
     /// </remarks>
     /// </summary>
     /// <param name="existingAttachment">A <see cref="Guid"/> item pointing to an existing attachment</param>
@@ -210,7 +210,7 @@ public interface ICorrespondenceBuilderCanBuild
     /// <summary>
     /// Adds existing attachment references to the correspondence
     /// <remarks>
-    /// This method respects any existing references already stored in <see cref="Models.Correspondence.ExistingAttachments"/>
+    /// This method respects any existing references already stored in <see cref="CorrespondenceRequest.ExistingAttachments"/>
     /// </remarks>
     /// </summary>
     /// <param name="existingAttachments">A list of <see cref="Guid"/> items pointing to existing attachments</param>
@@ -244,7 +244,7 @@ public interface ICorrespondenceBuilderCanBuild
     ICorrespondenceBuilderCanBuild WithAttachments(IReadOnlyList<CorrespondenceAttachment> attachments);
 
     /// <summary>
-    /// Builds the <see cref="Models.Correspondence"/> instance
+    /// Builds the <see cref="CorrespondenceRequest"/> instance
     /// </summary>
-    Models.Correspondence Build();
+    CorrespondenceRequest Build();
 }

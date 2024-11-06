@@ -1,6 +1,5 @@
 using System.Net.Mime;
 using Altinn.App.Core.Features.Correspondence.Models;
-using Altinn.App.Core.Models;
 
 namespace Altinn.App.Core.Features.Correspondence.Builder;
 

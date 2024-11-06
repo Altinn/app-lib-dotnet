@@ -15,7 +15,7 @@ public class LanguageCodeTests
     {
         foreach (var validCode in _validIso6391Codes)
         {
-            var langCode = LanguageCode<ISO_639_1>.Parse(validCode);
+            var langCode = LanguageCode<Iso6391>.Parse(validCode);
             langCode.Get().Should().Be(validCode.ToLowerInvariant());
         }
     }
@@ -25,7 +25,7 @@ public class LanguageCodeTests
     {
         foreach (var invalidCode in _invalidIso6391Codes)
         {
-            Action act = () => LanguageCode<ISO_639_1>.Parse(invalidCode);
+            Action act = () => LanguageCode<Iso6391>.Parse(invalidCode);
             act.Should().Throw<FormatException>();
         }
     }
@@ -33,9 +33,9 @@ public class LanguageCodeTests
     [Fact]
     public void EqualityWorksAsExpected()
     {
-        var langCode1A = LanguageCode<ISO_639_1>.Parse(_validIso6391Codes[0]);
-        var langCode1B = LanguageCode<ISO_639_1>.Parse(_validIso6391Codes[0]);
-        var langCode2 = LanguageCode<ISO_639_1>.Parse(_validIso6391Codes[2]);
+        var langCode1A = LanguageCode<Iso6391>.Parse(_validIso6391Codes[0]);
+        var langCode1B = LanguageCode<Iso6391>.Parse(_validIso6391Codes[0]);
+        var langCode2 = LanguageCode<Iso6391>.Parse(_validIso6391Codes[2]);
 
         Assert.True(langCode1A == langCode1B);
         Assert.True(langCode1A != langCode2);

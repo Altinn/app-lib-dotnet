@@ -32,7 +32,7 @@ public abstract class CorrespondenceBuilderBase
 }
 
 /// <summary>
-/// Builder factory for creating <see cref="Models.Correspondence"/> objects
+/// Builder factory for creating <see cref="CorrespondenceRequest"/> objects
 /// </summary>
 public class CorrespondenceBuilder
     : CorrespondenceBuilderBase,
@@ -245,7 +245,7 @@ public class CorrespondenceBuilder
     }
 
     /// <inheritdoc/>
-    public Models.Correspondence Build()
+    public CorrespondenceRequest Build()
     {
         NotNullOrEmpty(_resourceId, "Resource ID is required");
         NotNullOrEmpty(_sender, "Sender is required");
@@ -255,7 +255,7 @@ public class CorrespondenceBuilder
         NotNullOrEmpty(_dueDateTime, "DueDateTime is required");
         NotNullOrEmpty(_recipients, "Recipients is required");
 
-        return new Models.Correspondence
+        return new CorrespondenceRequest
         {
             ResourceId = _resourceId,
             Sender = _sender.Value,

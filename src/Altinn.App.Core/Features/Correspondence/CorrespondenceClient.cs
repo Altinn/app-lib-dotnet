@@ -5,6 +5,8 @@ using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features.Correspondence.Builder;
+using Altinn.App.Core.Features.Correspondence.Exceptions;
+using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Features.Maskinporten;
 using Altinn.App.Core.Features.Maskinporten.Constants;
 using Microsoft.AspNetCore.Mvc;
@@ -21,14 +23,15 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IMaskinportenClient _maskinportenClient;
     private readonly PlatformSettings _platformSettings;
-    private readonly Telemetry _telemetry;
+    private readonly Telemetry? _telemetry;
+    private static readonly JsonSerializerOptions _jsonSerializerOptions = new() { PropertyNameCaseInsensitive = true };
 
     public CorrespondenceClient(
-        ILogger<CorrespondenceClient> logger,
         IHttpClientFactory httpClientFactory,
         [FromKeyedServices(MaskinportenClient.VariantInternal)] IMaskinportenClient maskinportenClient,
         IOptions<PlatformSettings> platformSettings,
-        Telemetry telemetry
+        ILogger<CorrespondenceClient> logger,
+        Telemetry? telemetry = null
     )
     {
         _logger = logger;
@@ -39,54 +42,71 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
     }
 
     /// <inheritdoc />
-    public async Task Send(Models.Correspondence correspondence, CancellationToken cancellationToken = default)
+    public async Task<CorrespondenceResponse> Send(
+        CorrespondenceRequest correspondenceRequest,
+        CancellationToken cancellationToken = default
+    )
     {
-        using Activity? activity = _telemetry.StartSendCorrespondenceActivity();
+        _logger.LogDebug("Sending Correspondence request");
+        using Activity? activity = _telemetry?.StartSendCorrespondenceActivity();
+        ProblemDetails? problemDetails = null;
         HttpResponseMessage? response = null;
         string? responseBody = null;
-        ProblemDetails? problemDetails = null;
         try
         {
-            using MultipartFormDataContent content = new();
-            correspondence.Serialize(content);
-
-            // foreach (var attachment in correspondence.Content.Attachments ?? [])
-            // {
-            //     content.Add(new StreamContent(attachment.Data), "attachments", attachment.Filename ?? "");
-            // }
-
             string uri = _platformSettings.ApiCorrespondenceEndpoint.TrimEnd('/') + "/correspondence/upload";
+            _logger.LogDebug("Correspondence uri is {CorrespondenceUri}", uri);
+
+            using MultipartFormDataContent content = correspondenceRequest.Serialize();
             using HttpClient client = _httpClientFactory.CreateClient();
             using HttpRequestMessage request = await AuthenticatedHttpRequestFactory(
                 method: HttpMethod.Post,
                 uri: uri,
                 content: content,
-                scopes: ["altinn:correspondence.write"],
+                scopes: ["altinn:correspondence.write", "altinn:serviceowner/instances.read",],
                 cancellationToken
             );
             response = await client.SendAsync(request, cancellationToken);
+            responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
 
             if (response.StatusCode != HttpStatusCode.OK)
             {
-                responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-                problemDetails = JsonSerializer.Deserialize<ProblemDetails>(responseBody);
-
-                // TODO: handle errors here
+                problemDetails = GetProblemDetails(responseBody);
+                throw new CorrespondenceRequestException(
+                    $"Correspondence request failed with status {response?.StatusCode}: {problemDetails?.Detail}"
+                );
             }
 
-            // TODO: handle success here
+            _logger.LogDebug("Correspondence request succeeded: {Response}", responseBody);
+            var parsedResponse =
+                JsonSerializer.Deserialize<CorrespondenceResponse>(responseBody, _jsonSerializerOptions)
+                ?? throw new CorrespondenceRequestException("Invalid response from Correspondence API server");
+
+            return parsedResponse;
         }
-        catch (Exception ex)
+        catch (CorrespondenceException e)
         {
             _logger.LogError(
-                ex,
-                "Failed to send Correspondence message: status={StatusCode} problem.type={ProblemType}",
+                e,
+                "Failed to send Correspondence: status={StatusCode} response={Response}",
                 response?.StatusCode,
-                problemDetails?.Type
+                responseBody
             );
-            activity?.Errored(ex);
+            activity?.Errored(e, problemDetails?.Detail);
 
-            // TODO: handle errors here
+            throw;
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(
+                e,
+                "Failed to send Correspondence: status={StatusCode} response={Response}",
+                response?.StatusCode.ToString() ?? "Unknown status code",
+                responseBody ?? "No response body"
+            );
+            activity?.Errored(e);
+
+            throw new CorrespondenceRequestException($"Failed to send correspondence: {e}", e);
         }
         finally
         {
@@ -95,9 +115,12 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
     }
 
     /// <inheritdoc />
-    public async Task Send(CorrespondenceBuilder builder, CancellationToken cancellationToken)
+    public async Task<CorrespondenceResponse> Send(
+        ICorrespondenceBuilderCanBuild builder,
+        CancellationToken cancellationToken = default
+    )
     {
-        await Send(builder.Build(), cancellationToken);
+        return await Send(builder.Build(), cancellationToken);
     }
 
     private async Task<HttpRequestMessage> AuthenticatedHttpRequestFactory<TContent>(
@@ -111,10 +134,24 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
     {
         HttpRequestMessage request = new(method, uri) { Content = content };
 
-        var maskinportenToken = await _maskinportenClient.GetAccessToken(scopes, cancellationToken);
-        request.Headers.Authorization = new AuthenticationHeaderValue(TokenTypes.Bearer, maskinportenToken.AccessToken);
+        var altinnToken = await _maskinportenClient.GetAltinnExchangedToken(scopes, cancellationToken);
+        request.Headers.Authorization = new AuthenticationHeaderValue(TokenTypes.Bearer, altinnToken.AccessToken);
         request.Headers.TryAddWithoutValidation(General.SubscriptionKeyHeaderName, _platformSettings.SubscriptionKey);
 
         return request;
+    }
+
+    private ProblemDetails? GetProblemDetails(string responseBody)
+    {
+        try
+        {
+            return JsonSerializer.Deserialize<ProblemDetails>(responseBody);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError("Error parsing ProblemDetails from correspondence api: {Error}", e);
+        }
+
+        return null;
     }
 }

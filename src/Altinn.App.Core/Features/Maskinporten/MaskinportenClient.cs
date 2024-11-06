@@ -211,6 +211,7 @@ internal sealed class MaskinportenClient : IMaskinportenClient
     {
         try
         {
+            _logger.LogDebug("Using MaskinportenClient.Variant={Variant} for authorization", Variant);
             string jwtGrant = GenerateJwtGrant(formattedScopes);
             FormUrlEncodedContent payload = AuthenticationPayloadFactory(jwtGrant);
 

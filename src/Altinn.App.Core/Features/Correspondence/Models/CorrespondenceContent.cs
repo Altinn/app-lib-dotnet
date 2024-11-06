@@ -5,7 +5,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models;
 /// <summary>
 /// The message content in a correspondence
 /// </summary>
-public sealed record CorrespondenceContent : CorrespondenceBase, ICorrespondence
+public sealed record CorrespondenceContent : CorrespondenceBase, ICorrespondenceSerializer
 {
     /// <summary>
     /// The correspondence message title (subject)
@@ -15,7 +15,7 @@ public sealed record CorrespondenceContent : CorrespondenceBase, ICorrespondence
     /// <summary>
     /// The language of the correspondence, specified according to ISO 639-1
     /// </summary>
-    public required LanguageCode<ISO_639_1> Language { get; init; }
+    public required LanguageCode<Iso6391> Language { get; init; }
 
     /// <summary>
     /// The summary text of the correspondence message

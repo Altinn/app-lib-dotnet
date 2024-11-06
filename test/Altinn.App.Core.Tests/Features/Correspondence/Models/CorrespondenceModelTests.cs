@@ -9,14 +9,14 @@ using Moq;
 
 namespace Altinn.App.Core.Tests.Features.Correspondence.Models;
 
-public class CorrespondenceTest
+public class CorrespondenceRequestTest
 {
     [Fact]
     public async Task Serialize_ShouldAddCorrectFields()
     {
         // Arrange
         var multipartContent = new MultipartFormDataContent();
-        var correspondence = new Core.Features.Correspondence.Models.Correspondence
+        var correspondence = new CorrespondenceRequest
         {
             ResourceId = "resource-id",
             Sender = TestHelpers.GetOrganisationNumber(0),
@@ -32,7 +32,7 @@ public class CorrespondenceTest
                 Title = "title",
                 Body = "body",
                 Summary = "summary",
-                Language = LanguageCode<ISO_639_1>.Parse("no"),
+                Language = LanguageCode<Iso6391>.Parse("no"),
                 Attachments =
                 [
                     new CorrespondenceAttachment

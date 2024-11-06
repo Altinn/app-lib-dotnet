@@ -157,9 +157,27 @@ public static class ServiceCollectionExtensions
         string configSectionPath
     )
     {
-        // TODO: Add support for multiple variants
         services.AddOptions<MaskinportenSettings>().BindConfiguration(configSectionPath).ValidateDataAnnotations();
 
+        return services;
+    }
+
+    /// <summary>
+    /// Binds a <see cref="MaskinportenClient"/> configuration to the supplied config section path and options name
+    /// </summary>
+    /// <param name="services">The service collection</param>
+    /// <param name="configSectionPath">The configuration section path, e.g. "MaskinportenSettingsInternal"</param>
+    /// <param name="optionsName">The options name to bind to, e.g. <see cref="MaskinportenClient.VariantInternal"/></param>
+    internal static IServiceCollection ConfigureMaskinportenClient(
+        this IServiceCollection services,
+        string configSectionPath,
+        string optionsName
+    )
+    {
+        services
+            .AddOptions<MaskinportenSettings>(optionsName)
+            .BindConfiguration(configSectionPath)
+            .ValidateDataAnnotations();
         return services;
     }
 
@@ -170,17 +188,14 @@ public static class ServiceCollectionExtensions
     /// <param name="services">The service collection</param>
     private static IServiceCollection AddMaskinportenClient(this IServiceCollection services)
     {
-        // TODO: Add support for multiple variants
+        // Only add MaskinportenSettings if they haven't already been configured.
+        // Users sometimes wish to bind the default options to another configuration path than "MaskinportenSettings".
         if (services.GetOptionsDescriptor<MaskinportenSettings>() is null)
         {
             services.ConfigureMaskinportenClient("MaskinportenSettings");
         }
 
-        services
-            .AddOptions<MaskinportenSettings>(MaskinportenClient.VariantInternal)
-            .BindConfiguration("MaskinportenSettingsInternal")
-            .ValidateDataAnnotations();
-
+        services.ConfigureMaskinportenClient("MaskinportenSettingsInternal", MaskinportenClient.VariantInternal);
         services.AddSingleton<IMaskinportenClient>(sp =>
             ActivatorUtilities.CreateInstance<MaskinportenClient>(sp, MaskinportenClient.VariantDefault)
         );
@@ -198,7 +213,7 @@ public static class ServiceCollectionExtensions
     /// <param name="services">The service collection</param>
     private static IServiceCollection AddCorrespondenceClient(this IServiceCollection services)
     {
-        services.AddHttpClient<ICorrespondenceClient, CorrespondenceClient>();
+        services.AddSingleton<ICorrespondenceClient, CorrespondenceClient>();
         return services;
     }
 

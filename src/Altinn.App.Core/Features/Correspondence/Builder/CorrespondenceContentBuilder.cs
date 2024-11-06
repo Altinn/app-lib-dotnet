@@ -15,7 +15,7 @@ public class CorrespondenceContentBuilder
         ICorrespondenceContentBuilderCanBuild
 {
     private string? _title;
-    private LanguageCode<ISO_639_1>? _language;
+    private LanguageCode<Iso6391>? _language;
     private string? _summary;
     private string? _body;
 
@@ -35,7 +35,7 @@ public class CorrespondenceContentBuilder
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceContentBuilderNeedsSummary WithLanguage(LanguageCode<ISO_639_1> language)
+    public ICorrespondenceContentBuilderNeedsSummary WithLanguage(LanguageCode<Iso6391> language)
     {
         _language = language;
         return this;

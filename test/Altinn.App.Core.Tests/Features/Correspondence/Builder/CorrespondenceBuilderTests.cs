@@ -29,7 +29,7 @@ public class CorrespondenceBuilderTests
         DateTimeOffset dueDateTime = DateTimeOffset.UtcNow.AddDays(30);
         DateTimeOffset allowSystemDeleteAfter = DateTimeOffset.UtcNow.AddDays(60);
         string contentTitle = "content-title";
-        LanguageCode<ISO_639_1> contentLanguage = LanguageCode<ISO_639_1>.Parse("no");
+        LanguageCode<Iso6391> contentLanguage = LanguageCode<Iso6391>.Parse("no");
         string contentSummary = "content-summary";
         string contentBody = "content-body";
 
@@ -88,7 +88,7 @@ public class CorrespondenceBuilderTests
             content = new
             {
                 title = "content-title",
-                language = LanguageCode<ISO_639_1>.Parse("en"),
+                language = LanguageCode<Iso6391>.Parse("en"),
                 summary = "content-summary",
                 body = "content-body"
             },

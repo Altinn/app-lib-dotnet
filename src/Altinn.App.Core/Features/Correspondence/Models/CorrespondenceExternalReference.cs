@@ -3,7 +3,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models;
 /// <summary>
 /// Represents a reference to another item in the Altinn ecosystem
 /// </summary>
-public sealed record CorrespondenceExternalReference : CorrespondenceBase, ICorrespondenceItem
+public sealed record CorrespondenceExternalReference : CorrespondenceBase, ICorrespondenceItemSerializer
 {
     /// <summary>
     /// The reference type

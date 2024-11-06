@@ -1,11 +1,9 @@
-using Altinn.App.Core.Models;
-
 namespace Altinn.App.Core.Features.Correspondence.Models;
 
 /// <summary>
 /// Represents an attachment to a correspondence
 /// </summary>
-public sealed record CorrespondenceAttachment : CorrespondenceBase, ICorrespondenceItem
+public sealed record CorrespondenceAttachment : CorrespondenceBase, ICorrespondenceItemSerializer
 {
     /// <summary>
     /// The filename of the attachment
@@ -69,7 +67,7 @@ public sealed record CorrespondenceAttachment : CorrespondenceBase, ICorresponde
         AddRequired(content, SendersReference, $"{prefix}.SendersReference");
         AddRequired(content, DataType, $"{prefix}.DataType");
         AddRequired(content, DataLocationType.ToString(), $"{prefix}.DataLocationType");
-        AddRequired(content, Data, $"{prefix}.Attachments", UniqueFileName());
+        AddRequired(content, Data, "Attachments", UniqueFileName()); // NOTE: No prefix!
         AddIfNotNull(content, IsEncrypted?.ToString(), $"{prefix}.IsEncrypted");
 
         // NOTE: RestrictionName can't be omitted or empty, but it may be irrelevant to most callers.
