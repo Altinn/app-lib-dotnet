@@ -1233,14 +1233,8 @@ public class InstancesController : ControllerBase
     {
         RequestPart? instancePart = parts.Find(part => part.Name == "instance");
 
-        // assume that first part with no name is an instanceTemplate
-        if (
-            instancePart == null
-            && parts.Count == 1
-            && parts[0].ContentType.Contains("application/json")
-            && parts[0].Name == null
-            && parts[0].Bytes.Length > 0
-        )
+        // If the request has a single part with no name, assume it is the instance template
+        if (instancePart == null && parts.Count == 1 && parts[0].Name == null)
         {
             instancePart = parts[0];
         }
@@ -1249,7 +1243,16 @@ public class InstancesController : ControllerBase
         {
             parts.Remove(instancePart);
 
-            return System.Text.Json.JsonSerializer.Deserialize<Instance>(instancePart.Bytes, _jsonSerializerOptionsWeb);
+            // Some clients might set contentType to application/json even if the body is empty
+            if (instancePart is { Bytes.Length: > 0, ContentType: "application/json" })
+            {
+                return System.Text.Json.JsonSerializer.Deserialize<Instance>(
+                    instancePart.Bytes,
+                    _jsonSerializerOptionsWeb
+                );
+            }
+
+            return null;
         }
 
         return null;
