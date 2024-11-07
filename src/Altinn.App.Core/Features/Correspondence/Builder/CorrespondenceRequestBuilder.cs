@@ -34,7 +34,7 @@ public abstract class CorrespondenceBuilderBase
 /// <summary>
 /// Builder factory for creating <see cref="CorrespondenceRequest"/> objects
 /// </summary>
-public class CorrespondenceBuilder
+public class CorrespondenceRequestBuilder
     : CorrespondenceBuilderBase,
         ICorrespondenceBuilderNeedsResourceId,
         ICorrespondenceBuilderNeedsContent,
@@ -61,12 +61,12 @@ public class CorrespondenceBuilder
     private bool? _ignoreReservation;
     private IReadOnlyList<Guid>? _existingAttachments;
 
-    private CorrespondenceBuilder() { }
+    private CorrespondenceRequestBuilder() { }
 
     /// <summary>
-    /// Creates a new <see cref="CorrespondenceBuilder"/> instance
+    /// Creates a new <see cref="CorrespondenceRequestBuilder"/> instance
     /// </summary>
-    public static ICorrespondenceBuilderNeedsResourceId Create() => new CorrespondenceBuilder();
+    public static ICorrespondenceBuilderNeedsResourceId Create() => new CorrespondenceRequestBuilder();
 
     /// <inheritdoc/>
     public ICorrespondenceBuilderNeedsSender WithResourceId(string resourceId)

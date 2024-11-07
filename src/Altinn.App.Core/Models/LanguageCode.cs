@@ -71,7 +71,7 @@ public readonly struct LanguageCode<TLangCodeStandard> : IEquatable<LanguageCode
     /// Parses a language code
     /// </summary>
     /// <param name="code">The language code</param>
-    /// <exception cref="FormatException"></exception>
+    /// <exception cref="FormatException">The language code format is invalid</exception>
     public static LanguageCode<TLangCodeStandard> Parse(string code)
     {
         LanguageCodeValidationResult validationResult = TryParse(code, out var instance);
@@ -85,7 +85,7 @@ public readonly struct LanguageCode<TLangCodeStandard> : IEquatable<LanguageCode
     /// Attempts to parse a language code
     /// </summary>
     /// <param name="code">The code to parse</param>
-    /// <param name="result">The resulting LanguageCode instance</param>
+    /// <param name="result">The resulting <see cref="LanguageCodeValidationResult"/></param>
     public static LanguageCodeValidationResult TryParse(string code, out LanguageCode<TLangCodeStandard> result)
     {
         var validationResult = TLangCodeStandard.Validate(code);
@@ -110,7 +110,7 @@ public readonly struct LanguageCode<TLangCodeStandard> : IEquatable<LanguageCode
     public override bool Equals(object? obj) => obj is LanguageCode<TLangCodeStandard> other && Equals(other);
 
     /// <summary>
-    /// Returns the hashcode for code value
+    /// Returns the hashcode for the language code value
     /// </summary>
     public override int GetHashCode() => _code.GetHashCode();
 
@@ -120,14 +120,23 @@ public readonly struct LanguageCode<TLangCodeStandard> : IEquatable<LanguageCode
     public override string ToString() => _code;
 
     /// <summary>
-    /// Determines whether two specified instances of <see cref="OrganisationNumber"/> are equal
+    /// Determines whether two specified instances of <see cref="LanguageCode{TLangCodeStandard}"/> are equal
     /// </summary>
     public static bool operator ==(LanguageCode<TLangCodeStandard> left, LanguageCode<TLangCodeStandard> right) =>
         left.Equals(right);
 
     /// <summary>
-    /// Determines whether two specified instances of <see cref="OrganisationNumber"/> are not equal
+    /// Determines whether two specified instances of <see cref="LanguageCode{TLangCodeStandard}"/> are not equal
     /// </summary>
     public static bool operator !=(LanguageCode<TLangCodeStandard> left, LanguageCode<TLangCodeStandard> right) =>
         !left.Equals(right);
+
+    /// <summary>
+    /// Implicit conversion from <see cref="LanguageCode{TLangCodeStandard}"/> to string
+    /// </summary>
+    /// <param name="languageCode">The language code instance</param>
+    public static implicit operator string(LanguageCode<TLangCodeStandard> languageCode)
+    {
+        return languageCode._code;
+    }
 }

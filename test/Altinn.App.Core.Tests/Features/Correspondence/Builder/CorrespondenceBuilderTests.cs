@@ -33,7 +33,7 @@ public class CorrespondenceBuilderTests
         string contentSummary = "content-summary";
         string contentBody = "content-body";
 
-        var builder = CorrespondenceBuilder
+        var builder = CorrespondenceRequestBuilder
             .Create()
             .WithResourceId(resourceId)
             .WithSender(sender)
@@ -150,7 +150,7 @@ public class CorrespondenceBuilderTests
             }
         };
 
-        var builder = CorrespondenceBuilder
+        var builder = CorrespondenceRequestBuilder
             .Create()
             .WithResourceId(data.resourceId)
             .WithSender(data.sender)

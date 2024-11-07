@@ -6,6 +6,7 @@ using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features.Maskinporten.Constants;
 using Altinn.App.Core.Features.Maskinporten.Exceptions;
 using Altinn.App.Core.Features.Maskinporten.Models;
+using Altinn.App.Core.Models;
 using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -296,7 +297,7 @@ internal sealed class MaskinportenClient : IMaskinportenClient
 
             return new JwtBearerToken
             {
-                AccessToken = token,
+                AccessToken = AccessToken.Parse(token),
                 ExpiresAt = expiry,
                 Scope = scope
             };

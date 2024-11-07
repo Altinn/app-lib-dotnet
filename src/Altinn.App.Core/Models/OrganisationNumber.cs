@@ -57,7 +57,7 @@ public readonly struct OrganisationNumber : IEquatable<OrganisationNumber>
     {
         return TryParse(value, out var organisationNumber)
             ? organisationNumber
-            : throw new FormatException("Invalid organisation number format.");
+            : throw new FormatException($"Invalid organisation number format: {value}");
     }
 
     /// <summary>

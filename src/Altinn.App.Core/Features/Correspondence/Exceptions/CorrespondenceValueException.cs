@@ -1,7 +1,7 @@
 namespace Altinn.App.Core.Features.Correspondence.Exceptions;
 
 /// <summary>
-/// An exception that indicates an invalid value being used in a correspondence operation
+/// An exception that indicates an invalid value is being used in a correspondence operation
 /// </summary>
 public class CorrespondenceValueException : CorrespondenceException
 {

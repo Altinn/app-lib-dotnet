@@ -4,7 +4,7 @@ using Altinn.App.Core.Models;
 namespace Altinn.App.Core.Features.Correspondence.Builder;
 
 /// <summary>
-/// Indicates that the <see cref="CorrespondenceBuilder"/> instance is on the <see cref="CorrespondenceRequest.ResourceId"/> step
+/// Indicates that the <see cref="CorrespondenceRequestBuilder"/> instance is on the <see cref="CorrespondenceRequest.ResourceId"/> step
 /// </summary>
 public interface ICorrespondenceBuilderNeedsResourceId
 {
@@ -16,7 +16,7 @@ public interface ICorrespondenceBuilderNeedsResourceId
 }
 
 /// <summary>
-/// Indicates that the <see cref="CorrespondenceBuilder"/> instance is on the <see cref="CorrespondenceRequest.Sender"/> step
+/// Indicates that the <see cref="CorrespondenceRequestBuilder"/> instance is on the <see cref="CorrespondenceRequest.Sender"/> step
 /// </summary>
 public interface ICorrespondenceBuilderNeedsSender
 {
@@ -28,7 +28,7 @@ public interface ICorrespondenceBuilderNeedsSender
 }
 
 /// <summary>
-/// Indicates that the <see cref="CorrespondenceBuilder"/> instance is on the <see cref="CorrespondenceRequest.SendersReference"/> step
+/// Indicates that the <see cref="CorrespondenceRequestBuilder"/> instance is on the <see cref="CorrespondenceRequest.SendersReference"/> step
 /// </summary>
 public interface ICorrespondenceBuilderNeedsSendersReference
 {
@@ -40,7 +40,7 @@ public interface ICorrespondenceBuilderNeedsSendersReference
 }
 
 /// <summary>
-/// Indicates that the <see cref="CorrespondenceBuilder"/> instance is on the <see cref="CorrespondenceRequest.Recipients"/> step
+/// Indicates that the <see cref="CorrespondenceRequestBuilder"/> instance is on the <see cref="CorrespondenceRequest.Recipients"/> step
 /// </summary>
 public interface ICorrespondenceBuilderNeedsRecipients
 {
@@ -58,7 +58,7 @@ public interface ICorrespondenceBuilderNeedsRecipients
 }
 
 /// <summary>
-/// Indicates that the <see cref="CorrespondenceBuilder"/> instance is on the <see cref="CorrespondenceRequest.DueDateTime"/> step
+/// Indicates that the <see cref="CorrespondenceRequestBuilder"/> instance is on the <see cref="CorrespondenceRequest.DueDateTime"/> step
 /// </summary>
 public interface ICorrespondenceBuilderNeedsDueDateTime
 {
@@ -71,7 +71,7 @@ public interface ICorrespondenceBuilderNeedsDueDateTime
 }
 
 /// <summary>
-/// Indicates that the <see cref="CorrespondenceBuilder"/> instance is on the <see cref="CorrespondenceRequest.AllowSystemDeleteAfter"/> step
+/// Indicates that the <see cref="CorrespondenceRequestBuilder"/> instance is on the <see cref="CorrespondenceRequest.AllowSystemDeleteAfter"/> step
 /// </summary>
 public interface ICorrespondenceBuilderNeedsAllowSystemDeleteAfter
 {
@@ -83,7 +83,7 @@ public interface ICorrespondenceBuilderNeedsAllowSystemDeleteAfter
 }
 
 /// <summary>
-/// Indicates that the <see cref="CorrespondenceBuilder"/> instance is on the <see cref="CorrespondenceRequest.Content"/> step
+/// Indicates that the <see cref="CorrespondenceRequestBuilder"/> instance is on the <see cref="CorrespondenceRequest.Content"/> step
 /// </summary>
 public interface ICorrespondenceBuilderNeedsContent
 {
@@ -101,7 +101,7 @@ public interface ICorrespondenceBuilderNeedsContent
 }
 
 /// <summary>
-/// Indicates that the <see cref="CorrespondenceBuilder"/> instance has completed all required steps and can proceed to <see cref="CorrespondenceBuilder.Build"/>
+/// Indicates that the <see cref="CorrespondenceRequestBuilder"/> instance has completed all required steps and can proceed to <see cref="CorrespondenceRequestBuilder.Build"/>
 /// </summary>
 public interface ICorrespondenceBuilderCanBuild
 {

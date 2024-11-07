@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using NetEscapades.EnumGenerators;
-using static Altinn.App.Core.Features.Telemetry.Maskinporten;
+using static Altinn.App.Core.Features.Telemetry.CorrespondenceConfig;
 using Tag = System.Collections.Generic.KeyValuePair<string, object?>;
 
 namespace Altinn.App.Core.Features;
@@ -10,47 +10,40 @@ partial class Telemetry
 {
     private void InitCorrespondence(InitContext context)
     {
-        // InitMetricCounter(
-        //     context,
-        //     MetricNameTokenRequest,
-        //     init: static m =>
-        //     {
-        //         foreach (var result in RequestResultExtensions.GetValues())
-        //         {
-        //             m.Add(0, new Tag(InternalLabels.Result, result.ToStringFast()));
-        //         }
-        //     }
-        // );
+        InitMetricCounter(
+            context,
+            MetricNameOrder,
+            init: static m =>
+            {
+                foreach (var result in CorrespondenceResultExtensions.GetValues())
+                {
+                    m.Add(0, new Tag(InternalLabels.Result, result.ToStringFast()));
+                }
+            }
+        );
     }
 
     internal Activity? StartSendCorrespondenceActivity()
     {
-        var activity = ActivitySource.StartActivity("Correspondence.Send");
-        // activity?.SetTag("maskinporten.scopes", scopes);
-        return activity;
+        return ActivitySource.StartActivity("Correspondence.Send");
     }
 
-    // internal void RecordMaskinportenTokenRequest(RequestResult result)
-    // {
-    //     _counters[MetricNameTokenRequest].Add(1, new Tag(InternalLabels.Result, result.ToStringFast()));
-    // }
+    internal void RecordCorrespondenceOrder(CorrespondenceResult result) =>
+        _counters[MetricNameOrder].Add(1, new Tag(InternalLabels.Result, result.ToStringFast()));
 
-    // TODO: Name this something reasonable
-    internal static class CorrespondenceSomethingUnique
+    // TODO: Rename this?
+    internal static class CorrespondenceConfig
     {
-        // internal static readonly string MetricNameTokenRequest = Metrics.CreateLibName("maskinporten_token_requests");
+        internal static readonly string MetricNameOrder = Metrics.CreateLibName("correspondence_orders");
 
-        // [EnumExtensions]
-        // internal enum RequestResult
-        // {
-        //     [Display(Name = "cached")]
-        //     Cached,
+        [EnumExtensions]
+        internal enum CorrespondenceResult
+        {
+            [Display(Name = "success")]
+            Success,
 
-        //     [Display(Name = "new")]
-        //     New,
-
-        //     [Display(Name = "error")]
-        //     Error
-        // }
+            [Display(Name = "error")]
+            Error
+        }
     }
 }

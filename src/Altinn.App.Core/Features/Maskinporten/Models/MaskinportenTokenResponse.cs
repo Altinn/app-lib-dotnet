@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Altinn.App.Core.Models;
 
 namespace Altinn.App.Core.Features.Maskinporten.Models;
 
@@ -9,7 +10,8 @@ public sealed record MaskinportenTokenResponse : IAccessToken
 {
     /// <inheritdoc />
     [JsonPropertyName("access_token")]
-    public required string AccessToken { get; init; }
+    [JsonConverter(typeof(AccessTokenJsonConverter))]
+    public required AccessToken AccessToken { get; init; }
 
     /// <summary>
     /// The type of JWT received. In this context, the value is always `Bearer`
@@ -34,7 +36,6 @@ public sealed record MaskinportenTokenResponse : IAccessToken
     /// </summary>
     public override string ToString()
     {
-        string maskedToken = JwtMasking.MaskSignature(AccessToken);
-        return $"{nameof(AccessToken)}: {maskedToken}, {nameof(TokenType)}: {TokenType}, {nameof(Scope)}: {Scope}, {nameof(ExpiresIn)}: {ExpiresIn}";
+        return $"{nameof(AccessToken)}: {AccessToken}, {nameof(TokenType)}: {TokenType}, {nameof(Scope)}: {Scope}, {nameof(ExpiresIn)}: {ExpiresIn}";
     }
 }
