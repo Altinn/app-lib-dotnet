@@ -1249,8 +1249,6 @@ public class InstancesController : ControllerBase
                     _jsonSerializerOptionsWeb
                 );
             }
-
-            return null;
         }
 
         return null;

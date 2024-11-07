@@ -298,6 +298,33 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
     }
 
     [Fact]
+    public async Task PostNewInstanceWithMissingTemplate()
+    {
+        string org = "tdd";
+        string app = "contributer-restriction";
+        int instanceOwnerPartyId = 501337;
+        int userId = 1337;
+        HttpClient client = GetRootedClient(org, app, userId, null);
+
+        using var content = new ByteArrayContent(new byte[0])
+        {
+            Headers = { ContentType = new MediaTypeHeaderValue("application/json") }
+        };
+
+        var response = await client.PostAsync(
+            $"{org}/{app}/instances?instanceOwnerPartyId={instanceOwnerPartyId}",
+            content
+        );
+        response.Should().HaveStatusCode(HttpStatusCode.Created);
+        var responseContent = await response.Content.ReadAsStringAsync();
+        var instance = JsonSerializer.Deserialize<Instance>(responseContent, JsonSerializerOptions);
+        instance.Should().NotBeNull();
+        instance!.Id.Should().NotBeNullOrEmpty();
+
+        TestData.DeleteInstanceAndData(org, app, instance.Id);
+    }
+
+    [Fact]
     public async Task InstationAllowedByOrg_Returns_Forbidden_For_User_SimplifiedEndpoint()
     {
         // Setup test data
