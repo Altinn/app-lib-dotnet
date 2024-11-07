@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Altinn.App.Core.Models;
 
 namespace Altinn.App.Core.Features.Correspondence.Models;
 
@@ -12,16 +13,29 @@ public sealed record CorrespondenceResponse(List<CorrespondenceDetails> Correspo
 /// <summary>
 /// Details about the correspondence
 /// </summary>
-/// <param name="CorrespondenceId">The correspondence identifier</param>
-/// <param name="Status">The status of the correspondence</param>
-/// <param name="Recipient">The recipient of the correspondence</param>
-/// <param name="Notifications">Notifications linked to the correspondence</param>
-public sealed record CorrespondenceDetails(
-    Guid CorrespondenceId,
-    CorrespondenceStatus Status,
-    string Recipient,
-    List<NotificationDetails>? Notifications
-);
+public sealed record CorrespondenceDetails
+{
+    /// <summary>
+    /// The correspondence identifier
+    /// </summary>
+    public Guid CorrespondenceId { get; init; }
+
+    /// <summary>
+    /// The status of the correspondence
+    /// </summary>
+    public CorrespondenceStatus Status { get; init; }
+
+    /// <summary>
+    /// The recipient of the correspondence
+    /// </summary>
+    [OrganisationNumberJsonConverter(OrganisationNumberFormat.International)]
+    public OrganisationNumber Recipient { get; init; }
+
+    /// <summary>
+    /// Notifications linked to the correspondence
+    /// </summary>
+    public List<CorrespondenceNotificationDetails>? Notifications { get; init; }
+}
 
 /// <summary>
 /// Details about the correspondence notification
@@ -29,13 +43,17 @@ public sealed record CorrespondenceDetails(
 /// <param name="OrderId">The notification order identifier</param>
 /// <param name="IsReminder">Whether or not this is a reminder notification</param>
 /// <param name="Status">The status of the notification</param>
-public sealed record NotificationDetails(Guid? OrderId, bool? IsReminder, NotificationStatus? Status);
+public sealed record CorrespondenceNotificationDetails(
+    Guid? OrderId,
+    bool? IsReminder,
+    CorrespondenceNotificationStatus? Status
+);
 
 /// <summary>
 /// The status of the correspondence notification
 /// </summary>
 [JsonConverter(typeof(JsonStringEnumConverter))]
-public enum NotificationStatus
+public enum CorrespondenceNotificationStatus
 {
     /// <summary>
     /// Notification has been scheduled successfully

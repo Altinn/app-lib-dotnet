@@ -13,13 +13,11 @@ public class AccessTokenJsonConverter : JsonConverter<AccessToken>
     {
         if (reader.TokenType != JsonTokenType.String)
         {
-            throw new JsonException("Expected string token for AccessToken.");
+            throw new JsonException("Expected string token for AccessToken property.");
         }
 
-        var tokenValue = reader.GetString();
-        return tokenValue is null
-            ? throw new JsonException("AccessToken string value is null.")
-            : AccessToken.Parse(tokenValue);
+        var tokenValue = reader.GetString() ?? throw new JsonException("AccessToken string value is null.");
+        return AccessToken.Parse(tokenValue);
     }
 
     /// <inheritdoc/>

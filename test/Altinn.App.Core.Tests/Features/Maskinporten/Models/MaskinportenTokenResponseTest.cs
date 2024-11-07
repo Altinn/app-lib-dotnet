@@ -10,9 +10,11 @@ public class MaskinportenTokenResponseTest
     public void ShouldDeserializeFromJsonCorrectly()
     {
         // Arrange
-        var json = """
+        var accessToken =
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJpdHMtYS1tZSJ9.wLLw4Timcl9gnQvA93RgREz-6S5y1UfzI_GYVI_XVDA";
+        var json = $$"""
             {
-                "access_token": "jwt.content.here",
+                "access_token": "{{accessToken}}",
                 "token_type": "Bearer",
                 "expires_in": 120,
                 "scope": "anything"
@@ -24,7 +26,7 @@ public class MaskinportenTokenResponseTest
 
         // Assert
         Assert.NotNull(token);
-        token.AccessToken.Should().Be("jwt.content.here");
+        token.AccessToken.ToStringUnmasked().Should().Be(accessToken);
         token.TokenType.Should().Be("Bearer");
         token.Scope.Should().Be("anything");
         token.ExpiresIn.Should().Be(120);

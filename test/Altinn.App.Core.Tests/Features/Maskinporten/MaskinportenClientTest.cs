@@ -212,7 +212,7 @@ public class MaskinportenClientTests
         var result = await fixture.Client(variant).GetAltinnExchangedToken(scopes);
 
         // Assert
-        result.AccessToken.Should().NotBeNullOrWhiteSpace();
+        result.AccessToken.Get().Should().NotBeNullOrWhiteSpace();
         result.ExpiresAt.Should().Be(fixture.FakeTime.GetUtcNow().Add(expiresIn).UtcDateTime);
     }
 

@@ -3,6 +3,7 @@ using Altinn.App.Api.Tests.Mocks;
 using Altinn.App.Core.Features.Maskinporten;
 using Altinn.App.Core.Features.Maskinporten.Constants;
 using Altinn.App.Core.Features.Maskinporten.Models;
+using Altinn.App.Core.Models;
 using AltinnCore.Authentication.Constants;
 
 namespace Altinn.App.Api.Tests.Utils;
@@ -157,7 +158,7 @@ public static class PrincipalUtil
 
         return new MaskinportenTokenResponse
         {
-            AccessToken = accessToken,
+            AccessToken = AccessToken.Parse(accessToken),
             ExpiresIn = (int)expiry.Value.TotalSeconds,
             Scope = scope,
             TokenType = "Bearer"
