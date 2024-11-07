@@ -134,6 +134,11 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
 
     private ProblemDetails? GetProblemDetails(string responseBody)
     {
+        if (string.IsNullOrWhiteSpace(responseBody))
+        {
+            return null;
+        }
+
         try
         {
             return JsonSerializer.Deserialize<ProblemDetails>(responseBody);
