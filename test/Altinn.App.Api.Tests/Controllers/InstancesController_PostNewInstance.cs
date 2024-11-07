@@ -306,7 +306,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         int userId = 1337;
         HttpClient client = GetRootedClient(org, app, userId, null);
 
-        using var content = new ByteArrayContent(new byte[0])
+        using var content = new ByteArrayContent([])
         {
             Headers = { ContentType = new MediaTypeHeaderValue("application/json") }
         };
