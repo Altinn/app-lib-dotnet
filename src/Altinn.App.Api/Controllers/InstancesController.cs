@@ -1239,7 +1239,10 @@ public class InstancesController : ControllerBase
             parts.Remove(instancePart);
 
             // Some clients might set contentType to application/json even if the body is empty
-            if (instancePart is { Bytes.Length: > 0, ContentType: "application/json" })
+            if (
+                instancePart is { Bytes.Length: > 0 }
+                && instancePart.ContentType.Contains("application/json", StringComparison.Ordinal)
+            )
             {
                 return System.Text.Json.JsonSerializer.Deserialize<Instance>(
                     instancePart.Bytes,
