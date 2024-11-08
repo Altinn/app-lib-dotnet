@@ -11,7 +11,7 @@ public class LanguageCodeTests
     static readonly string[] _invalidIso6391Codes = ["a.", " b", "abc", "😎🤓"];
 
     [Fact]
-    public void ValidIso6391CodesParseOk()
+    public void ValidIso6391Code_ParsesOk()
     {
         foreach (var validCode in _validIso6391Codes)
         {
@@ -21,7 +21,7 @@ public class LanguageCodeTests
     }
 
     [Fact]
-    public void InvalidIso6391CodesThrowException()
+    public void InvalidIso6391Code_ThrowsException()
     {
         foreach (var invalidCode in _invalidIso6391Codes)
         {
@@ -31,7 +31,7 @@ public class LanguageCodeTests
     }
 
     [Fact]
-    public void EqualityWorksAsExpected()
+    public void Equality_WorksAsExpected()
     {
         var langCode1A = LanguageCode<Iso6391>.Parse(_validIso6391Codes[0]);
         var langCode1B = LanguageCode<Iso6391>.Parse(_validIso6391Codes[0]);
@@ -43,5 +43,15 @@ public class LanguageCodeTests
 
         langCode1A.Should().Be(langCode1B);
         langCode1A.Should().NotBe(langCode2);
+    }
+
+    [Fact]
+    public void ImplicitStringConversion_WorksAsExpected()
+    {
+        foreach (var validCode in _validIso6391Codes)
+        {
+            string langCodeString = LanguageCode<Iso6391>.Parse(validCode);
+            langCodeString.Should().Be(validCode.ToLowerInvariant());
+        }
     }
 }

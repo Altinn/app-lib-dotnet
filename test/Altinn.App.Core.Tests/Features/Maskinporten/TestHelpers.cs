@@ -113,4 +113,17 @@ internal static class TestHelpers
             .Select(pair => pair.Split('='))
             .ToDictionary(split => Uri.UnescapeDataString(split[0]), split => Uri.UnescapeDataString(split[1]));
     }
+
+    public static (
+        string AccessToken,
+        (string Header, string Payload, string Signature) Components
+    ) GetEncodedAccessToken()
+    {
+        const string testTokenHeader = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
+        const string testTokenPayload = "eyJzdWIiOiJpdHMtYS1tZSJ9";
+        const string testTokenSignature = "wLLw4Timcl9gnQvA93RgREz-6S5y1UfzI_GYVI_XVDA";
+        const string testToken = testTokenHeader + "." + testTokenPayload + "." + testTokenSignature;
+
+        return (testToken, (testTokenHeader, testTokenPayload, testTokenSignature));
+    }
 }

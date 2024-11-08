@@ -1,15 +1,11 @@
 using System.Text;
-using Altinn.App.Core.Features.Correspondence.Builder;
 using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Models;
 using FluentAssertions;
-using Microsoft.AspNetCore.Mvc.Formatters;
-using Microsoft.Rest.Serialization;
-using Moq;
 
 namespace Altinn.App.Core.Tests.Features.Correspondence.Models;
 
-public class CorrespondenceRequestTest
+public class CorrespondenceRequestTests
 {
     [Fact]
     public async Task Serialize_ShouldAddCorrectFields()

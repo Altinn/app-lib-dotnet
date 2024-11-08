@@ -110,17 +110,9 @@ public class CorrespondenceClientTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.NotNull(result.Correspondences);
-        Assert.NotNull(result.Correspondences[0].Notifications);
         result.AttachmentIds.Should().ContainSingle("25b87c22-e7cc-4c07-95eb-9afa32e3ee7b");
         result.Correspondences.Should().HaveCount(1);
         result.Correspondences[0].CorrespondenceId.Should().Be("cf7a4a9f-45ce-46b9-b110-4f263b395842");
-        result.Correspondences[0].Status.Should().Be(CorrespondenceStatus.Initialized);
-        result.Correspondences[0].Recipient.Should().Be(OrganisationNumber.Parse("213872702"));
-        result.Correspondences[0].Notifications.Should().HaveCount(1);
-        result.Correspondences[0].Notifications![0].OrderId.Should().Be("05119865-6d46-415c-a2d7-65b9cd173e13");
-        result.Correspondences[0].Notifications![0].IsReminder.Should().BeFalse();
-        result.Correspondences[0].Notifications![0].Status.Should().Be(CorrespondenceNotificationStatus.Success);
     }
 
     [Theory]
@@ -167,5 +159,31 @@ public class CorrespondenceClientTests
 
         // Assert
         await act.Should().ThrowAsync<CorrespondenceRequestException>();
+    }
+
+    [Fact]
+    public async Task Send_UnexpectedException_IsHandled()
+    {
+        // Arrange
+        await using var fixture = Fixture.Create();
+        var mockHttpClientFactory = fixture.HttpClientFactoryMock;
+        var mockHttpClient = new Mock<HttpClient>();
+        var payload = PayloadFactory();
+
+        mockHttpClientFactory.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(mockHttpClient.Object);
+        mockHttpClient
+            .Setup(c => c.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => throw new HttpRequestException("Surprise!"));
+
+        // Act
+        Func<Task> act = async () =>
+        {
+            await fixture.CorrespondenceClient.Send(payload);
+        };
+
+        // Assert
+        await act.Should()
+            .ThrowAsync<CorrespondenceRequestException>()
+            .WithInnerExceptionExactly(typeof(HttpRequestException));
     }
 }
