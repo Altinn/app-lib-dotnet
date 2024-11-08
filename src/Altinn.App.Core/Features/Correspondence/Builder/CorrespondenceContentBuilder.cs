@@ -6,13 +6,7 @@ namespace Altinn.App.Core.Features.Correspondence.Builder;
 /// <summary>
 /// Builder factory for creating <see cref="CorrespondenceContent"/> objects
 /// </summary>
-public class CorrespondenceContentBuilder
-    : CorrespondenceBuilderBase,
-        ICorrespondenceContentBuilderNeedsTitle,
-        ICorrespondenceContentBuilderNeedsLanguage,
-        ICorrespondenceContentBuilderNeedsSummary,
-        ICorrespondenceContentBuilderNeedsBody,
-        ICorrespondenceContentBuilderCanBuild
+public class CorrespondenceContentBuilder : CorrespondenceBuilderBase, ICorrespondenceContentBuilder
 {
     private string? _title;
     private LanguageCode<Iso6391>? _language;
@@ -25,31 +19,31 @@ public class CorrespondenceContentBuilder
     /// Creates a new <see cref="CorrespondenceContentBuilder"/> instance
     /// </summary>
     /// <returns></returns>
-    public static ICorrespondenceContentBuilderNeedsTitle Create() => new CorrespondenceContentBuilder();
+    public static ICorrespondenceContentBuilderTitle Create() => new CorrespondenceContentBuilder();
 
     /// <inheritdoc/>
-    public ICorrespondenceContentBuilderNeedsLanguage WithTitle(string title)
+    public ICorrespondenceContentBuilderLanguage WithTitle(string title)
     {
         _title = title;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceContentBuilderNeedsSummary WithLanguage(LanguageCode<Iso6391> language)
+    public ICorrespondenceContentBuilderSummary WithLanguage(LanguageCode<Iso6391> language)
     {
         _language = language;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceContentBuilderNeedsBody WithSummary(string summary)
+    public ICorrespondenceContentBuilderBody WithSummary(string summary)
     {
         _summary = summary;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceContentBuilderCanBuild WithBody(string body)
+    public ICorrespondenceContentBuilder WithBody(string body)
     {
         _body = body;
         return this;

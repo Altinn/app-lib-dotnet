@@ -5,10 +5,7 @@ namespace Altinn.App.Core.Features.Correspondence.Builder;
 /// <summary>
 /// Builder factory for creating <see cref="CorrespondenceReplyOption"/> objects
 /// </summary>
-public class CorrespondenceReplyOptionBuilder
-    : CorrespondenceBuilderBase,
-        ICorrespondenceReplyOptionsBuilderNeedsLinkUrl,
-        ICorrespondenceReplyOptionsBuilderCanBuild
+public class CorrespondenceReplyOptionBuilder : CorrespondenceBuilderBase, ICorrespondenceReplyOptionsBuilder
 {
     private string? _linkUrl;
     private string? _linkText;
@@ -22,14 +19,14 @@ public class CorrespondenceReplyOptionBuilder
     public static ICorrespondenceReplyOptionsBuilderNeedsLinkUrl Create() => new CorrespondenceReplyOptionBuilder();
 
     /// <inheritdoc/>
-    public ICorrespondenceReplyOptionsBuilderCanBuild WithLinkUrl(string linkUrl)
+    public ICorrespondenceReplyOptionsBuilder WithLinkUrl(string linkUrl)
     {
         _linkUrl = linkUrl;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceReplyOptionsBuilderCanBuild WithLinkText(string linkText)
+    public ICorrespondenceReplyOptionsBuilder WithLinkText(string linkText)
     {
         _linkText = linkText;
         return this;

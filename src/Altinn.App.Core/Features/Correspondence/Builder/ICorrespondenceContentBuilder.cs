@@ -6,55 +6,59 @@ namespace Altinn.App.Core.Features.Correspondence.Builder;
 /// <summary>
 /// Indicates that the <see cref="CorrespondenceContentBuilder"/> instance is on the <see cref="CorrespondenceContent.Title"/> step
 /// </summary>
-public interface ICorrespondenceContentBuilderNeedsTitle
+public interface ICorrespondenceContentBuilderTitle
 {
     /// <summary>
     /// Sets the title of the correspondence content
     /// </summary>
     /// <param name="title">The correspondence title</param>
-    ICorrespondenceContentBuilderNeedsLanguage WithTitle(string title);
+    ICorrespondenceContentBuilderLanguage WithTitle(string title);
 }
 
 /// <summary>
 /// Indicates that the <see cref="CorrespondenceContentBuilder"/> instance is on the <see cref="CorrespondenceContent.Language"/> step
 /// </summary>
-public interface ICorrespondenceContentBuilderNeedsLanguage
+public interface ICorrespondenceContentBuilderLanguage
 {
     /// <summary>
     /// Sets the language of the correspondence content
     /// </summary>
     /// <param name="language"></param>
-    ICorrespondenceContentBuilderNeedsSummary WithLanguage(LanguageCode<Iso6391> language);
+    ICorrespondenceContentBuilderSummary WithLanguage(LanguageCode<Iso6391> language);
 }
 
 /// <summary>
 /// Indicates that the <see cref="CorrespondenceContentBuilder"/> instance is on the <see cref="CorrespondenceContent.Summary"/> step
 /// </summary>
-public interface ICorrespondenceContentBuilderNeedsSummary
+public interface ICorrespondenceContentBuilderSummary
 {
     /// <summary>
     /// Sets the summary of the correspondence content
     /// </summary>
     /// <param name="summary">The summary of the message</param>
-    ICorrespondenceContentBuilderNeedsBody WithSummary(string summary);
+    ICorrespondenceContentBuilderBody WithSummary(string summary);
 }
 
 /// <summary>
 /// Indicates that the <see cref="CorrespondenceContentBuilder"/> instance is on the <see cref="CorrespondenceContent.Body"/> step
 /// </summary>
-public interface ICorrespondenceContentBuilderNeedsBody
+public interface ICorrespondenceContentBuilderBody
 {
     /// <summary>
     /// Sets the body of the correspondence content
     /// </summary>
     /// <param name="body">The full text (body) of the message</param>
-    ICorrespondenceContentBuilderCanBuild WithBody(string body);
+    ICorrespondenceContentBuilder WithBody(string body);
 }
 
 /// <summary>
 /// Indicates that the <see cref="CorrespondenceContentBuilder"/> instance has completed all required steps and can proceed to <see cref="CorrespondenceContentBuilder.Build"/>
 /// </summary>
-public interface ICorrespondenceContentBuilderCanBuild
+public interface ICorrespondenceContentBuilder
+    : ICorrespondenceContentBuilderTitle,
+        ICorrespondenceContentBuilderLanguage,
+        ICorrespondenceContentBuilderSummary,
+        ICorrespondenceContentBuilderBody
 {
     /// <summary>
     /// Builds the correspondence content

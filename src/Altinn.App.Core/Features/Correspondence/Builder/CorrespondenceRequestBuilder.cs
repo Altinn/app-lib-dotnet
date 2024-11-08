@@ -34,16 +34,7 @@ public abstract class CorrespondenceBuilderBase
 /// <summary>
 /// Builder factory for creating <see cref="CorrespondenceRequest"/> objects
 /// </summary>
-public class CorrespondenceRequestBuilder
-    : CorrespondenceBuilderBase,
-        ICorrespondenceBuilderNeedsResourceId,
-        ICorrespondenceBuilderNeedsContent,
-        ICorrespondenceBuilderNeedsSender,
-        ICorrespondenceBuilderNeedsSendersReference,
-        ICorrespondenceBuilderNeedsAllowSystemDeleteAfter,
-        ICorrespondenceBuilderNeedsDueDateTime,
-        ICorrespondenceBuilderNeedsRecipients,
-        ICorrespondenceBuilderCanBuild
+public class CorrespondenceRequestBuilder : CorrespondenceBuilderBase, ICorrespondenceRequestBuilder
 {
     private string? _resourceId;
     private OrganisationNumber? _sender;
@@ -66,97 +57,97 @@ public class CorrespondenceRequestBuilder
     /// <summary>
     /// Creates a new <see cref="CorrespondenceRequestBuilder"/> instance
     /// </summary>
-    public static ICorrespondenceBuilderNeedsResourceId Create() => new CorrespondenceRequestBuilder();
+    public static ICorrespondenceRequestBuilderResourceId Create() => new CorrespondenceRequestBuilder();
 
     /// <inheritdoc/>
-    public ICorrespondenceBuilderNeedsSender WithResourceId(string resourceId)
+    public ICorrespondenceRequestBuilderSender WithResourceId(string resourceId)
     {
         _resourceId = resourceId;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceBuilderNeedsSendersReference WithSender(OrganisationNumber sender)
+    public ICorrespondenceRequestBuilderSendersReference WithSender(OrganisationNumber sender)
     {
         _sender = sender;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceBuilderNeedsRecipients WithSendersReference(string sendersReference)
+    public ICorrespondenceRequestBuilderRecipients WithSendersReference(string sendersReference)
     {
         _sendersReference = sendersReference;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceBuilderNeedsDueDateTime WithRecipient(OrganisationNumber recipient)
+    public ICorrespondenceRequestBuilderDueDateTime WithRecipient(OrganisationNumber recipient)
     {
         return WithRecipients([recipient]);
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceBuilderNeedsDueDateTime WithRecipients(IReadOnlyList<OrganisationNumber> recipients)
+    public ICorrespondenceRequestBuilderDueDateTime WithRecipients(IReadOnlyList<OrganisationNumber> recipients)
     {
-        _recipients = recipients;
+        _recipients = [.. _recipients ?? [], .. recipients];
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceBuilderNeedsAllowSystemDeleteAfter WithDueDateTime(DateTimeOffset dueDateTime)
+    public ICorrespondenceRequestBuilderAllowSystemDeleteAfter WithDueDateTime(DateTimeOffset dueDateTime)
     {
         _dueDateTime = dueDateTime;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceBuilderNeedsContent WithAllowSystemDeleteAfter(DateTimeOffset allowSystemDeleteAfter)
+    public ICorrespondenceRequestBuilderContent WithAllowSystemDeleteAfter(DateTimeOffset allowSystemDeleteAfter)
     {
         _allowSystemDeleteAfter = allowSystemDeleteAfter;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceBuilderCanBuild WithContent(CorrespondenceContent content)
+    public ICorrespondenceRequestBuilder WithContent(CorrespondenceContent content)
     {
         _content = content;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceBuilderCanBuild WithContent(ICorrespondenceContentBuilderCanBuild builder)
+    public ICorrespondenceRequestBuilder WithContent(ICorrespondenceContentBuilder builder)
     {
         return WithContent(builder.Build());
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceBuilderCanBuild WithRequestedPublishTime(DateTimeOffset requestedPublishTime)
+    public ICorrespondenceRequestBuilder WithRequestedPublishTime(DateTimeOffset requestedPublishTime)
     {
         _requestedPublishTime = requestedPublishTime;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceBuilderCanBuild WithMessageSender(string messageSender)
+    public ICorrespondenceRequestBuilder WithMessageSender(string messageSender)
     {
         _messageSender = messageSender;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceBuilderCanBuild WithExternalReference(CorrespondenceExternalReference externalReference)
+    public ICorrespondenceRequestBuilder WithExternalReference(CorrespondenceExternalReference externalReference)
     {
         return WithExternalReferences([externalReference]);
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceBuilderCanBuild WithExternalReference(ICorrespondenceExternalReferenceBuilderCanBuild builder)
+    public ICorrespondenceRequestBuilder WithExternalReference(ICorrespondenceExternalReferenceBuilder builder)
     {
         return WithExternalReferences([builder.Build()]);
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceBuilderCanBuild WithExternalReferences(
+    public ICorrespondenceRequestBuilder WithExternalReferences(
         IReadOnlyList<CorrespondenceExternalReference> externalReferences
     )
     {
@@ -165,78 +156,78 @@ public class CorrespondenceRequestBuilder
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceBuilderCanBuild WithPropertyList(IReadOnlyDictionary<string, string> propertyList)
+    public ICorrespondenceRequestBuilder WithPropertyList(IReadOnlyDictionary<string, string> propertyList)
     {
         _propertyList = propertyList;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceBuilderCanBuild WithReplyOption(CorrespondenceReplyOption replyOption)
+    public ICorrespondenceRequestBuilder WithReplyOption(CorrespondenceReplyOption replyOption)
     {
         return WithReplyOptions([replyOption]);
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceBuilderCanBuild WithReplyOption(ICorrespondenceReplyOptionsBuilderCanBuild builder)
+    public ICorrespondenceRequestBuilder WithReplyOption(ICorrespondenceReplyOptionsBuilder builder)
     {
         return WithReplyOptions([builder.Build()]);
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceBuilderCanBuild WithReplyOptions(IReadOnlyList<CorrespondenceReplyOption> replyOptions)
+    public ICorrespondenceRequestBuilder WithReplyOptions(IReadOnlyList<CorrespondenceReplyOption> replyOptions)
     {
         _replyOptions = [.. _replyOptions ?? [], .. replyOptions];
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceBuilderCanBuild WithNotification(CorrespondenceNotification notification)
+    public ICorrespondenceRequestBuilder WithNotification(CorrespondenceNotification notification)
     {
         _notification = notification;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceBuilderCanBuild WithNotification(ICorrespondenceNotificationBuilderCanBuild builder)
+    public ICorrespondenceRequestBuilder WithNotification(ICorrespondenceNotificationBuilder builder)
     {
         return WithNotification(builder.Build());
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceBuilderCanBuild WithIgnoreReservation(bool ignoreReservation)
+    public ICorrespondenceRequestBuilder WithIgnoreReservation(bool ignoreReservation)
     {
         _ignoreReservation = ignoreReservation;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceBuilderCanBuild WithExistingAttachment(Guid existingAttachment)
+    public ICorrespondenceRequestBuilder WithExistingAttachment(Guid existingAttachment)
     {
         return WithExistingAttachments([existingAttachment]);
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceBuilderCanBuild WithExistingAttachments(IReadOnlyList<Guid> existingAttachments)
+    public ICorrespondenceRequestBuilder WithExistingAttachments(IReadOnlyList<Guid> existingAttachments)
     {
         _existingAttachments = [.. _existingAttachments ?? [], .. existingAttachments];
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceBuilderCanBuild WithAttachment(CorrespondenceAttachment attachment)
+    public ICorrespondenceRequestBuilder WithAttachment(CorrespondenceAttachment attachment)
     {
         return WithAttachments([attachment]);
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceBuilderCanBuild WithAttachment(ICorrespondenceAttachmentBuilderCanBuild attachment)
+    public ICorrespondenceRequestBuilder WithAttachment(ICorrespondenceAttachmentBuilder attachment)
     {
         return WithAttachments([attachment.Build()]);
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceBuilderCanBuild WithAttachments(IReadOnlyList<CorrespondenceAttachment> attachments)
+    public ICorrespondenceRequestBuilder WithAttachments(IReadOnlyList<CorrespondenceAttachment> attachments)
     {
         NotNullOrEmpty(_content, "Content is required before adding attachments");
 

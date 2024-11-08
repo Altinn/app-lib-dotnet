@@ -11,19 +11,19 @@ public interface ICorrespondenceReplyOptionsBuilderNeedsLinkUrl
     /// Sets the link URL for the reply options
     /// </summary>
     /// <param name="linkUrl">The link URL</param>
-    ICorrespondenceReplyOptionsBuilderCanBuild WithLinkUrl(string linkUrl);
+    ICorrespondenceReplyOptionsBuilder WithLinkUrl(string linkUrl);
 }
 
 /// <summary>
 /// Indicates that the <see cref="CorrespondenceReplyOptionBuilder"/> instance has completed all required steps and can proceed to <see cref="CorrespondenceReplyOptionBuilder.Build"/>
 /// </summary>
-public interface ICorrespondenceReplyOptionsBuilderCanBuild
+public interface ICorrespondenceReplyOptionsBuilder : ICorrespondenceReplyOptionsBuilderNeedsLinkUrl
 {
     /// <summary>
     /// Sets the link text for the reply options
     /// </summary>
     /// <param name="linkText">The link text</param>
-    ICorrespondenceReplyOptionsBuilderCanBuild WithLinkText(string linkText);
+    ICorrespondenceReplyOptionsBuilder WithLinkText(string linkText);
 
     /// <summary>
     /// Builds the <see cref="CorrespondenceReplyOption"/> instance

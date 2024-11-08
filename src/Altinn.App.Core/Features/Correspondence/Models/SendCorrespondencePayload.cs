@@ -45,12 +45,12 @@ public sealed record SendCorrespondencePayload
     }
 
     /// <summary>
-    /// The payload contains an <see cref="ICorrespondenceBuilderCanBuild"/> builder instance
+    /// The payload contains an <see cref="ICorrespondenceRequestBuilder"/> builder instance
     /// </summary>
     /// <param name="correspondenceRequestBuilder">The correspondence request builder to send</param>
     /// <param name="accessTokenFactory">Access token factory delegate (e.g. <see cref="MaskinportenClient.GetAltinnExchangedToken"/>)</param>
     public static SendCorrespondencePayload WithBuilder(
-        ICorrespondenceBuilderCanBuild correspondenceRequestBuilder,
+        ICorrespondenceRequestBuilder correspondenceRequestBuilder,
         Func<Task<AccessToken>> accessTokenFactory
     )
     {

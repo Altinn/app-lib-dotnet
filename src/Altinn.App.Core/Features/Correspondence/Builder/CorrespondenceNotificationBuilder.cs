@@ -5,10 +5,7 @@ namespace Altinn.App.Core.Features.Correspondence.Builder;
 /// <summary>
 /// Builder factory for creating <see cref="CorrespondenceNotification"/> objects
 /// </summary>
-public class CorrespondenceNotificationBuilder
-    : CorrespondenceBuilderBase,
-        ICorrespondenceNotificationBuilderNeedsTemplate,
-        ICorrespondenceNotificationBuilderCanBuild
+public class CorrespondenceNotificationBuilder : CorrespondenceBuilderBase, ICorrespondenceNotificationBuilder
 {
     private CorrespondenceNotificationTemplate? _notificationTemplate;
     private string? _emailSubject;
@@ -29,10 +26,10 @@ public class CorrespondenceNotificationBuilder
     /// Creates a new <see cref="CorrespondenceNotificationBuilder"/> instance
     /// </summary>
     /// <returns></returns>
-    public static ICorrespondenceNotificationBuilderNeedsTemplate Create() => new CorrespondenceNotificationBuilder();
+    public static ICorrespondenceNotificationBuilderTemplate Create() => new CorrespondenceNotificationBuilder();
 
     /// <inheritdoc/>
-    public ICorrespondenceNotificationBuilderCanBuild WithNotificationTemplate(
+    public ICorrespondenceNotificationBuilder WithNotificationTemplate(
         CorrespondenceNotificationTemplate notificationTemplate
     )
     {
@@ -41,56 +38,56 @@ public class CorrespondenceNotificationBuilder
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceNotificationBuilderCanBuild WithEmailSubject(string? emailSubject)
+    public ICorrespondenceNotificationBuilder WithEmailSubject(string? emailSubject)
     {
         _emailSubject = emailSubject;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceNotificationBuilderCanBuild WithEmailBody(string? emailBody)
+    public ICorrespondenceNotificationBuilder WithEmailBody(string? emailBody)
     {
         _emailBody = emailBody;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceNotificationBuilderCanBuild WithSmsBody(string? smsBody)
+    public ICorrespondenceNotificationBuilder WithSmsBody(string? smsBody)
     {
         _smsBody = smsBody;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceNotificationBuilderCanBuild WithSendReminder(bool? sendReminder)
+    public ICorrespondenceNotificationBuilder WithSendReminder(bool? sendReminder)
     {
         _sendReminder = sendReminder;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceNotificationBuilderCanBuild WithReminderEmailSubject(string? reminderEmailSubject)
+    public ICorrespondenceNotificationBuilder WithReminderEmailSubject(string? reminderEmailSubject)
     {
         _reminderEmailSubject = reminderEmailSubject;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceNotificationBuilderCanBuild WithReminderEmailBody(string? reminderEmailBody)
+    public ICorrespondenceNotificationBuilder WithReminderEmailBody(string? reminderEmailBody)
     {
         _reminderEmailBody = reminderEmailBody;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceNotificationBuilderCanBuild WithReminderSmsBody(string? reminderSmsBody)
+    public ICorrespondenceNotificationBuilder WithReminderSmsBody(string? reminderSmsBody)
     {
         _reminderSmsBody = reminderSmsBody;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceNotificationBuilderCanBuild WithNotificationChannel(
+    public ICorrespondenceNotificationBuilder WithNotificationChannel(
         CorrespondenceNotificationChannel? notificationChannel
     )
     {
@@ -99,7 +96,7 @@ public class CorrespondenceNotificationBuilder
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceNotificationBuilderCanBuild WithReminderNotificationChannel(
+    public ICorrespondenceNotificationBuilder WithReminderNotificationChannel(
         CorrespondenceNotificationChannel? reminderNotificationChannel
     )
     {
@@ -108,14 +105,14 @@ public class CorrespondenceNotificationBuilder
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceNotificationBuilderCanBuild WithSendersReference(string? sendersReference)
+    public ICorrespondenceNotificationBuilder WithSendersReference(string? sendersReference)
     {
         _sendersReference = sendersReference;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceNotificationBuilderCanBuild WithRequestedSendTime(DateTimeOffset? requestedSendTime)
+    public ICorrespondenceNotificationBuilder WithRequestedSendTime(DateTimeOffset? requestedSendTime)
     {
         _requestedSendTime = requestedSendTime;
         return this;

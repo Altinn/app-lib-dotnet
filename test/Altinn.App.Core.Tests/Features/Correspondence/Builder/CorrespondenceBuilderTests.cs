@@ -316,4 +316,88 @@ public class CorrespondenceBuilderTests
             correspondence.ReplyOptions[i].LinkText.Should().Be(data.replyOptions[i].text);
         }
     }
+
+    // TODO: This isn't exhaustive, but it's so boring to write up all permutations... do it anyway, some day.
+    [Fact]
+    public void Builder_UpdatesAndOverwritesValuesCorrectly()
+    {
+        // Arrange
+        var builder = CorrespondenceRequestBuilder
+            .Create()
+            .WithResourceId("resourceId-1")
+            .WithSender(TestHelpers.GetOrganisationNumber(1))
+            .WithSendersReference("sender-reference-1")
+            .WithRecipient(TestHelpers.GetOrganisationNumber(1))
+            .WithDueDateTime(DateTimeOffset.UtcNow.AddDays(1))
+            .WithAllowSystemDeleteAfter(DateTimeOffset.UtcNow.AddDays(1))
+            .WithContent(
+                CorrespondenceContentBuilder
+                    .Create()
+                    .WithTitle("content-title-1")
+                    .WithLanguage(LanguageCode<Iso6391>.Parse("no"))
+                    .WithSummary("content-summary-1")
+                    .WithBody("content-body-1")
+            )
+            .WithNotification(
+                CorrespondenceNotificationBuilder
+                    .Create()
+                    .WithNotificationTemplate(CorrespondenceNotificationTemplate.GenericAltinnMessage)
+                    .WithEmailBody("email-body-1")
+            );
+
+        builder.WithResourceId("resourceId-2");
+        builder.WithSender(TestHelpers.GetOrganisationNumber(2));
+        builder.WithSendersReference("sender-reference-2");
+        builder.WithRecipient(TestHelpers.GetOrganisationNumber(2));
+        builder.WithRecipients([TestHelpers.GetOrganisationNumber(3), TestHelpers.GetOrganisationNumber(4)]);
+        builder.WithDueDateTime(DateTimeOffset.UtcNow.AddDays(2));
+        builder.WithAllowSystemDeleteAfter(DateTimeOffset.UtcNow.AddDays(2));
+        builder.WithContent(
+            CorrespondenceContentBuilder
+                .Create()
+                .WithTitle("content-title-2")
+                .WithLanguage(LanguageCode<Iso6391>.Parse("en"))
+                .WithSummary("content-summary-2")
+                .WithBody("content-body-2")
+        );
+        builder.WithNotification(
+            CorrespondenceNotificationBuilder
+                .Create()
+                .WithNotificationTemplate(CorrespondenceNotificationTemplate.CustomMessage)
+                .WithEmailBody("email-body-2")
+        );
+
+        // Act
+        var correspondence = builder.Build();
+
+        // Assert
+        Assert.NotNull(correspondence);
+        Assert.NotNull(correspondence.Notification);
+
+        correspondence.ResourceId.Should().Be("resourceId-2");
+        correspondence.Sender.Should().Be(TestHelpers.GetOrganisationNumber(2));
+        correspondence.SendersReference.Should().Be("sender-reference-2");
+        correspondence.AllowSystemDeleteAfter.Should().BeSameDateAs(DateTimeOffset.UtcNow.AddDays(2));
+        correspondence.DueDateTime.Should().BeSameDateAs(DateTimeOffset.UtcNow.AddDays(2));
+
+        correspondence.Recipients.Should().HaveCount(4);
+        correspondence
+            .Recipients.Should()
+            .BeEquivalentTo(
+                [
+                    TestHelpers.GetOrganisationNumber(1),
+                    TestHelpers.GetOrganisationNumber(2),
+                    TestHelpers.GetOrganisationNumber(3),
+                    TestHelpers.GetOrganisationNumber(4)
+                ]
+            );
+
+        correspondence.Content.Title.Should().Be("content-title-2");
+        correspondence.Content.Language.Should().Be(LanguageCode<Iso6391>.Parse("en"));
+        correspondence.Content.Summary.Should().Be("content-summary-2");
+        correspondence.Content.Body.Should().Be("content-body-2");
+
+        correspondence.Notification.NotificationTemplate.Should().Be(CorrespondenceNotificationTemplate.CustomMessage);
+        correspondence.Notification.EmailBody.Should().Be("email-body-2");
+    }
 }

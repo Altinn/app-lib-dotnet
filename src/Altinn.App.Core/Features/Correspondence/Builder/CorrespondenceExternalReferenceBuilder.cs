@@ -5,11 +5,7 @@ namespace Altinn.App.Core.Features.Correspondence.Builder;
 /// <summary>
 /// Builder factory for creating <see cref="CorrespondenceExternalReference"/> objects
 /// </summary>
-public class CorrespondenceExternalReferenceBuilder
-    : CorrespondenceBuilderBase,
-        ICorrespondenceExternalReferenceBuilderNeedsType,
-        ICorrespondenceExternalReferenceBuilderNeedsValue,
-        ICorrespondenceExternalReferenceBuilderCanBuild
+public class CorrespondenceExternalReferenceBuilder : CorrespondenceBuilderBase, ICorrespondenceExternalReferenceBuilder
 {
     private CorrespondenceReferenceType? _referenceType;
     private string? _referenceValue;
@@ -19,20 +15,17 @@ public class CorrespondenceExternalReferenceBuilder
     /// <summary>
     /// Creates a new <see cref="CorrespondenceExternalReferenceBuilder"/> instance
     /// </summary>
-    public static ICorrespondenceExternalReferenceBuilderNeedsType Create() =>
-        new CorrespondenceExternalReferenceBuilder();
+    public static ICorrespondenceExternalReferenceBuilderType Create() => new CorrespondenceExternalReferenceBuilder();
 
     /// <inheritdoc/>
-    public ICorrespondenceExternalReferenceBuilderNeedsValue WithReferenceType(
-        CorrespondenceReferenceType referenceType
-    )
+    public ICorrespondenceExternalReferenceBuilderValue WithReferenceType(CorrespondenceReferenceType referenceType)
     {
         _referenceType = referenceType;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceExternalReferenceBuilderCanBuild WithReferenceValue(string referenceValue)
+    public ICorrespondenceExternalReferenceBuilder WithReferenceValue(string referenceValue)
     {
         _referenceValue = referenceValue;
         return this;
