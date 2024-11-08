@@ -115,7 +115,7 @@ public static class ServiceCollectionExtensions
         services.TryAddTransient<IApplicationLanguage, Internal.Language.ApplicationLanguage>();
         services.TryAddTransient<IAuthorizationService, AuthorizationService>();
 
-        services.AddClientContext();
+        services.AddAuthenticationContext();
     }
 
     private static void AddApplicationIdentifier(IServiceCollection services)
