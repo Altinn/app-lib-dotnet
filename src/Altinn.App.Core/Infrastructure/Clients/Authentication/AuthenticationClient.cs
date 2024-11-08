@@ -16,7 +16,7 @@ public class AuthenticationClient : IAuthenticationClient
 {
     private readonly ILogger _logger;
     private readonly HttpClient _client;
-    private readonly IClientContext _clientContext;
+    private readonly IAuthenticationContext _authenticationContext;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AuthenticationClient"/> class
@@ -37,14 +37,14 @@ public class AuthenticationClient : IAuthenticationClient
         httpClient.DefaultRequestHeaders.Add(General.SubscriptionKeyHeaderName, platformSettings.Value.SubscriptionKey);
         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         _client = httpClient;
-        _clientContext = serviceProvider.GetRequiredService<IClientContext>();
+        _authenticationContext = serviceProvider.GetRequiredService<IAuthenticationContext>();
     }
 
     /// <inheritdoc />
     public async Task<string> RefreshToken()
     {
         string endpointUrl = $"refresh";
-        string token = _clientContext.Current.Token; // TODO: check if authenticated?
+        string token = _authenticationContext.Current.Token; // TODO: check if authenticated?
         HttpResponseMessage response = await _client.GetAsync(token, endpointUrl);
 
         if (response.StatusCode == System.Net.HttpStatusCode.OK)
