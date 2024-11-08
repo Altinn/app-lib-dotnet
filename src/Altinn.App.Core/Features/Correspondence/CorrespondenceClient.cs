@@ -22,7 +22,6 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly PlatformSettings _platformSettings;
     private readonly Telemetry? _telemetry;
-    private static readonly JsonSerializerOptions _jsonSerializerOptions = new() { PropertyNameCaseInsensitive = true };
 
     public CorrespondenceClient(
         IHttpClientFactory httpClientFactory,
@@ -77,7 +76,7 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
 
             _logger.LogDebug("Correspondence request succeeded: {Response}", responseBody);
             var parsedResponse =
-                JsonSerializer.Deserialize<CorrespondenceResponse>(responseBody, _jsonSerializerOptions)
+                JsonSerializer.Deserialize<CorrespondenceResponse>(responseBody)
                 ?? throw new CorrespondenceRequestException("Invalid response from Correspondence API server");
 
             _telemetry?.RecordCorrespondenceOrder(CorrespondenceResult.Success);

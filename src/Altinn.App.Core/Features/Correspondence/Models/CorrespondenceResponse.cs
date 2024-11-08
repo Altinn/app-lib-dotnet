@@ -6,9 +6,20 @@ namespace Altinn.App.Core.Features.Correspondence.Models;
 /// <summary>
 /// Response from the Altinn Correspondence server after a successful request
 /// </summary>
-/// <param name="Correspondences">The correspondences that were processed</param>
-/// <param name="AttachmentIds">The attachments linked to the correspondence</param>
-public sealed record CorrespondenceResponse(List<CorrespondenceDetails> Correspondences, List<string> AttachmentIds);
+public sealed record CorrespondenceResponse
+{
+    /// <summary>
+    /// The correspondences that were processed
+    /// </summary>
+    [JsonPropertyName("correspondences")]
+    public required List<CorrespondenceDetails> Correspondences { get; init; }
+
+    /// <summary>
+    /// The attachments linked to the correspondence
+    /// </summary>
+    [JsonPropertyName("attachmentIds")]
+    public List<Guid>? AttachmentIds { get; init; }
+}
 
 /// <summary>
 /// Details about the correspondence
@@ -18,36 +29,52 @@ public sealed record CorrespondenceDetails
     /// <summary>
     /// The correspondence identifier
     /// </summary>
-    public Guid CorrespondenceId { get; init; }
+    [JsonPropertyName("correspondenceId")]
+    public required Guid CorrespondenceId { get; init; }
 
     /// <summary>
     /// The status of the correspondence
     /// </summary>
-    public CorrespondenceStatus Status { get; init; }
+    [JsonPropertyName("status")]
+    public required CorrespondenceStatus Status { get; init; }
 
     /// <summary>
     /// The recipient of the correspondence
     /// </summary>
+    [JsonPropertyName("recipient")]
     [OrganisationNumberJsonConverter(OrganisationNumberFormat.International)]
-    public OrganisationNumber Recipient { get; init; }
+    public required OrganisationNumber Recipient { get; init; }
 
     /// <summary>
     /// Notifications linked to the correspondence
     /// </summary>
+    [JsonPropertyName("notifications")]
     public List<CorrespondenceNotificationDetails>? Notifications { get; init; }
 }
 
 /// <summary>
 /// Details about the correspondence notification
 /// </summary>
-/// <param name="OrderId">The notification order identifier</param>
-/// <param name="IsReminder">Whether or not this is a reminder notification</param>
-/// <param name="Status">The status of the notification</param>
-public sealed record CorrespondenceNotificationDetails(
-    Guid? OrderId,
-    bool? IsReminder,
-    CorrespondenceNotificationStatus? Status
-);
+public sealed record CorrespondenceNotificationDetails
+{
+    /// <summary>
+    /// The notification order identifier
+    /// </summary>
+    [JsonPropertyName("orderId")]
+    public required Guid OrderId { get; init; }
+
+    /// <summary>
+    /// Whether or not this is a reminder notification
+    /// </summary>
+    [JsonPropertyName("isReminder")]
+    public required bool IsReminder { get; init; }
+
+    /// <summary>
+    /// The status of the notification
+    /// </summary>
+    [JsonPropertyName("status")]
+    public required CorrespondenceNotificationStatus Status { get; init; }
+}
 
 /// <summary>
 /// The status of the correspondence notification
