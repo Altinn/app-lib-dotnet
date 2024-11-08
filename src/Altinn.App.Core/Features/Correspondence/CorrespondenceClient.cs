@@ -11,7 +11,7 @@ using Altinn.App.Core.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using CorrespondenceResult = Altinn.App.Core.Features.Telemetry.CorrespondenceConfig.CorrespondenceResult;
+using CorrespondenceResult = Altinn.App.Core.Features.Telemetry.Correspondence.CorrespondenceResult;
 
 namespace Altinn.App.Core.Features.Correspondence;
 

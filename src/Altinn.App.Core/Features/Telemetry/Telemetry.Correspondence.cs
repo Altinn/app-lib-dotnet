@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using NetEscapades.EnumGenerators;
-using static Altinn.App.Core.Features.Telemetry.CorrespondenceConfig;
+using static Altinn.App.Core.Features.Telemetry.Correspondence;
 using Tag = System.Collections.Generic.KeyValuePair<string, object?>;
 
 namespace Altinn.App.Core.Features;
@@ -32,7 +32,7 @@ partial class Telemetry
         _counters[MetricNameOrder].Add(1, new Tag(InternalLabels.Result, result.ToStringFast()));
 
     // TODO: Rename this?
-    internal static class CorrespondenceConfig
+    internal static class Correspondence
     {
         internal static readonly string MetricNameOrder = Metrics.CreateLibName("correspondence_orders");
 
