@@ -12,7 +12,7 @@ public class MaskinportenSettingsTest
     /// <summary>
     /// This key definition is complete and valid
     /// </summary>
-    private string _validJwk = """
+    private static readonly string _validJwk = """
         {
             "p": "5BRHaF0zpryULcbyTf02xZUXMb26Ait8XvU4NsAYCH4iLNkC_zYRJ0X_qb0sJ_WVYecB1-nCV1Qr15KnsaKp1qBOx21_ftHHwdBE12z9KYGe1xQ4ZIXEP0OiR044XQPphRFVjWOF7wQKdoXlTNXCg4B3lo5waBj8eYmMHCxyK6k",
             "kty": "RSA",
@@ -33,12 +33,12 @@ public class MaskinportenSettingsTest
     /// This is a Base64 encoded version of <see cref="_validJwk"/>.
     /// <inheritdoc cref="_validJwk"/>
     /// </summary>
-    private string _validJwk_Base64 => Convert.ToBase64String(Encoding.UTF8.GetBytes(_validJwk));
+    private static string _validJwkBase64 => Convert.ToBase64String(Encoding.UTF8.GetBytes(_validJwk));
 
     /// <summary>
     /// This key definition is missing the `e` exponent and the `kid` identifier
     /// </summary>
-    private string _invalidJwk = """
+    private static readonly string _invalidJwk = """
         {
             "p": "5BRHaF0zpryULcbyTf02xZUXMb26Ait8XvU4NsAYCH4iLNkC_zYRJ0X_qb0sJ_WVYecB1-nCV1Qr15KnsaKp1qBOx21_ftHHwdBE12z9KYGe1xQ4ZIXEP0OiR044XQPphRFVjWOF7wQKdoXlTNXCg4B3lo5waBj8eYmMHCxyK6k",
             "kty": "RSA",
@@ -59,7 +59,7 @@ public class MaskinportenSettingsTest
     /// This is a Base64 encoded version of <see cref="_invalidJwk"/>.
     /// <inheritdoc cref="_invalidJwk"/>
     /// </summary>
-    private string _invalidJwk_base64 => Convert.ToBase64String(Encoding.UTF8.GetBytes(_invalidJwk));
+    private static string _invalidJwkBase64 => Convert.ToBase64String(Encoding.UTF8.GetBytes(_invalidJwk));
 
     [Fact]
     public void ShouldDeserializeFromJsonCorrectly()
@@ -91,7 +91,7 @@ public class MaskinportenSettingsTest
             {
                 "authority": "https://maskinporten.dev/",
                 "clientId": "test-client",
-                "jwkBase64": "{{_validJwk_Base64}}"
+                "jwkBase64": "{{_validJwkBase64}}"
             }
             """;
 
@@ -139,7 +139,7 @@ public class MaskinportenSettingsTest
             {
                 "authority": "https://maskinporten.dev/",
                 "clientId": "test-client",
-                "jwkBase64": "{{_invalidJwk_base64}}"
+                "jwkBase64": "{{_invalidJwkBase64}}"
             }
             """;
 

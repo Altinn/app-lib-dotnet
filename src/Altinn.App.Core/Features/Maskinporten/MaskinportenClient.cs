@@ -22,7 +22,7 @@ internal sealed class MaskinportenClient : IMaskinportenClient
     /// The margin to take into consideration when determining if a token has expired (seconds).
     /// <remarks>This value represents the worst-case latency scenario for <em>outbound</em> connections carrying the access token.</remarks>
     /// </summary>
-    internal static TimeSpan TokenExpirationMargin = TimeSpan.FromSeconds(30);
+    internal static readonly TimeSpan TokenExpirationMargin = TimeSpan.FromSeconds(30);
 
     internal MaskinportenSettings Settings =>
         _options.Get(Variant == VariantDefault ? Microsoft.Extensions.Options.Options.DefaultName : Variant);

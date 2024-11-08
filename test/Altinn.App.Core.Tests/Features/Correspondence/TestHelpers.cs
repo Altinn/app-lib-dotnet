@@ -13,8 +13,6 @@ public static class TestHelpers
 
     public static HttpContent? GetItem(this MultipartFormDataContent content, string name)
     {
-        var names = content.Select(x => x.Headers.ContentDisposition?.Name);
-
         return content.FirstOrDefault(item => item.Headers.ContentDisposition?.Name?.Trim('\"') == name);
     }
 }
