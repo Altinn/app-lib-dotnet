@@ -31,7 +31,6 @@ partial class Telemetry
     internal void RecordCorrespondenceOrder(CorrespondenceResult result) =>
         _counters[MetricNameOrder].Add(1, new Tag(InternalLabels.Result, result.ToStringFast()));
 
-    // TODO: Rename this?
     internal static class Correspondence
     {
         internal static readonly string MetricNameOrder = Metrics.CreateLibName("correspondence_orders");
