@@ -1,6 +1,8 @@
 using System.Globalization;
 using System.Net;
 using System.Text.Json;
+using Altinn.App.Api.Extensions;
+using Altinn.App.Api.Helpers.Patch;
 using Altinn.App.Api.Helpers.RequestHandling;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Mappers;
@@ -16,7 +18,6 @@ using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Events;
 using Altinn.App.Core.Internal.Instances;
-using Altinn.App.Core.Internal.Patch;
 using Altinn.App.Core.Internal.Prefill;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Profile;
@@ -69,7 +70,7 @@ public class InstancesController : ControllerBase
     private readonly IOrganizationClient _orgClient;
     private readonly IHostEnvironment _env;
     private readonly ModelSerializationService _serializationService;
-    private readonly IPatchService _patchService;
+    private readonly InternalPatchService _patchService;
     private static readonly JsonSerializerOptions _jsonSerializerOptionsWeb = new(JsonSerializerDefaults.Web);
     private const long RequestSizeLimit = 2000 * 1024 * 1024;
 
@@ -94,7 +95,7 @@ public class InstancesController : ControllerBase
         IOrganizationClient orgClient,
         IHostEnvironment env,
         ModelSerializationService serializationService,
-        IPatchService patchService
+        InternalPatchService patchService
     )
     {
         _logger = logger;
@@ -348,6 +349,11 @@ public class InstancesController : ControllerBase
             var prefillProblem = await StorePrefillParts(instance, application, requestParts, language);
             if (prefillProblem is not null)
             {
+                await _instanceClient.DeleteInstance(
+                    int.Parse(instance.InstanceOwner.PartyId, CultureInfo.InvariantCulture),
+                    Guid.Parse(instance.Id.Split("/")[1]),
+                    hard: true
+                );
                 return StatusCode(prefillProblem.Status ?? 500, prefillProblem);
             }
 
@@ -1193,23 +1199,12 @@ public class InstancesController : ControllerBase
             var changes = dataMutator.GetDataElementChanges(initializeAltinnRowId: true);
             await _patchService.RunDataProcessors(dataMutator, changes, taskId, language);
 
-            if (dataMutator.AbandonIssues.Count > 0)
+            if (dataMutator.GetAbandonResponse() is { } abandonResponse)
             {
                 _logger.LogWarning(
                     "Data processing failed for one or more data elements, the instance was created, but we try to delete the instance"
                 );
-                await _instanceClient.DeleteInstance(
-                    int.Parse(instance.Id.Split("/")[0], CultureInfo.InvariantCulture),
-                    Guid.Parse(instance.Id.Split("/")[1]),
-                    hard: true
-                );
-                return new ProblemDetails
-                {
-                    Title = "Data processing failed",
-                    Detail =
-                        "Data processing failed for one or more data elements, the instance was created, but the data was ignored",
-                    Extensions = { { "issues", dataMutator.AbandonIssues }, { "instance", instance } }
-                };
+                return abandonResponse;
             }
 
             // Update the changes list if it changed in data processors
@@ -1233,14 +1228,8 @@ public class InstancesController : ControllerBase
     {
         RequestPart? instancePart = parts.Find(part => part.Name == "instance");
 
-        // assume that first part with no name is an instanceTemplate
-        if (
-            instancePart == null
-            && parts.Count == 1
-            && parts[0].ContentType.Contains("application/json")
-            && parts[0].Name == null
-            && parts[0].Bytes.Length > 0
-        )
+        // If the request has a single part with no name, assume it is the instance template
+        if (instancePart == null && parts.Count == 1 && parts[0].Name == null)
         {
             instancePart = parts[0];
         }
@@ -1249,7 +1238,17 @@ public class InstancesController : ControllerBase
         {
             parts.Remove(instancePart);
 
-            return System.Text.Json.JsonSerializer.Deserialize<Instance>(instancePart.Bytes, _jsonSerializerOptionsWeb);
+            // Some clients might set contentType to application/json even if the body is empty
+            if (
+                instancePart is { Bytes.Length: > 0 }
+                && instancePart.ContentType.Contains("application/json", StringComparison.Ordinal)
+            )
+            {
+                return System.Text.Json.JsonSerializer.Deserialize<Instance>(
+                    instancePart.Bytes,
+                    _jsonSerializerOptionsWeb
+                );
+            }
         }
 
         return null;
