@@ -11,28 +11,32 @@ using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Internal.Auth;
 
-internal static class ClientContextDI
+internal static class AuthenticationContextDI
 {
-    internal static void AddClientContext(this IServiceCollection services)
+    internal static void AddAuthenticationContext(this IServiceCollection services)
     {
-        services.TryAddSingleton<IClientContext, ClientContext>();
+        services.TryAddSingleton<IAuthenticationContext, AuthenticationContext>();
     }
 }
 
-internal abstract record ClientContextData(string Token)
+internal abstract record AuthenticationInfo
 {
-    internal sealed record Unauthenticated(string Token) : ClientContextData(Token);
+    public string Token { get; }
 
-    internal sealed record User(int UserId, int PartyId, string Token) : ClientContextData(Token);
+    private AuthenticationInfo(string token) => Token = token;
 
-    internal sealed record Org(string OrgName, string OrgNo, int PartyId, string Token) : ClientContextData(Token);
+    internal sealed record Unauthenticated(string Token) : AuthenticationInfo(Token);
+
+    internal sealed record User(int UserId, int PartyId, string Token) : AuthenticationInfo(Token);
+
+    internal sealed record Org(string OrgName, string OrgNo, int PartyId, string Token) : AuthenticationInfo(Token);
 
     internal sealed record SystemUser(IReadOnlyList<string> SystemUserId, string SystemId, string Token)
-        : ClientContextData(Token);
+        : AuthenticationInfo(Token);
 
     // internal sealed record App(string Token) : ClientContextData;
 
-    internal static ClientContextData From(HttpContext httpContext, string cookieName)
+    internal static AuthenticationInfo From(HttpContext httpContext, string cookieName)
     {
         string token = JwtTokenUtil.GetTokenFromContext(httpContext, cookieName);
         if (string.IsNullOrWhiteSpace(token))
@@ -114,25 +118,53 @@ internal abstract record ClientContextData(string Token)
     );
 }
 
-internal interface IClientContext
+internal interface IAuthenticationContext
 {
-    ClientContextData Current { get; }
+    AuthenticationInfo Current { get; }
 }
 
-internal sealed class ClientContext : IClientContext
+internal sealed class AuthenticationContext : IAuthenticationContext
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IOptionsMonitor<AppSettings> _appSettings;
 
-    public ClientContext(IHttpContextAccessor httpContextAccessor, IOptionsMonitor<AppSettings> appSettings)
+    private readonly object _lck = new();
+
+    public AuthenticationContext(IHttpContextAccessor httpContextAccessor, IOptionsMonitor<AppSettings> appSettings)
     {
         _httpContextAccessor = httpContextAccessor;
         _appSettings = appSettings;
     }
 
-    public ClientContextData Current =>
-        ClientContextData.From(
-            _httpContextAccessor.HttpContext ?? throw new InvalidOperationException("No HTTP context available"),
-            _appSettings.CurrentValue.RuntimeCookieName
-        );
+    public AuthenticationInfo Current
+    {
+        get
+        {
+            // Currently we're coupling this to the HTTP context directly.
+            // In the future we might want to run work (e.g. service tasks) in the background,
+            // at which point we won't always have a HTTP context available.
+            // At that point we probably want to implement something like an `IExecutionContext`, `IExecutionContextAccessor`
+            // to decouple ourselves from the ASP.NET request context.
+            // TODO: consider removing dependcy on HTTP context
+            var httpContext =
+                _httpContextAccessor.HttpContext ?? throw new InvalidOperationException("No HTTP context available");
+
+            lock (_lck)
+            {
+                const string key = "Internal_AltinnAuthenticationInfo";
+                if (httpContext.Items.TryGetValue(key, out var authInfoObj))
+                {
+                    if (authInfoObj is not AuthenticationInfo authInfo)
+                        throw new InvalidOperationException("Invalid authentication info object in HTTP context items");
+                    return authInfo;
+                }
+                else
+                {
+                    var authInfo = AuthenticationInfo.From(httpContext, _appSettings.CurrentValue.RuntimeCookieName);
+                    httpContext.Items[key] = authInfo;
+                    return authInfo;
+                }
+            }
+        }
+    }
 }
