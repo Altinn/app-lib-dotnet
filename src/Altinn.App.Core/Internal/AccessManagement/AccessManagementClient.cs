@@ -5,10 +5,8 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.AccessManagement.Exceptions;
 using Altinn.App.Core.Internal.AccessManagement.Helpers;
 using Altinn.App.Core.Internal.AccessManagement.Models;
-using Altinn.App.Core.Internal.AccessManagement.Models.Shared;
 using Altinn.App.Core.Internal.App;
 using Altinn.Common.AccessTokenClient.Services;
-using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
 
 namespace Altinn.App.Core.Internal.AccessManagement;
@@ -27,11 +25,15 @@ internal sealed class AccessManagementClient(
     Telemetry? telemetry = null
 ) : IAccessManagementClient
 {
+#pragma warning disable CA1822
     internal void DelegationCheck() { }
+#pragma warning restore CA1822
 
     public async Task<DelegationResponse> DelegateRights(DelegationRequest delegation, CancellationToken ct)
     {
         // TODO: telemetry
+        var onlyToRemoveWarning = telemetry?.IsInitialized;
+
         HttpResponseMessage? httpResponseMessage = null;
         string? httpContent = null;
         UrlHelper urlHelper = new(platformSettings);

@@ -1,6 +1,4 @@
-using Altinn.App.Core.Features.Signing;
 using Altinn.App.Core.Features.Signing.Interfaces;
-using Altinn.App.Core.Features.Signing.Models;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Internal.Process.ProcessTasks;

@@ -3,7 +3,6 @@ using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Mocks;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Internal.Registers;
-using Altinn.App.Core.Internal.Sign;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 

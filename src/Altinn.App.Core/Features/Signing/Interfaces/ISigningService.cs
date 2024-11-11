@@ -1,5 +1,4 @@
 ﻿using Altinn.App.Core.Features.Signing.Models;
-using Altinn.App.Core.Internal.Sign;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Features.Signing.Interfaces;

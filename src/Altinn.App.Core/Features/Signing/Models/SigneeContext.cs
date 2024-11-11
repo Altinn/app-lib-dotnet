@@ -1,5 +1,3 @@
-using Altinn.App.Core.Features.Signing.Interfaces;
-
 namespace Altinn.App.Core.Features.Signing.Models;
 
 internal sealed class SigneeContext

@@ -21,13 +21,13 @@ internal sealed class SigningDelegationService(IAccessManagementClient accessMan
         foreach (SigneeContext signeeContext in signeeContexts)
         {
             SigneeState state = signeeContext.SigneeState;
-            AppIdHelper appIdHelper = new();
+
             try
             {
                 if (state.IsAccessDelegated is false)
                 {
                     // csharpier-ignore-start
-                    string appResourceId = appIdHelper.ToResourceId(instance.AppId);
+                    string appResourceId = AppIdHelper.ToResourceId(instance.AppId);
                     DelegationRequest delegation = DelegationRequestBuilder
                         .CreateBuilder(appResourceId, instance.Id)
                         .WithDelegator(new Delegator { IdType = DelegationConst.Party, Id = "" }) // TODO: assign delegator

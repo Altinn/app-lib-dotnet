@@ -1,5 +1,3 @@
-using System;
-
 namespace Altinn.App.Core.Internal.AccessManagement.Exceptions;
 
 internal sealed class DelegationException : Exception
