@@ -9,27 +9,15 @@ namespace Altinn.App.Core.Features.Correspondence.Models;
 /// </summary>
 public sealed record SendCorrespondencePayload
 {
-    private readonly CorrespondenceRequest _correspondenceRequest;
-    private readonly Func<Task<AccessToken>> _accessTokenFactory;
+    /// <summary>
+    /// The correspondence request to send
+    /// </summary>
+    public required CorrespondenceRequest CorrespondenceRequest { get; init; }
 
     /// <summary>
     /// Access token factory delegate (e.g. <see cref="MaskinportenClient.GetAltinnExchangedToken"/>)
     /// </summary>
-    public Func<Task<AccessToken>> AccessTokenFactory => _accessTokenFactory;
-
-    /// <summary>
-    /// The correspondence request to send
-    /// </summary>
-    public CorrespondenceRequest CorrespondenceRequest => _correspondenceRequest;
-
-    private SendCorrespondencePayload(
-        CorrespondenceRequest correspondenceRequest,
-        Func<Task<AccessToken>> accessTokenFactory
-    )
-    {
-        _correspondenceRequest = correspondenceRequest;
-        _accessTokenFactory = accessTokenFactory;
-    }
+    public required Func<Task<AccessToken>> AccessTokenFactory { get; init; }
 
     /// <summary>
     /// The payload contains a <see cref="Models.CorrespondenceRequest"/> instance
@@ -41,8 +29,14 @@ public sealed record SendCorrespondencePayload
         Func<Task<AccessToken>> accessTokenFactory
     )
     {
-        return new SendCorrespondencePayload(correspondenceRequest, accessTokenFactory);
+        return new SendCorrespondencePayload
+        {
+            CorrespondenceRequest = correspondenceRequest,
+            AccessTokenFactory = accessTokenFactory
+        };
     }
+
+    // TODO: `WithRequest` overloads for built-in authz schemes here
 
     /// <summary>
     /// The payload contains an <see cref="ICorrespondenceRequestBuilder"/> builder instance
@@ -54,6 +48,12 @@ public sealed record SendCorrespondencePayload
         Func<Task<AccessToken>> accessTokenFactory
     )
     {
-        return new SendCorrespondencePayload(correspondenceRequestBuilder.Build(), accessTokenFactory);
+        return new SendCorrespondencePayload
+        {
+            CorrespondenceRequest = correspondenceRequestBuilder.Build(),
+            AccessTokenFactory = accessTokenFactory
+        };
     }
+
+    // TODO: `WithBuilder` overloads for built-in authz schemes here
 }
