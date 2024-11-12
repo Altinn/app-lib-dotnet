@@ -39,7 +39,7 @@ public sealed record CorrespondenceAttachment : CorrespondenceBase
     /// <summary>
     /// The file stream
     /// </summary>
-    public required Stream Data { get; init; }
+    public required ReadOnlyMemory<byte> Data { get; init; }
 
     internal void Serialise(MultipartFormDataContent content, int index, string? filenameOverride = null)
     {

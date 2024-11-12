@@ -37,7 +37,7 @@ public class CorrespondenceRequestTests
                         Name = "name-1",
                         SendersReference = "senders-reference-1",
                         DataType = "application/pdf",
-                        Data = new MemoryStream(Encoding.UTF8.GetBytes("data"))
+                        Data = "data"u8.ToArray()
                     },
                     new CorrespondenceAttachment
                     {
@@ -45,7 +45,7 @@ public class CorrespondenceRequestTests
                         Name = "name-2",
                         SendersReference = "senders-reference-2",
                         DataType = "plain/text",
-                        Data = new MemoryStream(Encoding.UTF8.GetBytes("data")),
+                        Data = "data"u8.ToArray(),
                         DataLocationType = CorrespondenceDataLocationType.NewCorrespondenceAttachment,
                         IsEncrypted = true
                     }
@@ -199,7 +199,7 @@ public class CorrespondenceRequestTests
                         Name = "name-1",
                         SendersReference = "senders-reference-1",
                         DataType = "application/pdf",
-                        Data = new MemoryStream(Encoding.UTF8.GetBytes("data-1"))
+                        Data = Encoding.UTF8.GetBytes("data-1")
                     },
                     new CorrespondenceAttachment
                     {
@@ -207,7 +207,7 @@ public class CorrespondenceRequestTests
                         Name = "name-2",
                         SendersReference = "senders-reference-2",
                         DataType = "plain/text",
-                        Data = new MemoryStream(Encoding.UTF8.GetBytes("data-2")),
+                        Data = Encoding.UTF8.GetBytes("data-2"),
                     }
                 ],
             }

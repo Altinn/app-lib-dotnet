@@ -193,7 +193,7 @@ public class CorrespondenceBuilderTests
                     .WithName(data.attachments[0].name)
                     .WithSendersReference(data.attachments[0].sendersReference)
                     .WithDataType(data.attachments[0].dataType)
-                    .WithData(new MemoryStream(Encoding.UTF8.GetBytes(data.attachments[0].data)))
+                    .WithData(Encoding.UTF8.GetBytes(data.attachments[0].data))
                     .WithDataLocationType(data.attachments[0].dataLocationType)
                     .WithIsEncrypted(data.attachments[0].isEncrypted)
             )
@@ -205,7 +205,7 @@ public class CorrespondenceBuilderTests
                         Name = data.attachments[1].name,
                         SendersReference = data.attachments[1].sendersReference,
                         DataType = data.attachments[1].dataType,
-                        Data = new MemoryStream(Encoding.UTF8.GetBytes(data.attachments[1].data)),
+                        Data = Encoding.UTF8.GetBytes(data.attachments[1].data),
                         DataLocationType = data.attachments[1].dataLocationType,
                         IsEncrypted = data.attachments[1].isEncrypted,
                     }
@@ -279,7 +279,10 @@ public class CorrespondenceBuilderTests
             correspondence.Content.Attachments[i].SendersReference.Should().Be(data.attachments[i].sendersReference);
             correspondence.Content.Attachments[i].DataType.Should().Be(data.attachments[i].dataType);
             correspondence.Content.Attachments[i].DataLocationType.Should().Be(data.attachments[i].dataLocationType);
-            StreamReadHelper(correspondence.Content.Attachments[i].Data).Should().Be(data.attachments[i].data);
+            Encoding
+                .UTF8.GetString(correspondence.Content.Attachments[i].Data.Span)
+                .Should()
+                .Be(data.attachments[i].data);
         }
 
         correspondence.Notification.NotificationTemplate.Should().Be(data.notification.template);

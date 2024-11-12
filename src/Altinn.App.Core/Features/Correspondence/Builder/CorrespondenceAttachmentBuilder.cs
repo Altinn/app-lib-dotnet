@@ -11,7 +11,7 @@ public class CorrespondenceAttachmentBuilder : CorrespondenceBuilderBase, ICorre
     private string? _name;
     private string? _sendersReference;
     private string? _dataType;
-    private Stream? _data;
+    private ReadOnlyMemory<byte>? _data;
     private bool? _isEncrypted;
     private CorrespondenceDataLocationType _dataLocationType =
         CorrespondenceDataLocationType.ExistingCorrespondenceAttachment;
@@ -52,7 +52,7 @@ public class CorrespondenceAttachmentBuilder : CorrespondenceBuilderBase, ICorre
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceAttachmentBuilder WithData(Stream data)
+    public ICorrespondenceAttachmentBuilder WithData(ReadOnlyMemory<byte> data)
     {
         _data = data;
         return this;
@@ -87,7 +87,7 @@ public class CorrespondenceAttachmentBuilder : CorrespondenceBuilderBase, ICorre
             Name = _name,
             SendersReference = _sendersReference,
             DataType = _dataType,
-            Data = _data,
+            Data = _data.Value,
             IsEncrypted = _isEncrypted,
             DataLocationType = _dataLocationType
         };

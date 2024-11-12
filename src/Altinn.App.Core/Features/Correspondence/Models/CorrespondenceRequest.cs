@@ -18,12 +18,17 @@ public abstract record CorrespondenceBase
         content.Add(new StringContent(value), name);
     }
 
-    internal static void AddRequired(MultipartFormDataContent content, Stream data, string name, string filename)
+    internal static void AddRequired(
+        MultipartFormDataContent content,
+        ReadOnlyMemory<byte> data,
+        string name,
+        string filename
+    )
     {
-        if (data is null)
+        if (data.IsEmpty)
             throw new CorrespondenceValueException($"Required value is missing: {name}");
 
-        content.Add(new StreamContent(data), name, filename);
+        content.Add(new ReadOnlyMemoryContent(data), name, filename);
     }
 
     internal static void AddIfNotNull(MultipartFormDataContent content, string? value, string name)
