@@ -1,7 +1,6 @@
 using System.Net.Http.Headers;
 using Altinn.App.Core.Features.Maskinporten.Constants;
 using Altinn.App.Core.Features.Maskinporten.Exceptions;
-using Altinn.App.Core.Features.Maskinporten.Models;
 using Microsoft.Extensions.Logging;
 
 namespace Altinn.App.Core.Features.Maskinporten.Delegates;
