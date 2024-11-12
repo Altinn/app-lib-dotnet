@@ -122,8 +122,10 @@ public sealed class FormDataChange : DataElementChange
     /// The binary representation (for storage) of the data element after changes
     /// </summary>
     /// <remarks>
-    /// Not available for form data in data processing phase, because it can't reflect
+    /// null during the form data in data processing phase, because it can't reflect
     /// the changes made by the data processors.
+    /// Empty for deleted elements during the validation phase because it does
+    /// not make sense to be null after serialization.
     /// </remarks>
     public required ReadOnlyMemory<byte>? CurrentBinaryData { get; init; }
 }
