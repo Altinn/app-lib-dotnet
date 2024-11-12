@@ -149,3 +149,7 @@ dotnet_diagnostic.CA1720.severity = suggestion
 [Program.cs]
 dotnet_diagnostic.CA1050.severity = none
 dotnet_diagnostic.S1118.severity = none
+
+[*.{yml,yaml}]
+indent_size = 2
+end_of_line = lf
