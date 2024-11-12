@@ -3,7 +3,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models;
 /// <summary>
 /// Represents a reference to another item in the Altinn ecosystem
 /// </summary>
-public sealed record CorrespondenceExternalReference : CorrespondenceBase, ICorrespondenceItemSerializer
+public sealed record CorrespondenceExternalReference : CorrespondenceListBase
 {
     /// <summary>
     /// The reference type
@@ -15,9 +15,7 @@ public sealed record CorrespondenceExternalReference : CorrespondenceBase, ICorr
     /// </summary>
     public required string ReferenceValue { get; init; }
 
-    // TODO: Should this be internal?
-    /// <inheritdoc />
-    public void Serialize(MultipartFormDataContent content, int index)
+    internal override void Serialise(MultipartFormDataContent content, int index)
     {
         AddRequired(content, ReferenceType.ToString(), $"Correspondence.ExternalReferences[{index}].ReferenceType");
         AddRequired(content, ReferenceValue, $"Correspondence.ExternalReferences[{index}].ReferenceValue");

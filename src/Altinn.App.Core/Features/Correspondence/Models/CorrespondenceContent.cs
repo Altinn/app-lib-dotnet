@@ -5,7 +5,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models;
 /// <summary>
 /// The message content in a correspondence
 /// </summary>
-public sealed record CorrespondenceContent : CorrespondenceBase, ICorrespondenceSerializer
+public sealed record CorrespondenceContent : CorrespondenceBase
 {
     /// <summary>
     /// The correspondence message title (subject)
@@ -32,14 +32,12 @@ public sealed record CorrespondenceContent : CorrespondenceBase, ICorrespondence
     /// </summary>
     public IReadOnlyList<CorrespondenceAttachment>? Attachments { get; init; }
 
-    // TODO: Should this be internal?
-    /// <inheritdoc />
-    public void Serialize(MultipartFormDataContent content)
+    internal void Serialise(MultipartFormDataContent content)
     {
         AddRequired(content, Language.Get(), "Correspondence.Content.Language");
         AddRequired(content, Title, "Correspondence.Content.MessageTitle");
         AddRequired(content, Summary, "Correspondence.Content.MessageSummary");
         AddRequired(content, Body, "Correspondence.Content.MessageBody");
-        SerializeListItems(content, Attachments);
+        SerializeAttachmentItems(content, Attachments);
     }
 }

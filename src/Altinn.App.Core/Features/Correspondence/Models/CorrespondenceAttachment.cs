@@ -3,7 +3,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models;
 /// <summary>
 /// Represents an attachment to a correspondence
 /// </summary>
-public sealed record CorrespondenceAttachment : CorrespondenceBase, ICorrespondenceItemSerializer
+public sealed record CorrespondenceAttachment : CorrespondenceBase
 {
     /// <summary>
     /// The filename of the attachment
@@ -49,42 +49,19 @@ public sealed record CorrespondenceAttachment : CorrespondenceBase, ICorresponde
     /// </summary>
     public required Stream Data { get; init; }
 
-    /// <summary>
-    /// If duplicate attachment filenames are detected during serialization,
-    /// this field is populated with a unique index, which is in turn used by <see cref="UniqueFileName"/>
-    /// </summary>
-    internal int? FilenameClashUniqueId;
-
-    // TODO: Should this be internal?
-    /// <inheritdoc />
-    public void Serialize(MultipartFormDataContent content, int index)
+    internal void Serialise(MultipartFormDataContent content, int index, string? filenameOverride = null)
     {
         const string typePrefix = "Correspondence.Content.Attachments";
         string prefix = $"{typePrefix}[{index}]";
+        string actualFilename = filenameOverride ?? Filename;
 
-        AddRequired(content, UniqueFileName(), $"{prefix}.Filename");
+        AddRequired(content, actualFilename, $"{prefix}.Filename");
         AddRequired(content, Name, $"{prefix}.Name");
         AddRequired(content, SendersReference, $"{prefix}.SendersReference");
         AddRequired(content, DataType, $"{prefix}.DataType");
         AddRequired(content, DataLocationType.ToString(), $"{prefix}.DataLocationType");
-        AddRequired(content, Data, "Attachments", UniqueFileName()); // NOTE: No prefix!
+        AddRequired(content, Data, "Attachments", actualFilename); // NOTE: No prefix!
         AddIfNotNull(content, IsEncrypted?.ToString(), $"{prefix}.IsEncrypted");
-
-        // NOTE: RestrictionName can't be omitted or empty, but it may be irrelevant to most callers.
-        // Default to FileName if value is missing.
-        string restrictionName = string.IsNullOrWhiteSpace(RestrictionName) ? Filename : RestrictionName;
-        AddRequired(content, restrictionName, $"{prefix}.RestrictionName");
-    }
-
-    private string UniqueFileName()
-    {
-        if (FilenameClashUniqueId is null)
-        {
-            return Filename;
-        }
-
-        string filename = Path.GetFileNameWithoutExtension(Filename);
-        string extension = Path.GetExtension(Filename);
-        return $"{filename}({FilenameClashUniqueId}).{extension}";
+        AddIfNotNull(content, RestrictionName, $"{prefix}.RestrictionName");
     }
 }

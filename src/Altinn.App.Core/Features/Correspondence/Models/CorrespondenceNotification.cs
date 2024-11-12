@@ -5,7 +5,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models;
 /// <summary>
 /// Represents a notification to be sent to the recipient of a correspondence
 /// </summary>
-public sealed record CorrespondenceNotification : CorrespondenceBase, ICorrespondenceSerializer
+public sealed record CorrespondenceNotification : CorrespondenceBase
 {
     /// <summary>
     /// The notification template for use for notifications
@@ -91,9 +91,7 @@ public sealed record CorrespondenceNotification : CorrespondenceBase, ICorrespon
     /// </summary>
     public DateTimeOffset? RequestedSendTime { get; init; }
 
-    // TODO: Should this be internal?
-    /// <inheritdoc />
-    public void Serialize(MultipartFormDataContent content)
+    internal void Serialise(MultipartFormDataContent content)
     {
         ValidateAllProperties(nameof(CorrespondenceNotification));
 
@@ -106,12 +104,12 @@ public sealed record CorrespondenceNotification : CorrespondenceBase, ICorrespon
         AddIfNotNull(content, ReminderEmailBody, "Correspondence.Notification.ReminderEmailBody");
         AddIfNotNull(content, ReminderSmsBody, "Correspondence.Notification.ReminderSmsBody");
         AddIfNotNull(content, NotificationChannel.ToString(), "Correspondence.Notification.NotificationChannel");
+        AddIfNotNull(content, SendersReference, "Correspondence.Notification.SendersReference");
+        AddIfNotNull(content, RequestedSendTime?.ToString("O"), "Correspondence.Notification.RequestedSendTime");
         AddIfNotNull(
             content,
             ReminderNotificationChannel.ToString(),
             "Correspondence.Notification.ReminderNotificationChannel"
         );
-        AddIfNotNull(content, SendersReference, "Correspondence.Notification.SendersReference");
-        AddIfNotNull(content, RequestedSendTime?.ToString("O"), "Correspondence.Notification.RequestedSendTime");
     }
 }

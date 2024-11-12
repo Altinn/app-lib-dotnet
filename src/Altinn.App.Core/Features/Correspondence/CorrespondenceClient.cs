@@ -55,7 +55,7 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
             string uri = _platformSettings.ApiCorrespondenceEndpoint.TrimEnd('/') + "/correspondence/upload";
             AccessToken accessToken = await payload.AccessTokenFactory();
 
-            using MultipartFormDataContent content = payload.CorrespondenceRequest.Serialize();
+            using MultipartFormDataContent content = payload.CorrespondenceRequest.Serialise();
             using HttpClient client = _httpClientFactory.CreateClient();
             using HttpRequestMessage request = AuthenticatedHttpRequestFactory(
                 method: HttpMethod.Post,

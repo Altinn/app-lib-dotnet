@@ -8,7 +8,7 @@ namespace Altinn.App.Core.Tests.Features.Correspondence.Models;
 public class CorrespondenceRequestTests
 {
     [Fact]
-    public async Task Serialize_ShouldAddCorrectFields()
+    public async Task Serialise_ShouldAddCorrectFields()
     {
         // Arrange
         var multipartContent = new MultipartFormDataContent();
@@ -106,10 +106,11 @@ public class CorrespondenceRequestTests
         };
 
         // Act
-        correspondence.Serialize(multipartContent);
-        // Assert
+        correspondence.Serialise(multipartContent);
         // csharpier-ignore
-        var expectedSerialization = new Dictionary<string, object>
+
+        // Assert
+        var expectedSerialisation = new Dictionary<string, object>
         {
             ["Recipients[0]"] = correspondence.Recipients[0],
             ["Recipients[1]"] = correspondence.Recipients[1],
@@ -168,10 +169,60 @@ public class CorrespondenceRequestTests
             ["Correspondence.Notification.RequestedSendTime"] = correspondence.Notification.RequestedSendTime
         };
 
-        foreach (var (key, value) in expectedSerialization)
+        foreach (var (key, value) in expectedSerialisation)
         {
             await AssertContent(multipartContent, key, value);
         }
+    }
+
+    [Theory]
+    [InlineData("clashingFilename.txt", new[] { "clashingFilename(1).txt", "clashingFilename(2).txt" })]
+    [InlineData("clashingFilename", new[] { "clashingFilename(1)", "clashingFilename(2)" })]
+    public async Task Serialise_ShouldHandleClashingFilenames(string clashingFilename, string[] expectedResolutions)
+    {
+        // Arrange
+        var correspondence = new CorrespondenceRequest
+        {
+            ResourceId = "resource-id",
+            Sender = TestHelpers.GetOrganisationNumber(0),
+            SendersReference = "senders-reference",
+            AllowSystemDeleteAfter = DateTimeOffset.UtcNow.AddDays(2),
+            DueDateTime = DateTimeOffset.UtcNow.AddDays(2),
+            Recipients = [TestHelpers.GetOrganisationNumber(1)],
+            Content = new CorrespondenceContent
+            {
+                Title = "title",
+                Body = "body",
+                Summary = "summary",
+                Language = LanguageCode<Iso6391>.Parse("no"),
+                Attachments =
+                [
+                    new CorrespondenceAttachment
+                    {
+                        Filename = clashingFilename,
+                        Name = "name-1",
+                        SendersReference = "senders-reference-1",
+                        DataType = "application/pdf",
+                        Data = new MemoryStream(Encoding.UTF8.GetBytes("data-1"))
+                    },
+                    new CorrespondenceAttachment
+                    {
+                        Filename = clashingFilename,
+                        Name = "name-2",
+                        SendersReference = "senders-reference-2",
+                        DataType = "plain/text",
+                        Data = new MemoryStream(Encoding.UTF8.GetBytes("data-2")),
+                    }
+                ],
+            }
+        };
+
+        // Act
+        MultipartFormDataContent multipartContent = correspondence.Serialise();
+
+        // Assert
+        await AssertContent(multipartContent, "Correspondence.Content.Attachments[0].Filename", expectedResolutions[0]);
+        await AssertContent(multipartContent, "Correspondence.Content.Attachments[1].Filename", expectedResolutions[1]);
     }
 
     private static async Task AssertContent(MultipartFormDataContent content, string dispositionName, object value)

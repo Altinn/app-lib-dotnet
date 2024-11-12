@@ -50,33 +50,50 @@ public abstract record CorrespondenceBase
         }
     }
 
-    internal static void SerializeListItems<T>(MultipartFormDataContent content, IReadOnlyList<T>? items)
-        where T : ICorrespondenceItemSerializer
+    internal static void SerializeListItems(
+        MultipartFormDataContent content,
+        IReadOnlyList<CorrespondenceListBase>? items
+    )
     {
         if (IsEmptyCollection(items))
             return;
 
-        // Ensure unique filenames for attachments
-        if (items is IReadOnlyList<CorrespondenceAttachment> attachments)
+        for (int i = 0; i < items.Count; i++)
         {
-            var hasDuplicateFilenames = attachments
-                .GroupBy(x => x.Filename.ToLowerInvariant())
-                .Where(x => x.Count() > 1)
-                .Select(x => x.ToList());
+            items[i].Serialise(content, i);
+        }
+    }
 
-            foreach (var duplicates in hasDuplicateFilenames)
+    internal static void SerializeAttachmentItems(
+        MultipartFormDataContent content,
+        IReadOnlyList<CorrespondenceAttachment>? attachments
+    )
+    {
+        if (IsEmptyCollection(attachments))
+            return;
+
+        // Ensure unique filenames
+        var overrides = new Dictionary<CorrespondenceAttachment, string>();
+        var hasDuplicateFilenames = attachments
+            .GroupBy(x => x.Filename.ToLowerInvariant())
+            .Where(x => x.Count() > 1)
+            .Select(x => x.ToList());
+
+        foreach (var duplicates in hasDuplicateFilenames)
+        {
+            for (int i = 0; i < duplicates.Count; i++)
             {
-                for (int i = 0; i < duplicates.Count; i++)
-                {
-                    duplicates[i].FilenameClashUniqueId = i + 1;
-                }
+                int uniqueId = i + 1;
+                string filename = Path.GetFileNameWithoutExtension(duplicates[i].Filename);
+                string extension = Path.GetExtension(duplicates[i].Filename);
+                overrides.Add(duplicates[i], $"{filename}({uniqueId}){extension}");
             }
         }
 
-        // Serialize
-        for (int i = 0; i < items.Count; i++)
+        // Serialise
+        for (int i = 0; i < attachments.Count; i++)
         {
-            items[i].Serialize(content, i);
+            attachments[i].Serialise(content, i, overrides.GetValueOrDefault(attachments[i]));
         }
     }
 
@@ -125,9 +142,17 @@ public abstract record CorrespondenceBase
 }
 
 /// <summary>
+/// Base functionality for correspondence list models
+/// </summary>
+public abstract record CorrespondenceListBase : CorrespondenceBase
+{
+    internal abstract void Serialise(MultipartFormDataContent content, int index);
+}
+
+/// <summary>
 /// Represents and Altinn Correspondence request
 /// </summary>
-public sealed record CorrespondenceRequest : CorrespondenceBase, ICorrespondenceRequest
+public sealed record CorrespondenceRequest : CorrespondenceBase
 {
     /// <summary>
     /// The Resource Id for the correspondence service
@@ -206,9 +231,11 @@ public sealed record CorrespondenceRequest : CorrespondenceBase, ICorrespondence
     /// </summary>
     public IReadOnlyList<Guid>? ExistingAttachments { get; init; }
 
-    // TODO: Should this be internal?
-    /// <inheritdoc />
-    public void Serialize(MultipartFormDataContent content)
+    /// <summary>
+    /// Serialises the entire <see cref="CorrespondenceRequest"/> object to a provided <see cref="MultipartFormDataContent"/> instance
+    /// </summary>
+    /// <param name="content">The multipart object to serialise into</param>
+    internal void Serialise(MultipartFormDataContent content)
     {
         AddRequired(content, ResourceId, "Correspondence.ResourceId");
         AddRequired(content, Sender.Get(OrganisationNumberFormat.International), "Correspondence.Sender");
@@ -222,17 +249,19 @@ public sealed record CorrespondenceRequest : CorrespondenceBase, ICorrespondence
         AddListItems(content, ExistingAttachments, x => x.ToString(), i => $"Correspondence.ExistingAttachments[{i}]");
         AddDictionaryItems(content, PropertyList, x => x, key => $"Correspondence.PropertyList.{key}");
 
-        Content.Serialize(content);
-        Notification?.Serialize(content);
+        Content.Serialise(content);
+        Notification?.Serialise(content);
         SerializeListItems(content, ExternalReferences);
         SerializeListItems(content, ReplyOptions);
     }
 
-    /// <inheritdoc/>
-    public MultipartFormDataContent Serialize()
+    /// <summary>
+    /// Serialises the entire <see cref="CorrespondenceRequest"/> object to a newly created <see cref="MultipartFormDataContent"/>
+    /// </summary>
+    internal MultipartFormDataContent Serialise()
     {
         var content = new MultipartFormDataContent();
-        Serialize(content);
+        Serialise(content);
         return content;
     }
 }
