@@ -13,18 +13,19 @@ public abstract class CorrespondenceBuilderBase
     /// <summary>
     /// Because of the interface-chaining in this builder, some properties are guaranteed to be non-null.
     /// But the compiler doesn't trust that, so we add this check where needed.
+    ///
+    /// Additionally this method checks for empty strings and emtpy data allocations.
     /// </summary>
     /// <param name="value">The value to assert</param>
     /// <param name="errorMessage">The error message to throw, if the value was null</param>
     /// <exception cref="CorrespondenceValueException"></exception>
-    internal static void NotNullOrEmpty([NotNull] object? value, string errorMessage)
+    internal static void NotNullOrEmpty([NotNull] object? value, string? errorMessage = null)
     {
-        if (value is null)
-        {
-            throw new CorrespondenceValueException(errorMessage);
-        }
-
-        if (value is string str && string.IsNullOrWhiteSpace(str))
+        if (
+            value is null
+            || value is string str && string.IsNullOrWhiteSpace(str)
+            || value is ReadOnlyMemory<byte> { IsEmpty: true }
+        )
         {
             throw new CorrespondenceValueException(errorMessage);
         }
@@ -62,6 +63,7 @@ public class CorrespondenceRequestBuilder : CorrespondenceBuilderBase, ICorrespo
     /// <inheritdoc/>
     public ICorrespondenceRequestBuilderSender WithResourceId(string resourceId)
     {
+        NotNullOrEmpty(resourceId, "Resource ID cannot be empty");
         _resourceId = resourceId;
         return this;
     }
@@ -69,6 +71,7 @@ public class CorrespondenceRequestBuilder : CorrespondenceBuilderBase, ICorrespo
     /// <inheritdoc/>
     public ICorrespondenceRequestBuilderSendersReference WithSender(OrganisationNumber sender)
     {
+        NotNullOrEmpty(sender, "Sender cannot be empty");
         _sender = sender;
         return this;
     }
@@ -76,6 +79,7 @@ public class CorrespondenceRequestBuilder : CorrespondenceBuilderBase, ICorrespo
     /// <inheritdoc/>
     public ICorrespondenceRequestBuilderRecipients WithSendersReference(string sendersReference)
     {
+        NotNullOrEmpty(sendersReference, "Senders reference cannot be empty");
         _sendersReference = sendersReference;
         return this;
     }
@@ -96,6 +100,7 @@ public class CorrespondenceRequestBuilder : CorrespondenceBuilderBase, ICorrespo
     /// <inheritdoc/>
     public ICorrespondenceRequestBuilderAllowSystemDeleteAfter WithDueDateTime(DateTimeOffset dueDateTime)
     {
+        NotNullOrEmpty(dueDateTime, "DueDateTime cannot be empty");
         _dueDateTime = dueDateTime;
         return this;
     }
@@ -103,6 +108,7 @@ public class CorrespondenceRequestBuilder : CorrespondenceBuilderBase, ICorrespo
     /// <inheritdoc/>
     public ICorrespondenceRequestBuilderContent WithAllowSystemDeleteAfter(DateTimeOffset allowSystemDeleteAfter)
     {
+        NotNullOrEmpty(allowSystemDeleteAfter, "AllowSystemDeleteAfter cannot be empty");
         _allowSystemDeleteAfter = allowSystemDeleteAfter;
         return this;
     }
@@ -110,6 +116,7 @@ public class CorrespondenceRequestBuilder : CorrespondenceBuilderBase, ICorrespo
     /// <inheritdoc/>
     public ICorrespondenceRequestBuilder WithContent(CorrespondenceContent content)
     {
+        NotNullOrEmpty(content, "Content cannot be empty");
         _content = content;
         return this;
     }
@@ -238,13 +245,13 @@ public class CorrespondenceRequestBuilder : CorrespondenceBuilderBase, ICorrespo
     /// <inheritdoc/>
     public CorrespondenceRequest Build()
     {
-        NotNullOrEmpty(_resourceId, "Resource ID is required");
-        NotNullOrEmpty(_sender, "Sender is required");
-        NotNullOrEmpty(_sendersReference, "Senders reference is required");
-        NotNullOrEmpty(_content, "Content is required");
-        NotNullOrEmpty(_allowSystemDeleteAfter, "AllowSystemDeleteAfter is required");
-        NotNullOrEmpty(_dueDateTime, "DueDateTime is required");
-        NotNullOrEmpty(_recipients, "Recipients is required");
+        NotNullOrEmpty(_resourceId);
+        NotNullOrEmpty(_sender);
+        NotNullOrEmpty(_sendersReference);
+        NotNullOrEmpty(_content);
+        NotNullOrEmpty(_allowSystemDeleteAfter);
+        NotNullOrEmpty(_dueDateTime);
+        NotNullOrEmpty(_recipients);
 
         return new CorrespondenceRequest
         {

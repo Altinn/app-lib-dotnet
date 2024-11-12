@@ -20,6 +20,7 @@ public class CorrespondenceExternalReferenceBuilder : CorrespondenceBuilderBase,
     /// <inheritdoc/>
     public ICorrespondenceExternalReferenceBuilderValue WithReferenceType(CorrespondenceReferenceType referenceType)
     {
+        NotNullOrEmpty(referenceType, "Reference type cannot be empty");
         _referenceType = referenceType;
         return this;
     }
@@ -27,6 +28,7 @@ public class CorrespondenceExternalReferenceBuilder : CorrespondenceBuilderBase,
     /// <inheritdoc/>
     public ICorrespondenceExternalReferenceBuilder WithReferenceValue(string referenceValue)
     {
+        NotNullOrEmpty(referenceValue, "Reference value cannot be empty");
         _referenceValue = referenceValue;
         return this;
     }
@@ -34,8 +36,8 @@ public class CorrespondenceExternalReferenceBuilder : CorrespondenceBuilderBase,
     /// <inheritdoc/>
     public CorrespondenceExternalReference Build()
     {
-        NotNullOrEmpty(_referenceType, "Reference type is required");
-        NotNullOrEmpty(_referenceValue, "Reference value is required");
+        NotNullOrEmpty(_referenceType);
+        NotNullOrEmpty(_referenceValue);
 
         return new CorrespondenceExternalReference
         {

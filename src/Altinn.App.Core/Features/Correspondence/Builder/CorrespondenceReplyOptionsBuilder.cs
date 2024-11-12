@@ -21,6 +21,7 @@ public class CorrespondenceReplyOptionBuilder : CorrespondenceBuilderBase, ICorr
     /// <inheritdoc/>
     public ICorrespondenceReplyOptionsBuilder WithLinkUrl(string linkUrl)
     {
+        NotNullOrEmpty(linkUrl, "Link URL cannot be empty");
         _linkUrl = linkUrl;
         return this;
     }
@@ -35,7 +36,7 @@ public class CorrespondenceReplyOptionBuilder : CorrespondenceBuilderBase, ICorr
     /// <inheritdoc/>
     public CorrespondenceReplyOption Build()
     {
-        NotNullOrEmpty(_linkUrl, "Link URL is required");
+        NotNullOrEmpty(_linkUrl);
 
         return new CorrespondenceReplyOption { LinkUrl = _linkUrl, LinkText = _linkText };
     }

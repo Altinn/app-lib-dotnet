@@ -33,6 +33,7 @@ public class CorrespondenceNotificationBuilder : CorrespondenceBuilderBase, ICor
         CorrespondenceNotificationTemplate notificationTemplate
     )
     {
+        NotNullOrEmpty(notificationTemplate, "Notification template cannot be empty");
         _notificationTemplate = notificationTemplate;
         return this;
     }
@@ -121,7 +122,7 @@ public class CorrespondenceNotificationBuilder : CorrespondenceBuilderBase, ICor
     /// <inheritdoc/>
     public CorrespondenceNotification Build()
     {
-        NotNullOrEmpty(_notificationTemplate, "Notification template is required");
+        NotNullOrEmpty(_notificationTemplate);
 
         return new CorrespondenceNotification
         {

@@ -24,6 +24,7 @@ public class CorrespondenceContentBuilder : CorrespondenceBuilderBase, ICorrespo
     /// <inheritdoc/>
     public ICorrespondenceContentBuilderLanguage WithTitle(string title)
     {
+        NotNullOrEmpty(title, "Title cannot be empty");
         _title = title;
         return this;
     }
@@ -31,6 +32,7 @@ public class CorrespondenceContentBuilder : CorrespondenceBuilderBase, ICorrespo
     /// <inheritdoc/>
     public ICorrespondenceContentBuilderSummary WithLanguage(LanguageCode<Iso6391> language)
     {
+        NotNullOrEmpty(language, "Language cannot be empty");
         _language = language;
         return this;
     }
@@ -38,6 +40,7 @@ public class CorrespondenceContentBuilder : CorrespondenceBuilderBase, ICorrespo
     /// <inheritdoc/>
     public ICorrespondenceContentBuilderBody WithSummary(string summary)
     {
+        NotNullOrEmpty(summary, "Summary cannot be empty");
         _summary = summary;
         return this;
     }
@@ -45,6 +48,7 @@ public class CorrespondenceContentBuilder : CorrespondenceBuilderBase, ICorrespo
     /// <inheritdoc/>
     public ICorrespondenceContentBuilder WithBody(string body)
     {
+        NotNullOrEmpty(body, "Body cannot be empty");
         _body = body;
         return this;
     }
@@ -52,10 +56,10 @@ public class CorrespondenceContentBuilder : CorrespondenceBuilderBase, ICorrespo
     /// <inheritdoc/>
     public CorrespondenceContent Build()
     {
-        NotNullOrEmpty(_title, "Title is required");
-        NotNullOrEmpty(_language, "Language is required");
-        NotNullOrEmpty(_summary, "Summary is required");
-        NotNullOrEmpty(_body, "Body is required");
+        NotNullOrEmpty(_title);
+        NotNullOrEmpty(_language);
+        NotNullOrEmpty(_summary);
+        NotNullOrEmpty(_body);
 
         return new CorrespondenceContent
         {

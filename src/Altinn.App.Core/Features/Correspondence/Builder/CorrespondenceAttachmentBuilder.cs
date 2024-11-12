@@ -1,3 +1,4 @@
+using Altinn.App.Core.Features.Correspondence.Exceptions;
 using Altinn.App.Core.Features.Correspondence.Models;
 
 namespace Altinn.App.Core.Features.Correspondence.Builder;
@@ -26,6 +27,7 @@ public class CorrespondenceAttachmentBuilder : CorrespondenceBuilderBase, ICorre
     /// <inheritdoc/>
     public ICorrespondenceAttachmentBuilderName WithFilename(string filename)
     {
+        NotNullOrEmpty(filename, "Filename cannot be empty");
         _filename = filename;
         return this;
     }
@@ -33,6 +35,7 @@ public class CorrespondenceAttachmentBuilder : CorrespondenceBuilderBase, ICorre
     /// <inheritdoc/>
     public ICorrespondenceAttachmentBuilderSendersReference WithName(string name)
     {
+        NotNullOrEmpty(name, "Name cannot be empty");
         _name = name;
         return this;
     }
@@ -40,6 +43,7 @@ public class CorrespondenceAttachmentBuilder : CorrespondenceBuilderBase, ICorre
     /// <inheritdoc/>
     public ICorrespondenceAttachmentBuilderDataType WithSendersReference(string sendersReference)
     {
+        NotNullOrEmpty(sendersReference, "Senders reference cannot be empty");
         _sendersReference = sendersReference;
         return this;
     }
@@ -47,6 +51,7 @@ public class CorrespondenceAttachmentBuilder : CorrespondenceBuilderBase, ICorre
     /// <inheritdoc/>
     public ICorrespondenceAttachmentBuilderData WithDataType(string dataType)
     {
+        NotNullOrEmpty(dataType, "Data type cannot be empty");
         _dataType = dataType;
         return this;
     }
@@ -54,6 +59,7 @@ public class CorrespondenceAttachmentBuilder : CorrespondenceBuilderBase, ICorre
     /// <inheritdoc/>
     public ICorrespondenceAttachmentBuilder WithData(ReadOnlyMemory<byte> data)
     {
+        NotNullOrEmpty(data, "Data cannot be empty");
         _data = data;
         return this;
     }
@@ -75,11 +81,11 @@ public class CorrespondenceAttachmentBuilder : CorrespondenceBuilderBase, ICorre
     /// <inheritdoc/>
     public CorrespondenceAttachment Build()
     {
-        NotNullOrEmpty(_filename, "Filename is required");
-        NotNullOrEmpty(_name, "Name is required");
-        NotNullOrEmpty(_sendersReference, "Senders reference is required");
-        NotNullOrEmpty(_dataType, "Data type is required");
-        NotNullOrEmpty(_data, "Data is required");
+        NotNullOrEmpty(_filename);
+        NotNullOrEmpty(_name);
+        NotNullOrEmpty(_sendersReference);
+        NotNullOrEmpty(_dataType);
+        NotNullOrEmpty(_data);
 
         return new CorrespondenceAttachment
         {
