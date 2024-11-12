@@ -12,7 +12,6 @@ public class CorrespondenceAttachmentBuilder : CorrespondenceBuilderBase, ICorre
     private string? _sendersReference;
     private string? _dataType;
     private Stream? _data;
-    private string? _restrictionName;
     private bool? _isEncrypted;
     private CorrespondenceDataLocationType _dataLocationType =
         CorrespondenceDataLocationType.ExistingCorrespondenceAttachment;
@@ -60,13 +59,6 @@ public class CorrespondenceAttachmentBuilder : CorrespondenceBuilderBase, ICorre
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceAttachmentBuilder WithRestrictionName(string restrictionName)
-    {
-        _restrictionName = restrictionName;
-        return this;
-    }
-
-    /// <inheritdoc/>
     public ICorrespondenceAttachmentBuilder WithIsEncrypted(bool isEncrypted)
     {
         _isEncrypted = isEncrypted;
@@ -96,7 +88,6 @@ public class CorrespondenceAttachmentBuilder : CorrespondenceBuilderBase, ICorre
             SendersReference = _sendersReference,
             DataType = _dataType,
             Data = _data,
-            RestrictionName = _restrictionName,
             IsEncrypted = _isEncrypted,
             DataLocationType = _dataLocationType
         };

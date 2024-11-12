@@ -16,14 +16,6 @@ public sealed record CorrespondenceAttachment : CorrespondenceBase
     public required string Name { get; init; }
 
     /// <summary>
-    /// The name of the Restriction Policy restricting access to this element
-    /// </summary>
-    /// <remarks>
-    /// An empty value indicates no restriction beyond the ones governing the correspondence referencing this attachment
-    /// </remarks>
-    public string? RestrictionName { get; init; }
-
-    /// <summary>
     /// A value indicating whether the attachment is encrypted or not
     /// </summary>
     public bool? IsEncrypted { get; init; }
@@ -62,6 +54,5 @@ public sealed record CorrespondenceAttachment : CorrespondenceBase
         AddRequired(content, DataLocationType.ToString(), $"{prefix}.DataLocationType");
         AddRequired(content, Data, "Attachments", actualFilename); // NOTE: No prefix!
         AddIfNotNull(content, IsEncrypted?.ToString(), $"{prefix}.IsEncrypted");
-        AddIfNotNull(content, RestrictionName, $"{prefix}.RestrictionName");
     }
 }

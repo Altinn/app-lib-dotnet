@@ -75,12 +75,6 @@ public interface ICorrespondenceAttachmentBuilder
         ICorrespondenceAttachmentBuilderData
 {
     /// <summary>
-    /// Sets the name of the Restriction Policy restricting access to this element
-    /// </summary>
-    /// <param name="restrictionName">The name of the restriction policy</param>
-    ICorrespondenceAttachmentBuilder WithRestrictionName(string restrictionName);
-
-    /// <summary>
     /// Sets whether the attachment is encrypted or not
     /// </summary>
     /// <param name="isEncrypted">`true` for encrypted, `false` otherwise</param>

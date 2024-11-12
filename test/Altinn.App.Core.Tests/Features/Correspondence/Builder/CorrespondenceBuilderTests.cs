@@ -196,7 +196,6 @@ public class CorrespondenceBuilderTests
                     .WithData(new MemoryStream(Encoding.UTF8.GetBytes(data.attachments[0].data)))
                     .WithDataLocationType(data.attachments[0].dataLocationType)
                     .WithIsEncrypted(data.attachments[0].isEncrypted)
-                    .WithRestrictionName(data.attachments[0].restrictionName)
             )
             .WithAttachments(
                 [
@@ -209,7 +208,6 @@ public class CorrespondenceBuilderTests
                         Data = new MemoryStream(Encoding.UTF8.GetBytes(data.attachments[1].data)),
                         DataLocationType = data.attachments[1].dataLocationType,
                         IsEncrypted = data.attachments[1].isEncrypted,
-                        RestrictionName = data.attachments[1].restrictionName
                     }
                 ]
             )
@@ -277,7 +275,6 @@ public class CorrespondenceBuilderTests
         {
             correspondence.Content.Attachments[i].Filename.Should().Be(data.attachments[i].filename);
             correspondence.Content.Attachments[i].Name.Should().Be(data.attachments[i].name);
-            correspondence.Content.Attachments[i].RestrictionName.Should().Be(data.attachments[i].restrictionName);
             correspondence.Content.Attachments[i].IsEncrypted.Should().Be(data.attachments[i].isEncrypted);
             correspondence.Content.Attachments[i].SendersReference.Should().Be(data.attachments[i].sendersReference);
             correspondence.Content.Attachments[i].DataType.Should().Be(data.attachments[i].dataType);
