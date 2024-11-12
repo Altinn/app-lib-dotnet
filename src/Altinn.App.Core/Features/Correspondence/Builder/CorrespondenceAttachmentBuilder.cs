@@ -1,4 +1,3 @@
-using Altinn.App.Core.Features.Correspondence.Exceptions;
 using Altinn.App.Core.Features.Correspondence.Models;
 
 namespace Altinn.App.Core.Features.Correspondence.Builder;
