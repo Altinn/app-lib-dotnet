@@ -66,7 +66,7 @@ internal static class TestHelpers
     ) MockMaskinportenDelegatingHandlerFactory(
         TokenAuthorities authorities,
         IEnumerable<string> scopes,
-        JwtBearerToken accessToken
+        TokenWrapper accessToken
     )
     {
         var mockProvider = new Mock<IServiceProvider>();

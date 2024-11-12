@@ -139,7 +139,7 @@ public static class PrincipalUtil
         return token;
     }
 
-    public static MaskinportenTokenResponse GetMaskinportenToken(
+    internal static MaskinportenTokenResponse GetMaskinportenToken(
         string scope,
         TimeSpan? expiry = null,
         TimeProvider? timeProvider = null

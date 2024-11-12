@@ -6,9 +6,11 @@ namespace Altinn.App.Core.Features.Maskinporten.Models;
 /// <summary>
 /// The response received from Maskinporten after a successful grant request
 /// </summary>
-public sealed record MaskinportenTokenResponse : IAccessToken
+internal sealed record MaskinportenTokenResponse
 {
-    /// <inheritdoc />
+    /// <summary>
+    /// The JWT access token to be used for authorisation of http requests
+    /// </summary>
     [JsonPropertyName("access_token")]
     [JsonConverter(typeof(AccessTokenJsonConverter))]
     public required AccessToken AccessToken { get; init; }

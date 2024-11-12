@@ -16,7 +16,7 @@ public class JwtBearerTokenTest
         var scope = "test";
 
         // Act
-        var jwtBearerToken = new JwtBearerToken
+        var tokenWrapper = new TokenWrapper
         {
             AccessToken = accessToken,
             ExpiresAt = expiresAt,
@@ -24,9 +24,9 @@ public class JwtBearerTokenTest
         };
 
         // Assert
-        jwtBearerToken.AccessToken.Should().Be(accessToken);
-        jwtBearerToken.ExpiresAt.Should().Be(expiresAt);
-        jwtBearerToken.Scope.Should().Be(scope);
+        tokenWrapper.AccessToken.Should().Be(accessToken);
+        tokenWrapper.ExpiresAt.Should().Be(expiresAt);
+        tokenWrapper.Scope.Should().Be(scope);
     }
 
     [Theory]
@@ -37,7 +37,7 @@ public class JwtBearerTokenTest
         // Arrange
         var encodedToken = TestHelpers.GetEncodedAccessToken();
         var accessToken = AccessToken.Parse(encodedToken.AccessToken);
-        var jwtBearerToken = new JwtBearerToken
+        var tokenWrapper = new TokenWrapper
         {
             AccessToken = accessToken,
             ExpiresAt = DateTime.UtcNow.AddHours(offset),
@@ -45,7 +45,7 @@ public class JwtBearerTokenTest
         };
 
         // Act
-        var isExpired = jwtBearerToken.IsExpired();
+        var isExpired = tokenWrapper.IsExpired();
 
         // Assert
         isExpired.Should().Be(expired);
@@ -57,7 +57,7 @@ public class JwtBearerTokenTest
         // Arrange
         var encodedToken = TestHelpers.GetEncodedAccessToken();
         var accessToken = AccessToken.Parse(encodedToken.AccessToken);
-        var jwtBearerToken = new JwtBearerToken
+        var tokenWrapper = new TokenWrapper
         {
             AccessToken = accessToken,
             ExpiresAt = DateTime.UtcNow.AddHours(1),
@@ -65,7 +65,7 @@ public class JwtBearerTokenTest
         };
 
         // Act
-        AccessToken convertedToken = jwtBearerToken;
+        AccessToken convertedToken = tokenWrapper;
 
         // Assert
         convertedToken.Should().Be(accessToken);
@@ -79,7 +79,7 @@ public class JwtBearerTokenTest
         var accessToken = AccessToken.Parse(encodedToken.AccessToken);
 
         // Act
-        var jwtBearerToken = new JwtBearerToken
+        var tokenWrapper = new TokenWrapper
         {
             AccessToken = accessToken,
             ExpiresAt = DateTime.UtcNow.AddHours(1),
@@ -87,8 +87,8 @@ public class JwtBearerTokenTest
         };
 
         // Assert
-        jwtBearerToken.AccessToken.ToStringUnmasked().Should().Be(encodedToken.AccessToken);
-        jwtBearerToken.ToString().Should().NotContain(encodedToken.Components.Signature);
-        $"{jwtBearerToken}".Should().NotContain(encodedToken.Components.Signature);
+        tokenWrapper.AccessToken.ToStringUnmasked().Should().Be(encodedToken.AccessToken);
+        tokenWrapper.ToString().Should().NotContain(encodedToken.Components.Signature);
+        $"{tokenWrapper}".Should().NotContain(encodedToken.Components.Signature);
     }
 }

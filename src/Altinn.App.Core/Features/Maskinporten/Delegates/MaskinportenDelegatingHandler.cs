@@ -45,7 +45,7 @@ internal sealed class MaskinportenDelegatingHandler : DelegatingHandler
     {
         _logger.LogDebug("Executing custom `SendAsync` method; injecting authentication headers");
 
-        IAccessToken auth = Authorities switch
+        var token = Authorities switch
         {
             TokenAuthorities.Maskinporten => await _maskinportenClient.GetAccessToken(Scopes, cancellationToken),
             TokenAuthorities.AltinnTokenExchange
@@ -53,7 +53,7 @@ internal sealed class MaskinportenDelegatingHandler : DelegatingHandler
             _ => throw new MaskinportenAuthenticationException($"Unknown authority `{Authorities}`")
         };
 
-        request.Headers.Authorization = new AuthenticationHeaderValue(TokenTypes.Bearer, auth.AccessToken.Get());
+        request.Headers.Authorization = new AuthenticationHeaderValue(TokenTypes.Bearer, token.AccessToken.Get());
 
         return await base.SendAsync(request, cancellationToken);
     }

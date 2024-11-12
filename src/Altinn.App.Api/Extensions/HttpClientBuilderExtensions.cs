@@ -67,16 +67,4 @@ public static class HttpClientBuilderExtensions
         );
         return builder.AddHttpMessageHandler(provider => factory(provider, [authorities, scopes]));
     }
-
-    // TODO: Do we need this? Has anyone actually used this method?
-    /// <inheritdoc cref="UseMaskinportenAuthorisation"/>
-    [Obsolete("UseMaskinportenAuthorization is deprecated, use UseMaskinportenAuthorisation instead.")]
-    public static IHttpClientBuilder UseMaskinportenAuthorization(
-        this IHttpClientBuilder builder,
-        string scope,
-        params string[] additionalScopes
-    )
-    {
-        return UseMaskinportenAuthorisation(builder, scope, additionalScopes);
-    }
 }

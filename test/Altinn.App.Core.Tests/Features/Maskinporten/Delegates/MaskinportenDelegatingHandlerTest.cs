@@ -18,7 +18,7 @@ public class MaskinportenDelegatingHandlerTest
         var (client, handler) = TestHelpers.MockMaskinportenDelegatingHandlerFactory(
             TokenAuthorities.Maskinporten,
             scopes,
-            new JwtBearerToken
+            new TokenWrapper
             {
                 Scope = "-",
                 AccessToken = accessToken,

@@ -4,24 +4,13 @@ using Altinn.App.Core.Models;
 namespace Altinn.App.Core.Features.Maskinporten.Models;
 
 /// <summary>
-/// An object that contains a JWT <see cref="AccessToken"/> member
-/// </summary>
-public interface IAccessToken
-{
-    /// <summary>
-    /// The JWT access token to be used in the Authorization header for downstream requests
-    /// </summary>
-    AccessToken AccessToken { get; init; }
-}
-
-/// <summary>
-/// JWT Bearer token wrapper which includes the <see cref="AccessToken"/> and relevant metadata
+/// JWT wrapper which includes the <see cref="AccessToken"/> and relevant metadata
 /// </summary>
 [ImmutableObject(true)] // `ImmutableObject` prevents serialization with HybridCache
-public sealed record JwtBearerToken : IAccessToken
+public sealed record TokenWrapper
 {
     /// <summary>
-    /// The JWT access token to be used in the Authorization header for http requests
+    /// The JWT access token to be used for authorisation of http requests
     /// </summary>
     public required AccessToken AccessToken { get; init; }
 
@@ -50,10 +39,10 @@ public sealed record JwtBearerToken : IAccessToken
     }
 
     /// <summary>
-    /// Implicit conversion from <see cref="JwtBearerToken"/> to <see cref="AccessToken"/>
+    /// Implicit conversion from <see cref="TokenWrapper"/> to <see cref="AccessToken"/>
     /// </summary>
     /// <param name="jwtBearerToken">The JWT bearer token instance</param>
-    public static implicit operator AccessToken(JwtBearerToken jwtBearerToken)
+    public static implicit operator AccessToken(TokenWrapper jwtBearerToken)
     {
         return jwtBearerToken.AccessToken;
     }

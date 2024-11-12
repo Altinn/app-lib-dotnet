@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Altinn.App.Core.Models;
 
 /// <summary>
-/// Represents an OAuth 2.0 access token
+/// Represents an OAuth 2.0 access token in JWT format
 /// </summary>
 public readonly partial struct AccessToken : IEquatable<AccessToken>
 {
