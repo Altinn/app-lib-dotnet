@@ -78,7 +78,20 @@ public abstract record CorrespondenceBase
             return;
 
         // Ensure unique filenames
-        var overrides = new Dictionary<CorrespondenceAttachment, string>();
+        var overrides = CalculateFilenameOverrides(attachments);
+
+        // Serialise
+        for (int i = 0; i < attachments.Count; i++)
+        {
+            attachments[i].Serialise(content, i, overrides.GetValueOrDefault(attachments[i]));
+        }
+    }
+
+    internal static Dictionary<CorrespondenceAttachment, string> CalculateFilenameOverrides(
+        IEnumerable<CorrespondenceAttachment> attachments
+    )
+    {
+        var overrides = new Dictionary<CorrespondenceAttachment, string>(ReferenceEqualityComparer.Instance);
         var hasDuplicateFilenames = attachments
             .GroupBy(x => x.Filename.ToLowerInvariant())
             .Where(x => x.Count() > 1)
@@ -95,11 +108,7 @@ public abstract record CorrespondenceBase
             }
         }
 
-        // Serialise
-        for (int i = 0; i < attachments.Count; i++)
-        {
-            attachments[i].Serialise(content, i, overrides.GetValueOrDefault(attachments[i]));
-        }
+        return overrides;
     }
 
     internal static void AddDictionaryItems<TKey, TValue>(

@@ -221,6 +221,51 @@ public class CorrespondenceRequestTests
         await AssertContent(multipartContent, "Correspondence.Content.Attachments[1].Filename", expectedResolutions[1]);
     }
 
+    [Fact]
+    public void Serialise_ClashingFilenames_ShouldUseReferenceComparison()
+    {
+        // Arrange
+        ReadOnlyMemory<byte> data = Encoding.UTF8.GetBytes("data");
+        List<CorrespondenceAttachment> identicalAttachments =
+        [
+            new CorrespondenceAttachment
+            {
+                Filename = "filename",
+                Name = "name",
+                SendersReference = "senders-reference",
+                DataType = "plain/text",
+                Data = data
+            },
+            new CorrespondenceAttachment
+            {
+                Filename = "filename",
+                Name = "name",
+                SendersReference = "senders-reference",
+                DataType = "plain/text",
+                Data = data
+            },
+            new CorrespondenceAttachment
+            {
+                Filename = "filename",
+                Name = "name",
+                SendersReference = "senders-reference",
+                DataType = "plain/text",
+                Data = data
+            }
+        ];
+        var clonedAttachment = identicalAttachments.Last();
+
+        // Act
+        var processedAttachments = CorrespondenceBase.CalculateFilenameOverrides(identicalAttachments);
+        processedAttachments[clonedAttachment] = "overwritten";
+
+        // Assert
+        processedAttachments.Should().HaveCount(3);
+        processedAttachments[identicalAttachments[0]].Should().Contain("(1)");
+        processedAttachments[identicalAttachments[1]].Should().Contain("(2)");
+        processedAttachments[identicalAttachments[2]].Should().Contain("overwritten");
+    }
+
     private static async Task AssertContent(MultipartFormDataContent content, string dispositionName, object value)
     {
         var item = content.GetItem(dispositionName);
