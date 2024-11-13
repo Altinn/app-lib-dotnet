@@ -1,7 +1,9 @@
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
+using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
+using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models.UserAction;
 using Microsoft.Extensions.Logging;
 
@@ -51,10 +53,25 @@ internal class InitializeDelegatedSigningUserAction : IUserAction
             currentTask.Id
         );
 
-        CancellationToken ct = new();
+        AltinnSignatureConfiguration? signatureConfiguration = currentTask
+            .ExtensionElements
+            ?.TaskExtension
+            ?.SignatureConfiguration;
+        if (signatureConfiguration == null)
+        {
+            throw new ApplicationConfigException(
+                "SignatureConfiguration is missing in the payment process task configuration."
+            );
+        }
 
-        List<SigneeContext> signeeContexts = await _signingService.InitializeSignees(currentTask.Id, ct);
-        signeeContexts = await _signingService.ProcessSignees(currentTask.Id, context.Instance, signeeContexts, ct);
+        CancellationToken ct = new();
+        List<SigneeContext> signeeContexts = await _signingService.InitializeSignees(
+            context.Instance,
+            signatureConfiguration,
+            ct
+        );
+
+        await _signingService.ProcessSignees(context.Instance, signeeContexts, ct);
 
         //TODO: Return failure result if something failed.
 

@@ -1,7 +1,9 @@
+using System.Diagnostics;
 using Altinn.App.Core.Features.Signing.Exceptions;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Mocks;
 using Altinn.App.Core.Features.Signing.Models;
+using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
@@ -9,20 +11,36 @@ using Altinn.Platform.Storage.Interface.Models;
 namespace Altinn.App.Core.Features.Signing;
 
 internal sealed class SigningService(
-    ISigneeProvider signeeProvider, /*ISignClient signClient, IInstanceClient instanceClient, IAppMetadata appMetadata,*/
+    /*ISignClient signClient, IInstanceClient instanceClient, IAppMetadata appMetadata,*/
     IPersonClient personClient,
     IOrganizationClient organisationClient,
     IAltinnPartyClient altinnPartyClient,
     ISigningDelegationService signingDelegationService,
     ISigningNotificationService signingNotificationService,
+    IEnumerable<ISigneeProvider> signeeProviders,
     Telemetry? telemetry
 ) : ISigningService
 {
-    public async Task<List<SigneeContext>> InitializeSignees(string taskId, CancellationToken ct)
+    public async Task<List<SigneeContext>> InitializeSignees(
+        Instance instance,
+        AltinnSignatureConfiguration signatureConfiguration,
+        CancellationToken ct
+    )
     {
-        using var activity = telemetry?.StartAssignSigneesActivity();
+        using Activity? activity = telemetry?.StartAssignSigneesActivity();
+        string taskId = instance.Process.CurrentTask.ElementId;
 
-        SigneesResult signeesResult = await signeeProvider.GetSigneesAsync();
+        string? signeeProviderId = signatureConfiguration.SigneeProviderId;
+        if (signeeProviderId is null)
+            return [];
+
+        ISigneeProvider signeeProvider =
+            signeeProviders.FirstOrDefault(sp => sp.Id == signeeProviderId)
+            ?? throw new SigneeProviderNotFoundException(
+                $"No signee provider found for task with id {instance.Process.CurrentTask.ElementId}."
+            );
+
+        SigneesResult signeesResult = await signeeProvider.GetSigneesAsync(instance);
 
         List<SigneeContext> personSigneeContexts = await GetPersonSigneeContexts(taskId, signeesResult, ct);
         List<SigneeContext> organisationSigneeContexts = await GetOrganisationSigneeContexts(taskId, signeesResult, ct);
@@ -33,13 +51,13 @@ internal sealed class SigningService(
     }
 
     public async Task<List<SigneeContext>> ProcessSignees(
-        string taskId,
         Instance instance,
         List<SigneeContext> signeeContexts,
         CancellationToken ct
     )
     {
         using var activity = telemetry?.StartAssignSigneesActivity();
+        string taskId = instance.Process.CurrentTask.ElementId;
 
         await signingDelegationService.DelegateSigneeRights(taskId, instance, signeeContexts, ct);
 

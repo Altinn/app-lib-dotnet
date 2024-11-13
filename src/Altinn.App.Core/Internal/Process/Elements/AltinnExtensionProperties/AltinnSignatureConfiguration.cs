@@ -33,4 +33,10 @@ public class AltinnSignatureConfiguration
     )]
     [XmlArrayItem(ElementName = "dataType", Namespace = "http://altinn.no/process")]
     public List<string> UniqueFromSignaturesInDataTypes { get; set; } = new();
+
+    /// <summary>
+    /// Optionally set a signee provider that should be used for selecting signees for this signing step. The signee provider with a matching ID must be registered as a transient service in the DI container. If no provider is set, no signing rights will be delegated and no notifications to sign will be sent. Only parties granted signing rights via policy.xml will be able to sign.
+    /// </summary>
+    [XmlElement("signeeProviderId", Namespace = "http://altinn.no/process")]
+    public string? SigneeProviderId { get; set; }
 }
