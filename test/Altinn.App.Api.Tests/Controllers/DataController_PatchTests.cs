@@ -49,6 +49,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
     private static readonly Guid _instanceGuid = new("0fc98a23-fe31-4ef5-8fb9-dd3f479354ce");
     private static readonly string _instanceId = $"{InstanceOwnerPartyId}/{_instanceGuid}";
     private static readonly Guid _dataGuid = new("fc121812-0336-45fb-a75c-490df3ad5109");
+    private static readonly Guid _binaryDataGuid = new("fc121812-0336-45fb-a75c-490df3ad510a");
 
     // Define mocks
     private readonly Mock<IDataProcessor> _dataProcessorMock = new(MockBehavior.Strict);
@@ -1029,6 +1030,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
                 (IInstanceDataMutator dataMutator, string taskId, DataElementChanges changes, string? language) =>
                 {
                     dataMutator.RemoveDataElement(new DataElementIdentifier(_dataGuid));
+                    dataMutator.RemoveDataElement(new DataElementIdentifier(_binaryDataGuid));
                     return Task.CompletedTask;
                 }
             )
