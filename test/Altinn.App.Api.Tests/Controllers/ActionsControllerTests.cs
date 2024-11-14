@@ -580,9 +580,8 @@ public class FillAction : IUserAction
                 );
                 break;
             case "update":
-                var originalDataElement = context.DataMutator.FormDataElements.First(de => de.DataType == "Scheme");
-                var originalData = await context.DataMutator.GetFormData(originalDataElement);
-                var data = (Scheme)originalData;
+                var originalDataElement = context.DataMutator.GetDataElementsForType("Scheme").First();
+                var data = await context.DataMutator.GetFormData<Scheme>(originalDataElement);
 
                 data.TestCustomButtonReadOnlyInput = "Her kommer det data fra backend";
                 break;
@@ -606,7 +605,7 @@ public class FillAction : IUserAction
                 result.AddUpdatedDataModel(dataGuid.ToString(), obsoleteData);
                 return result;
             case "delete":
-                var elementToDelete = context.DataMutator.FormDataElements.First(de => de.DataType == "Scheme");
+                var elementToDelete = context.DataMutator.GetDataElementsForType("Scheme").First();
                 context.DataMutator.RemoveDataElement(elementToDelete);
                 break;
             case "getClientActions":

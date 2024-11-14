@@ -143,9 +143,7 @@ public class ValidatorFactory : IValidatorFactory
         foreach (var instanceValidator in _instanceValidators)
         {
             validators.Add(new LegacyIInstanceValidatorTaskValidator(_generalSettings, instanceValidator));
-            validators.Add(
-                new LegacyIInstanceValidatorFormDataValidator(_generalSettings, instanceValidator, _appMetadata)
-            );
+            validators.Add(new LegacyIInstanceValidatorFormDataValidator(_generalSettings, instanceValidator));
         }
 
         return validators;
