@@ -598,9 +598,6 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
 
             var equal = (currentChange, previousChange) switch
             {
-                (FormDataChange { CurrentFormData: null }, FormDataChange { CurrentFormData: null }) => throw new Exception(
-                    "CurrentFormData should not be null when verifying changes"
-                ),
                 (
                     FormDataChange { CurrentBinaryData.Span: var currentSpan },
                     FormDataChange { CurrentBinaryData.Span: var previousSpan }
