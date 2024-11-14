@@ -190,17 +190,18 @@ public static class ServiceCollectionExtensions
     /// <param name="services">The service collection</param>
     private static IServiceCollection AddMaskinportenClient(this IServiceCollection services)
     {
-        // Only add MaskinportenSettings if they haven't already been configured.
+        // Only add MaskinportenSettings if not already configured.
         // Users sometimes wish to bind the default options to another configuration path than "MaskinportenSettings".
-        if (services.GetOptionsDescriptor<MaskinportenSettings>() is null)
+        if (services.IsConfigured<MaskinportenSettings>() is false)
         {
             services.ConfigureMaskinportenClient("MaskinportenSettings");
         }
 
-        services.ConfigureMaskinportenClient("MaskinportenSettingsInternal", MaskinportenClient.VariantInternal);
-        services.AddSingleton<IMaskinportenClient>(sp =>
+        services.TryAddSingleton<IMaskinportenClient>(sp =>
             ActivatorUtilities.CreateInstance<MaskinportenClient>(sp, MaskinportenClient.VariantDefault)
         );
+
+        services.ConfigureMaskinportenClient("MaskinportenSettingsInternal", MaskinportenClient.VariantInternal);
         services.AddKeyedSingleton<IMaskinportenClient>(
             MaskinportenClient.VariantInternal,
             (sp, key) => ActivatorUtilities.CreateInstance<MaskinportenClient>(sp, MaskinportenClient.VariantInternal)
@@ -535,18 +536,18 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<ValidateAntiforgeryTokenIfAuthCookieAuthorizationFilter>();
     }
 
-    private static IServiceCollection RemoveOptions<TOptions>(this IServiceCollection services)
-        where TOptions : class
-    {
-        var descriptor = services.GetOptionsDescriptor<TOptions>();
-
-        if (descriptor is not null)
-        {
-            services.Remove(descriptor);
-        }
-
-        return services;
-    }
+    // private static IServiceCollection RemoveOptions<TOptions>(this IServiceCollection services)
+    //     where TOptions : class
+    // {
+    //     var descriptor = services.GetOptionsDescriptor<TOptions>();
+    //
+    //     if (descriptor is not null)
+    //     {
+    //         services.Remove(descriptor);
+    //     }
+    //
+    //     return services;
+    // }
 
     private static (string? Key, string? ConnectionString) GetAppInsightsConfig(
         IConfiguration config,

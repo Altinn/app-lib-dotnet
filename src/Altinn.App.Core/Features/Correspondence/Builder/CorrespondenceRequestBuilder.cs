@@ -228,9 +228,9 @@ public class CorrespondenceRequestBuilder : CorrespondenceBuilderBase, ICorrespo
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceRequestBuilder WithAttachment(ICorrespondenceAttachmentBuilder attachment)
+    public ICorrespondenceRequestBuilder WithAttachment(ICorrespondenceAttachmentBuilder builder)
     {
-        return WithAttachments([attachment.Build()]);
+        return WithAttachments([builder.Build()]);
     }
 
     /// <inheritdoc/>

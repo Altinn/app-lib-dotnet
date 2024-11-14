@@ -28,6 +28,11 @@ partial class Telemetry
         return ActivitySource.StartActivity("Correspondence.Send");
     }
 
+    internal Activity? StartCorrespondenceStatusActivity()
+    {
+        return ActivitySource.StartActivity("Correspondence.Status");
+    }
+
     internal void RecordCorrespondenceOrder(CorrespondenceResult result) =>
         _counters[MetricNameOrder].Add(1, new Tag(InternalLabels.Result, result.ToStringFast()));
 

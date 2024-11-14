@@ -23,9 +23,12 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
     private readonly PlatformSettings _platformSettings;
     private readonly Telemetry? _telemetry;
 
+    public ICorrespondenceAuthorisationFactory Authorisation { get; init; }
+
     public CorrespondenceClient(
         IHttpClientFactory httpClientFactory,
         IOptions<PlatformSettings> platformSettings,
+        IServiceProvider serviceProvider,
         ILogger<CorrespondenceClient> logger,
         Telemetry? telemetry = null
     )
@@ -34,94 +37,110 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
         _httpClientFactory = httpClientFactory;
         _platformSettings = platformSettings.Value;
         _telemetry = telemetry;
+
+        Authorisation = new CorrespondenceAuthorisationFactory(serviceProvider);
     }
 
     /// <inheritdoc />
-    public async Task<CorrespondenceResponse> Send(
-        SendCorrespondencePayload payload,
+    public async Task<CorrespondenceResponse.Send> Send(
+        CorrespondencePayload.Send payload,
         CancellationToken cancellationToken = default
     )
     {
         _logger.LogDebug("Sending Correspondence request");
         using Activity? activity = _telemetry?.StartSendCorrespondenceActivity();
 
-        ProblemDetails? problemDetails = null;
-        HttpResponseMessage? response = null;
-        string? responseBody = null;
-
         try
         {
-            _logger.LogDebug("Fetching access token via factory");
-            string uri = _platformSettings.ApiCorrespondenceEndpoint.TrimEnd('/') + "/correspondence/upload";
-            AccessToken accessToken = await payload.AccessTokenFactory();
-
             using MultipartFormDataContent content = payload.CorrespondenceRequest.Serialise();
-            using HttpClient client = _httpClientFactory.CreateClient();
-            using HttpRequestMessage request = AuthenticatedHttpRequestFactory(
+            using HttpRequestMessage request = await AuthenticatedHttpRequestFactory(
                 method: HttpMethod.Post,
-                uri: uri,
+                uri: GetUri("correspondence/upload"),
                 content: content,
-                accessToken: accessToken
+                accessTokenFactory: payload.AccessTokenFactory
             );
-            response = await client.SendAsync(request, cancellationToken);
-            responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
 
-            if (response.StatusCode != HttpStatusCode.OK)
-            {
-                problemDetails = GetProblemDetails(responseBody);
-                throw new CorrespondenceRequestException(
-                    $"Correspondence request failed with status {response?.StatusCode}: {problemDetails?.Detail}"
-                );
-            }
-
-            _logger.LogDebug("Correspondence request succeeded: {Response}", responseBody);
-            var parsedResponse =
-                JsonSerializer.Deserialize<CorrespondenceResponse>(responseBody)
-                ?? throw new CorrespondenceRequestException("Invalid response from Correspondence API server");
-
+            var response = await HandleServerCommunication<CorrespondenceResponse.Send>(request, cancellationToken);
             _telemetry?.RecordCorrespondenceOrder(CorrespondenceResult.Success);
-            return parsedResponse;
+
+            return response;
         }
         catch (CorrespondenceException e)
         {
+            var requestException = e as CorrespondenceRequestException;
+
             _logger.LogError(
                 e,
-                "Failed to send Correspondence: status={StatusCode} response={Response}",
-                response?.StatusCode.ToString() ?? "Unknown",
-                responseBody ?? "No response body"
+                "Failed to send correspondence: status={StatusCode} response={Response}",
+                requestException?.HttpStatusCode.ToString() ?? "Unknown",
+                requestException?.ResponseBody ?? "No response body"
             );
-            activity?.Errored(e, problemDetails?.Detail);
-            _telemetry?.RecordCorrespondenceOrder(CorrespondenceResult.Error);
 
+            activity?.Errored(e, requestException?.ProblemDetails?.Detail);
+            _telemetry?.RecordCorrespondenceOrder(CorrespondenceResult.Error);
             throw;
         }
         catch (Exception e)
         {
-            _logger.LogError(
-                e,
-                "Failed to send Correspondence: status={StatusCode} response={Response}",
-                response?.StatusCode.ToString() ?? "Unknown",
-                responseBody ?? "No response body"
-            );
             activity?.Errored(e);
+            _logger.LogError(e, "Failed to send correspondence: {Exception}", e);
             _telemetry?.RecordCorrespondenceOrder(CorrespondenceResult.Error);
-
             throw new CorrespondenceRequestException($"Failed to send correspondence: {e}", e);
-        }
-        finally
-        {
-            response?.Dispose();
         }
     }
 
-    private HttpRequestMessage AuthenticatedHttpRequestFactory<TContent>(
+    /// <inheritdoc/>
+    public async Task<CorrespondenceResponse.Status> Status(
+        CorrespondencePayload.Status payload,
+        CancellationToken cancellationToken = default
+    )
+    {
+        _logger.LogDebug("Fetching correspondence status");
+        using Activity? activity = _telemetry?.StartCorrespondenceStatusActivity();
+
+        try
+        {
+            using HttpRequestMessage request = await AuthenticatedHttpRequestFactory(
+                method: HttpMethod.Get,
+                uri: GetUri($"correspondence/{payload.CorrespondenceId}/details"),
+                content: null,
+                accessTokenFactory: payload.AccessTokenFactory
+            );
+
+            return await HandleServerCommunication<CorrespondenceResponse.Status>(request, cancellationToken);
+        }
+        catch (CorrespondenceException e)
+        {
+            var requestException = e as CorrespondenceRequestException;
+
+            _logger.LogError(
+                e,
+                "Failed to fetch correspondence status: status={StatusCode} response={Response}",
+                requestException?.HttpStatusCode.ToString() ?? "Unknown",
+                requestException?.ResponseBody ?? "No response body"
+            );
+
+            activity?.Errored(e, requestException?.ProblemDetails?.Detail);
+            throw;
+        }
+        catch (Exception e)
+        {
+            activity?.Errored(e);
+            _logger.LogError(e, "Failed to fetch correspondence status: {Exception}", e);
+            throw new CorrespondenceRequestException($"Failed to fetch correspondence status: {e}", e);
+        }
+    }
+
+    private async Task<HttpRequestMessage> AuthenticatedHttpRequestFactory(
         HttpMethod method,
         string uri,
-        TContent content,
-        AccessToken accessToken
+        HttpContent? content,
+        Func<Task<AccessToken>> accessTokenFactory
     )
-        where TContent : HttpContent
     {
+        _logger.LogDebug("Fetching access token via factory");
+        AccessToken accessToken = await accessTokenFactory();
+
         _logger.LogDebug("Constructing authorized http request for target uri {TargetEndpoint}", uri);
         HttpRequestMessage request = new(method, uri) { Content = content };
 
@@ -148,5 +167,44 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
         }
 
         return null;
+    }
+
+    private string GetUri(string relativePath)
+    {
+        string baseUri = _platformSettings.ApiCorrespondenceEndpoint.TrimEnd('/');
+        return $"{baseUri}/{relativePath.TrimStart('/')}";
+    }
+
+    private async Task<TContent> HandleServerCommunication<TContent>(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken
+    )
+    {
+        using HttpClient client = _httpClientFactory.CreateClient();
+        HttpResponseMessage response = await client.SendAsync(request, cancellationToken);
+        string responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        if (response.StatusCode != HttpStatusCode.OK)
+        {
+            var problemDetails = GetProblemDetails(responseBody);
+            throw new CorrespondenceRequestException(
+                $"Correspondence request failed with status {response.StatusCode}: {problemDetails?.Detail}",
+                problemDetails,
+                response.StatusCode,
+                responseBody
+            );
+        }
+
+        _logger.LogDebug("Correspondence request succeeded: {Response}", responseBody);
+        var parsedResponse =
+            JsonSerializer.Deserialize<TContent>(responseBody)
+            ?? throw new CorrespondenceRequestException(
+                $"Invalid response from Correspondence API server: {responseBody}",
+                null,
+                response.StatusCode,
+                responseBody
+            );
+
+        return parsedResponse;
     }
 }

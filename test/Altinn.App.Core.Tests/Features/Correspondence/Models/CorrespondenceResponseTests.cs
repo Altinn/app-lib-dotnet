@@ -34,7 +34,7 @@ public class CorrespondenceResponseTests
             """;
 
         // Act
-        var parsedResponse = JsonSerializer.Deserialize<CorrespondenceResponse>(encodedResponse);
+        var parsedResponse = JsonSerializer.Deserialize<CorrespondenceResponse.Send>(encodedResponse);
 
         // Assert
         Assert.NotNull(parsedResponse);
@@ -46,7 +46,7 @@ public class CorrespondenceResponseTests
             .Correspondences[0]
             .CorrespondenceId.Should()
             .Be(Guid.Parse("d22d8dda-7b56-48c0-b287-5052aa255d5b"));
-        parsedResponse.Correspondences[0].Status.Should().Be(CorrespondenceStatus.Initialized);
+        parsedResponse.Correspondences[0].Status.Should().Be(CorrespondenceResponse.CorrespondenceStatus.Initialized);
         parsedResponse.Correspondences[0].Recipient.Should().Be(OrganisationNumber.Parse("0192:213872702"));
 
         parsedResponse.Correspondences[0].Notifications.Should().HaveCount(1);
@@ -60,7 +60,7 @@ public class CorrespondenceResponseTests
             .Correspondences[0]
             .Notifications![0]
             .Status.Should()
-            .Be(CorrespondenceNotificationStatus.Success);
+            .Be(CorrespondenceResponse.NotificationStatus.Success);
 
         parsedResponse.AttachmentIds.Should().HaveCount(1);
         parsedResponse.AttachmentIds[0].Should().Be(Guid.Parse("cae24499-a5f9-425b-9c5b-4dac85fce891"));
