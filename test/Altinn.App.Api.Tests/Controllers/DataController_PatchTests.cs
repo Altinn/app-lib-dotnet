@@ -1040,7 +1040,6 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
             services.AddSingleton(dataWriteProcessorMock.Object);
         };
 
-        var path = JsonPointer.Create("melding", "name");
         var patch = new DataPatchRequestMultiple()
         {
             IgnoredValidators = [],
