@@ -536,19 +536,6 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<ValidateAntiforgeryTokenIfAuthCookieAuthorizationFilter>();
     }
 
-    // private static IServiceCollection RemoveOptions<TOptions>(this IServiceCollection services)
-    //     where TOptions : class
-    // {
-    //     var descriptor = services.GetOptionsDescriptor<TOptions>();
-    //
-    //     if (descriptor is not null)
-    //     {
-    //         services.Remove(descriptor);
-    //     }
-    //
-    //     return services;
-    // }
-
     private static (string? Key, string? ConnectionString) GetAppInsightsConfig(
         IConfiguration config,
         IHostEnvironment env
