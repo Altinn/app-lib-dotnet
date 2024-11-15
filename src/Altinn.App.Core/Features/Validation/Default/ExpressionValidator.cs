@@ -54,12 +54,11 @@ public class ExpressionValidator : IValidator
     public bool ShouldRunForTask(string taskId) =>
         _appMetadata
             .GetApplicationMetadata()
-            .Result.DataTypes.Where(dt =>
+            .Result.DataTypes.Exists(dt =>
                 dt.TaskId == taskId
                 && dt.AppLogic?.ClassRef is not null
                 && _appResourceService.GetValidationConfiguration(dt.Id) is not null
-            )
-            .Any();
+            );
 
     /// <summary>
     /// This validator has the code "Expression" and this is known by the frontend, who may request this validator to not run for incremental validation.

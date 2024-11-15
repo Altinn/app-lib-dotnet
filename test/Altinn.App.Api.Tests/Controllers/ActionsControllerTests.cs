@@ -580,7 +580,9 @@ public class FillAction : IUserAction
                 );
                 break;
             case "update":
-                var originalDataElement = context.DataMutator.GetDataElementsForType("Scheme").First();
+                var dataType =
+                    context.DataMutator.GetDataType("Scheme") ?? throw new Exception("DataType \"Scheme\" not found");
+                var originalDataElement = context.DataMutator.GetDataElementsForType(dataType).First();
                 var data = await context.DataMutator.GetFormData<Scheme>(originalDataElement);
 
                 data.TestCustomButtonReadOnlyInput = "Her kommer det data fra backend";

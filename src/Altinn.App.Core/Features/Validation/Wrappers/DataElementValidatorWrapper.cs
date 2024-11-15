@@ -11,17 +11,11 @@ internal class DataElementValidatorWrapper : IValidator
 {
     private readonly IDataElementValidator _dataElementValidator;
     private readonly string _taskId;
-    private readonly List<DataType> _dataTypes;
 
-    public DataElementValidatorWrapper(
-        IDataElementValidator dataElementValidator,
-        string taskId,
-        List<DataType> dataTypes
-    )
+    public DataElementValidatorWrapper(IDataElementValidator dataElementValidator, string taskId)
     {
         _dataElementValidator = dataElementValidator;
         _taskId = taskId;
-        _dataTypes = dataTypes;
     }
 
     /// <inheritdoc />

@@ -132,8 +132,7 @@ public class ValidatorFactory : IValidatorFactory
         var dataTypes = _appMetadata.GetApplicationMetadata().Result.DataTypes;
 
         validators.AddRange(
-            GetDataElementValidators(taskId, dataTypes)
-                .Select(dev => new DataElementValidatorWrapper(dev, taskId, dataTypes))
+            GetDataElementValidators(taskId, dataTypes).Select(dev => new DataElementValidatorWrapper(dev, taskId))
         );
         validators.AddRange(
             GetFormDataValidators(taskId, dataTypes).Select(fdv => new FormDataValidatorWrapper(fdv, taskId))
