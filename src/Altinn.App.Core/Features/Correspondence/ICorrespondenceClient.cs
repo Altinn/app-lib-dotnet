@@ -26,11 +26,11 @@ public interface ICorrespondenceClient
     /// <summary>
     /// Fetches the status of a correspondence
     /// </summary>
-    /// <param name="payload">The <see cref="CorrespondencePayload.Status"/> payload</param>
+    /// <param name="payload">The <see cref="CorrespondencePayload.GetStatus"/> payload</param>
     /// <param name="cancellationToken">An optional cancellation token</param>
     /// <returns></returns>
-    Task<CorrespondenceResponse.Status> Status(
-        CorrespondencePayload.Status payload,
+    Task<CorrespondenceResponse.GetStatus> GetStatus(
+        CorrespondencePayload.GetStatus payload,
         CancellationToken cancellationToken = default
     );
 }

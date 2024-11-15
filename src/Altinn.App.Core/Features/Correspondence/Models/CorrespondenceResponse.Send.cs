@@ -31,13 +31,13 @@ partial class CorrespondenceResponse
             /// The correspondence identifier
             /// </summary>
             [JsonPropertyName("correspondenceId")]
-            public required Guid CorrespondenceId { get; init; }
+            public Guid CorrespondenceId { get; init; }
 
             /// <summary>
             /// The status of the correspondence
             /// </summary>
             [JsonPropertyName("status")]
-            public required CorrespondenceStatus Status { get; init; }
+            public CorrespondenceStatus Status { get; init; }
 
             /// <summary>
             /// The recipient of the correspondence
@@ -62,19 +62,19 @@ partial class CorrespondenceResponse
             /// The notification order identifier
             /// </summary>
             [JsonPropertyName("orderId")]
-            public required Guid OrderId { get; init; }
+            public Guid? OrderId { get; init; }
 
             /// <summary>
             /// Whether or not this is a reminder notification
             /// </summary>
             [JsonPropertyName("isReminder")]
-            public required bool IsReminder { get; init; }
+            public bool? IsReminder { get; init; }
 
             /// <summary>
             /// The status of the notification
             /// </summary>
             [JsonPropertyName("status")]
-            public required NotificationStatus Status { get; init; }
+            public NotificationStatus Status { get; init; }
         }
     }
 }

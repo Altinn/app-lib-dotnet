@@ -1,8 +1,11 @@
+using System.Text.Json.Serialization;
+
 namespace Altinn.App.Core.Features.Correspondence.Models;
 
 /// <summary>
 /// The message template to use for notifications
 /// </summary>
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum CorrespondenceNotificationTemplate
 {
     /// <summary>

@@ -1,8 +1,11 @@
+using System.Text.Json.Serialization;
+
 namespace Altinn.App.Core.Features.Correspondence.Models;
 
 /// <summary>
 /// Defines the type of an external reference
 /// </summary>
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum CorrespondenceReferenceType
 {
     /// <summary>

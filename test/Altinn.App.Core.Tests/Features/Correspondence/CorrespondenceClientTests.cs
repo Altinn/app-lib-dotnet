@@ -51,47 +51,59 @@ public class CorrespondenceClientTests
         public async ValueTask DisposeAsync() => await App.DisposeAsync();
     }
 
-    private static CorrespondencePayload.Send PayloadFactory(Func<Task<AccessToken>>? tokenFactory = default)
+    private static class PayloadFactory
     {
-        tokenFactory ??= async () =>
+        private static readonly Func<Task<AccessToken>> _defaultTokenFactory = async () =>
             await Task.FromResult(
                 AccessToken.Parse(
                     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJpdHMtYS1tZSJ9.wLLw4Timcl9gnQvA93RgREz-6S5y1UfzI_GYVI_XVDA"
                 )
             );
 
-        return new CorrespondencePayload.Send
+        public static CorrespondencePayload.Send Send(Func<Task<AccessToken>>? tokenFactory = default)
         {
-            CorrespondenceRequest = CorrespondenceRequestBuilder
-                .Create()
-                .WithResourceId("resource-id")
-                .WithSender(OrganisationNumber.Parse("991825827"))
-                .WithSendersReference("senders-ref")
-                .WithRecipient(OrganisationNumber.Parse("213872702"))
-                .WithDueDateTime(DateTime.Now.AddMonths(6))
-                .WithAllowSystemDeleteAfter(DateTime.Now.AddYears(1))
-                .WithContent(
-                    CorrespondenceContentBuilder
-                        .Create()
-                        .WithTitle("message-title")
-                        .WithLanguage(LanguageCode<Iso6391>.Parse("en"))
-                        .WithSummary("message-summary")
-                        .WithBody("message-body")
-                )
-                .Build(),
-            AccessTokenFactory = tokenFactory
-        };
+            return new CorrespondencePayload.Send
+            {
+                CorrespondenceRequest = CorrespondenceRequestBuilder
+                    .Create()
+                    .WithResourceId("resource-id")
+                    .WithSender(OrganisationNumber.Parse("991825827"))
+                    .WithSendersReference("senders-ref")
+                    .WithRecipient(OrganisationNumber.Parse("213872702"))
+                    .WithDueDateTime(DateTime.Now.AddMonths(6))
+                    .WithAllowSystemDeleteAfter(DateTime.Now.AddYears(1))
+                    .WithContent(
+                        CorrespondenceContentBuilder
+                            .Create()
+                            .WithTitle("message-title")
+                            .WithLanguage(LanguageCode<Iso6391>.Parse("en"))
+                            .WithSummary("message-summary")
+                            .WithBody("message-body")
+                    )
+                    .Build(),
+                AccessTokenFactory = tokenFactory ?? _defaultTokenFactory
+            };
+        }
+
+        public static CorrespondencePayload.GetStatus GetStatus(Func<Task<AccessToken>>? tokenFactory = default)
+        {
+            return new CorrespondencePayload.GetStatus
+            {
+                CorrespondenceId = Guid.NewGuid(),
+                AccessTokenFactory = tokenFactory ?? _defaultTokenFactory
+            };
+        }
     }
 
     [Fact]
-    public async Task Send_SuccessfulResponse_ReturnsCorrespondenceResponse()
+    public async Task Send_SuccessfulResponse_ReturnsCorrectResponse()
     {
         // Arrange
         await using var fixture = Fixture.Create();
         var mockHttpClientFactory = fixture.HttpClientFactoryMock;
         var mockHttpClient = new Mock<HttpClient>();
 
-        var payload = PayloadFactory();
+        var payload = PayloadFactory.Send();
         var responseMessage = new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new StringContent(
@@ -134,17 +146,66 @@ public class CorrespondenceClientTests
         result.Correspondences[0].CorrespondenceId.Should().Be("cf7a4a9f-45ce-46b9-b110-4f263b395842");
     }
 
-    [Theory]
-    [InlineData(HttpStatusCode.BadRequest)]
-    [InlineData(HttpStatusCode.InternalServerError)]
-    public async Task Send_FailedResponse_ThrowsCorrespondenceRequestException(HttpStatusCode httpStatusCode)
+    [Fact]
+    public async Task GetStatus_SuccessfulResponse_ReturnsCorrectResponse()
     {
         // Arrange
         await using var fixture = Fixture.Create();
         var mockHttpClientFactory = fixture.HttpClientFactoryMock;
         var mockHttpClient = new Mock<HttpClient>();
 
-        var payload = PayloadFactory();
+        var payload = PayloadFactory.GetStatus();
+        var responseMessage = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(
+                """
+                {
+                    "statusHistory": [
+                        {
+                            "status": "Published",
+                            "statusText": "Published"
+                        }
+                    ],
+                    "recipient": "0192:213872702",
+                    "correspondenceId": "94fa9dd9-734e-4712-9d49-4018aeb1a5dc",
+                    "resourceId": "apps-correspondence-integrasjon2",
+                    "sender": "0192:991825827",
+                    "sendersReference": "1234",
+                    "IsConfirmationNeeded": true
+                }
+                """
+            )
+        };
+
+        mockHttpClientFactory.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(mockHttpClient.Object);
+        mockHttpClient
+            .Setup(c => c.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(responseMessage);
+
+        // Act
+        var result = await fixture.CorrespondenceClient.GetStatus(payload);
+
+        // Assert
+        Assert.NotNull(result);
+        result.StatusHistory.Should().HaveCount(1);
+        result.StatusHistory.First().Status.Should().Be(CorrespondenceResponse.CorrespondenceStatus.Published);
+        result.Recipient.Should().Be("0192:213872702");
+        result.CorrespondenceId.Should().Be(Guid.Parse("94fa9dd9-734e-4712-9d49-4018aeb1a5dc"));
+        result.ResourceId.Should().Be("apps-correspondence-integrasjon2");
+        result.Sender.Should().Be(OrganisationNumber.Parse("991825827"));
+        result.SendersReference.Should().Be("1234");
+        result.IsConfirmationNeeded.Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.BadRequest)]
+    [InlineData(HttpStatusCode.InternalServerError)]
+    public async Task FailedResponse_ThrowsCorrespondenceRequestException(HttpStatusCode httpStatusCode)
+    {
+        // Arrange
+        await using var fixture = Fixture.Create();
+        var mockHttpClientFactory = fixture.HttpClientFactoryMock;
+        var mockHttpClient = new Mock<HttpClient>();
         var responseMessage = new HttpResponseMessage(httpStatusCode)
         {
             Content = httpStatusCode switch
@@ -171,23 +232,27 @@ public class CorrespondenceClientTests
             .ReturnsAsync(responseMessage);
 
         // Act
-        Func<Task> act = async () =>
+        Func<Task> send = async () =>
         {
-            await fixture.CorrespondenceClient.Send(payload);
+            await fixture.CorrespondenceClient.Send(PayloadFactory.Send());
+        };
+        Func<Task> getStatus = async () =>
+        {
+            await fixture.CorrespondenceClient.GetStatus(PayloadFactory.GetStatus());
         };
 
         // Assert
-        await act.Should().ThrowAsync<CorrespondenceRequestException>();
+        await send.Should().ThrowAsync<CorrespondenceRequestException>();
+        await getStatus.Should().ThrowAsync<CorrespondenceRequestException>();
     }
 
     [Fact]
-    public async Task Send_UnexpectedException_IsHandled()
+    public async Task UnexpectedException_IsHandled()
     {
         // Arrange
         await using var fixture = Fixture.Create();
         var mockHttpClientFactory = fixture.HttpClientFactoryMock;
         var mockHttpClient = new Mock<HttpClient>();
-        var payload = PayloadFactory();
 
         mockHttpClientFactory.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(mockHttpClient.Object);
         mockHttpClient
@@ -195,13 +260,21 @@ public class CorrespondenceClientTests
             .ReturnsAsync(() => throw new HttpRequestException("Surprise!"));
 
         // Act
-        Func<Task> act = async () =>
+        Func<Task> send = async () =>
         {
-            await fixture.CorrespondenceClient.Send(payload);
+            await fixture.CorrespondenceClient.Send(PayloadFactory.Send());
+        };
+        Func<Task> getStatus = async () =>
+        {
+            await fixture.CorrespondenceClient.GetStatus(PayloadFactory.GetStatus());
         };
 
         // Assert
-        await act.Should()
+        await send.Should()
+            .ThrowAsync<CorrespondenceRequestException>()
+            .WithInnerExceptionExactly(typeof(HttpRequestException));
+        await getStatus
+            .Should()
             .ThrowAsync<CorrespondenceRequestException>()
             .WithInnerExceptionExactly(typeof(HttpRequestException));
     }
@@ -216,7 +289,7 @@ public class CorrespondenceClientTests
         var mockMaskinportenClient = fixture.MaskinportenClientMock;
         var correspondenceClient = fixture.CorrespondenceClient;
         var mockHttpClient = new Mock<HttpClient>();
-        var correspondencePayload = PayloadFactory(correspondenceClient.Authorisation.Maskinporten);
+        var correspondencePayload = PayloadFactory.Send(correspondenceClient.Authorisation.Maskinporten);
         var altinnTokenResponse = PrincipalUtil.GetOrgToken("ttd");
         var altinnTokenWrapperResponse = new TokenWrapper
         {

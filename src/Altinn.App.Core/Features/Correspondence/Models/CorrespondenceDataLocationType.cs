@@ -1,8 +1,11 @@
+using System.Text.Json.Serialization;
+
 namespace Altinn.App.Core.Features.Correspondence.Models;
 
 /// <summary>
 /// The location of the attachment during the correspondence initialization
 /// </summary>
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum CorrespondenceDataLocationType
 {
     /// <summary>

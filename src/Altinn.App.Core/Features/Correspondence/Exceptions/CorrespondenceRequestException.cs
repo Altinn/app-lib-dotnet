@@ -45,6 +45,21 @@ public class CorrespondenceRequestException : CorrespondenceException
     }
 
     /// <inheritdoc/>
+    public CorrespondenceRequestException(
+        string? message,
+        ProblemDetails? problemDetails,
+        HttpStatusCode? httpStatusCode,
+        string? responseBody,
+        Exception? innerException
+    )
+        : base(message, innerException)
+    {
+        ProblemDetails = problemDetails;
+        HttpStatusCode = httpStatusCode;
+        ResponseBody = responseBody;
+    }
+
+    /// <inheritdoc/>
     public CorrespondenceRequestException(string? message, Exception? innerException)
         : base(message, innerException) { }
 }

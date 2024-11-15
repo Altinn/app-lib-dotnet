@@ -90,8 +90,8 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
     }
 
     /// <inheritdoc/>
-    public async Task<CorrespondenceResponse.Status> Status(
-        CorrespondencePayload.Status payload,
+    public async Task<CorrespondenceResponse.GetStatus> GetStatus(
+        CorrespondencePayload.GetStatus payload,
         CancellationToken cancellationToken = default
     )
     {
@@ -107,7 +107,7 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
                 accessTokenFactory: payload.AccessTokenFactory
             );
 
-            return await HandleServerCommunication<CorrespondenceResponse.Status>(request, cancellationToken);
+            return await HandleServerCommunication<CorrespondenceResponse.GetStatus>(request, cancellationToken);
         }
         catch (CorrespondenceException e)
         {
@@ -196,15 +196,23 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
         }
 
         _logger.LogDebug("Correspondence request succeeded: {Response}", responseBody);
-        var parsedResponse =
-            JsonSerializer.Deserialize<TContent>(responseBody)
-            ?? throw new CorrespondenceRequestException(
+
+        try
+        {
+            return JsonSerializer.Deserialize<TContent>(responseBody)
+                ?? throw new CorrespondenceRequestException(
+                    "Literal null content received from Correspondence API server"
+                );
+        }
+        catch (Exception e)
+        {
+            throw new CorrespondenceRequestException(
                 $"Invalid response from Correspondence API server: {responseBody}",
                 null,
                 response.StatusCode,
-                responseBody
+                responseBody,
+                e
             );
-
-        return parsedResponse;
+        }
     }
 }

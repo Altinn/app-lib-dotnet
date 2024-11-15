@@ -36,7 +36,7 @@ public static class CorrespondencePayload
     /// <summary>
     /// Represents a payload for querying the status of a correspondence
     /// </summary>
-    public sealed record Status : AuthorisationBase
+    public sealed record GetStatus : AuthorisationBase
     {
         /// <summary>
         /// The correspondence identifier
