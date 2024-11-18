@@ -14,6 +14,8 @@ using Altinn.App.Core.Features.Payment.Processors.FakePaymentProcessor;
 using Altinn.App.Core.Features.Payment.Processors.Nets;
 using Altinn.App.Core.Features.Payment.Services;
 using Altinn.App.Core.Features.Pdf;
+using Altinn.App.Core.Features.Signing;
+using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Features.Validation.Default;
 using Altinn.App.Core.Helpers.Serialization;
@@ -26,6 +28,7 @@ using Altinn.App.Core.Infrastructure.Clients.Pdf;
 using Altinn.App.Core.Infrastructure.Clients.Profile;
 using Altinn.App.Core.Infrastructure.Clients.Register;
 using Altinn.App.Core.Infrastructure.Clients.Storage;
+using Altinn.App.Core.Internal.AccessManagement;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Auth;
@@ -107,6 +110,8 @@ public static class ServiceCollectionExtensions
 #pragma warning restore CS0618 // Type or member is obsolete
         services.AddHttpClient<IProcessClient, ProcessClient>();
         services.AddHttpClient<IPersonClient, PersonClient>();
+        services.AddHttpClient<IAccessManagementClient, AccessManagementClient>();
+
         services.AddHybridCache();
 
         services.TryAddTransient<IUserTokenProvider, UserTokenProvider>();
@@ -298,6 +303,9 @@ public static class ServiceCollectionExtensions
     private static void AddSignatureServices(IServiceCollection services)
     {
         services.AddHttpClient<ISignClient, SignClient>();
+        services.AddTransient<ISigningDelegationService, SigningDelegationService>();
+        services.AddTransient<ISigningNotificationService, SigningNotificationService>();
+        services.AddTransient<ISigningService, SigningService>();
     }
 
     private static void AddAppOptions(IServiceCollection services)
