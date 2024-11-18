@@ -37,7 +37,7 @@ internal sealed class SigningService(
         ISigneeProvider signeeProvider =
             signeeProviders.FirstOrDefault(sp => sp.Id == signeeProviderId)
             ?? throw new SigneeProviderNotFoundException(
-                $"No signee provider found for task with id {instance.Process.CurrentTask.ElementId}."
+                $"No signee provider found for task {instance.Process.CurrentTask.ElementId} with signeeProviderId {signeeProviderId}."
             );
 
         SigneesResult signeesResult = await signeeProvider.GetSigneesAsync(instance);
