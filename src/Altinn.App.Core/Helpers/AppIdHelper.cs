@@ -6,4 +6,9 @@ internal sealed class AppIdHelper
     {
         return ""; //TODO
     }
+
+    internal static bool IsResourceId(string appId)
+    {
+        return false; //TODO
+    }
 }
