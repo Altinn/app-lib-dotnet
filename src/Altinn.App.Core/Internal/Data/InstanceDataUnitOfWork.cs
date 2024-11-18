@@ -147,7 +147,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         if (modelType.FullName != classRef)
         {
             throw new InvalidOperationException(
-                $"Data object registered for {dataTypeId} is not of type {classRef} as specified in application metadata"
+                $"Tried to save {modelType.FullName} as {dataTypeId}, but applicationmetadata.json specifies {classRef}"
             );
         }
 
@@ -233,7 +233,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
                     DataType = dataType,
                     FileName = dataElement.Filename,
                     ContentType = dataElement.ContentType,
-                    CurrentBinaryData = default,
+                    CurrentBinaryData = ReadOnlyMemory<byte>.Empty,
                 }
             );
         }
@@ -250,7 +250,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
                         ? cfd
                         : _modelSerializationService.GetEmpty(dataType),
                     PreviousFormData = _modelSerializationService.GetEmpty(dataType),
-                    CurrentBinaryData = null,
+                    CurrentBinaryData = ReadOnlyMemory<byte>.Empty,
                     PreviousBinaryData = _binaryCache.TryGetCachedValue(dataElementIdentifier, out var value)
                         ? value
                         : null,
@@ -260,6 +260,8 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     }
 
     internal List<ValidationIssue> AbandonIssues { get; } = [];
+
+    public bool HasAbandonIssues => AbandonIssues.Count > 0;
 
     public void AbandonAllChanges(IEnumerable<ValidationIssue> validationIssues)
     {
@@ -272,7 +274,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
 
     public DataElementChanges GetDataElementChanges(bool initializeAltinnRowId)
     {
-        if (AbandonIssues.Count > 0)
+        if (HasAbandonIssues)
         {
             throw new InvalidOperationException("AbandonAllChanges has been called, and no changes should be saved");
         }
@@ -396,7 +398,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
 
     internal async Task UpdateInstanceData(DataElementChanges changes)
     {
-        if (AbandonIssues.Count > 0)
+        if (HasAbandonIssues)
         {
             throw new InvalidOperationException("AbandonAllChanges has been called, and no changes should be saved");
         }
@@ -469,7 +471,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
 
     internal async Task SaveChanges(DataElementChanges changes)
     {
-        if (AbandonIssues.Count > 0)
+        if (HasAbandonIssues)
         {
             throw new InvalidOperationException("AbandonAllChanges has been called, and no changes should be saved");
         }

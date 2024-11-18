@@ -9,7 +9,18 @@ jobs:
   release-nugets:
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    environment: |-
+      ${{
+         contains(github.event.release.tag_name, 'preview') && 'test'
+      || contains(github.event.release.tag_name, 'rc')      && 'staging'
+      ||                                                       'prod'
+      }}
     steps:
+      - name: Validate tag
+        run: |
+          echo "Validating that the tag is in the correct format"
+          echo "${{ github.event.release.tag_name }}" | grep -P '^v(\d+)\.(\d+)\.(\d+)(-(preview|rc)\d+$|$)'
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
