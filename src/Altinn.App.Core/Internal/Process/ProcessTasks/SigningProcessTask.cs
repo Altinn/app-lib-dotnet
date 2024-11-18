@@ -1,4 +1,7 @@
 using Altinn.App.Core.Features.Signing.Interfaces;
+using Altinn.App.Core.Features.Signing.Models;
+using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Internal.Process.ProcessTasks;
@@ -9,10 +12,12 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks;
 internal sealed class SigningProcessTask : IProcessTask
 {
     private readonly ISigningService _signingService;
+    private readonly IProcessReader _processReader;
 
-    public SigningProcessTask(ISigningService signingService)
+    public SigningProcessTask(ISigningService signingService, IProcessReader processReader)
     {
         _signingService = signingService;
+        _processReader = processReader;
     }
 
     public string Type => "signing";
@@ -20,7 +25,11 @@ internal sealed class SigningProcessTask : IProcessTask
     /// <inheritdoc/>
     public async Task Start(string taskId, Instance instance)
     {
-        await Task.CompletedTask;
+        var cts = new CancellationTokenSource();
+
+        AltinnSignatureConfiguration config = GetAltinnSignatureConfiguration(taskId);
+        List<SigneeContext> signeeContexts = await _signingService.InitializeSignees(instance, config, cts.Token);
+        await _signingService.ProcessSignees(instance, signeeContexts, cts.Token);
     }
 
     /// <inheritdoc/>
@@ -33,5 +42,21 @@ internal sealed class SigningProcessTask : IProcessTask
     public async Task Abandon(string taskId, Instance instance)
     {
         await Task.CompletedTask;
+    }
+
+    private AltinnSignatureConfiguration GetAltinnSignatureConfiguration(string taskId)
+    {
+        AltinnSignatureConfiguration? signatureConfiguration = _processReader
+            .GetAltinnTaskExtension(taskId)
+            ?.SignatureConfiguration;
+
+        if (signatureConfiguration == null)
+        {
+            throw new ApplicationConfigException(
+                "SignatureConfig is missing in the signature process task configuration."
+            );
+        }
+
+        return signatureConfiguration;
     }
 }

@@ -24,7 +24,7 @@ internal sealed class SigningNotificationService(
 
             try
             {
-                Notification? notification = party.Notifications?.OnSignatureTaskReceived;
+                Notification? notification = party.Notifications?.OnSignatureAccessRightsDelegated;
 
                 if (state.SignatureRequestSmsSent is false && notification?.Sms is not null)
                 {

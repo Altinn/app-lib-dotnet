@@ -51,7 +51,7 @@ public class Notifications
     /// <summary>
     /// Notification for when a party has been delegated the rights to sign.
     /// </summary>
-    public Notification? OnSignatureTaskReceived { get; set; }
+    public Notification? OnSignatureAccessRightsDelegated { get; set; }
 }
 
 /// <summary>

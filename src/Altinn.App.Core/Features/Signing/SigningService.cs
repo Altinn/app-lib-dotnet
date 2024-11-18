@@ -18,7 +18,7 @@ internal sealed class SigningService(
     ISigningDelegationService signingDelegationService,
     ISigningNotificationService signingNotificationService,
     IEnumerable<ISigneeProvider> signeeProviders,
-    Telemetry? telemetry
+    Telemetry? telemetry = null
 ) : ISigningService
 {
     public async Task<List<SigneeContext>> InitializeSignees(
@@ -37,7 +37,7 @@ internal sealed class SigningService(
         ISigneeProvider signeeProvider =
             signeeProviders.FirstOrDefault(sp => sp.Id == signeeProviderId)
             ?? throw new SigneeProviderNotFoundException(
-                $"No signee provider found for task {instance.Process.CurrentTask.ElementId} with signeeProviderId {signeeProviderId}."
+                $"No signee provider found for task {instance.Process.CurrentTask.ElementId} with signeeProviderId {signeeProviderId}. Please add an implementation of the {nameof(ISigneeProvider)} interface with that ID or correct the ID."
             );
 
         SigneesResult signeesResult = await signeeProvider.GetSigneesAsync(instance);
@@ -98,7 +98,7 @@ internal sealed class SigningService(
                     $"No partyUuid found for signature party with social security number {personSignee.SocialSecurityNumber}." // TODO: ikke gi ut ssn her?!
                 );
 
-            Sms? smsNotification = personSignee.Notifications?.OnSignatureTaskReceived?.Sms;
+            Sms? smsNotification = personSignee.Notifications?.OnSignatureAccessRightsDelegated?.Sms;
             if (smsNotification is not null && smsNotification.MobileNumber is null)
             {
                 smsNotification.MobileNumber = person.MobileNumber;
@@ -142,13 +142,13 @@ internal sealed class SigningService(
                 );
 
             //TODO: Is this the correct place to set email to registry fallback? Maybe move it to notification service?
-            Email? emailNotification = organisationSignee.Notifications?.OnSignatureTaskReceived?.Email;
+            Email? emailNotification = organisationSignee.Notifications?.OnSignatureAccessRightsDelegated?.Email;
             if (emailNotification is not null && emailNotification.EmailAddress is null)
             {
                 emailNotification.EmailAddress = organisation.EMailAddress;
             }
 
-            Sms? smsNotification = organisationSignee.Notifications?.OnSignatureTaskReceived?.Sms;
+            Sms? smsNotification = organisationSignee.Notifications?.OnSignatureAccessRightsDelegated?.Sms;
             if (smsNotification is not null && smsNotification.MobileNumber is null)
             {
                 smsNotification.MobileNumber = organisation.MobileNumber;
