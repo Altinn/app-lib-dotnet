@@ -174,7 +174,7 @@ public class CorrespondenceClientTests
                     "resourceId": "apps-correspondence-integrasjon2",
                     "sender": "0192:991825827",
                     "sendersReference": "1234",
-                    "IsConfirmationNeeded": true
+                    "isConfirmationNeeded": true
                 }
                 """
             )

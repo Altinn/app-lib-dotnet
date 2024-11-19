@@ -184,7 +184,7 @@ public class CorrespondenceResponseTests
                             "dataLocationType": "AltinnCorrespondenceAttachment",
                             "status": "Published",
                             "statusText": "Published",
-                            "StatusChanged": "2024-11-14T11:06:00.102333+00:00",
+                            "statusChanged": "2024-11-14T11:06:00.102333+00:00",
                             "expirationTime": "0001-01-01T00:00:00+00:00",
                             "id": "a40fad32-dad1-442d-b4e1-2564d4561c07",
                             "fileName": "hello-world-3-1.pDf",
@@ -208,7 +208,7 @@ public class CorrespondenceResponseTests
                 "sender": "0192:991825827",
                 "sendersReference": "1234",
                 "messageSender": "Test Testesen",
-                "RequestedPublishTime": "2024-05-29T13:31:28.290518+00:00",
+                "requestedPublishTime": "2024-05-29T13:31:28.290518+00:00",
                 "allowSystemDeleteAfter": "2025-05-29T13:31:28.290518+00:00",
                 "dueDateTime": "2025-05-29T13:31:28.290518+00:00",
                 "externalReferences": [
@@ -233,9 +233,9 @@ public class CorrespondenceResponseTests
                     }
                 ],
                 "notification": null,
-                "IgnoreReservation": true,
-                "Published": "2024-11-14T11:06:56.208705+00:00",
-                "IsConfirmationNeeded": false
+                "ignoreReservation": true,
+                "published": "2024-11-14T11:06:56.208705+00:00",
+                "isConfirmationNeeded": false
             }
             """;
 

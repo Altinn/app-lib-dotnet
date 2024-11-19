@@ -40,7 +40,7 @@ public sealed record CorrespondenceAttachmentResponse
     /// <summary>
     /// The date and time when the current attachment status was changed
     /// </summary>
-    [JsonPropertyName("StatusChanged")]
+    [JsonPropertyName("statusChanged")]
     public DateTimeOffset StatusChanged { get; init; }
 
     /// <summary>

@@ -96,7 +96,7 @@ public sealed record GetCorrespondenceStatusResponse
     /// <summary>
     /// When the correspondence should become visible to the recipient
     /// </summary>
-    [JsonPropertyName("RequestedPublishTime")]
+    [JsonPropertyName("requestedPublishTime")]
     public DateTimeOffset? RequestedPublishTime { get; init; }
 
     /// <summary>
@@ -132,7 +132,7 @@ public sealed record GetCorrespondenceStatusResponse
     /// <summary>
     /// Specifies whether the correspondence can override reservation against digital communication in KRR
     /// </summary>
-    [JsonPropertyName("IgnoreReservation")]
+    [JsonPropertyName("ignoreReservation")]
     public bool? IgnoreReservation { get; init; }
 
     /// <summary>
@@ -141,12 +141,12 @@ public sealed record GetCorrespondenceStatusResponse
     /// <remarks>
     /// A null value means the correspondence has not yet been published
     /// </remarks>
-    [JsonPropertyName("Published")]
+    [JsonPropertyName("published")]
     public DateTimeOffset? Published { get; init; }
 
     /// <summary>
     /// Specifies whether reading the correspondence needs to be confirmed by the recipient
     /// </summary>
-    [JsonPropertyName("IsConfirmationNeeded")]
-    public bool IsConfirmationNeeded { get; set; }
+    [JsonPropertyName("isConfirmationNeeded")]
+    public bool IsConfirmationNeeded { get; init; }
 }
