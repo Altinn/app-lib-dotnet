@@ -112,7 +112,7 @@ public readonly struct NationalIdentityNumber : IEquatable<NationalIdentityNumbe
     public override bool Equals(object? obj) => obj is NationalIdentityNumber other && Equals(other);
 
     /// <summary>
-    /// Returns the hashcode for the national identity number value
+    /// Returns the hash code for the national identity number value
     /// </summary>
     public override int GetHashCode() => _nationalIdentityNumber.GetHashCode();
 

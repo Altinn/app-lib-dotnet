@@ -62,7 +62,7 @@ public sealed record CorrespondenceNotificationOrderResponse
     public string? ResourceId { get; init; }
 
     /// <summary>
-    /// The processing status of the notication order
+    /// The processing status of the notification order
     /// </summary>
     [JsonPropertyName("processingStatus")]
     public CorrespondenceNotificationStatusSummaryResponse? ProcessingStatus { get; init; }

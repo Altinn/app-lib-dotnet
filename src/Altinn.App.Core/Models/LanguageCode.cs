@@ -110,7 +110,7 @@ public readonly struct LanguageCode<TLangCodeStandard> : IEquatable<LanguageCode
     public override bool Equals(object? obj) => obj is LanguageCode<TLangCodeStandard> other && Equals(other);
 
     /// <summary>
-    /// Returns the hashcode for the language code value
+    /// Returns the hash code for the language code value
     /// </summary>
     public override int GetHashCode() => _code.GetHashCode();
 

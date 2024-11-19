@@ -235,7 +235,7 @@ public sealed record CorrespondenceRequest : CorrespondenceBase
     public CorrespondenceNotification? Notification { get; init; }
 
     /// <summary>
-    /// Specifies whether the correspondence can override reservation against digital comminication in KRR
+    /// Specifies whether the correspondence can override reservation against digital communication in KRR
     /// </summary>
     public bool? IgnoreReservation { get; init; }
 

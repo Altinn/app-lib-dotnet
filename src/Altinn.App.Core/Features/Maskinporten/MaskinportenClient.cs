@@ -381,7 +381,7 @@ internal sealed class MaskinportenClient : IMaskinportenClient
     /// <param name="cancellationToken">An optional cancellation token.</param>
     /// <returns>A <see cref="MaskinportenTokenResponse"/> for successful requests.</returns>
     /// <exception cref="MaskinportenAuthenticationException">Authentication failed.
-    /// This could be caused by an authentication/authorisation issue or a myriad of tother circumstances.</exception>
+    /// This could be caused by an authentication/authorisation issue or a myriad of other circumstances.</exception>
     internal static async Task<MaskinportenTokenResponse> ParseServerResponse(
         HttpResponseMessage httpResponse,
         CancellationToken cancellationToken = default

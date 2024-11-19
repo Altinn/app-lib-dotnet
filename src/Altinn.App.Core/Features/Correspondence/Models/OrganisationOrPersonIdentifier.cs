@@ -48,7 +48,7 @@ public abstract record OrganisationOrPersonIdentifier
     /// <summary>
     /// Creates a new instance of <see cref="OrganisationOrPersonIdentifier.Person"/>
     /// </summary>
-    /// <param name="value">The national idenfity number</param>
+    /// <param name="value">The national identity number</param>
     public static Person Create(NationalIdentityNumber value)
     {
         return new Person(value);

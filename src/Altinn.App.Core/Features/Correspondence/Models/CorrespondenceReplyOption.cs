@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Altinn.App.Core.Features.Correspondence.Models;
 
 /// <summary>
-/// Methods for recipients to respond to a correspondence, in additon to the normal Read and Confirm operations
+/// Methods for recipients to respond to a correspondence, in addition to the normal Read and Confirm operations
 /// </summary>
 public sealed record CorrespondenceReplyOption : CorrespondenceListBase
 {

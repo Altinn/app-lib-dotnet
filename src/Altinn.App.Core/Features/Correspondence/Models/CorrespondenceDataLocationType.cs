@@ -14,7 +14,7 @@ public enum CorrespondenceDataLocationType
     NewCorrespondenceAttachment,
 
     /// <summary>
-    /// Specifies that the attachment  already exist in Altinn Correpondence storage
+    /// Specifies that the attachment  already exist in Altinn Correspondence storage
     /// </summary>
     ExistingCorrespondenceAttachment,
 

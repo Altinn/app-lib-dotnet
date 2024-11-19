@@ -74,7 +74,7 @@ public readonly partial struct AccessToken : IEquatable<AccessToken>
     public override bool Equals(object? obj) => obj is AccessToken other && Equals(other);
 
     /// <summary>
-    /// Returns the hashcode for the access token value
+    /// Returns the hash code for the access token value
     /// </summary>
     public override int GetHashCode() => _accessToken.GetHashCode();
 

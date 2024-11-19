@@ -120,7 +120,8 @@ public interface ICorrespondenceRequestBuilderContent
 }
 
 /// <summary>
-/// Indicates that the <see cref="CorrespondenceRequestBuilder"/> instance has completed all required steps and can proceed to <see cref="CorrespondenceRequestBuilder.Build"/>
+/// Indicates that the <see cref="CorrespondenceRequestBuilder"/> instance has completed all
+/// required steps and can proceed to <see cref="CorrespondenceRequestBuilder.Build"/>
 /// </summary>
 public interface ICorrespondenceRequestBuilder
     : ICorrespondenceRequestBuilderResourceId,

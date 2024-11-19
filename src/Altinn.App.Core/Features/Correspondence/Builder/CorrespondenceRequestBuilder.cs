@@ -14,7 +14,7 @@ public abstract class CorrespondenceBuilderBase
     /// Because of the interface-chaining in this builder, some properties are guaranteed to be non-null.
     /// But the compiler doesn't trust that, so we add this check where needed.
     ///
-    /// Additionally this method checks for empty strings and emtpy data allocations.
+    /// Additionally this method checks for empty strings and empty data allocations.
     /// </summary>
     /// <param name="value">The value to assert</param>
     /// <param name="errorMessage">The error message to throw, if the value was null</param>

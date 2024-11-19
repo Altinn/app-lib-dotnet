@@ -3,7 +3,7 @@ using Altinn.App.Core.Features.Correspondence.Models;
 namespace Altinn.App.Core.Features.Correspondence;
 
 /// <summary>
-/// Contains logic for interacting with the correpondence message service
+/// Contains logic for interacting with the correspondence message service
 /// </summary>
 public interface ICorrespondenceClient
 {

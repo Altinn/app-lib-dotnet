@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 namespace Altinn.App.Core.Models;
 
 /// <summary>
-/// Json converter to transform between <see cref="string"/> &amp; <see cref="AccessToken"/>
+/// Json converter to transform between <see cref="string"/> and <see cref="AccessToken"/>
 /// </summary>
 public class AccessTokenJsonConverter : JsonConverter<AccessToken>
 {

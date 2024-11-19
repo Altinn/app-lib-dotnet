@@ -91,11 +91,10 @@ public readonly struct OrganisationNumber : IEquatable<OrganisationNumber>
 
         ReadOnlySpan<int> weights = [3, 2, 7, 6, 5, 4, 3, 2];
 
-        int currentDigit;
         int sum = 0;
         for (int i = 0; i < local.Length - 1; i++)
         {
-            if (!int.TryParse(local.AsSpan(i, 1), CultureInfo.InvariantCulture, out currentDigit))
+            if (!int.TryParse(local.AsSpan(i, 1), CultureInfo.InvariantCulture, out int currentDigit))
                 return false;
             sum += currentDigit * weights[i];
         }
@@ -127,7 +126,7 @@ public readonly struct OrganisationNumber : IEquatable<OrganisationNumber>
     public override bool Equals(object? obj) => obj is OrganisationNumber other && Equals(other);
 
     /// <summary>
-    /// Returns the hashcode for the <see cref="OrganisationNumberFormat.Local"/> value
+    /// Returns the hash code for the <see cref="OrganisationNumberFormat.Local"/> value
     /// </summary>
     public override int GetHashCode() => _local.GetHashCode();
 

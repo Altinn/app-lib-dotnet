@@ -9,7 +9,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models;
 public sealed record GetCorrespondenceStatusResponse
 {
     /// <summary>
-    /// The status history for the corrrespondence
+    /// The status history for the correspondence
     /// </summary>
     [JsonPropertyName("statusHistory")]
     public required IEnumerable<CorrespondenceStatusEventResponse> StatusHistory { get; init; }
@@ -130,7 +130,7 @@ public sealed record GetCorrespondenceStatusResponse
     public IEnumerable<CorrespondenceReplyOption>? ReplyOptions { get; init; }
 
     /// <summary>
-    /// Specifies whether the correspondence can override reservation against digital comminication in KRR
+    /// Specifies whether the correspondence can override reservation against digital communication in KRR
     /// </summary>
     [JsonPropertyName("IgnoreReservation")]
     public bool? IgnoreReservation { get; init; }
