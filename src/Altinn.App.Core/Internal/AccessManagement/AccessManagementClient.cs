@@ -8,6 +8,7 @@ using Altinn.App.Core.Internal.AccessManagement.Models;
 using Altinn.App.Core.Internal.App;
 using Altinn.Common.AccessTokenClient.Services;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Internal.AccessManagement;
 
@@ -21,7 +22,7 @@ internal sealed class AccessManagementClient(
     HttpClient httpClient,
     IAppMetadata appMetadata,
     IAccessTokenGenerator accessTokenGenerator,
-    PlatformSettings platformSettings,
+    IOptions<PlatformSettings> platformSettings,
     Telemetry? telemetry = null
 ) : IAccessManagementClient
 {
@@ -36,7 +37,7 @@ internal sealed class AccessManagementClient(
 
         HttpResponseMessage? httpResponseMessage = null;
         string? httpContent = null;
-        UrlHelper urlHelper = new(platformSettings);
+        UrlHelper urlHelper = new(platformSettings.Value);
         try
         {
             var application = await appMetadata.GetApplicationMetadata();

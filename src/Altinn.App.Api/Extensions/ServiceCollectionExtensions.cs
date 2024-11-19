@@ -12,6 +12,10 @@ using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Maskinporten;
 using Altinn.App.Core.Features.Maskinporten.Models;
+using Altinn.App.Core.Features.Signing;
+using Altinn.App.Core.Features.Signing.Interfaces;
+using Altinn.App.Core.Internal.AccessManagement;
+using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.Common.PEP.Authorization;
 using Altinn.Common.PEP.Clients;
 using AltinnCore.Authentication.JwtCookie;
@@ -87,14 +91,14 @@ public static class ServiceCollectionExtensions
         var useOpenTelemetrySetting = config.GetValue<bool?>("AppSettings:UseOpenTelemetry");
 
         // Use Application Insights as default, opt in to use Open Telemetry
-        if (useOpenTelemetrySetting is true)
-        {
-            AddOpenTelemetry(services, config, env);
-        }
-        else
-        {
-            AddApplicationInsights(services, config, env);
-        }
+        // if (useOpenTelemetrySetting is true)
+        // {
+        AddOpenTelemetry(services, config, env);
+        // }
+        // else
+        // {
+        //     AddApplicationInsights(services, config, env);
+        // }
 
         AddAuthenticationScheme(services, config, env);
         AddAuthorizationPolicies(services);
@@ -111,6 +115,11 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<AuthorizationApiClient>();
 
         services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+        services.AddSingleton<ISigningNotificationService, SigningNotificationService>();
+        services.AddSingleton<ISigningService, SigningService>();
+        services.AddSingleton<ISigningDelegationService, SigningDelegationService>();
+        services.AddSingleton<IAccessManagementClient, AccessManagementClient>();
+        services.AddSingleton<IProcessTask, SigningProcessTask>();
     }
 
     /// <summary>
