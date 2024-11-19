@@ -20,7 +20,6 @@ public class CorrespondenceBuilderTests
         ];
         string resourceId = "resource-id";
         string sendersReference = "sender-reference";
-        DateTimeOffset dueDateTime = DateTimeOffset.UtcNow.AddDays(30);
         DateTimeOffset allowSystemDeleteAfter = DateTimeOffset.UtcNow.AddDays(60);
         string contentTitle = "content-title";
         LanguageCode<Iso6391> contentLanguage = LanguageCode<Iso6391>.Parse("no");
