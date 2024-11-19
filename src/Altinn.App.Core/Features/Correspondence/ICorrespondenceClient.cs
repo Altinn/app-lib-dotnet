@@ -8,29 +8,24 @@ namespace Altinn.App.Core.Features.Correspondence;
 public interface ICorrespondenceClient
 {
     /// <summary>
-    /// Provides access to known authorisation methods
-    /// </summary>
-    ICorrespondenceAuthorisationFactory Authorisation { get; }
-
-    /// <summary>
     /// Sends a correspondence
     /// </summary>
-    /// <param name="payload">The <see cref="CorrespondencePayload.Send"/> payload</param>
+    /// <param name="payload">The <see cref="SendCorrespondencePayload"/> payload</param>
     /// <param name="cancellationToken">An optional cancellation token</param>
     /// <returns></returns>
-    Task<CorrespondenceResponse.Send> Send(
-        CorrespondencePayload.Send payload,
+    Task<SendCorrespondenceResponse> Send(
+        SendCorrespondencePayload payload,
         CancellationToken cancellationToken = default
     );
 
     /// <summary>
     /// Fetches the status of a correspondence
     /// </summary>
-    /// <param name="payload">The <see cref="CorrespondencePayload.GetStatus"/> payload</param>
+    /// <param name="payload">The <see cref="GetCorrespondenceStatusPayload"/> payload</param>
     /// <param name="cancellationToken">An optional cancellation token</param>
     /// <returns></returns>
-    Task<CorrespondenceResponse.GetStatus> GetStatus(
-        CorrespondencePayload.GetStatus payload,
+    Task<GetCorrespondenceStatusResponse> GetStatus(
+        GetCorrespondenceStatusPayload payload,
         CancellationToken cancellationToken = default
     );
 }

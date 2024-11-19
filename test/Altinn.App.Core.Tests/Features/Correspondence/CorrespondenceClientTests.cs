@@ -60,38 +60,41 @@ public class CorrespondenceClientTests
                 )
             );
 
-        public static CorrespondencePayload.Send Send(Func<Task<AccessToken>>? tokenFactory = default)
+        public static SendCorrespondencePayload Send(
+            Func<Task<AccessToken>>? tokenFactory = default,
+            CorrespondenceAuthorisation? authorisation = default
+        )
         {
-            return new CorrespondencePayload.Send
-            {
-                CorrespondenceRequest = CorrespondenceRequestBuilder
-                    .Create()
-                    .WithResourceId("resource-id")
-                    .WithSender(OrganisationNumber.Parse("991825827"))
-                    .WithSendersReference("senders-ref")
-                    .WithRecipient(OrganisationNumber.Parse("213872702"))
-                    .WithDueDateTime(DateTime.Now.AddMonths(6))
-                    .WithAllowSystemDeleteAfter(DateTime.Now.AddYears(1))
-                    .WithContent(
-                        CorrespondenceContentBuilder
-                            .Create()
-                            .WithTitle("message-title")
-                            .WithLanguage(LanguageCode<Iso6391>.Parse("en"))
-                            .WithSummary("message-summary")
-                            .WithBody("message-body")
-                    )
-                    .Build(),
-                AccessTokenFactory = tokenFactory ?? _defaultTokenFactory
-            };
+            var request = CorrespondenceRequestBuilder
+                .Create()
+                .WithResourceId("resource-id")
+                .WithSender(OrganisationNumber.Parse("991825827"))
+                .WithSendersReference("senders-ref")
+                .WithRecipient(OrganisationOrPersonIdentifier.Parse("213872702"))
+                .WithAllowSystemDeleteAfter(DateTime.Now.AddYears(1))
+                .WithContent(
+                    CorrespondenceContentBuilder
+                        .Create()
+                        .WithTitle("message-title")
+                        .WithLanguage(LanguageCode<Iso6391>.Parse("en"))
+                        .WithSummary("message-summary")
+                        .WithBody("message-body")
+                )
+                .Build();
+
+            return authorisation is null
+                ? new SendCorrespondencePayload(request, tokenFactory ?? _defaultTokenFactory)
+                : new SendCorrespondencePayload(request, authorisation.Value);
         }
 
-        public static CorrespondencePayload.GetStatus GetStatus(Func<Task<AccessToken>>? tokenFactory = default)
+        public static GetCorrespondenceStatusPayload GetStatus(
+            Func<Task<AccessToken>>? tokenFactory = default,
+            CorrespondenceAuthorisation? authorisation = default
+        )
         {
-            return new CorrespondencePayload.GetStatus
-            {
-                CorrespondenceId = Guid.NewGuid(),
-                AccessTokenFactory = tokenFactory ?? _defaultTokenFactory
-            };
+            return authorisation is null
+                ? new GetCorrespondenceStatusPayload(Guid.NewGuid(), tokenFactory ?? _defaultTokenFactory)
+                : new GetCorrespondenceStatusPayload(Guid.NewGuid(), authorisation.Value);
         }
     }
 
@@ -188,7 +191,7 @@ public class CorrespondenceClientTests
         // Assert
         Assert.NotNull(result);
         result.StatusHistory.Should().HaveCount(1);
-        result.StatusHistory.First().Status.Should().Be(CorrespondenceResponse.CorrespondenceStatus.Published);
+        result.StatusHistory.First().Status.Should().Be(CorrespondenceStatus.Published);
         result.Recipient.Should().Be("0192:213872702");
         result.CorrespondenceId.Should().Be(Guid.Parse("94fa9dd9-734e-4712-9d49-4018aeb1a5dc"));
         result.ResourceId.Should().Be("apps-correspondence-integrasjon2");
@@ -287,9 +290,8 @@ public class CorrespondenceClientTests
         IEnumerable<string>? capturedMaskinportenScopes = null;
         var mockHttpClientFactory = fixture.HttpClientFactoryMock;
         var mockMaskinportenClient = fixture.MaskinportenClientMock;
-        var correspondenceClient = fixture.CorrespondenceClient;
         var mockHttpClient = new Mock<HttpClient>();
-        var correspondencePayload = PayloadFactory.Send(correspondenceClient.Authorisation.Maskinporten);
+        var correspondencePayload = PayloadFactory.Send(authorisation: CorrespondenceAuthorisation.Maskinporten);
         var altinnTokenResponse = PrincipalUtil.GetOrgToken("ttd");
         var altinnTokenWrapperResponse = new TokenWrapper
         {
@@ -297,15 +299,15 @@ public class CorrespondenceClientTests
             Scope = "-",
             ExpiresAt = DateTime.UtcNow.AddMinutes(2)
         };
-        var correspondenceResponse = new CorrespondenceResponse.Send
+        var correspondenceResponse = new SendCorrespondenceResponse
         {
             Correspondences =
             [
-                new CorrespondenceResponse.Send.CorrespondenceDetails
+                new CorrespondenceDetailsResponse
                 {
                     CorrespondenceId = Guid.NewGuid(),
-                    Status = CorrespondenceResponse.CorrespondenceStatus.Published,
-                    Recipient = OrganisationNumber.Parse("991825827")
+                    Status = CorrespondenceStatus.Published,
+                    Recipient = OrganisationOrPersonIdentifier.Parse("991825827")
                 }
             ]
         };

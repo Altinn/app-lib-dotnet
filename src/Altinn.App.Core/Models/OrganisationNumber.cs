@@ -19,7 +19,7 @@ public enum OrganisationNumberFormat
 }
 
 /// <summary>
-/// Represents an organisation number
+/// Represents a Norwegian organisation number
 /// <remarks>
 /// The validation in this type is hard coded to the Norwegian organisation number format
 /// </remarks>
@@ -30,7 +30,7 @@ public readonly struct OrganisationNumber : IEquatable<OrganisationNumber>
     private readonly string _international;
 
     /// <summary>
-    /// Gets the organisation number in the specified format
+    /// Gets the organisation number as a string in the specified format
     /// </summary>
     /// <param name="format">The format to get</param>
     /// <exception cref="ArgumentOutOfRangeException">Invalid format provided</exception>

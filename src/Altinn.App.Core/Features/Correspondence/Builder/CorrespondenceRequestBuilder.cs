@@ -43,7 +43,7 @@ public class CorrespondenceRequestBuilder : CorrespondenceBuilderBase, ICorrespo
     private CorrespondenceContent? _content;
     private DateTimeOffset? _allowSystemDeleteAfter;
     private DateTimeOffset? _dueDateTime;
-    private IReadOnlyList<OrganisationNumber>? _recipients;
+    private IReadOnlyList<OrganisationOrPersonIdentifier>? _recipients;
     private DateTimeOffset? _requestedPublishTime;
     private string? _messageSender;
     private IReadOnlyList<CorrespondenceExternalReference>? _externalReferences;
@@ -77,6 +77,14 @@ public class CorrespondenceRequestBuilder : CorrespondenceBuilderBase, ICorrespo
     }
 
     /// <inheritdoc/>
+    public ICorrespondenceRequestBuilderSendersReference WithSender(string sender)
+    {
+        NotNullOrEmpty(sender, "Sender cannot be empty");
+        _sender = OrganisationNumber.Parse(sender);
+        return this;
+    }
+
+    /// <inheritdoc/>
     public ICorrespondenceRequestBuilderRecipients WithSendersReference(string sendersReference)
     {
         NotNullOrEmpty(sendersReference, "Senders reference cannot be empty");
@@ -85,23 +93,32 @@ public class CorrespondenceRequestBuilder : CorrespondenceBuilderBase, ICorrespo
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceRequestBuilderDueDateTime WithRecipient(OrganisationNumber recipient)
+    public ICorrespondenceRequestBuilderAllowSystemDeleteAfter WithRecipient(OrganisationOrPersonIdentifier recipient)
     {
         return WithRecipients([recipient]);
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceRequestBuilderDueDateTime WithRecipients(IReadOnlyList<OrganisationNumber> recipients)
+    public ICorrespondenceRequestBuilderAllowSystemDeleteAfter WithRecipient(string recipient)
+    {
+        return WithRecipients([recipient]);
+    }
+
+    /// <inheritdoc/>
+    public ICorrespondenceRequestBuilderAllowSystemDeleteAfter WithRecipients(
+        IReadOnlyList<OrganisationOrPersonIdentifier> recipients
+    )
     {
         _recipients = [.. _recipients ?? [], .. recipients];
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceRequestBuilderAllowSystemDeleteAfter WithDueDateTime(DateTimeOffset dueDateTime)
+    public ICorrespondenceRequestBuilderAllowSystemDeleteAfter WithRecipients(IReadOnlyList<string> recipients)
     {
-        NotNullOrEmpty(dueDateTime, "DueDateTime cannot be empty");
-        _dueDateTime = dueDateTime;
+        NotNullOrEmpty(recipients);
+
+        _recipients = [.. _recipients ?? [], .. recipients.Select(OrganisationOrPersonIdentifier.Parse)];
         return this;
     }
 
@@ -125,6 +142,14 @@ public class CorrespondenceRequestBuilder : CorrespondenceBuilderBase, ICorrespo
     public ICorrespondenceRequestBuilder WithContent(ICorrespondenceContentBuilder builder)
     {
         return WithContent(builder.Build());
+    }
+
+    /// <inheritdoc/>
+    public ICorrespondenceRequestBuilder WithDueDateTime(DateTimeOffset dueDateTime)
+    {
+        NotNullOrEmpty(dueDateTime, "DueDateTime cannot be empty");
+        _dueDateTime = dueDateTime;
+        return this;
     }
 
     /// <inheritdoc/>
@@ -250,7 +275,6 @@ public class CorrespondenceRequestBuilder : CorrespondenceBuilderBase, ICorrespo
         NotNullOrEmpty(_sendersReference);
         NotNullOrEmpty(_content);
         NotNullOrEmpty(_allowSystemDeleteAfter);
-        NotNullOrEmpty(_dueDateTime);
         NotNullOrEmpty(_recipients);
 
         return new CorrespondenceRequest
@@ -260,7 +284,7 @@ public class CorrespondenceRequestBuilder : CorrespondenceBuilderBase, ICorrespo
             SendersReference = _sendersReference,
             Content = _content,
             AllowSystemDeleteAfter = _allowSystemDeleteAfter.Value,
-            DueDateTime = _dueDateTime.Value,
+            DueDateTime = _dueDateTime,
             Recipients = _recipients,
             RequestedPublishTime = _requestedPublishTime,
             MessageSender = _messageSender,

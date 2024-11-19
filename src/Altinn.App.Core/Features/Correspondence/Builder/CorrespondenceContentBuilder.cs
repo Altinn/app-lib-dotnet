@@ -38,6 +38,14 @@ public class CorrespondenceContentBuilder : CorrespondenceBuilderBase, ICorrespo
     }
 
     /// <inheritdoc/>
+    public ICorrespondenceContentBuilderSummary WithLanguage(string language)
+    {
+        NotNullOrEmpty(language, "Language cannot be empty");
+        _language = LanguageCode<Iso6391>.Parse(language);
+        return this;
+    }
+
+    /// <inheritdoc/>
     public ICorrespondenceContentBuilderBody WithSummary(string summary)
     {
         NotNullOrEmpty(summary, "Summary cannot be empty");

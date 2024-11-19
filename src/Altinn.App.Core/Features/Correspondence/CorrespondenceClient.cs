@@ -23,7 +23,7 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
     private readonly PlatformSettings _platformSettings;
     private readonly Telemetry? _telemetry;
 
-    public ICorrespondenceAuthorisationFactory Authorisation { get; init; }
+    private readonly CorrespondenceAuthorisationFactory _authorisationFactory;
 
     public CorrespondenceClient(
         IHttpClientFactory httpClientFactory,
@@ -37,13 +37,36 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
         _httpClientFactory = httpClientFactory;
         _platformSettings = platformSettings.Value;
         _telemetry = telemetry;
+        _authorisationFactory = new CorrespondenceAuthorisationFactory(serviceProvider);
+    }
 
-        Authorisation = new CorrespondenceAuthorisationFactory(serviceProvider);
+    private async Task<AccessToken> AuthorisationFactory(CorrespondencePayloadBase payload)
+    {
+        if (payload.AccessTokenFactory is null && payload.AuthorisationMethod is null)
+        {
+            throw new CorrespondenceArgumentException(
+                "Neither AccessTokenFactory nor AuthorisationMethod was provided in the CorrespondencePayload object"
+            );
+        }
+
+        if (payload.AccessTokenFactory is not null)
+        {
+            return await payload.AccessTokenFactory();
+        }
+
+        return payload.AuthorisationMethod switch
+        {
+            CorrespondenceAuthorisation.Maskinporten => await _authorisationFactory.Maskinporten(),
+            _
+                => throw new CorrespondenceArgumentException(
+                    $"Unknown CorrespondenceAuthorisation `{payload.AuthorisationMethod}`"
+                )
+        };
     }
 
     /// <inheritdoc />
-    public async Task<CorrespondenceResponse.Send> Send(
-        CorrespondencePayload.Send payload,
+    public async Task<SendCorrespondenceResponse> Send(
+        SendCorrespondencePayload payload,
         CancellationToken cancellationToken = default
     )
     {
@@ -57,10 +80,10 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
                 method: HttpMethod.Post,
                 uri: GetUri("correspondence/upload"),
                 content: content,
-                accessTokenFactory: payload.AccessTokenFactory
+                payload: payload
             );
 
-            var response = await HandleServerCommunication<CorrespondenceResponse.Send>(request, cancellationToken);
+            var response = await HandleServerCommunication<SendCorrespondenceResponse>(request, cancellationToken);
             _telemetry?.RecordCorrespondenceOrder(CorrespondenceResult.Success);
 
             return response;
@@ -90,8 +113,8 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
     }
 
     /// <inheritdoc/>
-    public async Task<CorrespondenceResponse.GetStatus> GetStatus(
-        CorrespondencePayload.GetStatus payload,
+    public async Task<GetCorrespondenceStatusResponse> GetStatus(
+        GetCorrespondenceStatusPayload payload,
         CancellationToken cancellationToken = default
     )
     {
@@ -104,10 +127,10 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
                 method: HttpMethod.Get,
                 uri: GetUri($"correspondence/{payload.CorrespondenceId}/details"),
                 content: null,
-                accessTokenFactory: payload.AccessTokenFactory
+                payload: payload
             );
 
-            return await HandleServerCommunication<CorrespondenceResponse.GetStatus>(request, cancellationToken);
+            return await HandleServerCommunication<GetCorrespondenceStatusResponse>(request, cancellationToken);
         }
         catch (CorrespondenceException e)
         {
@@ -135,11 +158,11 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
         HttpMethod method,
         string uri,
         HttpContent? content,
-        Func<Task<AccessToken>> accessTokenFactory
+        CorrespondencePayloadBase payload
     )
     {
         _logger.LogDebug("Fetching access token via factory");
-        AccessToken accessToken = await accessTokenFactory();
+        AccessToken accessToken = await AuthorisationFactory(payload);
 
         _logger.LogDebug("Constructing authorized http request for target uri {TargetEndpoint}", uri);
         HttpRequestMessage request = new(method, uri) { Content = content };

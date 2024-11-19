@@ -25,6 +25,12 @@ public interface ICorrespondenceRequestBuilderSender
     /// </summary>
     /// <param name="sender">The correspondence sender</param>
     ICorrespondenceRequestBuilderSendersReference WithSender(OrganisationNumber sender);
+
+    /// <summary>
+    /// Sets the sender of the correspondence
+    /// </summary>
+    /// <param name="sender">A string representing a Norwegian organisation number (e.g. 991825827 or 0192:991825827)</param>
+    ICorrespondenceRequestBuilderSendersReference WithSender(string sender);
 }
 
 /// <summary>
@@ -51,7 +57,16 @@ public interface ICorrespondenceRequestBuilderRecipients
     /// This method respects any existing options already stored in <see cref="CorrespondenceRequest.Recipients"/>
     /// </remarks>
     /// <param name="recipient">A recipient</param>
-    ICorrespondenceRequestBuilderDueDateTime WithRecipient(OrganisationNumber recipient);
+    ICorrespondenceRequestBuilderAllowSystemDeleteAfter WithRecipient(OrganisationOrPersonIdentifier recipient);
+
+    /// <summary>
+    /// Adds a recipient to the correspondence
+    /// </summary>
+    /// <remarks>
+    /// This method respects any existing options already stored in <see cref="CorrespondenceRequest.Recipients"/>
+    /// </remarks>
+    /// <param name="recipient">A recipient: Either a Norwegian organisation number or national identity number</param>
+    ICorrespondenceRequestBuilderAllowSystemDeleteAfter WithRecipient(string recipient);
 
     /// <summary>
     /// Adds recipients to the correspondence
@@ -60,20 +75,18 @@ public interface ICorrespondenceRequestBuilderRecipients
     /// This method respects any existing options already stored in <see cref="CorrespondenceRequest.Recipients"/>
     /// </remarks>
     /// <param name="recipients">A list of recipients</param>
-    ICorrespondenceRequestBuilderDueDateTime WithRecipients(IReadOnlyList<OrganisationNumber> recipients);
-}
+    ICorrespondenceRequestBuilderAllowSystemDeleteAfter WithRecipients(
+        IReadOnlyList<OrganisationOrPersonIdentifier> recipients
+    );
 
-/// <summary>
-/// Indicates that the <see cref="CorrespondenceRequestBuilder"/> instance is on the <see cref="CorrespondenceRequest.DueDateTime"/> step
-/// </summary>
-public interface ICorrespondenceRequestBuilderDueDateTime
-{
     /// <summary>
-    /// Sets due date and time for the correspondence
+    /// Adds recipients to the correspondence
     /// </summary>
-    /// <param name="dueDateTime">The point in time when the correspondence is due</param>
-    /// <returns></returns>
-    ICorrespondenceRequestBuilderAllowSystemDeleteAfter WithDueDateTime(DateTimeOffset dueDateTime);
+    /// <remarks>
+    /// This method respects any existing options already stored in <see cref="CorrespondenceRequest.Recipients"/>
+    /// </remarks>
+    /// <param name="recipients">A list of recipients: Either Norwegian organisation numbers or national identity numbers</param>
+    ICorrespondenceRequestBuilderAllowSystemDeleteAfter WithRecipients(IReadOnlyList<string> recipients);
 }
 
 /// <summary>
@@ -114,10 +127,16 @@ public interface ICorrespondenceRequestBuilder
         ICorrespondenceRequestBuilderSender,
         ICorrespondenceRequestBuilderSendersReference,
         ICorrespondenceRequestBuilderRecipients,
-        ICorrespondenceRequestBuilderDueDateTime,
         ICorrespondenceRequestBuilderAllowSystemDeleteAfter,
         ICorrespondenceRequestBuilderContent
 {
+    /// <summary>
+    /// Sets due date and time for the correspondence
+    /// </summary>
+    /// <param name="dueDateTime">The point in time when the correspondence is due</param>
+    /// <returns></returns>
+    ICorrespondenceRequestBuilder WithDueDateTime(DateTimeOffset dueDateTime);
+
     /// <summary>
     /// Sets the requested publish time for the correspondence
     /// </summary>

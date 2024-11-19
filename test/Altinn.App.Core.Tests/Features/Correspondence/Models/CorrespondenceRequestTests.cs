@@ -22,7 +22,11 @@ public class CorrespondenceRequestTests
             DueDateTime = DateTimeOffset.UtcNow.AddDays(2),
             IgnoreReservation = true,
             MessageSender = "message-sender",
-            Recipients = [TestHelpers.GetOrganisationNumber(1), TestHelpers.GetOrganisationNumber(2)],
+            Recipients =
+            [
+                OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(1)),
+                OrganisationOrPersonIdentifier.Create(TestHelpers.GetNationalIdentityNumber(1))
+            ],
             Content = new CorrespondenceContent
             {
                 Title = "title",
@@ -184,7 +188,7 @@ public class CorrespondenceRequestTests
             SendersReference = "senders-reference",
             AllowSystemDeleteAfter = DateTimeOffset.UtcNow.AddDays(2),
             DueDateTime = DateTimeOffset.UtcNow.AddDays(2),
-            Recipients = [TestHelpers.GetOrganisationNumber(1)],
+            Recipients = [OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(1))],
             Content = new CorrespondenceContent
             {
                 Title = "title",
@@ -283,7 +287,8 @@ public class CorrespondenceRequestTests
 
         return value switch
         {
-            OrganisationNumber orgNumber => orgNumber.Get(OrganisationNumberFormat.International),
+            OrganisationNumber org => org.Get(OrganisationNumberFormat.International),
+            OrganisationOrPersonIdentifier.Organisation org => org.Value.Get(OrganisationNumberFormat.International),
             DateTime dateTime => dateTime.ToString("O"),
             DateTimeOffset dateTimeOffset => dateTimeOffset.ToString("O"),
             _

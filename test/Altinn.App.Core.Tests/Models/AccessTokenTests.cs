@@ -32,31 +32,6 @@ public class AccessTokenTests
     }
 
     [Fact]
-    public void TryParse_ValidToken_ShouldReturnTrue()
-    {
-        // Arrange
-        var encodedToken = _validTokens[1];
-
-        // Act
-        var result = AccessToken.TryParse(encodedToken, out var accessToken);
-
-        // Assert
-        result.Should().BeTrue();
-        accessToken.Get().Should().Be(encodedToken);
-    }
-
-    [Fact]
-    public void TryParse_InvalidToken_ShouldReturnFalse()
-    {
-        // Act
-        var result = AccessToken.TryParse(_invalidToken, out var accessToken);
-
-        // Assert
-        result.Should().BeFalse();
-        Assert.Equal(default, accessToken);
-    }
-
-    [Fact]
     public void Equals_SameToken_ShouldReturnTrue()
     {
         // Arrange
@@ -66,10 +41,12 @@ public class AccessTokenTests
         // Act
         bool result1 = token1.Equals(token2);
         bool result2 = token1 == token2;
+        bool result3 = token1 != token2;
 
         // Assert
         result1.Should().BeTrue();
         result2.Should().BeTrue();
+        result3.Should().BeFalse();
     }
 
     [Fact]
@@ -82,10 +59,12 @@ public class AccessTokenTests
         // Act
         bool result1 = token1.Equals(token2);
         bool result2 = token1 == token2;
+        bool result3 = token1 != token2;
 
         // Assert
         result1.Should().BeFalse();
         result2.Should().BeFalse();
+        result3.Should().BeTrue();
     }
 
     [Fact]

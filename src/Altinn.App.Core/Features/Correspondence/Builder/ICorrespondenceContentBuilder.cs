@@ -23,8 +23,14 @@ public interface ICorrespondenceContentBuilderLanguage
     /// <summary>
     /// Sets the language of the correspondence content
     /// </summary>
-    /// <param name="language"></param>
+    /// <param name="language">The content language</param>
     ICorrespondenceContentBuilderSummary WithLanguage(LanguageCode<Iso6391> language);
+
+    /// <summary>
+    /// Sets the language of the correspondence content
+    /// </summary>
+    /// <param name="language">The content language in ISO 639-1 format</param>
+    ICorrespondenceContentBuilderSummary WithLanguage(string language);
 }
 
 /// <summary>

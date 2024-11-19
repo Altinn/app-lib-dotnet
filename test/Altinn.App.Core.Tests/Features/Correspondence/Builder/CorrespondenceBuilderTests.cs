@@ -8,21 +8,15 @@ namespace Altinn.App.Core.Tests.Features.Correspondence.Builder;
 
 public class CorrespondenceBuilderTests
 {
-    private static string StreamReadHelper(Stream stream)
-    {
-        stream.Position = 0;
-        return new StreamReader(stream).ReadToEnd();
-    }
-
     [Fact]
     public void Build_WithOnlyRequiredProperties_ShouldReturnValidCorrespondence()
     {
         // Arrange
         OrganisationNumber sender = TestHelpers.GetOrganisationNumber(1);
-        IReadOnlyList<OrganisationNumber> recipients =
+        IReadOnlyList<OrganisationOrPersonIdentifier> recipients =
         [
-            TestHelpers.GetOrganisationNumber(1),
-            TestHelpers.GetOrganisationNumber(2)
+            OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(1)),
+            OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(2))
         ];
         string resourceId = "resource-id";
         string sendersReference = "sender-reference";
@@ -39,7 +33,6 @@ public class CorrespondenceBuilderTests
             .WithSender(sender)
             .WithSendersReference(sendersReference)
             .WithRecipients(recipients)
-            .WithDueDateTime(dueDateTime)
             .WithAllowSystemDeleteAfter(allowSystemDeleteAfter)
             .WithContent(
                 CorrespondenceContentBuilder
@@ -59,7 +52,6 @@ public class CorrespondenceBuilderTests
         correspondence.Sender.Should().Be(sender);
         correspondence.SendersReference.Should().Be("sender-reference");
         correspondence.AllowSystemDeleteAfter.Should().BeExactly(allowSystemDeleteAfter);
-        correspondence.DueDateTime.Should().BeExactly(dueDateTime);
         correspondence.Recipients.Should().BeEquivalentTo(recipients);
         correspondence.Content.Title.Should().Be(contentTitle);
         correspondence.Content.Language.Should().Be(contentLanguage);
@@ -72,7 +64,7 @@ public class CorrespondenceBuilderTests
     {
         // Arrange
         var sender = TestHelpers.GetOrganisationNumber(1);
-        var recipient = TestHelpers.GetOrganisationNumber(2);
+        var recipient = OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(2));
         var data = new
         {
             sender,
@@ -156,7 +148,6 @@ public class CorrespondenceBuilderTests
             .WithSender(data.sender)
             .WithSendersReference(data.sendersReference)
             .WithRecipient(data.recipient)
-            .WithDueDateTime(data.dueDateTime)
             .WithAllowSystemDeleteAfter(data.allowDeleteAfter)
             .WithContent(
                 CorrespondenceContentBuilder
@@ -182,6 +173,7 @@ public class CorrespondenceBuilderTests
                     .WithNotificationChannel(data.notification.notificationChannel)
                     .WithReminderNotificationChannel(data.notification.reminderNotificationChannel)
             )
+            .WithDueDateTime(data.dueDateTime)
             .WithMessageSender(data.messageSender)
             .WithIgnoreReservation(data.ignoreReservation)
             .WithRequestedPublishTime(data.requestedPublishTime)
@@ -317,7 +309,7 @@ public class CorrespondenceBuilderTests
         }
     }
 
-    // TODO: This isn't exhaustive, but it's so boring to write up all permutations... do it anyway, some day.
+    // TODO: This test isn't exhaustive
     [Fact]
     public void Builder_UpdatesAndOverwritesValuesCorrectly()
     {
@@ -327,8 +319,7 @@ public class CorrespondenceBuilderTests
             .WithResourceId("resourceId-1")
             .WithSender(TestHelpers.GetOrganisationNumber(1))
             .WithSendersReference("sender-reference-1")
-            .WithRecipient(TestHelpers.GetOrganisationNumber(1))
-            .WithDueDateTime(DateTimeOffset.UtcNow.AddDays(1))
+            .WithRecipient(OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(1)))
             .WithAllowSystemDeleteAfter(DateTimeOffset.UtcNow.AddDays(1))
             .WithContent(
                 CorrespondenceContentBuilder
@@ -338,6 +329,7 @@ public class CorrespondenceBuilderTests
                     .WithSummary("content-summary-1")
                     .WithBody("content-body-1")
             )
+            .WithDueDateTime(DateTimeOffset.UtcNow.AddDays(1))
             .WithNotification(
                 CorrespondenceNotificationBuilder
                     .Create()
@@ -348,15 +340,27 @@ public class CorrespondenceBuilderTests
         builder.WithResourceId("resourceId-2");
         builder.WithSender(TestHelpers.GetOrganisationNumber(2));
         builder.WithSendersReference("sender-reference-2");
-        builder.WithRecipient(TestHelpers.GetOrganisationNumber(2));
-        builder.WithRecipients([TestHelpers.GetOrganisationNumber(3), TestHelpers.GetOrganisationNumber(4)]);
+        builder.WithRecipient(OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(2)));
+        builder.WithRecipients(
+            [
+                OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(3)),
+                OrganisationOrPersonIdentifier.Create(TestHelpers.GetNationalIdentityNumber(4))
+            ]
+        );
+        builder.WithRecipient(TestHelpers.GetOrganisationNumber(5).Get(OrganisationNumberFormat.Local));
+        builder.WithRecipients(
+            [
+                TestHelpers.GetOrganisationNumber(6).Get(OrganisationNumberFormat.Local),
+                TestHelpers.GetNationalIdentityNumber(7).Get()
+            ]
+        );
         builder.WithDueDateTime(DateTimeOffset.UtcNow.AddDays(2));
         builder.WithAllowSystemDeleteAfter(DateTimeOffset.UtcNow.AddDays(2));
         builder.WithContent(
             CorrespondenceContentBuilder
                 .Create()
                 .WithTitle("content-title-2")
-                .WithLanguage(LanguageCode<Iso6391>.Parse("en"))
+                .WithLanguage("en")
                 .WithSummary("content-summary-2")
                 .WithBody("content-body-2")
         );
@@ -380,15 +384,19 @@ public class CorrespondenceBuilderTests
         correspondence.AllowSystemDeleteAfter.Should().BeSameDateAs(DateTimeOffset.UtcNow.AddDays(2));
         correspondence.DueDateTime.Should().BeSameDateAs(DateTimeOffset.UtcNow.AddDays(2));
 
-        correspondence.Recipients.Should().HaveCount(4);
+        correspondence.Recipients.Should().HaveCount(7);
         correspondence
-            .Recipients.Should()
+            .Recipients.Select(x => x.ToString())
+            .Should()
             .BeEquivalentTo(
                 [
-                    TestHelpers.GetOrganisationNumber(1),
-                    TestHelpers.GetOrganisationNumber(2),
-                    TestHelpers.GetOrganisationNumber(3),
-                    TestHelpers.GetOrganisationNumber(4)
+                    TestHelpers.GetOrganisationNumber(1).Get(OrganisationNumberFormat.Local),
+                    TestHelpers.GetOrganisationNumber(2).Get(OrganisationNumberFormat.Local),
+                    TestHelpers.GetOrganisationNumber(3).Get(OrganisationNumberFormat.Local),
+                    TestHelpers.GetNationalIdentityNumber(4).Get(),
+                    TestHelpers.GetOrganisationNumber(5).Get(OrganisationNumberFormat.Local),
+                    TestHelpers.GetOrganisationNumber(6).Get(OrganisationNumberFormat.Local),
+                    TestHelpers.GetNationalIdentityNumber(7).Get()
                 ]
             );
 

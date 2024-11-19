@@ -26,6 +26,18 @@ public class CorrespondenceResponseTests
                            "status": "Success"
                         }
                      ]
+                  },
+                  {
+                     "correspondenceId": "d22d8dda-7b56-48c0-b287-5052aa255d5b",
+                     "status": "Published",
+                     "recipient": "26267892619",
+                     "notifications": [
+                        {
+                           "orderId": "0ee29355-f2ca-4cd9-98e0-e97a4242d321",
+                           "isReminder": true,
+                           "status": "MissingContact"
+                        }
+                     ]
                   }
                ],
                "attachmentIds": [
@@ -35,20 +47,23 @@ public class CorrespondenceResponseTests
             """;
 
         // Act
-        var parsedResponse = JsonSerializer.Deserialize<CorrespondenceResponse.Send>(encodedResponse);
+        var parsedResponse = JsonSerializer.Deserialize<SendCorrespondenceResponse>(encodedResponse);
 
         // Assert
         Assert.NotNull(parsedResponse);
         Assert.NotNull(parsedResponse.Correspondences);
         Assert.NotNull(parsedResponse.AttachmentIds);
 
-        parsedResponse.Correspondences.Should().HaveCount(1);
+        parsedResponse.Correspondences.Should().HaveCount(2);
         parsedResponse
             .Correspondences[0]
             .CorrespondenceId.Should()
             .Be(Guid.Parse("d22d8dda-7b56-48c0-b287-5052aa255d5b"));
-        parsedResponse.Correspondences[0].Status.Should().Be(CorrespondenceResponse.CorrespondenceStatus.Initialized);
-        parsedResponse.Correspondences[0].Recipient.Should().Be(OrganisationNumber.Parse("0192:213872702"));
+        parsedResponse.Correspondences[0].Status.Should().Be(CorrespondenceStatus.Initialized);
+        parsedResponse
+            .Correspondences[0]
+            .Recipient.Should()
+            .Be(OrganisationOrPersonIdentifier.Create(OrganisationNumber.Parse("0192:213872702")));
 
         parsedResponse.Correspondences[0].Notifications.Should().HaveCount(1);
         parsedResponse
@@ -61,7 +76,19 @@ public class CorrespondenceResponseTests
             .Correspondences[0]
             .Notifications![0]
             .Status.Should()
-            .Be(CorrespondenceResponse.NotificationStatus.Success);
+            .Be(CorrespondenceNotificationStatusResponse.Success);
+
+        parsedResponse.Correspondences[1].Status.Should().Be(CorrespondenceStatus.Published);
+        parsedResponse
+            .Correspondences[1]
+            .Recipient.Should()
+            .Be(OrganisationOrPersonIdentifier.Create(NationalIdentityNumber.Parse("26267892619")));
+        parsedResponse.Correspondences[1].Notifications![0].IsReminder.Should().BeTrue();
+        parsedResponse
+            .Correspondences[1]
+            .Notifications![0]
+            .Status.Should()
+            .Be(CorrespondenceNotificationStatusResponse.MissingContact);
 
         parsedResponse.AttachmentIds.Should().HaveCount(1);
         parsedResponse.AttachmentIds[0].Should().Be(Guid.Parse("cae24499-a5f9-425b-9c5b-4dac85fce891"));
@@ -213,7 +240,7 @@ public class CorrespondenceResponseTests
             """;
 
         // Act
-        var parsedResponse = JsonSerializer.Deserialize<CorrespondenceResponse.GetStatus>(encodedResponse);
+        var parsedResponse = JsonSerializer.Deserialize<GetCorrespondenceStatusResponse>(encodedResponse);
 
         // Assert
         Assert.NotNull(parsedResponse);
@@ -222,9 +249,9 @@ public class CorrespondenceResponseTests
             .StatusHistory.Last()
             .Should()
             .Be(
-                new CorrespondenceResponse.GetStatus.StatusEvent
+                new CorrespondenceStatusEventResponse
                 {
-                    Status = CorrespondenceResponse.CorrespondenceStatus.Published,
+                    Status = CorrespondenceStatus.Published,
                     StatusText = "Published",
                     StatusChanged = DateTime.Parse("2024-11-14T11:06:56.208705+00:00")
                 }
@@ -234,7 +261,7 @@ public class CorrespondenceResponseTests
             .Notifications!.Last()
             .Should()
             .BeEquivalentTo(
-                new CorrespondenceResponse.GetStatus.NotificationOrder
+                new CorrespondenceNotificationOrderResponse
                 {
                     Id = "7ab0ff62-8c5d-4a2e-8ad2-7e7236e847a4",
                     SendersReference = "1234",
@@ -244,24 +271,24 @@ public class CorrespondenceResponseTests
                     NotificationChannel = CorrespondenceNotificationChannel.EmailPreferred,
                     IgnoreReservation = true,
                     ResourceId = "apps-correspondence-integrasjon2",
-                    ProcessingStatus = new CorrespondenceResponse.GetStatus.NotificationStatusSummary
+                    ProcessingStatus = new CorrespondenceNotificationStatusSummaryResponse
                     {
                         Status = "Completed",
                         Description = "Order processing is completed. All notifications have been generated.",
                         LastUpdate = DateTime.Parse("2024-11-14T11:05:57.054356Z").ToUniversalTime()
                     },
-                    NotificationStatusDetails = new CorrespondenceResponse.GetStatus.NotificationStatusDetails
+                    NotificationStatusDetails = new CorrespondenceNotificationSummaryResponse
                     {
-                        Email = new CorrespondenceResponse.GetStatus.NotificationDetails
+                        Email = new CorrespondenceNotificationStatusDetailsResponse
                         {
                             Id = Guid.Parse("0dabcc5c-c3de-4636-922c-e7b351cdbbfa"),
                             Succeeded = true,
-                            Recipient = new CorrespondenceResponse.GetStatus.NotificationRecipient
+                            Recipient = new CorrespondenceNotificationRecipientResponse
                             {
                                 EmailAddress = "someone@digdir.no",
-                                OrganizationNumber = "213872702"
+                                OrganisationNumber = "213872702"
                             },
-                            SendStatus = new CorrespondenceResponse.GetStatus.NotificationStatusSummary
+                            SendStatus = new CorrespondenceNotificationStatusSummaryResponse
                             {
                                 Status = "Succeeded",
                                 Description =
@@ -277,7 +304,7 @@ public class CorrespondenceResponseTests
         parsedResponse
             .Content.Should()
             .BeEquivalentTo(
-                new CorrespondenceResponse.GetStatus.CorrespondenceContent
+                new CorrespondenceContentResponse
                 {
                     Language = LanguageCode<Iso6391>.Parse("en"),
                     MessageTitle = "This is the title 👋🏻",
@@ -285,14 +312,11 @@ public class CorrespondenceResponseTests
                     MessageBody = "This is the message\n\nHere is a newline.\n\nHere are some emojis: 📎👴🏻👨🏼‍🍳🥰",
                     Attachments =
                     [
-                        new CorrespondenceResponse.GetStatus.CorrespondenceAttachment
+                        new CorrespondenceAttachmentResponse
                         {
                             Created = DateTimeOffset.Parse("2024-11-14T11:05:56.843622+00:00"),
-                            DataLocationType = CorrespondenceResponse
-                                .GetStatus
-                                .AttachmentDataLocationType
-                                .AltinnCorrespondenceAttachment,
-                            Status = CorrespondenceResponse.GetStatus.AttachmentStatus.Published,
+                            DataLocationType = CorrespondenceDataLocationTypeResponse.AltinnCorrespondenceAttachment,
+                            Status = CorrespondenceAttachmentStatusResponse.Published,
                             StatusText = "Published",
                             StatusChanged = DateTimeOffset.Parse("2024-11-14T11:06:00.102333+00:00"),
                             Id = Guid.Parse("a40fad32-dad1-442d-b4e1-2564d4561c07"),
@@ -306,7 +330,7 @@ public class CorrespondenceResponseTests
                 }
             );
         parsedResponse.Created.Should().Be(DateTimeOffset.Parse("2024-11-14T11:05:56.575089+00:00"));
-        parsedResponse.Status.Should().Be(CorrespondenceResponse.CorrespondenceStatus.Published);
+        parsedResponse.Status.Should().Be(CorrespondenceStatus.Published);
         parsedResponse.StatusText.Should().Be("Published");
         parsedResponse.ResourceId.Should().Be("apps-correspondence-integrasjon2");
         parsedResponse.Sender.Should().Be(OrganisationNumber.Parse("0192:991825827"));
@@ -320,7 +344,7 @@ public class CorrespondenceResponseTests
             .ExternalReferences!.Last()
             .Should()
             .Be(
-                new CorrespondenceResponse.GetStatus.ExternalReference
+                new CorrespondenceExternalReference
                 {
                     ReferenceType = CorrespondenceReferenceType.DialogportenDialogId,
                     ReferenceValue = "01932a59-edc3-7038-823e-cf46908cd83b"

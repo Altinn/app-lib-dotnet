@@ -10,7 +10,7 @@ public readonly partial struct AccessToken : IEquatable<AccessToken>
     private readonly string _accessToken;
 
     /// <summary>
-    /// Gets the access token
+    /// Gets the access token as a string
     /// </summary>
     public string Get()
     {

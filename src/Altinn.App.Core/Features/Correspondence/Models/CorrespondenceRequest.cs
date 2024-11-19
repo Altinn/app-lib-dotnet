@@ -199,16 +199,15 @@ public sealed record CorrespondenceRequest : CorrespondenceBase
     /// </summary>
     public required DateTimeOffset AllowSystemDeleteAfter { get; init; }
 
-    // TODO: This is currently required, but should be optional. Await correspondence team
     /// <summary>
     /// When must the recipient respond by?
     /// </summary>
-    public required DateTimeOffset DueDateTime { get; init; }
+    public DateTimeOffset? DueDateTime { get; init; }
 
     /// <summary>
-    /// The recipients of the correspondence
+    /// The recipients of the correspondence. Either Norwegian organisation numbers or national identity numbers
     /// </summary>
-    public required IReadOnlyList<OrganisationNumber> Recipients { get; init; }
+    public required IReadOnlyList<OrganisationOrPersonIdentifier> Recipients { get; init; }
 
     /// <summary>
     /// An alternative name for the sender of the correspondence. The name will be displayed instead of the organisation name
@@ -257,11 +256,26 @@ public sealed record CorrespondenceRequest : CorrespondenceBase
         AddRequired(content, AllowSystemDeleteAfter.ToString("O"), "Correspondence.AllowSystemDeleteAfter");
         AddIfNotNull(content, MessageSender, "Correspondence.MessageSender");
         AddIfNotNull(content, RequestedPublishTime?.ToString("O"), "Correspondence.RequestedPublishTime");
-        AddIfNotNull(content, DueDateTime.ToString("O"), "Correspondence.DueDateTime");
+        AddIfNotNull(content, DueDateTime?.ToString("O"), "Correspondence.DueDateTime");
         AddIfNotNull(content, IgnoreReservation?.ToString(), "Correspondence.IgnoreReservation");
-        AddListItems(content, Recipients, x => x.Get(OrganisationNumberFormat.International), i => $"Recipients[{i}]");
-        AddListItems(content, ExistingAttachments, x => x.ToString(), i => $"Correspondence.ExistingAttachments[{i}]");
         AddDictionaryItems(content, PropertyList, x => x, key => $"Correspondence.PropertyList.{key}");
+        AddListItems(content, ExistingAttachments, x => x.ToString(), i => $"Correspondence.ExistingAttachments[{i}]");
+        AddListItems(
+            content,
+            Recipients,
+            x =>
+                x switch
+                {
+                    OrganisationOrPersonIdentifier.Organisation org
+                        => org.Value.Get(OrganisationNumberFormat.International),
+                    OrganisationOrPersonIdentifier.Person person => person.Value.Get(),
+                    _
+                        => throw new CorrespondenceValueException(
+                            $"Unknown OrganisationOrPersonIdentifier type `{x.GetType()}` ({nameof(Recipients)})"
+                        )
+                },
+            i => $"Recipients[{i}]"
+        );
 
         Content.Serialise(content);
         Notification?.Serialise(content);

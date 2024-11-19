@@ -4,34 +4,36 @@ using System.Text.Json.Serialization;
 namespace Altinn.App.Core.Models;
 
 /// <summary>
-/// Json converter to transform between <see cref="string"/> &amp; <see cref="OrganisationNumber"/>
+/// Json converter to transform between <see cref="string"/> and <see cref="OrganisationNumber"/>
 /// </summary>
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Class, AllowMultiple = false)]
 public class OrganisationNumberJsonConverterAttribute : JsonConverterAttribute
 {
-    /// <summary>
-    /// The format to use for <see cref="OrganisationNumberJsonConverter.Write"/> operations
-    /// </summary>
-    public OrganisationNumberFormat Format { get; }
+    private OrganisationNumberFormat _format { get; init; }
 
-    /// <summary>
-    /// Heya
-    /// </summary>
-    /// <param name="format"></param>
+    /// <inheritdoc cref="OrganisationNumberJsonConverterAttribute"/>
+    /// <param name="format">The desired organisation number format to use for <b>serialization</b></param>
     public OrganisationNumberJsonConverterAttribute(OrganisationNumberFormat format)
     {
-        Format = format;
+        _format = format;
     }
 
     /// <inheritdoc/>
     public override JsonConverter? CreateConverter(Type typeToConvert)
     {
-        return new OrganisationNumberJsonConverter(Format);
+        return new OrganisationNumberJsonConverter(_format);
     }
 }
 
-internal class OrganisationNumberJsonConverter(OrganisationNumberFormat format) : JsonConverter<OrganisationNumber>
+internal class OrganisationNumberJsonConverter : JsonConverter<OrganisationNumber>
 {
+    private OrganisationNumberFormat _format { get; init; }
+
+    public OrganisationNumberJsonConverter(OrganisationNumberFormat format)
+    {
+        _format = format;
+    }
+
     public override OrganisationNumber Read(
         ref Utf8JsonReader reader,
         Type typeToConvert,
@@ -49,6 +51,6 @@ internal class OrganisationNumberJsonConverter(OrganisationNumberFormat format) 
 
     public override void Write(Utf8JsonWriter writer, OrganisationNumber value, JsonSerializerOptions options)
     {
-        writer.WriteStringValue(value.Get(format));
+        writer.WriteStringValue(value.Get(_format));
     }
 }

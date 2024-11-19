@@ -74,7 +74,7 @@ public class OrganisationNumberTests
     ];
 
     [Fact]
-    public void ValidNumbersParseOk()
+    public void Parse_ValidNumber_ShouldReturnOrganisationNumber()
     {
         foreach (var validOrgNumber in ValidOrganisationNumbers)
         {
@@ -88,7 +88,7 @@ public class OrganisationNumberTests
     }
 
     [Fact]
-    public void InvalidNumbersThrowException()
+    public void Parse_InvalidNumber_ShouldThrowFormatException()
     {
         foreach (var invalidOrgNumber in InvalidOrganisationNumbers)
         {
@@ -98,17 +98,54 @@ public class OrganisationNumberTests
     }
 
     [Fact]
-    public void EqualityWorksAsExpected()
+    public void Equals_SameNumber_ShouldReturnTrue()
     {
-        var orgNumber1A = OrganisationNumber.Parse(ValidOrganisationNumbers[0]);
-        var orgNumber1B = OrganisationNumber.Parse(ValidOrganisationNumbers[0]);
-        var orgNumber2 = OrganisationNumber.Parse(ValidOrganisationNumbers[2]);
+        // Arrange
+        var number1 = OrganisationNumber.Parse(ValidOrganisationNumbers[0]);
+        var number2 = OrganisationNumber.Parse(ValidOrganisationNumbers[0]);
 
-        Assert.True(orgNumber1A == orgNumber1B);
-        Assert.True(orgNumber1A != orgNumber2);
-        Assert.False(orgNumber1A == orgNumber2);
+        // Act
+        bool result1 = number1.Equals(number2);
+        bool result2 = number1 == number2;
+        bool result3 = number1 != number2;
 
-        orgNumber1A.Should().Be(orgNumber1B);
-        orgNumber1A.Should().NotBe(orgNumber2);
+        // Assert
+        result1.Should().BeTrue();
+        result2.Should().BeTrue();
+        result3.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Equals_DifferentNumber_ShouldReturnFalse()
+    {
+        // Arrange
+        var number1 = OrganisationNumber.Parse(ValidOrganisationNumbers[0]);
+        var number2 = OrganisationNumber.Parse(ValidOrganisationNumbers[1]);
+
+        // Act
+        bool result1 = number1.Equals(number2);
+        bool result2 = number1 == number2;
+        bool result3 = number1 != number2;
+
+        // Assert
+        result1.Should().BeFalse();
+        result2.Should().BeFalse();
+        result3.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ToString_ShouldReturnLocalFormat()
+    {
+        // Arrange
+        var rawLocal = ValidOrganisationNumbers[0];
+        var number = OrganisationNumber.Parse(rawLocal);
+
+        // Act
+        var stringified1 = number.ToString();
+        var stringified2 = $"{number}";
+
+        // Assert
+        stringified1.Should().Be(rawLocal);
+        stringified2.Should().Be(rawLocal);
     }
 }

@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Altinn.App.Core.Features.Correspondence;
 
-internal sealed class CorrespondenceAuthorisationFactory : ICorrespondenceAuthorisationFactory
+internal sealed class CorrespondenceAuthorisationFactory
 {
     private IMaskinportenClient? _maskinportenClient;
     private readonly IServiceProvider _serviceProvider;
