@@ -1,4 +1,5 @@
-﻿using Altinn.Platform.Register.Models;
+﻿using System.Text.Json.Serialization;
+using Altinn.Platform.Register.Models;
 
 namespace Altinn.App.Api.Models;
 
@@ -22,11 +23,13 @@ public class LookupPersonResponse
     /// <summary>
     /// Indicates whether a person was found or not.
     /// </summary>
+    [JsonPropertyName("success")]
     public bool Success { get; init; }
 
     /// <summary>
     /// Contains details about the person found by the search. Null if no person was found.
     /// </summary>
+    [JsonPropertyName("personDetails")]
     public PersonDetails? PersonDetails { get; init; }
 }
 
@@ -38,26 +41,31 @@ public class PersonDetails
     /// <summary>
     /// The social security number
     /// </summary>
+    [JsonPropertyName("ssn")]
     public required string Ssn { get; init; }
 
     /// <summary>
     /// The full name
     /// </summary>
+    [JsonPropertyName("name")]
     public required string Name { get; init; }
 
     /// <summary>
     /// The first name
     /// </summary>
+    [JsonPropertyName("firstName")]
     public string? FirstName { get; init; }
 
     /// <summary>
     /// The middle name
     /// </summary>
+    [JsonPropertyName("middleName")]
     public string? MiddleName { get; init; }
 
     /// <summary>
     /// The last name
     /// </summary>
+    [JsonPropertyName("lastName")]
     public required string LastName { get; init; }
 
     /// <summary>
