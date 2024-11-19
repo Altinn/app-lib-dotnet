@@ -109,7 +109,7 @@ public sealed record GetCorrespondenceStatusResponse
     /// A date and time for when the recipient must reply
     /// </summary>
     [JsonPropertyName("dueDateTime")]
-    public DateTimeOffset DueDateTime { get; init; }
+    public DateTimeOffset? DueDateTime { get; init; }
 
     /// <summary>
     /// Reference to other items in the Altinn ecosystem
