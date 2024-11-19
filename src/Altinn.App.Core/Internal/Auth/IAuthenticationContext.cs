@@ -29,7 +29,9 @@ internal abstract record AuthenticationInfo
 
     internal sealed record User(int UserId, int PartyId, string Token) : AuthenticationInfo(Token);
 
-    internal sealed record Org(string OrgName, string OrgNo, int PartyId, string Token) : AuthenticationInfo(Token);
+    internal sealed record ServiceOwner(string OrgName, string OrgNo, string Token) : AuthenticationInfo(Token);
+
+    internal sealed record Org(string OrgNo, int PartyId, string Token) : AuthenticationInfo(Token);
 
     internal sealed record SystemUser(IReadOnlyList<string> SystemUserId, string SystemId, string Token)
         : AuthenticationInfo(Token);
@@ -64,10 +66,20 @@ internal abstract record AuthenticationInfo
 
         if (!string.IsNullOrWhiteSpace(orgClaim?.Value))
         {
+            // In this case the token should have a serviceowner scope,
+            // due to the `urn:altinn:org` claim
             if (string.IsNullOrWhiteSpace(orgNoClaim?.Value))
                 throw new InvalidOperationException("Missing org number claim for org token");
+            if (!string.IsNullOrWhiteSpace(partyIdClaim?.Value))
+                throw new InvalidOperationException("Got service owner token");
 
-            return new Org(orgClaim.Value, orgNoClaim.Value, partyId, token);
+            // TODO: check if the org is the same as the owner of the app? A flag?
+
+            return new ServiceOwner(orgClaim.Value, orgNoClaim.Value, token);
+        }
+        else if (!string.IsNullOrWhiteSpace(orgNoClaim?.Value))
+        {
+            return new Org(orgNoClaim.Value, partyId, token);
         }
 
         var authorizationDetailsClaim = httpContext.User.Claims.FirstOrDefault(claim =>
