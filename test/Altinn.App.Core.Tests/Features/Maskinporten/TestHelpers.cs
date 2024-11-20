@@ -6,6 +6,7 @@ using Altinn.App.Core.Features.Maskinporten;
 using Altinn.App.Core.Features.Maskinporten.Constants;
 using Altinn.App.Core.Features.Maskinporten.Delegates;
 using Altinn.App.Core.Features.Maskinporten.Models;
+using Altinn.App.Core.Models;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Moq.Protected;
@@ -66,7 +67,7 @@ internal static class TestHelpers
     ) MockMaskinportenDelegatingHandlerFactory(
         TokenAuthorities authorities,
         IEnumerable<string> scopes,
-        TokenWrapper accessToken
+        JwtToken accessToken
     )
     {
         var mockProvider = new Mock<IServiceProvider>();

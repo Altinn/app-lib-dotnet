@@ -9,7 +9,7 @@ internal sealed class CorrespondenceAuthorisationFactory
     private IMaskinportenClient? _maskinportenClient;
     private readonly IServiceProvider _serviceProvider;
 
-    public Func<Task<AccessToken>> Maskinporten =>
+    public Func<Task<JwtToken>> Maskinporten =>
         async () =>
         {
             _maskinportenClient ??= _serviceProvider.GetRequiredService<IMaskinportenClient>();

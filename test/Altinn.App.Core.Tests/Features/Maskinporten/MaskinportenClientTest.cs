@@ -179,7 +179,7 @@ public class MaskinportenClientTests
         var result = await fixture.Client(variant).GetAccessToken(scopes);
 
         // Assert
-        result.AccessToken.Should().BeEquivalentTo(maskinportenTokenResponse.AccessToken);
+        result.Should().BeEquivalentTo(maskinportenTokenResponse.AccessToken);
         result.Scope.Should().BeEquivalentTo(formattedScopes);
     }
 
@@ -212,7 +212,7 @@ public class MaskinportenClientTests
         var result = await fixture.Client(variant).GetAltinnExchangedToken(scopes);
 
         // Assert
-        result.AccessToken.Value.Should().NotBeNullOrWhiteSpace();
+        result.Value.Should().NotBeNullOrWhiteSpace();
         result.ExpiresAt.Should().Be(fixture.FakeTime.GetUtcNow().Add(expiresIn).UtcDateTime);
     }
 
@@ -273,7 +273,7 @@ public class MaskinportenClientTests
         var token2 = await fixture.Client(variant).GetAccessToken(scopes);
 
         // Assert
-        token1.Should().BeSameAs(token2);
+        token1.Should().BeEquivalentTo(token2);
     }
 
     [Theory]

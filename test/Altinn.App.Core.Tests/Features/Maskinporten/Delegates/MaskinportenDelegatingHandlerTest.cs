@@ -1,7 +1,5 @@
 using Altinn.App.Api.Tests.Utils;
 using Altinn.App.Core.Features.Maskinporten.Constants;
-using Altinn.App.Core.Features.Maskinporten.Models;
-using Altinn.App.Core.Models;
 using FluentAssertions;
 using Moq;
 
@@ -18,12 +16,7 @@ public class MaskinportenDelegatingHandlerTest
         var (client, handler) = TestHelpers.MockMaskinportenDelegatingHandlerFactory(
             TokenAuthorities.Maskinporten,
             scopes,
-            new TokenWrapper
-            {
-                Scope = "-",
-                AccessToken = accessToken,
-                ExpiresAt = DateTime.MinValue
-            }
+            accessToken
         );
         var httpClient = new HttpClient(handler);
         var request = new HttpRequestMessage(HttpMethod.Get, "https://some-maskinporten-url/token");

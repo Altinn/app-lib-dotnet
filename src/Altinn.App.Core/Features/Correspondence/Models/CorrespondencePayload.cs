@@ -19,7 +19,7 @@ public enum CorrespondenceAuthorisation
 /// </summary>
 public abstract record CorrespondencePayloadBase
 {
-    internal Func<Task<AccessToken>>? AccessTokenFactory { get; init; }
+    internal Func<Task<JwtToken>>? AccessTokenFactory { get; init; }
 
     internal CorrespondenceAuthorisation? AuthorisationMethod { get; init; }
 }
@@ -36,7 +36,7 @@ public sealed record SendCorrespondencePayload : CorrespondencePayloadBase
     /// </summary>
     /// <param name="request">The correspondence request to send</param>
     /// <param name="accessTokenFactory">Access token factory delegate (e.g. <see cref="MaskinportenClient.GetAltinnExchangedToken"/>) to use for authorisation</param>
-    public SendCorrespondencePayload(CorrespondenceRequest request, Func<Task<AccessToken>> accessTokenFactory)
+    public SendCorrespondencePayload(CorrespondenceRequest request, Func<Task<JwtToken>> accessTokenFactory)
     {
         CorrespondenceRequest = request;
         AccessTokenFactory = accessTokenFactory;
@@ -69,7 +69,7 @@ public sealed record GetCorrespondenceStatusPayload : CorrespondencePayloadBase
     /// </summary>
     /// <param name="correspondenceId">The correspondence identifier to retrieve information about</param>
     /// <param name="accessTokenFactory">Access token factory delegate (e.g. <see cref="MaskinportenClient.GetAltinnExchangedToken"/>) to use for authorisation</param>
-    public GetCorrespondenceStatusPayload(Guid correspondenceId, Func<Task<AccessToken>> accessTokenFactory)
+    public GetCorrespondenceStatusPayload(Guid correspondenceId, Func<Task<JwtToken>> accessTokenFactory)
     {
         CorrespondenceId = correspondenceId;
         AccessTokenFactory = accessTokenFactory;

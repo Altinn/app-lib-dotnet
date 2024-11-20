@@ -12,8 +12,8 @@ internal sealed record MaskinportenTokenResponse
     /// The JWT access token to be used for authorisation of http requests
     /// </summary>
     [JsonPropertyName("access_token")]
-    [JsonConverter(typeof(AccessTokenJsonConverter))]
-    public required AccessToken AccessToken { get; init; }
+    [JsonConverter(typeof(JwtTokenJsonConverter))]
+    public required JwtToken AccessToken { get; init; }
 
     /// <summary>
     /// The type of JWT received. In this context, the value is always `Bearer`

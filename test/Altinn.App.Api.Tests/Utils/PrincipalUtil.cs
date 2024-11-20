@@ -158,7 +158,7 @@ public static class PrincipalUtil
 
         return new MaskinportenTokenResponse
         {
-            AccessToken = AccessToken.Parse(accessToken),
+            AccessToken = JwtToken.Parse(accessToken),
             ExpiresIn = (int)expiry.Value.TotalSeconds,
             Scope = scope,
             TokenType = "Bearer"

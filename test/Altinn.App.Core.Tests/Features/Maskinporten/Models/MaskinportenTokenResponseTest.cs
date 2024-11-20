@@ -26,7 +26,7 @@ public class MaskinportenTokenResponseTest
 
         // Assert
         Assert.NotNull(tokenResponse);
-        tokenResponse.AccessToken.Should().Be(AccessToken.Parse(encodedToken.AccessToken));
+        tokenResponse.AccessToken.Should().Be(JwtToken.Parse(encodedToken.AccessToken));
         tokenResponse.TokenType.Should().Be("Bearer");
         tokenResponse.Scope.Should().Be("anything");
         tokenResponse.ExpiresIn.Should().Be(120);
@@ -41,7 +41,7 @@ public class MaskinportenTokenResponseTest
         // Act
         var tokenResponse = new MaskinportenTokenResponse
         {
-            AccessToken = AccessToken.Parse(encodedToken.AccessToken),
+            AccessToken = JwtToken.Parse(encodedToken.AccessToken),
             Scope = "yep",
             TokenType = "Bearer",
             ExpiresIn = 120
