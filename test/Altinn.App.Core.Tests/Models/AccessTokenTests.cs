@@ -22,7 +22,7 @@ public class AccessTokenTests
         var accessToken = AccessToken.Parse(encodedToken);
 
         // Assert
-        accessToken.Get().Should().Be(encodedToken);
+        accessToken.Value.Should().Be(encodedToken);
     }
 
     [Fact]
@@ -106,7 +106,7 @@ public class AccessTokenTests
         var token = AccessToken.Parse(_validTokens[0]);
 
         // Act
-        string tokenString = token.Get();
+        string tokenString = token.Value;
 
         // Assert
         tokenString.Should().Be(_validTokens[0]);

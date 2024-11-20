@@ -7,19 +7,14 @@ namespace Altinn.App.Core.Models;
 /// </summary>
 public readonly partial struct AccessToken : IEquatable<AccessToken>
 {
-    private readonly string _accessToken;
-
     /// <summary>
-    /// Gets the access token as a string
+    /// The access token value (JWT format)
     /// </summary>
-    public string Get()
-    {
-        return _accessToken;
-    }
+    public string Value { get; }
 
     private AccessToken(string accessToken)
     {
-        _accessToken = accessToken;
+        Value = accessToken;
     }
 
     /// <summary>
@@ -66,7 +61,7 @@ public readonly partial struct AccessToken : IEquatable<AccessToken>
     /// <summary>
     /// Determines whether the specified object is equal to the current object
     /// </summary>
-    public bool Equals(AccessToken other) => _accessToken == other._accessToken;
+    public bool Equals(AccessToken other) => Value == other.Value;
 
     /// <summary>
     /// Determines whether the specified object is equal to the current object
@@ -76,17 +71,17 @@ public readonly partial struct AccessToken : IEquatable<AccessToken>
     /// <summary>
     /// Returns the hash code for the access token value
     /// </summary>
-    public override int GetHashCode() => _accessToken.GetHashCode();
+    public override int GetHashCode() => Value.GetHashCode();
 
     /// <summary>
     /// Returns a string representation of the access token with a masked signature component
     /// </summary>
-    public override string ToString() => MaskJwtSignature(_accessToken);
+    public override string ToString() => MaskJwtSignature(Value);
 
     /// <summary>
     /// Returns a string representation of the access token with an intact signature component
     /// </summary>
-    public string ToStringUnmasked() => _accessToken;
+    public string ToStringUnmasked() => Value;
 
     /// <summary>
     /// Determines whether two specified instances of <see cref="AccessToken"/> are equal
@@ -104,6 +99,6 @@ public readonly partial struct AccessToken : IEquatable<AccessToken>
     /// <param name="accessToken">The access token instance</param>
     public static implicit operator string(AccessToken accessToken)
     {
-        return accessToken._accessToken;
+        return accessToken.Value;
     }
 }

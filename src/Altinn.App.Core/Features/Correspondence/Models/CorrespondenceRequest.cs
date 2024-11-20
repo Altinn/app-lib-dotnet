@@ -268,7 +268,7 @@ public sealed record CorrespondenceRequest : CorrespondenceBase
                 {
                     OrganisationOrPersonIdentifier.Organisation org
                         => org.Value.Get(OrganisationNumberFormat.International),
-                    OrganisationOrPersonIdentifier.Person person => person.Value.Get(),
+                    OrganisationOrPersonIdentifier.Person person => person.Value,
                     _
                         => throw new CorrespondenceValueException(
                             $"Unknown OrganisationOrPersonIdentifier type `{x.GetType()}` ({nameof(Recipients)})"

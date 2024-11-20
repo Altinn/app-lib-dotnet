@@ -16,7 +16,7 @@ public class LanguageCodeTests
         foreach (var validCode in _validIso6391Codes)
         {
             var langCode = LanguageCode<Iso6391>.Parse(validCode);
-            langCode.Get().Should().Be(validCode.ToLowerInvariant());
+            langCode.Value.Should().Be(validCode.ToLowerInvariant());
         }
     }
 

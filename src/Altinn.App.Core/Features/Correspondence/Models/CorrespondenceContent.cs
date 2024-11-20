@@ -34,7 +34,7 @@ public sealed record CorrespondenceContent : CorrespondenceBase
 
     internal void Serialise(MultipartFormDataContent content)
     {
-        AddRequired(content, Language.Get(), "Correspondence.Content.Language");
+        AddRequired(content, Language.Value, "Correspondence.Content.Language");
         AddRequired(content, Title, "Correspondence.Content.MessageTitle");
         AddRequired(content, Summary, "Correspondence.Content.MessageSummary");
         AddRequired(content, Body, "Correspondence.Content.MessageBody");

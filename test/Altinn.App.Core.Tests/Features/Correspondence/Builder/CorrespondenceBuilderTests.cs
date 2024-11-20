@@ -350,7 +350,7 @@ public class CorrespondenceBuilderTests
         builder.WithRecipients(
             [
                 TestHelpers.GetOrganisationNumber(6).Get(OrganisationNumberFormat.Local),
-                TestHelpers.GetNationalIdentityNumber(7).Get()
+                TestHelpers.GetNationalIdentityNumber(7).Value
             ]
         );
         builder.WithDueDateTime(DateTimeOffset.UtcNow.AddDays(2));
@@ -392,10 +392,10 @@ public class CorrespondenceBuilderTests
                     TestHelpers.GetOrganisationNumber(1).Get(OrganisationNumberFormat.Local),
                     TestHelpers.GetOrganisationNumber(2).Get(OrganisationNumberFormat.Local),
                     TestHelpers.GetOrganisationNumber(3).Get(OrganisationNumberFormat.Local),
-                    TestHelpers.GetNationalIdentityNumber(4).Get(),
+                    TestHelpers.GetNationalIdentityNumber(4).Value,
                     TestHelpers.GetOrganisationNumber(5).Get(OrganisationNumberFormat.Local),
                     TestHelpers.GetOrganisationNumber(6).Get(OrganisationNumberFormat.Local),
-                    TestHelpers.GetNationalIdentityNumber(7).Get()
+                    TestHelpers.GetNationalIdentityNumber(7).Value
                 ]
             );
 

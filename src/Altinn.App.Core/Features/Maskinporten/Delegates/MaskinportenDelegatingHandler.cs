@@ -52,7 +52,7 @@ internal sealed class MaskinportenDelegatingHandler : DelegatingHandler
             _ => throw new MaskinportenAuthenticationException($"Unknown authority `{Authorities}`")
         };
 
-        request.Headers.Authorization = new AuthenticationHeaderValue(TokenTypes.Bearer, token.AccessToken.Get());
+        request.Headers.Authorization = new AuthenticationHeaderValue(TokenTypes.Bearer, token.AccessToken.Value);
 
         return await base.SendAsync(request, cancellationToken);
     }

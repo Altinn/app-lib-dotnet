@@ -136,7 +136,7 @@ internal class OrganisationOrPersonIdentifierConverter : JsonConverter<Organisat
         string stringValue = value switch
         {
             OrganisationOrPersonIdentifier.Organisation org => org.Value.Get(_format),
-            OrganisationOrPersonIdentifier.Person person => person.Value.Get(),
+            OrganisationOrPersonIdentifier.Person person => person.Value,
             _ => throw new JsonException($"Unknown type `{value.GetType()}` ({nameof(value)})")
         };
 

@@ -52,19 +52,14 @@ public sealed record LanguageCodeValidationResult(bool IsValid, string? ErrorMes
 public readonly struct LanguageCode<TLangCodeStandard> : IEquatable<LanguageCode<TLangCodeStandard>>
     where TLangCodeStandard : struct, ILanguageCodeStandard
 {
-    private readonly string _code;
-
     /// <summary>
-    /// Gets the language code
+    /// The language code value
     /// </summary>
-    public string Get()
-    {
-        return _code;
-    }
+    public string Value { get; }
 
     private LanguageCode(string code)
     {
-        _code = code.ToLowerInvariant();
+        Value = code.ToLowerInvariant();
     }
 
     /// <summary>
@@ -102,7 +97,7 @@ public readonly struct LanguageCode<TLangCodeStandard> : IEquatable<LanguageCode
     /// <summary>
     /// Determines whether the specified object is equal to the current object
     /// </summary>
-    public bool Equals(LanguageCode<TLangCodeStandard> other) => _code == other._code;
+    public bool Equals(LanguageCode<TLangCodeStandard> other) => Value == other.Value;
 
     /// <summary>
     /// Determines whether the specified object is equal to the current object
@@ -112,12 +107,12 @@ public readonly struct LanguageCode<TLangCodeStandard> : IEquatable<LanguageCode
     /// <summary>
     /// Returns the hash code for the language code value
     /// </summary>
-    public override int GetHashCode() => _code.GetHashCode();
+    public override int GetHashCode() => Value.GetHashCode();
 
     /// <summary>
     /// Returns a string representation of the language code
     /// </summary>
-    public override string ToString() => _code;
+    public override string ToString() => Value;
 
     /// <summary>
     /// Determines whether two specified instances of <see cref="LanguageCode{TLangCodeStandard}"/> are equal
@@ -137,6 +132,6 @@ public readonly struct LanguageCode<TLangCodeStandard> : IEquatable<LanguageCode
     /// <param name="languageCode">The language code instance</param>
     public static implicit operator string(LanguageCode<TLangCodeStandard> languageCode)
     {
-        return languageCode._code;
+        return languageCode.Value;
     }
 }

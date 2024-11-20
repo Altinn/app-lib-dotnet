@@ -58,7 +58,7 @@ public class NationalIdentityNumberTests
         foreach (var validNumber in ValidNationalIdentityNumbers)
         {
             var number = NationalIdentityNumber.Parse(validNumber);
-            number.Get().Should().Be(validNumber);
+            number.Value.Should().Be(validNumber);
         }
     }
 

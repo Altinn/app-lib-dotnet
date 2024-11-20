@@ -10,16 +10,14 @@ namespace Altinn.App.Core.Models;
 /// </summary>
 public readonly struct NationalIdentityNumber : IEquatable<NationalIdentityNumber>
 {
-    private readonly string _nationalIdentityNumber;
-
     /// <summary>
-    /// Gets the national identity number as a string
+    /// The national identity number value
     /// </summary>
-    public string Get() => _nationalIdentityNumber;
+    public string Value { get; }
 
     private NationalIdentityNumber(string nationalIdentityNumber)
     {
-        _nationalIdentityNumber = nationalIdentityNumber;
+        Value = nationalIdentityNumber;
     }
 
     /// <summary>
@@ -104,7 +102,7 @@ public readonly struct NationalIdentityNumber : IEquatable<NationalIdentityNumbe
     /// <summary>
     /// Determines whether the specified object is equal to the current object
     /// </summary>
-    public bool Equals(NationalIdentityNumber other) => _nationalIdentityNumber == other._nationalIdentityNumber;
+    public bool Equals(NationalIdentityNumber other) => Value == other.Value;
 
     /// <summary>
     /// Determines whether the specified object is equal to the current object
@@ -114,12 +112,12 @@ public readonly struct NationalIdentityNumber : IEquatable<NationalIdentityNumbe
     /// <summary>
     /// Returns the hash code for the national identity number value
     /// </summary>
-    public override int GetHashCode() => _nationalIdentityNumber.GetHashCode();
+    public override int GetHashCode() => Value.GetHashCode();
 
     /// <summary>
     /// Returns a string representation of the national identity number
     /// </summary>
-    public override string ToString() => _nationalIdentityNumber;
+    public override string ToString() => Value;
 
     /// <summary>
     /// Determines whether two specified instances of <see cref="NationalIdentityNumber"/> are equal
@@ -137,6 +135,6 @@ public readonly struct NationalIdentityNumber : IEquatable<NationalIdentityNumbe
     /// <param name="nationalIdentityNumber">The national identity number instance</param>
     public static implicit operator string(NationalIdentityNumber nationalIdentityNumber)
     {
-        return nationalIdentityNumber._nationalIdentityNumber;
+        return nationalIdentityNumber.Value;
     }
 }
