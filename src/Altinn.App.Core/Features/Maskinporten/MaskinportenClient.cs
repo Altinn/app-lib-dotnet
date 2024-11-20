@@ -230,9 +230,6 @@ internal sealed class MaskinportenClient : IMaskinportenClient
             );
 
             MaskinportenTokenResponse tokenResponse = await ParseServerResponse(response, cancellationToken);
-            JwtSecurityToken jwt = ParseJwt(tokenResponse.AccessToken, TokenAuthorities.Maskinporten);
-            DateTime expiry = jwt.ValidTo;
-            string? scope = jwt.Claims.FirstOrDefault(c => c.Type == JwtClaimTypes.Scope)?.Value;
 
             _logger.LogDebug("Token retrieved successfully: {Token}", tokenResponse);
             _telemetry?.RecordMaskinportenTokenRequest(Telemetry.Maskinporten.RequestResult.New);
@@ -283,9 +280,6 @@ internal sealed class MaskinportenClient : IMaskinportenClient
             response.EnsureSuccessStatusCode();
 
             string token = await response.Content.ReadAsStringAsync(cancellationToken);
-            JwtSecurityToken jwt = ParseJwt(token, TokenAuthorities.AltinnTokenExchange);
-            DateTime expiry = jwt.ValidTo;
-            string? scope = jwt.Claims.FirstOrDefault(c => c.Type == JwtClaimTypes.Scope)?.Value;
 
             _logger.LogDebug("Token retrieved successfully");
             _telemetry?.RecordMaskinportenAltinnTokenExchangeRequest(Telemetry.Maskinporten.RequestResult.New);
