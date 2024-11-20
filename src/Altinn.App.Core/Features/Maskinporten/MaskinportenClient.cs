@@ -40,7 +40,7 @@ internal sealed class MaskinportenClient : IMaskinportenClient
     private readonly IOptionsMonitor<MaskinportenSettings> _options;
     private readonly PlatformSettings _platformSettings;
     private readonly IHttpClientFactory _httpClientFactory;
-    private readonly TimeProvider _timeprovider;
+    private readonly TimeProvider _timeProvider;
     private readonly HybridCache _tokenCache;
     private readonly Telemetry? _telemetry;
 
@@ -75,7 +75,7 @@ internal sealed class MaskinportenClient : IMaskinportenClient
         _options = options;
         _platformSettings = platformSettings.Value;
         _telemetry = telemetry;
-        _timeprovider = timeProvider ?? TimeProvider.System;
+        _timeProvider = timeProvider ?? TimeProvider.System;
         _logger = logger;
         _httpClientFactory = httpClientFactory;
         _tokenCache = tokenCache;
@@ -89,7 +89,7 @@ internal sealed class MaskinportenClient : IMaskinportenClient
     {
         string formattedScopes = FormattedScopes(scopes);
         string cacheKey = $"{_maskinportenCacheKeySalt}_{formattedScopes}";
-        DateTimeOffset referenceTime = _timeprovider.GetUtcNow();
+        DateTimeOffset referenceTime = _timeProvider.GetUtcNow();
 
         _logger.LogDebug("Retrieving Maskinporten token for scopes: {Scopes}", formattedScopes);
         _telemetry?.StartGetAccessTokenActivity(Variant, Settings.ClientId, formattedScopes);
@@ -324,7 +324,7 @@ internal sealed class MaskinportenClient : IMaskinportenClient
             );
         }
 
-        var now = _timeprovider.GetUtcNow();
+        var now = _timeProvider.GetUtcNow();
         var expiry = now.AddMinutes(2);
         var jwtDescriptor = new SecurityTokenDescriptor
         {
@@ -449,6 +449,6 @@ internal sealed class MaskinportenClient : IMaskinportenClient
 
     private TimeSpan GetTokenExpiryWithMargin(JwtToken token)
     {
-        return token.ExpiresAt - _timeprovider.GetUtcNow() - TokenExpirationMargin;
+        return token.ExpiresAt - _timeProvider.GetUtcNow() - TokenExpirationMargin;
     }
 }
