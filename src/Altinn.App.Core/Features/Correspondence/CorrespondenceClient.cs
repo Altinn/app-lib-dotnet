@@ -204,7 +204,7 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
     )
     {
         using HttpClient client = _httpClientFactory.CreateClient();
-        HttpResponseMessage response = await client.SendAsync(request, cancellationToken);
+        using HttpResponseMessage response = await client.SendAsync(request, cancellationToken);
         string responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
 
         if (response.StatusCode != HttpStatusCode.OK)
