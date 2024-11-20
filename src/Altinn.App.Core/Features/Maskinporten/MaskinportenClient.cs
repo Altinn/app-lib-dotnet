@@ -82,7 +82,7 @@ internal sealed class MaskinportenClient : IMaskinportenClient
     }
 
     /// <inheritdoc/>
-    public async Task<TokenWrapper> GetAccessToken(
+    public async Task<JwtToken> GetAccessToken(
         IEnumerable<string> scopes,
         CancellationToken cancellationToken = default
     )
@@ -101,7 +101,7 @@ internal sealed class MaskinportenClient : IMaskinportenClient
             {
                 state.Self._logger.LogDebug("Token is not in cache, generating new");
 
-                TokenWrapper token = await state.Self.HandleMaskinportenAuthentication(
+                JwtToken token = await state.Self.HandleMaskinportenAuthentication(
                     state.FormattedScopes,
                     cancellationToken
                 );
@@ -141,7 +141,7 @@ internal sealed class MaskinportenClient : IMaskinportenClient
     }
 
     /// <inheritdoc/>
-    public async Task<TokenWrapper> GetAltinnExchangedToken(
+    public async Task<JwtToken> GetAltinnExchangedToken(
         IEnumerable<string> scopes,
         CancellationToken cancellationToken = default
     )
@@ -158,8 +158,8 @@ internal sealed class MaskinportenClient : IMaskinportenClient
             static async (state, cancellationToken) =>
             {
                 state.Self._logger.LogDebug("Token is not in cache, generating new");
-                TokenWrapper maskinportenToken = await state.Self.GetAccessToken(state.Scopes, cancellationToken);
-                TokenWrapper altinnToken = await state.Self.HandleMaskinportenAltinnTokenExchange(
+                JwtToken maskinportenToken = await state.Self.GetAccessToken(state.Scopes, cancellationToken);
+                JwtToken altinnToken = await state.Self.HandleMaskinportenAltinnTokenExchange(
                     maskinportenToken,
                     cancellationToken
                 );
@@ -205,7 +205,7 @@ internal sealed class MaskinportenClient : IMaskinportenClient
     /// <param name="cancellationToken">An optional cancellation token.</param>
     /// <returns><inheritdoc cref="GetAccessToken"/></returns>
     /// <exception cref="MaskinportenAuthenticationException"><inheritdoc cref="GetAccessToken"/></exception>
-    private async Task<TokenWrapper> HandleMaskinportenAuthentication(
+    private async Task<JwtToken> HandleMaskinportenAuthentication(
         string formattedScopes,
         CancellationToken cancellationToken = default
     )
@@ -237,12 +237,7 @@ internal sealed class MaskinportenClient : IMaskinportenClient
             _logger.LogDebug("Token retrieved successfully: {Token}", tokenResponse);
             _telemetry?.RecordMaskinportenTokenRequest(Telemetry.Maskinporten.RequestResult.New);
 
-            return new TokenWrapper
-            {
-                AccessToken = tokenResponse.AccessToken,
-                ExpiresAt = expiry,
-                Scope = scope
-            };
+            return tokenResponse.AccessToken;
         }
         catch (MaskinportenException)
         {
@@ -262,8 +257,8 @@ internal sealed class MaskinportenClient : IMaskinportenClient
     /// <param name="cancellationToken">An optional cancellation token.</param>
     /// <returns><inheritdoc cref="GetAltinnExchangedToken"/></returns>
     /// <exception cref="MaskinportenAuthenticationException"><inheritdoc cref="GetAltinnExchangedToken"/></exception>
-    private async Task<TokenWrapper> HandleMaskinportenAltinnTokenExchange(
-        TokenWrapper maskinportenToken,
+    private async Task<JwtToken> HandleMaskinportenAltinnTokenExchange(
+        JwtToken maskinportenToken,
         CancellationToken cancellationToken = default
     )
     {
@@ -282,7 +277,7 @@ internal sealed class MaskinportenClient : IMaskinportenClient
                 General.SubscriptionKeyHeaderName,
                 _platformSettings.SubscriptionKey
             );
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", maskinportenToken.AccessToken);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", maskinportenToken.Value);
 
             using HttpResponseMessage response = await client.SendAsync(request, cancellationToken);
             response.EnsureSuccessStatusCode();
@@ -295,12 +290,7 @@ internal sealed class MaskinportenClient : IMaskinportenClient
             _logger.LogDebug("Token retrieved successfully");
             _telemetry?.RecordMaskinportenAltinnTokenExchangeRequest(Telemetry.Maskinporten.RequestResult.New);
 
-            return new TokenWrapper
-            {
-                AccessToken = AccessToken.Parse(token),
-                ExpiresAt = expiry,
-                Scope = scope
-            };
+            return JwtToken.Parse(token);
         }
         catch (MaskinportenException)
         {
@@ -457,7 +447,7 @@ internal sealed class MaskinportenClient : IMaskinportenClient
         return jwt;
     }
 
-    private TimeSpan GetTokenExpiryWithMargin(TokenWrapper token)
+    private TimeSpan GetTokenExpiryWithMargin(JwtToken token)
     {
         return token.ExpiresAt - _timeprovider.GetUtcNow() - TokenExpirationMargin;
     }

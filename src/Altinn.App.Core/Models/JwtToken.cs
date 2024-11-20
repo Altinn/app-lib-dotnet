@@ -1,20 +1,43 @@
+using System.ComponentModel;
+using System.IdentityModel.Tokens.Jwt;
 using System.Text.RegularExpressions;
 
 namespace Altinn.App.Core.Models;
 
 /// <summary>
 /// Represents an OAuth 2.0 access token in JWT format
+/// Needs to be unencrypted
 /// </summary>
-public readonly partial struct AccessToken : IEquatable<AccessToken>
+[ImmutableObject(true)] // `ImmutableObject` prevents serialization with HybridCache
+public readonly partial struct JwtToken : IEquatable<JwtToken>
 {
     /// <summary>
     /// The access token value (JWT format)
     /// </summary>
     public string Value { get; }
 
-    private AccessToken(string accessToken)
+    private readonly JwtSecurityToken _jwtSecurityToken;
+
+    /// <summary>
+    /// The instant in time when the token expires
+    /// </summary>
+    public DateTimeOffset ExpiresAt => _jwtSecurityToken.ValidTo;
+
+    /// <summary>
+    /// Is the token expired?
+    /// </summary>
+    public bool IsExpired(TimeProvider? timeProvider = null) =>
+        ExpiresAt < (timeProvider?.GetUtcNow() ?? DateTimeOffset.UtcNow);
+
+    /// <summary>
+    /// The scope(s) associated with the token
+    /// </summary>
+    public string? Scope => _jwtSecurityToken.Payload.TryGetValue("scope", out var scope) ? scope.ToString() : null;
+
+    private JwtToken(string jwtToken, JwtSecurityToken jwtSecurityToken)
     {
-        Value = accessToken;
+        Value = jwtToken;
+        _jwtSecurityToken = jwtSecurityToken;
     }
 
     /// <summary>
@@ -22,7 +45,7 @@ public readonly partial struct AccessToken : IEquatable<AccessToken>
     /// </summary>
     /// <param name="value">The value to parse</param>
     /// <exception cref="FormatException">The access token is not valid</exception>
-    public static AccessToken Parse(string value)
+    public static JwtToken Parse(string value)
     {
         return TryParse(value, out var accessToken)
             ? accessToken
@@ -33,18 +56,23 @@ public readonly partial struct AccessToken : IEquatable<AccessToken>
     /// Attempt to parse an access token
     /// </summary>
     /// <param name="value">The value to parse</param>
-    /// <param name="accessToken">The resulting <see cref="AccessToken"/> instance</param>
+    /// <param name="jwtToken">The resulting <see cref="JwtToken"/> instance</param>
     /// <returns>`true` on successful parse, `false` otherwise</returns>
-    public static bool TryParse(string value, out AccessToken accessToken)
+    public static bool TryParse(string value, out JwtToken jwtToken)
     {
-        accessToken = default;
+        jwtToken = default;
 
-        if (JwtRegex().IsMatch(value) is false)
+        JwtSecurityTokenHandler handler = new();
+        try
+        {
+            JwtSecurityToken jwt = handler.ReadJwtToken(value);
+            jwtToken = new JwtToken(value, jwt);
+        }
+        catch
         {
             return false;
         }
 
-        accessToken = new AccessToken(value);
         return true;
     }
 
@@ -61,12 +89,12 @@ public readonly partial struct AccessToken : IEquatable<AccessToken>
     /// <summary>
     /// Determines whether the specified object is equal to the current object
     /// </summary>
-    public bool Equals(AccessToken other) => Value == other.Value;
+    public bool Equals(JwtToken other) => Value == other.Value;
 
     /// <summary>
     /// Determines whether the specified object is equal to the current object
     /// </summary>
-    public override bool Equals(object? obj) => obj is AccessToken other && Equals(other);
+    public override bool Equals(object? obj) => obj is JwtToken other && Equals(other);
 
     /// <summary>
     /// Returns the hash code for the access token value
@@ -84,20 +112,20 @@ public readonly partial struct AccessToken : IEquatable<AccessToken>
     public string ToStringUnmasked() => Value;
 
     /// <summary>
-    /// Determines whether two specified instances of <see cref="AccessToken"/> are equal
+    /// Determines whether two specified instances of <see cref="JwtToken"/> are equal
     /// </summary>
-    public static bool operator ==(AccessToken left, AccessToken right) => left.Equals(right);
+    public static bool operator ==(JwtToken left, JwtToken right) => left.Equals(right);
 
     /// <summary>
-    /// Determines whether two specified instances of <see cref="AccessToken"/> are not equal
+    /// Determines whether two specified instances of <see cref="JwtToken"/> are not equal
     /// </summary>
-    public static bool operator !=(AccessToken left, AccessToken right) => !left.Equals(right);
+    public static bool operator !=(JwtToken left, JwtToken right) => !left.Equals(right);
 
     /// <summary>
-    /// Implicit conversion from <see cref="AccessToken"/> to string
+    /// Implicit conversion from <see cref="JwtToken"/> to string
     /// </summary>
     /// <param name="accessToken">The access token instance</param>
-    public static implicit operator string(AccessToken accessToken)
+    public static implicit operator string(JwtToken accessToken)
     {
         return accessToken.Value;
     }

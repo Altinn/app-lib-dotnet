@@ -40,7 +40,7 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
         _authorisationFactory = new CorrespondenceAuthorisationFactory(serviceProvider);
     }
 
-    private async Task<AccessToken> AuthorisationFactory(CorrespondencePayloadBase payload)
+    private async Task<JwtToken> AuthorisationFactory(CorrespondencePayloadBase payload)
     {
         if (payload.AccessTokenFactory is null && payload.AuthorisationMethod is null)
         {
@@ -162,7 +162,7 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
     )
     {
         _logger.LogDebug("Fetching access token via factory");
-        AccessToken accessToken = await AuthorisationFactory(payload);
+        JwtToken accessToken = await AuthorisationFactory(payload);
 
         _logger.LogDebug("Constructing authorized http request for target uri {TargetEndpoint}", uri);
         HttpRequestMessage request = new(method, uri) { Content = content };

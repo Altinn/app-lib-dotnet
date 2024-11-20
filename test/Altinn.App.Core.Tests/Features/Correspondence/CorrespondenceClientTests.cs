@@ -53,15 +53,15 @@ public class CorrespondenceClientTests
 
     private static class PayloadFactory
     {
-        private static readonly Func<Task<AccessToken>> _defaultTokenFactory = async () =>
+        private static readonly Func<Task<JwtToken>> _defaultTokenFactory = async () =>
             await Task.FromResult(
-                AccessToken.Parse(
+                JwtToken.Parse(
                     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJpdHMtYS1tZSJ9.wLLw4Timcl9gnQvA93RgREz-6S5y1UfzI_GYVI_XVDA"
                 )
             );
 
         public static SendCorrespondencePayload Send(
-            Func<Task<AccessToken>>? tokenFactory = default,
+            Func<Task<JwtToken>>? tokenFactory = default,
             CorrespondenceAuthorisation? authorisation = default
         )
         {
@@ -88,7 +88,7 @@ public class CorrespondenceClientTests
         }
 
         public static GetCorrespondenceStatusPayload GetStatus(
-            Func<Task<AccessToken>>? tokenFactory = default,
+            Func<Task<JwtToken>>? tokenFactory = default,
             CorrespondenceAuthorisation? authorisation = default
         )
         {
@@ -293,12 +293,7 @@ public class CorrespondenceClientTests
         var mockHttpClient = new Mock<HttpClient>();
         var correspondencePayload = PayloadFactory.Send(authorisation: CorrespondenceAuthorisation.Maskinporten);
         var altinnTokenResponse = PrincipalUtil.GetOrgToken("ttd");
-        var altinnTokenWrapperResponse = new TokenWrapper
-        {
-            AccessToken = AccessToken.Parse(altinnTokenResponse),
-            Scope = "-",
-            ExpiresAt = DateTime.UtcNow.AddMinutes(2)
-        };
+        var altinnTokenWrapperResponse = JwtToken.Parse(altinnTokenResponse);
         var correspondenceResponse = new SendCorrespondenceResponse
         {
             Correspondences =

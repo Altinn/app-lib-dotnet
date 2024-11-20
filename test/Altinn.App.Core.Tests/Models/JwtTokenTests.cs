@@ -1,5 +1,7 @@
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Tests.Features.Maskinporten;
 using FluentAssertions;
+using Microsoft.Extensions.Time.Testing;
 
 namespace Altinn.App.Core.Tests.Models;
 
@@ -19,7 +21,7 @@ public class AccessTokenTests
         var encodedToken = _validTokens[0];
 
         // Act
-        var accessToken = AccessToken.Parse(encodedToken);
+        var accessToken = JwtToken.Parse(encodedToken);
 
         // Assert
         accessToken.Value.Should().Be(encodedToken);
@@ -28,15 +30,15 @@ public class AccessTokenTests
     [Fact]
     public void Parse_InvalidToken_ShouldThrowFormatException()
     {
-        Assert.Throws<FormatException>(() => AccessToken.Parse(_invalidToken));
+        Assert.Throws<FormatException>(() => JwtToken.Parse(_invalidToken));
     }
 
     [Fact]
     public void Equals_SameToken_ShouldReturnTrue()
     {
         // Arrange
-        var token1 = AccessToken.Parse(_validTokens[0]);
-        var token2 = AccessToken.Parse(_validTokens[0]);
+        var token1 = JwtToken.Parse(_validTokens[0]);
+        var token2 = JwtToken.Parse(_validTokens[0]);
 
         // Act
         bool result1 = token1.Equals(token2);
@@ -53,8 +55,8 @@ public class AccessTokenTests
     public void Equals_DifferentToken_ShouldReturnFalse()
     {
         // Arrange
-        var token1 = AccessToken.Parse(_validTokens[0]);
-        var token2 = AccessToken.Parse(_validTokens[1]);
+        var token1 = JwtToken.Parse(_validTokens[0]);
+        var token2 = JwtToken.Parse(_validTokens[1]);
 
         // Act
         bool result1 = token1.Equals(token2);
@@ -71,7 +73,7 @@ public class AccessTokenTests
     public void ToString_ShouldReturnMaskedToken()
     {
         // Arrange
-        var token = AccessToken.Parse(_validTokens[0]);
+        var token = JwtToken.Parse(_validTokens[0]);
 
         // Act
         var maskedToken1 = token.ToString();
@@ -90,7 +92,7 @@ public class AccessTokenTests
     public void ImplicitConversion_ShouldReturnFullTokenString()
     {
         // Arrange
-        var token = AccessToken.Parse(_validTokens[0]);
+        var token = JwtToken.Parse(_validTokens[0]);
 
         // Act
         string tokenString = token;
@@ -100,15 +102,46 @@ public class AccessTokenTests
     }
 
     [Fact]
-    public void GetMethod_ShouldReturnFullTokenString()
+    public void Value_Property_ShouldReturnFullTokenString()
     {
         // Arrange
-        var token = AccessToken.Parse(_validTokens[0]);
+        var token = JwtToken.Parse(_validTokens[0]);
 
         // Act
         string tokenString = token.Value;
 
         // Assert
         tokenString.Should().Be(_validTokens[0]);
+    }
+
+    // [Theory]
+    // [InlineData(true)]
+    // [InlineData(false)]
+    // public void ShouldIndicateExpiry(bool expired)
+    // {
+    //     // Arrange
+    //     var encodedToken = TestHelpers.GetEncodedAccessToken();
+    //     var jwtToken = JwtToken.Parse(encodedToken.AccessToken);
+    //     var expiry = jwtToken.ExpiresAt;
+    //     var fakeTimeProvider = new FakeTimeProvider(expiry.AddDays(expired ? -1 : 1));
+
+    //     // Act
+    //     var isExpired = jwtToken.IsExpired(fakeTimeProvider);
+
+    //     // Assert
+    //     isExpired.Should().Be(expired);
+    // }
+
+    [Fact]
+    public void ToString_ShouldMask_AccessToken()
+    {
+        // Arrange
+        var encodedToken = TestHelpers.GetEncodedAccessToken();
+        var accessToken = JwtToken.Parse(encodedToken.AccessToken);
+
+        // Act, Assert
+        accessToken.ToStringUnmasked().Should().Be(encodedToken.AccessToken);
+        accessToken.ToString().Should().NotContain(encodedToken.Components.Signature);
+        $"{accessToken}".Should().NotContain(encodedToken.Components.Signature);
     }
 }
