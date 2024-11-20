@@ -40,7 +40,7 @@ public sealed record CorrespondenceNotification : CorrespondenceBase
     public string? SmsBody { get; init; }
 
     /// <summary>
-    /// Should a reminder be send if this correspondence has not been actioned within an appropriate time frame?
+    /// Should a reminder be sent if this correspondence has not been actioned within an appropriate time frame?
     /// </summary>
     public bool? SendReminder { get; init; }
 

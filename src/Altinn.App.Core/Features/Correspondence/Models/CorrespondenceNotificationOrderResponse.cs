@@ -23,7 +23,7 @@ public sealed record CorrespondenceNotificationOrderResponse
     /// The requested send time of the notification
     /// </summary>
     [JsonPropertyName("requestedSendTime")]
-    public DateTime RequestedSendTime { get; set; }
+    public DateTimeOffset RequestedSendTime { get; set; }
 
     /// <summary>
     /// The short name of the creator of the notification order
@@ -35,7 +35,7 @@ public sealed record CorrespondenceNotificationOrderResponse
     /// The date and time of when the notification order was created
     /// </summary>
     [JsonPropertyName("created")]
-    public DateTime Created { get; init; }
+    public DateTimeOffset Created { get; init; }
 
     /// <summary>
     /// Indicates if the notification is a reminder notification

@@ -23,5 +23,5 @@ public sealed record CorrespondenceNotificationStatusSummaryResponse
     /// The date and time of when the status was last updated
     /// </summary>
     [JsonPropertyName("lastUpdate")]
-    public DateTime LastUpdate { get; init; }
+    public DateTimeOffset LastUpdate { get; init; }
 }

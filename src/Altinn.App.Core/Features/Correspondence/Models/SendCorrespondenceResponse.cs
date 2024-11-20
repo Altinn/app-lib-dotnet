@@ -11,11 +11,11 @@ public sealed record SendCorrespondenceResponse
     /// The correspondences that were processed
     /// </summary>
     [JsonPropertyName("correspondences")]
-    public required List<CorrespondenceDetailsResponse> Correspondences { get; init; }
+    public required IReadOnlyList<CorrespondenceDetailsResponse> Correspondences { get; init; }
 
     /// <summary>
     /// The attachments linked to the correspondence
     /// </summary>
     [JsonPropertyName("attachmentIds")]
-    public List<Guid>? AttachmentIds { get; init; }
+    public IReadOnlyList<Guid>? AttachmentIds { get; init; }
 }

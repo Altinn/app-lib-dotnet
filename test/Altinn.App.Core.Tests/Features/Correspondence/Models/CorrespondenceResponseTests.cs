@@ -265,9 +265,9 @@ public class CorrespondenceResponseTests
                 {
                     Id = "7ab0ff62-8c5d-4a2e-8ad2-7e7236e847a4",
                     SendersReference = "1234",
-                    RequestedSendTime = DateTime.Parse("2024-11-14T11:10:57.031351Z").ToUniversalTime(),
+                    RequestedSendTime = DateTimeOffset.Parse("2024-11-14T11:10:57.031351Z"),
                     Creator = "digdir",
-                    Created = DateTime.Parse("2024-11-14T11:05:57.054356Z").ToUniversalTime(),
+                    Created = DateTimeOffset.Parse("2024-11-14T11:05:57.054356Z"),
                     NotificationChannel = CorrespondenceNotificationChannel.EmailPreferred,
                     IgnoreReservation = true,
                     ResourceId = "apps-correspondence-integrasjon2",
@@ -275,7 +275,7 @@ public class CorrespondenceResponseTests
                     {
                         Status = "Completed",
                         Description = "Order processing is completed. All notifications have been generated.",
-                        LastUpdate = DateTime.Parse("2024-11-14T11:05:57.054356Z").ToUniversalTime()
+                        LastUpdate = DateTimeOffset.Parse("2024-11-14T11:05:57.054356Z")
                     },
                     NotificationStatusDetails = new CorrespondenceNotificationSummaryResponse
                     {

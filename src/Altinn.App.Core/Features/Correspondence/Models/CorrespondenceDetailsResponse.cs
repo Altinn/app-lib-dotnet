@@ -31,5 +31,5 @@ public sealed record CorrespondenceDetailsResponse
     /// Notifications linked to the correspondence
     /// </summary>
     [JsonPropertyName("notifications")]
-    public List<CorrespondenceNotificationDetailsResponse>? Notifications { get; init; }
+    public IReadOnlyList<CorrespondenceNotificationDetailsResponse>? Notifications { get; init; }
 }
