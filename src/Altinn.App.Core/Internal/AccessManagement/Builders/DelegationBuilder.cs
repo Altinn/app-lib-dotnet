@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using Altinn.App.Core.Helpers;
-using Altinn.App.Core.Internal.AccessManagement.Builders;
 using Altinn.App.Core.Internal.AccessManagement.Models;
 using Altinn.App.Core.Internal.AccessManagement.Models.Shared;
 
