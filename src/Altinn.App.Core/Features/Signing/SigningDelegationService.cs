@@ -42,7 +42,11 @@ internal sealed class SigningDelegationService(IAccessManagementClient accessMan
                                     .WithAction(DelegationConst.ActionId, ActionType.Read)
                                     .WithResources(
                                         [
-                                            new Resource { Type = DelegationConst.Resource, Value = AppIdHelper.ToResourceId(instance.AppId) },
+                                            new Resource
+                                            {
+                                                Type = DelegationConst.Resource,
+                                                Value = AppIdHelper.ToResourceId(instance.AppId)
+                                            },
                                             new Resource { Type = DelegationConst.Task, Value = taskId }
                                         ]
                                     )
@@ -52,7 +56,11 @@ internal sealed class SigningDelegationService(IAccessManagementClient accessMan
                                     .WithAction(DelegationConst.ActionId, ActionType.Sign)
                                     .WithResources(
                                         [
-                                            new Resource { Type = DelegationConst.Resource, Value = AppIdHelper.ToResourceId(instance.AppId) },
+                                            new Resource
+                                            {
+                                                Type = DelegationConst.Resource,
+                                                Value = AppIdHelper.ToResourceId(instance.AppId)
+                                            },
                                             new Resource { Type = DelegationConst.Task, Value = taskId }
                                         ]
                                     )
