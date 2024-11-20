@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Internal.AccessManagement.Exceptions;
 using Altinn.App.Core.Internal.AccessManagement.Models;
 using Altinn.App.Core.Internal.AccessManagement.Models.Shared;
 
@@ -15,7 +16,7 @@ internal abstract class DelegationBuilderBase
             || value is ReadOnlyMemory<byte> { IsEmpty: true }
         )
         {
-            throw new ArgumentNullException(errorMessage); // TODO: add custom exception
+            throw new AccessManagementArgumentException(errorMessage); // TODO: add custom exception
         }
     }
 }
