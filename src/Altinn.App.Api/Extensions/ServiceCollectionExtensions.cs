@@ -11,8 +11,9 @@ using Altinn.App.Api.Infrastructure.Telemetry;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
-using Altinn.App.Core.Features.Correspondence;
+using Altinn.App.Core.Features.Correspondence.Extensions;
 using Altinn.App.Core.Features.Maskinporten;
+using Altinn.App.Core.Features.Maskinporten.Extensions;
 using Altinn.App.Core.Features.Maskinporten.Models;
 using Altinn.Common.PEP.Authorization;
 using Altinn.Common.PEP.Clients;
@@ -161,62 +162,6 @@ public static class ServiceCollectionExtensions
     {
         services.AddOptions<MaskinportenSettings>().BindConfiguration(configSectionPath).ValidateDataAnnotations();
 
-        return services;
-    }
-
-    /// <summary>
-    /// Binds a <see cref="MaskinportenClient"/> configuration to the supplied config section path and options name
-    /// </summary>
-    /// <param name="services">The service collection</param>
-    /// <param name="configSectionPath">The configuration section path, e.g. "MaskinportenSettingsInternal"</param>
-    /// <param name="optionsName">The options name to bind to, e.g. <see cref="MaskinportenClient.VariantInternal"/></param>
-    internal static IServiceCollection ConfigureMaskinportenClient(
-        this IServiceCollection services,
-        string configSectionPath,
-        string optionsName
-    )
-    {
-        services
-            .AddOptions<MaskinportenSettings>(optionsName)
-            .BindConfiguration(configSectionPath)
-            .ValidateDataAnnotations();
-        return services;
-    }
-
-    /// <summary>
-    /// Adds a singleton <see cref="IMaskinportenClient"/> service to the service collection.
-    /// If no <see cref="MaskinportenSettings"/> configuration is found, it binds one to the path "MaskinportenSettings".
-    /// </summary>
-    /// <param name="services">The service collection</param>
-    private static IServiceCollection AddMaskinportenClient(this IServiceCollection services)
-    {
-        // Only add MaskinportenSettings if not already configured.
-        // Users sometimes wish to bind the default options to another configuration path than "MaskinportenSettings".
-        if (services.IsConfigured<MaskinportenSettings>() is false)
-        {
-            services.ConfigureMaskinportenClient("MaskinportenSettings");
-        }
-
-        services.TryAddSingleton<IMaskinportenClient>(sp =>
-            ActivatorUtilities.CreateInstance<MaskinportenClient>(sp, MaskinportenClient.VariantDefault)
-        );
-
-        services.ConfigureMaskinportenClient("MaskinportenSettingsInternal", MaskinportenClient.VariantInternal);
-        services.AddKeyedSingleton<IMaskinportenClient>(
-            MaskinportenClient.VariantInternal,
-            (sp, key) => ActivatorUtilities.CreateInstance<MaskinportenClient>(sp, MaskinportenClient.VariantInternal)
-        );
-
-        return services;
-    }
-
-    /// <summary>
-    /// Adds a <see cref="ICorrespondenceClient"/> service to the service collection.
-    /// </summary>
-    /// <param name="services">The service collection</param>
-    private static IServiceCollection AddCorrespondenceClient(this IServiceCollection services)
-    {
-        services.AddSingleton<ICorrespondenceClient, CorrespondenceClient>();
         return services;
     }
 

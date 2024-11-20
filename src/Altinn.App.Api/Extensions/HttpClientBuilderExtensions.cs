@@ -1,6 +1,6 @@
 using Altinn.App.Core.Features.Maskinporten;
 using Altinn.App.Core.Features.Maskinporten.Constants;
-using Altinn.App.Core.Features.Maskinporten.Delegates;
+using Altinn.App.Core.Features.Maskinporten.Extensions;
 
 namespace Altinn.App.Api.Extensions;
 
@@ -28,7 +28,7 @@ public static class HttpClientBuilderExtensions
         params string[] additionalScopes
     )
     {
-        return AddHttpMessageHandler(builder, scope, additionalScopes, TokenAuthorities.Maskinporten);
+        return builder.AddMaskinportenHttpMessageHandler(scope, additionalScopes, TokenAuthorities.Maskinporten);
     }
 
     /// <summary>
@@ -51,20 +51,6 @@ public static class HttpClientBuilderExtensions
         params string[] additionalScopes
     )
     {
-        return AddHttpMessageHandler(builder, scope, additionalScopes, TokenAuthorities.AltinnTokenExchange);
-    }
-
-    private static IHttpClientBuilder AddHttpMessageHandler(
-        IHttpClientBuilder builder,
-        string scope,
-        IEnumerable<string> additionalScopes,
-        TokenAuthorities authorities
-    )
-    {
-        var scopes = new[] { scope }.Concat(additionalScopes);
-        var factory = ActivatorUtilities.CreateFactory<MaskinportenDelegatingHandler>(
-            [typeof(TokenAuthorities), typeof(IEnumerable<string>),]
-        );
-        return builder.AddHttpMessageHandler(provider => factory(provider, [authorities, scopes]));
+        return builder.AddMaskinportenHttpMessageHandler(scope, additionalScopes, TokenAuthorities.AltinnTokenExchange);
     }
 }

@@ -1,5 +1,5 @@
 using Altinn.App.Core.Extensions;
-using Microsoft.Extensions.FileProviders;
+using Altinn.App.Core.Features.Maskinporten.Extensions;
 
 namespace Altinn.App.Api.Extensions;
 
@@ -43,31 +43,5 @@ public static class WebHostBuilderExtensions
                 configBuilder.LoadAppConfig(args);
             }
         );
-    }
-
-    private static IConfigurationBuilder AddMaskinportenSettingsFile(
-        this IConfigurationBuilder configurationBuilder,
-        WebHostBuilderContext context,
-        string configurationKey,
-        string defaultFileLocation
-    )
-    {
-        string jsonProvidedPath = context.Configuration.GetValue<string>(configurationKey) ?? defaultFileLocation;
-        string jsonAbsolutePath = Path.GetFullPath(jsonProvidedPath);
-
-        if (File.Exists(jsonAbsolutePath))
-        {
-            string jsonDir = Path.GetDirectoryName(jsonAbsolutePath) ?? string.Empty;
-            string jsonFile = Path.GetFileName(jsonAbsolutePath);
-
-            configurationBuilder.AddJsonFile(
-                provider: new PhysicalFileProvider(jsonDir),
-                path: jsonFile,
-                optional: true,
-                reloadOnChange: true
-            );
-        }
-
-        return configurationBuilder;
     }
 }
