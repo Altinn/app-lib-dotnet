@@ -1,7 +1,7 @@
 using Altinn.App.Core.Internal.AccessManagement.Models;
 using Altinn.App.Core.Internal.AccessManagement.Models.Shared;
 
-namespace Altinn.App.Core.Internal.AccessManagement;
+namespace Altinn.App.Core.Internal.AccessManagement.Builders;
 
 internal interface IAccessRightBuilderStart
 {
