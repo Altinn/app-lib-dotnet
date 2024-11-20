@@ -17,12 +17,12 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     private List<OrganisationOrPersonIdentifier>? _recipients;
     private DateTimeOffset? _requestedPublishTime;
     private string? _messageSender;
-    private List<CorrespondenceExternalReference>? _externalReferences; // TODO
-    private Dictionary<string, string>? _propertyList; // TODO
-    private List<CorrespondenceReplyOption>? _replyOptions; // TODO
+    private List<CorrespondenceExternalReference>? _externalReferences;
+    private Dictionary<string, string>? _propertyList;
+    private List<CorrespondenceReplyOption>? _replyOptions;
     private CorrespondenceNotification? _notification;
     private bool? _ignoreReservation;
-    private List<Guid>? _existingAttachments; // TODO
+    private List<Guid>? _existingAttachments;
 
     private CorrespondenceRequestBuilder() { }
 
