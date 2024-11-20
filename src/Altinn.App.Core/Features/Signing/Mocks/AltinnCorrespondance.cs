@@ -6,7 +6,9 @@ namespace Altinn.App.Core.Features.Signing.Mocks;
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 public class CorrespondanceClientMock
 {
-    public static async Task<InitializeCorrespondencesResponseMock> Initialize(InitializeCorrespondenceRequestMock requestMock)
+    public static async Task<InitializeCorrespondencesResponseMock> Initialize(
+        InitializeCorrespondenceRequestMock requestMock
+    )
     {
         var responseMock = new InitializeCorrespondencesResponseMock
         {
