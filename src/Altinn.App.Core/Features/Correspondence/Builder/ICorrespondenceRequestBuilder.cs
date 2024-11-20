@@ -76,7 +76,7 @@ public interface ICorrespondenceRequestBuilderRecipients
     /// </remarks>
     /// <param name="recipients">A list of recipients</param>
     ICorrespondenceRequestBuilderAllowSystemDeleteAfter WithRecipients(
-        IReadOnlyList<OrganisationOrPersonIdentifier> recipients
+        IEnumerable<OrganisationOrPersonIdentifier> recipients
     );
 
     /// <summary>
@@ -86,7 +86,7 @@ public interface ICorrespondenceRequestBuilderRecipients
     /// This method respects any existing options already stored in <see cref="CorrespondenceRequest.Recipients"/>
     /// </remarks>
     /// <param name="recipients">A list of recipients: Either Norwegian organisation numbers or national identity numbers</param>
-    ICorrespondenceRequestBuilderAllowSystemDeleteAfter WithRecipients(IReadOnlyList<string> recipients);
+    ICorrespondenceRequestBuilderAllowSystemDeleteAfter WithRecipients(IEnumerable<string> recipients);
 }
 
 /// <summary>
@@ -117,6 +117,29 @@ public interface ICorrespondenceRequestBuilderContent
     /// </summary>
     /// <param name="builder">A <see cref="CorrespondenceContentBuilder"/> instance in the <see cref="ICorrespondenceContentBuilder"/> stage</param>
     ICorrespondenceRequestBuilder WithContent(ICorrespondenceContentBuilder builder);
+
+    /// <summary>
+    /// Sets the content of the correspondence
+    /// </summary>
+    /// <param name="title">The message title</param>
+    /// <param name="summary">The message summary</param>
+    /// <param name="body">The message body</param>
+    /// <param name="language">The message language</param>
+    ICorrespondenceRequestBuilder WithContent(
+        string title,
+        string summary,
+        string body,
+        LanguageCode<Iso6391> language
+    );
+
+    /// <summary>
+    /// Sets the content of the correspondence
+    /// </summary>
+    /// <param name="title">The message title</param>
+    /// <param name="summary">The message summary</param>
+    /// <param name="body">The message body</param>
+    /// <param name="language">The message language in ISO 639-1 format</param>
+    ICorrespondenceRequestBuilder WithContent(string title, string summary, string body, string language);
 }
 
 /// <summary>
@@ -170,6 +193,16 @@ public interface ICorrespondenceRequestBuilder
     ICorrespondenceRequestBuilder WithExternalReference(ICorrespondenceExternalReferenceBuilder builder);
 
     /// <summary>
+    /// Adds an external reference to the correspondence
+    /// <remarks>
+    /// This method respects any existing references already stored in <see cref="CorrespondenceRequest.ExternalReferences"/>
+    /// </remarks>
+    /// </summary>
+    /// <param name="type">The reference type to add</param>
+    /// <param name="value">The reference value</param>
+    ICorrespondenceRequestBuilder WithExternalReference(CorrespondenceReferenceType type, string value);
+
+    /// <summary>
     /// Adds external references to the correspondence
     /// <remarks>
     /// This method respects any existing references already stored in <see cref="CorrespondenceRequest.ExternalReferences"/>
@@ -177,7 +210,7 @@ public interface ICorrespondenceRequestBuilder
     /// </summary>
     /// <param name="externalReferences">A list of <see cref="CorrespondenceExternalReference"/> items</param>
     ICorrespondenceRequestBuilder WithExternalReferences(
-        IReadOnlyList<CorrespondenceExternalReference> externalReferences
+        IEnumerable<CorrespondenceExternalReference> externalReferences
     );
 
     /// <summary>
@@ -205,13 +238,23 @@ public interface ICorrespondenceRequestBuilder
     ICorrespondenceRequestBuilder WithReplyOption(ICorrespondenceReplyOptionsBuilder builder);
 
     /// <summary>
+    /// Adds a reply option to the correspondence
+    /// <remarks>
+    /// This method respects any existing options already stored in <see cref="CorrespondenceRequest.ReplyOptions"/>
+    /// </remarks>
+    /// </summary>
+    /// <param name="linkUrl">The URL to be used as a reply/response to a correspondence</param>
+    /// <param name="linkText">The text to display for the link</param>
+    ICorrespondenceRequestBuilder WithReplyOption(string linkUrl, string linkText);
+
+    /// <summary>
     /// Adds reply options to the correspondence
     /// <remarks>
     /// This method respects any existing options already stored in <see cref="CorrespondenceRequest.ReplyOptions"/>
     /// </remarks>
     /// </summary>
     /// <param name="replyOptions">A list of <see cref="CorrespondenceReplyOption"/> items</param>
-    ICorrespondenceRequestBuilder WithReplyOptions(IReadOnlyList<CorrespondenceReplyOption> replyOptions);
+    ICorrespondenceRequestBuilder WithReplyOptions(IEnumerable<CorrespondenceReplyOption> replyOptions);
 
     /// <summary>
     /// Sets the notification for the correspondence
@@ -247,7 +290,7 @@ public interface ICorrespondenceRequestBuilder
     /// </remarks>
     /// </summary>
     /// <param name="existingAttachments">A list of <see cref="Guid"/> items pointing to existing attachments</param>
-    ICorrespondenceRequestBuilder WithExistingAttachments(IReadOnlyList<Guid> existingAttachments);
+    ICorrespondenceRequestBuilder WithExistingAttachments(IEnumerable<Guid> existingAttachments);
 
     /// <summary>
     /// Adds an attachment to the correspondence
@@ -274,7 +317,7 @@ public interface ICorrespondenceRequestBuilder
     /// </remarks>
     /// </summary>
     /// <param name="attachments">A List of <see cref="CorrespondenceAttachment"/> items</param>
-    ICorrespondenceRequestBuilder WithAttachments(IReadOnlyList<CorrespondenceAttachment> attachments);
+    ICorrespondenceRequestBuilder WithAttachments(IEnumerable<CorrespondenceAttachment> attachments);
 
     /// <summary>
     /// Builds the <see cref="CorrespondenceRequest"/> instance

@@ -5,7 +5,7 @@ namespace Altinn.App.Core.Features.Correspondence.Builder;
 /// <summary>
 /// Builder factory for creating <see cref="CorrespondenceAttachment"/> objects
 /// </summary>
-public class CorrespondenceAttachmentBuilder : CorrespondenceBuilderBase, ICorrespondenceAttachmentBuilder
+public class CorrespondenceAttachmentBuilder : ICorrespondenceAttachmentBuilder
 {
     private string? _filename;
     private string? _name;
@@ -26,7 +26,7 @@ public class CorrespondenceAttachmentBuilder : CorrespondenceBuilderBase, ICorre
     /// <inheritdoc/>
     public ICorrespondenceAttachmentBuilderName WithFilename(string filename)
     {
-        NotNullOrEmpty(filename, "Filename cannot be empty");
+        BuilderUtils.NotNullOrEmpty(filename, "Filename cannot be empty");
         _filename = filename;
         return this;
     }
@@ -34,7 +34,7 @@ public class CorrespondenceAttachmentBuilder : CorrespondenceBuilderBase, ICorre
     /// <inheritdoc/>
     public ICorrespondenceAttachmentBuilderSendersReference WithName(string name)
     {
-        NotNullOrEmpty(name, "Name cannot be empty");
+        BuilderUtils.NotNullOrEmpty(name, "Name cannot be empty");
         _name = name;
         return this;
     }
@@ -42,7 +42,7 @@ public class CorrespondenceAttachmentBuilder : CorrespondenceBuilderBase, ICorre
     /// <inheritdoc/>
     public ICorrespondenceAttachmentBuilderDataType WithSendersReference(string sendersReference)
     {
-        NotNullOrEmpty(sendersReference, "Senders reference cannot be empty");
+        BuilderUtils.NotNullOrEmpty(sendersReference, "Senders reference cannot be empty");
         _sendersReference = sendersReference;
         return this;
     }
@@ -50,7 +50,7 @@ public class CorrespondenceAttachmentBuilder : CorrespondenceBuilderBase, ICorre
     /// <inheritdoc/>
     public ICorrespondenceAttachmentBuilderData WithDataType(string dataType)
     {
-        NotNullOrEmpty(dataType, "Data type cannot be empty");
+        BuilderUtils.NotNullOrEmpty(dataType, "Data type cannot be empty");
         _dataType = dataType;
         return this;
     }
@@ -58,7 +58,7 @@ public class CorrespondenceAttachmentBuilder : CorrespondenceBuilderBase, ICorre
     /// <inheritdoc/>
     public ICorrespondenceAttachmentBuilder WithData(ReadOnlyMemory<byte> data)
     {
-        NotNullOrEmpty(data, "Data cannot be empty");
+        BuilderUtils.NotNullOrEmpty(data, "Data cannot be empty");
         _data = data;
         return this;
     }
@@ -80,11 +80,11 @@ public class CorrespondenceAttachmentBuilder : CorrespondenceBuilderBase, ICorre
     /// <inheritdoc/>
     public CorrespondenceAttachment Build()
     {
-        NotNullOrEmpty(_filename);
-        NotNullOrEmpty(_name);
-        NotNullOrEmpty(_sendersReference);
-        NotNullOrEmpty(_dataType);
-        NotNullOrEmpty(_data);
+        BuilderUtils.NotNullOrEmpty(_filename);
+        BuilderUtils.NotNullOrEmpty(_name);
+        BuilderUtils.NotNullOrEmpty(_sendersReference);
+        BuilderUtils.NotNullOrEmpty(_dataType);
+        BuilderUtils.NotNullOrEmpty(_data);
 
         return new CorrespondenceAttachment
         {

@@ -5,7 +5,7 @@ namespace Altinn.App.Core.Features.Correspondence.Builder;
 /// <summary>
 /// Builder factory for creating <see cref="CorrespondenceReplyOption"/> objects
 /// </summary>
-public class CorrespondenceReplyOptionBuilder : CorrespondenceBuilderBase, ICorrespondenceReplyOptionsBuilder
+public class CorrespondenceReplyOptionBuilder : ICorrespondenceReplyOptionsBuilder
 {
     private string? _linkUrl;
     private string? _linkText;
@@ -21,7 +21,7 @@ public class CorrespondenceReplyOptionBuilder : CorrespondenceBuilderBase, ICorr
     /// <inheritdoc/>
     public ICorrespondenceReplyOptionsBuilder WithLinkUrl(string linkUrl)
     {
-        NotNullOrEmpty(linkUrl, "Link URL cannot be empty");
+        BuilderUtils.NotNullOrEmpty(linkUrl, "Link URL cannot be empty");
         _linkUrl = linkUrl;
         return this;
     }
@@ -36,7 +36,7 @@ public class CorrespondenceReplyOptionBuilder : CorrespondenceBuilderBase, ICorr
     /// <inheritdoc/>
     public CorrespondenceReplyOption Build()
     {
-        NotNullOrEmpty(_linkUrl);
+        BuilderUtils.NotNullOrEmpty(_linkUrl);
 
         return new CorrespondenceReplyOption { LinkUrl = _linkUrl, LinkText = _linkText };
     }

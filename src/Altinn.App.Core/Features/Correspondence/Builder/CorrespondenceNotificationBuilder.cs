@@ -5,7 +5,7 @@ namespace Altinn.App.Core.Features.Correspondence.Builder;
 /// <summary>
 /// Builder factory for creating <see cref="CorrespondenceNotification"/> objects
 /// </summary>
-public class CorrespondenceNotificationBuilder : CorrespondenceBuilderBase, ICorrespondenceNotificationBuilder
+public class CorrespondenceNotificationBuilder : ICorrespondenceNotificationBuilder
 {
     private CorrespondenceNotificationTemplate? _notificationTemplate;
     private string? _emailSubject;
@@ -33,7 +33,7 @@ public class CorrespondenceNotificationBuilder : CorrespondenceBuilderBase, ICor
         CorrespondenceNotificationTemplate notificationTemplate
     )
     {
-        NotNullOrEmpty(notificationTemplate, "Notification template cannot be empty");
+        BuilderUtils.NotNullOrEmpty(notificationTemplate, "Notification template cannot be empty");
         _notificationTemplate = notificationTemplate;
         return this;
     }
@@ -122,7 +122,7 @@ public class CorrespondenceNotificationBuilder : CorrespondenceBuilderBase, ICor
     /// <inheritdoc/>
     public CorrespondenceNotification Build()
     {
-        NotNullOrEmpty(_notificationTemplate);
+        BuilderUtils.NotNullOrEmpty(_notificationTemplate);
 
         return new CorrespondenceNotification
         {

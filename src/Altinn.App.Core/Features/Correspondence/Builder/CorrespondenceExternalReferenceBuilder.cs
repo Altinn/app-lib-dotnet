@@ -5,7 +5,7 @@ namespace Altinn.App.Core.Features.Correspondence.Builder;
 /// <summary>
 /// Builder factory for creating <see cref="CorrespondenceExternalReference"/> objects
 /// </summary>
-public class CorrespondenceExternalReferenceBuilder : CorrespondenceBuilderBase, ICorrespondenceExternalReferenceBuilder
+public class CorrespondenceExternalReferenceBuilder : ICorrespondenceExternalReferenceBuilder
 {
     private CorrespondenceReferenceType? _referenceType;
     private string? _referenceValue;
@@ -20,7 +20,7 @@ public class CorrespondenceExternalReferenceBuilder : CorrespondenceBuilderBase,
     /// <inheritdoc/>
     public ICorrespondenceExternalReferenceBuilderValue WithReferenceType(CorrespondenceReferenceType referenceType)
     {
-        NotNullOrEmpty(referenceType, "Reference type cannot be empty");
+        BuilderUtils.NotNullOrEmpty(referenceType, "Reference type cannot be empty");
         _referenceType = referenceType;
         return this;
     }
@@ -28,7 +28,7 @@ public class CorrespondenceExternalReferenceBuilder : CorrespondenceBuilderBase,
     /// <inheritdoc/>
     public ICorrespondenceExternalReferenceBuilder WithReferenceValue(string referenceValue)
     {
-        NotNullOrEmpty(referenceValue, "Reference value cannot be empty");
+        BuilderUtils.NotNullOrEmpty(referenceValue, "Reference value cannot be empty");
         _referenceValue = referenceValue;
         return this;
     }
@@ -36,8 +36,8 @@ public class CorrespondenceExternalReferenceBuilder : CorrespondenceBuilderBase,
     /// <inheritdoc/>
     public CorrespondenceExternalReference Build()
     {
-        NotNullOrEmpty(_referenceType);
-        NotNullOrEmpty(_referenceValue);
+        BuilderUtils.NotNullOrEmpty(_referenceType);
+        BuilderUtils.NotNullOrEmpty(_referenceValue);
 
         return new CorrespondenceExternalReference
         {
