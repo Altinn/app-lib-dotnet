@@ -489,4 +489,44 @@ public class CorrespondenceBuilderTests
         correspondence.RequestedPublishTime.Should().BeSameDateAs(DateTime.Today.AddDays(1));
         correspondence.IgnoreReservation.Should().BeTrue();
     }
+
+    [Fact]
+    public void Builder_ValueTypeOverloads_ValidateInput()
+    {
+        // Arrange
+        var baseBuilder = CorrespondenceRequestBuilder
+            .Create()
+            .WithResourceId("resourceId-1")
+            .WithSender(TestHelpers.GetOrganisationNumber(1))
+            .WithSendersReference("sender-reference-1")
+            .WithRecipient(OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(1)))
+            .WithAllowSystemDeleteAfter(DateTimeOffset.UtcNow.AddDays(1))
+            .WithContent(
+                CorrespondenceContentBuilder
+                    .Create()
+                    .WithLanguage(LanguageCode<Iso6391>.Parse("no"))
+                    .WithTitle("content-title-1")
+                    .WithSummary("content-summary-1")
+                    .WithBody("content-body-1")
+            );
+
+        // Act
+        var act1 = () =>
+        {
+            baseBuilder.WithSender("123456789");
+        };
+        var act2 = () =>
+        {
+            baseBuilder.WithRecipient("123456789");
+        };
+        var act3 = () =>
+        {
+            CorrespondenceContentBuilder.Create().WithLanguage("nope");
+        };
+
+        // Assert
+        act1.Should().Throw<FormatException>();
+        act2.Should().Throw<FormatException>();
+        act3.Should().Throw<FormatException>();
+    }
 }
