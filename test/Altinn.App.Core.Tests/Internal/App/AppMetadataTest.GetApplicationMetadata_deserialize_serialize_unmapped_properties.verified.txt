@@ -1,4 +1,4 @@
-{
+﻿{
   "Id": "tdd/bestilling",
   "Features": {
     "footer": true,
