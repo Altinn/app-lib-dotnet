@@ -177,12 +177,6 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceRequestBuilder WithExternalReference(ICorrespondenceExternalReferenceBuilder builder)
-    {
-        return WithExternalReferences([builder.Build()]);
-    }
-
-    /// <inheritdoc/>
     public ICorrespondenceRequestBuilder WithExternalReference(CorrespondenceReferenceType type, string value)
     {
         return WithExternalReferences(
@@ -216,12 +210,6 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     public ICorrespondenceRequestBuilder WithReplyOption(CorrespondenceReplyOption replyOption)
     {
         return WithReplyOptions([replyOption]);
-    }
-
-    /// <inheritdoc/>
-    public ICorrespondenceRequestBuilder WithReplyOption(ICorrespondenceReplyOptionsBuilder builder)
-    {
-        return WithReplyOptions([builder.Build()]);
     }
 
     /// <inheritdoc/>

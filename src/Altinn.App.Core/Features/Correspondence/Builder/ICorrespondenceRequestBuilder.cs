@@ -189,15 +189,6 @@ public interface ICorrespondenceRequestBuilder
     /// This method respects any existing references already stored in <see cref="CorrespondenceRequest.ExternalReferences"/>
     /// </remarks>
     /// </summary>
-    /// <param name="builder">A <see cref="CorrespondenceExternalReferenceBuilder"/> instance in the <see cref="ICorrespondenceExternalReferenceBuilder"/> stage</param>
-    ICorrespondenceRequestBuilder WithExternalReference(ICorrespondenceExternalReferenceBuilder builder);
-
-    /// <summary>
-    /// Adds an external reference to the correspondence
-    /// <remarks>
-    /// This method respects any existing references already stored in <see cref="CorrespondenceRequest.ExternalReferences"/>
-    /// </remarks>
-    /// </summary>
     /// <param name="type">The reference type to add</param>
     /// <param name="value">The reference value</param>
     ICorrespondenceRequestBuilder WithExternalReference(CorrespondenceReferenceType type, string value);
@@ -227,15 +218,6 @@ public interface ICorrespondenceRequestBuilder
     /// </summary>
     /// <param name="replyOption">A <see cref="CorrespondenceReplyOption"/> item</param>
     ICorrespondenceRequestBuilder WithReplyOption(CorrespondenceReplyOption replyOption);
-
-    /// <summary>
-    /// Adds a reply option to the correspondence
-    /// <remarks>
-    /// This method respects any existing options already stored in <see cref="CorrespondenceRequest.ReplyOptions"/>
-    /// </remarks>
-    /// </summary>
-    /// <param name="builder">A <see cref="CorrespondenceReplyOptionBuilder"/> instance in the <see cref="ICorrespondenceReplyOptionsBuilder"/> stage</param>
-    ICorrespondenceRequestBuilder WithReplyOption(ICorrespondenceReplyOptionsBuilder builder);
 
     /// <summary>
     /// Adds a reply option to the correspondence
