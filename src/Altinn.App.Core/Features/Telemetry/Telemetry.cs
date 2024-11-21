@@ -170,6 +170,11 @@ public sealed partial class Telemetry : IDisposable
         /// Label for the organisation number.
         /// </summary>
         public const string OrganisationNumber = "organisation.number";
+
+        /// <summary>
+        /// Label for the Correspondence ID.
+        /// </summary>
+        public const string CorrespondenceId = "correspondence.id";
     }
 
     internal static class InternalLabels

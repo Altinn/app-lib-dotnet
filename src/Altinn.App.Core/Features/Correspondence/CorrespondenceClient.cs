@@ -84,6 +84,7 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
             );
 
             var response = await HandleServerCommunication<SendCorrespondenceResponse>(request, cancellationToken);
+            activity?.SetCorrespondence(response);
             _telemetry?.RecordCorrespondenceOrder(CorrespondenceResult.Success);
 
             return response;
@@ -119,7 +120,7 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
     )
     {
         _logger.LogDebug("Fetching correspondence status");
-        using Activity? activity = _telemetry?.StartCorrespondenceStatusActivity();
+        using Activity? activity = _telemetry?.StartCorrespondenceStatusActivity(payload.CorrespondenceId);
 
         try
         {
@@ -186,7 +187,7 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
         }
         catch (Exception e)
         {
-            _logger.LogError("Error parsing ProblemDetails from correspondence api: {Error}", e);
+            _logger.LogError(e, "Error parsing ProblemDetails from Correspondence api");
         }
 
         return null;

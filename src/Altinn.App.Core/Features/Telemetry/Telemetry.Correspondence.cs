@@ -28,9 +28,11 @@ partial class Telemetry
         return ActivitySource.StartActivity("Correspondence.Send");
     }
 
-    internal Activity? StartCorrespondenceStatusActivity()
+    internal Activity? StartCorrespondenceStatusActivity(Guid correspondenceId)
     {
-        return ActivitySource.StartActivity("Correspondence.Status");
+        var activity = ActivitySource.StartActivity("Correspondence.Status");
+        activity?.AddTag(Labels.CorrespondenceId, correspondenceId);
+        return activity;
     }
 
     internal void RecordCorrespondenceOrder(CorrespondenceResult result) =>
