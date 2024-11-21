@@ -19,18 +19,10 @@ public class CorrespondenceContentBuilder : ICorrespondenceContentBuilder
     /// Creates a new <see cref="CorrespondenceContentBuilder"/> instance
     /// </summary>
     /// <returns></returns>
-    public static ICorrespondenceContentBuilderTitle Create() => new CorrespondenceContentBuilder();
+    public static ICorrespondenceContentBuilderLanguage Create() => new CorrespondenceContentBuilder();
 
     /// <inheritdoc/>
-    public ICorrespondenceContentBuilderLanguage WithTitle(string title)
-    {
-        BuilderUtils.NotNullOrEmpty(title, "Title cannot be empty");
-        _title = title;
-        return this;
-    }
-
-    /// <inheritdoc/>
-    public ICorrespondenceContentBuilderSummary WithLanguage(LanguageCode<Iso6391> language)
+    public ICorrespondenceContentBuilderTitle WithLanguage(LanguageCode<Iso6391> language)
     {
         BuilderUtils.NotNullOrEmpty(language, "Language cannot be empty");
         _language = language;
@@ -38,10 +30,18 @@ public class CorrespondenceContentBuilder : ICorrespondenceContentBuilder
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceContentBuilderSummary WithLanguage(string language)
+    public ICorrespondenceContentBuilderTitle WithLanguage(string language)
     {
         BuilderUtils.NotNullOrEmpty(language, "Language cannot be empty");
         _language = LanguageCode<Iso6391>.Parse(language);
+        return this;
+    }
+
+    /// <inheritdoc/>
+    public ICorrespondenceContentBuilderSummary WithTitle(string title)
+    {
+        BuilderUtils.NotNullOrEmpty(title, "Title cannot be empty");
+        _title = title;
         return this;
     }
 

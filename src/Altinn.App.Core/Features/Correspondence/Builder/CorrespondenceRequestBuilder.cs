@@ -119,10 +119,10 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
 
     /// <inheritdoc/>
     public ICorrespondenceRequestBuilder WithContent(
+        LanguageCode<Iso6391> language,
         string title,
         string summary,
-        string body,
-        LanguageCode<Iso6391> language
+        string body
     )
     {
         _content = new CorrespondenceContent
@@ -136,7 +136,7 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceRequestBuilder WithContent(string title, string summary, string body, string language)
+    public ICorrespondenceRequestBuilder WithContent(string language, string title, string summary, string body)
     {
         _content = new CorrespondenceContent
         {

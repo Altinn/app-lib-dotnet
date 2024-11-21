@@ -121,25 +121,25 @@ public interface ICorrespondenceRequestBuilderContent
     /// <summary>
     /// Sets the content of the correspondence
     /// </summary>
+    /// <param name="language">The message language</param>
     /// <param name="title">The message title</param>
     /// <param name="summary">The message summary</param>
     /// <param name="body">The message body</param>
-    /// <param name="language">The message language</param>
     ICorrespondenceRequestBuilder WithContent(
+        LanguageCode<Iso6391> language,
         string title,
         string summary,
-        string body,
-        LanguageCode<Iso6391> language
+        string body
     );
 
     /// <summary>
     /// Sets the content of the correspondence
     /// </summary>
+    /// <param name="language">The message language in ISO 639-1 format</param>
     /// <param name="title">The message title</param>
     /// <param name="summary">The message summary</param>
     /// <param name="body">The message body</param>
-    /// <param name="language">The message language in ISO 639-1 format</param>
-    ICorrespondenceRequestBuilder WithContent(string title, string summary, string body, string language);
+    ICorrespondenceRequestBuilder WithContent(string language, string title, string summary, string body);
 }
 
 /// <summary>

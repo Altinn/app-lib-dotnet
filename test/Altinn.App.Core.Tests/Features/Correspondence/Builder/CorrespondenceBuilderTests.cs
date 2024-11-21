@@ -36,8 +36,8 @@ public class CorrespondenceBuilderTests
             .WithContent(
                 CorrespondenceContentBuilder
                     .Create()
-                    .WithTitle(contentTitle)
                     .WithLanguage(contentLanguage)
+                    .WithTitle(contentTitle)
                     .WithSummary(contentSummary)
                     .WithBody(contentBody)
             );
@@ -151,8 +151,8 @@ public class CorrespondenceBuilderTests
             .WithContent(
                 CorrespondenceContentBuilder
                     .Create()
-                    .WithTitle(data.content.title)
                     .WithLanguage(data.content.language)
+                    .WithTitle(data.content.title)
                     .WithSummary(data.content.summary)
                     .WithBody(data.content.body)
             )
@@ -204,12 +204,7 @@ public class CorrespondenceBuilderTests
             )
             .WithExistingAttachment(data.existingAttachments[0])
             .WithExistingAttachments(data.existingAttachments.Skip(1).ToList())
-            .WithExternalReference(
-                CorrespondenceExternalReferenceBuilder
-                    .Create()
-                    .WithReferenceType(data.externalReferences[0].type)
-                    .WithReferenceValue(data.externalReferences[0].value)
-            )
+            .WithExternalReference(data.externalReferences[0].type, data.externalReferences[0].value)
             .WithExternalReferences(
                 data.externalReferences.Skip(1)
                     .Select(x => new CorrespondenceExternalReference
@@ -219,12 +214,7 @@ public class CorrespondenceBuilderTests
                     })
                     .ToList()
             )
-            .WithReplyOption(
-                CorrespondenceReplyOptionBuilder
-                    .Create()
-                    .WithLinkUrl(data.replyOptions[0].url)
-                    .WithLinkText(data.replyOptions[0].text)
-            )
+            .WithReplyOption(data.replyOptions[0].url, data.replyOptions[0].text)
             .WithReplyOptions(
                 [
                     new CorrespondenceReplyOption
@@ -308,7 +298,6 @@ public class CorrespondenceBuilderTests
         }
     }
 
-    // TODO: This test isn't exhaustive
     [Fact]
     public void Builder_UpdatesAndOverwritesValuesCorrectly()
     {
@@ -323,8 +312,8 @@ public class CorrespondenceBuilderTests
             .WithContent(
                 CorrespondenceContentBuilder
                     .Create()
-                    .WithTitle("content-title-1")
                     .WithLanguage(LanguageCode<Iso6391>.Parse("no"))
+                    .WithTitle("content-title-1")
                     .WithSummary("content-summary-1")
                     .WithBody("content-body-1")
             )
@@ -334,41 +323,63 @@ public class CorrespondenceBuilderTests
                     .Create()
                     .WithNotificationTemplate(CorrespondenceNotificationTemplate.GenericAltinnMessage)
                     .WithEmailBody("email-body-1")
-            );
+            )
+            .WithReplyOption("url1", "text1")
+            .WithExternalReference(CorrespondenceReferenceType.Generic, "aaa")
+            .WithPropertyList(new Dictionary<string, string> { ["prop1"] = "value1", ["prop2"] = "value2" })
+            .WithExistingAttachment(Guid.Parse("a3ac4826-5873-4ecb-9fe7-dc4cfccd0afa"))
+            .WithRequestedPublishTime(DateTime.Today)
+            .WithIgnoreReservation(true);
 
         builder.WithResourceId("resourceId-2");
-        builder.WithSender(TestHelpers.GetOrganisationNumber(2));
+        builder.WithSender(TestHelpers.GetOrganisationNumber(2).Get(OrganisationNumberFormat.Local));
         builder.WithSendersReference("sender-reference-2");
-        builder.WithRecipient(OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(2)));
+        builder.WithRecipient(TestHelpers.GetOrganisationNumber(2).Get(OrganisationNumberFormat.International));
         builder.WithRecipients(
             [
                 OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(3)),
                 OrganisationOrPersonIdentifier.Create(TestHelpers.GetNationalIdentityNumber(4))
             ]
         );
-        builder.WithRecipient(TestHelpers.GetOrganisationNumber(5).Get(OrganisationNumberFormat.Local));
         builder.WithRecipients(
             [
-                TestHelpers.GetOrganisationNumber(6).Get(OrganisationNumberFormat.Local),
-                TestHelpers.GetNationalIdentityNumber(7).Value
+                TestHelpers.GetOrganisationNumber(5).Get(OrganisationNumberFormat.Local),
+                TestHelpers.GetNationalIdentityNumber(6).Value
             ]
         );
         builder.WithDueDateTime(DateTimeOffset.UtcNow.AddDays(2));
         builder.WithAllowSystemDeleteAfter(DateTimeOffset.UtcNow.AddDays(2));
-        builder.WithContent(
-            CorrespondenceContentBuilder
-                .Create()
-                .WithTitle("content-title-2")
-                .WithLanguage("en")
-                .WithSummary("content-summary-2")
-                .WithBody("content-body-2")
-        );
+        builder.WithContent("en", "content-title-2", "content-summary-2", "content-body-2");
         builder.WithNotification(
             CorrespondenceNotificationBuilder
                 .Create()
                 .WithNotificationTemplate(CorrespondenceNotificationTemplate.CustomMessage)
                 .WithEmailBody("email-body-2")
         );
+        builder.WithExternalReference(CorrespondenceReferenceType.Generic, "aaa");
+        builder.WithExternalReference(
+            new CorrespondenceExternalReference
+            {
+                ReferenceType = CorrespondenceReferenceType.AltinnAppInstance,
+                ReferenceValue = "bbb"
+            }
+        );
+        builder.WithExternalReferences(
+            [
+                new CorrespondenceExternalReference
+                {
+                    ReferenceType = CorrespondenceReferenceType.DialogportenProcessId,
+                    ReferenceValue = "ccc"
+                }
+            ]
+        );
+        builder.WithReplyOption("url2", "text2");
+        builder.WithReplyOption(new CorrespondenceReplyOption { LinkUrl = "url3", LinkText = "text3" });
+        builder.WithReplyOptions([new CorrespondenceReplyOption { LinkUrl = "url4", LinkText = "text4" }]);
+        builder.WithPropertyList(new Dictionary<string, string> { ["prop2"] = "value2-redux", ["prop3"] = "value3" });
+        builder.WithExistingAttachment(Guid.Parse("eeb67483-7d6d-40dc-9861-3fc1beff7608"));
+        builder.WithExistingAttachments([Guid.Parse("9a12dfd9-6c70-489c-8b3d-77bb188c64b3")]);
+        builder.WithRequestedPublishTime(DateTime.Today.AddDays(1));
 
         // Act
         var correspondence = builder.Build();
@@ -382,8 +393,7 @@ public class CorrespondenceBuilderTests
         correspondence.SendersReference.Should().Be("sender-reference-2");
         correspondence.AllowSystemDeleteAfter.Should().BeSameDateAs(DateTimeOffset.UtcNow.AddDays(2));
         correspondence.DueDateTime.Should().BeSameDateAs(DateTimeOffset.UtcNow.AddDays(2));
-
-        correspondence.Recipients.Should().HaveCount(7);
+        correspondence.Recipients.Should().HaveCount(6);
         correspondence
             .Recipients.Select(x => x.ToString())
             .Should()
@@ -394,17 +404,72 @@ public class CorrespondenceBuilderTests
                     TestHelpers.GetOrganisationNumber(3).Get(OrganisationNumberFormat.Local),
                     TestHelpers.GetNationalIdentityNumber(4).Value,
                     TestHelpers.GetOrganisationNumber(5).Get(OrganisationNumberFormat.Local),
-                    TestHelpers.GetOrganisationNumber(6).Get(OrganisationNumberFormat.Local),
-                    TestHelpers.GetNationalIdentityNumber(7).Value
+                    TestHelpers.GetNationalIdentityNumber(6).Value,
                 ]
             );
-
         correspondence.Content.Title.Should().Be("content-title-2");
         correspondence.Content.Language.Should().Be(LanguageCode<Iso6391>.Parse("en"));
         correspondence.Content.Summary.Should().Be("content-summary-2");
         correspondence.Content.Body.Should().Be("content-body-2");
-
         correspondence.Notification.NotificationTemplate.Should().Be(CorrespondenceNotificationTemplate.CustomMessage);
         correspondence.Notification.EmailBody.Should().Be("email-body-2");
+        correspondence
+            .ExternalReferences.Should()
+            .BeEquivalentTo(
+                [
+                    new CorrespondenceExternalReference
+                    {
+                        ReferenceType = CorrespondenceReferenceType.Generic,
+                        ReferenceValue = "aaa"
+                    },
+                    new CorrespondenceExternalReference
+                    {
+                        ReferenceType = CorrespondenceReferenceType.Generic,
+                        ReferenceValue = "aaa"
+                    },
+                    new CorrespondenceExternalReference
+                    {
+                        ReferenceType = CorrespondenceReferenceType.AltinnAppInstance,
+                        ReferenceValue = "bbb"
+                    },
+                    new CorrespondenceExternalReference
+                    {
+                        ReferenceType = CorrespondenceReferenceType.DialogportenProcessId,
+                        ReferenceValue = "ccc"
+                    }
+                ]
+            );
+        correspondence
+            .ReplyOptions.Should()
+            .BeEquivalentTo(
+                [
+                    new CorrespondenceReplyOption { LinkUrl = "url1", LinkText = "text1" },
+                    new CorrespondenceReplyOption { LinkUrl = "url2", LinkText = "text2" },
+                    new CorrespondenceReplyOption { LinkUrl = "url3", LinkText = "text3" },
+                    new CorrespondenceReplyOption { LinkUrl = "url4", LinkText = "text4" }
+                ]
+            );
+        correspondence
+            .PropertyList.Should()
+            .BeEquivalentTo(
+                new Dictionary<string, string>
+                {
+                    ["prop1"] = "value1",
+                    ["prop2"] = "value2-redux",
+                    ["prop3"] = "value3",
+                }
+            );
+        correspondence
+            .ExistingAttachments!.Select(x => x.ToString())
+            .Should()
+            .BeEquivalentTo(
+                [
+                    "a3ac4826-5873-4ecb-9fe7-dc4cfccd0afa",
+                    "eeb67483-7d6d-40dc-9861-3fc1beff7608",
+                    "9a12dfd9-6c70-489c-8b3d-77bb188c64b3"
+                ]
+            );
+        correspondence.RequestedPublishTime.Should().BeSameDateAs(DateTime.Today.AddDays(1));
+        correspondence.IgnoreReservation.Should().BeTrue();
     }
 }

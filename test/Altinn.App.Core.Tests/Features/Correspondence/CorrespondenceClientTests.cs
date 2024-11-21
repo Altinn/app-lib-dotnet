@@ -75,8 +75,8 @@ public class CorrespondenceClientTests
                 .WithContent(
                     CorrespondenceContentBuilder
                         .Create()
-                        .WithTitle("message-title")
                         .WithLanguage(LanguageCode<Iso6391>.Parse("en"))
+                        .WithTitle("message-title")
                         .WithSummary("message-summary")
                         .WithBody("message-body")
                 )
@@ -247,6 +247,45 @@ public class CorrespondenceClientTests
         // Assert
         await send.Should().ThrowAsync<CorrespondenceRequestException>();
         await getStatus.Should().ThrowAsync<CorrespondenceRequestException>();
+    }
+
+    [Fact]
+    public async Task KnownCorrespondenceException_IsHandled()
+    {
+        // Arrange
+        await using var fixture = Fixture.Create();
+        var mockHttpClientFactory = fixture.HttpClientFactoryMock;
+        var mockHttpClient = new Mock<HttpClient>();
+
+        mockHttpClientFactory.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(mockHttpClient.Object);
+        mockHttpClient
+            .Setup(c => c.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+                () =>
+                    throw new CorrespondenceRequestException(
+                        "Yikes",
+                        new CorrespondenceRequestException("Sometimes there's an inner exception")
+                    )
+            );
+
+        // Act
+        Func<Task> send = async () =>
+        {
+            await fixture.CorrespondenceClient.Send(PayloadFactory.Send());
+        };
+        Func<Task> getStatus = async () =>
+        {
+            await fixture.CorrespondenceClient.GetStatus(PayloadFactory.GetStatus());
+        };
+
+        // Assert
+        await send.Should()
+            .ThrowAsync<CorrespondenceRequestException>()
+            .WithInnerExceptionExactly(typeof(CorrespondenceRequestException));
+        await getStatus
+            .Should()
+            .ThrowAsync<CorrespondenceRequestException>()
+            .WithInnerExceptionExactly(typeof(CorrespondenceRequestException));
     }
 
     [Fact]

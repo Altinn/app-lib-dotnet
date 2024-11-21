@@ -4,18 +4,6 @@ using Altinn.App.Core.Models;
 namespace Altinn.App.Core.Features.Correspondence.Builder;
 
 /// <summary>
-/// Indicates that the <see cref="CorrespondenceContentBuilder"/> instance is on the <see cref="CorrespondenceContent.Title"/> step
-/// </summary>
-public interface ICorrespondenceContentBuilderTitle
-{
-    /// <summary>
-    /// Sets the title of the correspondence content
-    /// </summary>
-    /// <param name="title">The correspondence title</param>
-    ICorrespondenceContentBuilderLanguage WithTitle(string title);
-}
-
-/// <summary>
 /// Indicates that the <see cref="CorrespondenceContentBuilder"/> instance is on the <see cref="CorrespondenceContent.Language"/> step
 /// </summary>
 public interface ICorrespondenceContentBuilderLanguage
@@ -24,13 +12,25 @@ public interface ICorrespondenceContentBuilderLanguage
     /// Sets the language of the correspondence content
     /// </summary>
     /// <param name="language">The content language</param>
-    ICorrespondenceContentBuilderSummary WithLanguage(LanguageCode<Iso6391> language);
+    ICorrespondenceContentBuilderTitle WithLanguage(LanguageCode<Iso6391> language);
 
     /// <summary>
     /// Sets the language of the correspondence content
     /// </summary>
     /// <param name="language">The content language in ISO 639-1 format</param>
-    ICorrespondenceContentBuilderSummary WithLanguage(string language);
+    ICorrespondenceContentBuilderTitle WithLanguage(string language);
+}
+
+/// <summary>
+/// Indicates that the <see cref="CorrespondenceContentBuilder"/> instance is on the <see cref="CorrespondenceContent.Title"/> step
+/// </summary>
+public interface ICorrespondenceContentBuilderTitle
+{
+    /// <summary>
+    /// Sets the title of the correspondence content
+    /// </summary>
+    /// <param name="title">The correspondence title</param>
+    ICorrespondenceContentBuilderSummary WithTitle(string title);
 }
 
 /// <summary>
