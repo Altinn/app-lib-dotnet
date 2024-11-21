@@ -422,25 +422,6 @@ internal sealed class MaskinportenClient : IMaskinportenClient
         };
     }
 
-    private static JwtSecurityToken ParseJwt(string token, TokenAuthorities? authority)
-    {
-        JwtSecurityTokenHandler handler = new();
-        JwtSecurityToken jwt = handler.ReadJwtToken(token);
-        if (jwt is null)
-        {
-            string errorMessage = authority switch
-            {
-                TokenAuthorities.Maskinporten => "Invalid JWT payload from Maskinporten",
-                TokenAuthorities.AltinnTokenExchange => "Invalid JWT payload from Altinn Authentication token exchange",
-                _ => "Invalid JWT payload"
-            };
-
-            throw new MaskinportenAuthenticationException(errorMessage);
-        }
-
-        return jwt;
-    }
-
     private TimeSpan GetTokenExpiryWithMargin(JwtToken token)
     {
         return token.ExpiresAt - _timeProvider.GetUtcNow() - TokenExpirationMargin;
