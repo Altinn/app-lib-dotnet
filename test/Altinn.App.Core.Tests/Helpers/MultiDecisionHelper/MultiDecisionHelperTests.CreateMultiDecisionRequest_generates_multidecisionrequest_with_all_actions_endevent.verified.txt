@@ -75,15 +75,15 @@
         Id: s1,
         Attribute: [
           {
-            AttributeId: urn:altinn:partyid,
-            Value: 1337,
+            AttributeId: urn:altinn:authlevel,
+            Value: 3,
             Issuer: LOCAL AUTHORITY,
             DataType: string,
             IncludeInResult: false
           },
           {
-            AttributeId: urn:altinn:authlevel,
-            Value: 3,
+            AttributeId: urn:altinn:partyid,
+            Value: 1337,
             Issuer: LOCAL AUTHORITY,
             DataType: string,
             IncludeInResult: false
