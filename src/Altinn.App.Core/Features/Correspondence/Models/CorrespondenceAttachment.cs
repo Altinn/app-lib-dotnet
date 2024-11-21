@@ -3,7 +3,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models;
 /// <summary>
 /// Represents an attachment to a correspondence
 /// </summary>
-public sealed record CorrespondenceAttachment : CorrespondenceBase
+public sealed record CorrespondenceAttachment : MultipartCorrespondenceItem
 {
     /// <summary>
     /// The filename of the attachment

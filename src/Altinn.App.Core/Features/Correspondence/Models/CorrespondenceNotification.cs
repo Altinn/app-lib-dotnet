@@ -5,7 +5,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models;
 /// <summary>
 /// Represents a notification to be sent to the recipient of a correspondence
 /// </summary>
-public sealed record CorrespondenceNotification : CorrespondenceBase
+public sealed record CorrespondenceNotification : MultipartCorrespondenceItem
 {
     /// <summary>
     /// The notification template for use for notifications

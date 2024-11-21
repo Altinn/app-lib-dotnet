@@ -5,7 +5,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models;
 /// <summary>
 /// The message content in a correspondence
 /// </summary>
-public sealed record CorrespondenceContent : CorrespondenceBase
+public sealed record CorrespondenceContent : MultipartCorrespondenceItem
 {
     /// <summary>
     /// The correspondence message title (subject)

@@ -260,7 +260,7 @@ public class CorrespondenceRequestTests
         var clonedAttachment = identicalAttachments.Last();
 
         // Act
-        var processedAttachments = CorrespondenceBase.CalculateFilenameOverrides(identicalAttachments);
+        var processedAttachments = MultipartCorrespondenceItem.CalculateFilenameOverrides(identicalAttachments);
         processedAttachments[clonedAttachment] = "overwritten";
 
         // Assert

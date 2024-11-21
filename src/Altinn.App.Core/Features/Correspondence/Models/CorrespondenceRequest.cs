@@ -6,9 +6,9 @@ using Altinn.App.Core.Models;
 namespace Altinn.App.Core.Features.Correspondence.Models;
 
 /// <summary>
-/// Base functionality for correspondence models
+/// Represents a correspondence item that is serialisable as multipart form data
 /// </summary>
-public abstract record CorrespondenceBase
+public abstract record MultipartCorrespondenceItem
 {
     internal static void AddRequired(MultipartFormDataContent content, string value, string name)
     {
@@ -57,7 +57,7 @@ public abstract record CorrespondenceBase
 
     internal static void SerializeListItems(
         MultipartFormDataContent content,
-        IReadOnlyList<CorrespondenceListBase>? items
+        IReadOnlyList<MultipartCorrespondenceListItem>? items
     )
     {
         if (IsEmptyCollection(items))
@@ -156,9 +156,9 @@ public abstract record CorrespondenceBase
 }
 
 /// <summary>
-/// Base functionality for correspondence list models
+/// Represents a correspondence list item that is serialisable as multipart form data
 /// </summary>
-public abstract record CorrespondenceListBase : CorrespondenceBase
+public abstract record MultipartCorrespondenceListItem : MultipartCorrespondenceItem
 {
     internal abstract void Serialise(MultipartFormDataContent content, int index);
 }
@@ -166,7 +166,7 @@ public abstract record CorrespondenceListBase : CorrespondenceBase
 /// <summary>
 /// Represents and Altinn Correspondence request
 /// </summary>
-public sealed record CorrespondenceRequest : CorrespondenceBase
+public sealed record CorrespondenceRequest : MultipartCorrespondenceItem
 {
     /// <summary>
     /// The Resource Id for the correspondence service

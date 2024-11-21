@@ -5,7 +5,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models;
 /// <summary>
 /// Methods for recipients to respond to a correspondence, in addition to the normal Read and Confirm operations
 /// </summary>
-public sealed record CorrespondenceReplyOption : CorrespondenceListBase
+public sealed record CorrespondenceReplyOption : MultipartCorrespondenceListItem
 {
     /// <summary>
     /// The URL to be used as a reply/response to a correspondence
