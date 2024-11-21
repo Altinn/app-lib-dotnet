@@ -6,7 +6,7 @@ namespace Altinn.App.Core.Models;
 /// <summary>
 /// Json converter to transform between <see cref="string"/> and <see cref="JwtToken"/>
 /// </summary>
-public class JwtTokenJsonConverter : JsonConverter<JwtToken>
+internal class JwtTokenJsonConverter : JsonConverter<JwtToken>
 {
     /// <inheritdoc/>
     public override JwtToken Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)

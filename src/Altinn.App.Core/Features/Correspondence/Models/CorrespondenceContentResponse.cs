@@ -12,7 +12,7 @@ public sealed record CorrespondenceContentResponse
     /// The language of the correspondence, specified according to ISO 639-1
     /// </summary>
     [JsonPropertyName("language")]
-    [JsonConverter(typeof(LanguageCodeConverter<Iso6391>))]
+    [JsonConverter(typeof(LanguageCodeJsonConverter<Iso6391>))]
     public LanguageCode<Iso6391> Language { get; init; }
 
     /// <summary>

@@ -6,7 +6,7 @@ namespace Altinn.App.Core.Models;
 /// <summary>
 /// Json converter to transform between <see cref="string"/> and <see cref="NationalIdentityNumber"/>
 /// </summary>
-public class NationalIdentityNumberConverter : JsonConverter<NationalIdentityNumber>
+internal class NationalIdentityNumberJsonConverter : JsonConverter<NationalIdentityNumber>
 {
     /// <inheritdoc/>
     public override NationalIdentityNumber Read(

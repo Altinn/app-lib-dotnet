@@ -7,7 +7,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models;
 /// <summary>
 /// Represents either an organisation or a person
 /// </summary>
-[OrganisationOrPersonIdentifierConverter(OrganisationNumberFormat.International)]
+[OrganisationOrPersonIdentifierJsonConverter(OrganisationNumberFormat.International)]
 public abstract record OrganisationOrPersonIdentifier
 {
     /// <summary>
@@ -81,13 +81,13 @@ public abstract record OrganisationOrPersonIdentifier
 /// Json converter to transform between <see cref="string"/> and <see cref="OrganisationOrPersonIdentifier"/>
 /// </summary>
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Class, AllowMultiple = false)]
-public class OrganisationOrPersonIdentifierConverterAttribute : JsonConverterAttribute
+internal class OrganisationOrPersonIdentifierJsonConverterAttribute : JsonConverterAttribute
 {
     private OrganisationNumberFormat _format { get; }
 
-    /// <inheritdoc cref="OrganisationOrPersonIdentifierConverterAttribute"/>
+    /// <inheritdoc cref="OrganisationOrPersonIdentifierJsonConverterAttribute"/>
     /// <param name="format">The desired organisation number format to use for <b>serialization</b></param>
-    public OrganisationOrPersonIdentifierConverterAttribute(OrganisationNumberFormat format)
+    public OrganisationOrPersonIdentifierJsonConverterAttribute(OrganisationNumberFormat format)
     {
         _format = format;
     }
@@ -95,15 +95,15 @@ public class OrganisationOrPersonIdentifierConverterAttribute : JsonConverterAtt
     /// <inheritdoc/>
     public override JsonConverter? CreateConverter(Type typeToConvert)
     {
-        return new OrganisationOrPersonIdentifierConverter(_format);
+        return new OrganisationOrPersonJsonIdentifierConverter(_format);
     }
 }
 
-internal class OrganisationOrPersonIdentifierConverter : JsonConverter<OrganisationOrPersonIdentifier>
+internal class OrganisationOrPersonJsonIdentifierConverter : JsonConverter<OrganisationOrPersonIdentifier>
 {
     private OrganisationNumberFormat _format { get; init; }
 
-    public OrganisationOrPersonIdentifierConverter(OrganisationNumberFormat format)
+    public OrganisationOrPersonJsonIdentifierConverter(OrganisationNumberFormat format)
     {
         _format = format;
     }

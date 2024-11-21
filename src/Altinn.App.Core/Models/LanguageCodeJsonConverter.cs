@@ -6,7 +6,7 @@ namespace Altinn.App.Core.Models;
 /// <summary>
 /// Json converter to transform between <see cref="string"/> and <see cref="LanguageCode{TLangCodeStandard}"/>
 /// </summary>
-public class LanguageCodeConverter<T> : JsonConverter<LanguageCode<T>>
+internal class LanguageCodeJsonConverter<T> : JsonConverter<LanguageCode<T>>
     where T : struct, ILanguageCodeStandard
 {
     /// <inheritdoc/>

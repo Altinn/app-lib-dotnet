@@ -7,7 +7,7 @@ namespace Altinn.App.Core.Models;
 /// Json converter to transform between <see cref="string"/> and <see cref="OrganisationNumber"/>
 /// </summary>
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Class, AllowMultiple = false)]
-public class OrganisationNumberJsonConverterAttribute : JsonConverterAttribute
+internal class OrganisationNumberJsonConverterAttribute : JsonConverterAttribute
 {
     private OrganisationNumberFormat _format { get; init; }
 
