@@ -218,7 +218,7 @@ public class TelemetryConfigurationTests
 
         EventLevel[] errorLevels = [EventLevel.Error, EventLevel.Critical];
         var events = listener.Events;
-        Assert.NotEmpty(events.Where(e => errorLevels.Contains(e.Level)));
+        Assert.Contains(events, e => errorLevels.Contains(e.Level));
     }
 
     [Fact]
@@ -246,7 +246,7 @@ public class TelemetryConfigurationTests
     [Fact]
     public async Task OpenTelemetry_Does_Not_Register_By_Default()
     {
-        List<KeyValuePair<string, string?>> configData = [new("ApplicationInsights:InstrumentationKey", "test"),];
+        List<KeyValuePair<string, string?>> configData = [new("ApplicationInsights:InstrumentationKey", "test")];
         await using (var app = AppBuilder.Build(configData: configData))
         {
             var telemetryClient = app.Services.GetService<TelemetryClient>();

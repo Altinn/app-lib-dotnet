@@ -353,7 +353,7 @@ internal sealed class MaskinportenClient : IMaskinportenClient
             new Dictionary<string, string>
             {
                 ["grant_type"] = "urn:ietf:params:oauth:grant-type:jwt-bearer",
-                ["assertion"] = jwtAssertion
+                ["assertion"] = jwtAssertion,
             }
         );
     }
@@ -418,7 +418,7 @@ internal sealed class MaskinportenClient : IMaskinportenClient
         return new HybridCacheEntryOptions
         {
             LocalCacheExpiration = localExpiry,
-            Expiration = overallExpiry ?? localExpiry
+            Expiration = overallExpiry ?? localExpiry,
         };
     }
 

@@ -313,7 +313,7 @@ public class MaskinportenClientTests
         var unauthorizedResponse = new HttpResponseMessage
         {
             StatusCode = HttpStatusCode.Unauthorized,
-            Content = new StringContent(string.Empty)
+            Content = new StringContent(string.Empty),
         };
 
         // Act
@@ -337,7 +337,7 @@ public class MaskinportenClientTests
         var invalidJsonResponse = new HttpResponseMessage
         {
             StatusCode = HttpStatusCode.OK,
-            Content = new StringContent("Bad json formatting")
+            Content = new StringContent("Bad json formatting"),
         };
 
         // Act

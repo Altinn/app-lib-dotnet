@@ -3,7 +3,6 @@ using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Models.Process;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Mvc;
-using OpenTelemetry.Trace;
 using InternalLabels = Altinn.App.Core.Features.Telemetry.InternalLabels;
 using Labels = Altinn.App.Core.Features.Telemetry.Labels;
 
@@ -367,6 +366,9 @@ public static class TelemetryActivityExtensions
     internal static void Errored(this Activity activity, Exception? exception = null, string? error = null)
     {
         activity.SetStatus(ActivityStatusCode.Error, error);
-        activity.RecordException(exception);
+        if(exception is not null)
+        {
+            activity.AddException(exception);
+        }
     }
 }

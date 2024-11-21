@@ -100,7 +100,7 @@ internal static class TestHelpers
             mockLogger.Object
         )
         {
-            InnerHandler = innerHandlerMock.Object
+            InnerHandler = innerHandlerMock.Object,
         };
 
         return (mockMaskinportenClient, handler);

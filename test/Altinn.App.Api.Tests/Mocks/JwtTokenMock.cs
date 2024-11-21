@@ -31,7 +31,7 @@ public static class JwtTokenMock
             Expires = now.Add(tokenExpiry).UtcDateTime,
             NotBefore = now.UtcDateTime,
             SigningCredentials = GetSigningCredentials(),
-            Audience = "altinn.no"
+            Audience = "altinn.no",
         };
 
         SecurityToken token = tokenHandler.CreateToken(tokenDescriptor);
@@ -63,7 +63,7 @@ public static class JwtTokenMock
             ValidateAudience = false,
             RequireExpirationTime = true,
             ValidateLifetime = true,
-            ClockSkew = TimeSpan.Zero
+            ClockSkew = TimeSpan.Zero,
         };
 
         JwtSecurityTokenHandler validator = new();
