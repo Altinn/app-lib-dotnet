@@ -12,6 +12,7 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     private OrganisationNumber? _sender;
     private string? _sendersReference;
     private CorrespondenceContent? _content;
+    private List<CorrespondenceAttachment>? _contentAttachments;
     private DateTimeOffset? _allowSystemDeleteAfter;
     private DateTimeOffset? _dueDateTime;
     private List<OrganisationOrPersonIdentifier>? _recipients;
@@ -275,8 +276,8 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     /// <inheritdoc/>
     public ICorrespondenceRequestBuilder WithAttachments(IEnumerable<CorrespondenceAttachment> attachments)
     {
-        BuilderUtils.NotNullOrEmpty(_content, "Content is required before adding attachments");
-        _content.Attachments = [.. _content.Attachments ?? [], .. attachments];
+        _contentAttachments ??= [];
+        _contentAttachments.AddRange(attachments);
         return this;
     }
 
@@ -295,7 +296,7 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
             ResourceId = _resourceId,
             Sender = _sender.Value,
             SendersReference = _sendersReference,
-            Content = _content,
+            Content = _content with { Attachments = _contentAttachments },
             AllowSystemDeleteAfter = _allowSystemDeleteAfter.Value,
             DueDateTime = _dueDateTime,
             Recipients = _recipients,
