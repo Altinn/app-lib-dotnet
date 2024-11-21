@@ -33,14 +33,7 @@ public class CorrespondenceBuilderTests
             .WithSendersReference(sendersReference)
             .WithRecipients(recipients)
             .WithAllowSystemDeleteAfter(allowSystemDeleteAfter)
-            .WithContent(
-                CorrespondenceContentBuilder
-                    .Create()
-                    .WithLanguage(contentLanguage)
-                    .WithTitle(contentTitle)
-                    .WithSummary(contentSummary)
-                    .WithBody(contentBody)
-            );
+            .WithContent(contentLanguage, contentTitle, contentSummary, contentBody);
 
         // Act
         var correspondence = builder.Build();
@@ -124,6 +117,18 @@ public class CorrespondenceBuilderTests
                     isEncrypted = true,
                     restrictionName = "restriction-name-2",
                 },
+                new
+                {
+                    sender,
+                    filename = "file-3.txt",
+                    name = "File 3",
+                    sendersReference = "1234-3",
+                    dataType = "text/plain",
+                    data = "attachment-data-3",
+                    dataLocationType = CorrespondenceDataLocationType.ExisitingExternalStorage,
+                    isEncrypted = false,
+                    restrictionName = "restriction-name-3",
+                },
             },
             existingAttachments = new[] { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() },
             externalReferences = new[]
@@ -188,17 +193,29 @@ public class CorrespondenceBuilderTests
                     .WithDataLocationType(data.attachments[0].dataLocationType)
                     .WithIsEncrypted(data.attachments[0].isEncrypted)
             )
+            .WithAttachment(
+                new CorrespondenceAttachment
+                {
+                    Filename = data.attachments[1].filename,
+                    Name = data.attachments[1].name,
+                    SendersReference = data.attachments[1].sendersReference,
+                    DataType = data.attachments[1].dataType,
+                    Data = Encoding.UTF8.GetBytes(data.attachments[1].data),
+                    DataLocationType = data.attachments[1].dataLocationType,
+                    IsEncrypted = data.attachments[1].isEncrypted,
+                }
+            )
             .WithAttachments(
                 [
                     new CorrespondenceAttachment
                     {
-                        Filename = data.attachments[1].filename,
-                        Name = data.attachments[1].name,
-                        SendersReference = data.attachments[1].sendersReference,
-                        DataType = data.attachments[1].dataType,
-                        Data = Encoding.UTF8.GetBytes(data.attachments[1].data),
-                        DataLocationType = data.attachments[1].dataLocationType,
-                        IsEncrypted = data.attachments[1].isEncrypted,
+                        Filename = data.attachments[2].filename,
+                        Name = data.attachments[2].name,
+                        SendersReference = data.attachments[2].sendersReference,
+                        DataType = data.attachments[2].dataType,
+                        Data = Encoding.UTF8.GetBytes(data.attachments[2].data),
+                        DataLocationType = data.attachments[2].dataLocationType,
+                        IsEncrypted = data.attachments[2].isEncrypted,
                     },
                 ]
             )

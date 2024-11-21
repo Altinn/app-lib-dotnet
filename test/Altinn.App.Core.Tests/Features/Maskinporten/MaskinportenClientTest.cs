@@ -1,6 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
-using System.Security.Claims;
 using System.Text.Json;
 using Altinn.App.Api.Tests.Utils;
 using Altinn.App.Core.Features.Maskinporten;
@@ -52,7 +51,7 @@ public class MaskinportenClientTests
                 _ => throw new ArgumentException($"Unknown variant: {variant}"),
             };
 
-        public static Fixture Create()
+        public static Fixture Create(bool configureMaskinporten = true)
         {
             var mockHttpClientFactory = new Mock<IHttpClientFactory>();
             var fakeTimeProvider = new FakeTime(new DateTimeOffset(2024, 1, 1, 10, 0, 0, TimeSpan.Zero));
@@ -64,21 +63,24 @@ public class MaskinportenClientTests
                 services.AddSingleton<TimeProvider>(fakeTimeProvider);
                 services.AddSingleton(fakeTimeProvider);
 
-                services.Configure<MaskinportenSettings>(options =>
+                if (configureMaskinporten)
                 {
-                    options.Authority = DefaultSettings.Authority;
-                    options.ClientId = DefaultSettings.ClientId;
-                    options.JwkBase64 = DefaultSettings.JwkBase64;
-                });
-                services.Configure<MaskinportenSettings>(
-                    MaskinportenClient.VariantInternal,
-                    options =>
+                    services.Configure<MaskinportenSettings>(options =>
                     {
-                        options.Authority = InternalSettings.Authority;
-                        options.ClientId = InternalSettings.ClientId;
-                        options.JwkBase64 = InternalSettings.JwkBase64;
-                    }
-                );
+                        options.Authority = DefaultSettings.Authority;
+                        options.ClientId = DefaultSettings.ClientId;
+                        options.JwkBase64 = DefaultSettings.JwkBase64;
+                    });
+                    services.Configure<MaskinportenSettings>(
+                        MaskinportenClient.VariantInternal,
+                        options =>
+                        {
+                            options.Authority = InternalSettings.Authority;
+                            options.ClientId = InternalSettings.ClientId;
+                            options.JwkBase64 = InternalSettings.JwkBase64;
+                        }
+                    );
+                }
             });
 
             return new Fixture(app);
@@ -150,6 +152,23 @@ public class MaskinportenClientTests
         parsed.Audiences.First().Should().Be(settings.Authority);
         parsed.Issuer.Should().Be(settings.ClientId);
         parsed.Claims.First(x => x.Type == "scope").Value.Should().Be(scopes);
+    }
+
+    [Theory]
+    [MemberData(nameof(Variants))]
+    public async Task GenerateJwtGrant_HandlesMissingSettings(string variant)
+    {
+        // Arrange
+        await using var fixture = Fixture.Create(configureMaskinporten: false);
+
+        // Act
+        var act = () =>
+        {
+            fixture.Client(variant).GenerateJwtGrant("scope");
+        };
+
+        // Assert
+        act.Should().Throw<MaskinportenConfigurationException>();
     }
 
     [Theory]
@@ -235,13 +254,18 @@ public class MaskinportenClientTests
             });
 
         // Act
-        Func<Task> act = async () =>
+        Func<Task> act1 = async () =>
         {
             await fixture.Client(variant).GetAccessToken(["scope1", "scope2"]);
         };
+        Func<Task> act2 = async () =>
+        {
+            await fixture.Client(variant).GetAltinnExchangedToken(["scope1", "scope2"]);
+        };
 
         // Assert
-        await act.Should().ThrowAsync<MaskinportenTokenExpiredException>();
+        await act1.Should().ThrowAsync<MaskinportenTokenExpiredException>();
+        await act2.Should().ThrowAsync<MaskinportenTokenExpiredException>();
     }
 
     [Theory]
