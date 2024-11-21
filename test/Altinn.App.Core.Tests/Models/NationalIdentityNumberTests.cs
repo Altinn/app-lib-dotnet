@@ -26,7 +26,7 @@ public class NationalIdentityNumberTests
         "28044017069",
         "18055606346",
         "24063324295",
-        "16084521195"
+        "16084521195",
     ];
 
     internal static readonly string[] InvalidNationalIdentityNumbers =
@@ -49,7 +49,7 @@ public class NationalIdentityNumberTests
         "28044417069",
         "180556f6346",
         "240633242951",
-        "1234"
+        "1234",
     ];
 
     [Fact]

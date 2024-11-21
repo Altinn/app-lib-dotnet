@@ -31,5 +31,5 @@ public enum CorrespondenceAttachmentStatusResponse
     /// <summary>
     /// Failed
     /// </summary>
-    Failed
+    Failed,
 }

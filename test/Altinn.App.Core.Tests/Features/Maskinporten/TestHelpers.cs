@@ -38,7 +38,7 @@ internal static class TestHelpers
                     new HttpResponseMessage
                     {
                         StatusCode = HttpStatusCode.OK,
-                        Content = new StringContent(JsonSerializer.Serialize(maskinportenTokenResponse))
+                        Content = new StringContent(JsonSerializer.Serialize(maskinportenTokenResponse)),
                     }
             );
 
@@ -54,7 +54,7 @@ internal static class TestHelpers
                     new HttpResponseMessage
                     {
                         StatusCode = HttpStatusCode.OK,
-                        Content = new StringContent(altinnAccessToken)
+                        Content = new StringContent(altinnAccessToken),
                     }
             );
 

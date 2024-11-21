@@ -68,7 +68,7 @@ public readonly struct NationalIdentityNumber : IEquatable<NationalIdentityNumbe
                 var ctrl10 = Mod11(sum10) switch
                 {
                     11 => 0,
-                    var result => result
+                    var result => result,
                 };
 
                 if (ctrl10 != currentDigit)
@@ -82,7 +82,7 @@ public readonly struct NationalIdentityNumber : IEquatable<NationalIdentityNumbe
                 var ctrl11 = Mod11(sum11) switch
                 {
                     11 => 0,
-                    var result => result
+                    var result => result,
                 };
 
                 if (ctrl11 != currentDigit)

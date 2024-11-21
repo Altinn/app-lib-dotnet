@@ -26,5 +26,5 @@ public enum CorrespondenceNotificationChannel
     /// <summary>
     /// The selected channel for the notification is SMS preferred.
     /// </summary>
-    SmsPreferred
+    SmsPreferred,
 }

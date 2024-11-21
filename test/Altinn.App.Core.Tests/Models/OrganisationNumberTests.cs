@@ -30,7 +30,7 @@ public class OrganisationNumberTests
         "930771813",
         "207154156",
         "601050765",
-        "085483285"
+        "085483285",
     ];
 
     internal static readonly string[] InvalidOrganisationNumbers =
@@ -70,7 +70,7 @@ public class OrganisationNumberTests
         "123456789",
         "987654321",
         "12345",
-        "08548328f"
+        "08548328f",
     ];
 
     [Fact]

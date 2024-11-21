@@ -57,10 +57,9 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
         return payload.AuthorisationMethod switch
         {
             CorrespondenceAuthorisation.Maskinporten => await _authorisationFactory.Maskinporten(),
-            _
-                => throw new CorrespondenceArgumentException(
-                    $"Unknown CorrespondenceAuthorisation `{payload.AuthorisationMethod}`"
-                )
+            _ => throw new CorrespondenceArgumentException(
+                $"Unknown CorrespondenceAuthorisation `{payload.AuthorisationMethod}`"
+            ),
         };
     }
 

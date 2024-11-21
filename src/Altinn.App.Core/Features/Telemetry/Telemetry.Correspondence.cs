@@ -49,7 +49,7 @@ partial class Telemetry
             Success,
 
             [Display(Name = "error")]
-            Error
+            Error,
         }
     }
 }

@@ -161,7 +161,7 @@ public static class PrincipalUtil
             AccessToken = JwtToken.Parse(accessToken),
             ExpiresIn = (int)expiry.Value.TotalSeconds,
             Scope = scope,
-            TokenType = "Bearer"
+            TokenType = "Bearer",
         };
     }
 }

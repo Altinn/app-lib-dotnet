@@ -25,7 +25,7 @@ public class CorrespondenceRequestTests
             Recipients =
             [
                 OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(1)),
-                OrganisationOrPersonIdentifier.Create(TestHelpers.GetNationalIdentityNumber(1))
+                OrganisationOrPersonIdentifier.Create(TestHelpers.GetNationalIdentityNumber(1)),
             ],
             Content = new CorrespondenceContent
             {
@@ -41,7 +41,7 @@ public class CorrespondenceRequestTests
                         Name = "name-1",
                         SendersReference = "senders-reference-1",
                         DataType = "application/pdf",
-                        Data = "data"u8.ToArray()
+                        Data = "data"u8.ToArray(),
                     },
                     new CorrespondenceAttachment
                     {
@@ -51,8 +51,8 @@ public class CorrespondenceRequestTests
                         DataType = "plain/text",
                         Data = "data"u8.ToArray(),
                         DataLocationType = CorrespondenceDataLocationType.NewCorrespondenceAttachment,
-                        IsEncrypted = true
-                    }
+                        IsEncrypted = true,
+                    },
                 ],
             },
             ExternalReferences =
@@ -60,34 +60,34 @@ public class CorrespondenceRequestTests
                 new CorrespondenceExternalReference
                 {
                     ReferenceType = CorrespondenceReferenceType.AltinnAppInstance,
-                    ReferenceValue = "reference-1"
+                    ReferenceValue = "reference-1",
                 },
                 new CorrespondenceExternalReference
                 {
                     ReferenceType = CorrespondenceReferenceType.AltinnBrokerFileTransfer,
-                    ReferenceValue = "reference-2"
+                    ReferenceValue = "reference-2",
                 },
                 new CorrespondenceExternalReference
                 {
                     ReferenceType = CorrespondenceReferenceType.DialogportenDialogId,
-                    ReferenceValue = "reference-3"
+                    ReferenceValue = "reference-3",
                 },
                 new CorrespondenceExternalReference
                 {
                     ReferenceType = CorrespondenceReferenceType.DialogportenProcessId,
-                    ReferenceValue = "reference-4"
+                    ReferenceValue = "reference-4",
                 },
                 new CorrespondenceExternalReference
                 {
                     ReferenceType = CorrespondenceReferenceType.Generic,
-                    ReferenceValue = "reference-5"
+                    ReferenceValue = "reference-5",
                 },
             ],
             PropertyList = new Dictionary<string, string> { { "key-1", "value-1" }, { "key-2", "value-2" } },
             ReplyOptions =
             [
                 new CorrespondenceReplyOption { LinkUrl = "link-url-1", LinkText = "link-text-1" },
-                new CorrespondenceReplyOption { LinkUrl = "link-url-2", LinkText = "link-text-2" }
+                new CorrespondenceReplyOption { LinkUrl = "link-url-2", LinkText = "link-text-2" },
             ],
             Notification = new CorrespondenceNotification
             {
@@ -203,7 +203,7 @@ public class CorrespondenceRequestTests
                         Name = "name-1",
                         SendersReference = "senders-reference-1",
                         DataType = "application/pdf",
-                        Data = Encoding.UTF8.GetBytes("data-1")
+                        Data = Encoding.UTF8.GetBytes("data-1"),
                     },
                     new CorrespondenceAttachment
                     {
@@ -212,9 +212,9 @@ public class CorrespondenceRequestTests
                         SendersReference = "senders-reference-2",
                         DataType = "plain/text",
                         Data = Encoding.UTF8.GetBytes("data-2"),
-                    }
+                    },
                 ],
-            }
+            },
         };
 
         // Act
@@ -238,7 +238,7 @@ public class CorrespondenceRequestTests
                 Name = "name",
                 SendersReference = "senders-reference",
                 DataType = "plain/text",
-                Data = data
+                Data = data,
             },
             new CorrespondenceAttachment
             {
@@ -246,7 +246,7 @@ public class CorrespondenceRequestTests
                 Name = "name",
                 SendersReference = "senders-reference",
                 DataType = "plain/text",
-                Data = data
+                Data = data,
             },
             new CorrespondenceAttachment
             {
@@ -254,8 +254,8 @@ public class CorrespondenceRequestTests
                 Name = "name",
                 SendersReference = "senders-reference",
                 DataType = "plain/text",
-                Data = data
-            }
+                Data = data,
+            },
         ];
         var clonedAttachment = identicalAttachments.Last();
 
@@ -291,11 +291,10 @@ public class CorrespondenceRequestTests
             OrganisationOrPersonIdentifier.Organisation org => org.Value.Get(OrganisationNumberFormat.International),
             DateTime dateTime => dateTime.ToString("O"),
             DateTimeOffset dateTimeOffset => dateTimeOffset.ToString("O"),
-            _
-                => value.ToString()
-                    ?? throw new NullReferenceException(
-                        $"ToString method call for object `{nameof(value)} ({value.GetType()})` returned null"
-                    )
+            _ => value.ToString()
+                ?? throw new NullReferenceException(
+                    $"ToString method call for object `{nameof(value)} ({value.GetType()})` returned null"
+                ),
         };
     }
 }

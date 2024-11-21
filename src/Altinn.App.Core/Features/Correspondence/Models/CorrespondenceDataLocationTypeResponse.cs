@@ -16,5 +16,5 @@ public enum CorrespondenceDataLocationTypeResponse
     /// <summary>
     /// Specifies that the attachment data is stored in an external storage controlled by the sender
     /// </summary>
-    ExternalStorage
+    ExternalStorage,
 }

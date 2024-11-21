@@ -94,7 +94,7 @@ public class CorrespondenceAttachmentBuilder : ICorrespondenceAttachmentBuilder
             DataType = _dataType,
             Data = _data.Value,
             IsEncrypted = _isEncrypted,
-            DataLocationType = _dataLocationType
+            DataLocationType = _dataLocationType,
         };
     }
 }

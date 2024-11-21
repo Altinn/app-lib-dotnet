@@ -135,13 +135,13 @@ public class MaskinportenClientIntegrationTests
         {
             _ = actualTokenAuthority switch
             {
-                TokenAuthorities.Maskinporten
-                    => services.AddHttpClient<DummyHttpClient>().UseMaskinportenAuthorisation(scope, additionalScopes),
-                TokenAuthorities.AltinnTokenExchange
-                    => services
-                        .AddHttpClient<DummyHttpClient>()
-                        .UseMaskinportenAltinnAuthorisation(scope, additionalScopes),
-                _ => throw new ArgumentException($"Unknown TokenAuthority {tokenAuthority}")
+                TokenAuthorities.Maskinporten => services
+                    .AddHttpClient<DummyHttpClient>()
+                    .UseMaskinportenAuthorisation(scope, additionalScopes),
+                TokenAuthorities.AltinnTokenExchange => services
+                    .AddHttpClient<DummyHttpClient>()
+                    .UseMaskinportenAltinnAuthorisation(scope, additionalScopes),
+                _ => throw new ArgumentException($"Unknown TokenAuthority {tokenAuthority}"),
             };
         });
 

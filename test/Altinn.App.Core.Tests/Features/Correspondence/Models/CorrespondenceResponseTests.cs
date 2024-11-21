@@ -253,7 +253,7 @@ public class CorrespondenceResponseTests
                 {
                     Status = CorrespondenceStatus.Published,
                     StatusText = "Published",
-                    StatusChanged = DateTime.Parse("2024-11-14T11:06:56.208705+00:00")
+                    StatusChanged = DateTime.Parse("2024-11-14T11:06:56.208705+00:00"),
                 }
             );
         parsedResponse.Notifications.Should().HaveCount(2);
@@ -275,7 +275,7 @@ public class CorrespondenceResponseTests
                     {
                         Status = "Completed",
                         Description = "Order processing is completed. All notifications have been generated.",
-                        LastUpdate = DateTimeOffset.Parse("2024-11-14T11:05:57.054356Z")
+                        LastUpdate = DateTimeOffset.Parse("2024-11-14T11:05:57.054356Z"),
                     },
                     NotificationStatusDetails = new CorrespondenceNotificationSummaryResponse
                     {
@@ -286,17 +286,17 @@ public class CorrespondenceResponseTests
                             Recipient = new CorrespondenceNotificationRecipientResponse
                             {
                                 EmailAddress = "someone@digdir.no",
-                                OrganisationNumber = "213872702"
+                                OrganisationNumber = "213872702",
                             },
                             SendStatus = new CorrespondenceNotificationStatusSummaryResponse
                             {
                                 Status = "Succeeded",
                                 Description =
                                     "The email has been accepted by the third party email service and will be sent shortly.",
-                                LastUpdate = DateTime.Parse("2024-11-14T11:10:12.693438Z").ToUniversalTime()
-                            }
-                        }
-                    }
+                                LastUpdate = DateTime.Parse("2024-11-14T11:10:12.693438Z").ToUniversalTime(),
+                            },
+                        },
+                    },
                 }
             );
         parsedResponse.Recipient.Should().Be("0192:213872702");
@@ -324,9 +324,9 @@ public class CorrespondenceResponseTests
                             Name = "This is the PDF filename 🍕",
                             Checksum = "27bb85ec3681e3cd1ed44a079f5fc501",
                             SendersReference = "1234",
-                            DataType = "application/pdf"
-                        }
-                    ]
+                            DataType = "application/pdf",
+                        },
+                    ],
                 }
             );
         parsedResponse.Created.Should().Be(DateTimeOffset.Parse("2024-11-14T11:05:56.575089+00:00"));
@@ -347,7 +347,7 @@ public class CorrespondenceResponseTests
                 new CorrespondenceExternalReference
                 {
                     ReferenceType = CorrespondenceReferenceType.DialogportenDialogId,
-                    ReferenceValue = "01932a59-edc3-7038-823e-cf46908cd83b"
+                    ReferenceValue = "01932a59-edc3-7038-823e-cf46908cd83b",
                 }
             );
         parsedResponse
@@ -357,7 +357,7 @@ public class CorrespondenceResponseTests
                 {
                     ["anim5"] = "string",
                     ["culpa_852"] = "string",
-                    ["deserunt_12"] = "string"
+                    ["deserunt_12"] = "string",
                 }
             );
         parsedResponse.ReplyOptions.Should().HaveCount(1);

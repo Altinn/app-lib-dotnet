@@ -131,7 +131,7 @@ public class CorrespondenceClientTests
                     ]
                 }
                 """
-            )
+            ),
         };
 
         mockHttpClientFactory.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(mockHttpClient.Object);
@@ -177,7 +177,7 @@ public class CorrespondenceClientTests
                     "isConfirmationNeeded": true
                 }
                 """
-            )
+            ),
         };
 
         mockHttpClientFactory.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(mockHttpClient.Object);
@@ -213,20 +213,19 @@ public class CorrespondenceClientTests
         {
             Content = httpStatusCode switch
             {
-                HttpStatusCode.BadRequest
-                    => new StringContent(
-                        """
-                        {
-                            "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
-                            "title": "Bad Request",
-                            "status": 400,
-                            "detail": "For upload requests at least one attachment has to be included",
-                            "traceId": "00-3ceaba074547008ac46f622fd67d6c6e-e4129c2b46370667-00"
-                        }
-                        """
-                    ),
-                _ => null
-            }
+                HttpStatusCode.BadRequest => new StringContent(
+                    """
+                    {
+                        "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                        "title": "Bad Request",
+                        "status": 400,
+                        "detail": "For upload requests at least one attachment has to be included",
+                        "traceId": "00-3ceaba074547008ac46f622fd67d6c6e-e4129c2b46370667-00"
+                    }
+                    """
+                ),
+                _ => null,
+            },
         };
 
         mockHttpClientFactory.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(mockHttpClient.Object);
@@ -341,9 +340,9 @@ public class CorrespondenceClientTests
                 {
                     CorrespondenceId = Guid.NewGuid(),
                     Status = CorrespondenceStatus.Published,
-                    Recipient = OrganisationOrPersonIdentifier.Parse("991825827")
-                }
-            ]
+                    Recipient = OrganisationOrPersonIdentifier.Parse("991825827"),
+                },
+            ],
         };
 
         mockHttpClientFactory.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(mockHttpClient.Object);
@@ -363,11 +362,13 @@ public class CorrespondenceClientTests
                 (HttpRequestMessage request, CancellationToken _) =>
                     request.RequestUri!.AbsolutePath switch
                     {
-                        var path when path.EndsWith("/exchange/maskinporten")
-                            => TestHelpers.ResponseMessageFactory(altinnTokenResponse),
-                        var path when path.EndsWith("/correspondence/upload")
-                            => TestHelpers.ResponseMessageFactory(correspondenceResponse),
-                        _ => throw FailException.ForFailure($"Unknown mock endpoint: {request.RequestUri}")
+                        var path when path.EndsWith("/exchange/maskinporten") => TestHelpers.ResponseMessageFactory(
+                            altinnTokenResponse
+                        ),
+                        var path when path.EndsWith("/correspondence/upload") => TestHelpers.ResponseMessageFactory(
+                            correspondenceResponse
+                        ),
+                        _ => throw FailException.ForFailure($"Unknown mock endpoint: {request.RequestUri}"),
                     }
             );
 

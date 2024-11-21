@@ -137,7 +137,7 @@ internal class OrganisationOrPersonJsonIdentifierConverter : JsonConverter<Organ
         {
             OrganisationOrPersonIdentifier.Organisation org => org.Value.Get(_format),
             OrganisationOrPersonIdentifier.Person person => person.Value,
-            _ => throw new JsonException($"Unknown type `{value.GetType()}` ({nameof(value)})")
+            _ => throw new JsonException($"Unknown type `{value.GetType()}` ({nameof(value)})"),
         };
 
         writer.WriteStringValue(stringValue);

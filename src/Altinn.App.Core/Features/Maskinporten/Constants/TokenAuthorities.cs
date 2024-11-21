@@ -13,5 +13,5 @@ internal enum TokenAuthorities
     /// <summary>
     /// Altinn Authentication token exchange
     /// </summary>
-    AltinnTokenExchange
+    AltinnTokenExchange,
 }

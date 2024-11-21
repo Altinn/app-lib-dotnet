@@ -21,5 +21,5 @@ public enum CorrespondenceDataLocationType
     /// <summary>
     /// Specifies that the attachment data already exist in an external storage
     /// </summary>
-    ExisitingExternalStorage
+    ExisitingExternalStorage,
 }

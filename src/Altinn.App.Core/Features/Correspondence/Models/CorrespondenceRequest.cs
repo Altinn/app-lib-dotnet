@@ -266,13 +266,13 @@ public sealed record CorrespondenceRequest : CorrespondenceBase
             x =>
                 x switch
                 {
-                    OrganisationOrPersonIdentifier.Organisation org
-                        => org.Value.Get(OrganisationNumberFormat.International),
+                    OrganisationOrPersonIdentifier.Organisation org => org.Value.Get(
+                        OrganisationNumberFormat.International
+                    ),
                     OrganisationOrPersonIdentifier.Person person => person.Value,
-                    _
-                        => throw new CorrespondenceValueException(
-                            $"Unknown OrganisationOrPersonIdentifier type `{x.GetType()}` ({nameof(Recipients)})"
-                        )
+                    _ => throw new CorrespondenceValueException(
+                        $"Unknown OrganisationOrPersonIdentifier type `{x.GetType()}` ({nameof(Recipients)})"
+                    ),
                 },
             i => $"Recipients[{i}]"
         );

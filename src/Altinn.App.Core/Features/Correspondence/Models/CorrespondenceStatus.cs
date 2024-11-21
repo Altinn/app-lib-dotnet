@@ -66,5 +66,5 @@ public enum CorrespondenceStatus
     /// <summary>
     /// Correspondence has failed
     /// </summary>
-    Failed
+    Failed,
 }

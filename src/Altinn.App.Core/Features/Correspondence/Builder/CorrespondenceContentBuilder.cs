@@ -74,7 +74,7 @@ public class CorrespondenceContentBuilder : ICorrespondenceContentBuilder
             Title = _title,
             Language = _language.Value,
             Summary = _summary,
-            Body = _body
+            Body = _body,
         };
     }
 }

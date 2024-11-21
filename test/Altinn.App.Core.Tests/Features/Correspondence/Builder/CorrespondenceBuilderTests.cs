@@ -16,7 +16,7 @@ public class CorrespondenceBuilderTests
         IReadOnlyList<OrganisationOrPersonIdentifier> recipients =
         [
             OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(1)),
-            OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(2))
+            OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(2)),
         ];
         string resourceId = "resource-id";
         string sendersReference = "sender-reference";
@@ -81,7 +81,7 @@ public class CorrespondenceBuilderTests
                 title = "content-title",
                 language = LanguageCode<Iso6391>.Parse("en"),
                 summary = "content-summary",
-                body = "content-body"
+                body = "content-body",
             },
             notification = new
             {
@@ -96,7 +96,7 @@ public class CorrespondenceBuilderTests
                 sendersReference = "notification-senders-ref-1",
                 sendReminder = true,
                 notificationChannel = CorrespondenceNotificationChannel.EmailPreferred,
-                reminderNotificationChannel = CorrespondenceNotificationChannel.SmsPreferred
+                reminderNotificationChannel = CorrespondenceNotificationChannel.SmsPreferred,
             },
             attachments = new[]
             {
@@ -110,7 +110,7 @@ public class CorrespondenceBuilderTests
                     data = "attachment-data-1",
                     dataLocationType = CorrespondenceDataLocationType.ExistingCorrespondenceAttachment,
                     isEncrypted = false,
-                    restrictionName = "restriction-name-1"
+                    restrictionName = "restriction-name-1",
                 },
                 new
                 {
@@ -122,8 +122,8 @@ public class CorrespondenceBuilderTests
                     data = "attachment-data-2",
                     dataLocationType = CorrespondenceDataLocationType.NewCorrespondenceAttachment,
                     isEncrypted = true,
-                    restrictionName = "restriction-name-2"
-                }
+                    restrictionName = "restriction-name-2",
+                },
             },
             existingAttachments = new[] { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() },
             externalReferences = new[]
@@ -132,13 +132,13 @@ public class CorrespondenceBuilderTests
                 new { type = CorrespondenceReferenceType.AltinnAppInstance, value = "ref-2" },
                 new { type = CorrespondenceReferenceType.DialogportenDialogId, value = "ref-3" },
                 new { type = CorrespondenceReferenceType.DialogportenProcessId, value = "ref-4" },
-                new { type = CorrespondenceReferenceType.AltinnBrokerFileTransfer, value = "ref-5" }
+                new { type = CorrespondenceReferenceType.AltinnBrokerFileTransfer, value = "ref-5" },
             },
             replyOptions = new[]
             {
                 new { url = "reply-url-1", text = "reply-text-1" },
-                new { url = "reply-url-2", text = "reply-text-2" }
-            }
+                new { url = "reply-url-2", text = "reply-text-2" },
+            },
         };
 
         var builder = CorrespondenceRequestBuilder
@@ -199,7 +199,7 @@ public class CorrespondenceBuilderTests
                         Data = Encoding.UTF8.GetBytes(data.attachments[1].data),
                         DataLocationType = data.attachments[1].dataLocationType,
                         IsEncrypted = data.attachments[1].isEncrypted,
-                    }
+                    },
                 ]
             )
             .WithExistingAttachment(data.existingAttachments[0])
@@ -210,7 +210,7 @@ public class CorrespondenceBuilderTests
                     .Select(x => new CorrespondenceExternalReference
                     {
                         ReferenceType = x.type,
-                        ReferenceValue = x.value
+                        ReferenceValue = x.value,
                     })
                     .ToList()
             )
@@ -220,8 +220,8 @@ public class CorrespondenceBuilderTests
                     new CorrespondenceReplyOption
                     {
                         LinkUrl = data.replyOptions[1].url,
-                        LinkText = data.replyOptions[1].text
-                    }
+                        LinkText = data.replyOptions[1].text,
+                    },
                 ]
             );
 
@@ -338,13 +338,13 @@ public class CorrespondenceBuilderTests
         builder.WithRecipients(
             [
                 OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(3)),
-                OrganisationOrPersonIdentifier.Create(TestHelpers.GetNationalIdentityNumber(4))
+                OrganisationOrPersonIdentifier.Create(TestHelpers.GetNationalIdentityNumber(4)),
             ]
         );
         builder.WithRecipients(
             [
                 TestHelpers.GetOrganisationNumber(5).Get(OrganisationNumberFormat.Local),
-                TestHelpers.GetNationalIdentityNumber(6).Value
+                TestHelpers.GetNationalIdentityNumber(6).Value,
             ]
         );
         builder.WithDueDateTime(DateTimeOffset.UtcNow.AddDays(2));
@@ -361,7 +361,7 @@ public class CorrespondenceBuilderTests
             new CorrespondenceExternalReference
             {
                 ReferenceType = CorrespondenceReferenceType.AltinnAppInstance,
-                ReferenceValue = "bbb"
+                ReferenceValue = "bbb",
             }
         );
         builder.WithExternalReferences(
@@ -369,8 +369,8 @@ public class CorrespondenceBuilderTests
                 new CorrespondenceExternalReference
                 {
                     ReferenceType = CorrespondenceReferenceType.DialogportenProcessId,
-                    ReferenceValue = "ccc"
-                }
+                    ReferenceValue = "ccc",
+                },
             ]
         );
         builder.WithReplyOption("url2", "text2");
@@ -420,23 +420,23 @@ public class CorrespondenceBuilderTests
                     new CorrespondenceExternalReference
                     {
                         ReferenceType = CorrespondenceReferenceType.Generic,
-                        ReferenceValue = "aaa"
+                        ReferenceValue = "aaa",
                     },
                     new CorrespondenceExternalReference
                     {
                         ReferenceType = CorrespondenceReferenceType.Generic,
-                        ReferenceValue = "aaa"
+                        ReferenceValue = "aaa",
                     },
                     new CorrespondenceExternalReference
                     {
                         ReferenceType = CorrespondenceReferenceType.AltinnAppInstance,
-                        ReferenceValue = "bbb"
+                        ReferenceValue = "bbb",
                     },
                     new CorrespondenceExternalReference
                     {
                         ReferenceType = CorrespondenceReferenceType.DialogportenProcessId,
-                        ReferenceValue = "ccc"
-                    }
+                        ReferenceValue = "ccc",
+                    },
                 ]
             );
         correspondence
@@ -446,7 +446,7 @@ public class CorrespondenceBuilderTests
                     new CorrespondenceReplyOption { LinkUrl = "url1", LinkText = "text1" },
                     new CorrespondenceReplyOption { LinkUrl = "url2", LinkText = "text2" },
                     new CorrespondenceReplyOption { LinkUrl = "url3", LinkText = "text3" },
-                    new CorrespondenceReplyOption { LinkUrl = "url4", LinkText = "text4" }
+                    new CorrespondenceReplyOption { LinkUrl = "url4", LinkText = "text4" },
                 ]
             );
         correspondence
@@ -466,7 +466,7 @@ public class CorrespondenceBuilderTests
                 [
                     "a3ac4826-5873-4ecb-9fe7-dc4cfccd0afa",
                     "eeb67483-7d6d-40dc-9861-3fc1beff7608",
-                    "9a12dfd9-6c70-489c-8b3d-77bb188c64b3"
+                    "9a12dfd9-6c70-489c-8b3d-77bb188c64b3",
                 ]
             );
         correspondence.RequestedPublishTime.Should().BeSameDateAs(DateTime.Today.AddDays(1));

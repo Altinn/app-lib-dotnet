@@ -1,4 +1,3 @@
-using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
@@ -330,8 +329,8 @@ internal sealed class MaskinportenClient : IMaskinportenClient
             Claims = new Dictionary<string, object>
             {
                 [JwtClaimTypes.Scope] = formattedScopes,
-                [JwtClaimTypes.JwtId] = Guid.NewGuid().ToString()
-            }
+                [JwtClaimTypes.JwtId] = Guid.NewGuid().ToString(),
+            },
         };
 
         return new JsonWebTokenHandler().CreateToken(jwtDescriptor);

@@ -21,5 +21,5 @@ public enum CorrespondenceNotificationStatusResponse
     /// <summary>
     /// Notification has failed
     /// </summary>
-    Failure
+    Failure,
 }

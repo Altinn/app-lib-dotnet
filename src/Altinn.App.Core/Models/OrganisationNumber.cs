@@ -39,7 +39,7 @@ public readonly struct OrganisationNumber : IEquatable<OrganisationNumber>
         {
             OrganisationNumberFormat.Local => _local,
             OrganisationNumberFormat.International => _international,
-            _ => throw new ArgumentOutOfRangeException(nameof(format))
+            _ => throw new ArgumentOutOfRangeException(nameof(format)),
         };
 
     private OrganisationNumber(string local, string international)

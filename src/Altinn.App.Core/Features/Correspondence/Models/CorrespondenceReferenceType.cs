@@ -31,5 +31,5 @@ public enum CorrespondenceReferenceType
     /// <summary>
     /// A reference to a Dialogporten Process ID
     /// </summary>
-    DialogportenProcessId
+    DialogportenProcessId,
 }

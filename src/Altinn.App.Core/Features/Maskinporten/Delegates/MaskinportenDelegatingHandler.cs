@@ -47,9 +47,11 @@ internal sealed class MaskinportenDelegatingHandler : DelegatingHandler
         var token = Authorities switch
         {
             TokenAuthorities.Maskinporten => await _maskinportenClient.GetAccessToken(Scopes, cancellationToken),
-            TokenAuthorities.AltinnTokenExchange
-                => await _maskinportenClient.GetAltinnExchangedToken(Scopes, cancellationToken),
-            _ => throw new MaskinportenAuthenticationException($"Unknown authority `{Authorities}`")
+            TokenAuthorities.AltinnTokenExchange => await _maskinportenClient.GetAltinnExchangedToken(
+                Scopes,
+                cancellationToken
+            ),
+            _ => throw new MaskinportenAuthenticationException($"Unknown authority `{Authorities}`"),
         };
 
         request.Headers.Authorization = new AuthenticationHeaderValue(TokenTypes.Bearer, token.Value);

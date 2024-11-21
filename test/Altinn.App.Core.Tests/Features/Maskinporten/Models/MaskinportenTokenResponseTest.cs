@@ -44,7 +44,7 @@ public class MaskinportenTokenResponseTest
             AccessToken = JwtToken.Parse(encodedToken.AccessToken),
             Scope = "yep",
             TokenType = "Bearer",
-            ExpiresIn = 120
+            ExpiresIn = 120,
         };
 
         // Assert

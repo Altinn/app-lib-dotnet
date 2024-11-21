@@ -130,7 +130,7 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
             Title = title,
             Summary = summary,
             Body = body,
-            Language = language
+            Language = language,
         };
         return this;
     }
@@ -143,7 +143,7 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
             Title = title,
             Summary = summary,
             Body = body,
-            Language = LanguageCode<Iso6391>.Parse(language)
+            Language = LanguageCode<Iso6391>.Parse(language),
         };
         return this;
     }
@@ -306,7 +306,7 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
             ReplyOptions = _replyOptions,
             Notification = _notification,
             IgnoreReservation = _ignoreReservation,
-            ExistingAttachments = _existingAttachments
+            ExistingAttachments = _existingAttachments,
         };
     }
 }
