@@ -83,7 +83,10 @@ public class PdfControllerTests
         var handler = new Mock<HttpMessageHandler>();
         var httpClient = new HttpClient(handler.Object);
 
+        var logger = new Mock<ILogger<PdfGeneratorClient>>();
+
         var pdfGeneratorClient = new PdfGeneratorClient(
+            logger.Object,
             httpClient,
             _pdfGeneratorSettingsOptions,
             _platformSettingsOptions,
@@ -163,7 +166,10 @@ public class PdfControllerTests
         var handler = new Mock<HttpMessageHandler>();
         var httpClient = new HttpClient(handler.Object);
 
+        var logger = new Mock<ILogger<PdfGeneratorClient>>();
+
         var pdfGeneratorClient = new PdfGeneratorClient(
+            logger.Object,
             httpClient,
             _pdfGeneratorSettingsOptions,
             _platformSettingsOptions,
@@ -245,7 +251,10 @@ public class PdfControllerTests
         var handler = new Mock<HttpMessageHandler>();
         var httpClient = new HttpClient(handler.Object);
 
+        var logger = new Mock<ILogger<PdfGeneratorClient>>();
+
         var pdfGeneratorClient = new PdfGeneratorClient(
+            logger.Object,
             httpClient,
             _pdfGeneratorSettingsOptions,
             _platformSettingsOptions,

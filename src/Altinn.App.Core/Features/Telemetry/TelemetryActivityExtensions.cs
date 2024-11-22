@@ -344,7 +344,7 @@ public static class TelemetryActivityExtensions
     internal static void Errored(this Activity activity, Exception? exception = null, string? error = null)
     {
         activity.SetStatus(ActivityStatusCode.Error, error);
-        if(exception is not null)
+        if (exception is not null)
         {
             activity.AddException(exception);
         }
