@@ -21,6 +21,7 @@ public class CorrespondenceRequestTests
             AllowSystemDeleteAfter = DateTimeOffset.UtcNow.AddDays(2),
             DueDateTime = DateTimeOffset.UtcNow.AddDays(2),
             IgnoreReservation = true,
+            IsConfirmationNeeded = true,
             MessageSender = "message-sender",
             Recipients =
             [
@@ -124,6 +125,7 @@ public class CorrespondenceRequestTests
             ["Correspondence.DueDateTime"] = correspondence.DueDateTime,
             ["Correspondence.MessageSender"] = correspondence.MessageSender,
             ["Correspondence.IgnoreReservation"] = correspondence.IgnoreReservation,
+            ["Correspondence.IsConfirmationNeeded"] = correspondence.IsConfirmationNeeded,
             ["Correspondence.Content.Language"] = correspondence.Content.Language,
             ["Correspondence.Content.MessageTitle"] = correspondence.Content.Title,
             ["Correspondence.Content.MessageSummary"] = correspondence.Content.Summary,
@@ -278,7 +280,7 @@ public class CorrespondenceRequestTests
         item.Should().NotBeNull($"FormDataContent with name `{dispositionName}` was not found");
         item!.Headers.ContentDisposition!.Name.Should().NotBeNull();
         dispositionName.Should().Be(item.Headers.ContentDisposition.Name!.Trim('\"'));
-        stringValue.Should().Be(await item.ReadAsStringAsync());
+        stringValue.Should().Be(await item.ReadAsStringAsync(), $"`{dispositionName}`");
     }
 
     private static string FormattedString(object value)
@@ -289,8 +291,10 @@ public class CorrespondenceRequestTests
         {
             OrganisationNumber org => org.Get(OrganisationNumberFormat.International),
             OrganisationOrPersonIdentifier.Organisation org => org.Value.Get(OrganisationNumberFormat.International),
-            DateTime dateTime => dateTime.ToString("O"),
-            DateTimeOffset dateTimeOffset => dateTimeOffset.ToString("O"),
+            DateTime dateTime => MultipartCorrespondenceItem.NormaliseDateTime(dateTime).ToString("O"),
+            DateTimeOffset dateTimeOffset => MultipartCorrespondenceItem
+                .NormaliseDateTime(dateTimeOffset)
+                .ToString("O"),
             _ => value.ToString()
                 ?? throw new NullReferenceException(
                     $"ToString method call for object `{nameof(value)} ({value.GetType()})` returned null"
