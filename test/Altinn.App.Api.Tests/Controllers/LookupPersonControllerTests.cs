@@ -71,7 +71,7 @@ public class LookupPersonControllerTests : ApiTestBase, IClassFixture<WebApplica
             "application/json"
         );
 
-        HttpResponseMessage response = await client.PostAsync($"{Org}/{App}/api/v1/person-search", requestContent);
+        HttpResponseMessage response = await client.PostAsync($"{Org}/{App}/api/v1/lookup/person", requestContent);
 
         sendAsyncCalled.Should().BeTrue();
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -112,7 +112,7 @@ public class LookupPersonControllerTests : ApiTestBase, IClassFixture<WebApplica
             "application/json"
         );
 
-        HttpResponseMessage response = await client.PostAsync($"{Org}/{App}/api/v1/person-search", requestContent);
+        HttpResponseMessage response = await client.PostAsync($"{Org}/{App}/api/v1/lookup/person", requestContent);
 
         sendAsyncCalled.Should().BeTrue();
         response.StatusCode.Should().Be(HttpStatusCode.OK);
