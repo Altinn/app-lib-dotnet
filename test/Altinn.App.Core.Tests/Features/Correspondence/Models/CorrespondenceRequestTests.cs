@@ -1,4 +1,5 @@
 using System.Text;
+using Altinn.App.Core.Features.Correspondence.Exceptions;
 using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Models;
 using FluentAssertions;
@@ -270,6 +271,168 @@ public class CorrespondenceRequestTests
         processedAttachments[identicalAttachments[0]].Should().Contain("(1)");
         processedAttachments[identicalAttachments[1]].Should().Contain("(2)");
         processedAttachments[identicalAttachments[2]].Should().Contain("overwritten");
+    }
+
+    [Fact]
+    public void Serialise_ValidatesUniqueRecipients()
+    {
+        // Arrange
+        var correspondence = new CorrespondenceRequest
+        {
+            ResourceId = "resource-id",
+            Sender = TestHelpers.GetOrganisationNumber(0),
+            SendersReference = "senders-reference",
+            AllowSystemDeleteAfter = DateTimeOffset.UtcNow.AddYears(1),
+            Recipients =
+            [
+                OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(1)),
+                OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(1)),
+            ],
+            Content = new CorrespondenceContent
+            {
+                Title = "title",
+                Body = "body",
+                Summary = "summary",
+                Language = LanguageCode<Iso6391>.Parse("no"),
+            },
+        };
+
+        // Act
+        var act = () => correspondence.Serialise();
+
+        // Assert
+        act.Should().Throw<CorrespondenceArgumentException>().WithMessage("Duplicate recipients found *");
+    }
+
+    [Fact]
+    public void Serialise_ValidatesConfirmationAndDueDate()
+    {
+        // Arrange
+        var correspondence = new CorrespondenceRequest
+        {
+            ResourceId = "resource-id",
+            Sender = TestHelpers.GetOrganisationNumber(0),
+            SendersReference = "senders-reference",
+            AllowSystemDeleteAfter = DateTimeOffset.UtcNow.AddYears(1),
+            IsConfirmationNeeded = true,
+            Recipients = [OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(1))],
+            Content = new CorrespondenceContent
+            {
+                Title = "title",
+                Body = "body",
+                Summary = "summary",
+                Language = LanguageCode<Iso6391>.Parse("no"),
+            },
+        };
+
+        // Act
+        var act = () => correspondence.Serialise();
+
+        // Assert
+        act.Should().Throw<CorrespondenceArgumentException>().WithMessage("When*set*required");
+    }
+
+    [Fact]
+    public void Serialise_ValidatesNoDatesInThePast()
+    {
+        // Arrange
+        var baseCorrespondence = new CorrespondenceRequest
+        {
+            ResourceId = "resource-id",
+            Sender = TestHelpers.GetOrganisationNumber(0),
+            SendersReference = "senders-reference",
+            AllowSystemDeleteAfter = DateTimeOffset.UtcNow.AddYears(1),
+            Recipients = [OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(1))],
+            Content = new CorrespondenceContent
+            {
+                Title = "title",
+                Body = "body",
+                Summary = "summary",
+                Language = LanguageCode<Iso6391>.Parse("no"),
+            },
+        };
+
+        // Act
+        var act1 = () =>
+        {
+            var correspondence = baseCorrespondence with { DueDateTime = DateTimeOffset.Now.AddSeconds(-1) };
+            correspondence.Serialise();
+        };
+        var act2 = () =>
+        {
+            var correspondence = baseCorrespondence with { AllowSystemDeleteAfter = DateTimeOffset.Now.AddSeconds(-1) };
+            correspondence.Serialise();
+        };
+
+        // Assert
+        act1.Should().Throw<CorrespondenceArgumentException>().WithMessage("*not be*in the past");
+        act2.Should().Throw<CorrespondenceArgumentException>().WithMessage("*not be*in the past");
+    }
+
+    [Fact]
+    public void Serialise_ValidatesNoBeforePublishDate()
+    {
+        // Arrange
+        var baseCorrespondence = new CorrespondenceRequest
+        {
+            ResourceId = "resource-id",
+            Sender = TestHelpers.GetOrganisationNumber(0),
+            SendersReference = "senders-reference",
+            RequestedPublishTime = DateTimeOffset.Now.AddDays(2),
+            AllowSystemDeleteAfter = DateTimeOffset.UtcNow.AddYears(1),
+            Recipients = [OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(1))],
+            Content = new CorrespondenceContent
+            {
+                Title = "title",
+                Body = "body",
+                Summary = "summary",
+                Language = LanguageCode<Iso6391>.Parse("no"),
+            },
+        };
+
+        // Act
+        var act1 = () =>
+        {
+            var correspondence = baseCorrespondence with { DueDateTime = DateTimeOffset.Now.AddDays(1) };
+            correspondence.Serialise();
+        };
+        var act2 = () =>
+        {
+            var correspondence = baseCorrespondence with { AllowSystemDeleteAfter = DateTimeOffset.Now.AddDays(1) };
+            correspondence.Serialise();
+        };
+
+        // Assert
+        act1.Should().Throw<CorrespondenceArgumentException>().WithMessage("*not be prior to*");
+        act2.Should().Throw<CorrespondenceArgumentException>().WithMessage("*not be prior to*");
+    }
+
+    [Fact]
+    public void Serialise_ValidatesDeleteDateAfterDueDate()
+    {
+        // Arrange
+        var correspondence = new CorrespondenceRequest
+        {
+            ResourceId = "resource-id",
+            Sender = TestHelpers.GetOrganisationNumber(0),
+            SendersReference = "senders-reference",
+            AllowSystemDeleteAfter = DateTimeOffset.UtcNow.AddDays(2),
+            DueDateTime = DateTimeOffset.UtcNow.AddDays(3),
+            Recipients = [OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(1))],
+            Content = new CorrespondenceContent
+            {
+                Title = "title",
+                Body = "body",
+                Summary = "summary",
+                Language = LanguageCode<Iso6391>.Parse("no"),
+            },
+        };
+
+        // Act
+        var act = () => correspondence.Serialise();
+
+        // Assert
+        act.Should().Throw<CorrespondenceArgumentException>().WithMessage("*not be prior to*");
     }
 
     private static async Task AssertContent(MultipartFormDataContent content, string dispositionName, object value)
