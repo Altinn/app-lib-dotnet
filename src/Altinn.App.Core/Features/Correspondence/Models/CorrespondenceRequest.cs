@@ -48,7 +48,7 @@ public abstract record MultipartCorrespondenceItem
 
     internal static void AddIfNotNull(MultipartFormDataContent content, DateTimeOffset? value, string name)
     {
-        if (value == default)
+        if (value is null)
             return;
 
         var normalisedAndFormatted = NormaliseDateTime(value.Value).ToString("O");
