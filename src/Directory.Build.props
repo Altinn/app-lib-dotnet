@@ -3,7 +3,7 @@
   <Import Project="../Directory.Build.props" />
 
   <ItemGroup>
-    <PackageReference Include="MinVer" Version="5.0.0" PrivateAssets="All" />
+    <PackageReference Include="MinVer" Version="6.0.0" PrivateAssets="All" />
     <PackageReference Include="Nullable.Extended.Analyzer" Version="1.15.6169">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
@@ -11,6 +11,15 @@
     <None Include="../../README.md" Link="README.md" Pack="true" PackagePath="/" />
     <None Include="../../LICENSE" Pack="true" PackagePath="/" />
   </ItemGroup>
+
+  <Target Name="PreparePackageReleaseNotesFromFile" BeforeTargets="GenerateNuspec">
+    <ReadLinesFromFile File="../../RELEASE_NOTES.md">
+      <Output TaskParameter="Lines" ItemName="ReleaseNoteLines" />
+    </ReadLinesFromFile>
+    <PropertyGroup>
+      <PackageReleaseNotes>@(ReleaseNoteLines, '%0a')</PackageReleaseNotes>
+    </PropertyGroup>
+  </Target>
 
   <PropertyGroup>
     <AnalysisMode>Recommended</AnalysisMode>
@@ -23,13 +32,11 @@
     <MinVerTagPrefix>v</MinVerTagPrefix>
 
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <PackageReleaseNotes>https://github.com/Altinn/app-lib-dotnet/releases</PackageReleaseNotes>
     <Authors>Altinn Platform Contributors</Authors>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/Altinn/app-lib-dotnet</RepositoryUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <IncludeSymbols>true</IncludeSymbols>

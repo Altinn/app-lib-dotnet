@@ -1,7 +1,9 @@
 using Altinn.App.Api.Controllers;
+using Altinn.App.Api.Helpers.Patch;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
@@ -43,9 +45,14 @@ public class InstancesController_ActiveInstancesTest
     private readonly Mock<IProcessEngine> _processEngine = new();
     private readonly Mock<IOrganizationClient> _oarganizationClientMock = new();
     private readonly Mock<IHostEnvironment> _envMock = new();
+    private readonly ModelSerializationService _modelSerializationService;
 
-    private InstancesController SUT =>
-        new InstancesController(
+    private InstancesController SUT;
+
+    public InstancesController_ActiveInstancesTest()
+    {
+        _modelSerializationService = new ModelSerializationService(_appModel.Object);
+        SUT = new InstancesController(
             _logger.Object,
             _registrer.Object,
             _instanceClient.Object,
@@ -61,8 +68,20 @@ public class InstancesController_ActiveInstancesTest
             _profile.Object,
             _processEngine.Object,
             _oarganizationClientMock.Object,
-            _envMock.Object
+            _envMock.Object,
+            _modelSerializationService,
+            new InternalPatchService(
+                _appMetadata.Object,
+                _data.Object,
+                _instanceClient.Object,
+                null!,
+                [],
+                [],
+                _modelSerializationService,
+                _envMock.Object
+            )
         );
+    }
 
     private void VerifyNoOtherCalls()
     {
@@ -124,8 +143,8 @@ public class InstancesController_ActiveInstancesTest
                 DueBefore = DateTime.Today.AddDays(20),
                 LastChanged = DateTime.Now,
                 LastChangedBy = "12345",
-                PresentationTexts = new() { { "periode", "1. halvår 2023" } }
-            }
+                PresentationTexts = new() { { "periode", "1. halvår 2023" } },
+            },
         };
         var expected = instances.Select(i => new SimpleInstance()
         {
@@ -138,7 +157,7 @@ public class InstancesController_ActiveInstancesTest
                 "12345" => "",
                 // "12345" => "", // Would it be more sensible to return UserId as fallback?
                 _ => throw new Exception("Unknown user"),
-            }
+            },
         });
 
         _instanceClient
@@ -175,8 +194,8 @@ public class InstancesController_ActiveInstancesTest
                 Id = $"{1234}/{Guid.NewGuid()}",
                 LastChanged = DateTime.Now,
                 LastChangedBy = "12345",
-                PresentationTexts = new() { { "periode", "1. halvår 2023" }, { "kontaktperson", "Eirk Blodøks" } }
-            }
+                PresentationTexts = new() { { "periode", "1. halvår 2023" }, { "kontaktperson", "Eirk Blodøks" } },
+            },
         };
         var expected = instances.Select(i => new SimpleInstance()
         {
@@ -189,7 +208,7 @@ public class InstancesController_ActiveInstancesTest
                 "12345" => "",
                 // "12345" => "12345", // Would it be more sensible to return UserId as fallback?
                 _ => throw new Exception("Unknown user"),
-            }
+            },
         });
 
         _instanceClient
@@ -226,7 +245,7 @@ public class InstancesController_ActiveInstancesTest
                 Id = $"{1234}/{Guid.NewGuid()}",
                 LastChanged = DateTime.Now,
                 LastChangedBy = "12345",
-            }
+            },
         };
         var expected = instances.Select(i => new SimpleInstance()
         {
@@ -238,7 +257,7 @@ public class InstancesController_ActiveInstancesTest
             {
                 "12345" => "Ola Olsen",
                 _ => throw new Exception("Unknown user"),
-            }
+            },
         });
 
         _instanceClient
@@ -277,7 +296,7 @@ public class InstancesController_ActiveInstancesTest
                 Id = $"{1234}/{Guid.NewGuid()}",
                 LastChanged = DateTime.Now,
                 LastChangedBy = "123456789",
-            }
+            },
         };
         var expected = instances.Select(i => new SimpleInstance()
         {
@@ -290,7 +309,7 @@ public class InstancesController_ActiveInstancesTest
                 "123456789" => "",
                 // "123456789" => "123456789", // Would it be more sensible to return OrgNumber as fallback?
                 _ => throw new Exception("Unknown user"),
-            }
+            },
         });
 
         _instanceClient
@@ -327,7 +346,7 @@ public class InstancesController_ActiveInstancesTest
                 Id = $"{1234}/{Guid.NewGuid()}",
                 LastChanged = DateTime.Now,
                 LastChangedBy = "123456789",
-            }
+            },
         };
         var expected = instances.Select(i => new SimpleInstance()
         {
@@ -339,7 +358,7 @@ public class InstancesController_ActiveInstancesTest
             {
                 "123456789" => "Testdepartementet",
                 _ => throw new Exception("Unknown user"),
-            }
+            },
         });
 
         _instanceClient

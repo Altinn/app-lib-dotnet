@@ -72,14 +72,11 @@ public class LayoutModel
         var pageContexts = new List<ComponentContext>();
         foreach (var page in _defaultLayoutSet.Pages)
         {
-            pageContexts.Add(
-                await GenerateComponentContextsRecurs(
-                    page,
-                    dataModel,
-                    _defaultLayoutSet.GetDefaultDataElementId(instance),
-                    []
-                )
-            );
+            var defaultElementId = _defaultLayoutSet.GetDefaultDataElementId(instance);
+            if (defaultElementId is not null)
+            {
+                pageContexts.Add(await GenerateComponentContextsRecurs(page, dataModel, defaultElementId.Value, []));
+            }
         }
 
         return pageContexts;
@@ -94,26 +91,31 @@ public class LayoutModel
     {
         return component switch
         {
-            SubFormComponent subFormComponent
-                => await GenerateContextForSubComponent(dataModel, subFormComponent, defaultDataElementIdentifier),
+            SubFormComponent subFormComponent => await GenerateContextForSubComponent(
+                dataModel,
+                subFormComponent,
+                defaultDataElementIdentifier
+            ),
 
-            RepeatingGroupComponent repeatingGroupComponent
-                => await GenerateContextForRepeatingGroup(
-                    dataModel,
-                    repeatingGroupComponent,
-                    defaultDataElementIdentifier,
-                    indexes
-                ),
-            GroupComponent groupComponent
-                => await GenerateContextForGroup(dataModel, groupComponent, defaultDataElementIdentifier, indexes),
-            _
-                => new ComponentContext(
-                    component,
-                    indexes?.Length > 0 ? indexes : null,
-                    null,
-                    defaultDataElementIdentifier,
-                    []
-                )
+            RepeatingGroupComponent repeatingGroupComponent => await GenerateContextForRepeatingGroup(
+                dataModel,
+                repeatingGroupComponent,
+                defaultDataElementIdentifier,
+                indexes
+            ),
+            GroupComponent groupComponent => await GenerateContextForGroup(
+                dataModel,
+                groupComponent,
+                defaultDataElementIdentifier,
+                indexes
+            ),
+            _ => new ComponentContext(
+                component,
+                indexes?.Length > 0 ? indexes : null,
+                null,
+                defaultDataElementIdentifier,
+                []
+            ),
         };
     }
 
@@ -208,8 +210,8 @@ public class LayoutModel
         return new ComponentContext(subFormComponent, null, null, defaultDataElementIdentifier, children);
     }
 
-    internal DataElementIdentifier GetDefaultDataElementId(Instance instanceContext)
+    internal DataElementIdentifier? GetDefaultDataElementId(Instance instance)
     {
-        return _defaultLayoutSet.GetDefaultDataElementId(instanceContext);
+        return _defaultLayoutSet.GetDefaultDataElementId(instance);
     }
 }

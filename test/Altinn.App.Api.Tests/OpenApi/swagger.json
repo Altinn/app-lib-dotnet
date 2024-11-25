@@ -586,7 +586,8 @@
               }
             }
           }
-        }
+        },
+        "deprecated": true
       },
       "patch": {
         "tags": [
@@ -761,6 +762,173 @@
               "text/xml": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataType}": {
+      "post": {
+        "tags": [
+          "Data"
+        ],
+        "parameters": [
+          {
+            "name": "org",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "app",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "instanceOwnerPartyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "instanceGuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "dataType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ignoredValidators",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "language",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataPostResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataPostResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataPostResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataPostErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataPostErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataPostErrorResponse"
                 }
               }
             }
@@ -1184,11 +1352,42 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "ignoredValidators",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "language",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataPostResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataPostResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataPostResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -1997,6 +2196,13 @@
             "schema": {
               "type": "integer",
               "format": "int32"
+            }
+          },
+          {
+            "name": "language",
+            "in": "query",
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -5053,8 +5259,7 @@
           "actions": {
             "type": "object",
             "additionalProperties": {
-              "type": "boolean",
-              "nullable": true
+              "type": "boolean"
             },
             "nullable": true
           },
@@ -5258,7 +5463,7 @@
           "copyInstanceSettings": {
             "$ref": "#/components/schemas/CopyInstanceSettings"
           },
-          "storageContainerNumber": {
+          "storageAccountNumber": {
             "type": "integer",
             "format": "int32",
             "nullable": true
@@ -5273,8 +5478,7 @@
           "features": {
             "type": "object",
             "additionalProperties": {
-              "type": "boolean",
-              "nullable": true
+              "type": "boolean"
             },
             "nullable": true
           },
@@ -5799,6 +6003,74 @@
         },
         "additionalProperties": false
       },
+      "DataPostErrorResponse": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "detail": {
+            "type": "string",
+            "nullable": true
+          },
+          "instance": {
+            "type": "string",
+            "nullable": true
+          },
+          "uploadValidationIssues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationIssueWithSource"
+            },
+            "nullable": true,
+            "readOnly": true
+          }
+        },
+        "additionalProperties": { }
+      },
+      "DataPostResponse": {
+        "required": [
+          "instance",
+          "newDataElementId",
+          "newDataModels",
+          "validationIssues"
+        ],
+        "type": "object",
+        "properties": {
+          "newDataElementId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "instance": {
+            "$ref": "#/components/schemas/Instance"
+          },
+          "validationIssues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationSourcePair"
+            },
+            "nullable": true
+          },
+          "newDataModels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DataModelPairResponse"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "DataType": {
         "type": "object",
         "properties": {
@@ -6229,12 +6501,8 @@
       "JsonNodeOptions": {
         "type": "object",
         "properties": {
-          "hasValue": {
-            "type": "boolean",
-            "readOnly": true
-          },
-          "value": {
-            "$ref": "#/components/schemas/JsonNodeOptions"
+          "propertyNameCaseInsensitive": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -7075,8 +7343,7 @@
                 "items": {
                   "$ref": "#/components/schemas/ValidationIssueWithSource"
                 }
-              },
-              "nullable": true
+              }
             },
             "nullable": true
           },

@@ -26,7 +26,7 @@ public class EformidlingServiceTaskLegacyTests
         var appSettings = new AppSettings { EnableEFormidling = true };
         var applicationMetadata = new ApplicationMetadata("ttd/test")
         {
-            EFormidling = new EFormidlingContract() { SendAfterTaskId = "Task_1" }
+            EFormidling = new EFormidlingContract() { SendAfterTaskId = "Task_1" },
         };
         var instance = new Instance();
         _appMetadata.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(applicationMetadata);
@@ -53,7 +53,7 @@ public class EformidlingServiceTaskLegacyTests
         var appSettings = new AppSettings { EnableEFormidling = true };
         var applicationMetadata = new ApplicationMetadata("ttd/test")
         {
-            EFormidling = new EFormidlingContract() { SendAfterTaskId = "Task_1" }
+            EFormidling = new EFormidlingContract() { SendAfterTaskId = "Task_1" },
         };
         var instance = new Instance();
         _appMetadata.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(applicationMetadata);
@@ -76,7 +76,7 @@ public class EformidlingServiceTaskLegacyTests
         var appSettings = new AppSettings { EnableEFormidling = false };
         var applicationMetadata = new ApplicationMetadata("ttd/test")
         {
-            EFormidling = new EFormidlingContract() { SendAfterTaskId = "Task_1" }
+            EFormidling = new EFormidlingContract() { SendAfterTaskId = "Task_1" },
         };
         var instance = new Instance();
         _appMetadata.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(applicationMetadata);
@@ -99,7 +99,7 @@ public class EformidlingServiceTaskLegacyTests
         var appSettings = new AppSettings { EnableEFormidling = true };
         var applicationMetadata = new ApplicationMetadata("ttd/test")
         {
-            EFormidling = new EFormidlingContract() { SendAfterTaskId = "Task_2" }
+            EFormidling = new EFormidlingContract() { SendAfterTaskId = "Task_2" },
         };
         var instance = new Instance();
         _appMetadata.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(applicationMetadata);

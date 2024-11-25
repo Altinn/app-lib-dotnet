@@ -1,8 +1,10 @@
 using Altinn.App.Api.Controllers;
+using Altinn.App.Api.Helpers.Patch;
 using Altinn.App.Api.Tests.Utils;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
@@ -11,6 +13,7 @@ using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Prefill;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
+using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.Validation;
@@ -46,6 +49,7 @@ public class InstancesController_CopyInstanceTests
     private readonly Mock<HttpContext> _httpContextMock = new();
     private readonly Mock<IOrganizationClient> _oarganizationClientMock = new();
     private readonly Mock<IHostEnvironment> _envMock = new();
+    private readonly Mock<IValidationService> _validationService = new(MockBehavior.Strict);
 
     private readonly InstancesController SUT;
 
@@ -53,6 +57,17 @@ public class InstancesController_CopyInstanceTests
     {
         ControllerContext controllerContext = new ControllerContext() { HttpContext = _httpContextMock.Object };
 
+        var modelSerializationService = new ModelSerializationService(_appModel.Object);
+        var patchService = new InternalPatchService(
+            _appMetadata.Object,
+            _data.Object,
+            _instanceClient.Object,
+            _validationService.Object,
+            [],
+            [],
+            modelSerializationService,
+            _envMock.Object
+        );
         SUT = new InstancesController(
             _logger.Object,
             _registrer.Object,
@@ -69,10 +84,12 @@ public class InstancesController_CopyInstanceTests
             _profile.Object,
             _processEngine.Object,
             _oarganizationClientMock.Object,
-            _envMock.Object
+            _envMock.Object,
+            modelSerializationService,
+            patchService
         )
         {
-            ControllerContext = controllerContext
+            ControllerContext = controllerContext,
         };
     }
 
@@ -177,12 +194,11 @@ public class InstancesController_CopyInstanceTests
         const string AppName = "copy-instance";
         int instanceOwnerPartyId = 343234;
         Guid instanceGuid = Guid.NewGuid();
-        Instance instance =
-            new()
-            {
-                Id = $"{instanceOwnerPartyId}/{instanceGuid}",
-                Status = new InstanceStatus() { IsArchived = false }
-            };
+        Instance instance = new()
+        {
+            Id = $"{instanceOwnerPartyId}/{instanceGuid}",
+            Status = new InstanceStatus() { IsArchived = false },
+        };
 
         _httpContextMock.Setup(httpContext => httpContext.User).Returns(PrincipalUtil.GetUserPrincipal(1337, null));
         _appMetadata.Setup(a => a.GetApplicationMetadata()).ReturnsAsync(CreateApplicationMetadata(Org, AppName, true));
@@ -293,12 +309,11 @@ public class InstancesController_CopyInstanceTests
         const string AppName = "copy-instance";
         int instanceOwnerPartyId = 343234;
         Guid instanceGuid = Guid.NewGuid();
-        Instance instance =
-            new()
-            {
-                Id = $"{instanceOwnerPartyId}/{instanceGuid}",
-                Status = new InstanceStatus() { IsArchived = true }
-            };
+        Instance instance = new()
+        {
+            Id = $"{instanceOwnerPartyId}/{instanceGuid}",
+            Status = new InstanceStatus() { IsArchived = true },
+        };
         InstantiationValidationResult? instantiationValidationResult = new() { Valid = false };
 
         _httpContextMock.Setup(httpContext => httpContext.User).Returns(PrincipalUtil.GetUserPrincipal(1337, null));
@@ -338,19 +353,18 @@ public class InstancesController_CopyInstanceTests
         Guid instanceGuid = Guid.NewGuid();
         Guid dataGuid = Guid.NewGuid();
         const string dataTypeId = "data_type_1";
-        Instance instance =
-            new()
+        Instance instance = new()
+        {
+            Id = $"{InstanceOwnerPartyId}/{instanceGuid}",
+            AppId = $"{Org}/{AppName}",
+            InstanceOwner = new InstanceOwner() { PartyId = InstanceOwnerPartyId.ToString() },
+            Status = new InstanceStatus() { IsArchived = true },
+            Process = new ProcessState() { CurrentTask = new ProcessElementInfo() { ElementId = "First" } },
+            Data = new List<DataElement>
             {
-                Id = $"{InstanceOwnerPartyId}/{instanceGuid}",
-                AppId = $"{Org}/{AppName}",
-                InstanceOwner = new InstanceOwner() { PartyId = InstanceOwnerPartyId.ToString() },
-                Status = new InstanceStatus() { IsArchived = true },
-                Process = new ProcessState() { CurrentTask = new ProcessElementInfo() { ElementId = "First" } },
-                Data = new List<DataElement>
-                {
-                    new DataElement { Id = dataGuid.ToString(), DataType = dataTypeId }
-                }
-            };
+                new DataElement { Id = dataGuid.ToString(), DataType = dataTypeId },
+            },
+        };
         InstantiationValidationResult? instantiationValidationResult = new() { Valid = true };
 
         _httpContextMock.Setup(hc => hc.User).Returns(PrincipalUtil.GetUserPrincipal(1337, null));
@@ -425,11 +439,11 @@ public class InstancesController_CopyInstanceTests
                 new DataType
                 {
                     Id = "data_type_1",
-                    AppLogic = new ApplicationLogic { ClassRef = "App.Models.Skjema", },
-                    TaskId = "First"
-                }
+                    AppLogic = new ApplicationLogic { ClassRef = "App.Models.Skjema" },
+                    TaskId = "First",
+                },
             },
-            Org = org
+            Org = org,
         };
     }
 

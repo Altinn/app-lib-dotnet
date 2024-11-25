@@ -185,12 +185,12 @@ public record JwkWrapper
             [nameof(Q)] = Q,
             [nameof(Qi)] = Qi,
             [nameof(Dp)] = Dp,
-            [nameof(Dq)] = Dq
+            [nameof(Dq)] = Dq,
         };
 
         return new ValidationResult
         {
-            InvalidProperties = props.Where(x => string.IsNullOrWhiteSpace(x.Value)).Select(x => x.Key).ToList()
+            InvalidProperties = props.Where(x => string.IsNullOrWhiteSpace(x.Value)).Select(x => x.Key).ToList(),
         };
     }
 
@@ -212,7 +212,7 @@ public record JwkWrapper
             Q = Q,
             QI = Qi,
             DP = Dp,
-            DQ = Dq
+            DQ = Dq,
         };
     }
 
@@ -229,7 +229,7 @@ public record JwkWrapper
         /// <summary>
         /// Shorthand: Is the object in a valid state?
         /// </summary>
-        public bool IsValid() => InvalidProperties.IsNullOrEmpty();
+        public bool IsValid() => InvalidProperties is null || !InvalidProperties.Any();
 
         /// <summary>
         /// Helpful summary of the result

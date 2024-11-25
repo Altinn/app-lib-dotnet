@@ -61,7 +61,7 @@ public class RequestPartValidator
                 }
             }
 
-            long contentSize = part.FileSize != 0 ? part.FileSize : part.Stream.Length;
+            long contentSize = part.FileSize != 0 ? part.FileSize : part.Bytes.Length;
 
             if (contentSize == 0)
             {

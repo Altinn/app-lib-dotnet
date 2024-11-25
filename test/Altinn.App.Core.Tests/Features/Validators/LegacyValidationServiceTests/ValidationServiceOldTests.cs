@@ -9,6 +9,7 @@ using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Validation;
+using Altinn.App.Core.Tests.LayoutExpressions.TestUtilities;
 using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
@@ -22,26 +23,24 @@ namespace Altinn.App.Core.Tests.Features.Validators.LegacyValidationServiceTests
 public class ValidationServiceOldTests
 {
     private readonly Mock<ILogger<ValidationService>> _loggerMock = new();
-    private readonly Mock<IHttpContextAccessor> _httpContextAccessorMock = new();
     private readonly Mock<IDataClient> _dataClientMock = new(MockBehavior.Strict);
     private readonly Mock<IAppModel> _appModelMock = new(MockBehavior.Strict);
     private readonly Mock<IAppMetadata> _appMetadataMock = new(MockBehavior.Strict);
     private readonly ServiceCollection _serviceCollection = new();
 
-    private readonly ApplicationMetadata _applicationMetadata =
-        new("tdd/test")
+    private readonly ApplicationMetadata _applicationMetadata = new("tdd/test")
+    {
+        DataTypes = new List<DataType>()
         {
-            DataTypes = new List<DataType>()
+            new DataType()
             {
-                new DataType()
-                {
-                    Id = "test",
-                    TaskId = "Task_1",
-                    EnableFileScan = false,
-                    ValidationErrorOnPendingFileScan = false,
-                }
-            }
-        };
+                Id = "test",
+                TaskId = "Task_1",
+                EnableFileScan = false,
+                ValidationErrorOnPendingFileScan = false,
+            },
+        },
+    };
 
     public ValidationServiceOldTests()
     {
@@ -67,15 +66,16 @@ public class ValidationServiceOldTests
         {
             Id = "testScan",
             TaskId = "Task_1",
-            EnableFileScan = true
+            EnableFileScan = true,
         };
         _applicationMetadata.DataTypes.Add(dataType);
         var dataElement = new DataElement() { DataType = "testScan", FileScanResult = FileScanResult.Infected };
         var instance = new Instance() { Data = [dataElement] };
-        var dataAccessor = new Mock<IInstanceDataAccessor>();
+        var dataAccessor = new Mock<IInstanceDataAccessor>(MockBehavior.Strict);
+        dataAccessor.SetupGet(da => da.Instance).Returns(instance);
+        dataAccessor.Setup(da => da.GetDataType(dataType.Id)).Returns(dataType);
 
         List<ValidationIssueWithSource> validationIssues = await validationService.ValidateInstanceAtTask(
-            instance,
             dataAccessor.Object,
             "Task_1",
             null,
@@ -97,15 +97,16 @@ public class ValidationServiceOldTests
             Id = "test",
             TaskId = "Task_1",
             AppLogic = null,
-            EnableFileScan = true
+            EnableFileScan = true,
         };
-        var dataElement = new DataElement() { DataType = "test", FileScanResult = FileScanResult.Pending, };
+        var dataElement = new DataElement() { DataType = "test", FileScanResult = FileScanResult.Pending };
         var instance = new Instance() { Data = [dataElement] };
 
-        var dataAccessorMock = new Mock<IInstanceDataAccessor>();
+        var dataAccessorMock = new Mock<IInstanceDataAccessor>(MockBehavior.Strict);
+        dataAccessorMock.SetupGet(da => da.Instance).Returns(instance);
+        dataAccessorMock.Setup(da => da.GetDataType(dataType.Id)).Returns(dataType);
 
         List<ValidationIssueWithSource> validationIssues = await validationService.ValidateInstanceAtTask(
-            instance,
             dataAccessorMock.Object,
             "Task_1",
             null,
@@ -127,15 +128,16 @@ public class ValidationServiceOldTests
             Id = "testScan",
             TaskId = "Task_1",
             EnableFileScan = true,
-            ValidationErrorOnPendingFileScan = true
+            ValidationErrorOnPendingFileScan = true,
         };
         _applicationMetadata.DataTypes.Add(dataType);
         var dataElement = new DataElement() { DataType = "testScan", FileScanResult = FileScanResult.Pending };
-        var instance = new Instance() { Data = [dataElement], };
-        var dataAccessorMock = new Mock<IInstanceDataAccessor>();
+        var instance = new Instance() { Data = [dataElement] };
+        var dataAccessorMock = new Mock<IInstanceDataAccessor>(MockBehavior.Strict);
+        dataAccessorMock.SetupGet(da => da.Instance).Returns(instance);
+        dataAccessorMock.Setup(da => da.GetDataType(dataType.Id)).Returns(dataType);
 
         List<ValidationIssueWithSource> validationIssues = await validationService.ValidateInstanceAtTask(
-            instance,
             dataAccessorMock.Object,
             "Task_1",
             null,
@@ -153,19 +155,21 @@ public class ValidationServiceOldTests
         IValidationService validationService = serviceProvider.GetRequiredService<IValidationService>();
 
         var dataType = new DataType() { EnableFileScan = true, ValidationErrorOnPendingFileScan = true };
-        var dataElement = new DataElement() { DataType = "test", FileScanResult = FileScanResult.Clean, };
+        var dataElement = new DataElement() { DataType = "test", FileScanResult = FileScanResult.Clean };
         var instance = new Instance()
         {
             AppId = "ttd/test-app",
             Org = "ttd",
-            Data = [dataElement]
+            Data = [dataElement],
         };
 
-        var dataAccessorMock = new Mock<IInstanceDataAccessor>();
+        var dataAccessorMock = new InstanceDataAccessorFake(instance, _applicationMetadata, "Task_1", "test")
+        {
+            { dataElement, new ReadOnlyMemory<byte>() },
+        };
 
         List<ValidationIssueWithSource> validationIssues = await validationService.ValidateInstanceAtTask(
-            instance,
-            dataAccessorMock.Object,
+            dataAccessorMock,
             "Task_1",
             null,
             null,
@@ -182,18 +186,13 @@ public class ValidationServiceOldTests
         const string taskId = "Task_1";
 
         // Mock setup
-        var appMetadata = new ApplicationMetadata("ttd/test-app")
+        var dataType = new DataType
         {
-            DataTypes = new List<DataType>
-            {
-                new DataType
-                {
-                    Id = "data",
-                    TaskId = taskId,
-                    MaxCount = 0,
-                }
-            }
+            Id = "data",
+            TaskId = taskId,
+            MaxCount = 0,
         };
+        var appMetadata = new ApplicationMetadata("ttd/test-app") { DataTypes = [dataType] };
         _appMetadataMock.Setup(a => a.GetApplicationMetadata()).ReturnsAsync(appMetadata);
 
         await using var serviceProvider = _serviceCollection.BuildServiceProvider();
@@ -206,18 +205,13 @@ public class ValidationServiceOldTests
             {
                 new() { DataType = "data", ContentType = "application/json" },
             },
-            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "Task_1" } }
+            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "Task_1" } },
         };
-        var dataAccessorMock = new Mock<IInstanceDataAccessor>();
+        var dataAccessorMock = new Mock<IInstanceDataAccessor>(MockBehavior.Strict);
+        dataAccessorMock.SetupGet(da => da.Instance).Returns(instance);
+        dataAccessorMock.Setup(da => da.GetDataType(dataType.Id)).Returns(dataType);
 
-        var issues = await validationService.ValidateInstanceAtTask(
-            instance,
-            dataAccessorMock.Object,
-            taskId,
-            null,
-            null,
-            null
-        );
+        var issues = await validationService.ValidateInstanceAtTask(dataAccessorMock.Object, taskId, null, null, null);
         issues.Should().BeEmpty();
 
         // instance.Process?.CurrentTask?.Validated.CanCompleteTask.Should().BeTrue();
@@ -230,18 +224,13 @@ public class ValidationServiceOldTests
         const string taskId = "Task_1";
 
         // Mock setup
-        var appMetadata = new ApplicationMetadata("ttd/test-app")
+        var dataType = new DataType
         {
-            DataTypes = new List<DataType>
-            {
-                new DataType
-                {
-                    Id = "data",
-                    TaskId = taskId,
-                    MaxCount = 1,
-                }
-            }
+            Id = "data",
+            TaskId = taskId,
+            MaxCount = 1,
         };
+        var appMetadata = new ApplicationMetadata("ttd/test-app") { DataTypes = [dataType] };
         _appMetadataMock.Setup(a => a.GetApplicationMetadata()).ReturnsAsync(appMetadata);
 
         await using var serviceProvider = _serviceCollection.BuildServiceProvider();
@@ -256,27 +245,22 @@ public class ValidationServiceOldTests
                 {
                     Id = "3C8B52A9-9602-4B2E-A217-B4E816ED8DEB",
                     DataType = "data",
-                    ContentType = "application/json"
+                    ContentType = "application/json",
                 },
                 new()
                 {
                     Id = "3C8B52A9-9602-4B2E-A217-B4E816ED8DEC",
                     DataType = "data",
-                    ContentType = "application/json"
+                    ContentType = "application/json",
                 },
             },
-            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "Task_1" } }
+            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "Task_1" } },
         };
-        var dataAccessorMock = new Mock<IInstanceDataAccessor>();
+        var dataAccessorMock = new Mock<IInstanceDataAccessor>(MockBehavior.Strict);
+        dataAccessorMock.SetupGet(da => da.Instance).Returns(instance);
+        dataAccessorMock.Setup(da => da.GetDataType(dataType.Id)).Returns(dataType);
 
-        var issues = await validationService.ValidateInstanceAtTask(
-            instance,
-            dataAccessorMock.Object,
-            taskId,
-            null,
-            null,
-            null
-        );
+        var issues = await validationService.ValidateInstanceAtTask(dataAccessorMock.Object, taskId, null, null, null);
         issues.Should().HaveCount(1);
         issues.Should().ContainSingle(i => i.Code == ValidationIssueCodes.InstanceCodes.TooManyDataElementsOfType);
     }

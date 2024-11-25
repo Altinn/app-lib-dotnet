@@ -19,8 +19,10 @@ namespace Altinn.App.Api.Controllers;
 [ApiController]
 public class PdfController : ControllerBase
 {
-    private static readonly JsonSerializerOptions _jsonSerializerOptions =
-        new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    };
 
     private readonly IInstanceClient _instanceClient;
 #pragma warning disable CS0618 // Type or member is obsolete
@@ -28,7 +30,6 @@ public class PdfController : ControllerBase
     private readonly IAppResources _resources;
     private readonly IAppModel _appModel;
     private readonly IDataClient _dataClient;
-    private readonly IWebHostEnvironment _env;
     private readonly IPdfService _pdfService;
 
     /// <summary>
@@ -39,7 +40,6 @@ public class PdfController : ControllerBase
     /// <param name="resources">The app resource service</param>
     /// <param name="appModel">The app model service</param>
     /// <param name="dataClient">The data client</param>
-    /// <param name="env">The environment</param>
     /// <param name="pdfService">The PDF service</param>
     public PdfController(
         IInstanceClient instanceClient,
@@ -48,7 +48,6 @@ public class PdfController : ControllerBase
         IAppResources resources,
         IAppModel appModel,
         IDataClient dataClient,
-        IWebHostEnvironment env,
         IPdfService pdfService
     )
     {
@@ -57,7 +56,6 @@ public class PdfController : ControllerBase
         _resources = resources;
         _appModel = appModel;
         _dataClient = dataClient;
-        _env = env;
         _pdfService = pdfService;
     }
 
@@ -73,11 +71,6 @@ public class PdfController : ControllerBase
         [FromRoute] Guid instanceGuid
     )
     {
-        if (_env.IsProduction())
-        {
-            return NotFound();
-        }
-
         var instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
         string? taskId = instance.Process?.CurrentTask?.ElementId;
         if (instance == null || taskId == null)
@@ -85,7 +78,7 @@ public class PdfController : ControllerBase
             return NotFound("Did not find instance or task");
         }
 
-        Stream pdfContent = await _pdfService.GeneratePdf(instance, taskId, CancellationToken.None);
+        Stream pdfContent = await _pdfService.GeneratePdf(instance, taskId, true, CancellationToken.None);
         return new FileStreamResult(pdfContent, "application/pdf");
     }
 

@@ -30,7 +30,6 @@ public class DataControllerTests : ApiTestBase, IClassFixture<WebApplicationFact
         string token = PrincipalUtil.GetOrgToken("nav", "160694123");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        TestData.DeleteInstanceAndData(org, app, instanceOwnerPartyId, guid);
         TestData.PrepareInstance(org, app, instanceOwnerPartyId, guid);
 
         using var content = new StringContent("{}", System.Text.Encoding.UTF8, "application/json"); // empty valid json
@@ -38,6 +37,43 @@ public class DataControllerTests : ApiTestBase, IClassFixture<WebApplicationFact
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var responseContent = await response.Content.ReadAsStringAsync();
         responseContent.Should().Contain("dataType");
+    }
+
+    [Fact]
+    public async Task PostBinaryElement_ContentTooLarge_ReturnsBadRequest()
+    {
+        // Setup test data
+        string org = "tdd";
+        string app = "contributer-restriction";
+        int instanceOwnerPartyId = 1337;
+        string dataType = "specificFileType"; // Should have restrictions on 1 mb in app metadata
+        Guid guid = new Guid("0fc98a23-fe31-4ef5-8fb9-dd3f479354cd");
+        HttpClient client = GetRootedClient(org, app);
+        string token = PrincipalUtil.GetOrgToken("nav", "160694123");
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        TestData.PrepareInstance(org, app, instanceOwnerPartyId, guid);
+
+        using var content = new ByteArrayContent(new byte[1024 * 1024 + 1]); // 1 mb
+        content.Headers.ContentType = new MediaTypeHeaderValue("application/pdf");
+        content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
+        {
+            FileName = "example.pdf",
+        };
+        var response = await client.PostAsync(
+            $"/{org}/{app}/instances/{instanceOwnerPartyId}/{guid}/data/{dataType}",
+            content
+        );
+        var responseContent = await response.Content.ReadAsStringAsync();
+        OutputHelper.WriteLine(responseContent);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        responseContent
+            .Should()
+            .Contain(
+                """
+                "code":"DataElementTooLarge","description":"Invalid data provided. Error: Binary attachment exceeds limit of 1048576","source":"DataRestrictionValidation"
+                """
+            );
     }
 
     [Fact]
@@ -55,7 +91,6 @@ public class DataControllerTests : ApiTestBase, IClassFixture<WebApplicationFact
         HttpClient client = GetRootedClient(org, app);
 
         Guid guid = new Guid("0fc98a23-fe31-4ef5-8fb9-dd3f479354cd");
-        TestData.DeleteInstanceAndData(org, app, 1337, guid);
         TestData.PrepareInstance(org, app, 1337, guid);
 
         // Setup the request
@@ -89,7 +124,6 @@ public class DataControllerTests : ApiTestBase, IClassFixture<WebApplicationFact
         HttpClient client = GetRootedClient(org, app);
 
         Guid guid = new Guid("0fc98a23-fe31-4ef5-8fb9-dd3f479354cd");
-        TestData.DeleteInstanceAndData(org, app, 1337, guid);
         TestData.PrepareInstance(org, app, 1337, guid);
 
         // Setup the request
@@ -125,7 +159,6 @@ public class DataControllerTests : ApiTestBase, IClassFixture<WebApplicationFact
         HttpClient client = GetRootedClient(org, app);
 
         Guid guid = new Guid("1fc98a23-fe31-4ef5-8fb9-dd3f479354ce");
-        TestData.DeleteInstanceAndData(org, app, 1337, guid);
         TestData.PrepareInstance(org, app, 1337, guid);
 
         // Setup the request
@@ -179,7 +212,7 @@ public class MimeTypeAnalyserSuccessStub : IFileAnalyser
             {
                 MimeType = "application/pdf",
                 Filename = "example.pdf",
-                Extensions = new List<string>() { "pdf" }
+                Extensions = new List<string>() { "pdf" },
             }
         );
     }
@@ -201,7 +234,7 @@ public class MimeTypeAnalyserFailureStub : IFileAnalyser
             {
                 MimeType = "application/jpeg",
                 Filename = "example.jpg.pdf",
-                Extensions = new List<string>() { "jpg" }
+                Extensions = new List<string>() { "jpg" },
             }
         );
     }
@@ -230,15 +263,14 @@ public class MimeTypeValidatorStub : IFileValidator
             ) && !dataType.AllowedContentTypes.Contains("application/octet-stream")
         )
         {
-            ValidationIssue error =
-                new()
-                {
-                    Source = ValidationIssueSources.File,
-                    Code = ValidationIssueCodes.DataElementCodes.ContentTypeNotAllowed,
-                    Severity = ValidationIssueSeverity.Error,
-                    Description =
-                        $"The {fileMimeTypeResult?.Filename + " "}file does not appear to be of the allowed content type according to the configuration for data type {dataType.Id}. Allowed content types are {string.Join(", ", dataType.AllowedContentTypes)}"
-                };
+            ValidationIssue error = new()
+            {
+                Source = ValidationIssueSources.File,
+                Code = ValidationIssueCodes.DataElementCodes.ContentTypeNotAllowed,
+                Severity = ValidationIssueSeverity.Error,
+                Description =
+                    $"The {fileMimeTypeResult?.Filename + " "}file does not appear to be of the allowed content type according to the configuration for data type {dataType.Id}. Allowed content types are {string.Join(", ", dataType.AllowedContentTypes)}",
+            };
 
             errors.Add(error);
 

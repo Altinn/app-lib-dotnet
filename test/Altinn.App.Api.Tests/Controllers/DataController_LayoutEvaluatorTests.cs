@@ -46,7 +46,7 @@ public class DataController_LayoutEvaluatorTests : ApiTestBase, IClassFixture<We
             var hidden = await LayoutEvaluator.GetHiddenFieldsForRemoval(layoutEvaluatorState);
             if (dataId.HasValue)
             {
-                var id = (DataElementIdentifier)dataId;
+                var id = new DataElementIdentifier(dataId.Value);
                 hidden
                     .Should()
                     .BeEquivalentTo([new DataReference() { DataElementIdentifier = id, Field = "melding.hidden" }]);
@@ -74,7 +74,6 @@ public class DataController_LayoutEvaluatorTests : ApiTestBase, IClassFixture<We
         Guid dataGuid = Guid.Parse("f3e04c65-aa70-40ec-84df-087cc2583402");
         HttpClient client = GetRootedClient(org, app, 1337, instanceOwnerPartyId);
 
-        TestData.DeleteInstanceAndData(org, app, instanceOwnerPartyId, instanceGuid);
         TestData.PrepareInstance(org, app, instanceOwnerPartyId, instanceGuid);
 
         // Update data element

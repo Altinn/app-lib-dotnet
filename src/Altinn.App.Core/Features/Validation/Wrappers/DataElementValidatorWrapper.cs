@@ -1,3 +1,4 @@
+using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 
@@ -10,17 +11,11 @@ internal class DataElementValidatorWrapper : IValidator
 {
     private readonly IDataElementValidator _dataElementValidator;
     private readonly string _taskId;
-    private readonly List<DataType> _dataTypes;
 
-    public DataElementValidatorWrapper(
-        IDataElementValidator dataElementValidator,
-        string taskId,
-        List<DataType> dataTypes
-    )
+    public DataElementValidatorWrapper(IDataElementValidator dataElementValidator, string taskId)
     {
         _dataElementValidator = dataElementValidator;
         _taskId = taskId;
-        _dataTypes = dataTypes;
     }
 
     /// <inheritdoc />
@@ -39,27 +34,19 @@ internal class DataElementValidatorWrapper : IValidator
     /// Run all legacy <see cref="IDataElementValidator"/> instances for the given <see cref="DataType"/>.
     /// </summary>
     public async Task<List<ValidationIssue>> Validate(
-        Instance instance,
-        IInstanceDataAccessor instanceDataAccessor,
+        IInstanceDataAccessor dataAccessor,
         string taskId,
         string? language
     )
     {
         var issues = new List<ValidationIssue>();
         var validateAllElements = _dataElementValidator.DataType == "*";
-        foreach (var dataElement in instance.Data)
+        foreach (var (dataType, dataElement) in dataAccessor.GetDataElementsForTask(taskId))
         {
             if (validateAllElements || _dataElementValidator.DataType == dataElement.DataType)
             {
-                var dataType = _dataTypes.Find(d => d.Id == dataElement.DataType);
-                if (dataType is null)
-                {
-                    throw new InvalidOperationException(
-                        $"DataType {dataElement.DataType} not found in dataTypes from applicationmetadata"
-                    );
-                }
                 var dataElementValidationResult = await _dataElementValidator.ValidateDataElement(
-                    instance,
+                    dataAccessor.Instance,
                     dataElement,
                     dataType,
                     language
@@ -75,12 +62,7 @@ internal class DataElementValidatorWrapper : IValidator
     }
 
     /// <inheritdoc />
-    public Task<bool> HasRelevantChanges(
-        Instance instance,
-        IInstanceDataAccessor instanceDataAccessor,
-        string taskId,
-        List<DataElementChange> changes
-    )
+    public Task<bool> HasRelevantChanges(IInstanceDataAccessor dataAccessor, string taskId, DataElementChanges changes)
     {
         // DataElementValidator did not previously implement incremental validation, so we always return false
         throw new NotImplementedException(

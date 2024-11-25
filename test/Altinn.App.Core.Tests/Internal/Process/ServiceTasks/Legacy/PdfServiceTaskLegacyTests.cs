@@ -17,7 +17,7 @@ public class PdfServiceTaskLegacyTests
     [Fact]
     public async Task Execute_calls_pdf_service()
     {
-        Instance i = new() { Data = [new DataElement() { DataType = "DataType_1" },] };
+        Instance i = new() { Data = [new DataElement() { DataType = "DataType_1" }] };
         SetupAppMetadataWithDataTypes(
             [
                 new DataType
@@ -25,7 +25,7 @@ public class PdfServiceTaskLegacyTests
                     Id = "DataType_1",
                     TaskId = "Task_1",
                     AppLogic = new ApplicationLogic() { ClassRef = "DataType_1" },
-                    EnablePdfCreation = true
+                    EnablePdfCreation = true,
                 },
             ]
         );
@@ -43,17 +43,16 @@ public class PdfServiceTaskLegacyTests
     [Fact]
     public async Task Execute_pdf_service_is_called_only_once()
     {
-        Instance i =
-            new()
-            {
-                Data =
-                [
-                    new DataElement() { DataType = "DataType_1" },
-                    new DataElement() { DataType = "DataType_1" },
-                    new DataElement() { DataType = "DataType_2" },
-                    new DataElement() { DataType = "DataType_2" },
-                ]
-            };
+        Instance i = new()
+        {
+            Data =
+            [
+                new DataElement() { DataType = "DataType_1" },
+                new DataElement() { DataType = "DataType_1" },
+                new DataElement() { DataType = "DataType_2" },
+                new DataElement() { DataType = "DataType_2" },
+            ],
+        };
         SetupAppMetadataWithDataTypes(
             [
                 new DataType
@@ -61,14 +60,14 @@ public class PdfServiceTaskLegacyTests
                     Id = "DataType_1",
                     TaskId = "Task_1",
                     AppLogic = new ApplicationLogic() { ClassRef = "DataType_1" },
-                    EnablePdfCreation = true
+                    EnablePdfCreation = true,
                 },
                 new DataType
                 {
                     Id = "DataType_2",
                     TaskId = "Task_1",
                     AppLogic = new ApplicationLogic() { ClassRef = "DataType_2" },
-                    EnablePdfCreation = true
+                    EnablePdfCreation = true,
                 },
             ]
         );
@@ -94,14 +93,14 @@ public class PdfServiceTaskLegacyTests
                     Id = "DataType_1",
                     TaskId = "Task_1",
                     AppLogic = new ApplicationLogic() { ClassRef = "DataType_1" },
-                    EnablePdfCreation = true
+                    EnablePdfCreation = true,
                 },
                 new DataType
                 {
                     Id = "DataType_2",
                     TaskId = "Task_1",
                     AppLogic = new ApplicationLogic() { ClassRef = "DataType_2" },
-                    EnablePdfCreation = true
+                    EnablePdfCreation = true,
                 },
             ]
         );
@@ -119,7 +118,7 @@ public class PdfServiceTaskLegacyTests
     public async Task Execute_does_not_call_pdfservice_if_generate_pdf_are_false_for_all_datatypes()
     {
         DataElement d = new() { Id = "DataElement_1", DataType = "DataType_1" };
-        Instance i = new() { Data = [d,] };
+        Instance i = new() { Data = [d] };
         SetupAppMetadataWithDataTypes(
             [
                 new DataType
@@ -128,9 +127,9 @@ public class PdfServiceTaskLegacyTests
                     TaskId = "Task_1",
                     AppLogic = new ApplicationLogic()
                     {
-                        ClassRef = "Altinn.App.Core.Tests.Internal.Process.ServiceTasks.TestData.DummyDataType"
+                        ClassRef = "Altinn.App.Core.Tests.Internal.Process.ServiceTasks.TestData.DummyDataType",
                     },
-                    EnablePdfCreation = false
+                    EnablePdfCreation = false,
                 },
             ]
         );
@@ -148,7 +147,7 @@ public class PdfServiceTaskLegacyTests
     public async Task Execute_does_not_call_pdfservice_if_generate_pdf_are_false_for_all_datatypes_nde_pdf_flag_true()
     {
         DataElement d = new() { Id = "DataElement_1", DataType = "DataType_1" };
-        Instance i = new() { Data = [d,] };
+        Instance i = new() { Data = [d] };
         SetupAppMetadataWithDataTypes(
             [
                 new DataType
@@ -157,9 +156,9 @@ public class PdfServiceTaskLegacyTests
                     TaskId = "Task_1",
                     AppLogic = new ApplicationLogic()
                     {
-                        ClassRef = "Altinn.App.Core.Tests.Internal.Process.ServiceTasks.TestData.DummyDataType"
+                        ClassRef = "Altinn.App.Core.Tests.Internal.Process.ServiceTasks.TestData.DummyDataType",
                     },
-                    EnablePdfCreation = false
+                    EnablePdfCreation = false,
                 },
             ]
         );

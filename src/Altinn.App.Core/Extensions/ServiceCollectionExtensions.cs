@@ -34,7 +34,6 @@ using Altinn.App.Core.Internal.Events;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Language;
-using Altinn.App.Core.Internal.Patch;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Prefill;
 using Altinn.App.Core.Internal.Process;
@@ -109,7 +108,9 @@ public static class ServiceCollectionExtensions
 #pragma warning restore CS0618 // Type or member is obsolete
         services.AddHttpClient<IProcessClient, ProcessClient>();
         services.AddHttpClient<IPersonClient, PersonClient>();
+#pragma warning disable EXTEXP0018 // is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         services.AddHybridCache();
+#pragma warning restore EXTEXP0018
 
         services.TryAddTransient<IUserTokenProvider, UserTokenProvider>();
         services.TryAddTransient<IAccessTokenGenerator, AccessTokenGenerator>();
@@ -175,7 +176,6 @@ public static class ServiceCollectionExtensions
         services.TryAddTransient<IDataListsService, DataListsService>();
         services.TryAddTransient<ILayoutEvaluatorStateInitializer, LayoutEvaluatorStateInitializer>();
         services.TryAddTransient<LayoutEvaluatorStateInitializer>();
-        services.TryAddTransient<IPatchService, PatchService>();
         services.AddTransient<IDataService, DataService>();
         services.Configure<Common.PEP.Configuration.PepSettings>(configuration.GetSection("PEPSettings"));
         services.Configure<Common.PEP.Configuration.PlatformSettings>(configuration.GetSection("PlatformSettings"));
@@ -376,18 +376,12 @@ public static class ServiceCollectionExtensions
         services.TryAddTransient<IFileValidatorFactory, FileValidatorFactory>();
     }
 
-    internal static IEnumerable<ServiceDescriptor> GetOptionsDescriptors<TOptions>(this IServiceCollection services)
+    internal static bool IsConfigured<TOptions>(this IServiceCollection services)
         where TOptions : class
     {
-        return services.Where(d =>
+        return services.Any(d =>
             d.ServiceType == typeof(IConfigureOptions<TOptions>)
             || d.ServiceType == typeof(IOptionsChangeTokenSource<TOptions>)
         );
-    }
-
-    internal static ServiceDescriptor? GetOptionsDescriptor<TOptions>(this IServiceCollection services)
-        where TOptions : class
-    {
-        return services.GetOptionsDescriptors<TOptions>().FirstOrDefault();
     }
 }

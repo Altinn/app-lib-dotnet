@@ -3,6 +3,7 @@ using Altinn.App.Api.Controllers;
 using Altinn.App.Api.Controllers.Attributes;
 using Altinn.App.Api.Controllers.Conventions;
 using Altinn.App.Api.Helpers;
+using Altinn.App.Api.Helpers.Patch;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Infrastructure.Health;
 using Altinn.App.Api.Infrastructure.Middleware;
@@ -10,7 +11,9 @@ using Altinn.App.Api.Infrastructure.Telemetry;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Correspondence.Extensions;
 using Altinn.App.Core.Features.Maskinporten;
+using Altinn.App.Core.Features.Maskinporten.Extensions;
 using Altinn.App.Core.Features.Maskinporten.Models;
 using Altinn.Common.PEP.Authorization;
 using Altinn.Common.PEP.Clients;
@@ -81,7 +84,6 @@ public static class ServiceCollectionExtensions
 
         services.AddPlatformServices(config, env);
         services.AddAppServices(config, env);
-        services.AddMaskinportenClient();
         services.ConfigureDataProtection();
 
         var useOpenTelemetrySetting = config.GetValue<bool?>("AppSettings:UseOpenTelemetry");
@@ -96,11 +98,17 @@ public static class ServiceCollectionExtensions
             AddApplicationInsights(services, config, env);
         }
 
+        // AddMaskinportenClient adds a keyed service. This needs to happen after AddApplicationInsights,
+        // due to a bug in app insights: https://github.com/microsoft/ApplicationInsights-dotnet/issues/2828
+        services.AddMaskinportenClient();
+        services.AddCorrespondenceClient();
+
         AddAuthenticationScheme(services, config, env);
         AddAuthorizationPolicies(services);
         AddAntiforgery(services);
 
         services.AddSingleton<IAuthorizationHandler, AppAccessHandler>();
+        services.AddTransient<InternalPatchService>();
 
         services.Configure<KestrelServerOptions>(options =>
         {
@@ -153,23 +161,6 @@ public static class ServiceCollectionExtensions
     )
     {
         services.AddOptions<MaskinportenSettings>().BindConfiguration(configSectionPath).ValidateDataAnnotations();
-
-        return services;
-    }
-
-    /// <summary>
-    /// Adds a singleton <see cref="AddMaskinportenClient"/> service to the service collection.
-    /// If no <see cref="MaskinportenSettings"/> configuration is found, it binds one to the path "MaskinportenSettings".
-    /// </summary>
-    /// <param name="services">The service collection</param>
-    private static IServiceCollection AddMaskinportenClient(this IServiceCollection services)
-    {
-        if (services.GetOptionsDescriptor<MaskinportenSettings>() is null)
-        {
-            services.ConfigureMaskinportenClient("MaskinportenSettings");
-        }
-
-        services.AddSingleton<IMaskinportenClient, MaskinportenClient>();
 
         return services;
     }
@@ -360,12 +351,12 @@ public static class ServiceCollectionExtensions
 
         public OtelPropagator(TextMapPropagator inner) => _inner = inner;
 
-        public override ISet<string> Fields => _inner.Fields;
+        public override ISet<string>? Fields => _inner.Fields;
 
         public override PropagationContext Extract<T>(
             PropagationContext context,
             T carrier,
-            Func<T, string, IEnumerable<string>> getter
+            Func<T, string, IEnumerable<string>?> getter
         )
         {
             if (carrier is HttpRequest)
@@ -488,19 +479,6 @@ public static class ServiceCollectionExtensions
         });
 
         services.TryAddSingleton<ValidateAntiforgeryTokenIfAuthCookieAuthorizationFilter>();
-    }
-
-    private static IServiceCollection RemoveOptions<TOptions>(this IServiceCollection services)
-        where TOptions : class
-    {
-        var descriptor = services.GetOptionsDescriptor<TOptions>();
-
-        if (descriptor is not null)
-        {
-            services.Remove(descriptor);
-        }
-
-        return services;
     }
 
     private static (string? Key, string? ConnectionString) GetAppInsightsConfig(

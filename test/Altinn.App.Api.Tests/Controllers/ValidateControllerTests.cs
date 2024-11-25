@@ -82,7 +82,7 @@ public class ValidateControllerTests
         Instance instance = new Instance
         {
             Id = "instanceId",
-            Process = new ProcessState { CurrentTask = null }
+            Process = new ProcessState { CurrentTask = null },
         };
 
         _instanceMock
@@ -111,7 +111,7 @@ public class ValidateControllerTests
             Org = Org,
             AppId = $"{Org}/{App}",
 
-            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "dummy" } }
+            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "dummy" } },
         };
 
         var validationResult = new List<ValidationIssueWithSource>()
@@ -123,8 +123,8 @@ public class ValidateControllerTests
                 Field = "dummy",
                 Severity = ValidationIssueSeverity.Fixed,
                 Source = "dummy",
-                NoIncrementalUpdates = true
-            }
+                NoIncrementalUpdates = true,
+            },
         };
 
         _instanceMock
@@ -132,9 +132,7 @@ public class ValidateControllerTests
             .Returns(Task.FromResult<Instance>(instance));
 
         _validationMock
-            .Setup(v =>
-                v.ValidateInstanceAtTask(instance, It.IsAny<IInstanceDataAccessor>(), "dummy", null, null, null)
-            )
+            .Setup(v => v.ValidateInstanceAtTask(It.IsAny<IInstanceDataAccessor>(), "dummy", null, null, null))
             .ReturnsAsync(validationResult);
 
         // Act
@@ -155,7 +153,7 @@ public class ValidateControllerTests
             InstanceOwner = new() { PartyId = InstanceOwnerPartyId.ToString() },
             Org = Org,
             AppId = $"{Org}/{App}",
-            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "dummy" } }
+            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "dummy" } },
         };
 
         var updateProcessResult = new HttpResponseMessage(HttpStatusCode.Forbidden);
@@ -166,9 +164,7 @@ public class ValidateControllerTests
             .Returns(Task.FromResult<Instance>(instance));
 
         _validationMock
-            .Setup(v =>
-                v.ValidateInstanceAtTask(instance, It.IsAny<IInstanceDataAccessor>(), "dummy", null, null, null)
-            )
+            .Setup(v => v.ValidateInstanceAtTask(It.IsAny<IInstanceDataAccessor>(), "dummy", null, null, null))
             .Throws(exception);
 
         // Act
@@ -189,7 +185,7 @@ public class ValidateControllerTests
             InstanceOwner = new() { PartyId = InstanceOwnerPartyId.ToString() },
             Org = Org,
             AppId = $"{Org}/{App}",
-            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "dummy" } }
+            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "dummy" } },
         };
 
         var updateProcessResult = new HttpResponseMessage(HttpStatusCode.BadRequest);
@@ -200,9 +196,7 @@ public class ValidateControllerTests
             .Returns(Task.FromResult<Instance>(instance));
 
         _validationMock
-            .Setup(v =>
-                v.ValidateInstanceAtTask(instance, It.IsAny<IInstanceDataAccessor>(), "dummy", null, null, null)
-            )
+            .Setup(v => v.ValidateInstanceAtTask(It.IsAny<IInstanceDataAccessor>(), "dummy", null, null, null))
             .Throws(exception);
 
         // Act

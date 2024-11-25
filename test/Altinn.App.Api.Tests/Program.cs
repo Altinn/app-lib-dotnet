@@ -41,6 +41,13 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(
         EnvironmentName = "Production",
     }
 );
+builder.WebHost.UseDefaultServiceProvider(
+    (context, options) =>
+    {
+        options.ValidateScopes = true; // Allways validate scopes in test
+        options.ValidateOnBuild = true;
+    }
+);
 
 ApiTestBase.ConfigureFakeLogging(builder.Logging);
 
@@ -76,7 +83,7 @@ void ConfigureMockServices(IServiceCollection services, ConfigurationManager con
 {
     PlatformSettings platformSettings = new PlatformSettings()
     {
-        ApiAuthorizationEndpoint = "http://localhost:5101/authorization/api/v1/"
+        ApiAuthorizationEndpoint = "http://localhost:5101/authorization/api/v1/",
     };
     services.AddSingleton<IOptions<PlatformSettings>>(Options.Create(platformSettings));
     services.AddTransient<IAuthorizationClient, AuthorizationMock>();

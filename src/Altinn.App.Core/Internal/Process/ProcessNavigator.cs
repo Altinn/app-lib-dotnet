@@ -108,17 +108,16 @@ public class ProcessNavigator : IProcessNavigator
             }
             else
             {
-                ProcessGatewayInformation gatewayInformation =
-                    new()
-                    {
-                        Action = action,
-                        DataTypeId = gateway.ExtensionElements?.GatewayExtension?.ConnectedDataTypeId
-                    };
-                IInstanceDataAccessor dataAccessor = new CachedInstanceDataAccessor(
+                ProcessGatewayInformation gatewayInformation = new()
+                {
+                    Action = action,
+                    DataTypeId = gateway.ExtensionElements?.GatewayExtension?.ConnectedDataTypeId,
+                };
+                IInstanceDataAccessor dataAccessor = new InstanceDataUnitOfWork(
                     instance,
                     _dataClient,
                     _instanceClient,
-                    _appMetadata,
+                    await _appMetadata.GetApplicationMetadata(),
                     _modelSerialization
                 );
                 filteredList = await gatewayFilter.FilterAsync(

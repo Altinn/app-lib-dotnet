@@ -39,7 +39,7 @@ public class DefaultTaskValidator : ITaskValidator //TODO: Implement IValidator
                     Code = ValidationIssueCodes.InstanceCodes.TooManyDataElementsOfType,
                     Severity = ValidationIssueSeverity.Error,
                     Description = ValidationIssueCodes.InstanceCodes.TooManyDataElementsOfType,
-                    Field = dataType.Id
+                    Field = dataType.Id,
                 };
                 messages.Add(message);
             }
@@ -52,7 +52,7 @@ public class DefaultTaskValidator : ITaskValidator //TODO: Implement IValidator
                     Severity = ValidationIssueSeverity.Error,
                     Description =
                         $"Too few elements of type {dataType.Id}. Expected at least {dataType.MinCount}, found {elements.Count}",
-                    Field = dataType.Id
+                    Field = dataType.Id,
                 };
                 messages.Add(message);
             }

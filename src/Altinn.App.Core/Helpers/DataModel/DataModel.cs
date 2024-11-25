@@ -17,20 +17,14 @@ public class DataModel
     /// <summary>
     /// Constructor that wraps a POCO data model, and gives extra tool for working with the data
     /// </summary>
-    public DataModel(IInstanceDataAccessor dataAccessor, ApplicationMetadata appMetadata)
+    public DataModel(IInstanceDataAccessor dataAccessor)
     {
         _dataAccessor = dataAccessor;
-        foreach (var dataElement in dataAccessor.Instance.Data)
+        foreach (var (dataType, dataElement) in dataAccessor.GetDataElementsWithFormData())
         {
-            var dataTypeId = dataElement.DataType;
-            var dataType = appMetadata.DataTypes.Find(d => d.Id == dataTypeId);
-            if (dataType is { MaxCount: 1, AppLogic.ClassRef: not null })
+            if (dataType is { MaxCount: 1 })
             {
                 _dataIdsByType.TryAdd(dataElement.DataType, dataElement);
-            }
-            else
-            {
-                _dataIdsByType.TryAdd(dataElement.Id, null);
             }
         }
     }
@@ -125,8 +119,11 @@ public class DataModel
             .ToArray();
     }
 
-    private static readonly Regex _rowIndexRegex =
-        new(@"^([^[\]]+(\[(\d+)])?)+$", RegexOptions.Compiled, TimeSpan.FromMilliseconds(10));
+    private static readonly Regex _rowIndexRegex = new(
+        @"^([^[\]]+(\[(\d+)])?)+$",
+        RegexOptions.Compiled,
+        TimeSpan.FromMilliseconds(10)
+    );
 
     /// <summary>
     /// Get the row indices from a key

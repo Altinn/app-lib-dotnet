@@ -1,3 +1,4 @@
+using Altinn.App.Api.Extensions;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Extensions;
@@ -92,7 +93,7 @@ public class ActionsController : ControllerBase
                     Instance = instanceGuid.ToString(),
                     Status = 400,
                     Title = "Action is missing",
-                    Detail = "Action is missing in the request"
+                    Detail = "Action is missing in the request",
                 }
             );
         }
@@ -126,15 +127,20 @@ public class ActionsController : ControllerBase
             return Forbid();
         }
 
-        var dataMutator = new CachedInstanceDataAccessor(
+        var dataMutator = new InstanceDataUnitOfWork(
             instance,
             _dataClient,
             _instanceClient,
-            _appMetadata,
+            await _appMetadata.GetApplicationMetadata(),
             _modelSerialization
         );
-        UserActionContext userActionContext =
-            new(dataMutator, userId.Value, actionRequest.ButtonId, actionRequest.Metadata, language);
+        UserActionContext userActionContext = new(
+            dataMutator,
+            userId.Value,
+            actionRequest.ButtonId,
+            actionRequest.Metadata,
+            language
+        );
         IUserAction? actionHandler = _userActionService.GetActionHandler(action);
         if (actionHandler == null)
         {
@@ -146,7 +152,7 @@ public class ActionsController : ControllerBase
                     {
                         Code = "ActionNotFound",
                         Message = $"Action handler with id {action} not found",
-                    }
+                    },
                 }
             );
         }
@@ -161,16 +167,42 @@ public class ActionsController : ControllerBase
                     ProcessErrorType.Conflict => 409,
                     ProcessErrorType.Unauthorized => 401,
                     ProcessErrorType.BadRequest => 400,
-                    _ => 500
+                    _ => 500,
                 },
                 value: new UserActionResponse()
                 {
                     Instance = instance,
                     ClientActions = result.ClientActions,
-                    Error = result.Error
+                    Error = result.Error,
                 }
             );
         }
+
+        if (dataMutator.GetAbandonResponse() is not null)
+        {
+            throw new NotImplementedException(
+                "return an error response from UserActions instead of abandoning the dataMutator"
+            );
+        }
+
+#pragma warning disable CS0618 // Type or member is obsolete
+
+        // Ensure that the data mutator has the previous binary data for the data elements
+        // that were updated so that it shows up in diff for validation
+        // and ensures that it gets saved to storage
+        if (result.UpdatedDataModels is { Count: > 0 })
+        {
+            await Task.WhenAll(
+                result.UpdatedDataModels.Select(row => dataMutator.GetFormData(new DataElementIdentifier(row.Key)))
+            );
+            foreach (var (elementId, data) in result.UpdatedDataModels)
+            {
+                // If the data mutator missed a that was returned with the deprecated UpdatedDataModels
+                // we still need to return it to the frontend, but we assume it was already saved to storage
+                dataMutator.SetFormData(new DataElementIdentifier(elementId), data);
+            }
+        }
+#pragma warning restore CS0618 // Type or member is obsolete
 
         var changes = dataMutator.GetDataElementChanges(initializeAltinnRowId: true);
 
@@ -179,7 +211,6 @@ public class ActionsController : ControllerBase
         var saveTask = dataMutator.SaveChanges(changes);
 
         var validationIssues = await GetIncrementalValidations(
-            instance,
             dataMutator,
             changes,
             actionRequest.IgnoredValidators,
@@ -187,19 +218,10 @@ public class ActionsController : ControllerBase
         );
         await saveTask;
 
-        var updatedDataModels = changes.ToDictionary(c => c.DataElement.Id, c => c.CurrentFormData);
+        var updatedDataModels = changes
+            .FormDataChanges.Where(c => c.Type != ChangeType.Deleted)
+            .ToDictionary(c => c.DataElementIdentifier.Id, c => c.CurrentFormData);
 
-#pragma warning disable CS0618 // Type or member is obsolete
-        if (result.UpdatedDataModels is { Count: > 0 })
-        {
-            foreach (var (elementId, data) in result.UpdatedDataModels)
-            {
-                // If the data mutator missed a that was returned with the deprecated UpdatedDataModels
-                // we still need to return it to the frontend, but we assume it was already saved to storage
-                updatedDataModels.TryAdd(elementId, data);
-            }
-        }
-#pragma warning restore CS0618 // Type or member is obsolete
         return Ok(
             new UserActionResponse()
             {
@@ -216,16 +238,16 @@ public class ActionsController : ControllerBase
         string,
         Dictionary<string, List<ValidationIssueWithSource>>
     >?> GetIncrementalValidations(
-        Instance instance,
-        IInstanceDataAccessor dataAccessor,
-        List<DataElementChange> changes,
+        InstanceDataUnitOfWork dataAccessor,
+        DataElementChanges changes,
         List<string>? ignoredValidators,
         string? language
     )
     {
-        var taskId = instance.Process.CurrentTask.ElementId;
+        var taskId =
+            dataAccessor.Instance.Process?.CurrentTask?.ElementId
+            ?? throw new Exception("Unable to validate instance without a started process.");
         var validationIssues = await _validationService.ValidateIncrementalFormData(
-            instance,
             dataAccessor,
             taskId,
             changes,

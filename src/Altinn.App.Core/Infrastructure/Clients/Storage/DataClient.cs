@@ -80,7 +80,7 @@ public class DataClient : IDataClient
         where T : notnull
     {
         using var activity = _telemetry?.StartInsertFormDataActivity(instanceGuid, instanceOwnerPartyId);
-        Instance instance = new() { Id = $"{instanceOwnerPartyId}/{instanceGuid}", };
+        Instance instance = new() { Id = $"{instanceOwnerPartyId}/{instanceGuid}" };
         return await InsertFormData(instance, dataType, dataToSerialize, type);
     }
 
@@ -419,7 +419,6 @@ public class DataClient : IDataClient
             apiUrl += $"&generatedFromTask={generatedFromTask}";
         }
         string token = _userTokenProvider.GetUserToken();
-        DataElement dataElement;
 
         StreamContent content = new StreamContent(stream);
         content.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
@@ -428,7 +427,7 @@ public class DataClient : IDataClient
             content.Headers.ContentDisposition = new ContentDispositionHeaderValue(DispositionTypeNames.Attachment)
             {
                 FileName = filename,
-                FileNameStar = filename
+                FileNameStar = filename,
             };
         }
 
@@ -436,11 +435,11 @@ public class DataClient : IDataClient
 
         if (response.IsSuccessStatusCode)
         {
-            string instancedata = await response.Content.ReadAsStringAsync();
-            // ! TODO: this null-forgiving operator should be fixed/removed for the next major release
-            dataElement = JsonConvert.DeserializeObject<DataElement>(instancedata)!;
+            string dataElementString = await response.Content.ReadAsStringAsync();
 
-            return dataElement;
+            var dataElement = JsonConvert.DeserializeObject<DataElement>(dataElementString);
+            if (dataElement is not null)
+                return dataElement;
         }
 
         _logger.LogError(
@@ -503,7 +502,7 @@ public class DataClient : IDataClient
             content.Headers.ContentDisposition = new ContentDispositionHeaderValue(DispositionTypeNames.Attachment)
             {
                 FileName = filename,
-                FileNameStar = filename
+                FileNameStar = filename,
             };
         }
 

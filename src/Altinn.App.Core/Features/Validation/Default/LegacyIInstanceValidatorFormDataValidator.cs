@@ -2,9 +2,8 @@
 using System.Diagnostics;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features.Validation.Helpers;
-using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Validation;
-using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Options;
 
@@ -16,7 +15,6 @@ namespace Altinn.App.Core.Features.Validation.Default;
 public class LegacyIInstanceValidatorFormDataValidator : IValidator
 {
     private readonly IInstanceValidator _instanceValidator;
-    private readonly IAppMetadata _appMetadata;
     private readonly GeneralSettings _generalSettings;
 
     /// <summary>
@@ -24,12 +22,10 @@ public class LegacyIInstanceValidatorFormDataValidator : IValidator
     /// </summary>
     public LegacyIInstanceValidatorFormDataValidator(
         IOptions<GeneralSettings> generalSettings,
-        IInstanceValidator instanceValidator,
-        IAppMetadata appMetadata
+        IInstanceValidator instanceValidator
     )
     {
         _instanceValidator = instanceValidator;
-        _appMetadata = appMetadata;
         _generalSettings = generalSettings.Value;
     }
 
@@ -51,27 +47,21 @@ public class LegacyIInstanceValidatorFormDataValidator : IValidator
 
     /// <inheritdoc />
     public async Task<List<ValidationIssue>> Validate(
-        Instance instance,
-        IInstanceDataAccessor instanceDataAccessor,
+        IInstanceDataAccessor dataAccessor,
         string taskId,
         string? language
     )
     {
         var issues = new List<ValidationIssue>();
-        var appMetadata = await _appMetadata.GetApplicationMetadata();
-        var dataTypes = appMetadata
-            .DataTypes.Where(d => d.TaskId == taskId && d.AppLogic?.ClassRef != null)
-            .Select(d => d.Id)
-            .ToList();
-        foreach (var dataElement in instance.Data.Where(d => dataTypes.Contains(d.DataType)))
+        foreach (var (_, dataElement) in dataAccessor.GetDataElementsWithFormDataForTask(taskId))
         {
-            var data = await instanceDataAccessor.GetFormData(dataElement);
+            var data = await dataAccessor.GetFormData(dataElement);
             var modelState = new ModelStateDictionary();
             await _instanceValidator.ValidateData(data, modelState);
             issues.AddRange(
                 ModelStateHelpers.ModelStateToIssueList(
                     modelState,
-                    instance,
+                    dataAccessor.Instance,
                     dataElement,
                     _generalSettings,
                     data.GetType()
@@ -85,12 +75,7 @@ public class LegacyIInstanceValidatorFormDataValidator : IValidator
     /// <summary>
     /// Always run for incremental validation, because the legacy validator don't have a way to know when changes are relevant
     /// </summary>
-    public Task<bool> HasRelevantChanges(
-        Instance instance,
-        IInstanceDataAccessor instanceDataAccessor,
-        string taskId,
-        List<DataElementChange> changes
-    )
+    public Task<bool> HasRelevantChanges(IInstanceDataAccessor dataAccessor, string taskId, DataElementChanges changes)
     {
         return Task.FromResult(true);
     }
