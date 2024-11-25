@@ -10,7 +10,6 @@ using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
-using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
@@ -32,7 +31,6 @@ public class ProcessEngine : IProcessEngine
     private readonly IProcessEventDispatcher _processEventDispatcher;
     private readonly UserActionService _userActionService;
     private readonly Telemetry? _telemetry;
-    private readonly IProcessTaskCleaner _processTaskCleaner;
     private readonly IDataClient _dataClient;
     private readonly IInstanceClient _instanceClient;
     private readonly ModelSerializationService _modelSerialization;
@@ -47,7 +45,6 @@ public class ProcessEngine : IProcessEngine
         IProcessNavigator processNavigator,
         IProcessEventHandlerDelegator processEventsDelegator,
         IProcessEventDispatcher processEventDispatcher,
-        IProcessTaskCleaner processTaskCleaner,
         UserActionService userActionService,
         IDataClient dataClient,
         IInstanceClient instanceClient,
@@ -61,7 +58,6 @@ public class ProcessEngine : IProcessEngine
         _processNavigator = processNavigator;
         _processEventHandlerDelegator = processEventsDelegator;
         _processEventDispatcher = processEventDispatcher;
-        _processTaskCleaner = processTaskCleaner;
         _userActionService = userActionService;
         _dataClient = dataClient;
         _instanceClient = instanceClient;
@@ -81,7 +77,7 @@ public class ProcessEngine : IProcessEngine
             {
                 Success = false,
                 ErrorMessage = "Process is already started. Use next.",
-                ErrorType = ProcessErrorType.Conflict
+                ErrorType = ProcessErrorType.Conflict,
             };
             activity?.SetProcessChangeResult(result);
             return result;
@@ -98,7 +94,7 @@ public class ProcessEngine : IProcessEngine
             {
                 Success = false,
                 ErrorMessage = "No matching startevent",
-                ErrorType = ProcessErrorType.Conflict
+                ErrorType = ProcessErrorType.Conflict,
             };
             activity?.SetProcessChangeResult(result);
             return result;
@@ -130,13 +126,12 @@ public class ProcessEngine : IProcessEngine
             events.Add(goToNextEvent);
         }
 
-        ProcessStateChange processStateChange =
-            new()
-            {
-                OldProcessState = startChange?.OldProcessState,
-                NewProcessState = nextChange?.NewProcessState,
-                Events = events
-            };
+        ProcessStateChange processStateChange = new()
+        {
+            OldProcessState = startChange?.OldProcessState,
+            NewProcessState = nextChange?.NewProcessState,
+            Events = events,
+        };
 
         _telemetry?.ProcessStarted();
 
@@ -159,7 +154,7 @@ public class ProcessEngine : IProcessEngine
             {
                 Success = false,
                 ErrorMessage = $"Instance does not have current task information!",
-                ErrorType = ProcessErrorType.Conflict
+                ErrorType = ProcessErrorType.Conflict,
             };
             activity?.SetProcessChangeResult(result);
             return result;
@@ -187,7 +182,7 @@ public class ProcessEngine : IProcessEngine
             {
                 Success = false,
                 ErrorMessage = $"Action handler for action {request.Action} failed!",
-                ErrorType = actionResult.ErrorType
+                ErrorType = actionResult.ErrorType,
             };
             activity?.SetProcessChangeResult(result);
             return result;
@@ -246,19 +241,18 @@ public class ProcessEngine : IProcessEngine
         }
 
         DateTime now = DateTime.UtcNow;
-        ProcessState startState =
-            new()
-            {
-                Started = now,
-                StartEvent = startEvent,
-                CurrentTask = new ProcessElementInfo { Flow = 1, ElementId = startEvent }
-            };
+        ProcessState startState = new()
+        {
+            Started = now,
+            StartEvent = startEvent,
+            CurrentTask = new ProcessElementInfo { Flow = 1, ElementId = startEvent },
+        };
 
         instance.Process = startState;
 
         List<InstanceEvent> events =
         [
-            await GenerateProcessChangeEvent(InstanceEventType.process_StartEvent.ToString(), instance, now, user)
+            await GenerateProcessChangeEvent(InstanceEventType.process_StartEvent.ToString(), instance, now, user),
         ];
 
         // ! TODO: should probably improve nullability handling in the next major version
@@ -284,18 +278,17 @@ public class ProcessEngine : IProcessEngine
             return null;
         }
 
-        ProcessStateChange result =
-            new()
+        ProcessStateChange result = new()
+        {
+            OldProcessState = new ProcessState()
             {
-                OldProcessState = new ProcessState()
-                {
-                    Started = instance.Process.Started,
-                    CurrentTask = instance.Process.CurrentTask,
-                    StartEvent = instance.Process.StartEvent
-                },
-                Events = await MoveProcessToNext(instance, userContext, action),
-                NewProcessState = instance.Process
-            };
+                Started = instance.Process.Started,
+                CurrentTask = instance.Process.CurrentTask,
+                StartEvent = instance.Process.StartEvent,
+            },
+            Events = await MoveProcessToNext(instance, userContext, action),
+            NewProcessState = instance.Process,
+        };
         return result;
     }
 
@@ -387,21 +380,20 @@ public class ProcessEngine : IProcessEngine
     )
     {
         int? userId = user.GetUserIdAsInt();
-        InstanceEvent instanceEvent =
-            new()
+        InstanceEvent instanceEvent = new()
+        {
+            InstanceId = instance.Id,
+            InstanceOwnerPartyId = instance.InstanceOwner.PartyId,
+            EventType = eventType,
+            Created = now,
+            User = new PlatformUser
             {
-                InstanceId = instance.Id,
-                InstanceOwnerPartyId = instance.InstanceOwner.PartyId,
-                EventType = eventType,
-                Created = now,
-                User = new PlatformUser
-                {
-                    UserId = userId,
-                    AuthenticationLevel = user.GetAuthenticationLevel(),
-                    OrgId = user.GetOrg()
-                },
-                ProcessInfo = instance.Process,
-            };
+                UserId = userId,
+                AuthenticationLevel = user.GetAuthenticationLevel(),
+                OrgId = user.GetOrg(),
+            },
+            ProcessInfo = instance.Process,
+        };
 
         if (string.IsNullOrEmpty(instanceEvent.User.OrgId) && userId != null)
         {

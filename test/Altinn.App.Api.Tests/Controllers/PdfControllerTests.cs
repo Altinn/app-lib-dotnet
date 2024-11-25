@@ -57,10 +57,7 @@ public class PdfControllerTests
                         Org = _org,
                         AppId = $"{_org}/{_app}",
                         Id = $"{_partyId}/{_instanceId}",
-                        Process = new ProcessState()
-                        {
-                            CurrentTask = new ProcessElementInfo() { ElementId = _taskId, },
-                        }
+                        Process = new ProcessState() { CurrentTask = new ProcessElementInfo() { ElementId = _taskId } },
                     }
                 )
             );
@@ -69,9 +66,6 @@ public class PdfControllerTests
     [Fact]
     public async Task Request_In_Dev_Should_Generate()
     {
-        var env = new Mock<IWebHostEnvironment>();
-        env.Setup(a => a.EnvironmentName).Returns("Development");
-
         IOptions<GeneralSettings> generalSettingsOptions = Options.Create<GeneralSettings>(
             new() { HostName = "local.altinn.cloud" }
         );
@@ -109,7 +103,6 @@ public class PdfControllerTests
             _appResources.Object,
             _appModel.Object,
             _dataClient.Object,
-            env.Object,
             pdfService
         );
 
@@ -118,7 +111,7 @@ public class PdfControllerTests
             var mockResponse = new HttpResponseMessage()
             {
                 StatusCode = System.Net.HttpStatusCode.OK,
-                Content = new StringContent("PDF")
+                Content = new StringContent("PDF"),
             }
         )
         {
@@ -149,9 +142,6 @@ public class PdfControllerTests
     [Fact]
     public async Task Request_In_Dev_Should_Include_Frontend_Version()
     {
-        var env = new Mock<IWebHostEnvironment>();
-        env.Setup(a => a.EnvironmentName).Returns("Development");
-
         IOptions<GeneralSettings> generalSettingsOptions = Options.Create<GeneralSettings>(
             new() { HostName = "local.altinn.cloud" }
         );
@@ -189,7 +179,6 @@ public class PdfControllerTests
             _appResources.Object,
             _appModel.Object,
             _dataClient.Object,
-            env.Object,
             pdfService
         );
 
@@ -198,7 +187,7 @@ public class PdfControllerTests
             var mockResponse = new HttpResponseMessage()
             {
                 StatusCode = System.Net.HttpStatusCode.OK,
-                Content = new StringContent("PDF")
+                Content = new StringContent("PDF"),
             }
         )
         {
@@ -231,9 +220,6 @@ public class PdfControllerTests
     [Fact]
     public async Task Request_In_TT02_Should_Ignore_Frontend_Version()
     {
-        var env = new Mock<IWebHostEnvironment>();
-        env.Setup(a => a.EnvironmentName).Returns("Staging");
-
         IOptions<GeneralSettings> generalSettingsOptions = Options.Create<GeneralSettings>(
             new() { HostName = "org.apps.tt02.altinn.no" }
         );
@@ -271,7 +257,6 @@ public class PdfControllerTests
             _appResources.Object,
             _appModel.Object,
             _dataClient.Object,
-            env.Object,
             pdfService
         );
 
@@ -280,7 +265,7 @@ public class PdfControllerTests
             var mockResponse = new HttpResponseMessage()
             {
                 StatusCode = System.Net.HttpStatusCode.OK,
-                Content = new StringContent("PDF")
+                Content = new StringContent("PDF"),
             }
         )
         {

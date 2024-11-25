@@ -191,7 +191,7 @@ internal sealed class SigningService(
                 ResourceId = "",
                 Sender = "",
                 SendersReference = "",
-                VisibleFrom = DateTimeOffset.Now
+                VisibleFrom = DateTimeOffset.Now,
             };
             var request = new InitializeCorrespondenceRequestMock
             {
@@ -199,7 +199,7 @@ internal sealed class SigningService(
                 Recipients =
                 [ /*SigneeState.Id*/
                 ],
-                ExistingAttachments = [] // TODO: all relevant documents
+                ExistingAttachments = [], // TODO: all relevant documents
             };
             //      correspondanceClient.SendMessage(...);
             //      signeeState.IsReceiptSent = true;

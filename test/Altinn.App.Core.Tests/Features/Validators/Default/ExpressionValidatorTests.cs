@@ -70,23 +70,23 @@ public class ExpressionValidatorTests
     {
         var testCase = await LoadData(fileName, folder);
 
-        var instance = new Instance() { Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d", AppId = "org/app", };
-        var dataElement = new DataElement { DataType = "default", };
+        var instance = new Instance() { Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d", AppId = "org/app" };
+        var dataElement = new DataElement { DataType = "default" };
         var dataType = new DataType() { Id = "default" };
-        var appMedatada = new ApplicationMetadata("org/app") { DataTypes = [dataType], };
+        var appMedatada = new ApplicationMetadata("org/app") { DataTypes = [dataType] };
 
         var dataModel = DynamicClassBuilder.DataAccessorFromJsonDocument(instance, testCase.FormData, dataElement);
 
         var layout = new LayoutSetComponent(testCase.Layouts.Values.ToList(), "layout", dataType);
         var componentModel = new LayoutModel([layout], null);
-        var evaluatorState = new LayoutEvaluatorState(dataModel, componentModel, _frontendSettings.Value, appMedatada);
+        var evaluatorState = new LayoutEvaluatorState(dataModel, componentModel, _frontendSettings.Value);
         _layoutInitializer
             .Setup(init =>
                 init.Init(It.IsAny<IInstanceDataAccessor>(), "Task_1", It.IsAny<string?>(), It.IsAny<string?>())
             )
             .ReturnsAsync(evaluatorState);
 
-        var dataAccessor = new InstanceDataAccessorFake(instance) { { dataElement, dataModel } };
+        var dataAccessor = new InstanceDataAccessorFake(instance, appMedatada) { { dataElement, dataModel } };
 
         var validationIssues = await _validator.ValidateFormData(
             dataElement,

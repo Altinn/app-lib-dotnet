@@ -78,7 +78,7 @@ internal sealed class SigningNotificationService(
             Recipients = [new SmsRecipient(sms.MobileNumber, "", "")], //TODO: What do we get for setting orgnr or nin here?
             Body = sms.Body ?? "", //TODO: Should we have defaults or should this be required?
             SenderNumber = "",
-            SendersReference = ""
+            SendersReference = "",
         };
 
         try
@@ -110,7 +110,7 @@ internal sealed class SigningNotificationService(
             Recipients = [new EmailRecipient(email.EmailAddress)],
             Subject = email.Subject ?? "", //TODO: Should we have defaults or should this be required?
             Body = email.Body ?? "", //TODO: Should we have defaults or should this be required?
-            SendersReference = ""
+            SendersReference = "",
         };
 
         try

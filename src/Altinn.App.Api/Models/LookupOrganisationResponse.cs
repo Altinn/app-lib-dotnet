@@ -17,7 +17,7 @@ public class LookupOrganisationResponse
             Success = organisation is not null,
             OrganisationDetails = organisation is not null
                 ? OrganisationDetails.MapFromOrganisation(organisation)
-                : null
+                : null,
         };
     }
 

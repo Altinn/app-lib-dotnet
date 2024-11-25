@@ -15,7 +15,7 @@ public class LookupPersonResponse
         return new LookupPersonResponse
         {
             Success = person is not null,
-            PersonDetails = person is not null ? PersonDetails.MapFromPerson(person) : null
+            PersonDetails = person is not null ? PersonDetails.MapFromPerson(person) : null,
         };
     }
 

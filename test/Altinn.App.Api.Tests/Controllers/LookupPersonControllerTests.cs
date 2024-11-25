@@ -17,14 +17,13 @@ public class LookupPersonControllerTests : ApiTestBase, IClassFixture<WebApplica
     private const string Org = "tdd";
     private const string App = "contributer-restriction";
 
-    private static readonly JsonSerializerOptions _jsonSerializerOptions =
-        new()
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            WriteIndented = true,
-            UnknownTypeHandling = JsonUnknownTypeHandling.JsonElement,
-            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-        };
+    private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = true,
+        UnknownTypeHandling = JsonUnknownTypeHandling.JsonElement,
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
 
     public LookupPersonControllerTests(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper)
         : base(factory, outputHelper) { }
@@ -53,7 +52,7 @@ public class LookupPersonControllerTests : ApiTestBase, IClassFixture<WebApplica
                 Name = "Ola Normann",
                 FirstName = "Ola Normann",
                 MiddleName = null,
-                LastName = "Normann"
+                LastName = "Normann",
             };
 
             string personJson = JsonSerializer.Serialize(person);

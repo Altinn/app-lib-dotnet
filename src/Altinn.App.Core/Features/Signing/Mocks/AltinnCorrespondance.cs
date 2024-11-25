@@ -6,12 +6,14 @@ namespace Altinn.App.Core.Features.Signing.Mocks;
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 public class CorrespondanceClientMock
 {
-    public async Task<InitializeCorrespondencesResponseMock> Initialize(InitializeCorrespondenceRequestMock requestMock)
+    public static async Task<InitializeCorrespondencesResponseMock> Initialize(
+        InitializeCorrespondenceRequestMock requestMock
+    )
     {
         var responseMock = new InitializeCorrespondencesResponseMock
         {
             CorrespondenceIds = [Guid.NewGuid(), Guid.NewGuid()],
-            AttachmentIds = requestMock.ExistingAttachments
+            AttachmentIds = requestMock.ExistingAttachments,
         };
 
         return await Task.FromResult(responseMock);
@@ -301,7 +303,7 @@ public enum NotificationChannelExt
     /// <summary>
     /// The selected channel for the notification is SMS preferred.
     /// </summary>
-    SmsPreferred
+    SmsPreferred,
 }
 
 public class InitializeCorrespondenceContentExt
