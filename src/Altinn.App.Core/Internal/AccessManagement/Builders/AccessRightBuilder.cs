@@ -5,12 +5,12 @@ namespace Altinn.App.Core.Internal.AccessManagement.Builders;
 
 internal interface IAccessRightBuilderStart
 {
-    IAccessRightBuilderAction WithAction(string type, string value);
+    IAccessRightBuilderAction WithAction(string value);
 }
 
 internal interface IAccessRightBuilderAction
 {
-    IAccessRightBuilder WithResource(string type, string value);
+    IAccessRightBuilder WithResource(string value);
     IAccessRightBuilder WithResources(List<Resource> resources);
 }
 
@@ -28,15 +28,15 @@ internal sealed class AccessRightBuilder : IAccessRightBuilder
 
     public static IAccessRightBuilderStart Create() => new AccessRightBuilder();
 
-    public IAccessRightBuilderAction WithAction(string type, string value)
+    public IAccessRightBuilderAction WithAction(string value)
     {
-        _action = new AltinnAction { Type = type, Value = value };
+        _action = new AltinnAction { Type = DelegationConst.ActionId, Value = value };
         return this;
     }
 
-    public IAccessRightBuilder WithResource(string type, string value)
+    public IAccessRightBuilder WithResource(string value)
     {
-        _resources = [new Resource { Type = type, Value = value }];
+        _resources = [new Resource { Type = DelegationConst.Resource, Value = value }];
 
         return this;
     }
