@@ -33,12 +33,20 @@ jobs:
       - name: Install deps
         run: |
           dotnet restore
+      - name: Extract release notes
+        id: extract-notes
+        run: |
+          echo "Release notes look best on GitHub: ${{ github.event.release.html_url }}" > RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          echo "${{ github.event.release.body }}" >> RELEASE_NOTES.md
+          cat RELEASE_NOTES.md
       - name: Build
         run: |
           dotnet build --configuration Release --no-restore -p:Deterministic=true -p:BuildNumber=${{ github.run_number }}
       - name: Pack
         run: |
-          dotnet pack AppLibDotnet.sln --configuration Release --no-restore --no-build -p:Deterministic=true -p:BuildNumber=${{ github.run_number }}
+          dotnet pack AppLibDotnet.sln --configuration Release --no-restore --no-build \
+            -p:Deterministic=true -p:BuildNumber=${{ github.run_number }}
       - name: Versions
         run: |
           dotnet --version

@@ -20,13 +20,12 @@ namespace Altinn.App.Core.Implementation;
 /// </summary>
 public class AppResourcesSI : IAppResources
 {
-    private static readonly JsonSerializerOptions _jsonSerializerOptions =
-        new()
-        {
-            AllowTrailingCommas = true,
-            ReadCommentHandling = JsonCommentHandling.Skip,
-            PropertyNameCaseInsensitive = true,
-        };
+    private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
+    {
+        AllowTrailingCommas = true,
+        ReadCommentHandling = JsonCommentHandling.Skip,
+        PropertyNameCaseInsensitive = true,
+    };
 
     private readonly AppSettings _settings;
     private readonly IAppMetadata _appMetadata;
@@ -499,8 +498,8 @@ public class AppResourcesSI : IAppResources
     public string? GetValidationConfiguration(string dataTypeId)
     {
         using var activity = _telemetry?.StartGetValidationConfigurationActivity();
-        string legalPath = $"{_settings.AppBasePath}{_settings.ModelsFolder}";
-        string filename = $"{legalPath}{dataTypeId}.{_settings.ValidationConfigurationFileName}";
+        string legalPath = Path.Join(_settings.AppBasePath, _settings.ModelsFolder);
+        string filename = Path.Join(legalPath, $"{dataTypeId}.{_settings.ValidationConfigurationFileName}");
         PathHelper.EnsureLegalPath(legalPath, filename);
 
         string? filedata = null;

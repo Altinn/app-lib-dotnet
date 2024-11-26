@@ -156,7 +156,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         HttpClient client = GetRootedClient(org, app);
         string token = PrincipalUtil.GetToken(1337, null);
 
-        var prefill = new Dictionary<string, string> { { "melding.name", "TestName" }, };
+        var prefill = new Dictionary<string, string> { { "melding.name", "TestName" } };
         var createResponseParsed = await CreateInstanceSimplified(
             org,
             app,
@@ -284,7 +284,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         HttpClient client = GetRootedClient(org, app, userId, null);
 
         using var content = JsonContent.Create(
-            new Instance() { InstanceOwner = new InstanceOwner() { PartyId = instanceOwnerPartyId.ToString() }, }
+            new Instance() { InstanceOwner = new InstanceOwner() { PartyId = instanceOwnerPartyId.ToString() } }
         );
 
         var response = await client.PostAsync($"{org}/{app}/instances", content);
@@ -293,6 +293,51 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         var instance = JsonSerializer.Deserialize<Instance>(responseContent, JsonSerializerOptions);
         instance.Should().NotBeNull();
         instance!.Id.Should().NotBeNullOrEmpty();
+
+        TestData.DeleteInstanceAndData(org, app, instance.Id);
+    }
+
+    [Fact]
+    public async Task PostNewInstanceWithInstanceTemplateString()
+    {
+        string org = "tdd";
+        string app = "contributer-restriction";
+        int instanceOwnerPartyId = 501337;
+        // Get an org token
+        // (to avoid issues with read status being set when initialized by normal users)
+        HttpClient client = GetRootedClient(org, app, 0, null, serviceOwnerOrg: org);
+
+        using var content = new StringContent(
+            $$"""
+            {
+                "instanceOwner": {
+                    "partyId": {{instanceOwnerPartyId}}
+                },
+                "status": {
+                    "readStatus": "UpdatedSinceLastReview",
+                    "substatus": {
+                        "label": "min label",
+                        "description": "min beskrivelse"
+                    }
+                }
+            }
+            """,
+            Encoding.UTF8,
+            "application/json"
+        );
+
+        var response = await client.PostAsync($"{org}/{app}/instances", content);
+        var responseContent = await response.Content.ReadAsStringAsync();
+        OutputHelper.WriteLine(responseContent);
+        response.Should().HaveStatusCode(HttpStatusCode.Created);
+        var instance = JsonSerializer.Deserialize<Instance>(responseContent, JsonSerializerOptions)!;
+        instance.Should().NotBeNull();
+        instance.Id.Should().NotBeNullOrEmpty();
+        instance.Status.Should().NotBeNull();
+        instance.Status.ReadStatus.Should().Be(ReadStatus.UpdatedSinceLastReview);
+        instance.Status.Substatus.Should().NotBeNull();
+        instance.Status.Substatus!.Label.Should().Be("min label");
+        instance.Status.Substatus!.Description.Should().Be("min beskrivelse");
 
         TestData.DeleteInstanceAndData(org, app, instance.Id);
     }
@@ -308,7 +353,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
 
         using var content = new ByteArrayContent([])
         {
-            Headers = { ContentType = new MediaTypeHeaderValue("application/json") }
+            Headers = { ContentType = new MediaTypeHeaderValue("application/json") },
         };
 
         var response = await client.PostAsync(
@@ -431,7 +476,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var serializedPatch = JsonSerializer.Serialize(
-            new DataPatchRequest() { Patch = patch, IgnoredValidators = [], },
+            new DataPatchRequest() { Patch = patch, IgnoredValidators = [] },
             JsonSerializerOptions
         );
         OutputHelper.WriteLine(serializedPatch);

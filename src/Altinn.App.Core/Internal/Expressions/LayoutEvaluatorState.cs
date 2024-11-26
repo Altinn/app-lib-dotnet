@@ -29,12 +29,11 @@ public class LayoutEvaluatorState
         IInstanceDataAccessor dataAccessor,
         LayoutModel? componentModel,
         FrontEndSettings frontEndSettings,
-        ApplicationMetadata applicationMetadata,
         string? gatewayAction = null,
         string? language = null
     )
     {
-        _dataModel = new DataModel(dataAccessor, applicationMetadata);
+        _dataModel = new DataModel(dataAccessor);
         _componentModel = componentModel;
         _frontEndSettings = frontEndSettings;
         _instanceContext = dataAccessor.Instance;
@@ -176,16 +175,12 @@ public class LayoutEvaluatorState
             "instanceOwnerPartyId" => _instanceContext.InstanceOwner.PartyId,
             "appId" => _instanceContext.AppId,
             "instanceId" => _instanceContext.Id,
-            "instanceOwnerPartyType"
-                => (
-                    !string.IsNullOrWhiteSpace(_instanceContext.InstanceOwner.OrganisationNumber)
-                        ? "org"
-                        : !string.IsNullOrWhiteSpace(_instanceContext.InstanceOwner.PersonNumber)
-                            ? "person"
-                            : !string.IsNullOrWhiteSpace(_instanceContext.InstanceOwner.Username)
-                                ? "selfIdentified"
-                                : "unknown"
-                ),
+            "instanceOwnerPartyType" => (
+                !string.IsNullOrWhiteSpace(_instanceContext.InstanceOwner.OrganisationNumber) ? "org"
+                : !string.IsNullOrWhiteSpace(_instanceContext.InstanceOwner.PersonNumber) ? "person"
+                : !string.IsNullOrWhiteSpace(_instanceContext.InstanceOwner.Username) ? "selfIdentified"
+                : "unknown"
+            ),
             _ => throw new ExpressionEvaluatorTypeErrorException($"Unknown Instance context property {key}"),
         };
     }
