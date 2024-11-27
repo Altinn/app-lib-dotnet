@@ -50,28 +50,16 @@ public class UserHelper
     public async Task<UserContext> GetUserContext(HttpContext context)
     {
         using var activity = _telemetry?.StartGetUserContextActivity();
+        string? cookieValue = context.Request.Cookies[_settings.GetAltinnPartyCookieName];
 
-        UserContext userContext = new UserContext() { User = context.User };
-
-        foreach (Claim claim in context.User.Claims)
+        UserContext userContext = new()
         {
-            if (claim.Type.Equals(AltinnCoreClaimTypes.UserName, StringComparison.Ordinal))
-            {
-                userContext.UserName = claim.Value;
-            }
-            else if (claim.Type.Equals(AltinnCoreClaimTypes.UserId, StringComparison.Ordinal))
-            {
-                userContext.UserId = Convert.ToInt32(claim.Value, CultureInfo.InvariantCulture);
-            }
-            else if (claim.Type.Equals(AltinnCoreClaimTypes.PartyID, StringComparison.Ordinal))
-            {
-                userContext.PartyId = Convert.ToInt32(claim.Value, CultureInfo.InvariantCulture);
-            }
-            else if (claim.Type.Equals(AltinnCoreClaimTypes.AuthenticationLevel, StringComparison.Ordinal))
-            {
-                userContext.AuthenticationLevel = Convert.ToInt32(claim.Value, CultureInfo.InvariantCulture);
-            }
-        }
+            User = context.User,
+            UserName = GetClaim(context.User.Claims, AltinnCoreClaimTypes.UserName),
+            UserId = GetClaim(context.User.Claims, AltinnCoreClaimTypes.UserId),
+            PartyId = GetClaim(context.User.Claims, AltinnCoreClaimTypes.PartyID),
+            AuthenticationLevel = GetClaim(context.User.Claims, AltinnCoreClaimTypes.AuthenticationLevel),
+        };
 
         if (userContext.UserId == default)
         {
@@ -81,25 +69,40 @@ public class UserHelper
         UserProfile userProfile =
             await _profileClient.GetUserProfile(userContext.UserId)
             ?? throw new Exception("Could not get user profile while getting user context");
+
         userContext.UserParty = userProfile.Party;
 
-        if (context.Request.Cookies[_settings.GetAltinnPartyCookieName] != null)
-        {
-            userContext.PartyId = Convert.ToInt32(
-                context.Request.Cookies[_settings.GetAltinnPartyCookieName],
-                CultureInfo.InvariantCulture
-            );
-        }
+        userContext.PartyId = cookieValue is not null
+            ? Convert.ToInt32(cookieValue, CultureInfo.InvariantCulture)
+            : userContext.PartyId;
 
-        if (userContext.PartyId == userProfile.PartyId)
-        {
-            userContext.Party = userProfile.Party;
-        }
-        else
-        {
-            userContext.Party = await _altinnPartyClientService.GetParty(userContext.PartyId);
-        }
+        userContext.Party = userContext.PartyId.Equals(userProfile.Party?.PartyId)
+            ? userContext.Party = userProfile.Party
+            : await _altinnPartyClientService.GetParty(userContext.PartyId);
+
+        userContext.SocialSecurityNumber = userContext.Party?.SSN ?? userContext.UserParty.SSN;
 
         return userContext;
+    }
+
+    private static ClaimWrapper GetClaim(IEnumerable<Claim> claims, string claimType)
+    {
+        var claim = claims.FirstOrDefault(x => x.Type.Equals(claimType, StringComparison.Ordinal))?.Value;
+        return new ClaimWrapper(claim);
+    }
+
+    private readonly record struct ClaimWrapper(string? Value)
+    {
+        public static implicit operator string?(ClaimWrapper claimWrapper)
+        {
+            return claimWrapper.Value;
+        }
+
+        public static implicit operator int(ClaimWrapper claimWrapper)
+        {
+            return string.IsNullOrEmpty(claimWrapper.Value)
+                ? default
+                : Convert.ToInt32(claimWrapper.Value, CultureInfo.InvariantCulture);
+        }
     }
 }

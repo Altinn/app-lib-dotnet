@@ -28,7 +28,7 @@ public class MaskinportenClientIntegrationTests
         var authority = "https://maskinporten.dev/";
 
         // Act
-        var app = AppBuilder.Build(registerCustomAppServices: services =>
+        var app = AppBuilder.Build(preRegisterCustomAppServices: services =>
         {
             services.ConfigureMaskinportenClient(config =>
             {
@@ -101,7 +101,7 @@ public class MaskinportenClientIntegrationTests
         // Act
         var app = AppBuilder.Build(
             configData: configData,
-            registerCustomAppServices: services =>
+            preRegisterCustomAppServices: services =>
             {
                 services.ConfigureMaskinportenClient("CustomMaskinportenSettings");
             }
@@ -131,7 +131,7 @@ public class MaskinportenClientIntegrationTests
     {
         // Arrange
         Enum.TryParse(tokenAuthority, false, out TokenAuthorities actualTokenAuthority);
-        var app = AppBuilder.Build(registerCustomAppServices: services =>
+        var app = AppBuilder.Build(preRegisterCustomAppServices: services =>
         {
             _ = actualTokenAuthority switch
             {

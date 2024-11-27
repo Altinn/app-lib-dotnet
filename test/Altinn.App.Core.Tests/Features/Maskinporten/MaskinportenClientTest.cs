@@ -56,7 +56,7 @@ public class MaskinportenClientTests
             var mockHttpClientFactory = new Mock<IHttpClientFactory>();
             var fakeTimeProvider = new FakeTime(new DateTimeOffset(2024, 1, 1, 10, 0, 0, TimeSpan.Zero));
 
-            var app = Api.Tests.TestUtils.AppBuilder.Build(registerCustomAppServices: services =>
+            var app = Api.Tests.TestUtils.AppBuilder.Build(preRegisterCustomAppServices: services =>
             {
                 services.AddSingleton(mockHttpClientFactory.Object);
                 services.Configure<MemoryCacheOptions>(options => options.Clock = fakeTimeProvider);
