@@ -20,10 +20,12 @@ public sealed class ComponentContext
         int[]? rowIndices,
         int? rowLength,
         DataElementIdentifier dataElementIdentifier,
-        IEnumerable<ComponentContext>? childContexts = null
+        IEnumerable<ComponentContext>? childContexts = null,
+        IContextValueAccessor? contextValueAccessor = null
     )
     {
         DataElementIdentifier = dataElementIdentifier;
+        ContextValueAccessor = contextValueAccessor;
         Component = component;
         RowIndices = rowIndices;
         _rowLength = rowLength;
@@ -122,6 +124,11 @@ public sealed class ComponentContext
     /// The Id of the default data element in this context
     /// </summary>
     public DataElementIdentifier DataElementIdentifier { get; }
+
+    /// <summary>
+    /// Accessor for the ["value"] expression (used in expression validation and when expressions are used in filters)
+    /// </summary>
+    public IContextValueAccessor? ContextValueAccessor { get; }
 
     /// <summary>
     /// Get all children and children of children of this componentContext (not including this)

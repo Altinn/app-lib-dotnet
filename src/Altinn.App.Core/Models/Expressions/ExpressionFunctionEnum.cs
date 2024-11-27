@@ -134,9 +134,12 @@ public enum ExpressionFunction
     not,
 
     /// <summary>
-    /// Returns a positional argument
+    /// Get the value from context (eg the value from expression validation, or the option to filter)
     /// </summary>
-    argv,
+    /// <remarks>
+    /// This vas previously named argv for expression validation and it works for compatibility reasons
+    /// </remarks>
+    value,
 
     /// <summary>
     /// Get the action performed in task prior to bpmn gateway

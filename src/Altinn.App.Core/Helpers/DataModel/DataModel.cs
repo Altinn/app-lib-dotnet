@@ -86,6 +86,16 @@ public class DataModel
     }
 
     /// <summary>
+    /// Get model data based on an explicit data reference
+    /// </summary>
+    public async Task<object?> GetModelData(DataReference dataReference)
+    {
+        var model = await _dataAccessor.GetFormData(dataReference.DataElementIdentifier);
+        var modelWrapper = new DataModelWrapper(model);
+        return modelWrapper.GetModelData(dataReference.Field);
+    }
+
+    /// <summary>
     /// Get the count of data elements set in a group (enumerable)
     /// </summary>
     public async Task<int?> GetModelDataCount(

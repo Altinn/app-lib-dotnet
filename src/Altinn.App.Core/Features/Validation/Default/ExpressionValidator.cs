@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Internal.App;
@@ -136,23 +137,21 @@ public class ExpressionValidator : IValidator
                 {
                     continue;
                 }
+                var valueAccessor = new ExpressionContextValueAccessor(
+                    resolvedField,
+                    await evaluatorState.GetModelData(resolvedField)
+                );
                 var context = new ComponentContext(
                     component: null,
                     rowIndices: DataModel.GetRowIndices(resolvedField.Field),
                     rowLength: null,
-                    dataElementIdentifier: resolvedField.DataElementIdentifier
+                    dataElementIdentifier: resolvedField.DataElementIdentifier,
+                    contextValueAccessor: valueAccessor
                 );
-                var positionalArguments = new object[] { resolvedField };
+
                 foreach (var validation in validations)
                 {
-                    await RunValidation(
-                        evaluatorState,
-                        validationIssues,
-                        resolvedField,
-                        context,
-                        positionalArguments,
-                        validation
-                    );
+                    await RunValidation(evaluatorState, validationIssues, resolvedField, context, validation);
                 }
             }
         }
@@ -165,7 +164,6 @@ public class ExpressionValidator : IValidator
         List<ValidationIssue> validationIssues,
         DataReference resolvedField,
         ComponentContext context,
-        object[] positionalArguments,
         ExpressionValidation validation
     )
     {
@@ -179,8 +177,7 @@ public class ExpressionValidator : IValidator
             var validationResult = await ExpressionEvaluator.EvaluateExpression(
                 evaluatorState,
                 validation.Condition.Value,
-                context,
-                positionalArguments
+                context
             );
             switch (validationResult)
             {
@@ -432,5 +429,37 @@ public class ExpressionValidator : IValidator
             }
         }
         return expressionValidations;
+    }
+
+    private class ExpressionContextValueAccessor(DataReference reference, object? value) : IContextValueAccessor
+    {
+        public object? GetValue(ExpressionFunction function, ReadOnlySpan<object?> args)
+        {
+            if (function != ExpressionFunction.value)
+            {
+                throw new ExpressionEvaluatorTypeErrorException(
+                    $"Invalid function for value/argv expression ({function})"
+                );
+            }
+            switch (args)
+            {
+                case []:
+                    return value;
+                case [0.0]:
+                case ["0"]:
+                case ["reference"]:
+                    return reference;
+                default:
+                    var sb = new StringBuilder();
+                    foreach (var arg in args)
+                    {
+                        sb.Append(", ");
+                        sb.Append(arg);
+                    }
+                    throw new ExpressionEvaluatorTypeErrorException(
+                        $"Invalid arguments for value/argv expression ([\"value\"{sb}])"
+                    );
+            }
+        }
     }
 }
