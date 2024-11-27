@@ -36,7 +36,7 @@ public class EventsSubscriptionClientTests
             HttpResponseMessage httpResponseMessage = new HttpResponseMessage
             {
                 StatusCode = HttpStatusCode.OK,
-                Content = new StringContent(JsonSerializer.Serialize(subscriptionContent))
+                Content = new StringContent(JsonSerializer.Serialize(subscriptionContent)),
             };
             Mock<HttpMessageHandler> handlerMock = new();
             handlerMock

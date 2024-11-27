@@ -24,7 +24,7 @@ public class UserActionServiceTests
 
             return new Fixture(
                 services.BuildServiceProvider(
-                    new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true, }
+                    new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }
                 )
             );
         }

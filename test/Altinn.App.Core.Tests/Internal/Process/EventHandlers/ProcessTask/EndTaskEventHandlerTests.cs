@@ -59,7 +59,7 @@ public class EndTaskEventHandlerTests
 
             return new Fixture(
                 services.BuildServiceProvider(
-                    new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true, }
+                    new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }
                 )
             );
         }
@@ -72,7 +72,7 @@ public class EndTaskEventHandlerTests
 
         var eteh = fixture.Handler;
 
-        var instance = new Instance() { Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d", AppId = "ttd/test", };
+        var instance = new Instance() { Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d", AppId = "ttd/test" };
         Mock<IProcessTask> mockProcessTask = new();
         await eteh.Execute(mockProcessTask.Object, "Task_1", instance);
         fixture.Mock<IProcessTaskDataLocker>().Verify(p => p.Lock("Task_1", instance));
@@ -96,7 +96,7 @@ public class EndTaskEventHandlerTests
         using var fixture = Fixture.Create([endOne.Object, endTwo.Object]);
 
         var eteh = fixture.Handler;
-        var instance = new Instance() { Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d", AppId = "ttd/test", };
+        var instance = new Instance() { Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d", AppId = "ttd/test" };
         Mock<IProcessTask> mockProcessTask = new();
         await eteh.Execute(mockProcessTask.Object, "Task_1", instance);
         endOne.Verify(a => a.End("Task_1", instance));
@@ -188,7 +188,7 @@ public class EndTaskEventHandlerTests
 
         var eteh = fixture.Handler;
 
-        var instance = new Instance() { Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d", AppId = "ttd/test", };
+        var instance = new Instance() { Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d", AppId = "ttd/test" };
 
         var taskId = "Task_1";
         Mock<IProcessTask> mockProcessTask = new();
@@ -206,7 +206,7 @@ public class EndTaskEventHandlerTests
 
         var eteh = fixture.Handler;
 
-        var instance = new Instance() { Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d", AppId = "ttd/test", };
+        var instance = new Instance() { Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d", AppId = "ttd/test" };
 
         var taskId = "Task_1";
         Mock<IProcessTask> mockProcessTask = new();

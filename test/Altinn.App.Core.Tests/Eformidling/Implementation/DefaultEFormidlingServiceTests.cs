@@ -85,46 +85,46 @@ public class DefaultEFormidlingServiceTests
                 data?.ToList()
                 ??
                 [
-                    new DataElement { Id = Guid.NewGuid().ToString(), DataType = ModelDataType, },
+                    new DataElement { Id = Guid.NewGuid().ToString(), DataType = ModelDataType },
                     new DataElement
                     {
                         Id = Guid.NewGuid().ToString(),
                         DataType = FileAttachmentsDataType,
-                        Filename = "attachment.txt"
+                        Filename = "attachment.txt",
                     },
                     new DataElement
                     {
                         Id = Guid.NewGuid().ToString(),
                         DataType = FileAttachmentsDataType,
-                        Filename = "attachment.txt"
+                        Filename = "attachment.txt",
                     },
                     new DataElement
                     {
                         Id = Guid.NewGuid().ToString(),
                         DataType = FileAttachmentsDataType,
-                        Filename = "no-extension"
+                        Filename = "no-extension",
                     },
                     new DataElement
                     {
                         Id = Guid.NewGuid().ToString(),
                         DataType = FileAttachmentsDataType,
-                        Filename = null
+                        Filename = null,
                     },
                     //Same filename as the eFormidling metadata file.
                     new DataElement
                     {
                         Id = Guid.NewGuid().ToString(),
                         DataType = FileAttachmentsDataType,
-                        Filename = EFormidlingMetadataFilename
+                        Filename = EFormidlingMetadataFilename,
                     },
                     //Same filename as model data type.
                     new DataElement
                     {
                         Id = Guid.NewGuid().ToString(),
                         DataType = FileAttachmentsDataType,
-                        Filename = ModelDataType + ".xml"
-                    }
-                ]
+                        Filename = ModelDataType + ".xml",
+                    },
+                ],
         };
 
         appMetadata
@@ -138,9 +138,9 @@ public class DefaultEFormidlingServiceTests
                         new DataType
                         {
                             Id = ModelDataType,
-                            AppLogic = new ApplicationLogic { ClassRef = "SomeClass" }
+                            AppLogic = new ApplicationLogic { ClassRef = "SomeClass" },
                         },
-                        new DataType { Id = FileAttachmentsDataType }
+                        new DataType { Id = FileAttachmentsDataType },
                     ],
                     EFormidling = new EFormidlingContract
                     {
@@ -149,8 +149,8 @@ public class DefaultEFormidlingServiceTests
                         TypeVersion = "v8",
                         Type = "arkivmelding",
                         SecurityLevel = 3,
-                        DataTypes = [ModelDataType, FileAttachmentsDataType]
-                    }
+                        DataTypes = [ModelDataType, FileAttachmentsDataType],
+                    },
                 }
             );
         tokenGenerator.Setup(t => t.GenerateAccessToken("ttd", "test-app")).Returns("access-token");
@@ -190,7 +190,7 @@ public class DefaultEFormidlingServiceTests
         services.TryAddTransient<IEFormidlingService, DefaultEFormidlingService>();
 
         var serviceProvider = services.BuildServiceProvider(
-            new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true, }
+            new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }
         );
         return new(serviceProvider, instance, instanceGuid);
     }
@@ -396,7 +396,7 @@ public class DefaultEFormidlingServiceTests
                 _ => new Mock<IEFormidlingReceivers>().Object,
                 implLifetime
             ),
-            new ServiceDescriptor(typeof(IEFormidlingService), typeof(DefaultEFormidlingService), serviceLifetime)
+            new ServiceDescriptor(typeof(IEFormidlingService), typeof(DefaultEFormidlingService), serviceLifetime),
         };
 
         // Act
