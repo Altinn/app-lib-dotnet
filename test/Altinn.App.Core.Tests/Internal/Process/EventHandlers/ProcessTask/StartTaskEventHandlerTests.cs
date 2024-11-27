@@ -40,7 +40,7 @@ public class StartTaskEventHandlerTests
 
             return new Fixture(
                 services.BuildServiceProvider(
-                    new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true, }
+                    new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }
                 )
             );
         }
@@ -52,7 +52,7 @@ public class StartTaskEventHandlerTests
         using var fixture = Fixture.Create([]);
         var steh = fixture.Handler;
 
-        var instance = new Instance() { Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d", AppId = "ttd/test", };
+        var instance = new Instance() { Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d", AppId = "ttd/test" };
         Mock<IProcessTask> mockProcessTask = new Mock<IProcessTask>();
         await steh.Execute(mockProcessTask.Object, "Task_1", instance, []);
         fixture.Mock<IProcessTaskDataLocker>().Verify(p => p.Unlock("Task_1", instance));
@@ -74,7 +74,7 @@ public class StartTaskEventHandlerTests
         using var fixture = Fixture.Create([startOne.Object, startTwo.Object]);
         var steh = fixture.Handler;
 
-        var instance = new Instance() { Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d", AppId = "ttd/test", };
+        var instance = new Instance() { Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d", AppId = "ttd/test" };
         Mock<IProcessTask> mockProcessTask = new Mock<IProcessTask>();
         await steh.Execute(mockProcessTask.Object, "Task_1", instance, []);
         fixture.Mock<IProcessTaskDataLocker>().Verify(p => p.Unlock("Task_1", instance));

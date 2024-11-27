@@ -71,7 +71,7 @@ public sealed class ProcessEngineTest
         services.AddSingleton(processReaderMock.Object);
         using var fixture = Fixture.Create(services);
         ProcessEngine processEngine = fixture.ProcessEngine;
-        Instance instance = new Instance() { Id = _instanceId, AppId = "org/app", };
+        Instance instance = new Instance() { Id = _instanceId, AppId = "org/app" };
         ProcessStartRequest processStartRequest = new ProcessStartRequest()
         {
             Instance = instance,
@@ -1028,7 +1028,7 @@ public sealed class ProcessEngineTest
         };
         using var fixture = Fixture.Create(updatedInstance: updatedInstance);
         ProcessEngine processEngine = fixture.ProcessEngine;
-        ProcessStartRequest processStartRequest = new ProcessStartRequest() { Instance = instance, Prefill = prefill, };
+        ProcessStartRequest processStartRequest = new ProcessStartRequest() { Instance = instance, Prefill = prefill };
         Instance result = await processEngine.HandleEventsAndUpdateStorage(
             processStartRequest.Instance,
             processStartRequest.Prefill,
@@ -1113,7 +1113,7 @@ public sealed class ProcessEngineTest
                         {
                             UserId = 1337,
                             Email = "test@example.com",
-                            Party = new Party() { SSN = "22927774937" }
+                            Party = new Party() { SSN = "22927774937" },
                         }
                 );
             processNavigatorMock
@@ -1126,7 +1126,7 @@ public sealed class ProcessEngineTest
                             Incoming = new List<string> { "Flow_1" },
                             Outgoing = new List<string> { "Flow_2" },
                             Name = "Utfylling",
-                            ExtensionElements = new() { TaskExtension = new() { TaskType = "data" } }
+                            ExtensionElements = new() { TaskExtension = new() { TaskType = "data" } },
                         }
                 );
             processNavigatorMock
@@ -1139,7 +1139,7 @@ public sealed class ProcessEngineTest
                             Incoming = new List<string> { "Flow_2" },
                             Outgoing = new List<string> { "Flow_3" },
                             Name = "Bekreft",
-                            ExtensionElements = new() { TaskExtension = new() { TaskType = "confirmation" } }
+                            ExtensionElements = new() { TaskExtension = new() { TaskType = "confirmation" } },
                         }
                 );
             processNavigatorMock
@@ -1149,7 +1149,7 @@ public sealed class ProcessEngineTest
                         new EndEvent()
                         {
                             Id = "EndEvent_1",
-                            Incoming = new List<string> { "Flow_3" }
+                            Incoming = new List<string> { "Flow_3" },
                         }
                 );
             if (updatedInstance is not null)
@@ -1175,7 +1175,7 @@ public sealed class ProcessEngineTest
 
             return new Fixture(
                 services.BuildServiceProvider(
-                    new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true, }
+                    new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }
                 )
             );
         }

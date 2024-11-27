@@ -49,7 +49,7 @@ public class ProcessNavigatorTests
     {
         var processFile = "with-double-sign.bpmn";
         using var fixture = SetupProcessNavigator(processFile, [new SingleSignGateway()]);
-        var instance = new Instance() { Id = $"123/{Guid.NewGuid()}", AppId = "org/app", };
+        var instance = new Instance() { Id = $"123/{Guid.NewGuid()}", AppId = "org/app" };
         var (_, processNavigator) = fixture;
         var nextElements = await processNavigator.GetNextTask(instance, "Task_Sign1", "sign");
         Assert.NotNull(nextElements);
@@ -87,7 +87,7 @@ public class ProcessNavigatorTests
     public async Task GetNextTask_exclusive_gateway_zero_paths_should_fail()
     {
         var processFile = "with-double-sign.bpmn";
-        var instance = new Instance() { Id = $"123/{Guid.NewGuid()}", AppId = "org/app", };
+        var instance = new Instance() { Id = $"123/{Guid.NewGuid()}", AppId = "org/app" };
         using var fixture = SetupProcessNavigator(processFile, [new ZeroPathsGateway()]);
         var (_, processNavigator) = fixture;
         await Assert.ThrowsAsync<ProcessException>(
@@ -267,7 +267,7 @@ public class ProcessNavigatorTests
         using var fixture = SetupProcessNavigator("simple-gateway-with-join-gateway.bpmn", []);
         var (_, processNavigator) = fixture;
 
-        Instance i = new Instance() { Id = $"123/{Guid.NewGuid()}", AppId = "org/app", };
+        Instance i = new Instance() { Id = $"123/{Guid.NewGuid()}", AppId = "org/app" };
 
         var nextElements = await processNavigator.GetNextTask(i, "EndEvent", null);
         nextElements.Should().BeNull();
