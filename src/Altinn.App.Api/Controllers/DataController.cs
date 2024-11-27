@@ -46,7 +46,6 @@ public class DataController : ControllerBase
     private readonly IDataClient _dataClient;
     private readonly IEnumerable<IDataProcessor> _dataProcessors;
     private readonly IInstanceClient _instanceClient;
-    private readonly IInstantiationProcessor _instantiationProcessor;
     private readonly IAppModel _appModel;
     private readonly IAppMetadata _appMetadata;
     private readonly IPrefill _prefillService;
@@ -55,6 +54,7 @@ public class DataController : ControllerBase
     private readonly IFeatureManager _featureManager;
     private readonly InternalPatchService _patchService;
     private readonly ModelSerializationService _modelDeserializer;
+    private readonly AppImplementationFactory _appImplementationFactory;
 
     private const long REQUEST_SIZE_LIMIT = 2000 * 1024 * 1024;
 
@@ -63,7 +63,6 @@ public class DataController : ControllerBase
     /// </summary>
     /// <param name="logger">logger</param>
     /// <param name="instanceClient">instance service to store instances</param>
-    /// <param name="instantiationProcessor">Instantiation processor</param>
     /// <param name="dataClient">A service with access to data storage.</param>
     /// <param name="dataProcessors">Services implementing logic during data read/write</param>
     /// <param name="appModel">Service for generating app model</param>
@@ -74,10 +73,10 @@ public class DataController : ControllerBase
     /// <param name="fileValidationService">Service used to validate files uploaded.</param>
     /// <param name="patchService">Service for applying a json patch to a json serializable object</param>
     /// <param name="modelDeserializer">Service for serializing and deserializing models</param>
+    /// <param name="serviceProvider">Service provider</param>
     public DataController(
         ILogger<DataController> logger,
         IInstanceClient instanceClient,
-        IInstantiationProcessor instantiationProcessor,
         IDataClient dataClient,
         IEnumerable<IDataProcessor> dataProcessors,
         IAppModel appModel,
@@ -87,13 +86,13 @@ public class DataController : ControllerBase
         IAppMetadata appMetadata,
         IFeatureManager featureManager,
         InternalPatchService patchService,
-        ModelSerializationService modelDeserializer
+        ModelSerializationService modelDeserializer,
+        IServiceProvider serviceProvider
     )
     {
         _logger = logger;
 
         _instanceClient = instanceClient;
-        _instantiationProcessor = instantiationProcessor;
         _dataClient = dataClient;
         _dataProcessors = dataProcessors;
         _appModel = appModel;
@@ -104,6 +103,7 @@ public class DataController : ControllerBase
         _featureManager = featureManager;
         _patchService = patchService;
         _modelDeserializer = modelDeserializer;
+        _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
     }
 
     /// <summary>
@@ -291,7 +291,8 @@ public class DataController : ControllerBase
                     dataType.Id,
                     appModel
                 );
-                await _instantiationProcessor.DataCreation(dataMutator.Instance, appModel, null);
+                var instantiationProcessor = _appImplementationFactory.GetRequired<IInstantiationProcessor>();
+                await instantiationProcessor.DataCreation(dataMutator.Instance, appModel, null);
 
                 // Just stage the element to be created. We don't get the element id before we call UpdateInstanceData
                 dataMutator.AddFormDataElement(dataType.Id, appModel);

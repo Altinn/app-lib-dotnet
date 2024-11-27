@@ -1,5 +1,5 @@
-#nullable disable
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Events;
 using Altinn.App.Core.Internal.Instances;
@@ -11,53 +11,86 @@ using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
 using Moq;
 
 namespace Altinn.App.Core.Tests.Internal.Process;
 
 public class ProcessEventHandlingTests
 {
-    private readonly List<IProcessTask> processTasks =
-    [
-        new Mock<DataProcessTask>().Object,
-        new Mock<ConfirmationProcessTask>().Object,
-        new Mock<FeedbackProcessTask>().Object,
-        new Mock<NullTypeProcessTask>().Object,
-    ];
+    private sealed record Fixture(IServiceProvider ServiceProvider) : IDisposable
+    {
+        public Mock<T> Mock<T>()
+            where T : class => Moq.Mock.Get(ServiceProvider.GetRequiredService<T>());
+
+        public void Dispose() => (ServiceProvider as IDisposable)?.Dispose();
+
+        public ProcessEventHandlingDelegator Delegator =>
+            (ProcessEventHandlingDelegator)ServiceProvider.GetRequiredService<IProcessEventHandlerDelegator>();
+        public ProcessEventDispatcher Dispatcher =>
+            (ProcessEventDispatcher)ServiceProvider.GetRequiredService<IProcessEventDispatcher>();
+
+        public static Fixture Create(
+            ServiceCollection? services = null,
+            Action<AppSettings>? configureAppSettings = null
+        )
+        {
+            services ??= new ServiceCollection();
+            services.AddLogging(builder => builder.AddProvider(NullLoggerProvider.Instance));
+            services.AddTestAppImplementationFactory();
+
+            services.AddTransient<IProcessEventHandlerDelegator, ProcessEventHandlingDelegator>();
+            services.AddTransient<IProcessEventDispatcher, ProcessEventDispatcher>();
+
+            services.Configure<AppSettings>(settings => configureAppSettings?.Invoke(settings));
+
+            AddMock<IInstanceClient>();
+            AddMock<IInstanceEventClient>();
+            AddMock<IAppEvents>();
+            AddMock<IEventsClient>();
+            AddMock<IStartTaskEventHandler>();
+            AddMock<IEndTaskEventHandler>();
+            AddMock<IAbandonTaskEventHandler>();
+            AddMock<IEndEventEventHandler>();
+            AddMock<IAppMetadata>();
+
+            void AddMock<T>()
+                where T : class
+            {
+                var mock = new Mock<T>();
+                services.TryAddTransient(_ => mock.Object);
+            }
+
+            IProcessTask[] tasks =
+            [
+                new Mock<DataProcessTask>().Object,
+                new Mock<ConfirmationProcessTask>().Object,
+                new Mock<FeedbackProcessTask>().Object,
+                new Mock<NullTypeProcessTask>().Object,
+            ];
+            foreach (var task in tasks)
+            {
+                services.AddTransient(_ => task);
+            }
+
+            return new Fixture(
+                services.BuildServiceProvider(
+                    new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }
+                )
+            );
+        }
+    }
 
     [Fact]
     public async Task UpdateProcessAndDispatchEvents_StartEvent_instance_updated_and_events_sent_to_storage_nothing_sent_to_ITask()
     {
         // Arrange
-        var instanceService = new Mock<IInstanceClient>();
-        var instanceEvent = new Mock<IInstanceEventClient>();
-        var appEvents = new Mock<IAppEvents>();
-        var eventsService = new Mock<IEventsClient>();
-        var appSettings = Options.Create(new AppSettings());
-        var logger = new NullLogger<ProcessEventDispatcher>();
-        var startTaskEventHandler = new Mock<IStartTaskEventHandler>();
-        var endTaskEventHandler = new Mock<IEndTaskEventHandler>();
-        var abandonTaskEventHandler = new Mock<IAbandonTaskEventHandler>();
-        var endEventHandler = new Mock<IEndEventEventHandler>();
+        using var fixture = Fixture.Create();
 
-        ProcessEventHandlingDelegator delegator = new ProcessEventHandlingDelegator(
-            new NullLogger<ProcessEventHandlingDelegator>(),
-            startTaskEventHandler.Object,
-            endTaskEventHandler.Object,
-            abandonTaskEventHandler.Object,
-            endEventHandler.Object,
-            processTasks
-        );
-
-        ProcessEventDispatcher dispatcher = new ProcessEventDispatcher(
-            instanceService.Object,
-            instanceEvent.Object,
-            eventsService.Object,
-            appSettings,
-            logger
-        );
+        var (delegator, dispatcher) = (fixture.Delegator, fixture.Dispatcher);
 
         Instance instance = new Instance()
         {
@@ -98,8 +131,11 @@ public class ProcessEventHandlingTests
                 },
             },
         };
-        instanceService.Setup(i => i.UpdateProcess(instance)).ReturnsAsync(updateInstanceResponse);
-        instanceService.Setup(i => i.GetInstance(updateInstanceResponse)).ReturnsAsync(getInstanceResponse);
+        fixture.Mock<IInstanceClient>().Setup(i => i.UpdateProcess(instance)).ReturnsAsync(updateInstanceResponse);
+        fixture
+            .Mock<IInstanceClient>()
+            .Setup(i => i.GetInstance(updateInstanceResponse))
+            .ReturnsAsync(getInstanceResponse);
         Dictionary<string, string> prefill = new Dictionary<string, string>();
 
         // Act
@@ -108,46 +144,24 @@ public class ProcessEventHandlingTests
 
         // Assert
         result.Should().Be(getInstanceResponse);
-        instanceService.Verify(i => i.UpdateProcess(instance), Times.Once);
-        instanceService.Verify(i => i.GetInstance(updateInstanceResponse), Times.Once);
-        instanceEvent.Verify(p => p.SaveInstanceEvent(events[0], instance.Org, "test-app"), Times.Once);
-        instanceService.VerifyNoOtherCalls();
-        instanceEvent.VerifyNoOtherCalls();
-        appEvents.VerifyNoOtherCalls();
-        eventsService.VerifyNoOtherCalls();
+        fixture.Mock<IInstanceClient>().Verify(i => i.UpdateProcess(instance), Times.Once);
+        fixture.Mock<IInstanceClient>().Verify(i => i.GetInstance(updateInstanceResponse), Times.Once);
+        fixture
+            .Mock<IInstanceEventClient>()
+            .Verify(p => p.SaveInstanceEvent(events[0], instance.Org, "test-app"), Times.Once);
+        fixture.Mock<IInstanceClient>().VerifyNoOtherCalls();
+        fixture.Mock<IInstanceEventClient>().VerifyNoOtherCalls();
+        fixture.Mock<IAppEvents>().VerifyNoOtherCalls();
+        fixture.Mock<IEventsClient>().VerifyNoOtherCalls();
     }
 
     [Fact]
     public async Task UpdateProcessAndDispatchEvents_StartTask_instance_updated_and_events_sent_to_storage_nothing_sent_to_ITask_when_tasktype_missing()
     {
         // Arrange
-        var instanceService = new Mock<IInstanceClient>();
-        var instanceEvent = new Mock<IInstanceEventClient>();
-        var appEvents = new Mock<IAppEvents>();
-        var eventsService = new Mock<IEventsClient>();
-        var appSettings = Options.Create(new AppSettings());
-        var logger = new NullLogger<ProcessEventDispatcher>();
-        var startTaskEventHandler = new Mock<IStartTaskEventHandler>();
-        var endTaskEventHandler = new Mock<IEndTaskEventHandler>();
-        var abandonTaskEventHandler = new Mock<IAbandonTaskEventHandler>();
-        var endEventHandler = new Mock<IEndEventEventHandler>();
+        using var fixture = Fixture.Create();
 
-        ProcessEventHandlingDelegator delegator = new ProcessEventHandlingDelegator(
-            new NullLogger<ProcessEventHandlingDelegator>(),
-            startTaskEventHandler.Object,
-            endTaskEventHandler.Object,
-            abandonTaskEventHandler.Object,
-            endEventHandler.Object,
-            processTasks
-        );
-
-        ProcessEventDispatcher dispatcher = new ProcessEventDispatcher(
-            instanceService.Object,
-            instanceEvent.Object,
-            eventsService.Object,
-            appSettings,
-            logger
-        );
+        var (delegator, dispatcher) = (fixture.Delegator, fixture.Dispatcher);
 
         Instance instance = new Instance()
         {
@@ -181,8 +195,11 @@ public class ProcessEventHandlingTests
                 },
             },
         };
-        instanceService.Setup(i => i.UpdateProcess(instance)).ReturnsAsync(updateInstanceResponse);
-        instanceService.Setup(i => i.GetInstance(updateInstanceResponse)).ReturnsAsync(getInstanceResponse);
+        fixture.Mock<IInstanceClient>().Setup(i => i.UpdateProcess(instance)).ReturnsAsync(updateInstanceResponse);
+        fixture
+            .Mock<IInstanceClient>()
+            .Setup(i => i.GetInstance(updateInstanceResponse))
+            .ReturnsAsync(getInstanceResponse);
         Dictionary<string, string> prefill = new Dictionary<string, string>();
 
         // Act
@@ -191,46 +208,24 @@ public class ProcessEventHandlingTests
 
         // Assert
         result.Should().Be(getInstanceResponse);
-        instanceService.Verify(i => i.UpdateProcess(instance), Times.Once);
-        instanceService.Verify(i => i.GetInstance(updateInstanceResponse), Times.Once);
-        instanceEvent.Verify(p => p.SaveInstanceEvent(events[0], instance.Org, "test-app"), Times.Once);
-        instanceService.VerifyNoOtherCalls();
-        instanceEvent.VerifyNoOtherCalls();
-        appEvents.VerifyNoOtherCalls();
-        eventsService.VerifyNoOtherCalls();
+        fixture.Mock<IInstanceClient>().Verify(i => i.UpdateProcess(instance), Times.Once);
+        fixture.Mock<IInstanceClient>().Verify(i => i.GetInstance(updateInstanceResponse), Times.Once);
+        fixture
+            .Mock<IInstanceEventClient>()
+            .Verify(p => p.SaveInstanceEvent(events[0], instance.Org, "test-app"), Times.Once);
+        fixture.Mock<IInstanceClient>().VerifyNoOtherCalls();
+        fixture.Mock<IInstanceEventClient>().VerifyNoOtherCalls();
+        fixture.Mock<IAppEvents>().VerifyNoOtherCalls();
+        fixture.Mock<IEventsClient>().VerifyNoOtherCalls();
     }
 
     [Fact]
     public async Task UpdateProcessAndDispatchEvents_StartTask_data_instance_updated_and_events_sent_to_storage_and_trigger_ITask()
     {
         // Arrange
-        var instanceService = new Mock<IInstanceClient>();
-        var instanceEvent = new Mock<IInstanceEventClient>();
-        var appEvents = new Mock<IAppEvents>();
-        var eventsService = new Mock<IEventsClient>();
-        var appSettings = Options.Create(new AppSettings());
-        var logger = new NullLogger<ProcessEventDispatcher>();
-        var startTaskEventHandler = new Mock<IStartTaskEventHandler>();
-        var endTaskEventHandler = new Mock<IEndTaskEventHandler>();
-        var abandonTaskEventHandler = new Mock<IAbandonTaskEventHandler>();
-        var endEventHandler = new Mock<IEndEventEventHandler>();
+        using var fixture = Fixture.Create();
 
-        ProcessEventHandlingDelegator delegator = new ProcessEventHandlingDelegator(
-            new NullLogger<ProcessEventHandlingDelegator>(),
-            startTaskEventHandler.Object,
-            endTaskEventHandler.Object,
-            abandonTaskEventHandler.Object,
-            endEventHandler.Object,
-            processTasks
-        );
-
-        ProcessEventDispatcher dispatcher = new ProcessEventDispatcher(
-            instanceService.Object,
-            instanceEvent.Object,
-            eventsService.Object,
-            appSettings,
-            logger
-        );
+        var (delegator, dispatcher) = (fixture.Delegator, fixture.Dispatcher);
 
         Instance instance = new Instance()
         {
@@ -272,8 +267,11 @@ public class ProcessEventHandlingTests
                 },
             },
         };
-        instanceService.Setup(i => i.UpdateProcess(instance)).ReturnsAsync(updateInstanceResponse);
-        instanceService.Setup(i => i.GetInstance(updateInstanceResponse)).ReturnsAsync(getInstanceResponse);
+        fixture.Mock<IInstanceClient>().Setup(i => i.UpdateProcess(instance)).ReturnsAsync(updateInstanceResponse);
+        fixture
+            .Mock<IInstanceClient>()
+            .Setup(i => i.GetInstance(updateInstanceResponse))
+            .ReturnsAsync(getInstanceResponse);
         Dictionary<string, string> prefill = new Dictionary<string, string>();
 
         // Act
@@ -282,46 +280,24 @@ public class ProcessEventHandlingTests
 
         // Assert
         result.Should().Be(getInstanceResponse);
-        instanceService.Verify(i => i.UpdateProcess(instance), Times.Once);
-        instanceService.Verify(i => i.GetInstance(updateInstanceResponse), Times.Once);
-        instanceEvent.Verify(p => p.SaveInstanceEvent(events[0], instance.Org, "test-app"), Times.Once);
-        instanceService.VerifyNoOtherCalls();
-        instanceEvent.VerifyNoOtherCalls();
-        appEvents.VerifyNoOtherCalls();
-        eventsService.VerifyNoOtherCalls();
+        fixture.Mock<IInstanceClient>().Verify(i => i.UpdateProcess(instance), Times.Once);
+        fixture.Mock<IInstanceClient>().Verify(i => i.GetInstance(updateInstanceResponse), Times.Once);
+        fixture
+            .Mock<IInstanceEventClient>()
+            .Verify(p => p.SaveInstanceEvent(events[0], instance.Org, "test-app"), Times.Once);
+        fixture.Mock<IInstanceClient>().VerifyNoOtherCalls();
+        fixture.Mock<IInstanceEventClient>().VerifyNoOtherCalls();
+        fixture.Mock<IAppEvents>().VerifyNoOtherCalls();
+        fixture.Mock<IEventsClient>().VerifyNoOtherCalls();
     }
 
     [Fact]
     public async Task UpdateProcessAndDispatchEvents_EndTask_confirmation_instance_updated_and_events_sent_to_storage_and_trigger_ITask()
     {
         // Arrange
-        var instanceService = new Mock<IInstanceClient>();
-        var instanceEvent = new Mock<IInstanceEventClient>();
-        var appEvents = new Mock<IAppEvents>();
-        var eventsService = new Mock<IEventsClient>();
-        var appSettings = Options.Create(new AppSettings());
-        var logger = new NullLogger<ProcessEventDispatcher>();
-        var startTaskEventHandler = new Mock<IStartTaskEventHandler>();
-        var endTaskEventHandler = new Mock<IEndTaskEventHandler>();
-        var abandonTaskEventHandler = new Mock<IAbandonTaskEventHandler>();
-        var endEventHandler = new Mock<IEndEventEventHandler>();
+        using var fixture = Fixture.Create();
 
-        ProcessEventHandlingDelegator delegator = new ProcessEventHandlingDelegator(
-            new NullLogger<ProcessEventHandlingDelegator>(),
-            startTaskEventHandler.Object,
-            endTaskEventHandler.Object,
-            abandonTaskEventHandler.Object,
-            endEventHandler.Object,
-            processTasks
-        );
-
-        ProcessEventDispatcher dispatcher = new ProcessEventDispatcher(
-            instanceService.Object,
-            instanceEvent.Object,
-            eventsService.Object,
-            appSettings,
-            logger
-        );
+        var (delegator, dispatcher) = (fixture.Delegator, fixture.Dispatcher);
 
         Instance instance = new Instance()
         {
@@ -363,8 +339,11 @@ public class ProcessEventHandlingTests
                 },
             },
         };
-        instanceService.Setup(i => i.UpdateProcess(instance)).ReturnsAsync(updateInstanceResponse);
-        instanceService.Setup(i => i.GetInstance(updateInstanceResponse)).ReturnsAsync(getInstanceResponse);
+        fixture.Mock<IInstanceClient>().Setup(i => i.UpdateProcess(instance)).ReturnsAsync(updateInstanceResponse);
+        fixture
+            .Mock<IInstanceClient>()
+            .Setup(i => i.GetInstance(updateInstanceResponse))
+            .ReturnsAsync(getInstanceResponse);
         Dictionary<string, string> prefill = new Dictionary<string, string>();
 
         // Act
@@ -373,46 +352,24 @@ public class ProcessEventHandlingTests
 
         // Assert
         result.Should().Be(getInstanceResponse);
-        instanceService.Verify(i => i.UpdateProcess(instance), Times.Once);
-        instanceService.Verify(i => i.GetInstance(updateInstanceResponse), Times.Once);
-        instanceEvent.Verify(p => p.SaveInstanceEvent(events[0], instance.Org, "test-app"), Times.Once);
-        instanceService.VerifyNoOtherCalls();
-        instanceEvent.VerifyNoOtherCalls();
-        appEvents.VerifyNoOtherCalls();
-        eventsService.VerifyNoOtherCalls();
+        fixture.Mock<IInstanceClient>().Verify(i => i.UpdateProcess(instance), Times.Once);
+        fixture.Mock<IInstanceClient>().Verify(i => i.GetInstance(updateInstanceResponse), Times.Once);
+        fixture
+            .Mock<IInstanceEventClient>()
+            .Verify(p => p.SaveInstanceEvent(events[0], instance.Org, "test-app"), Times.Once);
+        fixture.Mock<IInstanceClient>().VerifyNoOtherCalls();
+        fixture.Mock<IInstanceEventClient>().VerifyNoOtherCalls();
+        fixture.Mock<IAppEvents>().VerifyNoOtherCalls();
+        fixture.Mock<IEventsClient>().VerifyNoOtherCalls();
     }
 
     [Fact]
     public async Task UpdateProcessAndDispatchEvents_AbandonTask_feedback_instance_updated_and_events_sent_to_storage_and_trigger_ITask()
     {
         // Arrange
-        var instanceService = new Mock<IInstanceClient>();
-        var instanceEvent = new Mock<IInstanceEventClient>();
-        var appEvents = new Mock<IAppEvents>();
-        var eventsService = new Mock<IEventsClient>();
-        var appSettings = Options.Create(new AppSettings());
-        var logger = new NullLogger<ProcessEventDispatcher>();
-        var startTaskEventHandler = new Mock<IStartTaskEventHandler>();
-        var endTaskEventHandler = new Mock<IEndTaskEventHandler>();
-        var abandonTaskEventHandler = new Mock<IAbandonTaskEventHandler>();
-        var endEventHandler = new Mock<IEndEventEventHandler>();
+        using var fixture = Fixture.Create();
 
-        ProcessEventHandlingDelegator delegator = new ProcessEventHandlingDelegator(
-            new NullLogger<ProcessEventHandlingDelegator>(),
-            startTaskEventHandler.Object,
-            endTaskEventHandler.Object,
-            abandonTaskEventHandler.Object,
-            endEventHandler.Object,
-            processTasks
-        );
-
-        ProcessEventDispatcher dispatcher = new ProcessEventDispatcher(
-            instanceService.Object,
-            instanceEvent.Object,
-            eventsService.Object,
-            appSettings,
-            logger
-        );
+        var (delegator, dispatcher) = (fixture.Delegator, fixture.Dispatcher);
 
         Instance instance = new Instance()
         {
@@ -454,8 +411,11 @@ public class ProcessEventHandlingTests
                 },
             },
         };
-        instanceService.Setup(i => i.UpdateProcess(instance)).ReturnsAsync(updateInstanceResponse);
-        instanceService.Setup(i => i.GetInstance(updateInstanceResponse)).ReturnsAsync(getInstanceResponse);
+        fixture.Mock<IInstanceClient>().Setup(i => i.UpdateProcess(instance)).ReturnsAsync(updateInstanceResponse);
+        fixture
+            .Mock<IInstanceClient>()
+            .Setup(i => i.GetInstance(updateInstanceResponse))
+            .ReturnsAsync(getInstanceResponse);
         Dictionary<string, string> prefill = new Dictionary<string, string>();
 
         // Act
@@ -464,47 +424,26 @@ public class ProcessEventHandlingTests
 
         // Assert
         result.Should().Be(getInstanceResponse);
-        instanceService.Verify(i => i.UpdateProcess(instance), Times.Once);
-        instanceService.Verify(i => i.GetInstance(updateInstanceResponse), Times.Once);
-        instanceEvent.Verify(p => p.SaveInstanceEvent(events[0], instance.Org, "test-app"), Times.Once);
-        instanceService.VerifyNoOtherCalls();
-        instanceEvent.VerifyNoOtherCalls();
-        appEvents.VerifyNoOtherCalls();
-        eventsService.VerifyNoOtherCalls();
+        fixture.Mock<IInstanceClient>().Verify(i => i.UpdateProcess(instance), Times.Once);
+        fixture.Mock<IInstanceClient>().Verify(i => i.GetInstance(updateInstanceResponse), Times.Once);
+        fixture
+            .Mock<IInstanceEventClient>()
+            .Verify(p => p.SaveInstanceEvent(events[0], instance.Org, "test-app"), Times.Once);
+        fixture.Mock<IInstanceClient>().VerifyNoOtherCalls();
+        fixture.Mock<IInstanceEventClient>().VerifyNoOtherCalls();
+        fixture.Mock<IAppEvents>().VerifyNoOtherCalls();
+        fixture.Mock<IEventsClient>().VerifyNoOtherCalls();
     }
 
     [Fact]
     public async Task UpdateProcessAndDispatchEvents_EndEvent_confirmation_instance_updated_and_events_sent_to_storage_and_trigger_ITask()
     {
         // Arrange
-        var instanceService = new Mock<IInstanceClient>();
-        var instanceEvent = new Mock<IInstanceEventClient>();
-        var appMetadata = new Mock<IAppMetadata>();
-        var appEvents = new Mock<IAppEvents>();
-        var eventsService = new Mock<IEventsClient>();
-        var appSettings = Options.Create(new AppSettings());
-        var logger = new NullLogger<ProcessEventDispatcher>();
-        var startTaskEventHandler = new Mock<IStartTaskEventHandler>();
-        var endTaskEventHandler = new Mock<IEndTaskEventHandler>();
-        var abandonTaskEventHandler = new Mock<IAbandonTaskEventHandler>();
-        var endEventHandler = new EndEventEventHandler(appEvents.Object, instanceService.Object, appMetadata.Object);
+        var services = new ServiceCollection();
+        services.AddTransient<IEndEventEventHandler, EndEventEventHandler>();
+        using var fixture = Fixture.Create(services: services);
 
-        ProcessEventHandlingDelegator delegator = new ProcessEventHandlingDelegator(
-            new NullLogger<ProcessEventHandlingDelegator>(),
-            startTaskEventHandler.Object,
-            endTaskEventHandler.Object,
-            abandonTaskEventHandler.Object,
-            endEventHandler,
-            processTasks
-        );
-
-        ProcessEventDispatcher dispatcher = new ProcessEventDispatcher(
-            instanceService.Object,
-            instanceEvent.Object,
-            eventsService.Object,
-            appSettings,
-            logger
-        );
+        var (delegator, dispatcher) = (fixture.Delegator, fixture.Dispatcher);
 
         Instance instance = new Instance()
         {
@@ -560,10 +499,13 @@ public class ProcessEventHandlingTests
             },
         };
 
-        appMetadata.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(applicationMetadata);
+        fixture.Mock<IAppMetadata>().Setup(x => x.GetApplicationMetadata()).ReturnsAsync(applicationMetadata);
 
-        instanceService.Setup(i => i.UpdateProcess(instance)).ReturnsAsync(updateInstanceResponse);
-        instanceService.Setup(i => i.GetInstance(updateInstanceResponse)).ReturnsAsync(getInstanceResponse);
+        fixture.Mock<IInstanceClient>().Setup(i => i.UpdateProcess(instance)).ReturnsAsync(updateInstanceResponse);
+        fixture
+            .Mock<IInstanceClient>()
+            .Setup(i => i.GetInstance(updateInstanceResponse))
+            .ReturnsAsync(getInstanceResponse);
         Dictionary<string, string> prefill = new Dictionary<string, string>();
 
         // Act
@@ -572,47 +514,25 @@ public class ProcessEventHandlingTests
 
         // Assert
         result.Should().Be(getInstanceResponse);
-        appEvents.Verify(a => a.OnEndAppEvent("EndEvent", instance), Times.Once);
-        instanceService.Verify(i => i.UpdateProcess(instance), Times.Once);
-        instanceService.Verify(i => i.GetInstance(updateInstanceResponse), Times.Once);
-        instanceEvent.Verify(p => p.SaveInstanceEvent(events[0], instance.Org, "test-app"), Times.Once);
-        instanceService.VerifyNoOtherCalls();
-        instanceEvent.VerifyNoOtherCalls();
-        appEvents.VerifyNoOtherCalls();
-        eventsService.VerifyNoOtherCalls();
+        fixture.Mock<IAppEvents>().Verify(a => a.OnEndAppEvent("EndEvent", instance), Times.Once);
+        fixture.Mock<IInstanceClient>().Verify(i => i.UpdateProcess(instance), Times.Once);
+        fixture.Mock<IInstanceClient>().Verify(i => i.GetInstance(updateInstanceResponse), Times.Once);
+        fixture
+            .Mock<IInstanceEventClient>()
+            .Verify(p => p.SaveInstanceEvent(events[0], instance.Org, "test-app"), Times.Once);
+        fixture.Mock<IInstanceClient>().VerifyNoOtherCalls();
+        fixture.Mock<IInstanceEventClient>().VerifyNoOtherCalls();
+        fixture.Mock<IAppEvents>().VerifyNoOtherCalls();
+        fixture.Mock<IEventsClient>().VerifyNoOtherCalls();
     }
 
     [Fact]
     public async Task UpdateProcessAndDispatchEvents_EndEvent_confirmation_instance_updated_and_dispatches_no_events_when_events_null()
     {
         // Arrange
-        var instanceService = new Mock<IInstanceClient>();
-        var instanceEvent = new Mock<IInstanceEventClient>();
-        var appEvents = new Mock<IAppEvents>();
-        var eventsService = new Mock<IEventsClient>();
-        var appSettings = Options.Create(new AppSettings());
-        var logger = new NullLogger<ProcessEventDispatcher>();
-        var startTaskEventHandler = new Mock<IStartTaskEventHandler>();
-        var endTaskEventHandler = new Mock<IEndTaskEventHandler>();
-        var abandonTaskEventHandler = new Mock<IAbandonTaskEventHandler>();
-        var endEventHandler = new Mock<IEndEventEventHandler>();
+        using var fixture = Fixture.Create();
 
-        ProcessEventHandlingDelegator delegator = new ProcessEventHandlingDelegator(
-            new NullLogger<ProcessEventHandlingDelegator>(),
-            startTaskEventHandler.Object,
-            endTaskEventHandler.Object,
-            abandonTaskEventHandler.Object,
-            endEventHandler.Object,
-            processTasks
-        );
-
-        ProcessEventDispatcher dispatcher = new ProcessEventDispatcher(
-            instanceService.Object,
-            instanceEvent.Object,
-            eventsService.Object,
-            appSettings,
-            logger
-        );
+        var (delegator, dispatcher) = (fixture.Delegator, fixture.Dispatcher);
 
         Instance instance = new Instance()
         {
@@ -635,9 +555,12 @@ public class ProcessEventHandlingTests
                 CurrentTask = new() { ElementId = "Task_2", Flow = 3 },
             },
         };
-        List<InstanceEvent> events = null;
-        instanceService.Setup(i => i.UpdateProcess(instance)).ReturnsAsync(updateInstanceResponse);
-        instanceService.Setup(i => i.GetInstance(updateInstanceResponse)).ReturnsAsync(getInstanceResponse);
+        List<InstanceEvent>? events = null;
+        fixture.Mock<IInstanceClient>().Setup(i => i.UpdateProcess(instance)).ReturnsAsync(updateInstanceResponse);
+        fixture
+            .Mock<IInstanceClient>()
+            .Setup(i => i.GetInstance(updateInstanceResponse))
+            .ReturnsAsync(getInstanceResponse);
         Dictionary<string, string> prefill = new Dictionary<string, string>();
 
         // Act
@@ -646,32 +569,23 @@ public class ProcessEventHandlingTests
 
         // Assert
         result.Should().Be(getInstanceResponse);
-        instanceService.Verify(i => i.UpdateProcess(instance), Times.Once);
-        instanceService.Verify(i => i.GetInstance(updateInstanceResponse), Times.Once);
-        instanceService.VerifyNoOtherCalls();
-        instanceEvent.VerifyNoOtherCalls();
-        appEvents.VerifyNoOtherCalls();
-        eventsService.VerifyNoOtherCalls();
+        fixture.Mock<IInstanceClient>().Verify(i => i.UpdateProcess(instance), Times.Once);
+        fixture.Mock<IInstanceClient>().Verify(i => i.GetInstance(updateInstanceResponse), Times.Once);
+        fixture.Mock<IInstanceClient>().VerifyNoOtherCalls();
+        fixture.Mock<IInstanceEventClient>().VerifyNoOtherCalls();
+        fixture.Mock<IAppEvents>().VerifyNoOtherCalls();
+        fixture.Mock<IEventsClient>().VerifyNoOtherCalls();
     }
 
     [Fact]
     public async Task RegisterEventWithEventsComponent_sends_movedTo_event_to_events_system_when_enabled_and_current_task_set()
     {
         // Arrange
-        var instanceService = new Mock<IInstanceClient>();
-        var instanceEvent = new Mock<IInstanceEventClient>();
-        var appEvents = new Mock<IAppEvents>();
-        var eventsService = new Mock<IEventsClient>();
-        var appSettings = Options.Create(new AppSettings() { RegisterEventsWithEventsComponent = true });
-        var logger = new NullLogger<ProcessEventDispatcher>();
-
-        ProcessEventDispatcher dispatcher = new ProcessEventDispatcher(
-            instanceService.Object,
-            instanceEvent.Object,
-            eventsService.Object,
-            appSettings,
-            logger
+        using var fixture = Fixture.Create(configureAppSettings: settings =>
+            settings.RegisterEventsWithEventsComponent = true
         );
+
+        var dispatcher = fixture.Dispatcher;
 
         Instance instance = new Instance()
         {
@@ -683,31 +597,24 @@ public class ProcessEventHandlingTests
         await dispatcher.RegisterEventWithEventsComponent(instance);
 
         // Assert
-        eventsService.Verify(e => e.AddEvent("app.instance.process.movedTo.Task_1", instance), Times.Once);
-        instanceService.VerifyNoOtherCalls();
-        instanceEvent.VerifyNoOtherCalls();
-        appEvents.VerifyNoOtherCalls();
-        eventsService.VerifyNoOtherCalls();
+        fixture
+            .Mock<IEventsClient>()
+            .Verify(e => e.AddEvent("app.instance.process.movedTo.Task_1", instance), Times.Once);
+        fixture.Mock<IInstanceClient>().VerifyNoOtherCalls();
+        fixture.Mock<IInstanceEventClient>().VerifyNoOtherCalls();
+        fixture.Mock<IAppEvents>().VerifyNoOtherCalls();
+        fixture.Mock<IEventsClient>().VerifyNoOtherCalls();
     }
 
     [Fact]
     public async Task RegisterEventWithEventsComponent_sends_complete_event_to_events_system_when_currentTask_null_and_endevent_set()
     {
         // Arrange
-        var instanceService = new Mock<IInstanceClient>();
-        var instanceEvent = new Mock<IInstanceEventClient>();
-        var appEvents = new Mock<IAppEvents>();
-        var eventsService = new Mock<IEventsClient>();
-        var appSettings = Options.Create(new AppSettings() { RegisterEventsWithEventsComponent = true });
-        var logger = new NullLogger<ProcessEventDispatcher>();
-
-        ProcessEventDispatcher dispatcher = new ProcessEventDispatcher(
-            instanceService.Object,
-            instanceEvent.Object,
-            eventsService.Object,
-            appSettings,
-            logger
+        using var fixture = Fixture.Create(configureAppSettings: settings =>
+            settings.RegisterEventsWithEventsComponent = true
         );
+
+        var dispatcher = fixture.Dispatcher;
 
         Instance instance = new Instance()
         {
@@ -719,31 +626,22 @@ public class ProcessEventHandlingTests
         await dispatcher.RegisterEventWithEventsComponent(instance);
 
         // Assert
-        eventsService.Verify(e => e.AddEvent("app.instance.process.completed", instance), Times.Once);
-        instanceService.VerifyNoOtherCalls();
-        instanceEvent.VerifyNoOtherCalls();
-        appEvents.VerifyNoOtherCalls();
-        eventsService.VerifyNoOtherCalls();
+        fixture.Mock<IEventsClient>().Verify(e => e.AddEvent("app.instance.process.completed", instance), Times.Once);
+        fixture.Mock<IInstanceClient>().VerifyNoOtherCalls();
+        fixture.Mock<IInstanceEventClient>().VerifyNoOtherCalls();
+        fixture.Mock<IAppEvents>().VerifyNoOtherCalls();
+        fixture.Mock<IEventsClient>().VerifyNoOtherCalls();
     }
 
     [Fact]
     public async Task RegisterEventWithEventsComponent_sends_no_events_when_process_is_null()
     {
         // Arrange
-        var instanceService = new Mock<IInstanceClient>();
-        var instanceEvent = new Mock<IInstanceEventClient>();
-        var appEvents = new Mock<IAppEvents>();
-        var eventsService = new Mock<IEventsClient>();
-        var appSettings = Options.Create(new AppSettings() { RegisterEventsWithEventsComponent = true });
-        var logger = new NullLogger<ProcessEventDispatcher>();
-
-        ProcessEventDispatcher dispatcher = new ProcessEventDispatcher(
-            instanceService.Object,
-            instanceEvent.Object,
-            eventsService.Object,
-            appSettings,
-            logger
+        using var fixture = Fixture.Create(configureAppSettings: settings =>
+            settings.RegisterEventsWithEventsComponent = true
         );
+
+        var dispatcher = fixture.Dispatcher;
 
         Instance instance = new Instance() { Id = Guid.NewGuid().ToString(), Process = null };
 
@@ -751,30 +649,21 @@ public class ProcessEventHandlingTests
         await dispatcher.RegisterEventWithEventsComponent(instance);
 
         // Assert
-        instanceService.VerifyNoOtherCalls();
-        instanceEvent.VerifyNoOtherCalls();
-        appEvents.VerifyNoOtherCalls();
-        eventsService.VerifyNoOtherCalls();
+        fixture.Mock<IInstanceClient>().VerifyNoOtherCalls();
+        fixture.Mock<IInstanceEventClient>().VerifyNoOtherCalls();
+        fixture.Mock<IAppEvents>().VerifyNoOtherCalls();
+        fixture.Mock<IEventsClient>().VerifyNoOtherCalls();
     }
 
     [Fact]
     public async Task RegisterEventWithEventsComponent_sends_no_events_when_current_and_endevent_is_null()
     {
         // Arrange
-        var instanceService = new Mock<IInstanceClient>();
-        var instanceEvent = new Mock<IInstanceEventClient>();
-        var appEvents = new Mock<IAppEvents>();
-        var eventsService = new Mock<IEventsClient>();
-        var appSettings = Options.Create(new AppSettings() { RegisterEventsWithEventsComponent = true });
-        var logger = new NullLogger<ProcessEventDispatcher>();
-
-        ProcessEventDispatcher dispatcher = new ProcessEventDispatcher(
-            instanceService.Object,
-            instanceEvent.Object,
-            eventsService.Object,
-            appSettings,
-            logger
+        using var fixture = Fixture.Create(configureAppSettings: settings =>
+            settings.RegisterEventsWithEventsComponent = true
         );
+
+        var dispatcher = fixture.Dispatcher;
 
         Instance instance = new Instance() { Id = Guid.NewGuid().ToString(), Process = new() };
 
@@ -782,30 +671,21 @@ public class ProcessEventHandlingTests
         await dispatcher.RegisterEventWithEventsComponent(instance);
 
         // Assert
-        instanceService.VerifyNoOtherCalls();
-        instanceEvent.VerifyNoOtherCalls();
-        appEvents.VerifyNoOtherCalls();
-        eventsService.VerifyNoOtherCalls();
+        fixture.Mock<IInstanceClient>().VerifyNoOtherCalls();
+        fixture.Mock<IInstanceEventClient>().VerifyNoOtherCalls();
+        fixture.Mock<IAppEvents>().VerifyNoOtherCalls();
+        fixture.Mock<IEventsClient>().VerifyNoOtherCalls();
     }
 
     [Fact]
     public async Task RegisterEventWithEventsComponent_sends_no_events_when_registereventswitheventscomponent_false()
     {
         // Arrange
-        var instanceService = new Mock<IInstanceClient>();
-        var instanceEvent = new Mock<IInstanceEventClient>();
-        var appEvents = new Mock<IAppEvents>();
-        var eventsService = new Mock<IEventsClient>();
-        var appSettings = Options.Create(new AppSettings() { RegisterEventsWithEventsComponent = false });
-        var logger = new NullLogger<ProcessEventDispatcher>();
-
-        ProcessEventDispatcher dispatcher = new ProcessEventDispatcher(
-            instanceService.Object,
-            instanceEvent.Object,
-            eventsService.Object,
-            appSettings,
-            logger
+        using var fixture = Fixture.Create(configureAppSettings: settings =>
+            settings.RegisterEventsWithEventsComponent = false
         );
+
+        var dispatcher = fixture.Dispatcher;
 
         Instance instance = new Instance()
         {
@@ -817,9 +697,9 @@ public class ProcessEventHandlingTests
         await dispatcher.RegisterEventWithEventsComponent(instance);
 
         // Assert
-        instanceService.VerifyNoOtherCalls();
-        instanceEvent.VerifyNoOtherCalls();
-        appEvents.VerifyNoOtherCalls();
-        eventsService.VerifyNoOtherCalls();
+        fixture.Mock<IInstanceClient>().VerifyNoOtherCalls();
+        fixture.Mock<IInstanceEventClient>().VerifyNoOtherCalls();
+        fixture.Mock<IAppEvents>().VerifyNoOtherCalls();
+        fixture.Mock<IEventsClient>().VerifyNoOtherCalls();
     }
 }
