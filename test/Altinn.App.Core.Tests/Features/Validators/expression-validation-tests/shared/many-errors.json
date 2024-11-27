@@ -43,20 +43,20 @@
         {
           "message": "email must be real",
           "severity": "error",
-          "condition": ["contains", ["dataModel", ["argv", 0]], "fake"]
+          "condition": ["contains", ["dataModel", ["argv", "reference"]], "fake"]
         },
         {
           "ref": "str-len",
           "condition": [
             "lessThan",
-            ["stringLength", ["dataModel", ["argv", 0]]],
+            ["stringLength", ["value"]],
             20
           ]
         },
         {
           "message": "email must contain @",
           "severity": "error",
-          "condition": ["notContains", ["dataModel", ["argv", 0]], "@"]
+          "condition": ["notContains", ["dataModel", ["value", 0]], "@"]
         }
       ]
     },

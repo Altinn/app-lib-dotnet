@@ -1,0 +1,5 @@
+{
+  "name": "Special strings must not be lowercased",
+  "expression": ["concat", "TRUE", "FALSE", "true", "false", "Null", "null", "NULL", "undefined", "UNDEFINED"],
+  "expects": "TRUEFALSEtruefalseNullnullNULLundefinedUNDEFINED"
+}
