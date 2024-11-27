@@ -1,6 +1,8 @@
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,6 +22,7 @@ public class InitialStateController : ControllerBase
     private readonly ILogger<ApplicationMetadataController> _logger;
     private readonly AppSettings _appSettings;
     private readonly FrontEndSettings _frontEndSettings;
+    private readonly IProfileClient _profileClient;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ApplicationMetadataController"/> class
@@ -30,13 +33,15 @@ public class InitialStateController : ControllerBase
         IAppMetadata appMetadata,
         ILogger<ApplicationMetadataController> logger,
         IOptions<AppSettings> appSettings,
-        IOptions<FrontEndSettings> frontEndSettings
+        IOptions<FrontEndSettings> frontEndSettings,
+        IProfileClient profileClient
     )
     {
         _appMetadata = appMetadata;
         _logger = logger;
         _appSettings = appSettings.Value;
         _frontEndSettings = frontEndSettings.Value;
+        _profileClient = profileClient;
     }
 
     private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
@@ -81,6 +86,30 @@ public class InitialStateController : ControllerBase
 
         //return new JsonResult(frontEndSettings, _jsonSerializerOptions);
         initialState.FrontEndSettings = new JsonResult(frontEndSettings, _jsonSerializerOptions);
+
+        int userId = AuthenticationHelper.GetUserId(HttpContext);
+        if (userId == 0)
+        {
+            return BadRequest("The userId is not proviced in the context.");
+        }
+
+        try
+        {
+            var user = await _profileClient.GetUserProfile(userId);
+
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            initialState.User = user;
+
+            //return Ok(user);
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, e.Message);
+        }
 
         if (!checkOrgApp || application.Id.Equals(wantedAppId, StringComparison.Ordinal))
         {
