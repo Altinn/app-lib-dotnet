@@ -1,10 +1,10 @@
-using Altinn.App.Api.Helpers;
+using Altinn.App.Core.Helpers;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 
-namespace Altinn.App.Api.Tests.Helpers;
+namespace Altinn.App.Core.Tests.Helpers;
 
-public class DataElementAccessCheckerTests
+public class AllowedContributorsHelperTests
 {
     [Theory]
     [InlineData(null, null, null, true)] // No allowed contributors, should be true
@@ -18,6 +18,10 @@ public class DataElementAccessCheckerTests
     [InlineData("org:altinn,orgno:12345678", "altinn", 87654321, true)] // Matching org only
     [InlineData("org:altinn,orgno:12345678", "notAltinn", 12345678, true)] // Matching orgNr only
     [InlineData("org:altinn,orgno:12345678", "notAltinn", 87654321, false)] // Non-matching both
+    [InlineData("app:owned", null, null, false)] // App owned, no matching
+    [InlineData("app:owned", "org:altinn", null, false)] // App owned, matching org
+    [InlineData("app:owned", "org:altinn", 12345678, false)] // App owned, matching both
+    [InlineData("app:owned", null, 12345678, false)] // App owned, matching orgNr
     public void IsValidContributor_ShouldReturnExpectedResult(
         string? allowedContributors,
         string? org,
@@ -32,7 +36,7 @@ public class DataElementAccessCheckerTests
         };
 
         // Act
-        bool result = DataElementAccessChecker.IsValidContributor(dataType, org, orgNr);
+        bool result = AllowedContributorsHelper.IsValidContributor(dataType, org, orgNr);
 
         // Assert
         result.Should().Be(expectedResult);

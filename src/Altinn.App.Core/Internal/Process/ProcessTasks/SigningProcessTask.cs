@@ -1,8 +1,11 @@
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
+using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.Hosting;
 
 namespace Altinn.App.Core.Internal.Process.ProcessTasks;
 
@@ -13,11 +16,20 @@ internal sealed class SigningProcessTask : IProcessTask
 {
     private readonly ISigningService _signingService;
     private readonly IProcessReader _processReader;
+    private readonly IAppMetadata _appMetadata;
+    private readonly IHostEnvironment _hostEnvironment;
 
-    public SigningProcessTask(ISigningService signingService, IProcessReader processReader)
+    public SigningProcessTask(
+        ISigningService signingService,
+        IProcessReader processReader,
+        IAppMetadata appMetadata,
+        IHostEnvironment hostEnvironment
+    )
     {
         _signingService = signingService;
         _processReader = processReader;
+        _appMetadata = appMetadata;
+        _hostEnvironment = hostEnvironment;
     }
 
     public string Type => "signing";
@@ -27,8 +39,20 @@ internal sealed class SigningProcessTask : IProcessTask
     {
         var cts = new CancellationTokenSource();
 
-        AltinnSignatureConfiguration config = GetAltinnSignatureConfiguration(taskId);
-        List<SigneeContext> signeeContexts = await _signingService.InitializeSignees(instance, config, cts.Token);
+        AltinnSignatureConfiguration signatureConfiguration = GetAltinnSignatureConfiguration(taskId);
+
+        if (_hostEnvironment.IsDevelopment())
+        {
+            ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
+            AllowedContributorsHelper.EnsureDataTypeIsAppOwned(appMetadata, signatureConfiguration.SignatureDataType);
+        }
+
+        List<SigneeContext> signeeContexts = await _signingService.InitializeSignees(
+            instance,
+            signatureConfiguration,
+            cts.Token
+        );
+
         await _signingService.ProcessSignees(instance, signeeContexts, cts.Token);
     }
 
