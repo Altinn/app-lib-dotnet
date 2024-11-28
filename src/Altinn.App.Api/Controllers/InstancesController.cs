@@ -335,6 +335,10 @@ public class InstancesController : ControllerBase
 
             // create the instance
             instance = await _instanceClient.CreateInstance(org, app, instanceTemplate);
+            foreach (var instanceEvent in result.ProcessStateChange?.Events ?? [])
+            {
+                instanceEvent.InstanceId = instance.Id;
+            }
         }
         catch (Exception exception)
         {
@@ -566,6 +570,10 @@ public class InstancesController : ControllerBase
             }
 
             instance = await _instanceClient.CreateInstance(org, app, instanceTemplate);
+            foreach (var instanceEvent in processResult.ProcessStateChange?.Events ?? [])
+            {
+                instanceEvent.InstanceId = instance.Id;
+            }
 
             if (isCopyRequest && source is not null)
             {
@@ -683,6 +691,10 @@ public class InstancesController : ControllerBase
         ProcessChangeResult startResult = await _processEngine.GenerateProcessStartEvents(processStartRequest);
 
         targetInstance = await _instanceClient.CreateInstance(org, app, targetInstance);
+        foreach (var instanceEvent in startResult.ProcessStateChange?.Events ?? [])
+        {
+            instanceEvent.InstanceId = targetInstance.Id;
+        }
 
         await CopyDataFromSourceInstance(application, targetInstance, sourceInstance);
 
