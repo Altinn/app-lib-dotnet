@@ -32,7 +32,7 @@ public class CorrespondenceClientTests
             var mockHttpClientFactory = new Mock<IHttpClientFactory>();
             var mockMaskinportenClient = new Mock<IMaskinportenClient>();
 
-            var app = Api.Tests.TestUtils.AppBuilder.Build(preRegisterCustomAppServices: services =>
+            var app = Api.Tests.TestUtils.AppBuilder.Build(registerCustomAppServices: services =>
             {
                 services.AddSingleton(mockHttpClientFactory.Object);
                 services.AddSingleton(mockMaskinportenClient.Object);

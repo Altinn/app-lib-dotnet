@@ -24,7 +24,7 @@ public class UserHelperTest
 
         public static Fixture Create(ClaimsPrincipal userPrincipal, string? partyCookieValue = null)
         {
-            var app = TestUtils.AppBuilder.Build(postRegisterCustomAppServices: services =>
+            var app = TestUtils.AppBuilder.Build(overrideAltinnAppServices: services =>
             {
                 var httpContextMock = new Mock<HttpContext>();
                 httpContextMock.Setup(x => x.Request.Cookies["AltinnPartyId"]).Returns(partyCookieValue);

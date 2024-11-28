@@ -300,7 +300,7 @@ public class TelemetryConfigurationTests
         var samplerToUse = new ParentBasedSampler(new AlwaysOnSampler());
         await using var app = AppBuilder.Build(
             configData: configData,
-            preRegisterCustomAppServices: services =>
+            registerCustomAppServices: services =>
             {
                 services.ConfigureOpenTelemetryTracerProvider(builder =>
                 {
@@ -328,7 +328,7 @@ public class TelemetryConfigurationTests
         var timeoutToUse = 4_000;
         await using var app = AppBuilder.Build(
             configData: configData,
-            preRegisterCustomAppServices: services =>
+            registerCustomAppServices: services =>
             {
                 services.Configure<PeriodicExportingMetricReaderOptions>(options =>
                 {
