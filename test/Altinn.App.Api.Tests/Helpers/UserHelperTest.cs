@@ -5,7 +5,6 @@ using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
-using Altinn.Platform.Register.Models;
 using FluentAssertions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
