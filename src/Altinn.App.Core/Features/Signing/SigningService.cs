@@ -69,6 +69,64 @@ internal sealed class SigningService(
         return signeeContexts;
     }
 
+    public List<SigneeContext> ReadSignees()
+    {
+        using var activity = telemetry?.StartReadSigneesActivity();
+        // TODO: Get signees from state
+
+        // TODO: Get signees from policy
+
+        throw new NotImplementedException();
+    }
+
+    //TODO: There is already logic for the sign action in the SigningUserAction class. Maybe move most of it here?
+    public async Task Sign(SigneeContext signee)
+    {
+        using var activity = telemetry?.StartSignActivity();
+        // var state = StorageClient.GetSignState(...);
+        try
+        {
+            // SigneeState signeeState = state.FirstOrDefault(s => s.Id == signee.UserId)
+            // if(signeeState.hasSigned is false)
+            // {
+            //      await signClient.SignDataElements();
+            //      signeeState.hasSigned = true;
+            // }
+            // if(signeeState.IsReceiptSent is false)
+            // {
+            var correspondanceClient = new CorrespondanceClientMock();
+            var correspondence = new BaseCorrespondenceExt
+            {
+                ResourceId = "",
+                Sender = "",
+                SendersReference = "",
+                VisibleFrom = DateTimeOffset.Now,
+            };
+            var request = new InitializeCorrespondenceRequestMock
+            {
+                Correspondence = correspondence,
+                Recipients =
+                [ /*SigneeState.Id*/
+                ],
+                ExistingAttachments = [], // TODO: all relevant documents
+            };
+            //      correspondanceClient.SendMessage(...);
+            //      signeeState.IsReceiptSent = true;
+            // }
+            await Task.CompletedTask;
+        }
+        catch
+        {
+            // TODO: log + telemetry?
+        }
+        finally
+        {
+            // StorageClient.SetSignState(state);
+        }
+
+        throw new NotImplementedException();
+    }
+
     private async Task<List<SigneeContext>> GetPersonSigneeContexts(
         string taskId,
         SigneesResult signeeResult,
@@ -83,8 +141,9 @@ internal sealed class SigningService(
             if (person is null)
             {
                 //TODO: persist state and throw
+
                 throw new SignaturePartyNotValidException(
-                    $"Signature party with social security number {personSignee.SocialSecurityNumber} was not found in the registry."
+                    $"The given SSN and last name did not match any person in the registry."
                 );
             }
 
@@ -94,9 +153,7 @@ internal sealed class SigningService(
 
             Guid partyUuid =
                 party.PartyUuid
-                ?? throw new SignaturePartyNotValidException(
-                    $"No partyUuid found for signature party with social security number {personSignee.SocialSecurityNumber}." // TODO: ikke gi ut ssn her?!
-                );
+                ?? throw new SignaturePartyNotValidException($"No partyUuid found for signature party.");
 
             Sms? smsNotification = personSignee.Notifications?.OnSignatureAccessRightsDelegated?.Sms;
             if (smsNotification is not null && smsNotification.MobileNumber is null)
@@ -158,62 +215,5 @@ internal sealed class SigningService(
         }
 
         return organisationSigneeContexts;
-    }
-
-    public List<SigneeContext> ReadSignees()
-    {
-        using var activity = telemetry?.StartReadSigneesActivity();
-        // TODO: Get signees from state
-
-        // TODO: Get signees from policy
-
-        throw new NotImplementedException();
-    }
-
-    //TODO: There is already logic for the sign action in the SigningUserAction class. Maybe move most of it here?
-    internal async Task Sign(SigneeContext signee)
-    {
-        using var activity = telemetry?.StartSignActivity();
-        // var state = StorageClient.GetSignState(...);
-        try
-        {
-            // SigneeState signeeState = state.FirstOrDefault(s => s.Id == signee.UserId)
-            // if(signeeState.hasSigned is false)
-            // {
-            //      await signClient.SignDataElements();
-            //      signeeState.hasSigned = true;
-            // }
-            // if(signeeState.IsReceiptSent is false)
-            // {
-            var correspondanceClient = new CorrespondanceClientMock();
-            var correspondence = new BaseCorrespondenceExt
-            {
-                ResourceId = "",
-                Sender = "",
-                SendersReference = "",
-                VisibleFrom = DateTimeOffset.Now,
-            };
-            var request = new InitializeCorrespondenceRequestMock
-            {
-                Correspondence = correspondence,
-                Recipients =
-                [ /*SigneeState.Id*/
-                ],
-                ExistingAttachments = [], // TODO: all relevant documents
-            };
-            //      correspondanceClient.SendMessage(...);
-            //      signeeState.IsReceiptSent = true;
-            // }
-            await Task.CompletedTask;
-        }
-        catch
-        {
-            // TODO: log + telemetry?
-        }
-        finally
-        {
-            // StorageClient.SetSignState(state);
-        }
-        throw new NotImplementedException();
     }
 }
