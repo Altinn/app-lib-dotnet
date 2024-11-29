@@ -63,7 +63,7 @@ public class UserHelper
             UserId = tokenClaims.GetValueOrDefault(AltinnCoreClaimTypes.UserId) switch
             {
                 { } value => Convert.ToInt32(value, CultureInfo.InvariantCulture),
-                _ => throw new Exception("Could not get user profile - could not retrieve user ID from claims"),
+                _ => default,
             },
             PartyId = tokenClaims.GetValueOrDefault(AltinnCoreClaimTypes.PartyID) switch
             {
@@ -76,6 +76,11 @@ public class UserHelper
                 _ => default,
             },
         };
+
+        if (userContext.UserId == default)
+        {
+            throw new Exception("Could not get user profile - could not retrieve user ID from claims");
+        }
 
         UserProfile userProfile =
             await _profileClient.GetUserProfile(userContext.UserId)
