@@ -84,4 +84,66 @@ public class UserHelperTest
                 }
             );
     }
+
+    [Fact]
+    public async Task GetUserContext_HandlesMissingClaims()
+    {
+        // Arrange
+        const int userId = 1001;
+        const int authLevel = 3;
+        var userPrincipal = PrincipalUtil.GetUserPrincipal(userId, default, authLevel);
+        await using var fixture = Fixture.Create(userPrincipal);
+        var userHelper = new UserHelper(
+            profileClient: fixture.ProfileClientMock,
+            altinnPartyClientService: fixture.AltinnPartyClientMock,
+            settings: fixture.GeneralSettings
+        );
+        var httpContextAccessor = fixture.App.Services.GetRequiredService<IHttpContextAccessor>();
+        var httpContext = httpContextAccessor.HttpContext;
+        var userProfile = await fixture.ProfileClientMock.GetUserProfile(userId);
+
+        // Act
+        var result = await userHelper.GetUserContext(httpContext!);
+
+        // Assert
+        result
+            .Should()
+            .BeEquivalentTo(
+                new Altinn.App.Core.Models.UserContext
+                {
+                    SocialSecurityNumber = null,
+                    UserName = $"User{userId}",
+                    UserId = userId,
+                    PartyId = default,
+                    AuthenticationLevel = authLevel,
+                    User = userPrincipal,
+                    UserParty = userProfile!.Party,
+                    Party = null,
+                }
+            );
+    }
+
+    [Fact]
+    public async Task GetUserContext_ThrowsOnMissingUserId()
+    {
+        // Arrange
+        var userPrincipal = PrincipalUtil.GetUserPrincipal(default, default);
+        await using var fixture = Fixture.Create(userPrincipal);
+        var userHelper = new UserHelper(
+            profileClient: fixture.ProfileClientMock,
+            altinnPartyClientService: fixture.AltinnPartyClientMock,
+            settings: fixture.GeneralSettings
+        );
+        var httpContextAccessor = fixture.App.Services.GetRequiredService<IHttpContextAccessor>();
+        var httpContext = httpContextAccessor.HttpContext;
+
+        // Act
+        var act = async () =>
+        {
+            await userHelper.GetUserContext(httpContext!);
+        };
+
+        // Assert
+        await act.Should().ThrowAsync<Exception>().WithMessage("*not*ID*from*claims*");
+    }
 }
