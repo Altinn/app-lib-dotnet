@@ -5,6 +5,7 @@ using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
+using Altinn.Platform.Register.Models;
 using FluentAssertions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -42,14 +43,14 @@ public class UserHelperTest
         public async ValueTask DisposeAsync() => await App.DisposeAsync();
     }
 
-    [Fact]
-    public async Task GetUserContext_PerformsCorrectLogic()
+    [Theory]
+    [InlineData(1337, 501337, "01039012345")] // Has `Party` containing correct SSN
+    [InlineData(1001, 510001, null)] // Has no SSN, because of empty `Party`
+    [InlineData(1337, 510001, "01899699552")] // `Party` mismatch, forcing load via `IAltinnPartyClient`, resulting in SSN belonging to party 510001
+    public async Task GetUserContext_PerformsCorrectLogic(int userId, int partyId, string? ssn)
     {
         // Arrange
-        const int userId = 1337;
-        const int partyId = 501337;
         const int authLevel = 3;
-
         var userPrincipal = PrincipalUtil.GetUserPrincipal(userId, partyId, authLevel);
         await using var fixture = Fixture.Create(userPrincipal);
         var userHelper = new UserHelper(
@@ -60,7 +61,9 @@ public class UserHelperTest
         var httpContextAccessor = fixture.App.Services.GetRequiredService<IHttpContextAccessor>();
         var httpContext = httpContextAccessor.HttpContext;
         var userProfile = await fixture.ProfileClientMock.GetUserProfile(userId);
-        var party = await fixture.AltinnPartyClientMock.GetParty(partyId);
+        var party = partyId.Equals(userProfile!.PartyId)
+            ? userProfile!.Party
+            : await fixture.AltinnPartyClientMock.GetParty(partyId);
 
         // Act
         var result = await userHelper.GetUserContext(httpContext!);
@@ -71,7 +74,7 @@ public class UserHelperTest
             .BeEquivalentTo(
                 new Altinn.App.Core.Models.UserContext
                 {
-                    SocialSecurityNumber = "01039012345",
+                    SocialSecurityNumber = ssn,
                     UserName = $"User{userId}",
                     UserId = userId,
                     PartyId = partyId,

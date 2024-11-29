@@ -50,15 +50,32 @@ public class UserHelper
     public async Task<UserContext> GetUserContext(HttpContext context)
     {
         using var activity = _telemetry?.StartGetUserContextActivity();
-        string? cookieValue = context.Request.Cookies[_settings.GetAltinnPartyCookieName];
+        string? partyCookieValue = context.Request.Cookies[_settings.GetAltinnPartyCookieName];
+        Dictionary<string, string> tokenClaims = context.User.Claims.ToDictionary(
+            x => x.Type,
+            y => y.Value,
+            StringComparer.Ordinal
+        );
 
         UserContext userContext = new()
         {
             User = context.User,
-            UserName = GetClaim(context.User.Claims, AltinnCoreClaimTypes.UserName),
-            UserId = GetClaim(context.User.Claims, AltinnCoreClaimTypes.UserId),
-            PartyId = GetClaim(context.User.Claims, AltinnCoreClaimTypes.PartyID),
-            AuthenticationLevel = GetClaim(context.User.Claims, AltinnCoreClaimTypes.AuthenticationLevel),
+            UserName = tokenClaims[AltinnCoreClaimTypes.UserName],
+            UserId = tokenClaims[AltinnCoreClaimTypes.UserId] switch
+            {
+                { } value => Convert.ToInt32(value, CultureInfo.InvariantCulture),
+                _ => default,
+            },
+            PartyId = tokenClaims[AltinnCoreClaimTypes.PartyID] switch
+            {
+                { } value => Convert.ToInt32(value, CultureInfo.InvariantCulture),
+                _ => default,
+            },
+            AuthenticationLevel = tokenClaims[AltinnCoreClaimTypes.AuthenticationLevel] switch
+            {
+                { } value => Convert.ToInt32(value, CultureInfo.InvariantCulture),
+                _ => default,
+            },
         };
 
         if (userContext.UserId == default)
@@ -72,37 +89,17 @@ public class UserHelper
 
         userContext.UserParty = userProfile.Party;
 
-        userContext.PartyId = cookieValue is not null
-            ? Convert.ToInt32(cookieValue, CultureInfo.InvariantCulture)
+        userContext.PartyId = partyCookieValue is not null
+            ? Convert.ToInt32(partyCookieValue, CultureInfo.InvariantCulture)
             : userContext.PartyId;
 
-        userContext.Party = userContext.PartyId.Equals(userProfile.Party?.PartyId)
-            ? userContext.Party = userProfile.Party
+        userContext.Party = userContext.PartyId.Equals(userProfile.PartyId)
+            ? userProfile.Party
             : await _altinnPartyClientService.GetParty(userContext.PartyId);
 
-        userContext.SocialSecurityNumber = userContext.Party?.SSN ?? userContext.UserParty.SSN;
+        userContext.SocialSecurityNumber =
+            userContext.Party?.SSN ?? userContext.Party?.Person?.SSN ?? userContext.UserParty.SSN;
 
         return userContext;
-    }
-
-    private static ClaimWrapper GetClaim(IEnumerable<Claim> claims, string claimType)
-    {
-        var claim = claims.FirstOrDefault(x => x.Type.Equals(claimType, StringComparison.Ordinal))?.Value;
-        return new ClaimWrapper(claim);
-    }
-
-    private readonly record struct ClaimWrapper(string? Value)
-    {
-        public static implicit operator string?(ClaimWrapper claimWrapper)
-        {
-            return claimWrapper.Value;
-        }
-
-        public static implicit operator int(ClaimWrapper claimWrapper)
-        {
-            return string.IsNullOrEmpty(claimWrapper.Value)
-                ? default
-                : Convert.ToInt32(claimWrapper.Value, CultureInfo.InvariantCulture);
-        }
     }
 }
