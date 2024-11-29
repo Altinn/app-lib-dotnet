@@ -9,6 +9,7 @@ using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
+using Microsoft.Extensions.Hosting;
 using Moq;
 
 namespace Altinn.App.Core.Tests.Internal.Process.ProcessTasks;
@@ -34,7 +35,9 @@ public class PaymentProcessTaskTests
                 _pdfServiceMock.Object,
                 _dataClientMock.Object,
                 _processReaderMock.Object,
-                _paymentServiceMock.Object
+                _paymentServiceMock.Object,
+                new Mock<IAppMetadata>().Object,
+                new Mock<IHostEnvironment>().Object
             );
         }
 

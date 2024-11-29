@@ -1,7 +1,7 @@
-using System.Globalization;
 using System.Net;
 using System.Security.Claims;
 using Altinn.App.Core.Extensions;
+using Altinn.App.Core.Helpers;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,40 +15,6 @@ namespace Altinn.App.Api.Helpers;
 /// </remarks>
 internal static class DataElementAccessChecker
 {
-    internal static bool IsValidContributor(DataType dataType, string? org, int? orgNr)
-    {
-        if (dataType.AllowedContributers is null || dataType.AllowedContributers.Count == 0)
-        {
-            return true;
-        }
-
-        foreach (string item in dataType.AllowedContributers)
-        {
-            string key = item.Split(':')[0];
-            string value = item.Split(':')[1];
-
-            switch (key.ToLowerInvariant())
-            {
-                case "org":
-                    if (value.Equals(org, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true;
-                    }
-
-                    break;
-                case "orgno":
-                    if (value.Equals(orgNr?.ToString(CultureInfo.InvariantCulture), StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true;
-                    }
-
-                    break;
-            }
-        }
-
-        return false;
-    }
-
     /// <summary>
     /// Checks if the user has access to read a data element of a given data type on an instance.
     /// </summary>
@@ -76,7 +42,8 @@ internal static class DataElementAccessChecker
                 Status = (int)HttpStatusCode.Conflict,
             };
         }
-        if (!IsValidContributor(dataType, user.GetOrg(), user.GetOrgNumber()))
+
+        if (!AllowedContributorsHelper.IsValidContributor(dataType, user.GetOrg(), user.GetOrgNumber()))
         {
             return new ProblemDetails
             {
