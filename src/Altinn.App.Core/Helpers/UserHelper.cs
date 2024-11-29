@@ -89,15 +89,19 @@ public class UserHelper
         if (partyCookieValue is not null)
             userContext.PartyId = Convert.ToInt32(partyCookieValue, CultureInfo.InvariantCulture);
 
-        if (userContext.PartyId == userProfile.PartyId)
-            userContext.Party = userProfile.Party;
-        else if (userContext.PartyId > 0)
-            userContext.Party = await _altinnPartyClientService.GetParty(userContext.PartyId);
-
         userContext.UserParty = userProfile.Party;
 
-        userContext.SocialSecurityNumber =
-            userContext.Party?.SSN ?? userContext.Party?.Person?.SSN ?? userContext.UserParty?.SSN;
+        if (userContext.PartyId == userProfile.PartyId)
+            userContext.Party = userProfile.Party;
+        else if (userContext.PartyId != default)
+            userContext.Party = await _altinnPartyClientService.GetParty(userContext.PartyId);
+
+        if (!string.IsNullOrWhiteSpace(userContext.Party?.SSN))
+            userContext.SocialSecurityNumber = userContext.Party.SSN;
+        else if (!string.IsNullOrWhiteSpace(userContext.Party?.Person?.SSN))
+            userContext.SocialSecurityNumber = userContext.Party.Person.SSN;
+        else if (!string.IsNullOrWhiteSpace(userContext.UserParty?.SSN))
+            userContext.SocialSecurityNumber = userContext.UserParty.SSN;
 
         return userContext;
     }
