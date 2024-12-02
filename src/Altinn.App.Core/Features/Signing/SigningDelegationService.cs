@@ -43,7 +43,7 @@ internal sealed class SigningDelegationService(IAccessManagementClient accessMan
                                     .WithResources(
                                         [
                                             new Resource { Value = AppIdHelper.ToResourceId(instance.AppId) },
-                                            new Resource { Type = DelegationConst.Task, Value = taskId }
+                                            new Resource { Type = DelegationConst.Task, Value = taskId },
                                         ]
                                     )
                                     .Build(),
@@ -53,7 +53,7 @@ internal sealed class SigningDelegationService(IAccessManagementClient accessMan
                                     .WithResources(
                                         [
                                             new Resource { Value = AppIdHelper.ToResourceId(instance.AppId) },
-                                            new Resource { Type = DelegationConst.Task, Value = taskId }
+                                            new Resource { Type = DelegationConst.Task, Value = taskId },
                                         ]
                                     )
                                     .Build()

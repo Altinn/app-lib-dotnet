@@ -131,7 +131,7 @@ internal sealed class DelegationBuilder : DelegationBuilderBase, IDelegationBuil
             InstanceId = _instanceId,
             From = _delegator,
             To = _recipient,
-            Rights = _rights
+            Rights = _rights,
         };
     }
 }
