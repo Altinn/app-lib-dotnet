@@ -56,7 +56,7 @@ internal sealed class SigningDelegationService(IAccessManagementClient accessMan
                                             new Resource { Type = DelegationConst.Task, Value = taskId },
                                         ]
                                     )
-                                    .Build()
+                                    .Build(),
                             ]
                         )
                         .Build();
