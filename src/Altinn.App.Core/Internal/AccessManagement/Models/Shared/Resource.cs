@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+
 namespace Altinn.App.Core.Internal.AccessManagement.Models.Shared;
 
 internal sealed class Resource
