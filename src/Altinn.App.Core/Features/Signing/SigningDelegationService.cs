@@ -2,6 +2,7 @@ using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.AccessManagement;
+using Altinn.App.Core.Internal.AccessManagement.Builders;
 using Altinn.App.Core.Internal.AccessManagement.Models;
 using Altinn.App.Core.Internal.AccessManagement.Models.Shared;
 using Altinn.Platform.Storage.Interface.Models;
@@ -26,25 +27,40 @@ internal sealed class SigningDelegationService(IAccessManagementClient accessMan
             {
                 if (state.IsAccessDelegated is false)
                 {
-                    // csharpier-ignore-start
-                    string appResourceId = AppIdHelper.ToResourceId(instance.AppId);
-                    DelegationRequest delegation = DelegationRequestBuilder
-                        .CreateBuilder(appResourceId, instance.Id)
-                        .WithDelegator(new Delegator { IdType = DelegationConst.Party, Id = "" }) // TODO: assign delegator
-                        .WithRecipient(new Delegatee { IdType = DelegationConst.Party, Id = signeeContext.PartyId.ToString() })
-                        .AddRight()
-                            .WithAction(DelegationConst.ActionId, ActionType.Read)
-                            .AddResource(DelegationConst.Resource, appResourceId) // TODO: translate app id to altinn resource id
-                            .AddResource(DelegationConst.Task, taskId)
-                            .BuildRight()
-                        .AddRight()
-                            .WithAction(DelegationConst.ActionId, ActionType.Sign)
-                            .AddResource(DelegationConst.Resource, appResourceId) // TODO: translate app id to altinn resource id
-                            .AddResource(DelegationConst.Task, taskId)
-                            .BuildRight()
+                    DelegationRequest delegationRequest = DelegationBuilder
+                        .Create()
+                        .WithApplicationId(instance.AppId)
+                        .WithInstanceId(instance.Id)
+                        .WithDelegator(new Delegator { IdType = DelegationConst.Party, Id = "" })
+                        .WithRecipient(
+                            new Delegatee { IdType = DelegationConst.Party, Id = signeeContext.PartyId.ToString() }
+                        )
+                        .WithRights(
+                            [
+                                AccessRightBuilder
+                                    .Create()
+                                    .WithAction(ActionType.Read)
+                                    .WithResources(
+                                        [
+                                            new Resource { Value = AppIdHelper.ToResourceId(instance.AppId) },
+                                            new Resource { Type = DelegationConst.Task, Value = taskId },
+                                        ]
+                                    )
+                                    .Build(),
+                                AccessRightBuilder
+                                    .Create()
+                                    .WithAction(ActionType.Sign)
+                                    .WithResources(
+                                        [
+                                            new Resource { Value = AppIdHelper.ToResourceId(instance.AppId) },
+                                            new Resource { Type = DelegationConst.Task, Value = taskId },
+                                        ]
+                                    )
+                                    .Build(),
+                            ]
+                        )
                         .Build();
-                    // csharpier-ignore-end
-                    var response = await accessManagementClient.DelegateRights(delegation, ct);
+                    var response = await accessManagementClient.DelegateRights(delegationRequest, ct);
                     state.IsAccessDelegated = await Task.FromResult(true);
                 }
             }

@@ -72,9 +72,10 @@ internal sealed class AccessManagementClient(
         }
         catch (Exception e)
         {
-            var ex = new DelegationException(
+            var ex = new AccessManagementRequestException(
                 $"Something went wrong when processing the access management request.",
-                httpResponseMessage,
+                null,
+                httpResponseMessage?.StatusCode,
                 httpContent,
                 e
             );

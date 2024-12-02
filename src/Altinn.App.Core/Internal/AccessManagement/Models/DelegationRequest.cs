@@ -28,4 +28,7 @@ internal sealed class RightRequest
 
     [JsonPropertyName("action")]
     internal AltinnAction? Action { get; set; }
+
+    [JsonPropertyName("taskId")]
+    internal string? TaskId { get; set; }
 }
