@@ -2,6 +2,7 @@ using System.Net.Mime;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Internal.Registers;
+using Altinn.App.Core.Models.Result;
 using Altinn.Platform.Register.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,7 +16,7 @@ namespace Altinn.App.Api.Controllers;
 [Produces(MediaTypeNames.Application.Json)]
 [Consumes(MediaTypeNames.Application.Json)]
 [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-[Route("{org}/{app}/api/v1/organisations")]
+[Route("{org}/{app}/api/v1/lookup/organisation")]
 public class LookupOrganisationController : ControllerBase
 {
     private readonly IOrganizationClient _organisationClient;
@@ -43,11 +44,35 @@ public class LookupOrganisationController : ControllerBase
     [HttpGet]
     [Route("{orgNr}")]
     [ProducesResponseType(typeof(LookupOrganisationResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<LookupOrganisationResponse>> LookUpOrganisation([FromRoute] string orgNr)
     {
         _logger.LogInformation($"Looking up organisation with orgNr: {orgNr}");
+
+        var organisationResult = await GetOrganisationDataOrError(orgNr);
+        if (!organisationResult.Success)
+        {
+            ProblemDetails problemDetails = organisationResult.Error;
+            return StatusCode(problemDetails.Status ?? 500, problemDetails);
+        }
+
+        return Ok(LookupOrganisationResponse.CreateFromOrganisation(organisationResult.Ok));
+    }
+
+    private async Task<ServiceResult<Organization, ProblemDetails>> GetOrganisationDataOrError(string orgNr)
+    {
         Organization? organisation = await _organisationClient.GetOrganization(orgNr);
 
-        return Ok(LookupOrganisationResponse.CreateFromOrganisation(organisation));
+        if (organisation is null)
+        {
+            return new ProblemDetails
+            {
+                Title = "Organisation not found",
+                Detail = $"No organisation registered with the supplied organisation number",
+                Status = StatusCodes.Status400BadRequest,
+            };
+        }
+
+        return organisation;
     }
 }

@@ -1,7 +1,10 @@
+using System.Net;
 using System.Net.Mime;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Registers;
+using Altinn.App.Core.Models.Result;
 using Altinn.Platform.Register.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -37,17 +40,78 @@ public class LookupPersonController : ControllerBase
     /// <returns>A <see cref="LookupPersonResponse"/> object.</returns>
     [HttpPost]
     [ProducesResponseType(typeof(LookupPersonResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<LookupPersonResponse>> LookupPerson(
         [FromBody] LookupPersonRequest lookupPersonRequest,
         CancellationToken cancellationToken
     )
     {
-        Person? person = await _personClient.GetPerson(
+        var personResult = await GetOrganisationDataOrError(
             lookupPersonRequest.SocialSecurityNumber,
-            lookupPersonRequest.LastName,
+            lookupPersonRequest.Surname,
             cancellationToken
         );
 
-        return Ok(LookupPersonResponse.CreateFromPerson(person));
+        if (!personResult.Success)
+        {
+            ProblemDetails problemDetails = personResult.Error;
+            return StatusCode(problemDetails.Status ?? 500, problemDetails);
+        }
+
+        return Ok(LookupPersonResponse.CreateFromPerson(personResult.Ok));
+    }
+
+    private async Task<ServiceResult<Person, ProblemDetails>> GetOrganisationDataOrError(
+        string ssn,
+        string surname,
+        CancellationToken cancellationToken
+    )
+    {
+        Person? person;
+        try
+        {
+            person = await _personClient.GetPerson(ssn, surname, cancellationToken);
+        }
+        catch (PlatformHttpException e)
+        {
+            if (e.Response.StatusCode == HttpStatusCode.Forbidden)
+            {
+                return new ProblemDetails
+                {
+                    Title = "Forbidden",
+                    Detail = "Access to the register is forbidden",
+                    Status = StatusCodes.Status403Forbidden,
+                };
+            }
+            else if (e.Response.StatusCode == HttpStatusCode.TooManyRequests)
+            {
+                return new ProblemDetails
+                {
+                    Title = "Too many requests",
+                    Detail = "Too many requests to the register",
+                    Status = StatusCodes.Status429TooManyRequests,
+                };
+            }
+            return new ProblemDetails
+            {
+                Title = "Error when calling Register",
+                Detail = e.Message,
+                Status = StatusCodes.Status500InternalServerError,
+            };
+        }
+
+        if (person is null)
+        {
+            return new ProblemDetails
+            {
+                Title = "Person not found",
+                Detail = $"No person is registered with this combination of national ID number/D-number and name",
+                Status = StatusCodes.Status400BadRequest,
+            };
+        }
+
+        return person;
     }
 }

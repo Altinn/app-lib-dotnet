@@ -13,5 +13,5 @@ public class LookupPersonRequest
     /// <summary>
     /// The last name of the person to search for.
     /// </summary>
-    public required string LastName { get; set; }
+    public required string Surname { get; set; }
 }
