@@ -23,6 +23,7 @@ public class LookupPersonController : ControllerBase
 {
     private readonly IPersonClient _personClient;
     private readonly ILogger<LookupOrganisationController> _logger;
+
     /// <summary>
     /// Initialize a new instance of <see cref="LookupPersonController"/> with the given services.
     /// </summary>
