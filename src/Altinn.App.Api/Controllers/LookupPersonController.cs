@@ -22,14 +22,14 @@ namespace Altinn.App.Api.Controllers;
 public class LookupPersonController : ControllerBase
 {
     private readonly IPersonClient _personClient;
-    private readonly ILogger<LookupOrganisationController> _logger;
+    private readonly ILogger<LookupPersonController> _logger;
 
     /// <summary>
     /// Initialize a new instance of <see cref="LookupPersonController"/> with the given services.
     /// </summary>
     /// <param name="personClient">A client for looking up a person.</param>
     /// <param name="logger">The logger</param>
-    public LookupPersonController(IPersonClient personClient, ILogger<LookupOrganisationController> logger)
+    public LookupPersonController(IPersonClient personClient, ILogger<LookupPersonController> logger)
     {
         _personClient = personClient;
         _logger = logger;
