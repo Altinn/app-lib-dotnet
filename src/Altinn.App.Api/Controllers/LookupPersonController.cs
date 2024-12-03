@@ -48,7 +48,7 @@ public class LookupPersonController : ControllerBase
         CancellationToken cancellationToken
     )
     {
-        var personResult = await GetPersoonDataOrError(
+        var personResult = await GetPersonDataOrError(
             lookupPersonRequest.SocialSecurityNumber,
             lookupPersonRequest.LastName,
             cancellationToken
@@ -63,7 +63,7 @@ public class LookupPersonController : ControllerBase
         return Ok(LookupPersonResponse.CreateFromPerson(personResult.Ok));
     }
 
-    private async Task<ServiceResult<Person?, ProblemDetails>> GetPersoonDataOrError(
+    private async Task<ServiceResult<Person?, ProblemDetails>> GetPersonDataOrError(
         string ssn,
         string lastName,
         CancellationToken cancellationToken
