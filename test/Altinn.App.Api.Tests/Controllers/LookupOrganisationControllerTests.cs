@@ -71,7 +71,7 @@ public class LookupOrganisationControllerTests : ApiTestBase, IClassFixture<WebA
             return await Task.FromResult(response);
         };
 
-        HttpResponseMessage response = await client.GetAsync($"{Org}/{App}/api/v1/organisations/{orgNr}");
+        HttpResponseMessage response = await client.GetAsync($"{Org}/{App}/api/v1/lookup/organisation/{orgNr}");
 
         sendAsyncCalled.Should().BeTrue();
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -106,7 +106,7 @@ public class LookupOrganisationControllerTests : ApiTestBase, IClassFixture<WebA
             return await Task.FromResult(response);
         };
 
-        HttpResponseMessage response = await client.GetAsync($"{Org}/{App}/api/v1/organisations/{orgNr}");
+        HttpResponseMessage response = await client.GetAsync($"{Org}/{App}/api/v1/lookup/organisation/{orgNr}");
 
         sendAsyncCalled.Should().BeTrue();
         response.StatusCode.Should().Be(HttpStatusCode.OK);

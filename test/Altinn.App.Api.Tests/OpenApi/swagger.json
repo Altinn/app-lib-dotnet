@@ -2499,7 +2499,7 @@
         }
       }
     },
-    "/{org}/{app}/api/v1/organisations/{orgNr}": {
+    "/{org}/{app}/api/v1/lookup/organisation/{orgNr}": {
       "get": {
         "tags": [
           "LookupOrganisation"
@@ -2537,6 +2537,26 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/LookupOrganisationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -2583,6 +2603,36 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/LookupPersonResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
