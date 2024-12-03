@@ -45,6 +45,7 @@ public class LookupOrganisationController : ControllerBase
     [Route("{orgNr}")]
     [ProducesResponseType(typeof(LookupOrganisationResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<LookupOrganisationResponse>> LookUpOrganisation([FromRoute] string orgNr)
     {
         _logger.LogInformation($"Looking up organisation with orgNr: {orgNr}");
