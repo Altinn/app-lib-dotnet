@@ -1,7 +1,10 @@
+using System.Net;
 using System.Net.Mime;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Registers;
+using Altinn.App.Core.Models.Result;
 using Altinn.Platform.Register.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,14 +22,17 @@ namespace Altinn.App.Api.Controllers;
 public class LookupPersonController : ControllerBase
 {
     private readonly IPersonClient _personClient;
+    private readonly ILogger<LookupPersonController> _logger;
 
     /// <summary>
     /// Initialize a new instance of <see cref="LookupPersonController"/> with the given services.
     /// </summary>
     /// <param name="personClient">A client for looking up a person.</param>
-    public LookupPersonController(IPersonClient personClient)
+    /// <param name="logger">The logger</param>
+    public LookupPersonController(IPersonClient personClient, ILogger<LookupPersonController> logger)
     {
         _personClient = personClient;
+        _logger = logger;
     }
 
     /// <summary>
@@ -37,17 +43,78 @@ public class LookupPersonController : ControllerBase
     /// <returns>A <see cref="LookupPersonResponse"/> object.</returns>
     [HttpPost]
     [ProducesResponseType(typeof(LookupPersonResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<LookupPersonResponse>> LookupPerson(
         [FromBody] LookupPersonRequest lookupPersonRequest,
         CancellationToken cancellationToken
     )
     {
-        Person? person = await _personClient.GetPerson(
+        var personResult = await GetPersonDataOrError(
             lookupPersonRequest.SocialSecurityNumber,
             lookupPersonRequest.LastName,
             cancellationToken
         );
 
-        return Ok(LookupPersonResponse.CreateFromPerson(person));
+        if (!personResult.Success)
+        {
+            ProblemDetails problemDetails = personResult.Error;
+            return StatusCode(problemDetails.Status ?? 500, problemDetails);
+        }
+
+        return Ok(LookupPersonResponse.CreateFromPerson(personResult.Ok));
+    }
+
+    private async Task<ServiceResult<Person?, ProblemDetails>> GetPersonDataOrError(
+        string ssn,
+        string lastName,
+        CancellationToken cancellationToken
+    )
+    {
+        Person? person;
+        try
+        {
+            person = await _personClient.GetPerson(ssn, lastName, cancellationToken);
+        }
+        catch (PlatformHttpException e)
+        {
+            if (e.Response.StatusCode == HttpStatusCode.Forbidden)
+            {
+                return new ProblemDetails
+                {
+                    Title = "Forbidden",
+                    Detail = "Access to the register is forbidden",
+                    Status = StatusCodes.Status403Forbidden,
+                };
+            }
+            else if (e.Response.StatusCode == HttpStatusCode.TooManyRequests)
+            {
+                return new ProblemDetails
+                {
+                    Title = "Too many requests",
+                    Detail = "Too many requests to the register",
+                    Status = StatusCodes.Status429TooManyRequests,
+                };
+            }
+            return new ProblemDetails
+            {
+                Title = "Error when calling register",
+                Detail = e.Message,
+                Status = StatusCodes.Status500InternalServerError,
+            };
+        }
+        catch (Exception e)
+        {
+            _logger.LogError($"Error when calling the Person Register Api, {e.Message}");
+            return new ProblemDetails
+            {
+                Title = "Error when calling the Person Register",
+                Detail = e.Message,
+                Status = StatusCodes.Status500InternalServerError,
+            };
+        }
+
+        return person;
     }
 }
