@@ -60,17 +60,20 @@ public class LookupOrganisationController : ControllerBase
         return Ok(LookupOrganisationResponse.CreateFromOrganisation(organisationResult.Ok));
     }
 
-    private async Task<ServiceResult<Organization, ProblemDetails>> GetOrganisationDataOrError(string orgNr)
+    private async Task<ServiceResult<Organization?, ProblemDetails>> GetOrganisationDataOrError(string orgNr)
     {
-        Organization? organisation = await _organisationClient.GetOrganization(orgNr);
-
-        if (organisation is null)
+        Organization? organisation;
+        try
+        {
+            organisation = await _organisationClient.GetOrganization(orgNr);
+        }
+        catch
         {
             return new ProblemDetails
             {
-                Title = "Organisation not found",
-                Detail = $"No organisation registered with the supplied organisation number",
-                Status = StatusCodes.Status400BadRequest,
+                Title = "Error when calling Register",
+                Detail = "Something went wrong when calling the Register API.",
+                Status = StatusCodes.Status500InternalServerError,
             };
         }
 

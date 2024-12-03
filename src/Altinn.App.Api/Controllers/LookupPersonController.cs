@@ -63,7 +63,7 @@ public class LookupPersonController : ControllerBase
         return Ok(LookupPersonResponse.CreateFromPerson(personResult.Ok));
     }
 
-    private async Task<ServiceResult<Person, ProblemDetails>> GetPersoonDataOrError(
+    private async Task<ServiceResult<Person?, ProblemDetails>> GetPersoonDataOrError(
         string ssn,
         string lastName,
         CancellationToken cancellationToken
@@ -101,14 +101,13 @@ public class LookupPersonController : ControllerBase
                 Status = StatusCodes.Status500InternalServerError,
             };
         }
-
-        if (person is null)
+        catch (Exception e)
         {
             return new ProblemDetails
             {
-                Title = "Person not found",
-                Detail = $"No person is registered with this combination of national ID number/D-number and name",
-                Status = StatusCodes.Status400BadRequest,
+                Title = "Error when calling Register",
+                Detail = e.Message,
+                Status = StatusCodes.Status500InternalServerError,
             };
         }
 
