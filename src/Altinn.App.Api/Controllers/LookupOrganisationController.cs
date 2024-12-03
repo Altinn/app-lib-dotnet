@@ -62,10 +62,9 @@ public class LookupOrganisationController : ControllerBase
 
     private async Task<ServiceResult<Organization?, ProblemDetails>> GetOrganisationDataOrError(string orgNr)
     {
-        Organization? organisation;
         try
         {
-            organisation = await _organisationClient.GetOrganization(orgNr);
+            return await _organisationClient.GetOrganization(orgNr);
         }
         catch (Exception e)
         {
@@ -77,7 +76,5 @@ public class LookupOrganisationController : ControllerBase
                 Status = StatusCodes.Status500InternalServerError,
             };
         }
-
-        return organisation;
     }
 }
