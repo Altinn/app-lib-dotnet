@@ -50,7 +50,7 @@ public class LookupPersonController : ControllerBase
     {
         var personResult = await GetPersoonDataOrError(
             lookupPersonRequest.SocialSecurityNumber,
-            lookupPersonRequest.Surname,
+            lookupPersonRequest.LastName,
             cancellationToken
         );
 
@@ -65,14 +65,14 @@ public class LookupPersonController : ControllerBase
 
     private async Task<ServiceResult<Person, ProblemDetails>> GetPersoonDataOrError(
         string ssn,
-        string surname,
+        string lastName,
         CancellationToken cancellationToken
     )
     {
         Person? person;
         try
         {
-            person = await _personClient.GetPerson(ssn, surname, cancellationToken);
+            person = await _personClient.GetPerson(ssn, lastName, cancellationToken);
         }
         catch (PlatformHttpException e)
         {
