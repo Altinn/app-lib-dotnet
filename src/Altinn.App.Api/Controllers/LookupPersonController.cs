@@ -22,14 +22,16 @@ namespace Altinn.App.Api.Controllers;
 public class LookupPersonController : ControllerBase
 {
     private readonly IPersonClient _personClient;
-
+    private readonly ILogger<LookupOrganisationController> _logger;
     /// <summary>
     /// Initialize a new instance of <see cref="LookupPersonController"/> with the given services.
     /// </summary>
     /// <param name="personClient">A client for looking up a person.</param>
-    public LookupPersonController(IPersonClient personClient)
+    /// <param name="logger">The logger</param>
+    public LookupPersonController(IPersonClient personClient, ILogger<LookupOrganisationController> logger)
     {
         _personClient = personClient;
+        _logger = logger;
     }
 
     /// <summary>
@@ -96,16 +98,17 @@ public class LookupPersonController : ControllerBase
             }
             return new ProblemDetails
             {
-                Title = "Error when calling Register",
+                Title = "Error when calling register",
                 Detail = e.Message,
                 Status = StatusCodes.Status500InternalServerError,
             };
         }
         catch (Exception e)
         {
+            _logger.LogError($"Error when calling the Person Register Api, {e.Message}");
             return new ProblemDetails
             {
-                Title = "Error when calling Register",
+                Title = "Error when calling the Person Register",
                 Detail = e.Message,
                 Status = StatusCodes.Status500InternalServerError,
             };
