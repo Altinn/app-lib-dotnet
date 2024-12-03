@@ -4241,14 +4241,14 @@ components:
       additionalProperties: false
     LookupPersonRequest:
       required:
+        - lastName
         - socialSecurityNumber
-        - surname
       type: object
       properties:
         socialSecurityNumber:
           type: string
           nullable: true
-        surname:
+        lastName:
           type: string
           nullable: true
       additionalProperties: false

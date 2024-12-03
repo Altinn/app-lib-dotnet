@@ -6706,8 +6706,8 @@
       },
       "LookupPersonRequest": {
         "required": [
-          "socialSecurityNumber",
-          "surname"
+          "lastName",
+          "socialSecurityNumber"
         ],
         "type": "object",
         "properties": {
@@ -6715,7 +6715,7 @@
             "type": "string",
             "nullable": true
           },
-          "surname": {
+          "lastName": {
             "type": "string",
             "nullable": true
           }
