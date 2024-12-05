@@ -63,12 +63,6 @@
     </PropertyGroup>
   </Target>
 
-  <Target Name="AssemblyVersionTarget" AfterTargets="MinVer" Condition="'$(MinVerVersionOverride)' != ''">
-    <PropertyGroup>
-      <PackageVersion>$(MinVerVersionOverride)</PackageVersion>
-    </PropertyGroup>
-  </Target>
-
   <ItemGroup Condition="'$(Deterministic)'=='true'">
     <SourceRoot Include="$(MSBuildThisFileDirectory)/" />
   </ItemGroup>
