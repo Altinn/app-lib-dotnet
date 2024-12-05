@@ -26,16 +26,13 @@ jobs:
           echo $version
       - name: Build
         run: |
-          echo $MINVERVERSIONOVERRIDE
-          dotnet build AppLibDotnet.sln -v m -c Release -p:MinVerVersionOverride=$MINVERVERSIONOVERRIDE
+          dotnet build AppLibDotnet.sln -v m -c Release
       - name: Test
         run: |
-          echo $MINVERVERSIONOVERRIDE
-          dotnet test AppLibDotnet.sln -v m --no-restore --no-build -c Release -p:MinVerVersionOverride=$MINVERVERSIONOVERRIDE
+          dotnet test AppLibDotnet.sln -v m --no-restore --no-build -c Release
       - name: Pack PR release
         run: |
-          echo $MINVERVERSIONOVERRIDE
-          dotnet pack AppLibDotnet.sln -v m --no-restore --no-build -c Release -p:Deterministic=true -p:BuildNumber=${{ github.run_number }} -p:MinVerVersionOverride=$MINVERVERSIONOVERRIDE
+          dotnet pack AppLibDotnet.sln -v m --no-restore --no-build -c Release -p:Deterministic=true -p:BuildNumber=${{ github.run_number }}
       - name: Versions
         run: |
           dotnet --version

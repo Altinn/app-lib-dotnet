@@ -26,6 +26,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <MinVerDefaultPreReleaseIdentifiers>preview.0</MinVerDefaultPreReleaseIdentifiers>
+    <MinVerTagPrefix>v</MinVerTagPrefix>
 
     <RepoRoot>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory)).Parent.FullName)</RepoRoot>
 
@@ -41,18 +43,13 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(MinVerVersionOverride)' == ''">
-    <MinVerDefaultPreReleaseIdentifiers>preview.0</MinVerDefaultPreReleaseIdentifiers>
-    <MinVerTagPrefix>v</MinVerTagPrefix>
-  </PropertyGroup>
-
-  <Target Name="VersionOverride" AfterTargets="MinVer" Condition="'$(MinVerVersionOverride)' != ''">
+  <!-- <Target Name="VersionOverride" AfterTargets="MinVer" Condition="'$(MinVerVersionOverride)' != ''">
     <PropertyGroup>
       <PackageVersion>$(MinVerVersionOverride)</PackageVersion>
     </PropertyGroup>
-  </Target>
+  </Target> -->
 
-  <Target Name="AssemblyVersionTarget" AfterTargets="MinVer" Condition="'$(MinVerVersion)'!='' AND '$(BuildNumber)' != '' AND '$(MinVerVersionOverride)' == ''">
+  <Target Name="AssemblyVersionTarget" AfterTargets="MinVer" Condition="'$(MinVerVersion)'!='' AND '$(BuildNumber)' != ''">
     <PropertyGroup>
       <FileVersion>$(MinVerMajor).$(MinVerMinor).$(MinVerPatch).$(BuildNumber)</FileVersion>
       <Version>$(MinVerMajor).$(MinVerMinor).$(MinVerPatch).$(BuildNumber)</Version>
