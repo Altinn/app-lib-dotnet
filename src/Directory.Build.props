@@ -28,8 +28,6 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
 
     <RepoRoot>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory)).Parent.FullName)</RepoRoot>
-    <MinVerDefaultPreReleaseIdentifiers>preview.0</MinVerDefaultPreReleaseIdentifiers>
-    <MinVerTagPrefix>v</MinVerTagPrefix>
 
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Authors>Altinn Platform Contributors</Authors>
@@ -43,7 +41,12 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
-  <Target Name="AssemblyVersionTarget" AfterTargets="MinVer" Condition="'$(MinVerVersion)'!='' AND '$(BuildNumber)' != ''">
+  <PropertyGroup Condition="'$(MinVerVersionOverride)' == ''">
+    <MinVerDefaultPreReleaseIdentifiers>preview.0</MinVerDefaultPreReleaseIdentifiers>
+    <MinVerTagPrefix>v</MinVerTagPrefix>
+  </PropertyGroup>
+
+  <Target Name="AssemblyVersionTarget" AfterTargets="MinVer" Condition="'$(MinVerVersion)'!='' AND '$(BuildNumber)' != '' AND '$(MinVerVersionOverride)' == ''">
     <PropertyGroup>
       <FileVersion>$(MinVerMajor).$(MinVerMinor).$(MinVerPatch).$(BuildNumber)</FileVersion>
       <Version>$(MinVerMajor).$(MinVerMinor).$(MinVerPatch).$(BuildNumber)</Version>
