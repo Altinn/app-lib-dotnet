@@ -26,19 +26,3 @@ jobs:
       - name: Test
         run: |
           dotnet test AppLibDotnet.sln -v m --no-restore --no-build
-
-      - name: Build PR release version
-        run: |
-          dotnet tool restore
-          version=$(dotnet minver --tag-prefix v --default-pre-release-identifiers preview.0)+$GITHUB_SHA
-          echo "MINVERVERSIONOVERRIDE=$version" >> $GITHUB_ENV
-      - name: Pack PR release
-        run: |
-          dotnet pack AppLibDotnet.sln --configuration Release --no-restore \
-            -p:Deterministic=true -p:BuildNumber=${{ github.run_number }}
-      - name: Versions
-        run: |
-          dotnet --version
-      - name: Publish PR release
-        run: |
-          dotnet nuget push src/**/bin/Release/*.nupkg --source https://nuget.pkg.github.com/Altinn/index.json --api-key ${{ secrets.GITHUB_TOKEN }}

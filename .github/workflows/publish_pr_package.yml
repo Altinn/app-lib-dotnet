@@ -1,0 +1,40 @@
+name: Publish PR packages
+on:
+  pull_request:
+jobs:
+  run:
+    name: Publish PR packages
+    runs-on: ubuntu-latest
+    env:
+      DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE: false
+    steps:
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
+      - name: Build
+        run: |
+          dotnet build AppLibDotnet.sln -v m -c Release
+      - name: Test
+        run: |
+          dotnet test AppLibDotnet.sln -v m --no-restore --no-build -c Release
+
+      - name: Build PR release version
+        run: |
+          dotnet tool restore
+          version=$(dotnet minver --tag-prefix v --default-pre-release-identifiers preview.0)+$GITHUB_SHA
+          echo "MINVERVERSIONOVERRIDE=$version" >> $GITHUB_ENV
+      - name: Pack PR release
+        run: |
+          dotnet pack AppLibDotnet.sln --c Release --no-restore --no-build \
+            -p:Deterministic=true -p:BuildNumber=${{ github.run_number }}
+      - name: Versions
+        run: |
+          dotnet --version
+      - name: Publish PR release
+        run: |
+          dotnet nuget push src/**/bin/Release/*.nupkg --source https://nuget.pkg.github.com/Altinn/index.json --api-key ${{ secrets.GITHUB_TOKEN }}
