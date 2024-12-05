@@ -30,7 +30,7 @@ jobs:
           echo "MINVERVERSIONOVERRIDE=$version" >> $GITHUB_ENV
       - name: Pack PR release
         run: |
-          dotnet pack AppLibDotnet.sln --c Release --no-restore --no-build \
+          dotnet pack AppLibDotnet.sln -c Release --no-restore --no-build \
             -p:Deterministic=true -p:BuildNumber=${{ github.run_number }}
       - name: Versions
         run: |
