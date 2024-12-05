@@ -20,7 +20,7 @@ jobs:
       - name: Build PR release version
         run: |
           dotnet tool restore
-          version=$(dotnet minver --tag-prefix v --ignore-height --default-pre-release-identifiers preview.0)+${{ github.event.pull_request.head.sha }}
+          version=$(dotnet minver --tag-prefix v --ignore-height --default-pre-release-identifiers preview.0).${{ github.event.pull_request.head.sha }}
           echo "MINVERVERSIONOVERRIDE=$version" >> $GITHUB_ENV
           echo $version
       - name: Build
