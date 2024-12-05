@@ -26,7 +26,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-    <NoWarn>7035</NoWarn>
 
     <RepoRoot>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory)).Parent.FullName)</RepoRoot>
 
@@ -50,9 +49,6 @@
   <Target Name="VersionOverride" AfterTargets="MinVer" Condition="'$(MinVerVersionOverride)' != ''">
     <PropertyGroup>
       <PackageVersion>$(MinVerVersionOverride)</PackageVersion>
-      <FileVersion>$(MinVerVersionOverride)</FileVersion>
-      <Version>$(MinVerVersionOverride)</Version>
-      <AssemblyVersion>$(MinVerVersionOverride)</AssemblyVersion>
     </PropertyGroup>
   </Target>
 
