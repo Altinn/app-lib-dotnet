@@ -25,12 +25,15 @@ jobs:
           echo $version
       - name: Build
         run: |
+          echo $MINVERVERSIONOVERRIDE
           dotnet build AppLibDotnet.sln -v m -c Release
       - name: Test
         run: |
+          echo $MINVERVERSIONOVERRIDE
           dotnet test AppLibDotnet.sln -v m --no-restore --no-build -c Release
       - name: Pack PR release
         run: |
+          echo $MINVERVERSIONOVERRIDE
           dotnet pack AppLibDotnet.sln -c Release --no-restore --no-build \
             -p:Deterministic=true -p:BuildNumber=${{ github.run_number }}
       - name: Versions
@@ -38,4 +41,4 @@ jobs:
           dotnet --version
       - name: Publish PR release
         run: |
-          dotnet nuget push src/**/bin/Release/*.nupkg --source https://nuget.pkg.github.com/Altinn/index.json --api-key ${{ secrets.GITHUB_TOKEN }}
+          dotnet nuget push src/**/bin/Release/*.nupkg --source https://nuget.pkg.github.com/Altinn/index.json --api-key ${{ secrets.GITHUB_TOKEN }} --skip-duplicate
