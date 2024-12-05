@@ -46,15 +46,26 @@
     <MinVerTagPrefix>v</MinVerTagPrefix>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(MinVerVersionOverride)' != ''">
-    <PackageVersion>$(MinVerVersionOverride)</PackageVersion>
-  </PropertyGroup>
+  <Target Name="AssemblyVersionTarget" AfterTargets="MinVer" Condition="'$(MinVerVersionOverride)' != ''">
+    <PropertyGroup>
+      <PackageVersion>$(MinVerVersionOverride)</PackageVersion>
+      <FileVersion>$(MinVerVersionOverride)</FileVersion>
+      <Version>$(MinVerVersionOverride)</Version>
+      <AssemblyVersion>$(MinVerVersionOverride)</AssemblyVersion>
+    </PropertyGroup>
+  </Target>
 
   <Target Name="AssemblyVersionTarget" AfterTargets="MinVer" Condition="'$(MinVerVersion)'!='' AND '$(BuildNumber)' != '' AND '$(MinVerVersionOverride)' == ''">
     <PropertyGroup>
       <FileVersion>$(MinVerMajor).$(MinVerMinor).$(MinVerPatch).$(BuildNumber)</FileVersion>
       <Version>$(MinVerMajor).$(MinVerMinor).$(MinVerPatch).$(BuildNumber)</Version>
       <AssemblyVersion>$(MinVerMajor).$(MinVerMinor).$(MinVerPatch).$(BuildNumber)</AssemblyVersion>
+    </PropertyGroup>
+  </Target>
+
+  <Target Name="AssemblyVersionTarget" AfterTargets="MinVer" Condition="'$(MinVerVersionOverride)' != ''">
+    <PropertyGroup>
+      <PackageVersion>$(MinVerVersionOverride)</PackageVersion>
     </PropertyGroup>
   </Target>
 
