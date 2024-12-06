@@ -1522,6 +1522,90 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/SimpleInstance'
+  '/{org}/{app}/api/v1/lookup/organisation/{orgNr}':
+    get:
+      tags:
+        - LookupOrganisation
+      parameters:
+        - name: orgNr
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: org
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: app
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LookupOrganisationResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  '/{org}/{app}/api/v1/lookup/person':
+    post:
+      tags:
+        - LookupPerson
+      parameters:
+        - name: org
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: app
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LookupPersonRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LookupPersonResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
   '/{org}/{app}/api/options/{optionsId}':
     get:
       tags:
@@ -2670,6 +2754,74 @@ paths:
       responses:
         '200':
           description: OK
+  '/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/signing':
+    get:
+      tags:
+        - Signing
+      parameters:
+        - name: org
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: app
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: instanceOwnerPartyId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - name: instanceGuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: language
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/SingingStateResponse'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SingingStateResponse'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/SingingStateResponse'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/SingingStateResponse'
+            text/xml:
+              schema:
+                $ref: '#/components/schemas/SingingStateResponse'
+        '404':
+          description: Not Found
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/xml:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
   '/{org}/{app}/v1/data':
     get:
       tags:
@@ -4147,6 +4299,35 @@ components:
           type: string
           nullable: true
       additionalProperties: false
+    LookupOrganisationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        organisationDetails:
+          $ref: '#/components/schemas/OrganisationDetails'
+      additionalProperties: false
+    LookupPersonRequest:
+      required:
+        - lastName
+        - socialSecurityNumber
+      type: object
+      properties:
+        socialSecurityNumber:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+      additionalProperties: false
+    LookupPersonResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        personDetails:
+          $ref: '#/components/schemas/PersonDetails'
+      additionalProperties: false
     MessageBoxConfig:
       type: object
       properties:
@@ -4222,6 +4403,19 @@ components:
           type: number
           format: double
           readOnly: true
+      additionalProperties: false
+    OrganisationDetails:
+      required:
+        - name
+        - orgNr
+      type: object
+      properties:
+        orgNr:
+          type: string
+          nullable: true
+        name:
+          type: string
+          nullable: true
       additionalProperties: false
     PartyTypesAllowed:
       type: object
@@ -4414,6 +4608,29 @@ components:
         - Cancelled
         - Skipped
       type: string
+    PersonDetails:
+      required:
+        - lastName
+        - name
+        - ssn
+      type: object
+      properties:
+        ssn:
+          type: string
+          nullable: true
+        name:
+          type: string
+          nullable: true
+        firstName:
+          type: string
+          nullable: true
+        middleName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+      additionalProperties: false
     PhoneNumber:
       type: object
       properties:
@@ -4582,6 +4799,22 @@ components:
           type: string
           nullable: true
       additionalProperties: false
+    SigneeState:
+      required:
+        - hasSigned
+        - name
+      type: object
+      properties:
+        name:
+          type: string
+          nullable: true
+        hasSigned:
+          type: boolean
+        delegationSuccessful:
+          type: boolean
+        notificationSuccessful:
+          type: boolean
+      additionalProperties: false
     SimpleInstance:
       type: object
       properties:
@@ -4603,6 +4836,17 @@ components:
           nullable: true
         lastChangedBy:
           type: string
+          nullable: true
+      additionalProperties: false
+    SingingStateResponse:
+      required:
+        - signeeStates
+      type: object
+      properties:
+        signeeStates:
+          type: array
+          items:
+            $ref: '#/components/schemas/SigneeState'
           nullable: true
       additionalProperties: false
     Substatus:
