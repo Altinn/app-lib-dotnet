@@ -1,10 +1,12 @@
-name: Publish PR packages
+name: PR actions
 on:
-  pull_request:
+  issue_comment:
+    types: [created, edited]
 jobs:
-  run:
+  publish:
     name: Publish PR packages
     runs-on: ubuntu-latest
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/publish')
     env:
       DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE: false
     steps:
