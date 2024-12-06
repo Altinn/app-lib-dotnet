@@ -10,7 +10,8 @@ using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
-using Altinn.App.Core.Internal.Process.ProcessTasks;
+using Altinn.App.Core.Internal.Process.ProcessTasks.Common;
+using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
@@ -31,6 +32,7 @@ public class ProcessEngine : IProcessEngine
     private readonly IProcessEventHandlerDelegator _processEventHandlerDelegator;
     private readonly IProcessEventDispatcher _processEventDispatcher;
     private readonly UserActionService _userActionService;
+    private readonly IEnumerable<IServiceTask> _serviceTasks;
     private readonly Telemetry? _telemetry;
     private readonly IProcessTaskCleaner _processTaskCleaner;
     private readonly IDataClient _dataClient;
@@ -39,7 +41,7 @@ public class ProcessEngine : IProcessEngine
     private readonly IAppMetadata _appMetadata;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ProcessEngine"/> class
+    /// Initializes a new instance of the <see cref="ProcessEngine"/> class.
     /// </summary>
     public ProcessEngine(
         IProcessReader processReader,
@@ -53,6 +55,7 @@ public class ProcessEngine : IProcessEngine
         IInstanceClient instanceClient,
         ModelSerializationService modelSerialization,
         IAppMetadata appMetadata,
+        IEnumerable<IServiceTask> serviceTasks,
         Telemetry? telemetry = null
     )
     {
@@ -67,6 +70,7 @@ public class ProcessEngine : IProcessEngine
         _instanceClient = instanceClient;
         _modelSerialization = modelSerialization;
         _appMetadata = appMetadata;
+        _serviceTasks = serviceTasks;
         _telemetry = telemetry;
     }
 
@@ -150,7 +154,8 @@ public class ProcessEngine : IProcessEngine
         using var activity = _telemetry?.StartProcessNextActivity(request.Instance, request.Action);
 
         Instance instance = request.Instance;
-        string? currentElementId = instance.Process?.CurrentTask?.ElementId;
+        ProcessState process = instance.Process ?? throw new ProcessException("Instance does not have a process.");
+        string? currentElementId = process.CurrentTask?.ElementId;
 
         if (currentElementId == null)
         {
@@ -169,7 +174,8 @@ public class ProcessEngine : IProcessEngine
         await _processTaskCleaner.RemoveAllDataElementsGeneratedFromTask(instance, currentElementId);
 
         int? userId = request.User.GetUserIdAsInt();
-        IUserAction? actionHandler = _userActionService.GetActionHandler(request.Action);
+        string? action = request.Action;
+        string altinnTaskType = instance.Process.CurrentTask.AltinnTaskType;
         var cachedDataMutator = new InstanceDataUnitOfWork(
             instance,
             _dataClient,
@@ -178,22 +184,73 @@ public class ProcessEngine : IProcessEngine
             _modelSerialization
         );
 
-        UserActionResult actionResult = actionHandler is null
-            ? UserActionResult.SuccessResult()
-            : await actionHandler.HandleAction(
-                new UserActionContext(cachedDataMutator, userId, language: request.Language)
+        // If the action is 'reject', we should not run any service task and there is no need to check for a user action handler, since 'reject' doesn't have one.
+        if (action is not "reject")
+        {
+            IServiceTask? serviceTask = _serviceTasks.FirstOrDefault(t =>
+                t.Type.Equals(altinnTaskType, StringComparison.OrdinalIgnoreCase)
             );
 
-        if (actionResult.ResultType != ResultType.Success)
-        {
-            var result = new ProcessChangeResult()
+            if (serviceTask is not null)
             {
-                Success = false,
-                ErrorMessage = $"Action handler for action {request.Action} failed!",
-                ErrorType = actionResult.ErrorType,
-            };
-            activity?.SetProcessChangeResult(result);
-            return result;
+                if (action is not "write")
+                {
+                    var result = new ProcessChangeResult()
+                    {
+                        Success = false,
+                        ErrorMessage =
+                            $"Server tasks ({altinnTaskType}) do not support running user actions! Received action param {action}.",
+                        ErrorType = ProcessErrorType.Conflict,
+                    };
+                    activity?.SetProcessChangeResult(result);
+                    return result;
+                }
+
+                using Activity? serviceTaskActivity = _telemetry?.StartProcessExecuteServiceTaskActivity(
+                    instance,
+                    altinnTaskType
+                );
+
+                try
+                {
+                    await serviceTask.Execute(currentElementId, instance);
+                }
+                catch (Exception ex)
+                {
+                    serviceTaskActivity?.Errored(ex);
+
+                    var result = new ProcessChangeResult()
+                    {
+                        Success = false,
+                        ErrorMessage = $"Server action {altinnTaskType} failed!",
+                        ErrorType = ProcessErrorType.Internal,
+                    };
+                    activity?.SetProcessChangeResult(result);
+                    return result;
+                }
+            }
+            else
+            {
+                IUserAction? userActionHandler = _userActionService.GetActionHandler(action);
+                if (userActionHandler is not null)
+                {
+                    UserActionResult actionResult = await userActionHandler.HandleAction(
+                        new UserActionContext(cachedDataMutator, userId, language: request.Language)
+                    );
+
+                    if (actionResult.ResultType != ResultType.Success)
+                    {
+                        var result = new ProcessChangeResult()
+                        {
+                            Success = false,
+                            ErrorMessage = $"Action handler for action {request.Action} failed!",
+                            ErrorType = actionResult.ErrorType,
+                        };
+                        activity?.SetProcessChangeResult(result);
+                        return result;
+                    }
+                }
+            }
         }
 
         if (cachedDataMutator.HasAbandonIssues)
