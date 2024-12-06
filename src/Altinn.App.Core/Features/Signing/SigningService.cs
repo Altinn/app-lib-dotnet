@@ -21,6 +21,22 @@ internal sealed class SigningService(
     Telemetry? telemetry = null
 ) : ISigningService
 {
+    public async Task<SigneesResult?> GetSignees(Instance instance, AltinnSignatureConfiguration signatureConfiguration)
+    {
+        string? signeeProviderId = signatureConfiguration.SigneeProviderId;
+        if (signeeProviderId is null)
+            return null;
+
+        ISigneeProvider signeeProvider =
+            signeeProviders.FirstOrDefault(sp => sp.Id == signeeProviderId)
+            ?? throw new SigneeProviderNotFoundException(
+                $"No signee provider found for task {instance.Process.CurrentTask.ElementId} with signeeProviderId {signeeProviderId}. Please add an implementation of the {nameof(ISigneeProvider)} interface with that ID or correct the ID."
+            );
+
+        SigneesResult signeesResult = await signeeProvider.GetSigneesAsync(instance);
+        return signeesResult;
+    }
+
     public async Task<List<SigneeContext>> InitializeSignees(
         Instance instance,
         AltinnSignatureConfiguration signatureConfiguration,
@@ -30,17 +46,11 @@ internal sealed class SigningService(
         using Activity? activity = telemetry?.StartAssignSigneesActivity();
         string taskId = instance.Process.CurrentTask.ElementId;
 
-        string? signeeProviderId = signatureConfiguration.SigneeProviderId;
-        if (signeeProviderId is null)
+        SigneesResult? signeesResult = await GetSignees(instance, signatureConfiguration);
+        if (signeesResult is null)
+        {
             return [];
-
-        ISigneeProvider signeeProvider =
-            signeeProviders.FirstOrDefault(sp => sp.Id == signeeProviderId)
-            ?? throw new SigneeProviderNotFoundException(
-                $"No signee provider found for task {instance.Process.CurrentTask.ElementId} with signeeProviderId {signeeProviderId}. Please add an implementation of the {nameof(ISigneeProvider)} interface with that ID or correct the ID."
-            );
-
-        SigneesResult signeesResult = await signeeProvider.GetSigneesAsync(instance);
+        }
 
         List<SigneeContext> personSigneeContexts = await GetPersonSigneeContexts(taskId, signeesResult, ct);
         List<SigneeContext> organisationSigneeContexts = await GetOrganisationSigneeContexts(taskId, signeesResult, ct);
@@ -56,7 +66,7 @@ internal sealed class SigningService(
         CancellationToken ct
     )
     {
-        using var activity = telemetry?.StartAssignSigneesActivity();
+        using Activity? activity = telemetry?.StartAssignSigneesActivity();
         string taskId = instance.Process.CurrentTask.ElementId;
 
         await signingDelegationService.DelegateSigneeRights(taskId, instance, signeeContexts, ct);
@@ -69,12 +79,12 @@ internal sealed class SigningService(
         return signeeContexts;
     }
 
-    public List<SigneeContext> ReadSignees()
+    public Task<List<SigneeContext>> GetSigneesState()
     {
-        using var activity = telemetry?.StartReadSigneesActivity();
+        using Activity? activity = telemetry?.StartReadSigneesActivity();
         // TODO: Get signees from state
 
-        // TODO: Get signees from policy
+        // TODO: Get signees from policy??
 
         throw new NotImplementedException();
     }
@@ -82,7 +92,7 @@ internal sealed class SigningService(
     //TODO: There is already logic for the sign action in the SigningUserAction class. Maybe move most of it here?
     public async Task Sign(SigneeContext signee)
     {
-        using var activity = telemetry?.StartSignActivity();
+        using Activity? activity = telemetry?.StartSignActivity();
         // var state = StorageClient.GetSignState(...);
         try
         {

@@ -6,6 +6,8 @@ namespace Altinn.App.Core.Features.Signing.Interfaces;
 
 internal interface ISigningService
 {
+    Task<SigneesResult?> GetSignees(Instance instance, AltinnSignatureConfiguration signatureConfiguration);
+
     Task<List<SigneeContext>> InitializeSignees(
         Instance instance,
         AltinnSignatureConfiguration signatureConfiguration,
@@ -18,5 +20,5 @@ internal interface ISigningService
         CancellationToken ct
     );
 
-    List<SigneeContext> ReadSignees();
+    Task<List<SigneeContext>> GetSigneesState();
 }
