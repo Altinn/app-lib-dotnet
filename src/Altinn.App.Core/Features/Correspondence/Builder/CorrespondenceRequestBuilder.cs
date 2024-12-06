@@ -4,7 +4,7 @@ using Altinn.App.Core.Models;
 namespace Altinn.App.Core.Features.Correspondence.Builder;
 
 /// <summary>
-/// Builder factory for creating <see cref="CorrespondenceRequest"/> objects
+/// Builder factory for creating <see cref="CorrespondenceRequest"/> objects.
 /// </summary>
 public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
 {
@@ -23,12 +23,13 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     private List<CorrespondenceReplyOption>? _replyOptions;
     private CorrespondenceNotification? _notification;
     private bool? _ignoreReservation;
+    private bool? _isConfirmationNeeded;
     private List<Guid>? _existingAttachments;
 
     private CorrespondenceRequestBuilder() { }
 
     /// <summary>
-    /// Creates a new <see cref="CorrespondenceRequestBuilder"/> instance
+    /// Creates a new <see cref="CorrespondenceRequestBuilder"/> instance.
     /// </summary>
     public static ICorrespondenceRequestBuilderResourceId Create() => new CorrespondenceRequestBuilder();
 
@@ -248,6 +249,13 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     }
 
     /// <inheritdoc/>
+    public ICorrespondenceRequestBuilder WithIsConfirmationNeeded(bool isConfirmationNeeded)
+    {
+        _isConfirmationNeeded = isConfirmationNeeded;
+        return this;
+    }
+
+    /// <inheritdoc/>
     public ICorrespondenceRequestBuilder WithExistingAttachment(Guid existingAttachment)
     {
         return WithExistingAttachments([existingAttachment]);
@@ -308,6 +316,7 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
             Notification = _notification,
             IgnoreReservation = _ignoreReservation,
             ExistingAttachments = _existingAttachments,
+            IsConfirmationNeeded = _isConfirmationNeeded,
         };
     }
 }
