@@ -2754,6 +2754,74 @@ paths:
       responses:
         '200':
           description: OK
+  '/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/signing':
+    get:
+      tags:
+        - Signing
+      parameters:
+        - name: org
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: app
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: instanceOwnerPartyId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - name: instanceGuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: language
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/SingingStateResponse'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SingingStateResponse'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/SingingStateResponse'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/SingingStateResponse'
+            text/xml:
+              schema:
+                $ref: '#/components/schemas/SingingStateResponse'
+        '404':
+          description: Not Found
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/xml:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
   '/{org}/{app}/v1/data':
     get:
       tags:
@@ -4731,6 +4799,22 @@ components:
           type: string
           nullable: true
       additionalProperties: false
+    SigneeState:
+      required:
+        - hasSigned
+        - name
+      type: object
+      properties:
+        name:
+          type: string
+          nullable: true
+        hasSigned:
+          type: boolean
+        delegationSuccessful:
+          type: boolean
+        notificationSuccessful:
+          type: boolean
+      additionalProperties: false
     SimpleInstance:
       type: object
       properties:
@@ -4752,6 +4836,17 @@ components:
           nullable: true
         lastChangedBy:
           type: string
+          nullable: true
+      additionalProperties: false
+    SingingStateResponse:
+      required:
+        - signeeStates
+      type: object
+      properties:
+        signeeStates:
+          type: array
+          items:
+            $ref: '#/components/schemas/SigneeState'
           nullable: true
       additionalProperties: false
     Substatus:
