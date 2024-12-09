@@ -63,7 +63,14 @@ public class SigningController : ControllerBase
 
         if (instance.Process.CurrentTask.AltinnTaskType != "signing")
         {
-            return BadRequest("The current task is not a signing task.");
+            return BadRequest(
+                new ProblemDetails
+                {
+                    Title = "Not a signing task",
+                    Detail = "The current task is not a signing task",
+                    Status = StatusCodes.Status400BadRequest,
+                }
+            );
         }
 
         AltinnSignatureConfiguration? signingConfiguration = _processReader
