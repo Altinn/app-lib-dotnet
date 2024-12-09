@@ -1,7 +1,7 @@
-#nullable disable
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Internal.Auth;
+using Altinn.Platform.Profile.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -15,15 +15,38 @@ public class AuthenticationController : ControllerBase
 {
     private readonly IAuthenticationClient _authenticationClient;
     private readonly GeneralSettings _settings;
+    private readonly IAuthenticationContext _authenticationContext;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AuthenticationController"/> class
     /// </summary>
-    public AuthenticationController(IAuthenticationClient authenticationClient, IOptions<GeneralSettings> settings)
+    public AuthenticationController(
+        IAuthenticationClient authenticationClient,
+        IOptions<GeneralSettings> settings,
+        IAuthenticationContext authenticationContext
+    )
     {
         _authenticationClient = authenticationClient;
         _settings = settings.Value;
+        _authenticationContext = authenticationContext;
     }
+
+    // /// <summary>
+    // /// Gets current party by reading cookie value and validating.
+    // /// </summary>
+    // /// <returns>Party id for selected party. If invalid, partyId for logged in user is returned.</returns>
+    // [Authorize]
+    // [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    // [HttpGet("{org}/{app}/api/[controller]/current")]
+    // public async Task<ActionResult> GetCurrent()
+    // {
+    //     bool returnPartyObject = false;
+    // }
+
+    // private sealed record CurrentAuthenticationResponse
+    // {
+    //     public required UserProfile? Profile { get; init; }
+    // }
 
     /// <summary>
     /// Refreshes the AltinnStudioRuntime JwtToken when not in AltinnStudio mode.
