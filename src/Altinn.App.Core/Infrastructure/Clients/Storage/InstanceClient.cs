@@ -168,6 +168,9 @@ public class InstanceClient : IInstanceClient
         using var activity = _telemetry?.StartUpdateProcessActivity(instance, events.Count);
         ProcessState processState = instance.Process;
 
+        foreach (var instanceEvent in events)
+            instanceEvent.InstanceId = instance.Id;
+
         string apiUrl = $"instances/{instance.Id}/process/instanceandevents";
         string token = _userTokenProvider.GetUserToken();
 
