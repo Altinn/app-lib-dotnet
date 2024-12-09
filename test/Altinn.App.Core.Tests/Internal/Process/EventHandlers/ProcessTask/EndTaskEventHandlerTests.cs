@@ -1,7 +1,8 @@
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
-using Altinn.App.Core.Internal.Process.ServiceTasks;
+using Altinn.App.Core.Internal.Process.ProcessTasks.Common;
+using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.Legacy;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -13,10 +14,8 @@ public class EndTaskEventHandlerTests
 {
     private readonly Mock<IProcessTaskDataLocker> _processTaskDataLocker = new();
     private readonly Mock<IProcessTaskFinalizer> _processTaskFinisher = new();
-    private readonly Mock<IPdfServiceTask> _pdfServiceTask = new();
-    private readonly Mock<IEformidlingServiceTask> _eformidlingServiceTask = new();
-
-    private IServiceTask[] ServiceTasks => [_pdfServiceTask.Object, _eformidlingServiceTask.Object];
+    private readonly Mock<IPdfServiceTaskLegacy> _pdfServiceTask = new();
+    private readonly Mock<IEFormidlingServiceTaskLegacy> _eformidlingServiceTask = new();
 
     private IEnumerable<IProcessTaskEnd> _processTaskEnds = new List<IProcessTaskEnd>();
     private readonly ILogger<EndTaskEventHandler> _logger = new NullLogger<EndTaskEventHandler>();
@@ -27,9 +26,10 @@ public class EndTaskEventHandlerTests
         EndTaskEventHandler eteh = new EndTaskEventHandler(
             _processTaskDataLocker.Object,
             _processTaskFinisher.Object,
-            ServiceTasks,
             _processTaskEnds,
-            _logger
+            _logger,
+            _pdfServiceTask.Object,
+            _eformidlingServiceTask.Object
         );
         var instance = new Instance() { Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d", AppId = "ttd/test" };
         Mock<IProcessTask> mockProcessTask = new();
@@ -56,9 +56,10 @@ public class EndTaskEventHandlerTests
         EndTaskEventHandler eteh = new(
             _processTaskDataLocker.Object,
             _processTaskFinisher.Object,
-            ServiceTasks,
             _processTaskEnds,
-            _logger
+            _logger,
+            _pdfServiceTask.Object,
+            _eformidlingServiceTask.Object
         );
         var instance = new Instance() { Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d", AppId = "ttd/test" };
         Mock<IProcessTask> mockProcessTask = new();
@@ -86,9 +87,10 @@ public class EndTaskEventHandlerTests
         EndTaskEventHandler eteh = new(
             _processTaskDataLocker.Object,
             _processTaskFinisher.Object,
-            ServiceTasks,
             _processTaskEnds,
-            _logger
+            _logger,
+            _pdfServiceTask.Object,
+            _eformidlingServiceTask.Object
         );
 
         var instance = new Instance() { Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d", AppId = "ttd/test" };
@@ -121,9 +123,10 @@ public class EndTaskEventHandlerTests
         EndTaskEventHandler eteh = new(
             _processTaskDataLocker.Object,
             _processTaskFinisher.Object,
-            ServiceTasks,
             _processTaskEnds,
-            _logger
+            _logger,
+            _pdfServiceTask.Object,
+            _eformidlingServiceTask.Object
         );
 
         var instance = new Instance() { Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d", AppId = "ttd/test" };
@@ -145,41 +148,5 @@ public class EndTaskEventHandlerTests
 
         // Make sure unlock data is called
         _processTaskDataLocker.Verify(p => p.Unlock(taskId, instance));
-    }
-
-    [Fact]
-    public void Throws_If_Missing_Pdf_ServiceTask()
-    {
-        IServiceTask[] serviceTasks = [_eformidlingServiceTask.Object];
-
-        var ex = Assert.Throws<InvalidOperationException>(
-            () =>
-                new EndTaskEventHandler(
-                    _processTaskDataLocker.Object,
-                    _processTaskFinisher.Object,
-                    serviceTasks,
-                    _processTaskEnds,
-                    _logger
-                )
-        );
-        Assert.Equal("PdfServiceTask not found in serviceTasks", ex.Message);
-    }
-
-    [Fact]
-    public void Throws_If_Missing_Eformidling_ServiceTask()
-    {
-        IServiceTask[] serviceTasks = [_pdfServiceTask.Object];
-
-        var ex = Assert.Throws<InvalidOperationException>(
-            () =>
-                new EndTaskEventHandler(
-                    _processTaskDataLocker.Object,
-                    _processTaskFinisher.Object,
-                    serviceTasks,
-                    _processTaskEnds,
-                    _logger
-                )
-        );
-        Assert.Equal("EformidlingServiceTask not found in serviceTasks", ex.Message);
     }
 }
