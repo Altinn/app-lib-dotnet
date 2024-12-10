@@ -747,7 +747,7 @@ public class CustomOpenApiController : Controller
         );
     }
 
-    private static  void AddRoutsForAttachmentDataType(
+    private static void AddRoutsForAttachmentDataType(
         OpenApiDocument doc,
         OpenApiTag[] tags,
         DataType dataType,
@@ -1076,7 +1076,10 @@ public static class Snippets
     /// </summary>
     public static OpenApiResponses AddCommonErrorResponses(HttpStatusCode statusCode, OpenApiResponse response)
     {
-        var responses = new OpenApiResponses() { [((int)statusCode).ToString(CultureInfo.InvariantCulture)] = response };
+        var responses = new OpenApiResponses()
+        {
+            [((int)statusCode).ToString(CultureInfo.InvariantCulture)] = response,
+        };
         return AddCommonErrorResponses(responses);
     }
 
