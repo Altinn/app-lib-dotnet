@@ -676,12 +676,11 @@ public class CustomOpenApiController : Controller
                     {
                         Tags = tags,
                         Summary = "Get data",
-                        Description = "Get data for a specific data element",
-                        ExternalDocs = new()
-                        {
-                            Description = "JSON Schema",
-                            Url = new($"/{appMetadata.Id}/api/jsonschema/{dataType.Id}"),
-                        },
+                        Description = $"""
+                        Get data for a specific data element
+
+                        see [JSON Schema](/{appMetadata.Id}/api/jsonschema/{dataType.Id})
+                        """,
                         Responses = Snippets.AddCommonErrorResponses(
                             HttpStatusCode.OK,
                             new OpenApiResponse()

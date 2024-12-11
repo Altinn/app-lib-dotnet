@@ -60,7 +60,7 @@ Either using ``instanceOwner.partyId`` or ``instanceOwner.personNumber`` or ``in
             empty: {
               schema: {
                 type: ,
-                example:
+                example: 
               }
             },
             application/json: {
@@ -553,11 +553,10 @@ Either using ``instanceOwner.partyId`` or ``instanceOwner.personNumber`` or ``in
           FormData default
         ],
         summary: Get data,
-        description: Get data for a specific data element,
-        externalDocs: {
-          description: JSON Schema,
-          url: /tdd/contributer-restriction/api/jsonschema/default
-        },
+        description:
+Get data for a specific data element
+
+see [JSON Schema](/tdd/contributer-restriction/api/jsonschema/default),
         responses: {
           200: {
             description:
@@ -1093,3 +1092,1364 @@ The response body contains the data in the format specified by the Accept header
           200: {
             description:
 # Data found
+
+The response body contains the data in the format specified by the Accept header.
+
+,
+            content: {
+              application/json: {
+                schema: {
+                  $ref: #/components/schemas/Skjema
+                }
+              },
+              application/xml: {
+                schema: {
+                  title: Xml,
+                  type: string,
+                  description: See [xml schema](/tdd/contributer-restriction/xmlSchema/disallowUserDelete),
+                  format: binary
+                },
+                example: <xml></xml>
+              }
+            }
+          },
+          400: {
+            $ref: #/components/responses/ProblemDetails
+          },
+          401: {
+            $ref: #/components/responses/ProblemDetails
+          },
+          403: {
+            $ref: #/components/responses/ProblemDetails
+          },
+          404: {
+            $ref: #/components/responses/ProblemDetails
+          },
+          500: {
+            $ref: #/components/responses/ProblemDetails
+          }
+        }
+      },
+      put: {
+        tags: [
+          FormData disallowUserDelete
+        ],
+        summary: Replace data element content,
+        description: Update data for a specific data element,
+        requestBody: {
+          content: {
+            application/json: {
+              schema: {
+                $ref: #/components/schemas/Skjema
+              }
+            },
+            application/xml: {
+              schema: {
+                title: Xml,
+                type: string,
+                description: See [xml schema](/tdd/contributer-restriction/xmlSchema/disallowUserDelete),
+                format: binary
+              },
+              example: <xml></xml>
+            }
+          },
+          required: true
+        }
+      },
+      parameters: [
+        null,
+        null,
+        null
+      ]
+    },
+    /tdd/contributer-restriction/instances/{instanceOwnerPartyId}/{instanceGuid}/data/disallowUserDelete: {
+      summary: Operations for disallowUserDelete,
+      description: CRUD operations for data of type disallowUserDelete,
+      post: {
+        tags: [
+          FormData disallowUserDelete
+        ],
+        summary: Create data,
+        description: Create data for a specific data element,
+        requestBody: {
+          content: {
+            application/json: {
+              schema: {
+                $ref: #/components/schemas/Skjema
+              }
+            },
+            application/xml: {
+              schema: {
+                title: Xml,
+                type: string,
+                description: See [xml schema](/tdd/contributer-restriction/xmlSchema/disallowUserDelete),
+                format: binary
+              },
+              example: <xml></xml>
+            }
+          },
+          required: true
+        }
+      },
+      parameters: [
+        null,
+        null,
+        null
+      ]
+    }
+  },
+  components: {
+    schemas: {
+      InstanceOwner: {
+        type: object,
+        properties: {
+          partyId: {
+            type: string,
+            nullable: true
+          },
+          personNumber: {
+            type: string,
+            nullable: true
+          },
+          organisationNumber: {
+            type: string,
+            nullable: true
+          },
+          username: {
+            type: string,
+            nullable: true
+          }
+        },
+        additionalProperties: false
+      },
+      ResourceLinks: {
+        type: object,
+        properties: {
+          apps: {
+            type: string,
+            nullable: true
+          },
+          platform: {
+            type: string,
+            nullable: true
+          }
+        },
+        additionalProperties: false
+      },
+      ValidationStatus: {
+        type: object,
+        properties: {
+          timestamp: {
+            type: string,
+            format: date-time,
+            nullable: true
+          },
+          canCompleteTask: {
+            type: boolean
+          }
+        },
+        additionalProperties: false
+      },
+      ProcessElementInfo: {
+        type: object,
+        properties: {
+          flow: {
+            type: integer,
+            format: int32,
+            nullable: true
+          },
+          started: {
+            type: string,
+            format: date-time,
+            nullable: true
+          },
+          elementId: {
+            type: string,
+            nullable: true
+          },
+          name: {
+            type: string,
+            nullable: true
+          },
+          altinnTaskType: {
+            type: string,
+            nullable: true
+          },
+          ended: {
+            type: string,
+            format: date-time,
+            nullable: true
+          },
+          validated: {
+            $ref: #/components/schemas/ValidationStatus
+          },
+          flowType: {
+            type: string,
+            nullable: true
+          }
+        },
+        additionalProperties: false
+      },
+      ProcessState: {
+        type: object,
+        properties: {
+          started: {
+            type: string,
+            format: date-time,
+            nullable: true
+          },
+          startEvent: {
+            type: string,
+            nullable: true
+          },
+          currentTask: {
+            $ref: #/components/schemas/ProcessElementInfo
+          },
+          ended: {
+            type: string,
+            format: date-time,
+            nullable: true
+          },
+          endEvent: {
+            type: string,
+            nullable: true
+          }
+        },
+        additionalProperties: false
+      },
+      ReadStatus: {
+        enum: [
+          0,
+          1,
+          2
+        ],
+        type: integer,
+        format: int32
+      },
+      Substatus: {
+        type: object,
+        properties: {
+          label: {
+            type: string,
+            nullable: true
+          },
+          description: {
+            type: string,
+            nullable: true
+          }
+        },
+        additionalProperties: false
+      },
+      InstanceStatus: {
+        type: object,
+        properties: {
+          isArchived: {
+            type: boolean
+          },
+          archived: {
+            type: string,
+            format: date-time,
+            nullable: true
+          },
+          isSoftDeleted: {
+            type: boolean
+          },
+          softDeleted: {
+            type: string,
+            format: date-time,
+            nullable: true
+          },
+          isHardDeleted: {
+            type: boolean
+          },
+          hardDeleted: {
+            type: string,
+            format: date-time,
+            nullable: true
+          },
+          readStatus: {
+            $ref: #/components/schemas/ReadStatus
+          },
+          substatus: {
+            $ref: #/components/schemas/Substatus
+          }
+        },
+        additionalProperties: false
+      },
+      CompleteConfirmation: {
+        type: object,
+        properties: {
+          stakeholderId: {
+            type: string,
+            nullable: true
+          },
+          confirmedOn: {
+            type: string,
+            format: date-time
+          }
+        },
+        additionalProperties: false
+      },
+      KeyValueEntry: {
+        type: object,
+        properties: {
+          key: {
+            type: string,
+            nullable: true
+          },
+          value: {
+            type: string,
+            nullable: true
+          }
+        },
+        additionalProperties: false
+      },
+      DeleteStatus: {
+        type: object,
+        properties: {
+          isHardDeleted: {
+            type: boolean
+          },
+          hardDeleted: {
+            type: string,
+            format: date-time,
+            nullable: true
+          }
+        },
+        additionalProperties: false
+      },
+      FileScanResult: {
+        enum: [
+          NotApplicable,
+          Pending,
+          Clean,
+          Infected
+        ],
+        type: string
+      },
+      RelationType: {
+        enum: [
+          GeneratedFrom
+        ],
+        type: string
+      },
+      ReferenceType: {
+        enum: [
+          DataElement,
+          Task
+        ],
+        type: string
+      },
+      Reference: {
+        type: object,
+        properties: {
+          value: {
+            type: string,
+            nullable: true
+          },
+          relation: {
+            $ref: #/components/schemas/RelationType
+          },
+          valueType: {
+            $ref: #/components/schemas/ReferenceType
+          }
+        },
+        additionalProperties: false
+      },
+      DataElement: {
+        type: object,
+        properties: {
+          created: {
+            type: string,
+            format: date-time,
+            nullable: true
+          },
+          createdBy: {
+            type: string,
+            nullable: true
+          },
+          lastChanged: {
+            type: string,
+            format: date-time,
+            nullable: true
+          },
+          lastChangedBy: {
+            type: string,
+            nullable: true
+          },
+          id: {
+            type: string,
+            nullable: true
+          },
+          instanceGuid: {
+            type: string,
+            nullable: true
+          },
+          dataType: {
+            type: string,
+            nullable: true
+          },
+          filename: {
+            type: string,
+            nullable: true
+          },
+          contentType: {
+            type: string,
+            nullable: true
+          },
+          blobStoragePath: {
+            type: string,
+            nullable: true
+          },
+          selfLinks: {
+            $ref: #/components/schemas/ResourceLinks
+          },
+          size: {
+            type: integer,
+            format: int64
+          },
+          contentHash: {
+            type: string,
+            nullable: true
+          },
+          locked: {
+            type: boolean
+          },
+          refs: {
+            type: array,
+            items: {
+              type: string,
+              format: uuid
+            },
+            nullable: true
+          },
+          isRead: {
+            type: boolean
+          },
+          tags: {
+            type: array,
+            items: {
+              type: string
+            },
+            nullable: true
+          },
+          userDefinedMetadata: {
+            type: array,
+            items: {
+              $ref: #/components/schemas/KeyValueEntry
+            },
+            nullable: true
+          },
+          metadata: {
+            type: array,
+            items: {
+              $ref: #/components/schemas/KeyValueEntry
+            },
+            nullable: true
+          },
+          deleteStatus: {
+            $ref: #/components/schemas/DeleteStatus
+          },
+          fileScanResult: {
+            $ref: #/components/schemas/FileScanResult
+          },
+          references: {
+            type: array,
+            items: {
+              $ref: #/components/schemas/Reference
+            },
+            nullable: true
+          }
+        },
+        additionalProperties: false
+      },
+      Instance: {
+        type: object,
+        properties: {
+          created: {
+            type: string,
+            format: date-time,
+            nullable: true
+          },
+          createdBy: {
+            type: string,
+            nullable: true
+          },
+          lastChanged: {
+            type: string,
+            format: date-time,
+            nullable: true
+          },
+          lastChangedBy: {
+            type: string,
+            nullable: true
+          },
+          id: {
+            type: string,
+            nullable: true
+          },
+          instanceOwner: {
+            $ref: #/components/schemas/InstanceOwner
+          },
+          appId: {
+            type: string,
+            nullable: true
+          },
+          org: {
+            type: string,
+            nullable: true
+          },
+          selfLinks: {
+            $ref: #/components/schemas/ResourceLinks
+          },
+          dueBefore: {
+            type: string,
+            format: date-time,
+            nullable: true
+          },
+          visibleAfter: {
+            type: string,
+            format: date-time,
+            nullable: true
+          },
+          process: {
+            $ref: #/components/schemas/ProcessState
+          },
+          status: {
+            $ref: #/components/schemas/InstanceStatus
+          },
+          completeConfirmations: {
+            type: array,
+            items: {
+              $ref: #/components/schemas/CompleteConfirmation
+            },
+            nullable: true
+          },
+          data: {
+            type: array,
+            items: {
+              $ref: #/components/schemas/DataElement
+            },
+            nullable: true
+          },
+          presentationTexts: {
+            type: object,
+            additionalProperties: {
+              type: string,
+              nullable: true
+            },
+            nullable: true
+          },
+          dataValues: {
+            type: object,
+            additionalProperties: {
+              type: string,
+              nullable: true
+            },
+            nullable: true
+          }
+        },
+        additionalProperties: false
+      },
+      ValidationIssueSeverity: {
+        enum: [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        type: integer,
+        format: int32
+      },
+      ValidationIssueWithSource: {
+        required: [
+          code,
+          description,
+          severity,
+          source
+        ],
+        type: object,
+        properties: {
+          severity: {
+            $ref: #/components/schemas/ValidationIssueSeverity
+          },
+          dataElementId: {
+            type: string,
+            nullable: true
+          },
+          field: {
+            type: string,
+            nullable: true
+          },
+          code: {
+            type: string,
+            nullable: true
+          },
+          description: {
+            type: string,
+            nullable: true
+          },
+          source: {
+            type: string,
+            nullable: true
+          },
+          noIncrementalUpdates: {
+            type: boolean
+          },
+          customTextKey: {
+            type: string,
+            nullable: true
+          },
+          customTextParams: {
+            type: array,
+            items: {
+              type: string
+            },
+            nullable: true
+          }
+        },
+        additionalProperties: false
+      },
+      ValidationSourcePair: {
+        type: object,
+        properties: {
+          source: {
+            type: string,
+            nullable: true
+          },
+          issues: {
+            type: array,
+            items: {
+              $ref: #/components/schemas/ValidationIssueWithSource
+            },
+            nullable: true
+          }
+        },
+        additionalProperties: false
+      },
+      DataModelPairResponse: {
+        type: object,
+        properties: {
+          dataElementId: {
+            type: string,
+            format: uuid
+          },
+          data: {
+            nullable: true
+          }
+        },
+        additionalProperties: false
+      },
+      DataPatchResponseMultiple: {
+        required: [
+          instance,
+          newDataModels,
+          validationIssues
+        ],
+        type: object,
+        properties: {
+          validationIssues: {
+            type: array,
+            items: {
+              $ref: #/components/schemas/ValidationSourcePair
+            },
+            nullable: true
+          },
+          newDataModels: {
+            type: array,
+            items: {
+              $ref: #/components/schemas/DataModelPairResponse
+            },
+            nullable: true
+          },
+          instance: {
+            $ref: #/components/schemas/Instance
+          }
+        },
+        additionalProperties: false
+      },
+      ShadowFields: {
+        type: object,
+        properties: {
+          prefix: {
+            type: string,
+            nullable: true
+          },
+          saveToDataType: {
+            type: string,
+            nullable: true
+          }
+        },
+        additionalProperties: false
+      },
+      ApplicationLogic: {
+        type: object,
+        properties: {
+          autoCreate: {
+            type: boolean,
+            nullable: true
+          },
+          classRef: {
+            type: string,
+            nullable: true
+          },
+          schemaRef: {
+            type: string,
+            nullable: true
+          },
+          allowAnonymousOnStateless: {
+            type: boolean
+          },
+          autoDeleteOnProcessEnd: {
+            type: boolean
+          },
+          disallowUserCreate: {
+            type: boolean
+          },
+          disallowUserDelete: {
+            type: boolean
+          },
+          allowInSubform: {
+            type: boolean,
+            deprecated: true
+          },
+          shadowFields: {
+            $ref: #/components/schemas/ShadowFields
+          }
+        },
+        additionalProperties: false
+      },
+      DataType: {
+        type: object,
+        properties: {
+          id: {
+            type: string,
+            nullable: true
+          },
+          description: {
+            type: object,
+            additionalProperties: {
+              type: string
+            },
+            nullable: true
+          },
+          allowedContentTypes: {
+            type: array,
+            items: {
+              type: string
+            },
+            nullable: true
+          },
+          allowedContributers: {
+            type: array,
+            items: {
+              type: string
+            },
+            nullable: true
+          },
+          appLogic: {
+            $ref: #/components/schemas/ApplicationLogic
+          },
+          taskId: {
+            type: string,
+            nullable: true
+          },
+          maxSize: {
+            type: integer,
+            format: int32,
+            nullable: true
+          },
+          maxCount: {
+            type: integer,
+            format: int32,
+            default: 1
+          },
+          minCount: {
+            type: integer,
+            format: int32,
+            default: 1
+          },
+          grouping: {
+            type: string,
+            nullable: true
+          },
+          enablePdfCreation: {
+            type: boolean
+          },
+          enableFileScan: {
+            type: boolean
+          },
+          validationErrorOnPendingFileScan: {
+            type: boolean
+          },
+          enabledFileAnalysers: {
+            type: array,
+            items: {
+              type: string
+            },
+            nullable: true
+          },
+          enabledFileValidators: {
+            type: array,
+            items: {
+              type: string
+            },
+            nullable: true
+          },
+          allowedKeysForUserDefinedMetadata: {
+            type: array,
+            items: {
+              type: string
+            },
+            nullable: true
+          }
+        },
+        additionalProperties: false
+      },
+      PartyTypesAllowed: {
+        type: object,
+        properties: {
+          bankruptcyEstate: {
+            type: boolean
+          },
+          organisation: {
+            type: boolean
+          },
+          person: {
+            type: boolean
+          },
+          subUnit: {
+            type: boolean
+          }
+        },
+        additionalProperties: false
+      },
+      DataField: {
+        type: object,
+        properties: {
+          id: {
+            type: string,
+            nullable: true
+          },
+          path: {
+            type: string,
+            nullable: true
+          },
+          dataTypeId: {
+            type: string,
+            nullable: true
+          }
+        },
+        additionalProperties: false
+      },
+      EFormidlingContract: {
+        type: object,
+        properties: {
+          serviceId: {
+            type: string,
+            nullable: true
+          },
+          dpfShipmentType: {
+            type: string,
+            nullable: true
+          },
+          receiver: {
+            type: string,
+            nullable: true
+          },
+          sendAfterTaskId: {
+            type: string,
+            nullable: true
+          },
+          process: {
+            type: string,
+            nullable: true
+          },
+          standard: {
+            type: string,
+            nullable: true
+          },
+          typeVersion: {
+            type: string,
+            nullable: true
+          },
+          type: {
+            type: string,
+            nullable: true
+          },
+          securityLevel: {
+            type: integer,
+            format: int32
+          },
+          dataTypes: {
+            type: array,
+            items: {
+              type: string
+            },
+            nullable: true
+          }
+        },
+        additionalProperties: false
+      },
+      OnEntryConfig: {
+        type: object,
+        properties: {
+          show: {
+            type: string,
+            nullable: true
+          }
+        },
+        additionalProperties: false
+      },
+      HideSettings: {
+        type: object,
+        properties: {
+          hideAlways: {
+            type: boolean
+          },
+          hideOnTask: {
+            type: array,
+            items: {
+              type: string
+            },
+            nullable: true
+          }
+        },
+        additionalProperties: false
+      },
+      MessageBoxConfig: {
+        type: object,
+        properties: {
+          hideSettings: {
+            $ref: #/components/schemas/HideSettings
+          }
+        },
+        additionalProperties: false
+      },
+      CopyInstanceSettings: {
+        type: object,
+        properties: {
+          enabled: {
+            type: boolean
+          },
+          excludedDataTypes: {
+            type: array,
+            items: {
+              type: string
+            },
+            nullable: true
+          },
+          excludedDataFields: {
+            type: array,
+            items: {
+              type: string
+            },
+            nullable: true
+          }
+        },
+        additionalProperties: false
+      },
+      InstanceSelection: {
+        type: object,
+        properties: {
+          rowsPerPageOptions: {
+            type: array,
+            items: {
+              type: integer,
+              format: int32
+            },
+            nullable: true
+          },
+          defaultRowsPerPage: {
+            type: integer,
+            format: int32,
+            nullable: true
+          },
+          defaultSelectedOption: {
+            type: integer,
+            format: int32,
+            nullable: true
+          },
+          sortDirection: {
+            type: string,
+            nullable: true
+          }
+        },
+        additionalProperties: false
+      },
+      OnEntry: {
+        type: object,
+        properties: {
+          show: {
+            type: string,
+            nullable: true
+          },
+          instanceSelection: {
+            $ref: #/components/schemas/InstanceSelection
+          }
+        },
+        additionalProperties: false
+      },
+      Logo: {
+        type: object,
+        properties: {
+          displayAppOwnerNameInHeader: {
+            type: boolean
+          },
+          source: {
+            type: string,
+            nullable: true
+          },
+          size: {
+            type: string,
+            nullable: true
+          }
+        },
+        additionalProperties: false
+      },
+      ApplicationMetadata: {
+        type: object,
+        properties: {
+          created: {
+            type: string,
+            format: date-time,
+            nullable: true
+          },
+          createdBy: {
+            type: string,
+            nullable: true
+          },
+          lastChanged: {
+            type: string,
+            format: date-time,
+            nullable: true
+          },
+          lastChangedBy: {
+            type: string,
+            nullable: true
+          },
+          versionId: {
+            type: string,
+            nullable: true
+          },
+          org: {
+            type: string,
+            nullable: true
+          },
+          title: {
+            type: object,
+            additionalProperties: {
+              type: string,
+              nullable: true
+            },
+            nullable: true
+          },
+          validFrom: {
+            type: string,
+            format: date-time,
+            nullable: true
+          },
+          validTo: {
+            type: string,
+            format: date-time,
+            nullable: true
+          },
+          processId: {
+            type: string,
+            nullable: true
+          },
+          dataTypes: {
+            type: array,
+            items: {
+              $ref: #/components/schemas/DataType
+            },
+            nullable: true
+          },
+          partyTypesAllowed: {
+            $ref: #/components/schemas/PartyTypesAllowed
+          },
+          autoDeleteOnProcessEnd: {
+            type: boolean
+          },
+          presentationFields: {
+            type: array,
+            items: {
+              $ref: #/components/schemas/DataField
+            },
+            nullable: true
+          },
+          dataFields: {
+            type: array,
+            items: {
+              $ref: #/components/schemas/DataField
+            },
+            nullable: true
+          },
+          eFormidling: {
+            $ref: #/components/schemas/EFormidlingContract
+          },
+          onEntry: {
+            $ref: #/components/schemas/OnEntry
+          },
+          messageBoxConfig: {
+            $ref: #/components/schemas/MessageBoxConfig
+          },
+          copyInstanceSettings: {
+            $ref: #/components/schemas/CopyInstanceSettings
+          },
+          storageAccountNumber: {
+            type: integer,
+            format: int32,
+            nullable: true
+          },
+          disallowUserInstantiation: {
+            type: boolean
+          },
+          id: {
+            type: string,
+            nullable: true
+          },
+          features: {
+            type: object,
+            additionalProperties: {
+              type: boolean
+            },
+            nullable: true
+          },
+          logo: {
+            $ref: #/components/schemas/Logo
+          },
+          altinnNugetVersion: {
+            type: string,
+            nullable: true
+          },
+          externalApiIds: {
+            type: array,
+            items: {
+              type: string
+            },
+            nullable: true
+          }
+        }
+      },
+      SimpleKeyvalues: {
+        type: object,
+        properties: {
+          key: {
+            type: string,
+            nullable: true
+          },
+          doubleValue: {
+            type: number,
+            format: double,
+            nullable: true
+          },
+          intValue: {
+            maximum: 2147483647,
+            minimum: -2147483648,
+            type: number,
+            format: double,
+            nullable: true
+          }
+        },
+        additionalProperties: false
+      },
+      ValuesList: {
+        type: object,
+        properties: {
+          simple_keyvalues: {
+            type: array,
+            items: {
+              $ref: #/components/schemas/SimpleKeyvalues
+            },
+            nullable: true
+          }
+        },
+        additionalProperties: false
+      },
+      Nested: {
+        type: object,
+        properties: {
+          key: {
+            type: string,
+            nullable: true
+          },
+          values: {
+            type: array,
+            items: {
+              $ref: #/components/schemas/SimpleKeyvalues
+            },
+            nullable: true
+          }
+        },
+        additionalProperties: false
+      },
+      TagWithAttribute: {
+        type: object,
+        properties: {
+          orid: {
+            maximum: 2147483647,
+            minimum: 1,
+            type: number,
+            format: double
+          },
+          value: {
+            maxLength: 60,
+            minLength: 1,
+            type: string,
+            nullable: true
+          }
+        },
+        additionalProperties: false
+      },
+      Dummy: {
+        type: object,
+        properties: {
+          name: {
+            type: string,
+            nullable: true
+          },
+          random: {
+            type: string,
+            nullable: true
+          },
+          tags: {
+            type: string,
+            nullable: true
+          },
+          simple_list: {
+            $ref: #/components/schemas/ValuesList
+          },
+          nested_list: {
+            type: array,
+            items: {
+              $ref: #/components/schemas/Nested
+            },
+            nullable: true
+          },
+          toggle: {
+            type: boolean
+          },
+          tag-with-attribute: {
+            $ref: #/components/schemas/TagWithAttribute
+          },
+          hidden: {
+            type: string,
+            nullable: true
+          },
+          SF_test: {
+            type: string,
+            nullable: true
+          }
+        },
+        additionalProperties: false
+      },
+      Skjema: {
+        type: object,
+        properties: {
+          melding: {
+            $ref: #/components/schemas/Dummy
+          }
+        },
+        additionalProperties: false
+      }
+    },
+    responses: {
+      ProblemDetails: {
+        description: Problem details,
+        content: {
+          application/problem+json: {
+            schema: {
+              type: object,
+              properties: {
+                type: {
+                  type: string,
+                  nullable: true,
+                  example: https://datatracker.ietf.org/doc/html/rfc6902/
+                },
+                title: {
+                  type: string,
+                  nullable: true,
+                  example: Error in data processing
+                },
+                status: {
+                  type: integer,
+                  format: int32,
+                  nullable: true,
+                  example: 400
+                },
+                detail: {
+                  type: string,
+                  nullable: true,
+                  example: Actually usefull description of the error
+                },
+                instance: {
+                  type: string,
+                  nullable: true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    parameters: {
+      instanceOwnerPartyId: {
+        name: instanceOwnerPartyId,
+        in: path,
+        description: PartyId for the owner of the instance, this is altinns internal id for the organisation, person or self registered user. Might be the current user, or ,
+        required: true,
+        schema: {
+          type: integer
+        }
+      },
+      instanceGuid: {
+        name: instanceGuid,
+        in: path,
+        description: The guid part of instance.Id,
+        required: true,
+        schema: {
+          type: guid
+        }
+      },
+      dataGuid: {
+        name: dataGuid,
+        in: path,
+        description: Id of this data element that belongs to an instance,
+        required: true,
+        schema: {
+          type: guid
+        }
+      },
+      language: {
+        name: language,
+        in: query,
+        description: Some apps make changes to the data models or validation based on the active language of the user,
+        schema: {
+          pattern: \w\w,
+          type: string
+        },
+        example: nb
+      }
+    },
+    securitySchemes: {
+      AltinnToken: {
+        type: http,
+        description:
+Get a token for [localtest](http://local.altinn.cloud/Home/Tokens)
+or by exchanging a maskinporten token with the [token exchange endpoint](https://docs.altinn.studio/api/authentication/spec/#/Authentication/get_exchange__tokenProvider_),
+        scheme: Bearer,
+        bearerFormat: JWT
+      }
+    }
+  },
+  security: [
+    {}
+  ],
+  externalDocs: {
+    description: Altinn 3 Documentation,
+    url: https://docs.altinn.studio
+  }
+}
