@@ -191,49 +191,12 @@ public class CustomOpenApiController : Controller
     {
         OpenApiTag[] instanceTags = [new() { Name = "Instances", Description = "Operations on instances" }];
         var instanceSchema = _schemaGenerator.GenerateSchema(typeof(Instance), _schemaRepository);
+        document.Components.Schemas.Add("InstanceWrite", Snippets.InstanceWriteSchema);
         var instanceWriteSchema = new OpenApiSchema()
         {
-            Title = "InstanceWrite",
-            Properties =
-            {
-                ["instanceOwner"] = new OpenApiSchema()
-                {
-                    Type = "object",
-                    Title = "Altnernate ways to spcecify the instance owner",
-                    Description = "Only one of these should be spcecified when creating a new inistance",
-                    Properties =
-                    {
-                        ["partyId"] = new OpenApiSchema()
-                        {
-                            Type = "string",
-                            Nullable = true,
-                            Format = "int32",
-                        },
-                        ["personNumber"] = new OpenApiSchema()
-                        {
-                            Type = "string",
-                            Nullable = true,
-                            Pattern = @"^\d{11}$",
-                        },
-                        ["organisationNumber"] = new OpenApiSchema()
-                        {
-                            Type = "string",
-                            Nullable = true,
-                            Pattern = @"^\d{9}$",
-                        },
-                        ["username"] = new OpenApiSchema()
-                        {
-                            Type = "string",
-                            Nullable = true,
-                            Description =
-                                "Initialization based on username is not yet supported (https://github.com/Altinn/app-lib-dotnet/issues/652)",
-                        },
-                    },
-                },
-                ["dueBefore"] = new OpenApiSchema() { Type = "string", Format = "date-time" },
-                ["visibleAfter"] = new OpenApiSchema() { Type = "string", Format = "date-time" },
-            },
+            Reference = new OpenApiReference() { Id = "InstanceWrite", Type = ReferenceType.Schema },
         };
+
         OpenApiMediaType multipartMediaType = new OpenApiMediaType()
         {
             Schema = new OpenApiSchema() { Type = "object", Properties = { ["instance"] = instanceWriteSchema } },
@@ -856,6 +819,51 @@ public class CustomOpenApiController : Controller
 /// </summary>
 public static class Snippets
 {
+    public static OpenApiSchema InstanceWriteSchema =>
+        new()
+        {
+            Title = "InstanceWrite",
+            Properties =
+            {
+                ["instanceOwner"] = new OpenApiSchema()
+                {
+                    Type = "object",
+                    Title = "Altnernate ways to spcecify the instance owner",
+                    Description = "Only one of these should be spcecified when creating a new inistance",
+                    Properties =
+                    {
+                        ["partyId"] = new OpenApiSchema()
+                        {
+                            Type = "string",
+                            Nullable = true,
+                            Format = "int32",
+                        },
+                        ["personNumber"] = new OpenApiSchema()
+                        {
+                            Type = "string",
+                            Nullable = true,
+                            Pattern = @"^\d{11}$",
+                        },
+                        ["organisationNumber"] = new OpenApiSchema()
+                        {
+                            Type = "string",
+                            Nullable = true,
+                            Pattern = @"^\d{9}$",
+                        },
+                        ["username"] = new OpenApiSchema()
+                        {
+                            Type = "string",
+                            Nullable = true,
+                            Description =
+                                "Initialization based on username is not yet supported (https://github.com/Altinn/app-lib-dotnet/issues/652)",
+                        },
+                    },
+                },
+                ["dueBefore"] = new OpenApiSchema() { Type = "string", Format = "date-time" },
+                ["visibleAfter"] = new OpenApiSchema() { Type = "string", Format = "date-time" },
+            },
+        };
+
     /// <summary>
     /// Schema for patching multiple data elements at once
     /// </summary>

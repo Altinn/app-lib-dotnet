@@ -65,44 +65,7 @@ Either using ``instanceOwner.partyId`` or ``instanceOwner.personNumber`` or ``in
             },
             application/json: {
               schema: {
-                title: InstanceWrite,
-                properties: {
-                  instanceOwner: {
-                    title: Altnernate ways to spcecify the instance owner,
-                    type: object,
-                    properties: {
-                      partyId: {
-                        type: string,
-                        format: int32,
-                        nullable: true
-                      },
-                      personNumber: {
-                        pattern: ^\d{11}$,
-                        type: string,
-                        nullable: true
-                      },
-                      organisationNumber: {
-                        pattern: ^\d{9}$,
-                        type: string,
-                        nullable: true
-                      },
-                      username: {
-                        type: string,
-                        description: Initialization based on username is not yet supported (https://github.com/Altinn/app-lib-dotnet/issues/652),
-                        nullable: true
-                      }
-                    },
-                    description: Only one of these should be spcecified when creating a new inistance
-                  },
-                  dueBefore: {
-                    type: string,
-                    format: date-time
-                  },
-                  visibleAfter: {
-                    type: string,
-                    format: date-time
-                  }
-                }
+                $ref: #/components/schemas/InstanceWrite
               }
             },
             multipart/form-data: {
@@ -110,44 +73,7 @@ Either using ``instanceOwner.partyId`` or ``instanceOwner.personNumber`` or ``in
                 type: object,
                 properties: {
                   instance: {
-                    title: InstanceWrite,
-                    properties: {
-                      instanceOwner: {
-                        title: Altnernate ways to spcecify the instance owner,
-                        type: object,
-                        properties: {
-                          partyId: {
-                            type: string,
-                            format: int32,
-                            nullable: true
-                          },
-                          personNumber: {
-                            pattern: ^\d{11}$,
-                            type: string,
-                            nullable: true
-                          },
-                          organisationNumber: {
-                            pattern: ^\d{9}$,
-                            type: string,
-                            nullable: true
-                          },
-                          username: {
-                            type: string,
-                            description: Initialization based on username is not yet supported (https://github.com/Altinn/app-lib-dotnet/issues/652),
-                            nullable: true
-                          }
-                        },
-                        description: Only one of these should be spcecified when creating a new inistance
-                      },
-                      dueBefore: {
-                        type: string,
-                        format: date-time
-                      },
-                      visibleAfter: {
-                        type: string,
-                        format: date-time
-                      }
-                    }
+                    $ref: #/components/schemas/InstanceWrite
                   },
                   default: {
                     type: string,
@@ -839,11 +765,10 @@ The response body contains the data in the format specified by the Accept header
           FormData userInteractionUnspecified
         ],
         summary: Get data,
-        description: Get data for a specific data element,
-        externalDocs: {
-          description: JSON Schema,
-          url: /tdd/contributer-restriction/api/jsonschema/userInteractionUnspecified
-        },
+        description:
+Get data for a specific data element
+
+see [JSON Schema](/tdd/contributer-restriction/api/jsonschema/userInteractionUnspecified),
         responses: {
           200: {
             description:
@@ -961,11 +886,10 @@ The response body contains the data in the format specified by the Accept header
           FormData disallowUserCreate
         ],
         summary: Get data,
-        description: Get data for a specific data element,
-        externalDocs: {
-          description: JSON Schema,
-          url: /tdd/contributer-restriction/api/jsonschema/disallowUserCreate
-        },
+        description:
+Get data for a specific data element
+
+see [JSON Schema](/tdd/contributer-restriction/api/jsonschema/disallowUserCreate),
         responses: {
           200: {
             description:
@@ -1083,11 +1007,10 @@ The response body contains the data in the format specified by the Accept header
           FormData disallowUserDelete
         ],
         summary: Get data,
-        description: Get data for a specific data element,
-        externalDocs: {
-          description: JSON Schema,
-          url: /tdd/contributer-restriction/api/jsonschema/disallowUserDelete
-        },
+        description:
+Get data for a specific data element
+
+see [JSON Schema](/tdd/contributer-restriction/api/jsonschema/disallowUserDelete),
         responses: {
           200: {
             description:
@@ -1650,6 +1573,46 @@ The response body contains the data in the format specified by the Accept header
           }
         },
         additionalProperties: false
+      },
+      InstanceWrite: {
+        title: InstanceWrite,
+        properties: {
+          instanceOwner: {
+            title: Altnernate ways to spcecify the instance owner,
+            type: object,
+            properties: {
+              partyId: {
+                type: string,
+                format: int32,
+                nullable: true
+              },
+              personNumber: {
+                pattern: ^\d{11}$,
+                type: string,
+                nullable: true
+              },
+              organisationNumber: {
+                pattern: ^\d{9}$,
+                type: string,
+                nullable: true
+              },
+              username: {
+                type: string,
+                description: Initialization based on username is not yet supported (https://github.com/Altinn/app-lib-dotnet/issues/652),
+                nullable: true
+              }
+            },
+            description: Only one of these should be spcecified when creating a new inistance
+          },
+          dueBefore: {
+            type: string,
+            format: date-time
+          },
+          visibleAfter: {
+            type: string,
+            format: date-time
+          }
+        }
       },
       ValidationIssueSeverity: {
         enum: [
