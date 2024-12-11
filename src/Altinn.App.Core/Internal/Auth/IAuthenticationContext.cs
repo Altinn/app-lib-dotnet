@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Net.Security;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Configuration;
@@ -12,7 +11,6 @@ using AltinnCore.Authentication.Utils;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Internal.Auth;
@@ -25,41 +23,250 @@ internal static class AuthenticationContextDI
     }
 }
 
+/// <summary>
+/// Contains information about the current logged in client/user.
+/// Represented as a union/type hierarchy to express which information is available.
+/// </summary>
 public abstract record AuthenticationInfo
 {
+    /// <summary>
+    /// The JWT token.
+    /// </summary>
     public string Token { get; }
 
     private AuthenticationInfo(string token) => Token = token;
 
+    /// <summary>
+    /// Type to indicate that the current request is not uathenticated.
+    /// </summary>
+    /// <param name="Token"></param>
     public sealed record Unauthenticated(string Token) : AuthenticationInfo(Token);
 
-    public sealed record User(
-        int UserId,
-        int PartyId,
-        Party? Reportee,
-        Party? Party,
-        UserProfile Profile,
-        int AuthenticationLevel,
-        string Token
-    ) : AuthenticationInfo(Token);
+    /// <summary>
+    /// The logged in client is a user (e.g. Altinn portal/IDporten)
+    /// </summary>
+    public sealed record User : AuthenticationInfo
+    {
+        /// <summary>
+        /// User ID
+        /// </summary>
+        public int UserId { get; }
 
-    public sealed record ServiceOwner(string OrgName, string OrgNo, int AuthenticationLevel, string Token)
-        : AuthenticationInfo(Token);
+        /// <summary>
+        /// Party ID
+        /// </summary>
+        public int PartyId { get; }
 
-    public sealed record Org(string OrgNo, int PartyId, int AuthenticationLevel, string Token)
-        : AuthenticationInfo(Token);
+        /// <summary>
+        /// Authentication level
+        /// </summary>
+        public int AuthenticationLevel { get; }
+        private Details? _extra;
+        private readonly Func<int, Task<UserProfile?>> _getUserProfile;
+        private readonly Func<int, Task<Party?>> _lookupParty;
+        private readonly Func<int, Task<List<Party>?>> _getPartyList;
+        private readonly Func<int, int, Task<bool?>> _validateSelectedParty;
 
+        internal User(
+            int userId,
+            int partyId,
+            int authenticationLevel,
+            string token,
+            Func<int, Task<UserProfile?>> getUserProfile,
+            Func<int, Task<Party?>> lookupParty,
+            Func<int, Task<List<Party>?>> getPartyList,
+            Func<int, int, Task<bool?>> validateSelectedParty
+        )
+            : base(token)
+        {
+            UserId = userId;
+            PartyId = partyId;
+            AuthenticationLevel = authenticationLevel;
+            _getUserProfile = getUserProfile;
+            _lookupParty = lookupParty;
+            _getPartyList = getPartyList;
+            _validateSelectedParty = validateSelectedParty;
+        }
+
+        /// <summary>
+        /// Detailed information about a logged in user
+        /// </summary>
+        /// <param name="Reportee">Party objectd for the selected party ID</param>
+        /// <param name="Profile">Users profile</param>
+        /// <param name="RepresentsSelf">True if the user represents itself</param>
+        /// <param name="Parties">List of parties the user can represent</param>
+        public sealed record Details(
+            Party Reportee,
+            UserProfile Profile,
+            bool RepresentsSelf,
+            IReadOnlyList<Party> Parties
+        );
+
+        /// <summary>
+        /// Load the details for the current user.
+        /// </summary>
+        /// <param name="validateSelectedParty">If true, will verify that the logged in user has access to the selected party</param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException">Thrown if the user doesn't have access to the selected party</exception>
+        public async Task<Details> LoadDetails(bool validateSelectedParty = false)
+        {
+            if (_extra is not null)
+                return _extra;
+
+            var userProfile =
+                await _getUserProfile(UserId)
+                ?? throw new InvalidOperationException("Could not get user profile while getting user context");
+
+            var lookupPartyTask =
+                PartyId == userProfile.PartyId ? Task.FromResult((Party?)userProfile.Party) : _lookupParty(PartyId);
+            var partiesTask = _getPartyList(UserId);
+            await Task.WhenAll(lookupPartyTask, partiesTask);
+
+            var parties = await partiesTask ?? [];
+            if (parties.Count == 0)
+                parties.Add(userProfile.Party);
+
+            var reportee = await lookupPartyTask;
+            if (reportee is null)
+                throw new InvalidOperationException("Could not load party for selected party ID");
+
+            var representsSelf = userProfile.Party is null || PartyId != userProfile.Party.PartyId;
+            if (validateSelectedParty && !representsSelf)
+            {
+                // The selected party must either be the profile/default party or a party the user can represent,
+                // which can be validated against the user's party list.
+                if (await _validateSelectedParty(UserId, PartyId) is not true)
+                {
+                    throw new InvalidOperationException($"User {UserId} cannot represent party {PartyId}");
+                }
+            }
+
+            _extra = new Details(reportee, userProfile, representsSelf, parties);
+            return _extra;
+        }
+    }
+
+    /// <summary>
+    /// The logged in client is an organisation (but they have not authenticated as an Altinn service owner).
+    /// Authentication has been done through Maskinporten.
+    /// </summary>
+    public sealed record Org : AuthenticationInfo
+    {
+        /// <summary>
+        /// Organisation number
+        /// </summary>
+        public string OrgNo { get; }
+
+        /// <summary>
+        /// Authentication level
+        /// </summary>
+        public int AuthenticationLevel { get; }
+
+        private readonly Func<string, Task<Party>> _lookupParty;
+
+        internal Org(string orgNo, int authenticationLevel, string token, Func<string, Task<Party>> lookupParty)
+            : base(token)
+        {
+            OrgNo = orgNo;
+            AuthenticationLevel = authenticationLevel;
+            _lookupParty = lookupParty;
+        }
+
+        /// <summary>
+        /// Detailed information about an organisation
+        /// </summary>
+        /// <param name="Party">Party of the org</param>
+        public sealed record Details(Party Party);
+
+        /// <summary>
+        /// Load the details for the current organisation.
+        /// </summary>
+        /// <returns>Details</returns>
+        public async Task<Details> LoadDetails()
+        {
+            var party = await _lookupParty(OrgNo);
+            return new Details(party);
+        }
+    }
+
+    /// <summary>
+    /// The logged in client is an Altinn service owner (i.e. they have the "urn:altinn:org" claim).
+    /// The service owner may or may not own the current app.
+    /// </summary>
+    public sealed record ServiceOwner : AuthenticationInfo
+    {
+        /// <summary>
+        /// Organisation/service owner name
+        /// </summary>
+        public string Name { get; }
+
+        /// <summary>
+        /// Organisation number
+        /// </summary>
+        public string OrgNo { get; }
+
+        /// <summary>
+        /// Authentication level
+        /// </summary>
+        public int AuthenticationLevel { get; }
+
+        private readonly Func<string, Task<Party>> _lookupParty;
+
+        internal ServiceOwner(
+            string name,
+            string orgNo,
+            int authenticationLevel,
+            string token,
+            Func<string, Task<Party>> lookupParty
+        )
+            : base(token)
+        {
+            Name = name;
+            OrgNo = orgNo;
+            AuthenticationLevel = authenticationLevel;
+            _lookupParty = lookupParty;
+        }
+
+        /// <summary>
+        /// Detailed information about a service owner
+        /// </summary>
+        /// <param name="Party">Party of the service owner</param>
+        public sealed record Details(Party Party);
+
+        /// <summary>
+        /// Load the details for the current service owner.
+        /// </summary>
+        /// <returns>Details</returns>
+        public async Task<Details> LoadDetails()
+        {
+            var party = await _lookupParty(OrgNo);
+            return new Details(party);
+        }
+    }
+
+    /// <summary>
+    /// The logged in client is a system user.
+    /// System users authenticate through Maskinporten.
+    /// The caller is the system, which impersonates the system user (which represents the organisation/owner of the user).
+    /// </summary>
+    /// <param name="SystemUserId">System user ID</param>
+    /// <param name="SystemId">System ID</param>
+    /// <param name="Token">JWT token</param>
     public sealed record SystemUser(IReadOnlyList<string> SystemUserId, string SystemId, string Token)
         : AuthenticationInfo(Token);
 
-    // public sealed record App(string Token) : ClientContextData;
+    // TODO: app token?
+    // public sealed record App(string Token) : AuthenticationInfo;
 
-    internal static async Task<AuthenticationInfo> From(
+    internal static AuthenticationInfo From(
         HttpContext httpContext,
         string authCookieName,
         string partyCookieName,
         Func<int, Task<UserProfile?>> getUserProfile,
-        Func<int, Task<Party?>> lookupParty
+        Func<int, Task<Party?>> lookupUserParty,
+        Func<string, Task<Party>> lookupOrgParty,
+        Func<int, Task<List<Party>?>> getPartyList,
+        Func<int, int, Task<bool?>> validateSelectedParty
     )
     {
         string token = JwtTokenUtil.GetTokenFromContext(httpContext, authCookieName);
@@ -74,10 +281,16 @@ public abstract record AuthenticationInfo
             claim.Type.Equals(AltinnCoreClaimTypes.PartyID, StringComparison.OrdinalIgnoreCase)
         );
 
-        if (string.IsNullOrWhiteSpace(partyIdClaim?.Value))
-            throw new InvalidOperationException("Missing party ID claim for token");
-        if (!int.TryParse(partyIdClaim.Value, CultureInfo.InvariantCulture, out int partyId))
-            throw new InvalidOperationException("Invalid party ID claim value for token");
+        int? selectedPartyId = null;
+        if (!string.IsNullOrWhiteSpace(partyIdClaim?.Value))
+        {
+            // TODO: partyId is only present for org tokens when using virksomhetsbruker
+            // which is going away, probably.
+            // If we want `Org` to always have party ID, then we need to do a lookup with AltinnPartyClient (register)
+            if (!int.TryParse(partyIdClaim.Value, CultureInfo.InvariantCulture, out var partyIdClaimValue))
+                throw new InvalidOperationException("Invalid party ID claim value for token");
+            selectedPartyId = partyIdClaimValue;
+        }
 
         var orgClaim = httpContext.User.Claims.FirstOrDefault(claim =>
             claim.Type.Equals(AltinnCoreClaimTypes.Org, StringComparison.OrdinalIgnoreCase)
@@ -113,13 +326,13 @@ public abstract record AuthenticationInfo
 
             // TODO: check if the org is the same as the owner of the app? A flag?
 
-            return new ServiceOwner(orgClaim.Value, orgNoClaim.Value, authLevel, token);
+            return new ServiceOwner(orgClaim.Value, orgNoClaim.Value, authLevel, token, lookupOrgParty);
         }
         else if (!string.IsNullOrWhiteSpace(orgNoClaim?.Value))
         {
             ParseAuthLevel(authLevelClaim?.Value, out authLevel);
 
-            return new Org(orgNoClaim.Value, partyId, authLevel, token);
+            return new Org(orgNoClaim.Value, authLevel, token, lookupOrgParty);
         }
 
         var authorizationDetailsClaim = httpContext.User.Claims.FirstOrDefault(claim =>
@@ -158,22 +371,29 @@ public abstract record AuthenticationInfo
         if (!int.TryParse(userIdClaim.Value, CultureInfo.InvariantCulture, out int userId))
             throw new InvalidOperationException("Invalid user ID claim value for user token");
 
-        var userProfile =
-            await getUserProfile(userId)
-            ?? throw new InvalidOperationException("Could not get user profile while getting user context");
-
         if (httpContext.Request.Cookies.TryGetValue(partyCookieName, out var partyCookie) && partyCookie != null)
         {
             if (!int.TryParse(partyCookie, CultureInfo.InvariantCulture, out var cookiePartyId))
                 throw new InvalidOperationException("Invalid party ID in cookie: " + partyCookie);
 
-            partyId = cookiePartyId;
+            selectedPartyId = cookiePartyId;
         }
 
         ParseAuthLevel(authLevelClaim?.Value, out authLevel);
 
-        var reportee = partyId == userProfile.PartyId ? userProfile.Party : await lookupParty(partyId);
-        return new User(userId, partyId, reportee, userProfile.Party, userProfile, authLevel, token);
+        if (selectedPartyId is null)
+            throw new InvalidOperationException("Missing party ID for user token");
+
+        return new User(
+            userId,
+            selectedPartyId.Value,
+            authLevel,
+            token,
+            getUserProfile,
+            lookupUserParty,
+            getPartyList,
+            validateSelectedParty
+        );
     }
 
     private sealed record AuthorizationDetailsClaim([property: JsonPropertyName("type")] string Type);
@@ -181,12 +401,21 @@ public abstract record AuthenticationInfo
     private sealed record SystemUserAuthorizationDetailsClaim(
         [property: JsonPropertyName("type")] string Type,
         [property: JsonPropertyName("systemuser_id")] IReadOnlyList<string> SystemUserId,
-        [property: JsonPropertyName("system_id")] string SystemId
+        [property: JsonPropertyName("system_id")] string SystemId,
+        [property: JsonPropertyName("party_id")] string SystemUserOrg
     );
+
+    // private sealed class
 }
 
-public interface IAuthenticationContext
+/// <summary>
+/// Provides access to the current authentication context.
+/// </summary>
+internal interface IAuthenticationContext
 {
+    /// <summary>
+    /// The current authentication info.
+    /// </summary>
     AuthenticationInfo Current { get; }
 }
 
@@ -198,13 +427,15 @@ internal sealed class AuthenticationContext : IAuthenticationContext
     private readonly IOptionsMonitor<GeneralSettings> _generalSettings;
     private readonly IProfileClient _profileClient;
     private readonly IAltinnPartyClient _altinnPartyClient;
+    private readonly IAuthorizationClient _authorizationClient;
 
     public AuthenticationContext(
         IHttpContextAccessor httpContextAccessor,
         IOptionsMonitor<AppSettings> appSettings,
         IOptionsMonitor<GeneralSettings> generalSettings,
         IProfileClient profileClient,
-        IAltinnPartyClient altinnPartyClient
+        IAltinnPartyClient altinnPartyClient,
+        IAuthorizationClient authorizationClient
     )
     {
         _httpContextAccessor = httpContextAccessor;
@@ -212,6 +443,7 @@ internal sealed class AuthenticationContext : IAuthenticationContext
         _generalSettings = generalSettings;
         _profileClient = profileClient;
         _altinnPartyClient = altinnPartyClient;
+        _authorizationClient = authorizationClient;
     }
 
     // Currently we're coupling this to the HTTP context directly.
@@ -223,15 +455,18 @@ internal sealed class AuthenticationContext : IAuthenticationContext
     private HttpContext _httpContext =>
         _httpContextAccessor.HttpContext ?? throw new InvalidOperationException("No HTTP context available");
 
-    internal async Task ResolveCurrent()
+    internal void ResolveCurrent()
     {
         var httpContext = _httpContext;
-        var authInfo = await AuthenticationInfo.From(
+        var authInfo = AuthenticationInfo.From(
             httpContext,
             _appSettings.CurrentValue.RuntimeCookieName,
             _generalSettings.CurrentValue.GetAltinnPartyCookieName,
             _profileClient.GetUserProfile,
-            _altinnPartyClient.GetParty
+            _altinnPartyClient.GetParty,
+            (string orgNr) => _altinnPartyClient.LookupParty(new PartyLookup { OrgNo = orgNr }),
+            _authorizationClient.GetPartyList,
+            _authorizationClient.ValidateSelectedParty
         );
         httpContext.Items[ItemsKey] = authInfo;
     }
@@ -242,7 +477,7 @@ internal sealed class AuthenticationContext : IAuthenticationContext
         {
             var httpContext = _httpContext;
 
-            if (httpContext.Items.TryGetValue(ItemsKey, out var authInfoObj))
+            if (!httpContext.Items.TryGetValue(ItemsKey, out var authInfoObj))
                 throw new InvalidOperationException("Authentication info was not populated");
             if (authInfoObj is not AuthenticationInfo authInfo)
                 throw new InvalidOperationException("Invalid authentication info object in HTTP context items");
