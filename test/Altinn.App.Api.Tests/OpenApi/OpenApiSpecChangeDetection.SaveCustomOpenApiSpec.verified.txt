@@ -27,11 +27,11 @@ This app has the following data types:
       description: Local development server
     },
     {
-      url: http://tdd.apps.tt02.altinn.no,
+      url: https://tdd.apps.tt02.altinn.no,
       description: TT02 server
     },
     {
-      url: http://tdd.apps.altinn.no,
+      url: https://tdd.apps.altinn.no,
       description: Production server
     }
   ],

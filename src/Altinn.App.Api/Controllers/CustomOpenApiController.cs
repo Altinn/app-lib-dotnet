@@ -76,7 +76,7 @@ public class CustomOpenApiController : Controller
                 Description = GetIntroDoc(appMetadata),
             },
             ExternalDocs = new() { Description = "Altinn 3 Documentation", Url = new("https://docs.altinn.studio") },
-            Paths = new(), // Add to this later
+            Paths = [], // Add to this later
             Components = new OpenApiComponents()
             {
                 Schemas = _schemaRepository.Schemas,
@@ -86,19 +86,19 @@ public class CustomOpenApiController : Controller
             },
             SecurityRequirements =
             [
-                new OpenApiSecurityRequirement() { [Snippets.AltinnTokenSecurityScheme] = new List<string>() },
+                new OpenApiSecurityRequirement() { [Snippets.AltinnTokenSecurityScheme] = [] },
             ],
             Servers =
             {
                 new OpenApiServer() { Url = $"http://local.altinn.cloud", Description = "Local development server" },
                 new OpenApiServer()
                 {
-                    Url = $"http://{appMetadata.Org}.apps.tt02.altinn.no",
+                    Url = $"https://{appMetadata.Org}.apps.tt02.altinn.no",
                     Description = "TT02 server",
                 },
                 new OpenApiServer()
                 {
-                    Url = $"http://{appMetadata.Org}.apps.altinn.no",
+                    Url = $"https://{appMetadata.Org}.apps.altinn.no",
                     Description = "Production server",
                 },
             },
@@ -457,11 +457,7 @@ public class CustomOpenApiController : Controller
                                 Schema = new OpenApiSchema()
                                 {
                                     Type = "string",
-                                    Enum = new List<IOpenApiAny>()
-                                    {
-                                        new OpenApiString("maskinporten"),
-                                        new OpenApiString("id-porten"),
-                                    },
+                                    Enum = [new OpenApiString("maskinporten"), new OpenApiString("id-porten")],
                                 },
                             },
                             new OpenApiParameter()
@@ -510,11 +506,11 @@ public class CustomOpenApiController : Controller
                         },
                     },
                 },
-                Servers = new List<OpenApiServer>()
-                {
-                    new OpenApiServer() { Description = "Production environment", Url = "https://platform.altinn.no" },
-                    new OpenApiServer() { Description = "Test environment", Url = "https://platform.tt02.altinn.no" },
-                },
+                Servers =
+                [
+                    new OpenApiServer { Description = "Production environment", Url = "https://platform.altinn.no" },
+                    new OpenApiServer { Description = "Test environment", Url = "https://platform.tt02.altinn.no" },
+                ],
             }
         );
         document.Paths.Add(
@@ -1082,6 +1078,15 @@ public static class Snippets
     };
 
     /// <summary>
+    /// Reference to the ProblemDetails common response
+    /// </summary>
+    public static readonly OpenApiReference ProblemDetailsResponseReference = new()
+    {
+        Id = "ProblemDetails",
+        Type = ReferenceType.Response,
+    };
+
+    /// <summary>
     /// Add common error responses to a response collection
     /// </summary>
     public static OpenApiResponses AddCommonErrorResponses(HttpStatusCode statusCode, OpenApiResponse response)
@@ -1092,15 +1097,6 @@ public static class Snippets
         };
         return AddCommonErrorResponses(responses);
     }
-
-    /// <summary>
-    /// Reference to the ProblemDetails common response
-    /// </summary>
-    public static readonly OpenApiReference ProblemDetailsResponseReference = new()
-    {
-        Id = "ProblemDetails",
-        Type = ReferenceType.Response,
-    };
 
     /// <summary>
     /// Add common error responses to a response collection
