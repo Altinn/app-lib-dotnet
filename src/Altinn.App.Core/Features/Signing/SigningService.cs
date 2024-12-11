@@ -99,7 +99,86 @@ internal sealed class SigningService(
 
         // TODO: Get signees from policy??
 
-        throw new NotImplementedException();
+        return Task.FromResult(
+            new List<SigneeContext>
+            {
+                new(
+                    "taskId",
+                    Guid.NewGuid(),
+                    new PersonSignee
+                    {
+                        DisplayName = "Klara Ku",
+                        LastName = "Ku",
+                        SocialSecurityNumber = "12345678911",
+                    },
+                    new SigneeState
+                    {
+                        IsAccessDelegated = true,
+                        DelegationFailedReason = null,
+                        SignatureRequestSmsSent = false,
+                        SignatureRequestSmsNotSentReason = null,
+                        SignatureRequestEmailSent = false,
+                        SignatureRequestEmailNotSentReason = null,
+                        IsReceiptSent = false,
+                    }
+                ),
+                new(
+                    "taskId",
+                    Guid.NewGuid(),
+                    new OrganisationSignee { DisplayName = "Skog og Fjell", OrganisationNumber = "043871668" },
+                    new SigneeState
+                    {
+                        IsAccessDelegated = false,
+                        DelegationFailedReason = null,
+                        SignatureRequestSmsSent = false,
+                        SignatureRequestSmsNotSentReason = null,
+                        SignatureRequestEmailSent = false,
+                        SignatureRequestEmailNotSentReason = null,
+                        IsReceiptSent = false,
+                    }
+                ),
+                new(
+                    "taskId",
+                    Guid.NewGuid(),
+                    new PersonSignee
+                    {
+                        DisplayName = "Pengelens Partner",
+                        SocialSecurityNumber = "01899699552",
+                        LastName = "Partner",
+                    },
+                    new SigneeState
+                    {
+                        IsAccessDelegated = true,
+                        DelegationFailedReason = null,
+                        SignatureRequestSmsSent = false,
+                        SignatureRequestSmsNotSentReason = null,
+                        SignatureRequestEmailSent = false,
+                        SignatureRequestEmailNotSentReason = null,
+                        IsReceiptSent = false,
+                    }
+                ),
+                new(
+                    "taskId",
+                    Guid.NewGuid(),
+                    new PersonSignee
+                    {
+                        DisplayName = "Gjentakende Forelder",
+                        SocialSecurityNumber = "17858296439",
+                        LastName = "Forelder",
+                    },
+                    new SigneeState
+                    {
+                        IsAccessDelegated = false,
+                        DelegationFailedReason = null,
+                        SignatureRequestSmsSent = false,
+                        SignatureRequestSmsNotSentReason = null,
+                        SignatureRequestEmailSent = false,
+                        SignatureRequestEmailNotSentReason = null,
+                        IsReceiptSent = false,
+                    }
+                ),
+            }
+        );
     }
 
     //TODO: There is already logic for the sign action in the SigningUserAction class. Maybe move most of it here?
@@ -159,6 +238,11 @@ internal sealed class SigningService(
         List<SigneeContext> personSigneeContexts = [];
         foreach (PersonSignee personSignee in signeeResult.PersonSignees)
         {
+            _logger.LogInformation(
+                "Looking up person with SSN {SocialSecurityNumber} and last name {LastName}.",
+                personSignee.SocialSecurityNumber,
+                personSignee.LastName.Split(" ").Last()
+            );
             Person? person = await personClient.GetPerson(
                 personSignee.SocialSecurityNumber,
                 personSignee.LastName.Split(" ").Last(),

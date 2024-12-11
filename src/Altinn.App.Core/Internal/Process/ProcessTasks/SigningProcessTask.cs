@@ -57,6 +57,9 @@ internal sealed class SigningProcessTask : IProcessTask
 
         AltinnSignatureConfiguration signatureConfiguration = GetAltinnSignatureConfiguration(taskId);
         ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
+        _logger.LogInformation($"Starting signing task for instance {instance.Id}");
+        _logger.LogInformation($"Signature configuration: {signatureConfiguration.SignatureDataTypeId}");
+        _logger.LogInformation($"App metadata: {appMetadata}");
 
         if (_hostEnvironment.IsDevelopment())
         {
@@ -78,6 +81,7 @@ internal sealed class SigningProcessTask : IProcessTask
 
         await _signingService.ProcessSignees(cachedDataMutator, signeeContexts, signatureConfiguration, cts.Token);
         var changes = cachedDataMutator.GetDataElementChanges(false);
+        _logger.LogInformation($"Saving changes for instance {instance.Id}. Changes: {changes}");
         await cachedDataMutator.SaveChanges(changes);
     }
 
