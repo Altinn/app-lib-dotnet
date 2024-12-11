@@ -84,10 +84,7 @@ public class CustomOpenApiController : Controller
                 Responses = { ["ProblemDetails"] = Snippets.ProblemDetailsResponseSchema },
                 Parameters = Snippets.ComponentParameters,
             },
-            SecurityRequirements =
-            [
-                new OpenApiSecurityRequirement() { [Snippets.AltinnTokenSecurityScheme] = [] },
-            ],
+            SecurityRequirements = [new OpenApiSecurityRequirement() { [Snippets.AltinnTokenSecurityScheme] = [] }],
             Servers =
             {
                 new OpenApiServer() { Url = $"http://local.altinn.cloud", Description = "Local development server" },
