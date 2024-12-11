@@ -2,7 +2,7 @@ namespace Altinn.App.Core.Features.Signing.Models;
 
 internal sealed class SigneeContext
 {
-    internal SigneeContext(string taskId, Guid partyId, SigneeParty signeeParty, SigneeState signeeState)
+    internal SigneeContext(string taskId, int partyId, SigneeParty signeeParty, SigneeState signeeState)
     {
         SigneeState = signeeState;
         SigneeParty = signeeParty;
@@ -11,7 +11,7 @@ internal sealed class SigneeContext
     }
 
     /// <summary>The identifier of the signee.</summary>
-    internal Guid PartyId { get; }
+    internal int PartyId { get; }
 
     /// <summary>The task associated with the signee state.</summary>
     internal string TaskId { get; set; }

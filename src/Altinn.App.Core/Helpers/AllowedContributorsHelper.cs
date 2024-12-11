@@ -44,7 +44,7 @@ internal static class AllowedContributorsHelper
         return false;
     }
 
-    public static void EnsureDataTypeIsAppOwned(ApplicationMetadata metadata, string dataTypeId)
+    public static void EnsureDataTypeIsAppOwned(ApplicationMetadata metadata, string? dataTypeId)
     {
         DataType? dataType = metadata.DataTypes.Find(x => x.Id == dataTypeId);
         List<string>? allowedContributors = dataType?.AllowedContributers;

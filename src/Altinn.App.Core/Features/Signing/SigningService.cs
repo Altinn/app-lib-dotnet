@@ -104,7 +104,7 @@ internal sealed class SigningService(
             {
                 new(
                     "taskId",
-                    Guid.NewGuid(),
+                    50000123,
                     new PersonSignee
                     {
                         DisplayName = "Klara Ku",
@@ -124,7 +124,7 @@ internal sealed class SigningService(
                 ),
                 new(
                     "taskId",
-                    Guid.NewGuid(),
+                    50000124,
                     new OrganisationSignee { DisplayName = "Skog og Fjell", OrganisationNumber = "043871668" },
                     new SigneeState
                     {
@@ -139,7 +139,7 @@ internal sealed class SigningService(
                 ),
                 new(
                     "taskId",
-                    Guid.NewGuid(),
+                    50000125,
                     new PersonSignee
                     {
                         DisplayName = "Pengelens Partner",
@@ -159,7 +159,7 @@ internal sealed class SigningService(
                 ),
                 new(
                     "taskId",
-                    Guid.NewGuid(),
+                    50000126,
                     new PersonSignee
                     {
                         DisplayName = "Gjentakende Forelder",
@@ -262,17 +262,13 @@ internal sealed class SigningService(
                 new PartyLookup { Ssn = personSignee.SocialSecurityNumber }
             );
 
-            // Guid partyUuid =
-            //     party.PartyUuid
-            //     ?? throw new SignaturePartyNotValidException($"No partyUuid found for signature party.");
-
             Sms? smsNotification = personSignee.Notifications?.OnSignatureAccessRightsDelegated?.Sms;
             if (smsNotification is not null && smsNotification.MobileNumber is null)
             {
                 smsNotification.MobileNumber = person.MobileNumber;
             }
 
-            personSigneeContexts.Add(new SigneeContext(taskId, Guid.NewGuid(), personSignee, new SigneeState()));
+            personSigneeContexts.Add(new SigneeContext(taskId, party.PartyId, personSignee, new SigneeState()));
         }
 
         return personSigneeContexts;
@@ -303,12 +299,6 @@ internal sealed class SigningService(
                 new PartyLookup { OrgNo = organisationSignee.OrganisationNumber }
             );
 
-            Guid partyUuid =
-                party.PartyUuid
-                ?? throw new SignaturePartyNotValidException(
-                    $"No partyId found for signature party with organisation number {organisationSignee.OrganisationNumber}."
-                );
-
             //TODO: Is this the correct place to set email to registry fallback? Maybe move it to notification service?
             Email? emailNotification = organisationSignee.Notifications?.OnSignatureAccessRightsDelegated?.Email;
             if (emailNotification is not null && emailNotification.EmailAddress is null)
@@ -322,7 +312,7 @@ internal sealed class SigningService(
                 smsNotification.MobileNumber = organisation.MobileNumber;
             }
 
-            organisationSigneeContexts.Add(new SigneeContext(taskId, partyUuid, organisationSignee, new SigneeState()));
+            organisationSigneeContexts.Add(new SigneeContext(taskId, party.PartyId, organisationSignee, new SigneeState()));
         }
 
         return organisationSigneeContexts;
