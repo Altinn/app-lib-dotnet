@@ -819,6 +819,9 @@ public class CustomOpenApiController : Controller
 /// </summary>
 public static class Snippets
 {
+    /// <summary>
+    /// Schema for the POST endpoint for creating a new instance
+    /// </summary>
     public static OpenApiSchema InstanceWriteSchema =>
         new()
         {
