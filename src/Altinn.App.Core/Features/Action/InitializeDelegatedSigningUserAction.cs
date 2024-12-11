@@ -1,6 +1,9 @@
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
+using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
@@ -17,6 +20,10 @@ internal class InitializeDelegatedSigningUserAction : IUserAction
     private readonly IProcessReader _processReader;
     private readonly ILogger<InitializeDelegatedSigningUserAction> _logger;
     private readonly ISigningService _signingService;
+    private readonly IAppMetadata _appMetadata;
+    private readonly IDataClient _dataClient;
+    private readonly IInstanceClient _instanceClient;
+    private readonly ModelSerializationService _modelSerialization;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="InitializeDelegatedSigningUserAction"/> class
@@ -24,11 +31,19 @@ internal class InitializeDelegatedSigningUserAction : IUserAction
     public InitializeDelegatedSigningUserAction(
         IProcessReader processReader,
         ISigningService signingService,
+        IAppMetadata appMetadata,
+        IDataClient dataClient,
+        IInstanceClient instanceClient,
+        ModelSerializationService modelSerialization,
         ILogger<InitializeDelegatedSigningUserAction> logger
     )
     {
         _processReader = processReader;
         _signingService = signingService;
+        _appMetadata = appMetadata;
+        _dataClient = dataClient;
+        _instanceClient = instanceClient;
+        _modelSerialization = modelSerialization;
         _logger = logger;
     }
 
@@ -64,6 +79,13 @@ internal class InitializeDelegatedSigningUserAction : IUserAction
             );
         }
 
+        var cachedDataMutator = new InstanceDataUnitOfWork(
+            context.Instance,
+            _dataClient,
+            _instanceClient,
+            await _appMetadata.GetApplicationMetadata(),
+            _modelSerialization
+        );
         CancellationToken ct = new();
         List<SigneeContext> signeeContexts = await _signingService.InitializeSignees(
             context.Instance,
@@ -71,7 +93,9 @@ internal class InitializeDelegatedSigningUserAction : IUserAction
             ct
         );
 
-        await _signingService.ProcessSignees(context.Instance, signeeContexts, ct);
+        await _signingService.ProcessSignees(cachedDataMutator, signeeContexts, signatureConfiguration, ct);
+        var changes = cachedDataMutator.GetDataElementChanges(false);
+        await cachedDataMutator.SaveChanges(changes);
 
         //TODO: Return failure result if something failed.
 

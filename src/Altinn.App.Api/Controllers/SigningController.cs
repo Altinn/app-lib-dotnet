@@ -51,6 +51,7 @@ public class SigningController : ControllerBase
     [HttpGet]
     [ProducesResponseType(typeof(SingingStateResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetSigneesState(
         [FromRoute] string org,
         [FromRoute] string app,
@@ -82,15 +83,19 @@ public class SigningController : ControllerBase
             throw new ApplicationConfigException("Signing configuration not found in AltinnTaskExtension");
         }
 
-        List<SigneeContext> signeeContexts = await _signingService.GetSigneesState();
+        List<SigneeContext> signeeContexts = await _signingService.GetSigneeContexts();
 
+        Random rnd = new Random();
         var response = new SingingStateResponse
         {
             SigneeStates = signeeContexts
                 .Select(signeeContext => new SigneeState
                 {
-                    Name = signeeContext.SigneeParty.DisplayName,
-                    HasSigned = false, //TODO: When and where to check if signee has signed?
+                    Name = signeeContext.SigneeParty is PersonSignee personSignee ? personSignee.DisplayName : null,
+                    Organisation = signeeContext.SigneeParty is OrganisationSignee organisationSignee
+                        ? organisationSignee.DisplayName
+                        : (signeeContext.SigneeParty as PersonSignee)?.OnBehalfOfOrganisation,
+                    HasSigned = rnd.Next(1, 10) > 5, //TODO: When and where to check if signee has signed?
                     DelegationSuccessful = signeeContext.SigneeState.IsAccessDelegated is false,
                     NotificationSuccessful =
                         signeeContext.SigneeState

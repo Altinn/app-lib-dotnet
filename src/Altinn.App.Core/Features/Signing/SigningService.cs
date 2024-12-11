@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.Json;
 using Altinn.App.Core.Features.Signing.Exceptions;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Mocks;
@@ -7,6 +8,7 @@ using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.Logging;
 
 namespace Altinn.App.Core.Features.Signing;
 
@@ -18,9 +20,14 @@ internal sealed class SigningService(
     ISigningDelegationService signingDelegationService,
     ISigningNotificationService signingNotificationService,
     IEnumerable<ISigneeProvider> signeeProviders,
+    ILogger<SigningService> logger,
     Telemetry? telemetry = null
 ) : ISigningService
 {
+    private static readonly JsonSerializerOptions _jsonSerializerOptions = new(JsonSerializerDefaults.Web);
+    private readonly ILogger<SigningService> _logger = logger;
+    private const string ApplicationJsonContentType = "application/json";
+
     public async Task<SigneesResult?> GetSignees(Instance instance, AltinnSignatureConfiguration signatureConfiguration)
     {
         string? signeeProviderId = signatureConfiguration.SigneeProviderId;
@@ -61,25 +68,31 @@ internal sealed class SigningService(
     }
 
     public async Task<List<SigneeContext>> ProcessSignees(
-        Instance instance,
+        IInstanceDataMutator instanceMutator,
         List<SigneeContext> signeeContexts,
+        AltinnSignatureConfiguration signatureConfiguration,
         CancellationToken ct
     )
     {
         using Activity? activity = telemetry?.StartAssignSigneesActivity();
-        string taskId = instance.Process.CurrentTask.ElementId;
+        string taskId = instanceMutator.Instance.Process.CurrentTask.ElementId;
 
-        await signingDelegationService.DelegateSigneeRights(taskId, instance, signeeContexts, ct);
+        await signingDelegationService.DelegateSigneeRights(taskId, instanceMutator.Instance, signeeContexts, ct);
 
         //TODO: If something fails inside DelegateSigneeRights, abort and don't send notifications. Set error state in SigneeState.
 
         await signingNotificationService.NotifySignatureTask(signeeContexts, ct);
 
-        // TODO: StorageClient.SetSignState(state); ?
+        instanceMutator.AddBinaryDataElement(
+            dataTypeId: signatureConfiguration.SignatureDataTypeId,
+            contentType: ApplicationJsonContentType,
+            filename: null,
+            bytes: JsonSerializer.SerializeToUtf8Bytes(signeeContexts)
+        );
         return signeeContexts;
     }
 
-    public Task<List<SigneeContext>> GetSigneesState()
+    public Task<List<SigneeContext>> GetSigneeContexts()
     {
         using Activity? activity = telemetry?.StartReadSigneesActivity();
         // TODO: Get signees from state
@@ -146,7 +159,11 @@ internal sealed class SigningService(
         List<SigneeContext> personSigneeContexts = [];
         foreach (PersonSignee personSignee in signeeResult.PersonSignees)
         {
-            Person? person = await personClient.GetPerson(personSignee.SocialSecurityNumber, personSignee.LastName, ct);
+            Person? person = await personClient.GetPerson(
+                personSignee.SocialSecurityNumber,
+                personSignee.LastName.Split(" ").Last(),
+                ct
+            );
 
             if (person is null)
             {
@@ -161,9 +178,9 @@ internal sealed class SigningService(
                 new PartyLookup { Ssn = personSignee.SocialSecurityNumber }
             );
 
-            Guid partyUuid =
-                party.PartyUuid
-                ?? throw new SignaturePartyNotValidException($"No partyUuid found for signature party.");
+            // Guid partyUuid =
+            //     party.PartyUuid
+            //     ?? throw new SignaturePartyNotValidException($"No partyUuid found for signature party.");
 
             Sms? smsNotification = personSignee.Notifications?.OnSignatureAccessRightsDelegated?.Sms;
             if (smsNotification is not null && smsNotification.MobileNumber is null)
@@ -171,7 +188,7 @@ internal sealed class SigningService(
                 smsNotification.MobileNumber = person.MobileNumber;
             }
 
-            personSigneeContexts.Add(new SigneeContext(taskId, partyUuid, personSignee, new SigneeState()));
+            personSigneeContexts.Add(new SigneeContext(taskId, Guid.NewGuid(), personSignee, new SigneeState()));
         }
 
         return personSigneeContexts;

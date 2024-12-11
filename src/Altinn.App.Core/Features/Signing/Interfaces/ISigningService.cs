@@ -15,10 +15,11 @@ internal interface ISigningService
     );
 
     Task<List<SigneeContext>> ProcessSignees(
-        Instance instance,
+        IInstanceDataMutator instanceMutator,
         List<SigneeContext> signeeContexts,
+        AltinnSignatureConfiguration signatureConfiguration,
         CancellationToken ct
     );
 
-    Task<List<SigneeContext>> GetSigneesState();
+    Task<List<SigneeContext>> GetSigneeContexts();
 }
