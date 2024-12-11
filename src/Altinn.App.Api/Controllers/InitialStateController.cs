@@ -2,8 +2,12 @@ using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Profile;
+using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Models;
+using Altinn.Platform.Register.Models;
+using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -16,6 +20,7 @@ namespace Altinn.App.Api.Controllers;
 /// </summary>
 [AllowAnonymous]
 [ApiController]
+[Route("{org}/{app}/api/v1/inital-state")]
 public class InitialStateController : ControllerBase
 {
     private readonly IAppMetadata _appMetadata;
@@ -23,6 +28,10 @@ public class InitialStateController : ControllerBase
     private readonly AppSettings _appSettings;
     private readonly FrontEndSettings _frontEndSettings;
     private readonly IProfileClient _profileClient;
+
+    private readonly IAuthorizationClient _authorizationClient;
+    private readonly UserHelper _userHelper;
+    private readonly GeneralSettings _settings;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ApplicationMetadataController"/> class
@@ -34,7 +43,10 @@ public class InitialStateController : ControllerBase
         ILogger<ApplicationMetadataController> logger,
         IOptions<AppSettings> appSettings,
         IOptions<FrontEndSettings> frontEndSettings,
-        IProfileClient profileClient
+        IProfileClient profileClient,
+        IAuthorizationClient authorizationClient,
+        IAltinnPartyClient altinnPartyClientClient,
+        IOptions<GeneralSettings> settings
     )
     {
         _appMetadata = appMetadata;
@@ -42,6 +54,8 @@ public class InitialStateController : ControllerBase
         _appSettings = appSettings.Value;
         _frontEndSettings = frontEndSettings.Value;
         _profileClient = profileClient;
+        _authorizationClient = authorizationClient;
+        _userHelper = new UserHelper(profileClient, altinnPartyClientClient, settings);
     }
 
     private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
@@ -58,8 +72,13 @@ public class InitialStateController : ControllerBase
     /// <param name="app">Application identifier which is unique within an organisation.</param>
     /// <param name="checkOrgApp">Boolean get parameter to skip verification of correct org/app</param>
     /// <returns>Application metadata</returns>
-    [HttpGet("{org}/{app}/api/v1/inital-state")]
-    public async Task<ActionResult<InitialState>> GetAction(string org, string app, [FromQuery] bool checkOrgApp = true)
+    [HttpGet()]
+    public async Task<ActionResult<InitialState>> GetAction(
+        string org,
+        string app,
+        [FromQuery] bool checkOrgApp = true,
+        bool allowedToInstantiateFilter = false
+    )
     {
         ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
 
@@ -110,6 +129,20 @@ public class InitialStateController : ControllerBase
         {
             return StatusCode(500, e.Message);
         }
+
+        UserContext userContext = await _userHelper.GetUserContext(HttpContext);
+        List<Party>? partyList = await _authorizationClient.GetPartyList(userContext.UserId);
+
+        if (allowedToInstantiateFilter)
+        {
+            List<Party> validParties = InstantiationHelper.FilterPartiesByAllowedPartyTypes(
+                partyList,
+                application.PartyTypesAllowed
+            );
+            //return Ok(validParties);
+            initialState.ValidParties = validParties;
+        }
+        initialState.ValidParties = partyList;
 
         if (!checkOrgApp || application.Id.Equals(wantedAppId, StringComparison.Ordinal))
         {

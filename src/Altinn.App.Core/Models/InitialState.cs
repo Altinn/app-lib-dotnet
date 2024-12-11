@@ -1,10 +1,8 @@
-using Altinn.App.Core.Configuration;
 using Altinn.Platform.Profile.Models;
+using Altinn.Platform.Register.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Altinn.App.Core.Models;
-
-using System.Text.Json;
 
 public class InitialState
 {
@@ -18,4 +16,6 @@ public class InitialState
     public JsonResult FrontEndSettings { get; set; }
 
     public UserProfile User { get; set; }
+
+    public List<Party> ValidParties { get; set; }
 }
