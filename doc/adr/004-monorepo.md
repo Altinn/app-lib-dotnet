@@ -60,6 +60,8 @@ The separation of frontend and backend repositories creates challenges specific 
 - Risk of larger PRs containing frontend and backend changes, potentially complicating reviews.
   - Can be mitigated by having multiple people review if necessary, keep PRs specific.
 - Higher potential for repository-wide issues affecting multiple areas.
+- 1 repo with issues related to both frontend and backend
+  - Can be mitigated by labelling issues for example
 
 ## Conclusion
 
