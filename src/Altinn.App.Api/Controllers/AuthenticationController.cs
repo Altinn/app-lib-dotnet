@@ -1,12 +1,9 @@
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
-using Altinn.App.Core.Helpers;
-using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Auth;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
-using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -20,7 +17,6 @@ public class AuthenticationController : ControllerBase
 {
     private readonly IAuthenticationClient _authenticationClient;
     private readonly GeneralSettings _settings;
-    private readonly IAppMetadata _appMetadata;
     private readonly IAuthenticationContext _authenticationContext;
 
     /// <summary>
@@ -29,13 +25,11 @@ public class AuthenticationController : ControllerBase
     public AuthenticationController(
         IAuthenticationClient authenticationClient,
         IOptions<GeneralSettings> settings,
-        IAppMetadata appMetadata,
         IServiceProvider serviceProvider
     )
     {
         _authenticationClient = authenticationClient;
         _settings = settings.Value;
-        _appMetadata = appMetadata;
         _authenticationContext = serviceProvider.GetRequiredService<IAuthenticationContext>();
     }
 
@@ -50,8 +44,6 @@ public class AuthenticationController : ControllerBase
     {
         var current = _authenticationContext.Current;
 
-        Application application = await _appMetadata.GetApplicationMetadata();
-
         CurrentAuthenticationBaseResponse response = current switch
         {
             AuthenticationInfo.Unauthenticated => new UnauthenticatedResponse(),
@@ -61,10 +53,7 @@ public class AuthenticationController : ControllerBase
                     Profile = details.Profile,
                     Party = details.Reportee,
                     Parties = details.Parties,
-                    PartiesAllowedToInstantiate = InstantiationHelper.FilterPartiesByAllowedPartyTypes(
-                        details.Parties,
-                        application.PartyTypesAllowed
-                    ),
+                    PartiesAllowedToInstantiate = details.PartiesAllowedToInstantiate,
                 },
             AuthenticationInfo.Org org when await org.LoadDetails() is var details => new OrgResponse
             {
