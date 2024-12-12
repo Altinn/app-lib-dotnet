@@ -50,7 +50,7 @@ public class UserHelperTest
     {
         // Arrange
         const int authLevel = 3;
-        var userPrincipal = PrincipalUtil.GetUserPrincipal(userId, partyId, authLevel);
+        var userPrincipal = TestAuthentication.GetUserPrincipal(userId, partyId, authLevel);
         await using var fixture = Fixture.Create(userPrincipal);
         var userHelper = new UserHelper(
             profileClient: fixture.ProfileClientMock,
@@ -91,7 +91,7 @@ public class UserHelperTest
         // Arrange
         const int userId = 1001;
         const int authLevel = 3;
-        var userPrincipal = PrincipalUtil.GetUserPrincipal(userId, default, authLevel);
+        var userPrincipal = TestAuthentication.GetUserPrincipal(userId, default, authLevel);
         await using var fixture = Fixture.Create(userPrincipal);
         var userHelper = new UserHelper(
             profileClient: fixture.ProfileClientMock,
@@ -127,7 +127,7 @@ public class UserHelperTest
     public async Task GetUserContext_ThrowsOnMissingUserId()
     {
         // Arrange
-        var userPrincipal = PrincipalUtil.GetUserPrincipal(default, default);
+        var userPrincipal = TestAuthentication.GetUserPrincipal(default, default);
         await using var fixture = Fixture.Create(userPrincipal);
         var userHelper = new UserHelper(
             profileClient: fixture.ProfileClientMock,

@@ -47,7 +47,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         string app = "contributer-restriction";
         int instanceOwnerPartyId = 501337;
         HttpClient client = GetRootedClient(org, app);
-        string token = PrincipalUtil.GetToken(1337, null);
+        string token = TestAuthentication.GetUserToken(userId: 1337, partyId: instanceOwnerPartyId);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Create instance data
@@ -161,7 +161,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         string app = "contributer-restriction";
         int instanceOwnerPartyId = 501337;
         HttpClient client = GetRootedClient(org, app);
-        string token = PrincipalUtil.GetToken(1337, null);
+        string token = TestAuthentication.GetUserToken(userId: 1337, partyId: instanceOwnerPartyId);
 
         var createResponseParsed = await CreateInstanceSimplified(org, app, instanceOwnerPartyId, client, token);
         var instanceId = createResponseParsed.Id;
@@ -185,7 +185,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         string app = "contributer-restriction";
         int instanceOwnerPartyId = 501337;
         HttpClient client = GetRootedClient(org, app);
-        string token = PrincipalUtil.GetToken(1337, null);
+        string token = TestAuthentication.GetUserToken(userId: 1337, partyId: instanceOwnerPartyId);
 
         var prefill = new Dictionary<string, string> { { "melding.name", "TestName" } };
         var createResponseParsed = await CreateInstanceSimplified(
@@ -219,7 +219,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         string app = "contributer-restriction";
         int instanceOwnerPartyId = 501337;
         HttpClient client = GetRootedClient(org, app);
-        string token = PrincipalUtil.GetToken(1337, null);
+        string token = TestAuthentication.GetUserToken(userId: 1337, partyId: instanceOwnerPartyId);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Create instance data
@@ -245,7 +245,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         string app = "contributer-restriction";
         int instanceOwnerPartyId = 501337;
         HttpClient client = GetRootedClient(org, app);
-        string token = PrincipalUtil.GetToken(1337, null);
+        string token = TestAuthentication.GetUserToken(userId: 1337, partyId: instanceOwnerPartyId);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Create instance data
@@ -282,7 +282,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         this.OverrideServicesForThisTest = services =>
             services.AddSingleton(new AppMetadataMutationHook(app => app.DisallowUserInstantiation = true));
         HttpClient client = GetRootedClient(org, app);
-        string token = PrincipalUtil.GetToken(1337, null);
+        string token = TestAuthentication.GetUserToken(userId: 1337, partyId: instanceOwnerPartyId);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Create instance data
@@ -312,7 +312,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         string app = "contributer-restriction";
         int instanceOwnerPartyId = 501337;
         int userId = 1337;
-        HttpClient client = GetRootedClient(org, app, userId, null);
+        using HttpClient client = GetRootedUserClient(org, app, userId, instanceOwnerPartyId);
 
         using var content = JsonContent.Create(
             new Instance() { InstanceOwner = new InstanceOwner() { PartyId = instanceOwnerPartyId.ToString() } }
@@ -336,7 +336,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         int instanceOwnerPartyId = 501337;
         // Get an org token
         // (to avoid issues with read status being set when initialized by normal users)
-        HttpClient client = GetRootedClient(org, app, 0, null, serviceOwnerOrg: org);
+        using HttpClient client = GetRootedOrgClient(org, app, serviceOwnerOrg: org);
 
         using var content = new StringContent(
             $$"""
@@ -380,7 +380,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         string app = "contributer-restriction";
         int instanceOwnerPartyId = 501337;
         int userId = 1337;
-        HttpClient client = GetRootedClient(org, app, userId, null);
+        using HttpClient client = GetRootedUserClient(org, app, userId, instanceOwnerPartyId);
 
         using var content = new ByteArrayContent([])
         {
@@ -410,7 +410,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         this.OverrideServicesForThisTest = services =>
             services.AddSingleton(new AppMetadataMutationHook(app => app.DisallowUserInstantiation = true));
         HttpClient client = GetRootedClient(org, app);
-        string token = PrincipalUtil.GetToken(1337, null);
+        string token = TestAuthentication.GetUserToken(userId: 1337, partyId: instanceOwnerPartyId);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Create instance data
@@ -450,8 +450,8 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         };
         HttpClient client = GetRootedClient(org, app);
 
-        string orgToken = PrincipalUtil.GetOrgToken("tdd", "160694123");
-        string userToken = PrincipalUtil.GetToken(1337, 501337);
+        string orgToken = TestAuthentication.GetOrgToken("160694123", org: "tdd");
+        string userToken = TestAuthentication.GetUserToken(1337, 501337);
 
         var sourceInstance = await CreateInstanceSimplified(org, app, instanceOwnerPartyId, client, orgToken);
         sourceInstance.Data.Should().HaveCount(1, "Create instance should create a data element");

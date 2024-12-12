@@ -59,6 +59,9 @@
         },
         {
           user.name: User1337
+        },
+        {
+          user.party.id: 500600
         }
       ],
       IdFormat: W3C,
