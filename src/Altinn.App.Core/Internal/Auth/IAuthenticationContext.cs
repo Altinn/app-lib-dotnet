@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
+using Altinn.App.Core.Models;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
 using AltinnCore.Authentication.Constants;
@@ -58,6 +59,11 @@ public abstract record AuthenticationInfo
         public int PartyId { get; }
 
         /// <summary>
+        /// Party ID from party ID selection cookie
+        /// </summary>
+        public int? CookiePartyId { get; }
+
+        /// <summary>
         /// Authentication level
         /// </summary>
         public int AuthenticationLevel { get; }
@@ -71,6 +77,7 @@ public abstract record AuthenticationInfo
             int userId,
             int partyId,
             int authenticationLevel,
+            int? cookiePartyId,
             string token,
             Func<int, Task<UserProfile?>> getUserProfile,
             Func<int, Task<Party?>> lookupParty,
@@ -81,6 +88,7 @@ public abstract record AuthenticationInfo
         {
             UserId = userId;
             PartyId = partyId;
+            CookiePartyId = cookiePartyId;
             AuthenticationLevel = authenticationLevel;
             _getUserProfile = getUserProfile;
             _lookupParty = lookupParty;
@@ -95,11 +103,13 @@ public abstract record AuthenticationInfo
         /// <param name="Profile">Users profile</param>
         /// <param name="RepresentsSelf">True if the user represents itself</param>
         /// <param name="Parties">List of parties the user can represent</param>
+        /// <param name="CanRepresent">True if the user can represent the selected party. Only set if details were loaded with validateSelectedParty set to true</param>
         public sealed record Details(
             Party Reportee,
             UserProfile Profile,
             bool RepresentsSelf,
-            IReadOnlyList<Party> Parties
+            IReadOnlyList<Party> Parties,
+            bool? CanRepresent = null
         );
 
         /// <summary>
@@ -131,17 +141,15 @@ public abstract record AuthenticationInfo
                 throw new InvalidOperationException("Could not load party for selected party ID");
 
             var representsSelf = userProfile.Party is null || PartyId != userProfile.Party.PartyId;
+            bool? canRepresent = null;
             if (validateSelectedParty && !representsSelf)
             {
                 // The selected party must either be the profile/default party or a party the user can represent,
                 // which can be validated against the user's party list.
-                if (await _validateSelectedParty(UserId, PartyId) is not true)
-                {
-                    throw new InvalidOperationException($"User {UserId} cannot represent party {PartyId}");
-                }
+                canRepresent = await _validateSelectedParty(UserId, PartyId);
             }
 
-            _extra = new Details(reportee, userProfile, representsSelf, parties);
+            _extra = new Details(reportee, userProfile, representsSelf, parties, canRepresent);
             return _extra;
         }
     }
@@ -249,11 +257,56 @@ public abstract record AuthenticationInfo
     /// System users authenticate through Maskinporten.
     /// The caller is the system, which impersonates the system user (which represents the organisation/owner of the user).
     /// </summary>
-    /// <param name="SystemUserId">System user ID</param>
-    /// <param name="SystemId">System ID</param>
-    /// <param name="Token">JWT token</param>
-    public sealed record SystemUser(IReadOnlyList<string> SystemUserId, string SystemId, string Token)
-        : AuthenticationInfo(Token);
+    public sealed record SystemUser : AuthenticationInfo
+    {
+        /// <summary>
+        /// System user ID
+        /// </summary>
+        public IReadOnlyList<string> SystemUserId { get; }
+
+        /// <summary>
+        /// Organisation number of the system user
+        /// </summary>
+        public OrganisationNumber SystemUserOrgNr { get; }
+
+        /// <summary>
+        /// System ID
+        /// </summary>
+        public string SystemId { get; }
+
+        private readonly Func<string, Task<Party>> _lookupParty;
+
+        internal SystemUser(
+            IReadOnlyList<string> systemUserId,
+            OrganisationNumber systemUserOrgNr,
+            string systemId,
+            string token,
+            Func<string, Task<Party>> lookupParty
+        )
+            : base(token)
+        {
+            SystemUserId = systemUserId;
+            SystemUserOrgNr = systemUserOrgNr;
+            SystemId = systemId;
+            _lookupParty = lookupParty;
+        }
+
+        /// <summary>
+        /// Detailed information about a system user
+        /// </summary>
+        /// <param name="Party">Party of the system user</param>
+        public sealed record Details(Party Party);
+
+        /// <summary>
+        /// Load the details for the current system user.
+        /// </summary>
+        /// <returns>Details</returns>
+        public async Task<Details> LoadDetails()
+        {
+            var party = await _lookupParty(SystemUserOrgNr.Get(OrganisationNumberFormat.Local));
+            return new Details(party);
+        }
+    }
 
     // TODO: app token?
     // public sealed record App(string Token) : AuthenticationInfo;
@@ -359,8 +412,12 @@ public abstract record AuthenticationInfo
                 throw new InvalidOperationException("Missing system user ID claim for system user token");
             if (string.IsNullOrWhiteSpace(systemUser.SystemId))
                 throw new InvalidOperationException("Missing system ID claim for system user token");
+            if (systemUser.SystemUserOrg.Authority != "iso6523-actorid-upis")
+                throw new InvalidOperationException("Unsupported organisation authority in system user token");
+            if (!OrganisationNumber.TryParse(systemUser.SystemUserOrg.Id, out var orgNr))
+                throw new InvalidOperationException("Invalid organisation number in system user token");
 
-            return new SystemUser(systemUser.SystemUserId, systemUser.SystemId, token);
+            return new SystemUser(systemUser.SystemUserId, orgNr, systemUser.SystemId, token, lookupOrgParty);
         }
 
         var userIdClaim = httpContext.User.Claims.FirstOrDefault(claim =>
@@ -371,11 +428,13 @@ public abstract record AuthenticationInfo
         if (!int.TryParse(userIdClaim.Value, CultureInfo.InvariantCulture, out int userId))
             throw new InvalidOperationException("Invalid user ID claim value for user token");
 
+        int? cookiePartyId = null;
         if (httpContext.Request.Cookies.TryGetValue(partyCookieName, out var partyCookie) && partyCookie != null)
         {
-            if (!int.TryParse(partyCookie, CultureInfo.InvariantCulture, out var cookiePartyId))
+            if (!int.TryParse(partyCookie, CultureInfo.InvariantCulture, out var cookiePartyIdVal))
                 throw new InvalidOperationException("Invalid party ID in cookie: " + partyCookie);
 
+            cookiePartyId = cookiePartyIdVal;
             selectedPartyId = cookiePartyId;
         }
 
@@ -388,6 +447,7 @@ public abstract record AuthenticationInfo
             userId,
             selectedPartyId.Value,
             authLevel,
+            cookiePartyId,
             token,
             getUserProfile,
             lookupUserParty,
@@ -402,10 +462,13 @@ public abstract record AuthenticationInfo
         [property: JsonPropertyName("type")] string Type,
         [property: JsonPropertyName("systemuser_id")] IReadOnlyList<string> SystemUserId,
         [property: JsonPropertyName("system_id")] string SystemId,
-        [property: JsonPropertyName("party_id")] string SystemUserOrg
+        [property: JsonPropertyName("systemuser_org")] SystemUserOrg SystemUserOrg
     );
 
-    // private sealed class
+    private sealed record SystemUserOrg(
+        [property: JsonPropertyName("authority")] string Authority,
+        [property: JsonPropertyName("ID")] string Id
+    );
 }
 
 /// <summary>
