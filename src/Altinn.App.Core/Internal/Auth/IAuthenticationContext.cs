@@ -2,6 +2,8 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Models;
@@ -72,6 +74,7 @@ public abstract record AuthenticationInfo
         private readonly Func<int, Task<Party?>> _lookupParty;
         private readonly Func<int, Task<List<Party>?>> _getPartyList;
         private readonly Func<int, int, Task<bool?>> _validateSelectedParty;
+        private readonly Func<Task<ApplicationMetadata>> _getApplicationMetadata;
 
         internal User(
             int userId,
@@ -82,7 +85,8 @@ public abstract record AuthenticationInfo
             Func<int, Task<UserProfile?>> getUserProfile,
             Func<int, Task<Party?>> lookupParty,
             Func<int, Task<List<Party>?>> getPartyList,
-            Func<int, int, Task<bool?>> validateSelectedParty
+            Func<int, int, Task<bool?>> validateSelectedParty,
+            Func<Task<ApplicationMetadata>> getApplicationMetadata
         )
             : base(token)
         {
@@ -94,6 +98,7 @@ public abstract record AuthenticationInfo
             _lookupParty = lookupParty;
             _getPartyList = getPartyList;
             _validateSelectedParty = validateSelectedParty;
+            _getApplicationMetadata = getApplicationMetadata;
         }
 
         /// <summary>
@@ -103,12 +108,14 @@ public abstract record AuthenticationInfo
         /// <param name="Profile">Users profile</param>
         /// <param name="RepresentsSelf">True if the user represents itself</param>
         /// <param name="Parties">List of parties the user can represent</param>
+        /// <param name="PartiesAllowedToInstantiate">List of parties the user can instantiate</param>
         /// <param name="CanRepresent">True if the user can represent the selected party. Only set if details were loaded with validateSelectedParty set to true</param>
         public sealed record Details(
             Party Reportee,
             UserProfile Profile,
             bool RepresentsSelf,
             IReadOnlyList<Party> Parties,
+            IReadOnlyList<Party> PartiesAllowedToInstantiate,
             bool? CanRepresent = null
         );
 
@@ -149,7 +156,20 @@ public abstract record AuthenticationInfo
                 canRepresent = await _validateSelectedParty(UserId, PartyId);
             }
 
-            _extra = new Details(reportee, userProfile, representsSelf, parties, canRepresent);
+            var application = await _getApplicationMetadata();
+            var partiesAllowedToInstantiate = InstantiationHelper.FilterPartiesByAllowedPartyTypes(
+                parties,
+                application.PartyTypesAllowed
+            );
+
+            _extra = new Details(
+                reportee,
+                userProfile,
+                representsSelf,
+                parties,
+                partiesAllowedToInstantiate,
+                canRepresent
+            );
             return _extra;
         }
     }
@@ -319,7 +339,8 @@ public abstract record AuthenticationInfo
         Func<int, Task<Party?>> lookupUserParty,
         Func<string, Task<Party>> lookupOrgParty,
         Func<int, Task<List<Party>?>> getPartyList,
-        Func<int, int, Task<bool?>> validateSelectedParty
+        Func<int, int, Task<bool?>> validateSelectedParty,
+        Func<Task<ApplicationMetadata>> getApplicationMetadata
     )
     {
         string token = JwtTokenUtil.GetTokenFromContext(httpContext, authCookieName);
@@ -452,7 +473,8 @@ public abstract record AuthenticationInfo
             getUserProfile,
             lookupUserParty,
             getPartyList,
-            validateSelectedParty
+            validateSelectedParty,
+            getApplicationMetadata
         );
     }
 
@@ -491,6 +513,7 @@ internal sealed class AuthenticationContext : IAuthenticationContext
     private readonly IProfileClient _profileClient;
     private readonly IAltinnPartyClient _altinnPartyClient;
     private readonly IAuthorizationClient _authorizationClient;
+    private readonly IAppMetadata _appMetadata;
 
     public AuthenticationContext(
         IHttpContextAccessor httpContextAccessor,
@@ -498,7 +521,8 @@ internal sealed class AuthenticationContext : IAuthenticationContext
         IOptionsMonitor<GeneralSettings> generalSettings,
         IProfileClient profileClient,
         IAltinnPartyClient altinnPartyClient,
-        IAuthorizationClient authorizationClient
+        IAuthorizationClient authorizationClient,
+        IAppMetadata appMetadata
     )
     {
         _httpContextAccessor = httpContextAccessor;
@@ -507,6 +531,7 @@ internal sealed class AuthenticationContext : IAuthenticationContext
         _profileClient = profileClient;
         _altinnPartyClient = altinnPartyClient;
         _authorizationClient = authorizationClient;
+        _appMetadata = appMetadata;
     }
 
     // Currently we're coupling this to the HTTP context directly.
@@ -529,7 +554,8 @@ internal sealed class AuthenticationContext : IAuthenticationContext
             _altinnPartyClient.GetParty,
             (string orgNr) => _altinnPartyClient.LookupParty(new PartyLookup { OrgNo = orgNr }),
             _authorizationClient.GetPartyList,
-            _authorizationClient.ValidateSelectedParty
+            _authorizationClient.ValidateSelectedParty,
+            _appMetadata.GetApplicationMetadata
         );
         httpContext.Items[ItemsKey] = authInfo;
     }

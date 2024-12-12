@@ -28,6 +28,7 @@ public class PartiesController : ControllerBase
     private readonly IProfileClient _profileClient;
     private readonly GeneralSettings _settings;
     private readonly IAppMetadata _appMetadata;
+    private readonly IAuthenticationContext _authenticationContext;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PartiesController"/> class
@@ -37,7 +38,8 @@ public class PartiesController : ControllerBase
         IProfileClient profileClient,
         IAltinnPartyClient altinnPartyClientClient,
         IOptions<GeneralSettings> settings,
-        IAppMetadata appMetadata
+        IAppMetadata appMetadata,
+        IServiceProvider serviceProvider
     )
     {
         _authorizationClient = authorizationClient;
@@ -45,6 +47,7 @@ public class PartiesController : ControllerBase
         _profileClient = profileClient;
         _settings = settings.Value;
         _appMetadata = appMetadata;
+        _authenticationContext = serviceProvider.GetRequiredService<IAuthenticationContext>();
     }
 
     /// <summary>
@@ -58,20 +61,37 @@ public class PartiesController : ControllerBase
     [HttpGet("{org}/{app}/api/v1/parties")]
     public async Task<IActionResult> Get(string org, string app, bool allowedToInstantiateFilter = false)
     {
-        UserContext userContext = await _userHelper.GetUserContext(HttpContext);
-        List<Party>? partyList = await _authorizationClient.GetPartyList(userContext.UserId);
-
-        if (allowedToInstantiateFilter)
+        var context = _authenticationContext.Current;
+        switch (context)
         {
-            Application application = await _appMetadata.GetApplicationMetadata();
-            List<Party> validParties = InstantiationHelper.FilterPartiesByAllowedPartyTypes(
-                partyList,
-                application.PartyTypesAllowed
-            );
-            return Ok(validParties);
+            case AuthenticationInfo.Unauthenticated:
+                return Unauthorized();
+            case AuthenticationInfo.User user:
+            {
+                var details = await user.LoadDetails(validateSelectedParty: false);
+                return allowedToInstantiateFilter ? Ok(details.PartiesAllowedToInstantiate) : Ok(details.Parties);
+            }
+            case AuthenticationInfo.Org orgInfo:
+            {
+                var details = await orgInfo.LoadDetails();
+                IReadOnlyList<Party> parties = [details.Party];
+                return Ok(parties);
+            }
+            case AuthenticationInfo.ServiceOwner serviceOwner:
+            {
+                var details = await serviceOwner.LoadDetails();
+                IReadOnlyList<Party> parties = [details.Party];
+                return Ok(parties);
+            }
+            case AuthenticationInfo.SystemUser su:
+            {
+                var details = await su.LoadDetails();
+                IReadOnlyList<Party> parties = [details.Party];
+                return Ok(parties);
+            }
+            default:
+                throw new NotImplementedException();
         }
-
-        return Ok(partyList);
     }
 
     /// <summary>
