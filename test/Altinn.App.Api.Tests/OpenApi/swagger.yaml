@@ -247,6 +247,24 @@ paths:
       responses:
         '200':
           description: OK
+  '/{org}/{app}/api/Authentication/current':
+    get:
+      tags:
+        - Authentication
+      parameters:
+        - name: org
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: app
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
   '/{org}/{app}/api/Authentication/keepAlive':
     get:
       tags:
