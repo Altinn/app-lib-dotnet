@@ -1,5 +1,4 @@
-using Altinn.App.Core.Helpers;
-using Altinn.App.Core.Internal.Profile;
+using Altinn.App.Core.Internal.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,14 +12,14 @@ namespace Altinn.App.Api.Controllers;
 [ApiController]
 public class ProfileController : Controller
 {
-    private readonly IProfileClient _profileClient;
+    private readonly IAuthenticationContext _authenticationContext;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProfileController"/> class
     /// </summary>
-    public ProfileController(IProfileClient profileClient)
+    public ProfileController(IServiceProvider serviceProvider)
     {
-        _profileClient = profileClient;
+        _authenticationContext = serviceProvider.GetRequiredService<IAuthenticationContext>();
     }
 
     /// <summary>
@@ -31,26 +30,16 @@ public class ProfileController : Controller
     [HttpGet("user")]
     public async Task<ActionResult> GetUser()
     {
-        int userId = AuthenticationHelper.GetUserId(HttpContext);
-        if (userId == 0)
+        var context = _authenticationContext.Current;
+        switch (context)
         {
-            return BadRequest("The userId is not proviced in the context.");
-        }
-
-        try
-        {
-            var user = await _profileClient.GetUserProfile(userId);
-
-            if (user == null)
+            case AuthenticationInfo.User user:
             {
-                return NotFound();
+                var details = await user.LoadDetails(validateSelectedParty: false);
+                return Ok(details.Profile);
             }
-
-            return Ok(user);
-        }
-        catch (Exception e)
-        {
-            return StatusCode(500, e.Message);
+            default:
+                return BadRequest("The userId is not proviced in the context.");
         }
     }
 }
