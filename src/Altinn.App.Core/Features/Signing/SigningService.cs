@@ -4,8 +4,13 @@ using Altinn.App.Core.Features.Signing.Exceptions;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Mocks;
 using Altinn.App.Core.Features.Signing.Models;
+using Altinn.App.Core.Helpers.Serialization;
+using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Registers;
+using Altinn.App.Core.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
@@ -20,11 +25,19 @@ internal sealed class SigningService(
     ISigningDelegationService signingDelegationService,
     ISigningNotificationService signingNotificationService,
     IEnumerable<ISigneeProvider> signeeProviders,
+    IDataClient dataClient,
+    IInstanceClient instanceClient,
+    ModelSerializationService modelSerialization,
+    IAppMetadata _appMetadata,
     ILogger<SigningService> logger,
     Telemetry? telemetry = null
 ) : ISigningService
 {
     private static readonly JsonSerializerOptions _jsonSerializerOptions = new(JsonSerializerDefaults.Web);
+    private readonly IDataClient _dataClient = dataClient;
+    private readonly IInstanceClient _instanceClient = instanceClient;
+    private readonly ModelSerializationService _modelSerialization = modelSerialization;
+    private readonly IAppMetadata _appMetadata = _appMetadata;
     private readonly ILogger<SigningService> _logger = logger;
     private const string ApplicationJsonContentType = "application/json";
 
@@ -45,12 +58,14 @@ internal sealed class SigningService(
     }
 
     public async Task<List<SigneeContext>> InitializeSignees(
-        Instance instance,
+        IInstanceDataMutator instanceMutator,
         AltinnSignatureConfiguration signatureConfiguration,
         CancellationToken ct
     )
     {
         using Activity? activity = telemetry?.StartAssignSigneesActivity();
+
+        var instance = instanceMutator.Instance;
         string taskId = instance.Process.CurrentTask.ElementId;
 
         SigneesResult? signeesResult = await GetSignees(instance, signatureConfiguration);
@@ -63,7 +78,8 @@ internal sealed class SigningService(
         List<SigneeContext> organisationSigneeContexts = await GetOrganisationSigneeContexts(taskId, signeesResult, ct);
         List<SigneeContext> signeeContexts = [.. personSigneeContexts, .. organisationSigneeContexts];
 
-        // TODO: StorageClient.SetSignState(signeeContexts); ?
+        _logger.LogInformation("Assigning signees to task {TaskId}: {SigneeContexts}", taskId, signeeContexts.Count);
+
         return signeeContexts;
     }
 
@@ -84,7 +100,7 @@ internal sealed class SigningService(
         await signingNotificationService.NotifySignatureTask(signeeContexts, ct);
 
         instanceMutator.AddBinaryDataElement(
-            dataTypeId: signatureConfiguration.SignatureDataTypeId,
+            dataTypeId: signatureConfiguration.SigneeStatesDataTypeId,
             contentType: ApplicationJsonContentType,
             filename: null,
             bytes: JsonSerializer.SerializeToUtf8Bytes(signeeContexts)
@@ -92,14 +108,32 @@ internal sealed class SigningService(
         return signeeContexts;
     }
 
-    public Task<List<SigneeContext>> GetSigneeContexts()
+    public async Task<List<SigneeContext>> GetSigneeContexts(
+        Instance instance,
+        AltinnSignatureConfiguration signatureConfiguration
+    )
     {
         using Activity? activity = telemetry?.StartReadSigneesActivity();
         // TODO: Get signees from state
+        ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
+
+        var cachedDataMutator = new InstanceDataUnitOfWork(
+            instance,
+            _dataClient,
+            _instanceClient,
+            appMetadata,
+            _modelSerialization
+        );
+
+        var dataElements = cachedDataMutator.GetDataElementsForType(signatureConfiguration.SigneeStatesDataTypeId);
+
+        // return dataElements.Select(dataElement =>
+        //     JsonSerializer.Deserialize<SigneeContext>(dataElement., _jsonSerializerOptions)
+        // ).ToList();
 
         // TODO: Get signees from policy??
 
-        return Task.FromResult(
+        return await Task.FromResult(
             new List<SigneeContext>
             {
                 new(
@@ -312,9 +346,10 @@ internal sealed class SigningService(
                 smsNotification.MobileNumber = organisation.MobileNumber;
             }
 
-            organisationSigneeContexts.Add(new SigneeContext(taskId, party.PartyId, organisationSignee, new SigneeState()));
+            organisationSigneeContexts.Add(
+                new SigneeContext(taskId, party.PartyId, organisationSignee, new SigneeState())
+            );
         }
-
         return organisationSigneeContexts;
     }
 }

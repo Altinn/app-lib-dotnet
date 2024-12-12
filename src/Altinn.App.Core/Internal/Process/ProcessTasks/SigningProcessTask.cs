@@ -58,12 +58,15 @@ internal sealed class SigningProcessTask : IProcessTask
         AltinnSignatureConfiguration signatureConfiguration = GetAltinnSignatureConfiguration(taskId);
         ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
         _logger.LogInformation($"Starting signing task for instance {instance.Id}");
-        _logger.LogInformation($"Signature configuration: {signatureConfiguration.SignatureDataTypeId}");
+        _logger.LogInformation($"Signature configuration: {signatureConfiguration.SigneeStatesDataTypeId}");
         _logger.LogInformation($"App metadata: {appMetadata}");
 
         if (_hostEnvironment.IsDevelopment())
         {
-            AllowedContributorsHelper.EnsureDataTypeIsAppOwned(appMetadata, signatureConfiguration.SignatureDataTypeId);
+            AllowedContributorsHelper.EnsureDataTypeIsAppOwned(
+                appMetadata,
+                signatureConfiguration.SigneeStatesDataTypeId
+            );
         }
 
         var cachedDataMutator = new InstanceDataUnitOfWork(
@@ -74,14 +77,15 @@ internal sealed class SigningProcessTask : IProcessTask
             _modelSerialization
         );
         List<SigneeContext> signeeContexts = await _signingService.InitializeSignees(
-            instance,
+            cachedDataMutator,
             signatureConfiguration,
             cts.Token
         );
 
         await _signingService.ProcessSignees(cachedDataMutator, signeeContexts, signatureConfiguration, cts.Token);
-        var changes = cachedDataMutator.GetDataElementChanges(false);
-        _logger.LogInformation($"Saving changes for instance {instance.Id}. Changes: {changes}");
+        DataElementChanges changes = cachedDataMutator.GetDataElementChanges(false);
+
+        await cachedDataMutator.UpdateInstanceData(changes);
         await cachedDataMutator.SaveChanges(changes);
     }
 

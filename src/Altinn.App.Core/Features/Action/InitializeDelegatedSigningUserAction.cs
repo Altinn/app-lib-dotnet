@@ -88,7 +88,7 @@ internal class InitializeDelegatedSigningUserAction : IUserAction
         );
         CancellationToken ct = new();
         List<SigneeContext> signeeContexts = await _signingService.InitializeSignees(
-            context.Instance,
+            cachedDataMutator,
             signatureConfiguration,
             ct
         );

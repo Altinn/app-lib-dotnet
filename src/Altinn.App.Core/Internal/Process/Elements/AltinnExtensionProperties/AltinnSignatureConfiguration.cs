@@ -46,6 +46,6 @@ public class AltinnSignatureConfiguration
     /// <summary>
     /// Optionally set a signee context data type that should be used for storing signee contexts for this signing step.
     /// </summary>
-    [XmlElement("signatureDataTypeId", Namespace = "http://altinn.no/process")]
-    public string? SignatureDataTypeId { get; set; }
+    [XmlElement("signeeStatesDataTypeId", Namespace = "http://altinn.no/process")]
+    public string? SigneeStatesDataTypeId { get; set; }
 }

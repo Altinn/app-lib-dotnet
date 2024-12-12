@@ -3,6 +3,7 @@ using Altinn.App.Api.Models;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
@@ -83,7 +84,7 @@ public class SigningController : ControllerBase
             throw new ApplicationConfigException("Signing configuration not found in AltinnTaskExtension");
         }
 
-        List<SigneeContext> signeeContexts = await _signingService.GetSigneeContexts();
+        List<SigneeContext> signeeContexts = await _signingService.GetSigneeContexts(instance, signingConfiguration);
 
         Random rnd = new Random();
         var response = new SingingStateResponse

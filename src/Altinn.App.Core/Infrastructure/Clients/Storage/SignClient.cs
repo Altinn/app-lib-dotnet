@@ -65,7 +65,7 @@ public class SignClient : ISignClient
                 PersonNumber = signatureContext.Signee.PersonNumber,
                 OrganisationNumber = signatureContext.Signee.OrganisationNumber,
             },
-            SignatureDocumentDataType = signatureContext.SignatureDataTypeId,
+            SignatureDocumentDataType = signatureContext.SigneeStatesDataTypeId,
             DataElementSignatures = new(),
             GeneratedFromTask = signatureContext.GeneratedFromTask,
         };

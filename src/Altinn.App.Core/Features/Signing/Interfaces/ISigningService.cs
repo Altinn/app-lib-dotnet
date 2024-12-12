@@ -9,7 +9,7 @@ internal interface ISigningService
     Task<SigneesResult?> GetSignees(Instance instance, AltinnSignatureConfiguration signatureConfiguration);
 
     Task<List<SigneeContext>> InitializeSignees(
-        Instance instance,
+        IInstanceDataMutator instanceMutator,
         AltinnSignatureConfiguration signatureConfiguration,
         CancellationToken ct
     );
@@ -21,5 +21,5 @@ internal interface ISigningService
         CancellationToken ct
     );
 
-    Task<List<SigneeContext>> GetSigneeContexts();
+    Task<List<SigneeContext>> GetSigneeContexts(Instance instance, AltinnSignatureConfiguration signatureConfiguration);
 }
