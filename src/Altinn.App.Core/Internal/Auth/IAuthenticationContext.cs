@@ -355,7 +355,7 @@ public abstract record AuthenticationInfo
     {
         string token = JwtTokenUtil.GetTokenFromContext(httpContext, authCookieName);
         if (string.IsNullOrWhiteSpace(token))
-            throw new InvalidOperationException("Couldn't extract current client token from context");
+            return new Unauthenticated(token);
 
         var isAuthenticated = httpContext.User.Identity?.IsAuthenticated ?? false;
         if (!isAuthenticated)
@@ -554,9 +554,8 @@ internal sealed class AuthenticationContext : IAuthenticationContext
     private HttpContext _httpContext =>
         _httpContextAccessor.HttpContext ?? throw new InvalidOperationException("No HTTP context available");
 
-    internal void ResolveCurrent()
+    internal void ResolveCurrent(HttpContext httpContext)
     {
-        var httpContext = _httpContext;
         var authInfo = AuthenticationInfo.From(
             httpContext,
             _appSettings.CurrentValue.RuntimeCookieName,
