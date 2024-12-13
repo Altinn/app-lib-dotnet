@@ -5,7 +5,7 @@ namespace Altinn.App.Core.Features.Signing.Models;
 /// <summary>
 ///  Represents the context of a signee.
 /// </summary>
-public sealed class SigneeContext
+internal sealed class SigneeContext
 {
     /// <summary>The identifier of the signee.</summary>
     [JsonPropertyName("partyId")]
