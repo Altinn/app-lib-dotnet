@@ -25,7 +25,7 @@ public class SignatureContext
     {
         InstanceIdentifier = instanceIdentifier;
         GeneratedFromTask = generatedFromTask;
-        SigneeStatesDataTypeId = SigneeStatesDataTypeId;
+        SigneeStatesDataTypeId = signeeStatesDataTypeId;
         DataElementSignatures.AddRange(dataElementSignature);
         Signee = signee;
     }

@@ -3,7 +3,6 @@ using Altinn.App.Api.Models;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Internal.App;
-using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
@@ -90,17 +89,26 @@ public class SigningController : ControllerBase
         var response = new SingingStateResponse
         {
             SigneeStates = signeeContexts
-                .Select(signeeContext => new SigneeState
+                .Select(signeeContext =>
                 {
-                    Name = signeeContext.SigneeParty is PersonSignee personSignee ? personSignee.DisplayName : null,
-                    Organisation = signeeContext.SigneeParty is OrganisationSignee organisationSignee
+                    string? name = signeeContext.SigneeParty is PersonSignee personSignee
+                        ? personSignee.DisplayName
+                        : null;
+
+                    string? organisation = signeeContext.SigneeParty is OrganisationSignee organisationSignee
                         ? organisationSignee.DisplayName
-                        : (signeeContext.SigneeParty as PersonSignee)?.OnBehalfOfOrganisation,
-                    HasSigned = rnd.Next(1, 10) > 5, //TODO: When and where to check if signee has signed?
-                    DelegationSuccessful = signeeContext.SigneeState.IsAccessDelegated is false,
-                    NotificationSuccessful =
-                        signeeContext.SigneeState
-                            is { SignatureRequestEmailSent: false, SignatureRequestSmsSent: false },
+                        : (signeeContext.SigneeParty as PersonSignee)?.OnBehalfOfOrganisation;
+
+                    return new SigneeState
+                    {
+                        Name = name,
+                        Organisation = organisation,
+                        HasSigned = rnd.Next(1, 10) > 5, //TODO: When and where to check if signee has signed?
+                        DelegationSuccessful = signeeContext.SigneeState.IsAccessDelegated is false,
+                        NotificationSuccessful =
+                            signeeContext.SigneeState
+                                is { SignatureRequestEmailSent: false, SignatureRequestSmsSent: false },
+                    };
                 })
                 .ToList(),
         };

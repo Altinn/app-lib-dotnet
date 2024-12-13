@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 using System.Text.Json;
 using Altinn.App.Core.Features.Signing.Exceptions;
 using Altinn.App.Core.Features.Signing.Interfaces;
@@ -18,17 +19,16 @@ using Microsoft.Extensions.Logging;
 namespace Altinn.App.Core.Features.Signing;
 
 internal sealed class SigningService(
-    /*ISignClient signClient, IInstanceClient instanceClient, IAppMetadata appMetadata,*/
     IPersonClient personClient,
     IOrganizationClient organisationClient,
     IAltinnPartyClient altinnPartyClient,
-    ISigningDelegationService signingDelegationService,
-    ISigningNotificationService signingNotificationService,
+    // ISigningDelegationService signingDelegationService,
+    // ISigningNotificationService signingNotificationService,
     IEnumerable<ISigneeProvider> signeeProviders,
     IDataClient dataClient,
     IInstanceClient instanceClient,
     ModelSerializationService modelSerialization,
-    IAppMetadata _appMetadata,
+    IAppMetadata appMetadata,
     ILogger<SigningService> logger,
     Telemetry? telemetry = null
 ) : ISigningService
@@ -37,7 +37,7 @@ internal sealed class SigningService(
     private readonly IDataClient _dataClient = dataClient;
     private readonly IInstanceClient _instanceClient = instanceClient;
     private readonly ModelSerializationService _modelSerialization = modelSerialization;
-    private readonly IAppMetadata _appMetadata = _appMetadata;
+    private readonly IAppMetadata _appMetadata = appMetadata;
     private readonly ILogger<SigningService> _logger = logger;
     private const string ApplicationJsonContentType = "application/json";
 
@@ -93,18 +93,22 @@ internal sealed class SigningService(
         using Activity? activity = telemetry?.StartAssignSigneesActivity();
         string taskId = instanceMutator.Instance.Process.CurrentTask.ElementId;
 
-        await signingDelegationService.DelegateSigneeRights(taskId, instanceMutator.Instance, signeeContexts, ct);
+        // await signingDelegationService.DelegateSigneeRights(taskId, instanceMutator.Instance, signeeContexts, ct);
 
         //TODO: If something fails inside DelegateSigneeRights, abort and don't send notifications. Set error state in SigneeState.
 
-        await signingNotificationService.NotifySignatureTask(signeeContexts, ct);
+        // await signingNotificationService.NotifySignatureTask(signeeContexts, ct);
 
+        // ! TODO: Remove nullable
         instanceMutator.AddBinaryDataElement(
-            dataTypeId: signatureConfiguration.SigneeStatesDataTypeId,
+            dataTypeId: signatureConfiguration.SigneeStatesDataTypeId!,
             contentType: ApplicationJsonContentType,
             filename: null,
-            bytes: JsonSerializer.SerializeToUtf8Bytes(signeeContexts)
+            bytes: JsonSerializer.SerializeToUtf8Bytes(signeeContexts, _jsonSerializerOptions)
         );
+
+        await Task.CompletedTask;
+
         return signeeContexts;
     }
 
@@ -125,94 +129,101 @@ internal sealed class SigningService(
             _modelSerialization
         );
 
-        var dataElements = cachedDataMutator.GetDataElementsForType(signatureConfiguration.SigneeStatesDataTypeId);
+        // ! TODO: Remove nullable
+        IEnumerable<DataElement> dataElements = cachedDataMutator.GetDataElementsForType(
+            signatureConfiguration.SigneeStatesDataTypeId!
+        );
 
-        // return dataElements.Select(dataElement =>
-        //     JsonSerializer.Deserialize<SigneeContext>(dataElement., _jsonSerializerOptions)
-        // ).ToList();
+        DataElement signeeStateDataElement = dataElements.Single();
+        ReadOnlyMemory<byte> data = await cachedDataMutator.GetBinaryData(signeeStateDataElement);
+        string asString = Encoding.UTF8.GetString(data.ToArray());
+
+        var result = JsonSerializer.Deserialize<SigneeContext[]>(asString) ?? [];
+
+        return result.ToList();
 
         // TODO: Get signees from policy??
 
-        return await Task.FromResult(
-            new List<SigneeContext>
-            {
-                new(
-                    "taskId",
-                    50000123,
-                    new PersonSignee
-                    {
-                        DisplayName = "Klara Ku",
-                        LastName = "Ku",
-                        SocialSecurityNumber = "12345678911",
-                    },
-                    new SigneeState
-                    {
-                        IsAccessDelegated = true,
-                        DelegationFailedReason = null,
-                        SignatureRequestSmsSent = false,
-                        SignatureRequestSmsNotSentReason = null,
-                        SignatureRequestEmailSent = false,
-                        SignatureRequestEmailNotSentReason = null,
-                        IsReceiptSent = false,
-                    }
-                ),
-                new(
-                    "taskId",
-                    50000124,
-                    new OrganisationSignee { DisplayName = "Skog og Fjell", OrganisationNumber = "043871668" },
-                    new SigneeState
-                    {
-                        IsAccessDelegated = false,
-                        DelegationFailedReason = null,
-                        SignatureRequestSmsSent = false,
-                        SignatureRequestSmsNotSentReason = null,
-                        SignatureRequestEmailSent = false,
-                        SignatureRequestEmailNotSentReason = null,
-                        IsReceiptSent = false,
-                    }
-                ),
-                new(
-                    "taskId",
-                    50000125,
-                    new PersonSignee
-                    {
-                        DisplayName = "Pengelens Partner",
-                        SocialSecurityNumber = "01899699552",
-                        LastName = "Partner",
-                    },
-                    new SigneeState
-                    {
-                        IsAccessDelegated = true,
-                        DelegationFailedReason = null,
-                        SignatureRequestSmsSent = false,
-                        SignatureRequestSmsNotSentReason = null,
-                        SignatureRequestEmailSent = false,
-                        SignatureRequestEmailNotSentReason = null,
-                        IsReceiptSent = false,
-                    }
-                ),
-                new(
-                    "taskId",
-                    50000126,
-                    new PersonSignee
-                    {
-                        DisplayName = "Gjentakende Forelder",
-                        SocialSecurityNumber = "17858296439",
-                        LastName = "Forelder",
-                    },
-                    new SigneeState
-                    {
-                        IsAccessDelegated = false,
-                        DelegationFailedReason = null,
-                        SignatureRequestSmsSent = false,
-                        SignatureRequestSmsNotSentReason = null,
-                        SignatureRequestEmailSent = false,
-                        SignatureRequestEmailNotSentReason = null,
-                        IsReceiptSent = false,
-                    }
-                ),
-            }
-        );
+        // return await Task.FromResult(
+        //     new List<SigneeContext>
+        //     {
+        //         new(
+        //             "taskId",
+        //             50000123,
+        //             new PersonSignee
+        //             {
+        //                 DisplayName = "Klara Ku",
+        //                 LastName = "Ku",
+        //                 SocialSecurityNumber = "12345678911",
+        //             },
+        //             new SigneeState
+        //             {
+        //                 IsAccessDelegated = true,
+        //                 DelegationFailedReason = null,
+        //                 SignatureRequestSmsSent = false,
+        //                 SignatureRequestSmsNotSentReason = null,
+        //                 SignatureRequestEmailSent = false,
+        //                 SignatureRequestEmailNotSentReason = null,
+        //                 IsReceiptSent = false,
+        //             }
+        //         ),
+        //         new(
+        //             "taskId",
+        //             50000124,
+        //             new OrganisationSignee { DisplayName = "Skog og Fjell", OrganisationNumber = "043871668" },
+        //             new SigneeState
+        //             {
+        //                 IsAccessDelegated = false,
+        //                 DelegationFailedReason = null,
+        //                 SignatureRequestSmsSent = false,
+        //                 SignatureRequestSmsNotSentReason = null,
+        //                 SignatureRequestEmailSent = false,
+        //                 SignatureRequestEmailNotSentReason = null,
+        //                 IsReceiptSent = false,
+        //             }
+        //         ),
+        //         new(
+        //             "taskId",
+        //             50000125,
+        //             new PersonSignee
+        //             {
+        //                 DisplayName = "Pengelens Partner",
+        //                 SocialSecurityNumber = "01899699552",
+        //                 LastName = "Partner",
+        //             },
+        //             new SigneeState
+        //             {
+        //                 IsAccessDelegated = true,
+        //                 DelegationFailedReason = null,
+        //                 SignatureRequestSmsSent = false,
+        //                 SignatureRequestSmsNotSentReason = null,
+        //                 SignatureRequestEmailSent = false,
+        //                 SignatureRequestEmailNotSentReason = null,
+        //                 IsReceiptSent = false,
+        //             }
+        //         ),
+        //         new(
+        //             "taskId",
+        //             50000126,
+        //             new PersonSignee
+        //             {
+        //                 DisplayName = "Gjentakende Forelder",
+        //                 SocialSecurityNumber = "17858296439",
+        //                 LastName = "Forelder",
+        //             },
+        //             new SigneeState
+        //             {
+        //                 IsAccessDelegated = false,
+        //                 DelegationFailedReason = null,
+        //                 SignatureRequestSmsSent = false,
+        //                 SignatureRequestSmsNotSentReason = null,
+        //                 SignatureRequestEmailSent = false,
+        //                 SignatureRequestEmailNotSentReason = null,
+        //                 IsReceiptSent = false,
+        //             }
+        //         ),
+        //     }
+        // );
     }
 
     //TODO: There is already logic for the sign action in the SigningUserAction class. Maybe move most of it here?
@@ -302,7 +313,15 @@ internal sealed class SigningService(
                 smsNotification.MobileNumber = person.MobileNumber;
             }
 
-            personSigneeContexts.Add(new SigneeContext(taskId, party.PartyId, personSignee, new SigneeState()));
+            personSigneeContexts.Add(
+                new SigneeContext
+                {
+                    TaskId = taskId,
+                    PartyId = party.PartyId,
+                    SigneeParty = personSignee,
+                    SigneeState = new SigneeState(),
+                }
+            );
         }
 
         return personSigneeContexts;
@@ -347,7 +366,13 @@ internal sealed class SigningService(
             }
 
             organisationSigneeContexts.Add(
-                new SigneeContext(taskId, party.PartyId, organisationSignee, new SigneeState())
+                new SigneeContext
+                {
+                    TaskId = taskId,
+                    PartyId = party.PartyId,
+                    SigneeParty = organisationSignee,
+                    SigneeState = new SigneeState(),
+                }
             );
         }
         return organisationSigneeContexts;

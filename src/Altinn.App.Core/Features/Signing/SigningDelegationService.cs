@@ -1,3 +1,4 @@
+using System.Globalization;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Helpers;
@@ -33,7 +34,11 @@ internal sealed class SigningDelegationService(IAccessManagementClient accessMan
                         .WithInstanceId(instance.Id)
                         .WithDelegator(new Delegator { IdType = DelegationConst.Party, Id = "" })
                         .WithRecipient(
-                            new Delegatee { IdType = DelegationConst.Party, Id = signeeContext.PartyId.ToString() }
+                            new Delegatee
+                            {
+                                IdType = DelegationConst.Party,
+                                Id = signeeContext.PartyId.ToString(CultureInfo.InvariantCulture),
+                            }
                         )
                         .WithRights(
                             [
