@@ -91,18 +91,10 @@ public class SigningController : ControllerBase
             SigneeStates = signeeContexts
                 .Select(signeeContext =>
                 {
-                    string? name = signeeContext.SigneeParty is PersonSignee personSignee
-                        ? personSignee.DisplayName
-                        : null;
-
-                    string? organisation = signeeContext.SigneeParty is OrganisationSignee organisationSignee
-                        ? organisationSignee.DisplayName
-                        : (signeeContext.SigneeParty as PersonSignee)?.OnBehalfOfOrganisation;
-
                     return new SigneeState
                     {
-                        Name = name,
-                        Organisation = organisation,
+                        Name = signeeContext.PersonSignee?.DisplayName ?? signeeContext.OrganisationSignee?.DisplayName,
+                        Organisation = signeeContext.OrganisationSignee?.DisplayName,
                         HasSigned = rnd.Next(1, 10) > 5, //TODO: When and where to check if signee has signed?
                         DelegationSuccessful = signeeContext.SigneeState.IsAccessDelegated is false,
                         NotificationSuccessful =

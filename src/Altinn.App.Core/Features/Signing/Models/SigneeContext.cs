@@ -21,9 +21,21 @@ public sealed class SigneeContext
     [JsonPropertyName("signeeState")]
     public required SigneeState SigneeState { get; set; }
 
+    // /// <summary>
+    // /// The signee.
+    // /// </summary>
+    // [JsonPropertyName("signeeParty")]
+    // public required SigneeParty SigneeParty { get; set; }
+
     /// <summary>
-    /// The signee.
+    ///
     /// </summary>
-    [JsonPropertyName("signeeParty")]
-    public required SigneeParty SigneeParty { get; set; }
+    [JsonPropertyName("organisationSignee")]
+    public OrganisationSignee? OrganisationSignee { get; set; }
+
+    /// <summary>
+    ///
+    /// </summary>
+    [JsonPropertyName("personSignee")]
+    public PersonSignee? PersonSignee { get; set; }
 }

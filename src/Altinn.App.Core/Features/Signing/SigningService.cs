@@ -138,92 +138,11 @@ internal sealed class SigningService(
         ReadOnlyMemory<byte> data = await cachedDataMutator.GetBinaryData(signeeStateDataElement);
         string asString = Encoding.UTF8.GetString(data.ToArray());
 
-        var result = JsonSerializer.Deserialize<SigneeContext[]>(asString) ?? [];
+        var result = JsonSerializer.Deserialize<SigneeContext[]>(asString, _jsonSerializerOptions) ?? [];
 
-        return result.ToList();
+        return [.. result];
 
         // TODO: Get signees from policy??
-
-        // return await Task.FromResult(
-        //     new List<SigneeContext>
-        //     {
-        //         new(
-        //             "taskId",
-        //             50000123,
-        //             new PersonSignee
-        //             {
-        //                 DisplayName = "Klara Ku",
-        //                 LastName = "Ku",
-        //                 SocialSecurityNumber = "12345678911",
-        //             },
-        //             new SigneeState
-        //             {
-        //                 IsAccessDelegated = true,
-        //                 DelegationFailedReason = null,
-        //                 SignatureRequestSmsSent = false,
-        //                 SignatureRequestSmsNotSentReason = null,
-        //                 SignatureRequestEmailSent = false,
-        //                 SignatureRequestEmailNotSentReason = null,
-        //                 IsReceiptSent = false,
-        //             }
-        //         ),
-        //         new(
-        //             "taskId",
-        //             50000124,
-        //             new OrganisationSignee { DisplayName = "Skog og Fjell", OrganisationNumber = "043871668" },
-        //             new SigneeState
-        //             {
-        //                 IsAccessDelegated = false,
-        //                 DelegationFailedReason = null,
-        //                 SignatureRequestSmsSent = false,
-        //                 SignatureRequestSmsNotSentReason = null,
-        //                 SignatureRequestEmailSent = false,
-        //                 SignatureRequestEmailNotSentReason = null,
-        //                 IsReceiptSent = false,
-        //             }
-        //         ),
-        //         new(
-        //             "taskId",
-        //             50000125,
-        //             new PersonSignee
-        //             {
-        //                 DisplayName = "Pengelens Partner",
-        //                 SocialSecurityNumber = "01899699552",
-        //                 LastName = "Partner",
-        //             },
-        //             new SigneeState
-        //             {
-        //                 IsAccessDelegated = true,
-        //                 DelegationFailedReason = null,
-        //                 SignatureRequestSmsSent = false,
-        //                 SignatureRequestSmsNotSentReason = null,
-        //                 SignatureRequestEmailSent = false,
-        //                 SignatureRequestEmailNotSentReason = null,
-        //                 IsReceiptSent = false,
-        //             }
-        //         ),
-        //         new(
-        //             "taskId",
-        //             50000126,
-        //             new PersonSignee
-        //             {
-        //                 DisplayName = "Gjentakende Forelder",
-        //                 SocialSecurityNumber = "17858296439",
-        //                 LastName = "Forelder",
-        //             },
-        //             new SigneeState
-        //             {
-        //                 IsAccessDelegated = false,
-        //                 DelegationFailedReason = null,
-        //                 SignatureRequestSmsSent = false,
-        //                 SignatureRequestSmsNotSentReason = null,
-        //                 SignatureRequestEmailSent = false,
-        //                 SignatureRequestEmailNotSentReason = null,
-        //                 IsReceiptSent = false,
-        //             }
-        //         ),
-        //     }
-        // );
     }
 
     //TODO: There is already logic for the sign action in the SigningUserAction class. Maybe move most of it here?
@@ -288,21 +207,15 @@ internal sealed class SigningService(
                 personSignee.SocialSecurityNumber,
                 personSignee.LastName.Split(" ").Last()
             );
-            Person? person = await personClient.GetPerson(
-                personSignee.SocialSecurityNumber,
-                personSignee.LastName.Split(" ").Last(),
-                ct
-            );
-
-            if (person is null)
-            {
-                //TODO: persist state and throw
-
-                throw new SignaturePartyNotValidException(
+            Person? person =
+                await personClient.GetPerson(
+                    personSignee.SocialSecurityNumber,
+                    personSignee.LastName.Split(" ").Last(),
+                    ct
+                )
+                ?? throw new SignaturePartyNotValidException(
                     $"The given SSN and last name did not match any person in the registry."
                 );
-            }
-
             Party? party = await altinnPartyClient.LookupParty(
                 new PartyLookup { Ssn = personSignee.SocialSecurityNumber }
             );
@@ -318,7 +231,7 @@ internal sealed class SigningService(
                 {
                     TaskId = taskId,
                     PartyId = party.PartyId,
-                    SigneeParty = personSignee,
+                    PersonSignee = personSignee,
                     SigneeState = new SigneeState(),
                 }
             );
@@ -370,7 +283,7 @@ internal sealed class SigningService(
                 {
                     TaskId = taskId,
                     PartyId = party.PartyId,
-                    SigneeParty = organisationSignee,
+                    OrganisationSignee = organisationSignee,
                     SigneeState = new SigneeState(),
                 }
             );

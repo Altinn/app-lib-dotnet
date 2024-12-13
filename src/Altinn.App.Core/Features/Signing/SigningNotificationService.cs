@@ -20,11 +20,12 @@ internal sealed class SigningNotificationService(
         foreach (SigneeContext signeeContext in signeeContexts)
         {
             SigneeState state = signeeContext.SigneeState;
-            SigneeParty party = signeeContext.SigneeParty;
+            Models.Notifications? notifications =
+                signeeContext.OrganisationSignee?.Notifications ?? signeeContext.PersonSignee?.Notifications;
 
             try
             {
-                Notification? notification = party.Notifications?.OnSignatureAccessRightsDelegated;
+                Notification? notification = notifications?.OnSignatureAccessRightsDelegated;
 
                 if (state.SignatureRequestSmsSent is false && notification?.Sms is not null)
                 {

@@ -3,12 +3,12 @@ using System.Text.Json.Serialization;
 namespace Altinn.App.Core.Features.Signing.Models;
 
 /// <summary>
-/// Base class representing a signee.
+/// Represents a person who is a signee.
 /// </summary>
-public abstract class SigneeParty
+public class PersonSignee : ISigneeParty
 {
     /// <summary>
-    /// The name of the signee.
+    ///
     /// </summary>
     [JsonPropertyName("displayName")]
     public required string DisplayName { get; init; }
@@ -18,13 +18,7 @@ public abstract class SigneeParty
     /// </summary>
     [JsonPropertyName("notifications")]
     public Notifications? Notifications { get; init; }
-}
 
-/// <summary>
-/// Represents a person who is a signee.
-/// </summary>
-public class PersonSignee : SigneeParty
-{
     /// <summary>
     /// The social security number.
     /// </summary>
@@ -47,13 +41,31 @@ public class PersonSignee : SigneeParty
 /// <summary>
 /// Represents an organization that is a signee.
 /// </summary>
-public class OrganisationSignee : SigneeParty
+public class OrganisationSignee : ISigneeParty
 {
+    /// <summary>
+    ///
+    /// </summary>
+    [JsonPropertyName("displayName")]
+    public required string DisplayName { get; init; }
+
+    /// <summary>
+    /// Notifications configuration.
+    /// </summary>
+    [JsonPropertyName("notifications")]
+    public Notifications? Notifications { get; init; }
+
     /// <summary>
     /// The organization number.
     /// </summary>
     [JsonPropertyName("organisationNumber")]
     public required string OrganisationNumber { get; init; }
+}
+
+internal interface ISigneeParty
+{
+    public Notifications? Notifications { get; init; }
+    public string DisplayName { get; init; }
 }
 
 /// <summary>
