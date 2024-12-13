@@ -8,7 +8,7 @@ namespace Altinn.App.Core.Features.Signing.Models;
 public class PersonSignee : ISigneeParty
 {
     /// <summary>
-    ///
+    /// The name of the signee.
     /// </summary>
     [JsonPropertyName("displayName")]
     public required string DisplayName { get; init; }
@@ -44,7 +44,7 @@ public class PersonSignee : ISigneeParty
 public class OrganisationSignee : ISigneeParty
 {
     /// <summary>
-    ///
+    /// The name of the organisation.
     /// </summary>
     [JsonPropertyName("displayName")]
     public required string DisplayName { get; init; }

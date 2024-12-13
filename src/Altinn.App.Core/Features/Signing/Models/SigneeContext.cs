@@ -28,13 +28,13 @@ public sealed class SigneeContext
     // public required SigneeParty SigneeParty { get; set; }
 
     /// <summary>
-    ///
+    /// The organisation signee.
     /// </summary>
     [JsonPropertyName("organisationSignee")]
     public OrganisationSignee? OrganisationSignee { get; set; }
 
     /// <summary>
-    ///
+    /// The person signee.
     /// </summary>
     [JsonPropertyName("personSignee")]
     public PersonSignee? PersonSignee { get; set; }
