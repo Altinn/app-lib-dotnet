@@ -22,7 +22,7 @@ internal sealed class SigningService(
     IPersonClient personClient,
     IOrganizationClient organisationClient,
     IAltinnPartyClient altinnPartyClient,
-    // ISigningDelegationService signingDelegationService,
+    ISigningDelegationService signingDelegationService,
     // ISigningNotificationService signingNotificationService,
     IEnumerable<ISigneeProvider> signeeProviders,
     IDataClient dataClient,
@@ -93,11 +93,18 @@ internal sealed class SigningService(
         using Activity? activity = telemetry?.StartAssignSigneesActivity();
         string taskId = instanceMutator.Instance.Process.CurrentTask.ElementId;
 
-        // await signingDelegationService.DelegateSigneeRights(taskId, instanceMutator.Instance, signeeContexts, ct);
+        (signeeContexts, var delegateSuccess) = await signingDelegationService.DelegateSigneeRights(
+            taskId,
+            instanceMutator.Instance,
+            signeeContexts,
+            ct,
+            telemetry
+        );
 
-        //TODO: If something fails inside DelegateSigneeRights, abort and don't send notifications. Set error state in SigneeState.
-
-        // await signingNotificationService.NotifySignatureTask(signeeContexts, ct);
+        if (delegateSuccess)
+        {
+            // await signingNotificationService.NotifySignatureTask(signeeContexts, ct);
+        }
 
         // ! TODO: Remove nullable
         instanceMutator.AddBinaryDataElement(
