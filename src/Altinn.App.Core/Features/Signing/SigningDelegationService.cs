@@ -6,7 +6,6 @@ using Altinn.App.Core.Internal.AccessManagement;
 using Altinn.App.Core.Internal.AccessManagement.Builders;
 using Altinn.App.Core.Internal.AccessManagement.Models;
 using Altinn.App.Core.Internal.AccessManagement.Models.Shared;
-using Altinn.Platform.Storage.Interface.Models;
 using static Altinn.App.Core.Features.Telemetry.DelegationConst;
 
 namespace Altinn.App.Core.Features.Signing;
@@ -16,12 +15,13 @@ internal sealed class SigningDelegationService(IAccessManagementClient accessMan
 {
     public async Task<(List<SigneeContext>, bool success)> DelegateSigneeRights(
         string taskId,
-        Instance instance,
+        IInstanceDataMutator instanceMutator,
         List<SigneeContext> signeeContexts,
         CancellationToken ct,
         Telemetry? telemetry = null
     )
     {
+        var instance = instanceMutator.Instance;
         bool success = true;
         foreach (SigneeContext signeeContext in signeeContexts)
         {

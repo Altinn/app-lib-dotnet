@@ -95,7 +95,7 @@ internal sealed class SigningService(
 
         (signeeContexts, var delegateSuccess) = await signingDelegationService.DelegateSigneeRights(
             taskId,
-            instanceMutator.Instance,
+            instanceMutator,
             signeeContexts,
             ct,
             telemetry
