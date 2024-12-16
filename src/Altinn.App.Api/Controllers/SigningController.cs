@@ -50,9 +50,8 @@ public class SigningController : ControllerBase
     /// <returns>An object containing updated signing information</returns>
     [HttpGet]
     [ProducesResponseType(typeof(SingingStateResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetSigneesState(
         [FromRoute] string org,
         [FromRoute] string app,
@@ -66,6 +65,15 @@ public class SigningController : ControllerBase
         if (instance.Process.CurrentTask.AltinnTaskType != "signing")
         {
             return NotSigningTask();
+        }
+
+        AltinnSignatureConfiguration? signingConfiguration = _processReader
+            .GetAltinnTaskExtension(instance.Process.CurrentTask.ElementId)
+            ?.SignatureConfiguration;
+
+        if (signingConfiguration == null)
+        {
+            throw new ApplicationConfigException("Signing configuration not found in AltinnTaskExtension");
         }
 
         List<SigneeContext> signeeContexts = await _signingService.GetSigneeContexts(instance, signingConfiguration);
@@ -105,7 +113,7 @@ public class SigningController : ControllerBase
     /// <exception cref="ApplicationConfigException"></exception>
     [HttpGet("data-elements")]
     [ProducesResponseType(typeof(SingingStateResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetDataElements(
         [FromRoute] string org,
