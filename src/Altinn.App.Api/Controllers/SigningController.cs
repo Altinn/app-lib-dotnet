@@ -50,6 +50,7 @@ public class SigningController : ControllerBase
     /// <returns>An object containing updated signing information</returns>
     [HttpGet]
     [ProducesResponseType(typeof(SingingStateResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetSigneesState(
@@ -64,23 +65,7 @@ public class SigningController : ControllerBase
 
         if (instance.Process.CurrentTask.AltinnTaskType != "signing")
         {
-            return BadRequest(
-                new ProblemDetails
-                {
-                    Title = "Not a signing task",
-                    Detail = "The current task is not a signing task",
-                    Status = StatusCodes.Status400BadRequest,
-                }
-            );
-        }
-
-        AltinnSignatureConfiguration? signingConfiguration = _processReader
-            .GetAltinnTaskExtension(instance.Process.CurrentTask.ElementId)
-            ?.SignatureConfiguration;
-
-        if (signingConfiguration == null)
-        {
-            throw new ApplicationConfigException("Signing configuration not found in AltinnTaskExtension");
+            return NotSigningTask();
         }
 
         List<SigneeContext> signeeContexts = await _signingService.GetSigneeContexts(instance, signingConfiguration);
@@ -106,5 +91,64 @@ public class SigningController : ControllerBase
         };
 
         return Ok(response);
+    }
+
+    /// <summary>
+    /// Get the data elements being signed in the current signature task.
+    /// </summary>
+    /// <param name="org"></param>
+    /// <param name="app"></param>
+    /// <param name="instanceOwnerPartyId"></param>
+    /// <param name="instanceGuid"></param>
+    /// <param name="language"></param>
+    /// <returns></returns>
+    /// <exception cref="ApplicationConfigException"></exception>
+    [HttpGet("data-elements")]
+    [ProducesResponseType(typeof(SingingStateResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetDataElements(
+        [FromRoute] string org,
+        [FromRoute] string app,
+        [FromRoute] int instanceOwnerPartyId,
+        [FromRoute] Guid instanceGuid,
+        [FromQuery] string? language = null
+    )
+    {
+        Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
+
+        if (instance.Process.CurrentTask.AltinnTaskType != "signing")
+        {
+            return NotSigningTask();
+        }
+
+        AltinnSignatureConfiguration? signingConfiguration = _processReader
+            .GetAltinnTaskExtension(instance.Process.CurrentTask.ElementId)
+            ?.SignatureConfiguration;
+
+        if (signingConfiguration == null)
+        {
+            throw new ApplicationConfigException("Signing configuration not found in AltinnTaskExtension");
+        }
+
+        List<DataElement> dataElements = instance
+            .Data.Where(x => signingConfiguration.DataTypesToSign.Contains(x.DataType))
+            .ToList();
+
+        SigningDataElementsResponse response = new() { DataElements = dataElements };
+
+        return Ok(response);
+    }
+
+    private BadRequestObjectResult NotSigningTask()
+    {
+        return BadRequest(
+            new ProblemDetails
+            {
+                Title = "Not a signing task",
+                Detail = "This endpoint is only callable while the current task is a signing task.",
+                Status = StatusCodes.Status400BadRequest,
+            }
+        );
     }
 }
