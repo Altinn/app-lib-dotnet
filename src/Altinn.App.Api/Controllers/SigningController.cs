@@ -51,6 +51,7 @@ public class SigningController : ControllerBase
     [HttpGet]
     [ProducesResponseType(typeof(SingingStateResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetSigneesState(
         [FromRoute] string org,
         [FromRoute] string app,
@@ -82,19 +83,24 @@ public class SigningController : ControllerBase
             throw new ApplicationConfigException("Signing configuration not found in AltinnTaskExtension");
         }
 
-        List<SigneeContext> signeeContexts = await _signingService.GetSigneesState();
+        List<SigneeContext> signeeContexts = await _signingService.GetSigneeContexts(instance, signingConfiguration);
 
+        Random rnd = new Random();
         var response = new SingingStateResponse
         {
             SigneeStates = signeeContexts
-                .Select(signeeContext => new SigneeState
+                .Select(signeeContext =>
                 {
-                    Name = signeeContext.SigneeParty.DisplayName,
-                    HasSigned = false, //TODO: When and where to check if signee has signed?
-                    DelegationSuccessful = signeeContext.SigneeState.IsAccessDelegated is false,
-                    NotificationSuccessful =
-                        signeeContext.SigneeState
-                            is { SignatureRequestEmailSent: false, SignatureRequestSmsSent: false },
+                    return new SigneeState
+                    {
+                        Name = signeeContext.PersonSignee?.DisplayName ?? signeeContext.OrganisationSignee?.DisplayName,
+                        Organisation = signeeContext.OrganisationSignee?.DisplayName,
+                        HasSigned = rnd.Next(1, 10) > 5, //TODO: When and where to check if signee has signed?
+                        DelegationSuccessful = signeeContext.SigneeState.IsAccessDelegated is false,
+                        NotificationSuccessful =
+                            signeeContext.SigneeState
+                                is { SignatureRequestEmailSent: false, SignatureRequestSmsSent: false },
+                    };
                 })
                 .ToList(),
         };

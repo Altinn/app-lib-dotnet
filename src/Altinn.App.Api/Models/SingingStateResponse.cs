@@ -19,7 +19,12 @@ public class SigneeState
     /// <summary>
     /// The name of the signee.
     /// </summary>
-    public required string Name { get; set; }
+    public string? Name { get; set; }
+
+    /// <summary>
+    /// The organisation of the signee.
+    /// </summary>
+    public string? Organisation { get; set; }
 
     /// <summary>
     /// Whether the signee has signed or not.

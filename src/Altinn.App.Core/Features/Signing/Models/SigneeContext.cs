@@ -1,21 +1,41 @@
+using System.Text.Json.Serialization;
+
 namespace Altinn.App.Core.Features.Signing.Models;
 
+/// <summary>
+///  Represents the context of a signee.
+/// </summary>
 internal sealed class SigneeContext
 {
-    internal SigneeContext(string taskId, Guid partyId, SigneeParty signeeParty, SigneeState signeeState)
-    {
-        SigneeState = signeeState;
-        SigneeParty = signeeParty;
-        PartyId = partyId;
-        TaskId = taskId;
-    }
-
     /// <summary>The identifier of the signee.</summary>
-    internal Guid PartyId { get; }
+    [JsonPropertyName("partyId")]
+    public required int PartyId { get; init; }
 
     /// <summary>The task associated with the signee state.</summary>
-    internal string TaskId { get; set; }
+    [JsonPropertyName("taskId")]
+    public required string TaskId { get; init; }
 
-    internal SigneeState SigneeState { get; set; }
-    internal SigneeParty SigneeParty { get; set; }
+    /// <summary>
+    /// The state of the signee.
+    /// </summary>
+    [JsonPropertyName("signeeState")]
+    public required SigneeState SigneeState { get; set; }
+
+    // /// <summary>
+    // /// The signee.
+    // /// </summary>
+    // [JsonPropertyName("signeeParty")]
+    // public required SigneeParty SigneeParty { get; set; }
+
+    /// <summary>
+    /// The organisation signee.
+    /// </summary>
+    [JsonPropertyName("organisationSignee")]
+    public OrganisationSignee? OrganisationSignee { get; set; }
+
+    /// <summary>
+    /// The person signee.
+    /// </summary>
+    [JsonPropertyName("personSignee")]
+    public PersonSignee? PersonSignee { get; set; }
 }
