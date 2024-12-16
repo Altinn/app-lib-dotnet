@@ -38,7 +38,7 @@ internal interface IDelegationBuilderInstanceId
 
 internal interface IDelegationBuilderDelegator
 {
-    IDelegationBuilderRecipient WithRecipient(Delegatee recipient);
+    IDelegationBuilderRecipient WithDelegatee(Delegatee recipient);
 }
 
 internal interface IDelegationBuilderRecipient
@@ -92,7 +92,7 @@ internal sealed class DelegationBuilder : DelegationBuilderBase, IDelegationBuil
         return this;
     }
 
-    public IDelegationBuilderRecipient WithRecipient(Delegatee recipient)
+    public IDelegationBuilderRecipient WithDelegatee(Delegatee recipient)
     {
         NotNullOrEmpty(recipient, nameof(recipient));
         _recipient = recipient;
