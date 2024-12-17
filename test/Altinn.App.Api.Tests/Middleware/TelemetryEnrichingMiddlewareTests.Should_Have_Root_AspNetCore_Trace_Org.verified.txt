@@ -16,7 +16,7 @@
           network.protocol.version: 1.1
         },
         {
-          organisation.name: ttd
+          organisation.name: tdd
         },
         {
           organisation.number: 405003309

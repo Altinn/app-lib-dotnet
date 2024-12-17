@@ -116,12 +116,12 @@ public class ApiTestBase
         string org,
         string app,
         string orgNumber = TestAuthentication.DefaultOrgNumber,
-        string scope = TestAuthentication.DefaultOrgScope,
-        string? serviceOwnerOrg = TestAuthentication.DefaultOrg
+        string scope = TestAuthentication.DefaultServiceOwnerScope,
+        string serviceOwnerOrg = TestAuthentication.DefaultOrg
     )
     {
         var client = GetRootedClient(org, app);
-        string token = TestAuthentication.GetOrgToken(orgNumber, org: serviceOwnerOrg, scope: scope);
+        string token = TestAuthentication.GetServiceOwnerToken(orgNumber, org: serviceOwnerOrg, scope: scope);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return client;
     }

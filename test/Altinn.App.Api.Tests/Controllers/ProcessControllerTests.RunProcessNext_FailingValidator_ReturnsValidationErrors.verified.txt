@@ -136,9 +136,6 @@
           user.id: 1337
         },
         {
-          user.name: User1337
-        },
-        {
           user.party.id: 500600
         }
       ],

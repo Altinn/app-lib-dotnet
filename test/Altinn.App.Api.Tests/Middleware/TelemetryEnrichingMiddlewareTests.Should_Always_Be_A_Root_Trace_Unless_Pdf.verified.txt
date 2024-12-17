@@ -37,9 +37,6 @@
           user.id: 10
         },
         {
-          user.name: User10
-        },
-        {
           user.party.id: Scrubbed
         }
       ],

@@ -46,7 +46,7 @@ public class TelemetryEnrichingMiddlewareTests : ApiTestBase, IClassFixture<WebA
     public async Task Should_Have_Root_AspNetCore_Trace_Org()
     {
         var org = Guid.NewGuid().ToString();
-        string token = TestAuthentication.GetOrgToken();
+        string token = TestAuthentication.GetServiceOwnerToken();
 
         var (telemetry, request) = AnalyzeTelemetry(token);
         await request();
