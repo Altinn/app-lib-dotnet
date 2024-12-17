@@ -1804,7 +1804,7 @@
             "description": "OK"
           },
           "425": {
-            "description": "Client Error"
+            "description": "Too Early"
           },
           "500": {
             "description": "Internal Server Error"
@@ -5730,7 +5730,8 @@
             "type": "boolean"
           },
           "allowInSubform": {
-            "type": "boolean"
+            "type": "boolean",
+            "deprecated": true
           },
           "shadowFields": {
             "$ref": "#/components/schemas/ShadowFields"

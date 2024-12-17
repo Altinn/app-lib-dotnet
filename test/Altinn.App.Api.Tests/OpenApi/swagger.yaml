@@ -1101,7 +1101,7 @@ paths:
         '200':
           description: OK
         '425':
-          description: Client Error
+          description: Too Early
         '500':
           description: Internal Server Error
         '401':
@@ -3510,6 +3510,7 @@ components:
           type: boolean
         allowInSubform:
           type: boolean
+          deprecated: true
         shadowFields:
           $ref: '#/components/schemas/ShadowFields'
       additionalProperties: false
