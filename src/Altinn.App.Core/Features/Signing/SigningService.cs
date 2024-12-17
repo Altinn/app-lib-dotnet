@@ -210,7 +210,7 @@ internal sealed class SigningService(
         List<SigneeContext> personSigneeContexts = [];
         foreach (PersonSignee personSignee in signeeResult.PersonSignees)
         {
-            var lastName = personSignee.LastName.Split(" ").Last().ToLower(CultureInfo.InvariantCulture);
+            var lastName = personSignee.LastName.Split(" ").First().ToLower(CultureInfo.InvariantCulture);
             _logger.LogInformation(
                 "Looking up person with SSN {SocialSecurityNumber} and last name {LastName}.",
                 personSignee.SocialSecurityNumber,
