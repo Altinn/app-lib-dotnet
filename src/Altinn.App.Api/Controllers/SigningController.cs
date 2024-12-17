@@ -51,7 +51,6 @@ public class SigningController : ControllerBase
     [HttpGet]
     [ProducesResponseType(typeof(SingingStateResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetSigneesState(
         [FromRoute] string org,
         [FromRoute] string app,
@@ -114,7 +113,6 @@ public class SigningController : ControllerBase
     [HttpGet("data-elements")]
     [ProducesResponseType(typeof(SingingStateResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetDataElements(
         [FromRoute] string org,
         [FromRoute] string app,
