@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using Altinn.App.Core.Features.Signing.Exceptions;
@@ -209,19 +210,20 @@ internal sealed class SigningService(
         List<SigneeContext> personSigneeContexts = [];
         foreach (PersonSignee personSignee in signeeResult.PersonSignees)
         {
+            var lastName = personSignee.LastName.Split(" ").Last().ToLower(CultureInfo.InvariantCulture);
             _logger.LogInformation(
                 "Looking up person with SSN {SocialSecurityNumber} and last name {LastName}.",
                 personSignee.SocialSecurityNumber,
-                personSignee.LastName.Split(" ").Last()
+                lastName
             );
             Person? person =
                 await personClient.GetPerson(
                     personSignee.SocialSecurityNumber,
-                    personSignee.LastName.Split(" ").Last(),
+                    lastName,
                     ct
                 )
                 ?? throw new SignaturePartyNotValidException(
-                    $"The given SSN and last name did not match any person in the registry."
+                    $"The given SSN: {personSignee.SocialSecurityNumber} and last name: {lastName} did not match any person in the registry."
                 );
             Party? party = await altinnPartyClient.LookupParty(
                 new PartyLookup { Ssn = personSignee.SocialSecurityNumber }
