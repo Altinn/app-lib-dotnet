@@ -42,7 +42,7 @@ internal static class TestHelpers
                     }
             );
 
-        altinnAccessToken ??= TestAuthentication.GetOrgToken("160694123", org: "ttd");
+        altinnAccessToken ??= TestAuthentication.GetServiceOwnerToken("160694123", org: "ttd");
         protectedMock
             .Setup<Task<HttpResponseMessage>>(
                 "SendAsync",

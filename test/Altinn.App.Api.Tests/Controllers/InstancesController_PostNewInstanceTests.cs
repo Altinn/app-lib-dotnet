@@ -153,17 +153,18 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         return createResponseParsed;
     }
 
-    [Fact]
-    public async Task PostNewInstance_Simplified()
+    [Theory]
+    [ClassData(typeof(TestAuthentication.AllTokens))]
+    public async Task PostNewInstance_Simplified(TestJwtToken token)
     {
         // Setup test data
         string org = "tdd";
-        string app = "contributer-restriction";
-        int instanceOwnerPartyId = 501337;
-        HttpClient client = GetRootedClient(org, app);
-        string token = TestAuthentication.GetUserToken(userId: 1337, partyId: instanceOwnerPartyId);
+        string app = "permissive-app";
+        int instanceOwnerPartyId = token.PartyId;
+        using HttpClient client = GetRootedClient(org, app);
+        // string token = TestAuthentication.GetUserToken(userId: 1337, partyId: instanceOwnerPartyId);
 
-        var createResponseParsed = await CreateInstanceSimplified(org, app, instanceOwnerPartyId, client, token);
+        var createResponseParsed = await CreateInstanceSimplified(org, app, instanceOwnerPartyId, client, token.Token);
         var instanceId = createResponseParsed.Id;
         createResponseParsed.Data.Should().HaveCount(1, "Create instance should create a data element");
         var dataGuid = createResponseParsed.Data.First().Id;
@@ -450,7 +451,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         };
         HttpClient client = GetRootedClient(org, app);
 
-        string orgToken = TestAuthentication.GetOrgToken("160694123", org: "tdd");
+        string orgToken = TestAuthentication.GetServiceOwnerToken("160694123", org: "tdd");
         string userToken = TestAuthentication.GetUserToken(1337, 501337);
 
         var sourceInstance = await CreateInstanceSimplified(org, app, instanceOwnerPartyId, client, orgToken);

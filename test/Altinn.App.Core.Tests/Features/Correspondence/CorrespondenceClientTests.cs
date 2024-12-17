@@ -335,7 +335,7 @@ public class CorrespondenceClientTests
         var mockMaskinportenClient = fixture.MaskinportenClientMock;
         var mockHttpClient = new Mock<HttpClient>();
         var correspondencePayload = PayloadFactory.Send(authorisation: CorrespondenceAuthorisation.Maskinporten);
-        var altinnTokenResponse = TestAuthentication.GetOrgToken(org: "ttd");
+        var altinnTokenResponse = TestAuthentication.GetServiceOwnerToken(org: "ttd");
         var altinnTokenWrapperResponse = JwtToken.Parse(altinnTokenResponse);
 
         Func<Task<object>> action = async () =>

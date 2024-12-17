@@ -150,7 +150,9 @@ public class InstancesController_CopyInstanceTests
     public async Task CopyInstance_AsAppOwner_ReturnsForbidResult()
     {
         // Arrange
-        _httpContextMock.Setup(httpContext => httpContext.User).Returns(TestAuthentication.GetOrgPrincipal("ttd"));
+        _httpContextMock
+            .Setup(httpContext => httpContext.User)
+            .Returns(TestAuthentication.GetServiceOwnerPrincipal("ttd"));
 
         // Act
         ActionResult actual = await SUT.CopyInstance("ttd", "copy-instance", 343234, Guid.NewGuid());

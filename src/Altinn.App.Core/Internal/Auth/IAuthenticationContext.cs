@@ -184,6 +184,77 @@ public abstract record AuthenticationInfo
     }
 
     /// <summary>
+    /// The logged in client is a user (e.g. Altinn portal/IDporten) with auth level 0.
+    /// This means that the user has authenticated with a username/password, which can happen using
+    /// * Altinn "self registered users"
+    /// * IDporten through Ansattporten ("low"), MinID self registered eID
+    /// These have limited access to Altinn and can only represent themselves.
+    /// </summary>
+    public sealed record SelfIdentifiedUser : AuthenticationInfo
+    {
+        /// <summary>
+        /// Username
+        /// </summary>
+        public string Username { get; }
+
+        /// <summary>
+        /// User ID
+        /// </summary>
+        public int UserId { get; }
+
+        /// <summary>
+        /// Party ID
+        /// </summary>
+        public int PartyId { get; }
+
+        private Details? _extra;
+        private readonly Func<int, Task<UserProfile?>> _getUserProfile;
+
+        internal SelfIdentifiedUser(
+            string username,
+            int userId,
+            int partyId,
+            string token,
+            Func<int, Task<UserProfile?>> getUserProfile
+        )
+            : base(token)
+        {
+            Username = username;
+            UserId = userId;
+            PartyId = partyId;
+            _getUserProfile = getUserProfile;
+        }
+
+        /// <summary>
+        /// Authentication level
+        /// </summary>
+        public static int AuthenticationLevel => 0;
+
+        /// <summary>
+        /// Detailed information about a logged in user
+        /// </summary>
+        public sealed record Details(Party Reportee, UserProfile Profile, bool RepresentsSelf);
+
+        /// <summary>
+        /// Load the details for the current user.
+        /// </summary>
+        /// <returns></returns>
+        public async Task<Details> LoadDetails()
+        {
+            if (_extra is not null)
+                return _extra;
+
+            var userProfile =
+                await _getUserProfile(UserId)
+                ?? throw new InvalidOperationException("Could not get user profile while getting user context");
+
+            var party = userProfile.Party;
+            _extra = new Details(party, userProfile, RepresentsSelf: true);
+            return _extra;
+        }
+    }
+
+    /// <summary>
     /// The logged in client is an organisation (but they have not authenticated as an Altinn service owner).
     /// Authentication has been done through Maskinporten.
     /// </summary>
@@ -424,19 +495,14 @@ public abstract record AuthenticationInfo
         );
         if (!string.IsNullOrWhiteSpace(authorizationDetailsClaim?.Value))
         {
-            var authorizationDetails = JsonSerializer.Deserialize<AuthorizationDetailsClaim>(
+            var authorizationDetails = JsonSerializer.Deserialize<IReadOnlyList<AuthorizationDetailsClaim>>(
                 authorizationDetailsClaim.Value
             );
-            if (authorizationDetails is null)
+            if (authorizationDetails is not [var authorizationDetailsElement] || authorizationDetailsElement is null)
                 throw new InvalidOperationException("Invalid authorization details claim value for token");
-            if (authorizationDetails.Type != "urn:altinn:systemuser")
-                throw new InvalidOperationException(
-                    "Receieved authorization details claim for unsupported client/user type"
-                );
+            if (authorizationDetailsElement is not SystemUserAuthorizationDetailsClaim systemUser)
+                throw new InvalidOperationException("Unsupported authorization details claim value for token");
 
-            var systemUser = JsonSerializer.Deserialize<SystemUserAuthorizationDetailsClaim>(
-                authorizationDetailsClaim.Value
-            );
             if (systemUser is null)
                 throw new InvalidOperationException("Invalid system user authorization details claim value for token");
             if (systemUser.SystemUserId is null || systemUser.SystemUserId.Count == 0)
@@ -459,6 +525,24 @@ public abstract record AuthenticationInfo
         if (!int.TryParse(userIdClaim.Value, CultureInfo.InvariantCulture, out int userId))
             throw new InvalidOperationException("Invalid user ID claim value for user token");
 
+        ParseAuthLevel(authLevelClaim?.Value, out authLevel);
+        if (authLevel == 0)
+        {
+            var usernameClaim = httpContext.User.Claims.FirstOrDefault(claim =>
+                claim.Type.Equals(AltinnCoreClaimTypes.UserName, StringComparison.OrdinalIgnoreCase)
+            );
+            if (string.IsNullOrWhiteSpace(usernameClaim?.Value))
+                throw new InvalidOperationException("Missing username claim for self-identified user token");
+
+            return new SelfIdentifiedUser(
+                usernameClaim.Value,
+                userId,
+                selectedPartyId ?? throw new InvalidOperationException("Missing party ID for user token"),
+                token,
+                getUserProfile
+            );
+        }
+
         int? cookiePartyId = null;
         if (httpContext.Request.Cookies.TryGetValue(partyCookieName, out var partyCookie) && partyCookie != null)
         {
@@ -468,8 +552,6 @@ public abstract record AuthenticationInfo
             cookiePartyId = cookiePartyIdVal;
             selectedPartyId = cookiePartyId;
         }
-
-        ParseAuthLevel(authLevelClaim?.Value, out authLevel);
 
         if (selectedPartyId is null)
             throw new InvalidOperationException("Missing party ID for user token");
@@ -489,16 +571,17 @@ public abstract record AuthenticationInfo
         );
     }
 
-    private sealed record AuthorizationDetailsClaim([property: JsonPropertyName("type")] string Type);
+    [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
+    [JsonDerivedType(typeof(SystemUserAuthorizationDetailsClaim), typeDiscriminator: "urn:altinn:systemuser")]
+    internal record AuthorizationDetailsClaim();
 
-    private sealed record SystemUserAuthorizationDetailsClaim(
-        [property: JsonPropertyName("type")] string Type,
+    internal sealed record SystemUserAuthorizationDetailsClaim(
         [property: JsonPropertyName("systemuser_id")] IReadOnlyList<string> SystemUserId,
         [property: JsonPropertyName("system_id")] string SystemId,
         [property: JsonPropertyName("systemuser_org")] SystemUserOrg SystemUserOrg
-    );
+    ) : AuthorizationDetailsClaim();
 
-    private sealed record SystemUserOrg(
+    internal sealed record SystemUserOrg(
         [property: JsonPropertyName("authority")] string Authority,
         [property: JsonPropertyName("ID")] string Id
     );
