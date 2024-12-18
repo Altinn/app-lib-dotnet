@@ -72,9 +72,9 @@ internal sealed class DelegationBuilder : DelegationBuilderBase, IDelegationBuil
     public IDelegationBuilderApplicationId WithApplicationId(string applicationId)
     {
         NotNullOrEmpty(applicationId, nameof(applicationId));
-        _applicationId = AppIdHelper.TryGetResourceId(applicationId, out string? resourceId)
-            ? resourceId
-            : throw new ArgumentException("Invalid application ID", nameof(applicationId));
+        _applicationId = AppIdHelper.TryGetResourceId(applicationId, out AppResourceId? resourceId)
+            ? resourceId.Value
+            : throw new ArgumentException($"Invalid application id: {applicationId}", nameof(applicationId));
         return this;
     }
 
