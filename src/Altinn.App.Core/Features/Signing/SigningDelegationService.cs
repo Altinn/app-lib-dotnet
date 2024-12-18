@@ -6,11 +6,12 @@ using Altinn.App.Core.Internal.AccessManagement;
 using Altinn.App.Core.Internal.AccessManagement.Builders;
 using Altinn.App.Core.Internal.AccessManagement.Models;
 using Altinn.App.Core.Internal.AccessManagement.Models.Shared;
+using Microsoft.Extensions.Logging;
 using static Altinn.App.Core.Features.Telemetry.DelegationConst;
 
 namespace Altinn.App.Core.Features.Signing;
 
-internal sealed class SigningDelegationService(IAccessManagementClient accessManagementClient)
+internal sealed class SigningDelegationService(IAccessManagementClient accessManagementClient, ILogger<SigningDelegationService> logger)
     : ISigningDelegationService
 {
     public async Task<(List<SigneeContext>, bool success)> DelegateSigneeRights(
@@ -23,6 +24,8 @@ internal sealed class SigningDelegationService(IAccessManagementClient accessMan
     {
         var instance = instanceMutator.Instance;
         bool success = true;
+        logger.LogInformation($"------------------------------------------------------------------------");
+        logger.LogInformation($"Delegating signee rights for task {taskId} for instance {instance.Id}");
         foreach (SigneeContext signeeContext in signeeContexts)
         {
             SigneeState state = signeeContext.SigneeState;
@@ -31,6 +34,7 @@ internal sealed class SigningDelegationService(IAccessManagementClient accessMan
             {
                 if (state.IsAccessDelegated is false)
                 {
+                    logger.LogInformation($"Delegating signee rights for signee {signeeContext.PartyId} for task {taskId}");
                     DelegationRequest delegationRequest = DelegationBuilder
                         .Create()
                         .WithApplicationId(instance.AppId)
@@ -71,12 +75,14 @@ internal sealed class SigningDelegationService(IAccessManagementClient accessMan
                         )
                         .Build();
                     var response = await accessManagementClient.DelegateRights(delegationRequest, ct);
+                    logger.LogInformation($"Request: {delegationRequest},/n Response: {response}");
                     state.IsAccessDelegated = await Task.FromResult(true);
                     telemetry?.RecordDelegation(DelegationResult.Success);
                 }
             }
             catch (Exception ex)
             {
+                logger.LogError(ex, "Failed to delegate signee rights");
                 state.DelegationFailedReason = "Failed to delegate signee rights: " + ex.Message;
                 telemetry?.RecordDelegation(DelegationResult.Error);
                 success = false;
