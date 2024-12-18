@@ -79,8 +79,6 @@ internal sealed class SigningDelegationService(
                             ]
                         )
                         .Build();
-                    var s = JsonSerializer.Serialize(delegationRequest);
-                    logger.LogInformation($"Delegation request:\n {s}");
                     var response = await accessManagementClient.DelegateRights(delegationRequest, ct);
                     state.IsAccessDelegated = await Task.FromResult(true);
                     telemetry?.RecordDelegation(DelegationResult.Success);
