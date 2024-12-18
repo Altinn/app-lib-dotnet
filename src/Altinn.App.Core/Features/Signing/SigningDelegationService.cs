@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text.Json;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Internal.AccessManagement;
