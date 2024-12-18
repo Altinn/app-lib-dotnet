@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Internal.AccessManagement;
@@ -78,8 +79,9 @@ internal sealed class SigningDelegationService(
                             ]
                         )
                         .Build();
+                    var s = JsonSerializer.Serialize(delegationRequest);
+                    logger.LogInformation($"Delegation request:\n {s}");
                     var response = await accessManagementClient.DelegateRights(delegationRequest, ct);
-                    logger.LogInformation($"Request: {delegationRequest},/n Response: {response}");
                     state.IsAccessDelegated = await Task.FromResult(true);
                     telemetry?.RecordDelegation(DelegationResult.Success);
                 }
