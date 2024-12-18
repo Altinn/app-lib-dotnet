@@ -134,17 +134,25 @@ public class LayoutModel
         var children = new List<ComponentContext>();
         if (repeatingGroupComponent.DataModelBindings.TryGetValue("group", out var groupBinding))
         {
-            rowLength = await dataModel.GetModelDataCount(groupBinding, defaultDataElementIdentifier, indexes) ?? 0;
-            foreach (var index in Enumerable.Range(0, rowLength.Value))
+            var repeatingGroupRowComponent = new RepeatingGroupRowComponent(
+                $"{repeatingGroupComponent.Id}_{Guid.NewGuid()}", // Ensure globally unique id (consider using altinnRowId)
+                repeatingGroupComponent.DataModelBindings,
+                repeatingGroupComponent.HiddenRow,
+                repeatingGroupComponent
+            );
+            var rowLength = await dataModel.GetModelDataCount(groupBinding, defaultDataElementIdentifier, indexes) ?? 0;
+            // We add rows in reverse order, so that we can remove them without affecting the indexes of the remaining rows
+            foreach (var index in Enumerable.Range(0, rowLength).Reverse())
             {
+                // concatenate [...indexes, index]
+                var subIndexes = new int[(indexes?.Length ?? 0) + 1];
+                indexes?.CopyTo(subIndexes.AsSpan());
+                subIndexes[^1] = index;
+
+                var rowChildren = new List<ComponentContext>();
                 foreach (var child in repeatingGroupComponent.Children)
                 {
-                    // concatenate [...indexes, index]
-                    var subIndexes = new int[(indexes?.Length ?? 0) + 1];
-                    indexes?.CopyTo(subIndexes.AsSpan());
-                    subIndexes[^1] = index;
-
-                    children.Add(
+                    rowChildren.Add(
                         await GenerateComponentContextsRecurs(
                             child,
                             dataModel,
@@ -153,6 +161,15 @@ public class LayoutModel
                         )
                     );
                 }
+
+                children.Add(
+                    new ComponentContext(
+                        repeatingGroupRowComponent,
+                        subIndexes,
+                        defaultDataElementIdentifier,
+                        rowChildren
+                    )
+                );
             }
         }
 

@@ -46,21 +46,31 @@ public static class LayoutEvaluator
         ComponentContext context
     )
     {
+        if (context.Component is null)
+        {
+            throw new ArgumentNullException(
+                nameof(context),
+                "Context must have a component when removing hidden fields"
+            );
+        }
+
+        var isHidden = await context.IsHidden(state);
+        // Ignore children of hidden rows if includeHiddenRowChildren is false
+        if (!includeHiddenRowChildren && isHidden)
+        {
+            if (context.Component is RepeatingGroupRowComponent or RepeatingGroupComponent)
+            {
+                if (context.Component.DataModelBindings.TryGetValue("group", out var groupBinding))
+                {
+                    var indexedBinding = await state.AddInidicies(groupBinding, context);
+                    hiddenModelBindings.Add(indexedBinding);
+                }
+                return;
+            }
+        }
         // Recurse children
         foreach (var childContext in context.ChildContexts)
         {
-            // Ignore children of hidden rows if includeHiddenRowChildren is false
-            if (!includeHiddenRowChildren && childContext.Component is RepeatingGroupComponent)
-            {
-                var hiddenRows = await childContext.GetHiddenRows(state);
-                var currentRow = childContext.RowIndices?[^1];
-                var rowIsHidden = currentRow is not null && hiddenRows[currentRow.Value];
-                if (rowIsHidden)
-                {
-                    continue;
-                }
-            }
-
             await HiddenFieldsForRemovalRecurs(
                 state,
                 includeHiddenRowChildren,
@@ -71,26 +81,22 @@ public static class LayoutEvaluator
         }
 
         // Remove data if hidden
-        if (context.Component is not null)
+        foreach (var (bindingName, binding) in context.Component.DataModelBindings)
         {
-            foreach (var (bindingName, binding) in context.Component.DataModelBindings)
+            if (bindingName == "group")
             {
-                if (bindingName == "group")
-                {
-                    continue;
-                }
+                continue;
+            }
 
-                var indexedBinding = await state.AddInidicies(binding, context);
-                var isHidden = await context.IsHidden(state);
+            var indexedBinding = await state.AddInidicies(binding, context);
 
-                if (isHidden)
-                {
-                    hiddenModelBindings.Add(indexedBinding);
-                }
-                else
-                {
-                    nonHiddenModelBindings.Add(indexedBinding);
-                }
+            if (isHidden)
+            {
+                hiddenModelBindings.Add(indexedBinding);
+            }
+            else
+            {
+                nonHiddenModelBindings.Add(indexedBinding);
             }
         }
     }

@@ -39,3 +39,31 @@ public record RepeatingGroupComponent : GroupComponent
     /// </summary>
     public Expression HiddenRow { get; }
 }
+
+/// <summary>
+/// Component (currently only used for contexts to have something to point to) for a row in a repeating group
+/// </summary>
+public record RepeatingGroupRowComponent : BaseComponent
+{
+    /// <summary>
+    /// Constructor for RepeatingGroupRowComponent
+    /// </summary>
+    public RepeatingGroupRowComponent(
+        string id,
+        IReadOnlyDictionary<string, ModelBinding> dataModelBindings,
+        Expression hiddenRow,
+        BaseComponent parent
+    )
+        : base(
+            id,
+            "groupRow",
+            dataModelBindings,
+            hiddenRow,
+            required: Expression.False,
+            readOnly: Expression.False,
+            null
+        )
+    {
+        Parent = parent;
+    }
+}
