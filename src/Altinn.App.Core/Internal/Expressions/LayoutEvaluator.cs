@@ -22,14 +22,15 @@ public static class LayoutEvaluator
         var hiddenModelBindings = new HashSet<DataReference>();
         var nonHiddenModelBindings = new HashSet<DataReference>();
 
-        foreach (var context in await state.GetComponentContexts())
+        var pageContexts = await state.GetComponentContexts();
+        foreach (var pageContext in pageContexts)
         {
             await HiddenFieldsForRemovalRecurs(
                 state,
                 includeHiddenRowChildren,
                 hiddenModelBindings,
                 nonHiddenModelBindings,
-                context
+                pageContext
             );
         }
 

@@ -30,7 +30,7 @@ public record RepeatingGroupComponent : GroupComponent
     }
 
     /// <summary>
-    /// Maximum number of repeatitions of this repating group
+    /// Maximum number of repetitions of this repeating group
     /// </summary>
     public int MaxCount { get; }
 

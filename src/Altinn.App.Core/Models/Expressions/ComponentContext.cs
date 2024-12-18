@@ -1,4 +1,4 @@
-using System.Collections;
+using System.Diagnostics;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Models.Layout.Components;
@@ -8,6 +8,8 @@ namespace Altinn.App.Core.Models.Expressions;
 /// <summary>
 /// Simple class for holding the context for <see cref="ExpressionEvaluator"/>
 /// </summary>
+[DebuggerDisplay("{_debuggerDisplay}", Name = "{_debuggerName}")]
+[DebuggerTypeProxy(typeof(DebuggerProxy))]
 public sealed class ComponentContext
 {
     private readonly int? _rowLength;
@@ -20,7 +22,7 @@ public sealed class ComponentContext
         int[]? rowIndices,
         int? rowLength,
         DataElementIdentifier dataElementIdentifier,
-        IEnumerable<ComponentContext>? childContexts = null
+        List<ComponentContext>? childContexts = null
     )
     {
         DataElementIdentifier = dataElementIdentifier;
@@ -111,7 +113,7 @@ public sealed class ComponentContext
     /// <summary>
     /// Contexts that logically belongs under this context (eg cell => row => group=> page)
     /// </summary>
-    public IEnumerable<ComponentContext> ChildContexts { get; }
+    public List<ComponentContext> ChildContexts { get; }
 
     /// <summary>
     /// Parent context or null, if this is a root context, or a context created without setting parent
@@ -138,6 +140,28 @@ public sealed class ComponentContext
                 foreach (var child in node.ChildContexts)
                     stack.Push(child);
             }
+        }
+    }
+
+    private string _debuggerName =>
+        $"{Component?.Type}" + (RowIndices is not null ? $"[{string.Join(',', RowIndices)}]" : "");
+    private string _debuggerDisplay =>
+        $"id:\"{Component?.Id}\"" + (ChildContexts.Count > 0 ? $" ({ChildContexts.Count} children)" : "");
+
+    private class DebuggerProxy
+    {
+        private readonly ComponentContext _context;
+
+        [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
+        public List<ComponentContext> ChildContexts => _context.ChildContexts;
+        public BaseComponent? Component => _context.Component;
+        public ComponentContext? Parent => _context.Parent;
+        public bool? IsHidden => _context._isHidden;
+        public Guid DataElementId => _context.DataElementIdentifier.Guid;
+
+        public DebuggerProxy(ComponentContext context)
+        {
+            _context = context;
         }
     }
 }

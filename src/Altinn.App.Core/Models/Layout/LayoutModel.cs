@@ -44,23 +44,6 @@ public class LayoutModel
     }
 
     /// <summary>
-    /// Get all components by recursively walking all the pages.
-    /// </summary>
-    public IEnumerable<BaseComponent> GetComponents()
-    {
-        // Use a stack in order to implement a depth first search
-        var nodes = new Stack<BaseComponent>(_defaultLayoutSet.Pages);
-        while (nodes.Count != 0)
-        {
-            var node = nodes.Pop();
-            yield return node;
-            if (node is GroupComponent groupNode)
-                foreach (var n in groupNode.Children)
-                    nodes.Push(n);
-        }
-    }
-
-    /// <summary>
     /// Generate a list of <see cref="ComponentContext"/> for all components in the layout model
     /// taking repeating groups into account.
     /// </summary>
