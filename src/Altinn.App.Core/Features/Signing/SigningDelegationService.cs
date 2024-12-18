@@ -27,6 +27,7 @@ internal sealed class SigningDelegationService(
     )
     {
         logger.LogInformation($"------------------------------------------------------------------------");
+        var actualInstanceId = instanceId.Split("/")[1];
         var appResourceId = AppResourceId.FromAppIdentifier(appIdentifier);
         // log appIdentifier and appResourceId
         logger.LogInformation($"AppIdentifier: {appIdentifier.Org}/{appIdentifier.App}");
@@ -48,7 +49,7 @@ internal sealed class SigningDelegationService(
                     DelegationRequest delegationRequest = DelegationBuilder
                         .Create()
                         .WithApplicationId(appIdentifier)
-                        .WithInstanceId(instanceId)
+                        .WithInstanceId(actualInstanceId)
                         .WithDelegator(new Delegator { IdType = DelegationConst.Party, Id = instanceOwnerPartyId }) // TODO: should it be possible for other than the instance owner to delegate rights?
                         .WithDelegatee(
                             new Delegatee
