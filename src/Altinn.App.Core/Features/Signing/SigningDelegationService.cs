@@ -25,6 +25,11 @@ internal sealed class SigningDelegationService(
     )
     {
         var instance = instanceMutator.Instance;
+        if (!AppIdHelper.TryGetResourceId(instance.AppId, out AppResourceId? appResourceId))
+        {
+            logger.LogError("Failed to get app resource id from app id");
+            return (signeeContexts, false);
+        }
         bool success = true;
         logger.LogInformation($"------------------------------------------------------------------------");
         logger.LogInformation($"Delegating signee rights for task {taskId} for instance {instance.Id}");
@@ -60,7 +65,7 @@ internal sealed class SigningDelegationService(
                                     .WithAction(ActionType.Read)
                                     .WithResources(
                                         [
-                                            new Resource { Value = AppIdHelper.ToResourceId(instance.AppId) },
+                                            new Resource { Value = appResourceId.Value },
                                             new Resource { Type = DelegationConst.Task, Value = taskId },
                                         ]
                                     )
@@ -70,7 +75,7 @@ internal sealed class SigningDelegationService(
                                     .WithAction(ActionType.Sign)
                                     .WithResources(
                                         [
-                                            new Resource { Value = AppIdHelper.ToResourceId(instance.AppId) },
+                                            new Resource { Value = appResourceId.Value },
                                             new Resource { Type = DelegationConst.Task, Value = taskId },
                                         ]
                                     )
