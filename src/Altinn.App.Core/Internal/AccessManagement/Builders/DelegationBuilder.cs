@@ -1,8 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
-using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.AccessManagement.Exceptions;
 using Altinn.App.Core.Internal.AccessManagement.Models;
 using Altinn.App.Core.Internal.AccessManagement.Models.Shared;
+using Altinn.App.Core.Models;
 
 namespace Altinn.App.Core.Internal.AccessManagement.Builders;
 
@@ -23,7 +23,7 @@ internal abstract class DelegationBuilderBase
 
 internal interface IDelegationBuilderStart
 {
-    IDelegationBuilderApplicationId WithApplicationId(string applicationId);
+    IDelegationBuilderApplicationId WithApplicationId(AppIdentifier appIdentifier);
 }
 
 internal interface IDelegationBuilderApplicationId
@@ -69,12 +69,9 @@ internal sealed class DelegationBuilder : DelegationBuilderBase, IDelegationBuil
 
     public static IDelegationBuilderStart Create() => new DelegationBuilder();
 
-    public IDelegationBuilderApplicationId WithApplicationId(string applicationId)
+    public IDelegationBuilderApplicationId WithApplicationId(AppIdentifier appIdentifier)
     {
-        NotNullOrEmpty(applicationId, nameof(applicationId));
-        _applicationId = AppIdHelper.TryGetResourceId(applicationId, out AppResourceId? resourceId)
-            ? resourceId.Value
-            : throw new ArgumentException($"Invalid application id: {applicationId}", nameof(applicationId));
+        _applicationId = AppResourceId.FromAppIdentifier(appIdentifier).Value;
         return this;
     }
 

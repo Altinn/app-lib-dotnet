@@ -93,10 +93,15 @@ internal sealed class SigningService(
     {
         using Activity? activity = telemetry?.StartAssignSigneesActivity();
         string taskId = instanceMutator.Instance.Process.CurrentTask.ElementId;
+        string instanceOwnerPartyId = instanceMutator.Instance.InstanceOwner.PartyId;
+        string instanceId = instanceMutator.Instance.Id;
 
+        AppIdentifier appIdentifier = new(instanceMutator.Instance.Org, instanceMutator.Instance.AppId);
         (signeeContexts, var delegateSuccess) = await signingDelegationService.DelegateSigneeRights(
             taskId,
-            instanceMutator,
+            instanceId,
+            instanceOwnerPartyId,
+            appIdentifier,
             signeeContexts,
             ct,
             telemetry

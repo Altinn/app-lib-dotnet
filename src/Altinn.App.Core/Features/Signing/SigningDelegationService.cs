@@ -1,11 +1,11 @@
 using System.Globalization;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
-using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.AccessManagement;
 using Altinn.App.Core.Internal.AccessManagement.Builders;
 using Altinn.App.Core.Internal.AccessManagement.Models;
 using Altinn.App.Core.Internal.AccessManagement.Models.Shared;
+using Altinn.App.Core.Models;
 using Microsoft.Extensions.Logging;
 using static Altinn.App.Core.Features.Telemetry.DelegationConst;
 
@@ -18,21 +18,18 @@ internal sealed class SigningDelegationService(
 {
     public async Task<(List<SigneeContext>, bool success)> DelegateSigneeRights(
         string taskId,
-        IInstanceDataMutator instanceMutator,
+        string instanceId,
+        string instanceOwnerPartyId,
+        AppIdentifier appIdentifier,
         List<SigneeContext> signeeContexts,
         CancellationToken ct,
         Telemetry? telemetry = null
     )
     {
-        var instance = instanceMutator.Instance;
-        if (!AppIdHelper.TryGetResourceId(instance.AppId, out AppResourceId? appResourceId))
-        {
-            logger.LogError("Failed to get app resource id from app id");
-            return (signeeContexts, false);
-        }
+        var appResourceId = AppResourceId.FromAppIdentifier(appIdentifier);
         bool success = true;
         logger.LogInformation($"------------------------------------------------------------------------");
-        logger.LogInformation($"Delegating signee rights for task {taskId} for instance {instance.Id}");
+        logger.LogInformation($"Delegating signee rights for task {taskId}.");
         foreach (SigneeContext signeeContext in signeeContexts)
         {
             SigneeState state = signeeContext.SigneeState;
@@ -46,11 +43,9 @@ internal sealed class SigningDelegationService(
                     );
                     DelegationRequest delegationRequest = DelegationBuilder
                         .Create()
-                        .WithApplicationId(instance.AppId)
-                        .WithInstanceId(instance.Id)
-                        .WithDelegator(
-                            new Delegator { IdType = DelegationConst.Party, Id = instance.InstanceOwner.PartyId }
-                        ) // TODO: should it be possible for other than the instance owner to delegate rights?
+                        .WithApplicationId(appIdentifier)
+                        .WithInstanceId(instanceId)
+                        .WithDelegator(new Delegator { IdType = DelegationConst.Party, Id = instanceOwnerPartyId }) // TODO: should it be possible for other than the instance owner to delegate rights?
                         .WithDelegatee(
                             new Delegatee
                             {
