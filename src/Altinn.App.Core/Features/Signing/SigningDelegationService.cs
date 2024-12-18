@@ -26,7 +26,11 @@ internal sealed class SigningDelegationService(
         Telemetry? telemetry = null
     )
     {
+        logger.LogInformation($"------------------------------------------------------------------------");
         var appResourceId = AppResourceId.FromAppIdentifier(appIdentifier);
+        // log appIdentifier and appResourceId
+        logger.LogInformation($"AppIdentifier: {appIdentifier.Org}/{appIdentifier.App}");
+        logger.LogInformation($"AppResourceId: {appResourceId.Value}");
         bool success = true;
         logger.LogInformation($"------------------------------------------------------------------------");
         logger.LogInformation($"Delegating signee rights for task {taskId}.");

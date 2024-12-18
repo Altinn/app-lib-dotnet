@@ -96,7 +96,7 @@ internal sealed class SigningService(
         string instanceOwnerPartyId = instanceMutator.Instance.InstanceOwner.PartyId;
         string instanceId = instanceMutator.Instance.Id;
 
-        AppIdentifier appIdentifier = new(instanceMutator.Instance.Org, instanceMutator.Instance.AppId);
+        AppIdentifier appIdentifier = new(instanceMutator.Instance.AppId);
         (signeeContexts, var delegateSuccess) = await signingDelegationService.DelegateSigneeRights(
             taskId,
             instanceId,

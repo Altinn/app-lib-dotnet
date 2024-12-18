@@ -71,7 +71,8 @@ internal sealed class DelegationBuilder : DelegationBuilderBase, IDelegationBuil
 
     public IDelegationBuilderApplicationId WithApplicationId(AppIdentifier appIdentifier)
     {
-        _applicationId = AppResourceId.FromAppIdentifier(appIdentifier).Value;
+        AppResourceId appResourceId = AppResourceId.FromAppIdentifier(appIdentifier);
+        _applicationId = appResourceId.Value;
         return this;
     }
 
