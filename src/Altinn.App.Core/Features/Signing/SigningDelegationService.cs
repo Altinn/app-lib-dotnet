@@ -11,8 +11,10 @@ using static Altinn.App.Core.Features.Telemetry.DelegationConst;
 
 namespace Altinn.App.Core.Features.Signing;
 
-internal sealed class SigningDelegationService(IAccessManagementClient accessManagementClient, ILogger<SigningDelegationService> logger)
-    : ISigningDelegationService
+internal sealed class SigningDelegationService(
+    IAccessManagementClient accessManagementClient,
+    ILogger<SigningDelegationService> logger
+) : ISigningDelegationService
 {
     public async Task<(List<SigneeContext>, bool success)> DelegateSigneeRights(
         string taskId,
@@ -34,7 +36,9 @@ internal sealed class SigningDelegationService(IAccessManagementClient accessMan
             {
                 if (state.IsAccessDelegated is false)
                 {
-                    logger.LogInformation($"Delegating signee rights for signee {signeeContext.PartyId} for task {taskId}");
+                    logger.LogInformation(
+                        $"Delegating signee rights for signee {signeeContext.PartyId} for task {taskId}"
+                    );
                     DelegationRequest delegationRequest = DelegationBuilder
                         .Create()
                         .WithApplicationId(instance.AppId)
