@@ -32,6 +32,7 @@ internal partial class AppResourceId
 {
     [GeneratedRegex("app_[a-zA-Z0-9]+_[a-zA-Z0-9]+")]
     private static partial Regex AppIdRegex();
+
     internal AppResourceId(string org, string app)
     {
         Org = org;
@@ -50,7 +51,6 @@ internal partial class AppResourceId
     internal string App { get; init; }
 
     internal string Value => $"app_{Org}_{App}";
-
 
     internal static bool IsResourceId(AppResourceId? resourceId)
     {
