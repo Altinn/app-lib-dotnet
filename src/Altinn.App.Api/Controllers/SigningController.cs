@@ -2,6 +2,7 @@ using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
@@ -47,7 +48,7 @@ public class SigningController : ControllerBase
     /// <param name="instanceOwnerPartyId">unique id of the party that this the owner of the instance</param>
     /// <param name="instanceGuid">unique id to identify the instance</param>
     /// <param name="language">The currently used language by the user (or null if not available)</param>
-    /// <returns>An object containing updated signing information</returns>
+    /// <returns>An object containing updated signee state</returns>
     [HttpGet]
     [ProducesResponseType(typeof(SingingStateResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -108,10 +109,10 @@ public class SigningController : ControllerBase
     /// <param name="instanceOwnerPartyId"></param>
     /// <param name="instanceGuid"></param>
     /// <param name="language"></param>
-    /// <returns></returns>
+    /// <returns>An object containing the documents to be signed</returns>
     /// <exception cref="ApplicationConfigException"></exception>
     [HttpGet("data-elements")]
-    [ProducesResponseType(typeof(SingingStateResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(SigningDataElementsResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetDataElements(
         [FromRoute] string org,
@@ -140,6 +141,11 @@ public class SigningController : ControllerBase
         List<DataElement> dataElements = instance
             .Data.Where(x => signingConfiguration.DataTypesToSign.Contains(x.DataType))
             .ToList();
+
+        foreach (DataElement dataElement in dataElements)
+        {
+            SelfLinkHelper.SetDataAppSelfLinks(instanceOwnerPartyId, instanceGuid, dataElement, Request);
+        }
 
         SigningDataElementsResponse response = new() { DataElements = dataElements };
 
