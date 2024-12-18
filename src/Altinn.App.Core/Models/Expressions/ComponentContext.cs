@@ -12,15 +12,12 @@ namespace Altinn.App.Core.Models.Expressions;
 [DebuggerTypeProxy(typeof(DebuggerProxy))]
 public sealed class ComponentContext
 {
-    private readonly int? _rowLength;
-
     /// <summary>
     /// Constructor for ComponentContext
     /// </summary>
     public ComponentContext(
         BaseComponent? component,
         int[]? rowIndices,
-        int? rowLength,
         DataElementIdentifier dataElementIdentifier,
         List<ComponentContext>? childContexts = null
     )
@@ -28,7 +25,6 @@ public sealed class ComponentContext
         DataElementIdentifier = dataElementIdentifier;
         Component = component;
         RowIndices = rowIndices;
-        _rowLength = rowLength;
         ChildContexts = childContexts ?? [];
         foreach (var child in ChildContexts)
         {
@@ -65,49 +61,6 @@ public sealed class ComponentContext
 
         _isHidden = await ExpressionEvaluator.EvaluateBooleanExpression(state, this, "hidden", false);
         return _isHidden.Value;
-    }
-
-    private BitArray? _hiddenRows;
-
-    /// <summary>
-    /// Hidden rows for repeating group
-    /// </summary>
-    public async Task<BitArray> GetHiddenRows(LayoutEvaluatorState state)
-    {
-        if (_hiddenRows is not null)
-        {
-            return _hiddenRows;
-        }
-        if (Component is not RepeatingGroupComponent)
-        {
-            throw new InvalidOperationException("HiddenRows can only be called on a repeating group");
-        }
-        if (_rowLength is null)
-        {
-            throw new InvalidOperationException("RowLength must be set to call HiddenRows on repeating group");
-        }
-
-        var hiddenRows = new BitArray(_rowLength.Value);
-        foreach (var index in Enumerable.Range(0, hiddenRows.Length))
-        {
-            var rowIndices = RowIndices?.Append(index).ToArray() ?? [index];
-            var childContexts = ChildContexts.Where(c => c.RowIndices?[RowIndices?.Length ?? 0] == index);
-            // Row contexts are not in the tree, so we need to create them here
-            var rowContext = new ComponentContext(
-                Component,
-                rowIndices,
-                rowLength: hiddenRows.Length,
-                dataElementIdentifier: DataElementIdentifier,
-                childContexts: childContexts
-            );
-            var rowHidden = await ExpressionEvaluator.EvaluateBooleanExpression(state, rowContext, "hiddenRow", false);
-
-            hiddenRows[index] = rowHidden;
-        }
-
-        // Set the hidden rows so that it does not need to be recomputed
-        _hiddenRows = hiddenRows;
-        return _hiddenRows;
     }
 
     /// <summary>

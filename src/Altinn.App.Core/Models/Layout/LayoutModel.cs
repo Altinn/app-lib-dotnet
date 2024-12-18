@@ -95,7 +95,6 @@ public class LayoutModel
             _ => new ComponentContext(
                 component,
                 indexes?.Length > 0 ? indexes : null,
-                null,
                 defaultDataElementIdentifier,
                 []
             ),
@@ -120,7 +119,6 @@ public class LayoutModel
         return new ComponentContext(
             groupComponent,
             indexes?.Length > 0 ? indexes : null,
-            null,
             defaultDataElementIdentifier,
             children
         );
@@ -133,7 +131,6 @@ public class LayoutModel
         int[]? indexes
     )
     {
-        int? rowLength = null;
         var children = new List<ComponentContext>();
         if (repeatingGroupComponent.DataModelBindings.TryGetValue("group", out var groupBinding))
         {
@@ -162,7 +159,6 @@ public class LayoutModel
         return new ComponentContext(
             repeatingGroupComponent,
             indexes?.Length > 0 ? indexes : null,
-            rowLength,
             defaultDataElementIdentifier,
             children
         );
@@ -187,10 +183,10 @@ public class LayoutModel
                 subForms.Add(await GenerateComponentContextsRecurs(page, dataModel, dataElement, indexes: null));
             }
 
-            children.Add(new ComponentContext(subFormComponent, null, null, dataElement, subForms));
+            children.Add(new ComponentContext(subFormComponent, null, dataElement, subForms));
         }
 
-        return new ComponentContext(subFormComponent, null, null, defaultDataElementIdentifier, children);
+        return new ComponentContext(subFormComponent, null, defaultDataElementIdentifier, children);
     }
 
     internal DataElementIdentifier? GetDefaultDataElementId(Instance instance)

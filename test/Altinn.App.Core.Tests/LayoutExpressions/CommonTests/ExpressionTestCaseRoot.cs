@@ -106,7 +106,6 @@ public class ComponentContextForTestSpec
         return new ComponentContext(
             component,
             RowIndices,
-            rowLength: component is RepeatingGroupComponent ? 0 : null,
             // TODO: get from data model, but currently not important for tests
             state.GetDefaultDataElementId(),
             ChildContexts.Select(c => c.ToContext(model, state)).ToList()

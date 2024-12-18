@@ -70,31 +70,6 @@ public static class LayoutEvaluator
             );
         }
 
-        // Get dataReference for hidden rows
-        if (context is { Component: RepeatingGroupComponent repGroup })
-        {
-            var hiddenRows = await context.GetHiddenRows(state);
-            // Reverse order to get the last hidden row first so that the index is correct when removing from the data object
-            foreach (var index in Enumerable.Range(0, hiddenRows.Length).Reverse())
-            {
-                var rowIndices = context.RowIndices?.Append(index).ToArray() ?? [index];
-                var indexedBinding = await state.AddInidicies(
-                    repGroup.DataModelBindings["group"],
-                    context.DataElementIdentifier,
-                    rowIndices
-                );
-
-                if (hiddenRows[index])
-                {
-                    hiddenModelBindings.Add(indexedBinding);
-                }
-                else
-                {
-                    nonHiddenModelBindings.Add(indexedBinding);
-                }
-            }
-        }
-
         // Remove data if hidden
         if (context.Component is not null)
         {
