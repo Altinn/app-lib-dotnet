@@ -495,12 +495,12 @@ public abstract record AuthenticationInfo
         );
         if (!string.IsNullOrWhiteSpace(authorizationDetailsClaim?.Value))
         {
-            var authorizationDetails = JsonSerializer.Deserialize<IReadOnlyList<AuthorizationDetailsClaim>>(
+            var authorizationDetails = JsonSerializer.Deserialize<AuthorizationDetailsClaim>(
                 authorizationDetailsClaim.Value
             );
-            if (authorizationDetails is not [var authorizationDetailsElement] || authorizationDetailsElement is null)
+            if (authorizationDetails is null)
                 throw new InvalidOperationException("Invalid authorization details claim value for token");
-            if (authorizationDetailsElement is not SystemUserAuthorizationDetailsClaim systemUser)
+            if (authorizationDetails is not SystemUserAuthorizationDetailsClaim systemUser)
                 throw new InvalidOperationException("Unsupported authorization details claim value for token");
 
             if (systemUser is null)

@@ -71,10 +71,10 @@ public class UserHelperTest
         result
             .Should()
             .BeEquivalentTo(
-                new Altinn.App.Core.Models.UserContext
+                new Core.Models.UserContext
                 {
                     SocialSecurityNumber = ssn,
-                    UserName = $"User{userId}",
+                    UserName = null,
                     UserId = userId,
                     PartyId = partyId,
                     AuthenticationLevel = authLevel,
@@ -109,10 +109,10 @@ public class UserHelperTest
         result
             .Should()
             .BeEquivalentTo(
-                new Altinn.App.Core.Models.UserContext
+                new Core.Models.UserContext
                 {
                     SocialSecurityNumber = null,
-                    UserName = $"User{userId}",
+                    UserName = null,
                     UserId = userId,
                     PartyId = default,
                     AuthenticationLevel = authLevel,
