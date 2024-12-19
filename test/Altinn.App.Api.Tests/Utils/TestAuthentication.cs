@@ -199,14 +199,17 @@ public static class TestAuthentication
         List<Claim> claims = [];
         string issuer = "www.altinn.no";
 
-        SystemUserAuthorizationDetailsClaim details = new(
+        AuthorizationDetailsClaim details = new SystemUserAuthorizationDetailsClaim(
             [systemUserId],
             systemId,
-            new SystemUserOrg("iso6523-actorid-upis", $"0192:{systemUserOrgNumber}")
+            new SystemUserOrg(
+                "iso6523-actorid-upis",
+                OrganisationNumber.Parse(systemUserOrgNumber).Get(OrganisationNumberFormat.International)
+            )
         );
-        AuthorizationDetailsClaim[] authorizationDetailsClaims = [details];
-        string authorizationDetailsClaim = JsonSerializer.Serialize(authorizationDetailsClaims);
-        claims.Add(new Claim("authorization_details", authorizationDetailsClaim, ClaimValueTypes.String, issuer));
+        claims.Add(
+            new Claim("authorization_details", JsonSerializer.Serialize(details), ClaimValueTypes.String, issuer)
+        );
         claims.Add(new Claim(AltinnCoreClaimTypes.AuthenticateMethod, "systemuser", ClaimValueTypes.String, issuer));
         claims.Add(new Claim(AltinnCoreClaimTypes.AuthenticationLevel, "3", ClaimValueTypes.Integer32, issuer));
         claims.Add(new Claim(JwtClaimTypes.Scope, scope, ClaimValueTypes.String, issuer));
