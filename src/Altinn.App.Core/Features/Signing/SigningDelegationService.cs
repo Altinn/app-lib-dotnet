@@ -43,22 +43,6 @@ internal sealed class SigningDelegationService(
             {
                 if (state.IsAccessDelegated is false)
                 {
-                    logger.LogInformation(
-                        $"Delegating signee rights for signee {signeeContext.PartyId} for task {taskId}"
-                    );
-                    logger.LogInformation($"------------------------------------------------------------------------");
-                    logger.LogInformation($"with application id: {appResourceId}, and instance id: {actualInstanceId}");
-                    logger.LogInformation($"from id type: {DelegationConst.Party}, id: {instanceOwnerPartyId}");
-                    logger.LogInformation(
-                        $"to id type: {DelegationConst.Party}, id: {signeeContext.PartyId.ToString(CultureInfo.InvariantCulture)}"
-                    );
-                    logger.LogInformation(
-                        $"right 1 - action: {DelegationConst.ActionId} {ActionType.Read}, resource1: {DelegationConst.Resource} {appResourceId.Value}, resource2: {DelegationConst.Task}, {taskId}"
-                    );
-                    logger.LogInformation(
-                        $"right 2 - action: {DelegationConst.ActionId} {ActionType.Sign}, resource1: {DelegationConst.Resource} {appResourceId.Value}, resource2: {DelegationConst.Task}, {taskId}"
-                    );
-                    logger.LogInformation($"------------------------------------------------------------------------");
                     DelegationRequest delegationRequest = DelegationBuilder
                         .Create()
                         .WithApplicationId(appIdentifier)
@@ -96,6 +80,33 @@ internal sealed class SigningDelegationService(
                             ]
                         )
                         .Build();
+                    logger.LogInformation($"------------------------------------------------------------------------");
+                    logger.LogInformation($"with application id: {appResourceId}, and instance id: {actualInstanceId}");
+                    logger.LogInformation(
+                        $"from id type: {delegationRequest.From?.IdType}, id: {delegationRequest.From?.Id}"
+                    );
+                    logger.LogInformation(
+                        $"to id type: {delegationRequest.To?.IdType}, id: {delegationRequest.To?.Id}"
+                    );
+                    logger.LogInformation(
+                        $"rights 1: action type - {delegationRequest.Rights?[0].Action?.Value}, value - {delegationRequest.Rights?[0].Action?.Type}"
+                    );
+                    logger.LogInformation(
+                        $"rights 1: resource 1 - type - {delegationRequest.Rights?[0].Resource?[0].Type}, value - {delegationRequest.Rights?[0].Resource?[0].Value}"
+                    );
+                    logger.LogInformation(
+                        $"rights 1: resource 2 - type - {delegationRequest.Rights?[0].Resource?[1].Type}, value - {delegationRequest.Rights?[0].Resource?[1].Value}"
+                    );
+                    logger.LogInformation(
+                        $"rights 2: action type - {delegationRequest.Rights?[1].Action?.Value}, value - {delegationRequest.Rights?[1].Action?.Type}"
+                    );
+                    logger.LogInformation(
+                        $"rights 2: resource 1 - type - {delegationRequest.Rights?[1].Resource?[0].Type}, value - {delegationRequest.Rights?[1].Resource?[0].Value}"
+                    );
+                    logger.LogInformation(
+                        $"rights 2: resource 2 - type - {delegationRequest.Rights?[1].Resource?[1].Type}, value - {delegationRequest.Rights?[1].Resource?[1].Value}"
+                    );
+                    logger.LogInformation($"------------------------------------------------------------------------");
                     var response = await accessManagementClient.DelegateRights(delegationRequest, ct);
                     state.IsAccessDelegated = await Task.FromResult(true);
                     telemetry?.RecordDelegation(DelegationResult.Success);
