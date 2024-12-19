@@ -15,6 +15,7 @@ internal interface ISigningService
     );
 
     Task<List<SigneeContext>> ProcessSignees(
+        string taskId,
         IInstanceDataMutator instanceMutator,
         List<SigneeContext> signeeContexts,
         AltinnSignatureConfiguration signatureConfiguration,

@@ -7,6 +7,7 @@ using Altinn.App.Core.Internal.AccessManagement.Helpers;
 using Altinn.App.Core.Internal.AccessManagement.Models;
 using Altinn.App.Core.Internal.App;
 using Altinn.Common.AccessTokenClient.Services;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -45,6 +46,8 @@ internal sealed class AccessManagementClient(
             var uri = urlHelper.CreateInstanceDelegationUrl(delegation.ResourceId, delegation.InstanceId);
             var body = JsonSerializer.Serialize(delegation);
 
+            logger.LogInformation($"Delegating rights to {uri} with body {body}");
+
             using var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, uri)
             {
                 Content = new StringContent(body, new MediaTypeHeaderValue("application/json")),
@@ -66,6 +69,28 @@ internal sealed class AccessManagementClient(
             }
             else
             {
+                try
+                {
+                    var problemDetails = JsonSerializer.Deserialize<ProblemDetails>(httpContent);
+                    if (problemDetails is not null)
+                    {
+                        logger.LogError(
+                            "Got error status code for access management request. Status code: {StatusCode}. Problem details: {ProblemDetails}",
+                            httpResponseMessage.StatusCode,
+                            problemDetails
+                        );
+                        throw new AccessManagementRequestException(
+                            "Got error status code for access management request.",
+                            problemDetails,
+                            httpResponseMessage.StatusCode,
+                            httpContent
+                        );
+                    }
+                }
+                catch (JsonException)
+                {
+                    response = null;
+                }
                 throw new HttpRequestException("Got error status code for access management request.");
             }
             return response;
