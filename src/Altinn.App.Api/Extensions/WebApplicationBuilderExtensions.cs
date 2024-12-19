@@ -16,10 +16,7 @@ public static class WebApplicationBuilderExtensions
     public static IApplicationBuilder UseAltinnAppCommonConfiguration(this IApplicationBuilder app)
     {
         var appId = StartupHelper.GetApplicationId();
-        if (app is WebApplication webApp && webApp.Environment.IsDevelopment())
-        {
-            app.UseDeveloperExceptionPage();
-        }
+        app.UseExceptionHandler();
 
         app.UseDefaultSecurityHeaders();
         app.UseRouting();

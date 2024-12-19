@@ -23,6 +23,7 @@ using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.Exceptions;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Authorization.ABAC.Xacml.JsonProfile;
@@ -368,6 +369,12 @@ public class InstancesController : ControllerBase
             // notify app and store events
             _logger.LogInformation("Events sent to process engine: {Events}", change?.Events);
             await _processEngine.HandleEventsAndUpdateStorage(instance, null, change?.Events);
+        }
+        // Let the AltinnAppException through as it is handled in IExceptionHandler
+        catch (AltinnAppException)
+        {
+            // TODO: handle all exceptions (not just this) in IExceptionHandler
+            throw;
         }
         catch (Exception exception)
         {
