@@ -17,14 +17,13 @@ public class LookupOrganisationControllerTests : ApiTestBase, IClassFixture<WebA
     private const string Org = "tdd";
     private const string App = "contributer-restriction";
 
-    private static readonly JsonSerializerOptions _jsonSerializerOptions =
-        new()
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            WriteIndented = true,
-            UnknownTypeHandling = JsonUnknownTypeHandling.JsonElement,
-            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-        };
+    private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = true,
+        UnknownTypeHandling = JsonUnknownTypeHandling.JsonElement,
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
 
     public LookupOrganisationControllerTests(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper)
         : base(factory, outputHelper) { }
@@ -61,7 +60,7 @@ public class LookupOrganisationControllerTests : ApiTestBase, IClassFixture<WebA
                 MobileNumber = "12345678",
                 TelephoneNumber = "12345678",
                 UnitStatus = "Active",
-                UnitType = "AS"
+                UnitType = "AS",
             };
 
             string orgJson = JsonSerializer.Serialize(organisation, _jsonSerializerOptions);
