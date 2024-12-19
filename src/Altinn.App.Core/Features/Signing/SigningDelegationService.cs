@@ -81,7 +81,9 @@ internal sealed class SigningDelegationService(
                         )
                         .Build();
                     logger.LogInformation($"------------------------------------------------------------------------");
-                    logger.LogInformation($"with application id: {appResourceId}, and instance id: {actualInstanceId}");
+                    logger.LogInformation(
+                        $"with application id: {delegationRequest.ResourceId}, and instance id: {delegationRequest.InstanceId}"
+                    );
                     logger.LogInformation(
                         $"from id type: {delegationRequest.From?.IdType}, id: {delegationRequest.From?.Id}"
                     );
