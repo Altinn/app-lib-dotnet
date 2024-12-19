@@ -77,7 +77,7 @@ internal sealed class AccessManagementClient(
                         logger.LogError(
                             "Got error status code for access management request. Status code: {StatusCode}. Problem details: {ProblemDetails}",
                             httpResponseMessage.StatusCode,
-                            problemDetails
+                            JsonSerializer.Serialize(problemDetails)
                         );
                         throw new AccessManagementRequestException(
                             "Got error status code for access management request.",
@@ -97,13 +97,16 @@ internal sealed class AccessManagementClient(
         }
         catch (Exception e)
         {
-            var ex = new AccessManagementRequestException(
-                $"Something went wrong when processing the access management request.",
-                null,
-                httpResponseMessage?.StatusCode,
-                httpContent,
-                e
-            );
+            var ex =
+                e is AccessManagementRequestException
+                    ? e
+                    : new AccessManagementRequestException(
+                        $"Something went wrong when processing the access management request.",
+                        null,
+                        httpResponseMessage?.StatusCode,
+                        httpContent,
+                        e
+                    );
             logger.LogError(ex, "Error when processing access management request.");
 
             // TODO: metrics
