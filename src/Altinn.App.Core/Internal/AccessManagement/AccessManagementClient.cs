@@ -45,8 +45,9 @@ internal sealed class AccessManagementClient(
 
             var uri = urlHelper.CreateInstanceDelegationUrl(delegation.ResourceId, delegation.InstanceId);
             var body = JsonSerializer.Serialize(delegation);
-
+            logger.LogInformation($"------------------------------------------------------------------------");
             logger.LogInformation($"Delegating rights to {uri} with body {body}");
+            logger.LogInformation($"------------------------------------------------------------------------");
 
             using var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, uri)
             {

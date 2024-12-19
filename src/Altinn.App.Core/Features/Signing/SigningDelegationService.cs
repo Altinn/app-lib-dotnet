@@ -46,6 +46,19 @@ internal sealed class SigningDelegationService(
                     logger.LogInformation(
                         $"Delegating signee rights for signee {signeeContext.PartyId} for task {taskId}"
                     );
+                    logger.LogInformation($"------------------------------------------------------------------------");
+                    logger.LogInformation($"with application id: {appResourceId}, and instance id: {actualInstanceId}");
+                    logger.LogInformation($"from id type: {DelegationConst.Party}, id: {instanceOwnerPartyId}");
+                    logger.LogInformation(
+                        $"to id type: {DelegationConst.Party}, id: {signeeContext.PartyId.ToString(CultureInfo.InvariantCulture)}"
+                    );
+                    logger.LogInformation(
+                        $"right 1 - action: {DelegationConst.ActionId} {ActionType.Read}, resource1: {DelegationConst.Resource} {appResourceId.Value}, resource2: {DelegationConst.Task}, {taskId}"
+                    );
+                    logger.LogInformation(
+                        $"right 2 - action: {DelegationConst.ActionId} {ActionType.Sign}, resource1: {DelegationConst.Resource} {appResourceId.Value}, resource2: {DelegationConst.Task}, {taskId}"
+                    );
+                    logger.LogInformation($"------------------------------------------------------------------------");
                     DelegationRequest delegationRequest = DelegationBuilder
                         .Create()
                         .WithApplicationId(appIdentifier)
