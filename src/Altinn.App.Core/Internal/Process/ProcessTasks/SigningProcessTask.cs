@@ -82,7 +82,13 @@ internal sealed class SigningProcessTask : IProcessTask
             cts.Token
         );
 
-        await _signingService.ProcessSignees(cachedDataMutator, signeeContexts, signatureConfiguration, cts.Token);
+        await _signingService.ProcessSignees(
+            taskId,
+            cachedDataMutator,
+            signeeContexts,
+            signatureConfiguration,
+            cts.Token
+        );
         DataElementChanges changes = cachedDataMutator.GetDataElementChanges(false);
 
         await cachedDataMutator.UpdateInstanceData(changes);

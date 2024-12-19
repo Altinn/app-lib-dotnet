@@ -85,6 +85,7 @@ internal sealed class SigningService(
     }
 
     public async Task<List<SigneeContext>> ProcessSignees(
+        string taskId,
         IInstanceDataMutator instanceMutator,
         List<SigneeContext> signeeContexts,
         AltinnSignatureConfiguration signatureConfiguration,
@@ -92,7 +93,6 @@ internal sealed class SigningService(
     )
     {
         using Activity? activity = telemetry?.StartAssignSigneesActivity();
-        string taskId = instanceMutator.Instance.Process.CurrentTask.ElementId;
         string instanceOwnerPartyId = instanceMutator.Instance.InstanceOwner.PartyId;
         string instanceId = instanceMutator.Instance.Id;
 
