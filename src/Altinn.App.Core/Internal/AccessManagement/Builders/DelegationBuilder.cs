@@ -1,8 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
-using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.AccessManagement.Exceptions;
 using Altinn.App.Core.Internal.AccessManagement.Models;
 using Altinn.App.Core.Internal.AccessManagement.Models.Shared;
+using Altinn.App.Core.Models;
 
 namespace Altinn.App.Core.Internal.AccessManagement.Builders;
 
@@ -23,7 +23,7 @@ internal abstract class DelegationBuilderBase
 
 internal interface IDelegationBuilderStart
 {
-    IDelegationBuilderApplicationId WithApplicationId(string applicationId);
+    IDelegationBuilderApplicationId WithApplicationId(AppIdentifier appIdentifier);
 }
 
 internal interface IDelegationBuilderApplicationId
@@ -38,7 +38,7 @@ internal interface IDelegationBuilderInstanceId
 
 internal interface IDelegationBuilderDelegator
 {
-    IDelegationBuilderRecipient WithRecipient(Delegatee recipient);
+    IDelegationBuilderRecipient WithDelegatee(Delegatee recipient);
 }
 
 internal interface IDelegationBuilderRecipient
@@ -69,12 +69,10 @@ internal sealed class DelegationBuilder : DelegationBuilderBase, IDelegationBuil
 
     public static IDelegationBuilderStart Create() => new DelegationBuilder();
 
-    public IDelegationBuilderApplicationId WithApplicationId(string applicationId)
+    public IDelegationBuilderApplicationId WithApplicationId(AppIdentifier appIdentifier)
     {
-        NotNullOrEmpty(applicationId, nameof(applicationId));
-        _applicationId = AppIdHelper.TryGetResourceId(applicationId, out string? resourceId)
-            ? resourceId
-            : throw new ArgumentException("Invalid application ID", nameof(applicationId));
+        AppResourceId appResourceId = AppResourceId.FromAppIdentifier(appIdentifier);
+        _applicationId = appResourceId.Value;
         return this;
     }
 
@@ -92,7 +90,7 @@ internal sealed class DelegationBuilder : DelegationBuilderBase, IDelegationBuil
         return this;
     }
 
-    public IDelegationBuilderRecipient WithRecipient(Delegatee recipient)
+    public IDelegationBuilderRecipient WithDelegatee(Delegatee recipient)
     {
         NotNullOrEmpty(recipient, nameof(recipient));
         _recipient = recipient;

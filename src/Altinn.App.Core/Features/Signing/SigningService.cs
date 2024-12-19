@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using Altinn.App.Core.Features.Signing.Exceptions;
@@ -22,7 +23,7 @@ internal sealed class SigningService(
     IPersonClient personClient,
     IOrganizationClient organisationClient,
     IAltinnPartyClient altinnPartyClient,
-    // ISigningDelegationService signingDelegationService,
+    ISigningDelegationService signingDelegationService,
     // ISigningNotificationService signingNotificationService,
     IEnumerable<ISigneeProvider> signeeProviders,
     IDataClient dataClient,
@@ -84,6 +85,7 @@ internal sealed class SigningService(
     }
 
     public async Task<List<SigneeContext>> ProcessSignees(
+        string taskId,
         IInstanceDataMutator instanceMutator,
         List<SigneeContext> signeeContexts,
         AltinnSignatureConfiguration signatureConfiguration,
@@ -91,13 +93,24 @@ internal sealed class SigningService(
     )
     {
         using Activity? activity = telemetry?.StartAssignSigneesActivity();
-        string taskId = instanceMutator.Instance.Process.CurrentTask.ElementId;
+        string instanceOwnerPartyId = instanceMutator.Instance.InstanceOwner.PartyId;
+        string instanceId = instanceMutator.Instance.Id;
 
-        // await signingDelegationService.DelegateSigneeRights(taskId, instanceMutator.Instance, signeeContexts, ct);
+        AppIdentifier appIdentifier = new(instanceMutator.Instance.AppId);
+        (signeeContexts, var delegateSuccess) = await signingDelegationService.DelegateSigneeRights(
+            taskId,
+            instanceId,
+            instanceOwnerPartyId,
+            appIdentifier,
+            signeeContexts,
+            ct,
+            telemetry
+        );
 
-        //TODO: If something fails inside DelegateSigneeRights, abort and don't send notifications. Set error state in SigneeState.
-
-        // await signingNotificationService.NotifySignatureTask(signeeContexts, ct);
+        if (delegateSuccess)
+        {
+            // await signingNotificationService.NotifySignatureTask(signeeContexts, ct);
+        }
 
         // ! TODO: Remove nullable
         instanceMutator.AddBinaryDataElement(
@@ -202,19 +215,16 @@ internal sealed class SigningService(
         List<SigneeContext> personSigneeContexts = [];
         foreach (PersonSignee personSignee in signeeResult.PersonSignees)
         {
+            var lastName = personSignee.LastName.Split(" ").First().ToLower(CultureInfo.InvariantCulture);
             _logger.LogInformation(
                 "Looking up person with SSN {SocialSecurityNumber} and last name {LastName}.",
                 personSignee.SocialSecurityNumber,
-                personSignee.LastName.Split(" ").Last()
+                lastName
             );
             Person? person =
-                await personClient.GetPerson(
-                    personSignee.SocialSecurityNumber,
-                    personSignee.LastName.Split(" ").Last(),
-                    ct
-                )
+                await personClient.GetPerson(personSignee.SocialSecurityNumber, lastName, ct)
                 ?? throw new SignaturePartyNotValidException(
-                    $"The given SSN and last name did not match any person in the registry."
+                    $"The given SSN: {personSignee.SocialSecurityNumber} and last name: {lastName} did not match any person in the registry."
                 );
             Party? party = await altinnPartyClient.LookupParty(
                 new PartyLookup { Ssn = personSignee.SocialSecurityNumber }

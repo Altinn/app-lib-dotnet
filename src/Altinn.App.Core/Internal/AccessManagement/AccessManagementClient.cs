@@ -7,6 +7,7 @@ using Altinn.App.Core.Internal.AccessManagement.Helpers;
 using Altinn.App.Core.Internal.AccessManagement.Models;
 using Altinn.App.Core.Internal.App;
 using Altinn.Common.AccessTokenClient.Services;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -44,6 +45,9 @@ internal sealed class AccessManagementClient(
 
             var uri = urlHelper.CreateInstanceDelegationUrl(delegation.ResourceId, delegation.InstanceId);
             var body = JsonSerializer.Serialize(delegation);
+            logger.LogInformation($"------------------------------------------------------------------------");
+            logger.LogInformation($"Delegating rights to {uri} with body {body}");
+            logger.LogInformation($"------------------------------------------------------------------------");
 
             using var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, uri)
             {
@@ -66,19 +70,44 @@ internal sealed class AccessManagementClient(
             }
             else
             {
+                try
+                {
+                    var problemDetails = JsonSerializer.Deserialize<ProblemDetails>(httpContent);
+                    if (problemDetails is not null)
+                    {
+                        logger.LogError(
+                            "Got error status code for access management request. Status code: {StatusCode}. Problem details: {ProblemDetails}",
+                            httpResponseMessage.StatusCode,
+                            JsonSerializer.Serialize(problemDetails)
+                        );
+                        throw new AccessManagementRequestException(
+                            "Got error status code for access management request.",
+                            problemDetails,
+                            httpResponseMessage.StatusCode,
+                            httpContent
+                        );
+                    }
+                }
+                catch (JsonException)
+                {
+                    response = null;
+                }
                 throw new HttpRequestException("Got error status code for access management request.");
             }
             return response;
         }
         catch (Exception e)
         {
-            var ex = new AccessManagementRequestException(
-                $"Something went wrong when processing the access management request.",
-                null,
-                httpResponseMessage?.StatusCode,
-                httpContent,
-                e
-            );
+            var ex =
+                e is AccessManagementRequestException
+                    ? e
+                    : new AccessManagementRequestException(
+                        $"Something went wrong when processing the access management request.",
+                        null,
+                        httpResponseMessage?.StatusCode,
+                        httpContent,
+                        e
+                    );
             logger.LogError(ex, "Error when processing access management request.");
 
             // TODO: metrics

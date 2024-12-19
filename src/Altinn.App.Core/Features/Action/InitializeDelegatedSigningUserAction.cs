@@ -93,7 +93,13 @@ internal class InitializeDelegatedSigningUserAction : IUserAction
             ct
         );
 
-        await _signingService.ProcessSignees(cachedDataMutator, signeeContexts, signatureConfiguration, ct);
+        await _signingService.ProcessSignees(
+            currentTask.Id,
+            cachedDataMutator,
+            signeeContexts,
+            signatureConfiguration,
+            ct
+        );
         var changes = cachedDataMutator.GetDataElementChanges(false);
         await cachedDataMutator.SaveChanges(changes);
 
