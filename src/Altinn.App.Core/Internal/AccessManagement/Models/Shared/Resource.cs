@@ -2,11 +2,20 @@ using System.Text.Json.Serialization;
 
 namespace Altinn.App.Core.Internal.AccessManagement.Models.Shared;
 
-internal sealed class Resource
+/// <summary>
+/// Represents a resource.
+/// </summary>
+public class Resource
 {
+    /// <summary>
+    /// Gets or sets the type of the resource. Default is "resource".
+    /// </summary>
     [JsonPropertyName("type")]
-    internal string Type { get; set; } = DelegationConst.Resource;
+    public string Type { get; set; } = DelegationConst.Resource;
 
+    /// <summary>
+    /// Gets or sets the value.
+    /// </summary>
     [JsonPropertyName("value")]
-    internal required string Value { get; set; }
+    public required string Value { get; set; }
 }

@@ -2,7 +2,6 @@ using System.Globalization;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Internal.AccessManagement;
-using Altinn.App.Core.Internal.AccessManagement.Builders;
 using Altinn.App.Core.Internal.AccessManagement.Models;
 using Altinn.App.Core.Internal.AccessManagement.Models.Shared;
 using Altinn.App.Core.Models;
@@ -43,73 +42,39 @@ internal sealed class SigningDelegationService(
             {
                 if (state.IsAccessDelegated is false)
                 {
-                    DelegationRequest delegationRequest = DelegationBuilder
-                        .Create()
-                        .WithApplicationId(appIdentifier)
-                        .WithInstanceId(actualInstanceId)
-                        .WithDelegator(new Delegator { IdType = DelegationConst.Party, Id = instanceOwnerPartyId }) // TODO: should it be possible for other than the instance owner to delegate rights?
-                        .WithDelegatee(
-                            new Delegatee
+                    var dr = new DelegationRequest
+                    {
+                        To = new Delegatee
+                        {
+                            Id = signeeContext.PartyId.ToString(CultureInfo.InvariantCulture),
+                            IdType = DelegationConst.Party,
+                        },
+                        From = new Delegator { Id = instanceOwnerPartyId, IdType = DelegationConst.Party },
+                        ResourceId = appResourceId.Value,
+                        InstanceId = actualInstanceId,
+                        Rights =
+                        [
+                            new RightRequest
                             {
-                                IdType = DelegationConst.Party,
-                                Id = signeeContext.PartyId.ToString(CultureInfo.InvariantCulture),
-                            }
-                        )
-                        .WithRights(
-                            [
-                                AccessRightBuilder
-                                    .Create()
-                                    .WithAction(ActionType.Read)
-                                    .WithResources(
-                                        [
-                                            new Resource { Value = appResourceId.Value },
-                                            new Resource { Type = DelegationConst.Task, Value = taskId },
-                                        ]
-                                    )
-                                    .Build(),
-                                AccessRightBuilder
-                                    .Create()
-                                    .WithAction(ActionType.Sign)
-                                    .WithResources(
-                                        [
-                                            new Resource { Value = appResourceId.Value },
-                                            new Resource { Type = DelegationConst.Task, Value = taskId },
-                                        ]
-                                    )
-                                    .Build(),
-                            ]
-                        )
-                        .Build();
-                    logger.LogInformation($"------------------------------------------------------------------------");
-                    logger.LogInformation(
-                        $"with application id: {delegationRequest.ResourceId}, and instance id: {delegationRequest.InstanceId}"
-                    );
-                    logger.LogInformation(
-                        $"from id type: {delegationRequest.From?.IdType}, id: {delegationRequest.From?.Id}"
-                    );
-                    logger.LogInformation(
-                        $"to id type: {delegationRequest.To?.IdType}, id: {delegationRequest.To?.Id}"
-                    );
-                    logger.LogInformation(
-                        $"rights 1: action type - {delegationRequest.Rights?[0].Action?.Value}, value - {delegationRequest.Rights?[0].Action?.Type}"
-                    );
-                    logger.LogInformation(
-                        $"rights 1: resource 1 - type - {delegationRequest.Rights?[0].Resource?[0].Type}, value - {delegationRequest.Rights?[0].Resource?[0].Value}"
-                    );
-                    logger.LogInformation(
-                        $"rights 1: resource 2 - type - {delegationRequest.Rights?[0].Resource?[1].Type}, value - {delegationRequest.Rights?[0].Resource?[1].Value}"
-                    );
-                    logger.LogInformation(
-                        $"rights 2: action type - {delegationRequest.Rights?[1].Action?.Value}, value - {delegationRequest.Rights?[1].Action?.Type}"
-                    );
-                    logger.LogInformation(
-                        $"rights 2: resource 1 - type - {delegationRequest.Rights?[1].Resource?[0].Type}, value - {delegationRequest.Rights?[1].Resource?[0].Value}"
-                    );
-                    logger.LogInformation(
-                        $"rights 2: resource 2 - type - {delegationRequest.Rights?[1].Resource?[1].Type}, value - {delegationRequest.Rights?[1].Resource?[1].Value}"
-                    );
-                    logger.LogInformation($"------------------------------------------------------------------------");
-                    var response = await accessManagementClient.DelegateRights(delegationRequest, ct);
+                                Resource =
+                                [
+                                    new Resource { Type = DelegationConst.Resource, Value = appResourceId.Value },
+                                    new Resource { Type = DelegationConst.Task, Value = taskId },
+                                ],
+                                Action = new AltinnAction { Type = DelegationConst.ActionId, Value = "read" },
+                            },
+                            new RightRequest
+                            {
+                                Resource =
+                                [
+                                    new Resource { Type = DelegationConst.Resource, Value = appResourceId.Value },
+                                    new Resource { Type = DelegationConst.Task, Value = taskId },
+                                ],
+                                Action = new AltinnAction { Type = DelegationConst.ActionId, Value = "sign" },
+                            },
+                        ],
+                    };
+                    var response = await accessManagementClient.DelegateRights(dr, ct);
                     state.IsAccessDelegated = await Task.FromResult(true);
                     telemetry?.RecordDelegation(DelegationResult.Success);
                 }
