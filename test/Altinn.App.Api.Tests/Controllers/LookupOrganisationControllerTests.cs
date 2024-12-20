@@ -7,6 +7,8 @@ using Altinn.App.Api.Models;
 using Altinn.App.Api.Tests.Utils;
 using Altinn.Platform.Register.Models;
 using FluentAssertions;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit.Abstractions;
 
@@ -121,6 +123,38 @@ public class LookupOrganisationControllerTests : ApiTestBase, IClassFixture<WebA
         orgLookupResponse.Should().NotBeNull();
         orgLookupResponse?.Success.Should().BeFalse();
         orgLookupResponse?.OrganisationDetails.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Post_LookupOrganisation_General_Exception_Returned_Correctly()
+    {
+        HttpClient client = GetHttpClient();
+        var orgNr = "123456789";
+
+        var sendAsyncCalled = false;
+        SendAsync = message =>
+        {
+            message.RequestUri!.PathAndQuery.Should().Be($"/register/api/v1/organizations/{orgNr}");
+            sendAsyncCalled = true;
+
+            throw new Exception("General error");
+        };
+
+        HttpResponseMessage response = await client.GetAsync($"{Org}/{App}/api/v1/lookup/organisation/{orgNr}");
+
+        sendAsyncCalled.Should().BeTrue();
+        response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
+
+        string responseContent = await response.Content.ReadAsStringAsync();
+        OutputHelper.WriteLine(responseContent);
+        var personSearchResponse = JsonSerializer.Deserialize<ProblemDetails>(responseContent, _jsonSerializerOptions);
+
+        personSearchResponse.Should().NotBeNull();
+        personSearchResponse?.Title.Should().BeEquivalentTo("Error when calling register");
+        personSearchResponse
+            ?.Detail.Should()
+            .BeEquivalentTo("Something went wrong when calling the Organisation Register API.");
+        personSearchResponse?.Status.Should().Be(StatusCodes.Status500InternalServerError);
     }
 
     private HttpClient GetHttpClient()
