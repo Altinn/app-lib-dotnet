@@ -110,7 +110,7 @@ public class LookupPersonController : ControllerBase
             return new ProblemDetails
             {
                 Title = "Error when calling the Person Register",
-                Detail = e.Message,
+                Detail = "Something went wrong when calling the Person Register API.",
                 Status = StatusCodes.Status500InternalServerError,
             };
         }

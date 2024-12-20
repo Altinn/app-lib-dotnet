@@ -5,8 +5,11 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Altinn.App.Api.Models;
 using Altinn.App.Api.Tests.Utils;
+using Altinn.App.Core.Helpers;
 using Altinn.Platform.Register.Models;
 using FluentAssertions;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit.Abstractions;
 
@@ -126,6 +129,153 @@ public class LookupPersonControllerTests : ApiTestBase, IClassFixture<WebApplica
         personSearchResponse.Should().NotBeNull();
         personSearchResponse?.Success.Should().BeFalse();
         personSearchResponse?.PersonDetails.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Post_PersonSearch_Forbidden_Returned_Correctly()
+    {
+        HttpClient client = GetHttpClient();
+
+        var sendAsyncCalled = false;
+        SendAsync = async message =>
+        {
+            message.RequestUri!.PathAndQuery.Should().Be($"/register/api/v1/persons");
+            sendAsyncCalled = true;
+
+            var response = new HttpResponseMessage(HttpStatusCode.Forbidden);
+
+            return await Task.FromResult(response);
+        };
+
+        using var requestContent = new StringContent(
+            """{"SocialSecurityNumber": "12345678901", "LastName": "Normann"}""",
+            System.Text.Encoding.UTF8,
+            "application/json"
+        );
+
+        HttpResponseMessage response = await client.PostAsync($"{Org}/{App}/api/v1/lookup/person", requestContent);
+
+        sendAsyncCalled.Should().BeTrue();
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        string responseContent = await response.Content.ReadAsStringAsync();
+        OutputHelper.WriteLine(responseContent);
+        var personSearchResponse = JsonSerializer.Deserialize<ProblemDetails>(responseContent, _jsonSerializerOptions);
+
+        personSearchResponse.Should().NotBeNull();
+        personSearchResponse?.Title.Should().BeEquivalentTo("Forbidden");
+        personSearchResponse?.Detail.Should().BeEquivalentTo("Access to the register is forbidden");
+        personSearchResponse?.Status.Should().Be(StatusCodes.Status403Forbidden);
+    }
+
+    [Fact]
+    public async Task Post_PersonSearch_TooManyRequests_Returned_Correctly()
+    {
+        HttpClient client = GetHttpClient();
+
+        var sendAsyncCalled = false;
+        SendAsync = async message =>
+        {
+            message.RequestUri!.PathAndQuery.Should().Be($"/register/api/v1/persons");
+            sendAsyncCalled = true;
+
+            var response = new HttpResponseMessage(HttpStatusCode.TooManyRequests);
+
+            return await Task.FromResult(response);
+        };
+
+        using var requestContent = new StringContent(
+            """{"SocialSecurityNumber": "12345678901", "LastName": "Normann"}""",
+            System.Text.Encoding.UTF8,
+            "application/json"
+        );
+
+        HttpResponseMessage response = await client.PostAsync($"{Org}/{App}/api/v1/lookup/person", requestContent);
+
+        sendAsyncCalled.Should().BeTrue();
+        response.StatusCode.Should().Be(HttpStatusCode.TooManyRequests);
+
+        string responseContent = await response.Content.ReadAsStringAsync();
+        OutputHelper.WriteLine(responseContent);
+        var personSearchResponse = JsonSerializer.Deserialize<ProblemDetails>(responseContent, _jsonSerializerOptions);
+
+        personSearchResponse.Should().NotBeNull();
+        personSearchResponse?.Title.Should().BeEquivalentTo("Too many requests");
+        personSearchResponse?.Detail.Should().BeEquivalentTo("Too many requests to the register");
+        personSearchResponse?.Status.Should().Be(StatusCodes.Status429TooManyRequests);
+    }
+
+    [Fact]
+    public async Task Post_PersonSearch_Other_PlatformException_Returned_Correctly()
+    {
+        HttpClient client = GetHttpClient();
+
+        var sendAsyncCalled = false;
+        SendAsync = message =>
+        {
+            message.RequestUri!.PathAndQuery.Should().Be($"/register/api/v1/persons");
+            sendAsyncCalled = true;
+
+            var response = new HttpResponseMessage(HttpStatusCode.InternalServerError);
+            throw new PlatformHttpException(response, "Error");
+        };
+
+        using var requestContent = new StringContent(
+            """{"SocialSecurityNumber": "12345678901", "LastName": "Normann"}""",
+            System.Text.Encoding.UTF8,
+            "application/json"
+        );
+
+        HttpResponseMessage response = await client.PostAsync($"{Org}/{App}/api/v1/lookup/person", requestContent);
+
+        sendAsyncCalled.Should().BeTrue();
+        response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
+
+        string responseContent = await response.Content.ReadAsStringAsync();
+        OutputHelper.WriteLine(responseContent);
+        var personSearchResponse = JsonSerializer.Deserialize<ProblemDetails>(responseContent, _jsonSerializerOptions);
+
+        personSearchResponse.Should().NotBeNull();
+        personSearchResponse?.Title.Should().BeEquivalentTo("Error when calling register");
+        personSearchResponse?.Detail.Should().BeEquivalentTo("Error");
+        personSearchResponse?.Status.Should().Be(StatusCodes.Status500InternalServerError);
+    }
+
+    [Fact]
+    public async Task Post_PersonSearch_General_Exception_Returned_Correctly()
+    {
+        HttpClient client = GetHttpClient();
+
+        var sendAsyncCalled = false;
+        SendAsync = message =>
+        {
+            message.RequestUri!.PathAndQuery.Should().Be($"/register/api/v1/persons");
+            sendAsyncCalled = true;
+
+            throw new Exception("General error");
+        };
+
+        using var requestContent = new StringContent(
+            """{"SocialSecurityNumber": "12345678901", "LastName": "Normann"}""",
+            System.Text.Encoding.UTF8,
+            "application/json"
+        );
+
+        HttpResponseMessage response = await client.PostAsync($"{Org}/{App}/api/v1/lookup/person", requestContent);
+
+        sendAsyncCalled.Should().BeTrue();
+        response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
+
+        string responseContent = await response.Content.ReadAsStringAsync();
+        OutputHelper.WriteLine(responseContent);
+        var personSearchResponse = JsonSerializer.Deserialize<ProblemDetails>(responseContent, _jsonSerializerOptions);
+
+        personSearchResponse.Should().NotBeNull();
+        personSearchResponse?.Title.Should().BeEquivalentTo("Error when calling the Person Register");
+        personSearchResponse
+            ?.Detail.Should()
+            .BeEquivalentTo("Something went wrong when calling the Person Register API.");
+        personSearchResponse?.Status.Should().Be(StatusCodes.Status500InternalServerError);
     }
 
     private HttpClient GetHttpClient()
