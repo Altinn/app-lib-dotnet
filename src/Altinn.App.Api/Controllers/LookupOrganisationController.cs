@@ -66,7 +66,7 @@ public class LookupOrganisationController : ControllerBase
         }
         catch (Exception e)
         {
-            _logger.LogError($"Error when calling the Organisation Register API, {e.Message}");
+            _logger.LogError(e, "Error when calling the Organisation Register API.");
             return new ProblemDetails
             {
                 Title = "Error when calling register",
