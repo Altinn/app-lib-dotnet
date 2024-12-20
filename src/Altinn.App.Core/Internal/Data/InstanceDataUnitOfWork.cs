@@ -7,6 +7,7 @@ using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.Exceptions;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 
@@ -588,14 +589,22 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         var changes = GetDataElementChanges(initializeAltinnRowId: false);
         if (changes.AllChanges.Count != previousChanges.AllChanges.Count)
         {
-            throw new Exception("Number of data elements have changed by validators");
+            throw new AltinnAppException()
+            {
+                Title = "Validators have changed data elements",
+                Description = "Number of data elements have changed by validators",
+            };
         }
 
         foreach (var previousChange in previousChanges.AllChanges)
         {
             var currentChange =
                 changes.AllChanges.FirstOrDefault(c => c.DataElement?.Id == previousChange.DataElement?.Id)
-                ?? throw new Exception("Number of data elements have changed by validators");
+                ?? throw new AltinnAppException()
+                {
+                    Title = "Validators have changed data elements",
+                    Description = "Number of data elements have changed by validators",
+                };
 
             var equal = (currentChange, previousChange) switch
             {
@@ -606,13 +615,20 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
                 (BinaryDataChange current, BinaryDataChange previous) => current.CurrentBinaryData.Span.SequenceEqual(
                     previous.CurrentBinaryData.Span
                 ),
-                _ => throw new Exception("Data element type has changed by validators"),
+                _ => throw new AltinnAppException()
+                {
+                    Title = "Validators have changed data elements",
+                    Description = "Number of data elements have changed by validators",
+                },
             };
             if (!equal)
             {
-                throw new Exception(
-                    $"Data element {previousChange.DataType.Id} with id {previousChange.DataElement?.Id} has been changed by validators"
-                );
+                throw new AltinnAppException()
+                {
+                    Title = "Validators have changed data elements",
+                    Description =
+                        $"Data element {previousChange.DataType.Id} with id {previousChange.DataElement?.Id} has been changed by validators",
+                };
             }
         }
     }
