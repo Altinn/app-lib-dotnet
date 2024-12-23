@@ -46,19 +46,9 @@ internal sealed class AccessManagementClient(
 
             var uri = urlHelper.CreateInstanceDelegationUrl(delegation.ResourceId, delegation.InstanceId);
             AppsInstanceDelegationRequestDto dto = GetDto(delegation);
-
-            // log every property in the dto
-            logger.LogInformation($"------------------------------------------------------------------------");
-            logger.LogInformation($"Dto properties:");
-            foreach (var property in dto.GetType().GetProperties())
-            {
-                logger.LogInformation($"{property.Name}: {property.GetValue(dto)}");
-            }
-
             var body = JsonSerializer.Serialize(dto);
             logger.LogInformation($"------------------------------------------------------------------------");
             logger.LogInformation($"Delegating rights to {uri} with body {body}");
-            logger.LogInformation($"------------------------------------------------------------------------");
 
             using var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, uri)
             {

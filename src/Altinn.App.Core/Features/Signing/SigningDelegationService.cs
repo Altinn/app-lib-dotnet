@@ -25,7 +25,7 @@ internal sealed class SigningDelegationService(
         Telemetry? telemetry = null
     )
     {
-        var actualInstanceId = instanceId.Split("/")[1];
+        var instanceGuid = instanceId.Split("/")[1];
         var appResourceId = AppResourceId.FromAppIdentifier(appIdentifier);
         bool success = true;
         foreach (SigneeContext signeeContext in signeeContexts)
@@ -53,7 +53,7 @@ internal sealed class SigningDelegationService(
                                 ?? throw new InvalidOperationException("Delegatee: PartyUuid is null"),
                         },
                         ResourceId = appResourceId.Value,
-                        InstanceId = actualInstanceId,
+                        InstanceId = instanceGuid,
                         Rights =
                         [
                             new RightRequest
