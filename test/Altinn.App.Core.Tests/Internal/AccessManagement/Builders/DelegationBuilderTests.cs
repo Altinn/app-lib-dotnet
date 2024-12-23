@@ -24,8 +24,8 @@ public class DelegationBuilderTests
             .Create()
             .WithApplicationId(appIdentifier)
             .WithInstanceId(instanceId)
-            .WithDelegator(new Delegator { IdType = DelegationConst.Party, Id = instanceOwnerPartyId })
-            .WithDelegatee(new Delegatee { IdType = DelegationConst.Party, Id = delegateeId })
+            .WithDelegator(new Delegator { Type = DelegationConst.Party, Value = instanceOwnerPartyId })
+            .WithDelegatee(new Delegatee { Type = DelegationConst.Party, Value = delegateeId })
             .WithRights(
                 [
                     AccessRightBuilder
@@ -43,8 +43,8 @@ public class DelegationBuilderTests
 
         var expected = new DelegationRequest
         {
-            From = new Delegator { IdType = "urn:altinn:party:uuid", Id = "50000000" },
-            To = new Delegatee { IdType = "urn:altinn:party:uuid", Id = "50000001" },
+            From = new Delegator { Type = "urn:altinn:party:uuid", Value = "50000000" },
+            To = new Delegatee { Type = "urn:altinn:party:uuid", Value = "50000001" },
             ResourceId = "app_testOrg_testApp",
             InstanceId = "61c2fe1d-7ff7-4009-9e96-506c56ea3d5e",
             Rights =
@@ -70,11 +70,11 @@ public class DelegationBuilderTests
 
         // Assert
         // Compare top-level properties
-        actual.From!.IdType.Should().Be(expected.From.IdType);
-        actual.From.Id.Should().Be(expected.From.Id);
+        actual.From!.Type.Should().Be(expected.From.Type);
+        actual.From.Value.Should().Be(expected.From.Value);
 
-        actual.To!.IdType.Should().Be(expected.To.IdType);
-        actual.To.Id.Should().Be(expected.To.Id);
+        actual.To!.Type.Should().Be(expected.To.Type);
+        actual.To.Value.Should().Be(expected.To.Value);
 
         actual.ResourceId.Should().Be(expected.ResourceId);
         actual.InstanceId.Should().Be(expected.InstanceId);

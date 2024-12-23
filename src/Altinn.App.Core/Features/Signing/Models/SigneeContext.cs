@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Altinn.Platform.Register.Models;
 
 namespace Altinn.App.Core.Features.Signing.Models;
 
@@ -7,9 +8,10 @@ namespace Altinn.App.Core.Features.Signing.Models;
 /// </summary>
 internal sealed class SigneeContext
 {
-    /// <summary>The identifier of the signee.</summary>
-    [JsonPropertyName("partyId")]
-    public required int PartyId { get; init; }
+    /// <summary>
+    /// The party associated with the signee state.
+    /// </summary>
+    public required Party Party { get; set; }
 
     /// <summary>The task associated with the signee state.</summary>
     [JsonPropertyName("taskId")]
@@ -20,12 +22,6 @@ internal sealed class SigneeContext
     /// </summary>
     [JsonPropertyName("signeeState")]
     public required SigneeState SigneeState { get; set; }
-
-    // /// <summary>
-    // /// The signee.
-    // /// </summary>
-    // [JsonPropertyName("signeeParty")]
-    // public required SigneeParty SigneeParty { get; set; }
 
     /// <summary>
     /// The organisation signee.

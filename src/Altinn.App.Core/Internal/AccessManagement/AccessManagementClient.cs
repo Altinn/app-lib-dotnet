@@ -5,6 +5,7 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.AccessManagement.Exceptions;
 using Altinn.App.Core.Internal.AccessManagement.Helpers;
 using Altinn.App.Core.Internal.AccessManagement.Models;
+using Altinn.App.Core.Internal.AccessManagement.Models.Shared;
 using Altinn.App.Core.Internal.App;
 using Altinn.Common.AccessTokenClient.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -44,7 +45,17 @@ internal sealed class AccessManagementClient(
             var application = await appMetadata.GetApplicationMetadata();
 
             var uri = urlHelper.CreateInstanceDelegationUrl(delegation.ResourceId, delegation.InstanceId);
-            var body = JsonSerializer.Serialize(delegation);
+            AppsInstanceDelegationRequestDto dto = GetDto(delegation);
+
+            // log every property in the dto
+            logger.LogInformation($"------------------------------------------------------------------------");
+            logger.LogInformation($"Dto properties:");
+            foreach (var property in dto.GetType().GetProperties())
+            {
+                logger.LogInformation($"{property.Name}: {property.GetValue(dto)}");
+            }
+
+            var body = JsonSerializer.Serialize(dto);
             logger.LogInformation($"------------------------------------------------------------------------");
             logger.LogInformation($"Delegating rights to {uri} with body {body}");
             logger.LogInformation($"------------------------------------------------------------------------");
@@ -118,5 +129,39 @@ internal sealed class AccessManagementClient(
         {
             httpResponseMessage?.Dispose();
         }
+    }
+
+    private static AppsInstanceDelegationRequestDto GetDto(DelegationRequest delegation)
+    {
+        return new AppsInstanceDelegationRequestDto
+        {
+            From = new Delegator
+            {
+                Type = delegation.From is not null
+                    ? delegation.From.Type
+                    : throw new AccessManagementArgumentException("From is required"),
+                Value = delegation.From.Value,
+            },
+            To = new Delegatee
+            {
+                Type = delegation.To is not null
+                    ? delegation.To.Type
+                    : throw new AccessManagementArgumentException("To is required"),
+                Value = delegation.To.Value,
+            },
+            Rights = delegation
+                .Rights.Select(r => new RightDto
+                {
+                    Resource = r.Resource.Select(rr => new Resource { Type = rr.Type, Value = rr.Value }).ToList(),
+                    Action = new AltinnAction
+                    {
+                        Type = r.Action is not null
+                            ? r.Action.Type
+                            : throw new AccessManagementArgumentException("Action is required"),
+                        Value = r.Action.Value,
+                    },
+                })
+                .ToList(),
+        };
     }
 }

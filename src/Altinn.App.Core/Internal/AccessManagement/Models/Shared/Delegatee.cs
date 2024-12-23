@@ -11,11 +11,11 @@ public class Delegatee
     /// Gets or sets the type of the id.
     /// </summary>
     [JsonPropertyName("type")]
-    public required string IdType { get; set; }
+    public required string Type { get; set; }
 
     /// <summary>
     /// Gets or sets the id.
     /// </summary>
     [JsonPropertyName("value")]
-    public required string Id { get; set; }
+    public required string Value { get; set; }
 }
