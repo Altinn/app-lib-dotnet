@@ -62,6 +62,7 @@ internal sealed class AccessManagementClient(
 
             httpResponseMessage = await httpClient.SendAsync(httpRequestMessage, ct);
             httpContent = await httpResponseMessage.Content.ReadAsStringAsync(ct);
+            logger.LogInformation($"Response from delegation: {httpContent}");
             DelegationResponse? response;
             if (httpResponseMessage.IsSuccessStatusCode)
             {
