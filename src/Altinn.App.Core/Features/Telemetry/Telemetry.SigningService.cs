@@ -28,10 +28,25 @@ partial class Telemetry
                 }
             }
         );
+
+        InitMetricCounter(
+            context,
+            MetricNameDelegationRevoke,
+            init: static m =>
+            {
+                foreach (var result in DelegationResultExtensions.GetValues())
+                {
+                    m.Add(0, new Tag(InternalLabels.Result, result.ToStringFast()));
+                }
+            }
+        );
     }
 
     internal void RecordDelegation(DelegationResult result) =>
         _counters[MetricNameDelegation].Add(1, new Tag(InternalLabels.Result, result.ToStringFast()));
+
+    internal void RecordDelegationRevoke(DelegationResult result) =>
+        _counters[MetricNameDelegationRevoke].Add(1, new Tag(InternalLabels.Result, result.ToStringFast()));
 
     internal Activity? StartAssignSigneesActivity() => ActivitySource.StartActivity("SigningService.AssignSignees");
 
@@ -42,6 +57,7 @@ partial class Telemetry
     internal static class DelegationConst
     {
         internal static readonly string MetricNameDelegation = Metrics.CreateLibName("signing_delegations");
+        internal static readonly string MetricNameDelegationRevoke = Metrics.CreateLibName("signing_delegation_revokes");
 
         [EnumExtensions]
         internal enum DelegationResult
