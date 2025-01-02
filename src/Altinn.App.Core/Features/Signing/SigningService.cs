@@ -222,7 +222,7 @@ internal sealed class SigningService(
         foreach (PersonSignee personSignee in signeeResult.PersonSignees)
         {
             var lastName = personSignee.LastName.Split(" ").First().ToLower(CultureInfo.InvariantCulture);
-            _logger.LogInformation(
+            _logger.LogDebug(
                 "Looking up person with SSN {SocialSecurityNumber} and last name {LastName}.",
                 personSignee.SocialSecurityNumber,
                 lastName
@@ -230,7 +230,7 @@ internal sealed class SigningService(
             Person? person =
                 await personClient.GetPerson(personSignee.SocialSecurityNumber, lastName, ct)
                 ?? throw new SignaturePartyNotValidException(
-                    $"The given SSN and last name: {lastName} did not match any person in the registry."
+                    $"The given SSN and last name did not match any person in the registry."
                 );
             Party party = await altinnPartyClient.LookupParty(
                 new PartyLookup { Ssn = personSignee.SocialSecurityNumber }
