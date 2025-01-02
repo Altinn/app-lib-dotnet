@@ -24,8 +24,8 @@ public class DelegationBuilderTests
             .Create()
             .WithApplicationId(appIdentifier)
             .WithInstanceId(instanceId)
-            .WithDelegator(new Delegator { Type = DelegationConst.Party, Value = instanceOwnerPartyId })
-            .WithDelegatee(new Delegatee { Type = DelegationConst.Party, Value = delegateeId })
+            .WithDelegator(new DelegationParty { Type = DelegationConst.Party, Value = instanceOwnerPartyId })
+            .WithDelegatee(new DelegationParty { Type = DelegationConst.Party, Value = delegateeId })
             .WithRights(
                 [
                     AccessRightBuilder
@@ -43,8 +43,8 @@ public class DelegationBuilderTests
 
         var expected = new DelegationRequest
         {
-            From = new Delegator { Type = "urn:altinn:party:uuid", Value = "50000000" },
-            To = new Delegatee { Type = "urn:altinn:party:uuid", Value = "50000001" },
+            From = new DelegationParty { Type = "urn:altinn:party:uuid", Value = "50000000" },
+            To = new DelegationParty { Type = "urn:altinn:party:uuid", Value = "50000001" },
             ResourceId = "app_testOrg_testApp",
             InstanceId = "61c2fe1d-7ff7-4009-9e96-506c56ea3d5e",
             Rights =

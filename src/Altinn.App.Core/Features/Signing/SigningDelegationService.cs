@@ -38,14 +38,14 @@ internal sealed class SigningDelegationService(
                 {
                     var dr = new DelegationRequest
                     {
-                        From = new Delegator
+                        From = new DelegationParty
                         {
                             Type = DelegationConst.Party,
                             Value =
                                 delegatorParty.PartyUuid.ToString()
                                 ?? throw new InvalidOperationException("Delegator: PartyUuid is null"),
                         },
-                        To = new Delegatee
+                        To = new DelegationParty
                         {
                             Type = DelegationConst.Party,
                             Value =

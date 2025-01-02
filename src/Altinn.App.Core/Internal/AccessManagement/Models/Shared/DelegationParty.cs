@@ -3,15 +3,15 @@ using System.Text.Json.Serialization;
 namespace Altinn.App.Core.Internal.AccessManagement.Models.Shared;
 
 /// <summary>
-/// Represents the delegatee.
+/// Represents a delegation party.
 /// </summary>
-public class Delegatee
+public class DelegationParty
 {
     /// <summary>
-    /// Gets or sets the type of the id.
+    /// Gets or sets the type of the id. Default is <see cref="DelegationConst.Party"/>.
     /// </summary>
     [JsonPropertyName("type")]
-    public required string Type { get; set; }
+    public string Type { get; set; } = DelegationConst.Party;
 
     /// <summary>
     /// Gets or sets the id.

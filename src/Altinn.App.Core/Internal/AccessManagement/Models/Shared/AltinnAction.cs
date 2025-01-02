@@ -9,9 +9,10 @@ public class AltinnAction
 {
     /// <summary>
     /// Gets or sets the type of the action.
+    /// Default value is <see cref="DelegationConst.ActionId"/>.
     /// </summary>
     [JsonPropertyName("type")]
-    public required string Type { get; set; }
+    public string Type { get; set; } = DelegationConst.ActionId;
 
     /// <summary>
     /// Gets or sets the value.

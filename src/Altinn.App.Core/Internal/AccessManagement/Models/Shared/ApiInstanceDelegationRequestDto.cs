@@ -11,13 +11,13 @@ public class AppsInstanceDelegationRequestDto
     /// Gets or sets the urn identifying the party to delegate from
     /// </summary>
     [JsonPropertyName("from")]
-    public required Delegator From { get; set; }
+    public required DelegationParty From { get; set; }
 
     /// <summary>
     /// Gets or sets the urn identifying the party to be delegated to
     /// </summary>
     [JsonPropertyName("to")]
-    public required Delegatee To { get; set; }
+    public required DelegationParty To { get; set; }
 
     /// <summary>
     /// Gets or sets the rights to delegate

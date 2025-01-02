@@ -33,12 +33,12 @@ internal interface IDelegationBuilderApplicationId
 
 internal interface IDelegationBuilderInstanceId
 {
-    IDelegationBuilderDelegator WithDelegator(Delegator delegator);
+    IDelegationBuilderDelegator WithDelegator(DelegationParty delegator);
 }
 
 internal interface IDelegationBuilderDelegator
 {
-    IDelegationBuilderRecipient WithDelegatee(Delegatee recipient);
+    IDelegationBuilderRecipient WithDelegatee(DelegationParty delegatee);
 }
 
 internal interface IDelegationBuilderRecipient
@@ -61,8 +61,8 @@ internal sealed class DelegationBuilder : DelegationBuilderBase, IDelegationBuil
 {
     private string? _applicationId;
     private string? _instanceId;
-    private Delegator? _delegator;
-    private Delegatee? _recipient;
+    private DelegationParty? _delegator;
+    private DelegationParty? _delegatee;
     private List<RightRequest>? _rights;
 
     private DelegationBuilder() { }
@@ -83,17 +83,17 @@ internal sealed class DelegationBuilder : DelegationBuilderBase, IDelegationBuil
         return this;
     }
 
-    public IDelegationBuilderDelegator WithDelegator(Delegator delegator)
+    public IDelegationBuilderDelegator WithDelegator(DelegationParty delegator)
     {
         NotNullOrEmpty(delegator, nameof(delegator));
         _delegator = delegator;
         return this;
     }
 
-    public IDelegationBuilderRecipient WithDelegatee(Delegatee recipient)
+    public IDelegationBuilderRecipient WithDelegatee(DelegationParty delegatee)
     {
-        NotNullOrEmpty(recipient, nameof(recipient));
-        _recipient = recipient;
+        NotNullOrEmpty(delegatee, nameof(delegatee));
+        _delegatee = delegatee;
         return this;
     }
 
@@ -120,7 +120,7 @@ internal sealed class DelegationBuilder : DelegationBuilderBase, IDelegationBuil
         NotNullOrEmpty(_applicationId, nameof(_applicationId));
         NotNullOrEmpty(_instanceId, nameof(_instanceId));
         NotNullOrEmpty(_delegator, nameof(_delegator));
-        NotNullOrEmpty(_recipient, nameof(_recipient));
+        NotNullOrEmpty(_delegatee, nameof(_delegatee));
         NotNullOrEmpty(_rights, nameof(_rights));
 
         return new DelegationRequest
@@ -128,7 +128,7 @@ internal sealed class DelegationBuilder : DelegationBuilderBase, IDelegationBuil
             ResourceId = _applicationId,
             InstanceId = _instanceId,
             From = _delegator,
-            To = _recipient,
+            To = _delegatee,
             Rights = _rights,
         };
     }

@@ -14,13 +14,13 @@ public sealed class DelegationRequest
     /// Gets or sets the delegator.
     /// </summary>
     [JsonPropertyName("from")]
-    public Delegator? From { get; set; }
+    public DelegationParty? From { get; set; }
 
     /// <summary>
     /// Gets or sets the delegatee.
     /// </summary>
     [JsonPropertyName("to")]
-    public Delegatee? To { get; set; }
+    public DelegationParty? To { get; set; }
 
     /// <summary>
     /// Gets or sets the resource id.

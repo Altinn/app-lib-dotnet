@@ -47,8 +47,9 @@ internal sealed class AccessManagementClient(
             var uri = urlHelper.CreateInstanceDelegationUrl(delegation.ResourceId, delegation.InstanceId);
             AppsInstanceDelegationRequestDto dto = GetDto(delegation);
             var body = JsonSerializer.Serialize(dto);
-            logger.LogInformation($"------------------------------------------------------------------------");
-            logger.LogInformation($"Delegating rights to {uri} with body {body}");
+            logger.LogInformation(
+                $"Delegating rights to {dto.To.Value} from {dto.From.Value} for {delegation.ResourceId}"
+            );
 
             using var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, uri)
             {
@@ -62,7 +63,6 @@ internal sealed class AccessManagementClient(
 
             httpResponseMessage = await httpClient.SendAsync(httpRequestMessage, ct);
             httpContent = await httpResponseMessage.Content.ReadAsStringAsync(ct);
-            logger.LogInformation($"Response from delegation: {httpContent}");
             DelegationResponse? response;
             if (httpResponseMessage.IsSuccessStatusCode)
             {
@@ -126,14 +126,14 @@ internal sealed class AccessManagementClient(
     {
         return new AppsInstanceDelegationRequestDto
         {
-            From = new Delegator
+            From = new DelegationParty
             {
                 Type = delegation.From is not null
                     ? delegation.From.Type
                     : throw new AccessManagementArgumentException("From is required"),
                 Value = delegation.From.Value,
             },
-            To = new Delegatee
+            To = new DelegationParty
             {
                 Type = delegation.To is not null
                     ? delegation.To.Type

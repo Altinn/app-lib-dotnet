@@ -8,7 +8,8 @@ namespace Altinn.App.Core.Internal.AccessManagement.Models.Shared;
 public class Resource
 {
     /// <summary>
-    /// Gets or sets the type of the resource. Default is "resource".
+    /// Gets or sets the type of the action.
+    /// Default value is <see cref="DelegationConst.Resource"/>.
     /// </summary>
     [JsonPropertyName("type")]
     public string Type { get; set; } = DelegationConst.Resource;
