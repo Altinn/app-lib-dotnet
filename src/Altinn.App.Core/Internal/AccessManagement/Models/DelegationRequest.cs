@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Altinn.App.Core.Internal.AccessManagement.Exceptions;
 using Altinn.App.Core.Internal.AccessManagement.Models.Shared;
 
 namespace Altinn.App.Core.Internal.AccessManagement.Models;
@@ -39,6 +40,43 @@ public sealed class DelegationRequest
     /// </summary>
     [JsonPropertyName("rights")]
     public List<RightRequest> Rights { get; set; } = [];
+
+    /// <summary>
+    /// Converts a <see cref="DelegationRequest"/> to a <see cref="AppsInstanceDelegationRequestDto"/>
+    /// </summary>
+    public static AppsInstanceDelegationRequestDto ConvertToDto(DelegationRequest delegation)
+    {
+        return new AppsInstanceDelegationRequestDto
+        {
+            From = new DelegationParty
+            {
+                Type = delegation.From is not null
+                    ? delegation.From.Type
+                    : throw new AccessManagementArgumentException("From is required"),
+                Value = delegation.From.Value,
+            },
+            To = new DelegationParty
+            {
+                Type = delegation.To is not null
+                    ? delegation.To.Type
+                    : throw new AccessManagementArgumentException("To is required"),
+                Value = delegation.To.Value,
+            },
+            Rights = delegation
+                .Rights.Select(r => new RightDto
+                {
+                    Resource = r.Resource.Select(rr => new Resource { Type = rr.Type, Value = rr.Value }).ToList(),
+                    Action = new AltinnAction
+                    {
+                        Type = r.Action is not null
+                            ? r.Action.Type
+                            : throw new AccessManagementArgumentException("Action is required"),
+                        Value = r.Action.Value,
+                    },
+                })
+                .ToList(),
+        };
+    }
 }
 
 /// <summary>

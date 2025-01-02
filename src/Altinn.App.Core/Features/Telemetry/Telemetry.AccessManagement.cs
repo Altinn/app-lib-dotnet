@@ -1,0 +1,8 @@
+using System.Diagnostics;
+
+namespace Altinn.App.Core.Features;
+
+partial class Telemetry
+{
+    internal Activity? StartAppInstanceDelegationActivity() => ActivitySource.StartActivity("AccessManagementClient.Delegate");
+}
