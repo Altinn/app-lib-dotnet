@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
-using Altinn.App.Core.Models;
+
+namespace Altinn.App.Core.Models;
 
 internal partial class AppResourceId
 {
