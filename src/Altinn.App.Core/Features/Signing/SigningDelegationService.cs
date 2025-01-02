@@ -36,50 +36,48 @@ internal sealed class SigningDelegationService(
             {
                 if (state.IsAccessDelegated is false)
                 {
-                    var dr = new DelegationRequest
+                    DelegationRequest delegationRequest = new()
                     {
+                        ResourceId = appResourceId.Value,
+                        InstanceId = instanceGuid,
                         From = new DelegationParty
                         {
-                            Type = DelegationConst.Party,
                             Value =
                                 delegatorParty.PartyUuid.ToString()
                                 ?? throw new InvalidOperationException("Delegator: PartyUuid is null"),
                         },
                         To = new DelegationParty
                         {
-                            Type = DelegationConst.Party,
                             Value =
                                 signeeContext.Party.PartyUuid.ToString()
                                 ?? throw new InvalidOperationException("Delegatee: PartyUuid is null"),
                         },
-                        ResourceId = appResourceId.Value,
-                        InstanceId = instanceGuid,
                         Rights =
                         [
                             new RightRequest
                             {
                                 Resource =
                                 [
-                                    new Resource { Type = DelegationConst.App, Value = appIdentifier.App },
-                                    new Resource { Type = DelegationConst.Org, Value = appIdentifier.Org },
-                                    new Resource { Type = DelegationConst.Task, Value = taskId },
+                                    new AppResource { Value = appIdentifier.App },
+                                    new OrgResource { Value = appIdentifier.Org },
+                                    new TaskResource { Value = taskId },
                                 ],
-                                Action = new AltinnAction { Type = DelegationConst.ActionId, Value = "read" },
+                                Action = new AltinnAction { Value = ActionType.Read },
                             },
                             new RightRequest
                             {
                                 Resource =
                                 [
-                                    new Resource { Type = DelegationConst.App, Value = appIdentifier.App },
-                                    new Resource { Type = DelegationConst.Org, Value = appIdentifier.Org },
-                                    new Resource { Type = DelegationConst.Task, Value = taskId },
+                                    new AppResource { Value = appIdentifier.App },
+                                    new OrgResource { Value = appIdentifier.Org },
+                                    new TaskResource { Value = taskId },
                                 ],
-                                Action = new AltinnAction { Type = DelegationConst.ActionId, Value = "sign" },
+                                Action = new AltinnAction { Value = ActionType.Sign },
                             },
                         ],
                     };
-                    var response = await accessManagementClient.DelegateRights(dr, ct);
-                    state.IsAccessDelegated = await Task.FromResult(true);
+                    DelegationResponse? response = await accessManagementClient.DelegateRights(delegationRequest, ct);
+                    state.IsAccessDelegated = true;
                     telemetry?.RecordDelegation(DelegationResult.Success);
                 }
             }
