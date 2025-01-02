@@ -86,7 +86,6 @@ internal sealed class SigningDelegationService(
                     success = false;
                 }
             }
-
         }
         return (signeeContexts, success);
     }

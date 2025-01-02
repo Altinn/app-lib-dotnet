@@ -57,7 +57,9 @@ partial class Telemetry
     internal static class DelegationConst
     {
         internal static readonly string MetricNameDelegation = Metrics.CreateLibName("signing_delegations");
-        internal static readonly string MetricNameDelegationRevoke = Metrics.CreateLibName("signing_delegation_revokes");
+        internal static readonly string MetricNameDelegationRevoke = Metrics.CreateLibName(
+            "signing_delegation_revokes"
+        );
 
         [EnumExtensions]
         internal enum DelegationResult
