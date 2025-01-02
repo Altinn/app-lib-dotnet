@@ -60,7 +60,8 @@ internal sealed class SigningDelegationService(
                             {
                                 Resource =
                                 [
-                                    new Resource { Type = DelegationConst.Resource, Value = appResourceId.Value },
+                                    new Resource { Type = DelegationConst.App, Value = appIdentifier.App },
+                                    new Resource { Type = DelegationConst.Org, Value = appIdentifier.Org },
                                     new Resource { Type = DelegationConst.Task, Value = taskId },
                                 ],
                                 Action = new AltinnAction { Type = DelegationConst.ActionId, Value = "read" },
@@ -69,7 +70,8 @@ internal sealed class SigningDelegationService(
                             {
                                 Resource =
                                 [
-                                    new Resource { Type = DelegationConst.Resource, Value = appResourceId.Value },
+                                    new Resource { Type = DelegationConst.App, Value = appIdentifier.App },
+                                    new Resource { Type = DelegationConst.Org, Value = appIdentifier.Org },
                                     new Resource { Type = DelegationConst.Task, Value = taskId },
                                 ],
                                 Action = new AltinnAction { Type = DelegationConst.ActionId, Value = "sign" },

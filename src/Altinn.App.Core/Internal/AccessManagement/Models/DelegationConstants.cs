@@ -4,6 +4,8 @@ namespace Altinn.App.Core.Internal.AccessManagement.Models;
 internal class DelegationConst
 {
     internal const string Resource = "urn:altinn:resource";
+    internal const string App = "urn:altinn:app";
+    internal const string Org = "urn:altinn:org";
     internal const string Task = "urn:altinn:task";
     internal const string ActionId = "urn:oasis:names:tc:xacml:1.0:action:action-id";
     internal const string Party = "urn:altinn:party:uuid";
