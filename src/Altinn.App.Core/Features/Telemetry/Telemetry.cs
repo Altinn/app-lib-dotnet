@@ -73,6 +73,7 @@ public sealed partial class Telemetry : IDisposable
             InitData(context);
             InitInstances(context);
             InitNotifications(context);
+            InitSigning(context);
             InitProcesses(context);
             InitValidation(context);
             InitMaskinporten(context);

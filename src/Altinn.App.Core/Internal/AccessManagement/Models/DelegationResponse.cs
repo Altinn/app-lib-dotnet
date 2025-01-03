@@ -3,32 +3,62 @@ using Altinn.App.Core.Internal.AccessManagement.Models.Shared;
 
 namespace Altinn.App.Core.Internal.AccessManagement.Models;
 
-internal sealed class DelegationResponse
+/// <summary>
+/// Represents a response to a delegation request.
+/// </summary>
+public sealed class DelegationResponse
 {
+    /// <summary>
+    /// Gets or sets the delegator.
+    /// </summary>
     [JsonPropertyName("from")]
-    internal Delegator? Delegator { get; set; }
+    public DelegationParty? Delegator { get; set; }
 
+    /// <summary>
+    /// Gets or sets the delegatee.
+    /// </summary>
     [JsonPropertyName("to")]
-    internal Delegatee? Delegatee { get; set; }
+    public DelegationParty? Delegatee { get; set; }
 
+    /// <summary>
+    /// Gets or sets the resource id.
+    /// </summary>
     [JsonPropertyName("resourceId")]
-    internal string? ResourceId { get; set; }
+    public string? ResourceId { get; set; }
 
+    /// <summary>
+    /// Gets or sets the instance id.
+    /// </summary>
     [JsonPropertyName("instanceId")]
-    internal string? InstanceId { get; set; }
+    public string? InstanceId { get; set; }
 
+    /// <summary>
+    /// Gets or sets the rights.
+    /// </summary>
     [JsonPropertyName("rights")]
-    internal List<RightResponse> Rights { get; set; } = [];
+    public List<RightResponse> Rights { get; set; } = [];
 }
 
-internal sealed class RightResponse
+/// <summary>
+/// Represents the rights to delegate.
+/// </summary>
+public sealed class RightResponse
 {
+    /// <summary>
+    /// Gets or sets the resource.
+    /// </summary>
     [JsonPropertyName("resource")]
-    internal List<Resource> Resource { get; set; } = [];
+    public List<Resource> Resource { get; set; } = [];
 
+    /// <summary>
+    /// Gets or sets the action.
+    /// </summary>
     [JsonPropertyName("action")]
-    internal AltinnAction? Action { get; set; }
+    public AltinnAction? Action { get; set; }
 
+    /// <summary>
+    /// Gets or sets the status.
+    /// </summary>
     [JsonPropertyName("status")]
-    internal string? Status { get; set; }
+    public string? Status { get; set; }
 }

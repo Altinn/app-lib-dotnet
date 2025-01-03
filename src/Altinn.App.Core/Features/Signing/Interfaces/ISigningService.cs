@@ -1,5 +1,6 @@
 ﻿using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
+using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Features.Signing.Interfaces;
@@ -15,6 +16,8 @@ internal interface ISigningService
     );
 
     Task<List<SigneeContext>> ProcessSignees(
+        string taskId,
+        Party delegatorParty,
         IInstanceDataMutator instanceMutator,
         List<SigneeContext> signeeContexts,
         AltinnSignatureConfiguration signatureConfiguration,

@@ -3,19 +3,18 @@ using System.Text.Json.Serialization;
 namespace Altinn.App.Core.Internal.AccessManagement.Models.Shared;
 
 /// <summary>
-/// Represents an action.
+/// Represents a delegation party.
 /// </summary>
-public class AltinnAction
+public class DelegationParty
 {
     /// <summary>
-    /// Gets or sets the type of the action.
-    /// Default value is <see cref="DelegationConst.ActionId"/>.
+    /// Gets or sets the type of the id. Default is <see cref="DelegationConst.Party"/>.
     /// </summary>
     [JsonPropertyName("type")]
-    public string Type { get; set; } = DelegationConst.ActionId;
+    public string Type { get; set; } = DelegationConst.Party;
 
     /// <summary>
-    /// Gets or sets the value.
+    /// Gets or sets the id.
     /// </summary>
     [JsonPropertyName("value")]
     public required string Value { get; set; }
