@@ -2859,19 +2859,19 @@ paths:
           content:
             text/plain:
               schema:
-                $ref: '#/components/schemas/SingingStateResponse'
+                $ref: '#/components/schemas/SigningDataElementsResponse'
             application/json:
               schema:
-                $ref: '#/components/schemas/SingingStateResponse'
+                $ref: '#/components/schemas/SigningDataElementsResponse'
             text/json:
               schema:
-                $ref: '#/components/schemas/SingingStateResponse'
+                $ref: '#/components/schemas/SigningDataElementsResponse'
             application/xml:
               schema:
-                $ref: '#/components/schemas/SingingStateResponse'
+                $ref: '#/components/schemas/SigningDataElementsResponse'
             text/xml:
               schema:
-                $ref: '#/components/schemas/SingingStateResponse'
+                $ref: '#/components/schemas/SigningDataElementsResponse'
         '400':
           description: Bad Request
           content:
@@ -4885,6 +4885,17 @@ components:
           type: boolean
         notificationSuccessful:
           type: boolean
+      additionalProperties: false
+    SigningDataElementsResponse:
+      required:
+        - dataElements
+      type: object
+      properties:
+        dataElements:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataElement'
+          nullable: true
       additionalProperties: false
     SimpleInstance:
       type: object
