@@ -101,7 +101,7 @@ internal sealed class SigningProcessTask : IProcessTask
 
         await _signingService.ProcessSignees(
             taskId,
-            userContext.Party,
+            userContext.UserParty,
             cachedDataMutator,
             signeeContexts,
             signatureConfiguration,
