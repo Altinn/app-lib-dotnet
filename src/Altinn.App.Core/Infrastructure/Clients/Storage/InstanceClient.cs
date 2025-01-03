@@ -10,6 +10,7 @@ using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.Exceptions;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
@@ -188,11 +189,23 @@ public class InstanceClient : IInstanceClient
                 ?? throw new Exception("Could not deserialize instance");
             return updatedInstance;
         }
-        else
+
+        // If the endpoint is not found and address contains "local" it is likely that the localtest is not updated
+        if (response.StatusCode == HttpStatusCode.NotFound && _client.BaseAddress?.Host.Contains("local") == true)
         {
-            _logger.LogError($"Unable to update instance process with instance id {instance.Id}");
-            throw await PlatformHttpException.CreateAsync(response);
+            _logger.LogCritical(
+                "Please update localtest to the latest version. https://gitub.com/Altinn/app-localtest"
+            );
+            _logger.LogCritical("Your version of platform is missing the endpoint for updating process and events.");
+            throw new AltinnAppException()
+            {
+                Title = "Update Localtest",
+                Description = "Please update localtest to the latest version. https://github.com/Altinn/app-localtest",
+            };
         }
+
+        _logger.LogError($"Unable to update instance process with instance id {instance.Id}");
+        throw await PlatformHttpException.CreateAsync(response);
     }
 
     /// <inheritdoc/>

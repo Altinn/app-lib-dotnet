@@ -4,6 +4,7 @@ using Altinn.App.Api.Controllers.Attributes;
 using Altinn.App.Api.Controllers.Conventions;
 using Altinn.App.Api.Helpers;
 using Altinn.App.Api.Helpers.Patch;
+using Altinn.App.Api.Infrastructure;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Infrastructure.Health;
 using Altinn.App.Api.Infrastructure.Middleware;
@@ -64,6 +65,8 @@ public static class ServiceCollectionExtensions
             {
                 options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
             });
+        services.AddProblemDetails();
+        services.AddExceptionHandler<RequestExceptionHandler>();
     }
 
     /// <summary>

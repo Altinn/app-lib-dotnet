@@ -1098,15 +1098,13 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
 
         var url = $"/{Org}/{App}/instances/{_instanceId}/data?language=nb";
 
-        var action = async () =>
-        {
-            using var updateDataElementContent = JsonContent.Create(patch);
-            await GetClient().PatchAsync(url, updateDataElementContent);
-        };
-        // Not sure why the exception propagates out of the api call in WebApplicationFactory.
-        (await action.Should().ThrowAsync<Exception>())
-            .Which.Message.Should()
-            .Contain("changed by validators");
+        using var updateDataElementContent = JsonContent.Create(patch);
+        var response = await GetClient().PatchAsync(url, updateDataElementContent);
+
+        response.Should().HaveStatusCode(HttpStatusCode.InternalServerError);
+        var responseString = await response.Content.ReadAsStringAsync();
+        OutputHelper.WriteLine(responseString);
+        responseString.Should().Contain("changed by validators");
     }
 
     ~DataControllerPatchTests()
