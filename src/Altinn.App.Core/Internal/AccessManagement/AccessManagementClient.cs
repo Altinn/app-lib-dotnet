@@ -33,9 +33,10 @@ internal sealed class AccessManagementClient(
 
         HttpResponseMessage? httpResponseMessage = null;
         string? httpContent = null;
-        UrlHelper urlHelper = new(platformSettings.Value);
+
         try
         {
+            UrlHelper urlHelper = new(platformSettings.Value);
             var application = await appMetadata.GetApplicationMetadata();
 
             var uri = urlHelper.CreateInstanceRevokeUrl(delegation.ResourceId, delegation.InstanceId);
@@ -92,9 +93,9 @@ internal sealed class AccessManagementClient(
 
         HttpResponseMessage? httpResponseMessage = null;
         string? httpContent = null;
-        UrlHelper urlHelper = new(platformSettings.Value);
         try
         {
+            UrlHelper urlHelper = new(platformSettings.Value);
             var application = await appMetadata.GetApplicationMetadata();
 
             var uri = urlHelper.CreateInstanceDelegationUrl(delegation.ResourceId, delegation.InstanceId);
@@ -122,7 +123,9 @@ internal sealed class AccessManagementClient(
             }
             response = JsonSerializer.Deserialize<DelegationResponse>(httpContent);
             if (response is null)
+            {
                 throw new JsonException("Couldn't deserialize access management response.");
+            }
             return response;
         }
         catch (Exception e)
