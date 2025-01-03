@@ -86,6 +86,7 @@ internal sealed class SigningService(
 
     public async Task<List<SigneeContext>> ProcessSignees(
         string taskId,
+        Party delegatorParty,
         IInstanceDataMutator instanceMutator,
         List<SigneeContext> signeeContexts,
         AltinnSignatureConfiguration signatureConfiguration,
@@ -93,12 +94,6 @@ internal sealed class SigningService(
     )
     {
         using Activity? activity = telemetry?.StartAssignSigneesActivity();
-        string instanceOwnerPartyId = instanceMutator.Instance.InstanceOwner.PartyId;
-
-        var instanceOwnerPartyIdAsInt = int.TryParse(instanceOwnerPartyId, out int partyId)
-            ? partyId
-            : throw new InvalidOperationException($"Party ID {instanceOwnerPartyId} is not a valid integer.");
-        Party? delegatorParty = await altinnPartyClient.GetParty(instanceOwnerPartyIdAsInt);
 
         string instanceId = instanceMutator.Instance.Id;
 

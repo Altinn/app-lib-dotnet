@@ -1,5 +1,7 @@
+using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
@@ -7,8 +9,13 @@ using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
+using Altinn.App.Core.Internal.Profile;
+using Altinn.App.Core.Internal.Registers;
+using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.UserAction;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Features.Action;
 
@@ -24,6 +31,8 @@ internal class InitializeDelegatedSigningUserAction : IUserAction
     private readonly IDataClient _dataClient;
     private readonly IInstanceClient _instanceClient;
     private readonly ModelSerializationService _modelSerialization;
+    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly UserHelper _userHelper;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="InitializeDelegatedSigningUserAction"/> class
@@ -35,6 +44,10 @@ internal class InitializeDelegatedSigningUserAction : IUserAction
         IDataClient dataClient,
         IInstanceClient instanceClient,
         ModelSerializationService modelSerialization,
+        IHttpContextAccessor httpContextAccessor,
+        IProfileClient profileClient,
+        IAltinnPartyClient altinnPartyClientClient,
+        IOptions<GeneralSettings> settings,
         ILogger<InitializeDelegatedSigningUserAction> logger
     )
     {
@@ -44,6 +57,8 @@ internal class InitializeDelegatedSigningUserAction : IUserAction
         _dataClient = dataClient;
         _instanceClient = instanceClient;
         _modelSerialization = modelSerialization;
+        _httpContextAccessor = httpContextAccessor;
+        _userHelper = new UserHelper(profileClient, altinnPartyClientClient, settings);
         _logger = logger;
     }
 
@@ -93,8 +108,13 @@ internal class InitializeDelegatedSigningUserAction : IUserAction
             ct
         );
 
+        UserContext userContext = await _userHelper.GetUserContext(
+            _httpContextAccessor.HttpContext ?? throw new InvalidOperationException("HttpContext is not available.")
+        );
+
         await _signingService.ProcessSignees(
             currentTask.Id,
+            userContext.Party,
             cachedDataMutator,
             signeeContexts,
             signatureConfiguration,

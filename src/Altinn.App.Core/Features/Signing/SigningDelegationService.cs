@@ -103,6 +103,7 @@ internal sealed class SigningDelegationService(
         var instanceGuid = instanceId.Split("/")[1];
         var appResourceId = AppResourceId.FromAppIdentifier(appIdentifier);
         bool success = true;
+
         foreach (SigneeContext signeeContext in signeeContexts)
         {
             SigneeState state = signeeContext.SigneeState;
@@ -111,6 +112,9 @@ internal sealed class SigningDelegationService(
             {
                 if (state.IsAccessDelegated is false)
                 {
+                    logger.LogInformation(
+                        $"Delegating signee rights to {signeeContext.Party.PartyUuid} from {delegatorParty.PartyUuid} for {appResourceId.Value}"
+                    );
                     DelegationRequest delegationRequest = new()
                     {
                         ResourceId = appResourceId.Value,
