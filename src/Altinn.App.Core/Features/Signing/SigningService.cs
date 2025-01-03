@@ -222,11 +222,6 @@ internal sealed class SigningService(
         foreach (PersonSignee personSignee in signeeResult.PersonSignees)
         {
             var lastName = personSignee.LastName.Split(" ").First().ToLower(CultureInfo.InvariantCulture);
-            _logger.LogDebug(
-                "Looking up person with SSN {SocialSecurityNumber} and last name {LastName}.",
-                personSignee.SocialSecurityNumber,
-                lastName
-            );
             Person? person =
                 await personClient.GetPerson(personSignee.SocialSecurityNumber, lastName, ct)
                 ?? throw new SignaturePartyNotValidException(
