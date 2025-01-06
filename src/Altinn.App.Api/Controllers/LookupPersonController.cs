@@ -106,11 +106,11 @@ public class LookupPersonController : ControllerBase
         }
         catch (Exception e)
         {
-            _logger.LogError($"Error when calling the Person Register Api, {e.Message}");
+            _logger.LogError(e, "Error when calling the Person Register Api.");
             return new ProblemDetails
             {
                 Title = "Error when calling the Person Register",
-                Detail = e.Message,
+                Detail = "Something went wrong when calling the Person Register API.",
                 Status = StatusCodes.Status500InternalServerError,
             };
         }

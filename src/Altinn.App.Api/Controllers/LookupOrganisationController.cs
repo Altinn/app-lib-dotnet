@@ -48,8 +48,6 @@ public class LookupOrganisationController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<LookupOrganisationResponse>> LookUpOrganisation([FromRoute] string orgNr)
     {
-        _logger.LogInformation($"Looking up organisation with orgNr: {orgNr}");
-
         var organisationResult = await GetOrganisationDataOrError(orgNr);
         if (!organisationResult.Success)
         {
@@ -68,7 +66,7 @@ public class LookupOrganisationController : ControllerBase
         }
         catch (Exception e)
         {
-            _logger.LogError($"Error when calling the Organisation Register API, {e.Message}");
+            _logger.LogError(e, "Error when calling the Organisation Register API.");
             return new ProblemDetails
             {
                 Title = "Error when calling register",
