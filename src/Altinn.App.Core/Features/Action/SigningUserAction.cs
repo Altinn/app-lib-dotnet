@@ -1,4 +1,8 @@
 using System.Globalization;
+using Altinn.App.Core.Features.Correspondence;
+using Altinn.App.Core.Features.Correspondence.Builder;
+using Altinn.App.Core.Features.Correspondence.Models;
+using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
@@ -23,6 +27,8 @@ public class SigningUserAction : IUserAction
     private readonly ILogger<SigningUserAction> _logger;
     private readonly IProfileClient _profileClient;
     private readonly ISignClient _signClient;
+    private readonly ICorrespondenceClient _correspondenceClient;
+    private readonly AltinnCdnClient _altinnCdnClient;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SigningUserAction"/> class
@@ -31,20 +37,26 @@ public class SigningUserAction : IUserAction
     /// <param name="logger">The logger</param>
     /// <param name="profileClient">The profile client</param>
     /// <param name="signClient">The sign client</param>
+    /// <param name="correspondenceClient">The correspondence client</param>
     /// <param name="appMetadata">The application metadata</param>
+    /// <param name="httpClientFactory">Http client factory required by <see cref="AltinnCdnClient"/></param>
     public SigningUserAction(
         IProcessReader processReader,
         ILogger<SigningUserAction> logger,
         IProfileClient profileClient,
         ISignClient signClient,
-        IAppMetadata appMetadata
+        ICorrespondenceClient correspondenceClient,
+        IAppMetadata appMetadata,
+        IHttpClientFactory httpClientFactory
     )
     {
         _logger = logger;
         _profileClient = profileClient;
         _signClient = signClient;
         _processReader = processReader;
+        _correspondenceClient = correspondenceClient;
         _appMetadata = appMetadata;
+        _altinnCdnClient = new AltinnCdnClient(httpClientFactory);
     }
 
     /// <inheritdoc />
@@ -55,61 +67,126 @@ public class SigningUserAction : IUserAction
     /// <exception cref="ApplicationConfigException"></exception>
     public async Task<UserActionResult> HandleAction(UserActionContext context)
     {
-        if (context.UserId == null)
+        if (context.UserId is null)
         {
             return UserActionResult.FailureResult(
-                error: new ActionError() { Code = "NoUserId", Message = "User id is missing in token" },
+                error: new ActionError { Code = "NoUserId", Message = "User id is missing in token" },
                 errorType: ProcessErrorType.Unauthorized
             );
         }
-        if (_processReader.GetFlowElement(context.Instance.Process.CurrentTask.ElementId) is ProcessTask currentTask)
+
+        ProcessTask? currentTask =
+            _processReader.GetFlowElement(context.Instance.Process.CurrentTask.ElementId) as ProcessTask;
+
+        if (currentTask is null)
         {
-            _logger.LogInformation(
-                "Signing action handler invoked for instance {Id}. In task: {CurrentTaskId}",
-                context.Instance.Id,
-                currentTask.Id
-            );
-            var appMetadata = await _appMetadata.GetApplicationMetadata();
-            var dataTypeIds =
-                currentTask.ExtensionElements?.TaskExtension?.SignatureConfiguration?.DataTypesToSign ?? [];
-            var dataTypesToSign = appMetadata
-                .DataTypes?.Where(d => dataTypeIds.Contains(d.Id, StringComparer.OrdinalIgnoreCase))
-                .ToList();
-
-            if (
-                GetDataTypeForSignature(currentTask, context.Instance.Data, dataTypesToSign) is string signatureDataType
-            )
-            {
-                var dataElementSignatures = GetDataElementSignatures(context.Instance.Data, dataTypesToSign);
-                SignatureContext signatureContext = new(
-                    new InstanceIdentifier(context.Instance),
-                    currentTask.Id,
-                    signatureDataType,
-                    await GetSignee(context.UserId.Value),
-                    dataElementSignatures
-                );
-                await _signClient.SignDataElements(signatureContext);
-                return UserActionResult.SuccessResult();
-            }
-
-            throw new ApplicationConfigException(
-                "Missing configuration for signing. Check that the task has a signature configuration and that the data types to sign are defined."
+            return UserActionResult.FailureResult(
+                new ActionError { Code = "NoProcessTask", Message = "Current task is not a process task." }
             );
         }
 
-        return UserActionResult.FailureResult(
-            new ActionError() { Code = "NoProcessTask", Message = "Current task is not a process task." }
+        _logger.LogInformation(
+            "Signing action handler invoked for instance {Id}. In task: {CurrentTaskId}",
+            context.Instance.Id,
+            currentTask.Id
+        );
+
+        ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
+        List<string> dataTypeIds =
+            currentTask.ExtensionElements?.TaskExtension?.SignatureConfiguration?.DataTypesToSign ?? [];
+        List<DataType>? dataTypesToSign = appMetadata
+            .DataTypes?.Where(d => dataTypeIds.Contains(d.Id, StringComparer.OrdinalIgnoreCase))
+            .ToList();
+        List<DataElementSignature> dataElementSignatures = GetDataElementSignatures(
+            context.Instance.Data,
+            dataTypesToSign
+        );
+        string signatureDataType =
+            GetDataTypeForSignature(currentTask, context.Instance.Data, dataTypesToSign)
+            ?? throw new ApplicationConfigException(
+                "Missing configuration for signing. Check that the task has a signature configuration and that the data types to sign are defined."
+            );
+
+        SignatureContext signatureContext = new(
+            new InstanceIdentifier(context.Instance),
+            currentTask.Id,
+            signatureDataType,
+            await GetSignee(context.UserId.Value),
+            dataElementSignatures
+        );
+
+        await _signClient.SignDataElements(signatureContext);
+
+        try
+        {
+            await SendCorrespondence(signatureContext.InstanceIdentifier, signatureContext.Signee, appMetadata);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Correspondence send failed: {Exception}", e.Message);
+        }
+
+        return UserActionResult.SuccessResult();
+    }
+
+    private async Task<SendCorrespondenceResponse?> SendCorrespondence(
+        InstanceIdentifier instanceIdentifier,
+        Signee signee,
+        ApplicationMetadata appMetadata
+    )
+    {
+        NationalIdentityNumber recipient = NationalIdentityNumber.Parse(signee.PersonNumber ?? string.Empty);
+        AltinnCdnOrgs altinnCdnOrgs = await _altinnCdnClient.GetOrgs();
+        string? sender = altinnCdnOrgs.Orgs?.GetValueOrDefault(appMetadata.Org)?.Orgnr;
+
+        if (string.IsNullOrEmpty(sender))
+        {
+            // TODO: Fix all `Exception` types in this class
+            throw new Exception(
+                $"Error looking up sender's organisation number from Altinn CDN, using key {appMetadata.Org}"
+            );
+        }
+
+        var builder = CorrespondenceRequestBuilder
+            .Create()
+            .WithResourceId("apps-correspondence-integrasjon2") // TODO: Configurable resource
+            .WithSender(sender) // TODO: Needs fallback for TTD
+            .WithSendersReference(instanceIdentifier.ToString())
+            .WithRecipient(recipient)
+            .WithAllowSystemDeleteAfter(DateTime.Now.AddYears(1))
+            .WithContent(
+                CorrespondenceContentBuilder
+                    .Create()
+                    .WithLanguage(LanguageCode<Iso6391>.Parse("en"))
+                    .WithTitle("Hello from .NET (with builder)")
+                    .WithSummary("This is a summary of the message. This was sent to an organisation number.")
+                    .WithBody(
+                        "This is the full message in all its glory.\n\nHere's some markdown: **bold** *italic* `code`"
+                    )
+            )
+            .WithAttachment(
+                CorrespondenceAttachmentBuilder
+                    .Create()
+                    .WithFilename("attachment.txt")
+                    .WithName("The attachment 📎")
+                    .WithSendersReference("12345-attachmentref")
+                    .WithDataType("application/pdf")
+                    .WithData("This is the attachment content"u8.ToArray())
+            );
+
+        return await _correspondenceClient.Send(
+            new SendCorrespondencePayload(builder.Build(), CorrespondenceAuthorisation.Maskinporten)
         );
     }
 
     private static string? GetDataTypeForSignature(
         ProcessTask currentTask,
-        List<DataElement> dataElements,
-        List<DataType>? dataTypesToSign
+        IEnumerable<DataElement> dataElements,
+        IEnumerable<DataType>? dataTypesToSign
     )
     {
         var signatureDataType = currentTask.ExtensionElements?.TaskExtension?.SignatureConfiguration?.SignatureDataType;
-        if (dataTypesToSign is null or [] || signatureDataType is null)
+        if (dataTypesToSign.IsNullOrEmpty())
         {
             return null;
         }
@@ -122,13 +199,16 @@ public class SigningUserAction : IUserAction
     }
 
     private static List<DataElementSignature> GetDataElementSignatures(
-        List<DataElement> dataElements,
-        List<DataType>? dataTypesToSign
+        IEnumerable<DataElement> dataElements,
+        IEnumerable<DataType>? dataTypesToSign
     )
     {
-        var connectedDataElements = new List<DataElementSignature>();
-        if (dataTypesToSign is null or [])
+        List<DataElementSignature> connectedDataElements = [];
+        if (dataTypesToSign.IsNullOrEmpty())
+        {
             return connectedDataElements;
+        }
+
         foreach (var dataType in dataTypesToSign)
         {
             connectedDataElements.AddRange(

@@ -1,5 +1,6 @@
 #nullable disable
 using Altinn.App.Core.Features.Action;
+using Altinn.App.Core.Features.Correspondence;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Process;
@@ -277,6 +278,7 @@ public class SigningUserActionTests
         var profileClientMock = new Mock<IProfileClient>();
         var signingClientMock = new Mock<ISignClient>();
         var appMetadataMock = new Mock<IAppMetadata>();
+        var correspondenceClientMock = new Mock<ICorrespondenceClient>();
         appMetadataMock.Setup(m => m.GetApplicationMetadata()).ReturnsAsync(applicationMetadataToReturn);
         profileClientMock.Setup(p => p.GetUserProfile(It.IsAny<int>())).ReturnsAsync(userProfileToReturn);
         if (platformHttpExceptionToThrow != null)
@@ -292,6 +294,7 @@ public class SigningUserActionTests
                 new NullLogger<SigningUserAction>(),
                 profileClientMock.Object,
                 signingClientMock.Object,
+                correspondenceClientMock.Object,
                 appMetadataMock.Object
             ),
             signingClientMock
