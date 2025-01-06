@@ -48,6 +48,11 @@ internal sealed class LocaltestValidation : BackgroundService
         _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
+    private void Exit()
+    {
+        _lifetime.StopApplication();
+    }
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var configuredHostname = _generalSettings.CurrentValue.HostName;
@@ -73,34 +78,34 @@ internal sealed class LocaltestValidation : BackgroundService
                                 + " Version found: '{Version}'. Shutting down..",
                             version
                         );
-                        _lifetime.StopApplication();
+                        Exit();
                         return;
                     }
                     case VersionResult.ApiNotFound:
                     {
                         _logger.LogError(
                             "Localtest version may be outdated, as we failed to probe {HostName} API for version information."
-                                + "Is localtest running on {HostName}? Do you have a recent copy of localtest? Shutting down..",
+                                + " Is localtest running on {HostName}? Do you have a recent copy of localtest? Shutting down..",
                             ExpectedHostname,
                             ExpectedHostname
                         );
-                        _lifetime.StopApplication();
+                        Exit();
                         return;
                     }
                     case VersionResult.ApiNotAvailable { Error: var error }:
                         _logger.LogWarning(
-                            "Localtest API could not be reached, is it running? Trying again soon.. Error: {Error}",
+                            "Localtest API could not be reached, is it running? Trying again soon.. Error: '{Error}'. Trying again soon..",
                             error
                         );
                         break;
                     case VersionResult.UnhandledStatusCode { StatusCode: var statusCode }:
                         _logger.LogError(
-                            "Localtest version endpoint returned unexpected status code: {StatusCode}",
+                            "Localtest version endpoint returned unexpected status code: '{StatusCode}'. Trying again soon..",
                             statusCode
                         );
                         break;
                     case VersionResult.UnknownError { Exception: var ex }:
-                        _logger.LogError(ex, "Error while trying fetching localtest version");
+                        _logger.LogError(ex, "Error while trying to fetch localtest version. Trying again soon..");
                         break;
                     case VersionResult.AppShuttingDown:
                         return;
