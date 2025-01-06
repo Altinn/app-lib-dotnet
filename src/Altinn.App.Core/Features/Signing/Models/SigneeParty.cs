@@ -26,7 +26,7 @@ public class PersonSignee : ISigneeParty
     public required string SocialSecurityNumber { get; init; }
 
     /// <summary>
-    /// The last name of the signee.
+    /// The full name of the signee. {FirstName} {LastName} or {FirstName} {MiddleName} {LastName}.
     /// </summary>
     [JsonPropertyName("fullName")]
     public required string FullName { get; init; }
