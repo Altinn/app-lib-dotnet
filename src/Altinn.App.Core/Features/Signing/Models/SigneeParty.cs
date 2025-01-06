@@ -28,8 +28,8 @@ public class PersonSignee : ISigneeParty
     /// <summary>
     /// The last name of the signee.
     /// </summary>
-    [JsonPropertyName("lastName")]
-    public required string LastName { get; init; }
+    [JsonPropertyName("fullName")]
+    public required string FullName { get; init; }
 
     /// <summary>
     /// The organisation the person signed on behalf of.

@@ -215,8 +215,9 @@ internal sealed class SigningService(
         List<SigneeContext> personSigneeContexts = [];
         foreach (PersonSignee personSignee in signeeResult.PersonSignees)
         {
+            var lastName = personSignee.FullName.Split(" ").Last();
             Person? person =
-                await personClient.GetPerson(personSignee.SocialSecurityNumber, personSignee.LastName, ct)
+                await personClient.GetPerson(personSignee.SocialSecurityNumber, lastName, ct)
                 ?? throw new SignaturePartyNotValidException(
                     $"The given SSN and last name did not match any person in the registry."
                 );
