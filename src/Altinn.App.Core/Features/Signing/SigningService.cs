@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using Altinn.App.Core.Features.Signing.Exceptions;
@@ -215,7 +216,7 @@ internal sealed class SigningService(
         List<SigneeContext> personSigneeContexts = [];
         foreach (PersonSignee personSignee in signeeResult.PersonSignees)
         {
-            var lastName = personSignee.FullName.Split(" ").Last();
+            var lastName = personSignee.FullName.Split(" ").Last().ToLower(CultureInfo.InvariantCulture);;
             Person? person =
                 await personClient.GetPerson(personSignee.SocialSecurityNumber, lastName, ct)
                 ?? throw new SignaturePartyNotValidException(
