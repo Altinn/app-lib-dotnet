@@ -26,10 +26,10 @@ public class PersonSignee : ISigneeParty
     public required string SocialSecurityNumber { get; init; }
 
     /// <summary>
-    /// The last name of the signee.
+    /// The full name of the signee. {FirstName} {LastName} or {FirstName} {MiddleName} {LastName}.
     /// </summary>
-    [JsonPropertyName("lastName")]
-    public required string LastName { get; init; }
+    [JsonPropertyName("fullName")]
+    public required string FullName { get; init; }
 
     /// <summary>
     /// The organisation the person signed on behalf of.
