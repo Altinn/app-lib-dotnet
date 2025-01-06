@@ -107,7 +107,7 @@ public class LocaltestValidationTests
         var lifetime = fixture.App.Services.GetRequiredService<IHostApplicationLifetime>();
         await service.StartAsync(lifetime.ApplicationStopping);
 
-        var result = await service.FirstResult;
+        var result = await service.Results.FirstAsync();
         Assert.NotNull(result);
         var ok = Assert.IsType<VersionResult.Ok>(result);
         Assert.Equal(expectedVersion, ok.Version);
@@ -140,7 +140,7 @@ public class LocaltestValidationTests
         var lifetime = fixture.App.Services.GetRequiredService<IHostApplicationLifetime>();
         await service.StartAsync(lifetime.ApplicationStopping);
 
-        var result = await service.FirstResult;
+        var result = await service.Results.FirstAsync();
         Assert.NotNull(result);
         var ok = Assert.IsType<VersionResult.Ok>(result);
         Assert.Equal(expectedVersion, ok.Version);
@@ -165,7 +165,7 @@ public class LocaltestValidationTests
         var lifetime = fixture.App.Services.GetRequiredService<IHostApplicationLifetime>();
         await service.StartAsync(lifetime.ApplicationStopping);
 
-        var result = await service.FirstResult;
+        var result = await service.Results.FirstAsync();
         Assert.NotNull(result);
         Assert.IsType<VersionResult.ApiNotFound>(result);
 
@@ -191,7 +191,7 @@ public class LocaltestValidationTests
         var lifetime = fixture.App.Services.GetRequiredService<IHostApplicationLifetime>();
         await service.StartAsync(lifetime.ApplicationStopping);
 
-        var result = await service.FirstResult;
+        var result = await service.Results.FirstAsync();
         Assert.NotNull(result);
         Assert.IsType<VersionResult.InvalidVersionResponse>(result);
 
@@ -224,7 +224,7 @@ public class LocaltestValidationTests
         await Task.Delay(10);
         fixture.TimeProvider.Advance(delay);
 
-        var result = await service.FirstResult;
+        var result = await service.Results.FirstAsync();
         Assert.NotNull(result);
         Assert.IsType<VersionResult.Timeout>(result);
 
@@ -258,7 +258,7 @@ public class LocaltestValidationTests
         fixture.TimeProvider.Advance(delay.Subtract(TimeSpan.FromSeconds(4)));
         lifetime.StopApplication();
 
-        var result = await service.FirstResult;
+        var result = await service.Results.FirstAsync();
         Assert.NotNull(result);
         Assert.IsType<VersionResult.AppShuttingDown>(result);
 
@@ -291,7 +291,7 @@ public class LocaltestValidationTests
         var lifetime = fixture.App.Services.GetRequiredService<IHostApplicationLifetime>();
         await service.StartAsync(lifetime.ApplicationStopping);
 
-        var result = await service.FirstResult;
+        var result = await service.Results.FirstAsync();
         Assert.NotNull(result);
         var notAvailable = Assert.IsType<VersionResult.ApiNotAvailable>(result);
         Assert.Equal(HttpRequestError.NameResolutionError, notAvailable.Error);
@@ -313,7 +313,7 @@ public class LocaltestValidationTests
         var lifetime = fixture.App.Services.GetRequiredService<IHostApplicationLifetime>();
         await service.StartAsync(lifetime.ApplicationStopping);
 
-        var result = await service.FirstResult;
+        var result = await service.Results.FirstAsync();
         Assert.NotNull(result);
         var status = Assert.IsType<VersionResult.UnhandledStatusCode>(result);
         Assert.Equal(HttpStatusCode.Created, status.StatusCode);
@@ -339,11 +339,63 @@ public class LocaltestValidationTests
         var lifetime = fixture.App.Services.GetRequiredService<IHostApplicationLifetime>();
         await service.StartAsync(lifetime.ApplicationStopping);
 
-        var result = await service.FirstResult;
+        var result = await service.Results.FirstAsync();
         Assert.NotNull(result);
         var error = Assert.IsType<VersionResult.UnknownError>(result);
         Assert.Equal(errorMessage, error.Exception.Message);
 
+        Assert.False(lifetime.ApplicationStopping.IsCancellationRequested);
+    }
+
+    [Fact]
+    public async Task Test_Unhandled_Error_But_Continue_To_Try()
+    {
+        var errorMessage = "Unhandled error";
+        var failCount = 0;
+        var expectedVersion = 1;
+        await using var fixture = Fixture.Create(onRequest: () =>
+        {
+            if (failCount++ < 3)
+                throw new Exception(errorMessage);
+        });
+
+        var server = fixture.Server;
+        server
+            .Given(Request.Create().WithPath(Fixture.ApiPath).UsingGet())
+            .RespondWith(
+                Response
+                    .Create()
+                    .WithStatusCode(200)
+                    .WithHeader("Content-Type", "text/plain")
+                    .WithBody($"{expectedVersion}")
+            );
+
+        var service = fixture.App.Services.GetRequiredService<LocaltestValidation>();
+        var lifetime = fixture.App.Services.GetRequiredService<IHostApplicationLifetime>();
+        await service.StartAsync(lifetime.ApplicationStopping);
+
+        List<VersionResult> results = [];
+        await foreach (var result in service.Results)
+        {
+            fixture.TimeProvider.Advance(TimeSpan.FromSeconds(5));
+            results.Add(result);
+        }
+
+        Assert.Equal(4, results.Count);
+        Assert.All(
+            results.Take(3),
+            result =>
+            {
+                Assert.NotNull(result);
+                var error = Assert.IsType<VersionResult.UnknownError>(result);
+                Assert.Equal(errorMessage, error.Exception.Message);
+
+                Assert.False(lifetime.ApplicationStopping.IsCancellationRequested);
+            }
+        );
+
+        var ok = Assert.IsType<VersionResult.Ok>(results.Last());
+        Assert.Equal(expectedVersion, ok.Version);
         Assert.False(lifetime.ApplicationStopping.IsCancellationRequested);
     }
 }

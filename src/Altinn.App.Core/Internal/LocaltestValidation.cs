@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Net;
+using System.Threading.Channels;
 using Altinn.App.Core.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -27,11 +28,9 @@ internal sealed class LocaltestValidation : BackgroundService
     private readonly IOptionsMonitor<GeneralSettings> _generalSettings;
     private readonly IHostApplicationLifetime _lifetime;
     private readonly TimeProvider _timeProvider;
-    private readonly TaskCompletionSource<VersionResult> _tcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly Channel<VersionResult> _resultChannel;
 
-    internal Task<VersionResult> FirstResult => _tcs.Task;
-
-    internal VersionResult? Result;
+    internal IAsyncEnumerable<VersionResult> Results => _resultChannel.Reader.ReadAllAsync();
 
     public LocaltestValidation(
         ILogger<LocaltestValidation> logger,
@@ -46,6 +45,9 @@ internal sealed class LocaltestValidation : BackgroundService
         _generalSettings = generalSettings;
         _lifetime = lifetime;
         _timeProvider = timeProvider ?? TimeProvider.System;
+        _resultChannel = Channel.CreateBounded<VersionResult>(
+            new BoundedChannelOptions(10) { FullMode = BoundedChannelFullMode.DropWrite }
+        );
     }
 
     private void Exit()
@@ -55,17 +57,19 @@ internal sealed class LocaltestValidation : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var configuredHostname = _generalSettings.CurrentValue.HostName;
-        if (configuredHostname != ExpectedHostname)
-            return;
-
         try
         {
+            var configuredHostname = _generalSettings.CurrentValue.HostName;
+            if (configuredHostname != ExpectedHostname)
+                return;
+
             while (!stoppingToken.IsCancellationRequested)
             {
                 var result = await Version();
-                Result = result;
-                _tcs.TrySetResult(result);
+
+                if (!_resultChannel.Writer.TryWrite(result))
+                    _logger.LogWarning("Couldn't log result to channel");
+
                 switch (result)
                 {
                     case VersionResult.Ok { Version: var version }:
@@ -114,6 +118,11 @@ internal sealed class LocaltestValidation : BackgroundService
             }
         }
         catch (OperationCanceledException) { }
+        finally
+        {
+            if (!_resultChannel.Writer.TryComplete())
+                _logger.LogWarning("Couldn't close result channel");
+        }
     }
 
     internal abstract record VersionResult
