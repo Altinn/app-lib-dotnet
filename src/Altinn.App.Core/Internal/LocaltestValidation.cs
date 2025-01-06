@@ -8,21 +8,21 @@ using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Internal;
 
-internal static class LocaltestClientDI
+internal static class LocaltestValidationDI
 {
-    public static IServiceCollection AddLocaltestClient(this IServiceCollection services)
+    public static IServiceCollection AddLocaltestValidation(this IServiceCollection services)
     {
-        services.AddSingleton<LocaltestClient>();
-        services.AddSingleton<IHostedService>(provider => provider.GetRequiredService<LocaltestClient>());
+        services.AddSingleton<LocaltestValidation>();
+        services.AddSingleton<IHostedService>(provider => provider.GetRequiredService<LocaltestValidation>());
         return services;
     }
 }
 
-internal sealed class LocaltestClient : BackgroundService
+internal sealed class LocaltestValidation : BackgroundService
 {
     private const string ExpectedHostname = "local.altinn.cloud";
 
-    private readonly ILogger<LocaltestClient> _logger;
+    private readonly ILogger<LocaltestValidation> _logger;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IOptionsMonitor<GeneralSettings> _generalSettings;
     private readonly IHostApplicationLifetime _lifetime;
@@ -33,8 +33,8 @@ internal sealed class LocaltestClient : BackgroundService
 
     internal VersionResult? Result;
 
-    public LocaltestClient(
-        ILogger<LocaltestClient> logger,
+    public LocaltestValidation(
+        ILogger<LocaltestValidation> logger,
         IHttpClientFactory httpClientFactory,
         IOptionsMonitor<GeneralSettings> generalSettings,
         IHostApplicationLifetime lifetime,

@@ -9,11 +9,11 @@ using Moq;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 using WireMock.Server;
-using static Altinn.App.Core.Internal.LocaltestClient;
+using static Altinn.App.Core.Internal.LocaltestValidation;
 
 namespace Altinn.App.Core.Tests.Internal;
 
-public class LocaltestclientTests
+public class LocaltestValidationTests
 {
     private sealed record Fixture(WebApplication App) : IAsyncDisposable
     {
@@ -80,9 +80,9 @@ public class LocaltestclientTests
     {
         await using var fixture = Fixture.Create();
 
-        var client = fixture.App.Services.GetRequiredService<LocaltestClient>();
+        var service = fixture.App.Services.GetRequiredService<LocaltestValidation>();
 
-        Assert.NotNull(client);
+        Assert.NotNull(service);
     }
 
     [Fact]
@@ -103,11 +103,11 @@ public class LocaltestclientTests
                     .WithBody($"{expectedVersion}")
             );
 
-        var client = fixture.App.Services.GetRequiredService<LocaltestClient>();
+        var service = fixture.App.Services.GetRequiredService<LocaltestValidation>();
         var lifetime = fixture.App.Services.GetRequiredService<IHostApplicationLifetime>();
-        await client.StartAsync(lifetime.ApplicationStopping);
+        await service.StartAsync(lifetime.ApplicationStopping);
 
-        var result = await client.FirstResult;
+        var result = await service.FirstResult;
         Assert.NotNull(result);
         var ok = Assert.IsType<VersionResult.Ok>(result);
         Assert.Equal(expectedVersion, ok.Version);
@@ -136,11 +136,11 @@ public class LocaltestclientTests
                     .WithBody($"{expectedVersion}")
             );
 
-        var client = fixture.App.Services.GetRequiredService<LocaltestClient>();
+        var service = fixture.App.Services.GetRequiredService<LocaltestValidation>();
         var lifetime = fixture.App.Services.GetRequiredService<IHostApplicationLifetime>();
-        await client.StartAsync(lifetime.ApplicationStopping);
+        await service.StartAsync(lifetime.ApplicationStopping);
 
-        var result = await client.FirstResult;
+        var result = await service.FirstResult;
         Assert.NotNull(result);
         var ok = Assert.IsType<VersionResult.Ok>(result);
         Assert.Equal(expectedVersion, ok.Version);
@@ -161,11 +161,11 @@ public class LocaltestclientTests
             .Given(Request.Create().WithPath(Fixture.ApiPath).UsingGet())
             .RespondWith(Response.Create().WithStatusCode(404));
 
-        var client = fixture.App.Services.GetRequiredService<LocaltestClient>();
+        var service = fixture.App.Services.GetRequiredService<LocaltestValidation>();
         var lifetime = fixture.App.Services.GetRequiredService<IHostApplicationLifetime>();
-        await client.StartAsync(lifetime.ApplicationStopping);
+        await service.StartAsync(lifetime.ApplicationStopping);
 
-        var result = await client.FirstResult;
+        var result = await service.FirstResult;
         Assert.NotNull(result);
         Assert.IsType<VersionResult.ApiNotFound>(result);
 
@@ -187,11 +187,11 @@ public class LocaltestclientTests
                 Response.Create().WithStatusCode(200).WithHeader("Content-Type", "text/plain").WithBody("blah")
             );
 
-        var client = fixture.App.Services.GetRequiredService<LocaltestClient>();
+        var service = fixture.App.Services.GetRequiredService<LocaltestValidation>();
         var lifetime = fixture.App.Services.GetRequiredService<IHostApplicationLifetime>();
-        await client.StartAsync(lifetime.ApplicationStopping);
+        await service.StartAsync(lifetime.ApplicationStopping);
 
-        var result = await client.FirstResult;
+        var result = await service.FirstResult;
         Assert.NotNull(result);
         Assert.IsType<VersionResult.InvalidVersionResponse>(result);
 
@@ -218,13 +218,13 @@ public class LocaltestclientTests
                     .WithDelay(delay)
             );
 
-        var client = fixture.App.Services.GetRequiredService<LocaltestClient>();
+        var service = fixture.App.Services.GetRequiredService<LocaltestValidation>();
         var lifetime = fixture.App.Services.GetRequiredService<IHostApplicationLifetime>();
-        await client.StartAsync(lifetime.ApplicationStopping);
+        await service.StartAsync(lifetime.ApplicationStopping);
         await Task.Delay(10);
         fixture.TimeProvider.Advance(delay);
 
-        var result = await client.FirstResult;
+        var result = await service.FirstResult;
         Assert.NotNull(result);
         Assert.IsType<VersionResult.Timeout>(result);
 
@@ -251,14 +251,14 @@ public class LocaltestclientTests
                     .WithDelay(delay)
             );
 
-        var client = fixture.App.Services.GetRequiredService<LocaltestClient>();
+        var service = fixture.App.Services.GetRequiredService<LocaltestValidation>();
         var lifetime = fixture.App.Services.GetRequiredService<IHostApplicationLifetime>();
-        await client.StartAsync(lifetime.ApplicationStopping);
+        await service.StartAsync(lifetime.ApplicationStopping);
         await Task.Delay(10);
         fixture.TimeProvider.Advance(delay.Subtract(TimeSpan.FromSeconds(4)));
         lifetime.StopApplication();
 
-        var result = await client.FirstResult;
+        var result = await service.FirstResult;
         Assert.NotNull(result);
         Assert.IsType<VersionResult.AppShuttingDown>(result);
 
@@ -287,11 +287,11 @@ public class LocaltestclientTests
                     .WithBody($"{expectedVersion}")
             );
 
-        var client = fixture.App.Services.GetRequiredService<LocaltestClient>();
+        var service = fixture.App.Services.GetRequiredService<LocaltestValidation>();
         var lifetime = fixture.App.Services.GetRequiredService<IHostApplicationLifetime>();
-        await client.StartAsync(lifetime.ApplicationStopping);
+        await service.StartAsync(lifetime.ApplicationStopping);
 
-        var result = await client.FirstResult;
+        var result = await service.FirstResult;
         Assert.NotNull(result);
         var notAvailable = Assert.IsType<VersionResult.ApiNotAvailable>(result);
         Assert.Equal(HttpRequestError.NameResolutionError, notAvailable.Error);
@@ -309,11 +309,11 @@ public class LocaltestclientTests
             .Given(Request.Create().WithPath(Fixture.ApiPath).UsingGet())
             .RespondWith(Response.Create().WithStatusCode(201));
 
-        var client = fixture.App.Services.GetRequiredService<LocaltestClient>();
+        var service = fixture.App.Services.GetRequiredService<LocaltestValidation>();
         var lifetime = fixture.App.Services.GetRequiredService<IHostApplicationLifetime>();
-        await client.StartAsync(lifetime.ApplicationStopping);
+        await service.StartAsync(lifetime.ApplicationStopping);
 
-        var result = await client.FirstResult;
+        var result = await service.FirstResult;
         Assert.NotNull(result);
         var status = Assert.IsType<VersionResult.UnhandledStatusCode>(result);
         Assert.Equal(HttpStatusCode.Created, status.StatusCode);
@@ -335,11 +335,11 @@ public class LocaltestclientTests
             .Given(Request.Create().WithPath(Fixture.ApiPath).UsingGet())
             .RespondWith(Response.Create().WithStatusCode(200).WithHeader("Content-Type", "text/plain").WithBody($"1"));
 
-        var client = fixture.App.Services.GetRequiredService<LocaltestClient>();
+        var service = fixture.App.Services.GetRequiredService<LocaltestValidation>();
         var lifetime = fixture.App.Services.GetRequiredService<IHostApplicationLifetime>();
-        await client.StartAsync(lifetime.ApplicationStopping);
+        await service.StartAsync(lifetime.ApplicationStopping);
 
-        var result = await client.FirstResult;
+        var result = await service.FirstResult;
         Assert.NotNull(result);
         var error = Assert.IsType<VersionResult.UnknownError>(result);
         Assert.Equal(errorMessage, error.Exception.Message);
