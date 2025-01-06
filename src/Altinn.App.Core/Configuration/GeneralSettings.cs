@@ -34,6 +34,9 @@ public class GeneralSettings
     /// </summary>
     public string HostName { get; set; } = "local.altinn.cloud";
 
+    // Only here to be overridden from tests
+    internal string LocaltestUrl { get; set; } = "http://local.altinn.cloud";
+
     /// <summary>
     /// The externally accesible base url for the app with trailing /
     /// </summary>

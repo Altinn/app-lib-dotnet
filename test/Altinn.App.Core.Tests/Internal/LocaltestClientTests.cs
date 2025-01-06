@@ -1,10 +1,14 @@
-using System.Net;
+using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Internal;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Time.Testing;
 using Moq;
+using WireMock.RequestBuilders;
+using WireMock.ResponseBuilders;
+using WireMock.Server;
+using static Altinn.App.Core.Internal.LocaltestClient;
 
 namespace Altinn.App.Core.Tests.Internal;
 
@@ -12,34 +16,37 @@ public class LocaltestclientTests
 {
     private sealed record Fixture(WebApplication App) : IAsyncDisposable
     {
+        internal const string ApiPath = "/Home/Localtest/Version";
+
         public Mock<IHttpClientFactory> HttpClientFactoryMock =>
             Mock.Get(App.Services.GetRequiredService<IHttpClientFactory>());
 
-        public Mock<HttpClient> HttpClientMock => Mock.Get(App.Services.GetRequiredService<HttpClient>());
+        public WireMockServer Server => App.Services.GetRequiredService<WireMockServer>();
 
-        public static Fixture Create(bool realTest = false)
+        public FakeTimeProvider TimeProvider => App.Services.GetRequiredService<FakeTimeProvider>();
+
+        public static Fixture Create()
         {
-            Mock<IHttpClientFactory>? mockHttpClientFactory = null;
-            if (!realTest)
-            {
-                mockHttpClientFactory = new Mock<IHttpClientFactory>();
-                var mockHttpClient = new Mock<HttpClient>();
-                mockHttpClientFactory.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(mockHttpClient.Object);
-            }
+            var server = WireMockServer.Start();
+
+            var mockHttpClientFactory = new Mock<IHttpClientFactory>();
+            var mockHttpClient = new Mock<HttpClient>();
+            mockHttpClientFactory.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(() => server.CreateClient());
 
             var app = Api.Tests.TestUtils.AppBuilder.Build(registerCustomAppServices: services =>
             {
-                if (!realTest)
-                {
-                    var fakeTimeProvider = new FakeTimeProvider(
-                        new DateTimeOffset(2024, 1, 1, 10, 0, 0, TimeSpan.Zero)
-                    );
-                    services.AddSingleton<TimeProvider>(fakeTimeProvider);
-                    services.AddSingleton(fakeTimeProvider);
-                }
+                services.AddSingleton(_ => server);
 
-                if (mockHttpClientFactory is not null)
-                    services.AddSingleton(mockHttpClientFactory.Object);
+                services.Configure<GeneralSettings>(settings =>
+                {
+                    settings.LocaltestUrl = server.Url ?? throw new Exception("Missing server URL");
+                });
+
+                var fakeTimeProvider = new FakeTimeProvider(new DateTimeOffset(2024, 1, 1, 10, 0, 0, TimeSpan.Zero));
+                services.AddSingleton<TimeProvider>(fakeTimeProvider);
+                services.AddSingleton(fakeTimeProvider);
+
+                services.AddSingleton(mockHttpClientFactory.Object);
             });
 
             return new Fixture(app);
@@ -59,28 +66,22 @@ public class LocaltestclientTests
     }
 
     [Fact]
-    public async Task Test_Ok()
+    public async Task Test_Recent_Version()
     {
         await using var fixture = Fixture.Create();
 
-        var httpClient = fixture.HttpClientMock;
-        httpClient
-            .Setup(c => c.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(
-                new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("{\"version\": 1}") }
+        var expectedVersion = 1;
+
+        var server = fixture.Server;
+        server
+            .Given(Request.Create().WithPath(Fixture.ApiPath).UsingGet())
+            .RespondWith(
+                Response
+                    .Create()
+                    .WithStatusCode(200)
+                    .WithHeader("Content-Type", "text/plain")
+                    .WithBody($"{expectedVersion}")
             );
-
-        var client = fixture.App.Services.GetRequiredService<LocaltestClient>();
-        var lifetime = fixture.App.Services.GetRequiredService<IHostApplicationLifetime>();
-        await client.StartAsync(lifetime.ApplicationStopping);
-
-        Assert.NotNull(client);
-    }
-
-    [Fact]
-    public async Task Test_Real() // Runs against localtest, add skip to avoid running this test on main
-    {
-        await using var fixture = Fixture.Create(realTest: true);
 
         var client = fixture.App.Services.GetRequiredService<LocaltestClient>();
         var lifetime = fixture.App.Services.GetRequiredService<IHostApplicationLifetime>();
@@ -88,5 +89,97 @@ public class LocaltestclientTests
 
         var result = await client.FirstResult;
         Assert.NotNull(result);
+        var ok = Assert.IsType<VersionResult.Ok>(result);
+        Assert.Equal(expectedVersion, ok.Version);
+
+        var reqs = server.FindLogEntries(Request.Create().WithPath(Fixture.ApiPath).UsingGet());
+        Assert.Single(reqs);
+
+        Assert.False(lifetime.ApplicationStopping.IsCancellationRequested);
+    }
+
+    [Fact]
+    public async Task Test_Old_Version()
+    {
+        await using var fixture = Fixture.Create();
+
+        var expectedVersion = 0;
+
+        var server = fixture.Server;
+        server
+            .Given(Request.Create().WithPath(Fixture.ApiPath).UsingGet())
+            .RespondWith(
+                Response
+                    .Create()
+                    .WithStatusCode(200)
+                    .WithHeader("Content-Type", "text/plain")
+                    .WithBody($"{expectedVersion}")
+            );
+
+        var client = fixture.App.Services.GetRequiredService<LocaltestClient>();
+        var lifetime = fixture.App.Services.GetRequiredService<IHostApplicationLifetime>();
+        await client.StartAsync(lifetime.ApplicationStopping);
+
+        var result = await client.FirstResult;
+        Assert.NotNull(result);
+        var ok = Assert.IsType<VersionResult.Ok>(result);
+        Assert.Equal(expectedVersion, ok.Version);
+
+        var reqs = server.FindLogEntries(Request.Create().WithPath(Fixture.ApiPath).UsingGet());
+        Assert.Single(reqs);
+
+        Assert.True(lifetime.ApplicationStopping.IsCancellationRequested);
+    }
+
+    [Fact]
+    public async Task Test_Invalid_Version()
+    {
+        await using var fixture = Fixture.Create();
+
+        var server = fixture.Server;
+        server
+            .Given(Request.Create().WithPath(Fixture.ApiPath).UsingGet())
+            .RespondWith(
+                Response.Create().WithStatusCode(200).WithHeader("Content-Type", "text/plain").WithBody("blah")
+            );
+
+        var client = fixture.App.Services.GetRequiredService<LocaltestClient>();
+        var lifetime = fixture.App.Services.GetRequiredService<IHostApplicationLifetime>();
+        await client.StartAsync(lifetime.ApplicationStopping);
+
+        var result = await client.FirstResult;
+        Assert.NotNull(result);
+        Assert.IsType<VersionResult.InvalidVersionResponse>(result);
+    }
+
+    [Fact]
+    public async Task Test_Timeout()
+    {
+        await using var fixture = Fixture.Create();
+
+        var expectedVersion = 1;
+        var delay = TimeSpan.FromSeconds(6);
+
+        var server = fixture.Server;
+        server
+            .Given(Request.Create().WithPath(Fixture.ApiPath).UsingGet())
+            .RespondWith(
+                Response
+                    .Create()
+                    .WithStatusCode(200)
+                    .WithHeader("Content-Type", "text/plain")
+                    .WithBody($"{expectedVersion}")
+                    .WithDelay(delay)
+            );
+
+        var client = fixture.App.Services.GetRequiredService<LocaltestClient>();
+        var lifetime = fixture.App.Services.GetRequiredService<IHostApplicationLifetime>();
+        await client.StartAsync(lifetime.ApplicationStopping);
+        await Task.Delay(10);
+        fixture.TimeProvider.Advance(delay);
+
+        var result = await client.FirstResult;
+        Assert.NotNull(result);
+        Assert.IsType<VersionResult.Timeout>(result);
     }
 }

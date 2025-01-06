@@ -119,7 +119,7 @@ internal sealed class LocaltestClient : BackgroundService
 
         public sealed record InvalidVersionResponse(string Repsonse) : VersionResult;
 
-        // Whatever listened on "local.altinn.cloud:80" responded with a 4044
+        // Whatever listened on "local.altinn.cloud:80" responded with a 404
         public sealed record ApiNotFound() : VersionResult;
 
         // The request timed out. Note that there may be multiple variants of timeouts.
@@ -148,7 +148,8 @@ internal sealed class LocaltestClient : BackgroundService
         {
             using var client = _httpClientFactory.CreateClient();
 
-            var url = "http://local.altinn.cloud/Home/Localtest/Version";
+            var baseUrl = _generalSettings.CurrentValue.LocaltestUrl;
+            var url = $"{baseUrl}/Home/Localtest/Version";
 
             using var response = await client.GetAsync(url, cancellationToken);
             switch (response.StatusCode)
