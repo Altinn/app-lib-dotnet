@@ -46,7 +46,6 @@ public class LocaltestValidationTests
             var server = WireMockServer.Start();
 
             var mockHttpClientFactory = new Mock<IHttpClientFactory>();
-            var mockHttpClient = new Mock<HttpClient>();
             mockHttpClientFactory
                 .Setup(f => f.CreateClient(It.IsAny<string>()))
                 .Returns(() => server.CreateClient(new ReqHandler(onRequest)));
