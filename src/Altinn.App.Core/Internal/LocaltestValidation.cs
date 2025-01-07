@@ -99,8 +99,7 @@ internal sealed class LocaltestValidation : BackgroundService
                     {
                         _logger.LogError(
                             "Localtest version may be outdated, as we failed to probe {HostName} API for version information."
-                                + " Is localtest running on {HostName}? Do you have a recent copy of localtest? Shutting down..",
-                            ExpectedHostname,
+                                + " Is localtest running? Do you have a recent copy of localtest? Shutting down..",
                             ExpectedHostname
                         );
                         Exit();
