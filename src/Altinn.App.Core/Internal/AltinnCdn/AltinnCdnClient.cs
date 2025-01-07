@@ -17,11 +17,25 @@ internal sealed class AltinnCdnClient : IDisposable
     {
         using var client = CreateHttpClient();
 
-        return await client.GetFromJsonAsync<AltinnCdnOrgs>(
+        AltinnCdnOrgs orgs =
+            await client.GetFromJsonAsync<AltinnCdnOrgs>(
                 requestUri: "https://altinncdn.no/orgs/altinn-orgs.json",
                 options: _jsonOptions,
                 cancellationToken: cancellationToken
             ) ?? throw new JsonException("Received literal \"null\" response from Altinn CDN");
+
+        // Inject Digdir's organisation number for TTD, because TTD does not have an organisation number
+        if (
+            !orgs.Orgs.IsNullOrEmpty()
+            && orgs.Orgs.TryGetValue("ttd", out var ttdOrgDetails)
+            && orgs.Orgs.TryGetValue("digdir", out var digdirOrgDetails)
+            && string.IsNullOrEmpty(ttdOrgDetails.Orgnr)
+        )
+        {
+            ttdOrgDetails.Orgnr = digdirOrgDetails.Orgnr;
+        }
+
+        return orgs;
     }
 
     private HttpClient CreateHttpClient()

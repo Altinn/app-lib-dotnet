@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization;
-using Altinn.App.Core.Models;
 
 namespace Altinn.App.Core.Internal.AltinnCdn;
 
@@ -18,7 +17,7 @@ internal sealed record AltinnCdnOrgDetails
     public string? Logo { get; init; }
 
     [JsonPropertyName("orgnr")]
-    public string? Orgnr { get; init; }
+    public string? Orgnr { get; set; }
 
     [JsonPropertyName("homepage")]
     public string? Homepage { get; init; }
