@@ -89,7 +89,6 @@ public class AltinnCdnClientTest
             ),
         };
 
-        var httpClientFactoryMock = new Mock<IHttpClientFactory>();
         var httpMessageHandlerMock = new Mock<HttpMessageHandler>();
         httpMessageHandlerMock
             .Protected()
@@ -100,10 +99,7 @@ public class AltinnCdnClientTest
             )
             .ReturnsAsync(responseMessage);
 
-        var httpClient = new HttpClient(httpMessageHandlerMock.Object);
-        httpClientFactoryMock.Setup(factory => factory.CreateClient(It.IsAny<string>())).Returns(httpClient);
-
-        var client = new AltinnCdnClient(httpClientFactoryMock.Object);
+        var client = new AltinnCdnClient(httpMessageHandlerMock.Object);
 
         // Act
         var result = await client.GetOrgs();
@@ -128,10 +124,7 @@ public class AltinnCdnClientTest
             )
             .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("null") });
 
-        var httpClient = new HttpClient(httpMessageHandlerMock.Object);
-        httpClientFactoryMock.Setup(factory => factory.CreateClient(It.IsAny<string>())).Returns(httpClient);
-
-        var client = new AltinnCdnClient(httpClientFactoryMock.Object);
+        var client = new AltinnCdnClient(httpMessageHandlerMock.Object);
 
         // Act
         var act = new Func<Task>(() => client.GetOrgs());
@@ -145,10 +138,10 @@ public class AltinnCdnClientTest
     {
         // Arrange
         var httpClientFactoryMock = new Mock<IHttpClientFactory>();
-        var httpMessageHandlerMock = new Mock<HttpMessageHandler>();
         var cancellationTokenSource = new CancellationTokenSource();
         cancellationTokenSource.Cancel(); // Cancel the token immediately
 
+        var httpMessageHandlerMock = new Mock<HttpMessageHandler>();
         httpMessageHandlerMock
             .Protected()
             .Setup<Task<HttpResponseMessage>>(
@@ -158,10 +151,7 @@ public class AltinnCdnClientTest
             )
             .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK));
 
-        var httpClient = new HttpClient(httpMessageHandlerMock.Object);
-        httpClientFactoryMock.Setup(factory => factory.CreateClient(It.IsAny<string>())).Returns(httpClient);
-
-        var altinnCdnClient = new AltinnCdnClient(httpClientFactoryMock.Object);
+        var altinnCdnClient = new AltinnCdnClient(httpMessageHandlerMock.Object);
 
         // Act
         var act = new Func<Task>(() => altinnCdnClient.GetOrgs(cancellationTokenSource.Token));

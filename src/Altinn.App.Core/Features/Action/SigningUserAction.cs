@@ -28,7 +28,6 @@ public class SigningUserAction : IUserAction
     private readonly IProfileClient _profileClient;
     private readonly ISignClient _signClient;
     private readonly ICorrespondenceClient _correspondenceClient;
-    private readonly AltinnCdnClient _altinnCdnClient;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SigningUserAction"/> class
@@ -39,15 +38,13 @@ public class SigningUserAction : IUserAction
     /// <param name="signClient">The sign client</param>
     /// <param name="correspondenceClient">The correspondence client</param>
     /// <param name="appMetadata">The application metadata</param>
-    /// <param name="httpClientFactory">Http client factory required by <see cref="AltinnCdnClient"/></param>
     public SigningUserAction(
         IProcessReader processReader,
         ILogger<SigningUserAction> logger,
         IProfileClient profileClient,
         ISignClient signClient,
         ICorrespondenceClient correspondenceClient,
-        IAppMetadata appMetadata,
-        IHttpClientFactory httpClientFactory
+        IAppMetadata appMetadata
     )
     {
         _logger = logger;
@@ -56,7 +53,6 @@ public class SigningUserAction : IUserAction
         _processReader = processReader;
         _correspondenceClient = correspondenceClient;
         _appMetadata = appMetadata;
-        _altinnCdnClient = new AltinnCdnClient(httpClientFactory);
     }
 
     /// <inheritdoc />
@@ -136,7 +132,9 @@ public class SigningUserAction : IUserAction
     )
     {
         NationalIdentityNumber recipient = NationalIdentityNumber.Parse(signee.PersonNumber ?? string.Empty);
-        AltinnCdnOrgs altinnCdnOrgs = await _altinnCdnClient.GetOrgs();
+
+        using var altinnCdnClient = new AltinnCdnClient();
+        AltinnCdnOrgs altinnCdnOrgs = await altinnCdnClient.GetOrgs();
         string? sender = altinnCdnOrgs.Orgs?.GetValueOrDefault(appMetadata.Org)?.Orgnr;
 
         if (string.IsNullOrEmpty(sender))
