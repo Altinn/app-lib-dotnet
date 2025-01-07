@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Net;
 using System.Threading.Channels;
 using Altinn.App.Core.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -11,9 +12,14 @@ namespace Altinn.App.Core.Internal;
 
 internal static class LocaltestValidationDI
 {
-    public static IServiceCollection AddLocaltestValidation(this IServiceCollection services)
+    public static IServiceCollection AddLocaltestValidation(
+        this IServiceCollection services,
+        IConfiguration configuration
+    )
     {
         services.AddSingleton<LocaltestValidation>();
+        if (configuration.GetValue<bool>("GeneralSettings:DisableLocaltestValidation"))
+            return services;
         services.AddSingleton<IHostedService>(provider => provider.GetRequiredService<LocaltestValidation>());
         return services;
     }
@@ -59,7 +65,11 @@ internal sealed class LocaltestValidation : BackgroundService
     {
         try
         {
-            var configuredHostname = _generalSettings.CurrentValue.HostName;
+            var settings = _generalSettings.CurrentValue;
+            if (settings.DisableLocaltestValidation)
+                return;
+
+            var configuredHostname = settings.HostName;
             if (configuredHostname != ExpectedHostname)
                 return;
 

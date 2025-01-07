@@ -37,6 +37,8 @@ public class GeneralSettings
     // Only here to be overridden from tests
     internal string LocaltestUrl { get; set; } = "http://local.altinn.cloud";
 
+    internal bool DisableLocaltestValidation { get; set; }
+
     /// <summary>
     /// The externally accesible base url for the app with trailing /
     /// </summary>
