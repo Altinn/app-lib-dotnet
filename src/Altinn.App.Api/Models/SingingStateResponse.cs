@@ -41,5 +41,9 @@ public class SigneeState
     /// </summary>
     public bool NotificationSuccessful { get; set; }
 
+    /// <summary>
+    /// The party id of the signee.
+    /// </summary>
+    public required int PartyId { get; set; }
     //TODO: Add necessary properties
 }

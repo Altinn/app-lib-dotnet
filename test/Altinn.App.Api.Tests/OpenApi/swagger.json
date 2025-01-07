@@ -7726,7 +7726,8 @@
       },
       "SigneeState": {
         "required": [
-          "hasSigned"
+          "hasSigned",
+          "partyId"
         ],
         "type": "object",
         "properties": {
@@ -7746,6 +7747,10 @@
           },
           "notificationSuccessful": {
             "type": "boolean"
+          },
+          "partyId": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false

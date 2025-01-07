@@ -4943,6 +4943,7 @@ components:
     SigneeState:
       required:
         - hasSigned
+        - partyId
       type: object
       properties:
         name:
@@ -4957,6 +4958,9 @@ components:
           type: boolean
         notificationSuccessful:
           type: boolean
+        partyId:
+          type: integer
+          format: int32
       additionalProperties: false
     SigningDataElementsResponse:
       required:
