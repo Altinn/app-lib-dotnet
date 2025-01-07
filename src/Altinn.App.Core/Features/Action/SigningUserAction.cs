@@ -4,6 +4,8 @@ using Altinn.App.Core.Features.Correspondence.Builder;
 using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Profile;
@@ -28,6 +30,8 @@ public class SigningUserAction : IUserAction
     private readonly IProfileClient _profileClient;
     private readonly ISignClient _signClient;
     private readonly ICorrespondenceClient _correspondenceClient;
+    private readonly IDataClient _dataClient;
+    private readonly IAppResources _appResources;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SigningUserAction"/> class
@@ -37,14 +41,18 @@ public class SigningUserAction : IUserAction
     /// <param name="profileClient">The profile client</param>
     /// <param name="signClient">The sign client</param>
     /// <param name="correspondenceClient">The correspondence client</param>
+    /// <param name="dataClient">The data client</param>
     /// <param name="appMetadata">The application metadata</param>
+    /// <param name="appResources">The application resources</param>
     public SigningUserAction(
         IProcessReader processReader,
         ILogger<SigningUserAction> logger,
         IProfileClient profileClient,
         ISignClient signClient,
         ICorrespondenceClient correspondenceClient,
-        IAppMetadata appMetadata
+        IDataClient dataClient,
+        IAppMetadata appMetadata,
+        IAppResources appResources
     )
     {
         _logger = logger;
@@ -52,7 +60,9 @@ public class SigningUserAction : IUserAction
         _signClient = signClient;
         _processReader = processReader;
         _correspondenceClient = correspondenceClient;
+        _dataClient = dataClient;
         _appMetadata = appMetadata;
+        _appResources = appResources;
     }
 
     /// <inheritdoc />
@@ -115,10 +125,17 @@ public class SigningUserAction : IUserAction
 
         try
         {
-            await SendCorrespondence(signatureContext.InstanceIdentifier, signatureContext.Signee, appMetadata);
+            await SendCorrespondence(
+                signatureContext.InstanceIdentifier,
+                signatureContext.Signee,
+                dataElementSignatures,
+                appMetadata,
+                context
+            );
         }
         catch (Exception e)
         {
+            // TODO: What do we do here? This failure is pretty silent... but throwing would cause havoc
             _logger.LogError(e, "Correspondence send failed: {Exception}", e.Message);
         }
 
@@ -128,53 +145,123 @@ public class SigningUserAction : IUserAction
     private async Task<SendCorrespondenceResponse?> SendCorrespondence(
         InstanceIdentifier instanceIdentifier,
         Signee signee,
-        ApplicationMetadata appMetadata
+        IEnumerable<DataElementSignature> dataElementSignatures,
+        ApplicationMetadata appMetadata,
+        UserActionContext context
     )
     {
-        NationalIdentityNumber recipient = NationalIdentityNumber.Parse(signee.PersonNumber ?? string.Empty);
-
-        using var altinnCdnClient = new AltinnCdnClient();
-        AltinnCdnOrgs altinnCdnOrgs = await altinnCdnClient.GetOrgs();
-        string? sender = altinnCdnOrgs.Orgs?.GetValueOrDefault(appMetadata.Org)?.Orgnr;
-
-        if (string.IsNullOrEmpty(sender))
+        if (string.IsNullOrEmpty(signee.PersonNumber))
         {
-            // TODO: Fix all `Exception` types in this class
-            throw new Exception(
-                $"Error looking up sender's organisation number from Altinn CDN, using key {appMetadata.Org}"
+            throw new InvalidOperationException(
+                $"Signee's national identity number is missing, unable to send correspondence"
             );
         }
 
+        using var altinnCdnClient = new AltinnCdnClient();
+        AltinnCdnOrgs altinnCdnOrgs = await altinnCdnClient.GetOrgs();
+        string sender =
+            altinnCdnOrgs.Orgs?.GetValueOrDefault(appMetadata.Org)?.Orgnr
+            ?? throw new InvalidOperationException(
+                $"Error looking up sender's organisation number from Altinn CDN, using key `{appMetadata.Org}`"
+            );
+
+        CorrespondenceContent content = await GetCorrespondenceContent(context);
         var builder = CorrespondenceRequestBuilder
             .Create()
             .WithResourceId("apps-correspondence-integrasjon2") // TODO: Configurable resource
-            .WithSender(sender) // TODO: Needs fallback for TTD
+            .WithSender(sender)
             .WithSendersReference(instanceIdentifier.ToString())
-            .WithRecipient(recipient)
+            .WithRecipient(signee.PersonNumber)
             .WithAllowSystemDeleteAfter(DateTime.Now.AddYears(1))
-            .WithContent(
-                CorrespondenceContentBuilder
-                    .Create()
-                    .WithLanguage(LanguageCode<Iso6391>.Parse("en"))
-                    .WithTitle("Hello from .NET (with builder)")
-                    .WithSummary("This is a summary of the message. This was sent to an organisation number.")
-                    .WithBody(
-                        "This is the full message in all its glory.\n\nHere's some markdown: **bold** *italic* `code`"
-                    )
-            )
-            .WithAttachment(
+            .WithContent(content);
+
+        foreach (var dataElementSignature in dataElementSignatures)
+        {
+            DataElement dataElement = context.Instance.Data.First(x => x.Id == dataElementSignature.DataElementId);
+
+            builder.WithAttachment(
                 CorrespondenceAttachmentBuilder
                     .Create()
-                    .WithFilename("attachment.txt")
-                    .WithName("The attachment 📎")
-                    .WithSendersReference("12345-attachmentref")
-                    .WithDataType("application/pdf")
-                    .WithData("This is the attachment content"u8.ToArray())
+                    .WithFilename(dataElement.Filename)
+                    .WithName(dataElement.Filename)
+                    .WithSendersReference(dataElement.Id)
+                    .WithDataType(dataElement.DataType)
+                    .WithData(
+                        await _dataClient.GetDataBytes(
+                            appMetadata.AppIdentifier.Org,
+                            appMetadata.AppIdentifier.App,
+                            instanceIdentifier.InstanceOwnerPartyId,
+                            instanceIdentifier.InstanceGuid,
+                            Guid.Parse(dataElement.Id)
+                        )
+                    )
             );
+        }
 
         return await _correspondenceClient.Send(
             new SendCorrespondencePayload(builder.Build(), CorrespondenceAuthorisation.Maskinporten)
         );
+    }
+
+    private async Task<CorrespondenceContent> GetCorrespondenceContent(UserActionContext context)
+    {
+        string? title = null;
+        string? summary = null;
+        string? body = null;
+        var language = LanguageCode<Iso6391>.Parse(LanguageConst.Nb);
+
+        // TODO: Write better defaults
+        var defaults = new
+        {
+            Title = "Meldingstittel",
+            Summary = "Meldingsoppsummering",
+            Body = "Full meldingstekst",
+        };
+
+        try
+        {
+            if (context.Language is not null && context.Language != language)
+            {
+                language = LanguageCode<Iso6391>.Parse(context.Language);
+            }
+
+            var appIdentifier = new AppIdentifier(context.Instance);
+            TextResource textResource =
+                await _appResources.GetTexts(appIdentifier.Org, appIdentifier.App, language)
+                ?? throw new InvalidOperationException($"No text resource found for language {language}");
+
+            title = textResource
+                .Resources.FirstOrDefault(textResourceElement =>
+                    textResourceElement.Id.Equals("signing-receipt-title", StringComparison.Ordinal)
+                )
+                ?.Value;
+            summary = textResource
+                .Resources.FirstOrDefault(textResourceElement =>
+                    textResourceElement.Id.Equals("signing-receipt-summary", StringComparison.Ordinal)
+                )
+                ?.Value;
+            body = textResource
+                .Resources.FirstOrDefault(textResourceElement =>
+                    textResourceElement.Id.Equals("signing-receipt-body", StringComparison.Ordinal)
+                )
+                ?.Value;
+        }
+        catch (Exception e)
+        {
+            _logger.LogInformation(
+                e,
+                "Unable to fetch custom message correspondence message content, falling back to default values: {Exception}",
+                e.Message
+            );
+        }
+
+        return new CorrespondenceContent
+        {
+            Language = language,
+            Title = title ?? defaults.Title,
+            Summary = summary ?? defaults.Summary,
+            Body = body ?? defaults.Body,
+        };
     }
 
     private static string? GetDataTypeForSignature(
