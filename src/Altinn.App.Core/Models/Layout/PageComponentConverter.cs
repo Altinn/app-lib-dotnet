@@ -219,7 +219,19 @@ public class PageComponentConverter : JsonConverter<PageComponent>
         {
             if (component is GroupComponent groupComponent)
             {
-                var children = groupComponent.ChildIDs.Select(id => componentLookup[id]).ToList();
+                var children = groupComponent
+                    .ChildIDs.Select(childId =>
+                    {
+                        if (!componentLookup.TryGetValue(childId, out var child))
+                        {
+                            throw new InvalidOperationException(
+                                $"""Group "{component.Id}" references a child with id \"{childId}\" which was not found in layout"""
+                            );
+                        }
+
+                        return child;
+                    })
+                    .ToList();
                 children.ForEach(c => groupComponent.AddChild(c));
             }
 
