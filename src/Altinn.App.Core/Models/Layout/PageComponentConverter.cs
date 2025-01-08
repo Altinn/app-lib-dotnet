@@ -244,7 +244,7 @@ public class PageComponentConverter : JsonConverter<PageComponent>
     {
         if (!componentLookup.TryAdd(component.Id, component))
         {
-            throw new JsonException($"Duplicate key \"{component.Id}\" detected on page \"{component.PageId}\"");
+            throw new JsonException($"Duplicate key \"{component.Id}\" detected");
         }
     }
 
