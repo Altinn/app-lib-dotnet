@@ -177,7 +177,8 @@ public static class ServiceCollectionExtensions
         services.Configure<FrontEndSettings>(configuration.GetSection(nameof(FrontEndSettings)));
         services.Configure<PdfGeneratorSettings>(configuration.GetSection(nameof(PdfGeneratorSettings)));
 
-        services.AddLocaltestValidation(configuration);
+        if (env.IsDevelopment())
+            services.AddLocaltestValidation(configuration);
 
         AddValidationServices(services, configuration);
         AddAppOptions(services);
