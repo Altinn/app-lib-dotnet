@@ -4,6 +4,7 @@ using Altinn.App.Core.Constants;
 using Altinn.App.Core.Internal.Auth;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
+using Authorization.Platform.Authorization.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -54,6 +55,7 @@ public class AuthenticationController : ControllerBase
                     Party = details.Reportee,
                     Parties = details.Parties,
                     PartiesAllowedToInstantiate = details.PartiesAllowedToInstantiate,
+                    Roles = details.Roles,
                 },
             AuthenticationInfo.Org org when await org.LoadDetails() is var details => new OrgResponse
             {
@@ -86,6 +88,8 @@ public class AuthenticationController : ControllerBase
         public required IReadOnlyList<Party> Parties { get; init; }
 
         public required IReadOnlyList<Party> PartiesAllowedToInstantiate { get; init; }
+
+        public required IReadOnlyList<Role> Roles { get; init; }
     }
 
     private sealed record OrgResponse : CurrentAuthenticationBaseResponse
