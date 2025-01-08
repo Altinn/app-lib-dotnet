@@ -1,8 +1,6 @@
 using System.Globalization;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Internal.Auth;
-using Altinn.App.Core.Models;
-using Altinn.Platform.Register.Models;
 using Authorization.Platform.Authorization.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -82,6 +80,16 @@ public class AuthorizationController : Controller
                 }
                 return Ok(reportee.PartyId);
             }
+            case AuthenticationInfo.SelfIdentifiedUser selfIdentified:
+            {
+                var details = await selfIdentified.LoadDetails();
+                if (returnPartyObject)
+                {
+                    return Ok(details.Reportee);
+                }
+
+                return Ok(details.Reportee.PartyId);
+            }
             case AuthenticationInfo.Org org:
             {
                 var details = await org.LoadDetails();
@@ -113,7 +121,7 @@ public class AuthorizationController : Controller
                 return Ok(details.Party.PartyId);
             }
             default:
-                throw new NotImplementedException();
+                throw new Exception($"Unknown authentication context: {context.GetType().Name}");
         }
     }
 
@@ -173,6 +181,10 @@ public class AuthorizationController : Controller
 
                 return Ok(details.Roles);
             }
+            case AuthenticationInfo.SelfIdentifiedUser:
+            {
+                return Ok(Array.Empty<Role>());
+            }
             case AuthenticationInfo.Org:
             {
                 return Ok(Array.Empty<Role>());
@@ -187,7 +199,7 @@ public class AuthorizationController : Controller
                 return Ok(Array.Empty<Role>());
             }
             default:
-                throw new NotImplementedException();
+                throw new Exception($"Unknown authentication context: {context.GetType().Name}");
         }
     }
 }

@@ -71,6 +71,12 @@ public class PartiesController : ControllerBase
                 var details = await user.LoadDetails(validateSelectedParty: false);
                 return allowedToInstantiateFilter ? Ok(details.PartiesAllowedToInstantiate) : Ok(details.Parties);
             }
+            case AuthenticationInfo.SelfIdentifiedUser selfIdentified:
+            {
+                var details = await selfIdentified.LoadDetails();
+                IReadOnlyList<Party> parties = [details.Reportee];
+                return Ok(parties);
+            }
             case AuthenticationInfo.Org orgInfo:
             {
                 var details = await orgInfo.LoadDetails();
@@ -90,7 +96,7 @@ public class PartiesController : ControllerBase
                 return Ok(parties);
             }
             default:
-                throw new NotImplementedException();
+                throw new Exception($"Unexpected authentication context: {context.GetType().Name}");
         }
     }
 

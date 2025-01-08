@@ -38,8 +38,13 @@ public class ProfileController : Controller
                 var details = await user.LoadDetails(validateSelectedParty: false);
                 return Ok(details.Profile);
             }
+            case AuthenticationInfo.SelfIdentifiedUser selfIdentifiedUser:
+            {
+                var details = await selfIdentifiedUser.LoadDetails();
+                return Ok(details.Profile);
+            }
             default:
-                return BadRequest("The userId is not proviced in the context.");
+                return BadRequest($"Unknown authentication context: {context.GetType().Name}");
         }
     }
 }

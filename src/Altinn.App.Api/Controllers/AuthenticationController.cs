@@ -45,29 +45,46 @@ public class AuthenticationController : ControllerBase
     {
         var current = _authenticationContext.Current;
 
-        CurrentAuthenticationBaseResponse response = current switch
+        switch (current)
         {
-            AuthenticationInfo.Unauthenticated => new UnauthenticatedResponse(),
-            AuthenticationInfo.User user when await user.LoadDetails(validateSelectedParty: true) is var details =>
-                new UserResponse
-                {
-                    Profile = details.Profile,
-                    Party = details.Reportee,
-                    Parties = details.Parties,
-                    PartiesAllowedToInstantiate = details.PartiesAllowedToInstantiate,
-                    Roles = details.Roles,
-                },
-            AuthenticationInfo.Org org when await org.LoadDetails() is var details => new OrgResponse
+            case AuthenticationInfo.Unauthenticated:
+                return Unauthorized();
+            case AuthenticationInfo.User user:
             {
-                Party = details.Party,
-            },
-            AuthenticationInfo.ServiceOwner serviceOwner when await serviceOwner.LoadDetails() is var details =>
-                new ServiceOwnerResponse { Party = details.Party },
-            AuthenticationInfo.SystemUser => new SystemUserResponse(),
-            _ => throw new Exception("Unhandled authenticated type: " + current.GetType().Name),
-        };
-
-        return Ok(response);
+                var details = await user.LoadDetails(validateSelectedParty: true);
+                if (details.CanRepresent is not true)
+                    return Unauthorized();
+                return Ok(
+                    new UserResponse
+                    {
+                        Profile = details.Profile,
+                        Party = details.Reportee,
+                        Parties = details.Parties,
+                        PartiesAllowedToInstantiate = details.PartiesAllowedToInstantiate,
+                        Roles = details.Roles,
+                    }
+                );
+            }
+            case AuthenticationInfo.SelfIdentifiedUser selfIdentified:
+            {
+                var details = await selfIdentified.LoadDetails();
+                return Ok(new SelfIdentifiedUserResponse { Profile = details.Profile, Party = details.Reportee });
+            }
+            case AuthenticationInfo.Org org:
+            {
+                var details = await org.LoadDetails();
+                return Ok(new OrgResponse { Party = details.Party });
+            }
+            case AuthenticationInfo.ServiceOwner serviceOwner:
+            {
+                var details = await serviceOwner.LoadDetails();
+                return Ok(new ServiceOwnerResponse { Party = details.Party });
+            }
+            case AuthenticationInfo.SystemUser:
+                return Ok(new SystemUserResponse { });
+            default:
+                throw new Exception($"Unexpected authentication context: {current.GetType().Name}");
+        }
     }
 
     [JsonDerivedType(typeof(UnauthenticatedResponse), typeDiscriminator: "Unauthenticated")]
@@ -90,6 +107,13 @@ public class AuthenticationController : ControllerBase
         public required IReadOnlyList<Party> PartiesAllowedToInstantiate { get; init; }
 
         public required IReadOnlyList<Role> Roles { get; init; }
+    }
+
+    private sealed record SelfIdentifiedUserResponse : CurrentAuthenticationBaseResponse
+    {
+        public required UserProfile Profile { get; init; }
+
+        public required Party Party { get; init; }
     }
 
     private sealed record OrgResponse : CurrentAuthenticationBaseResponse
