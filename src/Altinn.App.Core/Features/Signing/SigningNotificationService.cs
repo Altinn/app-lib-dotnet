@@ -3,13 +3,15 @@ using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Models.Notifications.Email;
 using Altinn.App.Core.Models.Notifications.Sms;
 using Microsoft.Extensions.Logging;
+using static Altinn.App.Core.Features.Telemetry.NotifySigneesConst;
 
 namespace Altinn.App.Core.Features.Signing;
 
 internal sealed class SigningNotificationService(
     ILogger<SigningNotificationService> logger,
     ISmsNotificationClient? smsNotificationClient = null,
-    IEmailNotificationClient? emailNotificationClient = null
+    IEmailNotificationClient? emailNotificationClient = null,
+    Telemetry? telemetry = null
 ) : ISigningNotificationService
 {
     public async Task<List<SigneeContext>> NotifySignatureTask(
@@ -17,6 +19,7 @@ internal sealed class SigningNotificationService(
         CancellationToken? ct = null
     )
     {
+        using var activity = telemetry?.StartNotifySigneesActivity();
         foreach (SigneeContext signeeContext in signeeContexts)
         {
             SigneeState state = signeeContext.SigneeState;
@@ -38,6 +41,7 @@ internal sealed class SigningNotificationService(
 
                     state.SignatureRequestSmsSent = success;
                     state.SignatureRequestSmsNotSentReason = success ? null : errorMessage;
+                    telemetry?.RecordNotifySignees(NotifySigneesResult.Success);
                 }
 
                 if (state.SignatureRequestEmailSent is false && notification?.Email is not null)
@@ -47,6 +51,7 @@ internal sealed class SigningNotificationService(
                     if (success is false)
                     {
                         logger.LogError(errorMessage);
+                        telemetry?.RecordNotifySignees(NotifySigneesResult.Error);
                     }
 
                     state.SignatureRequestEmailSent = success;
@@ -55,7 +60,7 @@ internal sealed class SigningNotificationService(
             }
             catch
             {
-                // TODO: log + telemetry?
+                telemetry?.RecordNotifySignees(NotifySigneesResult.Error);
             }
         }
 
