@@ -19,8 +19,7 @@ internal static class LocaltestValidationDI
     {
         if (configuration.GetValue<bool>("GeneralSettings:DisableLocaltestValidation"))
             return services;
-        services.AddSingleton<LocaltestValidation>();
-        services.AddSingleton<IHostedService>(provider => provider.GetRequiredService<LocaltestValidation>());
+        services.AddHostedService<LocaltestValidation>();
         return services;
     }
 }

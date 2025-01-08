@@ -26,6 +26,9 @@ public class LocaltestValidationTests
 
         public FakeTimeProvider TimeProvider => App.Services.GetRequiredService<FakeTimeProvider>();
 
+        public LocaltestValidation Validator =>
+            App.Services.GetServices<IHostedService>().OfType<LocaltestValidation>().Single();
+
         private sealed class ReqHandler(Action? onRequest = null) : DelegatingHandler
         {
             protected override Task<HttpResponseMessage> SendAsync(
@@ -80,7 +83,7 @@ public class LocaltestValidationTests
     {
         await using var fixture = Fixture.Create();
 
-        var service = fixture.App.Services.GetRequiredService<LocaltestValidation>();
+        var service = fixture.Validator;
 
         Assert.NotNull(service);
     }
@@ -103,7 +106,7 @@ public class LocaltestValidationTests
                     .WithBody($"{expectedVersion}")
             );
 
-        var service = fixture.App.Services.GetRequiredService<LocaltestValidation>();
+        var service = fixture.Validator;
         var lifetime = fixture.App.Services.GetRequiredService<IHostApplicationLifetime>();
         await service.StartAsync(lifetime.ApplicationStopping);
 
@@ -136,7 +139,7 @@ public class LocaltestValidationTests
                     .WithBody($"{expectedVersion}")
             );
 
-        var service = fixture.App.Services.GetRequiredService<LocaltestValidation>();
+        var service = fixture.Validator;
         var lifetime = fixture.App.Services.GetRequiredService<IHostApplicationLifetime>();
         await service.StartAsync(lifetime.ApplicationStopping);
 
@@ -161,7 +164,7 @@ public class LocaltestValidationTests
             .Given(Request.Create().WithPath(Fixture.ApiPath).UsingGet())
             .RespondWith(Response.Create().WithStatusCode(404));
 
-        var service = fixture.App.Services.GetRequiredService<LocaltestValidation>();
+        var service = fixture.Validator;
         var lifetime = fixture.App.Services.GetRequiredService<IHostApplicationLifetime>();
         await service.StartAsync(lifetime.ApplicationStopping);
 
@@ -187,7 +190,7 @@ public class LocaltestValidationTests
                 Response.Create().WithStatusCode(200).WithHeader("Content-Type", "text/plain").WithBody("blah")
             );
 
-        var service = fixture.App.Services.GetRequiredService<LocaltestValidation>();
+        var service = fixture.Validator;
         var lifetime = fixture.App.Services.GetRequiredService<IHostApplicationLifetime>();
         await service.StartAsync(lifetime.ApplicationStopping);
 
@@ -218,7 +221,7 @@ public class LocaltestValidationTests
                     .WithDelay(delay)
             );
 
-        var service = fixture.App.Services.GetRequiredService<LocaltestValidation>();
+        var service = fixture.Validator;
         var lifetime = fixture.App.Services.GetRequiredService<IHostApplicationLifetime>();
         await service.StartAsync(lifetime.ApplicationStopping);
         await Task.Delay(10);
@@ -251,7 +254,7 @@ public class LocaltestValidationTests
                     .WithDelay(delay)
             );
 
-        var service = fixture.App.Services.GetRequiredService<LocaltestValidation>();
+        var service = fixture.Validator;
         var lifetime = fixture.App.Services.GetRequiredService<IHostApplicationLifetime>();
         await service.StartAsync(lifetime.ApplicationStopping);
         await Task.Delay(10);
@@ -290,7 +293,7 @@ public class LocaltestValidationTests
                     .WithBody($"{expectedVersion}")
             );
 
-        var service = fixture.App.Services.GetRequiredService<LocaltestValidation>();
+        var service = fixture.Validator;
         var lifetime = fixture.App.Services.GetRequiredService<IHostApplicationLifetime>();
         await service.StartAsync(lifetime.ApplicationStopping);
 
@@ -312,7 +315,7 @@ public class LocaltestValidationTests
             .Given(Request.Create().WithPath(Fixture.ApiPath).UsingGet())
             .RespondWith(Response.Create().WithStatusCode(201));
 
-        var service = fixture.App.Services.GetRequiredService<LocaltestValidation>();
+        var service = fixture.Validator;
         var lifetime = fixture.App.Services.GetRequiredService<IHostApplicationLifetime>();
         await service.StartAsync(lifetime.ApplicationStopping);
 
@@ -338,7 +341,7 @@ public class LocaltestValidationTests
             .Given(Request.Create().WithPath(Fixture.ApiPath).UsingGet())
             .RespondWith(Response.Create().WithStatusCode(200).WithHeader("Content-Type", "text/plain").WithBody($"1"));
 
-        var service = fixture.App.Services.GetRequiredService<LocaltestValidation>();
+        var service = fixture.Validator;
         var lifetime = fixture.App.Services.GetRequiredService<IHostApplicationLifetime>();
         await service.StartAsync(lifetime.ApplicationStopping);
 
@@ -373,7 +376,7 @@ public class LocaltestValidationTests
                     .WithBody($"{expectedVersion}")
             );
 
-        var service = fixture.App.Services.GetRequiredService<LocaltestValidation>();
+        var service = fixture.Validator;
         var lifetime = fixture.App.Services.GetRequiredService<IHostApplicationLifetime>();
         await service.StartAsync(lifetime.ApplicationStopping);
 
