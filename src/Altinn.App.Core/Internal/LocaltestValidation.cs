@@ -32,6 +32,7 @@ internal sealed class LocaltestValidation : BackgroundService
     private readonly ILogger<LocaltestValidation> _logger;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IOptionsMonitor<GeneralSettings> _generalSettings;
+    private readonly IOptionsMonitor<PlatformSettings> _platformSettings;
     private readonly IHostApplicationLifetime _lifetime;
     private readonly TimeProvider _timeProvider;
     private readonly Channel<VersionResult> _resultChannel;
@@ -42,6 +43,7 @@ internal sealed class LocaltestValidation : BackgroundService
         ILogger<LocaltestValidation> logger,
         IHttpClientFactory httpClientFactory,
         IOptionsMonitor<GeneralSettings> generalSettings,
+        IOptionsMonitor<PlatformSettings> platformSettings,
         IHostApplicationLifetime lifetime,
         TimeProvider? timeProvider = null
     )
@@ -49,6 +51,7 @@ internal sealed class LocaltestValidation : BackgroundService
         _logger = logger;
         _httpClientFactory = httpClientFactory;
         _generalSettings = generalSettings;
+        _platformSettings = platformSettings;
         _lifetime = lifetime;
         _timeProvider = timeProvider ?? TimeProvider.System;
         _resultChannel = Channel.CreateBounded<VersionResult>(
@@ -171,7 +174,7 @@ internal sealed class LocaltestValidation : BackgroundService
         {
             using var client = _httpClientFactory.CreateClient();
 
-            var baseUrl = _generalSettings.CurrentValue.LocaltestUrl;
+            var baseUrl = new Uri(_platformSettings.CurrentValue.ApiStorageEndpoint).GetLeftPart(UriPartial.Authority);
             var url = $"{baseUrl}/Home/Localtest/Version";
 
             using var response = await client.GetAsync(url, cancellationToken);

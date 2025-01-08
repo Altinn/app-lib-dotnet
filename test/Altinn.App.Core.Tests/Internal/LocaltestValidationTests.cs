@@ -54,9 +54,10 @@ public class LocaltestValidationTests
             {
                 services.AddSingleton(_ => server);
 
-                services.Configure<GeneralSettings>(settings =>
+                services.Configure<PlatformSettings>(settings =>
                 {
-                    settings.LocaltestUrl = server.Url ?? throw new Exception("Missing server URL");
+                    var testUrl = server.Url ?? throw new Exception("Missing server URL");
+                    settings.ApiStorageEndpoint = $"{testUrl}{new Uri(settings.ApiStorageEndpoint).PathAndQuery}";
                 });
 
                 var fakeTimeProvider = new FakeTimeProvider(new DateTimeOffset(2024, 1, 1, 10, 0, 0, TimeSpan.Zero));
@@ -268,8 +269,11 @@ public class LocaltestValidationTests
     public async Task Test_Dns_Failure()
     {
         await using var fixture = Fixture.Create(registerCustomAppServices: services =>
-            services.Configure<GeneralSettings>(settings =>
-                settings.LocaltestUrl = "http://provoke-dns-fail.local.altinn.cloud"
+            services.Configure<PlatformSettings>(settings =>
+                settings.ApiStorageEndpoint = ReplaceHost(
+                    settings.ApiStorageEndpoint,
+                    "provoke-dns-fail.local.altinn.cloud"
+                )
             )
         );
 
@@ -396,5 +400,12 @@ public class LocaltestValidationTests
         var ok = Assert.IsType<VersionResult.Ok>(results.Last());
         Assert.Equal(expectedVersion, ok.Version);
         Assert.False(lifetime.ApplicationStopping.IsCancellationRequested);
+    }
+
+    private static string ReplaceHost(string original, string newHostName)
+    {
+        var builder = new UriBuilder(original);
+        builder.Host = newHostName;
+        return builder.Uri.ToString();
     }
 }

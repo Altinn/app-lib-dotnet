@@ -34,10 +34,10 @@ public class GeneralSettings
     /// </summary>
     public string HostName { get; set; } = "local.altinn.cloud";
 
-    // Only here to be overridden from tests
-    internal string LocaltestUrl { get; set; } = "http://local.altinn.cloud";
-
-    internal bool DisableLocaltestValidation { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether to disable localtest validation on startup.
+    /// </summary>
+    public bool DisableLocaltestValidation { get; set; }
 
     /// <summary>
     /// The externally accesible base url for the app with trailing /
