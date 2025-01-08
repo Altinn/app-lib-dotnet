@@ -78,52 +78,56 @@ internal sealed class LocaltestValidation : BackgroundService
             while (!stoppingToken.IsCancellationRequested)
             {
                 var result = await Version();
-
-                if (!_resultChannel.Writer.TryWrite(result))
-                    _logger.LogWarning("Couldn't log result to channel");
-
-                switch (result)
+                try
                 {
-                    case VersionResult.Ok { Version: var version }:
+                    switch (result)
                     {
-                        _logger.LogInformation("Localtest version: {Version}", version);
-                        if (version >= 1)
+                        case VersionResult.Ok { Version: var version }:
+                        {
+                            _logger.LogInformation("Localtest version: {Version}", version);
+                            if (version >= 1)
+                                return;
+                            _logger.LogError(
+                                "Localtest version is not supported for this version of the app backend. Update your local copy of localtest."
+                                    + " Version found: '{Version}'. Shutting down..",
+                                version
+                            );
+                            Exit();
                             return;
-                        _logger.LogError(
-                            "Localtest version is not supported for this version of the app backend. Update your local copy of localtest."
-                                + " Version found: '{Version}'. Shutting down..",
-                            version
-                        );
-                        Exit();
-                        return;
+                        }
+                        case VersionResult.ApiNotFound:
+                        {
+                            _logger.LogError(
+                                "Localtest version may be outdated, as we failed to probe {HostName} API for version information."
+                                    + " Is localtest running? Do you have a recent copy of localtest? Shutting down..",
+                                ExpectedHostname
+                            );
+                            Exit();
+                            return;
+                        }
+                        case VersionResult.ApiNotAvailable { Error: var error }:
+                            _logger.LogWarning(
+                                "Localtest API could not be reached, is it running? Trying again soon.. Error: '{Error}'. Trying again soon..",
+                                error
+                            );
+                            break;
+                        case VersionResult.UnhandledStatusCode { StatusCode: var statusCode }:
+                            _logger.LogError(
+                                "Localtest version endpoint returned unexpected status code: '{StatusCode}'. Trying again soon..",
+                                statusCode
+                            );
+                            break;
+                        case VersionResult.UnknownError { Exception: var ex }:
+                            _logger.LogError(ex, "Error while trying to fetch localtest version. Trying again soon..");
+                            break;
+                        case VersionResult.AppShuttingDown:
+                            return;
                     }
-                    case VersionResult.ApiNotFound:
-                    {
-                        _logger.LogError(
-                            "Localtest version may be outdated, as we failed to probe {HostName} API for version information."
-                                + " Is localtest running? Do you have a recent copy of localtest? Shutting down..",
-                            ExpectedHostname
-                        );
-                        Exit();
-                        return;
-                    }
-                    case VersionResult.ApiNotAvailable { Error: var error }:
-                        _logger.LogWarning(
-                            "Localtest API could not be reached, is it running? Trying again soon.. Error: '{Error}'. Trying again soon..",
-                            error
-                        );
-                        break;
-                    case VersionResult.UnhandledStatusCode { StatusCode: var statusCode }:
-                        _logger.LogError(
-                            "Localtest version endpoint returned unexpected status code: '{StatusCode}'. Trying again soon..",
-                            statusCode
-                        );
-                        break;
-                    case VersionResult.UnknownError { Exception: var ex }:
-                        _logger.LogError(ex, "Error while trying to fetch localtest version. Trying again soon..");
-                        break;
-                    case VersionResult.AppShuttingDown:
-                        return;
+                }
+                finally
+                {
+                    if (!_resultChannel.Writer.TryWrite(result))
+                        _logger.LogWarning("Couldn't log result to channel");
                 }
                 await Task.Delay(TimeSpan.FromSeconds(5), _timeProvider, stoppingToken);
             }
