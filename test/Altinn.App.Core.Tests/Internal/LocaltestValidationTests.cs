@@ -275,7 +275,7 @@ public class LocaltestValidationTests
             services.Configure<PlatformSettings>(settings =>
                 settings.ApiStorageEndpoint = ReplaceHost(
                     settings.ApiStorageEndpoint,
-                    "provoke-dns-fail.local.altinn.cloud"
+                    "provoke-dns-fail.local.not-altinn-at-all.cloud"
                 )
             )
         );
