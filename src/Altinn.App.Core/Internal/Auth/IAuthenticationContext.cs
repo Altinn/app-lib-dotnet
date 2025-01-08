@@ -62,9 +62,9 @@ public abstract record AuthenticationInfo
         public int PartyId { get; }
 
         /// <summary>
-        /// Party ID from party ID selection cookie
+        /// The party the user has selected through party selection
         /// </summary>
-        public int? CookiePartyId { get; }
+        public int? SelectedPartyId { get; }
 
         /// <summary>
         /// Authentication level
@@ -82,7 +82,7 @@ public abstract record AuthenticationInfo
             int userId,
             int partyId,
             int authenticationLevel,
-            int? cookiePartyId,
+            int? selectedPartyId,
             string token,
             Func<int, Task<UserProfile?>> getUserProfile,
             Func<int, Task<Party?>> lookupParty,
@@ -95,7 +95,7 @@ public abstract record AuthenticationInfo
         {
             UserId = userId;
             PartyId = partyId;
-            CookiePartyId = cookiePartyId;
+            SelectedPartyId = selectedPartyId;
             AuthenticationLevel = authenticationLevel;
             _getUserProfile = getUserProfile;
             _lookupParty = lookupParty;

@@ -162,7 +162,6 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         string app = "permissive-app";
         int instanceOwnerPartyId = token.PartyId;
         using HttpClient client = GetRootedClient(org, app);
-        // string token = TestAuthentication.GetUserToken(userId: 1337, partyId: instanceOwnerPartyId);
 
         var createResponseParsed = await CreateInstanceSimplified(org, app, instanceOwnerPartyId, client, token.Token);
         var instanceId = createResponseParsed.Id;

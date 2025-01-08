@@ -66,7 +66,7 @@ public class AuthorizationController : Controller
                 // Now we know the user can't represent the selected party (reportee)
                 // so we will automatically switch to the user's own party (from the profile)
                 var reportee = details.Profile.Party;
-                if (user.CookiePartyId is null || user.CookiePartyId.Value != reportee.PartyId)
+                if (user.SelectedPartyId is null || user.SelectedPartyId.Value != reportee.PartyId)
                 {
                     // Setting cookie to partyID of logged in user if it varies from previus value.
                     Response.Cookies.Append(
