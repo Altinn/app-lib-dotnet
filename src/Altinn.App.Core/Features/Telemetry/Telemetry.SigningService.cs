@@ -61,7 +61,8 @@ partial class Telemetry
     internal void RecordDelegationRevoke(DelegationResult result) =>
         _counters[MetricNameDelegationRevoke].Add(1, new Tag(InternalLabels.Result, result.ToStringFast()));
 
-    internal void RecordNotifySignees(NotifySigneesResult result) => _counters[MetricNameNotifySignees].Add(1, new Tag(InternalLabels.Result, result.ToStringFast()));
+    internal void RecordNotifySignees(NotifySigneesResult result) =>
+        _counters[MetricNameNotifySignees].Add(1, new Tag(InternalLabels.Result, result.ToStringFast()));
 
     internal Activity? StartAssignSigneesActivity() => ActivitySource.StartActivity("SigningService.AssignSignees");
 
