@@ -114,6 +114,7 @@ internal class InitializeDelegatedSigningUserAction : IUserAction
 
         await _signingService.ProcessSignees(
             currentTask.Id,
+            userContext.UserId,
             userContext.UserParty,
             cachedDataMutator,
             signeeContexts,

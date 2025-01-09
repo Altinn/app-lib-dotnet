@@ -101,13 +101,13 @@ internal sealed class SigningProcessTask : IProcessTask
         UserContext userContext = await _userHelper.GetUserContext(
             _httpContextAccessor.HttpContext ?? throw new InvalidOperationException("HttpContext is not available.")
         );
-
         ClaimsPrincipal user = userContext.User;
 
         string language = await _languageHelper.GetUserLanguage(user);
 
         await _signingService.ProcessSignees(
             taskId,
+            userContext.UserId,
             userContext.UserParty,
             cachedDataMutator,
             signeeContexts,

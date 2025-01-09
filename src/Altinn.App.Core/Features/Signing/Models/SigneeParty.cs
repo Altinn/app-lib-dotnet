@@ -114,6 +114,11 @@ public class Sms
     /// </summary>
     [JsonPropertyName("body")]
     public string? Body { get; set; }
+
+    /// <summary>
+    /// The reference used to track the sms. Can be set to a custom value. If not set, a random guid will be used.
+    /// </summary>
+    public string Reference { get; set; } = Guid.NewGuid().ToString();
 }
 
 /// <summary>
