@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization;
-using Altinn.App.Core.Models;
 
 namespace Altinn.App.Core.Features.Correspondence.Models;
 
