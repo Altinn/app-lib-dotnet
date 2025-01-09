@@ -44,12 +44,12 @@ public abstract record AuthenticationInfo
         /// <summary>
         /// Party ID
         /// </summary>
-        public int PartyId { get; }
+        public int UserPartyId { get; }
 
         /// <summary>
         /// The party the user has selected through party selection
         /// </summary>
-        public int? SelectedPartyId { get; }
+        public int SelectedPartyId { get; }
 
         /// <summary>
         /// Authentication level
@@ -65,9 +65,9 @@ public abstract record AuthenticationInfo
 
         internal User(
             int userId,
-            int partyId,
+            int userPartyId,
             int authenticationLevel,
-            int? selectedPartyId,
+            int selectedPartyId,
             string token,
             Func<int, Task<UserProfile?>> getUserProfile,
             Func<int, Task<Party?>> lookupParty,
@@ -79,7 +79,7 @@ public abstract record AuthenticationInfo
             : base(token)
         {
             UserId = userId;
-            PartyId = partyId;
+            UserPartyId = userPartyId;
             SelectedPartyId = selectedPartyId;
             AuthenticationLevel = authenticationLevel;
             _getUserProfile = getUserProfile;
@@ -93,15 +93,20 @@ public abstract record AuthenticationInfo
         /// <summary>
         /// Detailed information about a logged in user
         /// </summary>
-        /// <param name="Reportee">Party objectd for the selected party ID</param>
+        /// <param name="UserParty">Party object for the user. This means that the user is currently representing themselves as a person</param>
+        /// <param name="SelectedParty">
+        ///     Party object for the selected party.
+        ///     Selected party and user party will differ when the user has chosed to represent a different entity during party selection (e.g. an organisation)
+        /// </param>
         /// <param name="Profile">Users profile</param>
-        /// <param name="RepresentsSelf">True if the user represents itself</param>
+        /// <param name="RepresentsSelf">True if the user represents itself (user party will equal selected party)</param>
         /// <param name="Parties">List of parties the user can represent</param>
         /// <param name="PartiesAllowedToInstantiate">List of parties the user can instantiate</param>
         /// <param name="Roles">List of roles the user has</param>
         /// <param name="CanRepresent">True if the user can represent the selected party. Only set if details were loaded with validateSelectedParty set to true</param>
         public sealed record Details(
-            Party Reportee,
+            Party UserParty,
+            Party SelectedParty,
             UserProfile Profile,
             bool RepresentsSelf,
             IReadOnlyList<Party> Parties,
@@ -124,9 +129,13 @@ public abstract record AuthenticationInfo
             var userProfile =
                 await _getUserProfile(UserId)
                 ?? throw new InvalidOperationException("Could not get user profile while getting user context");
+            if (userProfile.Party is null)
+                throw new InvalidOperationException("Could not get user party from profile");
 
             var lookupPartyTask =
-                PartyId == userProfile.PartyId ? Task.FromResult((Party?)userProfile.Party) : _lookupParty(PartyId);
+                SelectedPartyId == userProfile.PartyId
+                    ? Task.FromResult((Party?)userProfile.Party)
+                    : _lookupParty(SelectedPartyId);
             var partiesTask = _getPartyList(UserId);
             await Task.WhenAll(lookupPartyTask, partiesTask);
 
@@ -134,20 +143,20 @@ public abstract record AuthenticationInfo
             if (parties.Count == 0)
                 parties.Add(userProfile.Party);
 
-            var reportee = await lookupPartyTask;
-            if (reportee is null)
+            var selectedParty = await lookupPartyTask;
+            if (selectedParty is null)
                 throw new InvalidOperationException("Could not load party for selected party ID");
 
-            var representsSelf = userProfile.Party is null || PartyId != userProfile.Party.PartyId;
+            var representsSelf = SelectedPartyId == userProfile.PartyId;
             bool? canRepresent = null;
             if (validateSelectedParty && !representsSelf)
             {
                 // The selected party must either be the profile/default party or a party the user can represent,
                 // which can be validated against the user's party list.
-                canRepresent = await _validateSelectedParty(UserId, PartyId);
+                canRepresent = await _validateSelectedParty(UserId, SelectedPartyId);
             }
 
-            var roles = await _getUserRoles(UserId, PartyId);
+            var roles = await _getUserRoles(UserId, SelectedPartyId);
 
             var application = await _getApplicationMetadata();
             var partiesAllowedToInstantiate = InstantiationHelper.FilterPartiesByAllowedPartyTypes(
@@ -156,7 +165,8 @@ public abstract record AuthenticationInfo
             );
 
             _extra = new Details(
-                reportee,
+                userProfile.Party,
+                selectedParty,
                 userProfile,
                 representsSelf,
                 parties,
@@ -218,7 +228,7 @@ public abstract record AuthenticationInfo
         /// <summary>
         /// Detailed information about a logged in user
         /// </summary>
-        public sealed record Details(Party Reportee, UserProfile Profile, bool RepresentsSelf);
+        public sealed record Details(Party Party, UserProfile Profile, bool RepresentsSelf);
 
         /// <summary>
         /// Load the details for the current user.
@@ -421,7 +431,7 @@ public abstract record AuthenticationInfo
             claim.Type.Equals(AltinnCoreClaimTypes.PartyID, StringComparison.OrdinalIgnoreCase)
         );
 
-        int? selectedPartyId = null;
+        int? partyId = null;
         if (!string.IsNullOrWhiteSpace(partyIdClaim?.Value))
         {
             // TODO: partyId is only present for org tokens when using virksomhetsbruker
@@ -429,7 +439,7 @@ public abstract record AuthenticationInfo
             // If we want `Org` to always have party ID, then we need to do a lookup with AltinnPartyClient (register)
             if (!int.TryParse(partyIdClaim.Value, CultureInfo.InvariantCulture, out var partyIdClaimValue))
                 throw new InvalidOperationException("Invalid party ID claim value for token");
-            selectedPartyId = partyIdClaimValue;
+            partyId = partyIdClaimValue;
         }
 
         var orgClaim = httpContext.User.Claims.FirstOrDefault(claim =>
@@ -510,6 +520,9 @@ public abstract record AuthenticationInfo
         if (!int.TryParse(userIdClaim.Value, CultureInfo.InvariantCulture, out int userId))
             throw new InvalidOperationException("Invalid user ID claim value for user token");
 
+        if (partyId is null)
+            throw new InvalidOperationException("Missing party ID for user token");
+
         ParseAuthLevel(authLevelClaim?.Value, out authLevel);
         if (authLevel == 0)
         {
@@ -519,33 +532,23 @@ public abstract record AuthenticationInfo
             if (string.IsNullOrWhiteSpace(usernameClaim?.Value))
                 throw new InvalidOperationException("Missing username claim for self-identified user token");
 
-            return new SelfIdentifiedUser(
-                usernameClaim.Value,
-                userId,
-                selectedPartyId ?? throw new InvalidOperationException("Missing party ID for user token"),
-                token,
-                getUserProfile
-            );
+            return new SelfIdentifiedUser(usernameClaim.Value, userId, partyId.Value, token, getUserProfile);
         }
 
-        int? cookiePartyId = null;
+        int selectedPartyId = partyId.Value;
         if (httpContext.Request.Cookies.TryGetValue(partyCookieName, out var partyCookie) && partyCookie != null)
         {
             if (!int.TryParse(partyCookie, CultureInfo.InvariantCulture, out var cookiePartyIdVal))
                 throw new InvalidOperationException("Invalid party ID in cookie: " + partyCookie);
 
-            cookiePartyId = cookiePartyIdVal;
-            selectedPartyId = cookiePartyId;
+            selectedPartyId = cookiePartyIdVal;
         }
-
-        if (selectedPartyId is null)
-            throw new InvalidOperationException("Missing party ID for user token");
 
         return new User(
             userId,
-            selectedPartyId.Value,
+            partyId.Value,
             authLevel,
-            cookiePartyId,
+            selectedPartyId,
             token,
             getUserProfile,
             lookupUserParty,

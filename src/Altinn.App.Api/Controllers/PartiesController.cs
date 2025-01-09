@@ -75,7 +75,7 @@ public class PartiesController : ControllerBase
             case AuthenticationInfo.SelfIdentifiedUser selfIdentified:
             {
                 var details = await selfIdentified.LoadDetails();
-                IReadOnlyList<Party> parties = [details.Reportee];
+                IReadOnlyList<Party> parties = [details.Party];
                 return Ok(parties);
             }
             case AuthenticationInfo.Org orgInfo:

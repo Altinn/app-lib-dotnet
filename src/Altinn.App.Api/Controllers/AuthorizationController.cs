@@ -56,16 +56,16 @@ public class AuthorizationController : Controller
                 {
                     if (returnPartyObject)
                     {
-                        return Ok(details.Reportee);
+                        return Ok(details.SelectedParty);
                     }
 
-                    return Ok(details.Reportee.PartyId);
+                    return Ok(details.SelectedParty.PartyId);
                 }
 
                 // Now we know the user can't represent the selected party (reportee)
                 // so we will automatically switch to the user's own party (from the profile)
                 var reportee = details.Profile.Party;
-                if (user.SelectedPartyId is null || user.SelectedPartyId.Value != reportee.PartyId)
+                if (user.SelectedPartyId != reportee.PartyId)
                 {
                     // Setting cookie to partyID of logged in user if it varies from previus value.
                     Response.Cookies.Append(
@@ -86,10 +86,10 @@ public class AuthorizationController : Controller
                 var details = await selfIdentified.LoadDetails();
                 if (returnPartyObject)
                 {
-                    return Ok(details.Reportee);
+                    return Ok(details.Party);
                 }
 
-                return Ok(details.Reportee.PartyId);
+                return Ok(details.Party.PartyId);
             }
             case AuthenticationInfo.Org org:
             {
