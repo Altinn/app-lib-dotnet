@@ -58,7 +58,7 @@ public abstract record OrganisationOrPersonIdentifier
         /// </summary>
         public override string ToUrnFormattedString()
         {
-            return Value.GetUrnFormattedValue();
+            return Value.ToUrnFormattedString();
         }
     }
 
