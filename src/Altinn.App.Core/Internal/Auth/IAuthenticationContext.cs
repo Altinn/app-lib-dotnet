@@ -660,10 +660,29 @@ internal sealed class AuthenticationContext : IAuthenticationContext
         {
             var httpContext = _httpContext;
 
+            AuthenticationInfo authInfo;
             if (!httpContext.Items.TryGetValue(ItemsKey, out var authInfoObj))
-                throw new InvalidOperationException("Authentication info was not populated");
-            if (authInfoObj is not AuthenticationInfo authInfo)
-                throw new InvalidOperationException("Invalid authentication info object in HTTP context items");
+            {
+                authInfo = AuthenticationInfo.From(
+                    httpContext,
+                    _appSettings.CurrentValue.RuntimeCookieName,
+                    _generalSettings.CurrentValue.GetAltinnPartyCookieName,
+                    _profileClient.GetUserProfile,
+                    _altinnPartyClient.GetParty,
+                    (string orgNr) => _altinnPartyClient.LookupParty(new PartyLookup { OrgNo = orgNr }),
+                    _authorizationClient.GetPartyList,
+                    _authorizationClient.ValidateSelectedParty,
+                    _authorizationClient.GetUserRoles,
+                    _appMetadata.GetApplicationMetadata
+                );
+                httpContext.Items[ItemsKey] = authInfo;
+            }
+            else
+            {
+                authInfo =
+                    authInfoObj as AuthenticationInfo
+                    ?? throw new Exception("Unexpected type for authentication info in HTTP context");
+            }
             return authInfo;
         }
     }
