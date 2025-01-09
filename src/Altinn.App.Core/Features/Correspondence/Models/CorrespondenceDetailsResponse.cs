@@ -24,7 +24,7 @@ public sealed record CorrespondenceDetailsResponse
     /// The recipient of the correspondence.
     /// </summary>
     [JsonPropertyName("recipient")]
-    [OrganisationOrPersonIdentifierJsonConverter(OrganisationNumberFormat.International)]
+    [JsonConverter(typeof(OrganisationOrPersonIdentifierJsonConverter))]
     public required OrganisationOrPersonIdentifier Recipient { get; init; }
 
     /// <summary>
