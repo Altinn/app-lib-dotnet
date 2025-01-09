@@ -322,7 +322,7 @@ public class CorrespondenceClientTests
 
     [Theory]
     [InlineData(typeof(SendCorrespondencePayload), new[] { "altinn:correspondence.write", "altinn:serviceowner" })]
-    [InlineData(typeof(GetCorrespondenceStatusPayload), new[] { "altinn:correspondence.read", "altinn:serviceowner" })]
+    [InlineData(typeof(GetCorrespondenceStatusPayload), new[] { "altinn:correspondence.write", "altinn:serviceowner" })]
     public async Task AuthorisationFactory_ImplementsMaskinportenCorrectly(
         Type payloadType,
         IEnumerable<string> expectedScopes
