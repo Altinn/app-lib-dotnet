@@ -5,7 +5,7 @@ using Altinn.App.Core.Features.Maskinporten.Constants;
 using Altinn.App.Core.Features.Maskinporten.Models;
 using Altinn.App.Core.Models;
 using AltinnCore.Authentication.Constants;
-using static Altinn.App.Core.Internal.Auth.AuthenticationInfo;
+using static Altinn.App.Core.Features.Auth.AuthenticationInfo;
 
 namespace Altinn.App.Api.Tests.Utils;
 

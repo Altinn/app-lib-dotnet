@@ -1,6 +1,7 @@
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.DataLists;
 using Altinn.App.Core.Features.DataProcessing;
 using Altinn.App.Core.Features.ExternalApi;

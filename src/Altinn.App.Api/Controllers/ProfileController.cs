@@ -1,4 +1,4 @@
-using Altinn.App.Core.Internal.Auth;
+using Altinn.App.Core.Features.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

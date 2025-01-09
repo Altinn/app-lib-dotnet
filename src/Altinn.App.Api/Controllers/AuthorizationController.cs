@@ -1,5 +1,6 @@
 using System.Globalization;
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Internal.Auth;
 using Authorization.Platform.Authorization.Models;
 using Microsoft.AspNetCore.Authorization;
