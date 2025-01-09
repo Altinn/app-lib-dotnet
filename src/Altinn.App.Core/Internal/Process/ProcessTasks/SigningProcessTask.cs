@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
@@ -32,6 +33,7 @@ internal sealed class SigningProcessTask : IProcessTask
     private readonly ModelSerializationService _modelSerialization;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly UserHelper _userHelper;
+    private readonly LanguageHelper _languageHelper;
     private readonly ILogger<SigningProcessTask> _logger;
 
     public SigningProcessTask(
@@ -58,6 +60,7 @@ internal sealed class SigningProcessTask : IProcessTask
         _modelSerialization = modelSerialization;
         _httpContextAccessor = httpContextAccessor;
         _userHelper = new UserHelper(profileClient, altinnPartyClientClient, settings);
+        _languageHelper = new LanguageHelper(profileClient);
         _logger = logger;
     }
 
@@ -98,6 +101,10 @@ internal sealed class SigningProcessTask : IProcessTask
         UserContext userContext = await _userHelper.GetUserContext(
             _httpContextAccessor.HttpContext ?? throw new InvalidOperationException("HttpContext is not available.")
         );
+
+        ClaimsPrincipal user = userContext.User;
+
+        string language = await _languageHelper.GetUserLanguage(user);
 
         await _signingService.ProcessSignees(
             taskId,
