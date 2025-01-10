@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Features.Maskinporten.Constants;
 using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
@@ -40,6 +41,26 @@ public abstract class Authenticated
         TokenIssuer = tokenIssuer;
         TokenIsExchanged = tokenIsExchanged;
         Token = token;
+    }
+
+    /// <summary>
+    /// Resolves the language for the current authenticated client.
+    /// If the client is a user, we will look up the language from the user profile.
+    /// In all other cases we default to "nb".
+    /// </summary>
+    /// <returns></returns>
+    public async Task<string> GetLanguage()
+    {
+        string language = LanguageConst.Nb;
+        if (this is not User user)
+            return language;
+
+        var details = await user.LoadDetails();
+
+        if (!string.IsNullOrEmpty(details.Profile.ProfileSettingPreference?.Language))
+            language = details.Profile.ProfileSettingPreference.Language;
+
+        return language;
     }
 
     /// <summary>

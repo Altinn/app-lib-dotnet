@@ -4,12 +4,17 @@ using Altinn.App.Api.Tests.Mocks;
 using Altinn.App.Core.Features.Maskinporten.Constants;
 using Altinn.App.Core.Features.Maskinporten.Models;
 using Altinn.App.Core.Models;
+using Altinn.Platform.Profile.Models;
+using Altinn.Platform.Register.Enums;
+using Altinn.Platform.Register.Models;
+using Altinn.Platform.Storage.Interface.Models;
 using AltinnCore.Authentication.Constants;
+using Authorization.Platform.Authorization.Models;
 using static Altinn.App.Core.Features.Auth.Authenticated;
 
 namespace Altinn.App.Api.Tests.Utils;
 
-public enum JwtTokenTypes
+public enum AuthenticationTypes
 {
     User,
     SelfIdentifiedUser,
@@ -18,7 +23,7 @@ public enum JwtTokenTypes
     ServiceOwner,
 }
 
-public sealed record TestJwtToken(JwtTokenTypes Type, int PartyId, string Token);
+public sealed record TestJwtToken(AuthenticationTypes Type, int PartyId, string Token);
 
 public static class TestAuthentication
 {
@@ -41,11 +46,23 @@ public static class TestAuthentication
     {
         public AllTokens()
         {
-            Add(new(JwtTokenTypes.User, DefaultUserPartyId, GetUserToken()));
-            Add(new(JwtTokenTypes.SelfIdentifiedUser, DefaultUserPartyId, GetSelfIdentifiedUserToken()));
-            Add(new(JwtTokenTypes.Org, DefaultOrgPartyId, GetOrgToken()));
-            Add(new(JwtTokenTypes.SystemUser, DefaultOrgPartyId, GetSystemUserToken()));
-            Add(new(JwtTokenTypes.ServiceOwner, DefaultOrgPartyId, GetServiceOwnerToken()));
+            Add(new(AuthenticationTypes.User, DefaultUserPartyId, GetUserToken()));
+            Add(new(AuthenticationTypes.SelfIdentifiedUser, DefaultUserPartyId, GetSelfIdentifiedUserToken()));
+            Add(new(AuthenticationTypes.Org, DefaultOrgPartyId, GetOrgToken()));
+            Add(new(AuthenticationTypes.SystemUser, DefaultOrgPartyId, GetSystemUserToken()));
+            Add(new(AuthenticationTypes.ServiceOwner, DefaultOrgPartyId, GetServiceOwnerToken()));
+        }
+    }
+
+    public sealed class AllTypes : TheoryData<AuthenticationTypes>
+    {
+        public AllTypes()
+        {
+            Add(AuthenticationTypes.User);
+            Add(AuthenticationTypes.SelfIdentifiedUser);
+            Add(AuthenticationTypes.Org);
+            Add(AuthenticationTypes.SystemUser);
+            Add(AuthenticationTypes.ServiceOwner);
         }
     }
 
@@ -88,6 +105,78 @@ public static class TestAuthentication
         identity.AddClaims(claims);
         ClaimsPrincipal principal = new ClaimsPrincipal(identity);
         return principal;
+    }
+
+    public static User GetUserAuthenticationInfo(ProfileSettingPreference? profileSettingPreference = null)
+    {
+        var userId = DefaultUserId;
+        var userPartyId = DefaultUserPartyId;
+        var party = new Party()
+        {
+            PartyId = userPartyId,
+            PartyTypeName = PartyType.Person,
+            OrgNumber = null,
+            SSN = "12345678901",
+            Name = "Test Testesen",
+        };
+        return new User(
+            userId,
+            userPartyId,
+            DefaultUserAuthenticationLevel,
+            userPartyId,
+            "",
+            getUserProfile: uid =>
+            {
+                Assert.Equal(userId, uid);
+                return Task.FromResult<UserProfile?>(
+                    new UserProfile()
+                    {
+                        UserId = userId,
+                        PartyId = userPartyId,
+                        Party = party,
+                        Email = "test@testesen.no",
+                        ProfileSettingPreference = profileSettingPreference,
+                    }
+                );
+            },
+            lookupParty: uid =>
+            {
+                Assert.Equal(userId, uid);
+                return Task.FromResult<Party?>(party);
+            },
+            getPartyList: uid =>
+            {
+                Assert.Equal(userId, uid);
+                return Task.FromResult<List<Party>?>([party]);
+            },
+            validateSelectedParty: (uid, pid) =>
+            {
+                Assert.Equal(userId, uid);
+                Assert.Equal(userPartyId, pid);
+                return Task.FromResult<bool?>(true);
+            },
+            getUserRoles: (uid, pid) =>
+            {
+                Assert.Equal(userId, uid);
+                Assert.Equal(userPartyId, pid);
+                return Task.FromResult<IEnumerable<Role>>([]);
+            },
+            getApplicationMetadata: () =>
+            {
+                return Task.FromResult(
+                    new ApplicationMetadata("ttd/app")
+                    {
+                        PartyTypesAllowed = new PartyTypesAllowed()
+                        {
+                            BankruptcyEstate = true,
+                            Organisation = true,
+                            Person = true,
+                            SubUnit = true,
+                        },
+                    }
+                );
+            }
+        );
     }
 
     public static string GetSelfIdentifiedUserToken(

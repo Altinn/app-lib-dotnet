@@ -1,17 +1,15 @@
 using System.Globalization;
-using System.Security.Claims;
 using Altinn.App.Core.Configuration;
-using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Helpers.Extensions;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Language;
-using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Models;
-using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
@@ -26,11 +24,11 @@ public class PdfService : IPdfService
     private readonly IAppResources _resourceService;
     private readonly IDataClient _dataClient;
     private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly IProfileClient _profileClient;
 
     private readonly IPdfGeneratorClient _pdfGeneratorClient;
     private readonly PdfGeneratorSettings _pdfGeneratorSettings;
     private readonly ILogger<PdfService> _logger;
+    private readonly IAuthenticationContext _authenticationContext;
     private readonly GeneralSettings _generalSettings;
     private readonly Telemetry? _telemetry;
     private const string PdfElementType = "ref-data-as-pdf";
@@ -42,32 +40,32 @@ public class PdfService : IPdfService
     /// <param name="appResources">The service giving access to local resources.</param>
     /// <param name="dataClient">The data client.</param>
     /// <param name="httpContextAccessor">The httpContextAccessor</param>
-    /// <param name="profileClient">The profile client</param>
     /// <param name="pdfGeneratorClient">PDF generator client for the experimental PDF generator service</param>
     /// <param name="pdfGeneratorSettings">PDF generator related settings.</param>
     /// <param name="generalSettings">The app general settings.</param>
     /// <param name="logger">The logger.</param>
+    /// <param name="serviceProvider">The service provider.</param>
     /// <param name="telemetry">Telemetry for metrics and traces.</param>
     public PdfService(
         IAppResources appResources,
         IDataClient dataClient,
         IHttpContextAccessor httpContextAccessor,
-        IProfileClient profileClient,
         IPdfGeneratorClient pdfGeneratorClient,
         IOptions<PdfGeneratorSettings> pdfGeneratorSettings,
         IOptions<GeneralSettings> generalSettings,
         ILogger<PdfService> logger,
+        IServiceProvider serviceProvider,
         Telemetry? telemetry = null
     )
     {
         _resourceService = appResources;
         _dataClient = dataClient;
         _httpContextAccessor = httpContextAccessor;
-        _profileClient = profileClient;
         _pdfGeneratorClient = pdfGeneratorClient;
         _pdfGeneratorSettings = pdfGeneratorSettings.Value;
         _generalSettings = generalSettings.Value;
         _logger = logger;
+        _authenticationContext = serviceProvider.GetRequiredService<IAuthenticationContext>();
         _telemetry = telemetry;
     }
 
@@ -78,9 +76,9 @@ public class PdfService : IPdfService
 
         HttpContext? httpContext = _httpContextAccessor.HttpContext;
         var queries = httpContext?.Request.Query;
-        var user = httpContext?.User;
+        var auth = _authenticationContext.Current;
 
-        var language = GetOverriddenLanguage(queries) ?? await GetLanguage(user);
+        var language = GetOverriddenLanguage(queries) ?? await auth.GetLanguage();
 
         TextResource? textResource = await GetTextResource(instance, language);
 
@@ -97,9 +95,9 @@ public class PdfService : IPdfService
 
         HttpContext? httpContext = _httpContextAccessor.HttpContext;
         var queries = httpContext?.Request.Query;
-        var user = httpContext?.User;
+        var auth = _authenticationContext.Current;
 
-        var language = GetOverriddenLanguage(queries) ?? await GetLanguage(user);
+        var language = GetOverriddenLanguage(queries) ?? await auth.GetLanguage();
 
         TextResource? textResource = await GetTextResource(instance, language);
 
@@ -160,32 +158,6 @@ public class PdfService : IPdfService
         }
 
         return new Uri(url);
-    }
-
-    internal async Task<string> GetLanguage(ClaimsPrincipal? user)
-    {
-        string language = LanguageConst.Nb;
-
-        if (user is null)
-        {
-            return language;
-        }
-
-        int? userId = user.GetUserIdAsInt();
-
-        if (userId is not null)
-        {
-            UserProfile userProfile =
-                await _profileClient.GetUserProfile((int)userId)
-                ?? throw new Exception("Could not get user profile while getting language");
-
-            if (!string.IsNullOrEmpty(userProfile.ProfileSettingPreference?.Language))
-            {
-                language = userProfile.ProfileSettingPreference.Language;
-            }
-        }
-
-        return language;
     }
 
     internal static string? GetOverriddenLanguage(IQueryCollection? queries)
