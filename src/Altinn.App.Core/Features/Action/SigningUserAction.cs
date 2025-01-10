@@ -131,13 +131,21 @@ public class SigningUserAction : IUserAction
 
         try
         {
-            await SendCorrespondence(
+            var result = await SendCorrespondence(
                 signatureContext.InstanceIdentifier,
                 signatureContext.Signee,
                 dataElementSignatures,
                 appMetadata,
                 context
             );
+
+            if (result is not null)
+            {
+                _logger.LogInformation(
+                    "Correspondence successfully sent to {Recipients}",
+                    string.Join(", ", result.Correspondences.Select(x => x.Recipient))
+                );
+            }
         }
         catch (Exception e)
         {
@@ -192,31 +200,28 @@ public class SigningUserAction : IUserAction
             .WithAllowSystemDeleteAfter(DateTime.Now.AddYears(1))
             .WithContent(content);
 
-        foreach (var dataElementSignature in dataElementSignatures)
-        {
-            DataElement dataElement = context.Instance.Data.First(x => x.Id == dataElementSignature.DataElementId);
+        IEnumerable<DataElement> attachments = context.Instance.Data.Where(x =>
+            IsSignedDataElement(x) || IsGeneratedPdf(x)
+        );
 
-            string filename = dataElement.Filename;
-            if (string.IsNullOrWhiteSpace(filename))
-            {
-                string? extension = GetExtensionFromMimeType(dataElement.ContentType);
-                filename = $"{dataElement.DataType}{extension}";
-            }
+        foreach (DataElement attachment in attachments)
+        {
+            string filename = GetDataElementFilename(attachment);
 
             builder.WithAttachment(
                 CorrespondenceAttachmentBuilder
                     .Create()
                     .WithFilename(filename)
                     .WithName(filename)
-                    .WithSendersReference(dataElement.Id)
-                    .WithDataType(dataElement.ContentType)
+                    .WithSendersReference(attachment.Id)
+                    .WithDataType(attachment.ContentType)
                     .WithData(
                         await _dataClient.GetDataBytes(
                             appMetadata.AppIdentifier.Org,
                             appMetadata.AppIdentifier.App,
                             instanceIdentifier.InstanceOwnerPartyId,
                             instanceIdentifier.InstanceGuid,
-                            Guid.Parse(dataElement.Id)
+                            Guid.Parse(attachment.Id)
                         )
                     )
             );
@@ -225,6 +230,12 @@ public class SigningUserAction : IUserAction
         return await _correspondenceClient.Send(
             new SendCorrespondencePayload(builder.Build(), CorrespondenceAuthorisation.Maskinporten)
         );
+
+        bool IsSignedDataElement(DataElement dataElement) =>
+            dataElementSignatures.Any(x => x.DataElementId == dataElement.Id);
+
+        bool IsGeneratedPdf(DataElement dataElement) =>
+            dataElement is { ContentType: "application/pdf", DataType: "ref-data-as-pdf" };
     }
 
     private async Task<CorrespondenceContent> GetCorrespondenceContent(UserActionContext context)
@@ -288,12 +299,19 @@ public class SigningUserAction : IUserAction
         };
     }
 
+    // TODO: Get some critical eyes on this
     /// <summary>
     /// Note: This method contains only an extremely small list of known mime types.
     /// The aim here is not to be exhaustive, just to cover some common cases.
     /// </summary>
-    public static string? GetExtensionFromMimeType(string mimeType)
+    public static string GetDataElementFilename(DataElement dataElement)
     {
+        if (!string.IsNullOrWhiteSpace(dataElement.Filename))
+        {
+            return dataElement.Filename;
+        }
+
+        string mimeType = dataElement.ContentType.ToLower(CultureInfo.InvariantCulture);
         var mapping = new Dictionary<string, string>
         {
             ["application/xml"] = ".xml",
@@ -302,7 +320,14 @@ public class SigningUserAction : IUserAction
             ["application/json"] = ".json",
         };
 
-        return mapping.GetValueOrDefault(mimeType.ToLower(CultureInfo.InvariantCulture));
+        string? extension = mapping.GetValueOrDefault(mimeType);
+        string filename = dataElement.DataType;
+        if (filename == "model" && extension == ".xml")
+        {
+            filename = "skjemadata";
+        }
+
+        return $"{filename}{extension}";
     }
 
     private static string? GetDataTypeForSignature(
