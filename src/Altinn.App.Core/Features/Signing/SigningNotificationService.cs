@@ -1,8 +1,6 @@
 using Altinn.App.Core.Features.Signing.Constants;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
-using Altinn.App.Core.Helpers;
-using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Models.Notifications.Email;
 using Altinn.App.Core.Models.Notifications.Sms;
 using Microsoft.Extensions.Logging;
@@ -12,7 +10,6 @@ namespace Altinn.App.Core.Features.Signing;
 
 internal sealed class SigningNotificationService : ISigningNotificationService
 {
-    private readonly LanguageHelper _languageHelper;
     private readonly ILogger<SigningNotificationService> _logger;
     private readonly ISmsNotificationClient? _smsNotificationClient;
     private readonly IEmailNotificationClient? _emailNotificationClient;
@@ -20,13 +17,11 @@ internal sealed class SigningNotificationService : ISigningNotificationService
 
     public SigningNotificationService(
         ILogger<SigningNotificationService> logger,
-        IProfileClient profileClient,
         ISmsNotificationClient? smsNotificationClient = null,
         IEmailNotificationClient? emailNotificationClient = null,
         Telemetry? telemetry = null
     )
     {
-        _languageHelper = new LanguageHelper(profileClient);
         _logger = logger;
         _smsNotificationClient = smsNotificationClient;
         _emailNotificationClient = emailNotificationClient;

@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;

@@ -1,5 +1,3 @@
-using Altinn.App.Core.Internal.Language;
-
 namespace Altinn.App.Core.Features.Signing.Constants;
 
 internal sealed class SigningNotificationConst
