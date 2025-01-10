@@ -243,7 +243,8 @@ public class SigningUserAction : IUserAction
         string? title = null;
         string? summary = null;
         string? body = null;
-        var language = LanguageCode<Iso6391>.Parse(LanguageConst.Nb);
+        string defaultLanguage = LanguageConst.Nb;
+        TextResource? textResource = null;
 
         // TODO: Write better defaults
         var defaults = new
@@ -255,16 +256,20 @@ public class SigningUserAction : IUserAction
 
         try
         {
-            if (context.Language is not null && context.Language != language)
+            AppIdentifier appIdentifier = new(context.Instance);
+
+            if (context.Language is not null && context.Language != defaultLanguage)
             {
-                language = LanguageCode<Iso6391>.Parse(context.Language);
+                textResource = await _appResources.GetTexts(appIdentifier.Org, appIdentifier.App, context.Language);
             }
 
-            var appIdentifier = new AppIdentifier(context.Instance);
-            TextResource textResource =
-                await _appResources.GetTexts(appIdentifier.Org, appIdentifier.App, language)
-                ?? throw new InvalidOperationException($"No text resource found for language {language}");
+            textResource ??=
+                await _appResources.GetTexts(appIdentifier.Org, appIdentifier.App, defaultLanguage)
+                ?? throw new InvalidOperationException(
+                    $"No text resource found for specified language ({context.Language}) nor the default language ({defaultLanguage})"
+                );
 
+            // TODO: Better lang resource IDs
             title = textResource
                 .Resources.FirstOrDefault(textResourceElement =>
                     textResourceElement.Id.Equals("signing-receipt-title", StringComparison.Ordinal)
@@ -292,7 +297,7 @@ public class SigningUserAction : IUserAction
 
         return new CorrespondenceContent
         {
-            Language = language,
+            Language = LanguageCode<Iso6391>.Parse(textResource?.Language ?? defaultLanguage),
             Title = title ?? defaults.Title,
             Summary = summary ?? defaults.Summary,
             Body = body ?? defaults.Body,
