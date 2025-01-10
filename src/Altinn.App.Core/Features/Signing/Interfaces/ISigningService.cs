@@ -17,7 +17,6 @@ internal interface ISigningService
 
     Task<List<SigneeContext>> ProcessSignees(
         string taskId,
-        int userId,
         Party delegatorParty,
         IInstanceDataMutator instanceMutator,
         List<SigneeContext> signeeContexts,

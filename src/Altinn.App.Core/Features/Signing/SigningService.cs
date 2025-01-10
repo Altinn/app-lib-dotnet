@@ -86,7 +86,6 @@ internal sealed class SigningService(
 
     public async Task<List<SigneeContext>> ProcessSignees(
         string taskId,
-        int userId,
         Party delegatorParty,
         IInstanceDataMutator instanceMutator,
         List<SigneeContext> signeeContexts,
@@ -111,7 +110,7 @@ internal sealed class SigningService(
 
         if (delegateSuccess)
         {
-            await signingNotificationService.NotifySignatureTask(signeeContexts, userId, ct);
+            await signingNotificationService.NotifySignatureTask(signeeContexts, ct);
         }
 
         // ! TODO: Remove nullable

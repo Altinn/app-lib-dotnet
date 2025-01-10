@@ -35,7 +35,6 @@ internal sealed class SigningNotificationService : ISigningNotificationService
 
     public async Task<List<SigneeContext>> NotifySignatureTask(
         List<SigneeContext> signeeContexts,
-        int userId,
         CancellationToken? ct = null
     )
     {
@@ -52,8 +51,7 @@ internal sealed class SigningNotificationService : ISigningNotificationService
 
                 if (state.SignatureRequestSmsSent is false && notification?.Sms is not null)
                 {
-                    string language = await _languageHelper.GetUserLanguage(userId);
-                    (bool success, string? errorMessage) = await TrySendSms(notification.Sms, language, ct);
+                    (bool success, string? errorMessage) = await TrySendSms(notification.Sms, ct);
 
                     if (success is false)
                     {
@@ -88,7 +86,7 @@ internal sealed class SigningNotificationService : ISigningNotificationService
         return signeeContexts;
     }
 
-    private async Task<(bool, string? errorMessage)> TrySendSms(Sms sms, string language, CancellationToken? ct = null)
+    private async Task<(bool, string? errorMessage)> TrySendSms(Sms sms, CancellationToken? ct = null)
     {
         if (_smsNotificationClient is null)
         {
@@ -103,7 +101,7 @@ internal sealed class SigningNotificationService : ISigningNotificationService
         var notification = new SmsNotification()
         {
             Recipients = [new SmsRecipient(sms.MobileNumber)],
-            Body = sms.Body ?? SigningNotificationConst.GetDefaultSmsBody(language),
+            Body = sms.Body ?? SigningNotificationConst.DefaultSmsBody,
             SenderNumber = "",
             SendersReference = sms.Reference,
         };
