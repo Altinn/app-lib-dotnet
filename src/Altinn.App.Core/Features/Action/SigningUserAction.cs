@@ -1,4 +1,5 @@
 using System.Globalization;
+using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features.Correspondence;
 using Altinn.App.Core.Features.Correspondence.Builder;
 using Altinn.App.Core.Features.Correspondence.Models;
@@ -14,7 +15,9 @@ using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Signee = Altinn.App.Core.Internal.Sign.Signee;
 
 namespace Altinn.App.Core.Features.Action;
@@ -32,6 +35,7 @@ public class SigningUserAction : IUserAction
     private readonly ICorrespondenceClient _correspondenceClient;
     private readonly IDataClient _dataClient;
     private readonly IAppResources _appResources;
+    private readonly AppSettings _settings;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SigningUserAction"/> class
@@ -44,6 +48,7 @@ public class SigningUserAction : IUserAction
     /// <param name="dataClient">The data client</param>
     /// <param name="appMetadata">The application metadata</param>
     /// <param name="appResources">The application resources</param>
+    /// <param name="settings">The application settings</param>
     public SigningUserAction(
         IProcessReader processReader,
         ILogger<SigningUserAction> logger,
@@ -52,7 +57,8 @@ public class SigningUserAction : IUserAction
         ICorrespondenceClient correspondenceClient,
         IDataClient dataClient,
         IAppMetadata appMetadata,
-        IAppResources appResources
+        IAppResources appResources,
+        IOptions<AppSettings> settings
     )
     {
         _logger = logger;
@@ -63,6 +69,7 @@ public class SigningUserAction : IUserAction
         _dataClient = dataClient;
         _appMetadata = appMetadata;
         _appResources = appResources;
+        _settings = settings.Value;
     }
 
     /// <inheritdoc />
@@ -150,7 +157,15 @@ public class SigningUserAction : IUserAction
         UserActionContext context
     )
     {
-        if (string.IsNullOrEmpty(signee.PersonNumber))
+        string? resource = _settings.SigningCorrespondenceResource;
+        if (string.IsNullOrEmpty(resource))
+        {
+            _logger.LogInformation("No correspondence resource configured, skipping correspondence send");
+            return null;
+        }
+
+        string? recipient = signee.PersonNumber;
+        if (string.IsNullOrEmpty(recipient))
         {
             throw new InvalidOperationException(
                 $"Signee's national identity number is missing, unable to send correspondence"
@@ -159,19 +174,22 @@ public class SigningUserAction : IUserAction
 
         using var altinnCdnClient = new AltinnCdnClient();
         AltinnCdnOrgs altinnCdnOrgs = await altinnCdnClient.GetOrgs();
-        string sender =
-            altinnCdnOrgs.Orgs?.GetValueOrDefault(appMetadata.Org)?.Orgnr
-            ?? throw new InvalidOperationException(
+        string? sender = altinnCdnOrgs.Orgs?.GetValueOrDefault(appMetadata.Org)?.Orgnr;
+
+        if (string.IsNullOrEmpty(sender))
+        {
+            throw new InvalidOperationException(
                 $"Error looking up sender's organisation number from Altinn CDN, using key `{appMetadata.Org}`"
             );
+        }
 
         CorrespondenceContent content = await GetCorrespondenceContent(context);
         var builder = CorrespondenceRequestBuilder
             .Create()
-            .WithResourceId("apps-correspondence-integrasjon2") // TODO: Configurable resource
+            .WithResourceId(resource)
             .WithSender(sender)
             .WithSendersReference(instanceIdentifier.ToString())
-            .WithRecipient(signee.PersonNumber)
+            .WithRecipient(recipient)
             .WithAllowSystemDeleteAfter(DateTime.Now.AddYears(1))
             .WithContent(content);
 
