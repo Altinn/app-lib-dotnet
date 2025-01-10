@@ -15,7 +15,6 @@ using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
 using Altinn.Platform.Storage.Interface.Models;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Signee = Altinn.App.Core.Internal.Sign.Signee;
@@ -197,13 +196,20 @@ public class SigningUserAction : IUserAction
         {
             DataElement dataElement = context.Instance.Data.First(x => x.Id == dataElementSignature.DataElementId);
 
+            string filename = dataElement.Filename;
+            if (string.IsNullOrWhiteSpace(filename))
+            {
+                string? extension = GetExtensionFromMimeType(dataElement.ContentType);
+                filename = $"{dataElement.DataType}{extension}";
+            }
+
             builder.WithAttachment(
                 CorrespondenceAttachmentBuilder
                     .Create()
-                    .WithFilename(dataElement.Filename)
-                    .WithName(dataElement.Filename)
+                    .WithFilename(filename)
+                    .WithName(filename)
                     .WithSendersReference(dataElement.Id)
-                    .WithDataType(dataElement.DataType)
+                    .WithDataType(dataElement.ContentType)
                     .WithData(
                         await _dataClient.GetDataBytes(
                             appMetadata.AppIdentifier.Org,
@@ -280,6 +286,23 @@ public class SigningUserAction : IUserAction
             Summary = summary ?? defaults.Summary,
             Body = body ?? defaults.Body,
         };
+    }
+
+    /// <summary>
+    /// Note: This method contains only an extremely small list of known mime types.
+    /// The aim here is not to be exhaustive, just to cover some common cases.
+    /// </summary>
+    public static string? GetExtensionFromMimeType(string mimeType)
+    {
+        var mapping = new Dictionary<string, string>
+        {
+            ["application/xml"] = ".xml",
+            ["text/xml"] = ".xml",
+            ["application/pdf"] = ".pdf",
+            ["application/json"] = ".json",
+        };
+
+        return mapping.GetValueOrDefault(mimeType.ToLower(CultureInfo.InvariantCulture));
     }
 
     private static string? GetDataTypeForSignature(
