@@ -1,3 +1,4 @@
+using System.Net;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Signing;
 using Altinn.App.Core.Features.Signing.Models;
@@ -6,12 +7,13 @@ using Altinn.App.Core.Models.Notifications.Sms;
 using Altinn.Platform.Register.Models;
 using Microsoft.Extensions.Logging;
 using Moq;
+using static Altinn.App.Core.Features.Signing.SigningNotificationService;
 
 namespace Altinn.App.Core.Tests.Features.Signing.Notifications;
 
 public class SigningNotificationServiceTests
 {
-    Mock<ILogger<SigningNotificationService>> _loggerMock = new(MockBehavior.Strict);
+    Mock<ILogger<SigningNotificationService>> _loggerMock = new();
 
     private Mock<ISmsNotificationClient> SetupSmsNotificationClientMock(string orderId = "123")
     {
@@ -316,6 +318,141 @@ public class SigningNotificationServiceTests
             "No email address provided. Unable to send email notification.",
             signeeContexts[0].SigneeState.SignatureRequestEmailNotSentReason
         );
+    }
+
+    [Fact]
+    public async Task NotifySignatureTask_TrySendSmsWithException_Fails()
+    {
+        //
+
+        Mock<ISmsNotificationClient> smsNotificationClientMock = new Mock<ISmsNotificationClient>(MockBehavior.Strict);
+        smsNotificationClientMock
+            .Setup(x => x.Order(It.IsAny<SmsNotification>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(
+                new SmsNotificationException(
+                    "Failed to send SMS notification",
+                    new HttpResponseMessage()
+                    {
+                        StatusCode = HttpStatusCode.Conflict,
+                        ReasonPhrase = "Conflict",
+                        Content = new StringContent("Failed to send SMS notification"),
+                    },
+                    "Failed to send SMS notification",
+                    new Exception()
+                )
+            );
+
+        SigningNotificationService signingNotificationService = new(
+            logger: _loggerMock.Object,
+            smsNotificationClient: smsNotificationClientMock.Object
+        );
+        // Arrange
+        var signeeContexts = new List<SigneeContext>
+        {
+            SetupSmsSigneeContextNotification(
+                isOrganisation: false,
+                mobileNumber: "12345678",
+                body: "Test SMS",
+                reference: "sms-reference"
+            ),
+        };
+
+        // Act
+        signeeContexts = await signingNotificationService.NotifySignatureTask(signeeContexts);
+
+        // Assert
+        Assert.False(signeeContexts[0].SigneeState.SignatureRequestSmsSent); // SMS notification not sent
+        Assert.NotNull(signeeContexts[0].SigneeState.SignatureRequestSmsNotSentReason); // Error message
+        Assert.Equal(
+            "Failed to send SMS notification: Failed to send SMS notification: StatusCode=Conflict\nReason=Conflict\nBody=Failed to send SMS notification\n",
+            signeeContexts[0].SigneeState.SignatureRequestSmsNotSentReason
+        );
+    }
+
+    [Fact]
+    public async Task NotifySignatureTask_TrySendEmailWithException_Fails()
+    {
+        Mock<IEmailNotificationClient> emailNotificationClientMock = new(MockBehavior.Strict);
+        emailNotificationClientMock
+            .Setup(x => x.Order(It.IsAny<EmailNotification>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(
+                new EmailNotificationException(
+                    "Failed to send email notification",
+                    new HttpResponseMessage()
+                    {
+                        StatusCode = HttpStatusCode.Conflict,
+                        ReasonPhrase = "Conflict",
+                        Content = new StringContent("Failed to send email notification"),
+                    },
+                    "Failed to send email notification",
+                    new Exception()
+                )
+            );
+
+        SigningNotificationService signingNotificationService = new(
+            logger: _loggerMock.Object,
+            emailNotificationClient: emailNotificationClientMock.Object
+        );
+        // Arrange
+        var signeeContexts = new List<SigneeContext>
+        {
+            SetupEmailSigneeContextNotification(
+                isOrganisation: false,
+                email: "test@test.no",
+                subject: "Test Email",
+                body: "This is a test email for testing purposes"
+            ),
+        };
+
+        // Act
+        signeeContexts = await signingNotificationService.NotifySignatureTask(signeeContexts);
+
+        // Assert
+        Assert.False(signeeContexts[0].SigneeState.SignatureRequestEmailSent); // Email notification not sent
+        Assert.NotNull(signeeContexts[0].SigneeState.SignatureRequestEmailNotSentReason); // Error message
+        Assert.Equal(
+            "Failed to send Email notification: Failed to send email notification: StatusCode=Conflict\nReason=Conflict\nBody=Failed to send email notification\n",
+            signeeContexts[0].SigneeState.SignatureRequestEmailNotSentReason
+        );
+    }
+
+    [Fact]
+    public void GetEmailBody_WhenNoBodySet_ReturnsDefaultBody()
+    {
+        // Arrange
+        var email = new Email { EmailAddress = "test@test.no", Subject = "Test Email" };
+
+        // Act
+        string body = GetEmailBody(email);
+
+        // Assert
+        Assert.Equal(NotificationDefaults.EmailBody, body);
+    }
+
+    [Fact]
+    public void GetEmailSubject_WhenNoSubjectSet_ReturnsDefaultSubject()
+    {
+        // Arrange
+        var email = new Email { EmailAddress = "test@test.no", Body = "This is a test email for testing purposes" };
+
+        // Act
+        string subject = GetEmailSubject(email);
+
+        // Assert
+        Assert.Equal(NotificationDefaults.EmailSubject, subject);
+    }
+
+    [Fact]
+    public void GetSmsBody_WhenNoBodySet_ReturnsDefaultBody()
+    {
+        // Arrange
+        var sms = new Sms { MobileNumber = "12345678" };
+
+        // Act
+        string body = GetSmsBody(sms);
+
+        // Assert
+        Assert.Equal(NotificationDefaults.SmsBody, body);
     }
 
     private SigneeContext SetupSmsSigneeContextNotification(

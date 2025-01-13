@@ -14,7 +14,7 @@ internal sealed class SigningNotificationService : ISigningNotificationService
     private readonly IEmailNotificationClient? _emailNotificationClient;
     private readonly Telemetry? _telemetry;
 
-    private record NotificationDefaults
+    internal sealed record NotificationDefaults
     {
         internal const string SmsBody =
             "Du har mottatt en oppgave til signering. Du finner oppgaven i innboksen i Altinn.";
@@ -22,13 +22,6 @@ internal sealed class SigningNotificationService : ISigningNotificationService
             "Du har mottatt en oppgave til signering. Du finner oppgaven i innboksen i Altinn.";
         internal const string EmailSubject = "Oppgave til signering i Altinn";
     }
-
-    // private readonly NotificationDefaults _defaults = new()
-    // {
-    //     SmsBody = "Du har mottatt en oppgave til signering. Du finner oppgaven i innboksen i Altinn.",
-    //     EmailBody = "Du har mottatt en oppgave til signering. Du finner oppgaven i innboksen i Altinn.",
-    //     EmailSubject = "Oppgave til signering i Altinn",
-    // };
 
     public SigningNotificationService(
         ILogger<SigningNotificationService> logger,
@@ -55,44 +48,38 @@ internal sealed class SigningNotificationService : ISigningNotificationService
             Models.Notifications? notifications =
                 signeeContext.OrganisationSignee?.Notifications ?? signeeContext.PersonSignee?.Notifications;
 
-            try
+            Notification? notification = notifications?.OnSignatureAccessRightsDelegated;
+
+            if (state.SignatureRequestSmsSent is false && notification?.Sms is not null)
             {
-                Notification? notification = notifications?.OnSignatureAccessRightsDelegated;
+                (bool success, string? errorMessage) = await TrySendSms(notification.Sms, ct);
 
-                if (state.SignatureRequestSmsSent is false && notification?.Sms is not null)
+                if (success is false)
                 {
-                    (bool success, string? errorMessage) = await TrySendSms(notification.Sms, ct);
-
-                    if (success is false)
-                    {
-                        signeeContext.SigneeState.SignatureRequestSmsNotSentReason = errorMessage;
-                        _logger.LogError(errorMessage);
-                        break;
-                    }
-
-                    state.SignatureRequestSmsSent = success;
-                    _telemetry?.RecordNotifySignees(NotifySigneesResult.Success);
+                    signeeContext.SigneeState.SignatureRequestSmsNotSentReason = errorMessage;
+                    _telemetry?.RecordNotifySignees(NotifySigneesResult.Error);
+                    _logger.LogError(errorMessage);
+                    break;
                 }
 
-                if (state.SignatureRequestEmailSent is false && notification?.Email is not null)
-                {
-                    (bool success, string? errorMessage) = await TrySendEmail(notification.Email, ct);
-
-                    if (success is false)
-                    {
-                        signeeContext.SigneeState.SignatureRequestEmailNotSentReason = errorMessage;
-                        _logger.LogError(errorMessage);
-                        _telemetry?.RecordNotifySignees(NotifySigneesResult.Error);
-                        break;
-                    }
-
-                    state.SignatureRequestEmailSent = success;
-                    _telemetry?.RecordNotifySignees(NotifySigneesResult.Success);
-                }
+                state.SignatureRequestSmsSent = success;
+                _telemetry?.RecordNotifySignees(NotifySigneesResult.Success);
             }
-            catch
+
+            if (state.SignatureRequestEmailSent is false && notification?.Email is not null)
             {
-                _telemetry?.RecordNotifySignees(NotifySigneesResult.Error);
+                (bool success, string? errorMessage) = await TrySendEmail(notification.Email, ct);
+
+                if (success is false)
+                {
+                    signeeContext.SigneeState.SignatureRequestEmailNotSentReason = errorMessage;
+                    _telemetry?.RecordNotifySignees(NotifySigneesResult.Error);
+                    _logger.LogError(errorMessage);
+                    break;
+                }
+
+                state.SignatureRequestEmailSent = success;
+                _telemetry?.RecordNotifySignees(NotifySigneesResult.Success);
             }
         }
 
@@ -114,7 +101,7 @@ internal sealed class SigningNotificationService : ISigningNotificationService
         var notification = new SmsNotification()
         {
             Recipients = [new SmsRecipient(sms.MobileNumber)],
-            Body = sms.Body ?? NotificationDefaults.SmsBody,
+            Body = GetSmsBody(sms),
             SenderNumber = "", // Default SMS sender number is used by setting the value to an empty string. This is set in the altinn-notification repository to be "Altinn".
             SendersReference = sms.Reference,
         };
@@ -146,8 +133,8 @@ internal sealed class SigningNotificationService : ISigningNotificationService
         var notification = new EmailNotification()
         {
             Recipients = [new EmailRecipient(email.EmailAddress)],
-            Subject = email.Subject ?? NotificationDefaults.EmailSubject,
-            Body = email.Body ?? NotificationDefaults.EmailBody,
+            Subject = GetEmailSubject(email),
+            Body = GetEmailBody(email),
             SendersReference = email.Reference,
         };
 
@@ -156,10 +143,25 @@ internal sealed class SigningNotificationService : ISigningNotificationService
             await _emailNotificationClient.Order(notification, ct ?? new CancellationToken());
             return (true, null);
         }
-        catch (SmsNotificationException ex)
+        catch (EmailNotificationException ex)
         {
             _logger.LogError(ex.Message, ex);
             return (false, "Failed to send Email notification: " + ex.Message);
         }
+    }
+
+    internal static string GetSmsBody(Sms sms)
+    {
+        return sms.Body ?? NotificationDefaults.SmsBody;
+    }
+
+    internal static string GetEmailBody(Email email)
+    {
+        return email.Body ?? NotificationDefaults.EmailBody;
+    }
+
+    internal static string GetEmailSubject(Email email)
+    {
+        return email.Subject ?? NotificationDefaults.EmailSubject;
     }
 }
