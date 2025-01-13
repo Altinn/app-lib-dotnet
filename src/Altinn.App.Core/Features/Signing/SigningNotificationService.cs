@@ -97,7 +97,7 @@ internal sealed class SigningNotificationService : ISigningNotificationService
         {
             Recipients = [new SmsRecipient(sms.MobileNumber)],
             Body = sms.Body ?? SigningNotificationConst.DefaultSmsBody,
-            SenderNumber = "",
+            SenderNumber = "", // Default SMS sender number is used. This is set in the altinn-notification repository to be "Altinn".
             SendersReference = sms.Reference,
         };
 
@@ -128,9 +128,9 @@ internal sealed class SigningNotificationService : ISigningNotificationService
         var notification = new EmailNotification()
         {
             Recipients = [new EmailRecipient(email.EmailAddress)],
-            Subject = email.Subject ?? "", //TODO: Should we have defaults or should this be required?
-            Body = email.Body ?? "", //TODO: Should we have defaults or should this be required?
-            SendersReference = "",
+            Subject = email.Subject ?? SigningNotificationConst.DefaultEmailSubject,
+            Body = email.Body ?? SigningNotificationConst.DefaultEmailBody,
+            SendersReference = email.Reference,
         };
 
         try
