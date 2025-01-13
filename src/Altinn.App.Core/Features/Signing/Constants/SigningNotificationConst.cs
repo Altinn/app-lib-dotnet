@@ -6,4 +6,5 @@ internal sealed class SigningNotificationConst
         "Du har mottatt en oppgave til signering. Du finner oppgaven i innboksen i Altinn.";
     internal const string DefaultEmailBody =
         "Du har mottatt en oppgave til signering. Du finner oppgaven i innboksen i Altinn.";
+    internal const string DefaultEmailSubject = "Oppgave til signering i Altinn";
 }
