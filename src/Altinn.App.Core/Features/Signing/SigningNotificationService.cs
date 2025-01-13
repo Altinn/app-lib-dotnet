@@ -1,4 +1,3 @@
-using Altinn.App.Core.Features.Signing.Constants;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Models.Notifications.Email;
@@ -14,6 +13,20 @@ internal sealed class SigningNotificationService : ISigningNotificationService
     private readonly ISmsNotificationClient? _smsNotificationClient;
     private readonly IEmailNotificationClient? _emailNotificationClient;
     private readonly Telemetry? _telemetry;
+
+    private record NotificationDefaults
+    {
+        internal required string SmsBody { get; set; }
+        internal required string EmailBody { get; set; }
+        internal required string EmailSubject { get; set; }
+    }
+
+    private readonly NotificationDefaults _defaults = new()
+    {
+        SmsBody = "Du har mottatt en oppgave til signering. Du finner oppgaven i innboksen i Altinn.",
+        EmailBody = "Du har mottatt en oppgave til signering. Du finner oppgaven i innboksen i Altinn.",
+        EmailSubject = "Oppgave til signering i Altinn",
+    };
 
     public SigningNotificationService(
         ILogger<SigningNotificationService> logger,
@@ -96,8 +109,8 @@ internal sealed class SigningNotificationService : ISigningNotificationService
         var notification = new SmsNotification()
         {
             Recipients = [new SmsRecipient(sms.MobileNumber)],
-            Body = sms.Body ?? SigningNotificationConst.DefaultSmsBody,
-            SenderNumber = "", // Default SMS sender number is used. This is set in the altinn-notification repository to be "Altinn".
+            Body = sms.Body ?? _defaults.SmsBody,
+            SenderNumber = "", // Default SMS sender number is used by setting the value to an empty string. This is set in the altinn-notification repository to be "Altinn".
             SendersReference = sms.Reference,
         };
 
@@ -128,8 +141,8 @@ internal sealed class SigningNotificationService : ISigningNotificationService
         var notification = new EmailNotification()
         {
             Recipients = [new EmailRecipient(email.EmailAddress)],
-            Subject = email.Subject ?? SigningNotificationConst.DefaultEmailSubject,
-            Body = email.Body ?? SigningNotificationConst.DefaultEmailBody,
+            Subject = email.Subject ?? _defaults.EmailSubject,
+            Body = email.Body ?? _defaults.EmailBody,
             SendersReference = email.Reference,
         };
 
