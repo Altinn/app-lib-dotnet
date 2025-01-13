@@ -204,6 +204,120 @@ public class SigningNotificationServiceTests
         Assert.Null(signeeContexts[0].SigneeState.SignatureRequestSmsNotSentReason); // No error message
     }
 
+    [Fact]
+    public async Task NotifySignatureTask_TrySendSmsWithoutClient_Fails()
+    {
+        SigningNotificationService signingNotificationService = new(logger: _loggerMock.Object);
+        // Arrange
+        var signeeContexts = new List<SigneeContext>
+        {
+            SetupSmsSigneeContextNotification(
+                isOrganisation: false,
+                mobileNumber: "12345678",
+                body: "Test SMS",
+                reference: "sms-reference"
+            ),
+        };
+
+        // Act
+        signeeContexts = await signingNotificationService.NotifySignatureTask(signeeContexts);
+
+        // Assert
+        Assert.False(signeeContexts[0].SigneeState.SignatureRequestSmsSent); // SMS notification not sent
+        Assert.NotNull(signeeContexts[0].SigneeState.SignatureRequestSmsNotSentReason); // Error message
+        Assert.Equal(
+            "No implementation of ISmsNotificationClient registered. Unable to send notification.",
+            signeeContexts[0].SigneeState.SignatureRequestSmsNotSentReason
+        );
+    }
+
+    [Fact]
+    public async Task NotifySignatureTask_TrySendSmsWithNoMobileNumber_Fails()
+    {
+        SigningNotificationService signingNotificationService = new(
+            logger: _loggerMock.Object,
+            smsNotificationClient: SetupSmsNotificationClientMock().Object
+        );
+        // Arrange
+        var signeeContexts = new List<SigneeContext>
+        {
+            SetupSmsSigneeContextNotification(
+                isOrganisation: false,
+                mobileNumber: string.Empty, // No mobile number set
+                body: "Test SMS",
+                reference: "sms-reference"
+            ),
+        };
+
+        // Act
+        signeeContexts = await signingNotificationService.NotifySignatureTask(signeeContexts);
+
+        // Assert
+        Assert.False(signeeContexts[0].SigneeState.SignatureRequestSmsSent); // SMS notification not sent
+        Assert.NotNull(signeeContexts[0].SigneeState.SignatureRequestSmsNotSentReason); // Error message
+        Assert.Equal(
+            "No mobile number provided. Unable to send SMS notification.",
+            signeeContexts[0].SigneeState.SignatureRequestSmsNotSentReason
+        );
+    }
+
+    [Fact]
+    public async Task NotifySignatureTask_TrySendEmailWithoutClient_Fails()
+    {
+        SigningNotificationService signingNotificationService = new(logger: _loggerMock.Object);
+        // Arrange
+        var signeeContexts = new List<SigneeContext>
+        {
+            SetupEmailSigneeContextNotification(
+                isOrganisation: false,
+                email: "test@test.no",
+                subject: "Test Email",
+                body: "This is a test email for testing purposes"
+            ),
+        };
+
+        // Act
+        signeeContexts = await signingNotificationService.NotifySignatureTask(signeeContexts);
+
+        // Assert
+        Assert.False(signeeContexts[0].SigneeState.SignatureRequestEmailSent); // Email notification not sent
+        Assert.NotNull(signeeContexts[0].SigneeState.SignatureRequestEmailNotSentReason); // Error message
+        Assert.Equal(
+            "No implementation of IEmailNotificationClient registered. Unable to send notification.",
+            signeeContexts[0].SigneeState.SignatureRequestEmailNotSentReason
+        );
+    }
+
+    [Fact]
+    public async Task NotifySignatureTask_TrySendEmailWithNoEmailAddress_Fails()
+    {
+        SigningNotificationService signingNotificationService = new(
+            logger: _loggerMock.Object,
+            emailNotificationClient: SetupEmailNotificationClientMock().Object
+        );
+        // Arrange
+        var signeeContexts = new List<SigneeContext>
+        {
+            SetupEmailSigneeContextNotification(
+                isOrganisation: false,
+                email: string.Empty, // No email address set
+                subject: "Test Email",
+                body: "This is a test email for testing purposes"
+            ),
+        };
+
+        // Act
+        signeeContexts = await signingNotificationService.NotifySignatureTask(signeeContexts);
+
+        // Assert
+        Assert.False(signeeContexts[0].SigneeState.SignatureRequestEmailSent); // Email notification not sent
+        Assert.NotNull(signeeContexts[0].SigneeState.SignatureRequestEmailNotSentReason); // Error message
+        Assert.Equal(
+            "No email address provided. Unable to send email notification.",
+            signeeContexts[0].SigneeState.SignatureRequestEmailNotSentReason
+        );
+    }
+
     private SigneeContext SetupSmsSigneeContextNotification(
         bool isOrganisation,
         string mobileNumber,

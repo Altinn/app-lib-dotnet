@@ -16,17 +16,19 @@ internal sealed class SigningNotificationService : ISigningNotificationService
 
     private record NotificationDefaults
     {
-        internal required string SmsBody { get; set; }
-        internal required string EmailBody { get; set; }
-        internal required string EmailSubject { get; set; }
+        internal const string SmsBody =
+            "Du har mottatt en oppgave til signering. Du finner oppgaven i innboksen i Altinn.";
+        internal const string EmailBody =
+            "Du har mottatt en oppgave til signering. Du finner oppgaven i innboksen i Altinn.";
+        internal const string EmailSubject = "Oppgave til signering i Altinn";
     }
 
-    private readonly NotificationDefaults _defaults = new()
-    {
-        SmsBody = "Du har mottatt en oppgave til signering. Du finner oppgaven i innboksen i Altinn.",
-        EmailBody = "Du har mottatt en oppgave til signering. Du finner oppgaven i innboksen i Altinn.",
-        EmailSubject = "Oppgave til signering i Altinn",
-    };
+    // private readonly NotificationDefaults _defaults = new()
+    // {
+    //     SmsBody = "Du har mottatt en oppgave til signering. Du finner oppgaven i innboksen i Altinn.",
+    //     EmailBody = "Du har mottatt en oppgave til signering. Du finner oppgaven i innboksen i Altinn.",
+    //     EmailSubject = "Oppgave til signering i Altinn",
+    // };
 
     public SigningNotificationService(
         ILogger<SigningNotificationService> logger,
@@ -63,11 +65,12 @@ internal sealed class SigningNotificationService : ISigningNotificationService
 
                     if (success is false)
                     {
+                        signeeContext.SigneeState.SignatureRequestSmsNotSentReason = errorMessage;
                         _logger.LogError(errorMessage);
+                        break;
                     }
 
                     state.SignatureRequestSmsSent = success;
-                    state.SignatureRequestSmsNotSentReason = success ? null : errorMessage;
                     _telemetry?.RecordNotifySignees(NotifySigneesResult.Success);
                 }
 
@@ -77,12 +80,14 @@ internal sealed class SigningNotificationService : ISigningNotificationService
 
                     if (success is false)
                     {
+                        signeeContext.SigneeState.SignatureRequestEmailNotSentReason = errorMessage;
                         _logger.LogError(errorMessage);
                         _telemetry?.RecordNotifySignees(NotifySigneesResult.Error);
+                        break;
                     }
 
                     state.SignatureRequestEmailSent = success;
-                    state.SignatureRequestEmailNotSentReason = success ? null : errorMessage;
+                    _telemetry?.RecordNotifySignees(NotifySigneesResult.Success);
                 }
             }
             catch
@@ -101,7 +106,7 @@ internal sealed class SigningNotificationService : ISigningNotificationService
             return (false, "No implementation of ISmsNotificationClient registered. Unable to send notification.");
         }
 
-        if (sms.MobileNumber is null)
+        if (string.IsNullOrEmpty(sms.MobileNumber))
         {
             return (false, "No mobile number provided. Unable to send SMS notification.");
         }
@@ -109,7 +114,7 @@ internal sealed class SigningNotificationService : ISigningNotificationService
         var notification = new SmsNotification()
         {
             Recipients = [new SmsRecipient(sms.MobileNumber)],
-            Body = sms.Body ?? _defaults.SmsBody,
+            Body = sms.Body ?? NotificationDefaults.SmsBody,
             SenderNumber = "", // Default SMS sender number is used by setting the value to an empty string. This is set in the altinn-notification repository to be "Altinn".
             SendersReference = sms.Reference,
         };
@@ -133,16 +138,16 @@ internal sealed class SigningNotificationService : ISigningNotificationService
             return (false, "No implementation of IEmailNotificationClient registered. Unable to send notification.");
         }
 
-        if (email.EmailAddress is null)
+        if (string.IsNullOrEmpty(email.EmailAddress))
         {
-            return (false, "No email address provided. Unable to send SMS notification.");
+            return (false, "No email address provided. Unable to send email notification.");
         }
 
         var notification = new EmailNotification()
         {
             Recipients = [new EmailRecipient(email.EmailAddress)],
-            Subject = email.Subject ?? _defaults.EmailSubject,
-            Body = email.Body ?? _defaults.EmailBody,
+            Subject = email.Subject ?? NotificationDefaults.EmailSubject,
+            Body = email.Body ?? NotificationDefaults.EmailBody,
             SendersReference = email.Reference,
         };
 
