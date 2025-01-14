@@ -417,6 +417,45 @@ public class SigningNotificationServiceTests
     }
 
     [Fact]
+    public async Task NotifySignatureTask_WhenNotificationFails_KeppProcessingRemainingNotifications()
+    {
+        SigningNotificationService signingNotificationService = new(
+            logger: _loggerMock.Object,
+            emailNotificationClient: SetupEmailNotificationClientMock().Object
+        );
+        // Arrange
+        var signeeContexts = new List<SigneeContext>
+        {
+            SetupEmailSigneeContextNotification(
+                isOrganisation: false,
+                email: string.Empty, // No email address set
+                subject: "Test Email",
+                body: "This is a test email for testing purposes"
+            ),
+            SetupEmailSigneeContextNotification(
+                isOrganisation: false,
+                email: "test@test.no",
+                subject: "Test Email2",
+                body: "This is a test email for testing purposes"
+            ),
+        };
+
+        // Act
+        signeeContexts = await signingNotificationService.NotifySignatureTask(signeeContexts);
+
+        // Assert
+        Assert.False(signeeContexts[0].SigneeState.SignatureRequestEmailSent); // Email notification not sent
+        Assert.NotNull(signeeContexts[0].SigneeState.SignatureRequestEmailNotSentReason); // Error message
+        Assert.Equal(
+            "No email address provided. Unable to send email notification.",
+            signeeContexts[0].SigneeState.SignatureRequestEmailNotSentReason
+        );
+
+        Assert.True(signeeContexts[1].SigneeState.SignatureRequestEmailSent); // Email notification sent
+        Assert.Null(signeeContexts[1].SigneeState.SignatureRequestEmailNotSentReason); // No error message
+    }
+
+    [Fact]
     public void GetEmailBody_WhenNoBodySet_ReturnsDefaultBody()
     {
         // Arrange
