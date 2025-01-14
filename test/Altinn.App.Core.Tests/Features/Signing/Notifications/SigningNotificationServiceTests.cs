@@ -417,7 +417,7 @@ public class SigningNotificationServiceTests
     }
 
     [Fact]
-    public async Task NotifySignatureTask_WhenNotificationFails_KeppProcessingRemainingNotifications()
+    public async Task NotifySignatureTask_WhenNotificationFails_KeepProcessingRemainingNotifications()
     {
         SigningNotificationService signingNotificationService = new(
             logger: _loggerMock.Object,
