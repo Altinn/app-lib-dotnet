@@ -69,23 +69,6 @@ internal sealed class AuthenticationContext : IAuthenticationContext
     private HttpContext _httpContext =>
         _httpContextAccessor.HttpContext ?? throw new InvalidOperationException("No HTTP context available");
 
-    internal void ResolveCurrent(HttpContext httpContext)
-    {
-        var authInfo = AuthenticationInfo.From(
-            httpContext,
-            _appSettings.CurrentValue.RuntimeCookieName,
-            _generalSettings.CurrentValue.GetAltinnPartyCookieName,
-            _profileClient.GetUserProfile,
-            _altinnPartyClient.GetParty,
-            (string orgNr) => _altinnPartyClient.LookupParty(new PartyLookup { OrgNo = orgNr }),
-            _authorizationClient.GetPartyList,
-            _authorizationClient.ValidateSelectedParty,
-            _authorizationClient.GetUserRoles,
-            _appMetadata.GetApplicationMetadata
-        );
-        httpContext.Items[ItemsKey] = authInfo;
-    }
-
     public AuthenticationInfo Current
     {
         get
