@@ -16,7 +16,7 @@ namespace Altinn.App.Core.Features.Auth;
 /// Contains information about the current logged in client/user.
 /// Represented as a union/type hierarchy to express which information is available.
 /// </summary>
-public abstract record AuthenticationInfo
+internal abstract record AuthenticationInfo
 {
     /// <summary>
     /// The JWT token.
