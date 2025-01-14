@@ -1,9 +1,11 @@
+using Altinn.App.Core.Exceptions;
+
 namespace Altinn.App.Core.Internal.AccessManagement.Exceptions;
 
 /// <summary>
 /// Generic Access Management related exception.
 /// </summary>
-internal abstract class AccessManagementException : Exception
+internal abstract class AccessManagementException : AltinnException
 {
     /// <inheritdoc/>
     protected AccessManagementException() { }
