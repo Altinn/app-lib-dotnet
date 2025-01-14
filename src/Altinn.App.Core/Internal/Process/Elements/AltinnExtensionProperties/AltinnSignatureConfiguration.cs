@@ -12,7 +12,7 @@ public class AltinnSignatureConfiguration
     /// </summary>
     [XmlArray(ElementName = "dataTypesToSign", Namespace = "http://altinn.no/process", IsNullable = true)]
     [XmlArrayItem(ElementName = "dataType", Namespace = "http://altinn.no/process")]
-    public List<string> DataTypesToSign { get; set; } = new();
+    public List<string> DataTypesToSign { get; set; } = [];
 
     /// <summary>
     /// Set what dataTypeId that should be used for storing the signature
@@ -32,7 +32,7 @@ public class AltinnSignatureConfiguration
         IsNullable = true
     )]
     [XmlArrayItem(ElementName = "dataType", Namespace = "http://altinn.no/process")]
-    public List<string> UniqueFromSignaturesInDataTypes { get; set; } = new();
+    public List<string> UniqueFromSignaturesInDataTypes { get; set; } = [];
 
     /// <summary>
     /// Optionally set a signee provider that should be used for selecting signees for this signing step.
@@ -48,4 +48,35 @@ public class AltinnSignatureConfiguration
     /// </summary>
     [XmlElement("signeeStatesDataTypeId", Namespace = "http://altinn.no/process")]
     public string? SigneeStatesDataTypeId { get; set; }
+
+    /// <summary>
+    /// Environment specific configurations
+    /// </summary>
+    // [XmlElement("environmentConfigs", Namespace = "http://altinn.no/process")]
+    [XmlArray(ElementName = "environmentConfigs", Namespace = "http://altinn.no/process", IsNullable = true)]
+    [XmlArrayItem(ElementName = "environmentConfig", Namespace = "http://altinn.no/process")]
+    public List<EnvironmentConfig> EnvironmentConfigs { get; set; } = [];
+
+    public EnvironmentConfig? GetEnvironmentConfig(string env)
+    {
+        return EnvironmentConfigs.FirstOrDefault(e => e.Env == env);
+    }
+
+    /// <summary>
+    /// Correspondence resource details
+    /// </summary>
+    public class EnvironmentConfig
+    {
+        /// <summary>
+        /// The environment the configuration is for
+        /// </summary>
+        [XmlAttribute("env")]
+        public required string Env { get; set; }
+
+        /// <summary>
+        /// The resource to use for correspondence (receipts)
+        /// </summary>
+        [XmlElement(ElementName = "correspondenceResource", Namespace = "http://altinn.no/process")]
+        public string? CorrespondenceResource { get; set; }
+    }
 }
