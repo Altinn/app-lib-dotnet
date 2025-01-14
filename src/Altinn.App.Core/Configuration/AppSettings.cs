@@ -220,9 +220,4 @@ public class AppSettings
     /// Improves instrumentation throughout the Altinn app libraries.
     /// </summary>
     public bool UseOpenTelemetry { get; set; }
-
-    /// <summary>
-    /// The resource to use for sending signing-related correspondence.
-    /// </summary>
-    public string? SigningCorrespondenceResource { get; set; }
 }

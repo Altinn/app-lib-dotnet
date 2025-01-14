@@ -39,6 +39,11 @@ internal static class AltinnEnvironments
         var envNameLower = environmentName.ToLower(CultureInfo.InvariantCulture);
         return Map.FirstOrDefault(x => x.Value.Contains(envNameLower)).Key;
     }
+
+    public static HostingEnvironment GetHostingEnvironment(IHostEnvironment hostEnvironment)
+    {
+        return GetHostingEnvironment(hostEnvironment.EnvironmentName);
+    }
 }
 
 internal enum HostingEnvironment

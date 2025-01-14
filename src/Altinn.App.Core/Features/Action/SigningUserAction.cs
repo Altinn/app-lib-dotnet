@@ -1,5 +1,7 @@
 using System.Globalization;
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Constants;
+using Altinn.App.Core.Exceptions;
 using Altinn.App.Core.Features.Correspondence;
 using Altinn.App.Core.Features.Correspondence.Builder;
 using Altinn.App.Core.Features.Correspondence.Models;
@@ -9,12 +11,14 @@ using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
+using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Signee = Altinn.App.Core.Internal.Sign.Signee;
@@ -34,7 +38,7 @@ public class SigningUserAction : IUserAction
     private readonly ICorrespondenceClient _correspondenceClient;
     private readonly IDataClient _dataClient;
     private readonly IAppResources _appResources;
-    private readonly AppSettings _settings;
+    private readonly IHostEnvironment _hostEnvironment;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SigningUserAction"/> class
@@ -47,7 +51,7 @@ public class SigningUserAction : IUserAction
     /// <param name="dataClient">The data client</param>
     /// <param name="appMetadata">The application metadata</param>
     /// <param name="appResources">The application resources</param>
-    /// <param name="settings">The application settings</param>
+    /// <param name="hostEnvironment">The hosting environment details</param>
     public SigningUserAction(
         IProcessReader processReader,
         ILogger<SigningUserAction> logger,
@@ -57,7 +61,7 @@ public class SigningUserAction : IUserAction
         IDataClient dataClient,
         IAppMetadata appMetadata,
         IAppResources appResources,
-        IOptions<AppSettings> settings
+        IHostEnvironment hostEnvironment
     )
     {
         _logger = logger;
@@ -68,7 +72,7 @@ public class SigningUserAction : IUserAction
         _dataClient = dataClient;
         _appMetadata = appMetadata;
         _appResources = appResources;
-        _settings = settings.Value;
+        _hostEnvironment = hostEnvironment;
     }
 
     /// <inheritdoc />
@@ -104,8 +108,11 @@ public class SigningUserAction : IUserAction
         );
 
         ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
-        List<string> dataTypeIds =
-            currentTask.ExtensionElements?.TaskExtension?.SignatureConfiguration?.DataTypesToSign ?? [];
+        AltinnSignatureConfiguration? signatureConfiguration = currentTask
+            .ExtensionElements
+            ?.TaskExtension
+            ?.SignatureConfiguration;
+        List<string> dataTypeIds = signatureConfiguration?.DataTypesToSign ?? [];
         List<DataType>? dataTypesToSign = appMetadata
             .DataTypes?.Where(d => dataTypeIds.Contains(d.Id, StringComparer.OrdinalIgnoreCase))
             .ToList();
@@ -129,6 +136,7 @@ public class SigningUserAction : IUserAction
 
         await _signClient.SignDataElements(signatureContext);
 
+        // TODO: Metrics
         try
         {
             var result = await SendCorrespondence(
@@ -136,7 +144,8 @@ public class SigningUserAction : IUserAction
                 signatureContext.Signee,
                 dataElementSignatures,
                 appMetadata,
-                context
+                context,
+                signatureConfiguration
             );
 
             if (result is not null)
@@ -146,6 +155,10 @@ public class SigningUserAction : IUserAction
                     string.Join(", ", result.Correspondences.Select(x => x.Recipient))
                 );
             }
+        }
+        catch (ConfigurationException e)
+        {
+            _logger.LogWarning(e, "Correspondence configuration error: {Exception}", e.Message);
         }
         catch (Exception e)
         {
@@ -161,21 +174,24 @@ public class SigningUserAction : IUserAction
         Signee signee,
         IEnumerable<DataElementSignature> dataElementSignatures,
         ApplicationMetadata appMetadata,
-        UserActionContext context
+        UserActionContext context,
+        AltinnSignatureConfiguration? signatureConfiguration
     )
     {
-        string? resource = _settings.SigningCorrespondenceResource;
+        HostingEnvironment env = AltinnEnvironments.GetHostingEnvironment(_hostEnvironment);
+        string? resource = signatureConfiguration?.GetEnvironmentConfig(env)?.CorrespondenceResource;
         if (string.IsNullOrEmpty(resource))
         {
-            _logger.LogInformation("No correspondence resource configured, skipping correspondence send");
-            return null;
+            throw new ConfigurationException(
+                $"No correspondence resource configured for environment {env}, skipping correspondence send"
+            );
         }
 
         string? recipient = signee.PersonNumber;
         if (string.IsNullOrEmpty(recipient))
         {
             throw new InvalidOperationException(
-                $"Signee's national identity number is missing, unable to send correspondence"
+                "Signee's national identity number is missing, unable to send correspondence"
             );
         }
 
@@ -200,13 +216,11 @@ public class SigningUserAction : IUserAction
             .WithAllowSystemDeleteAfter(DateTime.Now.AddYears(1))
             .WithContent(content);
 
-        IEnumerable<DataElement> attachments = context.Instance.Data.Where(x =>
-            IsSignedDataElement(x) || IsGeneratedPdf(x)
-        );
+        IEnumerable<DataElement> attachments = context.Instance.Data.Where(IsSignedDataElement);
 
         foreach (DataElement attachment in attachments)
         {
-            string filename = GetDataElementFilename(attachment);
+            string filename = GetDataElementFilename(attachment, appMetadata);
 
             builder.WithAttachment(
                 CorrespondenceAttachmentBuilder
@@ -233,9 +247,6 @@ public class SigningUserAction : IUserAction
 
         bool IsSignedDataElement(DataElement dataElement) =>
             dataElementSignatures.Any(x => x.DataElementId == dataElement.Id);
-
-        bool IsGeneratedPdf(DataElement dataElement) =>
-            dataElement is { ContentType: "application/pdf", DataType: "ref-data-as-pdf" };
     }
 
     private async Task<CorrespondenceContent> GetCorrespondenceContent(UserActionContext context)
@@ -269,20 +280,19 @@ public class SigningUserAction : IUserAction
                     $"No text resource found for specified language ({context.Language}) nor the default language ({defaultLanguage})"
                 );
 
-            // TODO: Better lang resource IDs
             title = textResource
                 .Resources.FirstOrDefault(textResourceElement =>
-                    textResourceElement.Id.Equals("signing-receipt-title", StringComparison.Ordinal)
+                    textResourceElement.Id.Equals("signing.receipt_title", StringComparison.Ordinal)
                 )
                 ?.Value;
             summary = textResource
                 .Resources.FirstOrDefault(textResourceElement =>
-                    textResourceElement.Id.Equals("signing-receipt-summary", StringComparison.Ordinal)
+                    textResourceElement.Id.Equals("signing.receipt_summary", StringComparison.Ordinal)
                 )
                 ?.Value;
             body = textResource
                 .Resources.FirstOrDefault(textResourceElement =>
-                    textResourceElement.Id.Equals("signing-receipt-body", StringComparison.Ordinal)
+                    textResourceElement.Id.Equals("signing.receipt_body", StringComparison.Ordinal)
                 )
                 ?.Value;
         }
@@ -304,19 +314,21 @@ public class SigningUserAction : IUserAction
         };
     }
 
-    // TODO: Get some critical eyes on this
     /// <summary>
     /// Note: This method contains only an extremely small list of known mime types.
     /// The aim here is not to be exhaustive, just to cover some common cases.
     /// </summary>
-    public static string GetDataElementFilename(DataElement dataElement)
+    internal static string GetDataElementFilename(DataElement dataElement, ApplicationMetadata appMetadata)
     {
         if (!string.IsNullOrWhiteSpace(dataElement.Filename))
         {
             return dataElement.Filename;
         }
 
+        DataType? dataType = appMetadata.DataTypes.Find(x => x.Id == dataElement.DataType);
+
         string mimeType = dataElement.ContentType.ToLower(CultureInfo.InvariantCulture);
+        var formDataExtensions = new[] { ".xml", ".json" };
         var mapping = new Dictionary<string, string>
         {
             ["application/xml"] = ".xml",
@@ -327,9 +339,9 @@ public class SigningUserAction : IUserAction
 
         string? extension = mapping.GetValueOrDefault(mimeType);
         string filename = dataElement.DataType;
-        if (filename == "model" && extension == ".xml")
+        if (dataType?.AppLogic is not null && formDataExtensions.Contains(extension))
         {
-            filename = "skjemadata";
+            filename = $"skjemadata_{filename}";
         }
 
         return $"{filename}{extension}";

@@ -1,4 +1,5 @@
 using System.Xml.Serialization;
+using Altinn.App.Core.Constants;
 
 namespace Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 
@@ -57,9 +58,9 @@ public class AltinnSignatureConfiguration
     [XmlArrayItem(ElementName = "environmentConfig", Namespace = "http://altinn.no/process")]
     public List<EnvironmentConfig> EnvironmentConfigs { get; set; } = [];
 
-    public EnvironmentConfig? GetEnvironmentConfig(string env)
+    internal EnvironmentConfig? GetEnvironmentConfig(HostingEnvironment env)
     {
-        return EnvironmentConfigs.FirstOrDefault(e => e.Env == env);
+        return EnvironmentConfigs.FirstOrDefault(e => AltinnEnvironments.GetHostingEnvironment(e.Env) == env);
     }
 
     /// <summary>
