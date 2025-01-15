@@ -3,59 +3,87 @@ using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Models.Notifications.Email;
 using Altinn.App.Core.Models.Notifications.Sms;
 using Microsoft.Extensions.Logging;
+using static Altinn.App.Core.Features.Telemetry.NotifySigneesConst;
 
 namespace Altinn.App.Core.Features.Signing;
 
-internal sealed class SigningNotificationService(
-    ILogger<SigningNotificationService> logger,
-    ISmsNotificationClient? smsNotificationClient = null,
-    IEmailNotificationClient? emailNotificationClient = null
-) : ISigningNotificationService
+internal sealed class SigningNotificationService : ISigningNotificationService
 {
+    private readonly ILogger<SigningNotificationService> _logger;
+    private readonly ISmsNotificationClient? _smsNotificationClient;
+    private readonly IEmailNotificationClient? _emailNotificationClient;
+    private readonly Telemetry? _telemetry;
+
+    internal sealed record NotificationDefaults
+    {
+        internal const string SmsBody =
+            "Du har mottatt en oppgave til signering. Du finner oppgaven i innboksen i Altinn.";
+        internal const string EmailBody =
+            "Du har mottatt en oppgave til signering. Du finner oppgaven i innboksen i Altinn.";
+        internal const string EmailSubject = "Oppgave til signering i Altinn";
+    }
+
+    public SigningNotificationService(
+        ILogger<SigningNotificationService> logger,
+        ISmsNotificationClient? smsNotificationClient = null,
+        IEmailNotificationClient? emailNotificationClient = null,
+        Telemetry? telemetry = null
+    )
+    {
+        _logger = logger;
+        _smsNotificationClient = smsNotificationClient;
+        _emailNotificationClient = emailNotificationClient;
+        _telemetry = telemetry;
+    }
+
     public async Task<List<SigneeContext>> NotifySignatureTask(
         List<SigneeContext> signeeContexts,
         CancellationToken? ct = null
     )
     {
+        using var activity = _telemetry?.StartNotifySigneesActivity();
         foreach (SigneeContext signeeContext in signeeContexts)
         {
             SigneeState state = signeeContext.SigneeState;
             Models.Notifications? notifications =
                 signeeContext.OrganisationSignee?.Notifications ?? signeeContext.PersonSignee?.Notifications;
 
-            try
+            Notification? notification = notifications?.OnSignatureAccessRightsDelegated;
+
+            if (state.SignatureRequestSmsSent is false && notification?.Sms is not null)
             {
-                Notification? notification = notifications?.OnSignatureAccessRightsDelegated;
+                (bool success, string? errorMessage) = await TrySendSms(notification.Sms, ct);
 
-                if (state.SignatureRequestSmsSent is false && notification?.Sms is not null)
+                if (success is false)
                 {
-                    (bool success, string? errorMessage) = await TrySendSms(notification.Sms, ct);
-
-                    if (success is false)
-                    {
-                        logger.LogError(errorMessage);
-                    }
-
-                    state.SignatureRequestSmsSent = success;
-                    state.SignatureRequestSmsNotSentReason = success ? null : errorMessage;
+                    signeeContext.SigneeState.SignatureRequestSmsNotSentReason = errorMessage;
+                    _telemetry?.RecordNotifySignees(NotifySigneesResult.Error);
+                    _logger.LogError(errorMessage);
+                }
+                else
+                {
+                    _telemetry?.RecordNotifySignees(NotifySigneesResult.Success);
                 }
 
-                if (state.SignatureRequestEmailSent is false && notification?.Email is not null)
-                {
-                    (bool success, string? errorMessage) = await TrySendEmail(notification.Email, ct);
-
-                    if (success is false)
-                    {
-                        logger.LogError(errorMessage);
-                    }
-
-                    state.SignatureRequestEmailSent = success;
-                    state.SignatureRequestEmailNotSentReason = success ? null : errorMessage;
-                }
+                state.SignatureRequestSmsSent = success;
             }
-            catch
+
+            if (state.SignatureRequestEmailSent is false && notification?.Email is not null)
             {
-                // TODO: log + telemetry?
+                (bool success, string? errorMessage) = await TrySendEmail(notification.Email, ct);
+
+                if (success is false)
+                {
+                    signeeContext.SigneeState.SignatureRequestEmailNotSentReason = errorMessage;
+                    _telemetry?.RecordNotifySignees(NotifySigneesResult.Error);
+                    _logger.LogError(errorMessage);
+                }
+                else
+                {
+                    _telemetry?.RecordNotifySignees(NotifySigneesResult.Success);
+                }
+
+                state.SignatureRequestEmailSent = success;
             }
         }
 
@@ -64,65 +92,80 @@ internal sealed class SigningNotificationService(
 
     private async Task<(bool, string? errorMessage)> TrySendSms(Sms sms, CancellationToken? ct = null)
     {
-        if (smsNotificationClient is null)
+        if (_smsNotificationClient is null)
         {
             return (false, "No implementation of ISmsNotificationClient registered. Unable to send notification.");
         }
 
-        if (sms.MobileNumber is null)
+        if (string.IsNullOrEmpty(sms.MobileNumber))
         {
             return (false, "No mobile number provided. Unable to send SMS notification.");
         }
 
         var notification = new SmsNotification()
         {
-            Recipients = [new SmsRecipient(sms.MobileNumber, "", "")], //TODO: What do we get for setting orgnr or nin here?
-            Body = sms.Body ?? "", //TODO: Should we have defaults or should this be required?
-            SenderNumber = "",
-            SendersReference = "",
+            Recipients = [new SmsRecipient(sms.MobileNumber)],
+            Body = GetSmsBody(sms),
+            SenderNumber = "", // Default SMS sender number is used by setting the value to an empty string. This is set in the altinn-notification repository to be "Altinn".
+            SendersReference = sms.Reference,
         };
 
         try
         {
-            await smsNotificationClient.Order(notification, ct ?? new CancellationToken());
+            await _smsNotificationClient.Order(notification, ct ?? new CancellationToken());
             return (true, null);
         }
         catch (SmsNotificationException ex)
         {
-            logger.LogError(ex.Message, ex);
+            _logger.LogError(ex.Message, ex);
             return (false, "Failed to send SMS notification: " + ex.Message);
         }
     }
 
     private async Task<(bool, string?)> TrySendEmail(Email email, CancellationToken? ct = null)
     {
-        if (emailNotificationClient is null)
+        if (_emailNotificationClient is null)
         {
             return (false, "No implementation of IEmailNotificationClient registered. Unable to send notification.");
         }
 
-        if (email.EmailAddress is null)
+        if (string.IsNullOrEmpty(email.EmailAddress))
         {
-            return (false, "No email address provided. Unable to send SMS notification.");
+            return (false, "No email address provided. Unable to send email notification.");
         }
 
         var notification = new EmailNotification()
         {
             Recipients = [new EmailRecipient(email.EmailAddress)],
-            Subject = email.Subject ?? "", //TODO: Should we have defaults or should this be required?
-            Body = email.Body ?? "", //TODO: Should we have defaults or should this be required?
-            SendersReference = "",
+            Subject = GetEmailSubject(email),
+            Body = GetEmailBody(email),
+            SendersReference = email.Reference,
         };
 
         try
         {
-            await emailNotificationClient.Order(notification, ct ?? new CancellationToken());
+            await _emailNotificationClient.Order(notification, ct ?? new CancellationToken());
             return (true, null);
         }
-        catch (SmsNotificationException ex)
+        catch (EmailNotificationException ex)
         {
-            logger.LogError(ex.Message, ex);
+            _logger.LogError(ex.Message, ex);
             return (false, "Failed to send Email notification: " + ex.Message);
         }
+    }
+
+    internal static string GetSmsBody(Sms sms)
+    {
+        return sms.Body ?? NotificationDefaults.SmsBody;
+    }
+
+    internal static string GetEmailBody(Email email)
+    {
+        return email.Body ?? NotificationDefaults.EmailBody;
+    }
+
+    internal static string GetEmailSubject(Email email)
+    {
+        return email.Subject ?? NotificationDefaults.EmailSubject;
     }
 }

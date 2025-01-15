@@ -24,7 +24,7 @@ internal sealed class SigningService(
     IOrganizationClient organisationClient,
     IAltinnPartyClient altinnPartyClient,
     ISigningDelegationService signingDelegationService,
-    // ISigningNotificationService signingNotificationService,
+    ISigningNotificationService signingNotificationService,
     IEnumerable<ISigneeProvider> signeeProviders,
     IDataClient dataClient,
     IInstanceClient instanceClient,
@@ -110,7 +110,7 @@ internal sealed class SigningService(
 
         if (delegateSuccess)
         {
-            // await signingNotificationService.NotifySignatureTask(signeeContexts, ct);
+            await signingNotificationService.NotifySignatureTask(signeeContexts, ct);
         }
 
         // ! TODO: Remove nullable
