@@ -194,7 +194,7 @@ public class AuthorizationController : Controller
             {
                 return Ok(Array.Empty<Role>());
             }
-            case AuthenticationInfo.SystemUser su:
+            case AuthenticationInfo.SystemUser:
             {
                 // TODO: is there an API for role lookup for system users?
                 return Ok(Array.Empty<Role>());
