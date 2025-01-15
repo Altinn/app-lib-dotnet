@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Models;
 
 namespace Altinn.App.Core.Features.Action;
@@ -15,14 +16,17 @@ public class UserActionAuthorizerContext
     /// <param name="instanceIdentifier"><see cref="InstanceIdentifier"/> for the instance</param>
     /// <param name="taskId">The id of the task</param>
     /// <param name="action">The action to authorize</param>
+    /// <param name="authentication">Information about the authenticated party</param>
     public UserActionAuthorizerContext(
         ClaimsPrincipal user,
         InstanceIdentifier instanceIdentifier,
         string? taskId,
-        string action
+        string action,
+        AuthenticationInfo authentication
     )
     {
         User = user;
+        Authentication = authentication;
         InstanceIdentifier = instanceIdentifier;
         TaskId = taskId;
         Action = action;
@@ -31,7 +35,13 @@ public class UserActionAuthorizerContext
     /// <summary>
     /// Gets or sets the user
     /// </summary>
+    [Obsolete("Use the Authentication property instead")]
     public ClaimsPrincipal User { get; set; }
+
+    /// <summary>
+    /// Gets or sets the authentication information
+    /// </summary>
+    public AuthenticationInfo Authentication { get; }
 
     /// <summary>
     /// Gets or sets the instance identifier

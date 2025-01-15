@@ -1,4 +1,5 @@
 #nullable disable
+using Altinn.App.Api.Tests.Utils;
 using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
@@ -49,7 +50,11 @@ public class SigningUserActionTests
                 new() { Id = "a499c3ef-e88a-436b-8650-1c43e5037ada", DataType = "Model" },
             },
         };
-        var userActionContext = new UserActionContext(instance, 1337);
+        var userActionContext = new UserActionContext(
+            instance,
+            1337,
+            authentication: TestAuthentication.GetUserAuthenticationInfo(1337)
+        );
 
         // Act
         var result = await userAction.HandleAction(userActionContext);
@@ -98,7 +103,11 @@ public class SigningUserActionTests
                 new() { Id = "a499c3ef-e88a-436b-8650-1c43e5037ada", DataType = "Model" },
             },
         };
-        var userActionContext = new UserActionContext(instance, 1337);
+        var userActionContext = new UserActionContext(
+            instance,
+            1337,
+            authentication: TestAuthentication.GetUserAuthenticationInfo(1337)
+        );
 
         // Act
         var result = await userAction.HandleAction(userActionContext);
@@ -185,7 +194,11 @@ public class SigningUserActionTests
                 new() { Id = "a499c3ef-e88a-436b-8650-1c43e5037ada", DataType = "Model" },
             },
         };
-        var userActionContext = new UserActionContext(instance, 1337);
+        var userActionContext = new UserActionContext(
+            instance,
+            1337,
+            authentication: TestAuthentication.GetUserAuthenticationInfo(1337)
+        );
 
         // Act
         await Assert.ThrowsAsync<ApplicationConfigException>(
@@ -218,7 +231,11 @@ public class SigningUserActionTests
                 new() { Id = "a499c3ef-e88a-436b-8650-1c43e5037ada", DataType = "Model" },
             },
         };
-        var userActionContext = new UserActionContext(instance, 1337);
+        var userActionContext = new UserActionContext(
+            instance,
+            1337,
+            authentication: TestAuthentication.GetUserAuthenticationInfo(1337)
+        );
 
         // Act
         await Assert.ThrowsAsync<ApplicationConfigException>(
@@ -253,7 +270,11 @@ public class SigningUserActionTests
                 new() { Id = "a499c3ef-e88a-436b-8650-1c43e5037ada", DataType = "Model" },
             },
         };
-        var userActionContext = new UserActionContext(instance, 1337);
+        var userActionContext = new UserActionContext(
+            instance,
+            1337,
+            authentication: TestAuthentication.GetUserAuthenticationInfo(1337)
+        );
 
         // Act
         await Assert.ThrowsAsync<ApplicationConfigException>(

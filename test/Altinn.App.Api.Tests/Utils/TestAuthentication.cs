@@ -107,22 +107,27 @@ public static class TestAuthentication
         return principal;
     }
 
-    public static User GetUserAuthenticationInfo(ProfileSettingPreference? profileSettingPreference = null)
+    public static User GetUserAuthenticationInfo(
+        int userId = DefaultUserId,
+        int userPartyId = DefaultUserPartyId,
+        int authenticationLevel = DefaultUserAuthenticationLevel,
+        string? email = null,
+        string? ssn = null,
+        ProfileSettingPreference? profileSettingPreference = null
+    )
     {
-        var userId = DefaultUserId;
-        var userPartyId = DefaultUserPartyId;
         var party = new Party()
         {
             PartyId = userPartyId,
             PartyTypeName = PartyType.Person,
             OrgNumber = null,
-            SSN = "12345678901",
+            SSN = ssn ?? "12345678901",
             Name = "Test Testesen",
         };
         return new User(
             userId,
             userPartyId,
-            DefaultUserAuthenticationLevel,
+            authenticationLevel,
             userPartyId,
             "",
             getUserProfile: uid =>
@@ -134,7 +139,7 @@ public static class TestAuthentication
                         UserId = userId,
                         PartyId = userPartyId,
                         Party = party,
-                        Email = "test@testesen.no",
+                        Email = email ?? "test@testesen.no",
                         ProfileSettingPreference = profileSettingPreference,
                     }
                 );

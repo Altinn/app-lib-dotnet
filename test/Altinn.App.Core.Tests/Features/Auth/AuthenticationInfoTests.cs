@@ -12,7 +12,7 @@ public class AuthenticationInfoTests
     public async Task Test_User_Get_Language_From_Profile()
     {
         var user = TestAuthentication.GetUserAuthenticationInfo(
-            new ProfileSettingPreference { Language = LanguageConst.En }
+            profileSettingPreference: new ProfileSettingPreference { Language = LanguageConst.En }
         );
 
         var lang = await user.GetLanguage();

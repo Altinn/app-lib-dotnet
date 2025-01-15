@@ -1,4 +1,5 @@
 using System.Globalization;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
@@ -55,7 +56,12 @@ public class SigningUserAction : IUserAction
     /// <exception cref="ApplicationConfigException"></exception>
     public async Task<UserActionResult> HandleAction(UserActionContext context)
     {
-        if (context.UserId == null)
+        if (
+            context.Authentication
+            is not AuthenticationInfo.User
+                or AuthenticationInfo.SelfIdentifiedUser
+                or AuthenticationInfo.SystemUser
+        )
         {
             return UserActionResult.FailureResult(
                 error: new ActionError() { Code = "NoUserId", Message = "User id is missing in token" },
@@ -85,7 +91,7 @@ public class SigningUserAction : IUserAction
                     new InstanceIdentifier(context.Instance),
                     currentTask.Id,
                     signatureDataType,
-                    await GetSignee(context.UserId.Value),
+                    await GetSignee(context),
                     dataElementSignatures
                 );
                 await _signClient.SignDataElements(signatureContext);
@@ -141,17 +147,33 @@ public class SigningUserAction : IUserAction
         return connectedDataElements;
     }
 
-    private async Task<Signee> GetSignee(int userId)
+    private async Task<Signee> GetSignee(UserActionContext context)
     {
-        var userProfile =
-            await _profileClient.GetUserProfile(userId)
-            ?? throw new Exception("Could not get user profile while getting signee");
-
-        return new Signee
+        switch (context.Authentication)
         {
-            UserId = userProfile.UserId.ToString(CultureInfo.InvariantCulture),
-            PersonNumber = userProfile.Party.SSN,
-            OrganisationNumber = userProfile.Party.OrgNumber,
-        };
+            case AuthenticationInfo.User user:
+            {
+                var userProfile =
+                    await _profileClient.GetUserProfile(user.UserId)
+                    ?? throw new Exception("Could not get user profile while getting signee");
+
+                return new Signee
+                {
+                    UserId = userProfile.UserId.ToString(CultureInfo.InvariantCulture),
+                    PersonNumber = userProfile.Party.SSN,
+                    OrganisationNumber = userProfile.Party.OrgNumber,
+                };
+            }
+            case AuthenticationInfo.SelfIdentifiedUser selfIdentifiedUser:
+            {
+                return new Signee { UserId = selfIdentifiedUser.UserId.ToString(CultureInfo.InvariantCulture) };
+            }
+            case AuthenticationInfo.SystemUser systemUser:
+            {
+                return new Signee { SystemUserId = systemUser.SystemUserId[0] };
+            }
+            default:
+                throw new Exception("Could not get signee");
+        }
     }
 }

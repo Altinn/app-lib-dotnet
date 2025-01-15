@@ -49,6 +49,9 @@ public static class InstanceEventExtensions
                 OrgId = original.User.OrgId,
                 UserId = original.User.UserId,
                 NationalIdentityNumber = original.User?.NationalIdentityNumber,
+                SystemUserId = original.User?.SystemUserId,
+                SystemUserOwnerOrgNo = original.User?.SystemUserOwnerOrgNo,
+                SystemUserName = original.User?.SystemUserName,
             },
         };
     }

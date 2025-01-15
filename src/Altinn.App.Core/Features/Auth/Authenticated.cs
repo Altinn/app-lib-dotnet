@@ -456,7 +456,7 @@ public abstract class Authenticated
         /// <summary>
         /// System user ID
         /// </summary>
-        public IReadOnlyList<string> SystemUserId { get; }
+        public IReadOnlyList<Guid> SystemUserId { get; }
 
         /// <summary>
         /// Organisation number of the system user
@@ -466,7 +466,7 @@ public abstract class Authenticated
         /// <summary>
         /// System ID
         /// </summary>
-        public string SystemId { get; }
+        public Guid SystemId { get; }
 
         /// <summary>
         /// Authentication level
@@ -481,9 +481,9 @@ public abstract class Authenticated
         private readonly Func<string, Task<Party>> _lookupParty;
 
         internal SystemUser(
-            IReadOnlyList<string> systemUserId,
+            IReadOnlyList<Guid> systemUserId,
             OrganisationNumber systemUserOrgNr,
-            string systemId,
+            Guid systemId,
             int? authenticationLevel,
             string? authenticationMethod,
             TokenIssuer tokenIssuer,
@@ -710,10 +710,22 @@ public abstract class Authenticated
                     $"Invalid organisation number in systemuser token: {systemUser.SystemUserOrg.Id}"
                 );
 
+            var systemUserIds = new Guid[systemUser.SystemUserId.Count];
+            for (int i = 0; i < systemUser.SystemUserId.Count; i++)
+            {
+                if (!Guid.TryParse(systemUser.SystemUserId[i], out systemUserIds[i]))
+                    throw new InvalidOperationException(
+                        $"Invalid system user ID claim value for system user token: {systemUser.SystemUserId[i]}"
+                    );
+            }
+
+            if (!Guid.TryParse(systemUser.SystemId, out var systemId))
+                throw new InvalidOperationException("Invalid system ID claim value for system user token");
+
             return new SystemUser(
-                systemUser.SystemUserId,
+                systemUserIds,
                 orgNr,
-                systemUser.SystemId,
+                systemId,
                 int.TryParse(authLevelClaim?.Value, CultureInfo.InvariantCulture, out authLevel) ? authLevel : null,
                 !string.IsNullOrWhiteSpace(authMethodClaim?.Value) ? authMethodClaim.Value : null,
                 tokenIssuer,

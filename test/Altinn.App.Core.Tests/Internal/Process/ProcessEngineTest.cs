@@ -1,9 +1,10 @@
 using System.Security.Claims;
-using System.Security.Cryptography.X509Certificates;
+using Altinn.App.Api.Tests.Utils;
 using Altinn.App.Common.Tests;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
@@ -12,12 +13,9 @@ using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
-using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
-using Altinn.Platform.Profile.Models;
-using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
 using AltinnCore.Authentication.Constants;
@@ -35,7 +33,7 @@ public sealed class ProcessEngineTest : IDisposable
     private static readonly Guid _instanceGuid = new("00000000-DEAD-BABE-0000-001230000000");
     private static readonly string _instanceId = $"{_instanceOwnerPartyId}/{_instanceGuid}";
     private readonly Mock<IProcessReader> _processReaderMock = new();
-    private readonly Mock<IProfileClient> _profileMock = new(MockBehavior.Strict);
+    private readonly Mock<IAuthenticationContext> _authenticationContextMock = new();
     private readonly Mock<IProcessNavigator> _processNavigatorMock = new(MockBehavior.Strict);
     private readonly Mock<IProcessEventHandlerDelegator> _processEventHandlingDelegatorMock = new();
     private readonly Mock<IProcessEventDispatcher> _processEventDispatcherMock = new();
@@ -174,7 +172,7 @@ public sealed class ProcessEngineTest : IDisposable
                 User = new()
                 {
                     UserId = 1337,
-                    OrgId = "tdd",
+                    NationalIdentityNumber = "22927774937",
                     AuthenticationLevel = 2,
                 },
                 ProcessInfo = new()
@@ -196,7 +194,7 @@ public sealed class ProcessEngineTest : IDisposable
                 User = new()
                 {
                     UserId = 1337,
-                    OrgId = "tdd",
+                    NationalIdentityNumber = "22927774937",
                     AuthenticationLevel = 2,
                 },
                 ProcessInfo = new()
@@ -298,8 +296,8 @@ public sealed class ProcessEngineTest : IDisposable
                 User = new()
                 {
                     UserId = 1337,
-                    OrgId = "tdd",
                     AuthenticationLevel = 2,
+                    NationalIdentityNumber = "22927774937",
                 },
                 ProcessInfo = new()
                 {
@@ -320,8 +318,8 @@ public sealed class ProcessEngineTest : IDisposable
                 User = new()
                 {
                     UserId = 1337,
-                    OrgId = "tdd",
                     AuthenticationLevel = 2,
+                    NationalIdentityNumber = "22927774937",
                 },
                 ProcessInfo = new()
                 {
@@ -547,7 +545,7 @@ public sealed class ProcessEngineTest : IDisposable
                 User = new()
                 {
                     UserId = 1337,
-                    OrgId = "tdd",
+                    NationalIdentityNumber = "22927774937",
                     AuthenticationLevel = 2,
                 },
                 ProcessInfo = new()
@@ -570,7 +568,7 @@ public sealed class ProcessEngineTest : IDisposable
                 User = new()
                 {
                     UserId = 1337,
-                    OrgId = "tdd",
+                    NationalIdentityNumber = "22927774937",
                     AuthenticationLevel = 2,
                 },
                 ProcessInfo = new()
@@ -696,7 +694,7 @@ public sealed class ProcessEngineTest : IDisposable
                 User = new()
                 {
                     UserId = 1337,
-                    OrgId = "tdd",
+                    NationalIdentityNumber = "22927774937",
                     AuthenticationLevel = 2,
                 },
                 ProcessInfo = new()
@@ -719,7 +717,7 @@ public sealed class ProcessEngineTest : IDisposable
                 User = new()
                 {
                     UserId = 1337,
-                    OrgId = "tdd",
+                    NationalIdentityNumber = "22927774937",
                     AuthenticationLevel = 2,
                 },
                 ProcessInfo = new()
@@ -825,7 +823,6 @@ public sealed class ProcessEngineTest : IDisposable
         ProcessChangeResult result = await processEngine.Next(processNextRequest);
         _processReaderMock.Verify(r => r.IsProcessTask("Task_2"), Times.Once);
         _processReaderMock.Verify(r => r.IsEndEvent("EndEvent_1"), Times.Once);
-        _profileMock.Verify(p => p.GetUserProfile(1337), Times.Exactly(3));
         _processNavigatorMock.Verify(n => n.GetNextTask(It.IsAny<Instance>(), "Task_2", null), Times.Once);
 
         var expectedInstanceEvents = new List<InstanceEvent>()
@@ -974,7 +971,7 @@ public sealed class ProcessEngineTest : IDisposable
                 User = new()
                 {
                     UserId = 1337,
-                    OrgId = "tdd",
+                    NationalIdentityNumber = "22927774937",
                     AuthenticationLevel = 2,
                 },
                 ProcessInfo = new()
@@ -1035,16 +1032,14 @@ public sealed class ProcessEngineTest : IDisposable
             _processReaderMock.Setup(r => r.IsProcessTask("EndEvent_1")).Returns(false);
         }
 
-        _profileMock
-            .Setup(p => p.GetUserProfile(1337))
-            .ReturnsAsync(
-                () =>
-                    new UserProfile()
-                    {
-                        UserId = 1337,
-                        Email = "test@example.com",
-                        Party = new Party() { SSN = "22927774937" },
-                    }
+        _authenticationContextMock
+            .Setup(a => a.Current)
+            .Returns(
+                TestAuthentication.GetUserAuthenticationInfo(
+                    userId: 1337,
+                    email: "test@example.com",
+                    ssn: "22927774937"
+                )
             );
         _processNavigatorMock
             .Setup(pn => pn.GetNextTask(It.IsAny<Instance>(), "StartEvent_1", It.IsAny<string?>()))
@@ -1091,7 +1086,6 @@ public sealed class ProcessEngineTest : IDisposable
 
         return new ProcessEngine(
             _processReaderMock.Object,
-            _profileMock.Object,
             _processNavigatorMock.Object,
             _processEventHandlingDelegatorMock.Object,
             _processEventDispatcherMock.Object,
@@ -1101,6 +1095,7 @@ public sealed class ProcessEngineTest : IDisposable
             _instanceClientMock.Object,
             new ModelSerializationService(_appModelMock.Object, telemetrySink?.Object),
             _appMetadataMock.Object,
+            _authenticationContextMock.Object,
             telemetrySink?.Object
         );
     }
@@ -1108,7 +1103,6 @@ public sealed class ProcessEngineTest : IDisposable
     public void Dispose()
     {
         _processReaderMock.VerifyNoOtherCalls();
-        _profileMock.VerifyNoOtherCalls();
         _processNavigatorMock.VerifyNoOtherCalls();
         _processEventHandlingDelegatorMock.VerifyNoOtherCalls();
         _processEventDispatcherMock.VerifyNoOtherCalls();
