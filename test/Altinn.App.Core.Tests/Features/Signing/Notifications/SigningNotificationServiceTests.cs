@@ -189,7 +189,7 @@ public class SigningNotificationServiceTests
         signeeContexts = await signingNotificationService.NotifySignatureTask(signeeContexts);
 
         // Assert
-        Assert.True(signeeContexts[0].SigneeState.SignatureRequestSmsSent); // SMS notification set
+        Assert.True(signeeContexts[0].SigneeState.SignatureRequestSmsSent); // SMS notification sent
         Assert.Null(signeeContexts[0].SigneeState.SignatureRequestSmsNotSentReason); // No error message
         Assert.True(signeeContexts[0].SigneeState.SignatureRequestEmailSent); // Email notification sent
         Assert.Null(signeeContexts[0].SigneeState.SignatureRequestEmailNotSentReason); // No error message
