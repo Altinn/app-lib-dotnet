@@ -56,6 +56,10 @@ internal sealed class SigningDelegationService(
                 signeeContext.SigneeState.DelegationFailedReason = "Failed to revoke signee rights: " + ex.Message;
                 telemetry?.RecordDelegationRevoke(DelegationResult.Error);
             }
+            finally
+            {
+                updatedContexts.Add(signeeContext);
+            }
         }
         return signeeContexts;
     }
