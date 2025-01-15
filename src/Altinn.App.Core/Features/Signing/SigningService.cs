@@ -98,7 +98,7 @@ internal sealed class SigningService(
         string instanceId = instanceMutator.Instance.Id;
 
         AppIdentifier appIdentifier = new(instanceMutator.Instance.AppId);
-        (signeeContexts, var delegateSuccess) = await signingDelegationService.DelegateSigneeRights(
+        List<SigneeContext> signeeContextsDelegated = await signingDelegationService.DelegateSigneeRights(
             taskId,
             instanceId,
             delegatorParty ?? throw new InvalidOperationException("Delegator party is null"),
@@ -108,9 +108,9 @@ internal sealed class SigningService(
             telemetry
         );
 
-        if (delegateSuccess)
+        if (signeeContextsDelegated.All(context => context.SigneeState.IsAccessDelegated is true))
         {
-            await signingNotificationService.NotifySignatureTask(signeeContexts, ct);
+            await signingNotificationService.NotifySignatureTask(signeeContextsDelegated, ct);
         }
 
         // ! TODO: Remove nullable
@@ -118,12 +118,12 @@ internal sealed class SigningService(
             dataTypeId: signatureConfiguration.SigneeStatesDataTypeId!,
             contentType: ApplicationJsonContentType,
             filename: null,
-            bytes: JsonSerializer.SerializeToUtf8Bytes(signeeContexts, _jsonSerializerOptions)
+            bytes: JsonSerializer.SerializeToUtf8Bytes(signeeContextsDelegated, _jsonSerializerOptions)
         );
 
         await Task.CompletedTask;
 
-        return signeeContexts;
+        return signeeContextsDelegated;
     }
 
     public async Task<List<SigneeContext>> GetSigneeContexts(
@@ -132,7 +132,6 @@ internal sealed class SigningService(
     )
     {
         using Activity? activity = telemetry?.StartReadSigneesActivity();
-        // TODO: Get signees from state
         ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
 
         var cachedDataMutator = new InstanceDataUnitOfWork(
