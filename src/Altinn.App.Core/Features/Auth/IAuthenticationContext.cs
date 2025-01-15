@@ -22,7 +22,7 @@ internal static class AuthenticationContextDI
 /// <summary>
 /// Provides access to the current authentication context.
 /// </summary>
-internal interface IAuthenticationContext
+public interface IAuthenticationContext
 {
     /// <summary>
     /// The current authentication info.

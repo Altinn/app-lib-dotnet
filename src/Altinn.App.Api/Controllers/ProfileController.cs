@@ -17,9 +17,9 @@ public class ProfileController : Controller
     /// <summary>
     /// Initializes a new instance of the <see cref="ProfileController"/> class
     /// </summary>
-    public ProfileController(IServiceProvider serviceProvider)
+    public ProfileController(IAuthenticationContext authenticationContext)
     {
-        _authenticationContext = serviceProvider.GetRequiredService<IAuthenticationContext>();
+        _authenticationContext = authenticationContext;
     }
 
     /// <summary>

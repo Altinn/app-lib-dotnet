@@ -4,7 +4,6 @@ using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Internal.Auth;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -25,12 +24,12 @@ public class AuthenticationClient : IAuthenticationClient
     /// <param name="platformSettings">The current platform settings.</param>
     /// <param name="logger">the logger</param>
     /// <param name="httpClient">A HttpClient provided by the HttpClientFactory.</param>
-    /// <param name="serviceProvider">The service provider.</param>
+    /// <param name="authenticationContext">The authentication context.</param>
     public AuthenticationClient(
         IOptions<PlatformSettings> platformSettings,
         ILogger<AuthenticationClient> logger,
         HttpClient httpClient,
-        IServiceProvider serviceProvider
+        IAuthenticationContext authenticationContext
     )
     {
         _logger = logger;
@@ -38,7 +37,7 @@ public class AuthenticationClient : IAuthenticationClient
         httpClient.DefaultRequestHeaders.Add(General.SubscriptionKeyHeaderName, platformSettings.Value.SubscriptionKey);
         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         _client = httpClient;
-        _authenticationContext = serviceProvider.GetRequiredService<IAuthenticationContext>();
+        _authenticationContext = authenticationContext;
     }
 
     /// <inheritdoc />

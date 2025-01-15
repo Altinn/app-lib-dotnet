@@ -24,12 +24,12 @@ public class AuthorizationController : Controller
     public AuthorizationController(
         IAuthorizationClient authorization,
         IOptions<GeneralSettings> settings,
-        IServiceProvider serviceProvider
+        IAuthenticationContext authenticationContext
     )
     {
         _authorization = authorization;
         _settings = settings.Value;
-        _authenticationContext = serviceProvider.GetRequiredService<IAuthenticationContext>();
+        _authenticationContext = authenticationContext;
     }
 
     /// <summary>

@@ -40,7 +40,7 @@ public class PartiesController : ControllerBase
         IAltinnPartyClient altinnPartyClientClient,
         IOptions<GeneralSettings> settings,
         IAppMetadata appMetadata,
-        IServiceProvider serviceProvider
+        IAuthenticationContext authenticationContext
     )
     {
         _authorizationClient = authorizationClient;
@@ -48,7 +48,7 @@ public class PartiesController : ControllerBase
         _profileClient = profileClient;
         _settings = settings.Value;
         _appMetadata = appMetadata;
-        _authenticationContext = serviceProvider.GetRequiredService<IAuthenticationContext>();
+        _authenticationContext = authenticationContext;
     }
 
     /// <summary>
