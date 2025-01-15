@@ -145,7 +145,7 @@ public class Email
     public string? Body { get; set; }
 
     /// <summary>
-    /// The reference used to track the sms. Can be set to a custom value. If not set, a random guid will be used.
+    /// The reference used to track the email. Can be set to a custom value. If not set, a random guid will be used.
     /// </summary>
     public string Reference { get; set; } = Guid.NewGuid().ToString();
 }

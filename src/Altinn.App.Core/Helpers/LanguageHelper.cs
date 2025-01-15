@@ -27,17 +27,17 @@ internal class LanguageHelper
 
     internal async Task<string> GetUserLanguage(int? userId)
     {
-        string language = LanguageConst.Nb;
+        string defaultLanguage = LanguageConst.Nb;
 
         if (userId is null)
         {
-            return language;
+            return defaultLanguage;
         }
 
         UserProfile userProfile =
             await _profileClient.GetUserProfile(userId.Value)
             ?? throw new InvalidOperationException("Could not get user profile while getting language");
 
-        return userProfile?.ProfileSettingPreference?.Language ?? language;
+        return userProfile?.ProfileSettingPreference?.Language ?? defaultLanguage;
     }
 }

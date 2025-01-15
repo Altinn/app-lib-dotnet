@@ -148,34 +148,51 @@ public class SigningNotificationServiceTests
     {
         SigningNotificationService signingNotificationService = new(
             logger: _loggerMock.Object,
-            smsNotificationClient: SetupSmsNotificationClientMock().Object,
-            emailNotificationClient: SetupEmailNotificationClientMock().Object
+            emailNotificationClient: SetupEmailNotificationClientMock().Object,
+            smsNotificationClient: SetupSmsNotificationClientMock().Object
         );
         // Arrange
         var signeeContexts = new List<SigneeContext>
         {
-            SetupSmsSigneeContextNotification(
-                isOrganisation: false,
-                mobileNumber: "12345678",
-                body: "Test SMS",
-                reference: "sms-reference"
-            ),
-            SetupEmailSigneeContextNotification(
-                isOrganisation: false,
-                email: "test@test.no",
-                subject: "Test Email",
-                body: "This is a test email for testing purposes"
-            ),
+            new()
+            {
+                Party = new Party(),
+                TaskId = "task-id",
+                SigneeState = new SigneeState { SignatureRequestSmsSent = false },
+                OrganisationSignee = new OrganisationSignee
+                {
+                    DisplayName = "Test Organisation",
+                    OrganisationNumber = "123456789",
+                    Notifications = new Core.Features.Signing.Models.Notifications
+                    {
+                        OnSignatureAccessRightsDelegated = new Notification
+                        {
+                            Sms = new Sms
+                            {
+                                MobileNumber = "12345678",
+                                Body = "Test SMS",
+                                Reference = "sms-reference",
+                            },
+                            Email = new Email
+                            {
+                                EmailAddress = "test@test.no",
+                                Subject = "Test Email",
+                                Body = "This is a test email for testing purposes",
+                            },
+                        },
+                    },
+                },
+            },
         };
 
         // Act
         signeeContexts = await signingNotificationService.NotifySignatureTask(signeeContexts);
 
         // Assert
-        Assert.True(signeeContexts[0].SigneeState.SignatureRequestSmsSent); // SMS notification sent
+        Assert.True(signeeContexts[0].SigneeState.SignatureRequestSmsSent); // SMS notification set
         Assert.Null(signeeContexts[0].SigneeState.SignatureRequestSmsNotSentReason); // No error message
-        Assert.True(signeeContexts[1].SigneeState.SignatureRequestEmailSent); // Email notification sent
-        Assert.Null(signeeContexts[1].SigneeState.SignatureRequestEmailNotSentReason); // No error message
+        Assert.True(signeeContexts[0].SigneeState.SignatureRequestEmailSent); // Email notification sent
+        Assert.Null(signeeContexts[0].SigneeState.SignatureRequestEmailNotSentReason); // No error message
     }
 
     [Fact]
@@ -453,6 +470,62 @@ public class SigningNotificationServiceTests
 
         Assert.True(signeeContexts[1].SigneeState.SignatureRequestEmailSent); // Email notification sent
         Assert.Null(signeeContexts[1].SigneeState.SignatureRequestEmailNotSentReason); // No error message
+    }
+
+    [Fact]
+    public async Task NotifySignatureTask_WhenSmsFails_TrySendEmail()
+    {
+        SigningNotificationService signingNotificationService = new(
+            logger: _loggerMock.Object,
+            emailNotificationClient: SetupEmailNotificationClientMock().Object,
+            smsNotificationClient: SetupSmsNotificationClientMock().Object
+        );
+        // Arrange
+        var signeeContexts = new List<SigneeContext>
+        {
+            new()
+            {
+                Party = new Party(),
+                TaskId = "task-id",
+                SigneeState = new SigneeState { SignatureRequestSmsSent = false },
+                OrganisationSignee = new OrganisationSignee
+                {
+                    DisplayName = "Test Organisation",
+                    OrganisationNumber = "123456789",
+                    Notifications = new Core.Features.Signing.Models.Notifications
+                    {
+                        OnSignatureAccessRightsDelegated = new Notification
+                        {
+                            Sms = new Sms
+                            {
+                                MobileNumber = "", // No mobile number set, will fail
+                                Body = "Test SMS",
+                                Reference = "sms-reference",
+                            },
+                            Email = new Email
+                            {
+                                EmailAddress = "test@test.no",
+                                Subject = "Test Email",
+                                Body = "This is a test email for testing purposes",
+                            },
+                        },
+                    },
+                },
+            },
+        };
+
+        // Act
+        signeeContexts = await signingNotificationService.NotifySignatureTask(signeeContexts);
+
+        // Assert
+        Assert.False(signeeContexts[0].SigneeState.SignatureRequestSmsSent); // SMS notification not sent
+        Assert.NotNull(signeeContexts[0].SigneeState.SignatureRequestSmsNotSentReason); // Error message
+        Assert.Equal(
+            "No mobile number provided. Unable to send SMS notification.",
+            signeeContexts[0].SigneeState.SignatureRequestSmsNotSentReason
+        );
+        Assert.True(signeeContexts[0].SigneeState.SignatureRequestEmailSent); // Email notification sent
+        Assert.Null(signeeContexts[0].SigneeState.SignatureRequestEmailNotSentReason); // No error message
     }
 
     [Fact]
