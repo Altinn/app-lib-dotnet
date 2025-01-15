@@ -27,7 +27,7 @@ public class StartupHelperTests
                 // $"{AppContext.BaseDirectory}Altinn.App.Api.Tests.xml", // Tests does not generate XML documentation
                 $"{AppContext.BaseDirectory}Altinn.App.Api.xml"
             );
-        testDouble.GetBools().Should().Equal(false, false);
+        testDouble.GetBools().Should().Equal(false);
     }
 
     [Fact]
