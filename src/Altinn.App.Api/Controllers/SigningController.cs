@@ -89,7 +89,7 @@ public class SigningController : ControllerBase
                         Name = signeeContext.PersonSignee?.DisplayName ?? signeeContext.OrganisationSignee?.DisplayName,
                         Organisation = signeeContext.OrganisationSignee?.DisplayName,
                         HasSigned = rnd.Next(1, 10) > 5, //TODO: When and where to check if signee has signed?
-                        DelegationSuccessful = signeeContext.SigneeState.IsAccessDelegated is false,
+                        DelegationSuccessful = signeeContext.SigneeState.IsAccessDelegated is true,
                         NotificationSuccessful =
                             signeeContext.SigneeState
                                 is { SignatureRequestEmailSent: false, SignatureRequestSmsSent: false },
