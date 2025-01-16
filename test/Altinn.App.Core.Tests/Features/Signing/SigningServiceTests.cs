@@ -9,7 +9,6 @@ using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -132,54 +131,55 @@ public class SigningServiceTests
         );
 
         // Assert
-        result.Should().NotBeNull();
-        result.Should().HaveCount(2);
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Count);
 
         SigneeContext signeeContextWithMatchingSignatureDocument = result.First(x =>
             x.Party.Organization.OrgNumber == org.OrgNumber
         );
 
-        signeeContextWithMatchingSignatureDocument.Should().NotBeNull();
-        signeeContextWithMatchingSignatureDocument.TaskId.Should().Be(instance.Process.CurrentTask.ElementId);
+        Assert.NotNull(signeeContextWithMatchingSignatureDocument);
+        Assert.Equal(instance.Process.CurrentTask.ElementId, signeeContextWithMatchingSignatureDocument.TaskId);
 
-        signeeContextWithMatchingSignatureDocument.OrganisationSignee.Should().NotBeNull();
-        signeeContextWithMatchingSignatureDocument.OrganisationSignee?.DisplayName.Should().Be(org.Name);
-        signeeContextWithMatchingSignatureDocument.OrganisationSignee?.OrganisationNumber.Should().Be(org.OrgNumber);
+        Assert.NotNull(signeeContextWithMatchingSignatureDocument.OrganisationSignee);
+        Assert.Equal(org.Name, signeeContextWithMatchingSignatureDocument.OrganisationSignee?.DisplayName);
+        Assert.Equal(org.OrgNumber, signeeContextWithMatchingSignatureDocument.OrganisationSignee?.OrganisationNumber);
 
-        signeeContextWithMatchingSignatureDocument.Party.Should().NotBeNull();
-        signeeContextWithMatchingSignatureDocument.Party.Organization.Should().NotBeNull();
-        signeeContextWithMatchingSignatureDocument.Party.Organization?.OrgNumber.Should().Be(org.OrgNumber);
-        signeeContextWithMatchingSignatureDocument.Party.Organization?.Name.Should().Be(org.Name);
+        Assert.NotNull(signeeContextWithMatchingSignatureDocument.Party);
+        Assert.NotNull(signeeContextWithMatchingSignatureDocument.Party.Organization);
+        Assert.Equal(org.OrgNumber, signeeContextWithMatchingSignatureDocument.Party.Organization?.OrgNumber);
+        Assert.Equal(org.Name, signeeContextWithMatchingSignatureDocument.Party.Organization?.Name);
 
-        signeeContextWithMatchingSignatureDocument.SigneeState.Should().NotBeNull();
-        signeeContextWithMatchingSignatureDocument.SigneeState.IsAccessDelegated.Should().BeTrue();
+        Assert.NotNull(signeeContextWithMatchingSignatureDocument.SigneeState);
+        Assert.True(signeeContextWithMatchingSignatureDocument.SigneeState.IsAccessDelegated);
 
-        signeeContextWithMatchingSignatureDocument.SignDocument.Should().NotBeNull();
-        signeeContextWithMatchingSignatureDocument.SignDocument?.SigneeInfo.Should().NotBeNull();
-        signeeContextWithMatchingSignatureDocument
-            .SignDocument?.SigneeInfo?.OrganisationNumber.Should()
-            .Be(org.OrgNumber);
+        Assert.NotNull(signeeContextWithMatchingSignatureDocument.SignDocument);
+        Assert.NotNull(signeeContextWithMatchingSignatureDocument.SignDocument?.SigneeInfo);
+        Assert.Equal(
+            org.OrgNumber,
+            signeeContextWithMatchingSignatureDocument.SignDocument?.SigneeInfo?.OrganisationNumber
+        );
 
         SigneeContext signatureWithOnTheFlySigneeContext = result.First(x => x.Party.Person?.SSN == person.SSN);
 
-        signatureWithOnTheFlySigneeContext.Should().NotBeNull();
-        signatureWithOnTheFlySigneeContext.TaskId.Should().Be(instance.Process.CurrentTask.ElementId);
+        Assert.NotNull(signatureWithOnTheFlySigneeContext);
+        Assert.Equal(instance.Process.CurrentTask.ElementId, signatureWithOnTheFlySigneeContext.TaskId);
 
-        signatureWithOnTheFlySigneeContext.PersonSignee.Should().NotBeNull();
-        signatureWithOnTheFlySigneeContext.PersonSignee?.DisplayName.Should().Be(person.Name);
-        signatureWithOnTheFlySigneeContext.PersonSignee?.SocialSecurityNumber.Should().Be(person.SSN);
+        Assert.NotNull(signatureWithOnTheFlySigneeContext.PersonSignee);
+        Assert.Equal(person.Name, signatureWithOnTheFlySigneeContext.PersonSignee?.DisplayName);
+        Assert.Equal(person.SSN, signatureWithOnTheFlySigneeContext.PersonSignee?.SocialSecurityNumber);
 
-        signatureWithOnTheFlySigneeContext.Party.Should().NotBeNull();
-        signatureWithOnTheFlySigneeContext.Party.Person.Should().NotBeNull();
-        signatureWithOnTheFlySigneeContext.Party.Person?.SSN.Should().Be(person.SSN);
-        signatureWithOnTheFlySigneeContext.Party.Person?.Name.Should().Be(person.Name);
+        Assert.NotNull(signatureWithOnTheFlySigneeContext.Party);
+        Assert.NotNull(signatureWithOnTheFlySigneeContext.Party.Person);
+        Assert.Equal(person.SSN, signatureWithOnTheFlySigneeContext.Party.Person?.SSN);
+        Assert.Equal(person.Name, signatureWithOnTheFlySigneeContext.Party.Person?.Name);
 
-        signatureWithOnTheFlySigneeContext.SigneeState.Should().NotBeNull();
-        signatureWithOnTheFlySigneeContext.SigneeState.IsAccessDelegated.Should().BeTrue();
+        Assert.NotNull(signatureWithOnTheFlySigneeContext.SigneeState);
+        Assert.True(signatureWithOnTheFlySigneeContext.SigneeState.IsAccessDelegated);
 
-        signatureWithOnTheFlySigneeContext.SignDocument.Should().NotBeNull();
-        signatureWithOnTheFlySigneeContext.SignDocument?.SigneeInfo.Should().NotBeNull();
-        signatureWithOnTheFlySigneeContext.SignDocument?.SigneeInfo?.PersonNumber.Should().Be(person.SSN);
+        Assert.NotNull(signatureWithOnTheFlySigneeContext.SignDocument);
+        Assert.NotNull(signatureWithOnTheFlySigneeContext.SignDocument?.SigneeInfo);
+        Assert.Equal(person.SSN, signatureWithOnTheFlySigneeContext.SignDocument?.SigneeInfo?.PersonNumber);
     }
 
     private static byte[] ToBytes<T>(T obj)
