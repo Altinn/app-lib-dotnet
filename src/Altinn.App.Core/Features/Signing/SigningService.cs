@@ -307,26 +307,9 @@ internal sealed class SigningService(
         try
         {
             SignDocument[] signDocuments = await Task.WhenAll(
-                signatureDataElements.Select(async signatureDataElement =>
-                {
-                    try
-                    {
-                        ReadOnlyMemory<byte> data = await instanceMutator.GetBinaryData(signatureDataElement);
-                        string signDocumentSerialized = Encoding.UTF8.GetString(data.ToArray());
-
-                        return JsonSerializer.Deserialize<SignDocument>(signDocumentSerialized, _jsonSerializerOptions)
-                            ?? throw new JsonException("Could not deserialize signature document.");
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(
-                            ex,
-                            "Failed to download signature document for DataElement with ID {DataElementId}.",
-                            signatureDataElement.Id
-                        );
-                        throw;
-                    }
-                })
+                signatureDataElements.Select(signatureDataElement =>
+                    DownloadSignDocumentAsync(instanceMutator, signatureDataElement)
+                )
             );
 
             return [.. signDocuments];
@@ -334,6 +317,30 @@ internal sealed class SigningService(
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to download signature documents.");
+            throw;
+        }
+    }
+
+    private async Task<SignDocument> DownloadSignDocumentAsync(
+        IInstanceDataMutator instanceMutator,
+        DataElement signatureDataElement
+    )
+    {
+        try
+        {
+            ReadOnlyMemory<byte> data = await instanceMutator.GetBinaryData(signatureDataElement);
+            string signDocumentSerialized = Encoding.UTF8.GetString(data.ToArray());
+
+            return JsonSerializer.Deserialize<SignDocument>(signDocumentSerialized, _jsonSerializerOptions)
+                ?? throw new JsonException("Could not deserialize signature document.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Failed to download signature document for DataElement with ID {DataElementId}.",
+                signatureDataElement.Id
+            );
             throw;
         }
     }
