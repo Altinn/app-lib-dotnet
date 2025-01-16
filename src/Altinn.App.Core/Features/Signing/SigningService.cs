@@ -6,16 +6,14 @@ using Altinn.App.Core.Features.Signing.Exceptions;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Mocks;
 using Altinn.App.Core.Features.Signing.Models;
-using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
-using Altinn.App.Core.Internal.Data;
-using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
+using JsonException = Newtonsoft.Json.JsonException;
 
 namespace Altinn.App.Core.Features.Signing;
 
@@ -26,19 +24,11 @@ internal sealed class SigningService(
     ISigningDelegationService signingDelegationService,
     ISigningNotificationService signingNotificationService,
     IEnumerable<ISigneeProvider> signeeProviders,
-    IDataClient dataClient,
-    IInstanceClient instanceClient,
-    ModelSerializationService modelSerialization,
-    IAppMetadata appMetadata,
     ILogger<SigningService> logger,
     Telemetry? telemetry = null
 ) : ISigningService
 {
     private static readonly JsonSerializerOptions _jsonSerializerOptions = new(JsonSerializerDefaults.Web);
-    private readonly IDataClient _dataClient = dataClient;
-    private readonly IInstanceClient _instanceClient = instanceClient;
-    private readonly ModelSerializationService _modelSerialization = modelSerialization;
-    private readonly IAppMetadata _appMetadata = appMetadata;
     private readonly ILogger<SigningService> _logger = logger;
     private const string ApplicationJsonContentType = "application/json";
 
@@ -66,7 +56,7 @@ internal sealed class SigningService(
     {
         using Activity? activity = telemetry?.StartAssignSigneesActivity();
 
-        var instance = instanceMutator.Instance;
+        Instance instance = instanceMutator.Instance;
         string taskId = instance.Process.CurrentTask.ElementId;
 
         SigneesResult? signeesResult = await GetSignees(instance, signatureConfiguration);
@@ -127,36 +117,18 @@ internal sealed class SigningService(
     }
 
     public async Task<List<SigneeContext>> GetSigneeContexts(
-        Instance instance,
+        IInstanceDataMutator instanceMutator,
         AltinnSignatureConfiguration signatureConfiguration
     )
     {
         using Activity? activity = telemetry?.StartReadSigneesActivity();
-        // TODO: Get signees from state
-        ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
 
-        var cachedDataMutator = new InstanceDataUnitOfWork(
-            instance,
-            _dataClient,
-            _instanceClient,
-            appMetadata,
-            _modelSerialization
-        );
+        List<SigneeContext> signeeContexts = await DownloadSigneeContexts(instanceMutator, signatureConfiguration);
+        List<SignDocument> signDocuments = await DownloadSignDocuments(instanceMutator, signatureConfiguration);
 
-        // ! TODO: Remove nullable
-        IEnumerable<DataElement> dataElements = cachedDataMutator.GetDataElementsForType(
-            signatureConfiguration.SigneeStatesDataTypeId!
-        );
+        await SynchronizeSigneeContextsWithSignDocuments(instanceMutator, signeeContexts, signDocuments);
 
-        DataElement signeeStateDataElement = dataElements.Single();
-        ReadOnlyMemory<byte> data = await cachedDataMutator.GetBinaryData(signeeStateDataElement);
-        string asString = Encoding.UTF8.GetString(data.ToArray());
-
-        var result = JsonSerializer.Deserialize<SigneeContext[]>(asString, _jsonSerializerOptions) ?? [];
-
-        return [.. result];
-
-        // TODO: Get signees from policy??
+        return signeeContexts;
     }
 
     //TODO: There is already logic for the sign action in the SigningUserAction class. Maybe move most of it here?
@@ -287,6 +259,135 @@ internal sealed class SigningService(
                 }
             );
         }
+
         return organisationSigneeContexts;
+    }
+
+    private static async Task<List<SigneeContext>> DownloadSigneeContexts(
+        IInstanceDataMutator instanceMutator,
+        AltinnSignatureConfiguration signatureConfiguration
+    )
+    {
+        string signeeStatesDataTypeId =
+            signatureConfiguration.SigneeStatesDataTypeId
+            ?? throw new ApplicationConfigException(
+                "SigneeStatesDataTypeId is not set in the signature configuration."
+            );
+
+        IEnumerable<DataElement> dataElements = instanceMutator.GetDataElementsForType(signeeStatesDataTypeId);
+
+        DataElement signeeStateDataElement =
+            dataElements.SingleOrDefault()
+            ?? throw new ApplicationException(
+                $"Failed to find the data element containing signee contexts using dataTypeId {signatureConfiguration.SigneeStatesDataTypeId}."
+            );
+
+        ReadOnlyMemory<byte> data = await instanceMutator.GetBinaryData(signeeStateDataElement);
+        string signeeStateSerialized = Encoding.UTF8.GetString(data.ToArray());
+
+        List<SigneeContext> signeeContexts =
+            JsonSerializer.Deserialize<List<SigneeContext>>(signeeStateSerialized, _jsonSerializerOptions) ?? [];
+
+        return signeeContexts;
+    }
+
+    private static async Task<List<SignDocument>> DownloadSignDocuments(
+        IInstanceDataMutator instanceMutator,
+        AltinnSignatureConfiguration signatureConfiguration
+    )
+    {
+        string signatureDataTypeId =
+            signatureConfiguration.SignatureDataType
+            ?? throw new ApplicationConfigException("SignatureDataType is not set in the signature configuration.");
+
+        List<DataElement> signatureDataElements = instanceMutator
+            .Instance.Data.Where(x => x.DataType == signatureDataTypeId)
+            .ToList();
+
+        List<SignDocument> signDocuments = [];
+        //TODO: Is GetBinaryData safe to do in parallel? If so, do it.
+        foreach (DataElement signatureDataElement in signatureDataElements)
+        {
+            ReadOnlyMemory<byte> data = await instanceMutator.GetBinaryData(signatureDataElement);
+            string signDocumentSerialized = Encoding.UTF8.GetString(data.ToArray());
+
+            SignDocument signDocument =
+                JsonSerializer.Deserialize<SignDocument>(signDocumentSerialized, _jsonSerializerOptions)
+                ?? throw new JsonException("Could not deserialize signature document.");
+
+            signDocuments.Add(signDocument);
+        }
+
+        return signDocuments;
+    }
+
+    /// <summary>
+    /// This method exists to ensure we have a SigneeContext for both signees that have been delegated access to sign and signees that have signed using access granted through the policy.xml file.
+    /// </summary>
+    private async Task SynchronizeSigneeContextsWithSignDocuments(
+        IInstanceDataMutator instanceMutator,
+        List<SigneeContext> signeeContexts,
+        List<SignDocument> signDocuments
+    )
+    {
+        foreach (SignDocument signDocument in signDocuments)
+        {
+            SigneeContext? matchingSigneeContext = signeeContexts.FirstOrDefault(x =>
+                x.PersonSignee?.SocialSecurityNumber == signDocument.SigneeInfo.PersonNumber
+                || x.OrganisationSignee?.OrganisationNumber == signDocument.SigneeInfo.OrganisationNumber
+            );
+
+            if (matchingSigneeContext is not null)
+            {
+                // If the signee has been delegated access to sign there will be a matching SigneeContext. Setting the sign document property on this context.
+                matchingSigneeContext.SignDocument = signDocument;
+            }
+            else
+            {
+                // If the signee has signed using access granted through the policy.xml file, there is no persisted signee context. We create a signee context on the fly.
+                Party party = await altinnPartyClient.LookupParty(
+                    new PartyLookup
+                    {
+                        Ssn = signDocument.SigneeInfo.PersonNumber,
+                        OrgNo = signDocument.SigneeInfo.OrganisationNumber,
+                    }
+                );
+
+                PersonSignee? personSignee = party.Person is not null
+                    ? new PersonSignee
+                    {
+                        SocialSecurityNumber = party.Person.SSN,
+                        DisplayName = party.Person.Name,
+                        FullName = party.Person.Name,
+                        OnBehalfOfOrganisation = party.Organization?.Name,
+                    }
+                    : null;
+
+                OrganisationSignee? organisationSignee = party.Organization is not null
+                    ? new OrganisationSignee
+                    {
+                        OrganisationNumber = party.Organization.OrgNumber,
+                        DisplayName = party.Organization.Name,
+                    }
+                    : null;
+
+                signeeContexts.Add(
+                    new SigneeContext
+                    {
+                        TaskId = instanceMutator.Instance.Process.CurrentTask.ElementId,
+                        Party = party,
+                        PersonSignee = personSignee,
+                        OrganisationSignee = organisationSignee,
+                        SigneeState = new SigneeState()
+                        {
+                            IsAccessDelegated = true,
+                            SignatureRequestEmailSent = true,
+                            SignatureRequestSmsSent = true,
+                            IsReceiptSent = false,
+                        },
+                    }
+                );
+            }
+        }
     }
 }
