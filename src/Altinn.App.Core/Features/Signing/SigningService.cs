@@ -291,7 +291,7 @@ internal sealed class SigningService(
         return signeeContexts;
     }
 
-    private static async Task<List<SignDocument>> DownloadSignDocuments(
+    private async Task<List<SignDocument>> DownloadSignDocuments(
         IInstanceDataMutator instanceMutator,
         AltinnSignatureConfiguration signatureConfiguration
     )
@@ -304,21 +304,38 @@ internal sealed class SigningService(
             .Instance.Data.Where(x => x.DataType == signatureDataTypeId)
             .ToList();
 
-        List<SignDocument> signDocuments = [];
-        //TODO: Is GetBinaryData safe to do in parallel? If so, do it.
-        foreach (DataElement signatureDataElement in signatureDataElements)
+        try
         {
-            ReadOnlyMemory<byte> data = await instanceMutator.GetBinaryData(signatureDataElement);
-            string signDocumentSerialized = Encoding.UTF8.GetString(data.ToArray());
+            SignDocument[] signDocuments = await Task.WhenAll(
+                signatureDataElements.Select(async signatureDataElement =>
+                {
+                    try
+                    {
+                        ReadOnlyMemory<byte> data = await instanceMutator.GetBinaryData(signatureDataElement);
+                        string signDocumentSerialized = Encoding.UTF8.GetString(data.ToArray());
 
-            SignDocument signDocument =
-                JsonSerializer.Deserialize<SignDocument>(signDocumentSerialized, _jsonSerializerOptions)
-                ?? throw new JsonException("Could not deserialize signature document.");
+                        return JsonSerializer.Deserialize<SignDocument>(signDocumentSerialized, _jsonSerializerOptions)
+                            ?? throw new JsonException("Could not deserialize signature document.");
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(
+                            ex,
+                            "Failed to download signature document for DataElement with ID {DataElementId}.",
+                            signatureDataElement.Id
+                        );
+                        throw;
+                    }
+                })
+            );
 
-            signDocuments.Add(signDocument);
+            return [.. signDocuments];
         }
-
-        return signDocuments;
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to download signature documents.");
+            throw;
+        }
     }
 
     /// <summary>
