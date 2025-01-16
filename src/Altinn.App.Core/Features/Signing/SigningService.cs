@@ -402,6 +402,7 @@ internal sealed class SigningService(
                             SignatureRequestSmsSent = true,
                             IsReceiptSent = false,
                         },
+                        SignDocument = signDocument,
                     }
                 );
             }

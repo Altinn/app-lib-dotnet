@@ -4,8 +4,6 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Signing;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
-using Altinn.App.Core.Internal.Data;
-using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Models;
@@ -64,10 +62,16 @@ public class SigningServiceTests
             DataType = signatureConfiguration.SignatureDataType,
         };
 
+        var signDocumentDataElement2 = new DataElement
+        {
+            Id = Guid.NewGuid().ToString(),
+            DataType = signatureConfiguration.SignatureDataType,
+        };
+
         Instance instance = new()
         {
             Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "Task_1" } },
-            Data = [signeeStateDataElement, signDocumentDataElement],
+            Data = [signeeStateDataElement, signDocumentDataElement, signDocumentDataElement2],
         };
 
         var org = new Organization { OrgNumber = "123456789", Name = "An org" };
@@ -90,9 +94,16 @@ public class SigningServiceTests
             },
         };
 
-        var signDocument = new SignDocument
+        var signDocumentWithMatchingSignatureContext = new SignDocument
         {
             SigneeInfo = new Signee { OrganisationNumber = signeeState.First().Party.Organization.OrgNumber },
+        };
+
+        var person = new Person { SSN = "12345678910", Name = "A person" };
+
+        var signDocumentWithoutMatchingSignatureContext = new SignDocument
+        {
+            SigneeInfo = new Signee { PersonNumber = person.SSN },
         };
 
         cachedInstanceMutator.Setup(x => x.Instance).Returns(instance);
@@ -102,7 +113,15 @@ public class SigningServiceTests
 
         cachedInstanceMutator
             .Setup(x => x.GetBinaryData(new DataElementIdentifier(signDocumentDataElement.Id)))
-            .ReturnsAsync(new ReadOnlyMemory<byte>(ToBytes(signDocument)));
+            .ReturnsAsync(new ReadOnlyMemory<byte>(ToBytes(signDocumentWithMatchingSignatureContext)));
+
+        cachedInstanceMutator
+            .Setup(x => x.GetBinaryData(new DataElementIdentifier(signDocumentDataElement2.Id)))
+            .ReturnsAsync(new ReadOnlyMemory<byte>(ToBytes(signDocumentWithoutMatchingSignatureContext)));
+
+        _altinnPartyClient
+            .Setup(x => x.LookupParty(Match.Create<PartyLookup>(p => p.Ssn == person.SSN)))
+            .ReturnsAsync(new Party { Person = person });
 
         // Act
         List<SigneeContext> result = await _signingService.GetSigneeContexts(
@@ -112,27 +131,53 @@ public class SigningServiceTests
 
         // Assert
         result.Should().NotBeNull();
-        result.Should().HaveCount(1);
+        result.Should().HaveCount(2);
 
-        SigneeContext signeeContext = result.First();
-        signeeContext.Should().NotBeNull();
-        signeeContext.TaskId.Should().Be(instance.Process.CurrentTask.ElementId);
+        SigneeContext signeeContextWithMatchingSignatureDocument = result.First(x =>
+            x.Party.Organization.OrgNumber == org.OrgNumber
+        );
 
-        signeeContext.OrganisationSignee.Should().NotBeNull();
-        signeeContext.OrganisationSignee?.DisplayName.Should().Be(org.Name);
-        signeeContext.OrganisationSignee?.OrganisationNumber.Should().Be(org.OrgNumber);
+        signeeContextWithMatchingSignatureDocument.Should().NotBeNull();
+        signeeContextWithMatchingSignatureDocument.TaskId.Should().Be(instance.Process.CurrentTask.ElementId);
 
-        signeeContext.Party.Should().NotBeNull();
-        signeeContext.Party.Organization.Should().NotBeNull();
-        signeeContext.Party.Organization?.OrgNumber.Should().Be(org.OrgNumber);
-        signeeContext.Party.Organization?.Name.Should().Be(org.Name);
+        signeeContextWithMatchingSignatureDocument.OrganisationSignee.Should().NotBeNull();
+        signeeContextWithMatchingSignatureDocument.OrganisationSignee?.DisplayName.Should().Be(org.Name);
+        signeeContextWithMatchingSignatureDocument.OrganisationSignee?.OrganisationNumber.Should().Be(org.OrgNumber);
 
-        signeeContext.SigneeState.Should().NotBeNull();
-        signeeContext.SigneeState.IsAccessDelegated.Should().BeTrue();
+        signeeContextWithMatchingSignatureDocument.Party.Should().NotBeNull();
+        signeeContextWithMatchingSignatureDocument.Party.Organization.Should().NotBeNull();
+        signeeContextWithMatchingSignatureDocument.Party.Organization?.OrgNumber.Should().Be(org.OrgNumber);
+        signeeContextWithMatchingSignatureDocument.Party.Organization?.Name.Should().Be(org.Name);
 
-        signeeContext.SignDocument.Should().NotBeNull();
-        signeeContext.SignDocument?.SigneeInfo.Should().NotBeNull();
-        signeeContext.SignDocument?.SigneeInfo?.OrganisationNumber.Should().Be(org.OrgNumber);
+        signeeContextWithMatchingSignatureDocument.SigneeState.Should().NotBeNull();
+        signeeContextWithMatchingSignatureDocument.SigneeState.IsAccessDelegated.Should().BeTrue();
+
+        signeeContextWithMatchingSignatureDocument.SignDocument.Should().NotBeNull();
+        signeeContextWithMatchingSignatureDocument.SignDocument?.SigneeInfo.Should().NotBeNull();
+        signeeContextWithMatchingSignatureDocument
+            .SignDocument?.SigneeInfo?.OrganisationNumber.Should()
+            .Be(org.OrgNumber);
+
+        SigneeContext signatureWithOnTheFlySigneeContext = result.First(x => x.Party.Person?.SSN == person.SSN);
+
+        signatureWithOnTheFlySigneeContext.Should().NotBeNull();
+        signatureWithOnTheFlySigneeContext.TaskId.Should().Be(instance.Process.CurrentTask.ElementId);
+
+        signatureWithOnTheFlySigneeContext.PersonSignee.Should().NotBeNull();
+        signatureWithOnTheFlySigneeContext.PersonSignee?.DisplayName.Should().Be(person.Name);
+        signatureWithOnTheFlySigneeContext.PersonSignee?.SocialSecurityNumber.Should().Be(person.SSN);
+
+        signatureWithOnTheFlySigneeContext.Party.Should().NotBeNull();
+        signatureWithOnTheFlySigneeContext.Party.Person.Should().NotBeNull();
+        signatureWithOnTheFlySigneeContext.Party.Person?.SSN.Should().Be(person.SSN);
+        signatureWithOnTheFlySigneeContext.Party.Person?.Name.Should().Be(person.Name);
+
+        signatureWithOnTheFlySigneeContext.SigneeState.Should().NotBeNull();
+        signatureWithOnTheFlySigneeContext.SigneeState.IsAccessDelegated.Should().BeTrue();
+
+        signatureWithOnTheFlySigneeContext.SignDocument.Should().NotBeNull();
+        signatureWithOnTheFlySigneeContext.SignDocument?.SigneeInfo.Should().NotBeNull();
+        signatureWithOnTheFlySigneeContext.SignDocument?.SigneeInfo?.PersonNumber.Should().Be(person.SSN);
     }
 
     private static byte[] ToBytes<T>(T obj)
