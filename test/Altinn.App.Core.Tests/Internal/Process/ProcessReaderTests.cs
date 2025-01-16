@@ -439,12 +439,22 @@ public class ProcessReaderTests
                     UniqueFromSignaturesInDataTypes = ["signature1"],
                     SigneeProviderId = "signeeProviderId",
                     SigneeStatesDataTypeId = "signeeStatesDataTypeId",
-                    EnvironmentConfigs =
+                    CorrespondenceResources =
                     [
-                        new AltinnSignatureConfiguration.EnvironmentConfig
+                        new AltinnSignatureConfiguration.CorrespondenceResource
                         {
-                            Env = "tt02",
-                            CorrespondenceResource = "correspondenceResource",
+                            Environment = null,
+                            ResourceId = "correspondenceResource",
+                        },
+                        new AltinnSignatureConfiguration.CorrespondenceResource
+                        {
+                            Environment = "tt02",
+                            ResourceId = "correspondenceResourceTt02",
+                        },
+                        new AltinnSignatureConfiguration.CorrespondenceResource
+                        {
+                            Environment = "prod",
+                            ResourceId = "correspondenceResourceProd",
                         },
                     ],
                 }

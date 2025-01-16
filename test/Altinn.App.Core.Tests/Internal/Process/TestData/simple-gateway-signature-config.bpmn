@@ -32,11 +32,9 @@
             </altinn:uniqueFromSignaturesInDataTypes>
             <altinn:signeeProviderId>signeeProviderId</altinn:signeeProviderId>
             <altinn:signeeStatesDataTypeId>signeeStatesDataTypeId</altinn:signeeStatesDataTypeId>
-            <altinn:environmentConfigs>
-              <altinn:environmentConfig env="tt02">
-                <altinn:correspondenceResource>correspondenceResource</altinn:correspondenceResource>
-              </altinn:environmentConfig>
-            </altinn:environmentConfigs>
+            <altinn:correspondenceResource>correspondenceResource</altinn:correspondenceResource>
+            <altinn:correspondenceResource env="tt02">correspondenceResourceTt02</altinn:correspondenceResource>
+            <altinn:correspondenceResource env="prod">correspondenceResourceProd</altinn:correspondenceResource>
           </altinn:signatureConfig>
         </altinn:taskExtension>
       </bpmn:extensionElements>

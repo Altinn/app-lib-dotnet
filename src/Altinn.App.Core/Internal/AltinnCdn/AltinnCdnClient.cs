@@ -3,14 +3,16 @@ using System.Text.Json;
 
 namespace Altinn.App.Core.Internal.AltinnCdn;
 
-internal sealed class AltinnCdnClient : IDisposable
+internal sealed class AltinnCdnClient : IAltinnCdnClient
 {
     private static readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web);
     private readonly HttpMessageHandler? _httpMessageHandler;
+    private readonly bool _disposeHandler;
 
-    public AltinnCdnClient(HttpMessageHandler? httpMessageHandler = null)
+    public AltinnCdnClient(HttpMessageHandler? httpMessageHandler = null, bool disposeHandler = false)
     {
         _httpMessageHandler = httpMessageHandler;
+        _disposeHandler = disposeHandler;
     }
 
     public async Task<AltinnCdnOrgs> GetOrgs(CancellationToken cancellationToken = default)
@@ -40,11 +42,16 @@ internal sealed class AltinnCdnClient : IDisposable
 
     private HttpClient CreateHttpClient()
     {
-        return _httpMessageHandler is not null ? new HttpClient(_httpMessageHandler) : new HttpClient();
+        return _httpMessageHandler is not null
+            ? new HttpClient(_httpMessageHandler, disposeHandler: false)
+            : new HttpClient();
     }
 
     public void Dispose()
     {
-        _httpMessageHandler?.Dispose();
+        if (_disposeHandler)
+        {
+            _httpMessageHandler?.Dispose();
+        }
     }
 }

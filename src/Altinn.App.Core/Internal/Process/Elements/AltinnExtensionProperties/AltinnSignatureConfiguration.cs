@@ -51,33 +51,45 @@ public class AltinnSignatureConfiguration
     public string? SigneeStatesDataTypeId { get; set; }
 
     /// <summary>
-    /// Environment specific configurations
+    /// Correspondence resource details
     /// </summary>
-    // [XmlElement("environmentConfigs", Namespace = "http://altinn.no/process")]
-    [XmlArray(ElementName = "environmentConfigs", Namespace = "http://altinn.no/process", IsNullable = true)]
-    [XmlArrayItem(ElementName = "environmentConfig", Namespace = "http://altinn.no/process")]
-    public List<EnvironmentConfig> EnvironmentConfigs { get; set; } = [];
+    [XmlElement(ElementName = "correspondenceResource", Namespace = "http://altinn.no/process")]
+    public List<CorrespondenceResource> CorrespondenceResources { get; set; } = [];
 
-    internal EnvironmentConfig? GetEnvironmentConfig(HostingEnvironment env)
+    /// <summary>
+    /// Retrieve a correspondence resource for the given environment, in a predictable manner.
+    /// Specific configurations (those specifying an environment) takes precedence over global configurations.
+    /// </summary>
+    internal CorrespondenceResource? GetCorrespondenceResourceForEnvironment(HostingEnvironment env)
     {
-        return EnvironmentConfigs.FirstOrDefault(e => AltinnEnvironments.GetHostingEnvironment(e.Env) == env);
+        const string globalKey = "__global__";
+        Dictionary<string, CorrespondenceResource> lookup = new();
+        foreach (var entry in CorrespondenceResources)
+        {
+            var key = string.IsNullOrWhiteSpace(entry.Environment)
+                ? globalKey
+                : AltinnEnvironments.GetHostingEnvironment(entry.Environment).ToString();
+            lookup[key] = entry;
+        }
+
+        return lookup.GetValueOrDefault(env.ToString()) ?? lookup.GetValueOrDefault(globalKey);
     }
 
     /// <summary>
     /// Correspondence resource details
     /// </summary>
-    public class EnvironmentConfig
+    public class CorrespondenceResource
     {
         /// <summary>
-        /// The environment the configuration is for
+        /// The environment the configuration is applicable for. An omitted value indicates validity for all environments.
         /// </summary>
         [XmlAttribute("env")]
-        public required string Env { get; set; }
+        public string? Environment { get; set; }
 
         /// <summary>
         /// The resource to use for correspondence (receipts)
         /// </summary>
-        [XmlElement(ElementName = "correspondenceResource", Namespace = "http://altinn.no/process")]
-        public string? CorrespondenceResource { get; set; }
+        [XmlText]
+        public required string ResourceId { get; set; }
     }
 }

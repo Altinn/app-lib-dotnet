@@ -1,5 +1,4 @@
 using System.Globalization;
-using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Exceptions;
 using Altinn.App.Core.Features.Correspondence;
@@ -20,7 +19,6 @@ using Altinn.App.Core.Models.UserAction;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Signee = Altinn.App.Core.Internal.Sign.Signee;
 
 namespace Altinn.App.Core.Features.Action;
@@ -178,8 +176,49 @@ public class SigningUserAction : IUserAction
         AltinnSignatureConfiguration? signatureConfiguration
     )
     {
-        HostingEnvironment env = AltinnEnvironments.GetHostingEnvironment(_hostEnvironment);
-        string? resource = signatureConfiguration?.GetEnvironmentConfig(env)?.CorrespondenceResource;
+        (string resource, string sender, string recipient) = await GetCorrespondenceHeaders(
+            signee,
+            appMetadata,
+            signatureConfiguration,
+            _hostEnvironment,
+            context.AltinnCdnClient
+        );
+        CorrespondenceContent content = await GetCorrespondenceContent(context);
+        IEnumerable<CorrespondenceAttachment> attachments = await GetCorrespondenceAttachments(
+            instanceIdentifier,
+            dataElementSignatures,
+            appMetadata,
+            context,
+            _dataClient
+        );
+
+        return await _correspondenceClient.Send(
+            new SendCorrespondencePayload(
+                CorrespondenceRequestBuilder
+                    .Create()
+                    .WithResourceId(resource)
+                    .WithSender(sender)
+                    .WithSendersReference(instanceIdentifier.ToString())
+                    .WithRecipient(recipient)
+                    .WithAllowSystemDeleteAfter(DateTime.Now.AddYears(1))
+                    .WithContent(content)
+                    .WithAttachments(attachments)
+                    .Build(),
+                CorrespondenceAuthorisation.Maskinporten
+            )
+        );
+    }
+
+    internal static async Task<(string resource, string sender, string recipient)> GetCorrespondenceHeaders(
+        Signee signee,
+        ApplicationMetadata appMetadata,
+        AltinnSignatureConfiguration? signatureConfiguration,
+        IHostEnvironment hostEnvironment,
+        IAltinnCdnClient? altinnCdnClient = null
+    )
+    {
+        HostingEnvironment env = AltinnEnvironments.GetHostingEnvironment(hostEnvironment);
+        string? resource = signatureConfiguration?.GetCorrespondenceResourceForEnvironment(env)?.ResourceId;
         if (string.IsNullOrEmpty(resource))
         {
             throw new ConfigurationException(
@@ -195,61 +234,32 @@ public class SigningUserAction : IUserAction
             );
         }
 
-        using var altinnCdnClient = new AltinnCdnClient();
-        AltinnCdnOrgs altinnCdnOrgs = await altinnCdnClient.GetOrgs();
-        string? sender = altinnCdnOrgs.Orgs?.GetValueOrDefault(appMetadata.Org)?.Orgnr;
-
-        if (string.IsNullOrEmpty(sender))
+        bool disposeClient = altinnCdnClient is null;
+        altinnCdnClient ??= new AltinnCdnClient();
+        try
         {
-            throw new InvalidOperationException(
-                $"Error looking up sender's organisation number from Altinn CDN, using key `{appMetadata.Org}`"
-            );
+            AltinnCdnOrgs altinnCdnOrgs = await altinnCdnClient.GetOrgs();
+            string? sender = altinnCdnOrgs.Orgs?.GetValueOrDefault(appMetadata.Org)?.Orgnr;
+
+            if (string.IsNullOrEmpty(sender))
+            {
+                throw new InvalidOperationException(
+                    $"Error looking up sender's organisation number from Altinn CDN, using key `{appMetadata.Org}`"
+                );
+            }
+
+            return (resource, sender, recipient);
         }
-
-        CorrespondenceContent content = await GetCorrespondenceContent(context);
-        var builder = CorrespondenceRequestBuilder
-            .Create()
-            .WithResourceId(resource)
-            .WithSender(sender)
-            .WithSendersReference(instanceIdentifier.ToString())
-            .WithRecipient(recipient)
-            .WithAllowSystemDeleteAfter(DateTime.Now.AddYears(1))
-            .WithContent(content);
-
-        IEnumerable<DataElement> attachments = context.Instance.Data.Where(IsSignedDataElement);
-
-        foreach (DataElement attachment in attachments)
+        finally
         {
-            string filename = GetDataElementFilename(attachment, appMetadata);
-
-            builder.WithAttachment(
-                CorrespondenceAttachmentBuilder
-                    .Create()
-                    .WithFilename(filename)
-                    .WithName(filename)
-                    .WithSendersReference(attachment.Id)
-                    .WithDataType(attachment.ContentType)
-                    .WithData(
-                        await _dataClient.GetDataBytes(
-                            appMetadata.AppIdentifier.Org,
-                            appMetadata.AppIdentifier.App,
-                            instanceIdentifier.InstanceOwnerPartyId,
-                            instanceIdentifier.InstanceGuid,
-                            Guid.Parse(attachment.Id)
-                        )
-                    )
-            );
+            if (disposeClient)
+            {
+                altinnCdnClient.Dispose();
+            }
         }
-
-        return await _correspondenceClient.Send(
-            new SendCorrespondencePayload(builder.Build(), CorrespondenceAuthorisation.Maskinporten)
-        );
-
-        bool IsSignedDataElement(DataElement dataElement) =>
-            dataElementSignatures.Any(x => x.DataElementId == dataElement.Id);
     }
 
-    private async Task<CorrespondenceContent> GetCorrespondenceContent(UserActionContext context)
+    internal async Task<CorrespondenceContent> GetCorrespondenceContent(UserActionContext context)
     {
         string? title = null;
         string? summary = null;
@@ -314,6 +324,47 @@ public class SigningUserAction : IUserAction
         };
     }
 
+    internal static async Task<IEnumerable<CorrespondenceAttachment>> GetCorrespondenceAttachments(
+        InstanceIdentifier instanceIdentifier,
+        IEnumerable<DataElementSignature> dataElementSignatures,
+        ApplicationMetadata appMetadata,
+        UserActionContext context,
+        IDataClient dataClient
+    )
+    {
+        List<CorrespondenceAttachment> attachments = [];
+        IEnumerable<DataElement> signedElements = context.Instance.Data.Where(IsSignedDataElement);
+
+        foreach (DataElement element in signedElements)
+        {
+            string filename = GetDataElementFilename(element, appMetadata);
+
+            attachments.Add(
+                CorrespondenceAttachmentBuilder
+                    .Create()
+                    .WithFilename(filename)
+                    .WithName(filename)
+                    .WithSendersReference(element.Id)
+                    .WithDataType(element.ContentType ?? "application/octet-stream")
+                    .WithData(
+                        await dataClient.GetDataBytes(
+                            appMetadata.AppIdentifier.Org,
+                            appMetadata.AppIdentifier.App,
+                            instanceIdentifier.InstanceOwnerPartyId,
+                            instanceIdentifier.InstanceGuid,
+                            Guid.Parse(element.Id)
+                        )
+                    )
+                    .Build()
+            );
+        }
+
+        return attachments;
+
+        bool IsSignedDataElement(DataElement dataElement) =>
+            dataElementSignatures.Any(x => x.DataElementId == dataElement.Id);
+    }
+
     /// <summary>
     /// Note: This method contains only an extremely small list of known mime types.
     /// The aim here is not to be exhaustive, just to cover some common cases.
@@ -327,7 +378,7 @@ public class SigningUserAction : IUserAction
 
         DataType? dataType = appMetadata.DataTypes.Find(x => x.Id == dataElement.DataType);
 
-        string mimeType = dataElement.ContentType.ToLower(CultureInfo.InvariantCulture);
+        var mimeType = dataElement.ContentType?.ToLower(CultureInfo.InvariantCulture) ?? string.Empty;
         var formDataExtensions = new[] { ".xml", ".json" };
         var mapping = new Dictionary<string, string>
         {
@@ -366,7 +417,7 @@ public class SigningUserAction : IUserAction
         return dataElementMatchExists || allDataTypesAreOptional ? signatureDataType : null;
     }
 
-    private static List<DataElementSignature> GetDataElementSignatures(
+    internal static List<DataElementSignature> GetDataElementSignatures(
         IEnumerable<DataElement> dataElements,
         IEnumerable<DataType>? dataTypesToSign
     )
