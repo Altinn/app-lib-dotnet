@@ -123,7 +123,11 @@ internal sealed class SigningService(
     {
         using Activity? activity = telemetry?.StartReadSigneesActivity();
 
-        List<SigneeContext> signeeContexts = await DownloadSigneeContexts(instanceMutator, signatureConfiguration);
+        //If no SigneeStateDataTypeId is set, delegated signing is not enabled and there is nothing to download.
+        List<SigneeContext> signeeContexts = signatureConfiguration.SigneeStatesDataTypeId is not null
+            ? await DownloadSigneeContexts(instanceMutator, signatureConfiguration)
+            : [];
+
         List<SignDocument> signDocuments = await DownloadSignDocuments(instanceMutator, signatureConfiguration);
 
         await SynchronizeSigneeContextsWithSignDocuments(instanceMutator, signeeContexts, signDocuments);
@@ -369,50 +373,58 @@ internal sealed class SigningService(
             else
             {
                 // If the signee has signed using access granted through the policy.xml file, there is no persisted signee context. We create a signee context on the fly.
-                Party party = await altinnPartyClient.LookupParty(
-                    new PartyLookup
-                    {
-                        Ssn = signDocument.SigneeInfo.PersonNumber,
-                        OrgNo = signDocument.SigneeInfo.OrganisationNumber,
-                    }
-                );
+                SigneeContext signeeContext = await CreateSigneeContextFromSignDocument(instanceMutator, signDocument);
 
-                PersonSignee? personSignee = party.Person is not null
-                    ? new PersonSignee
-                    {
-                        SocialSecurityNumber = party.Person.SSN,
-                        DisplayName = party.Person.Name,
-                        FullName = party.Person.Name,
-                        OnBehalfOfOrganisation = party.Organization?.Name,
-                    }
-                    : null;
-
-                OrganisationSignee? organisationSignee = party.Organization is not null
-                    ? new OrganisationSignee
-                    {
-                        OrganisationNumber = party.Organization.OrgNumber,
-                        DisplayName = party.Organization.Name,
-                    }
-                    : null;
-
-                signeeContexts.Add(
-                    new SigneeContext
-                    {
-                        TaskId = instanceMutator.Instance.Process.CurrentTask.ElementId,
-                        Party = party,
-                        PersonSignee = personSignee,
-                        OrganisationSignee = organisationSignee,
-                        SigneeState = new SigneeState()
-                        {
-                            IsAccessDelegated = true,
-                            SignatureRequestEmailSent = true,
-                            SignatureRequestSmsSent = true,
-                            IsReceiptSent = false,
-                        },
-                        SignDocument = signDocument,
-                    }
-                );
+                signeeContexts.Add(signeeContext);
             }
         }
+    }
+
+    private async Task<SigneeContext> CreateSigneeContextFromSignDocument(
+        IInstanceDataMutator instanceMutator,
+        SignDocument signDocument
+    )
+    {
+        Party party = await altinnPartyClient.LookupParty(
+            new PartyLookup
+            {
+                Ssn = signDocument.SigneeInfo.PersonNumber,
+                OrgNo = signDocument.SigneeInfo.OrganisationNumber,
+            }
+        );
+
+        PersonSignee? personSignee = party.Person is not null
+            ? new PersonSignee
+            {
+                SocialSecurityNumber = party.Person.SSN,
+                DisplayName = party.Person.Name,
+                FullName = party.Person.Name,
+                OnBehalfOfOrganisation = party.Organization?.Name,
+            }
+            : null;
+
+        OrganisationSignee? organisationSignee = party.Organization is not null
+            ? new OrganisationSignee
+            {
+                OrganisationNumber = party.Organization.OrgNumber,
+                DisplayName = party.Organization.Name,
+            }
+            : null;
+
+        return new SigneeContext
+        {
+            TaskId = instanceMutator.Instance.Process.CurrentTask.ElementId,
+            Party = party,
+            PersonSignee = personSignee,
+            OrganisationSignee = organisationSignee,
+            SigneeState = new SigneeState()
+            {
+                IsAccessDelegated = true,
+                SignatureRequestEmailSent = true,
+                SignatureRequestSmsSent = true,
+                IsReceiptSent = false,
+            },
+            SignDocument = signDocument,
+        };
     }
 }
