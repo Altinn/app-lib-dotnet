@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using NetEscapades.EnumGenerators;
 using static Altinn.App.Core.Features.Telemetry.DelegationConst;
+using static Altinn.App.Core.Features.Telemetry.NotifySigneesConst;
 using Tag = System.Collections.Generic.KeyValuePair<string, object?>;
 
 namespace Altinn.App.Core.Features;
@@ -40,6 +41,18 @@ partial class Telemetry
                 }
             }
         );
+
+        InitMetricCounter(
+            context,
+            MetricNameNotifySignees,
+            init: static m =>
+            {
+                foreach (var result in NotifySigneesResultExtensions.GetValues())
+                {
+                    m.Add(0, new Tag(InternalLabels.Result, result.ToStringFast()));
+                }
+            }
+        );
     }
 
     internal void RecordDelegation(DelegationResult result) =>
@@ -48,7 +61,12 @@ partial class Telemetry
     internal void RecordDelegationRevoke(DelegationResult result) =>
         _counters[MetricNameDelegationRevoke].Add(1, new Tag(InternalLabels.Result, result.ToStringFast()));
 
+    internal void RecordNotifySignees(NotifySigneesResult result) =>
+        _counters[MetricNameNotifySignees].Add(1, new Tag(InternalLabels.Result, result.ToStringFast()));
+
     internal Activity? StartAssignSigneesActivity() => ActivitySource.StartActivity("SigningService.AssignSignees");
+
+    internal Activity? StartNotifySigneesActivity() => ActivitySource.StartActivity("SigningService.NotifySignees");
 
     internal Activity? StartReadSigneesActivity() => ActivitySource.StartActivity("SigningService.ReadSignees");
 
@@ -63,6 +81,21 @@ partial class Telemetry
 
         [EnumExtensions]
         internal enum DelegationResult
+        {
+            [Display(Name = "success")]
+            Success,
+
+            [Display(Name = "error")]
+            Error,
+        }
+    }
+
+    internal static class NotifySigneesConst
+    {
+        internal static readonly string MetricNameNotifySignees = Metrics.CreateLibName("signing_notify_signees");
+
+        [EnumExtensions]
+        internal enum NotifySigneesResult
         {
             [Display(Name = "success")]
             Success,
