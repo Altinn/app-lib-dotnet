@@ -8144,8 +8144,8 @@
             "nullable": true
           },
           "source": {
-            "type": "string",
-            "nullable": true
+            "minLength": 1,
+            "type": "string"
           },
           "noIncrementalUpdates": {
             "type": "boolean"
@@ -8165,18 +8165,21 @@
         "additionalProperties": false
       },
       "ValidationSourcePair": {
+        "required": [
+          "issues",
+          "source"
+        ],
         "type": "object",
         "properties": {
           "source": {
-            "type": "string",
-            "nullable": true
+            "minLength": 1,
+            "type": "string"
           },
           "issues": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ValidationIssueWithSource"
-            },
-            "nullable": true
+            }
           }
         },
         "additionalProperties": false

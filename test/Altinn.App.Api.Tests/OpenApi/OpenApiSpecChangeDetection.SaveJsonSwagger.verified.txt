@@ -1,4 +1,4 @@
-﻿{
+{
   openapi: 3.0.1,
   info: {
     title: Altinn App Api,
@@ -6575,6 +6575,9 @@ version that supports multiple data models in the same request.
         description: Represents the response from a data patch operation on the Altinn.App.Api.Controllers.DataController.
       },
       DataPostErrorResponse: {
+        required: [
+          uploadValidationIssues
+        ],
         type: object,
         properties: {
           type: {
@@ -8145,8 +8148,8 @@ Validators that are not listed in the dictionary are assumed to have not been ex
             nullable: true
           },
           source: {
-            type: string,
-            nullable: true
+            minLength: 1,
+            type: string
           },
           noIncrementalUpdates: {
             type: boolean
@@ -8166,18 +8169,21 @@ Validators that are not listed in the dictionary are assumed to have not been ex
         additionalProperties: false
       },
       ValidationSourcePair: {
+        required: [
+          issues,
+          source
+        ],
         type: object,
         properties: {
           source: {
-            type: string,
-            nullable: true
+            minLength: 1,
+            type: string
           },
           issues: {
             type: array,
             items: {
               $ref: #/components/schemas/ValidationIssueWithSource
-            },
-            nullable: true
+            }
           }
         },
         additionalProperties: false
