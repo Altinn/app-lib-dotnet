@@ -4888,10 +4888,12 @@
         "tags": [
           "Signing"
         ],
+        "summary": "Get updated signing state for the current signing task.",
         "parameters": [
           {
             "name": "org",
             "in": "path",
+            "description": "unique identifier of the organisation responsible for the app",
             "required": true,
             "schema": {
               "type": "string"
@@ -4900,6 +4902,7 @@
           {
             "name": "app",
             "in": "path",
+            "description": "application identifier which is unique within an organisation",
             "required": true,
             "schema": {
               "type": "string"
@@ -4908,6 +4911,7 @@
           {
             "name": "instanceOwnerPartyId",
             "in": "path",
+            "description": "unique id of the party that this the owner of the instance",
             "required": true,
             "schema": {
               "type": "integer",
@@ -4917,6 +4921,7 @@
           {
             "name": "instanceGuid",
             "in": "path",
+            "description": "unique id to identify the instance",
             "required": true,
             "schema": {
               "type": "string",
@@ -4926,6 +4931,7 @@
           {
             "name": "language",
             "in": "query",
+            "description": "The currently used language by the user (or null if not available)",
             "schema": {
               "type": "string"
             }
@@ -5000,10 +5006,12 @@
         "tags": [
           "Signing"
         ],
+        "summary": "Get the data elements being signed in the current signature task.",
         "parameters": [
           {
             "name": "org",
             "in": "path",
+            "description": "",
             "required": true,
             "schema": {
               "type": "string"
@@ -5012,6 +5020,7 @@
           {
             "name": "app",
             "in": "path",
+            "description": "",
             "required": true,
             "schema": {
               "type": "string"
@@ -5020,6 +5029,7 @@
           {
             "name": "instanceOwnerPartyId",
             "in": "path",
+            "description": "",
             "required": true,
             "schema": {
               "type": "integer",
@@ -5029,6 +5039,7 @@
           {
             "name": "instanceGuid",
             "in": "path",
+            "description": "",
             "required": true,
             "schema": {
               "type": "string",
@@ -5038,6 +5049,7 @@
           {
             "name": "language",
             "in": "query",
+            "description": "",
             "schema": {
               "type": "string"
             }
@@ -8088,27 +8100,34 @@
         "properties": {
           "name": {
             "type": "string",
+            "description": "The name of the signee.",
             "nullable": true
           },
           "organisation": {
             "type": "string",
+            "description": "The organisation of the signee.",
             "nullable": true
           },
           "hasSigned": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Whether the signee has signed or not."
           },
           "delegationSuccessful": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Whether delegation of signing rights has been successful."
           },
           "notificationSuccessful": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Whether the signee has been notified to sign via email or sms."
           },
           "partyId": {
             "type": "integer",
+            "description": "The party id of the signee.",
             "format": "int32"
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "Contains information about a signee and the current signing status."
       },
       "SigningDataElementsResponse": {
         "required": [
@@ -8121,10 +8140,12 @@
             "items": {
               "$ref": "#/components/schemas/DataElement"
             },
+            "description": "The data elements that should be signed.",
             "nullable": true
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "Response that contains the data elements that should be signed."
       },
       "SimpleInstance": {
         "type": "object",
@@ -8174,10 +8195,12 @@
             "items": {
               "$ref": "#/components/schemas/SigneeState"
             },
+            "description": "The signees for the current task.",
             "nullable": true
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "Contains the result of a get signees request."
       },
       "Substatus": {
         "type": "object",
