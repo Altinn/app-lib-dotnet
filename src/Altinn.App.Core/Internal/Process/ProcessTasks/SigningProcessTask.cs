@@ -82,35 +82,56 @@ internal sealed class SigningProcessTask : IProcessTask
             );
         }
 
-        var cachedDataMutator = new InstanceDataUnitOfWork(
-            instance,
-            _dataClient,
-            _instanceClient,
-            appMetadata,
-            _modelSerialization
-        );
-        List<SigneeContext> signeeContexts = await _signingService.InitializeSignees(
-            cachedDataMutator,
-            signatureConfiguration,
-            cts.Token
-        );
+        if (signatureConfiguration.SigneeProviderId is null != signatureConfiguration.SigneeStatesDataTypeId is null)
+        {
+            throw new ApplicationConfigException(
+                $"Both {nameof(signatureConfiguration.SigneeProviderId)} ({signatureConfiguration.SigneeProviderId}) and {nameof(signatureConfiguration.SigneeStatesDataTypeId)} ({signatureConfiguration.SigneeStatesDataTypeId}) must be set, or non of them. Setting these properties is is required for enabling delegated signing."
+            );
+        }
 
-        UserContext userContext = await _userHelper.GetUserContext(
-            _httpContextAccessor.HttpContext ?? throw new InvalidOperationException("HttpContext is not available.")
-        );
+        if (
+            signatureConfiguration.SigneeProviderId is not null
+            && signatureConfiguration.SigneeStatesDataTypeId is not null
+        )
+        {
+            var cachedDataMutator = new InstanceDataUnitOfWork(
+                instance,
+                _dataClient,
+                _instanceClient,
+                appMetadata,
+                _modelSerialization
+            );
 
-        await _signingService.ProcessSignees(
-            taskId,
-            userContext.UserParty,
-            cachedDataMutator,
-            signeeContexts,
-            signatureConfiguration,
-            cts.Token
-        );
-        DataElementChanges changes = cachedDataMutator.GetDataElementChanges(false);
+            List<SigneeContext> signeeContexts = await _signingService.InitializeSignees(
+                cachedDataMutator,
+                signatureConfiguration,
+                cts.Token
+            );
 
-        await cachedDataMutator.UpdateInstanceData(changes);
-        await cachedDataMutator.SaveChanges(changes);
+            if (signeeContexts.Count == 0)
+            {
+                _logger.LogInformation("No signees returned from signee initialization.");
+                return;
+            }
+
+            UserContext userContext = await _userHelper.GetUserContext(
+                _httpContextAccessor.HttpContext ?? throw new InvalidOperationException("HttpContext is not available.")
+            );
+
+            await _signingService.ProcessSignees(
+                taskId,
+                userContext.UserParty,
+                cachedDataMutator,
+                signeeContexts,
+                signatureConfiguration,
+                cts.Token
+            );
+
+            DataElementChanges changes = cachedDataMutator.GetDataElementChanges(false);
+
+            await cachedDataMutator.UpdateInstanceData(changes);
+            await cachedDataMutator.SaveChanges(changes);
+        }
     }
 
     /// <inheritdoc/>

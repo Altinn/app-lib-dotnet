@@ -3,10 +3,13 @@ using Altinn.App.Api.Models;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
+using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Mvc;
 using SigneeState = Altinn.App.Api.Models.SigneeState;
@@ -23,6 +26,9 @@ namespace Altinn.App.Api.Controllers;
 public class SigningController : ControllerBase
 {
     private readonly IInstanceClient _instanceClient;
+    private readonly IAppMetadata _appMetadata;
+    private readonly IDataClient _dataClient;
+    private readonly ModelSerializationService _modelSerialization;
     private readonly IProcessReader _processReader;
     private readonly ISigningService _signingService;
 
@@ -32,10 +38,16 @@ public class SigningController : ControllerBase
     public SigningController(
         IServiceProvider serviceProvider,
         IInstanceClient instanceClient,
+        IAppMetadata appMetadata,
+        IDataClient dataClient,
+        ModelSerializationService modelSerialization,
         IProcessReader processReader
     )
     {
         _instanceClient = instanceClient;
+        _appMetadata = appMetadata;
+        _dataClient = dataClient;
+        _modelSerialization = modelSerialization;
         _processReader = processReader;
         _signingService = serviceProvider.GetRequiredService<ISigningService>();
     }
@@ -61,6 +73,15 @@ public class SigningController : ControllerBase
     )
     {
         Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
+        ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
+
+        var cachedDataMutator = new InstanceDataUnitOfWork(
+            instance,
+            _dataClient,
+            _instanceClient,
+            appMetadata,
+            _modelSerialization
+        );
 
         if (instance.Process.CurrentTask.AltinnTaskType != "signing")
         {
@@ -76,25 +97,24 @@ public class SigningController : ControllerBase
             throw new ApplicationConfigException("Signing configuration not found in AltinnTaskExtension");
         }
 
-        List<SigneeContext> signeeContexts = await _signingService.GetSigneeContexts(instance, signingConfiguration);
+        List<SigneeContext> signeeContexts = await _signingService.GetSigneeContexts(
+            cachedDataMutator,
+            signingConfiguration
+        );
 
-        Random rnd = new Random();
         var response = new SingingStateResponse
         {
             SigneeStates = signeeContexts
-                .Select(signeeContext =>
+                .Select(signeeContext => new SigneeState
                 {
-                    return new SigneeState
-                    {
-                        Name = signeeContext.PersonSignee?.DisplayName ?? signeeContext.OrganisationSignee?.DisplayName,
-                        Organisation = signeeContext.OrganisationSignee?.DisplayName,
-                        HasSigned = rnd.Next(1, 10) > 5, //TODO: When and where to check if signee has signed?
-                        DelegationSuccessful = signeeContext.SigneeState.IsAccessDelegated,
-                        NotificationSuccessful =
-                            signeeContext.SigneeState
-                                is { SignatureRequestEmailSent: false, SignatureRequestSmsSent: false },
-                        PartyId = signeeContext.Party.PartyId,
-                    };
+                    Name = signeeContext.PersonSignee?.DisplayName ?? signeeContext.OrganisationSignee?.DisplayName,
+                    Organisation = signeeContext.OrganisationSignee?.DisplayName,
+                    HasSigned = signeeContext.SignDocument is not null,
+                    DelegationSuccessful = signeeContext.SigneeState.IsAccessDelegated,
+                    NotificationSuccessful =
+                        signeeContext.SigneeState
+                            is { SignatureRequestEmailSent: false, SignatureRequestSmsSent: false },
+                    PartyId = signeeContext.Party.PartyId,
                 })
                 .ToList(),
         };
