@@ -16,7 +16,9 @@ public class ExtensionsTest
     public void WhereNotNull_ThrowsArgumentNullException_WhenSourceIsNull()
     {
         List<string?>? source = null;
+#pragma warning disable CS8604 // Possible null reference argument.
         Assert.Throws<ArgumentNullException>(() => source.WhereNotNull().ToList());
+#pragma warning restore CS8604 // Possible null reference argument.
     }
 
     [Fact]

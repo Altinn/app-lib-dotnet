@@ -135,6 +135,7 @@ public class SigningUserAction : IUserAction
         await _signClient.SignDataElements(signatureContext);
 
         // TODO: Metrics
+
         try
         {
             var result = await SendCorrespondence(
@@ -156,6 +157,7 @@ public class SigningUserAction : IUserAction
         }
         catch (ConfigurationException e)
         {
+            // TODO: What do we do here? Probably nothing.
             _logger.LogWarning(e, "Correspondence configuration error: {Exception}", e.Message);
         }
         catch (Exception e)
@@ -176,14 +178,14 @@ public class SigningUserAction : IUserAction
         AltinnSignatureConfiguration? signatureConfiguration
     )
     {
-        (string resource, string sender, string recipient) = await GetCorrespondenceHeaders(
+        var headers = await GetCorrespondenceHeaders(
             signee,
             appMetadata,
             signatureConfiguration,
             _hostEnvironment,
             context.AltinnCdnClient
         );
-        CorrespondenceContent content = await GetCorrespondenceContent(context);
+        CorrespondenceContent content = await GetCorrespondenceContent(context, appMetadata, headers.senderDetails);
         IEnumerable<CorrespondenceAttachment> attachments = await GetCorrespondenceAttachments(
             instanceIdentifier,
             dataElementSignatures,
@@ -196,10 +198,10 @@ public class SigningUserAction : IUserAction
             new SendCorrespondencePayload(
                 CorrespondenceRequestBuilder
                     .Create()
-                    .WithResourceId(resource)
-                    .WithSender(sender)
+                    .WithResourceId(headers.resource)
+                    .WithSender(headers.senderOrgNumber)
                     .WithSendersReference(instanceIdentifier.ToString())
-                    .WithRecipient(recipient)
+                    .WithRecipient(headers.recipient)
                     .WithAllowSystemDeleteAfter(DateTime.Now.AddYears(1))
                     .WithContent(content)
                     .WithAttachments(attachments)
@@ -209,7 +211,12 @@ public class SigningUserAction : IUserAction
         );
     }
 
-    internal static async Task<(string resource, string sender, string recipient)> GetCorrespondenceHeaders(
+    internal static async Task<(
+        string resource,
+        string senderOrgNumber,
+        AltinnCdnOrgDetails senderDetails,
+        string recipient
+    )> GetCorrespondenceHeaders(
         Signee signee,
         ApplicationMetadata appMetadata,
         AltinnSignatureConfiguration? signatureConfiguration,
@@ -239,16 +246,17 @@ public class SigningUserAction : IUserAction
         try
         {
             AltinnCdnOrgs altinnCdnOrgs = await altinnCdnClient.GetOrgs();
-            string? sender = altinnCdnOrgs.Orgs?.GetValueOrDefault(appMetadata.Org)?.Orgnr;
+            AltinnCdnOrgDetails? senderDetails = altinnCdnOrgs.Orgs?.GetValueOrDefault(appMetadata.Org);
+            string? senderOrgNumber = senderDetails?.Orgnr;
 
-            if (string.IsNullOrEmpty(sender))
+            if (senderDetails is null || string.IsNullOrEmpty(senderOrgNumber))
             {
                 throw new InvalidOperationException(
                     $"Error looking up sender's organisation number from Altinn CDN, using key `{appMetadata.Org}`"
                 );
             }
 
-            return (resource, sender, recipient);
+            return (resource, senderOrgNumber, senderDetails, recipient);
         }
         finally
         {
@@ -259,21 +267,24 @@ public class SigningUserAction : IUserAction
         }
     }
 
-    internal async Task<CorrespondenceContent> GetCorrespondenceContent(UserActionContext context)
+    internal async Task<CorrespondenceContent> GetCorrespondenceContent(
+        UserActionContext context,
+        ApplicationMetadata appMetadata,
+        AltinnCdnOrgDetails senderDetails
+    )
     {
+        TextResource? textResource = null;
         string? title = null;
         string? summary = null;
         string? body = null;
-        string defaultLanguage = LanguageConst.Nb;
-        TextResource? textResource = null;
+        string? appName = null;
 
-        // TODO: Write better defaults
-        var defaults = new
-        {
-            Title = "Meldingstittel",
-            Summary = "Meldingsoppsummering",
-            Body = "Full meldingstekst",
-        };
+        string appOwner = senderDetails.Name?.Nb ?? senderDetails.Name?.Nn ?? senderDetails.Name?.En ?? appMetadata.Org;
+        string defaultLanguage = LanguageConst.Nb;
+        string defaultAppName =
+            appMetadata.Title?.GetValueOrDefault(defaultLanguage)
+            ?? appMetadata.Title?.FirstOrDefault().Value
+            ?? appMetadata.Id;
 
         try
         {
@@ -291,20 +302,20 @@ public class SigningUserAction : IUserAction
                 );
 
             title = textResource
-                .Resources.FirstOrDefault(textResourceElement =>
-                    textResourceElement.Id.Equals("signing.receipt_title", StringComparison.Ordinal)
-                )
+                .Resources.FirstOrDefault(x => x.Id.Equals("signing.receipt_title", StringComparison.Ordinal))
                 ?.Value;
             summary = textResource
-                .Resources.FirstOrDefault(textResourceElement =>
-                    textResourceElement.Id.Equals("signing.receipt_summary", StringComparison.Ordinal)
-                )
+                .Resources.FirstOrDefault(x => x.Id.Equals("signing.receipt_summary", StringComparison.Ordinal))
                 ?.Value;
             body = textResource
-                .Resources.FirstOrDefault(textResourceElement =>
-                    textResourceElement.Id.Equals("signing.receipt_body", StringComparison.Ordinal)
-                )
+                .Resources.FirstOrDefault(x => x.Id.Equals("signing.receipt_body", StringComparison.Ordinal))
                 ?.Value;
+
+            appName =
+                textResource.Resources.FirstOrDefault(x => x.Id.Equals("appName", StringComparison.Ordinal))?.Value
+                ?? textResource
+                    .Resources.FirstOrDefault(x => x.Id.Equals("ServiceName", StringComparison.Ordinal))
+                    ?.Value;
         }
         catch (Exception e)
         {
@@ -314,6 +325,18 @@ public class SigningUserAction : IUserAction
                 e.Message
             );
         }
+
+        if (string.IsNullOrWhiteSpace(appName))
+        {
+            appName = defaultAppName;
+        }
+
+        var defaults = new
+        {
+            Title = $"{appName}: Signeringen er bekreftet",
+            Summary = $"Du har signert for {appName}.",
+            Body = $"Dokumentene du har signert er vedlagt. Disse kan lastes ned om ønskelig.<br /><br />Hvis du lurer på noe, kan du kontakte {appOwner}.",
+        };
 
         return new CorrespondenceContent
         {

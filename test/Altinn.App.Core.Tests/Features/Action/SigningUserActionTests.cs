@@ -6,6 +6,7 @@ using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Profile;
@@ -31,6 +32,23 @@ public class SigningUserActionTests
     {
         Org = "ttd",
         DataTypes = [new DataType { Id = "model", AppLogic = new ApplicationLogic() }],
+        Title = new Dictionary<string, string>
+        {
+            [LanguageConst.Nb] = "App name from appmetadata NB",
+            [LanguageConst.Nn] = "App name from appmetadata NN",
+            [LanguageConst.En] = "App name from appmetadata EN",
+        },
+    };
+
+    private static readonly AltinnCdnOrgDetails _defaultAltinnCdnTtdDetails = new()
+    {
+        Orgnr = "991825827",
+        Name = new AltinnCdnOrgName
+        {
+            En = "Org name from cdndetails EN",
+            Nb = "Org name from cdndetails NB",
+            Nn = "Org name from cdndetails NN",
+        },
     };
 
     private static readonly UserProfile _defaultUserProfile = new()
@@ -315,13 +333,7 @@ public class SigningUserActionTests
             .ReturnsAsync(
                 new AltinnCdnOrgs
                 {
-                    Orgs = new Dictionary<string, AltinnCdnOrgDetails>
-                    {
-                        {
-                            "ttd",
-                            new AltinnCdnOrgDetails { Orgnr = "991825827" }
-                        },
-                    },
+                    Orgs = new Dictionary<string, AltinnCdnOrgDetails> { { "ttd", _defaultAltinnCdnTtdDetails } },
                 }
             );
 
@@ -375,13 +387,7 @@ public class SigningUserActionTests
             .ReturnsAsync(
                 new AltinnCdnOrgs
                 {
-                    Orgs = new Dictionary<string, AltinnCdnOrgDetails>
-                    {
-                        {
-                            "ttd",
-                            new AltinnCdnOrgDetails { Orgnr = "987654321" }
-                        },
-                    },
+                    Orgs = new Dictionary<string, AltinnCdnOrgDetails> { { "ttd", _defaultAltinnCdnTtdDetails } },
                 }
             );
 
@@ -396,7 +402,8 @@ public class SigningUserActionTests
 
         // Assert
         result.resource.Should().Be(expectedResource);
-        result.sender.Should().Be("987654321");
+        result.senderOrgNumber.Should().Be(_defaultAltinnCdnTtdDetails.Orgnr);
+        result.senderDetails.Name!.En.Should().Be(_defaultAltinnCdnTtdDetails.Name!.En);
         result.recipient.Should().Be("12345678901");
     }
 
@@ -408,23 +415,33 @@ public class SigningUserActionTests
         var context = new UserActionContext(new Instance(), 1337);
 
         // Act
-        var result = await fixture.SigningUserAction.GetCorrespondenceContent(context);
+        var result = await fixture.SigningUserAction.GetCorrespondenceContent(
+            context,
+            _defaultAppMetadata,
+            _defaultAltinnCdnTtdDetails
+        );
 
         // Assert
-        result.Title.Should().Be("Meldingstittel");
-        result.Summary.Should().Be("Meldingsoppsummering");
-        result.Body.Should().Be("Full meldingstekst");
+        result.Title.Should().Be("App name from appmetadata NB: Signeringen er bekreftet");
+        result.Summary.Should().Be("Du har signert for App name from appmetadata NB.");
+        result
+            .Body.Should()
+            .MatchRegex(@"^Dokumentene du har signert .+ kan du kontakte Org name from cdndetails NB\.$");
     }
 
     [Fact]
-    public async Task GetCorrespondenceContent_ReturnsCustomContent_WhenTextResourceFound()
+    public async Task GetCorrespondenceContent_ReturnsCustomContent_WhenFullTextResourceFound()
     {
         // Arrange
         var fixture = Fixture.Create();
-        var context = new UserActionContext(new Instance { AppId = "doesn't/matter" }, 1337, language: "en");
+        var context = new UserActionContext(
+            new Instance { AppId = "doesn't/matter" },
+            1337,
+            language: LanguageConst.En
+        );
         var textResource = new TextResource
         {
-            Language = "en",
+            Language = LanguageConst.En,
             Resources =
             [
                 new TextResourceElement { Id = "signing.receipt_title", Value = "Custom Title" },
@@ -438,11 +455,53 @@ public class SigningUserActionTests
             .ReturnsAsync(textResource);
 
         // Act
-        var result = await fixture.SigningUserAction.GetCorrespondenceContent(context);
+        var result = await fixture.SigningUserAction.GetCorrespondenceContent(
+            context,
+            _defaultAppMetadata,
+            _defaultAltinnCdnTtdDetails
+        );
 
         // Assert
         result.Title.Should().Be("Custom Title");
         result.Summary.Should().Be("Custom Summary");
+        result.Body.Should().Be("Custom Body");
+    }
+
+    [Fact]
+    public async Task GetCorrespondenceContent_ReturnsCustomContent_WhenPartialTextResourceFound()
+    {
+        // Arrange
+        var fixture = Fixture.Create();
+        var context = new UserActionContext(
+            new Instance { AppId = "doesn't/matter" },
+            1337,
+            language: LanguageConst.En
+        );
+        var textResource = new TextResource
+        {
+            Language = LanguageConst.En,
+            Resources =
+            [
+                new TextResourceElement { Id = "appName", Value = "App name from textresource EN" },
+                new TextResourceElement { Id = "signing.receipt_title", Value = "Custom Title" },
+                new TextResourceElement { Id = "signing.receipt_body", Value = "Custom Body" },
+            ],
+        };
+
+        fixture
+            .AppResourcesMock.Setup(x => x.GetTexts(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(textResource);
+
+        // Act
+        var result = await fixture.SigningUserAction.GetCorrespondenceContent(
+            context,
+            _defaultAppMetadata,
+            _defaultAltinnCdnTtdDetails
+        );
+
+        // Assert
+        result.Title.Should().Be("Custom Title");
+        result.Summary.Should().Be("Du har signert for App name from textresource EN.");
         result.Body.Should().Be("Custom Body");
     }
 
