@@ -12,7 +12,7 @@ public class AltinnSignatureConfiguration
     /// </summary>
     [XmlArray(ElementName = "dataTypesToSign", Namespace = "http://altinn.no/process", IsNullable = true)]
     [XmlArrayItem(ElementName = "dataType", Namespace = "http://altinn.no/process")]
-    public List<string> DataTypesToSign { get; set; } = new();
+    public List<string> DataTypesToSign { get; set; } = [];
 
     /// <summary>
     /// Set what dataTypeId that should be used for storing the signature
@@ -32,7 +32,7 @@ public class AltinnSignatureConfiguration
         IsNullable = true
     )]
     [XmlArrayItem(ElementName = "dataType", Namespace = "http://altinn.no/process")]
-    public List<string> UniqueFromSignaturesInDataTypes { get; set; } = new();
+    public List<string> UniqueFromSignaturesInDataTypes { get; set; } = [];
 
     /// <summary>
     /// Optionally set a signee provider that should be used for selecting signees for this signing step.
@@ -48,4 +48,10 @@ public class AltinnSignatureConfiguration
     /// </summary>
     [XmlElement("signeeStatesDataTypeId", Namespace = "http://altinn.no/process")]
     public string? SigneeStatesDataTypeId { get; set; }
+
+    /// <summary>
+    /// Correspondence resource details
+    /// </summary>
+    [XmlElement(ElementName = "correspondenceResource", Namespace = "http://altinn.no/process")]
+    public List<AltinnEnvironmentConfig> CorrespondenceResources { get; set; } = [];
 }

@@ -85,7 +85,7 @@ internal sealed class SigningProcessTask : IProcessTask
         if (signatureConfiguration.SigneeProviderId is null != signatureConfiguration.SigneeStatesDataTypeId is null)
         {
             throw new ApplicationConfigException(
-                $"Both {nameof(signatureConfiguration.SigneeProviderId)} ({signatureConfiguration.SigneeProviderId}) and {nameof(signatureConfiguration.SigneeStatesDataTypeId)} ({signatureConfiguration.SigneeStatesDataTypeId}) must be set, or non of them. Setting these properties is is required for enabling delegated signing."
+                $"Both {nameof(signatureConfiguration.SigneeProviderId)} and {nameof(signatureConfiguration.SigneeStatesDataTypeId)} must either be set together, or left unset. These properties are required to enable delegated signing."
             );
         }
 

@@ -1,4 +1,5 @@
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Models.UserAction;
@@ -87,4 +88,6 @@ public class UserActionContext
     /// The language that will be used for the action
     /// </summary>
     public string? Language { get; }
+
+    internal IAltinnCdnClient? AltinnCdnClient { get; set; }
 }
