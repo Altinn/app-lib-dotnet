@@ -225,7 +225,9 @@ public class SigningUserAction : IUserAction
     )
     {
         HostingEnvironment env = AltinnEnvironments.GetHostingEnvironment(hostEnvironment);
-        string? resource = signatureConfiguration?.GetCorrespondenceResourceForEnvironment(env)?.ResourceId;
+        var resource = AltinnTaskExtension
+            .GetConfigForEnvironment(env, signatureConfiguration?.CorrespondenceResources)
+            ?.Value;
         if (string.IsNullOrEmpty(resource))
         {
             throw new ConfigurationException(

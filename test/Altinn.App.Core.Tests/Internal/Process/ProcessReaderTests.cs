@@ -441,21 +441,9 @@ public class ProcessReaderTests
                     SigneeStatesDataTypeId = "signeeStatesDataTypeId",
                     CorrespondenceResources =
                     [
-                        new AltinnSignatureConfiguration.CorrespondenceResource
-                        {
-                            Environment = null,
-                            ResourceId = "correspondenceResource",
-                        },
-                        new AltinnSignatureConfiguration.CorrespondenceResource
-                        {
-                            Environment = "tt02",
-                            ResourceId = "correspondenceResourceTt02",
-                        },
-                        new AltinnSignatureConfiguration.CorrespondenceResource
-                        {
-                            Environment = "prod",
-                            ResourceId = "correspondenceResourceProd",
-                        },
+                        new AltinnEnvironmentConfig { Environment = null, Value = "correspondenceResource" },
+                        new AltinnEnvironmentConfig { Environment = "tt02", Value = "correspondenceResourceTt02" },
+                        new AltinnEnvironmentConfig { Environment = "prod", Value = "correspondenceResourceProd" },
                     ],
                 }
             );

@@ -1,5 +1,4 @@
 using System.Xml.Serialization;
-using Altinn.App.Core.Constants;
 
 namespace Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 
@@ -54,42 +53,5 @@ public class AltinnSignatureConfiguration
     /// Correspondence resource details
     /// </summary>
     [XmlElement(ElementName = "correspondenceResource", Namespace = "http://altinn.no/process")]
-    public List<CorrespondenceResource> CorrespondenceResources { get; set; } = [];
-
-    /// <summary>
-    /// Retrieve a correspondence resource for the given environment, in a predictable manner.
-    /// Specific configurations (those specifying an environment) takes precedence over global configurations.
-    /// </summary>
-    internal CorrespondenceResource? GetCorrespondenceResourceForEnvironment(HostingEnvironment env)
-    {
-        const string globalKey = "__global__";
-        Dictionary<string, CorrespondenceResource> lookup = new();
-        foreach (var entry in CorrespondenceResources)
-        {
-            var key = string.IsNullOrWhiteSpace(entry.Environment)
-                ? globalKey
-                : AltinnEnvironments.GetHostingEnvironment(entry.Environment).ToString();
-            lookup[key] = entry;
-        }
-
-        return lookup.GetValueOrDefault(env.ToString()) ?? lookup.GetValueOrDefault(globalKey);
-    }
-
-    /// <summary>
-    /// Correspondence resource details
-    /// </summary>
-    public class CorrespondenceResource
-    {
-        /// <summary>
-        /// The environment the configuration is applicable for. An omitted value indicates validity for all environments.
-        /// </summary>
-        [XmlAttribute("env")]
-        public string? Environment { get; set; }
-
-        /// <summary>
-        /// The resource to use for correspondence (receipts)
-        /// </summary>
-        [XmlText]
-        public required string ResourceId { get; set; }
-    }
+    public List<AltinnEnvironmentConfig> CorrespondenceResources { get; set; } = [];
 }
