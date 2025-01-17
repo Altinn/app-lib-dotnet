@@ -337,7 +337,7 @@ public class SigningUserAction : IUserAction
         {
             Title = $"{appName}: Signeringen er bekreftet",
             Summary = $"Du har signert for {appName}.",
-            Body = $"Dokumentene du har signert er vedlagt. Disse kan lastes ned om ønskelig.<br /><br />Hvis du lurer på noe, kan du kontakte {appOwner}.",
+            Body = $"Dokumentene du har signert er vedlagt. Disse kan lastes ned om ønskelig. <br /><br />Hvis du lurer på noe, kan du kontakte {appOwner}.",
         };
 
         return new CorrespondenceContent
