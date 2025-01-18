@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Altinn.Platform.Storage.Interface.Models;
 using Newtonsoft.Json;
 
@@ -61,9 +62,34 @@ public class ApplicationMetadata : Application
     /// Frontend sometimes need to have knowledge of the nuget package version for backwards compatibility
     /// </summary>
     [JsonProperty(PropertyName = "altinnNugetVersion")]
-    public string AltinnNugetVersion { get; set; } =
-        typeof(ApplicationMetadata).Assembly.GetName().Version?.ToString()
-        ?? throw new Exception("Assembly version is null");
+    public string AltinnNugetVersion { get; set; } = _libVersion ?? throw new Exception("Couldn't get library version");
+
+    private static readonly string? _libVersion;
+
+    static ApplicationMetadata()
+    {
+        var assembly = typeof(ApplicationMetadata).Assembly;
+        var versionInfo = FileVersionInfo.GetVersionInfo(assembly.Location);
+
+        // Version from the reflected assembly name doesn't always contain all the version information (it comes from the AssemblyVersion property),
+        // ProductVersion from FileVersionInfo starts out by being parsed from the AssemblyVersion: https://github.com/dotnet/runtime/blob/8a2e93486920436613fb4d3bce30f135933d91c6/src/libraries/System.Diagnostics.FileVersionInfo/src/System/Diagnostics/FileVersionInfo.Unix.cs#L93-L94
+        // But it is overridden by any "InformationalVersion" attributes in the assembly: https://github.com/dotnet/runtime/blob/8a2e93486920436613fb4d3bce30f135933d91c6/src/libraries/System.Diagnostics.FileVersionInfo/src/System/Diagnostics/FileVersionInfo.Unix.cs#L149C63-L154
+        // MinVer seems to set the informational version to the whole version string regardless if the MinVerVersion is computed or overridden form CI (which is the case for PR builds).
+        // So for AltinnNugetVersion it is important that we prefer getting the version based on the InformationalVersion attribute (through FileVersionInfo).
+        var productVersion = versionInfo.ProductVersion;
+        if (!string.IsNullOrWhiteSpace(productVersion))
+        {
+            var plusIndex = productVersion.LastIndexOf('+');
+            if (plusIndex > 0)
+                productVersion = new string(productVersion.AsSpan(0, plusIndex));
+
+            _libVersion = productVersion;
+        }
+        else
+        {
+            _libVersion = assembly.GetName().Version?.ToString();
+        }
+    }
 
     /// <summary>
     /// Holds properties that are not mapped to other properties
