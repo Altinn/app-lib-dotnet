@@ -62,9 +62,9 @@ public class ApplicationMetadata : Application
     /// Frontend sometimes need to have knowledge of the nuget package version for backwards compatibility
     /// </summary>
     [JsonProperty(PropertyName = "altinnNugetVersion")]
-    public string AltinnNugetVersion { get; set; } = _libVersion ?? throw new Exception("Couldn't get library version");
+    public string AltinnNugetVersion { get; set; } = LibVersion ?? throw new Exception("Couldn't get library version");
 
-    private static readonly string? _libVersion;
+    internal static readonly string? LibVersion;
 
     static ApplicationMetadata()
     {
@@ -83,11 +83,11 @@ public class ApplicationMetadata : Application
             if (plusIndex > 0)
                 productVersion = new string(productVersion.AsSpan(0, plusIndex));
 
-            _libVersion = productVersion;
+            LibVersion = productVersion;
         }
         else
         {
-            _libVersion = assembly.GetName().Version?.ToString();
+            LibVersion = assembly.GetName().Version?.ToString();
         }
     }
 
