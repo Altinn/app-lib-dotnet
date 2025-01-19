@@ -27,7 +27,7 @@ public interface IAuthenticationContext
     /// <summary>
     /// The current authentication info.
     /// </summary>
-    AuthenticationInfo Current { get; }
+    Authenticated Current { get; }
 }
 
 internal sealed class AuthenticationContext : IAuthenticationContext
@@ -69,16 +69,16 @@ internal sealed class AuthenticationContext : IAuthenticationContext
     private HttpContext _httpContext =>
         _httpContextAccessor.HttpContext ?? throw new InvalidOperationException("No HTTP context available");
 
-    public AuthenticationInfo Current
+    public Authenticated Current
     {
         get
         {
             var httpContext = _httpContext;
 
-            AuthenticationInfo authInfo;
+            Authenticated authInfo;
             if (!httpContext.Items.TryGetValue(ItemsKey, out var authInfoObj))
             {
-                authInfo = AuthenticationInfo.From(
+                authInfo = Authenticated.From(
                     httpContext,
                     _appSettings.CurrentValue.RuntimeCookieName,
                     _generalSettings.CurrentValue.GetAltinnPartyCookieName,
@@ -95,7 +95,7 @@ internal sealed class AuthenticationContext : IAuthenticationContext
             else
             {
                 authInfo =
-                    authInfoObj as AuthenticationInfo
+                    authInfoObj as Authenticated
                     ?? throw new Exception("Unexpected type for authentication info in HTTP context");
             }
             return authInfo;

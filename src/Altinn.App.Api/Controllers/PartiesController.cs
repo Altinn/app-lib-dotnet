@@ -65,32 +65,32 @@ public class PartiesController : ControllerBase
         var context = _authenticationContext.Current;
         switch (context)
         {
-            case AuthenticationInfo.Unauthenticated:
+            case Authenticated.None:
                 return Unauthorized();
-            case AuthenticationInfo.User user:
+            case Authenticated.User user:
             {
                 var details = await user.LoadDetails(validateSelectedParty: false);
                 return allowedToInstantiateFilter ? Ok(details.PartiesAllowedToInstantiate) : Ok(details.Parties);
             }
-            case AuthenticationInfo.SelfIdentifiedUser selfIdentified:
+            case Authenticated.SelfIdentifiedUser selfIdentified:
             {
                 var details = await selfIdentified.LoadDetails();
                 IReadOnlyList<Party> parties = [details.Party];
                 return Ok(parties);
             }
-            case AuthenticationInfo.Org orgInfo:
+            case Authenticated.Org orgInfo:
             {
                 var details = await orgInfo.LoadDetails();
                 IReadOnlyList<Party> parties = [details.Party];
                 return Ok(parties);
             }
-            case AuthenticationInfo.ServiceOwner serviceOwner:
+            case Authenticated.ServiceOwner serviceOwner:
             {
                 var details = await serviceOwner.LoadDetails();
                 IReadOnlyList<Party> parties = [details.Party];
                 return Ok(parties);
             }
-            case AuthenticationInfo.SystemUser su:
+            case Authenticated.SystemUser su:
             {
                 var details = await su.LoadDetails();
                 IReadOnlyList<Party> parties = [details.Party];

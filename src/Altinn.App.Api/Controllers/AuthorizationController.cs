@@ -44,9 +44,9 @@ public class AuthorizationController : Controller
         var context = _authenticationContext.Current;
         switch (context)
         {
-            case AuthenticationInfo.Unauthenticated:
+            case Authenticated.None:
                 return Unauthorized();
-            case AuthenticationInfo.User user:
+            case Authenticated.User user:
             {
                 var details = await user.LoadDetails(validateSelectedParty: true);
                 if (details.CanRepresent is not bool canRepresent)
@@ -81,7 +81,7 @@ public class AuthorizationController : Controller
                 }
                 return Ok(reportee.PartyId);
             }
-            case AuthenticationInfo.SelfIdentifiedUser selfIdentified:
+            case Authenticated.SelfIdentifiedUser selfIdentified:
             {
                 var details = await selfIdentified.LoadDetails();
                 if (returnPartyObject)
@@ -91,7 +91,7 @@ public class AuthorizationController : Controller
 
                 return Ok(details.Party.PartyId);
             }
-            case AuthenticationInfo.Org org:
+            case Authenticated.Org org:
             {
                 var details = await org.LoadDetails();
                 if (returnPartyObject)
@@ -101,7 +101,7 @@ public class AuthorizationController : Controller
 
                 return Ok(details.Party.PartyId);
             }
-            case AuthenticationInfo.ServiceOwner so:
+            case Authenticated.ServiceOwner so:
             {
                 var details = await so.LoadDetails();
                 if (returnPartyObject)
@@ -111,7 +111,7 @@ public class AuthorizationController : Controller
 
                 return Ok(details.Party.PartyId);
             }
-            case AuthenticationInfo.SystemUser su:
+            case Authenticated.SystemUser su:
             {
                 var details = await su.LoadDetails();
                 if (returnPartyObject)
@@ -170,9 +170,9 @@ public class AuthorizationController : Controller
         var context = _authenticationContext.Current;
         switch (context)
         {
-            case AuthenticationInfo.Unauthenticated:
+            case Authenticated.None:
                 return Unauthorized();
-            case AuthenticationInfo.User user:
+            case Authenticated.User user:
             {
                 var details = await user.LoadDetails(validateSelectedParty: true);
                 if (details.CanRepresent is not bool canRepresent)
@@ -182,19 +182,19 @@ public class AuthorizationController : Controller
 
                 return Ok(details.Roles);
             }
-            case AuthenticationInfo.SelfIdentifiedUser:
+            case Authenticated.SelfIdentifiedUser:
             {
                 return Ok(Array.Empty<Role>());
             }
-            case AuthenticationInfo.Org:
+            case Authenticated.Org:
             {
                 return Ok(Array.Empty<Role>());
             }
-            case AuthenticationInfo.ServiceOwner:
+            case Authenticated.ServiceOwner:
             {
                 return Ok(Array.Empty<Role>());
             }
-            case AuthenticationInfo.SystemUser:
+            case Authenticated.SystemUser:
             {
                 // TODO: is there an API for role lookup for system users?
                 return Ok(Array.Empty<Role>());

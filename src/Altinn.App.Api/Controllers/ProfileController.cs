@@ -33,12 +33,12 @@ public class ProfileController : Controller
         var context = _authenticationContext.Current;
         switch (context)
         {
-            case AuthenticationInfo.User user:
+            case Authenticated.User user:
             {
                 var details = await user.LoadDetails(validateSelectedParty: false);
                 return Ok(details.Profile);
             }
-            case AuthenticationInfo.SelfIdentifiedUser selfIdentifiedUser:
+            case Authenticated.SelfIdentifiedUser selfIdentifiedUser:
             {
                 var details = await selfIdentifiedUser.LoadDetails();
                 return Ok(details.Profile);

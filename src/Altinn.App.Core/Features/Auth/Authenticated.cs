@@ -16,25 +16,25 @@ namespace Altinn.App.Core.Features.Auth;
 /// Contains information about the current logged in client/user.
 /// Represented as a union/type hierarchy to express which information is available.
 /// </summary>
-public abstract record AuthenticationInfo
+public abstract record Authenticated
 {
     /// <summary>
     /// The JWT token.
     /// </summary>
     public string Token { get; }
 
-    private AuthenticationInfo(string token) => Token = token;
+    private Authenticated(string token) => Token = token;
 
     /// <summary>
     /// Type to indicate that the current request is not uathenticated.
     /// </summary>
     /// <param name="Token"></param>
-    public sealed record Unauthenticated(string Token) : AuthenticationInfo(Token);
+    public sealed record None(string Token) : Authenticated(Token);
 
     /// <summary>
     /// The logged in client is a user (e.g. Altinn portal/IDporten)
     /// </summary>
-    public sealed record User : AuthenticationInfo
+    public sealed record User : Authenticated
     {
         /// <summary>
         /// User ID
@@ -185,7 +185,7 @@ public abstract record AuthenticationInfo
     /// * IDporten through Ansattporten ("low"), MinID self registered eID
     /// These have limited access to Altinn and can only represent themselves.
     /// </summary>
-    public sealed record SelfIdentifiedUser : AuthenticationInfo
+    public sealed record SelfIdentifiedUser : Authenticated
     {
         /// <summary>
         /// Username
@@ -253,7 +253,7 @@ public abstract record AuthenticationInfo
     /// The logged in client is an organisation (but they have not authenticated as an Altinn service owner).
     /// Authentication has been done through Maskinporten.
     /// </summary>
-    public sealed record Org : AuthenticationInfo
+    public sealed record Org : Authenticated
     {
         /// <summary>
         /// Organisation number
@@ -296,7 +296,7 @@ public abstract record AuthenticationInfo
     /// The logged in client is an Altinn service owner (i.e. they have the "urn:altinn:org" claim).
     /// The service owner may or may not own the current app.
     /// </summary>
-    public sealed record ServiceOwner : AuthenticationInfo
+    public sealed record ServiceOwner : Authenticated
     {
         /// <summary>
         /// Organisation/service owner name
@@ -352,7 +352,7 @@ public abstract record AuthenticationInfo
     /// System users authenticate through Maskinporten.
     /// The caller is the system, which impersonates the system user (which represents the organisation/owner of the user).
     /// </summary>
-    public sealed record SystemUser : AuthenticationInfo
+    public sealed record SystemUser : Authenticated
     {
         /// <summary>
         /// System user ID
@@ -406,7 +406,7 @@ public abstract record AuthenticationInfo
     // TODO: app token?
     // public sealed record App(string Token) : AuthenticationInfo;
 
-    internal static AuthenticationInfo From(
+    internal static Authenticated From(
         HttpContext httpContext,
         string authCookieName,
         string partyCookieName,
@@ -421,11 +421,11 @@ public abstract record AuthenticationInfo
     {
         string token = JwtTokenUtil.GetTokenFromContext(httpContext, authCookieName);
         if (string.IsNullOrWhiteSpace(token))
-            return new Unauthenticated(token);
+            return new None(token);
 
         var isAuthenticated = httpContext.User.Identity?.IsAuthenticated ?? false;
         if (!isAuthenticated)
-            return new Unauthenticated(token);
+            return new None(token);
 
         var partyIdClaim = httpContext.User.Claims.FirstOrDefault(claim =>
             claim.Type.Equals(AltinnCoreClaimTypes.PartyID, StringComparison.OrdinalIgnoreCase)
