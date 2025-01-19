@@ -58,9 +58,9 @@ public class SigningUserAction : IUserAction
     {
         if (
             context.Authentication
-            is not AuthenticationInfo.User
-                or AuthenticationInfo.SelfIdentifiedUser
-                or AuthenticationInfo.SystemUser
+            is not Authenticated.User
+                or Authenticated.SelfIdentifiedUser
+                or Authenticated.SystemUser
         )
         {
             return UserActionResult.FailureResult(
@@ -151,7 +151,7 @@ public class SigningUserAction : IUserAction
     {
         switch (context.Authentication)
         {
-            case AuthenticationInfo.User user:
+            case Authenticated.User user:
             {
                 var userProfile =
                     await _profileClient.GetUserProfile(user.UserId)
@@ -164,11 +164,11 @@ public class SigningUserAction : IUserAction
                     OrganisationNumber = userProfile.Party.OrgNumber,
                 };
             }
-            case AuthenticationInfo.SelfIdentifiedUser selfIdentifiedUser:
+            case Authenticated.SelfIdentifiedUser selfIdentifiedUser:
             {
                 return new Signee { UserId = selfIdentifiedUser.UserId.ToString(CultureInfo.InvariantCulture) };
             }
-            case AuthenticationInfo.SystemUser systemUser:
+            case Authenticated.SystemUser systemUser:
             {
                 return new Signee { SystemUserId = systemUser.SystemUserId[0] };
             }

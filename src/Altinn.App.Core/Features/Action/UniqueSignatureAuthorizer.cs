@@ -82,10 +82,10 @@ public class UniqueSignatureAuthorizer : IUserActionAuthorizer
                 );
                 bool unauthorized = context.Authentication switch
                 {
-                    AuthenticationInfo.User a => a.UserId.ToString(CultureInfo.InvariantCulture) == signee?.UserId,
-                    AuthenticationInfo.SelfIdentifiedUser a => a.UserId.ToString(CultureInfo.InvariantCulture)
+                    Authenticated.User a => a.UserId.ToString(CultureInfo.InvariantCulture) == signee?.UserId,
+                    Authenticated.SelfIdentifiedUser a => a.UserId.ToString(CultureInfo.InvariantCulture)
                         == signee?.UserId,
-                    AuthenticationInfo.SystemUser a => a.SystemUserId[0].ToString() == signee?.UserId, // TODO: wait for systemuserid
+                    Authenticated.SystemUser a => a.SystemUserId[0].ToString() == signee?.UserId, // TODO: wait for systemuserid
                     _ => false,
                 };
                 if (unauthorized)

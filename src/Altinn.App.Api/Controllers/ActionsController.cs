@@ -113,7 +113,7 @@ public class ActionsController : ControllerBase
         }
 
         var currentAuth = _authenticationContext.Current;
-        if (currentAuth is not AuthenticationInfo.User user)
+        if (currentAuth is not Authenticated.User user)
             return Unauthorized();
 
         bool authorized = await _authorization.AuthorizeAction(

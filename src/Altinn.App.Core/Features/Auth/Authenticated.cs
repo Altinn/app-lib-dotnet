@@ -159,7 +159,7 @@ public abstract class Authenticated
         /// <param name="Profile">Users profile</param>
         /// <param name="RepresentsSelf">True if the user represents itself (user party will equal selected party)</param>
         /// <param name="Parties">List of parties the user can represent</param>
-        /// <param name="PartiesAllowedToInstantiate">List of parties the user can instantiate</param>
+        /// <param name="PartiesAllowedToInstantiate">List of parties the user can instantiate as</param>
         /// <param name="Roles">List of roles the user has</param>
         /// <param name="CanRepresent">True if the user can represent the selected party. Only set if details were loaded with validateSelectedParty set to true</param>
         public sealed record Details(
@@ -171,7 +171,69 @@ public abstract class Authenticated
             IReadOnlyList<Party> PartiesAllowedToInstantiate,
             IReadOnlyList<Role> Roles,
             bool? CanRepresent = null
-        );
+        )
+        {
+            /// <summary>
+            /// Check if the user can represent a party.
+            /// </summary>
+            /// <param name="partyId">Party ID</param>
+            /// <returns></returns>
+            public bool CanRepresentParty(int partyId)
+            {
+                if (partyId == UserParty.PartyId || partyId == SelectedParty.PartyId)
+                    return true;
+
+                var partiesToCheck = new Queue<Party>(Parties);
+                while (partiesToCheck.Count > 0)
+                {
+                    var party = partiesToCheck.Dequeue();
+                    if (party.PartyId == partyId)
+                        return true;
+
+                    if (party.ChildParties is not null)
+                    {
+                        foreach (var childParty in party.ChildParties)
+                            partiesToCheck.Enqueue(childParty);
+                    }
+                }
+
+                return false;
+            }
+
+            /// <summary>
+            /// Checks if the current user can instantiate a specific party by ID.
+            /// </summary>
+            /// <param name="partyId">Party ID</param>
+            /// <returns></returns>
+            public bool CanInstantiateAsParty(int partyId)
+            {
+                var partiesToCheck = new Queue<Party>(PartiesAllowedToInstantiate);
+                while (partiesToCheck.Count > 0)
+                {
+                    var party = partiesToCheck.Dequeue();
+                    if (party.PartyId == partyId && !party.OnlyHierarchyElementWithNoAccess)
+                        return true;
+
+                    if (party.ChildParties is not null)
+                    {
+                        foreach (var childParty in party.ChildParties)
+                            partiesToCheck.Enqueue(childParty);
+                    }
+                }
+
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Lookup the party for the selected party ID.
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException">If the party couldn't be resolved</exception>
+        public async Task<Party> LookupSelectedParty() =>
+            _extra?.SelectedParty
+            ?? await _lookupParty(SelectedPartyId)
+            ?? throw new InvalidOperationException($"Could not load party for selected party ID: {SelectedPartyId}");
 
         /// <summary>
         /// Load the details for the current user.
@@ -272,6 +334,7 @@ public abstract class Authenticated
 
         private Details? _extra;
         private readonly Func<int, Task<UserProfile?>> _getUserProfile;
+        private readonly Func<Task<ApplicationMetadata>> _getApplicationMetadata;
 
         internal SelfIdentifiedUser(
             string username,
@@ -281,7 +344,8 @@ public abstract class Authenticated
             TokenIssuer tokenIssuer,
             bool tokenIsExchanged,
             string token,
-            Func<int, Task<UserProfile?>> getUserProfile
+            Func<int, Task<UserProfile?>> getUserProfile,
+            Func<Task<ApplicationMetadata>> getApplicationMetadata
         )
             : base(tokenIssuer, tokenIsExchanged, token)
         {
@@ -292,6 +356,7 @@ public abstract class Authenticated
             // Since they are self-identified, they are always 0
             AuthenticationLevel = 0;
             _getUserProfile = getUserProfile;
+            _getApplicationMetadata = getApplicationMetadata;
         }
 
         /// <summary>
@@ -302,7 +367,7 @@ public abstract class Authenticated
         /// <summary>
         /// Detailed information about a logged in user
         /// </summary>
-        public sealed record Details(Party Party, UserProfile Profile, bool RepresentsSelf);
+        public sealed record Details(Party Party, UserProfile Profile, bool RepresentsSelf, bool CanInstantiate);
 
         /// <summary>
         /// Load the details for the current user.
@@ -320,7 +385,9 @@ public abstract class Authenticated
                 );
 
             var party = userProfile.Party;
-            _extra = new Details(party, userProfile, RepresentsSelf: true);
+            var application = await _getApplicationMetadata();
+            var canInstantiate = InstantiationHelper.IsPartyAllowedToInstantiate(party, application.PartyTypesAllowed);
+            _extra = new Details(party, userProfile, RepresentsSelf: true, canInstantiate);
             return _extra;
         }
     }
@@ -347,6 +414,7 @@ public abstract class Authenticated
         public string AuthenticationMethod { get; }
 
         private readonly Func<string, Task<Party>> _lookupParty;
+        private readonly Func<Task<ApplicationMetadata>> _getApplicationMetadata;
 
         internal Org(
             string orgNo,
@@ -355,7 +423,8 @@ public abstract class Authenticated
             TokenIssuer tokenIssuer,
             bool tokenIsExchanged,
             string token,
-            Func<string, Task<Party>> lookupParty
+            Func<string, Task<Party>> lookupParty,
+            Func<Task<ApplicationMetadata>> getApplicationMetadata
         )
             : base(tokenIssuer, tokenIsExchanged, token)
         {
@@ -363,13 +432,15 @@ public abstract class Authenticated
             AuthenticationLevel = authenticationLevel;
             AuthenticationMethod = authenticationMethod;
             _lookupParty = lookupParty;
+            _getApplicationMetadata = getApplicationMetadata;
         }
 
         /// <summary>
         /// Detailed information about an organisation
         /// </summary>
         /// <param name="Party">Party of the org</param>
-        public sealed record Details(Party Party);
+        /// <param name="CanInstantiate">True if the org can instantiate applications</param>
+        public sealed record Details(Party Party, bool CanInstantiate);
 
         /// <summary>
         /// Load the details for the current organisation.
@@ -378,7 +449,11 @@ public abstract class Authenticated
         public async Task<Details> LoadDetails()
         {
             var party = await _lookupParty(OrgNo);
-            return new Details(party);
+
+            var application = await _getApplicationMetadata();
+            var canInstantiate = InstantiationHelper.IsPartyAllowedToInstantiate(party, application.PartyTypesAllowed);
+
+            return new Details(party, canInstantiate);
         }
     }
 
@@ -479,6 +554,7 @@ public abstract class Authenticated
         public string AuthenticationMethod { get; }
 
         private readonly Func<string, Task<Party>> _lookupParty;
+        private readonly Func<Task<ApplicationMetadata>> _getApplicationMetadata;
 
         internal SystemUser(
             IReadOnlyList<Guid> systemUserId,
@@ -489,7 +565,8 @@ public abstract class Authenticated
             TokenIssuer tokenIssuer,
             bool tokenIsExchanged,
             string token,
-            Func<string, Task<Party>> lookupParty
+            Func<string, Task<Party>> lookupParty,
+            Func<Task<ApplicationMetadata>> getApplicationMetadata
         )
             : base(tokenIssuer, tokenIsExchanged, token)
         {
@@ -501,13 +578,15 @@ public abstract class Authenticated
             AuthenticationLevel = authenticationLevel ?? 3;
             AuthenticationMethod = authenticationMethod ?? "maskinporten";
             _lookupParty = lookupParty;
+            _getApplicationMetadata = getApplicationMetadata;
         }
 
         /// <summary>
         /// Detailed information about a system user
         /// </summary>
         /// <param name="Party">Party of the system user</param>
-        public sealed record Details(Party Party);
+        /// <param name="CanInstantiate">True if the system user can instantiate applications</param>
+        public sealed record Details(Party Party, bool CanInstantiate);
 
         /// <summary>
         /// Load the details for the current system user.
@@ -516,12 +595,16 @@ public abstract class Authenticated
         public async Task<Details> LoadDetails()
         {
             var party = await _lookupParty(SystemUserOrgNr.Get(OrganisationNumberFormat.Local));
-            return new Details(party);
+
+            var application = await _getApplicationMetadata();
+            var canInstantiate = InstantiationHelper.IsPartyAllowedToInstantiate(party, application.PartyTypesAllowed);
+
+            return new Details(party, canInstantiate);
         }
     }
 
     // TODO: app token?
-    // public sealed record App(string Token) : AuthenticationInfo;
+    // public sealed record App(string Token) : Authenticated;
 
     internal static (TokenIssuer Issuer, bool IsExchanged) ResolveIssuer(
         string? iss,
@@ -731,7 +814,8 @@ public abstract class Authenticated
                 tokenIssuer,
                 isExchanged,
                 tokenStr,
-                lookupOrgParty
+                lookupOrgParty,
+                getApplicationMetadata
             );
         }
         else if (!string.IsNullOrWhiteSpace(orgClaim?.Value))
@@ -771,7 +855,8 @@ public abstract class Authenticated
                 tokenIssuer,
                 isExchanged,
                 tokenStr,
-                lookupOrgParty
+                lookupOrgParty,
+                getApplicationMetadata
             );
         }
 
@@ -801,7 +886,8 @@ public abstract class Authenticated
                 tokenIssuer,
                 isExchanged,
                 tokenStr,
-                getUserProfile
+                getUserProfile,
+                getApplicationMetadata
             );
         }
 

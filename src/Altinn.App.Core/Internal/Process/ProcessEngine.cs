@@ -174,8 +174,8 @@ public class ProcessEngine : IProcessEngine
 
         int? userId = currentAuth switch
         {
-            AuthenticationInfo.User auth => auth.UserId,
-            AuthenticationInfo.SelfIdentifiedUser auth => auth.UserId,
+            Authenticated.User auth => auth.UserId,
+            Authenticated.SelfIdentifiedUser auth => auth.UserId,
             _ => null,
         };
         UserActionResult actionResult = actionHandler is null
@@ -379,7 +379,7 @@ public class ProcessEngine : IProcessEngine
         PlatformUser user;
         switch (currentAuth)
         {
-            case AuthenticationInfo.User auth:
+            case Authenticated.User auth:
             {
                 var details = await auth.LoadDetails(validateSelectedParty: true);
                 user = new PlatformUser
@@ -390,28 +390,28 @@ public class ProcessEngine : IProcessEngine
                 };
                 break;
             }
-            case AuthenticationInfo.SelfIdentifiedUser auth:
+            case Authenticated.SelfIdentifiedUser auth:
             {
                 var details = await auth.LoadDetails();
                 user = new PlatformUser
                 {
                     UserId = auth.UserId,
-                    AuthenticationLevel = AuthenticationInfo.SelfIdentifiedUser.AuthenticationLevel,
+                    AuthenticationLevel = auth.AuthenticationLevel,
                     NationalIdentityNumber = details.Profile.Party.SSN, // This is probably null?
                 };
                 break;
             }
-            case AuthenticationInfo.Org:
+            case Authenticated.Org:
             {
                 user = new PlatformUser { }; // TODO: what do we do here?
                 break;
             }
-            case AuthenticationInfo.ServiceOwner auth:
+            case Authenticated.ServiceOwner auth:
             {
                 user = new PlatformUser { OrgId = auth.Name };
                 break;
             }
-            case AuthenticationInfo.SystemUser auth:
+            case Authenticated.SystemUser auth:
             {
                 user = new PlatformUser
                 {

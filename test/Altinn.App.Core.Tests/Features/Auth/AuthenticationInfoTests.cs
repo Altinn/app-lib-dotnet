@@ -33,7 +33,7 @@ public class AuthenticationInfoTests
     [Fact]
     public async Task Test_Unauth_Get_Default_Language()
     {
-        var user = new AuthenticationInfo.Unauthenticated("");
+        var user = new Authenticated.Unauthenticated("");
 
         var lang = await user.GetLanguage();
 

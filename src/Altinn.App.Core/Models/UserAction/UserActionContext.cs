@@ -24,7 +24,7 @@ public class UserActionContext
         string? buttonId = null,
         Dictionary<string, string>? actionMetadata = null,
         string? language = null,
-        AuthenticationInfo? authentication = null
+        Authenticated? authentication = null
     )
     {
         Instance = dataMutator.Instance;
@@ -52,7 +52,7 @@ public class UserActionContext
         string? buttonId = null,
         Dictionary<string, string>? actionMetadata = null,
         string? language = null,
-        AuthenticationInfo? authentication = null
+        Authenticated? authentication = null
     )
     {
         Instance = instance;
@@ -84,15 +84,15 @@ public class UserActionContext
         _userId
         ?? Authentication switch
         {
-            AuthenticationInfo.User user => user.UserId,
-            AuthenticationInfo.SelfIdentifiedUser selfIdentifiedUser => selfIdentifiedUser.UserId,
+            Authenticated.User user => user.UserId,
+            Authenticated.SelfIdentifiedUser selfIdentifiedUser => selfIdentifiedUser.UserId,
             _ => null,
         };
 
     /// <summary>
     /// Information about the authenticated party
     /// </summary>
-    public AuthenticationInfo? Authentication { get; }
+    public Authenticated? Authentication { get; }
 
     /// <summary>
     /// The id of the button that triggered the action (optional)

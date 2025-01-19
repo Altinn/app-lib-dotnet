@@ -22,7 +22,7 @@ public class UserActionAuthorizerContext
         InstanceIdentifier instanceIdentifier,
         string? taskId,
         string action,
-        AuthenticationInfo authentication
+        Authenticated authentication
     )
     {
         User = user;
@@ -41,7 +41,7 @@ public class UserActionAuthorizerContext
     /// <summary>
     /// Gets or sets the authentication information
     /// </summary>
-    public AuthenticationInfo Authentication { get; }
+    public Authenticated Authentication { get; }
 
     /// <summary>
     /// Gets or sets the instance identifier
