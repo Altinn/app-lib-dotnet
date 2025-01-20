@@ -25,11 +25,9 @@ public class SigningTaskValidatorTest
     private readonly Mock<IDataClient> _dataClientMock = new();
     private readonly Mock<IInstanceClient> _instanceClientMock = new();
     private readonly Mock<IAppMetadata> _appMetadataMock = new();
-    private readonly Mock<ModelSerializationService> _modelSerializationMock = new(new Mock<IAppModel>().Object, null);
+    private readonly Mock<ModelSerializationService> _modelSerializationMock = new(new Mock<IAppModel>().Object, null!);
     private readonly Mock<ILogger<SigningTaskValidator>> _loggerMock = new();
     private readonly SigningTaskValidator _validator;
-
-    private readonly ILogger _logger;
 
     public SigningTaskValidatorTest()
     {
@@ -42,8 +40,6 @@ public class SigningTaskValidatorTest
             _appMetadataMock.Object,
             _modelSerializationMock.Object
         );
-        using ILoggerFactory factory = LoggerFactory.Create(builder => builder.AddConsole());
-        _logger = factory.CreateLogger("SigningTaskValidatorTest");
     }
 
     [Fact]
@@ -76,7 +72,6 @@ public class SigningTaskValidatorTest
 
         // Act
         var result = await _validator.Validate(dataAccessorMock.Object, taskId, null);
-        _logger.LogInformation("Validation result: {result}", result);
 
         // Assert
         Assert.Empty(result);
