@@ -8,6 +8,7 @@ using Altinn.App.Api.Models;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models;
 using Altinn.App.Api.Tests.Utils;
+using Altinn.App.Common.Tests;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.Platform.Storage.Interface.Models;
@@ -161,7 +162,17 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         string org = "tdd";
         string app = "permissive-app";
         int instanceOwnerPartyId = token.PartyId;
-        using HttpClient client = GetRootedClient(org, app);
+
+        this.OverrideServicesForThisTest = (services) =>
+        {
+            services.AddTelemetrySink(
+                shouldAlsoListenToActivities: (_, source) => source.Name == "Microsoft.AspNetCore",
+                activityFilter: (_, activity) =>
+                    this.ActivityFilter(_, activity) && activity.DisplayName == "POST {org}/{app}/instances/create"
+            );
+        };
+
+        using HttpClient client = GetRootedClient(org, app, includeTraceContext: true);
 
         var createResponseParsed = await CreateInstanceSimplified(org, app, instanceOwnerPartyId, client, token.Token);
         var instanceId = createResponseParsed.Id;
@@ -175,6 +186,9 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         var readDataElementResponseParsed = JsonSerializer.Deserialize<Skjema>(readDataElementResponseContent)!;
         readDataElementResponseParsed.Melding.Should().BeNull(); // No content yet
         TestData.DeleteInstanceAndData(org, app, instanceId);
+
+        var telemetry = this.Services.GetRequiredService<TelemetrySink>();
+        await telemetry.SnapshotActivities(settings => settings.UseTextForParameters(token.Type.ToString()));
     }
 
     [Fact]

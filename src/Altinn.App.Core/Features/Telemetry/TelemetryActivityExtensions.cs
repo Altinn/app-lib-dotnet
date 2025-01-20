@@ -1,5 +1,7 @@
 using System.Diagnostics;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Correspondence.Models;
+using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -347,6 +349,63 @@ public static class TelemetryActivityExtensions
                 }
             }
             activity.AddEvent(new ActivityEvent("change", tags: tags));
+        }
+
+        return activity;
+    }
+
+    internal static Activity? SetAuthenticated(this Activity? activity, Authenticated currentAuth)
+    {
+        if (activity is null)
+            return null;
+
+        activity.SetTag(Labels.UserAuthenticationType, currentAuth.GetType().Name);
+        switch (currentAuth)
+        {
+            case Authenticated.None:
+                break;
+            case Authenticated.User auth:
+            {
+                activity.SetUserId(auth.UserId);
+                activity.SetUserPartyId(auth.SelectedPartyId);
+                activity.SetAuthenticationMethod(auth.AuthenticationMethod);
+                activity.SetAuthenticationLevel(auth.AuthenticationLevel);
+                break;
+            }
+            case Authenticated.SelfIdentifiedUser auth:
+            {
+                activity.SetUserId(auth.UserId);
+                activity.SetUserPartyId(auth.PartyId);
+                activity.SetAuthenticationMethod(auth.AuthenticationMethod);
+                activity.SetAuthenticationLevel(Authenticated.SelfIdentifiedUser.AuthenticationLevel);
+                break;
+            }
+            case Authenticated.Org auth:
+            {
+                activity.SetOrganisationNumber(auth.OrgNo);
+                activity.SetAuthenticationMethod(auth.AuthenticationMethod);
+                activity.SetAuthenticationLevel(auth.AuthenticationLevel);
+                break;
+            }
+            case Authenticated.ServiceOwner auth:
+            {
+                activity.SetOrganisationNumber(auth.OrgNo);
+                activity.SetOrganisationName(auth.Name);
+                activity.SetAuthenticationMethod(auth.AuthenticationMethod);
+                activity.SetAuthenticationLevel(auth.AuthenticationLevel);
+                break;
+            }
+            case Authenticated.SystemUser auth:
+            {
+                if (auth.SystemUserId is [var systemUserId, ..])
+                    activity.SetTag(Labels.OrganisationSystemUserId, systemUserId);
+
+                activity.SetOrganisationNumber(auth.SystemUserOrgNr.Get(OrganisationNumberFormat.Local));
+                activity.SetAuthenticationMethod(auth.AuthenticationMethod);
+                break;
+            }
+            default:
+                break;
         }
 
         return activity;

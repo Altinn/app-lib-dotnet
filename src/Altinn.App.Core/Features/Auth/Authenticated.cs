@@ -55,6 +55,12 @@ public abstract record Authenticated
         /// Authentication level
         /// </summary>
         public int AuthenticationLevel { get; }
+
+        /// <summary>
+        /// Method of authentication, e.g. "idporten" or "maskinporten"
+        /// </summary>
+        public string AuthenticationMethod { get; }
+
         private Details? _extra;
         private readonly Func<int, Task<UserProfile?>> _getUserProfile;
         private readonly Func<int, Task<Party?>> _lookupParty;
@@ -67,6 +73,7 @@ public abstract record Authenticated
             int userId,
             int userPartyId,
             int authenticationLevel,
+            string authenticationMethod,
             int selectedPartyId,
             string token,
             Func<int, Task<UserProfile?>> getUserProfile,
@@ -82,6 +89,7 @@ public abstract record Authenticated
             UserPartyId = userPartyId;
             SelectedPartyId = selectedPartyId;
             AuthenticationLevel = authenticationLevel;
+            AuthenticationMethod = authenticationMethod;
             _getUserProfile = getUserProfile;
             _lookupParty = lookupParty;
             _getPartyList = getPartyList;
@@ -202,6 +210,11 @@ public abstract record Authenticated
         /// </summary>
         public int PartyId { get; }
 
+        /// <summary>
+        /// Method of authentication, e.g. "idporten" or "maskinporten"
+        /// </summary>
+        public string AuthenticationMethod { get; }
+
         private Details? _extra;
         private readonly Func<int, Task<UserProfile?>> _getUserProfile;
 
@@ -209,6 +222,7 @@ public abstract record Authenticated
             string username,
             int userId,
             int partyId,
+            string authenticationMethod,
             string token,
             Func<int, Task<UserProfile?>> getUserProfile
         )
@@ -217,6 +231,7 @@ public abstract record Authenticated
             Username = username;
             UserId = userId;
             PartyId = partyId;
+            AuthenticationMethod = authenticationMethod;
             _getUserProfile = getUserProfile;
         }
 
@@ -265,13 +280,25 @@ public abstract record Authenticated
         /// </summary>
         public int AuthenticationLevel { get; }
 
+        /// <summary>
+        /// Method of authentication, e.g. "idporten" or "maskinporten"
+        /// </summary>
+        public string AuthenticationMethod { get; }
+
         private readonly Func<string, Task<Party>> _lookupParty;
 
-        internal Org(string orgNo, int authenticationLevel, string token, Func<string, Task<Party>> lookupParty)
+        internal Org(
+            string orgNo,
+            int authenticationLevel,
+            string authenticationMethod,
+            string token,
+            Func<string, Task<Party>> lookupParty
+        )
             : base(token)
         {
             OrgNo = orgNo;
             AuthenticationLevel = authenticationLevel;
+            AuthenticationMethod = authenticationMethod;
             _lookupParty = lookupParty;
         }
 
@@ -313,12 +340,18 @@ public abstract record Authenticated
         /// </summary>
         public int AuthenticationLevel { get; }
 
+        /// <summary>
+        /// Method of authentication, e.g. "idporten" or "maskinporten"
+        /// </summary>
+        public string AuthenticationMethod { get; }
+
         private readonly Func<string, Task<Party>> _lookupParty;
 
         internal ServiceOwner(
             string name,
             string orgNo,
             int authenticationLevel,
+            string authenticationMethod,
             string token,
             Func<string, Task<Party>> lookupParty
         )
@@ -327,6 +360,7 @@ public abstract record Authenticated
             Name = name;
             OrgNo = orgNo;
             AuthenticationLevel = authenticationLevel;
+            AuthenticationMethod = authenticationMethod;
             _lookupParty = lookupParty;
         }
 
@@ -368,6 +402,11 @@ public abstract record Authenticated
         /// System ID
         /// </summary>
         public string SystemId { get; }
+
+        /// <summary>
+        /// Method of authentication - always "maskinporten"
+        /// </summary>
+        public string AuthenticationMethod { get; } = "maskinporten";
 
         private readonly Func<string, Task<Party>> _lookupParty;
 
@@ -452,6 +491,9 @@ public abstract record Authenticated
         var authLevelClaim = httpContext.User.Claims.FirstOrDefault(claim =>
             claim.Type.Equals(AltinnCoreClaimTypes.AuthenticationLevel, StringComparison.OrdinalIgnoreCase)
         );
+        var authMethodClaim = httpContext.User.Claims.FirstOrDefault(claim =>
+            claim.Type.Equals(AltinnCoreClaimTypes.AuthenticateMethod, StringComparison.OrdinalIgnoreCase)
+        );
 
         int authLevel = -1;
         static void ParseAuthLevel(string? value, out int authLevel)
@@ -471,18 +513,29 @@ public abstract record Authenticated
                 throw new InvalidOperationException("Missing org number claim for service owner token");
             if (!string.IsNullOrWhiteSpace(partyIdClaim?.Value))
                 throw new InvalidOperationException("Got service owner token");
+            if (string.IsNullOrWhiteSpace(authMethodClaim?.Value))
+                throw new InvalidOperationException("Missing authentication method claim for service owner token");
 
             ParseAuthLevel(authLevelClaim?.Value, out authLevel);
 
             // TODO: check if the org is the same as the owner of the app? A flag?
 
-            return new ServiceOwner(orgClaim.Value, orgNoClaim.Value, authLevel, token, lookupOrgParty);
+            return new ServiceOwner(
+                orgClaim.Value,
+                orgNoClaim.Value,
+                authLevel,
+                authMethodClaim.Value,
+                token,
+                lookupOrgParty
+            );
         }
         else if (!string.IsNullOrWhiteSpace(orgNoClaim?.Value))
         {
             ParseAuthLevel(authLevelClaim?.Value, out authLevel);
+            if (string.IsNullOrWhiteSpace(authMethodClaim?.Value))
+                throw new InvalidOperationException("Missing authentication method claim for org token");
 
-            return new Org(orgNoClaim.Value, authLevel, token, lookupOrgParty);
+            return new Org(orgNoClaim.Value, authLevel, authMethodClaim.Value, token, lookupOrgParty);
         }
 
         var authorizationDetailsClaim = httpContext.User.Claims.FirstOrDefault(claim =>
@@ -522,6 +575,8 @@ public abstract record Authenticated
 
         if (partyId is null)
             throw new InvalidOperationException("Missing party ID for user token");
+        if (string.IsNullOrWhiteSpace(authMethodClaim?.Value))
+            throw new InvalidOperationException("Missing authentication method claim for user token");
 
         ParseAuthLevel(authLevelClaim?.Value, out authLevel);
         if (authLevel == 0)
@@ -532,7 +587,14 @@ public abstract record Authenticated
             if (string.IsNullOrWhiteSpace(usernameClaim?.Value))
                 throw new InvalidOperationException("Missing username claim for self-identified user token");
 
-            return new SelfIdentifiedUser(usernameClaim.Value, userId, partyId.Value, token, getUserProfile);
+            return new SelfIdentifiedUser(
+                usernameClaim.Value,
+                userId,
+                partyId.Value,
+                authMethodClaim.Value,
+                token,
+                getUserProfile
+            );
         }
 
         int selectedPartyId = partyId.Value;
@@ -548,6 +610,7 @@ public abstract record Authenticated
             userId,
             partyId.Value,
             authLevel,
+            authMethodClaim.Value,
             selectedPartyId,
             token,
             getUserProfile,

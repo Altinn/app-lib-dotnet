@@ -1,16 +1,16 @@
 ﻿{
   Activities: [
     {
-      ActivityName: GET {org}/{app}/api/v1/applicationmetadata,
+      ActivityName: POST {org}/{app}/instances/create,
       Tags: [
         {
-          http.request.method: GET
+          http.request.method: POST
         },
         {
-          http.response.status_code: 200
+          http.response.status_code: 201
         },
         {
-          http.route: {org}/{app}/api/v1/applicationmetadata
+          http.route: {org}/{app}/instances/create
         },
         {
           network.protocol.version: 1.1
@@ -28,7 +28,7 @@
           TestId: Guid_1
         },
         {
-          url.path: /tdd/contributer-restriction/api/v1/applicationmetadata
+          url.path: /tdd/permissive-app/instances/create
         },
         {
           url.scheme: http

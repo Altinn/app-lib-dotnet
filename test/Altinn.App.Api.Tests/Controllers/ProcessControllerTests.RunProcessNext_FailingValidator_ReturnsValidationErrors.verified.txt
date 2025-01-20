@@ -133,6 +133,9 @@
           user.authentication.method: Mock
         },
         {
+          user.authentication.type: User
+        },
+        {
           user.id: 1337
         },
         {
