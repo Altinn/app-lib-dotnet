@@ -22,7 +22,6 @@ public class PdfServiceTaskTests : ApiTestBase, IClassFixture<WebApplicationFact
     public PdfServiceTaskTests(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper)
         : base(factory, outputHelper)
     {
-        // OverrideServicesForAllTests = [];
         TestData.DeleteInstanceAndData(Org, App, InstanceOwnerPartyId, _instanceGuid);
         TestData.PrepareInstance(Org, App, InstanceOwnerPartyId, _instanceGuid);
     }
@@ -32,7 +31,7 @@ public class PdfServiceTaskTests : ApiTestBase, IClassFixture<WebApplicationFact
     {
         using HttpClient client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
 
-        //Run process next
+        // Run process next
         using HttpResponseMessage nextResponse = await client.PutAsync(
             $"{Org}/{App}/instances/{_instanceId}/process/next?language={Language}",
             null
@@ -49,7 +48,7 @@ public class PdfServiceTaskTests : ApiTestBase, IClassFixture<WebApplicationFact
     {
         using HttpClient client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
 
-        //Run process next to enter PDF task
+        // Run process next to enter PDF task
         using HttpResponseMessage nextResponse = await client.PutAsync(
             $"{Org}/{App}/instances/{_instanceId}/process/next?language={Language}",
             null
@@ -60,7 +59,7 @@ public class PdfServiceTaskTests : ApiTestBase, IClassFixture<WebApplicationFact
 
         nextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
 
-        //Run process next with reject to return to data task
+        // Run process next with reject to return to data task
 
         var rejectProcessNext = new ProcessNext { Action = "reject" };
         using var rejectContent = new StringContent(
@@ -76,7 +75,7 @@ public class PdfServiceTaskTests : ApiTestBase, IClassFixture<WebApplicationFact
 
         rejectResponse.Should().HaveStatusCode(HttpStatusCode.OK);
 
-        //Double check that process moved back to the data task
+        // Double check that process moved back to the data task
         Instance instance = await TestData.GetInstance(Org, App, InstanceOwnerPartyId, _instanceGuid);
         instance.Process.CurrentTask.ElementId.Should().Be("Task_1");
         instance.Process.CurrentTask.AltinnTaskType.Should().Be("data");
@@ -103,14 +102,14 @@ public class PdfServiceTaskTests : ApiTestBase, IClassFixture<WebApplicationFact
 
         using HttpClient client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
 
-        //Run process next
+        // Run process next
         using HttpResponseMessage firstNextResponse = await client.PutAsync(
             $"{Org}/{App}/instances/{_instanceId}/process/next?language={Language}",
             null
         );
         firstNextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
 
-        //Run process next again to actually execute the service task
+        // Run process next again to actually execute the service task
         using HttpResponseMessage secondNextResponse = await client.PutAsync(
             $"{Org}/{App}/instances/{_instanceId}/process/next?lang={Language}",
             null
@@ -137,20 +136,20 @@ public class PdfServiceTaskTests : ApiTestBase, IClassFixture<WebApplicationFact
             message.RequestUri!.PathAndQuery.Should().Be($"/pdf");
             sendAsyncCalled = true;
 
-            //Simulate failing PDF service
+            // Simulate failing PDF service
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
         };
 
         using HttpClient client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
 
-        //Run process next
+        // Run process next
         using HttpResponseMessage firstNextResponse = await client.PutAsync(
             $"{Org}/{App}/instances/{_instanceId}/process/next?language={Language}",
             null
         );
         firstNextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
 
-        //Run process next again to actually execute the service task
+        // Run process next again to actually execute the service task
         using HttpResponseMessage secondNextResponse = await client.PutAsync(
             $"{Org}/{App}/instances/{_instanceId}/process/next?lang={Language}",
             null
@@ -166,7 +165,7 @@ public class PdfServiceTaskTests : ApiTestBase, IClassFixture<WebApplicationFact
             .Should()
             .Be("{\"title\":\"Internal server error\",\"status\":500,\"detail\":\"Server action pdf failed!\"}");
 
-        //Double check that process did not move to the next task
+        // Double check that process did not move to the next task
         Instance instance = await TestData.GetInstance(Org, App, InstanceOwnerPartyId, _instanceGuid);
         instance.Process.CurrentTask.ElementId.Should().Be("Task_2");
         instance.Process.CurrentTask.AltinnTaskType.Should().Be("pdf");
