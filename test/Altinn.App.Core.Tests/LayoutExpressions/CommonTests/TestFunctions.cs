@@ -4,7 +4,9 @@ using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Layout;
+using Altinn.App.Core.Models.Layout.Components;
 using Altinn.App.Core.Tests.LayoutExpressions.TestUtilities;
 using Altinn.App.Core.Tests.TestUtils;
 using Altinn.Platform.Storage.Interface.Models;
@@ -37,6 +39,10 @@ public class TestFunctions
     public async Task And_Theory(string testName, string folder) => await RunTestCase(testName, folder);
 
     [Theory]
+    [SharedTest("formatDate")]
+    public async Task FormatDate_Theory(string testName, string folder) => await RunTestCase(testName, folder);
+
+    [Theory]
     [SharedTest("frontendSettings")]
     public async Task FrontendSettings_Theory(string testName, string folder) => await RunTestCase(testName, folder);
 
@@ -57,6 +63,10 @@ public class TestFunctions
     public async Task Language_Theory(string testName, string folder) => await RunTestCase(testName, folder);
 
     [Theory]
+    [SharedTest("compare")]
+    public async Task Compare_Theory(string testName, string folder) => await RunTestCase(testName, folder);
+
+    [Theory]
     [SharedTest("contains")]
     public async Task Contains_Theory(string testName, string folder) => await RunTestCase(testName, folder);
 
@@ -67,6 +77,10 @@ public class TestFunctions
     [Theory]
     [SharedTest("dataModelMultiple")]
     public async Task DataModelMultiple_Theory(string testName, string folder) => await RunTestCase(testName, folder);
+
+    [Theory]
+    [SharedTest("countDataElements")]
+    public async Task CountDataElements_Theory(string testName, string folder) => await RunTestCase(testName, folder);
 
     [Theory]
     [SharedTest("endsWith")]
@@ -127,6 +141,26 @@ public class TestFunctions
     [Theory]
     [SharedTest("lowerCase")]
     public async Task LowerCase_Theory(string testName, string folder) => await RunTestCase(testName, folder);
+
+    [Theory]
+    [SharedTest("upperCaseFirst")]
+    public async Task UpperCaseFirst_Theory(string testName, string folder) => await RunTestCase(testName, folder);
+
+    [Theory]
+    [SharedTest("lowerCaseFirst")]
+    public async Task LowerCaseFirst_Theory(string testName, string folder) => await RunTestCase(testName, folder);
+
+    [Theory]
+    [SharedTest("stringSlice")]
+    public async Task StringSlice_Theory(string testName, string folder) => await RunTestCase(testName, folder);
+
+    [Theory]
+    [SharedTest("stringReplace")]
+    public async Task StringReplace_Theory(string testName, string folder) => await RunTestCase(testName, folder);
+
+    [Theory]
+    [SharedTest("stringIndexOf")]
+    public async Task StringIndexOf_Theory(string testName, string folder) => await RunTestCase(testName, folder);
 
     [Theory]
     [SharedTest("startsWith")]
@@ -219,13 +253,61 @@ public class TestFunctions
             var layout = new LayoutSetComponent(test.Layouts.Values.ToList(), "layout", dataTypes[0]);
             componentModel = new LayoutModel([layout], null);
         }
+        else if (test.Layouts is null && dataTypes.Count > 0)
+        {
+            // Create a working dummy layout to avoid null reference exceptions and make dataModel lookups work.
+            var componentLookup = new Dictionary<string, BaseComponent>();
+            componentLookup.Add(
+                "myParagraph",
+                new BaseComponent(
+                    "myParagraph",
+                    "Paragraph",
+                    null,
+                    new Expression(),
+                    new Expression(),
+                    new Expression(),
+                    null
+                )
+            );
+            var componentList = new List<BaseComponent>();
+            componentList.Add(componentLookup["myParagraph"]);
+            var layout = new LayoutSetComponent(
+                [
+                    new PageComponent(
+                        "formLayout",
+                        "formLayout",
+                        componentList,
+                        componentLookup,
+                        new Expression(),
+                        new Expression(),
+                        new Expression(),
+                        null
+                    ),
+                ],
+                "layout",
+                dataTypes[0]
+            );
+            componentModel = new LayoutModel([layout], null);
+        }
+
         var state = new LayoutEvaluatorState(
             dataAccessor,
             componentModel,
             test.FrontEndSettings ?? new FrontEndSettings(),
             test.GatewayAction,
-            test.ProfileSettings?.Language
+            test.ProfileSettings?.Language,
+            TimeZoneInfo.Utc // Frontend uses UTC in tests, we should too (otherwise the default is local)
         );
+
+        ComponentContext? context = null;
+        if (test.Context is not null)
+        {
+            context = test.Context.ToContext(componentModel, state);
+        }
+        else if (componentModel is not null)
+        {
+            context = ComponentContextForTestSpec.FromFirstOrDefault(componentModel, state);
+        }
 
         if (test.ExpectsFailure is not null)
         {
@@ -237,12 +319,7 @@ public class TestFunctions
             {
                 Func<Task> act = async () =>
                 {
-                    await ExpressionEvaluator.EvaluateExpression(
-                        state,
-                        test.Expression,
-                        test.Context?.ToContext(componentModel, state)!,
-                        positionalArguments
-                    );
+                    await ExpressionEvaluator.EvaluateExpression(state, test.Expression, context!, positionalArguments);
                 };
                 (await act.Should().ThrowAsync<Exception>()).WithMessage($"*{test.ExpectsFailure}*");
             }
@@ -255,7 +332,7 @@ public class TestFunctions
         var result = await ExpressionEvaluator.EvaluateExpression(
             state,
             test.Expression,
-            test.Context?.ToContext(componentModel, state)!,
+            context!,
             positionalArguments
         );
 

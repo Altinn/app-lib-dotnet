@@ -27,6 +27,7 @@ public class EqualTests(ITestOutputHelper outputHelper)
     public static TheoryData<object> GetExoticTypes =>
         new()
         {
+            "hello world",
             "123",
             true,
             false,
@@ -46,10 +47,18 @@ public class EqualTests(ITestOutputHelper outputHelper)
         outputHelper.WriteLine($"Object of type {value?.GetType().FullName ?? "null"}:");
         outputHelper.WriteLine($"   value:{value}");
         outputHelper.WriteLine($"   json: {JsonSerializer.Serialize(value)}");
+
         // Verify that the EqualsToString method returns the same value as the JsonSerializer.
-        var json = value is string ? value : JsonSerializer.Serialize(value);
-        var toStringForEquals = ExpressionEvaluator.ToStringForEquals(value);
-        Assert.Equal(json, toStringForEquals);
+        var json = JsonSerializer.Serialize(value);
+        try
+        {
+            var jsonResult = JsonSerializer.Deserialize<string>(json);
+            Assert.Equal(jsonResult, ExpressionEvaluator.ToStringForEquals(value));
+        }
+        catch (JsonException)
+        {
+            Assert.Equal(json, ExpressionEvaluator.ToStringForEquals(value));
+        }
     }
 
     public static TheoryData<object> GetNonsenseValues =>

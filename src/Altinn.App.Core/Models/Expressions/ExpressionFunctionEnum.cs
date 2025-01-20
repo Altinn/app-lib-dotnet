@@ -24,9 +24,19 @@ public enum ExpressionFunction
     component,
 
     /// <summary>
+    ///  Lookup and count the number of data elements for a given data type
+    /// </summary>
+    countDataElements,
+
+    /// <summary>
     /// Lookup a few properties from the instance
     /// </summary>
     instanceContext,
+
+    /// <summary>
+    /// Parse a date string to a date object, and format it to a string (possibly given a format)
+    /// </summary>
+    formatDate,
 
     /// <summary>
     /// Conditional
@@ -52,6 +62,21 @@ public enum ExpressionFunction
     /// Turn characters to lower case
     /// </summary>
     lowerCase,
+
+    /// <summary>
+    ///  Capitalize the first letter of a string
+    /// </summary>
+    upperCaseFirst,
+
+    /// <summary>
+    ///  Lowercase the first letter of a string
+    /// </summary>
+    lowerCaseFirst,
+
+    /// <summary>
+    /// Compare two values using an operator (and possibly 'not' before it), return a boolean
+    /// </summary>
+    compare,
 
     /// <summary>
     /// Check if a string contains another string
@@ -112,6 +137,21 @@ public enum ExpressionFunction
     ///  Return the length of a string
     /// </summary>
     stringLength,
+
+    /// <summary>
+    ///  Return the position of a substring in a string
+    /// </summary>
+    stringIndexOf,
+
+    /// <summary>
+    ///  Replace a substring in a string with another string
+    /// </summary>
+    stringReplace,
+
+    /// <summary>
+    ///  Return a substring of a string
+    /// </summary>
+    stringSlice,
 
     /// <summary>
     /// Rounds a number to an integer, or optionally a decimal with a configurable amount of decimal points
