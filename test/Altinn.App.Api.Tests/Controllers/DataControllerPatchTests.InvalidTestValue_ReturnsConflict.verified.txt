@@ -65,6 +65,10 @@
       Kind: Server
     },
     {
+      ActivityName: ProcessClient.GetProcessDefinition,
+      IdFormat: W3C
+    },
+    {
       ActivityName: SerializationService.DeserializeXml,
       Tags: [
         {

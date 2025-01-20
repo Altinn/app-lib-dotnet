@@ -1,0 +1,194 @@
+using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Signing.Interfaces;
+using Altinn.App.Core.Features.Signing.Models;
+using Altinn.App.Core.Features.Validation.Default;
+using Altinn.App.Core.Helpers.Serialization;
+using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.AppModel;
+using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.Instances;
+using Altinn.App.Core.Internal.Process;
+using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
+using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.Validation;
+using Altinn.Platform.Register.Models;
+using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.Logging;
+using Moq;
+
+namespace Altinn.App.Core.Tests.Features.Validators.Default;
+
+public class SigningTaskValidatorTest
+{
+    private readonly Mock<IProcessReader> _processReaderMock = new();
+    private readonly Mock<ISigningService> _signingServiceMock = new();
+    private readonly Mock<IDataClient> _dataClientMock = new();
+    private readonly Mock<IInstanceClient> _instanceClientMock = new();
+    private readonly Mock<IAppMetadata> _appMetadataMock = new();
+    private readonly Mock<ModelSerializationService> _modelSerializationMock = new(new Mock<IAppModel>().Object, null);
+    private readonly Mock<ILogger<SigningTaskValidator>> _loggerMock = new();
+    private readonly SigningTaskValidator _validator;
+
+    private readonly ILogger _logger;
+
+    public SigningTaskValidatorTest()
+    {
+        _validator = new SigningTaskValidator(
+            _loggerMock.Object,
+            _processReaderMock.Object,
+            _signingServiceMock.Object,
+            _dataClientMock.Object,
+            _instanceClientMock.Object,
+            _appMetadataMock.Object,
+            _modelSerializationMock.Object
+        );
+        using ILoggerFactory factory = LoggerFactory.Create(builder => builder.AddConsole());
+        _logger = factory.CreateLogger("SigningTaskValidatorTest");
+    }
+
+    [Fact]
+    public async Task Validate_ShouldReturnEmptyList_WhenAllHaveSigned()
+    {
+        // Arrange
+        var dataAccessorMock = new Mock<IInstanceDataAccessor>();
+        dataAccessorMock.Setup(da => da.Instance).Returns(new Instance());
+        var taskId = "task1";
+        var signingConfiguration = new AltinnSignatureConfiguration();
+        var appMetadata = new ApplicationMetadata("org/app");
+        var signeeContexts = new List<SigneeContext>
+        {
+            new()
+            {
+                SignDocument = new SignDocument(),
+                Party = new Party(),
+                TaskId = taskId,
+                SigneeState = new SigneeState(),
+            },
+        };
+
+        _processReaderMock
+            .Setup(pr => pr.GetAltinnTaskExtension(taskId))
+            .Returns(new AltinnTaskExtension { SignatureConfiguration = signingConfiguration });
+        _appMetadataMock.Setup(am => am.GetApplicationMetadata()).ReturnsAsync(appMetadata);
+        _signingServiceMock
+            .Setup(ss => ss.GetSigneeContexts(It.IsAny<InstanceDataUnitOfWork>(), signingConfiguration))
+            .ReturnsAsync(signeeContexts);
+
+        // Act
+        var result = await _validator.Validate(dataAccessorMock.Object, taskId, null);
+        _logger.LogInformation("Validation result: {result}", result);
+
+        // Assert
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task Validate_ShouldReturnValidationIssue_WhenNotAllHaveSigned()
+    {
+        // Arrange
+        var dataAccessorMock = new Mock<IInstanceDataAccessor>();
+        dataAccessorMock.Setup(da => da.Instance).Returns(new Instance());
+        var taskId = "task1";
+        var signingConfiguration = new AltinnSignatureConfiguration();
+        var appMetadata = new ApplicationMetadata("org/app");
+        List<SigneeContext> signeeContexts =
+        [
+            new()
+            {
+                SignDocument = null,
+                Party = new Party(),
+                TaskId = taskId,
+                SigneeState = new SigneeState(),
+            },
+        ];
+
+        _processReaderMock
+            .Setup(pr => pr.GetAltinnTaskExtension(taskId))
+            .Returns(new AltinnTaskExtension { SignatureConfiguration = signingConfiguration });
+        _appMetadataMock.Setup(am => am.GetApplicationMetadata()).ReturnsAsync(appMetadata);
+        _signingServiceMock
+            .Setup(ss => ss.GetSigneeContexts(It.IsAny<InstanceDataUnitOfWork>(), signingConfiguration))
+            .ReturnsAsync(signeeContexts);
+
+        // Act
+        var result = await _validator.Validate(dataAccessorMock.Object, taskId, null);
+
+        // Assert
+        Assert.Single(result);
+        Assert.Equal(ValidationIssueCodes.DataElementCodes.MissingSignatures, result[0].Code);
+    }
+
+    [Fact]
+    public async Task Validate_ShouldReturnEmptyListAndLogError_WhenAppMetadataFetchFails()
+    {
+        // Arrange
+        var dataAccessorMock = new Mock<IInstanceDataAccessor>();
+        dataAccessorMock.Setup(da => da.Instance).Returns(new Instance());
+        var taskId = "task1";
+        var signingConfiguration = new AltinnSignatureConfiguration();
+        var exception = new Exception("Error fetching metadata");
+
+        _processReaderMock
+            .Setup(pr => pr.GetAltinnTaskExtension(taskId))
+            .Returns(new AltinnTaskExtension { SignatureConfiguration = signingConfiguration });
+        _appMetadataMock.Setup(am => am.GetApplicationMetadata()).ThrowsAsync(exception);
+
+        // Act
+        var result = await _validator.Validate(dataAccessorMock.Object, taskId, null);
+
+        // Assert
+        Assert.Empty(result);
+        _loggerMock.Verify(
+            logger =>
+                logger.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>(
+                        (value, _) => value.ToString()!.Contains("Error while fetching application metadata")
+                    ),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
+                ),
+            Times.Once
+        );
+    }
+
+    [Fact]
+    public async Task Validate_ShouldLogError_WhenSigneeContextsFetchFails()
+    {
+        // Arrange
+        var dataAccessorMock = new Mock<IInstanceDataAccessor>();
+        dataAccessorMock.Setup(da => da.Instance).Returns(new Instance());
+        var taskId = "task1";
+        var signingConfiguration = new AltinnSignatureConfiguration();
+        var appMetadata = new ApplicationMetadata("org/app");
+        var exception = new Exception("Error fetching signee contexts");
+
+        _processReaderMock
+            .Setup(pr => pr.GetAltinnTaskExtension(taskId))
+            .Returns(new AltinnTaskExtension { SignatureConfiguration = signingConfiguration });
+        _appMetadataMock.Setup(am => am.GetApplicationMetadata()).ReturnsAsync(appMetadata);
+        _signingServiceMock
+            .Setup(ss => ss.GetSigneeContexts(It.IsAny<InstanceDataUnitOfWork>(), signingConfiguration))
+            .ThrowsAsync(exception);
+
+        // Act
+        var result = await _validator.Validate(dataAccessorMock.Object, taskId, null);
+
+        // Assert
+        Assert.Empty(result);
+        _loggerMock.Verify(
+            logger =>
+                logger.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>(
+                        (value, _) => value.ToString()!.Contains("Error while fetching signee contexts")
+                    ),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
+                ),
+            Times.Once
+        );
+    }
+}
