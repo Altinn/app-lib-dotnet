@@ -124,7 +124,7 @@ internal class SigningTaskValidator : IValidator
         ];
     }
 
-    public static async Task<Tuple<Exception?, T?>> CatchError<T>(Task<T> task)
+    private static async Task<Tuple<Exception?, T?>> CatchError<T>(Task<T> task)
     {
         try
         {
