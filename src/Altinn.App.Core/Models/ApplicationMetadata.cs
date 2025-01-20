@@ -59,7 +59,8 @@ public class ApplicationMetadata : Application
     public Logo? Logo { get; set; }
 
     /// <summary>
-    /// Frontend sometimes need to have knowledge of the nuget package version for backwards compatibility
+    /// Frontend sometimes need to have knowledge of the nuget package version for backwards compatibility.
+    /// The string is of the format `major.minor.patch.build`.
     /// </summary>
     [JsonProperty(PropertyName = "altinnNugetVersion")]
     public string AltinnNugetVersion { get; set; } = LibVersion ?? throw new Exception("Couldn't get library version");

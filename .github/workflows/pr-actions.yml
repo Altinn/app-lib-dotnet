@@ -28,7 +28,11 @@ jobs:
           dotnet tool restore
           sha=$(gh pr view ${{ github.event.issue.number }} --repo ${{ github.repository }} --json headRefOid | jq -r '.headRefOid' | cut -c1-8)
           branch=$(gh pr view ${{ github.event.issue.number }} --repo ${{ github.repository }} --json headRefName | jq -r '.headRefName' | sed 's/.*\///')
-          version=$(dotnet minver --tag-prefix v --ignore-height --default-pre-release-identifiers preview.0).$branch.$sha
+          minverVersion=$(dotnet minver --tag-prefix v --ignore-height --default-pre-release-identifiers preview.0)
+          if [[ $minverVersion != *"-preview."* && $minverVersion != *"-rc."* ]]; then
+            minverVersion="$minverVersion-preview.0"
+          fi
+          version=$(minverVersion).$branch.$sha
           echo "MINVERVERSIONOVERRIDE=$version" >> $GITHUB_ENV
           echo $version
 
