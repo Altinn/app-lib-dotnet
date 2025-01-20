@@ -64,6 +64,7 @@ public class ApplicationMetadata : Application
     [JsonProperty(PropertyName = "altinnNugetVersion")]
     public string AltinnNugetVersion { get; set; } = LibVersion ?? throw new Exception("Couldn't get library version");
 
+    internal static readonly string? FullVersion;
     internal static readonly string? LibVersion;
 
     static ApplicationMetadata()
@@ -78,17 +79,103 @@ public class ApplicationMetadata : Application
         // So for AltinnNugetVersion it is important that we prefer getting the version based on the InformationalVersion attribute (through FileVersionInfo).
         var productVersion = versionInfo.ProductVersion;
         if (!string.IsNullOrWhiteSpace(productVersion))
-        {
-            var plusIndex = productVersion.LastIndexOf('+');
-            if (plusIndex > 0)
-                productVersion = new string(productVersion.AsSpan(0, plusIndex));
-
-            LibVersion = productVersion;
-        }
+            FullVersion = productVersion;
         else
+            FullVersion = assembly.GetName().Version?.ToString();
+
+        // AltinnNugetVersion is actually expected to be the format of `major.minor.patch.build`
+        if (FullVersion is not null)
+            LibVersion = GetStandardizedVersion(FullVersion);
+    }
+
+    internal static string GetStandardizedVersion(string fullVersion)
+    {
+        // Standard is `major.minor.patch.build`. If there is no build, we append '.0' to the version
+
+        ArgumentException.ThrowIfNullOrWhiteSpace(fullVersion);
+
+        var baseVersion = fullVersion.AsSpan();
+
+        if (baseVersion[0] is 'v' or 'V')
+            baseVersion = baseVersion.Slice(1);
+
+        var plusIndex = baseVersion.LastIndexOf('+'); // InformationalVersion will have a + section with some random data
+        if (plusIndex > 0)
+            baseVersion = baseVersion.Slice(0, plusIndex);
+
+        var dashIndex = baseVersion.IndexOf('-');
+        ReadOnlySpan<char> build = "0";
+        if (dashIndex > 0)
         {
-            LibVersion = assembly.GetName().Version?.ToString();
+            // The version has a prerelase section
+            var preRelase = baseVersion.Slice(dashIndex + 1);
+            var dotIndex = preRelase.IndexOf('.');
+            if (dotIndex > 0)
+            {
+                var buildStr = preRelase.Slice(dotIndex + 1);
+
+                for (int i = 0; i < buildStr.Length; i++)
+                {
+                    if (i == 0)
+                    {
+                        if (!char.IsDigit(buildStr[i]))
+                            throw new ArgumentException($"Unexpected build number format in version: {fullVersion}");
+                        if (buildStr.Length == 1)
+                        {
+                            build = buildStr;
+                            break;
+                        }
+                    }
+                    else if (i == buildStr.Length - 1)
+                    {
+                        build = buildStr;
+                        break;
+                    }
+                    else if (buildStr[i] == '.')
+                    {
+                        build = buildStr.Slice(0, i);
+                        break;
+                    }
+                    else if (!char.IsDigit(buildStr[i]))
+                    {
+                        throw new ArgumentException($"Unexpected build number format in version: {fullVersion}");
+                    }
+                }
+            }
+
+            baseVersion = baseVersion.Slice(0, dashIndex);
         }
+
+        var dotCount = baseVersion.Count('.');
+        if (dotCount < 2)
+            throw new ArgumentException($"Unexpected version format: {fullVersion}");
+
+        for (int i = 0; i < baseVersion.Length; i++)
+        {
+            if (i == 0)
+            {
+                if (!char.IsDigit(baseVersion[i]))
+                    throw new ArgumentException($"Unexpected version format: {fullVersion}");
+            }
+            else if (i == baseVersion.Length - 1)
+            {
+                if (!char.IsDigit(baseVersion[i]))
+                    throw new ArgumentException($"Unexpected version format: {fullVersion}");
+            }
+            else if (baseVersion[i - 1] == '.' && !char.IsDigit(baseVersion[i]))
+            {
+                throw new ArgumentException($"Unexpected version format: {fullVersion}");
+            }
+        }
+
+        var version = dotCount switch
+        {
+            2 => $"{baseVersion}.{build}",
+            3 => baseVersion.ToString(),
+            _ => throw new ArgumentException($"Unexpected version format: {fullVersion}"),
+        };
+
+        return version;
     }
 
     /// <summary>
