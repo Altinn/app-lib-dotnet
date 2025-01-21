@@ -1,4 +1,5 @@
 using System.Xml.Serialization;
+using Altinn.App.Core.Features.Validation.Default;
 
 namespace Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 
@@ -54,4 +55,10 @@ public class AltinnSignatureConfiguration
     /// </summary>
     [XmlElement(ElementName = "correspondenceResource", Namespace = "http://altinn.no/process")]
     public List<AltinnEnvironmentConfig> CorrespondenceResources { get; set; } = [];
+
+    /// <summary>
+    /// Sets if the default signing validator, <see cref="SigningTaskValidator"/>, should run. The default validation checks if all parties have signed the task.
+    /// </summary>
+    [XmlElement("runDefaultValidator", Namespace = "http://altinn.no/process")]
+    public bool RunDefaultValidator { get; set; } = true;
 }

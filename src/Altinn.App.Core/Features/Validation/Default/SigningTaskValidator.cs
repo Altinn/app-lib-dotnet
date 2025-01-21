@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 namespace Altinn.App.Core.Features.Validation.Default;
 
 /// <summary>
-/// Validates that all required parties have signed the current task
+/// Default validator for signing tasks. Validates that all parties have signed the current task.
 /// </summary>
 internal class SigningTaskValidator : IValidator
 {
@@ -47,26 +47,43 @@ internal class SigningTaskValidator : IValidator
     }
 
     /// <summary>
-    /// We implement <see cref="ShouldRunForTask"/> instead
+    /// We implement <see cref="ShouldRunForTask"/> instead.
     /// </summary>
     public string TaskId => "*";
 
     /// <summary>
-    /// Only run for tasks that are of type "signing"
+    /// Only runs for tasks that are of type "signing".
     /// </summary>
     public bool ShouldRunForTask(string taskId)
     {
-        return _processReader.GetAltinnTaskExtension(taskId)?.TaskType == "signing";
+        AltinnTaskExtension? taskConfig;
+        try
+        {
+            taskConfig = _processReader.GetAltinnTaskExtension(taskId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error while fetching signing configuration for task {taskId}");
+            return false;
+        }
+
+        AltinnSignatureConfiguration? signingConfiguration = taskConfig?.SignatureConfiguration;
+
+        return signingConfiguration?.RunDefaultValidator == true && taskConfig?.TaskType == "signing";
     }
 
     public bool NoIncrementalValidation => true;
 
-    // Should never be called because NoIncrementalValidation is true
+    /// <summary>
+    /// Should never be called because NoIncrementalValidation is true.
+    /// </summary>
     public Task<bool> HasRelevantChanges(IInstanceDataAccessor dataAccessor, string taskId, DataElementChanges changes)
     {
         throw new NotImplementedException();
     }
 
+    /// <inheritdoc />
+    /// <remarks>Validates that all required parties have signed the current task.</remarks>
     public async Task<List<ValidationIssue>> Validate(
         IInstanceDataAccessor dataAccessor,
         string taskId,
@@ -124,6 +141,9 @@ internal class SigningTaskValidator : IValidator
         ];
     }
 
+    /// <summary>
+    /// Catch exceptions from a task and return them as a tuple with the result.
+    /// </summary>
     private static async Task<Tuple<Exception?, T?>> CatchError<T>(Task<T> task)
     {
         try
