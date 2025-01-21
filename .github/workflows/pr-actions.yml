@@ -22,6 +22,7 @@ jobs:
           fetch-depth: 0
 
       - name: Build PR release version
+        id: build-version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -32,7 +33,21 @@ jobs:
           version="$version-pr.${{ github.run_number }}.$branch.$sha"
           version=$(echo $version | sed 's/^v//')
           echo "MINVERVERSIONOVERRIDE=$version" >> $GITHUB_ENV
+          echo "PR_RELEASE_VERSION=$version" >> $GITHUB_OUTPUT
           echo $version
+
+      - name: Create PR comment
+        uses: peter-evans/create-or-update-comment@v4
+        id: pr-comment
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            ## PR release:
+
+            * [Altinn.App.Api ${{ steps.build-version.outputs.PR_RELEASE_VERSION }}](https://www.nuget.org/packages/Altinn.App.Api.Experimental/${{ steps.build-version.outputs.PR_RELEASE_VERSION }})
+            * [Altinn.App.Core ${{ steps.build-version.outputs.PR_RELEASE_VERSION }}](https://www.nuget.org/packages/Altinn.App.Core.Experimental/${{ steps.build-version.outputs.PR_RELEASE_VERSION }})
+
+            > ⚙️ Building...
 
       - name: Build
         run: |
@@ -50,18 +65,23 @@ jobs:
         run: |
           dotnet nuget push src/**/bin/Release/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate
 
-      - uses: actions/github-script@v7
-        name: Comment on PR
+      - name: Update PR comment - failure
+        uses: peter-evans/create-or-update-comment@v4
+        if: failure()
         with:
-          script: |
-            const version = process.env.MINVERVERSIONOVERRIDE;
+          issue-number: ${{ github.event.issue.number }}
+          comment-id: ${{ steps.pr-comment.outputs.comment-id }}
+          edit-mode: append
+          body: |
+            > ❌ Failed: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `## Published PR packages:\n` +
-                `\n` +
-                `* [Altinn.App.Api ${version}](https://www.nuget.org/packages/Altinn.App.Api.Experimental/${version})\n` +
-                `* [Altinn.App.Core ${version}](https://www.nuget.org/packages/Altinn.App.Core.Experimental/${version})\n`
-            })
+      - name: Update PR comment - success
+        uses: peter-evans/create-or-update-comment@v4
+        if: success()
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          comment-id: ${{ steps.pr-comment.outputs.comment-id }}
+          edit-mode: append
+          body: |
+            > ✅ Done!
+          reactions: rocket
