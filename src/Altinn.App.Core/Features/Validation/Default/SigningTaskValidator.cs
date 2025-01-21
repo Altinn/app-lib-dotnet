@@ -14,7 +14,7 @@ namespace Altinn.App.Core.Features.Validation.Default;
 /// <summary>
 /// Default validator for signing tasks. Validates that all parties have signed the current task.
 /// </summary>
-internal class SigningTaskValidator : IValidator
+internal sealed class SigningTaskValidator : IValidator
 {
     private readonly IProcessReader _processReader;
     private readonly ISigningService _signingService;
@@ -69,7 +69,7 @@ internal class SigningTaskValidator : IValidator
 
         AltinnSignatureConfiguration? signingConfiguration = taskConfig?.SignatureConfiguration;
 
-        return signingConfiguration?.RunDefaultValidator == true && taskConfig?.TaskType == "signing";
+        return signingConfiguration?.RunDefaultValidator == true && taskConfig?.TaskType is "signing";
     }
 
     public bool NoIncrementalValidation => true;
