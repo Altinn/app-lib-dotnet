@@ -418,6 +418,7 @@ public class ProcessEngine : IProcessEngine
                     SystemUserId = auth.SystemUserId[0],
                     SystemUserOwnerOrgNo = auth.SystemUserOrgNr.Get(Models.OrganisationNumberFormat.Local),
                     SystemUserName = null, // TODO: will get this name later when a lookup API is implemented or the name is passed in token
+                    // TODO: what about auth level?
                 };
                 break;
             }

@@ -68,7 +68,7 @@ public class PdfServiceTests
         _userTokenProvider = new Mock<IUserTokenProvider>();
         _userTokenProvider.Setup(s => s.GetUserToken()).Returns("usertoken");
 
-        _authenticationContext.Setup(s => s.Current).Returns(TestAuthentication.GetUserAuthenticationInfo());
+        _authenticationContext.Setup(s => s.Current).Returns(TestAuthentication.GetUserAuthentication());
         _serviceProvider
             .Setup(s => s.GetService(typeof(IAuthenticationContext)))
             .Returns(_authenticationContext.Object);

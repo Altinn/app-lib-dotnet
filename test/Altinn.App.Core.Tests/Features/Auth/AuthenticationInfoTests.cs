@@ -11,7 +11,7 @@ public class AuthenticationInfoTests
     [Fact]
     public async Task Test_User_Get_Language_From_Profile()
     {
-        var user = TestAuthentication.GetUserAuthenticationInfo(
+        var user = TestAuthentication.GetUserAuthentication(
             profileSettingPreference: new ProfileSettingPreference { Language = LanguageConst.En }
         );
 
@@ -23,7 +23,7 @@ public class AuthenticationInfoTests
     [Fact]
     public async Task Test_User_Get_Default_Language()
     {
-        var user = TestAuthentication.GetUserAuthenticationInfo();
+        var user = TestAuthentication.GetUserAuthentication();
 
         var lang = await user.GetLanguage();
 
@@ -33,7 +33,7 @@ public class AuthenticationInfoTests
     [Fact]
     public async Task Test_Unauth_Get_Default_Language()
     {
-        var user = new Authenticated.Unauthenticated("");
+        var user = new Authenticated.None("");
 
         var lang = await user.GetLanguage();
 

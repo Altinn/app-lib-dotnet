@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Text.Json;
 using Altinn.App.Api.Tests.Mocks;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Maskinporten.Constants;
 using Altinn.App.Core.Features.Maskinporten.Models;
 using Altinn.App.Core.Models;
@@ -23,7 +24,7 @@ public enum AuthenticationTypes
     ServiceOwner,
 }
 
-public sealed record TestJwtToken(AuthenticationTypes Type, int PartyId, string Token);
+public sealed record TestJwtToken(AuthenticationTypes Type, int PartyId, string Token, Authenticated Auth);
 
 public static class TestAuthentication
 {
@@ -46,11 +47,32 @@ public static class TestAuthentication
     {
         public AllTokens()
         {
-            Add(new(AuthenticationTypes.User, DefaultUserPartyId, GetUserToken()));
-            Add(new(AuthenticationTypes.SelfIdentifiedUser, DefaultUserPartyId, GetSelfIdentifiedUserToken()));
-            Add(new(AuthenticationTypes.Org, DefaultOrgPartyId, GetOrgToken()));
-            Add(new(AuthenticationTypes.SystemUser, DefaultOrgPartyId, GetSystemUserToken()));
-            Add(new(AuthenticationTypes.ServiceOwner, DefaultOrgPartyId, GetServiceOwnerToken()));
+            Add(new(AuthenticationTypes.User, DefaultUserPartyId, GetUserToken(), GetUserAuthentication()));
+            Add(
+                new(
+                    AuthenticationTypes.SelfIdentifiedUser,
+                    DefaultUserPartyId,
+                    GetSelfIdentifiedUserToken(),
+                    GetSelfIdentifiedUserAuthentication()
+                )
+            );
+            // Add(new(AuthenticationTypes.Org, DefaultOrgPartyId, GetOrgAuthentication()));
+            Add(
+                new(
+                    AuthenticationTypes.ServiceOwner,
+                    DefaultOrgPartyId,
+                    GetServiceOwnerToken(),
+                    GetServiceOwnerAuthentication()
+                )
+            );
+            Add(
+                new(
+                    AuthenticationTypes.SystemUser,
+                    DefaultOrgPartyId,
+                    GetSystemUserToken(),
+                    GetSystemUserAuthentication()
+                )
+            );
         }
     }
 
@@ -60,9 +82,9 @@ public static class TestAuthentication
         {
             Add(AuthenticationTypes.User);
             Add(AuthenticationTypes.SelfIdentifiedUser);
-            Add(AuthenticationTypes.Org);
-            Add(AuthenticationTypes.SystemUser);
+            // Add(AuthenticationTypes.Org);
             Add(AuthenticationTypes.ServiceOwner);
+            Add(AuthenticationTypes.SystemUser);
         }
     }
 
@@ -107,7 +129,7 @@ public static class TestAuthentication
         return principal;
     }
 
-    public static User GetUserAuthenticationInfo(
+    public static User GetUserAuthentication(
         int userId = DefaultUserId,
         int userPartyId = DefaultUserPartyId,
         int authenticationLevel = DefaultUserAuthenticationLevel,
@@ -128,6 +150,7 @@ public static class TestAuthentication
             userId,
             userPartyId,
             authenticationLevel,
+            "IDporten",
             userPartyId,
             "",
             getUserProfile: uid =>
@@ -144,9 +167,9 @@ public static class TestAuthentication
                     }
                 );
             },
-            lookupParty: uid =>
+            lookupParty: partyId =>
             {
-                Assert.Equal(userId, uid);
+                Assert.Equal(userPartyId, partyId);
                 return Task.FromResult<Party?>(party);
             },
             getPartyList: uid =>
@@ -166,21 +189,7 @@ public static class TestAuthentication
                 Assert.Equal(userPartyId, pid);
                 return Task.FromResult<IEnumerable<Role>>([]);
             },
-            getApplicationMetadata: () =>
-            {
-                return Task.FromResult(
-                    new ApplicationMetadata("ttd/app")
-                    {
-                        PartyTypesAllowed = new PartyTypesAllowed()
-                        {
-                            BankruptcyEstate = true,
-                            Organisation = true,
-                            Person = true,
-                            SubUnit = true,
-                        },
-                    }
-                );
-            }
+            getApplicationMetadata: _getApplicationMetadata
         );
     }
 
@@ -219,6 +228,46 @@ public static class TestAuthentication
         return principal;
     }
 
+    public static SelfIdentifiedUser GetSelfIdentifiedUserAuthentication(
+        string username = DefaultUsername,
+        int userId = DefaultUserId,
+        int partyId = DefaultUserPartyId,
+        string? email = null,
+        ProfileSettingPreference? profileSettingPreference = null
+    )
+    {
+        var party = new Party()
+        {
+            PartyId = partyId,
+            PartyTypeName = PartyType.SelfIdentified,
+            OrgNumber = null,
+            Name = "Test Testesen",
+        };
+        return new SelfIdentifiedUser(
+            username,
+            userId,
+            partyId,
+            "IDporten",
+            "",
+            getUserProfile: uid =>
+            {
+                Assert.Equal(userId, uid);
+                return Task.FromResult<UserProfile?>(
+                    new UserProfile()
+                    {
+                        UserId = userId,
+                        UserName = username,
+                        PartyId = partyId,
+                        Party = party,
+                        Email = email ?? "test@testesen.no",
+                        ProfileSettingPreference = profileSettingPreference,
+                    }
+                );
+            },
+            getApplicationMetadata: _getApplicationMetadata
+        );
+    }
+
     public static ClaimsPrincipal GetOrgPrincipal(string orgNumber = DefaultOrgNumber, string scope = DefaultOrgScope)
     {
         List<Claim> claims = [];
@@ -248,6 +297,49 @@ public static class TestAuthentication
         ClaimsPrincipal principal = GetOrgPrincipal(orgNumber, scope);
         return JwtTokenMock.GenerateToken(principal, expiry ?? TimeSpan.FromMinutes(2), timeProvider);
     }
+
+    public static Org GetOrgAuthentication(
+        string orgNumber = DefaultOrgNumber,
+        int partyId = DefaultOrgPartyId,
+        int authenticationLevel = DefaultUserAuthenticationLevel
+    )
+    {
+        var party = new Party()
+        {
+            PartyId = partyId,
+            PartyTypeName = PartyType.Organisation,
+            OrgNumber = orgNumber,
+            Name = "Test AS",
+        };
+        return new Org(
+            orgNumber,
+            authenticationLevel,
+            "maskinporten",
+            "",
+            lookupParty: orgNo =>
+            {
+                Assert.Equal(orgNumber, orgNo);
+                return Task.FromResult(party);
+            },
+            getApplicationMetadata: _getApplicationMetadata
+        );
+    }
+
+    private static readonly Func<Task<ApplicationMetadata>> _getApplicationMetadata = () =>
+    {
+        return Task.FromResult(
+            new ApplicationMetadata("ttd/app")
+            {
+                PartyTypesAllowed = new PartyTypesAllowed()
+                {
+                    BankruptcyEstate = true,
+                    Organisation = true,
+                    Person = true,
+                    SubUnit = true,
+                },
+            }
+        );
+    };
 
     public static ClaimsPrincipal GetServiceOwnerPrincipal(
         string orgNumber = DefaultOrgNumber,
@@ -281,6 +373,34 @@ public static class TestAuthentication
     {
         ClaimsPrincipal principal = GetServiceOwnerPrincipal(orgNumber, scope, org);
         return JwtTokenMock.GenerateToken(principal, expiry ?? TimeSpan.FromMinutes(2), timeProvider);
+    }
+
+    public static ServiceOwner GetServiceOwnerAuthentication(
+        string orgNumber = DefaultOrgNumber,
+        string org = DefaultOrg,
+        int partyId = DefaultOrgPartyId,
+        int authenticationLevel = DefaultUserAuthenticationLevel
+    )
+    {
+        var party = new Party()
+        {
+            PartyId = partyId,
+            PartyTypeName = PartyType.Organisation,
+            OrgNumber = orgNumber,
+            Name = "Test AS",
+        };
+        return new ServiceOwner(
+            org,
+            orgNumber,
+            authenticationLevel,
+            "maskinporten",
+            "",
+            lookupParty: orgNo =>
+            {
+                Assert.Equal(orgNumber, orgNo);
+                return Task.FromResult(party);
+            }
+        );
     }
 
     public static ClaimsPrincipal GetSystemUserPrincipal(
@@ -325,6 +445,34 @@ public static class TestAuthentication
     {
         ClaimsPrincipal principal = GetSystemUserPrincipal(systemId, systemUserId, systemUserOrgNumber, scope);
         return JwtTokenMock.GenerateToken(principal, expiry ?? TimeSpan.FromMinutes(2), timeProvider);
+    }
+
+    public static SystemUser GetSystemUserAuthentication(
+        string systemId = DefaultSystemId,
+        string systemUserId = DefaultSystemUserId,
+        string systemUserOrgNumber = DefaultOrgNumber,
+        int partyId = DefaultOrgPartyId
+    )
+    {
+        var party = new Party()
+        {
+            PartyId = partyId,
+            PartyTypeName = PartyType.Organisation,
+            OrgNumber = systemUserOrgNumber,
+            Name = "Test AS",
+        };
+        return new SystemUser(
+            [Guid.Parse(systemUserId)],
+            OrganisationNumber.Parse(systemUserOrgNumber),
+            Guid.Parse(systemId),
+            "",
+            lookupParty: orgNo =>
+            {
+                Assert.Equal(systemUserOrgNumber, orgNo);
+                return Task.FromResult(party);
+            },
+            getApplicationMetadata: _getApplicationMetadata
+        );
     }
 
     internal static MaskinportenTokenResponse GetMaskinportenToken(

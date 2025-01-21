@@ -41,7 +41,7 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                 new InstanceIdentifier("500001/abba2e90-f86f-4881-b0e8-38334408bcb4"),
                 "Task_2",
                 "sign",
-                TestAuthentication.GetUserAuthenticationInfo()
+                TestAuthentication.GetUserAuthentication()
             )
         );
         _processReaderMock.Verify(p => p.GetFlowElement("Task_2"));
@@ -59,7 +59,7 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                 new InstanceIdentifier("500001/abba2e90-f86f-4881-b0e8-38334408bcb4"),
                 "Task_2",
                 "sign",
-                TestAuthentication.GetUserAuthenticationInfo()
+                TestAuthentication.GetUserAuthentication()
             )
         );
         _processReaderMock.Verify(p => p.GetFlowElement("Task_2"));
@@ -91,7 +91,7 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                 new InstanceIdentifier("500001/abba2e90-f86f-4881-b0e8-38334408bcb4"),
                 "Task_2",
                 "sign",
-                TestAuthentication.GetUserAuthenticationInfo()
+                TestAuthentication.GetUserAuthentication()
             )
         );
         _processReaderMock.Verify(p => p.GetFlowElement("Task_2"));
@@ -120,7 +120,7 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                 new InstanceIdentifier("500001/abba2e90-f86f-4881-b0e8-38334408bcb4"),
                 "Task_2",
                 "sign",
-                TestAuthentication.GetUserAuthenticationInfo(userId: 1000, authenticationLevel: 2)
+                TestAuthentication.GetUserAuthentication(userId: 1000, authenticationLevel: 2)
             )
         );
         _processReaderMock.Verify(p => p.GetFlowElement("Task_2"));
@@ -158,7 +158,7 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                 new InstanceIdentifier("500001/abba2e90-f86f-4881-b0e8-38334408bcb4"),
                 "Task_2",
                 "sign",
-                TestAuthentication.GetUserAuthenticationInfo(userId: 1000, authenticationLevel: 2)
+                TestAuthentication.GetUserAuthentication(userId: 1000, authenticationLevel: 2)
             )
         );
         _processReaderMock.Verify(p => p.GetFlowElement("Task_2"));
@@ -209,7 +209,7 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                 new InstanceIdentifier("500001/abba2e90-f86f-4881-b0e8-38334408bcb4"),
                 "Task_2",
                 "sign",
-                TestAuthentication.GetUserAuthenticationInfo(userId: 1337, authenticationLevel: 2)
+                TestAuthentication.GetUserAuthentication(userId: 1337, authenticationLevel: 2)
             )
         );
         _processReaderMock.Verify(p => p.GetFlowElement("Task_2"));
@@ -260,7 +260,7 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                 new InstanceIdentifier("500001/abba2e90-f86f-4881-b0e8-38334408bcb4"),
                 null,
                 "sign",
-                TestAuthentication.GetUserAuthenticationInfo(userId: 1337, authenticationLevel: 2)
+                TestAuthentication.GetUserAuthentication(userId: 1337, authenticationLevel: 2)
             )
         );
         result.Should().BeTrue();
@@ -300,7 +300,7 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                 new InstanceIdentifier("500001/abba2e90-f86f-4881-b0e8-38334408bcb4"),
                 "Task_2",
                 "sign",
-                TestAuthentication.GetUserAuthenticationInfo(userId: 1337, authenticationLevel: 2)
+                TestAuthentication.GetUserAuthentication(userId: 1337, authenticationLevel: 2)
             )
         );
         _processReaderMock.Verify(p => p.GetFlowElement("Task_2"));
@@ -354,7 +354,7 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                 new InstanceIdentifier("500001/abba2e90-f86f-4881-b0e8-38334408bcb4"),
                 "Task_2",
                 "sign",
-                TestAuthentication.GetUserAuthenticationInfo(userId: 1337, authenticationLevel: 2)
+                TestAuthentication.GetUserAuthentication(userId: 1337, authenticationLevel: 2)
             )
         );
         _processReaderMock.Verify(p => p.GetFlowElement("Task_2"));
@@ -408,7 +408,7 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                 new InstanceIdentifier("500001/abba2e90-f86f-4881-b0e8-38334408bcb4"),
                 "Task_2",
                 "sign",
-                TestAuthentication.GetUserAuthenticationInfo(userId: 1337, authenticationLevel: 2)
+                TestAuthentication.GetUserAuthentication(userId: 1337, authenticationLevel: 2)
             )
         );
         _processReaderMock.Verify(p => p.GetFlowElement("Task_2"));
@@ -462,7 +462,7 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                 new InstanceIdentifier("500001/abba2e90-f86f-4881-b0e8-38334408bcb4"),
                 "Task_2",
                 "sign",
-                TestAuthentication.GetUserAuthenticationInfo(userId: 1337, authenticationLevel: 2)
+                TestAuthentication.GetUserAuthentication(userId: 1337, authenticationLevel: 2)
             )
         );
         _processReaderMock.Verify(p => p.GetFlowElement("Task_2"));

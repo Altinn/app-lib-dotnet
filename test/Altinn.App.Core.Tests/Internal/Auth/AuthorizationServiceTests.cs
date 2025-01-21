@@ -22,7 +22,7 @@ public class AuthorizationServiceTests
     {
         var mock = new Mock<IAuthenticationContext>();
         mock.SetupGet(a => a.Current)
-            .Returns(TestAuthentication.GetUserAuthenticationInfo(userId: userId, userPartyId: partyId));
+            .Returns(TestAuthentication.GetUserAuthentication(userId: userId, userPartyId: partyId));
         return mock.Object;
     }
 

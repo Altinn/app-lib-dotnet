@@ -66,7 +66,7 @@ public class PdfControllerTests
                 )
             );
 
-        _authenticationContext.Setup(s => s.Current).Returns(TestAuthentication.GetUserAuthenticationInfo());
+        _authenticationContext.Setup(s => s.Current).Returns(TestAuthentication.GetUserAuthentication());
         _serviceProvider
             .Setup(s => s.GetService(typeof(IAuthenticationContext)))
             .Returns(_authenticationContext.Object);
