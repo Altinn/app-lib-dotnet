@@ -6,6 +6,7 @@ using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
+using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
@@ -31,6 +32,7 @@ internal sealed class SigningProcessTask : IProcessTask
     private readonly IInstanceClient _instanceClient;
     private readonly ModelSerializationService _modelSerialization;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IPdfService _pdfService;
     private readonly UserHelper _userHelper;
     private readonly ILogger<SigningProcessTask> _logger;
 
@@ -46,6 +48,7 @@ internal sealed class SigningProcessTask : IProcessTask
         IProfileClient profileClient,
         IAltinnPartyClient altinnPartyClientClient,
         IOptions<GeneralSettings> settings,
+        IPdfService pdfService,
         ILogger<SigningProcessTask> logger
     )
     {
@@ -57,11 +60,15 @@ internal sealed class SigningProcessTask : IProcessTask
         _instanceClient = instanceClient;
         _modelSerialization = modelSerialization;
         _httpContextAccessor = httpContextAccessor;
+        _pdfService = pdfService;
         _userHelper = new UserHelper(profileClient, altinnPartyClientClient, settings);
         _logger = logger;
     }
 
     public string Type => "signing";
+
+    private const string PdfContentType = "application/pdf";
+    private const string SignatureFileName = "signature.pdf";
 
     /// <inheritdoc/>
     public async Task Start(string taskId, Instance instance)
@@ -70,7 +77,7 @@ internal sealed class SigningProcessTask : IProcessTask
 
         AltinnSignatureConfiguration signatureConfiguration = GetAltinnSignatureConfiguration(taskId);
         ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
-        // _logger.LogInformation($"Starting signing task for instance {instance.Id}");
+        _logger.LogInformation($"Starting signing task for instance {instance.Id}");
         _logger.LogInformation($"Signature configuration: {signatureConfiguration.SigneeStatesDataTypeId}");
         _logger.LogInformation($"App metadata: {appMetadata}");
 
@@ -137,7 +144,17 @@ internal sealed class SigningProcessTask : IProcessTask
     /// <inheritdoc/>
     public async Task End(string taskId, Instance instance)
     {
-        await Task.CompletedTask;
+        Stream pdfStream = await _pdfService.GeneratePdf(instance, taskId, false, CancellationToken.None);
+        string signatureDataType = GetAltinnSignatureConfiguration(taskId).SignatureDataType;
+
+        await _dataClient.InsertBinaryData(
+            instance.Id,
+            signatureDataType,
+            PdfContentType,
+            SignatureFileName,
+            pdfStream,
+            taskId
+        );
     }
 
     /// <inheritdoc/>
