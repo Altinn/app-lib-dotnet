@@ -236,6 +236,16 @@ public abstract class Authenticated
             ?? throw new InvalidOperationException($"Could not load party for selected party ID: {SelectedPartyId}");
 
         /// <summary>
+        /// Lookup the user profile for the current user.
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public async Task<UserProfile> LookupProfile() =>
+            _extra?.Profile
+            ?? await _getUserProfile(UserId)
+            ?? throw new InvalidOperationException("Could not get user profile while getting user context");
+
+        /// <summary>
         /// Load the details for the current user.
         /// </summary>
         /// <param name="validateSelectedParty">If true, will verify that the logged in user has access to the selected party</param>

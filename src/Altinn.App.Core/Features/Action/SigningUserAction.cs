@@ -153,9 +153,7 @@ public class SigningUserAction : IUserAction
         {
             case Authenticated.User user:
             {
-                var userProfile =
-                    await _profileClient.GetUserProfile(user.UserId)
-                    ?? throw new Exception("Could not get user profile while getting signee");
+                var userProfile = await user.LookupProfile();
 
                 return new Signee
                 {
@@ -165,13 +163,9 @@ public class SigningUserAction : IUserAction
                 };
             }
             case Authenticated.SelfIdentifiedUser selfIdentifiedUser:
-            {
                 return new Signee { UserId = selfIdentifiedUser.UserId.ToString(CultureInfo.InvariantCulture) };
-            }
             case Authenticated.SystemUser systemUser:
-            {
                 return new Signee { SystemUserId = systemUser.SystemUserId[0] };
-            }
             default:
                 throw new Exception("Could not get signee");
         }
