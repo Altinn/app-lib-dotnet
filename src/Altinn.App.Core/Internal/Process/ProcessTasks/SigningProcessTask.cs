@@ -70,7 +70,7 @@ internal sealed class SigningProcessTask : IProcessTask
 
         AltinnSignatureConfiguration signatureConfiguration = GetAltinnSignatureConfiguration(taskId);
         ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
-        _logger.LogInformation($"Starting signing task for instance {instance.Id}");
+        // _logger.LogInformation($"Starting signing task for instance {instance.Id}");
         _logger.LogInformation($"Signature configuration: {signatureConfiguration.SigneeStatesDataTypeId}");
         _logger.LogInformation($"App metadata: {appMetadata}");
 
