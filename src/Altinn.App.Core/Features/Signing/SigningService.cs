@@ -148,6 +148,7 @@ internal sealed class SigningService(
         return signeeContexts;
     }
 
+    //TODO: There is already logic for the sign action in the SigningUserAction class. Maybe move most of it here?
     public async Task Sign(UserActionContext userActionContext, ProcessTask currentTask)
     {
         using Activity? activity = telemetry?.StartSignActivity();
@@ -215,6 +216,30 @@ internal sealed class SigningService(
             // TODO: What do we do here? This failure is pretty silent... but throwing would cause havoc
             _logger.LogError(e, "Correspondence send failed: {Exception}", e.Message);
         }
+    }
+
+    public void DeleteSigneeState(
+        IInstanceDataMutator instanceMutator,
+        AltinnSignatureConfiguration signatureConfiguration
+    )
+    {
+        using Activity? activity = telemetry?.StartDeleteSigneeStateActivity();
+
+        string signeeStatesDataTypeId =
+            signatureConfiguration.SigneeStatesDataTypeId
+            ?? throw new ApplicationConfigException(
+                "SigneeStatesDataTypeId is not set in the signature configuration."
+            );
+
+        IEnumerable<DataElement> dataElements = instanceMutator.GetDataElementsForType(signeeStatesDataTypeId);
+
+        DataElement signeeStateDataElement =
+            dataElements.SingleOrDefault()
+            ?? throw new ApplicationException(
+                $"Failed to find the data element containing signee contexts using dataTypeId {signatureConfiguration.SigneeStatesDataTypeId}."
+            );
+
+        instanceMutator.RemoveDataElement(signeeStateDataElement);
     }
 
     private async Task UpdateSigneeContext(

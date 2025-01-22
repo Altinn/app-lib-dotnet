@@ -47,7 +47,7 @@ public class SigningServiceTests
     }
 
     [Fact]
-    public async Task GetSigneeContexts()
+    public async Task GetSigneeContexts_HappyPath()
     {
         // Arrange
         var signatureConfiguration = new AltinnSignatureConfiguration
@@ -200,6 +200,30 @@ public class SigningServiceTests
         Assert.NotNull(signatureWithOnTheFlySigneeContext.SignDocument);
         Assert.NotNull(signatureWithOnTheFlySigneeContext.SignDocument?.SigneeInfo);
         Assert.Equal(person.SSN, signatureWithOnTheFlySigneeContext.SignDocument?.SigneeInfo?.PersonNumber);
+    }
+
+    [Fact]
+    public void DeleteSigneeState_Calls_RemoveDataElement()
+    {
+        var signatureConfiguration = new AltinnSignatureConfiguration
+        {
+            SigneeStatesDataTypeId = "signeeStates",
+            SignatureDataType = "signature",
+        };
+
+        var dataElement = new DataElement
+        {
+            Id = Guid.NewGuid().ToString(),
+            DataType = signatureConfiguration.SigneeStatesDataTypeId,
+        };
+        var cachedInstanceMutator = new Mock<IInstanceDataMutator>();
+        var instance = new Instance { Data = [dataElement] };
+
+        cachedInstanceMutator.Setup(x => x.Instance).Returns(instance);
+
+        _signingService.DeleteSigneeState(cachedInstanceMutator.Object, signatureConfiguration);
+
+        cachedInstanceMutator.Verify(x => x.RemoveDataElement(dataElement));
     }
 
     private static byte[] ToBytes<T>(T obj)

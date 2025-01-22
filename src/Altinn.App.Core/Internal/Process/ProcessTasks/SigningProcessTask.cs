@@ -95,6 +95,8 @@ internal sealed class SigningProcessTask : IProcessTask
                 _modelSerialization
             );
 
+            _signingService.DeleteSigneeState(cachedDataMutator, signatureConfiguration);
+
             List<SigneeContext> signeeContexts = await _signingService.GenerateSigneeContexts(
                 cachedDataMutator,
                 signatureConfiguration,
@@ -144,7 +146,22 @@ internal sealed class SigningProcessTask : IProcessTask
     /// <inheritdoc/>
     public async Task Abandon(string taskId, Instance instance)
     {
-        await Task.CompletedTask;
+        ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
+        AltinnSignatureConfiguration signatureConfiguration = GetAltinnSignatureConfiguration(taskId);
+
+        var cachedDataMutator = new InstanceDataUnitOfWork(
+            instance,
+            _dataClient,
+            _instanceClient,
+            appMetadata,
+            _modelSerialization
+        );
+
+        _signingService.DeleteSigneeState(cachedDataMutator, signatureConfiguration);
+
+        DataElementChanges changes = cachedDataMutator.GetDataElementChanges(false);
+        await cachedDataMutator.UpdateInstanceData(changes);
+        await cachedDataMutator.SaveChanges(changes);
     }
 
     private AltinnSignatureConfiguration GetAltinnSignatureConfiguration(string taskId)
