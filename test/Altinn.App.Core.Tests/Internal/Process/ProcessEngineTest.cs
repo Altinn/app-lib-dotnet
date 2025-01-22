@@ -185,7 +185,7 @@ public sealed class ProcessEngineTest : IDisposable
             {
                 SystemUserId = auth.SystemUserId[0],
                 SystemUserOwnerOrgNo = auth.SystemUserOrgNr.Get(OrganisationNumberFormat.Local),
-                // TODO: what about auth level?
+                AuthenticationLevel = auth.AuthenticationLevel,
             },
             _ => throw new NotImplementedException(),
         };

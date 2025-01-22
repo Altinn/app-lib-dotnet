@@ -553,6 +553,11 @@ public abstract class Authenticated
         /// </summary>
         public string AuthenticationMethod { get; }
 
+        /// <summary>
+        /// Authentication level
+        /// </summary>
+        public int AuthenticationLevel { get; } = 3;
+
         private readonly Func<string, Task<Party>> _lookupParty;
         private readonly Func<Task<ApplicationMetadata>> _getApplicationMetadata;
 
