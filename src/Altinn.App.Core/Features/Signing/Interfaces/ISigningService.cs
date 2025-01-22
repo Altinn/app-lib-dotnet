@@ -25,7 +25,7 @@ internal interface ISigningService
     );
 
     Task<List<SigneeContext>> GetSigneeContexts(
-        IInstanceDataMutator instanceMutator,
+        IInstanceDataAccessor instanceDataAccessor,
         AltinnSignatureConfiguration signatureConfiguration
     );
 }
