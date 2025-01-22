@@ -408,7 +408,7 @@ public class ProcessEngine : IProcessEngine
             }
             case Authenticated.ServiceOwner auth:
             {
-                user = new PlatformUser { OrgId = auth.Name };
+                user = new PlatformUser { OrgId = auth.Name, AuthenticationLevel = auth.AuthenticationLevel };
                 break;
             }
             case Authenticated.SystemUser auth:

@@ -120,7 +120,6 @@ public sealed class ProcessEngineTest : IDisposable
     {
         TelemetrySink telemetrySink = new();
         ProcessEngine processEngine = GetProcessEngine(telemetrySink: telemetrySink, token: token);
-        var partyIdStr = token.PartyId.ToString(CultureInfo.InvariantCulture);
         var instanceOwnerPartyId = token.Auth switch
         {
             Authenticated.User auth when await auth.LoadDetails() is { } details => details.SelectedParty.PartyId,
@@ -132,7 +131,7 @@ public sealed class ProcessEngineTest : IDisposable
         var instanceOwnerPartyIdStr = instanceOwnerPartyId.ToString(CultureInfo.InvariantCulture);
         Instance instance = new Instance()
         {
-            Id = _instanceId,
+            Id = $"{instanceOwnerPartyIdStr}/{_instanceGuid}",
             AppId = "org/app",
             InstanceOwner = new InstanceOwner() { PartyId = instanceOwnerPartyIdStr },
             Data = [],
@@ -147,9 +146,9 @@ public sealed class ProcessEngineTest : IDisposable
         _processNavigatorMock.Verify(n => n.GetNextTask(It.IsAny<Instance>(), "StartEvent_1", null), Times.Once);
         var expectedInstance = new Instance()
         {
-            Id = _instanceId,
+            Id = $"{instanceOwnerPartyIdStr}/{_instanceGuid}",
             AppId = "org/app",
-            InstanceOwner = new InstanceOwner() { PartyId = partyIdStr },
+            InstanceOwner = new InstanceOwner() { PartyId = instanceOwnerPartyIdStr },
             Data = [],
             Process = new ProcessState()
             {

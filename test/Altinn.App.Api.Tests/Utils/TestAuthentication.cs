@@ -24,7 +24,10 @@ public enum AuthenticationTypes
     ServiceOwner,
 }
 
-public sealed record TestJwtToken(AuthenticationTypes Type, int PartyId, string Token, Authenticated Auth);
+public sealed record TestJwtToken(AuthenticationTypes Type, int PartyId, string Token, Authenticated Auth)
+{
+    public override string ToString() => $"{Type}={PartyId}";
+}
 
 public static class TestAuthentication
 {
