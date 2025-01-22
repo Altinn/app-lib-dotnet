@@ -2,11 +2,7 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Features.Validation.Default;
-using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
-using Altinn.App.Core.Internal.AppModel;
-using Altinn.App.Core.Internal.Data;
-using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models;
@@ -22,10 +18,7 @@ public class SigningTaskValidatorTest
 {
     private readonly Mock<IProcessReader> _processReaderMock = new();
     private readonly Mock<ISigningService> _signingServiceMock = new();
-    private readonly Mock<IDataClient> _dataClientMock = new();
-    private readonly Mock<IInstanceClient> _instanceClientMock = new();
     private readonly Mock<IAppMetadata> _appMetadataMock = new();
-    private readonly Mock<ModelSerializationService> _modelSerializationMock = new(new Mock<IAppModel>().Object, null!);
     private readonly Mock<ILogger<SigningTaskValidator>> _loggerMock = new();
     private readonly SigningTaskValidator _validator;
 
@@ -35,10 +28,7 @@ public class SigningTaskValidatorTest
             _loggerMock.Object,
             _processReaderMock.Object,
             _signingServiceMock.Object,
-            _dataClientMock.Object,
-            _instanceClientMock.Object,
-            _appMetadataMock.Object,
-            _modelSerializationMock.Object
+            _appMetadataMock.Object
         );
     }
 
@@ -67,11 +57,11 @@ public class SigningTaskValidatorTest
             .Returns(new AltinnTaskExtension { SignatureConfiguration = signingConfiguration });
         _appMetadataMock.Setup(am => am.GetApplicationMetadata()).ReturnsAsync(appMetadata);
         _signingServiceMock
-            .Setup(ss => ss.GetSigneeContexts(It.IsAny<InstanceDataUnitOfWork>(), signingConfiguration))
+            .Setup(ss => ss.GetSigneeContexts(It.IsAny<IInstanceDataAccessor>(), signingConfiguration))
             .ReturnsAsync(signeeContexts);
 
         // Act
-        var result = await _validator.Validate(dataAccessorMock.Object, taskId, null);
+        var result = await _validator.Validate(dataAccessorMock.Object, taskId, null!);
 
         // Assert
         Assert.Empty(result);
@@ -102,11 +92,11 @@ public class SigningTaskValidatorTest
             .Returns(new AltinnTaskExtension { SignatureConfiguration = signingConfiguration });
         _appMetadataMock.Setup(am => am.GetApplicationMetadata()).ReturnsAsync(appMetadata);
         _signingServiceMock
-            .Setup(ss => ss.GetSigneeContexts(It.IsAny<InstanceDataUnitOfWork>(), signingConfiguration))
+            .Setup(ss => ss.GetSigneeContexts(It.IsAny<IInstanceDataAccessor>(), signingConfiguration))
             .ReturnsAsync(signeeContexts);
 
         // Act
-        var result = await _validator.Validate(dataAccessorMock.Object, taskId, null);
+        var result = await _validator.Validate(dataAccessorMock.Object, taskId, null!);
 
         // Assert
         Assert.Single(result);
@@ -129,7 +119,7 @@ public class SigningTaskValidatorTest
         _appMetadataMock.Setup(am => am.GetApplicationMetadata()).ThrowsAsync(exception);
 
         // Act
-        var result = await _validator.Validate(dataAccessorMock.Object, taskId, null);
+        var result = await _validator.Validate(dataAccessorMock.Object, taskId, null!);
 
         // Assert
         Assert.Empty(result);
@@ -164,11 +154,11 @@ public class SigningTaskValidatorTest
             .Returns(new AltinnTaskExtension { SignatureConfiguration = signingConfiguration });
         _appMetadataMock.Setup(am => am.GetApplicationMetadata()).ReturnsAsync(appMetadata);
         _signingServiceMock
-            .Setup(ss => ss.GetSigneeContexts(It.IsAny<InstanceDataUnitOfWork>(), signingConfiguration))
+            .Setup(ss => ss.GetSigneeContexts(It.IsAny<IInstanceDataAccessor>(), signingConfiguration))
             .ThrowsAsync(exception);
 
         // Act
-        var result = await _validator.Validate(dataAccessorMock.Object, taskId, null);
+        var result = await _validator.Validate(dataAccessorMock.Object, taskId, null!);
 
         // Assert
         Assert.Empty(result);

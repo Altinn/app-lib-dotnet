@@ -1,11 +1,10 @@
+using System.Diagnostics;
 using Altinn.App.Core.Features.Signing.Interfaces;
-using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
-using Altinn.App.Core.Internal.Data;
-using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.Result;
 using Altinn.App.Core.Models.Validation;
 using Microsoft.Extensions.Logging;
 
@@ -18,10 +17,7 @@ internal sealed class SigningTaskValidator : IValidator
 {
     private readonly IProcessReader _processReader;
     private readonly ISigningService _signingService;
-    private readonly IDataClient _dataClient;
-    private readonly IInstanceClient _instanceClient;
     private readonly IAppMetadata _appMetadata;
-    private readonly ModelSerializationService _modelSerialization;
     private readonly ILogger<SigningTaskValidator> _logger;
 
     /// <summary>
@@ -31,19 +27,13 @@ internal sealed class SigningTaskValidator : IValidator
         ILogger<SigningTaskValidator> logger,
         IProcessReader processReader,
         ISigningService signingService,
-        IDataClient dataClient,
-        IInstanceClient instanceClient,
-        IAppMetadata appMetadata,
-        ModelSerializationService modelSerialization
+        IAppMetadata appMetadata
     )
     {
         _logger = logger;
         _processReader = processReader;
         _signingService = signingService;
-        _dataClient = dataClient;
-        _instanceClient = instanceClient;
         _appMetadata = appMetadata;
-        _modelSerialization = modelSerialization;
     }
 
     /// <summary>
@@ -61,25 +51,24 @@ internal sealed class SigningTaskValidator : IValidator
         {
             taskConfig = _processReader.GetAltinnTaskExtension(taskId);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            _logger.LogError(ex, $"Error while fetching signing configuration for task {taskId}");
             return false;
         }
 
         AltinnSignatureConfiguration? signingConfiguration = taskConfig?.SignatureConfiguration;
 
-        return signingConfiguration?.RunDefaultValidator == true && taskConfig?.TaskType is "signing";
+        return signingConfiguration?.RunDefaultValidator is true && taskConfig?.TaskType is "signing";
     }
 
     public bool NoIncrementalValidation => true;
 
-    /// <summary>
-    /// Should never be called because NoIncrementalValidation is true.
-    /// </summary>
+    /// <inheritdoc />
     public Task<bool> HasRelevantChanges(IInstanceDataAccessor dataAccessor, string taskId, DataElementChanges changes)
     {
-        throw new NotImplementedException();
+        throw new UnreachableException(
+            "HasRelevantChanges should not be called because NoIncrementalValidation is true."
+        );
     }
 
     /// <inheritdoc />
@@ -90,41 +79,27 @@ internal sealed class SigningTaskValidator : IValidator
         string? language
     )
     {
-        AltinnSignatureConfiguration? signingConfiguration = (
-            _processReader.GetAltinnTaskExtension(taskId)?.SignatureConfiguration
-        );
+        AltinnSignatureConfiguration signingConfiguration =
+            (_processReader.GetAltinnTaskExtension(taskId)?.SignatureConfiguration)
+            ?? throw new ApplicationConfigException("Signing configuration not found in AltinnTaskExtension");
 
-        if (signingConfiguration == null)
+        var appMetadataResult = await CatchError(_appMetadata.GetApplicationMetadata());
+        if (!appMetadataResult.Success)
         {
-            _logger.LogError($"No signing configuration found for task {taskId}");
+            _logger.LogError(appMetadataResult.Error, "Error while fetching application metadata");
             return [];
         }
 
-        var (getAppMetadataError, appMetadata) = await CatchError(_appMetadata.GetApplicationMetadata());
-        if (getAppMetadataError != null || appMetadata == null)
+        var signeeContextsResult = await CatchError(
+            _signingService.GetSigneeContexts(dataAccessor, signingConfiguration)
+        );
+        if (!signeeContextsResult.Success)
         {
-            _logger.LogError(getAppMetadataError, "Error while fetching application metadata");
+            _logger.LogError(signeeContextsResult.Error, "Error while fetching signee contexts");
             return [];
         }
 
-        var cachedDataMutator = new InstanceDataUnitOfWork(
-            instance: dataAccessor.Instance,
-            _dataClient,
-            _instanceClient,
-            appMetadata,
-            _modelSerialization
-        );
-
-        var (getSigneeContextsError, signeeContexts) = await CatchError(
-            _signingService.GetSigneeContexts(cachedDataMutator, signingConfiguration)
-        );
-        if (getSigneeContextsError != null || signeeContexts == null)
-        {
-            _logger.LogError(getSigneeContextsError, "Error while fetching signee contexts");
-            return [];
-        }
-
-        var allHaveSigned = signeeContexts.All(signeeContext => signeeContext.SignDocument != null);
+        var allHaveSigned = signeeContextsResult.Ok.All(signeeContext => signeeContext.SignDocument is not null);
         if (allHaveSigned)
         {
             return [];
@@ -142,18 +117,18 @@ internal sealed class SigningTaskValidator : IValidator
     }
 
     /// <summary>
-    /// Catch exceptions from a task and return them as a tuple with the result.
+    /// Catch exceptions from a task and return them as a ServiceResult record with the result.
     /// </summary>
-    private static async Task<Tuple<Exception?, T?>> CatchError<T>(Task<T> task)
+    private static async Task<ServiceResult<T, Exception>> CatchError<T>(Task<T> task)
     {
         try
         {
             var result = await task;
-            return Tuple.Create<Exception?, T?>(null, result);
+            return result;
         }
         catch (Exception ex)
         {
-            return Tuple.Create<Exception?, T?>(ex, default);
+            return ex;
         }
     }
 }

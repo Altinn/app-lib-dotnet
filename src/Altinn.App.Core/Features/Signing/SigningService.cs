@@ -117,7 +117,7 @@ internal sealed class SigningService(
     }
 
     public async Task<List<SigneeContext>> GetSigneeContexts(
-        IInstanceDataMutator instanceMutator,
+        IInstanceDataAccessor instanceDataAccessor,
         AltinnSignatureConfiguration signatureConfiguration
     )
     {
@@ -125,12 +125,12 @@ internal sealed class SigningService(
 
         //If no SigneeStateDataTypeId is set, delegated signing is not enabled and there is nothing to download.
         List<SigneeContext> signeeContexts = signatureConfiguration.SigneeStatesDataTypeId is not null
-            ? await DownloadSigneeContexts(instanceMutator, signatureConfiguration)
+            ? await DownloadSigneeContexts(instanceDataAccessor, signatureConfiguration)
             : [];
 
-        List<SignDocument> signDocuments = await DownloadSignDocuments(instanceMutator, signatureConfiguration);
+        List<SignDocument> signDocuments = await DownloadSignDocuments(instanceDataAccessor, signatureConfiguration);
 
-        await SynchronizeSigneeContextsWithSignDocuments(instanceMutator, signeeContexts, signDocuments);
+        await SynchronizeSigneeContextsWithSignDocuments(instanceDataAccessor, signeeContexts, signDocuments);
 
         return signeeContexts;
     }
@@ -268,7 +268,7 @@ internal sealed class SigningService(
     }
 
     private static async Task<List<SigneeContext>> DownloadSigneeContexts(
-        IInstanceDataMutator instanceMutator,
+        IInstanceDataAccessor instanceDataAccessor,
         AltinnSignatureConfiguration signatureConfiguration
     )
     {
@@ -278,7 +278,7 @@ internal sealed class SigningService(
                 "SigneeStatesDataTypeId is not set in the signature configuration."
             );
 
-        IEnumerable<DataElement> dataElements = instanceMutator.GetDataElementsForType(signeeStatesDataTypeId);
+        IEnumerable<DataElement> dataElements = instanceDataAccessor.GetDataElementsForType(signeeStatesDataTypeId);
 
         DataElement signeeStateDataElement =
             dataElements.SingleOrDefault()
@@ -286,7 +286,7 @@ internal sealed class SigningService(
                 $"Failed to find the data element containing signee contexts using dataTypeId {signatureConfiguration.SigneeStatesDataTypeId}."
             );
 
-        ReadOnlyMemory<byte> data = await instanceMutator.GetBinaryData(signeeStateDataElement);
+        ReadOnlyMemory<byte> data = await instanceDataAccessor.GetBinaryData(signeeStateDataElement);
         string signeeStateSerialized = Encoding.UTF8.GetString(data.ToArray());
 
         List<SigneeContext> signeeContexts =
@@ -296,7 +296,7 @@ internal sealed class SigningService(
     }
 
     private async Task<List<SignDocument>> DownloadSignDocuments(
-        IInstanceDataMutator instanceMutator,
+        IInstanceDataAccessor instanceDataAccessor,
         AltinnSignatureConfiguration signatureConfiguration
     )
     {
@@ -304,7 +304,7 @@ internal sealed class SigningService(
             signatureConfiguration.SignatureDataType
             ?? throw new ApplicationConfigException("SignatureDataType is not set in the signature configuration.");
 
-        List<DataElement> signatureDataElements = instanceMutator
+        List<DataElement> signatureDataElements = instanceDataAccessor
             .Instance.Data.Where(x => x.DataType == signatureDataTypeId)
             .ToList();
 
@@ -312,7 +312,7 @@ internal sealed class SigningService(
         {
             SignDocument[] signDocuments = await Task.WhenAll(
                 signatureDataElements.Select(signatureDataElement =>
-                    DownloadSignDocumentAsync(instanceMutator, signatureDataElement)
+                    DownloadSignDocumentAsync(instanceDataAccessor, signatureDataElement)
                 )
             );
 
@@ -326,13 +326,13 @@ internal sealed class SigningService(
     }
 
     private async Task<SignDocument> DownloadSignDocumentAsync(
-        IInstanceDataMutator instanceMutator,
+        IInstanceDataAccessor instanceDataAccessor,
         DataElement signatureDataElement
     )
     {
         try
         {
-            ReadOnlyMemory<byte> data = await instanceMutator.GetBinaryData(signatureDataElement);
+            ReadOnlyMemory<byte> data = await instanceDataAccessor.GetBinaryData(signatureDataElement);
             string signDocumentSerialized = Encoding.UTF8.GetString(data.ToArray());
 
             return JsonSerializer.Deserialize<SignDocument>(signDocumentSerialized, _jsonSerializerOptions)
@@ -353,7 +353,7 @@ internal sealed class SigningService(
     /// This method exists to ensure we have a SigneeContext for both signees that have been delegated access to sign and signees that have signed using access granted through the policy.xml file.
     /// </summary>
     private async Task SynchronizeSigneeContextsWithSignDocuments(
-        IInstanceDataMutator instanceMutator,
+        IInstanceDataAccessor instanceDataAccessor,
         List<SigneeContext> signeeContexts,
         List<SignDocument> signDocuments
     )
@@ -373,7 +373,10 @@ internal sealed class SigningService(
             else
             {
                 // If the signee has signed using access granted through the policy.xml file, there is no persisted signee context. We create a signee context on the fly.
-                SigneeContext signeeContext = await CreateSigneeContextFromSignDocument(instanceMutator, signDocument);
+                SigneeContext signeeContext = await CreateSigneeContextFromSignDocument(
+                    instanceDataAccessor,
+                    signDocument
+                );
 
                 signeeContexts.Add(signeeContext);
             }
@@ -381,7 +384,7 @@ internal sealed class SigningService(
     }
 
     private async Task<SigneeContext> CreateSigneeContextFromSignDocument(
-        IInstanceDataMutator instanceMutator,
+        IInstanceDataAccessor instanceDataAccessor,
         SignDocument signDocument
     )
     {
@@ -413,7 +416,7 @@ internal sealed class SigningService(
 
         return new SigneeContext
         {
-            TaskId = instanceMutator.Instance.Process.CurrentTask.ElementId,
+            TaskId = instanceDataAccessor.Instance.Process.CurrentTask.ElementId,
             Party = party,
             PersonSignee = personSignee,
             OrganisationSignee = organisationSignee,
