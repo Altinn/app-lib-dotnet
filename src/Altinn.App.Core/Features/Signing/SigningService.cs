@@ -1,18 +1,28 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Exceptions;
 using Altinn.App.Core.Features.Signing.Exceptions;
 using Altinn.App.Core.Features.Signing.Interfaces;
-using Altinn.App.Core.Features.Signing.Mocks;
 using Altinn.App.Core.Features.Signing.Models;
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
+using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
+using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.UserAction;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using JsonException = Newtonsoft.Json.JsonException;
+using Signee = Altinn.App.Core.Internal.Sign.Signee;
 
 namespace Altinn.App.Core.Features.Signing;
 
@@ -21,12 +31,24 @@ internal sealed class SigningService(
     ISigningDelegationService signingDelegationService,
     ISigningNotificationService signingNotificationService,
     IEnumerable<ISigneeProvider> signeeProviders,
+    IAppMetadata appMetadata,
+    IHttpContextAccessor httpContextAccessor,
+    ISignClient signClient,
+    ISigningCorrespondenceService signingCorrespondenceService,
+    IProfileClient profileClient,
+    IAltinnPartyClient altinnPartyClientService,
+    IOptions<GeneralSettings> settings,
     ILogger<SigningService> logger,
     Telemetry? telemetry = null
 ) : ISigningService
 {
     private static readonly JsonSerializerOptions _jsonSerializerOptions = new(JsonSerializerDefaults.Web);
     private readonly ILogger<SigningService> _logger = logger;
+    private readonly IAppMetadata _appMetadata = appMetadata;
+    private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
+    private readonly ISignClient _signClient = signClient;
+    private readonly UserHelper _userHelper = new(profileClient, altinnPartyClientService, settings);
+    private readonly ISigningCorrespondenceService _signingCorrespondenceService = signingCorrespondenceService;
     private const string ApplicationJsonContentType = "application/json";
 
     public async Task<SigneesResult?> GetSigneesFromProvider(
@@ -138,52 +160,125 @@ internal sealed class SigningService(
         return signeeContexts;
     }
 
-    //TODO: There is already logic for the sign action in the SigningUserAction class. Maybe move most of it here?
-    public async Task Sign(SigneeContext signee)
+    public async Task Sign(UserActionContext userActionContext, ProcessTask currentTask)
     {
         using Activity? activity = telemetry?.StartSignActivity();
-        // var state = StorageClient.GetSignState(...);
+
+        ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
+        AltinnSignatureConfiguration? signatureConfiguration = currentTask
+            .ExtensionElements
+            ?.TaskExtension
+            ?.SignatureConfiguration;
+        List<string> dataTypeIds = signatureConfiguration?.DataTypesToSign ?? [];
+        List<DataType>? dataTypesToSign = appMetadata
+            .DataTypes?.Where(d => dataTypeIds.Contains(d.Id, StringComparer.OrdinalIgnoreCase))
+            .ToList();
+        List<DataElementSignature> dataElementSignatures = GetDataElementSignatures(
+            userActionContext.Instance.Data,
+            dataTypesToSign
+        );
+
+        string signatureDataType =
+            GetDataTypeForSignature(currentTask, userActionContext.Instance.Data, dataTypesToSign)
+            ?? throw new ApplicationConfigException(
+                "Missing configuration for signing. Check that the task has a signature configuration and that the data types to sign are defined."
+            );
+
+        SignatureContext signatureContext = new(
+            new InstanceIdentifier(userActionContext.Instance),
+            currentTask.Id,
+            signatureDataType,
+            await GetSignee(
+                _httpContextAccessor.HttpContext ?? throw new InvalidOperationException("HttpContext is not available.")
+            ),
+            dataElementSignatures
+        );
+
+        await _signClient.SignDataElements(signatureContext);
+
         try
         {
-            // SigneeState signeeState = state.FirstOrDefault(s => s.Id == signee.UserId)
-            // if(signeeState.hasSigned is false)
-            // {
-            //      await signClient.SignDataElements();
-            //      signeeState.hasSigned = true;
-            // }
-            // if(signeeState.IsReceiptSent is false)
-            // {
-            var correspondanceClient = new CorrespondanceClientMock();
-            var correspondence = new BaseCorrespondenceExt
+            var result = await _signingCorrespondenceService.SendCorrespondence(
+                signatureContext.InstanceIdentifier,
+                signatureContext.Signee,
+                dataElementSignatures,
+                userActionContext,
+                signatureConfiguration?.CorrespondenceResources
+            );
+            if (result is not null)
             {
-                ResourceId = "",
-                Sender = "",
-                SendersReference = "",
-                VisibleFrom = DateTimeOffset.Now,
-            };
-            var request = new InitializeCorrespondenceRequestMock
-            {
-                Correspondence = correspondence,
-                Recipients =
-                [ /*SigneeState.Id*/
-                ],
-                ExistingAttachments = [], // TODO: all relevant documents
-            };
-            //      correspondanceClient.SendMessage(...);
-            //      signeeState.IsReceiptSent = true;
-            // }
-            await Task.CompletedTask;
+                _logger.LogInformation(
+                    "Correspondence successfully sent to {Recipients}",
+                    string.Join(", ", result.Correspondences.Select(x => x.Recipient))
+                );
+            }
         }
-        catch
+        catch (ConfigurationException e)
         {
-            // TODO: log + telemetry?
+            // TODO: What do we do here? Probably nothing.
+            _logger.LogWarning(e, "Correspondence configuration error: {Exception}", e.Message);
         }
-        finally
+        catch (Exception e)
         {
-            // StorageClient.SetSignState(state);
+            // TODO: What do we do here? This failure is pretty silent... but throwing would cause havoc
+            _logger.LogError(e, "Correspondence send failed: {Exception}", e.Message);
+        }
+    }
+
+    private static List<DataElementSignature> GetDataElementSignatures(
+        IEnumerable<DataElement> dataElements,
+        IEnumerable<DataType>? dataTypesToSign
+    )
+    {
+        List<DataElementSignature> connectedDataElements = [];
+        if (dataTypesToSign.IsNullOrEmpty())
+        {
+            return connectedDataElements;
         }
 
-        throw new NotImplementedException();
+        foreach (var dataType in dataTypesToSign)
+        {
+            connectedDataElements.AddRange(
+                dataElements
+                    .Where(d => d.DataType.Equals(dataType.Id, StringComparison.OrdinalIgnoreCase))
+                    .Select(d => new DataElementSignature(d.Id))
+            );
+        }
+
+        return connectedDataElements;
+    }
+
+    private static string? GetDataTypeForSignature(
+        ProcessTask currentTask,
+        IEnumerable<DataElement> dataElements,
+        IEnumerable<DataType>? dataTypesToSign
+    )
+    {
+        var signatureDataType = currentTask.ExtensionElements?.TaskExtension?.SignatureConfiguration?.SignatureDataType;
+        if (dataTypesToSign.IsNullOrEmpty())
+        {
+            return null;
+        }
+
+        var dataElementMatchExists = dataElements.Any(de =>
+            dataTypesToSign.Any(dt => string.Equals(dt.Id, de.DataType, StringComparison.OrdinalIgnoreCase))
+        );
+        var allDataTypesAreOptional = dataTypesToSign.All(d => d.MinCount == 0);
+        return dataElementMatchExists || allDataTypesAreOptional ? signatureDataType : null;
+    }
+
+    private async Task<Signee> GetSignee(HttpContext context)
+    {
+        UserContext? userProfile =
+            await _userHelper.GetUserContext(context)
+            ?? throw new Exception("Could not get user profile while getting signee");
+
+        return new Signee
+        {
+            UserId = userProfile.UserId.ToString(CultureInfo.InvariantCulture),
+            PersonNumber = userProfile.SocialSecurityNumber,
+            OrganisationNumber = userProfile.Party.OrgNumber,
+        };
     }
 
     private async Task<SigneeContext> CreateSigneeContext(string taskId, SigneeParty signeeParty, CancellationToken ct)
