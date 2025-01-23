@@ -27,10 +27,5 @@ public class SigneesResult
     /// <summary>
     /// The signees who are persons that should sign.
     /// </summary>
-    public required List<PersonSignee> PersonSignees { get; set; }
-
-    /// <summary>
-    /// The signees who are organizations that should sign.
-    /// </summary>
-    public required List<OrganisationSignee> OrganisationSignees { get; set; }
+    public required List<SigneeParty> Signees { get; set; }
 }

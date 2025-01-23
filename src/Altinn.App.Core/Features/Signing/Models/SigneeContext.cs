@@ -25,16 +25,10 @@ internal sealed class SigneeContext
     public required SigneeState SigneeState { get; set; }
 
     /// <summary>
-    /// The organisation signee.
+    /// Notifications configuration.
     /// </summary>
-    [JsonPropertyName("organisationSignee")]
-    public OrganisationSignee? OrganisationSignee { get; set; }
-
-    /// <summary>
-    /// The person signee.
-    /// </summary>
-    [JsonPropertyName("personSignee")]
-    public PersonSignee? PersonSignee { get; set; }
+    [JsonPropertyName("notifications")]
+    public Notifications? Notifications { get; init; }
 
     /// <summary>
     /// The signature document, if it exists yet.

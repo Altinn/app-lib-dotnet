@@ -102,7 +102,7 @@ internal class InitializeDelegatedSigningUserAction : IUserAction
             _modelSerialization
         );
         CancellationToken ct = new();
-        List<SigneeContext> signeeContexts = await _signingService.InitializeSignees(
+        List<SigneeContext> signeeContexts = await _signingService.CreateSigneeContexts(
             cachedDataMutator,
             signatureConfiguration,
             ct
@@ -112,7 +112,7 @@ internal class InitializeDelegatedSigningUserAction : IUserAction
             _httpContextAccessor.HttpContext ?? throw new InvalidOperationException("HttpContext is not available.")
         );
 
-        await _signingService.ProcessSignees(
+        await _signingService.DelegateAccessAndNotifySignees(
             currentTask.Id,
             userContext.UserParty,
             cachedDataMutator,
