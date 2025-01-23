@@ -4,7 +4,10 @@ using Altinn.Platform.Register.Models;
 
 namespace Altinn.App.Core.Features.Signing.Interfaces;
 
-internal interface ISigningDelegationService
+/// <summary>
+/// Interface for implementing app-specific logic for delegating signee rights.
+/// </summary>
+public interface ISigningDelegationService
 {
     internal Task<(List<SigneeContext>, bool success)> DelegateSigneeRights(
         string taskId,

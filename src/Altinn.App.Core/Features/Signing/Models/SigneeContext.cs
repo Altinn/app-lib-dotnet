@@ -7,7 +7,7 @@ namespace Altinn.App.Core.Features.Signing.Models;
 /// <summary>
 ///  Represents the context of a signee.
 /// </summary>
-internal sealed class SigneeContext
+public sealed class SigneeContext
 {
     /// <summary>
     /// The party associated with the signee state.
