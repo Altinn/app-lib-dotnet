@@ -361,7 +361,6 @@ public class ProcessEngine : IProcessEngine
                 FlowType = action is "reject"
                     ? ProcessSequenceFlowType.AbandonCurrentMoveToNext.ToString()
                     : ProcessSequenceFlowType.CompleteCurrentMoveToNext.ToString(),
-                Validated = null,
             };
 
             events.Add(await GenerateProcessChangeEvent(InstanceEventType.process_StartTask.ToString(), instance, now));

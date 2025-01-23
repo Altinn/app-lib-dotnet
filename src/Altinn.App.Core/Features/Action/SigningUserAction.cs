@@ -3,7 +3,6 @@ using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
-using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
@@ -22,7 +21,6 @@ public class SigningUserAction : IUserAction
     private readonly IProcessReader _processReader;
     private readonly IAppMetadata _appMetadata;
     private readonly ILogger<SigningUserAction> _logger;
-    private readonly IProfileClient _profileClient;
     private readonly ISignClient _signClient;
 
     /// <summary>
@@ -30,19 +28,16 @@ public class SigningUserAction : IUserAction
     /// </summary>
     /// <param name="processReader">The process reader</param>
     /// <param name="logger">The logger</param>
-    /// <param name="profileClient">The profile client</param>
     /// <param name="signClient">The sign client</param>
     /// <param name="appMetadata">The application metadata</param>
     public SigningUserAction(
         IProcessReader processReader,
         ILogger<SigningUserAction> logger,
-        IProfileClient profileClient,
         ISignClient signClient,
         IAppMetadata appMetadata
     )
     {
         _logger = logger;
-        _profileClient = profileClient;
         _signClient = signClient;
         _processReader = processReader;
         _appMetadata = appMetadata;
@@ -147,7 +142,7 @@ public class SigningUserAction : IUserAction
         return connectedDataElements;
     }
 
-    private async Task<Signee> GetSignee(UserActionContext context)
+    private static async Task<Signee> GetSignee(UserActionContext context)
     {
         switch (context.Authentication)
         {

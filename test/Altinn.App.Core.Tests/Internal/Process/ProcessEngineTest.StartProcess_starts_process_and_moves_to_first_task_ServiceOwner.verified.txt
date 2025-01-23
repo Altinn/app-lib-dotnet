@@ -34,8 +34,7 @@
             },
             {
               to.task.name: Utfylling
-            },
-            {}
+            }
           ]
         }
       ]

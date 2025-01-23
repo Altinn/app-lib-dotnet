@@ -334,7 +334,6 @@ public static class TelemetryActivityExtensions
                 if (fromTask is not null)
                 {
                     tags.Add("from.task.name", fromTask.Name);
-                    tags.Add("from.task.validation.status", fromTask.Validated?.ToString());
                 }
             }
             var to = change.NewProcessState;
@@ -345,7 +344,6 @@ public static class TelemetryActivityExtensions
                 if (toTask is not null)
                 {
                     tags.Add("to.task.name", toTask.Name);
-                    tags.Add("to.task.validation.status", toTask.Validated?.ToString());
                 }
             }
             activity.AddEvent(new ActivityEvent("change", tags: tags));

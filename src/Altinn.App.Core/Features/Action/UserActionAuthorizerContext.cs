@@ -25,7 +25,9 @@ public class UserActionAuthorizerContext
         Authenticated authentication
     )
     {
+#pragma warning disable CS0618 // Type or member is obsolete
         User = user;
+#pragma warning restore CS0618 // Type or member is obsolete
         Authentication = authentication;
         InstanceIdentifier = instanceIdentifier;
         TaskId = taskId;
