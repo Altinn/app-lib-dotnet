@@ -17,7 +17,7 @@ using CorrespondenceResult = Altinn.App.Core.Features.Telemetry.Correspondence.C
 namespace Altinn.App.Core.Features.Correspondence;
 
 /// <inheritdoc />
-[Experimental("Correspondence001")]
+[Experimental("ALTINNAPP0200")]
 internal sealed class CorrespondenceClient : ICorrespondenceClient
 {
     private readonly ILogger<CorrespondenceClient> _logger;
@@ -43,7 +43,7 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
     }
 
     /// <inheritdoc />
-    [Experimental(diagnosticId: "Correspondence001")]
+    [Experimental(diagnosticId: "ALTINNAPP0200")]
     public async Task<SendCorrespondenceResponse> Send(
         SendCorrespondencePayload payload,
         CancellationToken cancellationToken = default
@@ -93,7 +93,7 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
     }
 
     /// <inheritdoc/>
-    [Experimental(diagnosticId: "Correspondence001")]
+    [Experimental(diagnosticId: "ALTINNAPP0200")]
     public async Task<GetCorrespondenceStatusResponse> GetStatus(
         GetCorrespondenceStatusPayload payload,
         CancellationToken cancellationToken = default
