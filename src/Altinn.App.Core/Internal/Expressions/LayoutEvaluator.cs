@@ -125,7 +125,7 @@ public static class LayoutEvaluator
     [Obsolete("Use the async version of this method RemoveHiddenDataAsync")]
     public static void RemoveHiddenData(LayoutEvaluatorState state, RowRemovalOption rowRemovalOption)
     {
-        RemoveHiddenDataAsync(state, rowRemovalOption).Wait();
+        RemoveHiddenDataAsync(state, rowRemovalOption).GetAwaiter().GetResult();
     }
 
     /// <summary>
