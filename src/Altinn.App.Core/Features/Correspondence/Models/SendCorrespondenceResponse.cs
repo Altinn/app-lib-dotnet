@@ -6,7 +6,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models;
 /// <summary>
 /// Response after a successful <see cref="CorrespondenceClient.Send"/> request.
 /// </summary>
-[Experimental(diagnosticId: "Correspondence004")]
+[Experimental(diagnosticId: "Correspondence001")]
 public sealed record SendCorrespondenceResponse
 {
     /// <summary>

@@ -43,7 +43,7 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
     }
 
     /// <inheritdoc />
-    [Experimental(diagnosticId: "Correspondence002")]
+    [Experimental(diagnosticId: "Correspondence001")]
     public async Task<SendCorrespondenceResponse> Send(
         SendCorrespondencePayload payload,
         CancellationToken cancellationToken = default
@@ -93,7 +93,7 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
     }
 
     /// <inheritdoc/>
-    [Experimental(diagnosticId: "Correspondence003")]
+    [Experimental(diagnosticId: "Correspondence001")]
     public async Task<GetCorrespondenceStatusResponse> GetStatus(
         GetCorrespondenceStatusPayload payload,
         CancellationToken cancellationToken = default

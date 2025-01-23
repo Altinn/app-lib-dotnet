@@ -7,7 +7,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models;
 /// <summary>
 /// Response after a successful <see cref="CorrespondenceClient.GetStatus"/> request.
 /// </summary>
-[Experimental(diagnosticId: "Correspondence005")]
+[Experimental(diagnosticId: "Correspondence001")]
 public sealed record GetCorrespondenceStatusResponse
 {
     /// <summary>
