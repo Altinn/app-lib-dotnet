@@ -1,9 +1,11 @@
 using System.Globalization;
+using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Exceptions;
 using Altinn.App.Core.Features.Correspondence;
 using Altinn.App.Core.Features.Correspondence.Builder;
 using Altinn.App.Core.Features.Correspondence.Models;
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
@@ -12,13 +14,16 @@ using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Profile;
+using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Signee = Altinn.App.Core.Internal.Sign.Signee;
 
 namespace Altinn.App.Core.Features.Action;
@@ -31,12 +36,13 @@ public class SigningUserAction : IUserAction
     private readonly IProcessReader _processReader;
     private readonly IAppMetadata _appMetadata;
     private readonly ILogger<SigningUserAction> _logger;
-    private readonly IProfileClient _profileClient;
     private readonly ISignClient _signClient;
     private readonly ICorrespondenceClient _correspondenceClient;
     private readonly IDataClient _dataClient;
     private readonly IAppResources _appResources;
     private readonly IHostEnvironment _hostEnvironment;
+    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly UserHelper _userHelper;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SigningUserAction"/> class
@@ -50,6 +56,9 @@ public class SigningUserAction : IUserAction
     /// <param name="appMetadata">The application metadata</param>
     /// <param name="appResources">The application resources</param>
     /// <param name="hostEnvironment">The hosting environment details</param>
+    /// <param name="altinnPartyClientClient">The Altinn party client</param>
+    /// <param name="settings">The general settings</param>
+    /// <param name="httpContextAccessor">The http context accessor</param>
     public SigningUserAction(
         IProcessReader processReader,
         ILogger<SigningUserAction> logger,
@@ -59,11 +68,13 @@ public class SigningUserAction : IUserAction
         IDataClient dataClient,
         IAppMetadata appMetadata,
         IAppResources appResources,
-        IHostEnvironment hostEnvironment
+        IHostEnvironment hostEnvironment,
+        IAltinnPartyClient altinnPartyClientClient,
+        IOptions<GeneralSettings> settings,
+        IHttpContextAccessor httpContextAccessor
     )
     {
         _logger = logger;
-        _profileClient = profileClient;
         _signClient = signClient;
         _processReader = processReader;
         _correspondenceClient = correspondenceClient;
@@ -71,6 +82,9 @@ public class SigningUserAction : IUserAction
         _appMetadata = appMetadata;
         _appResources = appResources;
         _hostEnvironment = hostEnvironment;
+        _httpContextAccessor = httpContextAccessor;
+        _userHelper = new UserHelper(profileClient, altinnPartyClientClient, settings);
+        _httpContextAccessor = httpContextAccessor;
     }
 
     /// <inheritdoc />
@@ -128,7 +142,9 @@ public class SigningUserAction : IUserAction
             new InstanceIdentifier(context.Instance),
             currentTask.Id,
             signatureDataType,
-            await GetSignee(context.UserId.Value),
+            await GetSignee(
+                _httpContextAccessor.HttpContext ?? throw new InvalidOperationException("HttpContext is not available.")
+            ),
             dataElementSignatures
         );
 
@@ -465,16 +481,16 @@ public class SigningUserAction : IUserAction
         return connectedDataElements;
     }
 
-    private async Task<Signee> GetSignee(int userId)
+    private async Task<Signee> GetSignee(HttpContext context)
     {
-        var userProfile =
-            await _profileClient.GetUserProfile(userId)
+        UserContext? userProfile =
+            await _userHelper.GetUserContext(context)
             ?? throw new Exception("Could not get user profile while getting signee");
 
         return new Signee
         {
             UserId = userProfile.UserId.ToString(CultureInfo.InvariantCulture),
-            PersonNumber = userProfile.Party.SSN,
+            PersonNumber = userProfile.SocialSecurityNumber,
             OrganisationNumber = userProfile.Party.OrgNumber,
         };
     }
