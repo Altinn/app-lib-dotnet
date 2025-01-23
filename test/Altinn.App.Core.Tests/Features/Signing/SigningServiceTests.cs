@@ -18,8 +18,6 @@ public class SigningServiceTests
 {
     private readonly SigningService _signingService;
 
-    private readonly Mock<IPersonClient> _personClient = new(MockBehavior.Strict);
-    private readonly Mock<IOrganizationClient> _organizationClient = new(MockBehavior.Strict);
     private readonly Mock<IAltinnPartyClient> _altinnPartyClient = new(MockBehavior.Strict);
     private readonly Mock<ISigningDelegationService> _signingDelegationService = new(MockBehavior.Strict);
     private readonly Mock<ISigningNotificationService> _signingNotificationService = new(MockBehavior.Strict);
@@ -29,8 +27,6 @@ public class SigningServiceTests
     public SigningServiceTests()
     {
         _signingService = new SigningService(
-            _personClient.Object,
-            _organizationClient.Object,
             _altinnPartyClient.Object,
             _signingDelegationService.Object,
             _signingNotificationService.Object,
@@ -83,13 +79,10 @@ public class SigningServiceTests
             {
                 TaskId = instance.Process.CurrentTask.ElementId,
                 SigneeState = new SigneeState { IsAccessDelegated = true },
-                OrganisationSignee = new OrganisationSignee
-                {
-                    DisplayName = org.Name,
-                    OrganisationNumber = org.OrgNumber,
-                },
+
                 Party = new Party
                 {
+                    OrgNumber = org.OrgNumber,
                     Organization = new Organization { OrgNumber = org.OrgNumber, Name = org.Name },
                 },
             },
@@ -97,7 +90,7 @@ public class SigningServiceTests
 
         var signDocumentWithMatchingSignatureContext = new SignDocument
         {
-            SigneeInfo = new Signee { OrganisationNumber = signeeState.First().Party.Organization.OrgNumber },
+            SigneeInfo = new Signee { OrganisationNumber = signeeState.First().Party.OrgNumber },
         };
 
         var person = new Person { SSN = "12345678910", Name = "A person" };
@@ -122,7 +115,7 @@ public class SigningServiceTests
 
         _altinnPartyClient
             .Setup(x => x.LookupParty(Match.Create<PartyLookup>(p => p.Ssn == person.SSN)))
-            .ReturnsAsync(new Party { Person = person });
+            .ReturnsAsync(new Party { SSN = person.SSN, Person = person });
 
         // Act
         List<SigneeContext> result = await _signingService.GetSigneeContexts(
@@ -141,9 +134,9 @@ public class SigningServiceTests
         Assert.NotNull(signeeContextWithMatchingSignatureDocument);
         Assert.Equal(instance.Process.CurrentTask.ElementId, signeeContextWithMatchingSignatureDocument.TaskId);
 
-        Assert.NotNull(signeeContextWithMatchingSignatureDocument.OrganisationSignee);
-        Assert.Equal(org.Name, signeeContextWithMatchingSignatureDocument.OrganisationSignee?.DisplayName);
-        Assert.Equal(org.OrgNumber, signeeContextWithMatchingSignatureDocument.OrganisationSignee?.OrganisationNumber);
+        Assert.NotNull(signeeContextWithMatchingSignatureDocument.Party);
+        Assert.Equal(org.Name, signeeContextWithMatchingSignatureDocument.Party.Organization?.Name);
+        Assert.Equal(org.OrgNumber, signeeContextWithMatchingSignatureDocument.Party.OrgNumber);
 
         Assert.NotNull(signeeContextWithMatchingSignatureDocument.Party);
         Assert.NotNull(signeeContextWithMatchingSignatureDocument.Party.Organization);
@@ -165,9 +158,9 @@ public class SigningServiceTests
         Assert.NotNull(signatureWithOnTheFlySigneeContext);
         Assert.Equal(instance.Process.CurrentTask.ElementId, signatureWithOnTheFlySigneeContext.TaskId);
 
-        Assert.NotNull(signatureWithOnTheFlySigneeContext.PersonSignee);
-        Assert.Equal(person.Name, signatureWithOnTheFlySigneeContext.PersonSignee?.DisplayName);
-        Assert.Equal(person.SSN, signatureWithOnTheFlySigneeContext.PersonSignee?.SocialSecurityNumber);
+        Assert.NotNull(signatureWithOnTheFlySigneeContext.Party);
+        Assert.Equal(person.Name, signatureWithOnTheFlySigneeContext.Party.Person?.Name);
+        Assert.Equal(person.SSN, signatureWithOnTheFlySigneeContext.Party.SSN);
 
         Assert.NotNull(signatureWithOnTheFlySigneeContext.Party);
         Assert.NotNull(signatureWithOnTheFlySigneeContext.Party.Person);

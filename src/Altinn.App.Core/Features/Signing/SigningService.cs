@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using Altinn.App.Core.Features.Signing.Exceptions;
@@ -18,8 +17,6 @@ using JsonException = Newtonsoft.Json.JsonException;
 namespace Altinn.App.Core.Features.Signing;
 
 internal sealed class SigningService(
-    IPersonClient personClient,
-    IOrganizationClient organisationClient,
     IAltinnPartyClient altinnPartyClient,
     ISigningDelegationService signingDelegationService,
     ISigningNotificationService signingNotificationService,
@@ -32,7 +29,10 @@ internal sealed class SigningService(
     private readonly ILogger<SigningService> _logger = logger;
     private const string ApplicationJsonContentType = "application/json";
 
-    public async Task<SigneesResult?> GetSignees(Instance instance, AltinnSignatureConfiguration signatureConfiguration)
+    public async Task<SigneesResult?> GetSigneesFromProvider(
+        Instance instance,
+        AltinnSignatureConfiguration signatureConfiguration
+    )
     {
         string? signeeProviderId = signatureConfiguration.SigneeProviderId;
         if (signeeProviderId is null)
@@ -48,7 +48,7 @@ internal sealed class SigningService(
         return signeesResult;
     }
 
-    public async Task<List<SigneeContext>> InitializeSignees(
+    public async Task<List<SigneeContext>> CreateSigneeContexts(
         IInstanceDataMutator instanceMutator,
         AltinnSignatureConfiguration signatureConfiguration,
         CancellationToken ct
@@ -59,22 +59,25 @@ internal sealed class SigningService(
         Instance instance = instanceMutator.Instance;
         string taskId = instance.Process.CurrentTask.ElementId;
 
-        SigneesResult? signeesResult = await GetSignees(instance, signatureConfiguration);
+        SigneesResult? signeesResult = await GetSigneesFromProvider(instance, signatureConfiguration);
         if (signeesResult is null)
         {
             return [];
         }
 
-        List<SigneeContext> personSigneeContexts = await GetPersonSigneeContexts(taskId, signeesResult, ct);
-        List<SigneeContext> organisationSigneeContexts = await GetOrganisationSigneeContexts(taskId, signeesResult, ct);
-        List<SigneeContext> signeeContexts = [.. personSigneeContexts, .. organisationSigneeContexts];
+        List<SigneeContext> signeeContexts = [];
+        foreach (SigneeParty signeeParty in signeesResult.Signees)
+        {
+            var signeeContext = await CreateSigneeContext(taskId, signeeParty, ct);
+            signeeContexts.Add(signeeContext);
+        }
 
         _logger.LogInformation("Assigning signees to task {TaskId}: {SigneeContexts}", taskId, signeeContexts.Count);
 
         return signeeContexts;
     }
 
-    public async Task<List<SigneeContext>> ProcessSignees(
+    public async Task<List<SigneeContext>> DelegateAccessAndNotifySignees(
         string taskId,
         Party delegatorParty,
         IInstanceDataMutator instanceMutator,
@@ -123,7 +126,7 @@ internal sealed class SigningService(
     {
         using Activity? activity = telemetry?.StartReadSigneesActivity();
 
-        //If no SigneeStateDataTypeId is set, delegated signing is not enabled and there is nothing to download.
+        // If no SigneeStatesDataTypeId is set, delegated signing is not enabled and there is nothing to download.
         List<SigneeContext> signeeContexts = signatureConfiguration.SigneeStatesDataTypeId is not null
             ? await DownloadSigneeContexts(instanceDataAccessor, signatureConfiguration)
             : [];
@@ -183,88 +186,37 @@ internal sealed class SigningService(
         throw new NotImplementedException();
     }
 
-    private async Task<List<SigneeContext>> GetPersonSigneeContexts(
-        string taskId,
-        SigneesResult signeeResult,
-        CancellationToken ct
-    )
+    private async Task<SigneeContext> CreateSigneeContext(string taskId, SigneeParty signeeParty, CancellationToken ct)
     {
-        List<SigneeContext> personSigneeContexts = [];
-        foreach (PersonSignee personSignee in signeeResult.PersonSignees)
-        {
-            var lastName = personSignee.FullName.Split(" ").Last().ToLower(CultureInfo.InvariantCulture);
-            Person? person =
-                await personClient.GetPerson(personSignee.SocialSecurityNumber, lastName, ct)
-                ?? throw new SignaturePartyNotValidException(
-                    $"The given SSN and last name did not match any person in the registry."
-                );
-            Party party = await altinnPartyClient.LookupParty(
-                new PartyLookup { Ssn = personSignee.SocialSecurityNumber }
-            );
-
-            Sms? smsNotification = personSignee.Notifications?.OnSignatureAccessRightsDelegated?.Sms;
-            if (smsNotification is not null && smsNotification.MobileNumber is null)
+        Party party = await altinnPartyClient.LookupParty(
+            new PartyLookup
             {
-                smsNotification.MobileNumber = person.MobileNumber;
+                Ssn = signeeParty.SocialSecurityNumber,
+                OrgNo = signeeParty.OnBehalfOfOrganisation?.OrganisationNumber,
             }
+        );
 
-            personSigneeContexts.Add(
-                new SigneeContext
-                {
-                    TaskId = taskId,
-                    Party = party,
-                    PersonSignee = personSignee,
-                    SigneeState = new SigneeState(),
-                }
-            );
+        Models.Notifications? notifications = signeeParty.Notifications;
+
+        Email? emailNotification = notifications?.OnSignatureAccessRightsDelegated?.Email;
+        if (emailNotification is not null && emailNotification.EmailAddress is null)
+        {
+            emailNotification.EmailAddress = party.Organization?.EMailAddress;
         }
 
-        return personSigneeContexts;
-    }
-
-    private async Task<List<SigneeContext>> GetOrganisationSigneeContexts(
-        string taskId,
-        SigneesResult signeeResult,
-        CancellationToken? ct = null
-    )
-    {
-        List<SigneeContext> organisationSigneeContexts = []; //TODO rename
-        foreach (OrganisationSignee organisationSignee in signeeResult.OrganisationSignees)
+        Sms? smsNotification = notifications?.OnSignatureAccessRightsDelegated?.Sms;
+        if (smsNotification is not null && smsNotification.MobileNumber is null)
         {
-            Organization? organisation =
-                await organisationClient.GetOrganization(organisationSignee.OrganisationNumber)
-                ?? throw new SignaturePartyNotValidException(
-                    $"Signature party with organisation number {organisationSignee.OrganisationNumber} was not found in the registry."
-                );
-            Party party = await altinnPartyClient.LookupParty(
-                new PartyLookup { OrgNo = organisationSignee.OrganisationNumber }
-            );
-
-            //TODO: Is this the correct place to set email to registry fallback? Maybe move it to notification service?
-            Email? emailNotification = organisationSignee.Notifications?.OnSignatureAccessRightsDelegated?.Email;
-            if (emailNotification is not null && emailNotification.EmailAddress is null)
-            {
-                emailNotification.EmailAddress = organisation.EMailAddress;
-            }
-
-            Sms? smsNotification = organisationSignee.Notifications?.OnSignatureAccessRightsDelegated?.Sms;
-            if (smsNotification is not null && smsNotification.MobileNumber is null)
-            {
-                smsNotification.MobileNumber = organisation.MobileNumber;
-            }
-
-            organisationSigneeContexts.Add(
-                new SigneeContext
-                {
-                    TaskId = taskId,
-                    Party = party,
-                    OrganisationSignee = organisationSignee,
-                    SigneeState = new SigneeState(),
-                }
-            );
+            smsNotification.MobileNumber = party.Organization?.MobileNumber ?? party.Person?.MobileNumber;
         }
 
-        return organisationSigneeContexts;
+        return new SigneeContext
+        {
+            TaskId = taskId,
+            Party = party,
+            SigneeState = new SigneeState(),
+            Notifications = notifications,
+        };
     }
 
     private static async Task<List<SigneeContext>> DownloadSigneeContexts(
@@ -361,8 +313,8 @@ internal sealed class SigningService(
         foreach (SignDocument signDocument in signDocuments)
         {
             SigneeContext? matchingSigneeContext = signeeContexts.FirstOrDefault(x =>
-                x.PersonSignee?.SocialSecurityNumber == signDocument.SigneeInfo.PersonNumber
-                || x.OrganisationSignee?.OrganisationNumber == signDocument.SigneeInfo.OrganisationNumber
+                x.Party?.SSN == signDocument.SigneeInfo.PersonNumber
+                || x.Party?.OrgNumber == signDocument.SigneeInfo.OrganisationNumber
             );
 
             if (matchingSigneeContext is not null)
@@ -396,30 +348,10 @@ internal sealed class SigningService(
             }
         );
 
-        PersonSignee? personSignee = party.Person is not null
-            ? new PersonSignee
-            {
-                SocialSecurityNumber = party.Person.SSN,
-                DisplayName = party.Person.Name,
-                FullName = party.Person.Name,
-                OnBehalfOfOrganisation = party.Organization?.Name,
-            }
-            : null;
-
-        OrganisationSignee? organisationSignee = party.Organization is not null
-            ? new OrganisationSignee
-            {
-                OrganisationNumber = party.Organization.OrgNumber,
-                DisplayName = party.Organization.Name,
-            }
-            : null;
-
         return new SigneeContext
         {
             TaskId = instanceDataAccessor.Instance.Process.CurrentTask.ElementId,
             Party = party,
-            PersonSignee = personSignee,
-            OrganisationSignee = organisationSignee,
             SigneeState = new SigneeState()
             {
                 IsAccessDelegated = true,

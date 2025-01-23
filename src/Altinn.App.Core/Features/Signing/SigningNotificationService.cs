@@ -45,8 +45,7 @@ internal sealed class SigningNotificationService : ISigningNotificationService
         foreach (SigneeContext signeeContext in signeeContexts)
         {
             SigneeState state = signeeContext.SigneeState;
-            Models.Notifications? notifications =
-                signeeContext.OrganisationSignee?.Notifications ?? signeeContext.PersonSignee?.Notifications;
+            Models.Notifications? notifications = signeeContext?.Notifications;
 
             Notification? notification = notifications?.OnSignatureAccessRightsDelegated;
 

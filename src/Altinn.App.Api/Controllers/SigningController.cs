@@ -88,14 +88,9 @@ public class SigningController : ControllerBase
             return NotSigningTask();
         }
 
-        AltinnSignatureConfiguration? signingConfiguration = _processReader
-            .GetAltinnTaskExtension(instance.Process.CurrentTask.ElementId)
-            ?.SignatureConfiguration;
-
-        if (signingConfiguration == null)
-        {
-            throw new ApplicationConfigException("Signing configuration not found in AltinnTaskExtension");
-        }
+        AltinnSignatureConfiguration signingConfiguration =
+            (_processReader.GetAltinnTaskExtension(instance.Process.CurrentTask.ElementId)?.SignatureConfiguration)
+            ?? throw new ApplicationConfigException("Signing configuration not found in AltinnTaskExtension");
 
         List<SigneeContext> signeeContexts = await _signingService.GetSigneeContexts(
             cachedDataMutator,
@@ -104,19 +99,20 @@ public class SigningController : ControllerBase
 
         var response = new SingingStateResponse
         {
-            SigneeStates = signeeContexts
-                .Select(signeeContext => new SigneeState
+            SigneeStates =
+            [
+                .. signeeContexts.Select(signeeContext => new SigneeState
                 {
-                    Name = signeeContext.PersonSignee?.DisplayName ?? signeeContext.OrganisationSignee?.DisplayName,
-                    Organisation = signeeContext.OrganisationSignee?.DisplayName,
+                    Name = signeeContext.Party.Person?.Name,
+                    Organisation = signeeContext.Party.Organization?.Name,
                     HasSigned = signeeContext.SignDocument is not null,
                     DelegationSuccessful = signeeContext.SigneeState.IsAccessDelegated,
                     NotificationSuccessful =
                         signeeContext.SigneeState
                             is { SignatureRequestEmailSent: false, SignatureRequestSmsSent: false },
                     PartyId = signeeContext.Party.PartyId,
-                })
-                .ToList(),
+                }),
+            ],
         };
 
         return Ok(response);

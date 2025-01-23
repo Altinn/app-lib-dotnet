@@ -102,7 +102,7 @@ internal sealed class SigningProcessTask : IProcessTask
                 _modelSerialization
             );
 
-            List<SigneeContext> signeeContexts = await _signingService.InitializeSignees(
+            List<SigneeContext> signeeContexts = await _signingService.CreateSigneeContexts(
                 cachedDataMutator,
                 signatureConfiguration,
                 cts.Token
@@ -112,7 +112,7 @@ internal sealed class SigningProcessTask : IProcessTask
                 _httpContextAccessor.HttpContext ?? throw new InvalidOperationException("HttpContext is not available.")
             );
 
-            await _signingService.ProcessSignees(
+            await _signingService.DelegateAccessAndNotifySignees(
                 taskId,
                 userContext.UserParty,
                 cachedDataMutator,
