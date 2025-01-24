@@ -74,36 +74,6 @@ public class HomeController : Controller
         [FromQuery] bool dontChooseReportee
     )
     {
-        // Access all query parameters
-        var allQueryParams = HttpContext.Request.Query;
-
-        foreach (var param in allQueryParams)
-        {
-            // Log each query parameter key and value
-            Console.WriteLine($"{param.Key}: {param.Value}");
-            HttpContext.Session.SetString(param.Key, param.Value);
-            var value = HttpContext.Session.GetString(param.Key);
-            Debugger.Break(); // This acts like a breakpoint.
-        }
-
-        //Debugger.Break(); // This acts like a breakpoint.
-
-        // See comments in the configuration of Antiforgery in MvcConfiguration.cs.
-        var tokens = _antiforgery.GetAndStoreTokens(HttpContext);
-        if (tokens.RequestToken != null)
-        {
-            HttpContext.Response.Cookies.Append(
-                "XSRF-TOKEN",
-                tokens.RequestToken,
-                new CookieOptions
-                {
-                    HttpOnly = false, // Make this cookie readable by Javascript.
-                }
-            );
-        }
-
-        Debugger.Break();
-
         if (await ShouldShowAppView())
         {
             ViewBag.org = org;
@@ -141,19 +111,56 @@ public class HomeController : Controller
     {
         var queryParams = HttpContext.Request.Query;
 
+        // Get application metadata
         Application application = await _appMetadata.GetApplicationMetadata();
 
+        // Get the data types from the application
         List<string> dataTypes = application.DataTypes.Select(type => type.Id).ToList();
 
-        List<string> allowedQueryParams = GetAllowedQueryParams(dataTypes);
+        // Build the modelPrefill dictionary
+        var modelPrefill = dataTypes
+            .Select(item =>
+            {
+                var prefillJson = _appResources.GetPrefillJson(item);
+                if (string.IsNullOrEmpty(prefillJson))
+                {
+                    return null;
+                }
 
-        if (allowedQueryParams.Count < 1)
-        {
-            return Content("<h1>No query parameters found in the request.</h1>", "text/html");
-        }
+                return new { DataModelName = item, PrefillConfiguration = JObject.Parse(prefillJson) };
+            })
+            .Where(item => item != null)
+            .ToList();
 
-        var queryDict = allowedQueryParams.ToDictionary(q => q.Key, q => q.Value.ToString());
-        var queryParamsJson = System.Text.Json.JsonSerializer.Serialize(queryDict);
+        // Prepare the result grouped by dataModelName
+        var result = modelPrefill
+            .Select(entry =>
+            {
+                var queryParamsConfig = entry.PrefillConfiguration["QueryParams"];
+                if (queryParamsConfig == null || queryParamsConfig.Type != JTokenType.Object)
+                {
+                    return null;
+                }
+
+                // Filter allowed query parameters
+                var allowedQueryParams = ((JObject)queryParamsConfig)
+                    .Properties()
+                    .Where(prop => queryParams.ContainsKey(prop.Name))
+                    .Select(prop => new Dictionary<string, string>
+                    {
+                        { prop.Value.ToString(), queryParams[prop.Name].ToString() },
+                    })
+                    .ToList();
+
+                return new { DataModelName = entry.DataModelName, PrefillFields = allowedQueryParams };
+            })
+            .Where(entry => entry != null && entry.PrefillFields.Count > 0)
+            .ToList();
+
+        // Serialize the result to JSON
+        var resultJson = System.Text.Json.JsonSerializer.Serialize(result);
+
+        // Generate HTML to set sessionStorage
         var htmlContent =
             $@"
         <!DOCTYPE html>
@@ -165,8 +172,8 @@ public class HomeController : Controller
         </head>
         <body>
             <script>
-                const params = {queryParamsJson};
-                sessionStorage.setItem('queryParams', JSON.stringify(params));
+                const prefillData = {resultJson};
+                sessionStorage.setItem('queryParams', JSON.stringify(prefillData));
                 const redirectUrl = `${{window.location.origin}}/{org}/{app}`;
                 window.location.href = redirectUrl;
             </script>
@@ -174,33 +181,6 @@ public class HomeController : Controller
         </html>";
 
         return Content(htmlContent, "text/html");
-    }
-
-    private List<string> GetAllowedQueryParams(List<string> dataTypes)
-    {
-        return dataTypes
-            .Select(item =>
-            {
-                var prefillJson = _appResources.GetPrefillJson(item);
-                if (prefillJson == null)
-                {
-                    return null;
-                }
-
-                JObject prefillConfiguration = JObject.Parse(prefillJson);
-                JToken? queryParamObject = prefillConfiguration.SelectToken("QueryParams");
-
-                if (queryParamObject != null && queryParamObject.Type == JTokenType.Object)
-                {
-                    return ((JObject)queryParamObject).Properties().Select(prop => prop.Name).ToList();
-                }
-
-                return null;
-            })
-            .Where(result => result != null)
-            .SelectMany(result => result)
-            .Distinct()
-            .ToList();
     }
 
     private async Task<bool> ShouldShowAppView()
