@@ -4,7 +4,7 @@
 
   <ItemGroup>
     <PackageReference Include="MinVer" Version="6.0.0" PrivateAssets="All" />
-    <PackageReference Include="Nullable.Extended.Analyzer" Version="1.15.6169">
+    <PackageReference Include="Nullable.Extended.Analyzer" Version="1.15.6495">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
@@ -42,14 +42,6 @@
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
-
-  <Target Name="AssemblyVersionTarget" AfterTargets="MinVer" Condition="'$(MinVerVersion)'!='' AND '$(BuildNumber)' != ''">
-    <PropertyGroup>
-      <FileVersion>$(MinVerMajor).$(MinVerMinor).$(MinVerPatch).$(BuildNumber)</FileVersion>
-      <Version>$(MinVerMajor).$(MinVerMinor).$(MinVerPatch).$(BuildNumber)</Version>
-      <AssemblyVersion>$(MinVerMajor).$(MinVerMinor).$(MinVerPatch).$(BuildNumber)</AssemblyVersion>
-    </PropertyGroup>
-  </Target>
 
   <PropertyGroup Condition="'$(MinVerVersionOverride)'!=''">
     <PackageId>$(MSBuildProjectName).Experimental</PackageId>
