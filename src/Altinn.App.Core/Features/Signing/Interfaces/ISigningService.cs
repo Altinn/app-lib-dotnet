@@ -60,5 +60,5 @@ public interface ISigningService
     /// <returns></returns>
     Task Sign(UserActionContext userActionContext, ProcessTask currentTask);
 
-    void DeleteSigneeState(IInstanceDataMutator cachedDataMutator, AltinnSignatureConfiguration signatureConfiguration);
+    void RemoveSigningData(IInstanceDataMutator cachedDataMutator, AltinnSignatureConfiguration signatureConfiguration);
 }

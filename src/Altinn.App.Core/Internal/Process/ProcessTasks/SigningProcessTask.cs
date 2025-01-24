@@ -95,7 +95,7 @@ internal sealed class SigningProcessTask : IProcessTask
                 _modelSerialization
             );
 
-            _signingService.DeleteSigneeState(cachedDataMutator, signatureConfiguration);
+            _signingService.RemoveSigningData(cachedDataMutator, signatureConfiguration);
 
             List<SigneeContext> signeeContexts = await _signingService.GenerateSigneeContexts(
                 cachedDataMutator,
@@ -157,7 +157,7 @@ internal sealed class SigningProcessTask : IProcessTask
             _modelSerialization
         );
 
-        _signingService.DeleteSigneeState(cachedDataMutator, signatureConfiguration);
+        _signingService.RemoveSigningData(cachedDataMutator, signatureConfiguration);
 
         DataElementChanges changes = cachedDataMutator.GetDataElementChanges(false);
         await cachedDataMutator.UpdateInstanceData(changes);

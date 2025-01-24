@@ -203,7 +203,7 @@ public class SigningServiceTests
     }
 
     [Fact]
-    public void DeleteSigneeState_Calls_RemoveDataElement()
+    public void RemoveSingingData_Removes_SigneeState_And_Signatures()
     {
         var signatureConfiguration = new AltinnSignatureConfiguration
         {
@@ -211,19 +211,29 @@ public class SigningServiceTests
             SignatureDataType = "signature",
         };
 
-        var dataElement = new DataElement
+        var signeeStateDataElement = new DataElement
         {
             Id = Guid.NewGuid().ToString(),
             DataType = signatureConfiguration.SigneeStatesDataTypeId,
         };
+
+        var signatureDataElement = new DataElement
+        {
+            Id = Guid.NewGuid().ToString(),
+            DataType = signatureConfiguration.SignatureDataType,
+        };
+
         var cachedInstanceMutator = new Mock<IInstanceDataMutator>();
-        var instance = new Instance { Data = [dataElement] };
+        var instance = new Instance { Data = [signeeStateDataElement, signatureDataElement] };
 
         cachedInstanceMutator.Setup(x => x.Instance).Returns(instance);
 
-        _signingService.DeleteSigneeState(cachedInstanceMutator.Object, signatureConfiguration);
+        _signingService.RemoveSigningData(cachedInstanceMutator.Object, signatureConfiguration);
 
-        cachedInstanceMutator.Verify(x => x.RemoveDataElement(dataElement));
+        cachedInstanceMutator.Verify(x => x.Instance);
+        cachedInstanceMutator.Verify(x => x.RemoveDataElement(signeeStateDataElement), Times.Once);
+        cachedInstanceMutator.Verify(x => x.RemoveDataElement(signatureDataElement), Times.Once);
+        cachedInstanceMutator.VerifyNoOtherCalls();
     }
 
     private static byte[] ToBytes<T>(T obj)

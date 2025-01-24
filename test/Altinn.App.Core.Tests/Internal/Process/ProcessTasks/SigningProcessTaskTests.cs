@@ -71,7 +71,7 @@ public class SigningProcessTaskTests
 
         // Assert
         _signingServiceMock.Verify(
-            x => x.DeleteSigneeState(It.IsAny<IInstanceDataMutator>(), altinnTaskExtension.SignatureConfiguration),
+            x => x.RemoveSigningData(It.IsAny<IInstanceDataMutator>(), altinnTaskExtension.SignatureConfiguration),
             Times.Once
         );
     }
@@ -91,7 +91,7 @@ public class SigningProcessTaskTests
 
         // Assert
         _signingServiceMock.Verify(x =>
-            x.DeleteSigneeState(It.IsAny<IInstanceDataMutator>(), altinnTaskExtension.SignatureConfiguration)
+            x.RemoveSigningData(It.IsAny<IInstanceDataMutator>(), altinnTaskExtension.SignatureConfiguration)
         );
     }
 

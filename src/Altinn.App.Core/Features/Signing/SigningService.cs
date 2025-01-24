@@ -218,7 +218,7 @@ internal sealed class SigningService(
         }
     }
 
-    public void DeleteSigneeState(
+    public void RemoveSigningData(
         IInstanceDataMutator instanceMutator,
         AltinnSignatureConfiguration signatureConfiguration
     )
@@ -231,15 +231,28 @@ internal sealed class SigningService(
                 "SigneeStatesDataTypeId is not set in the signature configuration."
             );
 
-        IEnumerable<DataElement> dataElements = instanceMutator.GetDataElementsForType(signeeStatesDataTypeId);
+        IEnumerable<DataElement> signeeStateDataElements = instanceMutator.GetDataElementsForType(
+            signeeStatesDataTypeId
+        );
 
         DataElement signeeStateDataElement =
-            dataElements.SingleOrDefault()
+            signeeStateDataElements.SingleOrDefault()
             ?? throw new ApplicationException(
                 $"Failed to find the data element containing signee contexts using dataTypeId {signatureConfiguration.SigneeStatesDataTypeId}."
             );
 
         instanceMutator.RemoveDataElement(signeeStateDataElement);
+
+        string signatureDataType =
+            signatureConfiguration.SignatureDataType
+            ?? throw new ApplicationConfigException("SignatureDataType is not set in the signature configuration.");
+
+        IEnumerable<DataElement> signatures = instanceMutator.GetDataElementsForType(signatureDataType);
+
+        foreach (DataElement signature in signatures)
+        {
+            instanceMutator.RemoveDataElement(signature);
+        }
     }
 
     private async Task UpdateSigneeContext(
