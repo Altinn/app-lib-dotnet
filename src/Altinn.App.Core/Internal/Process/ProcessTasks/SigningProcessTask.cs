@@ -68,7 +68,6 @@ internal sealed class SigningProcessTask : IProcessTask
     public string Type => "signing";
 
     private const string PdfContentType = "application/pdf";
-    private const string SignatureFileName = "signature.pdf";
 
     /// <inheritdoc/>
     public async Task Start(string taskId, Instance instance)
@@ -142,19 +141,28 @@ internal sealed class SigningProcessTask : IProcessTask
     }
 
     /// <inheritdoc/>
+    /// <remarks> Generates a PDF if the signature configuration specifies a signature data type. </remarks>
     public async Task End(string taskId, Instance instance)
     {
-        Stream pdfStream = await _pdfService.GeneratePdf(instance, taskId, false, CancellationToken.None);
-        string signatureDataType = GetAltinnSignatureConfiguration(taskId).SignatureDataType;
+        AltinnSignatureConfiguration? signatureConfiguration = _processReader
+            .GetAltinnTaskExtension(taskId)
+            ?.SignatureConfiguration;
 
-        await _dataClient.InsertBinaryData(
-            instance.Id,
-            signatureDataType,
-            PdfContentType,
-            SignatureFileName,
-            pdfStream,
-            taskId
-        );
+        string? signatureDataType = signatureConfiguration?.SignatureDataType;
+
+        if (signatureDataType is not null)
+        {
+            Stream pdfStream = await _pdfService.GeneratePdf(instance, taskId, false, CancellationToken.None);
+
+            await _dataClient.InsertBinaryData(
+                instance.Id,
+                signatureDataType,
+                PdfContentType,
+                signatureDataType + ".pdf" ?? "signature" + taskId + ".pdf",
+                pdfStream,
+                taskId
+            );
+        }
     }
 
     /// <inheritdoc/>
