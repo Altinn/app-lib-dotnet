@@ -225,7 +225,6 @@ public class SigningServiceTests
 
         var cachedInstanceMutator = new Mock<IInstanceDataMutator>();
         var instance = new Instance { Data = [signeeStateDataElement, signatureDataElement] };
-
         cachedInstanceMutator.Setup(x => x.Instance).Returns(instance);
 
         _signingService.RemoveSigningData(cachedInstanceMutator.Object, signatureConfiguration);
@@ -234,6 +233,65 @@ public class SigningServiceTests
         cachedInstanceMutator.Verify(x => x.RemoveDataElement(signeeStateDataElement), Times.Once);
         cachedInstanceMutator.Verify(x => x.RemoveDataElement(signatureDataElement), Times.Once);
         cachedInstanceMutator.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public void RemoveSingingData_Does_Nothing_If_No_Existing_Data()
+    {
+        var signatureConfiguration = new AltinnSignatureConfiguration
+        {
+            SigneeStatesDataTypeId = "signeeStates",
+            SignatureDataType = "signature",
+        };
+
+        var cachedInstanceMutator = new Mock<IInstanceDataMutator>();
+        var instance = new Instance { Data = [] };
+        cachedInstanceMutator.Setup(x => x.Instance).Returns(instance);
+
+        _signingService.RemoveSigningData(cachedInstanceMutator.Object, signatureConfiguration);
+
+        cachedInstanceMutator.Verify(x => x.Instance);
+        cachedInstanceMutator.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public void RemoveSigningData_Throws_Exception_When_SigneeStatesDataTypeId_Is_Null()
+    {
+        // Arrange
+        var signatureConfiguration = new AltinnSignatureConfiguration
+        {
+            SigneeStatesDataTypeId = null,
+            SignatureDataType = "signatures",
+        };
+
+        var cachedInstanceMutator = new Mock<IInstanceDataMutator>();
+        var instance = new Instance { Data = [] };
+        cachedInstanceMutator.Setup(x => x.Instance).Returns(instance);
+
+        // Act & Assert
+        Assert.Throws<ApplicationConfigException>(
+            () => _signingService.RemoveSigningData(cachedInstanceMutator.Object, signatureConfiguration)
+        );
+    }
+
+    [Fact]
+    public void RemoveSigningData_Throws_Exception_When_SignatureDataType_Is_Null()
+    {
+        // Arrange
+        var signatureConfiguration = new AltinnSignatureConfiguration
+        {
+            SigneeStatesDataTypeId = "signeeStates",
+            SignatureDataType = null,
+        };
+
+        var cachedInstanceMutator = new Mock<IInstanceDataMutator>();
+        var instance = new Instance { Data = [] };
+        cachedInstanceMutator.Setup(x => x.Instance).Returns(instance);
+
+        // Act & Assert
+        Assert.Throws<ApplicationConfigException>(
+            () => _signingService.RemoveSigningData(cachedInstanceMutator.Object, signatureConfiguration)
+        );
     }
 
     private static byte[] ToBytes<T>(T obj)

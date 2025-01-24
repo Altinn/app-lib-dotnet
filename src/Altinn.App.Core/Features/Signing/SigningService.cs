@@ -235,13 +235,11 @@ internal sealed class SigningService(
             signeeStatesDataTypeId
         );
 
-        DataElement signeeStateDataElement =
-            signeeStateDataElements.SingleOrDefault()
-            ?? throw new ApplicationException(
-                $"Failed to find the data element containing signee contexts using dataTypeId {signatureConfiguration.SigneeStatesDataTypeId}."
-            );
-
-        instanceMutator.RemoveDataElement(signeeStateDataElement);
+        DataElement? signeeStateDataElement = signeeStateDataElements.SingleOrDefault();
+        if (signeeStateDataElement is not null)
+        {
+            instanceMutator.RemoveDataElement(signeeStateDataElement);
+        }
 
         string signatureDataType =
             signatureConfiguration.SignatureDataType
