@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Features.Maskinporten.Constants;
@@ -14,42 +15,6 @@ using Authorization.Platform.Authorization.Models;
 using Microsoft.AspNetCore.Http;
 
 namespace Altinn.App.Core.Features.Auth;
-
-/// <summary>
-/// The type of the token, meaning how the user logged in
-/// </summary>
-public enum TokenIssuer
-{
-    /// <summary>
-    /// Token is missing or invalid
-    /// </summary>
-    None,
-
-    /// <summary>
-    /// Token is unknown or not recognized
-    /// </summary>
-    Unknown,
-
-    /// <summary>
-    /// Token is from Altinn portal or Altinn Authentication through token exchange
-    /// </summary>
-    Altinn,
-
-    /// <summary>
-    /// Token is from Altinn Studio
-    /// </summary>
-    AltinnStudio,
-
-    /// <summary>
-    /// Token is from external IDporten, e.g. SBS
-    /// </summary>
-    IDporten,
-
-    /// <summary>
-    /// Token is from Maskinporten directly, e.g. service owner token, org token, system user token (when not exchanged)
-    /// </summary>
-    Maskinporten,
-}
 
 /// <summary>
 /// Contains information about the current logged in client/user.
@@ -538,11 +503,11 @@ public abstract class Authenticated
     internal static (TokenIssuer Issuer, bool IsExchanged) ResolveIssuer(
         string? iss,
         string? authMethod,
-        string? scope,
-        string? acr
+        string? acr,
+        bool isInAltinnPortal
     )
     {
-        if (string.IsNullOrWhiteSpace(iss) && string.IsNullOrWhiteSpace(authMethod) && string.IsNullOrWhiteSpace(scope))
+        if (string.IsNullOrWhiteSpace(iss) && string.IsNullOrWhiteSpace(authMethod))
             return (TokenIssuer.None, false);
 
         // A token is exchanged if
@@ -553,11 +518,11 @@ public abstract class Authenticated
             (
                 iss?.Contains("altinn.no", StringComparison.OrdinalIgnoreCase) is true
                 || !string.IsNullOrWhiteSpace(authMethod)
-            ) && (scope?.Contains("altinn:portal/enduser", StringComparison.OrdinalIgnoreCase) is null or false);
+            ) && !isInAltinnPortal;
 
         // If we have the special scope, we know the login was done through Altinn portal directly
         // In any other case we want the underlying authentication method (IDporten, Maskinporten)
-        if (scope?.Contains("altinn:portal/enduser", StringComparison.OrdinalIgnoreCase) ?? false)
+        if (isInAltinnPortal)
             return (TokenIssuer.Altinn, isExchanged);
 
         if (iss is not null)
@@ -617,31 +582,53 @@ public abstract class Authenticated
         var handler = new JwtSecurityTokenHandler();
         var token = handler.ReadJwtToken(tokenStr);
         var claims = token.Claims;
-        var issuerClaim = claims.FirstOrDefault(claim =>
-            claim.Type.Equals(JwtClaimTypes.Issuer, StringComparison.OrdinalIgnoreCase)
-        );
-        var authMethodClaim = claims.FirstOrDefault(claim =>
-            claim.Type.Equals(AltinnCoreClaimTypes.AuthenticateMethod, StringComparison.OrdinalIgnoreCase)
-        );
-        var scopeClaim = claims.FirstOrDefault(claim =>
-            claim.Type.Equals(JwtClaimTypes.Scope, StringComparison.OrdinalIgnoreCase)
-        );
-        var acrClaim = claims.FirstOrDefault(claim => claim.Type.Equals("acr", StringComparison.OrdinalIgnoreCase));
+
+        Claim? issuerClaim = null;
+        Claim? authLevelClaim = null;
+        Claim? authMethodClaim = null;
+        Claim? scopeClaim = null;
+        Claim? acrClaim = null;
+        Claim? orgClaim = null;
+        Claim? orgNoClaim = null;
+        Claim? partyIdClaim = null;
+        Claim? authorizationDetailsClaim = null;
+        Claim? userIdClaim = null;
+        Claim? usernameClaim = null;
+
+        static void TryAssign(Claim claim, string name, ref Claim? dest)
+        {
+            if (claim.Type.Equals(name, StringComparison.OrdinalIgnoreCase))
+                dest = claim;
+        }
+
+        foreach (var claim in claims)
+        {
+            TryAssign(claim, JwtClaimTypes.Issuer, ref issuerClaim);
+            TryAssign(claim, AltinnCoreClaimTypes.AuthenticationLevel, ref authLevelClaim);
+            TryAssign(claim, AltinnCoreClaimTypes.AuthenticateMethod, ref authMethodClaim);
+            TryAssign(claim, JwtClaimTypes.Scope, ref scopeClaim);
+            TryAssign(claim, "acr", ref acrClaim);
+            TryAssign(claim, AltinnCoreClaimTypes.Org, ref orgClaim);
+            TryAssign(claim, AltinnCoreClaimTypes.OrgNumber, ref orgNoClaim);
+            TryAssign(claim, AltinnCoreClaimTypes.PartyID, ref partyIdClaim);
+            TryAssign(claim, "authorization_details", ref authorizationDetailsClaim);
+            TryAssign(claim, AltinnCoreClaimTypes.UserId, ref userIdClaim);
+            TryAssign(claim, AltinnCoreClaimTypes.UserName, ref usernameClaim);
+        }
+
+        var scopes = new Scopes(scopeClaim?.Value);
+        var isInAltinnPortal = scopes.HasScope("altinn:portal/enduser");
 
         var (tokenIssuer, isExchanged) = ResolveIssuer(
             issuerClaim?.Value,
             authMethodClaim?.Value,
-            scopeClaim?.Value,
-            acrClaim?.Value
+            acrClaim?.Value,
+            isInAltinnPortal
         );
 
         var isAuthenticated = httpContext.User.Identity?.IsAuthenticated ?? false;
         if (!isAuthenticated)
             return new None(tokenIssuer, isExchanged, tokenStr);
-
-        var partyIdClaim = claims.FirstOrDefault(claim =>
-            claim.Type.Equals(AltinnCoreClaimTypes.PartyID, StringComparison.OrdinalIgnoreCase)
-        );
 
         int? partyId = null;
         if (!string.IsNullOrWhiteSpace(partyIdClaim?.Value))
@@ -654,22 +641,6 @@ public abstract class Authenticated
             partyId = partyIdClaimValue;
         }
 
-        var orgClaim = claims.FirstOrDefault(claim =>
-            claim.Type.Equals(AltinnCoreClaimTypes.Org, StringComparison.OrdinalIgnoreCase)
-        );
-        var orgNoClaim = claims.FirstOrDefault(claim =>
-            claim.Type.Equals(AltinnCoreClaimTypes.OrgNumber, StringComparison.OrdinalIgnoreCase)
-        );
-
-        var authLevelClaim = claims.FirstOrDefault(claim =>
-            claim.Type.Equals(AltinnCoreClaimTypes.AuthenticationLevel, StringComparison.OrdinalIgnoreCase)
-        );
-
-        var authorizationDetailsClaim = claims.FirstOrDefault(claim =>
-            claim.Type.Equals("authorization_details", StringComparison.OrdinalIgnoreCase)
-        );
-
-        int authLevel = -1;
         static void ParseAuthLevel(string? value, out int authLevel)
         {
             if (!int.TryParse(value, CultureInfo.InvariantCulture, out authLevel))
@@ -679,6 +650,7 @@ public abstract class Authenticated
                 throw new InvalidOperationException("Invalid authentication level claim value for token");
         }
 
+        int authLevel;
         if (!string.IsNullOrWhiteSpace(authorizationDetailsClaim?.Value))
         {
             var authorizationDetails = JsonSerializer.Deserialize<AuthorizationDetailsClaim>(
@@ -755,9 +727,6 @@ public abstract class Authenticated
             );
         }
 
-        var userIdClaim = claims.FirstOrDefault(claim =>
-            claim.Type.Equals(AltinnCoreClaimTypes.UserId, StringComparison.OrdinalIgnoreCase)
-        );
         if (string.IsNullOrWhiteSpace(userIdClaim?.Value))
             throw new InvalidOperationException("Missing user ID claim for user token");
         if (!int.TryParse(userIdClaim.Value, CultureInfo.InvariantCulture, out int userId))
@@ -771,9 +740,6 @@ public abstract class Authenticated
         ParseAuthLevel(authLevelClaim?.Value, out authLevel);
         if (authLevel == 0)
         {
-            var usernameClaim = claims.FirstOrDefault(claim =>
-                claim.Type.Equals(AltinnCoreClaimTypes.UserName, StringComparison.OrdinalIgnoreCase)
-            );
             if (string.IsNullOrWhiteSpace(usernameClaim?.Value))
                 throw new InvalidOperationException("Missing username claim for self-identified user token");
 
@@ -804,7 +770,7 @@ public abstract class Authenticated
             authLevel,
             authMethodClaim.Value,
             selectedPartyId,
-            scopeClaim?.Value?.Contains("altinn:portal/enduser") ?? false,
+            isInAltinnPortal,
             tokenIssuer,
             isExchanged,
             tokenStr,
