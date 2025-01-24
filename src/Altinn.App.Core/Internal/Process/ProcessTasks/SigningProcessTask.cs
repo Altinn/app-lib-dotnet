@@ -158,7 +158,7 @@ internal sealed class SigningProcessTask : IProcessTask
                 instance.Id,
                 signatureDataType,
                 PdfContentType,
-                signatureDataType + ".pdf" ?? "signature" + taskId + ".pdf",
+                signatureDataType + ".pdf" ?? "signature_" + taskId + ".pdf",
                 pdfStream,
                 taskId
             );
