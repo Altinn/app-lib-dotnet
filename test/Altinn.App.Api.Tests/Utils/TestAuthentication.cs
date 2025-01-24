@@ -91,6 +91,11 @@ public static class TestAuthentication
         }
     }
 
+    public static None GetNoneAuthentication()
+    {
+        return new None(TokenIssuer.None, false, "None");
+    }
+
     public static string GetUserToken(
         int userId = DefaultUserId,
         int partyId = DefaultUserPartyId,
@@ -155,7 +160,10 @@ public static class TestAuthentication
             authenticationLevel,
             "IDporten",
             userPartyId,
-            "",
+            inAltinnPortal: true,
+            tokenIssuer: TokenIssuer.Altinn,
+            tokenIsExchanged: false,
+            token: "",
             getUserProfile: uid =>
             {
                 Assert.Equal(userId, uid);
@@ -251,7 +259,9 @@ public static class TestAuthentication
             userId,
             partyId,
             "IDporten",
-            "",
+            tokenIssuer: TokenIssuer.Altinn,
+            tokenIsExchanged: false,
+            token: "",
             getUserProfile: uid =>
             {
                 Assert.Equal(userId, uid);
@@ -318,7 +328,9 @@ public static class TestAuthentication
             orgNumber,
             authenticationLevel,
             "maskinporten",
-            "",
+            tokenIssuer: TokenIssuer.Maskinporten,
+            tokenIsExchanged: true,
+            token: "",
             lookupParty: orgNo =>
             {
                 Assert.Equal(orgNumber, orgNo);
@@ -397,7 +409,9 @@ public static class TestAuthentication
             orgNumber,
             authenticationLevel,
             "maskinporten",
-            "",
+            tokenIssuer: TokenIssuer.Maskinporten,
+            tokenIsExchanged: true,
+            token: "",
             lookupParty: orgNo =>
             {
                 Assert.Equal(orgNumber, orgNo);
@@ -454,7 +468,8 @@ public static class TestAuthentication
         string systemId = DefaultSystemId,
         string systemUserId = DefaultSystemUserId,
         string systemUserOrgNumber = DefaultOrgNumber,
-        int partyId = DefaultOrgPartyId
+        int partyId = DefaultOrgPartyId,
+        bool exchanged = true
     )
     {
         var party = new Party()
@@ -468,7 +483,11 @@ public static class TestAuthentication
             [Guid.Parse(systemUserId)],
             OrganisationNumber.Parse(systemUserOrgNumber),
             Guid.Parse(systemId),
-            "",
+            3,
+            "maskinporten",
+            tokenIssuer: TokenIssuer.Maskinporten,
+            tokenIsExchanged: exchanged,
+            token: "",
             lookupParty: orgNo =>
             {
                 Assert.Equal(systemUserOrgNumber, orgNo);

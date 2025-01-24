@@ -174,7 +174,7 @@ public sealed class ProcessEngineTest : IDisposable
             Authenticated.SelfIdentifiedUser auth => new()
             {
                 UserId = auth.UserId,
-                AuthenticationLevel = Authenticated.SelfIdentifiedUser.AuthenticationLevel,
+                AuthenticationLevel = auth.AuthenticationLevel,
             },
             Authenticated.ServiceOwner auth when await auth.LoadDetails() is { } details => new()
             {

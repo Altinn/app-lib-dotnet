@@ -41,7 +41,7 @@ public class DataElementAccessCheckerTests
         };
         Authenticated auth = (org, orgNr, isSystemUser) switch
         {
-            (null, null, _) => new Authenticated.None(""),
+            (null, null, _) => TestAuthentication.GetNoneAuthentication(),
             (string orgName, int orgNo, _) => TestAuthentication.GetServiceOwnerAuthentication(
                 orgNo.ToString(CultureInfo.InvariantCulture),
                 orgName
