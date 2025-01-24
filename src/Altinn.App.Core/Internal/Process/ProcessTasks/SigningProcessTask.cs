@@ -148,17 +148,17 @@ internal sealed class SigningProcessTask : IProcessTask
             .GetAltinnTaskExtension(taskId)
             ?.SignatureConfiguration;
 
-        string? signatureDataType = signatureConfiguration?.SignatureDataType;
+        string? signingPdfDataType = signatureConfiguration?.SigningPdfDataType;
 
-        if (signatureDataType is not null)
+        if (signingPdfDataType is not null)
         {
             Stream pdfStream = await _pdfService.GeneratePdf(instance, taskId, false, CancellationToken.None);
 
             await _dataClient.InsertBinaryData(
                 instance.Id,
-                signatureDataType,
+                signingPdfDataType,
                 PdfContentType,
-                signatureDataType + ".pdf",
+                signingPdfDataType + ".pdf",
                 pdfStream,
                 taskId
             );
