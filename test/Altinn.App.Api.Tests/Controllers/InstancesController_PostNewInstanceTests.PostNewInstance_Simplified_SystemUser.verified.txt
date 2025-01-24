@@ -34,7 +34,7 @@
           url.scheme: http
         },
         {
-          user.authentication.method: maskinporten
+          user.authentication.method: systemuser
         },
         {
           user.authentication.type: SystemUser

@@ -377,7 +377,7 @@ public static class TelemetryActivityExtensions
                 activity.SetUserId(auth.UserId);
                 activity.SetUserPartyId(auth.PartyId);
                 activity.SetAuthenticationMethod(auth.AuthenticationMethod);
-                activity.SetAuthenticationLevel(Authenticated.SelfIdentifiedUser.AuthenticationLevel);
+                activity.SetAuthenticationLevel(auth.AuthenticationLevel);
                 break;
             }
             case Authenticated.Org auth:
