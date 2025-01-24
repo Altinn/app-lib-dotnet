@@ -223,6 +223,9 @@ public abstract class Authenticated
 
             var representsSelf = SelectedPartyId == userProfile.PartyId;
             bool? canRepresent = null;
+            if (representsSelf)
+                canRepresent = true;
+
             if (validateSelectedParty && !representsSelf)
             {
                 // The selected party must either be the profile/default party or a party the user can represent,
