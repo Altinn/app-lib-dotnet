@@ -178,7 +178,20 @@ public class AuthorizationController : Controller
                 if (details.CanRepresent is not bool canRepresent)
                     throw new Exception("Couldn't validate selected party");
                 if (!canRepresent)
+                {
+                    // automatically switch to the user's own party
+                    var reportee = details.Profile.Party;
+                    if (user.SelectedPartyId != reportee.PartyId)
+                    {
+                        // Setting cookie to partyID of logged in user if it varies from previus value.
+                        Response.Cookies.Append(
+                            _settings.GetAltinnPartyCookieName,
+                            reportee.PartyId.ToString(CultureInfo.InvariantCulture),
+                            new CookieOptions { Domain = _settings.HostName }
+                        );
+                    }
                     return Unauthorized();
+                }
 
                 return Ok(details.Roles);
             }
@@ -196,7 +209,7 @@ public class AuthorizationController : Controller
             }
             case Authenticated.SystemUser:
             {
-                // TODO: is there an API for role lookup for system users?
+                // NOTE: system users can't have Altinn 2 roles, but they will get support for tilgangspakker, as of 26.01.2025
                 return Ok(Array.Empty<Role>());
             }
             default:
