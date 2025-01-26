@@ -34,7 +34,16 @@
           url.scheme: http
         },
         {
+          user.authentication.level: 3
+        },
+        {
           user.authentication.method: systemuser
+        },
+        {
+          user.authentication.token.isExchanged: True
+        },
+        {
+          user.authentication.token.issuer: Maskinporten
         },
         {
           user.authentication.type: SystemUser

@@ -34,6 +34,12 @@
           user.authentication.method: Mock
         },
         {
+          user.authentication.token.isExchanged: True
+        },
+        {
+          user.authentication.token.issuer: Unknown
+        },
+        {
           user.authentication.type: SelfIdentifiedUser
         },
         {

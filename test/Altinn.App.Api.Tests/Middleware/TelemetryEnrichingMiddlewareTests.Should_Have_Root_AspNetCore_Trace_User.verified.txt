@@ -28,10 +28,19 @@
           url.scheme: http
         },
         {
+          user.authentication.inAltinnPortal: False
+        },
+        {
           user.authentication.level: 4
         },
         {
           user.authentication.method: Mock
+        },
+        {
+          user.authentication.token.isExchanged: True
+        },
+        {
+          user.authentication.token.issuer: Unknown
         },
         {
           user.authentication.type: User
