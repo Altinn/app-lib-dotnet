@@ -551,7 +551,7 @@ public abstract class Authenticated
         /// <summary>
         /// System ID
         /// </summary>
-        public Guid SystemId { get; }
+        public string SystemId { get; }
 
         /// <summary>
         /// Authentication level
@@ -569,7 +569,7 @@ public abstract class Authenticated
         internal SystemUser(
             IReadOnlyList<Guid> systemUserId,
             OrganisationNumber systemUserOrgNr,
-            Guid systemId,
+            string systemId,
             int? authenticationLevel,
             string? authenticationMethod,
             TokenIssuer tokenIssuer,
@@ -803,22 +803,10 @@ public abstract class Authenticated
                     $"Invalid organisation number in systemuser token: {systemUser.SystemUserOrg.Id}"
                 );
 
-            var systemUserIds = new Guid[systemUser.SystemUserId.Count];
-            for (int i = 0; i < systemUser.SystemUserId.Count; i++)
-            {
-                if (!Guid.TryParse(systemUser.SystemUserId[i], out systemUserIds[i]))
-                    throw new InvalidOperationException(
-                        $"Invalid system user ID claim value for system user token: {systemUser.SystemUserId[i]}"
-                    );
-            }
-
-            if (!Guid.TryParse(systemUser.SystemId, out var systemId))
-                throw new InvalidOperationException("Invalid system ID claim value for system user token");
-
             return new SystemUser(
-                systemUserIds,
+                systemUser.SystemUserId,
                 orgNr,
-                systemId,
+                systemUser.SystemId,
                 int.TryParse(authLevelClaim?.Value, CultureInfo.InvariantCulture, out authLevel) ? authLevel : null,
                 !string.IsNullOrWhiteSpace(authMethodClaim?.Value) ? authMethodClaim.Value : null,
                 tokenIssuer,
@@ -934,7 +922,7 @@ public abstract class Authenticated
     internal record AuthorizationDetailsClaim();
 
     internal sealed record SystemUserAuthorizationDetailsClaim(
-        [property: JsonPropertyName("systemuser_id")] IReadOnlyList<string> SystemUserId,
+        [property: JsonPropertyName("systemuser_id")] IReadOnlyList<Guid> SystemUserId,
         [property: JsonPropertyName("system_id")] string SystemId,
         [property: JsonPropertyName("systemuser_org")] SystemUserOrg SystemUserOrg
     ) : AuthorizationDetailsClaim();

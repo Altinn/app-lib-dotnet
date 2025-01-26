@@ -431,7 +431,7 @@ public static class TestAuthentication
         string issuer = "www.altinn.no";
 
         AuthorizationDetailsClaim details = new SystemUserAuthorizationDetailsClaim(
-            [systemUserId],
+            [Guid.Parse(systemUserId)],
             systemId,
             new SystemUserOrg(
                 "iso6523-actorid-upis",
@@ -482,7 +482,7 @@ public static class TestAuthentication
         return new SystemUser(
             [Guid.Parse(systemUserId)],
             OrganisationNumber.Parse(systemUserOrgNumber),
-            Guid.Parse(systemId),
+            systemId,
             3,
             "maskinporten",
             tokenIssuer: TokenIssuer.Maskinporten,
