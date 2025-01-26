@@ -10,9 +10,7 @@ using Altinn.App.Core.Models;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
 using AltinnCore.Authentication.Constants;
-using AltinnCore.Authentication.Utils;
 using Authorization.Platform.Authorization.Models;
-using Microsoft.AspNetCore.Http;
 
 namespace Altinn.App.Core.Features.Auth;
 
@@ -562,9 +560,9 @@ public abstract class Authenticated
     }
 
     internal static Authenticated From(
-        HttpContext httpContext,
-        string authCookieName,
-        string partyCookieName,
+        string tokenStr,
+        bool isAuthenticated,
+        Func<string?> getSelectedParty,
         Func<int, Task<UserProfile?>> getUserProfile,
         Func<int, Task<Party?>> lookupUserParty,
         Func<string, Task<Party>> lookupOrgParty,
@@ -574,8 +572,6 @@ public abstract class Authenticated
         Func<Task<ApplicationMetadata>> getApplicationMetadata
     )
     {
-        string tokenStr = JwtTokenUtil.GetTokenFromContext(httpContext, authCookieName);
-
         if (string.IsNullOrWhiteSpace(tokenStr))
             return new None(TokenIssuer.None, false, tokenStr);
 
@@ -626,7 +622,6 @@ public abstract class Authenticated
             isInAltinnPortal
         );
 
-        var isAuthenticated = httpContext.User.Identity?.IsAuthenticated ?? false;
         if (!isAuthenticated)
             return new None(tokenIssuer, isExchanged, tokenStr);
 
@@ -756,12 +751,12 @@ public abstract class Authenticated
         }
 
         int selectedPartyId = partyId.Value;
-        if (httpContext.Request.Cookies.TryGetValue(partyCookieName, out var partyCookie) && partyCookie != null)
+        if (getSelectedParty() is { } selectedPartyStr)
         {
-            if (!int.TryParse(partyCookie, CultureInfo.InvariantCulture, out var cookiePartyIdVal))
-                throw new InvalidOperationException("Invalid party ID in cookie: " + partyCookie);
+            if (!int.TryParse(selectedPartyStr, CultureInfo.InvariantCulture, out var selectedParty))
+                throw new InvalidOperationException("Invalid party ID in cookie: " + selectedPartyStr);
 
-            selectedPartyId = cookiePartyIdVal;
+            selectedPartyId = selectedParty;
         }
 
         return new User(

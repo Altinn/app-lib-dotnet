@@ -4,6 +4,7 @@ using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.Platform.Register.Models;
+using AltinnCore.Authentication.Utils;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -79,9 +80,12 @@ internal sealed class AuthenticationContext : IAuthenticationContext
             if (!httpContext.Items.TryGetValue(ItemsKey, out var authInfoObj))
             {
                 authInfo = Authenticated.From(
-                    httpContext,
-                    _appSettings.CurrentValue.RuntimeCookieName,
-                    _generalSettings.CurrentValue.GetAltinnPartyCookieName,
+                    tokenStr: JwtTokenUtil.GetTokenFromContext(
+                        httpContext,
+                        _appSettings.CurrentValue.RuntimeCookieName
+                    ),
+                    isAuthenticated: httpContext.User?.Identity?.IsAuthenticated ?? false,
+                    () => _httpContext.Request.Cookies[_generalSettings.CurrentValue.GetAltinnPartyCookieName],
                     _profileClient.GetUserProfile,
                     _altinnPartyClient.GetParty,
                     (string orgNr) => _altinnPartyClient.LookupParty(new PartyLookup { OrgNo = orgNr }),
