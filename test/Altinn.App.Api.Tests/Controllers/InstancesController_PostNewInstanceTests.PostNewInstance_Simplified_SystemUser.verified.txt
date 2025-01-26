@@ -16,7 +16,7 @@
           network.protocol.version: 1.1
         },
         {
-          organisation.number: 405003309
+          organisation.number: 310702641
         },
         {
           organisation.systemuser.id: Guid_1
@@ -37,7 +37,7 @@
           user.authentication.level: 3
         },
         {
-          user.authentication.method: systemuser
+          user.authentication.method: maskinporten
         },
         {
           user.authentication.token.isExchanged: True

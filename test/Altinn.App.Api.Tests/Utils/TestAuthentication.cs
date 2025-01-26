@@ -45,6 +45,8 @@ public static class TestAuthentication
 
     internal const string DefaultSystemUserId = "f58fe166-bc22-4899-beb7-c3e8e3332f43";
     internal const string DefaultSystemId = "1cb8b115-31bf-421f-8029-8bb0cd23c954";
+    internal const string DefaultSystemUserOrgNumber = "310702641";
+    internal const string DefaultSystemUserSupplierOrgNumber = "991825827";
 
     public sealed class AllTokens : TheoryData<TestJwtToken>
     {
@@ -110,31 +112,24 @@ public static class TestAuthentication
     public static ClaimsPrincipal GetUserPrincipal(
         int userId = DefaultUserId,
         int partyId = DefaultUserPartyId,
-        int authenticationLevel = DefaultUserAuthenticationLevel
+        int authLevel = DefaultUserAuthenticationLevel
     )
     {
-        List<Claim> claims = [];
-        string issuer = "www.altinn.no";
+        // Returns a principal that looks like a token issed in tt02 Altinn portal using TestID
+        string iss = "https://platform.tt02.altinn.no/authentication/api/v1/openid/";
 
-        var sessionId = Guid.NewGuid().ToString();
-        claims.Add(new Claim(ClaimTypes.NameIdentifier, $"user-{userId}-{partyId}", ClaimValueTypes.String, issuer));
-        claims.Add(new Claim(AltinnCoreClaimTypes.UserId, userId.ToString(), ClaimValueTypes.String, issuer));
-        claims.Add(new Claim(AltinnCoreClaimTypes.PartyID, partyId.ToString(), ClaimValueTypes.Integer32, issuer));
-        claims.Add(new Claim(AltinnCoreClaimTypes.AuthenticateMethod, "Mock", ClaimValueTypes.String, issuer));
-        claims.Add(new Claim("jti", sessionId, ClaimValueTypes.String, issuer));
-        claims.Add(
-            new Claim(
-                AltinnCoreClaimTypes.AuthenticationLevel,
-                authenticationLevel.ToString(),
-                ClaimValueTypes.Integer32,
-                issuer
-            )
-        );
+        Claim[] claims =
+        [
+            new(ClaimTypes.NameIdentifier, $"user-{userId}-{partyId}", ClaimValueTypes.String, iss),
+            new(AltinnCoreClaimTypes.UserId, userId.ToString(), ClaimValueTypes.String, iss),
+            new(AltinnCoreClaimTypes.PartyID, partyId.ToString(), ClaimValueTypes.Integer32, iss),
+            new(AltinnCoreClaimTypes.AuthenticateMethod, "BankID", ClaimValueTypes.String, iss),
+            new(AltinnCoreClaimTypes.AuthenticationLevel, authLevel.ToString(), ClaimValueTypes.Integer32, iss),
+            new("jti", Guid.NewGuid().ToString(), ClaimValueTypes.String, iss),
+            new(JwtClaimTypes.Scope, "altinn:portal/enduser", ClaimValueTypes.String, iss),
+        ];
 
-        ClaimsIdentity identity = new ClaimsIdentity("mock");
-        identity.AddClaims(claims);
-        ClaimsPrincipal principal = new ClaimsPrincipal(identity);
-        return principal;
+        return new ClaimsPrincipal(new ClaimsIdentity(claims, "mock"));
     }
 
     public static User GetUserAuthentication(
@@ -221,22 +216,23 @@ public static class TestAuthentication
         int partyId = DefaultUserPartyId
     )
     {
-        List<Claim> claims = [];
-        string issuer = "www.altinn.no";
+        // Returns a principal that looks like a token issed in tt02 Altinn portal using the
+        // "Logg inn uten fødselsnummer/D-nummber" login method
+        string iss = "https://platform.tt02.altinn.no/authentication/api/v1/openid/";
 
-        var sessionId = Guid.NewGuid().ToString();
-        claims.Add(new Claim(ClaimTypes.NameIdentifier, $"user-{userId}-{partyId}", ClaimValueTypes.String, issuer));
-        claims.Add(new Claim(AltinnCoreClaimTypes.UserId, userId.ToString(), ClaimValueTypes.String, issuer));
-        claims.Add(new Claim(AltinnCoreClaimTypes.PartyID, partyId.ToString(), ClaimValueTypes.Integer32, issuer));
-        claims.Add(new Claim(AltinnCoreClaimTypes.UserName, username, ClaimValueTypes.String, issuer));
-        claims.Add(new Claim(AltinnCoreClaimTypes.AuthenticateMethod, "Mock", ClaimValueTypes.String, issuer));
-        claims.Add(new Claim("jti", sessionId, ClaimValueTypes.String, issuer));
-        claims.Add(new Claim(AltinnCoreClaimTypes.AuthenticationLevel, "0", ClaimValueTypes.Integer32, issuer));
+        Claim[] claims =
+        [
+            new(ClaimTypes.NameIdentifier, $"user-{userId}-{partyId}", ClaimValueTypes.String, iss),
+            new(AltinnCoreClaimTypes.UserId, userId.ToString(), ClaimValueTypes.String, iss),
+            new(AltinnCoreClaimTypes.UserName, username, ClaimValueTypes.String, iss),
+            new(AltinnCoreClaimTypes.PartyID, partyId.ToString(), ClaimValueTypes.Integer32, iss),
+            new(AltinnCoreClaimTypes.AuthenticateMethod, "Mock", ClaimValueTypes.String, iss),
+            new(AltinnCoreClaimTypes.AuthenticationLevel, "0", ClaimValueTypes.Integer32, iss),
+            new("jti", Guid.NewGuid().ToString(), ClaimValueTypes.String, iss),
+            new(JwtClaimTypes.Scope, "altinn:portal/enduser", ClaimValueTypes.String, iss),
+        ];
 
-        ClaimsIdentity identity = new ClaimsIdentity("mock");
-        identity.AddClaims(claims);
-        ClaimsPrincipal principal = new ClaimsPrincipal(identity);
-        return principal;
+        return new ClaimsPrincipal(new ClaimsIdentity(claims, "mock"));
     }
 
     public static SelfIdentifiedUser GetSelfIdentifiedUserAuthentication(
@@ -283,21 +279,34 @@ public static class TestAuthentication
 
     public static ClaimsPrincipal GetOrgPrincipal(string orgNumber = DefaultOrgNumber, string scope = DefaultOrgScope)
     {
-        List<Claim> claims = [];
-        string issuer = "www.altinn.no";
-        claims.Add(new Claim(AltinnCoreClaimTypes.OrgNumber, orgNumber, ClaimValueTypes.String, issuer));
+        // Returns a principal that looks like a token issued by Maskinporten and exchanged to Altinn token in tt02
+        // This is not a service owner token, so there should be no service owner scope
+        string iss = "https://platform.tt02.altinn.no/authentication/api/v1/openid/";
 
-        if (scope.Contains("altinn:serviceowner"))
+        var scopes = new Scopes(scope);
+        if (scopes.HasScopePrefix("altinn:serviceowner"))
             throw new InvalidOperationException("Org token cannot have serviceowner scopes");
 
-        claims.Add(new Claim(AltinnCoreClaimTypes.AuthenticateMethod, "Mock", ClaimValueTypes.String, issuer));
-        claims.Add(new Claim(AltinnCoreClaimTypes.AuthenticationLevel, "3", ClaimValueTypes.Integer32, issuer));
-        claims.Add(new Claim(JwtClaimTypes.Scope, scope, ClaimValueTypes.String, issuer));
+        var consumer = JsonSerializer.Serialize(
+            new OrgClaim(
+                "iso6523-actorid-upis",
+                OrganisationNumber.Parse(orgNumber).Get(OrganisationNumberFormat.International)
+            )
+        );
+        Claim[] claims =
+        [
+            new(JwtClaimTypes.Scope, scope, ClaimValueTypes.String, iss),
+            new("token_type", "Bearer", ClaimValueTypes.String, iss),
+            new("client_id", Guid.NewGuid().ToString(), ClaimValueTypes.String, iss),
+            new("consumer", consumer, ClaimValueTypes.String, iss),
+            new(AltinnCoreClaimTypes.OrgNumber, orgNumber, ClaimValueTypes.String, iss),
+            new(AltinnCoreClaimTypes.AuthenticateMethod, "maskinporten", ClaimValueTypes.String, iss),
+            new(AltinnCoreClaimTypes.AuthenticationLevel, "3", ClaimValueTypes.Integer32, iss),
+            new(JwtClaimTypes.Issuer, iss, ClaimValueTypes.String, iss),
+            new("jti", Guid.NewGuid().ToString(), ClaimValueTypes.String, iss),
+        ];
 
-        ClaimsIdentity identity = new ClaimsIdentity("mock");
-        identity.AddClaims(claims);
-
-        return new ClaimsPrincipal(identity);
+        return new ClaimsPrincipal(new ClaimsIdentity(claims, "mock"));
     }
 
     public static string GetOrgToken(
@@ -362,20 +371,35 @@ public static class TestAuthentication
         string org = DefaultOrg
     )
     {
-        List<Claim> claims = [];
-        string issuer = "www.altinn.no";
-        claims.Add(new Claim(AltinnCoreClaimTypes.OrgNumber, orgNumber, ClaimValueTypes.String, issuer));
+        // Returns a principal that looks like a token issued by Maskinporten and exchanged to Altinn token in tt02
+        // This is a service owner token, so there should be atleast 1 service owner scope
+        string iss = "https://platform.tt02.altinn.no/authentication/api/v1/openid/";
 
-        if (scope.Contains("altinn:serviceowner"))
-            claims.Add(new Claim(AltinnCoreClaimTypes.Org, org, ClaimValueTypes.String, issuer));
-        claims.Add(new Claim(AltinnCoreClaimTypes.AuthenticateMethod, "Mock", ClaimValueTypes.String, issuer));
-        claims.Add(new Claim(AltinnCoreClaimTypes.AuthenticationLevel, "3", ClaimValueTypes.Integer32, issuer));
-        claims.Add(new Claim(JwtClaimTypes.Scope, scope, ClaimValueTypes.String, issuer));
+        var scopes = new Scopes(scope);
+        if (!scopes.HasScopePrefix("altinn:serviceowner"))
+            throw new InvalidOperationException("Service owner token must have serviceowner scopes");
 
-        ClaimsIdentity identity = new ClaimsIdentity("mock");
-        identity.AddClaims(claims);
+        var consumer = JsonSerializer.Serialize(
+            new OrgClaim(
+                "iso6523-actorid-upis",
+                OrganisationNumber.Parse(orgNumber).Get(OrganisationNumberFormat.International)
+            )
+        );
+        Claim[] claims =
+        [
+            new(JwtClaimTypes.Scope, scope, ClaimValueTypes.String, iss),
+            new("token_type", "Bearer", ClaimValueTypes.String, iss),
+            new("client_id", Guid.NewGuid().ToString(), ClaimValueTypes.String, iss),
+            new("consumer", consumer, ClaimValueTypes.String, iss),
+            new(AltinnCoreClaimTypes.Org, org, ClaimValueTypes.String, iss),
+            new(AltinnCoreClaimTypes.OrgNumber, orgNumber, ClaimValueTypes.String, iss),
+            new(AltinnCoreClaimTypes.AuthenticateMethod, "maskinporten", ClaimValueTypes.String, iss),
+            new(AltinnCoreClaimTypes.AuthenticationLevel, "3", ClaimValueTypes.Integer32, iss),
+            new(JwtClaimTypes.Issuer, iss, ClaimValueTypes.String, iss),
+            new("jti", Guid.NewGuid().ToString(), ClaimValueTypes.String, iss),
+        ];
 
-        return new ClaimsPrincipal(identity);
+        return new ClaimsPrincipal(new ClaimsIdentity(claims, "mock"));
     }
 
     public static string GetServiceOwnerToken(
@@ -423,51 +447,75 @@ public static class TestAuthentication
     public static ClaimsPrincipal GetSystemUserPrincipal(
         string systemId = DefaultSystemId,
         string systemUserId = DefaultSystemUserId,
-        string systemUserOrgNumber = DefaultOrgNumber,
-        string scope = DefaultServiceOwnerScope
+        string systemUserOrgNumber = DefaultSystemUserOrgNumber,
+        string supplierOrgNumber = DefaultSystemUserSupplierOrgNumber,
+        string scope = DefaultOrgScope
     )
     {
-        List<Claim> claims = [];
-        string issuer = "www.altinn.no";
+        // Returns a principal that looks like a token issued by Maskinporten and exchanged to Altinn token in tt02
+        // This is a service owner token, so there should be atleast 1 service owner scope
+        string iss = "https://platform.tt02.altinn.no/authentication/api/v1/openid/";
+
+        var scopes = new Scopes(scope);
+        if (scopes.HasScopePrefix("altinn:serviceowner"))
+            throw new InvalidOperationException("System user tokens cannot have serviceowner scopes");
 
         AuthorizationDetailsClaim details = new SystemUserAuthorizationDetailsClaim(
             [Guid.Parse(systemUserId)],
             systemId,
-            new SystemUserOrg(
+            new OrgClaim(
                 "iso6523-actorid-upis",
                 OrganisationNumber.Parse(systemUserOrgNumber).Get(OrganisationNumberFormat.International)
             )
         );
-        claims.Add(
-            new Claim("authorization_details", JsonSerializer.Serialize(details), ClaimValueTypes.String, issuer)
+        var consumer = JsonSerializer.Serialize(
+            new OrgClaim(
+                "iso6523-actorid-upis",
+                OrganisationNumber.Parse(supplierOrgNumber).Get(OrganisationNumberFormat.International)
+            )
         );
-        claims.Add(new Claim(AltinnCoreClaimTypes.AuthenticateMethod, "systemuser", ClaimValueTypes.String, issuer));
-        claims.Add(new Claim(AltinnCoreClaimTypes.AuthenticationLevel, "3", ClaimValueTypes.Integer32, issuer));
-        claims.Add(new Claim(JwtClaimTypes.Scope, scope, ClaimValueTypes.String, issuer));
+        List<Claim> claims =
+        [
+            new("authorization_details", JsonSerializer.Serialize(details), ClaimValueTypes.String, iss),
+            new(JwtClaimTypes.Scope, scope, ClaimValueTypes.String, iss),
+            new("token_type", "Bearer", ClaimValueTypes.String, iss),
+            new("client_id", Guid.NewGuid().ToString(), ClaimValueTypes.String, iss),
+            new("consumer", consumer, ClaimValueTypes.String, iss),
+            new(AltinnCoreClaimTypes.OrgNumber, supplierOrgNumber, ClaimValueTypes.String, iss),
+            new(AltinnCoreClaimTypes.AuthenticateMethod, "maskinporten", ClaimValueTypes.String, iss),
+            new(AltinnCoreClaimTypes.AuthenticationLevel, "3", ClaimValueTypes.Integer32, iss),
+            new(JwtClaimTypes.Issuer, iss, ClaimValueTypes.String, iss),
+            new("jti", Guid.NewGuid().ToString(), ClaimValueTypes.String, iss),
+        ];
 
-        ClaimsIdentity identity = new ClaimsIdentity("mock");
-        identity.AddClaims(claims);
-
-        return new ClaimsPrincipal(identity);
+        return new ClaimsPrincipal(new ClaimsIdentity(claims, "mock"));
     }
 
     public static string GetSystemUserToken(
         string systemId = DefaultSystemId,
         string systemUserId = DefaultSystemUserId,
-        string systemUserOrgNumber = DefaultOrgNumber,
-        string scope = DefaultServiceOwnerScope,
+        string systemUserOrgNumber = DefaultSystemUserOrgNumber,
+        string supplierOrgNumber = DefaultSystemUserSupplierOrgNumber,
+        string scope = DefaultOrgScope,
         TimeSpan? expiry = null,
         TimeProvider? timeProvider = null
     )
     {
-        ClaimsPrincipal principal = GetSystemUserPrincipal(systemId, systemUserId, systemUserOrgNumber, scope);
+        ClaimsPrincipal principal = GetSystemUserPrincipal(
+            systemId,
+            systemUserId,
+            systemUserOrgNumber,
+            supplierOrgNumber,
+            scope
+        );
         return JwtTokenMock.GenerateToken(principal, expiry ?? TimeSpan.FromMinutes(2), timeProvider);
     }
 
     public static SystemUser GetSystemUserAuthentication(
         string systemId = DefaultSystemId,
         string systemUserId = DefaultSystemUserId,
-        string systemUserOrgNumber = DefaultOrgNumber,
+        string systemUserOrgNumber = DefaultSystemUserOrgNumber,
+        string supplierOrgNumber = DefaultSystemUserSupplierOrgNumber,
         int partyId = DefaultOrgPartyId,
         bool exchanged = true
     )
@@ -482,6 +530,7 @@ public static class TestAuthentication
         return new SystemUser(
             [Guid.Parse(systemUserId)],
             OrganisationNumber.Parse(systemUserOrgNumber),
+            OrganisationNumber.Parse(supplierOrgNumber),
             systemId,
             3,
             "maskinporten",

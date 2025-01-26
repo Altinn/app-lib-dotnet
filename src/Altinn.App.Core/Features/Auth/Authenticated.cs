@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -549,6 +550,11 @@ public abstract class Authenticated
         public OrganisationNumber SystemUserOrgNr { get; }
 
         /// <summary>
+        /// Organisation number of the supplier system
+        /// </summary>
+        public OrganisationNumber SupplierOrgNr { get; }
+
+        /// <summary>
         /// System ID
         /// </summary>
         public string SystemId { get; }
@@ -569,6 +575,7 @@ public abstract class Authenticated
         internal SystemUser(
             IReadOnlyList<Guid> systemUserId,
             OrganisationNumber systemUserOrgNr,
+            OrganisationNumber supplierOrgNr,
             string systemId,
             int? authenticationLevel,
             string? authenticationMethod,
@@ -582,6 +589,7 @@ public abstract class Authenticated
         {
             SystemUserId = systemUserId;
             SystemUserOrgNr = systemUserOrgNr;
+            SupplierOrgNr = supplierOrgNr;
             SystemId = systemId;
             // System user tokens can either be raw Maskinporten or exchanged atm.
             // If the token is not exchanged, we don't have these claims and so we default to what altinn-authentication currently does.
@@ -708,11 +716,17 @@ public abstract class Authenticated
         Claim? authorizationDetailsClaim = null;
         Claim? userIdClaim = null;
         Claim? usernameClaim = null;
+        Claim? consumerClaim = null;
+        OrgClaim? consumerClaimValue = null;
 
-        static void TryAssign(Claim claim, string name, ref Claim? dest)
+        static bool TryAssign(Claim claim, string name, [NotNullWhen(true)] ref Claim? dest)
         {
             if (claim.Type.Equals(name, StringComparison.OrdinalIgnoreCase))
+            {
                 dest = claim;
+                return true;
+            }
+            return false;
         }
 
         foreach (var claim in claims)
@@ -728,6 +742,8 @@ public abstract class Authenticated
             TryAssign(claim, "authorization_details", ref authorizationDetailsClaim);
             TryAssign(claim, AltinnCoreClaimTypes.UserId, ref userIdClaim);
             TryAssign(claim, AltinnCoreClaimTypes.UserName, ref usernameClaim);
+            if (TryAssign(claim, "consumer", ref consumerClaim))
+                consumerClaimValue = JsonSerializer.Deserialize<OrgClaim>(consumerClaim.Value);
         }
 
         var scopes = new Scopes(scopeClaim?.Value);
@@ -800,12 +816,17 @@ public abstract class Authenticated
                 );
             if (!OrganisationNumber.TryParse(systemUser.SystemUserOrg.Id, out var orgNr))
                 throw new AuthenticationContextException(
-                    $"Invalid organisation number in systemuser token: {systemUser.SystemUserOrg.Id}"
+                    $"Invalid system user organisation number in system user token: {systemUser.SystemUserOrg.Id}"
+                );
+            if (!OrganisationNumber.TryParse(consumerClaimValue?.Id, out var supplierOrgNr))
+                throw new AuthenticationContextException(
+                    $"Invalid organisation number in supplier organisation number claim for system user token: {consumerClaimValue?.Id}"
                 );
 
             return new SystemUser(
                 systemUser.SystemUserId,
                 orgNr,
+                supplierOrgNr,
                 systemUser.SystemId,
                 int.TryParse(authLevelClaim?.Value, CultureInfo.InvariantCulture, out authLevel) ? authLevel : null,
                 !string.IsNullOrWhiteSpace(authMethodClaim?.Value) ? authMethodClaim.Value : null,
@@ -924,10 +945,10 @@ public abstract class Authenticated
     internal sealed record SystemUserAuthorizationDetailsClaim(
         [property: JsonPropertyName("systemuser_id")] IReadOnlyList<Guid> SystemUserId,
         [property: JsonPropertyName("system_id")] string SystemId,
-        [property: JsonPropertyName("systemuser_org")] SystemUserOrg SystemUserOrg
+        [property: JsonPropertyName("systemuser_org")] OrgClaim SystemUserOrg
     ) : AuthorizationDetailsClaim();
 
-    internal sealed record SystemUserOrg(
+    internal sealed record OrgClaim(
         [property: JsonPropertyName("authority")] string Authority,
         [property: JsonPropertyName("ID")] string Id
     );

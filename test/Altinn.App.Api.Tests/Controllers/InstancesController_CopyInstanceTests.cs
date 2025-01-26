@@ -152,7 +152,7 @@ public class InstancesController_CopyInstanceTests
         // Arrange
         _httpContextMock
             .Setup(httpContext => httpContext.User)
-            .Returns(TestAuthentication.GetServiceOwnerPrincipal("ttd"));
+            .Returns(TestAuthentication.GetServiceOwnerPrincipal(org: "ttd"));
 
         // Act
         ActionResult actual = await SUT.CopyInstance("ttd", "copy-instance", 343234, Guid.NewGuid());

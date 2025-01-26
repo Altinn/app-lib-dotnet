@@ -29,4 +29,18 @@ public class ScopesTests
         var s = new Scopes(scopes);
         Assert.Equal(expected, s.HasScope(scopeToCheck));
     }
+
+    [Theory]
+    [InlineData("altinn:instances.write", "altinn:", true)]
+    [InlineData("altinn:instances.write", "altinn:serviceowner", false)]
+    [InlineData("altinn:serviceowner/instances.write", "altinn:serviceowner", true)]
+    [InlineData("aaltinn:serviceowner/instances.write", "altinn:serviceowner", false)]
+    [InlineData(null, "scope1", false)]
+    [InlineData("", "scope1", false)]
+    [InlineData("  ", "scope1", false)]
+    public void HasScopePrefix_Returns(string? scopes, string prefixToCheck, bool expected)
+    {
+        var s = new Scopes(scopes);
+        Assert.Equal(expected, s.HasScopePrefix(prefixToCheck));
+    }
 }
