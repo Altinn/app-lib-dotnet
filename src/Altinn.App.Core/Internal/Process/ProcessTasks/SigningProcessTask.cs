@@ -108,12 +108,6 @@ internal sealed class SigningProcessTask : IProcessTask
                 cts.Token
             );
 
-            if (signeeContexts.Count == 0)
-            {
-                _logger.LogInformation("No signees returned from signee initialization.");
-                return;
-            }
-
             UserContext userContext = await _userHelper.GetUserContext(
                 _httpContextAccessor.HttpContext ?? throw new InvalidOperationException("HttpContext is not available.")
             );
