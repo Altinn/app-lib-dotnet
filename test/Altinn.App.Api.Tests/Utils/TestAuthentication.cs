@@ -95,7 +95,7 @@ public static class TestAuthentication
 
     public static None GetNoneAuthentication()
     {
-        return new None(TokenIssuer.None, false, "None");
+        return new None(TokenIssuer.None, false, Scopes.None, "None");
     }
 
     public static string GetUserToken(
@@ -158,6 +158,7 @@ public static class TestAuthentication
             inAltinnPortal: true,
             tokenIssuer: TokenIssuer.Altinn,
             tokenIsExchanged: false,
+            new Scopes("altinn:portal/enduser"),
             token: "",
             getUserProfile: uid =>
             {
@@ -257,6 +258,7 @@ public static class TestAuthentication
             "idporten",
             tokenIssuer: TokenIssuer.Altinn,
             tokenIsExchanged: false,
+            new Scopes("altinn:portal/enduser"),
             token: "",
             getUserProfile: uid =>
             {
@@ -339,6 +341,7 @@ public static class TestAuthentication
             "maskinporten",
             tokenIssuer: TokenIssuer.Maskinporten,
             tokenIsExchanged: true,
+            new Scopes("altinn:instances.read altinn:instances.write"),
             token: "",
             lookupParty: orgNo =>
             {
@@ -435,6 +438,7 @@ public static class TestAuthentication
             "maskinporten",
             tokenIssuer: TokenIssuer.Maskinporten,
             tokenIsExchanged: true,
+            new Scopes("altinn:serviceowner/instances.read altinn:serviceowner/instances.write"),
             token: "",
             lookupParty: orgNo =>
             {
@@ -536,6 +540,7 @@ public static class TestAuthentication
             "maskinporten",
             tokenIssuer: TokenIssuer.Maskinporten,
             tokenIsExchanged: exchanged,
+            new Scopes("altinn:instances.read altinn:instances.write"),
             token: "",
             lookupParty: orgNo =>
             {

@@ -33,14 +33,20 @@ public abstract class Authenticated
     public bool TokenIsExchanged { get; }
 
     /// <summary>
-    /// The JWT token.
+    /// The scopes of the JWT token
+    /// </summary>
+    public Scopes Scopes { get; }
+
+    /// <summary>
+    /// The JWT token
     /// </summary>
     public string Token { get; }
 
-    private Authenticated(TokenIssuer tokenIssuer, bool tokenIsExchanged, string token)
+    private Authenticated(TokenIssuer tokenIssuer, bool tokenIsExchanged, Scopes scopes, string token)
     {
         TokenIssuer = tokenIssuer;
         TokenIsExchanged = tokenIsExchanged;
+        Scopes = scopes;
         Token = token;
     }
 
@@ -69,8 +75,8 @@ public abstract class Authenticated
     /// </summary>
     public sealed class None : Authenticated
     {
-        internal None(TokenIssuer tokenIssuer, bool tokenIsExchanged, string token)
-            : base(tokenIssuer, tokenIsExchanged, token) { }
+        internal None(TokenIssuer tokenIssuer, bool tokenIsExchanged, Scopes scopes, string token)
+            : base(tokenIssuer, tokenIsExchanged, scopes, token) { }
     }
 
     /// <summary>
@@ -125,6 +131,7 @@ public abstract class Authenticated
             bool inAltinnPortal,
             TokenIssuer tokenIssuer,
             bool tokenIsExchanged,
+            Scopes scopes,
             string token,
             Func<int, Task<UserProfile?>> getUserProfile,
             Func<int, Task<Party?>> lookupParty,
@@ -133,7 +140,7 @@ public abstract class Authenticated
             Func<int, int, Task<IEnumerable<Role>>> getUserRoles,
             Func<Task<ApplicationMetadata>> getApplicationMetadata
         )
-            : base(tokenIssuer, tokenIsExchanged, token)
+            : base(tokenIssuer, tokenIsExchanged, scopes, token)
         {
             UserId = userId;
             UserPartyId = userPartyId;
@@ -354,11 +361,12 @@ public abstract class Authenticated
             string authenticationMethod,
             TokenIssuer tokenIssuer,
             bool tokenIsExchanged,
+            Scopes scopes,
             string token,
             Func<int, Task<UserProfile?>> getUserProfile,
             Func<Task<ApplicationMetadata>> getApplicationMetadata
         )
-            : base(tokenIssuer, tokenIsExchanged, token)
+            : base(tokenIssuer, tokenIsExchanged, scopes, token)
         {
             Username = username;
             UserId = userId;
@@ -433,11 +441,12 @@ public abstract class Authenticated
             string authenticationMethod,
             TokenIssuer tokenIssuer,
             bool tokenIsExchanged,
+            Scopes scopes,
             string token,
             Func<string, Task<Party>> lookupParty,
             Func<Task<ApplicationMetadata>> getApplicationMetadata
         )
-            : base(tokenIssuer, tokenIsExchanged, token)
+            : base(tokenIssuer, tokenIsExchanged, scopes, token)
         {
             OrgNo = orgNo;
             AuthenticationLevel = authenticationLevel;
@@ -503,10 +512,11 @@ public abstract class Authenticated
             string authenticationMethod,
             TokenIssuer tokenIssuer,
             bool tokenIsExchanged,
+            Scopes scopes,
             string token,
             Func<string, Task<Party>> lookupParty
         )
-            : base(tokenIssuer, tokenIsExchanged, token)
+            : base(tokenIssuer, tokenIsExchanged, scopes, token)
         {
             Name = name;
             OrgNo = orgNo;
@@ -581,11 +591,12 @@ public abstract class Authenticated
             string? authenticationMethod,
             TokenIssuer tokenIssuer,
             bool tokenIsExchanged,
+            Scopes scopes,
             string token,
             Func<string, Task<Party>> lookupParty,
             Func<Task<ApplicationMetadata>> getApplicationMetadata
         )
-            : base(tokenIssuer, tokenIsExchanged, token)
+            : base(tokenIssuer, tokenIsExchanged, scopes, token)
         {
             SystemUserId = systemUserId;
             SystemUserOrgNr = systemUserOrgNr;
@@ -699,7 +710,7 @@ public abstract class Authenticated
     )
     {
         if (string.IsNullOrWhiteSpace(tokenStr))
-            return new None(TokenIssuer.None, false, tokenStr);
+            return new None(TokenIssuer.None, false, Scopes.None, tokenStr);
 
         var handler = new JwtSecurityTokenHandler();
         var token = handler.ReadJwtToken(tokenStr);
@@ -757,7 +768,7 @@ public abstract class Authenticated
         );
 
         if (!isAuthenticated)
-            return new None(tokenIssuer, isExchanged, tokenStr);
+            return new None(tokenIssuer, isExchanged, scopes, tokenStr);
 
         int? partyId = null;
         if (!string.IsNullOrWhiteSpace(partyIdClaim?.Value))
@@ -832,6 +843,7 @@ public abstract class Authenticated
                 !string.IsNullOrWhiteSpace(authMethodClaim?.Value) ? authMethodClaim.Value : null,
                 tokenIssuer,
                 isExchanged,
+                scopes,
                 tokenStr,
                 lookupOrgParty,
                 getApplicationMetadata
@@ -857,6 +869,7 @@ public abstract class Authenticated
                 authMethodClaim.Value,
                 tokenIssuer,
                 isExchanged,
+                scopes,
                 tokenStr,
                 lookupOrgParty
             );
@@ -873,6 +886,7 @@ public abstract class Authenticated
                 authMethodClaim.Value,
                 tokenIssuer,
                 isExchanged,
+                scopes,
                 tokenStr,
                 lookupOrgParty,
                 getApplicationMetadata
@@ -904,6 +918,7 @@ public abstract class Authenticated
                 authMethodClaim.Value,
                 tokenIssuer,
                 isExchanged,
+                scopes,
                 tokenStr,
                 getUserProfile,
                 getApplicationMetadata
@@ -928,6 +943,7 @@ public abstract class Authenticated
             isInAltinnPortal,
             tokenIssuer,
             isExchanged,
+            scopes,
             tokenStr,
             getUserProfile,
             lookupUserParty,
