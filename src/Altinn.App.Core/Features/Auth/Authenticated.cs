@@ -74,7 +74,7 @@ public abstract class Authenticated
     }
 
     /// <summary>
-    /// The logged in client is a user (e.g. Altinn portal/IDporten)
+    /// The logged in client is a user (e.g. Altinn portal/ID-porten)
     /// </summary>
     public sealed class User : Authenticated
     {
@@ -315,10 +315,10 @@ public abstract class Authenticated
     }
 
     /// <summary>
-    /// The logged in client is a user (e.g. Altinn portal/IDporten) with auth level 0.
+    /// The logged in client is a user (e.g. Altinn portal/ID-porten) with auth level 0.
     /// This means that the user has authenticated with a username/password, which can happen using
     /// * Altinn "self registered users"
-    /// * IDporten through Ansattporten ("low"), MinID self registered eID
+    /// * ID-porten through Ansattporten ("low"), MinID self registered eID
     /// These have limited access to Altinn and can only represent themselves.
     /// </summary>
     public sealed class SelfIdentifiedUser : Authenticated
@@ -645,7 +645,7 @@ public abstract class Authenticated
             ) && !isInAltinnPortal;
 
         // If we have the special scope, we know the login was done through Altinn portal directly
-        // In any other case we want the underlying authentication method (IDporten, Maskinporten)
+        // In any other case we want the underlying authentication method (ID-porten, Maskinporten)
         if (isInAltinnPortal)
             return (TokenIssuer.Altinn, isExchanged);
 
@@ -677,8 +677,8 @@ public abstract class Authenticated
             }
         }
 
-        // IDportens authenticationlevel equivalent will only be present if the token originates from IDporten
-        // We should already be handling the IDporten through Altinn portal case (with the scope)
+        // IDportens authenticationlevel equivalent will only be present if the token originates from ID-porten
+        // We should already be handling the ID-porten through Altinn portal case (with the scope)
         if (acr?.StartsWith("idporten", StringComparison.OrdinalIgnoreCase) ?? false)
             return (TokenIssuer.IDporten, isExchanged);
 

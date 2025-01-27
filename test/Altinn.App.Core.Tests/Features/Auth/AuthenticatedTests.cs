@@ -6,20 +6,20 @@ using Altinn.App.Core.Features.Auth;
 
 public class AuthenticatedTests
 {
-    // These are real tokens used from tt02/test login methods across Altinn, IDporten and Maskinporten
+    // These are real tokens used from tt02/test login methods across Altinn, ID-porten and Maskinporten
     public static TheoryData<string, AuthenticationTypes, TokenIssuer, bool, bool> Tokens =>
         new()
         {
             {
-                // IDporten testclient raw (demo-client.test.idporten.no)
+                // ID-porten testclient raw (demo-client.test.idporten.no)
                 "eyJraWQiOiJkaWdpdGFsaXNlcmluZ3NkaXJla3RvcmF0ZXQtLWNlcnQwIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiIxOTkxNDg5NzI4MSIsImFjciI6ImlkcG9ydGVuLWxvYS1zdWJzdGFudGlhbCIsInNjb3BlIjoiYWx0aW5uOmluc3RhbmNlcy5yZWFkIG9wZW5pZCBwcm9maWxlIiwiaXNzIjoiaHR0cHM6Ly90ZXN0LmlkcG9ydGVuLm5vIiwiY2xpZW50X2FtciI6ImNsaWVudF9zZWNyZXRfYmFzaWMiLCJwaWQiOiIxOTkxNDg5NzI4MSIsImV4cCI6MTczNzgxNTc0NiwiaWF0IjoxNzM3ODE1MTQ2LCJqdGkiOiJmVFJYUTNCWkRqTSIsImNsaWVudF9pZCI6ImRlbW9jbGllbnRfaWRwb3J0ZW5fdGVzdCIsImNvbnN1bWVyIjp7ImF1dGhvcml0eSI6ImlzbzY1MjMtYWN0b3JpZC11cGlzIiwiSUQiOiIwMTkyOjk5MTgyNTgyNyJ9fQ.h6clB-UEAkChH5aaqIEmmUqmq3vdCrazixBahfBi7bHMtZ1LtOrHtT0gdOaDIvamMxFDUhOc8fvu7jUpicd5hmDmvHULp_u-RS_qasAlZEVNzzV-ds4RXnhROVh0cCkO2XvZBJKS6RTWv8UmGrK_iaklZwhs5qhMiBs1bRAJ0isLwnbxTKXsUFgaY0RRtgNLzhXW6qwT00roL9GMSCAMb-rBXdXJ5zn41gacGejN5mdQTJe3TQbxyxk52uDU4Biy1TCAh3kRU12Cxx-6T39eJdCKtj-qKCHE44mYp-k8MenTbV1l613ObuVTbiZet4WehKlIXLYFctMB4LMrTQmWD2XS5WyMGXMrincoULZ7VO3Q7BAatbxtIBRT56C_9xhNHg5UOaGATjTp2X6U0XiwzAGE1sZoi-MdMVnUQC3ViJ7bIv3vHL4YU3qKX9iGjpZR0Lnqq8PkN-HTjz1mO0VvYZ3Gz71KKd1_p-DiyJo5lRgp4Ms5FSESz0gWkQ3YUm2Y",
                 AuthenticationTypes.User,
                 TokenIssuer.IDporten,
                 false,
-                false // we don't support raw IDporten tokens atm
+                false // we don't support raw ID-porten tokens atm
             },
             {
-                // IDporten testclient exchanged (demo-client.test.idporten.no)
+                // ID-porten testclient exchanged (demo-client.test.idporten.no)
                 "eyJhbGciOiJSUzI1NiIsImtpZCI6IkQ4RDg2N0M3RDUyMTM2MEY0RjM1Q0Q1MTU4MEM0OUEwNTE2NUQ0RTEiLCJ4NXQiOiIyTmhueDlVaE5nOVBOYzFSV0F4Sm9GRmwxT0UiLCJ0eXAiOiJKV1QifQ.eyJuYW1laWQiOiIxNDMzOTUzIiwidXJuOmFsdGlubjp1c2VyaWQiOiIxNDMzOTUzIiwidXJuOmFsdGlubjp1c2VybmFtZSI6IiIsInVybjphbHRpbm46cGFydHlpZCI6NTA1OTMxOTMsInVybjphbHRpbm46YXV0aGVudGljYXRlbWV0aG9kIjoiTm90RGVmaW5lZCIsInVybjphbHRpbm46YXV0aGxldmVsIjozLCJhY3IiOiJpZHBvcnRlbi1sb2Etc3Vic3RhbnRpYWwiLCJzY29wZSI6ImFsdGlubjppbnN0YW5jZXMucmVhZCBvcGVuaWQgcHJvZmlsZSIsImNsaWVudF9hbXIiOiJjbGllbnRfc2VjcmV0X2Jhc2ljIiwicGlkIjoiMTk5MTQ4OTcyODEiLCJleHAiOjE3Mzc4MTU3NDYsImlhdCI6MTczNzgxNTE1NywiY2xpZW50X2lkIjoiZGVtb2NsaWVudF9pZHBvcnRlbl90ZXN0IiwiY29uc3VtZXIiOnsiYXV0aG9yaXR5IjoiaXNvNjUyMy1hY3RvcmlkLXVwaXMiLCJJRCI6IjAxOTI6OTkxODI1ODI3In0sImlzcyI6Imh0dHBzOi8vcGxhdGZvcm0udHQwMi5hbHRpbm4ubm8vYXV0aGVudGljYXRpb24vYXBpL3YxL29wZW5pZC8iLCJqdGkiOiI3MTMzYmMwNy1iZWE0LTRkNDAtOWRjNC1jMWFmZGZjMmU2NTEiLCJuYmYiOjE3Mzc4MTUxNTd9.W71Z1FiSYUBJ8G1De-aGYOiUbpD_FCB9gTceLSItZN33y98IzAvNRKJEfXUxVge-GPInjm1DmJ6MVs6ZcVRunigiLa5gNR_W5kkV6kBkaTbZ4SJQsMdT3AaHoBziJEL2ey_ONyDT4ffScx-lRoF_qKQXbkpqLm-Qkj1VKjEBVSTsaqKxJMQrhmKZ4zK6rwhFOPZv5HnGSt56CWh2jrkk8IFzIJZbvO738qHscZ--1UhwHcZ_hpjsdLGaxENiC25kAiqV8gTAyihOAg9ii7jwxLiQYRe_ahqBv5IqT_ZNKKa3q9t7Yh57hQjPWOqtTFTgaBCCYQohYqv-FQtOenbd5g",
                 AuthenticationTypes.User,
                 TokenIssuer.IDporten,
