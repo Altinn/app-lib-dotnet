@@ -103,8 +103,8 @@ public class SigningController : ControllerBase
             [
                 .. signeeContexts.Select(signeeContext => new SigneeState
                 {
-                    Name = signeeContext.Party.Person?.Name,
-                    Organisation = signeeContext.Party.Organization?.Name,
+                    Name = signeeContext.FullName,
+                    Organisation = signeeContext.OnBehalfOfOrganisation?.Name,
                     HasSigned = signeeContext.SignDocument is not null,
                     DelegationSuccessful = signeeContext.SigneeState.IsAccessDelegated,
                     NotificationSuccessful =

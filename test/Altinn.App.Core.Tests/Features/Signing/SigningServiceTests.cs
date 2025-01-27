@@ -6,6 +6,7 @@ using Altinn.App.Core.Features.Signing;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
@@ -36,6 +37,7 @@ public class SigningServiceTests
     private readonly Mock<IProfileClient> _profileClient = new(MockBehavior.Strict);
     private readonly Mock<IAltinnPartyClient> _altinnPartyClientService = new(MockBehavior.Strict);
     private readonly Mock<IOptions<GeneralSettings>> _settings = new();
+    private readonly Mock<IDataClient> _dataClient = new(MockBehavior.Strict);
 
     public SigningServiceTests()
     {
@@ -51,6 +53,7 @@ public class SigningServiceTests
             _profileClient.Object,
             _altinnPartyClientService.Object,
             _settings.Object,
+            _dataClient.Object,
             _logger.Object
         );
     }

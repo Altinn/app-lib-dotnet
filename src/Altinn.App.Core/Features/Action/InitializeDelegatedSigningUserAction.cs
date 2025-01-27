@@ -83,16 +83,11 @@ internal class InitializeDelegatedSigningUserAction : IUserAction
             currentTask.Id
         );
 
-        AltinnSignatureConfiguration? signatureConfiguration = currentTask
-            .ExtensionElements
-            ?.TaskExtension
-            ?.SignatureConfiguration;
-        if (signatureConfiguration == null)
-        {
-            throw new ApplicationConfigException(
+        AltinnSignatureConfiguration? signatureConfiguration =
+            (currentTask.ExtensionElements?.TaskExtension?.SignatureConfiguration)
+            ?? throw new ApplicationConfigException(
                 "SignatureConfiguration is missing in the payment process task configuration."
             );
-        }
 
         var cachedDataMutator = new InstanceDataUnitOfWork(
             context.Instance,
@@ -102,7 +97,7 @@ internal class InitializeDelegatedSigningUserAction : IUserAction
             _modelSerialization
         );
         CancellationToken ct = new();
-        List<SigneeContext> signeeContexts = await _signingService.CreateSigneeContexts(
+        List<SigneeContext> signeeContexts = await _signingService.GenerateSigneeContexts(
             cachedDataMutator,
             signatureConfiguration,
             ct
@@ -112,7 +107,7 @@ internal class InitializeDelegatedSigningUserAction : IUserAction
             _httpContextAccessor.HttpContext ?? throw new InvalidOperationException("HttpContext is not available.")
         );
 
-        await _signingService.DelegateAccessAndNotifySignees(
+        await _signingService.InitialiseSignees(
             currentTask.Id,
             userContext.UserParty,
             cachedDataMutator,

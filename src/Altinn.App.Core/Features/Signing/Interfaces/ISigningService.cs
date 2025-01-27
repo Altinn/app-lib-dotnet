@@ -3,7 +3,6 @@ using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models.UserAction;
 using Altinn.Platform.Register.Models;
-using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Features.Signing.Interfaces;
 
@@ -13,28 +12,21 @@ namespace Altinn.App.Core.Features.Signing.Interfaces;
 public interface ISigningService
 {
     /// <summary>
-    /// Gets the signees for the current task from the signee provider implemented in the app.
-    /// </summary>
-    /// <param name="instance"></param>
-    /// <param name="signatureConfiguration"></param>
-    /// <returns></returns>
-    Task<SigneesResult?> GetSigneesFromProvider(Instance instance, AltinnSignatureConfiguration signatureConfiguration);
-
-    /// <summary>
     /// Creates the signee contexts for the current task.
     /// </summary>
     /// <param name="instanceMutator"></param>
     /// <param name="signatureConfiguration"></param>
     /// <param name="ct"></param>
     /// <returns></returns>
-    Task<List<SigneeContext>> CreateSigneeContexts(
+    Task<List<SigneeContext>> GenerateSigneeContexts(
         IInstanceDataMutator instanceMutator,
         AltinnSignatureConfiguration signatureConfiguration,
         CancellationToken ct
     );
 
     /// <summary>
-    /// Delegates access to the current task and notifies the signees.
+    /// Delegates access to the current task, notifies the signees about
+    /// a new task to sign and saves the signee contexts to Storage.
     /// </summary>
     /// <param name="taskId"></param>
     /// <param name="delegatorParty"></param>
@@ -43,7 +35,7 @@ public interface ISigningService
     /// <param name="signatureConfiguration"></param>
     /// <param name="ct"></param>
     /// <returns></returns>
-    Task<List<SigneeContext>> DelegateAccessAndNotifySignees(
+    Task<List<SigneeContext>> InitialiseSignees(
         string taskId,
         Party delegatorParty,
         IInstanceDataMutator instanceMutator,

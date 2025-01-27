@@ -16,6 +16,7 @@ using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.Result;
 using Altinn.App.Core.Models.UserAction;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
@@ -54,26 +55,7 @@ internal sealed class SigningService(
     private readonly IDataClient _dataClient = dataClient;
     private const string ApplicationJsonContentType = "application/json";
 
-    public async Task<SigneesResult?> GetSigneesFromProvider(
-        Instance instance,
-        AltinnSignatureConfiguration signatureConfiguration
-    )
-    {
-        string? signeeProviderId = signatureConfiguration.SigneeProviderId;
-        if (signeeProviderId is null)
-            return null;
-
-        ISigneeProvider signeeProvider =
-            signeeProviders.FirstOrDefault(sp => sp.Id == signeeProviderId)
-            ?? throw new SigneeProviderNotFoundException(
-                $"No signee provider found for task {instance.Process.CurrentTask.ElementId} with signeeProviderId {signeeProviderId}. Please add an implementation of the {nameof(ISigneeProvider)} interface with that ID or correct the ID."
-            );
-
-        SigneesResult signeesResult = await signeeProvider.GetSigneesAsync(instance);
-        return signeesResult;
-    }
-
-    public async Task<List<SigneeContext>> CreateSigneeContexts(
+    public async Task<List<SigneeContext>> GenerateSigneeContexts(
         IInstanceDataMutator instanceMutator,
         AltinnSignatureConfiguration signatureConfiguration,
         CancellationToken ct
@@ -93,7 +75,7 @@ internal sealed class SigningService(
         List<SigneeContext> signeeContexts = [];
         foreach (SigneeParty signeeParty in signeesResult.Signees)
         {
-            var signeeContext = await CreateSigneeContext(taskId, signeeParty, ct);
+            var signeeContext = await GenerateSigneeContext(taskId, signeeParty, ct);
             signeeContexts.Add(signeeContext);
         }
 
@@ -102,7 +84,7 @@ internal sealed class SigningService(
         return signeeContexts;
     }
 
-    public async Task<List<SigneeContext>> DelegateAccessAndNotifySignees(
+    public async Task<List<SigneeContext>> InitialiseSignees(
         string taskId,
         Party delegatorParty,
         IInstanceDataMutator instanceMutator,
@@ -131,6 +113,7 @@ internal sealed class SigningService(
             await signingNotificationService.NotifySignatureTask(signeeContexts, ct);
         }
 
+        // Saves the signee context state to Storage
         // ! TODO: Remove nullable
         instanceMutator.AddBinaryDataElement(
             dataTypeId: signatureConfiguration.SigneeStatesDataTypeId!,
@@ -201,13 +184,8 @@ internal sealed class SigningService(
 
         await _signClient.SignDataElements(signatureContext);
 
-        // Update signeecontexts with signee information
-        await UpdateSigneeContexts(
-            signatureConfiguration,
-            signatureContext,
-            userActionContext.DataMutator,
-            appMetadata
-        );
+        // Update matching signeeContext with new signee information
+        await UpdateSigneeContext(signatureConfiguration, signatureContext, userActionContext.DataMutator);
 
         try
         {
@@ -238,11 +216,10 @@ internal sealed class SigningService(
         }
     }
 
-    private async Task UpdateSigneeContexts(
+    private async Task UpdateSigneeContext(
         AltinnSignatureConfiguration? signatureConfiguration,
         SignatureContext signatureContext,
-        IInstanceDataMutator dataMutator,
-        ApplicationMetadata appMetadata
+        IInstanceDataMutator dataMutator
     )
     {
         if (signatureConfiguration?.SigneeStatesDataTypeId is not null)
@@ -255,16 +232,17 @@ internal sealed class SigningService(
                 // the original signee is an organisation and missing person information.
                 if (
                     signatureContext.Signee.OrganisationNumber is not null
-                    && signatureContext.Signee.OrganisationNumber == signeeContext.Party.OrgNumber
-                    && signeeContext.Party.Person is null
+                    && signatureContext.Signee.OrganisationNumber
+                        == signeeContext.OnBehalfOfOrganisation?.OrganisationNumber
+                    && signeeContext.SocialSecurityNumber is null
                 )
                 {
                     Party personParty = await altinnPartyClient.LookupParty(
                         new PartyLookup { Ssn = signatureContext.Signee.PersonNumber }
                     );
 
-                    signeeContext.Party.Person = personParty.Person;
-                    signeeContext.Party.SSN = personParty.SSN;
+                    signeeContext.FullName = personParty.Person.Name;
+                    signeeContext.SocialSecurityNumber = personParty.SSN;
                 }
             }
 
@@ -277,16 +255,46 @@ internal sealed class SigningService(
                 ?? throw new ApplicationException(
                     $"Failed to find the data element containing signee contexts using dataTypeId {signatureConfiguration.SigneeStatesDataTypeId}."
                 );
-            var updates = await _dataClient.UpdateBinaryData(
-                new InstanceIdentifier(dataMutator.Instance),
-                signeeStateDataElement.ContentType,
-                signeeStateDataElement.Filename,
-                new DataElementIdentifier(signeeStateDataElement.Id).Guid,
-                new MemoryAsStream(JsonSerializer.SerializeToUtf8Bytes(signeeContexts, _jsonSerializerOptions))
+
+            try
+            {
+                await _dataClient.UpdateBinaryData(
+                    new InstanceIdentifier(dataMutator.Instance),
+                    signeeStateDataElement.ContentType,
+                    signeeStateDataElement.Filename,
+                    new DataElementIdentifier(signeeStateDataElement.Id).Guid,
+                    new MemoryAsStream(JsonSerializer.SerializeToUtf8Bytes(signeeContexts, _jsonSerializerOptions))
+                );
+            }
+            catch (PlatformHttpException ex)
+            {
+                // TODO: Successful signing, but failed to update signee context data element. Should this throw or smth?
+                _logger.LogError(ex, "Failed to update signee context data element.");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Get signees from the signee provider implemented in the App.
+    /// </summary>
+    /// <exception cref="SigneeProviderNotFoundException"></exception>
+    private async Task<SigneesResult?> GetSigneesFromProvider(
+        Instance instance,
+        AltinnSignatureConfiguration signatureConfiguration
+    )
+    {
+        string? signeeProviderId = signatureConfiguration.SigneeProviderId;
+        if (signeeProviderId is null)
+            return null;
+
+        ISigneeProvider signeeProvider =
+            signeeProviders.FirstOrDefault(sp => sp.Id == signeeProviderId)
+            ?? throw new SigneeProviderNotFoundException(
+                $"No signee provider found for task {instance.Process.CurrentTask.ElementId} with signeeProviderId {signeeProviderId}. Please add an implementation of the {nameof(ISigneeProvider)} interface with that ID or correct the ID."
             );
 
-            await Task.CompletedTask;
-        }
+        SigneesResult signeesResult = await signeeProvider.GetSigneesAsync(instance);
+        return signeesResult;
     }
 
     private static List<DataElementSignature> GetDataElementSignatures(
@@ -345,7 +353,11 @@ internal sealed class SigningService(
         };
     }
 
-    private async Task<SigneeContext> CreateSigneeContext(string taskId, SigneeParty signeeParty, CancellationToken ct)
+    private async Task<SigneeContext> GenerateSigneeContext(
+        string taskId,
+        SigneeParty signeeParty,
+        CancellationToken ct
+    )
     {
         var orgNumber = signeeParty.OnBehalfOfOrganisation?.OrganisationNumber;
         Party party = await altinnPartyClient.LookupParty(
@@ -372,6 +384,15 @@ internal sealed class SigningService(
             Party = party,
             SigneeState = new SigneeState(),
             Notifications = notifications,
+            FullName = signeeParty.FullName,
+            SocialSecurityNumber = signeeParty.SocialSecurityNumber,
+            OnBehalfOfOrganisation = signeeParty.OnBehalfOfOrganisation is null
+                ? null
+                : new SigneeContextOrganisation
+                {
+                    Name = signeeParty.OnBehalfOfOrganisation.Name,
+                    OrganisationNumber = signeeParty.OnBehalfOfOrganisation.OrganisationNumber,
+                },
         };
     }
 
@@ -469,8 +490,8 @@ internal sealed class SigningService(
         foreach (SignDocument signDocument in signDocuments)
         {
             SigneeContext? matchingSigneeContext = signeeContexts.FirstOrDefault(x =>
-                x.Party?.SSN == signDocument.SigneeInfo.PersonNumber
-                || x.Party?.OrgNumber == signDocument.SigneeInfo.OrganisationNumber
+                x.OnBehalfOfOrganisation?.OrganisationNumber == signDocument.SigneeInfo.OrganisationNumber
+                && x.SocialSecurityNumber == signDocument.SigneeInfo.PersonNumber
             );
 
             if (matchingSigneeContext is not null)
@@ -517,5 +538,21 @@ internal sealed class SigningService(
             },
             SignDocument = signDocument,
         };
+    }
+
+    /// <summary>
+    /// Catch exceptions from a task and return them as a ServiceResult record with the result.
+    /// </summary>
+    private static async Task<ServiceResult<T, Exception>> CatchError<T>(Task<T> task)
+    {
+        try
+        {
+            var result = await task;
+            return result;
+        }
+        catch (Exception ex)
+        {
+            return ex;
+        }
     }
 }

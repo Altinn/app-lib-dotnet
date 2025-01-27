@@ -55,7 +55,7 @@ internal sealed class SigningNotificationService : ISigningNotificationService
 
                 if (success is false)
                 {
-                    signeeContext.SigneeState.SignatureRequestSmsNotSentReason = errorMessage;
+                    state.SignatureRequestSmsNotSentReason = errorMessage;
                     _telemetry?.RecordNotifySignees(NotifySigneesResult.Error);
                     _logger.LogError(errorMessage);
                 }
@@ -73,7 +73,7 @@ internal sealed class SigningNotificationService : ISigningNotificationService
 
                 if (success is false)
                 {
-                    signeeContext.SigneeState.SignatureRequestEmailNotSentReason = errorMessage;
+                    state.SignatureRequestEmailNotSentReason = errorMessage;
                     _telemetry?.RecordNotifySignees(NotifySigneesResult.Error);
                     _logger.LogError(errorMessage);
                 }
