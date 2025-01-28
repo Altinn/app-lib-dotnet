@@ -140,10 +140,14 @@ public class HomeController : Controller
             .Where(item => item != null)
             .ToList();
 
-        // Prepare the result grouped by dataModelName
         var result = modelPrefill
             .Select(entry =>
             {
+                if (entry.PrefillConfiguration == null) // Check if PrefillConfiguration is null
+                {
+                    return null;
+                }
+
                 var queryParamsConfig = entry.PrefillConfiguration["QueryParams"];
                 if (queryParamsConfig == null || queryParamsConfig.Type != JTokenType.Object)
                 {
@@ -165,10 +169,8 @@ public class HomeController : Controller
             .Where(entry => entry != null && entry.PrefillFields.Count > 0)
             .ToList();
 
-        // Serialize the result to JSON
         var resultJson = System.Text.Json.JsonSerializer.Serialize(result);
 
-        // Generate HTML to set sessionStorage
         var htmlContent =
             $@"
         <!DOCTYPE html>
