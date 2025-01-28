@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text.Json;
 using System.Web;
 using Altinn.App.Core.Configuration;
@@ -143,18 +142,20 @@ public class HomeController : Controller
         var result = modelPrefill
             .Select(entry =>
             {
-                if (entry.PrefillConfiguration == null) // Check if PrefillConfiguration is null
+                var prefillConfig = entry!.PrefillConfiguration;
+                if (prefillConfig == null)
                 {
                     return null;
                 }
 
-                var queryParamsConfig = entry.PrefillConfiguration["QueryParams"];
+                var queryParamsConfig = prefillConfig["QueryParams"];
                 if (queryParamsConfig == null || queryParamsConfig.Type != JTokenType.Object)
                 {
                     return null;
                 }
 
-                // Filter allowed query parameters
+                // Filter allowed query parameters. We only allow query params that are configured in
+                // <datamodel_name>.prefill.json
                 var allowedQueryParams = ((JObject)queryParamsConfig)
                     .Properties()
                     .Where(prop => queryParams.ContainsKey(prop.Name))
@@ -166,7 +167,7 @@ public class HomeController : Controller
 
                 return new { DataModelName = entry.DataModelName, PrefillFields = allowedQueryParams };
             })
-            .Where(entry => entry != null && entry.PrefillFields.Count > 0)
+            .Where(entry => entry != null && entry.PrefillFields!.Count > 0)
             .ToList();
 
         var resultJson = System.Text.Json.JsonSerializer.Serialize(result);
