@@ -16,7 +16,6 @@ using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Models;
-using Altinn.App.Core.Models.Result;
 using Altinn.App.Core.Models.UserAction;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
@@ -540,21 +539,5 @@ internal sealed class SigningService(
             },
             SignDocument = signDocument,
         };
-    }
-
-    /// <summary>
-    /// Catch exceptions from a task and return them as a ServiceResult record with the result.
-    /// </summary>
-    private static async Task<ServiceResult<T, Exception>> CatchError<T>(Task<T> task)
-    {
-        try
-        {
-            var result = await task;
-            return result;
-        }
-        catch (Exception ex)
-        {
-            return ex;
-        }
     }
 }
