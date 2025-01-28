@@ -359,9 +359,11 @@ internal sealed class SigningService(
         CancellationToken ct
     )
     {
-        var orgNumber = signeeParty.OnBehalfOfOrganisation?.OrganisationNumber;
+        var socialSecurityNumber = signeeParty.SocialSecurityNumber;
         Party party = await altinnPartyClient.LookupParty(
-            new PartyLookup { Ssn = orgNumber is null ? signeeParty.SocialSecurityNumber : null, OrgNo = orgNumber }
+            socialSecurityNumber is not null
+                ? new PartyLookup { Ssn = socialSecurityNumber }
+                : new PartyLookup { OrgNo = signeeParty.OnBehalfOfOrganisation?.OrganisationNumber }
         );
 
         Models.Notifications? notifications = signeeParty.Notifications;

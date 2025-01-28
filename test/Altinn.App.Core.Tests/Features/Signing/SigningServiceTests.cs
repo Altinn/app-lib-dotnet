@@ -108,6 +108,11 @@ public class SigningServiceTests
                     OrgNumber = org.OrgNumber,
                     Organization = new Organization { OrgNumber = org.OrgNumber, Name = org.Name },
                 },
+                OnBehalfOfOrganisation = new SigneeContextOrganisation
+                {
+                    Name = org.Name,
+                    OrganisationNumber = org.OrgNumber,
+                },
             },
         };
 
@@ -115,7 +120,7 @@ public class SigningServiceTests
         {
             SigneeInfo = new Platform.Storage.Interface.Models.Signee
             {
-                OrganisationNumber = signeeState.First().Party.OrgNumber,
+                OrganisationNumber = signeeState.First().OnBehalfOfOrganisation?.OrganisationNumber,
             },
         };
 
@@ -140,8 +145,16 @@ public class SigningServiceTests
             .ReturnsAsync(new ReadOnlyMemory<byte>(ToBytes(signDocumentWithoutMatchingSignatureContext)));
 
         _altinnPartyClient
-            .Setup(x => x.LookupParty(Match.Create<PartyLookup>(p => p.Ssn == person.SSN)))
-            .ReturnsAsync(new Party { SSN = person.SSN, Person = person });
+            .Setup(x => x.LookupParty(Match.Create<PartyLookup>(p => p.Ssn == person.SSN || p.OrgNo == org.OrgNumber)))
+            .ReturnsAsync(
+                new Party
+                {
+                    SSN = person.SSN,
+                    Person = person,
+                    OrgNumber = org.OrgNumber,
+                    Organization = org,
+                }
+            );
 
         // Act
         List<SigneeContext> result = await _signingService.GetSigneeContexts(
