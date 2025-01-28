@@ -15,7 +15,6 @@ namespace Altinn.App.Api.Controllers;
 /// <summary>
 /// Provides access to the default home view.
 /// </summary>
-[ApiController]
 public class HomeController : Controller
 {
     private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
@@ -30,8 +29,6 @@ public class HomeController : Controller
     private readonly IAppResources _appResources;
     private readonly IAppMetadata _appMetadata;
     private readonly List<string> _onEntryWithInstance = new List<string> { "new-instance", "select-instance" };
-
-    //private readonly ApplicationMetadata _applicationMetadata;
 
     /// <summary>
     /// Initialize a new instance of the <see cref="HomeController"/> class.
@@ -57,7 +54,6 @@ public class HomeController : Controller
         _appSettings = appSettings.Value;
         _appResources = appResources;
         _appMetadata = appMetadata;
-        //   _applicationMetadata = applicationMetadata;
     }
 
     /// <summary>
@@ -125,10 +121,8 @@ public class HomeController : Controller
     {
         var queryParams = HttpContext.Request.Query;
 
-        // Get application metadata
         Application application = await _appMetadata.GetApplicationMetadata();
 
-        // Get the data types from the application
         List<string> dataTypes = application.DataTypes.Select(type => type.Id).ToList();
 
         // Build the modelPrefill dictionary
