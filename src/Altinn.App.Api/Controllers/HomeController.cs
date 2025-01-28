@@ -74,6 +74,20 @@ public class HomeController : Controller
         [FromQuery] bool dontChooseReportee
     )
     {
+        // See comments in the configuration of Antiforgery in MvcConfiguration.cs.
+        var tokens = _antiforgery.GetAndStoreTokens(HttpContext);
+        if (tokens.RequestToken != null)
+        {
+            HttpContext.Response.Cookies.Append(
+                "XSRF-TOKEN",
+                tokens.RequestToken,
+                new CookieOptions
+                {
+                    HttpOnly = false, // Make this cookie readable by Javascript.
+                }
+            );
+        }
+
         if (await ShouldShowAppView())
         {
             ViewBag.org = org;
