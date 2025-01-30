@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Altinn.App.Core.Internal.Expressions;
 
 namespace Altinn.App.Core.Models.Expressions;
 
@@ -28,7 +29,7 @@ public class ExpressionConverter : JsonConverter<Expression>
             JsonTokenType.False => new Expression(false),
             JsonTokenType.String => new Expression(reader.GetString()),
             JsonTokenType.Number => new Expression(reader.GetDouble()),
-            JsonTokenType.Null => new Expression(null),
+            JsonTokenType.Null => new Expression(new ExpressionTypeUnion()),
             JsonTokenType.StartArray => ReadArray(ref reader, options),
             JsonTokenType.StartObject => throw new JsonException("Invalid type \"object\""),
             _ => throw new JsonException(),

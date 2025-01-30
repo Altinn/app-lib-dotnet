@@ -18,7 +18,7 @@ public readonly record struct Expression
     ///     Construct a value expression with the given value
     /// </summary>
     /// <param name="value"></param>
-    public Expression(object? value)
+    public Expression(ExpressionTypeUnion value)
     {
         Value = value;
     }
@@ -36,6 +36,7 @@ public readonly record struct Expression
     /// Test function to see if this is representing a function with args.
     /// </summary>
     [MemberNotNullWhen(true, nameof(Function), nameof(Args))]
+    [MemberNotNullWhen(false, nameof(Value))]
     public bool IsFunctionExpression => Function != ExpressionFunction.INVALID && Args != null;
 
     /// <summary>
@@ -54,7 +55,7 @@ public readonly record struct Expression
     /// <remarks>
     ///  If <see cref="Value" /> isn't null, <see cref="Function" /> and <see cref="Args" /> must be
     /// </remarks>
-    public object? Value { get; }
+    public ExpressionTypeUnion Value { get; }
 
     /// <summary>
     /// Static helper to create an expression with the value of false

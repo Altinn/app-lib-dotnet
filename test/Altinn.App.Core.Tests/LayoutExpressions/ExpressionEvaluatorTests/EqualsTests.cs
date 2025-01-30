@@ -46,9 +46,12 @@ public class EqualTests(ITestOutputHelper outputHelper)
         outputHelper.WriteLine($"Object of type {value?.GetType().FullName ?? "null"}:");
         outputHelper.WriteLine($"   value:{value}");
         outputHelper.WriteLine($"   json: {JsonSerializer.Serialize(value)}");
+
+        var union = ExpressionTypeUnion.FromObject(value);
+        outputHelper.WriteLine($"   union: {union.Json}");
         // Verify that the EqualsToString method returns the same value as the JsonSerializer.
         var json = value is string ? value : JsonSerializer.Serialize(value);
-        var toStringForEquals = ExpressionEvaluator.ToStringForEquals(value);
+        var toStringForEquals = ExpressionEvaluator.ToStringForEquals(ExpressionTypeUnion.FromObject(value));
         Assert.Equal(json, toStringForEquals);
     }
 
@@ -74,8 +77,11 @@ public class EqualTests(ITestOutputHelper outputHelper)
         outputHelper.WriteLine($"Object of type {value?.GetType().FullName ?? "null"}:");
         outputHelper.WriteLine($"   value:{value}");
         outputHelper.WriteLine($"   json: {JsonSerializer.Serialize(value)}");
+
+        var union = ExpressionTypeUnion.FromObject(value);
+        outputHelper.WriteLine($"   union: {union.Json}");
         // Verify that the EqualsToString method throws an exception for unsupported types.
-        Assert.Throws<NotImplementedException>(() => ExpressionEvaluator.ToStringForEquals(value));
+        Assert.Null(ExpressionEvaluator.ToStringForEquals(ExpressionTypeUnion.FromObject(value)));
     }
 
     [Theory]
@@ -93,7 +99,7 @@ public class EqualTests(ITestOutputHelper outputHelper)
     public void ToStringForEquals_SpecialCases(object? value, string? expected)
     {
         // Verify that the EqualsToString method returns the expected value for special cases.
-        var toStringForEquals = ExpressionEvaluator.ToStringForEquals(value);
+        var toStringForEquals = ExpressionEvaluator.ToStringForEquals(ExpressionTypeUnion.FromObject(value));
         Assert.Equal(expected, toStringForEquals);
     }
 }
