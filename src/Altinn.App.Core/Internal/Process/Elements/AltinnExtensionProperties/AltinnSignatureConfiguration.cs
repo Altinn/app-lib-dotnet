@@ -51,6 +51,12 @@ public class AltinnSignatureConfiguration
     public string? SigneeStatesDataTypeId { get; set; }
 
     /// <summary>
+    /// Optionally set which dataTypeId that should be used for the signing task pdf. If not set, a pdf will not be generated.
+    /// </summary>
+    [XmlElement("signingPdfDataType", Namespace = "http://altinn.no/process")]
+    public string? SigningPdfDataType { get; set; }
+
+    /// <summary>
     /// Correspondence resource details
     /// </summary>
     [XmlElement(ElementName = "correspondenceResource", Namespace = "http://altinn.no/process")]
