@@ -179,6 +179,9 @@ public class HomeController : Controller
 
         var resultJson = System.Text.Json.JsonSerializer.Serialize(result);
 
+        var encodedOrg = Uri.EscapeDataString(application.Org);
+        var encodedAppId = Uri.EscapeDataString(application.Id);
+
         var htmlContent =
             $@"
         <!DOCTYPE html>
@@ -192,7 +195,10 @@ public class HomeController : Controller
             <script>
                 const prefillData = {resultJson};
                 sessionStorage.setItem('queryParams', JSON.stringify(prefillData));
-                const redirectUrl = `${{window.location.origin}}/{org}/{app}`;
+                const redirectUrl = `${{window.location.origin}}/{encodedOrg}/{encodedAppId}`;
+
+
+
                 window.location.href = redirectUrl;
             </script>
         </body>
