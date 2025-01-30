@@ -196,9 +196,6 @@ public class HomeController : Controller
                 const prefillData = {resultJson};
                 sessionStorage.setItem('queryParams', JSON.stringify(prefillData));
                 const redirectUrl = `${{window.location.origin}}/{encodedOrg}/{encodedAppId}`;
-
-
-
                 window.location.href = redirectUrl;
             </script>
         </body>
