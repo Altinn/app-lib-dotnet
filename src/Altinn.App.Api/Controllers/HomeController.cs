@@ -176,9 +176,14 @@ public class HomeController : Controller
                     })
                     .ToList();
 
-                return new { DataModelName = entry.DataModelName, PrefillFields = allowedQueryParams };
+                return new
+                {
+                    dataModelName = entry.DataModelName,
+                    appId = application.Id,
+                    prefillFields = allowedQueryParams,
+                };
             })
-            .Where(entry => entry != null && entry.PrefillFields != null && entry.PrefillFields.Count > 0)
+            .Where(entry => entry != null && entry.prefillFields != null && entry.prefillFields.Count > 0)
             .ToList();
 
         var safeResultJson = System.Text.Json.JsonSerializer.Serialize(result, _jsonOptions);
