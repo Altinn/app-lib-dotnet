@@ -28,6 +28,10 @@ public class HomeController : Controller
     private readonly IAppResources _appResources;
     private readonly IAppMetadata _appMetadata;
     private readonly List<string> _onEntryWithInstance = new List<string> { "new-instance", "select-instance" };
+    private static readonly System.Text.Json.JsonSerializerOptions _jsonOptions = new()
+    {
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
 
     /// <summary>
     /// Initialize a new instance of the <see cref="HomeController"/> class.
@@ -177,10 +181,10 @@ public class HomeController : Controller
             .Where(entry => entry != null && entry.PrefillFields != null && entry.PrefillFields.Count > 0)
             .ToList();
 
-        var resultJson = System.Text.Json.JsonSerializer.Serialize(result);
-
-        var encodedOrg = Uri.EscapeDataString(application.Org);
+        var safeResultJson = System.Text.Json.JsonSerializer.Serialize(result, _jsonOptions);
         var encodedAppId = Uri.EscapeDataString(application.Id);
+
+        string nonce = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(16));
 
         var htmlContent =
             $@"
@@ -192,14 +196,16 @@ public class HomeController : Controller
             <title>Set Query Params</title>
         </head>
         <body>
-            <script>
-                const prefillData = {resultJson};
+            <script nonce='{nonce}'>
+                const prefillData = {safeResultJson};
                 sessionStorage.setItem('queryParams', JSON.stringify(prefillData));
-                const redirectUrl = `${{window.location.origin}}/{encodedOrg}/{encodedAppId}`;
-                window.location.href = redirectUrl;
+                const appOrg = decodeURIComponent('{encodedAppId}');
+                window.location.href = `${{window.location.origin}}/${{appOrg}}`;
             </script>
         </body>
         </html>";
+
+        Response.Headers["Content-Security-Policy"] = $"default-src 'self'; script-src 'nonce-{nonce}';";
 
         return Content(htmlContent, "text/html");
     }
