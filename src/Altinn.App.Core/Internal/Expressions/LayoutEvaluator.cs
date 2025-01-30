@@ -68,6 +68,18 @@ public static class LayoutEvaluator
                 return;
             }
         }
+        else
+        {
+            if (context.Component is RepeatingGroupRowComponent or RepeatingGroupComponent)
+            {
+                if (context.Component.DataModelBindings.TryGetValue("group", out var groupBinding))
+                {
+                    var indexedBinding = await state.AddInidicies(groupBinding, context);
+                    nonHiddenModelBindings.Add(indexedBinding);
+                }
+            }
+        }
+
         // Recurse children
         foreach (var childContext in context.ChildContexts)
         {
