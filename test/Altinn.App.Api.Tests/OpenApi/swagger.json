@@ -2265,6 +2265,39 @@
         }
       }
     },
+    "/{org}/{app}/set-query-params": {
+      "get": {
+        "tags": [
+          "Home"
+        ],
+        "summary": "Sets query parameters in frontend session storage",
+        "parameters": [
+          {
+            "name": "org",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "app",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}": {
       "get": {
         "tags": [
