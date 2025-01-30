@@ -113,7 +113,7 @@ public class HomeController : Controller
     /// </summary>
     /// <param name="org"></param>
     /// <param name="app"></param>
-    /// <returns></returns>
+    /// <returns>An HTML file with a small javascript that will set session variables in frontend and redirect to the app.</returns>
     [HttpGet]
     [Route("{org}/{app}/set-query-params")]
     public async Task<IActionResult> SetQueryParams(string org, string app)
@@ -142,7 +142,13 @@ public class HomeController : Controller
         var result = modelPrefill
             .Select(entry =>
             {
-                var prefillConfig = entry!.PrefillConfiguration;
+                if (entry == null || entry.PrefillConfiguration == null)
+                {
+                    return null;
+                }
+
+                var prefillConfig = entry.PrefillConfiguration;
+
                 if (prefillConfig == null)
                 {
                     return null;
@@ -167,7 +173,7 @@ public class HomeController : Controller
 
                 return new { DataModelName = entry.DataModelName, PrefillFields = allowedQueryParams };
             })
-            .Where(entry => entry != null && entry.PrefillFields!.Count > 0)
+            .Where(entry => entry != null && entry.PrefillFields != null && entry.PrefillFields.Count > 0)
             .ToList();
 
         var resultJson = System.Text.Json.JsonSerializer.Serialize(result);
