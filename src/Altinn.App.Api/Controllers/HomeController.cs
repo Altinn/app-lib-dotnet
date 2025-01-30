@@ -115,7 +115,7 @@ public class HomeController : Controller
     /// <param name="app"></param>
     /// <returns>An HTML file with a small javascript that will set session variables in frontend and redirect to the app.</returns>
     [HttpGet]
-    [Produces("text/html")]
+    [ApiExplorerSettings(IgnoreApi = true)]
     [Route("{org}/{app}/set-query-params")]
     public async Task<IActionResult> SetQueryParams(string org, string app)
     {
