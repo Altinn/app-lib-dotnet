@@ -4,9 +4,9 @@ using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Tests.LayoutExpressions.TestUtilities;
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Tests.LayoutExpressions.FullTests.RepeatingGroups;
+namespace Altinn.App.Core.Tests.LayoutExpressions.FullTests.RepeatingGroupsHidden;
 
-public class RepeatingGroups
+public class RepeatingGroupsHidden
 {
     [Theory]
     [InlineData(false, false)]
@@ -48,7 +48,7 @@ public class RepeatingGroups
             jsonDoc.RootElement
         );
         var data = await dataAccessor.GetFormData(dataAccessor.Instance.Data.First());
-        var state = await LayoutTestUtils.GetLayoutModelTools(data, "RepeatingGroups");
+        var state = await LayoutTestUtils.GetLayoutModelTools(data, "RepeatingGroupsHidden");
         var hidden = await LayoutEvaluator.GetHiddenFieldsForRemoval(state);
 
         await Verify(hidden).UseParameters(hidePage1, hidePage2);
