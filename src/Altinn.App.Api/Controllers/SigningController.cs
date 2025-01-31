@@ -110,7 +110,7 @@ public class SigningController : ControllerBase
                     NotificationSuccessful =
                         signeeContext.SigneeState
                             is { SignatureRequestEmailSent: false, SignatureRequestSmsSent: false },
-                    PartyId = signeeContext.Party.PartyId,
+                    PartyId = signeeContext.OriginalParty.PartyId,
                 }),
             ],
         };

@@ -382,7 +382,7 @@ internal sealed class SigningService(
         return new SigneeContext
         {
             TaskId = taskId,
-            Party = party,
+            OriginalParty = party,
             SigneeState = new SigneeState(),
             Notifications = notifications,
             FullName = signeeParty.FullName,
@@ -529,7 +529,7 @@ internal sealed class SigningService(
         return new SigneeContext
         {
             TaskId = instanceDataAccessor.Instance.Process.CurrentTask.ElementId,
-            Party = party,
+            OriginalParty = party,
             SigneeState = new SigneeState()
             {
                 IsAccessDelegated = true,

@@ -38,7 +38,7 @@ internal sealed class SigningDelegationService(
                 if (state.IsAccessDelegated is false)
                 {
                     logger.LogInformation(
-                        $"Delegating signee rights to {signeeContext.Party.PartyUuid} from {delegatorParty.PartyUuid} for {appResourceId.Value}"
+                        $"Delegating signee rights to {signeeContext.OriginalParty.PartyUuid} from {delegatorParty.PartyUuid} for {appResourceId.Value}"
                     );
                     DelegationRequest delegationRequest = new()
                     {
@@ -53,7 +53,7 @@ internal sealed class SigningDelegationService(
                         To = new DelegationParty
                         {
                             Value =
-                                signeeContext.Party.PartyUuid.ToString()
+                                signeeContext.OriginalParty.PartyUuid.ToString()
                                 ?? throw new InvalidOperationException("Delegatee: PartyUuid is null"),
                         },
                         Rights =
@@ -129,7 +129,7 @@ internal sealed class SigningDelegationService(
                         To = new DelegationParty
                         {
                             Value =
-                                signeeContext.Party.PartyUuid.ToString()
+                                signeeContext.OriginalParty.PartyUuid.ToString()
                                 ?? throw new InvalidOperationException("Delegatee: PartyUuid is null"),
                         },
                         Rights =

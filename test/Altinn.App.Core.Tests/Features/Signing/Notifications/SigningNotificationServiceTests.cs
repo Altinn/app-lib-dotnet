@@ -156,7 +156,7 @@ public class SigningNotificationServiceTests
         {
             new()
             {
-                Party = new Party
+                OriginalParty = new Party
                 {
                     OrgNumber = "123456789",
                     Organization = new Organization { Name = "Test Organisation", OrgNumber = "123456789" },
@@ -485,7 +485,7 @@ public class SigningNotificationServiceTests
         {
             new()
             {
-                Party = new Party()
+                OriginalParty = new Party()
                 {
                     OrgNumber = "123456789",
                     Organization = new Organization { Name = "Test Organisation", OrgNumber = "123456789" },
@@ -589,7 +589,7 @@ public class SigningNotificationServiceTests
 
         return new SigneeContext
         {
-            Party = party,
+            OriginalParty = party,
             TaskId = "task-id",
             SigneeState = new SigneeState { SignatureRequestSmsSent = hasSentSms ?? false },
             Notifications = new Core.Features.Signing.Models.Notifications
@@ -628,7 +628,7 @@ public class SigningNotificationServiceTests
         }
         return new SigneeContext
         {
-            Party = party,
+            OriginalParty = party,
             TaskId = "task-id",
             SigneeState = new SigneeState { SignatureRequestEmailSent = hasSentEmail ?? false },
             Notifications = new Core.Features.Signing.Models.Notifications
