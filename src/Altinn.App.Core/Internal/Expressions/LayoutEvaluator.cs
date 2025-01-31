@@ -47,8 +47,7 @@ public static class LayoutEvaluator
         var isHidden = await context.IsHidden(state);
         if (context.Component is RepeatingGroupRowComponent or RepeatingGroupComponent)
         {
-            var hasGroupBinding = context.Component.DataModelBindings.TryGetValue("group", out var groupBinding);
-            if (hasGroupBinding)
+            if (context.Component.DataModelBindings.TryGetValue("group", out var groupBinding))
             {
                 var indexedBinding = await state.AddInidicies(groupBinding, context);
                 (isHidden ? hiddenModelBindings : nonHiddenModelBindings).Add(indexedBinding);
