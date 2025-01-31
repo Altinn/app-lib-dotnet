@@ -44,6 +44,8 @@ public static class ServiceCollectionExtensions
     /// </summary>
     public static void AddAltinnAppControllersWithViews(this IServiceCollection services)
     {
+        services.AddAppConfigurationCache();
+
         // Add API controllers from Altinn.App.Api
         IMvcBuilder mvcBuilder = services.AddControllersWithViews(options =>
         {

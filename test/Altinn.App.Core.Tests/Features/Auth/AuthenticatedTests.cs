@@ -116,14 +116,14 @@ public class AuthenticatedTests
                     Authenticated.From(
                         tokenStr: token,
                         isAuthenticated: true,
+                        appMetadata: TestAuthentication.NewApplicationMetadata("digdir"),
                         getSelectedParty: () => null,
                         getUserProfile: _ => null!,
                         lookupUserParty: _ => null!,
                         lookupOrgParty: _ => null!,
                         getPartyList: _ => null!,
                         validateSelectedParty: (_, _) => null!,
-                        getUserRoles: (_, _) => null!,
-                        getApplicationMetadata: () => null!
+                        getUserRoles: (_, _) => null!
                     )
             );
             return;
@@ -132,14 +132,14 @@ public class AuthenticatedTests
         var auth = Authenticated.From(
             tokenStr: token,
             isAuthenticated: true,
+            appMetadata: TestAuthentication.NewApplicationMetadata("digdir"),
             getSelectedParty: () => null,
             getUserProfile: _ => null!,
             lookupUserParty: _ => null!,
             lookupOrgParty: _ => null!,
             getPartyList: _ => null!,
             validateSelectedParty: (_, _) => null!,
-            getUserRoles: (_, _) => null!,
-            getApplicationMetadata: () => null!
+            getUserRoles: (_, _) => null!
         );
 
         switch (tokenType)

@@ -58,6 +58,9 @@ builder.Configuration.AddJsonFile(
 builder.Configuration.GetSection("MetricsSettings:Enabled").Value = "false";
 builder.Configuration.GetSection("AppSettings:UseOpenTelemetry").Value = "true";
 builder.Configuration.GetSection("GeneralSettings:DisableLocaltestValidation").Value = "true";
+builder.Configuration.GetSection("GeneralSettings:DisableAppConfigurationCache").Value = "true";
+
+// AppConfigurationCache.Disable = true;
 
 ConfigureServices(builder.Services, builder.Configuration);
 ConfigureMockServices(builder.Services, builder.Configuration);
@@ -95,6 +98,7 @@ void ConfigureMockServices(IServiceCollection services, ConfigurationManager con
     services.AddTransient<IEventHandler, DummyFailureEventHandler>();
     services.AddTransient<IEventHandler, DummySuccessEventHandler>();
     services.AddTransient<IAppMetadata, AppMetadataMock>();
+    services.AddSingleton<IAppConfigurationCache, AppConfigurationCacheMock>();
     services.AddTransient<IDataClient, DataClientMock>();
     services.AddTransient<IAltinnPartyClient, AltinnPartyClientMock>();
     services.AddTransient<IProfileClient, ProfileClientMock>();

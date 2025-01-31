@@ -120,7 +120,7 @@ public abstract class Authenticated
         private readonly Func<int, Task<List<Party>?>> _getPartyList;
         private readonly Func<int, int, Task<bool?>> _validateSelectedParty;
         private readonly Func<int, int, Task<IEnumerable<Role>>> _getUserRoles;
-        private readonly Func<Task<ApplicationMetadata>> _getApplicationMetadata;
+        private readonly ApplicationMetadata _appMetadata;
 
         internal User(
             int userId,
@@ -138,7 +138,7 @@ public abstract class Authenticated
             Func<int, Task<List<Party>?>> getPartyList,
             Func<int, int, Task<bool?>> validateSelectedParty,
             Func<int, int, Task<IEnumerable<Role>>> getUserRoles,
-            Func<Task<ApplicationMetadata>> getApplicationMetadata
+            ApplicationMetadata appMetadata
         )
             : base(tokenIssuer, tokenIsExchanged, scopes, token)
         {
@@ -153,7 +153,7 @@ public abstract class Authenticated
             _getPartyList = getPartyList;
             _validateSelectedParty = validateSelectedParty;
             _getUserRoles = getUserRoles;
-            _getApplicationMetadata = getApplicationMetadata;
+            _appMetadata = appMetadata;
         }
 
         /// <summary>
@@ -301,10 +301,9 @@ public abstract class Authenticated
 
             var roles = await _getUserRoles(UserId, SelectedPartyId);
 
-            var application = await _getApplicationMetadata();
             var partiesAllowedToInstantiate = InstantiationHelper.FilterPartiesByAllowedPartyTypes(
                 parties,
-                application.PartyTypesAllowed
+                _appMetadata.PartyTypesAllowed
             );
 
             _extra = new Details(
@@ -352,7 +351,7 @@ public abstract class Authenticated
 
         private Details? _extra;
         private readonly Func<int, Task<UserProfile?>> _getUserProfile;
-        private readonly Func<Task<ApplicationMetadata>> _getApplicationMetadata;
+        private readonly ApplicationMetadata _appMetadata;
 
         internal SelfIdentifiedUser(
             string username,
@@ -364,7 +363,7 @@ public abstract class Authenticated
             Scopes scopes,
             string token,
             Func<int, Task<UserProfile?>> getUserProfile,
-            Func<Task<ApplicationMetadata>> getApplicationMetadata
+            ApplicationMetadata appMetadata
         )
             : base(tokenIssuer, tokenIsExchanged, scopes, token)
         {
@@ -375,7 +374,7 @@ public abstract class Authenticated
             // Since they are self-identified, they are always 0
             AuthenticationLevel = 0;
             _getUserProfile = getUserProfile;
-            _getApplicationMetadata = getApplicationMetadata;
+            _appMetadata = appMetadata;
         }
 
         /// <summary>
@@ -404,8 +403,7 @@ public abstract class Authenticated
                 );
 
             var party = userProfile.Party;
-            var application = await _getApplicationMetadata();
-            var canInstantiate = InstantiationHelper.IsPartyAllowedToInstantiate(party, application.PartyTypesAllowed);
+            var canInstantiate = InstantiationHelper.IsPartyAllowedToInstantiate(party, _appMetadata.PartyTypesAllowed);
             _extra = new Details(party, userProfile, RepresentsSelf: true, canInstantiate);
             return _extra;
         }
@@ -433,7 +431,7 @@ public abstract class Authenticated
         public string AuthenticationMethod { get; }
 
         private readonly Func<string, Task<Party>> _lookupParty;
-        private readonly Func<Task<ApplicationMetadata>> _getApplicationMetadata;
+        private readonly ApplicationMetadata _appMetadata;
 
         internal Org(
             string orgNo,
@@ -444,7 +442,7 @@ public abstract class Authenticated
             Scopes scopes,
             string token,
             Func<string, Task<Party>> lookupParty,
-            Func<Task<ApplicationMetadata>> getApplicationMetadata
+            ApplicationMetadata appMetadata
         )
             : base(tokenIssuer, tokenIsExchanged, scopes, token)
         {
@@ -452,7 +450,7 @@ public abstract class Authenticated
             AuthenticationLevel = authenticationLevel;
             AuthenticationMethod = authenticationMethod;
             _lookupParty = lookupParty;
-            _getApplicationMetadata = getApplicationMetadata;
+            _appMetadata = appMetadata;
         }
 
         /// <summary>
@@ -470,8 +468,7 @@ public abstract class Authenticated
         {
             var party = await _lookupParty(OrgNo);
 
-            var application = await _getApplicationMetadata();
-            var canInstantiate = InstantiationHelper.IsPartyAllowedToInstantiate(party, application.PartyTypesAllowed);
+            var canInstantiate = InstantiationHelper.IsPartyAllowedToInstantiate(party, _appMetadata.PartyTypesAllowed);
 
             return new Details(party, canInstantiate);
         }
@@ -580,7 +577,7 @@ public abstract class Authenticated
         public string AuthenticationMethod { get; }
 
         private readonly Func<string, Task<Party>> _lookupParty;
-        private readonly Func<Task<ApplicationMetadata>> _getApplicationMetadata;
+        private readonly ApplicationMetadata _appMetadata;
 
         internal SystemUser(
             IReadOnlyList<Guid> systemUserId,
@@ -594,7 +591,7 @@ public abstract class Authenticated
             Scopes scopes,
             string token,
             Func<string, Task<Party>> lookupParty,
-            Func<Task<ApplicationMetadata>> getApplicationMetadata
+            ApplicationMetadata appMetadata
         )
             : base(tokenIssuer, tokenIsExchanged, scopes, token)
         {
@@ -607,7 +604,7 @@ public abstract class Authenticated
             AuthenticationLevel = authenticationLevel ?? 3;
             AuthenticationMethod = authenticationMethod ?? "maskinporten";
             _lookupParty = lookupParty;
-            _getApplicationMetadata = getApplicationMetadata;
+            _appMetadata = appMetadata;
         }
 
         /// <summary>
@@ -625,8 +622,7 @@ public abstract class Authenticated
         {
             var party = await _lookupParty(SystemUserOrgNr.Get(OrganisationNumberFormat.Local));
 
-            var application = await _getApplicationMetadata();
-            var canInstantiate = InstantiationHelper.IsPartyAllowedToInstantiate(party, application.PartyTypesAllowed);
+            var canInstantiate = InstantiationHelper.IsPartyAllowedToInstantiate(party, _appMetadata.PartyTypesAllowed);
 
             return new Details(party, canInstantiate);
         }
@@ -699,14 +695,14 @@ public abstract class Authenticated
     internal static Authenticated From(
         string tokenStr,
         bool isAuthenticated,
+        ApplicationMetadata appMetadata,
         Func<string?> getSelectedParty,
         Func<int, Task<UserProfile?>> getUserProfile,
         Func<int, Task<Party?>> lookupUserParty,
         Func<string, Task<Party>> lookupOrgParty,
         Func<int, Task<List<Party>?>> getPartyList,
         Func<int, int, Task<bool?>> validateSelectedParty,
-        Func<int, int, Task<IEnumerable<Role>>> getUserRoles,
-        Func<Task<ApplicationMetadata>> getApplicationMetadata
+        Func<int, int, Task<IEnumerable<Role>>> getUserRoles
     )
     {
         if (string.IsNullOrWhiteSpace(tokenStr))
@@ -773,9 +769,6 @@ public abstract class Authenticated
         int? partyId = null;
         if (!string.IsNullOrWhiteSpace(partyIdClaim?.Value))
         {
-            // TODO: partyId is only present for org tokens when using virksomhetsbruker
-            // which is going away, probably.
-            // If we want `Org` to always have party ID, then we need to do a lookup with AltinnPartyClient (register)
             if (!int.TryParse(partyIdClaim.Value, CultureInfo.InvariantCulture, out var partyIdClaimValue))
                 throw new AuthenticationContextException(
                     $"Invalid party ID claim value for token: {partyIdClaim.Value}"
@@ -846,10 +839,10 @@ public abstract class Authenticated
                 scopes,
                 tokenStr,
                 lookupOrgParty,
-                getApplicationMetadata
+                appMetadata
             );
         }
-        else if (!string.IsNullOrWhiteSpace(orgClaim?.Value))
+        else if (!string.IsNullOrWhiteSpace(orgClaim?.Value) && orgClaim.Value == appMetadata.Org)
         {
             // In this case the token should have a serviceowner scope,
             // due to the `urn:altinn:org` claim
@@ -859,8 +852,6 @@ public abstract class Authenticated
                 throw new AuthenticationContextException("Missing authentication method claim for service owner token");
 
             ParseAuthLevel(authLevelClaim?.Value, out authLevel);
-
-            // TODO: check if the org is the same as the owner of the app? A flag?
 
             return new ServiceOwner(
                 orgClaim.Value,
@@ -889,7 +880,7 @@ public abstract class Authenticated
                 scopes,
                 tokenStr,
                 lookupOrgParty,
-                getApplicationMetadata
+                appMetadata
             );
         }
 
@@ -921,7 +912,7 @@ public abstract class Authenticated
                 scopes,
                 tokenStr,
                 getUserProfile,
-                getApplicationMetadata
+                appMetadata
             );
         }
 
@@ -950,7 +941,7 @@ public abstract class Authenticated
             getPartyList,
             validateSelectedParty,
             getUserRoles,
-            getApplicationMetadata
+            appMetadata
         );
     }
 

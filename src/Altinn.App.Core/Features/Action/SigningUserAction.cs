@@ -54,8 +54,8 @@ public class SigningUserAction : IUserAction
         if (
             context.Authentication
             is not Authenticated.User
-                or Authenticated.SelfIdentifiedUser
-                or Authenticated.SystemUser
+                and not Authenticated.SelfIdentifiedUser
+                and not Authenticated.SystemUser
         )
         {
             return UserActionResult.FailureResult(
@@ -160,7 +160,11 @@ public class SigningUserAction : IUserAction
             case Authenticated.SelfIdentifiedUser selfIdentifiedUser:
                 return new Signee { UserId = selfIdentifiedUser.UserId.ToString(CultureInfo.InvariantCulture) };
             case Authenticated.SystemUser systemUser:
-                return new Signee { SystemUserId = systemUser.SystemUserId[0] };
+                return new Signee
+                {
+                    SystemUserId = systemUser.SystemUserId[0],
+                    OrganisationNumber = systemUser.SystemUserOrgNr.Get(OrganisationNumberFormat.Local),
+                };
             default:
                 throw new Exception("Could not get signee");
         }

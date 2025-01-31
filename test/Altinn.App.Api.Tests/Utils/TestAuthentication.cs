@@ -196,7 +196,7 @@ public static class TestAuthentication
                 Assert.Equal(userPartyId, pid);
                 return Task.FromResult<IEnumerable<Role>>([]);
             },
-            getApplicationMetadata: _getApplicationMetadata
+            appMetadata: NewApplicationMetadata()
         );
     }
 
@@ -275,7 +275,7 @@ public static class TestAuthentication
                     }
                 );
             },
-            getApplicationMetadata: _getApplicationMetadata
+            appMetadata: NewApplicationMetadata()
         );
     }
 
@@ -348,25 +348,9 @@ public static class TestAuthentication
                 Assert.Equal(orgNumber, orgNo);
                 return Task.FromResult(party);
             },
-            getApplicationMetadata: _getApplicationMetadata
+            appMetadata: NewApplicationMetadata()
         );
     }
-
-    private static readonly Func<Task<ApplicationMetadata>> _getApplicationMetadata = () =>
-    {
-        return Task.FromResult(
-            new ApplicationMetadata("ttd/app")
-            {
-                PartyTypesAllowed = new PartyTypesAllowed()
-                {
-                    BankruptcyEstate = true,
-                    Organisation = true,
-                    Person = true,
-                    SubUnit = true,
-                },
-            }
-        );
-    };
 
     public static ClaimsPrincipal GetServiceOwnerPrincipal(
         string orgNumber = DefaultOrgNumber,
@@ -547,8 +531,23 @@ public static class TestAuthentication
                 Assert.Equal(systemUserOrgNumber, orgNo);
                 return Task.FromResult(party);
             },
-            getApplicationMetadata: _getApplicationMetadata
+            appMetadata: NewApplicationMetadata()
         );
+    }
+
+    public static ApplicationMetadata NewApplicationMetadata(string org = "ttd")
+    {
+        return new ApplicationMetadata($"{org}/app")
+        {
+            Org = org,
+            PartyTypesAllowed = new PartyTypesAllowed()
+            {
+                BankruptcyEstate = true,
+                Organisation = true,
+                Person = true,
+                SubUnit = true,
+            },
+        };
     }
 
     internal static MaskinportenTokenResponse GetMaskinportenToken(

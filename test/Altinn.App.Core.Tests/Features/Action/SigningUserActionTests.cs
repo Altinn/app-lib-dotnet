@@ -1,6 +1,8 @@
 #nullable disable
+using System.Globalization;
 using Altinn.App.Api.Tests.Utils;
 using Altinn.App.Core.Features.Action;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Process;
@@ -24,8 +26,9 @@ public class SigningUserActionTests
         DataTypes = [new DataType { Id = "model" }],
     };
 
-    [Fact]
-    public async Task HandleAction_returns_ok_if_user_is_valid()
+    [Theory]
+    [ClassData(typeof(TestAuthentication.AllTokens))]
+    public async Task HandleAction_returns_ok_if_user_is_valid(TestJwtToken token)
     {
         // Arrange
         (var userAction, var signClientMock) = CreateSigningUserAction(
@@ -34,36 +37,98 @@ public class SigningUserActionTests
         var instance = new Instance()
         {
             Id = "500000/b194e9f5-02d0-41bc-8461-a0cbac8a6efc",
-            InstanceOwner = new() { PartyId = "5000" },
+            InstanceOwner = new() { PartyId = token.PartyId.ToString(CultureInfo.InvariantCulture) },
             Process = new() { CurrentTask = new() { ElementId = "Task2" } },
             Data = new()
             {
                 new() { Id = "a499c3ef-e88a-436b-8650-1c43e5037ada", DataType = "Model" },
             },
         };
-        var userActionContext = new UserActionContext(
-            instance,
-            1337,
-            authentication: TestAuthentication.GetUserAuthentication(1337)
-        );
+        var userActionContext = new UserActionContext(instance, null, authentication: token.Auth);
 
         // Act
         var result = await userAction.HandleAction(userActionContext);
 
         // Assert
-        SignatureContext expected = new SignatureContext(
-            new InstanceIdentifier(instance),
-            instance.Process.CurrentTask.ElementId,
-            "signature",
-            new Signee() { UserId = "1337", PersonNumber = "12345678901" },
-            new DataElementSignature("a499c3ef-e88a-436b-8650-1c43e5037ada")
-        );
-        signClientMock.Verify(
-            s => s.SignDataElements(It.Is<SignatureContext>(sc => AssertSigningContextAsExpected(sc, expected))),
-            Times.Once
-        );
-        result.Should().BeEquivalentTo(UserActionResult.SuccessResult());
-        signClientMock.VerifyNoOtherCalls();
+        switch (token.Auth)
+        {
+            case Authenticated.User user:
+                {
+                    var details = await user.LoadDetails();
+                    SignatureContext expected = new SignatureContext(
+                        new InstanceIdentifier(instance),
+                        instance.Process.CurrentTask.ElementId,
+                        "signature",
+                        new Signee()
+                        {
+                            UserId = user.UserId.ToString(CultureInfo.InvariantCulture),
+                            PersonNumber = details.SelectedParty.SSN,
+                        },
+                        new DataElementSignature("a499c3ef-e88a-436b-8650-1c43e5037ada")
+                    );
+                    signClientMock.Verify(
+                        s =>
+                            s.SignDataElements(
+                                It.Is<SignatureContext>(sc => AssertSigningContextAsExpected(sc, expected))
+                            ),
+                        Times.Once
+                    );
+                    result.Should().BeEquivalentTo(UserActionResult.SuccessResult());
+                    signClientMock.VerifyNoOtherCalls();
+                }
+                break;
+            case Authenticated.SelfIdentifiedUser selfIdentifiedUser:
+                {
+                    SignatureContext expected = new SignatureContext(
+                        new InstanceIdentifier(instance),
+                        instance.Process.CurrentTask.ElementId,
+                        "signature",
+                        new Signee()
+                        {
+                            UserId = selfIdentifiedUser.UserId.ToString(CultureInfo.InvariantCulture),
+                            PersonNumber = null,
+                        },
+                        new DataElementSignature("a499c3ef-e88a-436b-8650-1c43e5037ada")
+                    );
+                    signClientMock.Verify(
+                        s =>
+                            s.SignDataElements(
+                                It.Is<SignatureContext>(sc => AssertSigningContextAsExpected(sc, expected))
+                            ),
+                        Times.Once
+                    );
+                    result.Should().BeEquivalentTo(UserActionResult.SuccessResult());
+                    signClientMock.VerifyNoOtherCalls();
+                }
+                break;
+            case Authenticated.SystemUser systemUser:
+                {
+                    SignatureContext expected = new SignatureContext(
+                        new InstanceIdentifier(instance),
+                        instance.Process.CurrentTask.ElementId,
+                        "signature",
+                        new Signee()
+                        {
+                            SystemUserId = systemUser.SystemUserId[0],
+                            OrganisationNumber = systemUser.SystemUserOrgNr.Get(OrganisationNumberFormat.Local),
+                        },
+                        new DataElementSignature("a499c3ef-e88a-436b-8650-1c43e5037ada")
+                    );
+                    signClientMock.Verify(
+                        s =>
+                            s.SignDataElements(
+                                It.Is<SignatureContext>(sc => AssertSigningContextAsExpected(sc, expected))
+                            ),
+                        Times.Once
+                    );
+                    result.Should().BeEquivalentTo(UserActionResult.SuccessResult());
+                    signClientMock.VerifyNoOtherCalls();
+                }
+                break;
+            default:
+                Assert.Equal(ProcessErrorType.Unauthorized, result.ErrorType);
+                break;
+        }
     }
 
     [Fact]
