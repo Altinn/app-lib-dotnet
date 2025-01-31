@@ -946,7 +946,7 @@ If org and app does not match, this returns a 409 Conflict response,
         }
       }
     },
-    /{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataType}: {
+    /{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/type/{dataType}: {
       post: {
         tags: [
           Data
@@ -1177,6 +1177,15 @@ If org and app does not match, this returns a 409 Conflict response,
             }
           },
           {
+            name: dataType,
+            in: path,
+            description: Optional parameter, verified if pressent. Used to have different schemas for different data types in openApi spec,
+            required: true,
+            schema: {
+              type: string
+            }
+          },
+          {
             name: includeRowId,
             in: query,
             description: Whether to initialize or remove AltinnRowId fields in the model,
@@ -1252,6 +1261,15 @@ If org and app does not match, this returns a 409 Conflict response,
             schema: {
               type: string,
               format: uuid
+            }
+          },
+          {
+            name: dataType,
+            in: path,
+            description: Optional parameter, verified if pressent. Used to have different schemas for different data types in openApi spec,,
+            required: true,
+            schema: {
+              type: string
             }
           },
           {
@@ -1535,6 +1553,15 @@ If org and app does not match, this returns a 409 Conflict response,
             schema: {
               type: string,
               format: uuid
+            }
+          },
+          {
+            name: dataType,
+            in: path,
+            description: Optional parameter, verified if pressent. Used to have different schemas for different data types in openApi spec,,
+            required: true,
+            schema: {
+              type: string
             }
           },
           {
