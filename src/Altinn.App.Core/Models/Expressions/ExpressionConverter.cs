@@ -82,7 +82,7 @@ public class ExpressionConverter : JsonConverter<Expression>
         else
         {
             // Just serialize the literal value
-            JsonSerializer.Serialize(writer, value.Value, options);
+            JsonSerializer.Serialize(writer, value.ValueUnion.ToObject(), options);
         }
     }
 }

@@ -100,35 +100,55 @@ public readonly struct ExpressionTypeUnion
     /// </summary>
     public static ExpressionTypeUnion FromObject(object? value)
     {
-        return value switch
-        {
-            ExpressionTypeUnion expressionValue => expressionValue,
-            null => new ExpressionTypeUnion(),
-            bool boolValue => boolValue,
-            string stringValue => stringValue,
-            float numberValue => numberValue,
-            double numberValue => numberValue,
-            byte numberValue => numberValue,
-            sbyte numberValue => numberValue,
-            short numberValue => numberValue,
-            ushort numberValue => numberValue,
-            int numberValue => numberValue,
-            uint numberValue => numberValue,
-            long numberValue => numberValue,
-            ulong numberValue => numberValue,
-            decimal numberValue => (double)numberValue, // expressions uses double which needs an explicit cast
+        return (ExpressionTypeUnion)(
+            value switch
+            {
+                ExpressionTypeUnion expressionValue => expressionValue,
+                null => new ExpressionTypeUnion(),
+                bool boolValue => boolValue,
+                string stringValue => stringValue,
+                float numberValue => (double?)numberValue,
+                double numberValue => (double?)numberValue,
+                byte numberValue => (double?)numberValue,
+                sbyte numberValue => (double?)numberValue,
+                short numberValue => (double?)numberValue,
+                ushort numberValue => (double?)numberValue,
+                int numberValue => (double?)numberValue,
+                uint numberValue => (double?)numberValue,
+                long numberValue => (double?)numberValue,
+                ulong numberValue => (double?)numberValue,
+                decimal numberValue => (double?)numberValue, // expressions uses double which needs an explicit cast
 
-            DateTime dateTimeValue => JsonSerializer.Serialize(dateTimeValue),
-            DateTimeOffset dateTimeOffsetValue => JsonSerializer.Serialize(dateTimeOffsetValue),
-            TimeSpan timeSpanValue => JsonSerializer.Serialize(timeSpanValue),
-            TimeOnly timeOnlyValue => JsonSerializer.Serialize(timeOnlyValue),
-            DateOnly dateOnlyValue => JsonSerializer.Serialize(dateOnlyValue),
+                DateTime dateTimeValue => JsonSerializer.Serialize(dateTimeValue),
+                DateTimeOffset dateTimeOffsetValue => JsonSerializer.Serialize(dateTimeOffsetValue),
+                TimeSpan timeSpanValue => JsonSerializer.Serialize(timeSpanValue),
+                TimeOnly timeOnlyValue => JsonSerializer.Serialize(timeOnlyValue),
+                DateOnly dateOnlyValue => JsonSerializer.Serialize(dateOnlyValue),
 
-            // Dictionary<string, ExpressionTypeUnion> objectValue => new ExpressionTypeUnion(objectValue),
-            // TODO add support for arrays, objects and other potential types
-            _ => new ExpressionTypeUnion(),
-        };
+                // Dictionary<string, ExpressionTypeUnion> objectValue => new ExpressionTypeUnion(objectValue),
+                // TODO add support for arrays, objects and other potential types
+                _ => new ExpressionTypeUnion(),
+            }
+        );
     }
+
+    /// <summary>
+    /// Convert the value to the relevant CLR type
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    public object? ToObject() =>
+        ValueKind switch
+        {
+            JsonValueKind.Null => null,
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            JsonValueKind.String => String,
+            JsonValueKind.Number => Number,
+            // JsonValueKind.Object => Object,
+            // JsonValueKind.Array => Array,
+            _ => throw new InvalidOperationException("Invalid value kind"),
+        };
 
     /// <summary>
     /// Get the type of json value this represents
