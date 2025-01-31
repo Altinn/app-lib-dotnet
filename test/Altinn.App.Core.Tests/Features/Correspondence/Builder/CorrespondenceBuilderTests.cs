@@ -20,7 +20,6 @@ public class CorrespondenceBuilderTests
         ];
         string resourceId = "resource-id";
         string sendersReference = "sender-reference";
-        DateTimeOffset allowSystemDeleteAfter = DateTimeOffset.UtcNow.AddDays(60);
         string contentTitle = "content-title";
         LanguageCode<Iso6391> contentLanguage = LanguageCode<Iso6391>.Parse("no");
         string contentSummary = "content-summary";
@@ -32,7 +31,6 @@ public class CorrespondenceBuilderTests
             .WithSender(sender)
             .WithSendersReference(sendersReference)
             .WithRecipients(recipients)
-            .WithAllowSystemDeleteAfter(allowSystemDeleteAfter)
             .WithContent(contentLanguage, contentTitle, contentSummary, contentBody);
 
         // Act
@@ -43,7 +41,6 @@ public class CorrespondenceBuilderTests
         correspondence.ResourceId.Should().Be("resource-id");
         correspondence.Sender.Should().Be(sender);
         correspondence.SendersReference.Should().Be("sender-reference");
-        correspondence.AllowSystemDeleteAfter.Should().BeExactly(allowSystemDeleteAfter);
         correspondence.Recipients.Should().BeEquivalentTo(recipients);
         correspondence.Content.Title.Should().Be(contentTitle);
         correspondence.Content.Language.Should().Be(contentLanguage);
@@ -150,7 +147,6 @@ public class CorrespondenceBuilderTests
             .WithSender(data.sender)
             .WithSendersReference(data.sendersReference)
             .WithRecipient(data.recipient)
-            .WithAllowSystemDeleteAfter(data.allowDeleteAfter)
             .WithContent(
                 CorrespondenceContentBuilder
                     .Create()
@@ -176,6 +172,7 @@ public class CorrespondenceBuilderTests
                     .WithReminderNotificationChannel(data.notification.reminderNotificationChannel)
             )
             .WithDueDateTime(data.dueDateTime)
+            .WithAllowSystemDeleteAfter(data.allowDeleteAfter)
             .WithMessageSender(data.messageSender)
             .WithIgnoreReservation(data.ignoreReservation)
             .WithIsConfirmationNeeded(data.isConfirmationNeeded)
@@ -185,9 +182,8 @@ public class CorrespondenceBuilderTests
                 CorrespondenceAttachmentBuilder
                     .Create()
                     .WithFilename(data.attachments[0].filename)
-                    .WithName(data.attachments[0].name)
+                    .WithDisplayName(data.attachments[0].name)
                     .WithSendersReference(data.attachments[0].sendersReference)
-                    .WithDataType(data.attachments[0].dataType)
                     .WithData(Encoding.UTF8.GetBytes(data.attachments[0].data))
                     .WithDataLocationType(data.attachments[0].dataLocationType)
                     .WithIsEncrypted(data.attachments[0].isEncrypted)
@@ -196,9 +192,8 @@ public class CorrespondenceBuilderTests
                 new CorrespondenceAttachment
                 {
                     Filename = data.attachments[1].filename,
-                    Name = data.attachments[1].name,
+                    DisplayName = data.attachments[1].name,
                     SendersReference = data.attachments[1].sendersReference,
-                    DataType = data.attachments[1].dataType,
                     Data = Encoding.UTF8.GetBytes(data.attachments[1].data),
                     DataLocationType = data.attachments[1].dataLocationType,
                     IsEncrypted = data.attachments[1].isEncrypted,
@@ -209,9 +204,8 @@ public class CorrespondenceBuilderTests
                     new CorrespondenceAttachment
                     {
                         Filename = data.attachments[2].filename,
-                        Name = data.attachments[2].name,
+                        DisplayName = data.attachments[2].name,
                         SendersReference = data.attachments[2].sendersReference,
-                        DataType = data.attachments[2].dataType,
                         Data = Encoding.UTF8.GetBytes(data.attachments[2].data),
                         DataLocationType = data.attachments[2].dataLocationType,
                         IsEncrypted = data.attachments[2].isEncrypted,
@@ -272,10 +266,9 @@ public class CorrespondenceBuilderTests
         for (int i = 0; i < data.attachments.Length; i++)
         {
             correspondence.Content.Attachments[i].Filename.Should().Be(data.attachments[i].filename);
-            correspondence.Content.Attachments[i].Name.Should().Be(data.attachments[i].name);
+            correspondence.Content.Attachments[i].DisplayName.Should().Be(data.attachments[i].name);
             correspondence.Content.Attachments[i].IsEncrypted.Should().Be(data.attachments[i].isEncrypted);
             correspondence.Content.Attachments[i].SendersReference.Should().Be(data.attachments[i].sendersReference);
-            correspondence.Content.Attachments[i].DataType.Should().Be(data.attachments[i].dataType);
             correspondence.Content.Attachments[i].DataLocationType.Should().Be(data.attachments[i].dataLocationType);
             Encoding
                 .UTF8.GetString(correspondence.Content.Attachments[i].Data.Span)
@@ -325,7 +318,6 @@ public class CorrespondenceBuilderTests
             .WithSender(TestHelpers.GetOrganisationNumber(1))
             .WithSendersReference("sender-reference-1")
             .WithRecipient(OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(1)))
-            .WithAllowSystemDeleteAfter(DateTimeOffset.UtcNow.AddDays(1))
             .WithContent(
                 CorrespondenceContentBuilder
                     .Create()
@@ -342,6 +334,7 @@ public class CorrespondenceBuilderTests
                     .WithEmailBody("email-body-1")
             )
             .WithReplyOption("url1", "text1")
+            .WithAllowSystemDeleteAfter(DateTimeOffset.UtcNow.AddDays(1))
             .WithExternalReference(CorrespondenceReferenceType.Generic, "aaa")
             .WithPropertyList(new Dictionary<string, string> { ["prop1"] = "value1", ["prop2"] = "value2" })
             .WithExistingAttachment(Guid.Parse("a3ac4826-5873-4ecb-9fe7-dc4cfccd0afa"))
@@ -504,7 +497,6 @@ public class CorrespondenceBuilderTests
             .WithSender(TestHelpers.GetOrganisationNumber(1))
             .WithSendersReference("sender-reference-1")
             .WithRecipient(OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(1)))
-            .WithAllowSystemDeleteAfter(DateTimeOffset.UtcNow.AddDays(1))
             .WithContent(
                 CorrespondenceContentBuilder
                     .Create()

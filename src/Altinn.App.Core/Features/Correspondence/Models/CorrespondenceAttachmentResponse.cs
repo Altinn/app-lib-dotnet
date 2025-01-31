@@ -58,8 +58,8 @@ public sealed record CorrespondenceAttachmentResponse
     /// <summary>
     /// The display name of the attachment.
     /// </summary>
-    [JsonPropertyName("name")]
-    public required string Name { get; init; }
+    [JsonPropertyName("displayName")]
+    public required string DisplayName { get; init; }
 
     /// <summary>
     /// Indicates if the attachment is encrypted or not.
