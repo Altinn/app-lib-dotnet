@@ -33,7 +33,7 @@ public class SigneeParty
 }
 
 /// <summary>
-///  Represents what organisation a person is signing on behalf of.
+///  Represents which organisation a person is signing on behalf of.
 /// </summary>
 public class SigneePartyOrganisation
 {

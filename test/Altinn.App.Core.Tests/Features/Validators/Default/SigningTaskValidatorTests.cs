@@ -46,7 +46,7 @@ public class SigningTaskValidatorTest
             new()
             {
                 SignDocument = new SignDocument(),
-                Party = new Party(),
+                OriginalParty = new Party(),
                 TaskId = taskId,
                 SigneeState = new SigneeState(),
             },
@@ -81,7 +81,7 @@ public class SigningTaskValidatorTest
             new()
             {
                 SignDocument = null,
-                Party = new Party(),
+                OriginalParty = new Party(),
                 TaskId = taskId,
                 SigneeState = new SigneeState(),
             },

@@ -18,6 +18,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Signee = Altinn.App.Core.Internal.Sign.Signee;
 
+namespace Altinn.App.Core.Features.Signing;
+
 internal sealed class SigningCorrespondenceService(
     ICorrespondenceClient correspondenceClient,
     IDataClient dataClient,
@@ -155,13 +157,8 @@ internal sealed class SigningCorrespondenceService(
         {
             AppIdentifier appIdentifier = new(context.Instance);
 
-            if (context.Language is not null && context.Language != defaultLanguage)
-            {
-                textResource = await _appResources.GetTexts(appIdentifier.Org, appIdentifier.App, context.Language);
-            }
-
             textResource ??=
-                await _appResources.GetTexts(appIdentifier.Org, appIdentifier.App, defaultLanguage)
+                await _appResources.GetTexts(appIdentifier.Org, appIdentifier.App, context.Language ?? defaultLanguage)
                 ?? throw new InvalidOperationException(
                     $"No text resource found for specified language ({context.Language}) nor the default language ({defaultLanguage})"
                 );
@@ -184,7 +181,7 @@ internal sealed class SigningCorrespondenceService(
         }
         catch (Exception e)
         {
-            _logger.LogInformation(
+            _logger.LogError(
                 e,
                 "Unable to fetch custom message correspondence message content, falling back to default values: {Exception}",
                 e.Message

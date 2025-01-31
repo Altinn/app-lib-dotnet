@@ -16,8 +16,9 @@ public sealed class SigneeContext
     /// <summary>
     /// The original party associated with the signee.
     /// </summary>
-    [JsonPropertyName("party")]
-    public required Party Party { get; set; }
+    /// <remarks>Original party may be org or person. Actual signee will always be a person.</remarks>
+    [JsonPropertyName("originalParty")]
+    public required Party OriginalParty { get; set; }
 
     /// <summary>
     /// The social security number.
@@ -34,6 +35,7 @@ public sealed class SigneeContext
     /// <summary>
     /// The organisation the person signed on behalf of.
     /// </summary>
+    /// <remarks>Only applicable if the original signee party is an org.</remarks>
     [JsonPropertyName("onBehalfOfOrganisation")]
     public SigneeContextOrganisation? OnBehalfOfOrganisation { get; set; }
 
