@@ -202,7 +202,11 @@ public class HomeController : Controller
         </head>
         <body>
             <script nonce='{nonce}'>
-                const prefillData = {safeResultJson};
+
+              const prefillData = {safeResultJson}.map(entry => ({{
+                        ...entry,
+                        expires: new Date(Date.now() + 60 * 60 * 1000).toISOString() // Expires in 1 hour
+                    }}));
                 sessionStorage.setItem('queryParams', JSON.stringify(prefillData));
                 const appOrg = decodeURIComponent('{encodedAppId}');
                 window.location.href = `${{window.location.origin}}/${{appOrg}}`;
