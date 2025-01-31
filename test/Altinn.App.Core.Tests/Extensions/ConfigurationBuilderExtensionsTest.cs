@@ -12,15 +12,9 @@ public class ConfigurationBuilderExtensionsTest
         // Arrange
         var builder = WebApplication.CreateBuilder();
 
-        /*
-            Must override root path to something valid,
-            otherwise `AddAppSettingsSecretFile` will exit gracefully with noop.
-         */
-        ConfigurationBuilderExtensions.AppSettingsSecretsRoot = AppContext.BaseDirectory;
-
         // Act
-        builder.Configuration.AddAppSettingsSecretFile();
-        builder.Configuration.AddAppSettingsSecretFile();
+        builder.Configuration.AddAppSettingsSecretFile(root: AppContext.BaseDirectory);
+        builder.Configuration.AddAppSettingsSecretFile(root: AppContext.BaseDirectory);
 
         // Assert
         Assert.Single(
