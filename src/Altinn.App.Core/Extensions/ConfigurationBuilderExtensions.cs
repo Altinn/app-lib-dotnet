@@ -9,8 +9,8 @@ namespace Altinn.App.Core.Extensions;
 /// </summary>
 public static class ConfigurationBuilderExtensions
 {
-    internal static string AppSettingsSecretsRoot = "/altinn-appsettings-secret";
-    internal static string AppSettingsSecretsFile = "altinn-appsettings-secret.json";
+    internal const string AppSettingsSecretsRoot = "/altinn-appsettings-secret";
+    internal const string AppSettingsSecretsFile = "altinn-appsettings-secret.json";
 
     /// <summary>
     /// Load all known configuration sources known to be needed by an app.
@@ -24,18 +24,23 @@ public static class ConfigurationBuilderExtensions
         builder.AddCommandLine(args ?? []);
     }
 
-    internal static void AddAppSettingsSecretFile(this IConfigurationBuilder builder)
+    internal static void AddAppSettingsSecretFile(
+        this IConfigurationBuilder builder,
+        string? root = null,
+        string? path = null
+    )
     {
         try
         {
-            bool alreadyAdded = builder
-                .Sources.OfType<JsonConfigurationSource>()
-                .Any(source => source.Path == AppSettingsSecretsFile);
+            root ??= AppSettingsSecretsRoot;
+            path ??= AppSettingsSecretsFile;
+
+            bool alreadyAdded = builder.Sources.OfType<JsonConfigurationSource>().Any(source => source.Path == path);
 
             if (alreadyAdded)
                 return;
 
-            builder.AddJsonFile(new PhysicalFileProvider(AppSettingsSecretsRoot), AppSettingsSecretsFile, true, true);
+            builder.AddJsonFile(new PhysicalFileProvider(root), path, true, true);
         }
         catch (DirectoryNotFoundException)
         {
