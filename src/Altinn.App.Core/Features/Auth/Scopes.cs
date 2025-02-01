@@ -1,5 +1,3 @@
-using System.Buffers;
-
 namespace Altinn.App.Core.Features.Auth;
 
 /// <summary>
@@ -68,10 +66,7 @@ public readonly struct Scopes : IEquatable<Scopes>
     /// <returns></returns>
     public override string ToString() => _scope ?? "";
 
-    private static readonly SearchValues<char> _whitespace = SearchValues.Create(" \t\n");
-    private static readonly SearchValues<char> _alphaNumeric = SearchValues.Create(
-        "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZÆØÅabcdefghijklmnopqrstuvwxyzæøå"
-    );
+    // private static readonly SearchValues<char> _whitespace = SearchValues.Create(" \t\r\n");
 
     /// <summary>
     /// Returns an enumerator that iterates through the scopes.
@@ -111,23 +106,29 @@ public readonly struct Scopes : IEquatable<Scopes>
             if (_scopes.IsEmpty)
                 return false;
 
-            var spaceIndex = _scopes.IndexOfAny(_whitespace);
-            if (spaceIndex == -1)
+            for (var i = 0; i < _scopes.Length; i++)
             {
-                _currentScope = _scopes;
-                _scopes = ReadOnlySpan<char>.Empty;
-            }
-            else
-            {
-                _currentScope = _scopes.Slice(0, spaceIndex);
-                var nextNonWhitespace = _scopes.Slice(spaceIndex).IndexOfAny(_alphaNumeric);
-                if (nextNonWhitespace != -1)
-                    _scopes = _scopes.Slice(spaceIndex + nextNonWhitespace);
-                else
-                    _scopes = ReadOnlySpan<char>.Empty;
+                if (!char.IsWhiteSpace(_scopes[i]))
+                {
+                    for (int j = i + 1; j <= _scopes.Length; j++)
+                    {
+                        if (j == _scopes.Length)
+                        {
+                            _currentScope = _scopes.Slice(i);
+                            _scopes = ReadOnlySpan<char>.Empty;
+                            return true;
+                        }
+                        else if (char.IsWhiteSpace(_scopes[j]))
+                        {
+                            _currentScope = _scopes.Slice(i, j - i);
+                            _scopes = _scopes.Slice(j);
+                            return true;
+                        }
+                    }
+                }
             }
 
-            return true;
+            return false;
         }
     }
 
@@ -143,7 +144,7 @@ public readonly struct Scopes : IEquatable<Scopes>
 
         foreach (var scope in this)
         {
-            if (scope.Equals(scopeToFind, StringComparison.OrdinalIgnoreCase))
+            if (scope.Equals(scopeToFind, StringComparison.Ordinal))
                 return true;
         }
 
@@ -162,7 +163,7 @@ public readonly struct Scopes : IEquatable<Scopes>
 
         foreach (var scope in this)
         {
-            if (scope.StartsWith(scopePrefix, StringComparison.OrdinalIgnoreCase))
+            if (scope.StartsWith(scopePrefix, StringComparison.Ordinal))
                 return true;
         }
 
