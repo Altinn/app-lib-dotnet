@@ -123,9 +123,13 @@ public class HomeController : Controller
     [Route("{org}/{app}/set-query-params")]
     public async Task<IActionResult> SetQueryParams(string org, string app)
     {
-        var queryParams = HttpContext.Request.Query;
+        ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
+        if (!IsStatelessApp(application))
+        {
+            return Redirect($"/{org}/{app}/");
+        }
 
-        Application application = await _appMetadata.GetApplicationMetadata();
+        var queryParams = HttpContext.Request.Query;
 
         List<string> dataTypes = application.DataTypes.Select(type => type.Id).ToList();
 
@@ -159,7 +163,7 @@ public class HomeController : Controller
                     return null;
                 }
 
-                var queryParamsConfig = prefillConfig["QueryParams"];
+                var queryParamsConfig = prefillConfig["QueryParameters"];
                 if (queryParamsConfig == null || queryParamsConfig.Type != JTokenType.Object)
                 {
                     return null;
