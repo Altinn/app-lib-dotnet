@@ -40,7 +40,9 @@ public static class ExpressionEvaluator
                 JsonValueKind.True => true,
                 JsonValueKind.False => false,
                 JsonValueKind.Null => defaultReturn,
-                _ => throw new ExpressionEvaluatorTypeErrorException($"Return was not boolean. Was {result.Json}"),
+                _ => throw new ExpressionEvaluatorTypeErrorException(
+                    $"Return was not boolean. Was {result} of type {result.ValueKind}"
+                ),
             };
         }
         catch (Exception e)
@@ -199,7 +201,7 @@ public static class ExpressionEvaluator
         {
             [{ ValueKind: JsonValueKind.String } arg] => arg.String,
             [{ } arg] => throw new ExpressionEvaluatorTypeErrorException(
-                $"Cannot lookup component {arg.Json}",
+                $"Cannot lookup component {arg}",
                 ExpressionFunction.component,
                 args
             ),
@@ -478,7 +480,7 @@ public static class ExpressionEvaluator
         return arg.ValueKind switch
         {
             JsonValueKind.True or JsonValueKind.False or JsonValueKind.Array or JsonValueKind.Object =>
-                throw new ExpressionEvaluatorTypeErrorException($"Expected number, got value {arg.Json}"),
+                throw new ExpressionEvaluatorTypeErrorException($"Expected number, got value {arg}"),
             JsonValueKind.String => ParseNumber(arg.String),
             JsonValueKind.Number => arg.Number,
 

@@ -63,7 +63,7 @@ public class EqualTests(ITestOutputHelper outputHelper)
         outputHelper.WriteLine($"   json: {JsonSerializer.Serialize(value)}");
 
         var union = ExpressionTypeUnion.FromObject(value);
-        outputHelper.WriteLine($"   union: {union.Json}");
+        outputHelper.WriteLine($"   union: {union}");
         // Verify that the EqualsToString method returns the same value as the JsonSerializer.
         var json = value is string ? value : JsonSerializer.Serialize(value);
         var toStringForEquals = ExpressionEvaluator.ToStringForEquals(ExpressionTypeUnion.FromObject(value));
@@ -94,7 +94,7 @@ public class EqualTests(ITestOutputHelper outputHelper)
         outputHelper.WriteLine($"   json: {JsonSerializer.Serialize(value)}");
 
         var union = ExpressionTypeUnion.FromObject(value);
-        outputHelper.WriteLine($"   union: {union.Json}");
+        outputHelper.WriteLine($"   union: {union}");
         // Verify that the EqualsToString method throws an exception for unsupported types.
         Assert.Null(ExpressionEvaluator.ToStringForEquals(ExpressionTypeUnion.FromObject(value)));
     }

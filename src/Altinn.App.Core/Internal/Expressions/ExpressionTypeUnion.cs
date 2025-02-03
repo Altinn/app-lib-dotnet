@@ -163,7 +163,7 @@ public readonly struct ExpressionTypeUnion
         {
             JsonValueKind.True => true,
             JsonValueKind.False => false,
-            _ => throw new InvalidOperationException($"{Json} is a boolean"),
+            _ => throw new InvalidOperationException($"{ToString()} is a boolean"),
         };
 
     /// <summary>
@@ -173,7 +173,7 @@ public readonly struct ExpressionTypeUnion
         _valueKind switch
         {
             JsonValueKind.String => _stringValue ?? throw new UnreachableException("Not a string"),
-            _ => throw new InvalidOperationException($"{Json} is not a string"),
+            _ => throw new InvalidOperationException($"{ToString()} is not a string"),
         };
 
     /// <summary>
@@ -183,27 +183,27 @@ public readonly struct ExpressionTypeUnion
         _valueKind switch
         {
             JsonValueKind.Number => _numberValue,
-            _ => throw new InvalidOperationException($"{Json} is not a number"),
+            _ => throw new InvalidOperationException($"{ToString()} is not a number"),
         };
 
     // public Dictionary<string, ExpressionTypeUnion> Object =>
     //     _valueKind switch
     //     {
-    //         JsonValueKind.Object => _objectValue ?? throw new UnreachableException($"{Json} is not an object"),
-    //         _ => throw new InvalidOperationException($"{Json} is not an object"),
+    //         JsonValueKind.Object => _objectValue ?? throw new UnreachableException($"{ToString()} is not an object"),
+    //         _ => throw new InvalidOperationException($"{ToString()} is not an object"),
     //     };
     //
     // public ExpressionTypeUnion[] Array =>
     //     _valueKind switch
     //     {
-    //         JsonValueKind.Array => _arrayValue ?? throw new UnreachableException($"{Json} is not an array"),
-    //         _ => throw new InvalidOperationException($"{Json} is not an array"),
+    //         JsonValueKind.Array => _arrayValue ?? throw new UnreachableException($"{ToString()} is not an array"),
+    //         _ => throw new InvalidOperationException($"{ToString()} is not an array"),
     //     };
 
     /// <summary>
     /// Get the value as it would be serialized to JSON
     /// </summary>
-    public string Json =>
+    public override string ToString() =>
         ValueKind switch
         {
             JsonValueKind.Null => "null",
