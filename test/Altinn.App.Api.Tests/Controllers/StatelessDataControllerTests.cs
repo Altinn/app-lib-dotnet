@@ -70,7 +70,7 @@ public class StatelessDataControllerTests
         string dataType = null!; // this is what we're testing
 
         // Act
-        var result = await statelessDataController.Get("ttd", "demo-app", dataType, "partyId:123");
+        var result = await statelessDataController.Get("ttd", "demo-app", dataType, "partyId:123", null);
 
         // Assert
         result
@@ -95,7 +95,7 @@ public class StatelessDataControllerTests
 
         // Act
         fixture.Mock<IAppResources>().Setup(x => x.GetClassRefForLogicDataType(dataType)).Returns(string.Empty);
-        var result = await statelessDataController.Get("ttd", "demo-app", dataType, "partyId:123");
+        var result = await statelessDataController.Get("ttd", "demo-app", dataType, "partyId:123", null);
 
         // Assert
         result
@@ -206,7 +206,7 @@ public class StatelessDataControllerTests
             .Mock<IAppResources>()
             .Setup(x => x.GetClassRefForLogicDataType(dataType))
             .Returns(typeof(DummyModel).FullName!);
-        var result = await statelessDataController.Get("ttd", "demo-app", dataType, string.Empty);
+        var result = await statelessDataController.Get("ttd", "demo-app", dataType, string.Empty, null);
 
         // Assert
         var response = result.Should().BeOfType<BadRequestObjectResult>().Which;
@@ -242,7 +242,7 @@ public class StatelessDataControllerTests
             .Mock<IAppResources>()
             .Setup(x => x.GetClassRefForLogicDataType(dataType))
             .Returns(typeof(DummyModel).FullName!);
-        var result = await statelessDataController.Get("ttd", "demo-app", dataType, null!);
+        var result = await statelessDataController.Get("ttd", "demo-app", dataType, null!, null);
 
         // Assert
         result.Should().BeOfType<BadRequestObjectResult>().Which.StatusCode.Should().Be(400);
@@ -287,7 +287,7 @@ public class StatelessDataControllerTests
             .Mock<IAppResources>()
             .Setup(x => x.GetClassRefForLogicDataType(dataType))
             .Returns(typeof(DummyModel).FullName!);
-        var result = await statelessDataController.Get("ttd", "demo-app", dataType, null!);
+        var result = await statelessDataController.Get("ttd", "demo-app", dataType, null!, null);
 
         // Assert
         result.Should().BeOfType<StatusCodeResult>().Which.StatusCode.Should().Be(403);
@@ -330,7 +330,7 @@ public class StatelessDataControllerTests
 
         // Act
         fixture.Mock<IAppResources>().Setup(x => x.GetClassRefForLogicDataType(dataType)).Returns(classRef);
-        var result = await statelessDataController.Get("ttd", "demo-app", dataType, null!);
+        var result = await statelessDataController.Get("ttd", "demo-app", dataType, null!, null);
 
         // Assert
         result.Should().BeOfType<OkObjectResult>().Which.StatusCode.Should().Be(200);

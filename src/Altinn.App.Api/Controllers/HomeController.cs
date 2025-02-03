@@ -120,13 +120,14 @@ public class HomeController : Controller
     /// <returns>An HTML file with a small javascript that will set session variables in frontend and redirect to the app.</returns>
     [HttpGet]
     [ApiExplorerSettings(IgnoreApi = true)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [Route("{org}/{app}/set-query-params")]
     public async Task<IActionResult> SetQueryParams(string org, string app)
     {
         ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
         if (!IsStatelessApp(application))
         {
-            return Redirect($"/{org}/{app}/");
+            return BadRequest("You can only use query params with a stateless task.");
         }
 
         var queryParams = HttpContext.Request.Query;
@@ -190,6 +191,11 @@ public class HomeController : Controller
             .Where(entry => entry != null && entry.prefillFields != null && entry.prefillFields.Count > 0)
             .ToList();
 
+        if (result.Count < 1)
+        {
+            return BadRequest("Found no valid query params.");
+        }
+
         var safeResultJson = System.Text.Json.JsonSerializer.Serialize(result, _jsonOptions);
         var encodedAppId = Uri.EscapeDataString(application.Id);
 
@@ -209,7 +215,7 @@ public class HomeController : Controller
 
               const prefillData = {safeResultJson}.map(entry => ({{
                         ...entry,
-                        expires: new Date(Date.now() + 60 * 60 * 1000).toISOString() // Expires in 1 hour
+                        created: new Date().toISOString()
                     }}));
                 sessionStorage.setItem('queryParams', JSON.stringify(prefillData));
                 const appOrg = decodeURIComponent('{encodedAppId}');
