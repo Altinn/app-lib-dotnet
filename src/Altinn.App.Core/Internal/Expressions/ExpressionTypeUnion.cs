@@ -282,6 +282,5 @@ internal class ExpressionTypeUnionConverter : JsonConverter<ExpressionTypeUnion>
             default:
                 throw new JsonException();
         }
-        ;
     }
 }
