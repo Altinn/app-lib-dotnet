@@ -7,22 +7,31 @@ namespace Altinn.App.Core.Tests.LayoutExpressions.ExpressionEvaluatorTests;
 
 public class EqualTests(ITestOutputHelper outputHelper)
 {
-    public static TheoryData<object> GetNumericTestData(double value) =>
-        new()
+    private static void AddIfEqual(TheoryData<object> data, object value, double origValue)
+    {
+        double newValue = Convert.ToDouble(value);
+        if (origValue.Equals(newValue))
         {
-            value,
-            (byte)value,
-            (sbyte)value,
-            (short)value,
-            (ushort)value,
-            (int)value,
-            (uint)value,
-            (long)value,
-            (ulong)value,
-            (float)value,
-            (decimal)value,
-            // (BigInteger)value, // Not supported by JsonSerializer
-        };
+            data.Add(value);
+        }
+    }
+
+    public static TheoryData<object> GetNumericTestData(double value)
+    {
+        var data = new TheoryData<object>();
+        AddIfEqual(data, (byte)value, value);
+        AddIfEqual(data, (sbyte)value, value);
+        AddIfEqual(data, (short)value, value);
+        AddIfEqual(data, (ushort)value, value);
+        AddIfEqual(data, (int)value, value);
+        AddIfEqual(data, (uint)value, value);
+        AddIfEqual(data, (long)value, value);
+        AddIfEqual(data, (ulong)value, value);
+        AddIfEqual(data, (float)value, value);
+        AddIfEqual(data, (decimal)value, value);
+
+        return data;
+    }
 
     public static TheoryData<object> GetExoticTypes =>
         new()
@@ -34,6 +43,12 @@ public class EqualTests(ITestOutputHelper outputHelper)
             DateTime.Now,
             DateOnly.FromDateTime(DateTime.Now),
             TimeOnly.FromDateTime(DateTime.Now),
+            ((long)int.MaxValue) + 1,
+            ((ulong)uint.MaxValue) + 1,
+            ((decimal)int.MaxValue) + 1,
+            ((decimal)uint.MaxValue) + 1,
+            (double)((decimal)long.MaxValue + 1),
+            (double)((decimal)ulong.MaxValue + 1),
         };
 
     [Theory]
