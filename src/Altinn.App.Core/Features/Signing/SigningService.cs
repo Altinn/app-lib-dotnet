@@ -391,7 +391,7 @@ internal sealed class SigningService(
         Party party = await altinnPartyClient.LookupParty(
             new PartyLookup
             {
-                Ssn = signDocument.SigneeInfo.PersonNumber,
+                Ssn = signDocument.SigneeInfo.OrganisationNumber is null ? signDocument.SigneeInfo.PersonNumber : null,
                 OrgNo = signDocument.SigneeInfo.OrganisationNumber,
             }
         );

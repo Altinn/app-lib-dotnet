@@ -474,7 +474,7 @@ public class SigningUserAction : IUserAction
         return new Signee
         {
             UserId = userProfile.UserId.ToString(CultureInfo.InvariantCulture),
-            PersonNumber = userProfile.Party.OrgNumber is null ? userProfile.Party.SSN : null,
+            PersonNumber = userProfile.Party.SSN,
             OrganisationNumber = userProfile.Party.OrgNumber,
         };
     }
