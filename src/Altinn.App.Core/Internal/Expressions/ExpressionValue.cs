@@ -8,7 +8,7 @@ namespace Altinn.App.Core.Internal.Expressions;
 /// Discriminated union for the JSON types that can be arguments and result of expressions
 /// </summary>
 [JsonConverter(typeof(ExpressionTypeUnionConverter))]
-public readonly struct ExpressionValue
+public readonly struct ExpressionValue : IEquatable<ExpressionValue>
 {
     private readonly JsonValueKind _valueKind;
     private readonly string? _stringValue = null;
@@ -215,6 +215,46 @@ public readonly struct ExpressionValue
             // JsonValueKind.Array => JsonSerializer.Serialize(Array),
             _ => throw new InvalidOperationException("Invalid value kind"),
         };
+
+    /// <summary>
+    /// Override default equals because we get a really slow default implementation from the runtime
+    /// </summary>
+    public bool Equals(ExpressionValue other)
+    {
+        throw new NotImplementedException("ExpressionValue does not implement Equals");
+    }
+
+    /// <summary>
+    /// Override default equals because we get a really slow default implementation from the runtime
+    /// </summary>
+    public override bool Equals(object? obj)
+    {
+        throw new NotImplementedException("ExpressionValue does not implement Equals");
+    }
+
+    /// <summary>
+    /// Override default GetHashCode because we get a really slow default implementation from the runtime
+    /// </summary>
+    public override int GetHashCode()
+    {
+        throw new NotImplementedException("ExpressionValue does not implement GetHashCode");
+    }
+
+    /// <summary>
+    /// Ensure that the == operator uses Equals
+    /// </summary>
+    public static bool operator ==(ExpressionValue left, ExpressionValue right)
+    {
+        return left.Equals(right);
+    }
+
+    /// <summary>
+    /// Ensure that the != operator uses Equals
+    /// </summary>
+    public static bool operator !=(ExpressionValue left, ExpressionValue right)
+    {
+        return !(left == right);
+    }
 }
 
 /// <summary>
@@ -223,11 +263,7 @@ public readonly struct ExpressionValue
 internal class ExpressionTypeUnionConverter : JsonConverter<ExpressionValue>
 {
     /// <inheritdoc />
-    public override ExpressionValue Read(
-        ref Utf8JsonReader reader,
-        Type typeToConvert,
-        JsonSerializerOptions options
-    )
+    public override ExpressionValue Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         reader.Read();
         return reader.TokenType switch
