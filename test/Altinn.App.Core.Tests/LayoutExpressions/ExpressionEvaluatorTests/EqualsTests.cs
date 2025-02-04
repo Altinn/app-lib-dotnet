@@ -7,22 +7,31 @@ namespace Altinn.App.Core.Tests.LayoutExpressions.ExpressionEvaluatorTests;
 
 public class EqualTests(ITestOutputHelper outputHelper)
 {
-    public static TheoryData<object> GetNumericTestData(double value) =>
-        new()
+    private static void AddIfEqual(TheoryData<object> data, object value, double origValue)
+    {
+        double newValue = Convert.ToDouble(value);
+        if (origValue.Equals(newValue))
         {
-            value,
-            (byte)value,
-            (sbyte)value,
-            (short)value,
-            (ushort)value,
-            (int)value,
-            (uint)value,
-            (long)value,
-            (ulong)value,
-            (float)value,
-            (decimal)value,
-            // (BigInteger)value, // Not supported by JsonSerializer
-        };
+            data.Add(value);
+        }
+    }
+
+    public static TheoryData<object> GetNumericTestData(double value)
+    {
+        var data = new TheoryData<object>();
+        AddIfEqual(data, (byte)value, value);
+        AddIfEqual(data, (sbyte)value, value);
+        AddIfEqual(data, (short)value, value);
+        AddIfEqual(data, (ushort)value, value);
+        AddIfEqual(data, (int)value, value);
+        AddIfEqual(data, (uint)value, value);
+        AddIfEqual(data, (long)value, value);
+        AddIfEqual(data, (ulong)value, value);
+        AddIfEqual(data, (float)value, value);
+        AddIfEqual(data, (decimal)value, value);
+
+        return data;
+    }
 
     public static TheoryData<object> GetExoticTypes =>
         new()
@@ -32,9 +41,15 @@ public class EqualTests(ITestOutputHelper outputHelper)
             true,
             false,
             "",
-            DateTime.Parse("2025-02-04T13:13:15.844735+01:00"),
-            DateOnly.FromDateTime(DateTime.Parse("2025-02-04T13:13:15.844735+01:00")),
-            TimeOnly.FromDateTime(DateTime.Parse("2025-02-04T13:13:15.844735+01:00")),
+            DateTime.Parse("2025-02-04T13:13:15.84473533+01:00"),
+            DateOnly.FromDateTime(DateTime.Parse("2025-02-04T13:13:15.8447353+01:00")),
+            TimeOnly.FromDateTime(DateTime.Parse("2025-02-04T13:13:15.8447353+01:00")),
+            ((long)int.MaxValue) + 1,
+            ((ulong)uint.MaxValue) + 1,
+            ((decimal)int.MaxValue) + 1,
+            ((decimal)uint.MaxValue) + 1,
+            (double)((decimal)long.MaxValue + 1),
+            (double)((decimal)ulong.MaxValue + 1),
         };
 
     [Theory]
@@ -49,15 +64,20 @@ public class EqualTests(ITestOutputHelper outputHelper)
 
         outputHelper.WriteLine($"Object of type {value?.GetType().FullName ?? "null"}:");
         outputHelper.WriteLine($"   value:{value}");
-        outputHelper.WriteLine($"   json: {JsonSerializer.Serialize(value)}");
-        try
+        outputHelper.WriteLine($"   json: {json}");
+
+        var expressionValue = ExpressionValue.FromObject(value);
+        outputHelper.WriteLine($"   expressionValue: {expressionValue}");
+        // Verify that the EqualsToString method returns the same value as the JsonSerializer.
+        var toStringForEquals = ExpressionEvaluator.ToStringForEquals(expressionValue);
+        if (expressionValue.ValueKind == JsonValueKind.String)
         {
-            var jsonResult = JsonSerializer.Deserialize<string>(json);
-            Assert.Equal(jsonResult, ExpressionEvaluator.ToStringForEquals(value));
+            // double serialize strings to add quotes
+            Assert.Equal(json, JsonSerializer.Serialize(toStringForEquals));
         }
-        catch (JsonException)
+        else
         {
-            Assert.Equal(json, ExpressionEvaluator.ToStringForEquals(value));
+            Assert.Equal(json, toStringForEquals);
         }
     }
 
@@ -83,8 +103,11 @@ public class EqualTests(ITestOutputHelper outputHelper)
         outputHelper.WriteLine($"Object of type {value?.GetType().FullName ?? "null"}:");
         outputHelper.WriteLine($"   value:{value}");
         outputHelper.WriteLine($"   json: {JsonSerializer.Serialize(value)}");
+
+        var union = ExpressionValue.FromObject(value);
+        outputHelper.WriteLine($"   union: {union}");
         // Verify that the EqualsToString method throws an exception for unsupported types.
-        Assert.Throws<NotImplementedException>(() => ExpressionEvaluator.ToStringForEquals(value));
+        Assert.Null(ExpressionEvaluator.ToStringForEquals(ExpressionValue.FromObject(value)));
     }
 
     [Theory]
@@ -102,7 +125,7 @@ public class EqualTests(ITestOutputHelper outputHelper)
     public void ToStringForEquals_SpecialCases(object? value, string? expected)
     {
         // Verify that the EqualsToString method returns the expected value for special cases.
-        var toStringForEquals = ExpressionEvaluator.ToStringForEquals(value);
+        var toStringForEquals = ExpressionEvaluator.ToStringForEquals(ExpressionValue.FromObject(value));
         Assert.Equal(expected, toStringForEquals);
     }
 }

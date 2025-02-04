@@ -1,4 +1,7 @@
+using System.Text.Json.Serialization;
+
 // ReSharper disable InconsistentNaming
+
 namespace Altinn.App.Core.Models.Expressions;
 
 /// <summary>
@@ -6,6 +9,7 @@ namespace Altinn.App.Core.Models.Expressions;
 ///
 /// Note that capitalization follows the JavaScript convention of camelCase for function names
 /// </summary>
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum ExpressionFunction
 {
     /// <summary>

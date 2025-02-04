@@ -4,12 +4,12 @@ using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Tests.LayoutExpressions.TestUtilities;
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Tests.LayoutExpressions.FullTests.ExpressionValidation;
+namespace Altinn.App.Core.Tests.LayoutExpressions.FullTests.RemoveHiddenData;
 
-public class ExpressionValidationTests
+public class RemoveHiddenDataTests
 {
     [Fact]
-    public async Task TestExpressionValidation()
+    public async Task TestRemoveHiddenData()
     {
         var jsonData = """
             {
@@ -114,7 +114,7 @@ public class ExpressionValidationTests
             jsonDoc.RootElement
         );
         var data = await dataAccessor.GetFormData(dataAccessor.Instance.Data.First());
-        var state = await LayoutTestUtils.GetLayoutModelTools(data, "ExpressionValidation");
+        var state = await LayoutTestUtils.GetLayoutModelTools(data, "RemoveHiddenData");
         var hidden = await LayoutEvaluator.GetHiddenFieldsForRemoval(state);
 
         await Verify(hidden);
