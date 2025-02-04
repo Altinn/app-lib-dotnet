@@ -9,14 +9,14 @@ namespace Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask;
 /// </summary>
 public class AbandonTaskEventHandler : IAbandonTaskEventHandler
 {
-    private readonly IEnumerable<IProcessTaskAbandon> _processTaskAbondons;
+    private readonly IEnumerable<IProcessTaskAbandon> _processTaskAbandons;
 
     /// <summary>
     /// This event handler is responsible for handling the abandon event for a process task.
     /// </summary>
     public AbandonTaskEventHandler(IEnumerable<IProcessTaskAbandon> processTaskAbondons)
     {
-        _processTaskAbondons = processTaskAbondons;
+        _processTaskAbandons = processTaskAbondons;
     }
 
     /// <summary>
@@ -33,7 +33,7 @@ public class AbandonTaskEventHandler : IAbandonTaskEventHandler
     /// </summary>
     private async Task RunAppDefinedProcessTaskAbandonHandlers(string taskId, Instance instance)
     {
-        foreach (IProcessTaskAbandon taskAbandon in _processTaskAbondons)
+        foreach (IProcessTaskAbandon taskAbandon in _processTaskAbandons)
         {
             await taskAbandon.Abandon(taskId, instance);
         }
