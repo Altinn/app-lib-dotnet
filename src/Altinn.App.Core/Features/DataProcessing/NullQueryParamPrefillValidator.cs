@@ -1,5 +1,3 @@
-using Altinn.Platform.Storage.Interface.Models;
-
 namespace Altinn.App.Core.Features.DataProcessing;
 
 /// <summary>
@@ -10,7 +8,7 @@ public class NullQueryParamPrefillValidator : IValidateQueryParamPrefill
 {
     /// <summary>
     /// Use this method to run validation on prefilled query parameter values.
-    /// It's a good idea to not just let any data be prefilled into the datamode.
+    /// It's a good idea to not just let any data be prefilled into the datamodel.
     /// </summary>
     /// <param name="prefill"></param>
     /// <returns></returns>

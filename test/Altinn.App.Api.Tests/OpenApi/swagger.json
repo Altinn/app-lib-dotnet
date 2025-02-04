@@ -4823,6 +4823,14 @@
             }
           },
           {
+            "name": "prefill",
+            "in": "query",
+            "description": "Prefilled fields from query parameters",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "language",
             "in": "query",
             "description": "Currently selected language by the user (if available)",
