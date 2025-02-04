@@ -1,7 +1,5 @@
-using System.Diagnostics;
 using System.Globalization;
 using System.Net;
-using System.Text.Json.Serialization;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Auth;
