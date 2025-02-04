@@ -7,6 +7,7 @@ using Altinn.App.Api.Tests.Utils;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Auth;
+using Altinn.App.Core.Features.DataProcessing;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Prefill;
@@ -227,7 +228,6 @@ public class StatelessDataControllerTests
         using var fixture = SimpleFixture.Create();
         var statelessDataController = fixture.Controller;
         var dataType = "some-value";
-
         statelessDataController.ControllerContext = new ControllerContext();
         statelessDataController.ControllerContext.HttpContext = new DefaultHttpContext();
         statelessDataController.ControllerContext.HttpContext.User = new ClaimsPrincipal(
@@ -261,7 +261,6 @@ public class StatelessDataControllerTests
         using var fixture = SimpleFixture.Create();
         var statelessDataController = fixture.Controller;
         var dataType = "some-value";
-
         statelessDataController.ControllerContext = new ControllerContext();
         statelessDataController.ControllerContext.HttpContext = new DefaultHttpContext();
         statelessDataController.ControllerContext.HttpContext.User = TestAuthentication.GetUserPrincipal();
@@ -308,7 +307,6 @@ public class StatelessDataControllerTests
         var statelessDataController = fixture.Controller;
         var dataType = "some-value";
         var classRef = typeof(DummyModel).FullName!;
-
         statelessDataController.ControllerContext = new ControllerContext();
         statelessDataController.ControllerContext.HttpContext = new DefaultHttpContext();
         var auth = TestAuthentication.GetUserAuthentication();

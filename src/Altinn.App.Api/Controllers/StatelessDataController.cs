@@ -38,6 +38,8 @@ public class StatelessDataController : ControllerBase
     private readonly IPDP _pdp;
     private readonly IAuthenticationContext _authenticationContext;
     private readonly AppImplementationFactory _appImplementationFactory;
+    private readonly IValidateQueryParamPrefill _validateQueryParamPrefill;
+
     private const long REQUEST_SIZE_LIMIT = 2000 * 1024 * 1024;
 
     private const string PartyPrefix = "partyid";
@@ -56,6 +58,8 @@ public class StatelessDataController : ControllerBase
         IPDP pdp,
         IAuthenticationContext authenticationContext,
         IServiceProvider serviceProvider
+        IEnumerable<IDataProcessor> dataProcessors,
+        IValidateQueryParamPrefill validateQueryParamPrefill
     )
     {
         _logger = logger;
@@ -66,6 +70,7 @@ public class StatelessDataController : ControllerBase
         _pdp = pdp;
         _authenticationContext = authenticationContext;
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
+        _validateQueryParamPrefill = validateQueryParamPrefill;
     }
 
     /// <summary>
@@ -124,7 +129,11 @@ public class StatelessDataController : ControllerBase
             try
             {
                 string decodedJson = Uri.UnescapeDataString(prefill);
-                prefillFromQueryParams = JsonConvert.DeserializeObject<Dictionary<string, string>>(decodedJson); //JsonSerializer.Deserialize<QueryParamPrefill>(decodedJson);
+                prefillFromQueryParams = JsonConvert.DeserializeObject<Dictionary<string, string>>(decodedJson);
+                if (prefillFromQueryParams != null)
+                {
+                    await _validateQueryParamPrefill.PrefillFromQueryParamsIsValid(prefillFromQueryParams);
+                }
             }
             catch (Exception ex)
             {
