@@ -187,7 +187,8 @@ public class DataController : ControllerBase
     /// <param name="language">The currently active user language</param>
     /// <returns>DataPostResponse on success and an extended problemDetails with validation issues if upload validation fails</returns>
     [Authorize(Policy = AuthzConstants.POLICY_INSTANCE_WRITE)]
-    [HttpPost("{dataType}")]
+    [HttpPost("type/{dataType}")] // Alias to comply with openApi restrictiokns
+    [HttpPost("{dataType}")] // Api for backwards compatibility
     [DisableFormValueModelBinding]
     [RequestSizeLimit(REQUEST_SIZE_LIMIT)]
     [ProducesResponseType(typeof(DataPostResponse), (int)HttpStatusCode.Created)]
@@ -492,17 +493,20 @@ public class DataController : ControllerBase
     /// <param name="instanceOwnerPartyId">unique id of the party that is the owner of the instance</param>
     /// <param name="instanceGuid">unique id to identify the instance</param>
     /// <param name="dataGuid">unique id to identify the data element to get</param>
+    /// <param name="dataType">Optional parameter, verified if pressent. Used to have different schemas for different data types in openApi spec</param>
     /// <param name="includeRowId">Whether to initialize or remove AltinnRowId fields in the model</param>
     /// <param name="language">The language selected by the user.</param>
     /// <returns>The data element is returned in the body of the response</returns>
     [Authorize(Policy = AuthzConstants.POLICY_INSTANCE_READ)]
     [HttpGet("{dataGuid:guid}")]
+    [HttpGet("{dataGuid:guid}/type/{dataType}")]
     public async Task<ActionResult> Get(
         [FromRoute] string org,
         [FromRoute] string app,
         [FromRoute] int instanceOwnerPartyId,
         [FromRoute] Guid instanceGuid,
         [FromRoute] Guid dataGuid,
+        [FromRoute] string? dataType = null,
         [FromQuery] bool includeRowId = false,
         [FromQuery] string? language = null
     )
@@ -520,14 +524,21 @@ public class DataController : ControllerBase
             {
                 return Problem(instanceResult.Error);
             }
-            var (instance, dataType, dataElement) = instanceResult.Ok;
+            var (instance, dataTypeObject, dataElement) = instanceResult.Ok;
 
-            if (DataElementAccessChecker.GetReaderProblem(instance, dataType, User) is { } accessProblem)
+            if (dataTypeObject.Id != dataType)
+            {
+                return BadRequest(
+                    $"Data type {dataType} does not match data element {dataGuid}, which is of type {dataTypeObject.Id}"
+                );
+            }
+
+            if (DataElementAccessChecker.GetReaderProblem(instance, dataTypeObject, User) is { } accessProblem)
             {
                 return Problem(accessProblem);
             }
 
-            if (dataType.AppLogic?.ClassRef is not null)
+            if (dataTypeObject.AppLogic?.ClassRef is not null)
             {
                 return await GetFormData(
                     org,
@@ -537,7 +548,7 @@ public class DataController : ControllerBase
                     instance,
                     dataGuid,
                     dataElement,
-                    dataType,
+                    dataTypeObject,
                     includeRowId,
                     language
                 );
@@ -562,10 +573,12 @@ public class DataController : ControllerBase
     /// <param name="instanceOwnerPartyId">unique id of the party that is the owner of the instance</param>
     /// <param name="instanceGuid">unique id to identify the instance</param>
     /// <param name="dataGuid">unique id to identify the data element to update</param>
+    /// <param name="dataType">Optional parameter, verified if pressent. Used to have different schemas for different data types in openApi spec,</param>
     /// <param name="language">The language selected by the user.</param>
     /// <returns>The updated data element, including the changed fields in the event of a calculation that changed data.</returns>
     [Authorize(Policy = AuthzConstants.POLICY_INSTANCE_WRITE)]
     [HttpPut("{dataGuid:guid}")]
+    [HttpPut("{dataGuid:guid}/type/{dataType}")]
     [DisableFormValueModelBinding]
     [RequestSizeLimit(REQUEST_SIZE_LIMIT)]
     [ProducesResponseType(typeof(DataElement), 201)]
@@ -576,6 +589,7 @@ public class DataController : ControllerBase
         [FromRoute] int instanceOwnerPartyId,
         [FromRoute] Guid instanceGuid,
         [FromRoute] Guid dataGuid,
+        [FromRoute] string? dataType = null,
         [FromQuery] string? language = null
     )
     {
@@ -586,19 +600,26 @@ public class DataController : ControllerBase
             {
                 return Problem(instanceResult.Error);
             }
-            var (instance, dataType, dataElement) = instanceResult.Ok;
+            var (instance, dataTypeObject, dataElement) = instanceResult.Ok;
 
-            if (DataElementAccessChecker.GetUpdateProblem(instance, dataType, User) is { } accessProblem)
+            if (dataTypeObject.Id != dataType)
+            {
+                return BadRequest(
+                    $"Data type {dataType} does not match data element {dataGuid}, which is of type {dataTypeObject.Id}"
+                );
+            }
+
+            if (DataElementAccessChecker.GetUpdateProblem(instance, dataTypeObject, User) is { } accessProblem)
             {
                 return Problem(accessProblem);
             }
 
-            if (dataType.AppLogic?.ClassRef is not null)
+            if (dataTypeObject.AppLogic?.ClassRef is not null)
             {
-                return await PutFormData(instance, dataElement, dataType, language);
+                return await PutFormData(instance, dataElement, dataTypeObject, language);
             }
 
-            return await PutBinaryData(instanceOwnerPartyId, instanceGuid, dataGuid, dataType);
+            return await PutBinaryData(instanceOwnerPartyId, instanceGuid, dataGuid, dataTypeObject);
         }
         catch (PlatformHttpException e)
         {
@@ -749,17 +770,20 @@ public class DataController : ControllerBase
     /// <param name="instanceOwnerPartyId">unique id of the party that is the owner of the instance</param>
     /// <param name="instanceGuid">unique id to identify the instance</param>
     /// <param name="dataGuid">unique id to identify the data element to update</param>
+    /// <param name="dataType">Optional parameter, verified if pressent. Used to have different schemas for different data types in openApi spec,</param>
     /// <param name="ignoredValidators">comma separated string of validators to ignore</param>
     /// <param name="language">The currently active language</param>
     /// <returns>The updated data element.</returns>
     [Authorize(Policy = AuthzConstants.POLICY_INSTANCE_WRITE)]
     [HttpDelete("{dataGuid:guid}")]
+    [HttpDelete("{dataGuid:guid}/type/{dataType}")]
     public async Task<ActionResult<DataPostResponse>> Delete(
         [FromRoute] string org,
         [FromRoute] string app,
         [FromRoute] int instanceOwnerPartyId,
         [FromRoute] Guid instanceGuid,
         [FromRoute] Guid dataGuid,
+        [FromRoute] string? dataType = null,
         [FromQuery] string? ignoredValidators = null,
         [FromQuery] string? language = null
     )
@@ -771,9 +795,18 @@ public class DataController : ControllerBase
             {
                 return Problem(instanceResult.Error);
             }
-            var (instance, dataType, dataElement) = instanceResult.Ok;
+            var (instance, dataTypeObject, dataElement) = instanceResult.Ok;
 
-            if (DataElementAccessChecker.GetDeleteProblem(instance, dataType, dataGuid, User) is { } accessProblem)
+            if (dataTypeObject.Id != dataType)
+            {
+                return BadRequest(
+                    $"Data type {dataType} does not match data element {dataGuid}, which is of type {dataTypeObject.Id}"
+                );
+            }
+
+            if (
+                DataElementAccessChecker.GetDeleteProblem(instance, dataTypeObject, dataGuid, User) is { } accessProblem
+            )
             {
                 return Problem(accessProblem);
             }
