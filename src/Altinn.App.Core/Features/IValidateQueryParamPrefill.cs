@@ -1,15 +1,14 @@
-using Altinn.Platform.Storage.Interface.Models;
-
 namespace Altinn.App.Core.Features;
 
+/// <summary>
+/// Allows service owners to validate values of prefill from query params
+/// </summary>
 public interface IValidateQueryParamPrefill
 {
     /// <summary>
-    /// Run events related to instantiation
+    /// Use this method to run the validations
     /// </summary>
-    /// <remarks>
-    /// For example custom prefill.
-    /// </remarks>
-    /// <param name="prefill">External prefill available under instansiation if supplied</param>
+    /// <param name="prefill">The prefilled params to validate</param>
+    /// <returns></returns>
     public Task PrefillFromQueryParamsIsValid(Dictionary<string, string>? prefill);
 }
