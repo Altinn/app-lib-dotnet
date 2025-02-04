@@ -29,7 +29,7 @@ public class ExpressionConverter : JsonConverter<Expression>
             JsonTokenType.False => new Expression(false),
             JsonTokenType.String => new Expression(reader.GetString()),
             JsonTokenType.Number => new Expression(reader.GetDouble()),
-            JsonTokenType.Null => new Expression(new ExpressionValue()),
+            JsonTokenType.Null => new Expression(ExpressionValue.Null),
             JsonTokenType.StartArray => ReadArray(ref reader, options),
             JsonTokenType.StartObject => throw new JsonException("Invalid type \"object\""),
             _ => throw new JsonException(),

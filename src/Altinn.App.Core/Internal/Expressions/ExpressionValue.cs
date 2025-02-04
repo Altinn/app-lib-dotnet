@@ -27,6 +27,11 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
         _valueKind = JsonValueKind.Null;
     }
 
+    /// <summary>
+    /// Convenient accessor for NULL value
+    /// </summary>
+    public static ExpressionValue Null => new();
+
     private ExpressionValue(bool? value)
     {
         if (value.HasValue)
@@ -104,7 +109,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             value switch
             {
                 ExpressionValue expressionValue => expressionValue,
-                null => new ExpressionValue(),
+                null => ExpressionValue.Null,
                 bool boolValue => boolValue,
                 string stringValue => stringValue,
                 float numberValue => (double?)numberValue,
@@ -127,7 +132,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
 
                 // Dictionary<string, ExpressionValue> objectValue => new ExpressionValue(objectValue),
                 // TODO add support for arrays, objects and other potential types
-                _ => new ExpressionValue(),
+                _ => ExpressionValue.Null,
             }
         );
     }
@@ -221,7 +226,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     /// </summary>
     public bool Equals(ExpressionValue other)
     {
-        throw new NotImplementedException("ExpressionValue does not implement Equals");
+        throw new NotImplementedException("ExpressionValue does not yet implement Equals");
     }
 
     /// <summary>
@@ -229,7 +234,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     /// </summary>
     public override bool Equals(object? obj)
     {
-        throw new NotImplementedException("ExpressionValue does not implement Equals");
+        throw new NotImplementedException("ExpressionValue does not yet implement Equals");
     }
 
     /// <summary>
@@ -237,7 +242,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     /// </summary>
     public override int GetHashCode()
     {
-        throw new NotImplementedException("ExpressionValue does not implement GetHashCode");
+        throw new NotImplementedException("ExpressionValue does not yet implement GetHashCode");
     }
 
     /// <summary>
@@ -272,7 +277,7 @@ internal class ExpressionTypeUnionConverter : JsonConverter<ExpressionValue>
             JsonTokenType.False => false,
             JsonTokenType.String => reader.GetString(),
             JsonTokenType.Number => reader.GetDouble(),
-            JsonTokenType.Null => new ExpressionValue(),
+            JsonTokenType.Null => ExpressionValue.Null,
             // JsonTokenType.StartObject => ReadObject(ref reader),
             // JsonTokenType.StartArray => ReadArray(ref reader),
             _ => throw new JsonException(),

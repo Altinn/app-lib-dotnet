@@ -221,7 +221,7 @@ public static class ExpressionEvaluator
 
         if (targetContext is null)
         {
-            return new ExpressionValue();
+            return ExpressionValue.Null;
         }
 
         if (targetContext.Component is GroupComponent)
@@ -235,7 +235,7 @@ public static class ExpressionEvaluator
         }
         if (await targetContext.IsHidden(state))
         {
-            return new ExpressionValue();
+            return ExpressionValue.Null;
         }
 
         return await DataModel(binding, context.DataElementIdentifier, context.RowIndices, state);
@@ -492,7 +492,7 @@ public static class ExpressionEvaluator
     {
         if (args.Length == 2)
         {
-            return PrepareBooleanArg(args[0]) ? args[1] : new ExpressionValue();
+            return PrepareBooleanArg(args[0]) ? args[1] : ExpressionValue.Null;
         }
 
         if (
