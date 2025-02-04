@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Expressions;

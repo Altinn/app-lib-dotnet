@@ -32,9 +32,9 @@ public class EqualTests(ITestOutputHelper outputHelper)
             true,
             false,
             "",
-            DateTime.Now,
-            DateOnly.FromDateTime(DateTime.Now),
-            TimeOnly.FromDateTime(DateTime.Now),
+            DateTime.Parse("2025-02-04T13:13:15.844735+01:00"),
+            DateOnly.FromDateTime(DateTime.Parse("2025-02-04T13:13:15.844735+01:00")),
+            TimeOnly.FromDateTime(DateTime.Parse("2025-02-04T13:13:15.844735+01:00")),
         };
 
     [Theory]
@@ -44,12 +44,12 @@ public class EqualTests(ITestOutputHelper outputHelper)
     [MemberData(nameof(GetExoticTypes))]
     public void ToStringForEquals_AgreesWithJsonSerializer(object? value)
     {
+        // Verify that the EqualsToString method returns the same value as the JsonSerializer.
+        var json = JsonSerializer.Serialize(value);
+
         outputHelper.WriteLine($"Object of type {value?.GetType().FullName ?? "null"}:");
         outputHelper.WriteLine($"   value:{value}");
         outputHelper.WriteLine($"   json: {JsonSerializer.Serialize(value)}");
-
-        // Verify that the EqualsToString method returns the same value as the JsonSerializer.
-        var json = JsonSerializer.Serialize(value);
         try
         {
             var jsonResult = JsonSerializer.Deserialize<string>(json);

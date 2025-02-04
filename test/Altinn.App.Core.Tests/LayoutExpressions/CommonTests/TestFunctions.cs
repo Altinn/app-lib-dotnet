@@ -2,8 +2,8 @@ using System.Collections;
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Internal.Expressions;
-using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Models.Layout.Components;
@@ -306,7 +306,9 @@ public class TestFunctions
         }
         else if (componentModel is not null)
         {
-            context = ComponentContextForTestSpec.FromFirstOrDefault(componentModel, state);
+            context = (
+                await componentModel.GenerateComponentContexts(test.Instance, new DataModel(dataAccessor))
+            ).First();
         }
 
         if (test.ExpectsFailure is not null)

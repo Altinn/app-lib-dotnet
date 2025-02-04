@@ -115,17 +115,6 @@ public class ComponentContextForTestSpec
         );
     }
 
-    public static ComponentContext FromFirstOrDefault(LayoutModel? model, LayoutEvaluatorState state)
-    {
-        var component = model?.GetFirstComponent();
-        return new ComponentContext(
-            component,
-            null,
-            rowLength: component is RepeatingGroupComponent ? 0 : null,
-            state.GetDefaultDataElementId()
-        );
-    }
-
     public static ComponentContextForTestSpec FromContext(ComponentContext context)
     {
         ArgumentNullException.ThrowIfNull(context.Component);
