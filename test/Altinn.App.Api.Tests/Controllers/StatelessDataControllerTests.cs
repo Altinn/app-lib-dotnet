@@ -5,6 +5,7 @@ using Altinn.App.Api.Tests.Controllers.TestResources;
 using Altinn.App.Api.Tests.Utils;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.DataProcessing;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Prefill;
@@ -46,7 +47,8 @@ public class StatelessDataControllerTests
             prefillMock.Object,
             registerMock.Object,
             pdpMock.Object,
-            new IDataProcessor[] { dataProcessorMock.Object }
+            new IDataProcessor[] { dataProcessorMock.Object },
+            new NullQueryParamPrefillValidator()
         );
 
         string dataType = null!; // this is what we're testing
@@ -86,7 +88,8 @@ public class StatelessDataControllerTests
             prefillMock.Object,
             registerMock.Object,
             pdpMock.Object,
-            new IDataProcessor[] { dataProcessorMock.Object }
+            new IDataProcessor[] { dataProcessorMock.Object },
+            new NullQueryParamPrefillValidator()
         );
 
         // Act
@@ -208,7 +211,8 @@ public class StatelessDataControllerTests
             prefillMock.Object,
             registerMock.Object,
             pdpMock.Object,
-            new IDataProcessor[] { dataProcessorMock.Object }
+            new IDataProcessor[] { dataProcessorMock.Object },
+            new NullQueryParamPrefillValidator()
         );
 
         // Act
@@ -246,7 +250,8 @@ public class StatelessDataControllerTests
             prefillMock.Object,
             registerMock.Object,
             pdpMock.Object,
-            new IDataProcessor[] { dataProcessorMock.Object }
+            new IDataProcessor[] { dataProcessorMock.Object },
+            new NullQueryParamPrefillValidator()
         );
         statelessDataController.ControllerContext = new ControllerContext();
         statelessDataController.ControllerContext.HttpContext = new DefaultHttpContext();
@@ -290,7 +295,8 @@ public class StatelessDataControllerTests
             prefillMock.Object,
             registerMock.Object,
             pdpMock.Object,
-            new IDataProcessor[] { dataProcessorMock.Object }
+            new IDataProcessor[] { dataProcessorMock.Object },
+            new NullQueryParamPrefillValidator()
         );
         statelessDataController.ControllerContext = new ControllerContext();
         statelessDataController.ControllerContext.HttpContext = new DefaultHttpContext();
@@ -349,7 +355,8 @@ public class StatelessDataControllerTests
             prefillMock.Object,
             registerMock.Object,
             pdpMock.Object,
-            new IDataProcessor[] { dataProcessorMock.Object }
+            new IDataProcessor[] { dataProcessorMock.Object },
+            new NullQueryParamPrefillValidator()
         );
         statelessDataController.ControllerContext = new ControllerContext();
         statelessDataController.ControllerContext.HttpContext = new DefaultHttpContext();
