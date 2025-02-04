@@ -18,7 +18,7 @@ public readonly record struct Expression
     ///     Construct a value expression with the given value
     /// </summary>
     /// <param name="value"></param>
-    public Expression(ExpressionTypeUnion value)
+    public Expression(ExpressionValue value)
     {
         ValueUnion = value;
     }
@@ -27,10 +27,10 @@ public readonly record struct Expression
     ///     Construct a value expression with the given value
     /// </summary>
     /// <param name="value"></param>
-    [Obsolete("Use the constructor with ExpressionTypeUnion instead")]
+    [Obsolete("Use the constructor with ExpressionValue instead")]
     public Expression(object? value)
     {
-        ValueUnion = ExpressionTypeUnion.FromObject(value);
+        ValueUnion = ExpressionValue.FromObject(value);
     }
 
     /// <summary>
@@ -74,7 +74,7 @@ public readonly record struct Expression
     /// <remarks>
     ///  If <see cref="ValueUnion" /> isn't null, <see cref="Function" /> and <see cref="Args" /> must be
     /// </remarks>
-    public ExpressionTypeUnion ValueUnion { get; }
+    public ExpressionValue ValueUnion { get; }
 
     /// <summary>
     /// Static helper to create an expression with the value of false

@@ -64,7 +64,7 @@ public static class ExpressionEvaluator
         object?[]? positionalArguments = null
     )
     {
-        var positionalArgumentUnions = positionalArguments?.Select(ExpressionTypeUnion.FromObject).ToArray();
+        var positionalArgumentUnions = positionalArguments?.Select(ExpressionValue.FromObject).ToArray();
         var result = await EvaluateExpression_internal(state, expr, context, positionalArgumentUnions);
         return result.ToObject();
     }
@@ -72,24 +72,24 @@ public static class ExpressionEvaluator
     /// <summary>
     /// private implementation in order to change the types of positional arguments without breaking change.
     /// </summary>
-    private static async Task<ExpressionTypeUnion> EvaluateExpression_internal(
+    private static async Task<ExpressionValue> EvaluateExpression_internal(
         LayoutEvaluatorState state,
         Expression expr,
         ComponentContext context,
-        ExpressionTypeUnion[]? positionalArguments = null
+        ExpressionValue[]? positionalArguments = null
     )
     {
         if (!expr.IsFunctionExpression)
         {
             return expr.ValueUnion;
         }
-        var args = new ExpressionTypeUnion[expr.Args.Count];
+        var args = new ExpressionValue[expr.Args.Count];
         for (var i = 0; i < args.Length; i++)
         {
             args[i] = await EvaluateExpression_internal(state, expr.Args[i], context, positionalArguments);
         }
 
-        ExpressionTypeUnion ret = expr.Function switch
+        ExpressionValue ret = expr.Function switch
         {
             ExpressionFunction.dataModel => await DataModel(args, context, state),
             ExpressionFunction.component => await Component(args, context, state),
@@ -123,7 +123,7 @@ public static class ExpressionEvaluator
         return ret;
     }
 
-    private static string InstanceContext(LayoutEvaluatorState state, ExpressionTypeUnion[] args)
+    private static string InstanceContext(LayoutEvaluatorState state, ExpressionValue[] args)
     {
         if (args is [{ ValueKind: JsonValueKind.String } arg])
         {
@@ -136,7 +136,7 @@ public static class ExpressionEvaluator
         );
     }
 
-    private static string? FrontendSetting(LayoutEvaluatorState state, ExpressionTypeUnion[] args)
+    private static string? FrontendSetting(LayoutEvaluatorState state, ExpressionValue[] args)
     {
         return args switch
         {
@@ -154,8 +154,8 @@ public static class ExpressionEvaluator
         };
     }
 
-    private static async Task<ExpressionTypeUnion> DataModel(
-        ExpressionTypeUnion[] args,
+    private static async Task<ExpressionValue> DataModel(
+        ExpressionValue[] args,
         ComponentContext context,
         LayoutEvaluatorState state
     )
@@ -179,7 +179,7 @@ public static class ExpressionEvaluator
         return await DataModel(key, context.DataElementIdentifier, context.RowIndices, state);
     }
 
-    private static async Task<ExpressionTypeUnion> DataModel(
+    private static async Task<ExpressionValue> DataModel(
         ModelBinding key,
         DataElementIdentifier defaultDataElementIdentifier,
         int[]? indexes,
@@ -188,11 +188,11 @@ public static class ExpressionEvaluator
     {
         var data = await state.GetModelData(key, defaultDataElementIdentifier, indexes);
 
-        return ExpressionTypeUnion.FromObject(data);
+        return ExpressionValue.FromObject(data);
     }
 
-    private static async Task<ExpressionTypeUnion> Component(
-        ExpressionTypeUnion[] args,
+    private static async Task<ExpressionValue> Component(
+        ExpressionValue[] args,
         ComponentContext? context,
         LayoutEvaluatorState state
     )
@@ -221,7 +221,7 @@ public static class ExpressionEvaluator
 
         if (targetContext is null)
         {
-            return new ExpressionTypeUnion();
+            return new ExpressionValue();
         }
 
         if (targetContext.Component is GroupComponent)
@@ -235,13 +235,13 @@ public static class ExpressionEvaluator
         }
         if (await targetContext.IsHidden(state))
         {
-            return new ExpressionTypeUnion();
+            return new ExpressionValue();
         }
 
         return await DataModel(binding, context.DataElementIdentifier, context.RowIndices, state);
     }
 
-    private static string Concat(ExpressionTypeUnion[] args)
+    private static string Concat(ExpressionValue[] args)
     {
         return string.Join(
             "",
@@ -255,7 +255,7 @@ public static class ExpressionEvaluator
         );
     }
 
-    private static bool Contains(ExpressionTypeUnion[] args)
+    private static bool Contains(ExpressionValue[] args)
     {
         if (args.Length != 2)
         {
@@ -272,7 +272,7 @@ public static class ExpressionEvaluator
         return stringOne.Contains(stringTwo, StringComparison.InvariantCulture);
     }
 
-    private static bool EndsWith(ExpressionTypeUnion[] args)
+    private static bool EndsWith(ExpressionValue[] args)
     {
         if (args.Length != 2)
         {
@@ -293,7 +293,7 @@ public static class ExpressionEvaluator
         return stringOne.EndsWith(stringTwo, StringComparison.InvariantCulture);
     }
 
-    private static bool StartsWith(ExpressionTypeUnion[] args)
+    private static bool StartsWith(ExpressionValue[] args)
     {
         if (args.Length != 2)
         {
@@ -314,7 +314,7 @@ public static class ExpressionEvaluator
         return stringOne.StartsWith(stringTwo, StringComparison.InvariantCulture);
     }
 
-    private static bool CommaContains(ExpressionTypeUnion[] args)
+    private static bool CommaContains(ExpressionValue[] args)
     {
         if (args.Length != 2)
         {
@@ -335,7 +335,7 @@ public static class ExpressionEvaluator
         return stringOne.Split(",").Select(s => s.Trim()).Contains(stringTwo, StringComparer.InvariantCulture);
     }
 
-    private static int StringLength(ExpressionTypeUnion[] args)
+    private static int StringLength(ExpressionValue[] args)
     {
         if (args.Length != 1)
         {
@@ -345,7 +345,7 @@ public static class ExpressionEvaluator
         return stringOne?.Length ?? 0;
     }
 
-    private static string Round(ExpressionTypeUnion[] args)
+    private static string Round(ExpressionValue[] args)
     {
         if (args.Length < 1 || args.Length > 2)
         {
@@ -373,7 +373,7 @@ public static class ExpressionEvaluator
         return number.Value.ToString($"N{precision}", CultureInfo.InvariantCulture);
     }
 
-    private static string? UpperCase(ExpressionTypeUnion[] args)
+    private static string? UpperCase(ExpressionValue[] args)
     {
         if (args.Length != 1)
         {
@@ -383,7 +383,7 @@ public static class ExpressionEvaluator
         return stringOne?.ToUpperInvariant();
     }
 
-    private static string? LowerCase(ExpressionTypeUnion[] args)
+    private static string? LowerCase(ExpressionValue[] args)
     {
         if (args.Length != 1)
         {
@@ -393,7 +393,7 @@ public static class ExpressionEvaluator
         return stringOne?.ToLowerInvariant();
     }
 
-    private static bool PrepareBooleanArg(ExpressionTypeUnion arg)
+    private static bool PrepareBooleanArg(ExpressionValue arg)
     {
         return arg.ValueKind switch
         {
@@ -428,7 +428,7 @@ public static class ExpressionEvaluator
         };
     }
 
-    private static bool? And(ExpressionTypeUnion[] args)
+    private static bool? And(ExpressionValue[] args)
     {
         if (args.Length == 0)
         {
@@ -440,7 +440,7 @@ public static class ExpressionEvaluator
         return preparedArgs.All(a => a);
     }
 
-    private static bool? Or(ExpressionTypeUnion[] args)
+    private static bool? Or(ExpressionValue[] args)
     {
         if (args.Length == 0)
         {
@@ -452,7 +452,7 @@ public static class ExpressionEvaluator
         return preparedArgs.Any(a => a);
     }
 
-    private static bool? Not(ExpressionTypeUnion[] args)
+    private static bool? Not(ExpressionValue[] args)
     {
         if (args.Length != 1)
         {
@@ -461,7 +461,7 @@ public static class ExpressionEvaluator
         return !PrepareBooleanArg(args[0]);
     }
 
-    private static (double?, double?) PrepareNumericArgs(ExpressionTypeUnion[] args)
+    private static (double?, double?) PrepareNumericArgs(ExpressionValue[] args)
     {
         if (args.Length != 2)
         {
@@ -475,7 +475,7 @@ public static class ExpressionEvaluator
         return (a, b);
     }
 
-    private static double? PrepareNumericArg(ExpressionTypeUnion arg)
+    private static double? PrepareNumericArg(ExpressionValue arg)
     {
         return arg.ValueKind switch
         {
@@ -488,11 +488,11 @@ public static class ExpressionEvaluator
         };
     }
 
-    private static ExpressionTypeUnion IfImpl(ExpressionTypeUnion[] args)
+    private static ExpressionValue IfImpl(ExpressionValue[] args)
     {
         if (args.Length == 2)
         {
-            return PrepareBooleanArg(args[0]) ? args[1] : new ExpressionTypeUnion();
+            return PrepareBooleanArg(args[0]) ? args[1] : new ExpressionValue();
         }
 
         if (
@@ -532,7 +532,7 @@ public static class ExpressionEvaluator
         return null;
     }
 
-    private static bool LessThan(ExpressionTypeUnion[] args)
+    private static bool LessThan(ExpressionValue[] args)
     {
         var (a, b) = PrepareNumericArgs(args);
 
@@ -543,7 +543,7 @@ public static class ExpressionEvaluator
         return a < b; // Actual implementation
     }
 
-    private static bool LessThanEq(ExpressionTypeUnion[] args)
+    private static bool LessThanEq(ExpressionValue[] args)
     {
         var (a, b) = PrepareNumericArgs(args);
 
@@ -554,7 +554,7 @@ public static class ExpressionEvaluator
         return a <= b; // Actual implementation
     }
 
-    private static bool GreaterThan(ExpressionTypeUnion[] args)
+    private static bool GreaterThan(ExpressionValue[] args)
     {
         var (a, b) = PrepareNumericArgs(args);
 
@@ -565,7 +565,7 @@ public static class ExpressionEvaluator
         return a > b; // Actual implementation
     }
 
-    private static bool GreaterThanEq(ExpressionTypeUnion[] args)
+    private static bool GreaterThanEq(ExpressionValue[] args)
     {
         var (a, b) = PrepareNumericArgs(args);
 
@@ -576,7 +576,7 @@ public static class ExpressionEvaluator
         return a >= b; // Actual implementation
     }
 
-    internal static string? ToStringForEquals(ExpressionTypeUnion value) =>
+    internal static string? ToStringForEquals(ExpressionValue value) =>
         value.ValueKind switch
         {
             JsonValueKind.Null => null,
@@ -594,7 +594,7 @@ public static class ExpressionEvaluator
             _ => throw new NotImplementedException($"ToStringForEquals not implemented for {value.ValueKind}"),
         };
 
-    internal static bool EqualsImplementation(ExpressionTypeUnion[] args)
+    internal static bool EqualsImplementation(ExpressionValue[] args)
     {
         if (args.Length != 2)
         {
@@ -604,7 +604,7 @@ public static class ExpressionEvaluator
         return string.Equals(ToStringForEquals(args[0]), ToStringForEquals(args[1]), StringComparison.Ordinal);
     }
 
-    private static ExpressionTypeUnion Argv(ExpressionTypeUnion[] args, ExpressionTypeUnion[]? positionalArguments)
+    private static ExpressionValue Argv(ExpressionValue[] args, ExpressionValue[]? positionalArguments)
     {
         if (args.Length != 1)
         {

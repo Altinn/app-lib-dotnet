@@ -62,11 +62,11 @@ public class EqualTests(ITestOutputHelper outputHelper)
         outputHelper.WriteLine($"   value:{value}");
         outputHelper.WriteLine($"   json: {JsonSerializer.Serialize(value)}");
 
-        var union = ExpressionTypeUnion.FromObject(value);
+        var union = ExpressionValue.FromObject(value);
         outputHelper.WriteLine($"   union: {union}");
         // Verify that the EqualsToString method returns the same value as the JsonSerializer.
         var json = value is string ? value : JsonSerializer.Serialize(value);
-        var toStringForEquals = ExpressionEvaluator.ToStringForEquals(ExpressionTypeUnion.FromObject(value));
+        var toStringForEquals = ExpressionEvaluator.ToStringForEquals(ExpressionValue.FromObject(value));
         Assert.Equal(json, toStringForEquals);
     }
 
@@ -93,10 +93,10 @@ public class EqualTests(ITestOutputHelper outputHelper)
         outputHelper.WriteLine($"   value:{value}");
         outputHelper.WriteLine($"   json: {JsonSerializer.Serialize(value)}");
 
-        var union = ExpressionTypeUnion.FromObject(value);
+        var union = ExpressionValue.FromObject(value);
         outputHelper.WriteLine($"   union: {union}");
         // Verify that the EqualsToString method throws an exception for unsupported types.
-        Assert.Null(ExpressionEvaluator.ToStringForEquals(ExpressionTypeUnion.FromObject(value)));
+        Assert.Null(ExpressionEvaluator.ToStringForEquals(ExpressionValue.FromObject(value)));
     }
 
     [Theory]
@@ -114,7 +114,7 @@ public class EqualTests(ITestOutputHelper outputHelper)
     public void ToStringForEquals_SpecialCases(object? value, string? expected)
     {
         // Verify that the EqualsToString method returns the expected value for special cases.
-        var toStringForEquals = ExpressionEvaluator.ToStringForEquals(ExpressionTypeUnion.FromObject(value));
+        var toStringForEquals = ExpressionEvaluator.ToStringForEquals(ExpressionValue.FromObject(value));
         Assert.Equal(expected, toStringForEquals);
     }
 }

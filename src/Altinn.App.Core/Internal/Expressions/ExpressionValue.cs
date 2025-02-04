@@ -8,7 +8,7 @@ namespace Altinn.App.Core.Internal.Expressions;
 /// Discriminated union for the JSON types that can be arguments and result of expressions
 /// </summary>
 [JsonConverter(typeof(ExpressionTypeUnionConverter))]
-public readonly struct ExpressionTypeUnion
+public readonly struct ExpressionValue
 {
     private readonly JsonValueKind _valueKind;
     private readonly string? _stringValue = null;
@@ -16,18 +16,18 @@ public readonly struct ExpressionTypeUnion
     // double is a value type where nullable takes extra space, and we only read it when it should be set
     private readonly double _numberValue = 0;
 
-    // private readonly Dictionary<string, ExpressionTypeUnion>? _objectValue = null;
-    // private readonly ExpressionTypeUnion[]? _arrayValue = null;
+    // private readonly Dictionary<string, ExpressionValue>? _objectValue = null;
+    // private readonly ExpressionValue[]? _arrayValue = null;
 
     /// <summary>
     /// Constructor for NULL value
     /// </summary>
-    public ExpressionTypeUnion()
+    public ExpressionValue()
     {
         _valueKind = JsonValueKind.Null;
     }
 
-    private ExpressionTypeUnion(bool? value)
+    private ExpressionValue(bool? value)
     {
         if (value.HasValue)
         {
@@ -39,7 +39,7 @@ public readonly struct ExpressionTypeUnion
         }
     }
 
-    private ExpressionTypeUnion(double? value)
+    private ExpressionValue(double? value)
     {
         if (value.HasValue)
         {
@@ -52,59 +52,59 @@ public readonly struct ExpressionTypeUnion
         }
     }
 
-    private ExpressionTypeUnion(string? value)
+    private ExpressionValue(string? value)
     {
         _valueKind = value is null ? JsonValueKind.Null : JsonValueKind.String;
         _stringValue = value;
     }
 
-    // private ExpressionTypeUnion(Dictionary<string, ExpressionTypeUnion>? value)
+    // private ExpressionValue(Dictionary<string, ExpressionValue>? value)
     // {
     //     _valueKind = value is null ? JsonValueKind.Null : JsonValueKind.Object;
     //     _objectValue = value;
     // }
 
-    // private ExpressionTypeUnion(ExpressionTypeUnion[]? value)
+    // private ExpressionValue(ExpressionValue[]? value)
     // {
     //     _valueKind = value is null ? JsonValueKind.Null : JsonValueKind.Array;
     //     _arrayValue = value;
     // }
 
     /// <summary>
-    /// Convert a nullable boolean to ExpressionTypeUnion
+    /// Convert a nullable boolean to ExpressionValue
     /// </summary>
-    public static implicit operator ExpressionTypeUnion(bool? value) => new(value);
+    public static implicit operator ExpressionValue(bool? value) => new(value);
 
     /// <summary>
-    /// Convert a nullable double to ExpressionTypeUnion
+    /// Convert a nullable double to ExpressionValue
     /// </summary>
-    public static implicit operator ExpressionTypeUnion(double? value) => new(value);
+    public static implicit operator ExpressionValue(double? value) => new(value);
 
     /// <summary>
-    /// Convert a nullable string to ExpressionTypeUnion
+    /// Convert a nullable string to ExpressionValue
     /// </summary>
-    public static implicit operator ExpressionTypeUnion(string? value) => new(value);
+    public static implicit operator ExpressionValue(string? value) => new(value);
 
     // /// <summary>
-    // /// Convert a Dictionary to ExpressionTypeUnion
+    // /// Convert a Dictionary to ExpressionValue
     // /// </summary>
-    // public static implicit operator ExpressionTypeUnion(Dictionary<string, ExpressionTypeUnion>? value) => new(value);
+    // public static implicit operator ExpressionValue(Dictionary<string, ExpressionValue>? value) => new(value);
     //
     // /// <summary>
-    // /// Convert an array to ExpressionTypeUnion
+    // /// Convert an array to ExpressionValue
     // /// </summary>
-    // public static implicit operator ExpressionTypeUnion(ExpressionTypeUnion[]? value) => new(value);
+    // public static implicit operator ExpressionValue(ExpressionValue[]? value) => new(value);
 
     /// <summary>
     /// Convert any of the supported CLR types to an expressionTypeUnion
     /// </summary>
-    public static ExpressionTypeUnion FromObject(object? value)
+    public static ExpressionValue FromObject(object? value)
     {
-        return (ExpressionTypeUnion)(
+        return (ExpressionValue)(
             value switch
             {
-                ExpressionTypeUnion expressionValue => expressionValue,
-                null => new ExpressionTypeUnion(),
+                ExpressionValue expressionValue => expressionValue,
+                null => new ExpressionValue(),
                 bool boolValue => boolValue,
                 string stringValue => stringValue,
                 float numberValue => (double?)numberValue,
@@ -125,9 +125,9 @@ public readonly struct ExpressionTypeUnion
                 TimeOnly timeOnlyValue => JsonSerializer.Serialize(timeOnlyValue),
                 DateOnly dateOnlyValue => JsonSerializer.Serialize(dateOnlyValue),
 
-                // Dictionary<string, ExpressionTypeUnion> objectValue => new ExpressionTypeUnion(objectValue),
+                // Dictionary<string, ExpressionValue> objectValue => new ExpressionValue(objectValue),
                 // TODO add support for arrays, objects and other potential types
-                _ => new ExpressionTypeUnion(),
+                _ => new ExpressionValue(),
             }
         );
     }
@@ -186,14 +186,14 @@ public readonly struct ExpressionTypeUnion
             _ => throw new InvalidOperationException($"{ToString()} is not a number"),
         };
 
-    // public Dictionary<string, ExpressionTypeUnion> Object =>
+    // public Dictionary<string, ExpressionValue> Object =>
     //     _valueKind switch
     //     {
     //         JsonValueKind.Object => _objectValue ?? throw new UnreachableException($"{ToString()} is not an object"),
     //         _ => throw new InvalidOperationException($"{ToString()} is not an object"),
     //     };
     //
-    // public ExpressionTypeUnion[] Array =>
+    // public ExpressionValue[] Array =>
     //     _valueKind switch
     //     {
     //         JsonValueKind.Array => _arrayValue ?? throw new UnreachableException($"{ToString()} is not an array"),
@@ -220,10 +220,10 @@ public readonly struct ExpressionTypeUnion
 /// <summary>
 /// JsonTypeUnion should serialize as the json value it represents, and the properties can't be accessed directly anyway
 /// </summary>
-internal class ExpressionTypeUnionConverter : JsonConverter<ExpressionTypeUnion>
+internal class ExpressionTypeUnionConverter : JsonConverter<ExpressionValue>
 {
     /// <inheritdoc />
-    public override ExpressionTypeUnion Read(
+    public override ExpressionValue Read(
         ref Utf8JsonReader reader,
         Type typeToConvert,
         JsonSerializerOptions options
@@ -236,25 +236,25 @@ internal class ExpressionTypeUnionConverter : JsonConverter<ExpressionTypeUnion>
             JsonTokenType.False => false,
             JsonTokenType.String => reader.GetString(),
             JsonTokenType.Number => reader.GetDouble(),
-            JsonTokenType.Null => new ExpressionTypeUnion(),
+            JsonTokenType.Null => new ExpressionValue(),
             // JsonTokenType.StartObject => ReadObject(ref reader),
             // JsonTokenType.StartArray => ReadArray(ref reader),
             _ => throw new JsonException(),
         };
     }
 
-    // private ExpressionTypeUnion ReadArray(ref Utf8JsonReader reader)
+    // private ExpressionValue ReadArray(ref Utf8JsonReader reader)
     // {
     //     throw new NotImplementedException();
     // }
     //
-    // private ExpressionTypeUnion ReadObject(ref Utf8JsonReader reader)
+    // private ExpressionValue ReadObject(ref Utf8JsonReader reader)
     // {
     //     throw new NotImplementedException();
     // }
 
     /// <inheritdoc />
-    public override void Write(Utf8JsonWriter writer, ExpressionTypeUnion value, JsonSerializerOptions options)
+    public override void Write(Utf8JsonWriter writer, ExpressionValue value, JsonSerializerOptions options)
     {
         switch (value.ValueKind)
         {

@@ -17,7 +17,7 @@ public class ExpressionEvaluatorTypeErrorException : Exception
     /// <param name="msg">the message</param>
     /// <param name="method">the method name</param>
     /// <param name="args">the list of evaluated arguments</param>
-    internal ExpressionEvaluatorTypeErrorException(string msg, ExpressionFunction method, ExpressionTypeUnion[] args)
+    internal ExpressionEvaluatorTypeErrorException(string msg, ExpressionFunction method, ExpressionValue[] args)
         : base(
             $"Type error in expression: {msg} with args: [\"{method}\" {string.Join(", ", args.Select(a => a.ToString()))}]"
         ) { }
