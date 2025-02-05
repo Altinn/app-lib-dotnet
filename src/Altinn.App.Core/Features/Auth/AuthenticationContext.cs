@@ -6,6 +6,7 @@ using Altinn.App.Core.Internal.Registers;
 using Altinn.Platform.Register.Models;
 using AltinnCore.Authentication.Utils;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Features.Auth;
@@ -13,6 +14,7 @@ namespace Altinn.App.Core.Features.Auth;
 internal sealed class AuthenticationContext : IAuthenticationContext
 {
     private const string ItemsKey = "Internal_AltinnAuthenticationInfo";
+    private readonly ILogger<AuthenticationContext> _logger;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IOptionsMonitor<AppSettings> _appSettings;
     private readonly IOptionsMonitor<GeneralSettings> _generalSettings;
@@ -22,6 +24,7 @@ internal sealed class AuthenticationContext : IAuthenticationContext
     private readonly IAppConfigurationCache _appConfigurationCache;
 
     public AuthenticationContext(
+        ILogger<AuthenticationContext> logger,
         IHttpContextAccessor httpContextAccessor,
         IOptionsMonitor<AppSettings> appSettings,
         IOptionsMonitor<GeneralSettings> generalSettings,
@@ -31,6 +34,7 @@ internal sealed class AuthenticationContext : IAuthenticationContext
         IAppConfigurationCache appConfigurationCache
     )
     {
+        _logger = logger;
         _httpContextAccessor = httpContextAccessor;
         _appSettings = appSettings;
         _generalSettings = generalSettings;
@@ -58,12 +62,16 @@ internal sealed class AuthenticationContext : IAuthenticationContext
             Authenticated authInfo;
             if (!httpContext.Items.TryGetValue(ItemsKey, out var authInfoObj))
             {
+                var token = JwtTokenUtil.GetTokenFromContext(httpContext, _appSettings.CurrentValue.RuntimeCookieName);
+                var isAuthenticated = httpContext.User?.Identity?.IsAuthenticated ?? false;
+                if (string.IsNullOrWhiteSpace(token))
+                    _logger.LogWarning("Missing token");
+                if (!isAuthenticated)
+                    _logger.LogWarning("User is not authenticated");
+
                 authInfo = Authenticated.From(
-                    tokenStr: JwtTokenUtil.GetTokenFromContext(
-                        httpContext,
-                        _appSettings.CurrentValue.RuntimeCookieName
-                    ),
-                    isAuthenticated: httpContext.User?.Identity?.IsAuthenticated ?? false,
+                    tokenStr: token,
+                    isAuthenticated: isAuthenticated,
                     _appConfigurationCache.ApplicationMetadata,
                     () => _httpContext.Request.Cookies[_generalSettings.CurrentValue.GetAltinnPartyCookieName],
                     _profileClient.GetUserProfile,
