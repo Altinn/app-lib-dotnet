@@ -497,9 +497,18 @@ internal sealed class SigningService(
     {
         foreach (SignDocument signDocument in signDocuments)
         {
+            _logger.LogInformation(
+                "Synchronizing SigneeContext with SignDocument for signee document with SSN {PersonNumber} and OrgNr {OrganisationNumber}.",
+                signDocument.SigneeInfo.PersonNumber,
+                signDocument.SigneeInfo.OrganisationNumber
+            );
             SigneeContext? matchingSigneeContext = signeeContexts.FirstOrDefault(x =>
-                x.OnBehalfOfOrganisation?.OrganisationNumber == signDocument.SigneeInfo.OrganisationNumber
-                && x.SocialSecurityNumber == signDocument.SigneeInfo.PersonNumber
+                x.SocialSecurityNumber == signDocument.SigneeInfo.PersonNumber
+                && string.Equals(
+                    signDocument.SigneeInfo.OrganisationNumber ?? "",
+                    x.OnBehalfOfOrganisation?.OrganisationNumber ?? "",
+                    StringComparison.Ordinal
+                )
             );
 
             if (matchingSigneeContext is not null)
@@ -519,6 +528,11 @@ internal sealed class SigningService(
 
     private async Task<SigneeContext> CreateSigneeContextFromSignDocument(string taskId, SignDocument signDocument)
     {
+        _logger.LogInformation(
+            "Creating SigneeContext for signee with SSN {PersonNumber} and OrgNr {OrganisationNumber} from SignDocument.",
+            signDocument.SigneeInfo.PersonNumber,
+            signDocument.SigneeInfo.OrganisationNumber
+        );
         Party party = await altinnPartyClient.LookupParty(
             string.IsNullOrEmpty(signDocument.SigneeInfo.OrganisationNumber)
                 ? new PartyLookup { Ssn = signDocument.SigneeInfo.PersonNumber }
