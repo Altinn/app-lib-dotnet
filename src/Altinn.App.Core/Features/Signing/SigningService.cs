@@ -355,7 +355,7 @@ internal sealed class SigningService(
         {
             UserId = userProfile.UserId.ToString(CultureInfo.InvariantCulture),
             PersonNumber = userProfile.UserParty.SSN,
-            OrganisationNumber = userProfile.UserParty.OrgNumber,
+            OrganisationNumber = userProfile.Party.OrgNumber,
         };
     }
 
@@ -503,7 +503,7 @@ internal sealed class SigningService(
                 signDocument.SigneeInfo.OrganisationNumber
             );
             SigneeContext? matchingSigneeContext = signeeContexts.FirstOrDefault(x =>
-                x.SocialSecurityNumber == signDocument.SigneeInfo.PersonNumber
+                signDocument.SigneeInfo.PersonNumber == x.SocialSecurityNumber
                 && string.Equals(
                     signDocument.SigneeInfo.OrganisationNumber ?? "",
                     x.OnBehalfOfOrganisation?.OrganisationNumber ?? "",
