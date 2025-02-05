@@ -346,11 +346,6 @@ internal sealed class SigningService(
             await _userHelper.GetUserContext(context)
             ?? throw new Exception("Could not get user profile while getting signee");
 
-        _logger.LogInformation("User party SSN retrieved for signee: {X}", userProfile.UserParty.SSN);
-        _logger.LogInformation("User party OrgNr retrieved for signee: {X}", userProfile.UserParty.OrgNumber);
-        _logger.LogInformation("Party SSN retrieved for signee: {X}", userProfile.Party.SSN);
-        _logger.LogInformation("Party OrgNr retrieved for signee: {X}", userProfile.Party.OrgNumber);
-
         return new Signee
         {
             UserId = userProfile.UserId.ToString(CultureInfo.InvariantCulture),
@@ -495,21 +490,25 @@ internal sealed class SigningService(
         List<SignDocument> signDocuments
     )
     {
+        _logger.LogInformation(
+            "Synchronizing signee contexts {SigneeContexts} with sign documents {SignDocuments} for task {TaskId}.",
+            signeeContexts,
+            signDocuments,
+            taskId
+        );
         foreach (SignDocument signDocument in signDocuments)
         {
-            _logger.LogInformation(
-                "Synchronizing SigneeContext with SignDocument for signee document with SSN {PersonNumber} and OrgNr {OrganisationNumber}.",
-                signDocument.SigneeInfo.PersonNumber,
-                signDocument.SigneeInfo.OrganisationNumber
-            );
             SigneeContext? matchingSigneeContext = signeeContexts.FirstOrDefault(x =>
-                signDocument.SigneeInfo.PersonNumber == x.SocialSecurityNumber
-                && string.Equals(
+            {
+                bool doesSsnMatch = signDocument.SigneeInfo.PersonNumber == x.SocialSecurityNumber;
+                bool doesOrgNrMatch = string.Equals(
                     signDocument.SigneeInfo.OrganisationNumber ?? "",
                     x.OnBehalfOfOrganisation?.OrganisationNumber ?? "",
                     StringComparison.Ordinal
-                )
-            );
+                );
+
+                return doesSsnMatch && doesOrgNrMatch;
+            });
 
             if (matchingSigneeContext is not null)
             {
@@ -529,20 +528,33 @@ internal sealed class SigningService(
     private async Task<SigneeContext> CreateSigneeContextFromSignDocument(string taskId, SignDocument signDocument)
     {
         _logger.LogInformation(
-            "Creating SigneeContext for signee with SSN {PersonNumber} and OrgNr {OrganisationNumber} from SignDocument.",
-            signDocument.SigneeInfo.PersonNumber,
-            signDocument.SigneeInfo.OrganisationNumber
+            "Creating signee context for sign document {SignDocument} for task {TaskId}.",
+            signDocument,
+            taskId
         );
-        Party party = await altinnPartyClient.LookupParty(
-            string.IsNullOrEmpty(signDocument.SigneeInfo.OrganisationNumber)
-                ? new PartyLookup { Ssn = signDocument.SigneeInfo.PersonNumber }
-                : new PartyLookup { OrgNo = signDocument.SigneeInfo.OrganisationNumber }
+
+        Party personParty = await altinnPartyClient.LookupParty(
+            new PartyLookup { Ssn = signDocument.SigneeInfo.PersonNumber }
         );
+        Party? orgParty = string.IsNullOrEmpty(signDocument.SigneeInfo.OrganisationNumber)
+            ? null
+            : await altinnPartyClient.LookupParty(
+                new PartyLookup { OrgNo = signDocument.SigneeInfo.OrganisationNumber }
+            );
 
         return new SigneeContext
         {
             TaskId = taskId,
-            OriginalParty = party,
+            OriginalParty = personParty,
+            SocialSecurityNumber = signDocument.SigneeInfo.PersonNumber,
+            FullName = personParty.Person.Name,
+            OnBehalfOfOrganisation = orgParty is null
+                ? null
+                : new SigneeContextOrganisation
+                {
+                    Name = orgParty.Organization.Name,
+                    OrganisationNumber = orgParty.Organization.OrgNumber,
+                },
             SigneeState = new SigneeState()
             {
                 IsAccessDelegated = true,
