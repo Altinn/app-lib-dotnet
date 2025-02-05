@@ -1,4 +1,4 @@
-using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Cache;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Models;
 

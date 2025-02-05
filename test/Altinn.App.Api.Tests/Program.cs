@@ -8,6 +8,7 @@ using Altinn.App.Api.Tests.Mocks.Event;
 using Altinn.App.Common.Tests;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Cache;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Auth;

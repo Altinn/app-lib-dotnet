@@ -1,4 +1,5 @@
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Features.Cache;
 using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
