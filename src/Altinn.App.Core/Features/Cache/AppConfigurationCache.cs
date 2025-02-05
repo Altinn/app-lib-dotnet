@@ -1,21 +1,22 @@
+using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Models;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Features.Cache;
 
 internal sealed class AppConfigurationCache(
     ILogger<AppConfigurationCache> logger,
     IServiceProvider serviceProvider,
-    IConfiguration configuration
+    IOptions<GeneralSettings> generalSettings
 ) : BackgroundService, IAppConfigurationCache
 {
     private readonly ILogger<AppConfigurationCache> _logger = logger;
     private readonly IServiceProvider _serviceProvider = serviceProvider;
-    private readonly IConfiguration _configuration = configuration;
+    private readonly IOptions<GeneralSettings> _generalSettings = generalSettings;
 
     private ApplicationMetadata? _appMetadata;
 
@@ -27,14 +28,14 @@ internal sealed class AppConfigurationCache(
     public override async Task StartAsync(CancellationToken cancellationToken)
     {
         await base.StartAsync(cancellationToken);
-        if (_configuration.GetValue<bool>("GeneralSettings:DisableAppConfigurationCache"))
+        if (_generalSettings.Value.DisableAppConfigurationCache)
             return;
         await _firstTick.Task;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        if (_configuration.GetValue<bool>("GeneralSettings:DisableAppConfigurationCache"))
+        if (_generalSettings.Value.DisableAppConfigurationCache)
             return;
         try
         {
