@@ -286,7 +286,7 @@ public static class TestAuthentication
         string iss = "https://platform.tt02.altinn.no/authentication/api/v1/openid/";
 
         var scopes = new Scopes(scope);
-        if (scopes.HasScopePrefix("altinn:serviceowner"))
+        if (scopes.HasScopeWithPrefix("altinn:serviceowner/"))
             throw new InvalidOperationException("Org token cannot have serviceowner scopes");
 
         var consumer = JsonSerializer.Serialize(
@@ -363,7 +363,7 @@ public static class TestAuthentication
         string iss = "https://platform.tt02.altinn.no/authentication/api/v1/openid/";
 
         var scopes = new Scopes(scope);
-        if (!scopes.HasScopePrefix("altinn:serviceowner"))
+        if (!scopes.HasScopeWithPrefix("altinn:serviceowner/"))
             throw new InvalidOperationException("Service owner token must have serviceowner scopes");
 
         var consumer = JsonSerializer.Serialize(
@@ -445,7 +445,7 @@ public static class TestAuthentication
         string iss = "https://platform.tt02.altinn.no/authentication/api/v1/openid/";
 
         var scopes = new Scopes(scope);
-        if (scopes.HasScopePrefix("altinn:serviceowner"))
+        if (scopes.HasScopeWithPrefix("altinn:serviceowner/"))
             throw new InvalidOperationException("System user tokens cannot have serviceowner scopes");
 
         AuthorizationDetailsClaim details = new SystemUserAuthorizationDetailsClaim(

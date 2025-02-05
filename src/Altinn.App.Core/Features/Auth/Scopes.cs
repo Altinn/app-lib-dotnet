@@ -152,11 +152,13 @@ public readonly struct Scopes : IEquatable<Scopes>
     }
 
     /// <summary>
-    /// Checks if any of the scopes contains a specific scope prefix.
+    /// Checks if any of the scopes contains a specific string prefix.
+    /// NOTE: this is not to be confused with the prefix concept in Maskinporten/ID porten,
+    /// this is strictly a string prefix, so you decide if there should be a delimiter at the end of the prefix
     /// </summary>
     /// <param name="scopePrefix">the prefix to search for</param>
     /// <returns></returns>
-    public bool HasScopePrefix(string scopePrefix)
+    public bool HasScopeWithPrefix(string scopePrefix)
     {
         if (string.IsNullOrWhiteSpace(_scope))
             return false;

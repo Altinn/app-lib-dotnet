@@ -41,6 +41,7 @@ public class ScopesTests
     [InlineData("altinn:instances.write", "altinn:", true)]
     [InlineData("altinn:instances.write", "altinn:serviceowner", false)]
     [InlineData("altinn:serviceowner/instances.write", "altinn:serviceowner", true)]
+    [InlineData("altinn:serviceowner/instances.write", "altinn:serviceowner/", true)]
     [InlineData("ALTINN:serviceowner/instances.write", "altinn:serviceowner", false)]
     [InlineData("test:altinn:serviceowner/instances.write", "altinn:serviceowner", false)]
     [InlineData("aaltinn:serviceowner/instances.write", "altinn:serviceowner", false)]
@@ -50,6 +51,36 @@ public class ScopesTests
     public void HasScopePrefix_Returns(string? inputScopes, string prefixToCheck, bool expected)
     {
         var scopes = new Scopes(inputScopes);
-        Assert.Equal(expected, scopes.HasScopePrefix(prefixToCheck));
+        Assert.Equal(expected, scopes.HasScopeWithPrefix(prefixToCheck));
+    }
+
+    public static TheoryData<string, string[]> IterationInputs = new()
+    {
+        { "scope1 scope2", ["scope1", "scope2"] },
+        { " scope1 scope2", ["scope1", "scope2"] },
+        { " scope1 scope2 ", ["scope1", "scope2"] },
+        { " scope1  scope2 ", ["scope1", "scope2"] },
+        { " scope1  scope2 scope3 ", ["scope1", "scope2", "scope3"] },
+        { "scope1", ["scope1"] },
+        { " scope1", ["scope1"] },
+        { "scope1 ", ["scope1"] },
+        { " scope1 ", ["scope1"] },
+        { "", [] },
+        { null!, [] },
+        { " ", [] },
+    };
+
+    [Theory]
+    [MemberData(nameof(IterationInputs))]
+    public void Iteration(string? inputScopes, string[] expectedScopes)
+    {
+        var scopes = new Scopes(inputScopes);
+        int i = 0;
+        foreach (var scope in scopes)
+        {
+            Assert.True(expectedScopes[i].AsSpan().SequenceEqual(scope));
+            i++;
+        }
+        Assert.Equal(i, expectedScopes.Length);
     }
 }
