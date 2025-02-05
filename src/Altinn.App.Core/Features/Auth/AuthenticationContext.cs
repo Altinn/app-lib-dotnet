@@ -1,5 +1,4 @@
 using Altinn.App.Core.Configuration;
-using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
@@ -19,7 +18,7 @@ internal sealed class AuthenticationContext : IAuthenticationContext
     private readonly IProfileClient _profileClient;
     private readonly IAltinnPartyClient _altinnPartyClient;
     private readonly IAuthorizationClient _authorizationClient;
-    private readonly IAppMetadata _appMetadata;
+    private readonly IAppConfigurationCache _appConfigurationCache;
 
     public AuthenticationContext(
         IHttpContextAccessor httpContextAccessor,
@@ -28,7 +27,7 @@ internal sealed class AuthenticationContext : IAuthenticationContext
         IProfileClient profileClient,
         IAltinnPartyClient altinnPartyClient,
         IAuthorizationClient authorizationClient,
-        IAppMetadata appMetadata
+        IAppConfigurationCache appConfigurationCache
     )
     {
         _httpContextAccessor = httpContextAccessor;
@@ -37,7 +36,7 @@ internal sealed class AuthenticationContext : IAuthenticationContext
         _profileClient = profileClient;
         _altinnPartyClient = altinnPartyClient;
         _authorizationClient = authorizationClient;
-        _appMetadata = appMetadata;
+        _appConfigurationCache = appConfigurationCache;
     }
 
     // Currently we're coupling this to the HTTP context directly.
@@ -64,14 +63,14 @@ internal sealed class AuthenticationContext : IAuthenticationContext
                         _appSettings.CurrentValue.RuntimeCookieName
                     ),
                     isAuthenticated: httpContext.User?.Identity?.IsAuthenticated ?? false,
+                    _appConfigurationCache.ApplicationMetadata,
                     () => _httpContext.Request.Cookies[_generalSettings.CurrentValue.GetAltinnPartyCookieName],
                     _profileClient.GetUserProfile,
                     _altinnPartyClient.GetParty,
                     (string orgNr) => _altinnPartyClient.LookupParty(new PartyLookup { OrgNo = orgNr }),
                     _authorizationClient.GetPartyList,
                     _authorizationClient.ValidateSelectedParty,
-                    _authorizationClient.GetUserRoles,
-                    _appMetadata.GetApplicationMetadata
+                    _authorizationClient.GetUserRoles
                 );
                 httpContext.Items[ItemsKey] = authInfo;
             }
