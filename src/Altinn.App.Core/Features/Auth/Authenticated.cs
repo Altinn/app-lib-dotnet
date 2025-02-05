@@ -165,9 +165,9 @@ public abstract class Authenticated
 
             var userProfile =
                 await _getUserProfile(UserId)
-                ?? throw new InvalidOperationException("Could not get user profile while getting user context");
+                ?? throw new AuthenticationContextException($"Could not get user profile for logged in user: {UserId}");
             if (userProfile.Party is null)
-                throw new InvalidOperationException("Could not get user party from profile");
+                throw new AuthenticationContextException($"Could not get user party from profile for user: {UserId}");
 
             var lookupPartyTask =
                 SelectedPartyId == userProfile.PartyId
@@ -182,7 +182,9 @@ public abstract class Authenticated
 
             var selectedParty = await lookupPartyTask;
             if (selectedParty is null)
-                throw new InvalidOperationException("Could not load party for selected party ID");
+                throw new AuthenticationContextException(
+                    $"Could not load party for selected party ID: {SelectedPartyId}"
+                );
 
             var representsSelf = SelectedPartyId == userProfile.PartyId;
             bool? canRepresent = null;
@@ -292,7 +294,9 @@ public abstract class Authenticated
 
             var userProfile =
                 await _getUserProfile(UserId)
-                ?? throw new InvalidOperationException("Could not get user profile while getting user context");
+                ?? throw new AuthenticationContextException(
+                    $"Could not get user profile for logged in self identified user: {UserId}"
+                );
 
             var party = userProfile.Party;
             _extra = new Details(party, userProfile, RepresentsSelf: true);
@@ -632,17 +636,25 @@ public abstract class Authenticated
             // which is going away, probably.
             // If we want `Org` to always have party ID, then we need to do a lookup with AltinnPartyClient (register)
             if (!int.TryParse(partyIdClaim.Value, CultureInfo.InvariantCulture, out var partyIdClaimValue))
-                throw new InvalidOperationException("Invalid party ID claim value for token");
+                throw new AuthenticationContextException(
+                    $"Invalid party ID claim value for token: {partyIdClaim.Value}"
+                );
             partyId = partyIdClaimValue;
         }
 
         static void ParseAuthLevel(string? value, out int authLevel)
         {
+            if (string.IsNullOrWhiteSpace(value))
+                throw new AuthenticationContextException($"Missing authentication level claim value for token");
             if (!int.TryParse(value, CultureInfo.InvariantCulture, out authLevel))
-                throw new InvalidOperationException("Missing authentication level claim value for token");
+                throw new AuthenticationContextException(
+                    $"Invalid authentication level claim value for token: {value}"
+                );
 
-            if (authLevel is < 0 or > 4) // TODO - better validation?
-                throw new InvalidOperationException("Invalid authentication level claim value for token");
+            if (authLevel is < 0 or > 4)
+                throw new AuthenticationContextException(
+                    $"Invalid authentication level claim value for token: {authLevel}"
+                );
         }
 
         int authLevel;
@@ -652,20 +664,30 @@ public abstract class Authenticated
                 authorizationDetailsClaim.Value
             );
             if (authorizationDetails is null)
-                throw new InvalidOperationException("Invalid authorization details claim value for token");
+                throw new AuthenticationContextException(
+                    "Invalid authorization details claim value for systemuser token"
+                );
             if (authorizationDetails is not SystemUserAuthorizationDetailsClaim systemUser)
-                throw new InvalidOperationException("Unsupported authorization details claim value for token");
+                throw new AuthenticationContextException(
+                    $"Unsupported authorization details claim value for systemuser token: {authorizationDetails.GetType().Name}"
+                );
 
             if (systemUser is null)
-                throw new InvalidOperationException("Invalid system user authorization details claim value for token");
+                throw new AuthenticationContextException(
+                    "Invalid system user authorization details claim value for systemuser token"
+                );
             if (systemUser.SystemUserId is null || systemUser.SystemUserId.Count == 0)
-                throw new InvalidOperationException("Missing system user ID claim for system user token");
+                throw new AuthenticationContextException("Missing system user ID claim for systemuser token");
             if (string.IsNullOrWhiteSpace(systemUser.SystemId))
-                throw new InvalidOperationException("Missing system ID claim for system user token");
+                throw new AuthenticationContextException("Missing system ID claim for systemuser token");
             if (systemUser.SystemUserOrg.Authority != "iso6523-actorid-upis")
-                throw new InvalidOperationException("Unsupported organisation authority in system user token");
+                throw new AuthenticationContextException(
+                    $"Unsupported organisation authority in systemuser token: {systemUser.SystemUserOrg.Authority}"
+                );
             if (!OrganisationNumber.TryParse(systemUser.SystemUserOrg.Id, out var orgNr))
-                throw new InvalidOperationException("Invalid organisation number in system user token");
+                throw new AuthenticationContextException(
+                    $"Invalid organisation number in systemuser token: {systemUser.SystemUserOrg.Id}"
+                );
 
             return new SystemUser(
                 systemUser.SystemUserId,
@@ -684,11 +706,9 @@ public abstract class Authenticated
             // In this case the token should have a serviceowner scope,
             // due to the `urn:altinn:org` claim
             if (string.IsNullOrWhiteSpace(orgNoClaim?.Value))
-                throw new InvalidOperationException("Missing org number claim for service owner token");
-            if (!string.IsNullOrWhiteSpace(partyIdClaim?.Value))
-                throw new InvalidOperationException("Got service owner token");
+                throw new AuthenticationContextException("Missing org number claim for service owner token");
             if (string.IsNullOrWhiteSpace(authMethodClaim?.Value))
-                throw new InvalidOperationException("Missing authentication method claim for service owner token");
+                throw new AuthenticationContextException("Missing authentication method claim for service owner token");
 
             ParseAuthLevel(authLevelClaim?.Value, out authLevel);
 
@@ -709,7 +729,7 @@ public abstract class Authenticated
         {
             ParseAuthLevel(authLevelClaim?.Value, out authLevel);
             if (string.IsNullOrWhiteSpace(authMethodClaim?.Value))
-                throw new InvalidOperationException("Missing authentication method claim for org token");
+                throw new AuthenticationContextException("Missing authentication method claim for org token");
 
             return new Org(
                 orgNoClaim.Value,
@@ -723,20 +743,22 @@ public abstract class Authenticated
         }
 
         if (string.IsNullOrWhiteSpace(userIdClaim?.Value))
-            throw new InvalidOperationException("Missing user ID claim for user token");
+            throw new AuthenticationContextException("Missing user ID claim for user token");
         if (!int.TryParse(userIdClaim.Value, CultureInfo.InvariantCulture, out int userId))
-            throw new InvalidOperationException("Invalid user ID claim value for user token");
+            throw new AuthenticationContextException(
+                $"Invalid user ID claim value for user token: {userIdClaim.Value}"
+            );
 
         if (partyId is null)
-            throw new InvalidOperationException("Missing party ID for user token");
+            throw new AuthenticationContextException("Missing party ID for user token");
         if (string.IsNullOrWhiteSpace(authMethodClaim?.Value))
-            throw new InvalidOperationException("Missing authentication method claim for user token");
+            throw new AuthenticationContextException("Missing authentication method claim for user token");
 
         ParseAuthLevel(authLevelClaim?.Value, out authLevel);
         if (authLevel == 0)
         {
             if (string.IsNullOrWhiteSpace(usernameClaim?.Value))
-                throw new InvalidOperationException("Missing username claim for self-identified user token");
+                throw new AuthenticationContextException("Missing username claim for self-identified user token");
 
             return new SelfIdentifiedUser(
                 usernameClaim.Value,
@@ -754,7 +776,7 @@ public abstract class Authenticated
         if (getSelectedParty() is { } selectedPartyStr)
         {
             if (!int.TryParse(selectedPartyStr, CultureInfo.InvariantCulture, out var selectedParty))
-                throw new InvalidOperationException("Invalid party ID in cookie: " + selectedPartyStr);
+                throw new AuthenticationContextException($"Invalid party ID in cookie: {selectedPartyStr}"); // TODO: maybe not throw?
 
             selectedPartyId = selectedParty;
         }

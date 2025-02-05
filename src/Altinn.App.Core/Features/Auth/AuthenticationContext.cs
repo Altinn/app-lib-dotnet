@@ -47,7 +47,7 @@ internal sealed class AuthenticationContext : IAuthenticationContext
     // to decouple ourselves from the ASP.NET request context.
     // TODO: consider removing dependcy on HTTP context
     private HttpContext _httpContext =>
-        _httpContextAccessor.HttpContext ?? throw new InvalidOperationException("No HTTP context available");
+        _httpContextAccessor.HttpContext ?? throw new AuthenticationContextException("No HTTP context available");
 
     public Authenticated Current
     {
@@ -79,7 +79,9 @@ internal sealed class AuthenticationContext : IAuthenticationContext
             {
                 authInfo =
                     authInfoObj as Authenticated
-                    ?? throw new Exception("Unexpected type for authentication info in HTTP context");
+                    ?? throw new AuthenticationContextException(
+                        "Unexpected type for authentication info in HTTP context"
+                    );
             }
             return authInfo;
         }
