@@ -545,7 +545,7 @@ internal sealed class SigningService(
         return new SigneeContext
         {
             TaskId = taskId,
-            OriginalParty = personParty,
+            OriginalParty = orgParty ?? personParty,
             SocialSecurityNumber = signDocument.SigneeInfo.PersonNumber,
             FullName = personParty.Person.Name,
             OnBehalfOfOrganisation = orgParty is null
