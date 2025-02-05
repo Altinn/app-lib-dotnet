@@ -29,7 +29,7 @@ public class SigningServiceTests
     private readonly Mock<ISigningDelegationService> _signingDelegationService = new(MockBehavior.Strict);
     private readonly Mock<ISigningNotificationService> _signingNotificationService = new(MockBehavior.Strict);
     private readonly Mock<ISigneeProvider> _signeeProvider = new(MockBehavior.Strict);
-    private readonly Mock<ILogger<SigningService>> _logger = new(MockBehavior.Strict);
+    private readonly Mock<ILogger<SigningService>> _logger = new();
     private readonly Mock<IAppMetadata> _appMetadata = new(MockBehavior.Strict);
     private readonly Mock<IHttpContextAccessor> _httpContextAccessor = new(MockBehavior.Strict);
     private readonly Mock<ISignClient> _signClient = new(MockBehavior.Strict);
