@@ -30,4 +30,10 @@ internal class PdfGeneratorRequest
     /// Provides a list of cookies Puppeteer will need to create before sending the request.
     /// </summary>
     public List<PdfGeneratorCookieOptions> Cookies { get; set; } = new();
+
+    public Boolean DisplayHeaderFooter { get; set; } = new();
+
+    public String HeaderTemplate { get; set; } = string.Empty;
+
+    public String FooterTemplate { get; set; } = string.Empty;
 }

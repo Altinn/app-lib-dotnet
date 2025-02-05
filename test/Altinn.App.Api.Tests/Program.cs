@@ -95,6 +95,7 @@ void ConfigureMockServices(IServiceCollection services, ConfigurationManager con
     services.AddTransient<IEventHandler, DummyFailureEventHandler>();
     services.AddTransient<IEventHandler, DummySuccessEventHandler>();
     services.AddTransient<IAppMetadata, AppMetadataMock>();
+    services.AddTransient<IAppResources, AppResourcesMock>();
     services.AddTransient<IDataClient, DataClientMock>();
     services.AddTransient<IAltinnPartyClient, AltinnPartyClientMock>();
     services.AddTransient<IProfileClient, ProfileClientMock>();
@@ -105,6 +106,14 @@ void ConfigureMockServices(IServiceCollection services, ConfigurationManager con
 void Configure()
 {
     app.UseSwagger(o => o.RouteTemplate = "/swagger/{documentName}/swagger.{json|yaml}");
+
+    // app.Use(
+    //     async (context, next) =>
+    //     {
+    //         context.Response.Headers["Content-Security-Policy"] = "default-src 'self';";
+    //         await next.Invoke();
+    //     }
+    // );
 
     // Enable middleware to serve generated Swagger as a JSON endpoint.
     // This is used for testing, and don't use the appId prefix used in real apps
