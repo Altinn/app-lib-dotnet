@@ -459,7 +459,7 @@ public abstract class Authenticated
             IReadOnlyList<string> systemUserId,
             OrganisationNumber systemUserOrgNr,
             string systemId,
-            int? authentictaionLevel,
+            int? authenticationLevel,
             string? authenticationMethod,
             TokenIssuer tokenIssuer,
             bool tokenIsExchanged,
@@ -473,7 +473,7 @@ public abstract class Authenticated
             SystemId = systemId;
             // System user tokens can either be raw Maskinporten or exchanged atm.
             // If the token is not exchanged, we don't have these claims and so we default to what altinn-authentication currently does.
-            AuthenticationLevel = authentictaionLevel ?? 3;
+            AuthenticationLevel = authenticationLevel ?? 3;
             AuthenticationMethod = authenticationMethod ?? "maskinporten";
             _lookupParty = lookupParty;
         }
