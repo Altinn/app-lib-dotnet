@@ -48,7 +48,7 @@ public class ActionsController : ControllerBase
         IDataClient dataClient,
         IAppMetadata appMetadata,
         ModelSerializationService modelSerialization,
-        IServiceProvider serviceProvider
+        IAuthenticationContext authenticationContext
     )
     {
         _authorization = authorization;
@@ -58,7 +58,7 @@ public class ActionsController : ControllerBase
         _dataClient = dataClient;
         _appMetadata = appMetadata;
         _modelSerialization = modelSerialization;
-        _authenticationContext = serviceProvider.GetRequiredService<IAuthenticationContext>();
+        _authenticationContext = authenticationContext;
     }
 
     /// <summary>

@@ -46,7 +46,6 @@ public class PdfControllerTests
     );
 
     private readonly Mock<IAuthenticationContext> _authenticationContext = new();
-    private readonly Mock<IServiceProvider> _serviceProvider = new();
 
     private readonly Mock<ILogger<PdfService>> _logger = new();
 
@@ -67,9 +66,6 @@ public class PdfControllerTests
             );
 
         _authenticationContext.Setup(s => s.Current).Returns(TestAuthentication.GetUserAuthentication());
-        _serviceProvider
-            .Setup(s => s.GetService(typeof(IAuthenticationContext)))
-            .Returns(_authenticationContext.Object);
     }
 
     private PdfService NewPdfService(
@@ -86,7 +82,7 @@ public class PdfControllerTests
             _pdfGeneratorSettingsOptions,
             generalSettingsOptions,
             _logger.Object,
-            _serviceProvider.Object
+            _authenticationContext.Object
         );
         return pdfService;
     }

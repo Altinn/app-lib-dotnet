@@ -43,7 +43,6 @@ public class PdfServiceTests
     private readonly Mock<IUserTokenProvider> _userTokenProvider;
 
     private readonly Mock<IAuthenticationContext> _authenticationContext = new();
-    private readonly Mock<IServiceProvider> _serviceProvider = new();
 
     private readonly Mock<ILogger<PdfService>> _logger = new();
 
@@ -69,9 +68,6 @@ public class PdfServiceTests
         _userTokenProvider.Setup(s => s.GetUserToken()).Returns("usertoken");
 
         _authenticationContext.Setup(s => s.Current).Returns(TestAuthentication.GetUserAuthentication());
-        _serviceProvider
-            .Setup(s => s.GetService(typeof(IAuthenticationContext)))
-            .Returns(_authenticationContext.Object);
     }
 
     [Fact]
@@ -309,7 +305,7 @@ public class PdfServiceTests
         Mock<IPdfGeneratorClient>? pdfGeneratorClient = null,
         IOptions<PdfGeneratorSettings>? pdfGeneratorSettingsOptions = null,
         IOptions<GeneralSettings>? generalSettingsOptions = null,
-        Mock<IServiceProvider>? serviceProvider = null,
+        Mock<IAuthenticationContext>? authenticationContext = null,
         TelemetrySink? telemetrySink = null
     )
     {
@@ -321,7 +317,7 @@ public class PdfServiceTests
             pdfGeneratorSettingsOptions ?? _pdfGeneratorSettingsOptions,
             generalSettingsOptions ?? _generalSettingsOptions,
             _logger.Object,
-            serviceProvider?.Object ?? _serviceProvider.Object,
+            authenticationContext?.Object ?? _authenticationContext.Object,
             telemetrySink?.Object
         );
     }

@@ -9,7 +9,6 @@ using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
@@ -44,7 +43,7 @@ public class PdfService : IPdfService
     /// <param name="pdfGeneratorSettings">PDF generator related settings.</param>
     /// <param name="generalSettings">The app general settings.</param>
     /// <param name="logger">The logger.</param>
-    /// <param name="serviceProvider">The service provider.</param>
+    /// <param name="authenticationContext">The auth context.</param>
     /// <param name="telemetry">Telemetry for metrics and traces.</param>
     public PdfService(
         IAppResources appResources,
@@ -54,7 +53,7 @@ public class PdfService : IPdfService
         IOptions<PdfGeneratorSettings> pdfGeneratorSettings,
         IOptions<GeneralSettings> generalSettings,
         ILogger<PdfService> logger,
-        IServiceProvider serviceProvider,
+        IAuthenticationContext authenticationContext,
         Telemetry? telemetry = null
     )
     {
@@ -65,7 +64,7 @@ public class PdfService : IPdfService
         _pdfGeneratorSettings = pdfGeneratorSettings.Value;
         _generalSettings = generalSettings.Value;
         _logger = logger;
-        _authenticationContext = serviceProvider.GetRequiredService<IAuthenticationContext>();
+        _authenticationContext = authenticationContext;
         _telemetry = telemetry;
     }
 
