@@ -138,9 +138,11 @@ internal sealed class SigningService(
             ? await DownloadSigneeContexts(instanceDataAccessor, signatureConfiguration)
             : [];
 
+        var taskId = instanceDataAccessor.Instance.Process.CurrentTask.ElementId;
+
         List<SignDocument> signDocuments = await DownloadSignDocuments(instanceDataAccessor, signatureConfiguration);
 
-        await SynchronizeSigneeContextsWithSignDocuments(instanceDataAccessor, signeeContexts, signDocuments);
+        await SynchronizeSigneeContextsWithSignDocuments(taskId, signeeContexts, signDocuments);
 
         return signeeContexts;
     }
@@ -488,7 +490,7 @@ internal sealed class SigningService(
     /// This method exists to ensure we have a SigneeContext for both signees that have been delegated access to sign and signees that have signed using access granted through the policy.xml file.
     /// </summary>
     private async Task SynchronizeSigneeContextsWithSignDocuments(
-        IInstanceDataAccessor instanceDataAccessor,
+        string taskId,
         List<SigneeContext> signeeContexts,
         List<SignDocument> signDocuments
     )
@@ -508,32 +510,24 @@ internal sealed class SigningService(
             else
             {
                 // If the signee has signed using access granted through the policy.xml file, there is no persisted signee context. We create a signee context on the fly.
-                SigneeContext signeeContext = await CreateSigneeContextFromSignDocument(
-                    instanceDataAccessor,
-                    signDocument
-                );
+                SigneeContext signeeContext = await CreateSigneeContextFromSignDocument(taskId, signDocument);
 
                 signeeContexts.Add(signeeContext);
             }
         }
     }
 
-    private async Task<SigneeContext> CreateSigneeContextFromSignDocument(
-        IInstanceDataAccessor instanceDataAccessor,
-        SignDocument signDocument
-    )
+    private async Task<SigneeContext> CreateSigneeContextFromSignDocument(string taskId, SignDocument signDocument)
     {
         Party party = await altinnPartyClient.LookupParty(
-            new PartyLookup
-            {
-                Ssn = signDocument.SigneeInfo.OrganisationNumber is null ? signDocument.SigneeInfo.PersonNumber : null,
-                OrgNo = signDocument.SigneeInfo.OrganisationNumber,
-            }
+            string.IsNullOrEmpty(signDocument.SigneeInfo.OrganisationNumber)
+                ? new PartyLookup { Ssn = signDocument.SigneeInfo.PersonNumber }
+                : new PartyLookup { OrgNo = signDocument.SigneeInfo.OrganisationNumber }
         );
 
         return new SigneeContext
         {
-            TaskId = instanceDataAccessor.Instance.Process.CurrentTask.ElementId,
+            TaskId = taskId,
             OriginalParty = party,
             SigneeState = new SigneeState()
             {
