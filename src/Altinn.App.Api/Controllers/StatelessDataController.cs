@@ -55,8 +55,7 @@ public class StatelessDataController : ControllerBase
         IAltinnPartyClient altinnPartyClientClient,
         IPDP pdp,
         IAuthenticationContext authenticationContext,
-        IServiceProvider serviceProvider
-        IEnumerable<IDataProcessor> dataProcessors,
+        IServiceProvider serviceProvider,
         IValidateQueryParamPrefill validateQueryParamPrefill
     )
     {

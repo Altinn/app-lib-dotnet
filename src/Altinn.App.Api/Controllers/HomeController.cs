@@ -139,6 +139,7 @@ public class HomeController : Controller
             .Select(item =>
             {
                 var prefillJson = _appResources.GetPrefillJson(item);
+
                 if (string.IsNullOrEmpty(prefillJson))
                 {
                     return null;
