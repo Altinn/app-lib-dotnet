@@ -344,11 +344,21 @@ internal sealed class SigningService(
             await _userHelper.GetUserContext(context)
             ?? throw new Exception("Could not get user profile while getting signee");
 
+        _logger.LogInformation(
+            "User profile retrieved for signee: {UserProfile}",
+            JsonSerializer.Serialize(userProfile)
+        );
+
+        _logger.LogInformation("User party SSN retrieved for signee: {X}", userProfile.UserParty.SSN);
+        _logger.LogInformation("User party OrgNr retrieved for signee: {X}", userProfile.UserParty.OrgNumber);
+        _logger.LogInformation("Party SSN retrieved for signee: {X}", userProfile.Party.SSN);
+        _logger.LogInformation("Party OrgNr retrieved for signee: {X}", userProfile.Party.OrgNumber);
+
         return new Signee
         {
             UserId = userProfile.UserId.ToString(CultureInfo.InvariantCulture),
-            PersonNumber = userProfile.SocialSecurityNumber,
-            OrganisationNumber = userProfile.Party.OrgNumber,
+            PersonNumber = userProfile.UserParty.SSN,
+            OrganisationNumber = userProfile.UserParty.OrgNumber,
         };
     }
 
