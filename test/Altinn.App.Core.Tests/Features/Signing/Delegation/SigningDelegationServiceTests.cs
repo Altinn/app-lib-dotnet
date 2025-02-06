@@ -20,7 +20,7 @@ public class SigningDelegationServiceTests
         var service = new SigningDelegationService(accessManagementClient.Object, logger.Object);
         var taskId = "taskId";
         var instanceId = "instanceOwnerPartyId/instanceGuid";
-        var delegatorParty = new Party();
+        Guid InstanceOwnerPartyUuid = Guid.NewGuid();
         var appIdentifier = new AppIdentifier("testOrg", "testApp");
         var signeeContexts = new List<SigneeContext>()
         {
@@ -37,7 +37,7 @@ public class SigningDelegationServiceTests
         (signeeContexts, var success) = await service.RevokeSigneeRights(
             taskId,
             instanceId,
-            delegatorParty,
+            InstanceOwnerPartyUuid,
             appIdentifier,
             signeeContexts,
             ct
@@ -60,7 +60,7 @@ public class SigningDelegationServiceTests
         var service = new SigningDelegationService(accessManagementClient.Object, logger.Object);
         var taskId = "taskId";
         var instanceId = "instanceOwnerPartyId/instanceGuid";
-        var delegatorParty = new Party();
+        Guid InstanceOwnerPartyUuid = Guid.NewGuid();
         var appIdentifier = new AppIdentifier("testOrg", "testApp");
         var signeeContexts = new List<SigneeContext>()
         {
@@ -77,7 +77,7 @@ public class SigningDelegationServiceTests
         (signeeContexts, var success) = await service.RevokeSigneeRights(
             taskId,
             instanceId,
-            delegatorParty,
+            InstanceOwnerPartyUuid,
             appIdentifier,
             signeeContexts,
             ct
@@ -101,7 +101,7 @@ public class SigningDelegationServiceTests
         var service = new SigningDelegationService(accessManagementClient.Object, logger.Object);
         var taskId = "taskId";
         var instanceId = "instanceOwnerPartyId/instanceGuid";
-        var delegatorParty = new Party();
+        Guid InstanceOwnerPartyUuid = Guid.NewGuid();
         var appIdentifier = new AppIdentifier("testOrg", "testApp");
         var signeeContexts = new List<SigneeContext>()
         {
@@ -118,7 +118,7 @@ public class SigningDelegationServiceTests
         (signeeContexts, var success) = await service.DelegateSigneeRights(
             taskId,
             instanceId,
-            delegatorParty,
+            InstanceOwnerPartyUuid,
             appIdentifier,
             signeeContexts,
             ct
@@ -141,7 +141,7 @@ public class SigningDelegationServiceTests
         var service = new SigningDelegationService(accessManagementClient.Object, logger.Object);
         var taskId = "taskId";
         var instanceId = "instanceOwnerPartyId/instanceGuid";
-        var delegatorParty = new Party();
+        Guid InstanceOwnerPartyUuid = Guid.NewGuid();
         var appIdentifier = new AppIdentifier("testOrg", "testApp");
         var signeeContexts = new List<SigneeContext>()
         {
@@ -158,7 +158,7 @@ public class SigningDelegationServiceTests
         (signeeContexts, var success) = await service.DelegateSigneeRights(
             taskId,
             instanceId,
-            delegatorParty,
+            InstanceOwnerPartyUuid,
             appIdentifier,
             signeeContexts,
             ct
