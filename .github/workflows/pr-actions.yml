@@ -1,0 +1,87 @@
+name: PR actions
+on:
+  issue_comment:
+    types: [created, edited]
+jobs:
+  publish:
+    name: Publish PR packages
+    runs-on: ubuntu-latest
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/publish')
+    env:
+      DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE: false
+    steps:
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ format('refs/pull/{0}/head', github.event.issue.number) }}
+          fetch-depth: 0
+
+      - name: Build PR release version
+        id: build-version
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          sha=$(gh pr view ${{ github.event.issue.number }} --repo ${{ github.repository }} --json headRefOid | jq -r '.headRefOid' | cut -c1-8)
+          branch=$(gh pr view ${{ github.event.issue.number }} --repo ${{ github.repository }} --json headRefName | jq -r '.headRefName' | sed 's/.*\///')
+          version=$(git describe --abbrev=0 --tags 2>/dev/null)
+          version=$(echo $version | cut -d '-' -f 1)
+          version="$version-pr.${{ github.run_number }}.$branch.$sha"
+          version=$(echo $version | sed 's/^v//')
+          echo "MINVERVERSIONOVERRIDE=$version" >> $GITHUB_ENV
+          echo "PR_RELEASE_VERSION=$version" >> $GITHUB_OUTPUT
+          echo $version
+
+      - name: Create PR comment
+        uses: peter-evans/create-or-update-comment@v4
+        id: pr-comment
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            ## PR release:
+
+            * [Altinn.App.Api ${{ steps.build-version.outputs.PR_RELEASE_VERSION }}](https://www.nuget.org/packages/Altinn.App.Api.Experimental/${{ steps.build-version.outputs.PR_RELEASE_VERSION }})
+            * [Altinn.App.Core ${{ steps.build-version.outputs.PR_RELEASE_VERSION }}](https://www.nuget.org/packages/Altinn.App.Core.Experimental/${{ steps.build-version.outputs.PR_RELEASE_VERSION }})
+
+            > ⚙️ Building...
+
+      - name: Build
+        run: |
+          dotnet build AppLibDotnet.sln -v m -c Release -p:Deterministic=true -p:BuildNumber=${{ github.run_number }}
+      - name: Test
+        run: |
+          dotnet test AppLibDotnet.sln -v m --no-restore --no-build -c Release
+      - name: Pack PR release
+        run: |
+          dotnet pack AppLibDotnet.sln -v m --no-restore --no-build -c Release -p:Deterministic=true -p:BuildNumber=${{ github.run_number }}
+      - name: Versions
+        run: |
+          dotnet --version
+      - name: Publish PR release
+        run: |
+          dotnet nuget push src/**/bin/Release/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate
+
+      - name: Update PR comment - failure
+        uses: peter-evans/create-or-update-comment@v4
+        if: failure()
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          comment-id: ${{ steps.pr-comment.outputs.comment-id }}
+          edit-mode: append
+          body: |
+            > ❌ Failed: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+      - name: Update PR comment - success
+        uses: peter-evans/create-or-update-comment@v4
+        if: success()
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          comment-id: ${{ steps.pr-comment.outputs.comment-id }}
+          edit-mode: append
+          body: |
+            > ✅ Done!
+          reactions: rocket

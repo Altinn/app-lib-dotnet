@@ -1,6 +1,8 @@
 using Altinn.App.Api.Controllers;
+using Altinn.App.Api.Tests.Utils;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Infrastructure.Clients.Pdf;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Auth;
@@ -33,7 +35,6 @@ public class PdfControllerTests
 
     private readonly Mock<IAppResources> _appResources = new();
     private readonly Mock<IDataClient> _dataClient = new();
-    private readonly Mock<IProfileClient> _profile = new();
     private readonly IOptions<PlatformSettings> _platformSettingsOptions = Options.Create<PlatformSettings>(new() { });
     private readonly Mock<IInstanceClient> _instanceClient = new();
     private readonly Mock<IPdfFormatter> _pdfFormatter = new();
@@ -43,6 +44,8 @@ public class PdfControllerTests
     private readonly IOptions<PdfGeneratorSettings> _pdfGeneratorSettingsOptions = Options.Create<PdfGeneratorSettings>(
         new() { }
     );
+
+    private readonly Mock<IAuthenticationContext> _authenticationContext = new();
 
     private readonly Mock<ILogger<PdfService>> _logger = new();
 
@@ -61,6 +64,27 @@ public class PdfControllerTests
                     }
                 )
             );
+
+        _authenticationContext.Setup(s => s.Current).Returns(TestAuthentication.GetUserAuthentication());
+    }
+
+    private PdfService NewPdfService(
+        Mock<IHttpContextAccessor> httpContextAccessor,
+        PdfGeneratorClient pdfGeneratorClient,
+        IOptions<GeneralSettings> generalSettingsOptions
+    )
+    {
+        var pdfService = new PdfService(
+            _appResources.Object,
+            _dataClient.Object,
+            httpContextAccessor.Object,
+            pdfGeneratorClient,
+            _pdfGeneratorSettingsOptions,
+            generalSettingsOptions,
+            _logger.Object,
+            _authenticationContext.Object
+        );
+        return pdfService;
     }
 
     [Fact]
@@ -80,23 +104,17 @@ public class PdfControllerTests
         var handler = new Mock<HttpMessageHandler>();
         var httpClient = new HttpClient(handler.Object);
 
+        var logger = new Mock<ILogger<PdfGeneratorClient>>();
+
         var pdfGeneratorClient = new PdfGeneratorClient(
+            logger.Object,
             httpClient,
             _pdfGeneratorSettingsOptions,
             _platformSettingsOptions,
             _userTokenProvider.Object,
             httpContextAccessor.Object
         );
-        var pdfService = new PdfService(
-            _appResources.Object,
-            _dataClient.Object,
-            httpContextAccessor.Object,
-            _profile.Object,
-            pdfGeneratorClient,
-            _pdfGeneratorSettingsOptions,
-            generalSettingsOptions,
-            _logger.Object
-        );
+        var pdfService = NewPdfService(httpContextAccessor, pdfGeneratorClient, generalSettingsOptions);
         var pdfController = new PdfController(
             _instanceClient.Object,
             _pdfFormatter.Object,
@@ -156,23 +174,17 @@ public class PdfControllerTests
         var handler = new Mock<HttpMessageHandler>();
         var httpClient = new HttpClient(handler.Object);
 
+        var logger = new Mock<ILogger<PdfGeneratorClient>>();
+
         var pdfGeneratorClient = new PdfGeneratorClient(
+            logger.Object,
             httpClient,
             _pdfGeneratorSettingsOptions,
             _platformSettingsOptions,
             _userTokenProvider.Object,
             httpContextAccessor.Object
         );
-        var pdfService = new PdfService(
-            _appResources.Object,
-            _dataClient.Object,
-            httpContextAccessor.Object,
-            _profile.Object,
-            pdfGeneratorClient,
-            _pdfGeneratorSettingsOptions,
-            generalSettingsOptions,
-            _logger.Object
-        );
+        var pdfService = NewPdfService(httpContextAccessor, pdfGeneratorClient, generalSettingsOptions);
         var pdfController = new PdfController(
             _instanceClient.Object,
             _pdfFormatter.Object,
@@ -234,23 +246,17 @@ public class PdfControllerTests
         var handler = new Mock<HttpMessageHandler>();
         var httpClient = new HttpClient(handler.Object);
 
+        var logger = new Mock<ILogger<PdfGeneratorClient>>();
+
         var pdfGeneratorClient = new PdfGeneratorClient(
+            logger.Object,
             httpClient,
             _pdfGeneratorSettingsOptions,
             _platformSettingsOptions,
             _userTokenProvider.Object,
             httpContextAccessor.Object
         );
-        var pdfService = new PdfService(
-            _appResources.Object,
-            _dataClient.Object,
-            httpContextAccessor.Object,
-            _profile.Object,
-            pdfGeneratorClient,
-            _pdfGeneratorSettingsOptions,
-            generalSettingsOptions,
-            _logger.Object
-        );
+        var pdfService = NewPdfService(httpContextAccessor, pdfGeneratorClient, generalSettingsOptions);
         var pdfController = new PdfController(
             _instanceClient.Object,
             _pdfFormatter.Object,

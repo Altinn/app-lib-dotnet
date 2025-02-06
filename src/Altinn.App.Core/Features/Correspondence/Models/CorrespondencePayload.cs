@@ -4,35 +4,27 @@ using Altinn.App.Core.Models;
 namespace Altinn.App.Core.Features.Correspondence.Models;
 
 /// <summary>
-/// Defines an authorisation method to use with the correspondence server
-/// </summary>
-public enum CorrespondenceAuthorisation
-{
-    /// <summary>
-    /// Uses the built-in <see cref="MaskinportenClient"/> for authorization
-    /// </summary>
-    Maskinporten,
-}
-
-/// <summary>
-/// Authorisation properties which are common for all correspondence interaction
+/// Authorisation properties which are common for all correspondence interaction.
 /// </summary>
 public abstract record CorrespondencePayloadBase
 {
     internal Func<Task<JwtToken>>? AccessTokenFactory { get; init; }
 
     internal CorrespondenceAuthorisation? AuthorisationMethod { get; init; }
+
+    internal abstract string RequiredScope { get; }
 }
 
 /// <summary>
-/// Represents the payload for sending a correspondence
+/// Represents the payload for sending a correspondence.
 /// </summary>
 public sealed record SendCorrespondencePayload : CorrespondencePayloadBase
 {
     internal CorrespondenceRequest CorrespondenceRequest { get; init; }
+    internal override string RequiredScope => CorrespondenceApiScopes.Write;
 
     /// <summary>
-    /// Instantiates a new payload for <see cref="SendCorrespondencePayload"/>
+    /// Instantiates a new payload for <see cref="SendCorrespondencePayload"/>.
     /// </summary>
     /// <param name="request">The correspondence request to send</param>
     /// <param name="accessTokenFactory">Access token factory delegate (e.g. <see cref="MaskinportenClient.GetAltinnExchangedToken"/>) to use for authorisation</param>
@@ -43,7 +35,7 @@ public sealed record SendCorrespondencePayload : CorrespondencePayloadBase
     }
 
     /// <summary>
-    /// Instantiates a new payload for <see cref="SendCorrespondencePayload"/>
+    /// Instantiates a new payload for <see cref="SendCorrespondencePayload"/>.
     /// </summary>
     /// <param name="request">The correspondence request to send</param>
     /// <param name="authorisation">The built-in authorisation method to use</param>
@@ -55,17 +47,15 @@ public sealed record SendCorrespondencePayload : CorrespondencePayloadBase
 }
 
 /// <summary>
-/// Represents a payload for querying the status of a correspondence
+/// Represents a payload for querying the status of a correspondence.
 /// </summary>
 public sealed record GetCorrespondenceStatusPayload : CorrespondencePayloadBase
 {
-    /// <summary>
-    /// The correspondence identifier
-    /// </summary>
-    public Guid CorrespondenceId { get; init; }
+    internal Guid CorrespondenceId { get; init; }
+    internal override string RequiredScope => CorrespondenceApiScopes.Write;
 
     /// <summary>
-    /// Instantiates a new payload for <see cref="CorrespondenceClient.GetStatus"/>
+    /// Instantiates a new payload for <see cref="CorrespondenceClient.GetStatus"/>.
     /// </summary>
     /// <param name="correspondenceId">The correspondence identifier to retrieve information about</param>
     /// <param name="accessTokenFactory">Access token factory delegate (e.g. <see cref="MaskinportenClient.GetAltinnExchangedToken"/>) to use for authorisation</param>
@@ -76,7 +66,7 @@ public sealed record GetCorrespondenceStatusPayload : CorrespondencePayloadBase
     }
 
     /// <summary>
-    /// Instantiates a new payload for <see cref="CorrespondenceClient.GetStatus"/>
+    /// Instantiates a new payload for <see cref="CorrespondenceClient.GetStatus"/>.
     /// </summary>
     /// <param name="correspondenceId">The correspondence identifier to retrieve information about</param>
     /// <param name="authorisation">The built-in authorisation method to use</param>
