@@ -102,9 +102,8 @@ internal static partial class UnicodeDateTimeTokenConverter
                 var converted = when.Value.ToString(dotNetToken, culture);
                 converted = token switch
                 {
-                    "a" when converted == "am" && language == "nn" => "f.m.",
-                    "a" when converted == "am" => "a.m.",
-                    "a" when converted == "pm" => "p.m.",
+                    // Localization of AM/PM is very locale dependent the norwegian translations does not have wide recognition
+                    "a" => when.Value.Hour <= 12 ? "AM" : "PM",
                     // This does not exist in .NET, but it's just the first letter of the day name.
                     "EEEEE" => converted.Substring(0, 1).ToUpper(culture),
                     // Remove the century from the year
