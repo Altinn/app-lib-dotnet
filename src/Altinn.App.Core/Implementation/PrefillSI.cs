@@ -307,7 +307,8 @@ public class PrefillSI : IPrefill
 
             if (string.IsNullOrEmpty(target))
             {
-                string errorMessage = $"Could not prefill, a target value was not set for source: {source}";
+                string errorMessage =
+                    $"Could not prefill, a target value was not set for source: {source.Replace(Environment.NewLine, "")}";
                 _logger.LogError(errorMessage);
                 throw new Exception(errorMessage);
             }

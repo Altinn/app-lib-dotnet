@@ -170,12 +170,7 @@ public class HomeControllerTest : ApiTestBase, IClassFixture<WebApplicationFacto
         var responseString = await response.Content.ReadAsStringAsync();
         OutputHelper.WriteLine(responseString);
         OutputHelper.WriteLine(response.Headers.ToString());
-
-        //response.Headers.GetValues().
-
         var cspHeaderCount = response.Headers.Count(h => h.Key == "Content-Security-Policy");
         Assert.Equal(1, cspHeaderCount);
-
-        //Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 }
