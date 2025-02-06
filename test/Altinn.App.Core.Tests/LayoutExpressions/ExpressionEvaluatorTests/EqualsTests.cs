@@ -36,7 +36,7 @@ public class EqualTests(ITestOutputHelper outputHelper)
     public static TheoryData<object> GetExoticTypes =>
         new()
         {
-            "hello world",
+            "hello \"world\"",
             "123",
             true,
             false,
@@ -70,9 +70,9 @@ public class EqualTests(ITestOutputHelper outputHelper)
         outputHelper.WriteLine($"   expressionValue: {expressionValue}");
         // Verify that the EqualsToString method returns the same value as the JsonSerializer.
         var toStringForEquals = ExpressionEvaluator.ToStringForEquals(expressionValue);
-        if (expressionValue.ValueKind == JsonValueKind.String)
+        if (value is string)
         {
-            // double serialize strings to add quotes
+            // Compare string to value
             Assert.Equal(json, JsonSerializer.Serialize(toStringForEquals));
         }
         else

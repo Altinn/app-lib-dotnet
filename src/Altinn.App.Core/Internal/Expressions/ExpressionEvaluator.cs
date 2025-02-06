@@ -83,43 +83,10 @@ public static class ExpressionEvaluator
         {
             return expr.ValueUnion;
         }
+        ValidateExpressionArgs(expr);
         var args = new ExpressionValue[expr.Args.Count];
         for (var i = 0; i < args.Length; i++)
         {
-            // Some arguments should not be evaluated as expressions in order to keep compatibility with frontend.
-            // This may be possible for this code to evaluate, but frontend may not be able to.
-            if (expr.Function == ExpressionFunction.dataModel && i == 1 && expr.Args[i].IsFunctionExpression)
-            {
-                throw new ExpressionEvaluatorTypeErrorException(
-                    "The data type must be a string (expressions cannot be used here)"
-                );
-            }
-            if (expr.Function == ExpressionFunction.@if && i == 2 && expr.Args[i].IsFunctionExpression)
-            {
-                throw new ExpressionEvaluatorTypeErrorException("Expected third argument to be \"else\"");
-            }
-            if (expr.Function == ExpressionFunction.compare)
-            {
-                if (args.Length == 4 && i == 1 && expr.Args[i].IsFunctionExpression)
-                {
-                    throw new ExpressionEvaluatorTypeErrorException(
-                        "Second argument must be \"not\" when providing 4 arguments in total"
-                    );
-                }
-                if (args.Length == 4 && i == 2 && expr.Args[i].IsFunctionExpression)
-                {
-                    throw new ExpressionEvaluatorTypeErrorException(
-                        "Invalid operator (it cannot be an expression or null)"
-                    );
-                }
-                if (args.Length == 3 && i == 1 && expr.Args[i].IsFunctionExpression)
-                {
-                    throw new ExpressionEvaluatorTypeErrorException(
-                        "Invalid operator (it cannot be an expression or null)"
-                    );
-                }
-            }
-
             args[i] = await EvaluateExpression_internal(state, expr.Args[i], context, positionalArguments);
         }
 
@@ -163,6 +130,29 @@ public static class ExpressionEvaluator
             _ => throw new ExpressionEvaluatorTypeErrorException("Function not implemented", expr.Function, args),
         };
         return ret;
+    }
+
+    private static void ValidateExpressionArgs(Expression expr)
+    {
+        switch (expr)
+        {
+            case { Function: ExpressionFunction.dataModel, Args: [_, { IsFunctionExpression: true }] }:
+                throw new ExpressionEvaluatorTypeErrorException(
+                    "The data type must be a string (expressions cannot be used here)"
+                );
+            case { Function: ExpressionFunction.@if, Args: [_, _, { IsFunctionExpression: true }, _] }:
+                throw new ExpressionEvaluatorTypeErrorException("Expected third argument to be \"else\"");
+            case { Function: ExpressionFunction.compare, Args: [_, { IsFunctionExpression: true }, _] }:
+            case { Function: ExpressionFunction.compare, Args: [_, _, { IsFunctionExpression: true }, _] }:
+                throw new ExpressionEvaluatorTypeErrorException(
+                    "Invalid operator (it cannot be an expression or null)"
+                );
+            case { Function: ExpressionFunction.compare, Args: [_, { IsFunctionExpression: true }, _, _] }:
+                throw new ExpressionEvaluatorTypeErrorException(
+                    "Second argument must be \"not\" when providing 4 arguments in total"
+                );
+        }
+        ;
     }
 
     private static string InstanceContext(LayoutEvaluatorState state, ExpressionValue[] args)
@@ -330,24 +320,25 @@ public static class ExpressionEvaluator
 
     private static string? FormatDate(ExpressionValue[] args, LayoutEvaluatorState state)
     {
-        if (args.Length < 1 || args.Length > 2)
+        if (args.Length is < 1 or > 2)
         {
             throw new ExpressionEvaluatorTypeErrorException($"Expected 1-2 argument(s), got {args.Length}");
         }
 
-        DateTime? date = PrepareDateArg(args[0]);
+        DateTimeOffset? date = PrepareDateArg(args[0], out var hasTimezone);
         if (date is null)
         {
             return null;
         }
 
-        if (date.GetValueOrDefault().Kind != DateTimeKind.Unspecified)
+        if (hasTimezone)
         {
-            var targetTimeZone = state.GetTimeZone() ?? TimeZoneInfo.Local;
-            date = TimeZoneInfo.ConvertTime(date.GetValueOrDefault(), targetTimeZone);
+            // If the date has a timezone, we need to convert it to the user's timezone before displaying it
+            var timezone = state.GetTimeZone();
+            date = TimeZoneInfo.ConvertTime(date.Value, timezone);
         }
 
-        string language = state?.GetLanguage() ?? "nb";
+        string language = state.GetLanguage() ?? "nb";
         return UnicodeDateTimeTokenConverter.Format(
             date,
             args.Length == 2 ? ToStringForEquals(args[1]) : null,
@@ -396,80 +387,54 @@ public static class ExpressionEvaluator
             "isAfter" => DateIsAfter(passOnArgs),
             "isBeforeEq" => DateIsBeforeEq(passOnArgs),
             "isAfterEq" => DateIsAfterEq(passOnArgs),
-            "isSameDay" => DateIsSameDay(passOnArgs),
+            "isSameDay" => DateIsSameDay(a, b),
             _ => throw new ExpressionEvaluatorTypeErrorException($"Invalid operator \"{opString}\""),
         };
     }
 
-    private static DateTime? PrepareDateArg(ExpressionValue arg)
+    private static DateTimeOffset? PrepareDateArg(ExpressionValue arg, out bool hasTimezone)
     {
-        if (arg.ValueKind != JsonValueKind.String)
-        {
-            return null;
-        }
-        var dateStr = arg.String;
+        var dateStr = (
+            arg switch
+            {
+                { ValueKind: JsonValueKind.String } => arg.String,
+                { ValueKind: JsonValueKind.Null } => null,
+                _ => throw new ExpressionEvaluatorTypeErrorException(
+                    $"Date expressions only accept strings or null, got {arg.ToString()} of type {arg.ValueKind}"
+                ),
+            }
+        );
         if (string.IsNullOrWhiteSpace(dateStr))
         {
+            hasTimezone = false;
             return null;
         }
-
-        var datePatterns = new[]
-        {
-            // These are duplicated in frontend, and limits the date formats that can be used in expressions to
-            // only those that match these patterns (marking a baseline for what we support).
-            @"^(\d{4})$",
-            @"^(\d{4})-(\d{2})-(\d{2})T?$",
-            @"^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})Z?([+-]\d{2}:\d{2})?$",
-            @"^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})Z?([+-]\d{2}:\d{2})?$",
-            @"^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})\.(\d+)Z?([+-]\d{2}:\d{2})?$",
-        };
-
-        foreach (var pattern in datePatterns)
-        {
-            var match = Regex.Match(
-                dateStr,
-                pattern,
-                RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.ECMAScript
-            );
-            if (!match.Success)
-            {
-                continue;
-            }
-            if (match.Groups.Count == 2)
-            {
-                // If only a year is provided, assume January 1st
-                return new DateTime(int.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture), 1, 1);
-            }
-
-            try
-            {
-                return DateTime.Parse(dateStr, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
-            }
-            catch (Exception)
-            {
-                throw new ExpressionEvaluatorTypeErrorException(
-                    $"Unable to parse date \"{dateStr}\": Format was recognized, but the date/time is invalid"
-                );
-            }
-        }
-
-        if (dateStr.Trim() != "")
+        var date = UnicodeDateTimeTokenConverter.Parse(dateStr, out hasTimezone);
+        if (date is null)
         {
             throw new ExpressionEvaluatorTypeErrorException($"Unable to parse date \"{dateStr}\": Unknown format");
         }
 
-        return null;
+        return date;
     }
 
-    private static (DateTime?, DateTime?) PrepareDateArgs(ExpressionValue[] args)
+    private static (DateTimeOffset?, DateTimeOffset?) PrepareDateArgs(ExpressionValue[] args)
     {
         if (args.Length != 2)
         {
             throw new ExpressionEvaluatorTypeErrorException("Invalid number of args for date compare");
         }
 
-        var a = PrepareDateArg(args[0]);
-        var b = PrepareDateArg(args[1]);
+        var a = PrepareDateArg(args[0], out bool aHasTimezone);
+        var b = PrepareDateArg(args[1], out bool bHasTimezone);
+        if (a.HasValue && b.HasValue && aHasTimezone != bHasTimezone)
+        {
+            throw new ExpressionEvaluatorTypeErrorException(
+                "Can not compare timestamps with timezone info against timestamps withou timezone info",
+                ExpressionFunction.compare,
+                args
+            );
+        }
 
         return (a, b);
     }
@@ -498,10 +463,34 @@ public static class ExpressionEvaluator
         return a >= b;
     }
 
-    private static bool DateIsSameDay(ExpressionValue[] args)
+    private static bool DateIsSameDay(ExpressionValue aExpr, ExpressionValue bExpr)
     {
-        var (a, b) = PrepareDateArgs(args);
-        return a?.Date == b?.Date;
+        var a = PrepareDateArg(aExpr, out bool aHasTimezone);
+        var b = PrepareDateArg(bExpr, out bool bHasTimezone);
+        if (!a.HasValue || !b.HasValue)
+        {
+            return false;
+        }
+
+        if (aHasTimezone != bHasTimezone)
+        {
+            throw new ExpressionEvaluatorTypeErrorException(
+                "Can not compare timestamps where only one specify timezone",
+                ExpressionFunction.compare,
+                [aExpr, "isSameDay", bExpr]
+            );
+        }
+
+        if (a.Value.Offset != b.Value.Offset)
+        {
+            throw new ExpressionEvaluatorTypeErrorException(
+                "Can not figure out if timestamps in different timezones are in the same day",
+                ExpressionFunction.compare,
+                [aExpr, "isSameDay", bExpr]
+            );
+        }
+
+        return a.Value.Date == b.Value.Date;
     }
 
     private static bool EndsWith(ExpressionValue[] args)

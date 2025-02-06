@@ -27,6 +27,12 @@ public class LayoutEvaluatorState
     /// <summary>
     /// Constructor for LayoutEvaluatorState. Usually called via <see cref="LayoutEvaluatorStateInitializer" /> that can be fetched from dependency injection.
     /// </summary>
+    /// <param name="dataAccessor">Accessor for the instance data</param>
+    /// <param name="componentModel">The component model for the current layout</param>
+    /// <param name="frontEndSettings">The frontend settings for the current app</param>
+    /// <param name="gatewayAction">The gateway action (only for gateways)</param>
+    /// <param name="language">The language of the instance viewer</param>
+    /// <param name="timeZone">The timezone of the instance viewer</param>
     public LayoutEvaluatorState(
         IInstanceDataAccessor dataAccessor,
         LayoutModel? componentModel,
@@ -74,7 +80,7 @@ public class LayoutEvaluatorState
     /// <summary>
     /// Gets the current timezone
     /// </summary>
-    public TimeZoneInfo? GetTimeZone() => _timeZone;
+    public TimeZoneInfo GetTimeZone() => _timeZone ?? TimeZoneInfo.Utc;
 
     /// <summary>
     /// Get component from componentModel

@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
@@ -63,8 +62,36 @@ public class TestFunctions
     public async Task Language_Theory(string testName, string folder) => await RunTestCase(testName, folder);
 
     [Theory]
-    [SharedTest("compare")]
-    public async Task Compare_Theory(string testName, string folder) => await RunTestCase(testName, folder);
+    [SharedTest("compare-equals")]
+    public async Task CompareEquals_Theory(string testName, string folder) => await RunTestCase(testName, folder);
+
+    [Theory]
+    [SharedTest("compare-error")]
+    public async Task CompareError_Theory(string testName, string folder) => await RunTestCase(testName, folder);
+
+    [Theory]
+    [SharedTest("compare-greaterThan")]
+    public async Task CompareGreaterThan_Theory(string testName, string folder) => await RunTestCase(testName, folder);
+
+    [Theory]
+    [SharedTest("compare-isAfter")]
+    public async Task CompareIsAfter_Theory(string testName, string folder) => await RunTestCase(testName, folder);
+
+    [Theory]
+    [SharedTest("compare-isAfterEq")]
+    public async Task CompareIsAfterEq_Theory(string testName, string folder) => await RunTestCase(testName, folder);
+
+    [Theory]
+    [SharedTest("compare-isBefore")]
+    public async Task CompareIsBefore_Theory(string testName, string folder) => await RunTestCase(testName, folder);
+
+    [Theory]
+    [SharedTest("compare-isBeforeEq")]
+    public async Task CompareIsBeforeEq_Theory(string testName, string folder) => await RunTestCase(testName, folder);
+
+    [Theory]
+    [SharedTest("compare-isSameDay")]
+    public async Task CompareIsSameDay_Theory(string testName, string folder) => await RunTestCase(testName, folder);
 
     [Theory]
     [SharedTest("contains")]
@@ -204,7 +231,8 @@ public class TestFunctions
     private async Task RunTestCase(string testName, string folder)
     {
         var test = await LoadTestCase(testName, folder);
-        _output.WriteLine($"{test.Filename} in {test.Folder}");
+        _output.WriteLine(test.Name);
+        _output.WriteLine($"{test.Folder}{Path.DirectorySeparatorChar}{test.Filename}");
         _output.WriteLine(test.RawJson);
         _output.WriteLine(test.FullPath);
 
@@ -296,7 +324,7 @@ public class TestFunctions
             test.FrontEndSettings ?? new FrontEndSettings(),
             test.GatewayAction,
             test.ProfileSettings?.Language,
-            TimeZoneInfo.Utc // Frontend uses UTC in tests, we should too (otherwise the default is local)
+            TimeZoneInfo.Utc // Frontend uses UTC when formating dates
         );
 
         ComponentContext? context = null;
@@ -311,26 +339,65 @@ public class TestFunctions
             ).First();
         }
 
-        if (test.ExpectsFailure is not null)
+        if (test.ExpectsFailure is not null && test.ParsingException is not null)
         {
-            if (test.ParsingException is not null)
-            {
-                test.ParsingException.Message.Should().Be(test.ExpectsFailure);
-            }
-            else
-            {
-                Func<Task> act = async () =>
-                {
-                    await ExpressionEvaluator.EvaluateExpression(state, test.Expression, context!, positionalArguments);
-                };
-                (await act.Should().ThrowAsync<Exception>()).WithMessage($"*{test.ExpectsFailure}*");
-            }
-
+            test.ParsingException.Message.Should().Be(test.ExpectsFailure);
             return;
         }
 
         test.ParsingException.Should().BeNull("Loading of test failed");
 
+        await RunTestCaseItem(
+            new ExpressionTestCaseRoot.TestCaseItem()
+            {
+                Expects = test.Expects,
+                Expression = test.Expression,
+                ExpectsFailure = test.ExpectsFailure,
+            },
+            state,
+            context,
+            positionalArguments
+        );
+
+        if (test.TestCases != null)
+        {
+            foreach (var testCase in test.TestCases)
+            {
+                await RunTestCaseItem(testCase, state, context, positionalArguments);
+            }
+        }
+    }
+
+    private async Task RunTestCaseItem(
+        ExpressionTestCaseRoot.TestCaseItem test,
+        LayoutEvaluatorState state,
+        ComponentContext? context,
+        object?[]? positionalArguments
+    )
+    {
+        if (test.ExpectsFailure is not null)
+        {
+            _output.WriteLine($"Expecting failure: {test.ExpectsFailure}");
+            _output.WriteLine($"Expression: {test.Expression}");
+            _output.WriteLine("");
+            Func<Task> act = async () =>
+            {
+                var evaluationResult = await ExpressionEvaluator.EvaluateExpression(
+                    state,
+                    test.Expression,
+                    context!,
+                    positionalArguments
+                );
+                _output.WriteLine($"Unexpected result: {evaluationResult}");
+            };
+            (await act.Should().ThrowAsync<Exception>()).WithMessage($"*{test.ExpectsFailure}*");
+
+            return;
+        }
+
+        _output.WriteLine($"Expecting success: {test.Expects}");
+        _output.WriteLine($"Expression: {test.Expression}");
+        _output.WriteLine("");
         var result = await ExpressionEvaluator.EvaluateExpression(
             state,
             test.Expression,
