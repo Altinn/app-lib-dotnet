@@ -100,7 +100,6 @@ void ConfigureMockServices(IServiceCollection services, ConfigurationManager con
     services.AddTransient<IEventHandler, DummySuccessEventHandler>();
     services.AddTransient<IAppMetadata, AppMetadataMock>();
     services.AddSingleton<IAppConfigurationCache, AppConfigurationCacheMock>();
-    services.AddTransient<IAppResources, AppResourcesMock>();
     services.AddTransient<IDataClient, DataClientMock>();
     services.AddTransient<IAltinnPartyClient, AltinnPartyClientMock>();
     services.AddTransient<IProfileClient, ProfileClientMock>();
