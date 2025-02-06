@@ -10,10 +10,14 @@ namespace Altinn.App.Api.Extensions;
 public static class HttpClientBuilderExtensions
 {
     /// <summary>
-    /// <p>Authorises all requests with Maskinporten using the provided scopes,
-    /// and injects the resulting token in the Authorization header using the Bearer scheme.</p>
-    /// <p>If your target API does <em>not</em> use this authorisation scheme, you should consider implementing
-    /// <see cref="MaskinportenClient.GetAccessToken"/> directly and handling the specifics manually.</p>
+    /// <para>
+    /// Authorises all requests with Maskinporten using the provided scopes,
+    /// and injects the resulting token in the Authorization header using the Bearer scheme.
+    /// </para>
+    /// <para>
+    /// If your target API does <em>not</em> use this authorisation scheme, you should consider implementing
+    /// <see cref="MaskinportenClient.GetAccessToken"/> directly and handling the specifics manually.
+    /// </para>
     /// </summary>
     /// <param name="builder">The Http client builder</param>
     /// <param name="scope">The scope to claim authorization for with Maskinporten</param>
@@ -28,11 +32,15 @@ public static class HttpClientBuilderExtensions
     }
 
     /// <summary>
-    /// <p>Authorises all requests with Maskinporten using the provided scopes.
+    /// <para>
+    /// Authorises all requests with Maskinporten using the provided scopes.
     /// The resulting token is then exchanged for an Altinn issued token and injected in
-    /// the Authorization header using the Bearer scheme.</p>
-    /// <p>If your target API does <em>not</em> use this authorisation scheme, you should consider implementing
-    /// <see cref="MaskinportenClient.GetAltinnExchangedToken(IEnumerable{string}, CancellationToken)"/> directly and handling the specifics manually.</p>
+    /// the Authorization header using the Bearer scheme.
+    /// </para>
+    /// <para>
+    /// If your target API does <em>not</em> use this authorisation scheme, you should consider implementing
+    /// <see cref="MaskinportenClient.GetAltinnExchangedToken(IEnumerable{string}, CancellationToken)"/> directly and handling the specifics manually.
+    /// </para>
     /// </summary>
     /// <param name="builder">The Http client builder</param>
     /// <param name="scope">The scope to claim authorization for with Maskinporten</param>

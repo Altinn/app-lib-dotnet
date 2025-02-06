@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models.Expressions;
@@ -64,9 +63,6 @@ public class ExpressionTestCaseRoot
     [JsonPropertyName("profileSettings")]
     public ProfileSettings? ProfileSettings { get; set; }
 
-    [JsonPropertyName("positionalArguments")]
-    public List<JsonElement>? PositionalArguments { get; set; }
-
     public override string ToString()
     {
         return $"{Filename}: {Name}";
@@ -109,9 +105,10 @@ public class ComponentContextForTestSpec
         return new ComponentContext(
             component,
             RowIndices,
+            rowLength: component is RepeatingGroupComponent ? 0 : null,
             // TODO: get from data model, but currently not important for tests
             state.GetDefaultDataElementId(),
-            ChildContexts.Select(c => c.ToContext(model, state)).ToList()
+            ChildContexts.Select(c => c.ToContext(model, state))
         );
     }
 
@@ -120,17 +117,10 @@ public class ComponentContextForTestSpec
         ArgumentNullException.ThrowIfNull(context.Component);
         ArgumentNullException.ThrowIfNull(context.Component.Id);
         ArgumentNullException.ThrowIfNull(context.Component.PageId);
-        var id = context.Component.Id;
-
-        // Remove guid from the end of the id
-        if (Regex.IsMatch(id, @".*_[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}"))
-        {
-            id = id.Substring(0, id.LastIndexOf('_'));
-        }
 
         return new ComponentContextForTestSpec
         {
-            ComponentId = id,
+            ComponentId = context.Component.Id,
             CurrentPageName = context.Component.PageId,
             ChildContexts = context.ChildContexts?.Select(FromContext) ?? [],
             RowIndices = context.RowIndices,

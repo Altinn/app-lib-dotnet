@@ -1,5 +1,7 @@
 using System.Net;
+using System.Net.Http.Headers;
 using Altinn.App.Api.Tests.Data;
+using Altinn.App.Api.Tests.Utils;
 using Altinn.App.Core.Features;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
@@ -26,18 +28,18 @@ public class DataController_UserAccessTests : ApiTestBase, IClassFixture<WebAppl
     }
 
     [Theory]
-    [InlineData("userInteractionUnspecified", false, HttpStatusCode.Created)]
-    [InlineData("userInteractionUnspecified", true, HttpStatusCode.Created)]
-    [InlineData("disallowUserCreate", false, HttpStatusCode.BadRequest)]
-    [InlineData("disallowUserCreate", true, HttpStatusCode.Created)]
+    [InlineData("userInteractionUnspecified", null, HttpStatusCode.Created)]
+    [InlineData("userInteractionUnspecified", OrgId, HttpStatusCode.Created)]
+    [InlineData("disallowUserCreate", null, HttpStatusCode.BadRequest)]
+    [InlineData("disallowUserCreate", OrgId, HttpStatusCode.Created)]
     public async Task CreateDataElement_ImplementsAndValidates_AllowUserCreateProperty(
         string dataModelId,
-        bool actAsOrg,
+        string? tokenOrgClaim,
         HttpStatusCode expectedStatusCode
     )
     {
         // Arrange
-        var instance = await CreateAppInstance(actAsOrg);
+        var instance = await CreateAppInstance(tokenOrgClaim);
 
         // Act
         var response = await instance.AuthenticatedClient.PostAsync(
@@ -52,21 +54,25 @@ public class DataController_UserAccessTests : ApiTestBase, IClassFixture<WebAppl
     }
 
     [Theory]
-    [InlineData("userInteractionUnspecified", false, HttpStatusCode.OK)]
-    [InlineData("userInteractionUnspecified", true, HttpStatusCode.OK)]
-    [InlineData("disallowUserDelete", false, HttpStatusCode.OK)]
-    [InlineData("disallowUserDelete", true, HttpStatusCode.OK)]
+    [InlineData("userInteractionUnspecified", null, HttpStatusCode.OK)]
+    [InlineData("userInteractionUnspecified", OrgId, HttpStatusCode.OK)]
+    [InlineData("disallowUserDelete", null, HttpStatusCode.OK)]
+    [InlineData("disallowUserDelete", OrgId, HttpStatusCode.OK)]
     public async Task DeleteDataElement_ImplementsAndValidates_AllowUserDeleteProperty(
         string dataModelId,
-        bool instantiateAsOrg,
+        string? tokenOrgClaim,
         HttpStatusCode expectedStatusCode
     )
     {
         // Arrange
-        var instance = await CreateAppInstance(instantiateAsOrg);
+        var instance = await CreateAppInstance(tokenOrgClaim);
 
         /* Create a datamodel so we have something to delete */
-        using var systemClient = GetRootedOrgClient(OrgId, AppId, serviceOwnerOrg: OrgId);
+        var systemClient = CreateAuthenticatedHttpClient(
+            rootOrg: instance.Org,
+            rootApp: instance.App,
+            tokenOrgClaim: OrgId
+        );
         var createResponse = await systemClient.PostAsync(
             $"/{instance.Org}/{instance.App}/instances/{instance.Id}/data?dataType={dataModelId}",
             null
@@ -87,13 +93,16 @@ public class DataController_UserAccessTests : ApiTestBase, IClassFixture<WebAppl
         TestData.DeleteInstanceAndData(OrgId, AppId, instance.Id);
     }
 
-    private async Task<AppInstance> CreateAppInstance(bool actAsOrg)
+    private async Task<AppInstance> CreateAppInstance(string? tokenOrgClaim)
     {
         var instanceOwnerPartyId = 501337;
         var userId = 1337;
-        HttpClient client = actAsOrg
-            ? GetRootedOrgClient(OrgId, AppId, serviceOwnerOrg: OrgId)
-            : GetRootedUserClient(OrgId, AppId, userId, instanceOwnerPartyId);
+        HttpClient client = CreateAuthenticatedHttpClient(
+            rootOrg: OrgId,
+            rootApp: AppId,
+            tokenUserClaim: userId,
+            tokenOrgClaim: tokenOrgClaim
+        );
 
         var response = await client.PostAsync(
             $"{OrgId}/{AppId}/instances/?instanceOwnerPartyId={instanceOwnerPartyId}",
@@ -102,6 +111,21 @@ public class DataController_UserAccessTests : ApiTestBase, IClassFixture<WebAppl
         var createResponseParsed = await VerifyStatusAndDeserialize<Instance>(response, HttpStatusCode.Created);
 
         return new AppInstance(createResponseParsed.Id, OrgId, AppId, client);
+    }
+
+    private HttpClient CreateAuthenticatedHttpClient(
+        string rootOrg,
+        string rootApp,
+        int? tokenUserClaim = default,
+        int? tokenPartyIdClaim = default,
+        string? tokenOrgClaim = default
+    )
+    {
+        HttpClient client = GetRootedClient(rootOrg, rootApp);
+        string token = PrincipalUtil.GetToken(tokenUserClaim, tokenPartyIdClaim, org: tokenOrgClaim);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        return client;
     }
 
     private record AppInstance(string Id, string Org, string App, HttpClient AuthenticatedClient);

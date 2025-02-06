@@ -219,17 +219,8 @@ public class PageComponentConverter : JsonConverter<PageComponent>
         {
             if (component is GroupComponent groupComponent)
             {
-                foreach (var childID in groupComponent.ChildIDs)
-                {
-                    if (!componentLookup.TryGetValue(childID, out var child))
-                    {
-                        throw new InvalidOperationException(
-                            $"""Group "{component.Id}" references a child with id \"{childID}\" which was not found in layout"""
-                        );
-                    }
-
-                    groupComponent.AddChild(child);
-                }
+                var children = groupComponent.ChildIDs.Select(id => componentLookup[id]).ToList();
+                children.ForEach(c => groupComponent.AddChild(c));
             }
 
             if (!childToGroupMapping.ContainsKey(component.Id))
@@ -242,10 +233,11 @@ public class PageComponentConverter : JsonConverter<PageComponent>
 
     private static void AddToComponentLookup(BaseComponent component, Dictionary<string, BaseComponent> componentLookup)
     {
-        if (!componentLookup.TryAdd(component.Id, component))
+        if (componentLookup.ContainsKey(component.Id))
         {
-            throw new JsonException($"Duplicate key \"{component.Id}\" detected");
+            throw new JsonException($"Duplicate key \"{component.Id}\" detected on page \"{component.PageId}\"");
         }
+        componentLookup[component.Id] = component;
     }
 
     private static readonly Regex _multiPageIndexRegex = new Regex(

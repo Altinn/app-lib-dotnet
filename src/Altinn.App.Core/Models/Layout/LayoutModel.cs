@@ -44,6 +44,23 @@ public class LayoutModel
     }
 
     /// <summary>
+    /// Get all components by recursively walking all the pages.
+    /// </summary>
+    public IEnumerable<BaseComponent> GetComponents()
+    {
+        // Use a stack in order to implement a depth first search
+        var nodes = new Stack<BaseComponent>(_defaultLayoutSet.Pages);
+        while (nodes.Count != 0)
+        {
+            var node = nodes.Pop();
+            yield return node;
+            if (node is GroupComponent groupNode)
+                foreach (var n in groupNode.Children)
+                    nodes.Push(n);
+        }
+    }
+
+    /// <summary>
     /// Generate a list of <see cref="ComponentContext"/> for all components in the layout model
     /// taking repeating groups into account.
     /// </summary>
@@ -95,6 +112,7 @@ public class LayoutModel
             _ => new ComponentContext(
                 component,
                 indexes?.Length > 0 ? indexes : null,
+                null,
                 defaultDataElementIdentifier,
                 []
             ),
@@ -119,6 +137,7 @@ public class LayoutModel
         return new ComponentContext(
             groupComponent,
             indexes?.Length > 0 ? indexes : null,
+            null,
             defaultDataElementIdentifier,
             children
         );
@@ -131,28 +150,21 @@ public class LayoutModel
         int[]? indexes
     )
     {
+        int? rowLength = null;
         var children = new List<ComponentContext>();
         if (repeatingGroupComponent.DataModelBindings.TryGetValue("group", out var groupBinding))
         {
-            var repeatingGroupRowComponent = new RepeatingGroupRowComponent(
-                $"{repeatingGroupComponent.Id}_{Guid.NewGuid()}", // Ensure globally unique id (consider using altinnRowId)
-                repeatingGroupComponent.DataModelBindings,
-                repeatingGroupComponent.HiddenRow,
-                repeatingGroupComponent
-            );
-            var rowLength = await dataModel.GetModelDataCount(groupBinding, defaultDataElementIdentifier, indexes) ?? 0;
-            // We add rows in reverse order, so that we can remove them without affecting the indexes of the remaining rows
-            foreach (var index in Enumerable.Range(0, rowLength).Reverse())
+            rowLength = await dataModel.GetModelDataCount(groupBinding, defaultDataElementIdentifier, indexes) ?? 0;
+            foreach (var index in Enumerable.Range(0, rowLength.Value))
             {
-                // concatenate [...indexes, index]
-                var subIndexes = new int[(indexes?.Length ?? 0) + 1];
-                indexes?.CopyTo(subIndexes.AsSpan());
-                subIndexes[^1] = index;
-
-                var rowChildren = new List<ComponentContext>();
                 foreach (var child in repeatingGroupComponent.Children)
                 {
-                    rowChildren.Add(
+                    // concatenate [...indexes, index]
+                    var subIndexes = new int[(indexes?.Length ?? 0) + 1];
+                    indexes?.CopyTo(subIndexes.AsSpan());
+                    subIndexes[^1] = index;
+
+                    children.Add(
                         await GenerateComponentContextsRecurs(
                             child,
                             dataModel,
@@ -161,21 +173,13 @@ public class LayoutModel
                         )
                     );
                 }
-
-                children.Add(
-                    new ComponentContext(
-                        repeatingGroupRowComponent,
-                        subIndexes,
-                        defaultDataElementIdentifier,
-                        rowChildren
-                    )
-                );
             }
         }
 
         return new ComponentContext(
             repeatingGroupComponent,
             indexes?.Length > 0 ? indexes : null,
+            rowLength,
             defaultDataElementIdentifier,
             children
         );
@@ -200,10 +204,10 @@ public class LayoutModel
                 subForms.Add(await GenerateComponentContextsRecurs(page, dataModel, dataElement, indexes: null));
             }
 
-            children.Add(new ComponentContext(subFormComponent, null, dataElement, subForms));
+            children.Add(new ComponentContext(subFormComponent, null, null, dataElement, subForms));
         }
 
-        return new ComponentContext(subFormComponent, null, defaultDataElementIdentifier, children);
+        return new ComponentContext(subFormComponent, null, null, defaultDataElementIdentifier, children);
     }
 
     internal DataElementIdentifier? GetDefaultDataElementId(Instance instance)

@@ -49,28 +49,16 @@
           url.scheme: http
         },
         {
-          user.authentication.inAltinnPortal: True
-        },
-        {
           user.authentication.level: 2
         },
         {
-          user.authentication.method: BankID
-        },
-        {
-          user.authentication.token.isExchanged: False
-        },
-        {
-          user.authentication.token.issuer: Altinn
-        },
-        {
-          user.authentication.type: User
+          user.authentication.method: Mock
         },
         {
           user.id: 1337
         },
         {
-          user.party.id: 500600
+          user.name: User1337
         }
       ],
       IdFormat: W3C,

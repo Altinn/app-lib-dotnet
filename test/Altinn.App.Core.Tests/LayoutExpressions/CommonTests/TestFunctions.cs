@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
@@ -27,10 +26,6 @@ public class TestFunctions
     {
         _output = output;
     }
-
-    [Theory]
-    [SharedTest("argv")]
-    public async Task Argv_Theory(string testName, string folder) => await RunTestCase(testName, folder);
 
     [Theory]
     [SharedTest("and")]
@@ -199,20 +194,6 @@ public class TestFunctions
             dataAccessor = DynamicClassBuilder.DataAccessorFromJsonDocument(test.Instance, test.DataModels);
         }
 
-        var positionalArguments = test
-            .PositionalArguments?.Select<JsonElement, object?>(e =>
-                e.ValueKind switch
-                {
-                    JsonValueKind.String => e.GetString(),
-                    JsonValueKind.Number => e.GetDouble(),
-                    JsonValueKind.True => true,
-                    JsonValueKind.False => false,
-                    JsonValueKind.Null => null,
-                    _ => throw new NotImplementedException($"JsonElement value kind {e.ValueKind} not implemented"),
-                }
-            )
-            .ToArray();
-
         LayoutModel? componentModel = null;
         if (test.Layouts is not null)
         {
@@ -240,8 +221,7 @@ public class TestFunctions
                     await ExpressionEvaluator.EvaluateExpression(
                         state,
                         test.Expression,
-                        test.Context?.ToContext(componentModel, state)!,
-                        positionalArguments
+                        test.Context?.ToContext(componentModel, state)!
                     );
                 };
                 (await act.Should().ThrowAsync<Exception>()).WithMessage($"*{test.ExpectsFailure}*");
@@ -255,8 +235,7 @@ public class TestFunctions
         var result = await ExpressionEvaluator.EvaluateExpression(
             state,
             test.Expression,
-            test.Context?.ToContext(componentModel, state)!,
-            positionalArguments
+            test.Context?.ToContext(componentModel, state)!
         );
 
         switch (test.Expects.ValueKind)

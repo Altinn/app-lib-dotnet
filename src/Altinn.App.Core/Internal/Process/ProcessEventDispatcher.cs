@@ -13,6 +13,7 @@ namespace Altinn.App.Core.Internal.Process;
 public class ProcessEventDispatcher : IProcessEventDispatcher
 {
     private readonly IInstanceClient _instanceClient;
+    private readonly IInstanceEventClient _instanceEventClient;
     private readonly IEventsClient _eventsClient;
     private readonly IOptions<AppSettings> _appSettings;
     private readonly ILogger<ProcessEventDispatcher> _logger;
@@ -22,12 +23,14 @@ public class ProcessEventDispatcher : IProcessEventDispatcher
     /// </summary>
     public ProcessEventDispatcher(
         IInstanceClient instanceClient,
+        IInstanceEventClient instanceEventClient,
         IEventsClient eventsClient,
         IOptions<AppSettings> appSettings,
         ILogger<ProcessEventDispatcher> logger
     )
     {
         _instanceClient = instanceClient;
+        _instanceEventClient = instanceEventClient;
         _eventsClient = eventsClient;
         _appSettings = appSettings;
         _logger = logger;
@@ -36,7 +39,12 @@ public class ProcessEventDispatcher : IProcessEventDispatcher
     /// <inheritdoc/>
     public async Task<Instance> DispatchToStorage(Instance instance, List<InstanceEvent>? events)
     {
-        Instance updatedInstance = await _instanceClient.UpdateProcessAndEvents(instance, events ?? []);
+        // need to update the instance process and then the instance in case appbase has changed it, e.g. endEvent sets status.archived
+        Instance updatedInstance = await _instanceClient.UpdateProcess(instance);
+        await DispatchProcessEventsToStorage(updatedInstance, events);
+
+        // remember to get the instance anew since AppBase can have updated a data element or stored something in the database.
+        updatedInstance = await _instanceClient.GetInstance(updatedInstance);
 
         return updatedInstance;
     }
@@ -63,6 +71,21 @@ public class ProcessEventDispatcher : IProcessEventDispatcher
             catch (Exception exception)
             {
                 _logger.LogWarning(exception, "Exception when sending event with the Events component");
+            }
+        }
+    }
+
+    private async Task DispatchProcessEventsToStorage(Instance instance, List<InstanceEvent>? events)
+    {
+        string org = instance.Org;
+        string app = instance.AppId.Split("/")[1];
+
+        if (events != null)
+        {
+            foreach (InstanceEvent instanceEvent in events)
+            {
+                instanceEvent.InstanceId = instance.Id;
+                await _instanceEventClient.SaveInstanceEvent(instanceEvent, org, app);
             }
         }
     }

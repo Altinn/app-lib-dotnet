@@ -76,50 +76,29 @@
           "currentLayout": "Page1",
           "children": [
             {
-              "component": "group0",
+              "component": "group1",
               "currentLayout": "Page1",
               "rowIndices": [0],
               "children": [
                 {
-                  "component": "group1",
-                  "rowIndices": [0],
+                  "component": "comp3",
                   "currentLayout": "Page1",
-                  "children": [
-                    {
-                      "component": "group1",
-                      "currentLayout": "Page1",
-                      "rowIndices": [0, 0],
-                      "children": [
-                        {
-                          "component": "comp3",
-                          "currentLayout": "Page1",
-                          "rowIndices": [0, 0]
-                        },
-                        {
-                          "component": "comp4",
-                          "currentLayout": "Page1",
-                          "rowIndices": [0, 0]
-                        }
-                      ]
-                    },
-                    {
-                      "component": "group1",
-                      "currentLayout": "Page1",
-                      "rowIndices": [0, 1],
-                      "children": [
-                        {
-                          "component": "comp3",
-                          "currentLayout": "Page1",
-                          "rowIndices": [0, 1]
-                        },
-                        {
-                          "component": "comp4",
-                          "currentLayout": "Page1",
-                          "rowIndices": [0, 1]
-                        }
-                      ]
-                    }
-                  ]
+                  "rowIndices": [0, 0]
+                },
+                {
+                  "component": "comp4",
+                  "currentLayout": "Page1",
+                  "rowIndices": [0, 0]
+                },
+                {
+                  "component": "comp3",
+                  "currentLayout": "Page1",
+                  "rowIndices": [0, 1]
+                },
+                {
+                  "component": "comp4",
+                  "currentLayout": "Page1",
+                  "rowIndices": [0, 1]
                 }
               ]
             }
@@ -145,14 +124,11 @@
   "dataModel": {
     "group": [
       {
-        "altinnRowId": "row0",
         "subgroup": [
           {
-            "altinnRowId": "row0-child0",
             "asdf": "123"
           },
           {
-            "altinnRowId": "row0-child1",
             "asdf": "456"
           }
         ]

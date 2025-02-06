@@ -16,16 +16,16 @@
           network.protocol.version: 1.1
         },
         {
-          organisation.name: tdd
+          organisation.name: Guid_1
         },
         {
-          organisation.number: 405003309
+          organisation.number: 160694123
         },
         {
           server.address: localhost
         },
         {
-          TestId: Guid_1
+          TestId: Guid_2
         },
         {
           url.path: /tdd/contributer-restriction/api/v1/applicationmetadata
@@ -34,19 +34,10 @@
           url.scheme: http
         },
         {
-          user.authentication.level: 3
+          user.authentication.level: 4
         },
         {
-          user.authentication.method: maskinporten
-        },
-        {
-          user.authentication.token.isExchanged: True
-        },
-        {
-          user.authentication.token.issuer: Maskinporten
-        },
-        {
-          user.authentication.type: ServiceOwner
+          user.authentication.method: Mock
         }
       ],
       IdFormat: W3C,

@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Security.Claims;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Profile;
@@ -14,7 +15,6 @@ namespace Altinn.App.Core.Helpers;
 /// <summary>
 /// The helper for user functionality
 /// </summary>
-[Obsolete("Use Altinn.App.Core.Features.Auth.IAuthenticationContext instead")]
 public class UserHelper
 {
     private readonly IProfileClient _profileClient;
@@ -50,33 +50,28 @@ public class UserHelper
     public async Task<UserContext> GetUserContext(HttpContext context)
     {
         using var activity = _telemetry?.StartGetUserContextActivity();
-        string? partyCookieValue = context.Request.Cookies[_settings.GetAltinnPartyCookieName];
-        Dictionary<string, string> tokenClaims = context.User.Claims.ToDictionary(
-            x => x.Type,
-            y => y.Value,
-            StringComparer.Ordinal
-        );
 
-        UserContext userContext = new()
+        UserContext userContext = new UserContext() { User = context.User };
+
+        foreach (Claim claim in context.User.Claims)
         {
-            User = context.User,
-            UserName = tokenClaims.GetValueOrDefault(AltinnCoreClaimTypes.UserName),
-            UserId = tokenClaims.GetValueOrDefault(AltinnCoreClaimTypes.UserId) switch
+            if (claim.Type.Equals(AltinnCoreClaimTypes.UserName, StringComparison.Ordinal))
             {
-                { } value => Convert.ToInt32(value, CultureInfo.InvariantCulture),
-                _ => default,
-            },
-            PartyId = tokenClaims.GetValueOrDefault(AltinnCoreClaimTypes.PartyID) switch
+                userContext.UserName = claim.Value;
+            }
+            else if (claim.Type.Equals(AltinnCoreClaimTypes.UserId, StringComparison.Ordinal))
             {
-                { } value => Convert.ToInt32(value, CultureInfo.InvariantCulture),
-                _ => default,
-            },
-            AuthenticationLevel = tokenClaims.GetValueOrDefault(AltinnCoreClaimTypes.AuthenticationLevel) switch
+                userContext.UserId = Convert.ToInt32(claim.Value, CultureInfo.InvariantCulture);
+            }
+            else if (claim.Type.Equals(AltinnCoreClaimTypes.PartyID, StringComparison.Ordinal))
             {
-                { } value => Convert.ToInt32(value, CultureInfo.InvariantCulture),
-                _ => default,
-            },
-        };
+                userContext.PartyId = Convert.ToInt32(claim.Value, CultureInfo.InvariantCulture);
+            }
+            else if (claim.Type.Equals(AltinnCoreClaimTypes.AuthenticationLevel, StringComparison.Ordinal))
+            {
+                userContext.AuthenticationLevel = Convert.ToInt32(claim.Value, CultureInfo.InvariantCulture);
+            }
+        }
 
         if (userContext.UserId == default)
         {
@@ -86,23 +81,24 @@ public class UserHelper
         UserProfile userProfile =
             await _profileClient.GetUserProfile(userContext.UserId)
             ?? throw new Exception("Could not get user profile while getting user context");
-
-        if (partyCookieValue is not null)
-            userContext.PartyId = Convert.ToInt32(partyCookieValue, CultureInfo.InvariantCulture);
-
         userContext.UserParty = userProfile.Party;
 
-        if (userContext.PartyId == userProfile.PartyId)
-            userContext.Party = userProfile.Party;
-        else if (userContext.PartyId != default)
-            userContext.Party = await _altinnPartyClientService.GetParty(userContext.PartyId);
+        if (context.Request.Cookies[_settings.GetAltinnPartyCookieName] != null)
+        {
+            userContext.PartyId = Convert.ToInt32(
+                context.Request.Cookies[_settings.GetAltinnPartyCookieName],
+                CultureInfo.InvariantCulture
+            );
+        }
 
-        if (!string.IsNullOrWhiteSpace(userContext.Party?.SSN))
-            userContext.SocialSecurityNumber = userContext.Party.SSN;
-        else if (!string.IsNullOrWhiteSpace(userContext.Party?.Person?.SSN))
-            userContext.SocialSecurityNumber = userContext.Party.Person.SSN;
-        else if (!string.IsNullOrWhiteSpace(userContext.UserParty?.SSN))
-            userContext.SocialSecurityNumber = userContext.UserParty.SSN;
+        if (userContext.PartyId == userProfile.PartyId)
+        {
+            userContext.Party = userProfile.Party;
+        }
+        else
+        {
+            userContext.Party = await _altinnPartyClientService.GetParty(userContext.PartyId);
+        }
 
         return userContext;
     }

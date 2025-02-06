@@ -11,7 +11,6 @@ using Altinn.App.Api.Infrastructure.Telemetry;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
-using Altinn.App.Core.Features.Cache;
 using Altinn.App.Core.Features.Correspondence.Extensions;
 using Altinn.App.Core.Features.Maskinporten;
 using Altinn.App.Core.Features.Maskinporten.Extensions;
@@ -45,10 +44,6 @@ public static class ServiceCollectionExtensions
     /// </summary>
     public static void AddAltinnAppControllersWithViews(this IServiceCollection services)
     {
-        // We add this here because it uses a hosted service and we want it to run as early as possible
-        // so that consumers of the cache can rely on it being available.
-        services.AddAppConfigurationCache();
-
         // Add API controllers from Altinn.App.Api
         IMvcBuilder mvcBuilder = services.AddControllersWithViews(options =>
         {
@@ -127,9 +122,13 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// <p>Configures the <see cref="MaskinportenClient"/> service with a configuration object which will be static for the lifetime of the service.</p>
-    /// <p>If you have already provided a <see cref="MaskinportenSettings"/> configuration, either manually or
-    /// implicitly via <see cref="WebHostBuilderExtensions.ConfigureAppWebHost"/>, this will be overridden.</p>
+    /// <para>
+    /// Configures the <see cref="MaskinportenClient"/> service with a configuration object which will be static for the lifetime of the service.
+    /// </para>
+    /// <para>
+    /// If you have already provided a <see cref="MaskinportenSettings"/> configuration, either manually or
+    /// implicitly via <see cref="WebHostBuilderExtensions.ConfigureAppWebHost"/>, this will be overridden.
+    /// </para>
     /// </summary>
     /// <param name="services">The service collection</param>
     /// <param name="configureOptions">
@@ -146,9 +145,13 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// <p>Binds a <see cref="MaskinportenClient"/> configuration to the supplied config section path.</p>
-    /// <p>If you have already provided a <see cref="MaskinportenSettings"/> configuration, either manually or
-    /// implicitly via <see cref="WebHostBuilderExtensions.ConfigureAppWebHost"/>, this will be overridden.</p>
+    /// <para>
+    /// Binds a <see cref="MaskinportenClient"/> configuration to the supplied config section path.
+    /// </para>
+    /// <para>
+    /// If you have already provided a <see cref="MaskinportenSettings"/> configuration, either manually or
+    /// implicitly via <see cref="WebHostBuilderExtensions.ConfigureAppWebHost"/>, this will be overridden.
+    /// </para>
     /// </summary>
     /// <param name="services">The service collection</param>
     /// <param name="configSectionPath">The configuration section path (Eg. "MaskinportenSettings")</param>
@@ -342,15 +345,6 @@ public static class ServiceCollectionExtensions
         public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
-    /// <summary>
-    /// PDF generation works by using a headless browser to render the frontend of an app instance.
-    /// To make  debugging PDF generation failures easier, we want requests originating from the PDF generator to be
-    /// contained in the root trace (process/next) as children. The frontend will set this header when making requests to the app backend in PDF mode.
-    /// </summary>
-    /// <param name="headers">Request headers attached to the span</param>
-    /// <returns></returns>
-    private static bool IsPdfGeneratorRequest(IHeaderDictionary headers) => headers.ContainsKey("X-Altinn-IsPdf");
-
     internal sealed class OtelPropagator : TextMapPropagator
     {
         private readonly TextMapPropagator _inner;
@@ -365,9 +359,8 @@ public static class ServiceCollectionExtensions
             Func<T, string, IEnumerable<string>?> getter
         )
         {
-            if (carrier is HttpRequest req && !IsPdfGeneratorRequest(req.Headers))
+            if (carrier is HttpRequest)
                 return default;
-
             return _inner.Extract(context, carrier, getter);
         }
 
@@ -388,7 +381,7 @@ public static class ServiceCollectionExtensions
             PropagatorGetterCallback? getter
         )
         {
-            if (carrier is IHeaderDictionary headers && !IsPdfGeneratorRequest(headers))
+            if (carrier is IHeaderDictionary)
                 return null;
 
             return _inner.ExtractBaggage(carrier, getter);
@@ -401,7 +394,7 @@ public static class ServiceCollectionExtensions
             out string? traceState
         )
         {
-            if (carrier is IHeaderDictionary headers && !IsPdfGeneratorRequest(headers))
+            if (carrier is IHeaderDictionary)
             {
                 traceId = null;
                 traceState = null;

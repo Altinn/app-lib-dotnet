@@ -55,13 +55,11 @@
   "dataModel": {
     "Mennesker": [
       {
-        "altinnRowId": "person0",
         "Navn": "Kåre",
         "Alder": 24,
         "AlderSkjult": true
       },
       {
-        "altinnRowId": "person1",
         "Navn": "Arild",
         "Alder": 14
       }

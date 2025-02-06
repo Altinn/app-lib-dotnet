@@ -1,11 +1,9 @@
-using System.Globalization;
 using System.Security.Claims;
-using Altinn.App.Api.Tests.Utils;
+using System.Security.Cryptography.X509Certificates;
 using Altinn.App.Common.Tests;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
-using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
@@ -14,9 +12,12 @@ using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
+using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
+using Altinn.Platform.Profile.Models;
+using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
 using AltinnCore.Authentication.Constants;
@@ -34,7 +35,7 @@ public sealed class ProcessEngineTest : IDisposable
     private static readonly Guid _instanceGuid = new("00000000-DEAD-BABE-0000-001230000000");
     private static readonly string _instanceId = $"{_instanceOwnerPartyId}/{_instanceGuid}";
     private readonly Mock<IProcessReader> _processReaderMock = new();
-    private readonly Mock<IAuthenticationContext> _authenticationContextMock = new();
+    private readonly Mock<IProfileClient> _profileMock = new(MockBehavior.Strict);
     private readonly Mock<IProcessNavigator> _processNavigatorMock = new(MockBehavior.Strict);
     private readonly Mock<IProcessEventHandlerDelegator> _processEventHandlingDelegatorMock = new();
     private readonly Mock<IProcessEventDispatcher> _processEventDispatcherMock = new();
@@ -114,29 +115,29 @@ public sealed class ProcessEngineTest : IDisposable
         result.Success.Should().BeTrue();
     }
 
-    [Theory]
-    [ClassData(typeof(TestAuthentication.AllTokens))]
-    public async Task StartProcess_starts_process_and_moves_to_first_task(TestJwtToken token)
+    [Fact]
+    public async Task StartProcess_starts_process_and_moves_to_first_task()
     {
         TelemetrySink telemetrySink = new();
-        ProcessEngine processEngine = GetProcessEngine(telemetrySink: telemetrySink, token: token);
-        var instanceOwnerPartyId = token.Auth switch
-        {
-            Authenticated.User auth when await auth.LoadDetails() is { } details => details.SelectedParty.PartyId,
-            Authenticated.SelfIdentifiedUser auth => auth.PartyId,
-            Authenticated.ServiceOwner => _instanceOwnerPartyId,
-            Authenticated.SystemUser auth when await auth.LoadDetails() is { } details => details.Party.PartyId,
-            _ => throw new NotImplementedException(),
-        };
-        var instanceOwnerPartyIdStr = instanceOwnerPartyId.ToString(CultureInfo.InvariantCulture);
+        ProcessEngine processEngine = GetProcessEngine(telemetrySink: telemetrySink);
         Instance instance = new Instance()
         {
-            Id = $"{instanceOwnerPartyIdStr}/{_instanceGuid}",
+            Id = _instanceId,
             AppId = "org/app",
-            InstanceOwner = new InstanceOwner() { PartyId = instanceOwnerPartyIdStr },
+            InstanceOwner = new InstanceOwner() { PartyId = "1337" },
             Data = [],
         };
-        ProcessStartRequest processStartRequest = new ProcessStartRequest() { Instance = instance, User = null };
+        ClaimsPrincipal user = new(
+            new ClaimsIdentity(
+                new List<Claim>()
+                {
+                    new(AltinnCoreClaimTypes.UserId, "1337"),
+                    new(AltinnCoreClaimTypes.AuthenticationLevel, "2"),
+                    new(AltinnCoreClaimTypes.Org, "tdd"),
+                }
+            )
+        );
+        ProcessStartRequest processStartRequest = new ProcessStartRequest() { Instance = instance, User = user };
         ProcessChangeResult result = await processEngine.GenerateProcessStartEvents(processStartRequest);
         await processEngine.HandleEventsAndUpdateStorage(instance, null, result.ProcessStateChange?.Events);
         _processReaderMock.Verify(r => r.GetStartEventIds(), Times.Once);
@@ -146,9 +147,9 @@ public sealed class ProcessEngineTest : IDisposable
         _processNavigatorMock.Verify(n => n.GetNextTask(It.IsAny<Instance>(), "StartEvent_1", null), Times.Once);
         var expectedInstance = new Instance()
         {
-            Id = $"{instanceOwnerPartyIdStr}/{_instanceGuid}",
+            Id = _instanceId,
             AppId = "org/app",
-            InstanceOwner = new InstanceOwner() { PartyId = instanceOwnerPartyIdStr },
+            InstanceOwner = new InstanceOwner() { PartyId = "1337" },
             Data = [],
             Process = new ProcessState()
             {
@@ -163,40 +164,19 @@ public sealed class ProcessEngineTest : IDisposable
                 StartEvent = "StartEvent_1",
             },
         };
-        PlatformUser platformUser = token.Auth switch
-        {
-            Authenticated.User auth when await auth.LoadDetails() is { } details => new()
-            {
-                UserId = auth.UserId,
-                NationalIdentityNumber = details.SelectedParty.SSN,
-                AuthenticationLevel = auth.AuthenticationLevel,
-            },
-            Authenticated.SelfIdentifiedUser auth => new()
-            {
-                UserId = auth.UserId,
-                AuthenticationLevel = auth.AuthenticationLevel,
-            },
-            Authenticated.ServiceOwner auth => new()
-            {
-                OrgId = auth.Name,
-                AuthenticationLevel = auth.AuthenticationLevel,
-            },
-            Authenticated.SystemUser auth => new()
-            {
-                SystemUserId = auth.SystemUserId[0],
-                SystemUserOwnerOrgNo = auth.SystemUserOrgNr.Get(OrganisationNumberFormat.Local),
-                AuthenticationLevel = auth.AuthenticationLevel,
-            },
-            _ => throw new NotImplementedException(),
-        };
         var expectedInstanceEvents = new List<InstanceEvent>()
         {
             new()
             {
-                InstanceId = $"{instanceOwnerPartyIdStr}/{_instanceGuid}",
+                InstanceId = $"{_instanceOwnerPartyId}/{_instanceGuid}",
                 EventType = InstanceEventType.process_StartEvent.ToString(),
-                InstanceOwnerPartyId = instanceOwnerPartyIdStr,
-                User = platformUser,
+                InstanceOwnerPartyId = "1337",
+                User = new()
+                {
+                    UserId = 1337,
+                    OrgId = "tdd",
+                    AuthenticationLevel = 2,
+                },
                 ProcessInfo = new()
                 {
                     StartEvent = "StartEvent_1",
@@ -210,10 +190,15 @@ public sealed class ProcessEngineTest : IDisposable
             },
             new()
             {
-                InstanceId = $"{instanceOwnerPartyIdStr}/{_instanceGuid}",
+                InstanceId = $"{_instanceOwnerPartyId}/{_instanceGuid}",
                 EventType = InstanceEventType.process_StartTask.ToString(),
-                InstanceOwnerPartyId = instanceOwnerPartyIdStr,
-                User = platformUser,
+                InstanceOwnerPartyId = "1337",
+                User = new()
+                {
+                    UserId = 1337,
+                    OrgId = "tdd",
+                    AuthenticationLevel = 2,
+                },
                 ProcessInfo = new()
                 {
                     StartEvent = "StartEvent_1",
@@ -246,7 +231,7 @@ public sealed class ProcessEngineTest : IDisposable
 
         result.Success.Should().BeTrue();
 
-        await Verify(telemetrySink.GetSnapshot()).UseTextForParameters(token.Type.ToString());
+        await Verify(telemetrySink.GetSnapshot());
     }
 
     [Fact]
@@ -313,8 +298,8 @@ public sealed class ProcessEngineTest : IDisposable
                 User = new()
                 {
                     UserId = 1337,
+                    OrgId = "tdd",
                     AuthenticationLevel = 2,
-                    NationalIdentityNumber = "22927774937",
                 },
                 ProcessInfo = new()
                 {
@@ -335,8 +320,8 @@ public sealed class ProcessEngineTest : IDisposable
                 User = new()
                 {
                     UserId = 1337,
+                    OrgId = "tdd",
                     AuthenticationLevel = 2,
-                    NationalIdentityNumber = "22927774937",
                 },
                 ProcessInfo = new()
                 {
@@ -562,7 +547,7 @@ public sealed class ProcessEngineTest : IDisposable
                 User = new()
                 {
                     UserId = 1337,
-                    NationalIdentityNumber = "22927774937",
+                    OrgId = "tdd",
                     AuthenticationLevel = 2,
                 },
                 ProcessInfo = new()
@@ -585,7 +570,7 @@ public sealed class ProcessEngineTest : IDisposable
                 User = new()
                 {
                     UserId = 1337,
-                    NationalIdentityNumber = "22927774937",
+                    OrgId = "tdd",
                     AuthenticationLevel = 2,
                 },
                 ProcessInfo = new()
@@ -711,7 +696,7 @@ public sealed class ProcessEngineTest : IDisposable
                 User = new()
                 {
                     UserId = 1337,
-                    NationalIdentityNumber = "22927774937",
+                    OrgId = "tdd",
                     AuthenticationLevel = 2,
                 },
                 ProcessInfo = new()
@@ -734,7 +719,7 @@ public sealed class ProcessEngineTest : IDisposable
                 User = new()
                 {
                     UserId = 1337,
-                    NationalIdentityNumber = "22927774937",
+                    OrgId = "tdd",
                     AuthenticationLevel = 2,
                 },
                 ProcessInfo = new()
@@ -840,6 +825,7 @@ public sealed class ProcessEngineTest : IDisposable
         ProcessChangeResult result = await processEngine.Next(processNextRequest);
         _processReaderMock.Verify(r => r.IsProcessTask("Task_2"), Times.Once);
         _processReaderMock.Verify(r => r.IsEndEvent("EndEvent_1"), Times.Once);
+        _profileMock.Verify(p => p.GetUserProfile(1337), Times.Exactly(3));
         _processNavigatorMock.Verify(n => n.GetNextTask(It.IsAny<Instance>(), "Task_2", null), Times.Once);
 
         var expectedInstanceEvents = new List<InstanceEvent>()
@@ -988,7 +974,7 @@ public sealed class ProcessEngineTest : IDisposable
                 User = new()
                 {
                     UserId = 1337,
-                    NationalIdentityNumber = "22927774937",
+                    OrgId = "tdd",
                     AuthenticationLevel = 2,
                 },
                 ProcessInfo = new()
@@ -1034,8 +1020,7 @@ public sealed class ProcessEngineTest : IDisposable
         bool setupProcessReaderMock = true,
         Instance? updatedInstance = null,
         List<IUserAction>? userActions = null,
-        TelemetrySink? telemetrySink = null,
-        TestJwtToken? token = null
+        TelemetrySink? telemetrySink = null
     )
     {
         if (setupProcessReaderMock)
@@ -1050,15 +1035,16 @@ public sealed class ProcessEngineTest : IDisposable
             _processReaderMock.Setup(r => r.IsProcessTask("EndEvent_1")).Returns(false);
         }
 
-        _authenticationContextMock
-            .Setup(a => a.Current)
-            .Returns(
-                token?.Auth
-                    ?? TestAuthentication.GetUserAuthentication(
-                        userId: 1337,
-                        email: "test@example.com",
-                        ssn: "22927774937"
-                    )
+        _profileMock
+            .Setup(p => p.GetUserProfile(1337))
+            .ReturnsAsync(
+                () =>
+                    new UserProfile()
+                    {
+                        UserId = 1337,
+                        Email = "test@example.com",
+                        Party = new Party() { SSN = "22927774937" },
+                    }
             );
         _processNavigatorMock
             .Setup(pn => pn.GetNextTask(It.IsAny<Instance>(), "StartEvent_1", It.IsAny<string?>()))
@@ -1105,6 +1091,7 @@ public sealed class ProcessEngineTest : IDisposable
 
         return new ProcessEngine(
             _processReaderMock.Object,
+            _profileMock.Object,
             _processNavigatorMock.Object,
             _processEventHandlingDelegatorMock.Object,
             _processEventDispatcherMock.Object,
@@ -1114,7 +1101,6 @@ public sealed class ProcessEngineTest : IDisposable
             _instanceClientMock.Object,
             new ModelSerializationService(_appModelMock.Object, telemetrySink?.Object),
             _appMetadataMock.Object,
-            _authenticationContextMock.Object,
             telemetrySink?.Object
         );
     }
@@ -1122,6 +1108,7 @@ public sealed class ProcessEngineTest : IDisposable
     public void Dispose()
     {
         _processReaderMock.VerifyNoOtherCalls();
+        _profileMock.VerifyNoOtherCalls();
         _processNavigatorMock.VerifyNoOtherCalls();
         _processEventHandlingDelegatorMock.VerifyNoOtherCalls();
         _processEventDispatcherMock.VerifyNoOtherCalls();

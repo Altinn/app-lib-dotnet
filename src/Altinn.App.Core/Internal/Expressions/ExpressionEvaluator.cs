@@ -29,6 +29,8 @@ public static class ExpressionEvaluator
             var expr = property switch
             {
                 "hidden" => context.Component.Hidden,
+                "hiddenRow" when context.Component is RepeatingGroupComponent repeatingGroup =>
+                    repeatingGroup.HiddenRow,
                 "required" => context.Component.Required,
                 _ => throw new ExpressionEvaluatorTypeErrorException($"unknown boolean expression property {property}"),
             };
@@ -57,7 +59,7 @@ public static class ExpressionEvaluator
         LayoutEvaluatorState state,
         Expression expr,
         ComponentContext context,
-        object?[]? positionalArguments = null
+        object[]? positionalArguments = null
     )
     {
         if (!expr.IsFunctionExpression)
@@ -532,7 +534,7 @@ public static class ExpressionEvaluator
         return string.Equals(ToStringForEquals(args[0]), ToStringForEquals(args[1]), StringComparison.Ordinal);
     }
 
-    private static object? Argv(object?[] args, object?[]? positionalArguments)
+    private static object Argv(object?[] args, object[]? positionalArguments)
     {
         if (args.Length != 1)
         {

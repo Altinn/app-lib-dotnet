@@ -21,7 +21,7 @@ public static class InstantiationHelper
     /// <param name="partyTypesAllowed">The allowed party types</param>
     /// <returns>A list with the filtered parties</returns>
     public static List<Party> FilterPartiesByAllowedPartyTypes(
-        IReadOnlyList<Party>? parties,
+        List<Party>? parties,
         PartyTypesAllowed? partyTypesAllowed
     )
     {
@@ -31,7 +31,7 @@ public static class InstantiationHelper
             return allowed;
         }
 
-        foreach (var party in parties)
+        parties.ForEach(party =>
         {
             bool canPartyInstantiate = IsPartyAllowedToInstantiate(party, partyTypesAllowed);
             bool isChildPartyAllowed = false;
@@ -75,8 +75,7 @@ public static class InstantiationHelper
                 party.ChildParties = new List<Party>();
                 allowed.Add(party);
             }
-        }
-
+        });
         return allowed;
     }
 

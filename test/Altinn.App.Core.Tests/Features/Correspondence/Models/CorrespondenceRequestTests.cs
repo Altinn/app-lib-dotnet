@@ -1,5 +1,4 @@
 using System.Text;
-using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features.Correspondence.Exceptions;
 using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Models;
@@ -117,10 +116,10 @@ public class CorrespondenceRequestTests
         // Assert
         var expectedSerialisation = new Dictionary<string, object>
         {
-            ["Recipients[0]"] = $"{AltinnUrns.OrganisationNumber}:{correspondence.Recipients[0]}",
-            ["Recipients[1]"] = $"{AltinnUrns.PersonId}:{correspondence.Recipients[1]}",
+            ["Recipients[0]"] = correspondence.Recipients[0],
+            ["Recipients[1]"] = correspondence.Recipients[1],
             ["Correspondence.ResourceId"] = correspondence.ResourceId,
-            ["Correspondence.Sender"] = $"{AltinnUrns.OrganisationNumber}:{correspondence.Sender}",
+            ["Correspondence.Sender"] = correspondence.Sender,
             ["Correspondence.SendersReference"] = correspondence.SendersReference,
             ["Correspondence.RequestedPublishTime"] = correspondence.RequestedPublishTime,
             ["Correspondence.AllowSystemDeleteAfter"] = correspondence.AllowSystemDeleteAfter,

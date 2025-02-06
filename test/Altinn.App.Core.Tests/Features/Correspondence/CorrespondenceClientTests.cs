@@ -171,7 +171,7 @@ public class CorrespondenceClientTests
                     ],
                     "recipient": "0192:213872702",
                     "correspondenceId": "94fa9dd9-734e-4712-9d49-4018aeb1a5dc",
-                    "resourceId": "test-resource-id",
+                    "resourceId": "apps-correspondence-integrasjon2",
                     "sender": "0192:991825827",
                     "sendersReference": "1234",
                     "isConfirmationNeeded": true
@@ -194,7 +194,7 @@ public class CorrespondenceClientTests
         result.StatusHistory.First().Status.Should().Be(CorrespondenceStatus.Published);
         result.Recipient.Should().Be("0192:213872702");
         result.CorrespondenceId.Should().Be(Guid.Parse("94fa9dd9-734e-4712-9d49-4018aeb1a5dc"));
-        result.ResourceId.Should().Be("test-resource-id");
+        result.ResourceId.Should().Be("apps-correspondence-integrasjon2");
         result.Sender.Should().Be(OrganisationNumber.Parse("991825827"));
         result.SendersReference.Should().Be("1234");
         result.IsConfirmationNeeded.Should().BeTrue();
@@ -320,13 +320,8 @@ public class CorrespondenceClientTests
             .WithInnerExceptionExactly(typeof(HttpRequestException));
     }
 
-    [Theory]
-    [InlineData(typeof(SendCorrespondencePayload), new[] { "altinn:correspondence.write", "altinn:serviceowner" })]
-    [InlineData(typeof(GetCorrespondenceStatusPayload), new[] { "altinn:correspondence.write", "altinn:serviceowner" })]
-    public async Task AuthorisationFactory_ImplementsMaskinportenCorrectly(
-        Type payloadType,
-        IEnumerable<string> expectedScopes
-    )
+    [Fact]
+    public async Task AuthorisationFactory_ImplementsMaskinportenCorrectly()
     {
         // Arrange
         await using var fixture = Fixture.Create();
@@ -335,17 +330,20 @@ public class CorrespondenceClientTests
         var mockMaskinportenClient = fixture.MaskinportenClientMock;
         var mockHttpClient = new Mock<HttpClient>();
         var correspondencePayload = PayloadFactory.Send(authorisation: CorrespondenceAuthorisation.Maskinporten);
-        var altinnTokenResponse = TestAuthentication.GetServiceOwnerToken(org: "ttd");
+        var altinnTokenResponse = PrincipalUtil.GetOrgToken("ttd");
         var altinnTokenWrapperResponse = JwtToken.Parse(altinnTokenResponse);
-
-        Func<Task<object>> action = async () =>
-            payloadType == typeof(SendCorrespondencePayload)
-                ? await fixture.CorrespondenceClient.Send(
-                    PayloadFactory.Send(authorisation: CorrespondenceAuthorisation.Maskinporten)
-                )
-                : await fixture.CorrespondenceClient.GetStatus(
-                    PayloadFactory.GetStatus(authorisation: CorrespondenceAuthorisation.Maskinporten)
-                );
+        var correspondenceResponse = new SendCorrespondenceResponse
+        {
+            Correspondences =
+            [
+                new CorrespondenceDetailsResponse
+                {
+                    CorrespondenceId = Guid.NewGuid(),
+                    Status = CorrespondenceStatus.Published,
+                    Recipient = OrganisationOrPersonIdentifier.Parse("991825827"),
+                },
+            ],
+        };
 
         mockHttpClientFactory.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(mockHttpClient.Object);
         mockMaskinportenClient
@@ -368,20 +366,20 @@ public class CorrespondenceClientTests
                             altinnTokenResponse
                         ),
                         var path when path.EndsWith("/correspondence/upload") => TestHelpers.ResponseMessageFactory(
-                            "dummy response."
-                        ),
-                        var path when path.EndsWith("/details") => TestHelpers.ResponseMessageFactory(
-                            "dummy response."
+                            correspondenceResponse
                         ),
                         _ => throw FailException.ForFailure($"Unknown mock endpoint: {request.RequestUri}"),
                     }
             );
 
         // Act
-        await action.Should().ThrowAsync<CorrespondenceRequestException>().WithMessage("Invalid response*");
+        var response = await fixture.CorrespondenceClient.Send(correspondencePayload);
 
         // Assert
+        response.Should().BeEquivalentTo(correspondenceResponse);
         mockMaskinportenClient.Verify();
-        capturedMaskinportenScopes.Should().BeEquivalentTo(expectedScopes);
+        capturedMaskinportenScopes
+            .Should()
+            .BeEquivalentTo(["altinn:correspondence.write", "altinn:serviceowner/instances.read"]);
     }
 }

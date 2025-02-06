@@ -1,27 +1,17 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Altinn.App.Core.Constants;
-using Altinn.App.Core.Features.Correspondence.Extensions;
 using Altinn.App.Core.Models;
 
 namespace Altinn.App.Core.Features.Correspondence.Models;
 
 /// <summary>
-/// Represents either an organisation or a person.
+/// Represents either an organisation or a person
 /// </summary>
-[JsonConverter(typeof(OrganisationOrPersonIdentifierJsonConverter))]
+[OrganisationOrPersonIdentifierJsonConverter(OrganisationNumberFormat.International)]
 public abstract record OrganisationOrPersonIdentifier
 {
-    private const string OrgUrnPrefix = $"{AltinnUrns.OrganisationNumber}:";
-    private const string PersonUrnPrefix = $"{AltinnUrns.PersonId}:";
-
     /// <summary>
-    /// Returns a string representation of the identifier, prefixed with the appropriate <see cref="AltinnUrns"/> URN value
-    /// </summary>
-    public abstract string ToUrnFormattedString();
-
-    /// <summary>
-    /// Represents an organisation.
+    /// Represents an organisation
     /// </summary>
     /// <param name="Value">The organisation number</param>
     public sealed record Organisation(OrganisationNumber Value) : OrganisationOrPersonIdentifier
@@ -31,18 +21,10 @@ public abstract record OrganisationOrPersonIdentifier
         {
             return Value.ToString();
         }
-
-        /// <summary>
-        /// Returns a string representation of the <see cref="OrganisationNumber"/>, prefixed with the <see cref="AltinnUrns.OrganisationNumber"/> URN value
-        /// </summary>
-        public override string ToUrnFormattedString()
-        {
-            return Value.ToUrnFormattedString();
-        }
     }
 
     /// <summary>
-    /// Represents a person.
+    /// Represents a person
     /// </summary>
     /// <param name="Value">The national identity number</param>
     public sealed record Person(NationalIdentityNumber Value) : OrganisationOrPersonIdentifier
@@ -52,18 +34,10 @@ public abstract record OrganisationOrPersonIdentifier
         {
             return Value.ToString();
         }
-
-        /// <summary>
-        /// Returns a string representation of the <see cref="NationalIdentityNumber"/>, prefixed with the <see cref="AltinnUrns.PersonId"/> URN value
-        /// </summary>
-        public override string ToUrnFormattedString()
-        {
-            return Value.ToUrnFormattedString();
-        }
     }
 
     /// <summary>
-    /// Creates a new instance of <see cref="OrganisationOrPersonIdentifier.Organisation"/>.
+    /// Creates a new instance of <see cref="OrganisationOrPersonIdentifier.Organisation"/>
     /// </summary>
     /// <param name="value">The organisation number</param>
     public static Organisation Create(OrganisationNumber value)
@@ -72,7 +46,7 @@ public abstract record OrganisationOrPersonIdentifier
     }
 
     /// <summary>
-    /// Creates a new instance of <see cref="OrganisationOrPersonIdentifier.Person"/>.
+    /// Creates a new instance of <see cref="OrganisationOrPersonIdentifier.Person"/>
     /// </summary>
     /// <param name="value">The national identity number</param>
     public static Person Create(NationalIdentityNumber value)
@@ -81,31 +55,17 @@ public abstract record OrganisationOrPersonIdentifier
     }
 
     /// <summary>
-    /// Attempts to parse a string containing either an <see cref="OrganisationNumber"/> or a <see cref="NationalIdentityNumber"/>.
+    /// Attempts to parse a string containing either an <see cref="OrganisationNumber"/> or a <see cref="NationalIdentityNumber"/>
     /// </summary>
     /// <param name="value">The string to parse</param>
     /// <exception cref="FormatException">The supplied string is not a valid format for either type</exception>
     public static OrganisationOrPersonIdentifier Parse(string value)
     {
-        // Value has come in padded with urn:altinn:organization:identifier-no
-        if (value.StartsWith(OrgUrnPrefix, StringComparison.OrdinalIgnoreCase))
-        {
-            return Create(OrganisationNumber.Parse(value[OrgUrnPrefix.Length..]));
-        }
-
-        // Value has come in padded with urn:altinn:person:identifier-no
-        if (value.StartsWith(PersonUrnPrefix, StringComparison.OrdinalIgnoreCase))
-        {
-            return Create(NationalIdentityNumber.Parse(value[PersonUrnPrefix.Length..]));
-        }
-
-        // Value could be anything, trying OrganisationNumber
         if (OrganisationNumber.TryParse(value, out var organisationNumber))
         {
             return Create(organisationNumber);
         }
 
-        // Last chance, trying NationalIdentityNumber
         if (NationalIdentityNumber.TryParse(value, out var nationalIdentityNumber))
         {
             return Create(nationalIdentityNumber);
@@ -117,8 +77,37 @@ public abstract record OrganisationOrPersonIdentifier
     }
 }
 
-internal class OrganisationOrPersonIdentifierJsonConverter : JsonConverter<OrganisationOrPersonIdentifier>
+/// <summary>
+/// Json converter to transform between <see cref="string"/> and <see cref="OrganisationOrPersonIdentifier"/>
+/// </summary>
+[AttributeUsage(AttributeTargets.Property | AttributeTargets.Class, AllowMultiple = false)]
+internal class OrganisationOrPersonIdentifierJsonConverterAttribute : JsonConverterAttribute
 {
+    private OrganisationNumberFormat _format { get; }
+
+    /// <inheritdoc cref="OrganisationOrPersonIdentifierJsonConverterAttribute"/>
+    /// <param name="format">The desired organisation number format to use for <b>serialization</b></param>
+    public OrganisationOrPersonIdentifierJsonConverterAttribute(OrganisationNumberFormat format)
+    {
+        _format = format;
+    }
+
+    /// <inheritdoc/>
+    public override JsonConverter? CreateConverter(Type typeToConvert)
+    {
+        return new OrganisationOrPersonJsonIdentifierConverter(_format);
+    }
+}
+
+internal class OrganisationOrPersonJsonIdentifierConverter : JsonConverter<OrganisationOrPersonIdentifier>
+{
+    private OrganisationNumberFormat _format { get; init; }
+
+    public OrganisationOrPersonJsonIdentifierConverter(OrganisationNumberFormat format)
+    {
+        _format = format;
+    }
+
     /// <inheritdoc/>
     public override OrganisationOrPersonIdentifier Read(
         ref Utf8JsonReader reader,
@@ -144,6 +133,13 @@ internal class OrganisationOrPersonIdentifierJsonConverter : JsonConverter<Organ
         JsonSerializerOptions options
     )
     {
-        writer.WriteStringValue(value.ToUrnFormattedString());
+        string stringValue = value switch
+        {
+            OrganisationOrPersonIdentifier.Organisation org => org.Value.Get(_format),
+            OrganisationOrPersonIdentifier.Person person => person.Value,
+            _ => throw new JsonException($"Unknown type `{value.GetType()}` ({nameof(value)})"),
+        };
+
+        writer.WriteStringValue(stringValue);
     }
 }

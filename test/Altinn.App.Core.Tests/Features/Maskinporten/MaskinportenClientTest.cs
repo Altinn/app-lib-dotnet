@@ -179,7 +179,7 @@ public class MaskinportenClientTests
         await using var fixture = Fixture.Create();
         string[] scopes = ["scope1", "scope2"];
         string formattedScopes = MaskinportenClient.FormattedScopes(scopes);
-        var maskinportenTokenResponse = TestAuthentication.GetMaskinportenToken(
+        var maskinportenTokenResponse = PrincipalUtil.GetMaskinportenToken(
             scope: formattedScopes,
             expiry: TimeSpan.FromMinutes(2),
             fixture.FakeTime
@@ -207,18 +207,13 @@ public class MaskinportenClientTests
         // Arrange
         await using var fixture = Fixture.Create();
         string[] scopes = ["scope1", "scope2"];
-        var maskinportenTokenResponse = TestAuthentication.GetMaskinportenToken(
+        var maskinportenTokenResponse = PrincipalUtil.GetMaskinportenToken(
             scope: MaskinportenClient.FormattedScopes(scopes),
             expiry: TimeSpan.FromMinutes(2),
             fixture.FakeTime
         );
         var expiresIn = TimeSpan.FromMinutes(30);
-        var altinnAccessToken = TestAuthentication.GetServiceOwnerToken(
-            "405003309",
-            org: "ttd",
-            expiry: expiresIn,
-            timeProvider: fixture.FakeTime
-        );
+        var altinnAccessToken = PrincipalUtil.GetOrgToken("ttd", "160694123", 3, expiresIn, fixture.FakeTime);
         fixture
             .HttpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>()))
             .Returns(() =>
@@ -244,7 +239,7 @@ public class MaskinportenClientTests
     {
         // Arrange
         await using var fixture = Fixture.Create();
-        var maskinportenTokenResponse = TestAuthentication.GetMaskinportenToken(
+        var maskinportenTokenResponse = PrincipalUtil.GetMaskinportenToken(
             scope: "-",
             expiry: MaskinportenClient.TokenExpirationMargin - TimeSpan.FromSeconds(1),
             fixture.FakeTime
@@ -281,7 +276,7 @@ public class MaskinportenClientTests
         await using var fixture = Fixture.Create();
         string[] scopes = ["scope1", "scope2"];
         var maskinportenTokenResponse = () =>
-            TestAuthentication.GetMaskinportenToken(
+            PrincipalUtil.GetMaskinportenToken(
                 scope: MaskinportenClient.FormattedScopes(scopes),
                 expiry: TimeSpan.FromMinutes(2),
                 fixture.FakeTime
@@ -311,7 +306,7 @@ public class MaskinportenClientTests
         await using var fixture = Fixture.Create();
         string[] scopes = ["scope1", "scope2"];
         var maskinportenTokenResponse = () =>
-            TestAuthentication.GetMaskinportenToken(
+            PrincipalUtil.GetMaskinportenToken(
                 scope: MaskinportenClient.FormattedScopes(scopes),
                 expiry: MaskinportenClient.TokenExpirationMargin + TimeSpan.FromSeconds(1),
                 fixture.FakeTime
@@ -383,7 +378,7 @@ public class MaskinportenClientTests
     public async Task ParseServerResponse_ThrowsOn_DisposedObject()
     {
         // Arrange
-        var maskinportenTokenResponse = TestAuthentication.GetMaskinportenToken(
+        var maskinportenTokenResponse = PrincipalUtil.GetMaskinportenToken(
             scope: "a b",
             expiry: MaskinportenClient.TokenExpirationMargin + TimeSpan.FromSeconds(1)
         );

@@ -7,8 +7,12 @@ using JsonWebKeyConverter = Altinn.App.Core.Features.Maskinporten.Converters.Jso
 namespace Altinn.App.Core.Features.Maskinporten.Models;
 
 /// <summary>
-/// <p>A configuration object that represents all required Maskinporten authentication settings.</p>
-/// <p>Typically serialised as <c>maskinporten-settings.json</c> and injected in the runtime.</p>
+/// <para>
+/// A configuration object that represents all required Maskinporten authentication settings.
+/// </para>
+/// <para>
+/// Typically serialized as `maskinporten-settings.json` and injected in the runtime.
+/// </para>
 /// </summary>
 public sealed record MaskinportenSettings
 {
@@ -87,84 +91,84 @@ public sealed record MaskinportenSettings
 }
 
 /// <summary>
-/// Serialization wrapper for a JsonWebKey object.
+/// Serialization wrapper for a JsonWebKey object
 /// </summary>
 public record JwkWrapper
 {
     /// <summary>
-    /// Key type.
+    /// Key type
     /// </summary>
     [JsonPropertyName("kty")]
     public string? Kty { get; init; }
 
     /// <summary>
-    /// Public key usage.
+    /// Public key usage
     /// </summary>
     [JsonPropertyName("use")]
     public string? Use { get; init; }
 
     /// <summary>
-    /// Key ID.
+    /// Key ID
     /// </summary>
     [JsonPropertyName("kid")]
     public string? Kid { get; init; }
 
     /// <summary>
-    /// Algorithm.
+    /// Algorithm
     /// </summary>
     [JsonPropertyName("alg")]
     public string? Alg { get; init; }
 
     /// <summary>
-    /// Modulus.
+    /// Modulus
     /// </summary>
     [JsonPropertyName("n")]
     public string? N { get; init; }
 
     /// <summary>
-    /// Exponent.
+    /// Exponent
     /// </summary>
     [JsonPropertyName("e")]
     public string? E { get; init; }
 
     /// <summary>
-    /// Private exponent.
+    /// Private exponent
     /// </summary>
     [JsonPropertyName("d")]
     public string? D { get; init; }
 
     /// <summary>
-    /// First prime factor.
+    /// First prime factor
     /// </summary>
     [JsonPropertyName("p")]
     public string? P { get; init; }
 
     /// <summary>
-    /// Second prime factor.
+    /// Second prime factor
     /// </summary>
     [JsonPropertyName("q")]
     public string? Q { get; init; }
 
     /// <summary>
-    /// First CRT coefficient.
+    /// First CRT coefficient
     /// </summary>
     [JsonPropertyName("qi")]
     public string? Qi { get; init; }
 
     /// <summary>
-    /// First factor CRT exponent.
+    /// First factor CRT exponent
     /// </summary>
     [JsonPropertyName("dp")]
     public string? Dp { get; init; }
 
     /// <summary>
-    /// Second factor CRT exponent.
+    /// Second factor CRT exponent
     /// </summary>
     [JsonPropertyName("dq")]
     public string? Dq { get; init; }
 
     /// <summary>
-    /// Validates the contents of this JWK.
+    /// Validates the contents of this JWK
     /// </summary>
     public ValidationResult Validate()
     {
@@ -191,7 +195,7 @@ public record JwkWrapper
     }
 
     /// <summary>
-    /// A <see cref="JsonWebKey"/> instance containing the component data from this record.
+    /// A <see cref="JsonWebKey"/> instance containing the component data from this record
     /// </summary>
     public JsonWebKey ToJsonWebKey()
     {
@@ -213,12 +217,12 @@ public record JwkWrapper
     }
 
     /// <summary>
-    /// A record that holds the result of a <see cref="JwkWrapper.Validate"/> call.
+    /// A record that holds the result of a <see cref="JwkWrapper.Validate"/> call
     /// </summary>
     public readonly record struct ValidationResult
     {
         /// <summary>
-        /// A collection of properties that are considered to be invalid.
+        /// A collection of properties that are considered to be invalid
         /// </summary>
         public IEnumerable<string>? InvalidProperties { get; init; }
 
@@ -228,7 +232,7 @@ public record JwkWrapper
         public bool IsValid() => InvalidProperties is null || !InvalidProperties.Any();
 
         /// <summary>
-        /// Helpful summary of the result.
+        /// Helpful summary of the result
         /// </summary>
         public override string ToString()
         {

@@ -150,9 +150,7 @@ public class InstancesController_CopyInstanceTests
     public async Task CopyInstance_AsAppOwner_ReturnsForbidResult()
     {
         // Arrange
-        _httpContextMock
-            .Setup(httpContext => httpContext.User)
-            .Returns(TestAuthentication.GetServiceOwnerPrincipal(org: "ttd"));
+        _httpContextMock.Setup(httpContext => httpContext.User).Returns(PrincipalUtil.GetOrgPrincipal("ttd"));
 
         // Act
         ActionResult actual = await SUT.CopyInstance("ttd", "copy-instance", 343234, Guid.NewGuid());
@@ -170,7 +168,7 @@ public class InstancesController_CopyInstanceTests
         // Arrange
         const string Org = "ttd";
         const string AppName = "copy-instance";
-        _httpContextMock.Setup(httpContext => httpContext.User).Returns(TestAuthentication.GetUserPrincipal(1337));
+        _httpContextMock.Setup(httpContext => httpContext.User).Returns(PrincipalUtil.GetUserPrincipal(1337, null));
         _appMetadata.Setup(a => a.GetApplicationMetadata()).ReturnsAsync(CreateApplicationMetadata(Org, AppName, true));
         _pdp.Setup<Task<XacmlJsonResponse>>(p => p.GetDecisionForRequest(It.IsAny<XacmlJsonRequestRoot>()))
             .ReturnsAsync(CreateXacmlResponse("Deny"));
@@ -202,9 +200,7 @@ public class InstancesController_CopyInstanceTests
             Status = new InstanceStatus() { IsArchived = false },
         };
 
-        _httpContextMock
-            .Setup(httpContext => httpContext.User)
-            .Returns(TestAuthentication.GetUserPrincipal(1337, instanceOwnerPartyId));
+        _httpContextMock.Setup(httpContext => httpContext.User).Returns(PrincipalUtil.GetUserPrincipal(1337, null));
         _appMetadata.Setup(a => a.GetApplicationMetadata()).ReturnsAsync(CreateApplicationMetadata(Org, AppName, true));
         _pdp.Setup<Task<XacmlJsonResponse>>(p => p.GetDecisionForRequest(It.IsAny<XacmlJsonRequestRoot>()))
             .ReturnsAsync(CreateXacmlResponse("Permit"));
@@ -240,9 +236,7 @@ public class InstancesController_CopyInstanceTests
             new HttpResponseMessage(System.Net.HttpStatusCode.Forbidden)
         );
 
-        _httpContextMock
-            .Setup(httpContext => httpContext.User)
-            .Returns(TestAuthentication.GetUserPrincipal(1337, instanceOwnerPartyId));
+        _httpContextMock.Setup(httpContext => httpContext.User).Returns(PrincipalUtil.GetUserPrincipal(1337, null));
         _appMetadata.Setup(a => a.GetApplicationMetadata()).ReturnsAsync(CreateApplicationMetadata(Org, AppName, true));
         _pdp.Setup<Task<XacmlJsonResponse>>(p => p.GetDecisionForRequest(It.IsAny<XacmlJsonRequestRoot>()))
             .ReturnsAsync(CreateXacmlResponse("Permit"));
@@ -278,9 +272,7 @@ public class InstancesController_CopyInstanceTests
             new HttpResponseMessage(System.Net.HttpStatusCode.BadGateway)
         );
 
-        _httpContextMock
-            .Setup(httpContext => httpContext.User)
-            .Returns(TestAuthentication.GetUserPrincipal(1337, instanceOwnerPartyId));
+        _httpContextMock.Setup(httpContext => httpContext.User).Returns(PrincipalUtil.GetUserPrincipal(1337, null));
         _appMetadata.Setup(a => a.GetApplicationMetadata()).ReturnsAsync(CreateApplicationMetadata(Org, AppName, true));
         _pdp.Setup<Task<XacmlJsonResponse>>(p => p.GetDecisionForRequest(It.IsAny<XacmlJsonRequestRoot>()))
             .ReturnsAsync(CreateXacmlResponse("Permit"));
@@ -324,9 +316,7 @@ public class InstancesController_CopyInstanceTests
         };
         InstantiationValidationResult? instantiationValidationResult = new() { Valid = false };
 
-        _httpContextMock
-            .Setup(httpContext => httpContext.User)
-            .Returns(TestAuthentication.GetUserPrincipal(1337, instanceOwnerPartyId));
+        _httpContextMock.Setup(httpContext => httpContext.User).Returns(PrincipalUtil.GetUserPrincipal(1337, null));
         _appMetadata.Setup(a => a.GetApplicationMetadata()).ReturnsAsync(CreateApplicationMetadata(Org, AppName, true));
         _pdp.Setup<Task<XacmlJsonResponse>>(p => p.GetDecisionForRequest(It.IsAny<XacmlJsonRequestRoot>()))
             .ReturnsAsync(CreateXacmlResponse("Permit"));
@@ -377,7 +367,7 @@ public class InstancesController_CopyInstanceTests
         };
         InstantiationValidationResult? instantiationValidationResult = new() { Valid = true };
 
-        _httpContextMock.Setup(hc => hc.User).Returns(TestAuthentication.GetUserPrincipal(1337, InstanceOwnerPartyId));
+        _httpContextMock.Setup(hc => hc.User).Returns(PrincipalUtil.GetUserPrincipal(1337, null));
         _httpContextMock.Setup(hc => hc.Request).Returns(Mock.Of<HttpRequest>());
         _appMetadata.Setup(a => a.GetApplicationMetadata()).ReturnsAsync(CreateApplicationMetadata(Org, AppName, true));
         _pdp.Setup<Task<XacmlJsonResponse>>(p => p.GetDecisionForRequest(It.IsAny<XacmlJsonRequestRoot>()))

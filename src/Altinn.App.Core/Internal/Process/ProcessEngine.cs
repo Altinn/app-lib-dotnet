@@ -1,8 +1,8 @@
 using System.Diagnostics;
+using System.Security.Claims;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
-using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
@@ -11,8 +11,10 @@ using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
+using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
+using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
 
@@ -24,12 +26,12 @@ namespace Altinn.App.Core.Internal.Process;
 public class ProcessEngine : IProcessEngine
 {
     private readonly IProcessReader _processReader;
+    private readonly IProfileClient _profileClient;
     private readonly IProcessNavigator _processNavigator;
     private readonly IProcessEventHandlerDelegator _processEventHandlerDelegator;
     private readonly IProcessEventDispatcher _processEventDispatcher;
     private readonly UserActionService _userActionService;
     private readonly Telemetry? _telemetry;
-    private readonly IAuthenticationContext _authenticationContext;
     private readonly IProcessTaskCleaner _processTaskCleaner;
     private readonly IDataClient _dataClient;
     private readonly IInstanceClient _instanceClient;
@@ -41,6 +43,7 @@ public class ProcessEngine : IProcessEngine
     /// </summary>
     public ProcessEngine(
         IProcessReader processReader,
+        IProfileClient profileClient,
         IProcessNavigator processNavigator,
         IProcessEventHandlerDelegator processEventsDelegator,
         IProcessEventDispatcher processEventDispatcher,
@@ -50,11 +53,11 @@ public class ProcessEngine : IProcessEngine
         IInstanceClient instanceClient,
         ModelSerializationService modelSerialization,
         IAppMetadata appMetadata,
-        IAuthenticationContext authenticationContext,
         Telemetry? telemetry = null
     )
     {
         _processReader = processReader;
+        _profileClient = profileClient;
         _processNavigator = processNavigator;
         _processEventHandlerDelegator = processEventsDelegator;
         _processEventDispatcher = processEventDispatcher;
@@ -65,7 +68,6 @@ public class ProcessEngine : IProcessEngine
         _modelSerialization = modelSerialization;
         _appMetadata = appMetadata;
         _telemetry = telemetry;
-        _authenticationContext = authenticationContext;
     }
 
     /// <inheritdoc/>
@@ -109,9 +111,13 @@ public class ProcessEngine : IProcessEngine
         );
 
         // start process
-        ProcessStateChange? startChange = await ProcessStart(processStartRequest.Instance, validStartElement);
+        ProcessStateChange? startChange = await ProcessStart(
+            processStartRequest.Instance,
+            validStartElement,
+            processStartRequest.User
+        );
         InstanceEvent? startEvent = startChange?.Events?[0].CopyValues();
-        ProcessStateChange? nextChange = await ProcessNext(processStartRequest.Instance);
+        ProcessStateChange? nextChange = await ProcessNext(processStartRequest.Instance, processStartRequest.User);
         InstanceEvent? goToNextEvent = nextChange?.Events?[0].CopyValues();
         List<InstanceEvent> events = [];
         if (startEvent is not null)
@@ -162,7 +168,7 @@ public class ProcessEngine : IProcessEngine
         // TODO: Move this logic to ProcessTaskInitializer.Initialize once the authentication model supports a service/app user with the appropriate scopes
         await _processTaskCleaner.RemoveAllDataElementsGeneratedFromTask(instance, currentElementId);
 
-        var currentAuth = _authenticationContext.Current;
+        int? userId = request.User.GetUserIdAsInt();
         IUserAction? actionHandler = _userActionService.GetActionHandler(request.Action);
         var cachedDataMutator = new InstanceDataUnitOfWork(
             instance,
@@ -172,21 +178,10 @@ public class ProcessEngine : IProcessEngine
             _modelSerialization
         );
 
-        int? userId = currentAuth switch
-        {
-            Authenticated.User auth => auth.UserId,
-            Authenticated.SelfIdentifiedUser auth => auth.UserId,
-            _ => null,
-        };
         UserActionResult actionResult = actionHandler is null
             ? UserActionResult.SuccessResult()
             : await actionHandler.HandleAction(
-                new UserActionContext(
-                    cachedDataMutator,
-                    userId,
-                    language: request.Language,
-                    authentication: currentAuth
-                )
+                new UserActionContext(cachedDataMutator, userId, language: request.Language)
             );
 
         if (actionResult.ResultType != ResultType.Success)
@@ -214,7 +209,7 @@ public class ProcessEngine : IProcessEngine
 
         // TODO: consider using the same cachedDataMutator for the rest of the process to avoid refetching data from storage
 
-        ProcessStateChange? nextResult = await HandleMoveToNext(instance, request.Action);
+        ProcessStateChange? nextResult = await HandleMoveToNext(instance, request.User, request.Action);
 
         if (nextResult?.NewProcessState?.Ended is not null)
         {
@@ -246,7 +241,7 @@ public class ProcessEngine : IProcessEngine
     /// <summary>
     /// Does not save process. Instance object is updated.
     /// </summary>
-    private async Task<ProcessStateChange?> ProcessStart(Instance instance, string startEvent)
+    private async Task<ProcessStateChange?> ProcessStart(Instance instance, string startEvent, ClaimsPrincipal user)
     {
         if (instance.Process != null)
         {
@@ -265,7 +260,7 @@ public class ProcessEngine : IProcessEngine
 
         List<InstanceEvent> events =
         [
-            await GenerateProcessChangeEvent(InstanceEventType.process_StartEvent.ToString(), instance, now),
+            await GenerateProcessChangeEvent(InstanceEventType.process_StartEvent.ToString(), instance, now, user),
         ];
 
         // ! TODO: should probably improve nullability handling in the next major version
@@ -280,7 +275,11 @@ public class ProcessEngine : IProcessEngine
     /// <summary>
     /// Moves instance's process to nextElement id. Returns the instance together with process events.
     /// </summary>
-    private async Task<ProcessStateChange?> ProcessNext(Instance instance, string? action = null)
+    private async Task<ProcessStateChange?> ProcessNext(
+        Instance instance,
+        ClaimsPrincipal userContext,
+        string? action = null
+    )
     {
         if (instance.Process == null)
         {
@@ -295,13 +294,17 @@ public class ProcessEngine : IProcessEngine
                 CurrentTask = instance.Process.CurrentTask,
                 StartEvent = instance.Process.StartEvent,
             },
-            Events = await MoveProcessToNext(instance, action),
+            Events = await MoveProcessToNext(instance, userContext, action),
             NewProcessState = instance.Process,
         };
         return result;
     }
 
-    private async Task<List<InstanceEvent>> MoveProcessToNext(Instance instance, string? action = null)
+    private async Task<List<InstanceEvent>> MoveProcessToNext(
+        Instance instance,
+        ClaimsPrincipal user,
+        string? action = null
+    )
     {
         List<InstanceEvent> events = [];
 
@@ -325,7 +328,7 @@ public class ProcessEngine : IProcessEngine
                 eventType = InstanceEventType.process_AbandonTask.ToString();
             }
 
-            events.Add(await GenerateProcessChangeEvent(eventType, instance, now));
+            events.Add(await GenerateProcessChangeEvent(eventType, instance, now, user));
             instance.Process = currentState;
         }
 
@@ -343,10 +346,12 @@ public class ProcessEngine : IProcessEngine
             currentState.Ended = now;
             currentState.EndEvent = nextElementId;
 
-            events.Add(await GenerateProcessChangeEvent(InstanceEventType.process_EndEvent.ToString(), instance, now));
+            events.Add(
+                await GenerateProcessChangeEvent(InstanceEventType.process_EndEvent.ToString(), instance, now, user)
+            );
 
             // add submit event (to support Altinn2 SBL)
-            events.Add(await GenerateProcessChangeEvent(InstanceEventType.Submited.ToString(), instance, now));
+            events.Add(await GenerateProcessChangeEvent(InstanceEventType.Submited.ToString(), instance, now, user));
         }
         else if (_processReader.IsProcessTask(nextElementId))
         {
@@ -361,9 +366,12 @@ public class ProcessEngine : IProcessEngine
                 FlowType = action is "reject"
                     ? ProcessSequenceFlowType.AbandonCurrentMoveToNext.ToString()
                     : ProcessSequenceFlowType.CompleteCurrentMoveToNext.ToString(),
+                Validated = null,
             };
 
-            events.Add(await GenerateProcessChangeEvent(InstanceEventType.process_StartTask.ToString(), instance, now));
+            events.Add(
+                await GenerateProcessChangeEvent(InstanceEventType.process_StartTask.ToString(), instance, now, user)
+            );
         }
 
         // current state points to the instance's process object. The following statement is unnecessary, but clarifies logic.
@@ -372,75 +380,41 @@ public class ProcessEngine : IProcessEngine
         return events;
     }
 
-    private async Task<InstanceEvent> GenerateProcessChangeEvent(string eventType, Instance instance, DateTime now)
+    private async Task<InstanceEvent> GenerateProcessChangeEvent(
+        string eventType,
+        Instance instance,
+        DateTime now,
+        ClaimsPrincipal user
+    )
     {
-        var currentAuth = _authenticationContext.Current;
-        PlatformUser user;
-        switch (currentAuth)
-        {
-            case Authenticated.User auth:
-            {
-                var details = await auth.LoadDetails(validateSelectedParty: true);
-                user = new PlatformUser
-                {
-                    UserId = auth.UserId,
-                    AuthenticationLevel = auth.AuthenticationLevel,
-                    NationalIdentityNumber = details.Profile.Party.SSN,
-                };
-                break;
-            }
-            case Authenticated.SelfIdentifiedUser auth:
-            {
-                var details = await auth.LoadDetails();
-                user = new PlatformUser
-                {
-                    UserId = auth.UserId,
-                    AuthenticationLevel = auth.AuthenticationLevel,
-                    NationalIdentityNumber = details.Profile.Party.SSN, // This is probably null?
-                };
-                break;
-            }
-            case Authenticated.Org:
-            {
-                user = new PlatformUser { }; // TODO: what do we do here?
-                break;
-            }
-            case Authenticated.ServiceOwner auth:
-            {
-                user = new PlatformUser { OrgId = auth.Name, AuthenticationLevel = auth.AuthenticationLevel };
-                break;
-            }
-            case Authenticated.SystemUser auth:
-            {
-                user = new PlatformUser
-                {
-                    SystemUserId = auth.SystemUserId[0],
-                    SystemUserOwnerOrgNo = auth.SystemUserOrgNr.Get(Models.OrganisationNumberFormat.Local),
-                    SystemUserName = null, // TODO: will get this name later when a lookup API is implemented or the name is passed in token
-                    AuthenticationLevel = auth.AuthenticationLevel,
-                };
-                break;
-            }
-            default:
-                throw new Exception($"Unknown authentication context: {currentAuth.GetType().Name}");
-        }
-
+        int? userId = user.GetUserIdAsInt();
         InstanceEvent instanceEvent = new()
         {
             InstanceId = instance.Id,
             InstanceOwnerPartyId = instance.InstanceOwner.PartyId,
             EventType = eventType,
             Created = now,
-            User = user,
+            User = new PlatformUser
+            {
+                UserId = userId,
+                AuthenticationLevel = user.GetAuthenticationLevel(),
+                OrgId = user.GetOrg(),
+            },
             ProcessInfo = instance.Process,
         };
+
+        if (string.IsNullOrEmpty(instanceEvent.User.OrgId) && userId != null)
+        {
+            UserProfile? up = await _profileClient.GetUserProfile((int)userId);
+            instanceEvent.User.NationalIdentityNumber = up?.Party.SSN; //TODO: Should we throw error if both OrgId and userProfile is null?
+        }
 
         return instanceEvent;
     }
 
-    private async Task<ProcessStateChange?> HandleMoveToNext(Instance instance, string? action)
+    private async Task<ProcessStateChange?> HandleMoveToNext(Instance instance, ClaimsPrincipal user, string? action)
     {
-        ProcessStateChange? processStateChange = await ProcessNext(instance, action);
+        ProcessStateChange? processStateChange = await ProcessNext(instance, user, action);
 
         if (processStateChange == null)
         {

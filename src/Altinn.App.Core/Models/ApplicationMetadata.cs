@@ -58,18 +58,12 @@ public class ApplicationMetadata : Application
     public Logo? Logo { get; set; }
 
     /// <summary>
-    /// Frontend sometimes need to have knowledge of the nuget package version for backwards compatibility.
-    /// The string is of the format `major.minor.patch.build`.
+    /// Frontend sometimes need to have knowledge of the nuget package version for backwards compatibility
     /// </summary>
     [JsonProperty(PropertyName = "altinnNugetVersion")]
-    public string AltinnNugetVersion { get; set; } = LibVersion ?? throw new Exception("Assembly version is null");
-
-    internal static readonly string? LibVersion;
-
-    static ApplicationMetadata()
-    {
-        LibVersion = typeof(ApplicationMetadata).Assembly.GetName().Version?.ToString();
-    }
+    public string AltinnNugetVersion { get; set; } =
+        typeof(ApplicationMetadata).Assembly.GetName().Version?.ToString()
+        ?? throw new Exception("Assembly version is null");
 
     /// <summary>
     /// Holds properties that are not mapped to other properties

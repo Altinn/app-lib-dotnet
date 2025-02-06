@@ -30,36 +30,12 @@ public class CorrespondenceResponseTests
                   {
                      "correspondenceId": "d22d8dda-7b56-48c0-b287-5052aa255d5b",
                      "status": "Published",
-                     "recipient": "urn:altinn:organization:identifier-no:213872702",
+                     "recipient": "26267892619",
                      "notifications": [
                         {
                            "orderId": "0ee29355-f2ca-4cd9-98e0-e97a4242d321",
                            "isReminder": true,
                            "status": "MissingContact"
-                        }
-                     ]
-                  },
-                  {
-                     "correspondenceId": "d22d8dda-7b56-48c0-b287-5052aa255d5b",
-                     "status": "Published",
-                     "recipient": "13896396174",
-                     "notifications": [
-                        {
-                           "orderId": "0ee29355-f2ca-4cd9-98e0-e97a4242d321",
-                           "isReminder": true,
-                           "status": "Success"
-                        }
-                     ]
-                  },
-                  {
-                     "correspondenceId": "d22d8dda-7b56-48c0-b287-5052aa255d5b",
-                     "status": "Published",
-                     "recipient": "urn:altinn:person:identifier-no:13896396174",
-                     "notifications": [
-                        {
-                           "orderId": "0ee29355-f2ca-4cd9-98e0-e97a4242d321",
-                           "isReminder": true,
-                           "status": "Success"
                         }
                      ]
                   }
@@ -70,9 +46,6 @@ public class CorrespondenceResponseTests
             }
             """;
 
-        var testOrg = OrganisationOrPersonIdentifier.Create(OrganisationNumber.Parse("213872702"));
-        var testPerson = OrganisationOrPersonIdentifier.Create(NationalIdentityNumber.Parse("13896396174"));
-
         // Act
         var parsedResponse = JsonSerializer.Deserialize<SendCorrespondenceResponse>(encodedResponse);
 
@@ -81,13 +54,16 @@ public class CorrespondenceResponseTests
         Assert.NotNull(parsedResponse.Correspondences);
         Assert.NotNull(parsedResponse.AttachmentIds);
 
-        parsedResponse.Correspondences.Should().HaveCount(4);
+        parsedResponse.Correspondences.Should().HaveCount(2);
         parsedResponse
             .Correspondences[0]
             .CorrespondenceId.Should()
             .Be(Guid.Parse("d22d8dda-7b56-48c0-b287-5052aa255d5b"));
         parsedResponse.Correspondences[0].Status.Should().Be(CorrespondenceStatus.Initialized);
-        parsedResponse.Correspondences[0].Recipient.Should().Be(testOrg);
+        parsedResponse
+            .Correspondences[0]
+            .Recipient.Should()
+            .Be(OrganisationOrPersonIdentifier.Create(OrganisationNumber.Parse("0192:213872702")));
 
         parsedResponse.Correspondences[0].Notifications.Should().HaveCount(1);
         parsedResponse
@@ -103,16 +79,16 @@ public class CorrespondenceResponseTests
             .Be(CorrespondenceNotificationStatusResponse.Success);
 
         parsedResponse.Correspondences[1].Status.Should().Be(CorrespondenceStatus.Published);
-        parsedResponse.Correspondences[1].Recipient.Should().Be(testOrg);
+        parsedResponse
+            .Correspondences[1]
+            .Recipient.Should()
+            .Be(OrganisationOrPersonIdentifier.Create(NationalIdentityNumber.Parse("26267892619")));
         parsedResponse.Correspondences[1].Notifications![0].IsReminder.Should().BeTrue();
         parsedResponse
             .Correspondences[1]
             .Notifications![0]
             .Status.Should()
             .Be(CorrespondenceNotificationStatusResponse.MissingContact);
-
-        parsedResponse.Correspondences[2].Recipient.Should().Be(testPerson);
-        parsedResponse.Correspondences[3].Recipient.Should().Be(testPerson);
 
         parsedResponse.AttachmentIds.Should().HaveCount(1);
         parsedResponse.AttachmentIds[0].Should().Be(Guid.Parse("cae24499-a5f9-425b-9c5b-4dac85fce891"));
@@ -151,7 +127,7 @@ public class CorrespondenceResponseTests
                         "isReminder": true,
                         "notificationChannel": "EmailPreferred",
                         "ignoreReservation": true,
-                        "resourceId": "test-resource-id",
+                        "resourceId": "apps-correspondence-integrasjon2",
                         "processingStatus": {
                             "status": "Registered",
                             "description": "Order has been registered and is awaiting requested send time before processing.",
@@ -171,7 +147,7 @@ public class CorrespondenceResponseTests
                         "isReminder": false,
                         "notificationChannel": "EmailPreferred",
                         "ignoreReservation": true,
-                        "resourceId": "test-resource-id",
+                        "resourceId": "apps-correspondence-integrasjon2",
                         "processingStatus": {
                             "status": "Completed",
                             "description": "Order processing is completed. All notifications have been generated.",
@@ -198,7 +174,7 @@ public class CorrespondenceResponseTests
                         }
                     }
                 ],
-                "recipient": "urn:altinn:person:identifier-no:13896396174",
+                "recipient": "0192:213872702",
                 "markedUnread": null,
                 "correspondenceId": "94fa9dd9-734e-4712-9d49-4018aeb1a5dc",
                 "content": {
@@ -228,8 +204,8 @@ public class CorrespondenceResponseTests
                 "status": "Published",
                 "statusText": "Published",
                 "statusChanged": "2024-11-14T11:06:56.208705+00:00",
-                "resourceId": "test-resource-id",
-                "sender": "urn:altinn:organization:identifier-no:991825827",
+                "resourceId": "apps-correspondence-integrasjon2",
+                "sender": "0192:991825827",
                 "sendersReference": "1234",
                 "messageSender": "Test Testesen",
                 "requestedPublishTime": "2024-05-29T13:31:28.290518+00:00",
@@ -294,7 +270,7 @@ public class CorrespondenceResponseTests
                     Created = DateTimeOffset.Parse("2024-11-14T11:05:57.054356Z"),
                     NotificationChannel = CorrespondenceNotificationChannel.EmailPreferred,
                     IgnoreReservation = true,
-                    ResourceId = "test-resource-id",
+                    ResourceId = "apps-correspondence-integrasjon2",
                     ProcessingStatus = new CorrespondenceNotificationStatusSummaryResponse
                     {
                         Status = "Completed",
@@ -323,7 +299,7 @@ public class CorrespondenceResponseTests
                     },
                 }
             );
-        parsedResponse.Recipient.Should().Be("urn:altinn:person:identifier-no:13896396174");
+        parsedResponse.Recipient.Should().Be("0192:213872702");
         parsedResponse.CorrespondenceId.Should().Be(Guid.Parse("94fa9dd9-734e-4712-9d49-4018aeb1a5dc"));
         parsedResponse
             .Content.Should()
@@ -356,8 +332,8 @@ public class CorrespondenceResponseTests
         parsedResponse.Created.Should().Be(DateTimeOffset.Parse("2024-11-14T11:05:56.575089+00:00"));
         parsedResponse.Status.Should().Be(CorrespondenceStatus.Published);
         parsedResponse.StatusText.Should().Be("Published");
-        parsedResponse.ResourceId.Should().Be("test-resource-id");
-        parsedResponse.Sender.Should().Be(OrganisationNumber.Parse("991825827"));
+        parsedResponse.ResourceId.Should().Be("apps-correspondence-integrasjon2");
+        parsedResponse.Sender.Should().Be(OrganisationNumber.Parse("0192:991825827"));
         parsedResponse.SendersReference.Should().Be("1234");
         parsedResponse.MessageSender.Should().Be("Test Testesen");
         parsedResponse.RequestedPublishTime.Should().Be(DateTimeOffset.Parse("2024-05-29T13:31:28.290518+00:00"));

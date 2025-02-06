@@ -1,6 +1,5 @@
 using System.Security.Claims;
 using System.Text.Json;
-using Altinn.App.Core.Constants;
 using Altinn.App.Core.Helpers;
 using Altinn.Authorization.ABAC.Xacml.JsonProfile;
 using Altinn.Platform.Storage.Interface.Models;
@@ -187,8 +186,8 @@ public class MultiDecisionHelperTests
                 new(
                     new List<Claim>
                     {
-                        new(AltinnUrns.PartyId, partyId, "#integer"),
-                        new(AltinnUrns.AuthenticationLevel, "3", "#integer"),
+                        new("urn:altinn:partyid", partyId, "#integer"),
+                        new("urn:altinn:authlevel", "3", "#integer"),
                     }
                 ),
             }

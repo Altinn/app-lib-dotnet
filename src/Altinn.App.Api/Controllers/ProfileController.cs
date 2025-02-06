@@ -1,4 +1,5 @@
-using Altinn.App.Core.Features.Auth;
+using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Internal.Profile;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,14 +13,14 @@ namespace Altinn.App.Api.Controllers;
 [ApiController]
 public class ProfileController : Controller
 {
-    private readonly IAuthenticationContext _authenticationContext;
+    private readonly IProfileClient _profileClient;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProfileController"/> class
     /// </summary>
-    public ProfileController(IAuthenticationContext authenticationContext)
+    public ProfileController(IProfileClient profileClient)
     {
-        _authenticationContext = authenticationContext;
+        _profileClient = profileClient;
     }
 
     /// <summary>
@@ -30,21 +31,26 @@ public class ProfileController : Controller
     [HttpGet("user")]
     public async Task<ActionResult> GetUser()
     {
-        var context = _authenticationContext.Current;
-        switch (context)
+        int userId = AuthenticationHelper.GetUserId(HttpContext);
+        if (userId == 0)
         {
-            case Authenticated.User user:
+            return BadRequest("The userId is not proviced in the context.");
+        }
+
+        try
+        {
+            var user = await _profileClient.GetUserProfile(userId);
+
+            if (user == null)
             {
-                var details = await user.LoadDetails(validateSelectedParty: false);
-                return Ok(details.Profile);
+                return NotFound();
             }
-            case Authenticated.SelfIdentifiedUser selfIdentifiedUser:
-            {
-                var details = await selfIdentifiedUser.LoadDetails();
-                return Ok(details.Profile);
-            }
-            default:
-                return BadRequest($"Unknown authentication context: {context.GetType().Name}");
+
+            return Ok(user);
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, e.Message);
         }
     }
 }

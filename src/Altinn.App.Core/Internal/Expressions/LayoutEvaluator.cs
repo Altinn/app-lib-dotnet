@@ -1,4 +1,4 @@
-using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Models.Layout.Components;
@@ -14,15 +14,23 @@ public static class LayoutEvaluator
     /// <summary>
     /// Get a list of fields that are only referenced in hidden components in <see cref="LayoutEvaluatorState" />
     /// </summary>
-    public static async Task<List<DataReference>> GetHiddenFieldsForRemoval(LayoutEvaluatorState state)
+    public static async Task<List<DataReference>> GetHiddenFieldsForRemoval(
+        LayoutEvaluatorState state,
+        bool includeHiddenRowChildren = false
+    )
     {
         var hiddenModelBindings = new HashSet<DataReference>();
         var nonHiddenModelBindings = new HashSet<DataReference>();
 
-        var pageContexts = await state.GetComponentContexts();
-        foreach (var pageContext in pageContexts)
+        foreach (var context in await state.GetComponentContexts())
         {
-            await HiddenFieldsForRemovalRecurs(state, hiddenModelBindings, nonHiddenModelBindings, pageContext);
+            await HiddenFieldsForRemovalRecurs(
+                state,
+                includeHiddenRowChildren,
+                hiddenModelBindings,
+                nonHiddenModelBindings,
+                context
+            );
         }
 
         var forRemoval = hiddenModelBindings.Except(nonHiddenModelBindings);
@@ -31,55 +39,82 @@ public static class LayoutEvaluator
 
     private static async Task HiddenFieldsForRemovalRecurs(
         LayoutEvaluatorState state,
+        bool includeHiddenRowChildren,
         HashSet<DataReference> hiddenModelBindings,
         HashSet<DataReference> nonHiddenModelBindings,
         ComponentContext context
     )
     {
-        if (context.Component is null)
-        {
-            throw new ArgumentNullException(
-                nameof(context),
-                "Context must have a component when removing hidden fields"
-            );
-        }
-
-        var isHidden = await context.IsHidden(state);
-        if (context.Component is RepeatingGroupRowComponent or RepeatingGroupComponent)
-        {
-            if (context.Component.DataModelBindings.TryGetValue("group", out var groupBinding))
-            {
-                var indexedBinding = await state.AddInidicies(groupBinding, context);
-                (isHidden ? hiddenModelBindings : nonHiddenModelBindings).Add(indexedBinding);
-            }
-
-            if (isHidden)
-                return;
-        }
-
         // Recurse children
         foreach (var childContext in context.ChildContexts)
         {
-            await HiddenFieldsForRemovalRecurs(state, hiddenModelBindings, nonHiddenModelBindings, childContext);
+            // Ignore children of hidden rows if includeHiddenRowChildren is false
+            if (!includeHiddenRowChildren && childContext.Component is RepeatingGroupComponent)
+            {
+                var hiddenRows = await childContext.GetHiddenRows(state);
+                var currentRow = childContext.RowIndices?[^1];
+                var rowIsHidden = currentRow is not null && hiddenRows[currentRow.Value];
+                if (rowIsHidden)
+                {
+                    continue;
+                }
+            }
+
+            await HiddenFieldsForRemovalRecurs(
+                state,
+                includeHiddenRowChildren,
+                hiddenModelBindings,
+                nonHiddenModelBindings,
+                childContext
+            );
+        }
+
+        // Get dataReference for hidden rows
+        if (context is { Component: RepeatingGroupComponent repGroup })
+        {
+            var hiddenRows = await context.GetHiddenRows(state);
+            // Reverse order to get the last hidden row first so that the index is correct when removing from the data object
+            foreach (var index in Enumerable.Range(0, hiddenRows.Length).Reverse())
+            {
+                var rowIndices = context.RowIndices?.Append(index).ToArray() ?? [index];
+                var indexedBinding = await state.AddInidicies(
+                    repGroup.DataModelBindings["group"],
+                    context.DataElementIdentifier,
+                    rowIndices
+                );
+
+                if (hiddenRows[index])
+                {
+                    hiddenModelBindings.Add(indexedBinding);
+                }
+                else
+                {
+                    nonHiddenModelBindings.Add(indexedBinding);
+                }
+            }
         }
 
         // Remove data if hidden
-        foreach (var (bindingName, binding) in context.Component.DataModelBindings)
+        if (context.Component is not null)
         {
-            if (bindingName == "group")
+            foreach (var (bindingName, binding) in context.Component.DataModelBindings)
             {
-                continue;
-            }
+                if (bindingName == "group")
+                {
+                    continue;
+                }
 
-            var indexedBinding = await state.AddInidicies(binding, context);
+                var indexedBinding = await state.AddInidicies(binding, context);
+                var isHidden = await context.IsHidden(state);
 
-            if (isHidden)
-            {
-                hiddenModelBindings.Add(indexedBinding);
-            }
-            else
-            {
-                nonHiddenModelBindings.Add(indexedBinding);
+                if (isHidden)
+                {
+                    hiddenModelBindings.Add(indexedBinding);
+                }
+                else
+                {
+                    nonHiddenModelBindings.Add(indexedBinding);
+                }
             }
         }
     }
@@ -87,16 +122,7 @@ public static class LayoutEvaluator
     /// <summary>
     /// Remove fields that are only referenced from hidden fields from the data object in the state.
     /// </summary>
-    [Obsolete("Use the async version of this method RemoveHiddenDataAsync")]
-    public static void RemoveHiddenData(LayoutEvaluatorState state, RowRemovalOption rowRemovalOption)
-    {
-        RemoveHiddenDataAsync(state, rowRemovalOption).GetAwaiter().GetResult();
-    }
-
-    /// <summary>
-    /// Remove fields that are only referenced from hidden fields from the data object in the state.
-    /// </summary>
-    public static async Task RemoveHiddenDataAsync(LayoutEvaluatorState state, RowRemovalOption rowRemovalOption)
+    public static async Task RemoveHiddenData(LayoutEvaluatorState state, RowRemovalOption rowRemovalOption)
     {
         var fields = await GetHiddenFieldsForRemoval(state);
         foreach (var dataReference in fields)

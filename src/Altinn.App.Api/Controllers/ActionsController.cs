@@ -1,9 +1,9 @@
 using Altinn.App.Api.Extensions;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
+using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
-using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
@@ -35,7 +35,6 @@ public class ActionsController : ControllerBase
     private readonly IDataClient _dataClient;
     private readonly IAppMetadata _appMetadata;
     private readonly ModelSerializationService _modelSerialization;
-    private readonly IAuthenticationContext _authenticationContext;
 
     /// <summary>
     /// Create new instance of the <see cref="ActionsController"/> class
@@ -47,8 +46,7 @@ public class ActionsController : ControllerBase
         IValidationService validationService,
         IDataClient dataClient,
         IAppMetadata appMetadata,
-        ModelSerializationService modelSerialization,
-        IAuthenticationContext authenticationContext
+        ModelSerializationService modelSerialization
     )
     {
         _authorization = authorization;
@@ -58,7 +56,6 @@ public class ActionsController : ControllerBase
         _dataClient = dataClient;
         _appMetadata = appMetadata;
         _modelSerialization = modelSerialization;
-        _authenticationContext = authenticationContext;
     }
 
     /// <summary>
@@ -112,9 +109,11 @@ public class ActionsController : ControllerBase
             return Conflict($"Process is ended.");
         }
 
-        var currentAuth = _authenticationContext.Current;
-        if (currentAuth is not Authenticated.User user)
+        int? userId = HttpContext.User.GetUserIdAsInt();
+        if (userId == null)
+        {
             return Unauthorized();
+        }
 
         bool authorized = await _authorization.AuthorizeAction(
             new AppIdentifier(org, app),
@@ -137,7 +136,7 @@ public class ActionsController : ControllerBase
         );
         UserActionContext userActionContext = new(
             dataMutator,
-            user.UserId,
+            userId.Value,
             actionRequest.ButtonId,
             actionRequest.Metadata,
             language

@@ -1,8 +1,8 @@
 using System.Globalization;
-using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
+using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
@@ -21,6 +21,7 @@ public class SigningUserAction : IUserAction
     private readonly IProcessReader _processReader;
     private readonly IAppMetadata _appMetadata;
     private readonly ILogger<SigningUserAction> _logger;
+    private readonly IProfileClient _profileClient;
     private readonly ISignClient _signClient;
 
     /// <summary>
@@ -28,16 +29,19 @@ public class SigningUserAction : IUserAction
     /// </summary>
     /// <param name="processReader">The process reader</param>
     /// <param name="logger">The logger</param>
+    /// <param name="profileClient">The profile client</param>
     /// <param name="signClient">The sign client</param>
     /// <param name="appMetadata">The application metadata</param>
     public SigningUserAction(
         IProcessReader processReader,
         ILogger<SigningUserAction> logger,
+        IProfileClient profileClient,
         ISignClient signClient,
         IAppMetadata appMetadata
     )
     {
         _logger = logger;
+        _profileClient = profileClient;
         _signClient = signClient;
         _processReader = processReader;
         _appMetadata = appMetadata;
@@ -51,12 +55,7 @@ public class SigningUserAction : IUserAction
     /// <exception cref="ApplicationConfigException"></exception>
     public async Task<UserActionResult> HandleAction(UserActionContext context)
     {
-        if (
-            context.Authentication
-            is not Authenticated.User
-                and not Authenticated.SelfIdentifiedUser
-                and not Authenticated.SystemUser
-        )
+        if (context.UserId == null)
         {
             return UserActionResult.FailureResult(
                 error: new ActionError() { Code = "NoUserId", Message = "User id is missing in token" },
@@ -86,7 +85,7 @@ public class SigningUserAction : IUserAction
                     new InstanceIdentifier(context.Instance),
                     currentTask.Id,
                     signatureDataType,
-                    await GetSignee(context),
+                    await GetSignee(context.UserId.Value),
                     dataElementSignatures
                 );
                 await _signClient.SignDataElements(signatureContext);
@@ -142,31 +141,17 @@ public class SigningUserAction : IUserAction
         return connectedDataElements;
     }
 
-    private static async Task<Signee> GetSignee(UserActionContext context)
+    private async Task<Signee> GetSignee(int userId)
     {
-        switch (context.Authentication)
-        {
-            case Authenticated.User user:
-            {
-                var userProfile = await user.LookupProfile();
+        var userProfile =
+            await _profileClient.GetUserProfile(userId)
+            ?? throw new Exception("Could not get user profile while getting signee");
 
-                return new Signee
-                {
-                    UserId = userProfile.UserId.ToString(CultureInfo.InvariantCulture),
-                    PersonNumber = userProfile.Party.SSN,
-                    OrganisationNumber = userProfile.Party.OrgNumber,
-                };
-            }
-            case Authenticated.SelfIdentifiedUser selfIdentifiedUser:
-                return new Signee { UserId = selfIdentifiedUser.UserId.ToString(CultureInfo.InvariantCulture) };
-            case Authenticated.SystemUser systemUser:
-                return new Signee
-                {
-                    SystemUserId = systemUser.SystemUserId[0],
-                    OrganisationNumber = systemUser.SystemUserOrgNr.Get(OrganisationNumberFormat.Local),
-                };
-            default:
-                throw new Exception("Could not get signee");
-        }
+        return new Signee
+        {
+            UserId = userProfile.UserId.ToString(CultureInfo.InvariantCulture),
+            PersonNumber = userProfile.Party.SSN,
+            OrganisationNumber = userProfile.Party.OrgNumber,
+        };
     }
 }

@@ -54,12 +54,10 @@
   "dataModel": {
     "Mennesker": [
       {
-        "altinnRowId": "person0",
         "Navn": "Kåre",
         "Alder": 24
       },
       {
-        "altinnRowId": "person1",
         "Navn": "Arild",
         "Alder": 14
       }

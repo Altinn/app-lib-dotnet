@@ -1,12 +1,9 @@
-using System.Globalization;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using Altinn.App.Api.Controllers;
 using Altinn.App.Api.Tests.Controllers.TestResources;
 using Altinn.App.Api.Tests.Utils;
-using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features;
-using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Prefill;
@@ -40,7 +37,6 @@ public class StatelessDataControllerTests
         var prefillMock = new Mock<IPrefill>();
         var registerMock = new Mock<IAltinnPartyClient>();
         var pdpMock = new Mock<IPDP>();
-        var authContextMock = new Mock<IAuthenticationContext>();
         ILogger<DataController> logger = new NullLogger<DataController>();
         var statelessDataController = new StatelessDataController(
             logger,
@@ -49,8 +45,7 @@ public class StatelessDataControllerTests
             prefillMock.Object,
             registerMock.Object,
             pdpMock.Object,
-            new IDataProcessor[] { dataProcessorMock.Object },
-            authContextMock.Object
+            new IDataProcessor[] { dataProcessorMock.Object }
         );
 
         string dataType = null!; // this is what we're testing
@@ -81,7 +76,6 @@ public class StatelessDataControllerTests
         var prefillMock = new Mock<IPrefill>();
         var registerMock = new Mock<IAltinnPartyClient>();
         var pdpMock = new Mock<IPDP>();
-        var authContextMock = new Mock<IAuthenticationContext>();
         var dataType = "some-value";
         ILogger<DataController> logger = new NullLogger<DataController>();
         var statelessDataController = new StatelessDataController(
@@ -91,8 +85,7 @@ public class StatelessDataControllerTests
             prefillMock.Object,
             registerMock.Object,
             pdpMock.Object,
-            new IDataProcessor[] { dataProcessorMock.Object },
-            authContextMock.Object
+            new IDataProcessor[] { dataProcessorMock.Object }
         );
 
         // Act
@@ -148,7 +141,7 @@ public class StatelessDataControllerTests
         var factory = new StatelessDataControllerWebApplicationFactory();
 
         var client = factory.CreateClient();
-        string token = TestAuthentication.GetUserToken(1337);
+        string token = PrincipalUtil.GetToken(1337, null);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         using var request = new HttpRequestMessage(HttpMethod.Get, "/tdd/demo-app/v1/data?dataType=xml");
         request.Headers.Add("party", new string[] { "partyid:234", "partyid:234" }); // Double header
@@ -176,7 +169,7 @@ public class StatelessDataControllerTests
         var factory = new StatelessDataControllerWebApplicationFactory();
 
         var client = factory.CreateClient();
-        string token = TestAuthentication.GetUserToken(1337);
+        string token = PrincipalUtil.GetToken(1337, null);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         using var request = new HttpRequestMessage(HttpMethod.Get, "/tdd/demo-app/v1/data?dataType=xml");
         request.Headers.Add("party", new string[] { "partyid:234" });
@@ -205,7 +198,6 @@ public class StatelessDataControllerTests
         var prefillMock = new Mock<IPrefill>();
         var registerMock = new Mock<IAltinnPartyClient>();
         var pdpMock = new Mock<IPDP>();
-        var authContextMock = new Mock<IAuthenticationContext>();
         var dataType = "some-value";
         ILogger<DataController> logger = new NullLogger<DataController>();
         var statelessDataController = new StatelessDataController(
@@ -215,8 +207,7 @@ public class StatelessDataControllerTests
             prefillMock.Object,
             registerMock.Object,
             pdpMock.Object,
-            new IDataProcessor[] { dataProcessorMock.Object },
-            authContextMock.Object
+            new IDataProcessor[] { dataProcessorMock.Object }
         );
 
         // Act
@@ -245,7 +236,6 @@ public class StatelessDataControllerTests
         var prefillMock = new Mock<IPrefill>();
         var registerMock = new Mock<IAltinnPartyClient>();
         var pdpMock = new Mock<IPDP>();
-        var authContextMock = new Mock<IAuthenticationContext>();
         var dataType = "some-value";
         ILogger<DataController> logger = new NullLogger<DataController>();
         var statelessDataController = new StatelessDataController(
@@ -255,15 +245,14 @@ public class StatelessDataControllerTests
             prefillMock.Object,
             registerMock.Object,
             pdpMock.Object,
-            new IDataProcessor[] { dataProcessorMock.Object },
-            authContextMock.Object
+            new IDataProcessor[] { dataProcessorMock.Object }
         );
         statelessDataController.ControllerContext = new ControllerContext();
         statelessDataController.ControllerContext.HttpContext = new DefaultHttpContext();
         statelessDataController.ControllerContext.HttpContext.User = new ClaimsPrincipal(
             new List<ClaimsIdentity>()
             {
-                new ClaimsIdentity(new List<Claim> { new Claim(AltinnUrns.PartyId, string.Empty, "#integer") }),
+                new ClaimsIdentity(new List<Claim> { new Claim("urn:altinn:partyid", string.Empty, "#integer") }),
             }
         );
 
@@ -291,7 +280,6 @@ public class StatelessDataControllerTests
         var prefillMock = new Mock<IPrefill>();
         var registerMock = new Mock<IAltinnPartyClient>();
         var pdpMock = new Mock<IPDP>();
-        var authContextMock = new Mock<IAuthenticationContext>();
         var dataType = "some-value";
         ILogger<DataController> logger = new NullLogger<DataController>();
         var statelessDataController = new StatelessDataController(
@@ -301,13 +289,16 @@ public class StatelessDataControllerTests
             prefillMock.Object,
             registerMock.Object,
             pdpMock.Object,
-            new IDataProcessor[] { dataProcessorMock.Object },
-            authContextMock.Object
+            new IDataProcessor[] { dataProcessorMock.Object }
         );
         statelessDataController.ControllerContext = new ControllerContext();
         statelessDataController.ControllerContext.HttpContext = new DefaultHttpContext();
-        statelessDataController.ControllerContext.HttpContext.User = TestAuthentication.GetUserPrincipal();
-        authContextMock.Setup(c => c.Current).Returns(TestAuthentication.GetUserAuthentication());
+        statelessDataController.ControllerContext.HttpContext.User = new ClaimsPrincipal(
+            new List<ClaimsIdentity>()
+            {
+                new ClaimsIdentity(new List<Claim> { new Claim("urn:altinn:partyid", "12345", "#integer") }),
+            }
+        );
         pdpMock
             .Setup(p => p.GetDecisionForRequest(It.IsAny<XacmlJsonRequestRoot>()))
             .ReturnsAsync(
@@ -319,6 +310,7 @@ public class StatelessDataControllerTests
                     },
                 }
             );
+        registerMock.Setup(r => r.GetParty(12345)).ReturnsAsync(new Platform.Register.Models.Party { PartyId = 12345 });
 
         // Act
         appResourcesMock.Setup(x => x.GetClassRefForLogicDataType(dataType)).Returns(typeof(DummyModel).FullName!);
@@ -328,6 +320,7 @@ public class StatelessDataControllerTests
         result.Should().BeOfType<StatusCodeResult>().Which.StatusCode.Should().Be(403);
         appResourcesMock.Verify(x => x.GetClassRefForLogicDataType(dataType), Times.Once);
         appResourcesMock.VerifyNoOtherCalls();
+        registerMock.Verify(r => r.GetParty(12345));
         pdpMock.Verify(p => p.GetDecisionForRequest(It.IsAny<XacmlJsonRequestRoot>()));
         pdpMock.VerifyNoOtherCalls();
         dataProcessorMock.VerifyNoOtherCalls();
@@ -345,7 +338,6 @@ public class StatelessDataControllerTests
         var prefillMock = new Mock<IPrefill>();
         var registerMock = new Mock<IAltinnPartyClient>();
         var pdpMock = new Mock<IPDP>();
-        var authContextMock = new Mock<IAuthenticationContext>();
         var dataType = "some-value";
         var classRef = typeof(DummyModel).FullName!;
         ILogger<DataController> logger = new NullLogger<DataController>();
@@ -356,14 +348,16 @@ public class StatelessDataControllerTests
             prefillMock.Object,
             registerMock.Object,
             pdpMock.Object,
-            new IDataProcessor[] { dataProcessorMock.Object },
-            authContextMock.Object
+            new IDataProcessor[] { dataProcessorMock.Object }
         );
         statelessDataController.ControllerContext = new ControllerContext();
         statelessDataController.ControllerContext.HttpContext = new DefaultHttpContext();
-        var auth = TestAuthentication.GetUserAuthentication();
-        statelessDataController.ControllerContext.HttpContext.User = TestAuthentication.GetUserPrincipal();
-        authContextMock.Setup(c => c.Current).Returns(auth);
+        statelessDataController.ControllerContext.HttpContext.User = new ClaimsPrincipal(
+            new List<ClaimsIdentity>()
+            {
+                new ClaimsIdentity(new List<Claim> { new Claim("urn:altinn:partyid", "12345", "#integer") }),
+            }
+        );
         pdpMock
             .Setup(p => p.GetDecisionForRequest(It.IsAny<XacmlJsonRequestRoot>()))
             .ReturnsAsync(
@@ -376,6 +370,7 @@ public class StatelessDataControllerTests
                 }
             );
         appModelMock.Setup(a => a.Create(classRef)).Returns(new DummyModel());
+        registerMock.Setup(r => r.GetParty(12345)).ReturnsAsync(new Platform.Register.Models.Party { PartyId = 12345 });
 
         // Act
         appResourcesMock.Setup(x => x.GetClassRefForLogicDataType(dataType)).Returns(classRef);
@@ -387,15 +382,9 @@ public class StatelessDataControllerTests
         appResourcesMock.Verify(x => x.GetClassRefForLogicDataType(dataType), Times.Once);
         pdpMock.Verify(p => p.GetDecisionForRequest(It.IsAny<XacmlJsonRequestRoot>()));
         appModelMock.Verify(a => a.Create(classRef), Times.Once);
-        prefillMock.Verify(p =>
-            p.PrefillDataModel(
-                auth.SelectedPartyId.ToString(CultureInfo.InvariantCulture),
-                dataType,
-                It.IsAny<DummyModel>(),
-                null
-            )
-        );
+        prefillMock.Verify(p => p.PrefillDataModel("12345", dataType, It.IsAny<DummyModel>(), null));
         dataProcessorMock.Verify(a => a.ProcessDataRead(It.IsAny<Instance>(), null, It.IsAny<DummyModel>(), null));
+        registerMock.Verify(r => r.GetParty(12345));
         appResourcesMock.VerifyNoOtherCalls();
         pdpMock.VerifyNoOtherCalls();
         dataProcessorMock.VerifyNoOtherCalls();

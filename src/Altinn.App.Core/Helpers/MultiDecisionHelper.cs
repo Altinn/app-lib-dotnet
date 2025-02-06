@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.Security.Claims;
-using Altinn.App.Core.Constants;
 using Altinn.App.Core.Models;
 using Altinn.Authorization.ABAC.Xacml.JsonProfile;
 using Altinn.Common.PEP.Constants;
@@ -14,6 +13,8 @@ namespace Altinn.App.Core.Helpers;
 /// </summary>
 public static class MultiDecisionHelper
 {
+    private const string XacmlResourceTaskId = "urn:altinn:task";
+    private const string XacmlResourceEndId = "urn:altinn:end-event";
     private const string XacmlResourceActionId = "urn:oasis:names:tc:xacml:1.0:action:action-id";
     private const string DefaultIssuer = "Altinn";
     private const string DefaultType = "string";
@@ -113,14 +114,19 @@ public static class MultiDecisionHelper
         if (instanceProps.Task != null)
         {
             resourceCategory.Attribute.Add(
-                DecisionHelper.CreateXacmlJsonAttribute(AltinnUrns.Task, instanceProps.Task, DefaultType, DefaultIssuer)
+                DecisionHelper.CreateXacmlJsonAttribute(
+                    XacmlResourceTaskId,
+                    instanceProps.Task,
+                    DefaultType,
+                    DefaultIssuer
+                )
             );
         }
         else if (instance.Process?.EndEvent != null)
         {
             resourceCategory.Attribute.Add(
                 DecisionHelper.CreateXacmlJsonAttribute(
-                    AltinnUrns.EndEvent,
+                    XacmlResourceEndId,
                     instance.Process.EndEvent,
                     DefaultType,
                     DefaultIssuer

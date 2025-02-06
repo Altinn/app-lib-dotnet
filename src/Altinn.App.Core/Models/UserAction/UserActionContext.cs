@@ -1,5 +1,4 @@
 using Altinn.App.Core.Features;
-using Altinn.App.Core.Features.Auth;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Models.UserAction;
@@ -17,20 +16,17 @@ public class UserActionContext
     /// <param name="buttonId">The id of the button that triggered the action (optional)</param>
     /// <param name="actionMetadata"></param>
     /// <param name="language">The currently used language by the user (or null if not available)</param>
-    /// <param name="authentication">Information about the authenticated party</param>
     public UserActionContext(
         IInstanceDataMutator dataMutator,
         int? userId,
         string? buttonId = null,
         Dictionary<string, string>? actionMetadata = null,
-        string? language = null,
-        Authenticated? authentication = null
+        string? language = null
     )
     {
         Instance = dataMutator.Instance;
         DataMutator = dataMutator;
-        _userId = userId;
-        Authentication = authentication;
+        UserId = userId;
         ButtonId = buttonId;
         ActionMetadata = actionMetadata ?? [];
         Language = language;
@@ -44,22 +40,19 @@ public class UserActionContext
     /// <param name="buttonId">The id of the button that triggered the action (optional)</param>
     /// <param name="actionMetadata"></param>
     /// <param name="language">The currently used language by the user (or null if not available)</param>
-    /// <param name="authentication">Information about the authenticated party</param>
     [Obsolete("Use the constructor with IInstanceDataAccessor instead")]
     public UserActionContext(
         Instance instance,
         int? userId,
         string? buttonId = null,
         Dictionary<string, string>? actionMetadata = null,
-        string? language = null,
-        Authenticated? authentication = null
+        string? language = null
     )
     {
         Instance = instance;
         // ! TODO: Deprecated constructor, remove in v9
         DataMutator = null!;
-        _userId = userId;
-        Authentication = authentication;
+        UserId = userId;
         ButtonId = buttonId;
         ActionMetadata = actionMetadata ?? [];
         Language = language;
@@ -75,24 +68,10 @@ public class UserActionContext
     /// </summary>
     public IInstanceDataMutator DataMutator { get; }
 
-    private readonly int? _userId;
-
     /// <summary>
     /// The user performing the action
     /// </summary>
-    public int? UserId =>
-        _userId
-        ?? Authentication switch
-        {
-            Authenticated.User user => user.UserId,
-            Authenticated.SelfIdentifiedUser selfIdentifiedUser => selfIdentifiedUser.UserId,
-            _ => null,
-        };
-
-    /// <summary>
-    /// Information about the authenticated party
-    /// </summary>
-    public Authenticated? Authentication { get; }
+    public int? UserId { get; }
 
     /// <summary>
     /// The id of the button that triggered the action (optional)

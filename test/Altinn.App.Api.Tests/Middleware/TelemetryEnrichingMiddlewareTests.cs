@@ -17,8 +17,7 @@ public class TelemetryEnrichingMiddlewareTests : ApiTestBase, IClassFixture<WebA
 
     private (TelemetrySink Telemetry, Func<Task> Request) AnalyzeTelemetry(
         string token,
-        bool includeTraceContext = false,
-        bool includePdfHeader = false
+        bool includeTraceContext = false
     )
     {
         this.OverrideServicesForThisTest = (services) =>
@@ -36,8 +35,6 @@ public class TelemetryEnrichingMiddlewareTests : ApiTestBase, IClassFixture<WebA
         var telemetry = this.Services.GetRequiredService<TelemetrySink>();
 
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        if (includePdfHeader)
-            client.DefaultRequestHeaders.Add("X-Altinn-IsPdf", "true");
 
         return (telemetry, async () => await client.GetStringAsync($"/{org}/{app}/api/v1/applicationmetadata"));
     }
@@ -46,7 +43,7 @@ public class TelemetryEnrichingMiddlewareTests : ApiTestBase, IClassFixture<WebA
     public async Task Should_Have_Root_AspNetCore_Trace_Org()
     {
         var org = Guid.NewGuid().ToString();
-        string token = TestAuthentication.GetServiceOwnerToken();
+        string token = PrincipalUtil.GetOrgToken(org, "160694123", 4);
 
         var (telemetry, request) = AnalyzeTelemetry(token);
         await request();
@@ -68,7 +65,7 @@ public class TelemetryEnrichingMiddlewareTests : ApiTestBase, IClassFixture<WebA
     public async Task Should_Have_Root_AspNetCore_Trace_User()
     {
         var partyId = Random.Shared.Next();
-        var principal = TestAuthentication.GetUserPrincipal(10, partyId, 4);
+        var principal = PrincipalUtil.GetUserPrincipal(10, partyId, 4);
         var token = JwtTokenMock.GenerateToken(principal, new TimeSpan(1, 1, 1));
 
         var (telemetry, request) = AnalyzeTelemetry(token);
@@ -91,7 +88,7 @@ public class TelemetryEnrichingMiddlewareTests : ApiTestBase, IClassFixture<WebA
     public async Task Should_Always_Be_A_Root_Trace()
     {
         var partyId = Random.Shared.Next();
-        var principal = TestAuthentication.GetUserPrincipal(10, partyId, 4);
+        var principal = PrincipalUtil.GetUserPrincipal(10, partyId, 4);
         var token = JwtTokenMock.GenerateToken(principal, new TimeSpan(1, 1, 1));
 
         var (telemetry, request) = AnalyzeTelemetry(token, includeTraceContext: true);
@@ -110,34 +107,6 @@ public class TelemetryEnrichingMiddlewareTests : ApiTestBase, IClassFixture<WebA
         Assert.Null(activity.Parent);
         Assert.Null(activity.ParentId);
         Assert.Equal(default, activity.ParentSpanId);
-
-        await telemetry.Snapshot(activity, c => c.ScrubMember(Telemetry.Labels.UserPartyId));
-    }
-
-    [Fact]
-    public async Task Should_Always_Be_A_Root_Trace_Unless_Pdf()
-    {
-        var partyId = Random.Shared.Next();
-        var principal = TestAuthentication.GetUserPrincipal(10, partyId, 4);
-        var token = JwtTokenMock.GenerateToken(principal, new TimeSpan(1, 1, 1));
-
-        var (telemetry, request) = AnalyzeTelemetry(token, includeTraceContext: true, includePdfHeader: true);
-        ActivitySpanId parentSpanId;
-        using (var parentActivity = telemetry.Object.ActivitySource.StartActivity("TestParentActivity"))
-        {
-            Assert.NotNull(parentActivity);
-            parentSpanId = parentActivity.SpanId;
-            await request();
-        }
-        await telemetry.WaitForServerActivity();
-
-        var activities = telemetry.CapturedActivities;
-        var activity = Assert.Single(activities, a => a.Kind == ActivityKind.Server);
-        Assert.True(activity.IsAllDataRequested);
-        Assert.True(activity.Recorded);
-        Assert.Equal("Microsoft.AspNetCore", activity.Source.Name);
-        Assert.NotNull(activity.ParentId);
-        Assert.Equal(parentSpanId, activity.ParentSpanId);
 
         await telemetry.Snapshot(activity, c => c.ScrubMember(Telemetry.Labels.UserPartyId));
     }

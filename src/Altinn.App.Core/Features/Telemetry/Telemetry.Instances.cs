@@ -76,11 +76,10 @@ partial class Telemetry
         return activity;
     }
 
-    internal Activity? StartUpdateProcessActivity(Instance instance, int eventCount = 0)
+    internal Activity? StartUpdateProcessActivity(Instance instance)
     {
         var activity = ActivitySource.StartActivity($"{Prefix}.UpdateProcess");
         activity?.SetInstanceId(instance);
-        activity?.SetTag(Labels.InstanceEventsCount, eventCount);
         return activity;
     }
 

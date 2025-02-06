@@ -24,11 +24,9 @@ public static class StartupHelper
         {
             string fileName = $"{Assembly.GetCallingAssembly().GetName().Name}.xml";
             string fullFilePath = Path.Combine(AppContext.BaseDirectory, fileName);
-            if (File.Exists(fullFilePath))
-                swaggerDelegate(fullFilePath, false);
+            swaggerDelegate(fullFilePath, false);
             string fullFilePathApi = Path.Combine(AppContext.BaseDirectory, "Altinn.App.Api.xml");
-            if (File.Exists(fullFilePathApi))
-                swaggerDelegate(fullFilePathApi, false);
+            swaggerDelegate(fullFilePathApi, false);
         }
         catch (Exception)
         {
