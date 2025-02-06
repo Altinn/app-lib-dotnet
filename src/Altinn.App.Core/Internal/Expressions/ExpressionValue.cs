@@ -105,36 +105,34 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     /// </summary>
     public static ExpressionValue FromObject(object? value)
     {
-        return (ExpressionValue)(
-            value switch
-            {
-                ExpressionValue expressionValue => expressionValue,
-                null => ExpressionValue.Null,
-                bool boolValue => boolValue,
-                string stringValue => stringValue,
-                float numberValue => (double?)numberValue,
-                double numberValue => (double?)numberValue,
-                byte numberValue => (double?)numberValue,
-                sbyte numberValue => (double?)numberValue,
-                short numberValue => (double?)numberValue,
-                ushort numberValue => (double?)numberValue,
-                int numberValue => (double?)numberValue,
-                uint numberValue => (double?)numberValue,
-                long numberValue => (double?)numberValue,
-                ulong numberValue => (double?)numberValue,
-                decimal numberValue => (double?)numberValue, // expressions uses double which needs an explicit cast
+        return value switch
+        {
+            ExpressionValue expressionValue => expressionValue,
+            null => Null,
+            bool boolValue => boolValue,
+            string stringValue => stringValue,
+            float numberValue => numberValue,
+            double numberValue => numberValue,
+            byte numberValue => numberValue,
+            sbyte numberValue => numberValue,
+            short numberValue => numberValue,
+            ushort numberValue => numberValue,
+            int numberValue => numberValue,
+            uint numberValue => numberValue,
+            long numberValue => numberValue,
+            ulong numberValue => numberValue,
+            decimal numberValue => (double?)numberValue, // expressions uses double which needs an explicit cast
 
-                DateTime dateTimeValue => JsonSerializer.Serialize(dateTimeValue),
-                DateTimeOffset dateTimeOffsetValue => JsonSerializer.Serialize(dateTimeOffsetValue),
-                TimeSpan timeSpanValue => JsonSerializer.Serialize(timeSpanValue),
-                TimeOnly timeOnlyValue => JsonSerializer.Serialize(timeOnlyValue),
-                DateOnly dateOnlyValue => JsonSerializer.Serialize(dateOnlyValue),
+            DateTime dateTimeValue => JsonSerializer.Serialize(dateTimeValue),
+            DateTimeOffset dateTimeOffsetValue => JsonSerializer.Serialize(dateTimeOffsetValue),
+            TimeSpan timeSpanValue => JsonSerializer.Serialize(timeSpanValue),
+            TimeOnly timeOnlyValue => JsonSerializer.Serialize(timeOnlyValue),
+            DateOnly dateOnlyValue => JsonSerializer.Serialize(dateOnlyValue),
 
-                // Dictionary<string, ExpressionValue> objectValue => new ExpressionValue(objectValue),
-                // TODO add support for arrays, objects and other potential types
-                _ => ExpressionValue.Null,
-            }
-        );
+            // Dictionary<string, ExpressionValue> objectValue => new ExpressionValue(objectValue),
+            // TODO add support for arrays, objects and other potential types
+            _ => Null,
+        };
     }
 
     /// <summary>
@@ -168,7 +166,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
         {
             JsonValueKind.True => true,
             JsonValueKind.False => false,
-            _ => throw new InvalidOperationException($"{ToString()} is a boolean"),
+            _ => throw new InvalidOperationException($"{this} is not a boolean"),
         };
 
     /// <summary>
@@ -178,7 +176,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
         _valueKind switch
         {
             JsonValueKind.String => _stringValue ?? throw new UnreachableException("Not a string"),
-            _ => throw new InvalidOperationException($"{ToString()} is not a string"),
+            _ => throw new InvalidOperationException($"{this} is not a string"),
         };
 
     /// <summary>
@@ -188,21 +186,21 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
         _valueKind switch
         {
             JsonValueKind.Number => _numberValue,
-            _ => throw new InvalidOperationException($"{ToString()} is not a number"),
+            _ => throw new InvalidOperationException($"{this} is not a number"),
         };
 
     // public Dictionary<string, ExpressionValue> Object =>
     //     _valueKind switch
     //     {
-    //         JsonValueKind.Object => _objectValue ?? throw new UnreachableException($"{ToString()} is not an object"),
-    //         _ => throw new InvalidOperationException($"{ToString()} is not an object"),
+    //         JsonValueKind.Object => _objectValue ?? throw new UnreachableException($"{this} is not an object"),
+    //         _ => throw new InvalidOperationException($"{this} is not an object"),
     //     };
     //
     // public ExpressionValue[] Array =>
     //     _valueKind switch
     //     {
-    //         JsonValueKind.Array => _arrayValue ?? throw new UnreachableException($"{ToString()} is not an array"),
-    //         _ => throw new InvalidOperationException($"{ToString()} is not an array"),
+    //         JsonValueKind.Array => _arrayValue ?? throw new UnreachableException($"{this} is not an array"),
+    //         _ => throw new InvalidOperationException($"{this} is not an array"),
     //     };
 
     /// <summary>

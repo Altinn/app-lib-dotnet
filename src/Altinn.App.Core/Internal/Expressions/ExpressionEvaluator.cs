@@ -400,7 +400,7 @@ public static class ExpressionEvaluator
                 { ValueKind: JsonValueKind.String } => arg.String,
                 { ValueKind: JsonValueKind.Null } => null,
                 _ => throw new ExpressionEvaluatorTypeErrorException(
-                    $"Date expressions only accept strings or null, got {arg.ToString()} of type {arg.ValueKind}"
+                    $"Date expressions only accept strings or null, got {arg} of type {arg.ValueKind}"
                 ),
             }
         );
