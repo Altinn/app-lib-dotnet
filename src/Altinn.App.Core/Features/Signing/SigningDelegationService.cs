@@ -97,7 +97,7 @@ internal sealed class SigningDelegationService(
     public async Task<(List<SigneeContext>, bool success)> RevokeSigneeRights(
         string taskId,
         string instanceIdCombo,
-        Guid InstanceOwnerPartyUuid,
+        Guid instanceOwnerPartyUuid,
         AppIdentifier appIdentifier,
         List<SigneeContext> signeeContexts,
         CancellationToken ct,
@@ -120,12 +120,7 @@ internal sealed class SigningDelegationService(
                     {
                         ResourceId = appResourceId.Value,
                         InstanceId = instanceGuid.ToString(),
-                        From = new DelegationParty
-                        {
-                            Value =
-                                InstanceOwnerPartyUuid.ToString()
-                                ?? throw new InvalidOperationException("Delegator: PartyUuid is null"),
-                        },
+                        From = new DelegationParty { Value = instanceOwnerPartyUuid.ToString() },
                         To = new DelegationParty
                         {
                             Value =
