@@ -26,7 +26,7 @@ public enum TokenIssuer
     AltinnStudio,
 
     /// <summary>
-    /// Token is from external IDporten, e.g. SBS
+    /// Token is from external ID-porten, e.g. SBS
     /// </summary>
     IDporten,
 

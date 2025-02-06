@@ -49,19 +49,19 @@
           url.scheme: http
         },
         {
-          user.authentication.inAltinnPortal: False
+          user.authentication.inAltinnPortal: True
         },
         {
           user.authentication.level: 2
         },
         {
-          user.authentication.method: Mock
+          user.authentication.method: BankID
         },
         {
-          user.authentication.token.isExchanged: True
+          user.authentication.token.isExchanged: False
         },
         {
-          user.authentication.token.issuer: Unknown
+          user.authentication.token.issuer: Altinn
         },
         {
           user.authentication.type: User

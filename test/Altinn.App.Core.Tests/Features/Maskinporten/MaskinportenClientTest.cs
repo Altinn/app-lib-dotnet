@@ -214,7 +214,7 @@ public class MaskinportenClientTests
         );
         var expiresIn = TimeSpan.FromMinutes(30);
         var altinnAccessToken = TestAuthentication.GetServiceOwnerToken(
-            "160694123",
+            "405003309",
             org: "ttd",
             expiry: expiresIn,
             timeProvider: fixture.FakeTime

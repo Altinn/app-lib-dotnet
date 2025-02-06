@@ -464,7 +464,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         };
         HttpClient client = GetRootedClient(org, app);
 
-        string orgToken = TestAuthentication.GetServiceOwnerToken("160694123", org: "tdd");
+        string orgToken = TestAuthentication.GetServiceOwnerToken("405003309", org: "tdd");
         string userToken = TestAuthentication.GetUserToken(1337, 501337);
 
         var sourceInstance = await CreateInstanceSimplified(org, app, instanceOwnerPartyId, client, orgToken);

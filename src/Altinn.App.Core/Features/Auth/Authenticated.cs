@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -6,6 +7,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Features.Maskinporten.Constants;
 using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
@@ -31,15 +33,41 @@ public abstract class Authenticated
     public bool TokenIsExchanged { get; }
 
     /// <summary>
-    /// The JWT token.
+    /// The scopes of the JWT token
+    /// </summary>
+    public Scopes Scopes { get; }
+
+    /// <summary>
+    /// The JWT token
     /// </summary>
     public string Token { get; }
 
-    private Authenticated(TokenIssuer tokenIssuer, bool tokenIsExchanged, string token)
+    private Authenticated(TokenIssuer tokenIssuer, bool tokenIsExchanged, Scopes scopes, string token)
     {
         TokenIssuer = tokenIssuer;
         TokenIsExchanged = tokenIsExchanged;
+        Scopes = scopes;
         Token = token;
+    }
+
+    /// <summary>
+    /// Resolves the language for the current authenticated client.
+    /// If the client is a user, we will look up the language from the user profile.
+    /// In all other cases we default to "nb".
+    /// </summary>
+    /// <returns></returns>
+    public async Task<string> GetLanguage()
+    {
+        string language = LanguageConst.Nb;
+        if (this is not User user)
+            return language;
+
+        var details = await user.LoadDetails();
+
+        if (!string.IsNullOrEmpty(details.Profile.ProfileSettingPreference?.Language))
+            language = details.Profile.ProfileSettingPreference.Language;
+
+        return language;
     }
 
     /// <summary>
@@ -47,12 +75,12 @@ public abstract class Authenticated
     /// </summary>
     public sealed class None : Authenticated
     {
-        internal None(TokenIssuer tokenIssuer, bool tokenIsExchanged, string token)
-            : base(tokenIssuer, tokenIsExchanged, token) { }
+        internal None(TokenIssuer tokenIssuer, bool tokenIsExchanged, Scopes scopes, string token)
+            : base(tokenIssuer, tokenIsExchanged, scopes, token) { }
     }
 
     /// <summary>
-    /// The logged in client is a user (e.g. Altinn portal/IDporten)
+    /// The logged in client is a user (e.g. Altinn portal/ID-porten)
     /// </summary>
     public sealed class User : Authenticated
     {
@@ -92,7 +120,7 @@ public abstract class Authenticated
         private readonly Func<int, Task<List<Party>?>> _getPartyList;
         private readonly Func<int, int, Task<bool?>> _validateSelectedParty;
         private readonly Func<int, int, Task<IEnumerable<Role>>> _getUserRoles;
-        private readonly Func<Task<ApplicationMetadata>> _getApplicationMetadata;
+        private readonly ApplicationMetadata _appMetadata;
 
         internal User(
             int userId,
@@ -103,15 +131,16 @@ public abstract class Authenticated
             bool inAltinnPortal,
             TokenIssuer tokenIssuer,
             bool tokenIsExchanged,
+            Scopes scopes,
             string token,
             Func<int, Task<UserProfile?>> getUserProfile,
             Func<int, Task<Party?>> lookupParty,
             Func<int, Task<List<Party>?>> getPartyList,
             Func<int, int, Task<bool?>> validateSelectedParty,
             Func<int, int, Task<IEnumerable<Role>>> getUserRoles,
-            Func<Task<ApplicationMetadata>> getApplicationMetadata
+            ApplicationMetadata appMetadata
         )
-            : base(tokenIssuer, tokenIsExchanged, token)
+            : base(tokenIssuer, tokenIsExchanged, scopes, token)
         {
             UserId = userId;
             UserPartyId = userPartyId;
@@ -124,7 +153,7 @@ public abstract class Authenticated
             _getPartyList = getPartyList;
             _validateSelectedParty = validateSelectedParty;
             _getUserRoles = getUserRoles;
-            _getApplicationMetadata = getApplicationMetadata;
+            _appMetadata = appMetadata;
         }
 
         /// <summary>
@@ -138,7 +167,7 @@ public abstract class Authenticated
         /// <param name="Profile">Users profile</param>
         /// <param name="RepresentsSelf">True if the user represents itself (user party will equal selected party)</param>
         /// <param name="Parties">List of parties the user can represent</param>
-        /// <param name="PartiesAllowedToInstantiate">List of parties the user can instantiate</param>
+        /// <param name="PartiesAllowedToInstantiate">List of parties the user can instantiate as</param>
         /// <param name="Roles">List of roles the user has</param>
         /// <param name="CanRepresent">True if the user can represent the selected party. Only set if details were loaded with validateSelectedParty set to true</param>
         public sealed record Details(
@@ -150,7 +179,79 @@ public abstract class Authenticated
             IReadOnlyList<Party> PartiesAllowedToInstantiate,
             IReadOnlyList<Role> Roles,
             bool? CanRepresent = null
-        );
+        )
+        {
+            /// <summary>
+            /// Check if the user can represent a party.
+            /// </summary>
+            /// <param name="partyId">Party ID</param>
+            /// <returns></returns>
+            public bool CanRepresentParty(int partyId)
+            {
+                if (partyId == UserParty.PartyId || partyId == SelectedParty.PartyId)
+                    return true;
+
+                var partiesToCheck = new Queue<Party>(Parties);
+                while (partiesToCheck.Count > 0)
+                {
+                    var party = partiesToCheck.Dequeue();
+                    if (party.PartyId == partyId)
+                        return true;
+
+                    if (party.ChildParties is not null)
+                    {
+                        foreach (var childParty in party.ChildParties)
+                            partiesToCheck.Enqueue(childParty);
+                    }
+                }
+
+                return false;
+            }
+
+            /// <summary>
+            /// Checks if the current user can instantiate a specific party by ID.
+            /// </summary>
+            /// <param name="partyId">Party ID</param>
+            /// <returns></returns>
+            public bool CanInstantiateAsParty(int partyId)
+            {
+                var partiesToCheck = new Queue<Party>(PartiesAllowedToInstantiate);
+                while (partiesToCheck.Count > 0)
+                {
+                    var party = partiesToCheck.Dequeue();
+                    if (party.PartyId == partyId && !party.OnlyHierarchyElementWithNoAccess)
+                        return true;
+
+                    if (party.ChildParties is not null)
+                    {
+                        foreach (var childParty in party.ChildParties)
+                            partiesToCheck.Enqueue(childParty);
+                    }
+                }
+
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Lookup the party for the selected party ID.
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException">If the party couldn't be resolved</exception>
+        public async Task<Party> LookupSelectedParty() =>
+            _extra?.SelectedParty
+            ?? await _lookupParty(SelectedPartyId)
+            ?? throw new InvalidOperationException($"Could not load party for selected party ID: {SelectedPartyId}");
+
+        /// <summary>
+        /// Lookup the user profile for the current user.
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public async Task<UserProfile> LookupProfile() =>
+            _extra?.Profile
+            ?? await _getUserProfile(UserId)
+            ?? throw new InvalidOperationException("Could not get user profile while getting user context");
 
         /// <summary>
         /// Load the details for the current user.
@@ -200,10 +301,9 @@ public abstract class Authenticated
 
             var roles = await _getUserRoles(UserId, SelectedPartyId);
 
-            var application = await _getApplicationMetadata();
             var partiesAllowedToInstantiate = InstantiationHelper.FilterPartiesByAllowedPartyTypes(
                 parties,
-                application.PartyTypesAllowed
+                _appMetadata.PartyTypesAllowed
             );
 
             _extra = new Details(
@@ -221,10 +321,10 @@ public abstract class Authenticated
     }
 
     /// <summary>
-    /// The logged in client is a user (e.g. Altinn portal/IDporten) with auth level 0.
+    /// The logged in client is a user (e.g. Altinn portal/ID-porten) with auth level 0.
     /// This means that the user has authenticated with a username/password, which can happen using
     /// * Altinn "self registered users"
-    /// * IDporten through Ansattporten ("low"), MinID self registered eID
+    /// * ID-porten through Ansattporten ("low"), MinID self registered eID
     /// These have limited access to Altinn and can only represent themselves.
     /// </summary>
     public sealed class SelfIdentifiedUser : Authenticated
@@ -251,6 +351,7 @@ public abstract class Authenticated
 
         private Details? _extra;
         private readonly Func<int, Task<UserProfile?>> _getUserProfile;
+        private readonly ApplicationMetadata _appMetadata;
 
         internal SelfIdentifiedUser(
             string username,
@@ -259,10 +360,12 @@ public abstract class Authenticated
             string authenticationMethod,
             TokenIssuer tokenIssuer,
             bool tokenIsExchanged,
+            Scopes scopes,
             string token,
-            Func<int, Task<UserProfile?>> getUserProfile
+            Func<int, Task<UserProfile?>> getUserProfile,
+            ApplicationMetadata appMetadata
         )
-            : base(tokenIssuer, tokenIsExchanged, token)
+            : base(tokenIssuer, tokenIsExchanged, scopes, token)
         {
             Username = username;
             UserId = userId;
@@ -271,6 +374,7 @@ public abstract class Authenticated
             // Since they are self-identified, they are always 0
             AuthenticationLevel = 0;
             _getUserProfile = getUserProfile;
+            _appMetadata = appMetadata;
         }
 
         /// <summary>
@@ -281,7 +385,7 @@ public abstract class Authenticated
         /// <summary>
         /// Detailed information about a logged in user
         /// </summary>
-        public sealed record Details(Party Party, UserProfile Profile, bool RepresentsSelf);
+        public sealed record Details(Party Party, UserProfile Profile, bool RepresentsSelf, bool CanInstantiate);
 
         /// <summary>
         /// Load the details for the current user.
@@ -299,7 +403,8 @@ public abstract class Authenticated
                 );
 
             var party = userProfile.Party;
-            _extra = new Details(party, userProfile, RepresentsSelf: true);
+            var canInstantiate = InstantiationHelper.IsPartyAllowedToInstantiate(party, _appMetadata.PartyTypesAllowed);
+            _extra = new Details(party, userProfile, RepresentsSelf: true, canInstantiate);
             return _extra;
         }
     }
@@ -326,6 +431,7 @@ public abstract class Authenticated
         public string AuthenticationMethod { get; }
 
         private readonly Func<string, Task<Party>> _lookupParty;
+        private readonly ApplicationMetadata _appMetadata;
 
         internal Org(
             string orgNo,
@@ -333,22 +439,26 @@ public abstract class Authenticated
             string authenticationMethod,
             TokenIssuer tokenIssuer,
             bool tokenIsExchanged,
+            Scopes scopes,
             string token,
-            Func<string, Task<Party>> lookupParty
+            Func<string, Task<Party>> lookupParty,
+            ApplicationMetadata appMetadata
         )
-            : base(tokenIssuer, tokenIsExchanged, token)
+            : base(tokenIssuer, tokenIsExchanged, scopes, token)
         {
             OrgNo = orgNo;
             AuthenticationLevel = authenticationLevel;
             AuthenticationMethod = authenticationMethod;
             _lookupParty = lookupParty;
+            _appMetadata = appMetadata;
         }
 
         /// <summary>
         /// Detailed information about an organisation
         /// </summary>
         /// <param name="Party">Party of the org</param>
-        public sealed record Details(Party Party);
+        /// <param name="CanInstantiate">True if the org can instantiate applications</param>
+        public sealed record Details(Party Party, bool CanInstantiate);
 
         /// <summary>
         /// Load the details for the current organisation.
@@ -357,7 +467,10 @@ public abstract class Authenticated
         public async Task<Details> LoadDetails()
         {
             var party = await _lookupParty(OrgNo);
-            return new Details(party);
+
+            var canInstantiate = InstantiationHelper.IsPartyAllowedToInstantiate(party, _appMetadata.PartyTypesAllowed);
+
+            return new Details(party, canInstantiate);
         }
     }
 
@@ -396,10 +509,11 @@ public abstract class Authenticated
             string authenticationMethod,
             TokenIssuer tokenIssuer,
             bool tokenIsExchanged,
+            Scopes scopes,
             string token,
             Func<string, Task<Party>> lookupParty
         )
-            : base(tokenIssuer, tokenIsExchanged, token)
+            : base(tokenIssuer, tokenIsExchanged, scopes, token)
         {
             Name = name;
             OrgNo = orgNo;
@@ -435,12 +549,17 @@ public abstract class Authenticated
         /// <summary>
         /// System user ID
         /// </summary>
-        public IReadOnlyList<string> SystemUserId { get; }
+        public IReadOnlyList<Guid> SystemUserId { get; }
 
         /// <summary>
         /// Organisation number of the system user
         /// </summary>
         public OrganisationNumber SystemUserOrgNr { get; }
+
+        /// <summary>
+        /// Organisation number of the supplier system
+        /// </summary>
+        public OrganisationNumber SupplierOrgNr { get; }
 
         /// <summary>
         /// System ID
@@ -458,35 +577,42 @@ public abstract class Authenticated
         public string AuthenticationMethod { get; }
 
         private readonly Func<string, Task<Party>> _lookupParty;
+        private readonly ApplicationMetadata _appMetadata;
 
         internal SystemUser(
-            IReadOnlyList<string> systemUserId,
+            IReadOnlyList<Guid> systemUserId,
             OrganisationNumber systemUserOrgNr,
+            OrganisationNumber supplierOrgNr,
             string systemId,
             int? authenticationLevel,
             string? authenticationMethod,
             TokenIssuer tokenIssuer,
             bool tokenIsExchanged,
+            Scopes scopes,
             string token,
-            Func<string, Task<Party>> lookupParty
+            Func<string, Task<Party>> lookupParty,
+            ApplicationMetadata appMetadata
         )
-            : base(tokenIssuer, tokenIsExchanged, token)
+            : base(tokenIssuer, tokenIsExchanged, scopes, token)
         {
             SystemUserId = systemUserId;
             SystemUserOrgNr = systemUserOrgNr;
+            SupplierOrgNr = supplierOrgNr;
             SystemId = systemId;
             // System user tokens can either be raw Maskinporten or exchanged atm.
             // If the token is not exchanged, we don't have these claims and so we default to what altinn-authentication currently does.
             AuthenticationLevel = authenticationLevel ?? 3;
             AuthenticationMethod = authenticationMethod ?? "maskinporten";
             _lookupParty = lookupParty;
+            _appMetadata = appMetadata;
         }
 
         /// <summary>
         /// Detailed information about a system user
         /// </summary>
         /// <param name="Party">Party of the system user</param>
-        public sealed record Details(Party Party);
+        /// <param name="CanInstantiate">True if the system user can instantiate applications</param>
+        public sealed record Details(Party Party, bool CanInstantiate);
 
         /// <summary>
         /// Load the details for the current system user.
@@ -495,12 +621,15 @@ public abstract class Authenticated
         public async Task<Details> LoadDetails()
         {
             var party = await _lookupParty(SystemUserOrgNr.Get(OrganisationNumberFormat.Local));
-            return new Details(party);
+
+            var canInstantiate = InstantiationHelper.IsPartyAllowedToInstantiate(party, _appMetadata.PartyTypesAllowed);
+
+            return new Details(party, canInstantiate);
         }
     }
 
     // TODO: app token?
-    // public sealed record App(string Token) : AuthenticationInfo;
+    // public sealed record App(string Token) : Authenticated;
 
     internal static (TokenIssuer Issuer, bool IsExchanged) ResolveIssuer(
         string? iss,
@@ -523,7 +652,7 @@ public abstract class Authenticated
             ) && !isInAltinnPortal;
 
         // If we have the special scope, we know the login was done through Altinn portal directly
-        // In any other case we want the underlying authentication method (IDporten, Maskinporten)
+        // In any other case we want the underlying authentication method (ID-porten, Maskinporten)
         if (isInAltinnPortal)
             return (TokenIssuer.Altinn, isExchanged);
 
@@ -555,8 +684,8 @@ public abstract class Authenticated
             }
         }
 
-        // IDportens authenticationlevel equivalent will only be present if the token originates from IDporten
-        // We should already be handling the IDporten through Altinn portal case (with the scope)
+        // IDportens authenticationlevel equivalent will only be present if the token originates from ID-porten
+        // We should already be handling the ID-porten through Altinn portal case (with the scope)
         if (acr?.StartsWith("idporten", StringComparison.OrdinalIgnoreCase) ?? false)
             return (TokenIssuer.IDporten, isExchanged);
 
@@ -566,18 +695,18 @@ public abstract class Authenticated
     internal static Authenticated From(
         string tokenStr,
         bool isAuthenticated,
+        ApplicationMetadata appMetadata,
         Func<string?> getSelectedParty,
         Func<int, Task<UserProfile?>> getUserProfile,
         Func<int, Task<Party?>> lookupUserParty,
         Func<string, Task<Party>> lookupOrgParty,
         Func<int, Task<List<Party>?>> getPartyList,
         Func<int, int, Task<bool?>> validateSelectedParty,
-        Func<int, int, Task<IEnumerable<Role>>> getUserRoles,
-        Func<Task<ApplicationMetadata>> getApplicationMetadata
+        Func<int, int, Task<IEnumerable<Role>>> getUserRoles
     )
     {
         if (string.IsNullOrWhiteSpace(tokenStr))
-            return new None(TokenIssuer.None, false, tokenStr);
+            return new None(TokenIssuer.None, false, Scopes.None, tokenStr);
 
         var handler = new JwtSecurityTokenHandler();
         var token = handler.ReadJwtToken(tokenStr);
@@ -594,11 +723,17 @@ public abstract class Authenticated
         Claim? authorizationDetailsClaim = null;
         Claim? userIdClaim = null;
         Claim? usernameClaim = null;
+        Claim? consumerClaim = null;
+        OrgClaim? consumerClaimValue = null;
 
-        static void TryAssign(Claim claim, string name, ref Claim? dest)
+        static bool TryAssign(Claim claim, string name, [NotNullWhen(true)] ref Claim? dest)
         {
             if (claim.Type.Equals(name, StringComparison.OrdinalIgnoreCase))
+            {
                 dest = claim;
+                return true;
+            }
+            return false;
         }
 
         foreach (var claim in claims)
@@ -614,6 +749,8 @@ public abstract class Authenticated
             TryAssign(claim, "authorization_details", ref authorizationDetailsClaim);
             TryAssign(claim, AltinnCoreClaimTypes.UserId, ref userIdClaim);
             TryAssign(claim, AltinnCoreClaimTypes.UserName, ref usernameClaim);
+            if (TryAssign(claim, "consumer", ref consumerClaim))
+                consumerClaimValue = JsonSerializer.Deserialize<OrgClaim>(consumerClaim.Value);
         }
 
         var scopes = new Scopes(scopeClaim?.Value);
@@ -627,14 +764,11 @@ public abstract class Authenticated
         );
 
         if (!isAuthenticated)
-            return new None(tokenIssuer, isExchanged, tokenStr);
+            return new None(tokenIssuer, isExchanged, scopes, tokenStr);
 
         int? partyId = null;
         if (!string.IsNullOrWhiteSpace(partyIdClaim?.Value))
         {
-            // TODO: partyId is only present for org tokens when using virksomhetsbruker
-            // which is going away, probably.
-            // If we want `Org` to always have party ID, then we need to do a lookup with AltinnPartyClient (register)
             if (!int.TryParse(partyIdClaim.Value, CultureInfo.InvariantCulture, out var partyIdClaimValue))
                 throw new AuthenticationContextException(
                     $"Invalid party ID claim value for token: {partyIdClaim.Value}"
@@ -686,22 +820,29 @@ public abstract class Authenticated
                 );
             if (!OrganisationNumber.TryParse(systemUser.SystemUserOrg.Id, out var orgNr))
                 throw new AuthenticationContextException(
-                    $"Invalid organisation number in systemuser token: {systemUser.SystemUserOrg.Id}"
+                    $"Invalid system user organisation number in system user token: {systemUser.SystemUserOrg.Id}"
+                );
+            if (!OrganisationNumber.TryParse(consumerClaimValue?.Id, out var supplierOrgNr))
+                throw new AuthenticationContextException(
+                    $"Invalid organisation number in supplier organisation number claim for system user token: {consumerClaimValue?.Id}"
                 );
 
             return new SystemUser(
                 systemUser.SystemUserId,
                 orgNr,
+                supplierOrgNr,
                 systemUser.SystemId,
                 int.TryParse(authLevelClaim?.Value, CultureInfo.InvariantCulture, out authLevel) ? authLevel : null,
                 !string.IsNullOrWhiteSpace(authMethodClaim?.Value) ? authMethodClaim.Value : null,
                 tokenIssuer,
                 isExchanged,
+                scopes,
                 tokenStr,
-                lookupOrgParty
+                lookupOrgParty,
+                appMetadata
             );
         }
-        else if (!string.IsNullOrWhiteSpace(orgClaim?.Value))
+        else if (!string.IsNullOrWhiteSpace(orgClaim?.Value) && orgClaim.Value == appMetadata.Org)
         {
             // In this case the token should have a serviceowner scope,
             // due to the `urn:altinn:org` claim
@@ -712,8 +853,6 @@ public abstract class Authenticated
 
             ParseAuthLevel(authLevelClaim?.Value, out authLevel);
 
-            // TODO: check if the org is the same as the owner of the app? A flag?
-
             return new ServiceOwner(
                 orgClaim.Value,
                 orgNoClaim.Value,
@@ -721,6 +860,7 @@ public abstract class Authenticated
                 authMethodClaim.Value,
                 tokenIssuer,
                 isExchanged,
+                scopes,
                 tokenStr,
                 lookupOrgParty
             );
@@ -737,8 +877,10 @@ public abstract class Authenticated
                 authMethodClaim.Value,
                 tokenIssuer,
                 isExchanged,
+                scopes,
                 tokenStr,
-                lookupOrgParty
+                lookupOrgParty,
+                appMetadata
             );
         }
 
@@ -767,8 +909,10 @@ public abstract class Authenticated
                 authMethodClaim.Value,
                 tokenIssuer,
                 isExchanged,
+                scopes,
                 tokenStr,
-                getUserProfile
+                getUserProfile,
+                appMetadata
             );
         }
 
@@ -790,13 +934,14 @@ public abstract class Authenticated
             isInAltinnPortal,
             tokenIssuer,
             isExchanged,
+            scopes,
             tokenStr,
             getUserProfile,
             lookupUserParty,
             getPartyList,
             validateSelectedParty,
             getUserRoles,
-            getApplicationMetadata
+            appMetadata
         );
     }
 
@@ -805,12 +950,12 @@ public abstract class Authenticated
     internal record AuthorizationDetailsClaim();
 
     internal sealed record SystemUserAuthorizationDetailsClaim(
-        [property: JsonPropertyName("systemuser_id")] IReadOnlyList<string> SystemUserId,
+        [property: JsonPropertyName("systemuser_id")] IReadOnlyList<Guid> SystemUserId,
         [property: JsonPropertyName("system_id")] string SystemId,
-        [property: JsonPropertyName("systemuser_org")] SystemUserOrg SystemUserOrg
+        [property: JsonPropertyName("systemuser_org")] OrgClaim SystemUserOrg
     ) : AuthorizationDetailsClaim();
 
-    internal sealed record SystemUserOrg(
+    internal sealed record OrgClaim(
         [property: JsonPropertyName("authority")] string Authority,
         [property: JsonPropertyName("ID")] string Id
     );

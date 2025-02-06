@@ -34,10 +34,10 @@
           user.authentication.method: Mock
         },
         {
-          user.authentication.token.isExchanged: True
+          user.authentication.token.isExchanged: False
         },
         {
-          user.authentication.token.issuer: Unknown
+          user.authentication.token.issuer: Altinn
         },
         {
           user.authentication.type: SelfIdentifiedUser

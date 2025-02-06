@@ -37,13 +37,13 @@
           user.authentication.level: 3
         },
         {
-          user.authentication.method: Mock
+          user.authentication.method: maskinporten
         },
         {
           user.authentication.token.isExchanged: True
         },
         {
-          user.authentication.token.issuer: Unknown
+          user.authentication.token.issuer: Maskinporten
         },
         {
           user.authentication.type: ServiceOwner
