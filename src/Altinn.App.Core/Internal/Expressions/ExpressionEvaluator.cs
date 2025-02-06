@@ -338,7 +338,7 @@ public static class ExpressionEvaluator
             date = TimeZoneInfo.ConvertTime(date.Value, timezone);
         }
 
-        string language = state.GetLanguage() ?? "nb";
+        string? language = state.GetLanguage();
         return UnicodeDateTimeTokenConverter.Format(
             date,
             args.Length == 2 ? ToStringForEquals(args[1]) : null,

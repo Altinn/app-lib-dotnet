@@ -66,7 +66,7 @@ internal static partial class UnicodeDateTimeTokenConverter
             _ => null,
         };
 
-    public static string? Format(DateTimeOffset? when, string? ldmlFormat, string language)
+    public static string? Format(DateTimeOffset? when, string? ldmlFormat, string? language)
     {
         if (when is null)
         {
@@ -83,7 +83,7 @@ internal static partial class UnicodeDateTimeTokenConverter
             };
         }
 
-        CultureInfo culture = new CultureInfo(language);
+        var culture = GetCultureInfoFromLang(language);
         StringBuilder sb = new StringBuilder();
         int i = 0;
         while (i < ldmlFormat.Length)
@@ -102,7 +102,8 @@ internal static partial class UnicodeDateTimeTokenConverter
                 var converted = when.Value.ToString(dotNetToken, culture);
                 converted = token switch
                 {
-                    // Localization of AM/PM is very locale dependent the norwegian translations does not have wide recognition
+                    // Localization of AM/PM is very locale dependent the nynorsk translations does not have wide recognition
+                    "a" when language is "nb" or "nn" => when.Value.Hour <= 12 ? "a.m." : "p.m.",
                     "a" => when.Value.Hour <= 12 ? "AM" : "PM",
                     // This does not exist in .NET, but it's just the first letter of the day name.
                     "EEEEE" => converted.Substring(0, 1).ToUpper(culture),
@@ -142,6 +143,24 @@ internal static partial class UnicodeDateTimeTokenConverter
         }
 
         return sb.ToString();
+    }
+
+    private static CultureInfo GetCultureInfoFromLang(string? language)
+    {
+        CultureInfo culture = CultureInfo.InvariantCulture;
+        if (language is not null)
+        {
+            try
+            {
+                culture = new CultureInfo(language);
+            }
+            catch (CultureNotFoundException)
+            {
+                // If the language is not recognized, we'll just use the invariant culture.
+            }
+        }
+
+        return culture;
     }
 
     [GeneratedRegex(
