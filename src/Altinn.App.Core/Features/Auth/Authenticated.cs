@@ -59,13 +59,19 @@ public abstract class Authenticated
     public async Task<string> GetLanguage()
     {
         string language = LanguageConst.Nb;
-        if (this is not User user)
+
+        if (this is not User and not SelfIdentifiedUser)
             return language;
 
-        var details = await user.LoadDetails();
+        var profile = this switch
+        {
+            User user => await user.LookupProfile(),
+            SelfIdentifiedUser selfIdentifiedUser => (await selfIdentifiedUser.LoadDetails()).Profile,
+            _ => throw new InvalidOperationException($"Unexpected case: {this.GetType().Name}"),
+        };
 
-        if (!string.IsNullOrEmpty(details.Profile.ProfileSettingPreference?.Language))
-            language = details.Profile.ProfileSettingPreference.Language;
+        if (!string.IsNullOrEmpty(profile.ProfileSettingPreference?.Language))
+            language = profile.ProfileSettingPreference.Language;
 
         return language;
     }
