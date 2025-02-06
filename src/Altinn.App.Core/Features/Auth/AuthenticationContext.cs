@@ -64,10 +64,6 @@ internal sealed class AuthenticationContext : IAuthenticationContext
             {
                 var token = JwtTokenUtil.GetTokenFromContext(httpContext, _appSettings.CurrentValue.RuntimeCookieName);
                 var isAuthenticated = httpContext.User?.Identity?.IsAuthenticated ?? false;
-                if (string.IsNullOrWhiteSpace(token))
-                    _logger.LogWarning("Missing token");
-                if (!isAuthenticated)
-                    _logger.LogWarning("User is not authenticated");
 
                 authInfo = Authenticated.From(
                     tokenStr: token,

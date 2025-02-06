@@ -88,7 +88,17 @@ public class PrefillSI : IPrefill
             _allowOverwrite = allowOverwriteToken.ToObject<bool>();
         }
 
-        Party? party = await _altinnPartyClientClient.GetParty(int.Parse(partyId, CultureInfo.InvariantCulture));
+        var currentAuth = _authenticationContext.Current;
+        var partyIdNum = int.Parse(partyId, CultureInfo.InvariantCulture);
+        Party? party = currentAuth switch
+        {
+            Authenticated.User user when user.SelectedPartyId == partyIdNum => await user.LookupSelectedParty(),
+            Authenticated.SelfIdentifiedUser user when user.PartyId == partyIdNum => (await user.LoadDetails()).Party,
+            Authenticated.SystemUser systemUser
+                when await systemUser.LoadDetails() is { } details && details.Party.PartyId == partyIdNum =>
+                details.Party,
+            _ => await _altinnPartyClientClient.GetParty(partyIdNum),
+        };
         if (party == null)
         {
             string errorMessage = $"Could find party for partyId: {partyId}";
@@ -107,7 +117,6 @@ public class PrefillSI : IPrefill
 
             if (userProfileDict.Count > 0)
             {
-                var currentAuth = _authenticationContext.Current;
                 UserProfile? userProfile = null;
                 switch (currentAuth)
                 {
