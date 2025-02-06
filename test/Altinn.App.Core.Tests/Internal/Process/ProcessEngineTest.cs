@@ -176,12 +176,12 @@ public sealed class ProcessEngineTest : IDisposable
                 UserId = auth.UserId,
                 AuthenticationLevel = auth.AuthenticationLevel,
             },
-            Authenticated.ServiceOwner auth when await auth.LoadDetails() is { } details => new()
+            Authenticated.ServiceOwner auth => new()
             {
                 OrgId = auth.Name,
                 AuthenticationLevel = auth.AuthenticationLevel,
             },
-            Authenticated.SystemUser auth when await auth.LoadDetails() is { } details => new()
+            Authenticated.SystemUser auth => new()
             {
                 SystemUserId = auth.SystemUserId[0],
                 SystemUserOwnerOrgNo = auth.SystemUserOrgNr.Get(OrganisationNumberFormat.Local),

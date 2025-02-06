@@ -40,7 +40,6 @@ internal sealed class AppConfigurationCache(
         try
         {
             var env = _serviceProvider.GetRequiredService<IHostEnvironment>();
-            var appMetadata = _serviceProvider.GetRequiredService<IAppMetadata>();
             if (env.IsDevelopment())
             {
                 // local dev, config can change

@@ -30,7 +30,7 @@ public readonly struct Scopes : IEquatable<Scopes>
     /// </summary>
     /// <param name="obj"></param>
     /// <returns></returns>
-    public override bool Equals(object? obj) => obj is Scopes other ? Equals(other) : false;
+    public override bool Equals(object? obj) => obj is Scopes other && Equals(other);
 
     /// <summary>
     /// Returns the hash code for this instance.
