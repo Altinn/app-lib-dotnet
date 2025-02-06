@@ -38,11 +38,7 @@ public class AppResourcesMock : IAppResources
     private readonly Telemetry? _telemetry;
     private readonly IEnumerable<AppResourcesMutationHook> _mutationHooks;
 
-    // Use an in-memory dictionary or anything else for "prefill" data
-    // that you might want to modify in a test with a Hook.
     public Dictionary<string, string> _prefillByDataType = new();
-
-    //public Dictionary<string, string> prefill OnEntry { get; set; }
 
     public AppResourcesMock(
         IOptions<AppSettings> settings,
@@ -59,24 +55,12 @@ public class AppResourcesMock : IAppResources
         _mutationHooks = mutationHooks;
         _telemetry = telemetry;
 
-        // Optionally load some initial data for each known dataType from test files:
-        // For example:
-        // _prefillByDataType["SomeDataType"] = File.ReadAllText(TestData.GetPrefillJsonPath("SomeDataType"));
-        // ...
-
-        // Finally, apply any dynamic modifications from your test.
         foreach (var hook in _mutationHooks)
         {
             hook.Action(this);
         }
     }
 
-    /// <summary>
-    /// Lets your tests add or modify prefill JSON for certain data types.
-    /// Example usage in test: <c>services.AddSingleton(new AppResourcesMutationHook(mock => {
-    ///   mock.AddOrUpdatePrefill("SomeDataType", "{\"foo\":\"bar\"}");
-    /// }))</c>
-    /// </summary>
     public void AddOrUpdatePrefill(string dataType, string json)
     {
         _prefillByDataType[dataType] = json;
@@ -84,37 +68,36 @@ public class AppResourcesMock : IAppResources
 
     public byte[] GetText(string org, string app, string textResource)
     {
-        throw new NotImplementedException();
+        return Array.Empty<byte>();
     }
 
     public Task<TextResource?> GetTexts(string org, string app, string language)
     {
-        throw new NotImplementedException();
+        return Task.FromResult<TextResource?>(null);
     }
 
     public string GetModelJsonSchema(string modelId)
     {
-        throw new NotImplementedException();
+        return string.Empty;
     }
 
     public Application GetApplication()
     {
-        throw new NotImplementedException();
+        return new Application();
     }
 
     public string? GetApplicationXACMLPolicy()
     {
-        throw new NotImplementedException();
+        return null;
     }
 
     public string? GetApplicationBPMNProcess()
     {
-        throw new NotImplementedException();
+        return null;
     }
 
     public string? GetPrefillJson(string dataModelName = "ServiceModel")
     {
-        // If test has set a custom prefill in memory, return it
         if (_prefillByDataType.TryGetValue(dataModelName, out var fromTest))
         {
             return fromTest;
@@ -124,81 +107,81 @@ public class AppResourcesMock : IAppResources
 
     public string GetClassRefForLogicDataType(string dataType)
     {
-        throw new NotImplementedException();
+        return string.Empty;
     }
 
     public string GetLayouts()
     {
-        throw new NotImplementedException();
+        return string.Empty;
     }
 
     public string? GetLayoutSettingsString()
     {
-        throw new NotImplementedException();
+        return null;
     }
 
     public LayoutSettings GetLayoutSettings()
     {
-        throw new NotImplementedException();
+        return new LayoutSettings();
     }
 
     public string GetLayoutSets()
     {
-        throw new NotImplementedException();
+        return string.Empty;
     }
 
     public Task<string?> GetFooter()
     {
-        throw new NotImplementedException();
+        return Task.FromResult<string?>(null);
     }
 
     public LayoutSets? GetLayoutSet()
     {
-        throw new NotImplementedException();
+        return null;
     }
 
     public LayoutSet? GetLayoutSetForTask(string taskId)
     {
-        throw new NotImplementedException();
+        return null;
     }
 
     public string GetLayoutsForSet(string layoutSetId)
     {
-        throw new NotImplementedException();
+        return string.Empty;
     }
 
     public LayoutModel? GetLayoutModelForTask(string taskId)
     {
-        throw new NotImplementedException();
+        return null;
     }
 
     public LayoutModel GetLayoutModel(string? layoutSetId = null)
     {
-        throw new NotImplementedException();
+        return new LayoutModel(new List<LayoutSetComponent>(), new LayoutSet { Id = null, DataType = null });
     }
 
     public string? GetLayoutSettingsStringForSet(string layoutSetId)
     {
-        throw new NotImplementedException();
+        return null;
     }
 
     public LayoutSettings? GetLayoutSettingsForSet(string? layoutSetId)
     {
-        throw new NotImplementedException();
+        return null;
     }
 
     public byte[] GetRuleConfigurationForSet(string id)
     {
-        throw new NotImplementedException();
+        return Array.Empty<byte>();
     }
 
     public byte[] GetRuleHandlerForSet(string id)
     {
-        throw new NotImplementedException();
+        return Array.Empty<byte>();
     }
 
     public string? GetValidationConfiguration(string dataTypeId)
     {
-        throw new NotImplementedException();
+        return null;
     }
 }

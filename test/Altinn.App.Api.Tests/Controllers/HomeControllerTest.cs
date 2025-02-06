@@ -48,6 +48,7 @@ public class HomeControllerTest : ApiTestBase, IClassFixture<WebApplicationFacto
         {
             services.AddSingleton(_dataProcessorMock.Object);
             services.AddSingleton(_formDataValidatorMock.Object);
+            services.AddSingleton<IAppResources, AppResourcesMock>();
         };
         TestData.PrepareInstance(Org, App, InstanceOwnerPartyId, _instanceGuid);
     }

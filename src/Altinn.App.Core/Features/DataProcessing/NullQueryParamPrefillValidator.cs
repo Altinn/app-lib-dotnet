@@ -15,6 +15,6 @@ public class NullQueryParamPrefillValidator : IValidateQueryParamPrefill
     /// <exception cref="NotImplementedException"></exception>
     public Task PrefillFromQueryParamsIsValid(Dictionary<string, string>? prefill)
     {
-        throw new NotImplementedException();
+        return Task.CompletedTask;
     }
 }
