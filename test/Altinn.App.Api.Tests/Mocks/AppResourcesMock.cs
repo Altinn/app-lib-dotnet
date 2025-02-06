@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace App.IntegrationTests.Mocks.Services;
+namespace Altinn.App.Api.Tests.Mocks;
 
 /// <summary>
 /// A hook for mutating the <see cref="AppResourcesMock"/> instance in tests.
@@ -157,7 +157,7 @@ public class AppResourcesMock : IAppResources
 
     public LayoutModel GetLayoutModel(string? layoutSetId = null)
     {
-        return new LayoutModel(new List<LayoutSetComponent>(), new LayoutSet { Id = null, DataType = null });
+        return new LayoutModel(new List<LayoutSetComponent>(), new LayoutSet { Id = "", DataType = "" });
     }
 
     public string? GetLayoutSettingsStringForSet(string layoutSetId)
@@ -177,7 +177,7 @@ public class AppResourcesMock : IAppResources
 
     public byte[] GetRuleHandlerForSet(string id)
     {
-        return Array.Empty<byte>();
+        return [];
     }
 
     public string? GetValidationConfiguration(string dataTypeId)
