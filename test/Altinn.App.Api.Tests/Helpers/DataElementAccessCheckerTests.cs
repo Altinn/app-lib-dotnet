@@ -23,6 +23,8 @@ public class DataElementAccessCheckerTests
     [InlineData("org:altinn,orgno:370194483", "altinn", 556750777, false, true)] // Matching org only
     [InlineData("org:altinn,orgno:370194483", "notAltinn", 370194483, false, true)] // Matching orgNr only
     [InlineData("org:altinn,orgno:370194483", "notAltinn", 556750777, false, false)] // Non-matching both
+    [InlineData("org:altinn,orgno:556750777", null, 556750777, true, true)] // Matching second rule
+    [InlineData("org:altinn,orgno:556750777", null, 556750777, false, true)] // Matching second rule
     [InlineData("orgno:370194483", null, 370194483, true, true)] // Matching orgNr (as systemuser)
     [InlineData("orgno:370194483", null, 556750777, true, false)] // Non-matching orgNr (as systemuser)
     [InlineData("org:altinn", null, 370194483, true, false)] // Org (as systemuser)

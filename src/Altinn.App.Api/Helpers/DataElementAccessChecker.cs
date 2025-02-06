@@ -38,7 +38,7 @@ internal static class DataElementAccessChecker
             if (key.Equals("org", StringComparison.OrdinalIgnoreCase))
             {
                 if (org is null)
-                    return false;
+                    continue;
 
                 if (value.Equals(org, StringComparison.OrdinalIgnoreCase))
                 {
@@ -48,7 +48,7 @@ internal static class DataElementAccessChecker
             else if (key.Equals("orgno", StringComparison.OrdinalIgnoreCase))
             {
                 if (orgNr is null)
-                    return false;
+                    continue;
 
                 if (value.Equals(orgNr, StringComparison.OrdinalIgnoreCase))
                 {
