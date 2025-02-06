@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
@@ -16,6 +17,7 @@ using CorrespondenceResult = Altinn.App.Core.Features.Telemetry.Correspondence.C
 namespace Altinn.App.Core.Features.Correspondence;
 
 /// <inheritdoc />
+[Experimental("ALTINNAPP0200")]
 internal sealed class CorrespondenceClient : ICorrespondenceClient
 {
     private readonly ILogger<CorrespondenceClient> _logger;
@@ -40,30 +42,8 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
         _authorisationFactory = new CorrespondenceAuthorisationFactory(serviceProvider);
     }
 
-    private async Task<JwtToken> AuthorisationResolver(CorrespondencePayloadBase payload)
-    {
-        if (payload.AccessTokenFactory is null && payload.AuthorisationMethod is null)
-        {
-            throw new CorrespondenceArgumentException(
-                "Neither AccessTokenFactory nor AuthorisationMethod was provided in the CorrespondencePayload object"
-            );
-        }
-
-        if (payload.AccessTokenFactory is not null)
-        {
-            return await payload.AccessTokenFactory();
-        }
-
-        return payload.AuthorisationMethod switch
-        {
-            CorrespondenceAuthorisation.Maskinporten => await _authorisationFactory.Maskinporten(),
-            _ => throw new CorrespondenceArgumentException(
-                $"Unknown CorrespondenceAuthorisation `{payload.AuthorisationMethod}`"
-            ),
-        };
-    }
-
     /// <inheritdoc />
+    [Experimental(diagnosticId: "ALTINNAPP0200")]
     public async Task<SendCorrespondenceResponse> Send(
         SendCorrespondencePayload payload,
         CancellationToken cancellationToken = default
@@ -113,12 +93,13 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
     }
 
     /// <inheritdoc/>
+    [Experimental(diagnosticId: "ALTINNAPP0200")]
     public async Task<GetCorrespondenceStatusResponse> GetStatus(
         GetCorrespondenceStatusPayload payload,
         CancellationToken cancellationToken = default
     )
     {
-        _logger.LogDebug("Fetching correspondence status");
+        _logger.LogDebug("Fetching correspondence status for {CorrespondenceId}", payload.CorrespondenceId);
         using Activity? activity = _telemetry?.StartCorrespondenceStatusActivity(payload.CorrespondenceId);
 
         try
@@ -162,7 +143,7 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
     )
     {
         _logger.LogDebug("Fetching access token via factory");
-        JwtToken accessToken = await AuthorisationResolver(payload);
+        JwtToken accessToken = await _authorisationFactory.Resolve(payload);
 
         _logger.LogDebug("Constructing authorized http request for target uri {TargetEndpoint}", uri);
         HttpRequestMessage request = new(method, uri) { Content = content };

@@ -1,19 +1,20 @@
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using Altinn.App.Core.Features.Correspondence.Exceptions;
+using Altinn.App.Core.Features.Correspondence.Extensions;
 using Altinn.App.Core.Models;
 
 namespace Altinn.App.Core.Features.Correspondence.Models;
 
 /// <summary>
-/// Represents a correspondence item that is serialisable as multipart form data
+/// Represents a correspondence item that is serialisable as multipart form data.
 /// </summary>
 public abstract record MultipartCorrespondenceItem
 {
     internal static void AddRequired(MultipartFormDataContent content, string value, string name)
     {
         if (string.IsNullOrWhiteSpace(value))
-            throw new CorrespondenceValueException($"Required value is missing: {name}");
+            throw new CorrespondenceArgumentException($"Required value is missing: {name}");
 
         content.Add(new StringContent(value), name);
     }
@@ -21,7 +22,7 @@ public abstract record MultipartCorrespondenceItem
     internal static void AddRequired(MultipartFormDataContent content, DateTimeOffset value, string name)
     {
         if (value == default)
-            throw new CorrespondenceValueException($"Required value is missing: {name}");
+            throw new CorrespondenceArgumentException($"Required value is missing: {name}");
 
         var normalisedAndFormatted = NormaliseDateTime(value).ToString("O");
         content.Add(new StringContent(normalisedAndFormatted), name);
@@ -35,7 +36,7 @@ public abstract record MultipartCorrespondenceItem
     )
     {
         if (data.IsEmpty)
-            throw new CorrespondenceValueException($"Required value is missing: {name}");
+            throw new CorrespondenceArgumentException($"Required value is missing: {name}");
 
         content.Add(new ReadOnlyMemoryContent(data), name, filename);
     }
@@ -165,7 +166,7 @@ public abstract record MultipartCorrespondenceItem
 
         if (isValid is false)
         {
-            throw new CorrespondenceValueException(
+            throw new CorrespondenceArgumentException(
                 $"Validation failed for {dataTypeName}",
                 new AggregateException(validationResults.Select(x => new ValidationException(x.ErrorMessage)))
             );
@@ -173,7 +174,7 @@ public abstract record MultipartCorrespondenceItem
     }
 
     /// <summary>
-    /// Removes the <see cref="DateTimeOffset.Ticks"/> portion of a <see cref="DateTimeOffset"/>
+    /// Removes the <see cref="DateTimeOffset.Ticks"/> portion of a <see cref="DateTimeOffset"/>.
     /// </summary>
     internal static DateTimeOffset NormaliseDateTime(DateTimeOffset dateTime)
     {
@@ -182,7 +183,7 @@ public abstract record MultipartCorrespondenceItem
 }
 
 /// <summary>
-/// Represents a correspondence list item that is serialisable as multipart form data
+/// Represents a correspondence list item that is serialisable as multipart form data.
 /// </summary>
 public abstract record MultipartCorrespondenceListItem : MultipartCorrespondenceItem
 {
@@ -190,33 +191,33 @@ public abstract record MultipartCorrespondenceListItem : MultipartCorrespondence
 }
 
 /// <summary>
-/// Represents and Altinn Correspondence request
+/// Represents and Altinn correspondence request.
 /// </summary>
 public sealed record CorrespondenceRequest : MultipartCorrespondenceItem
 {
     /// <summary>
-    /// The Resource Id for the correspondence service
+    /// The Resource ID for the correspondence service.
     /// </summary>
     public required string ResourceId { get; init; }
 
     /// <summary>
-    /// The sending organisation of the correspondence
+    /// The sending organisation of the correspondence.
     /// </summary>
     public required OrganisationNumber Sender { get; init; }
 
     /// <summary>
-    /// A reference value given to the message by the creator
+    /// A reference value given to the message by the creator.
     /// </summary>
     public required string SendersReference { get; init; }
 
     /// <summary>
-    /// The content of the message
+    /// The content of the message.
     /// </summary>
     public required CorrespondenceContent Content { get; init; }
 
     /// <summary>
     /// When should the correspondence become visible to the recipient?
-    /// If omitted, the correspondence is available immediately
+    /// If omitted, the correspondence is available immediately.
     /// </summary>
     public DateTimeOffset? RequestedPublishTime { get; init; }
 
@@ -231,52 +232,52 @@ public sealed record CorrespondenceRequest : MultipartCorrespondenceItem
     public DateTimeOffset? DueDateTime { get; init; }
 
     /// <summary>
-    /// The recipients of the correspondence. Either Norwegian organisation numbers or national identity numbers
+    /// The recipients of the correspondence. Either Norwegian organisation numbers or national identity numbers.
     /// </summary>
     public required IReadOnlyList<OrganisationOrPersonIdentifier> Recipients { get; init; }
 
     /// <summary>
-    /// An alternative name for the sender of the correspondence. The name will be displayed instead of the organisation name
+    /// An alternative name for the sender of the correspondence. The name will be displayed instead of the organisation name.
     /// </summary>
     public string? MessageSender { get; init; }
 
     /// <summary>
-    /// Reference to other items in the Altinn ecosystem
+    /// Reference to other items in the Altinn ecosystem.
     /// </summary>
     public IReadOnlyList<CorrespondenceExternalReference>? ExternalReferences { get; init; }
 
     /// <summary>
-    /// User-defined properties related to the correspondence
+    /// User-defined properties related to the correspondence.
     /// </summary>
     public IReadOnlyDictionary<string, string>? PropertyList { get; init; }
 
     /// <summary>
-    /// Options for how the recipient can reply to the correspondence
+    /// Options for how the recipient can reply to the correspondence.
     /// </summary>
     public IReadOnlyList<CorrespondenceReplyOption>? ReplyOptions { get; init; }
 
     /// <summary>
-    /// Notifications associated with this correspondence
+    /// Notifications associated with this correspondence.
     /// </summary>
     public CorrespondenceNotification? Notification { get; init; }
 
     /// <summary>
-    /// Specifies whether the correspondence can override reservation against digital communication in KRR
+    /// Specifies whether the correspondence can override reservation against digital communication in KRR.
     /// </summary>
     public bool? IgnoreReservation { get; init; }
 
     /// <summary>
-    /// Specifies if reading the correspondence needs to be confirmed by the recipient
+    /// Specifies if reading the correspondence needs to be confirmed by the recipient.
     /// </summary>
     public bool? IsConfirmationNeeded { get; init; }
 
     /// <summary>
-    /// Existing attachments that should be added to the correspondence
+    /// Existing attachments that should be added to the correspondence.
     /// </summary>
     public IReadOnlyList<Guid>? ExistingAttachments { get; init; }
 
     /// <summary>
-    /// Serialises the entire <see cref="CorrespondenceRequest"/> object to a provided <see cref="MultipartFormDataContent"/> instance
+    /// Serialises the entire <see cref="CorrespondenceRequest"/> object to a provided <see cref="MultipartFormDataContent"/> instance.
     /// </summary>
     /// <param name="content">The multipart object to serialise into</param>
     internal void Serialise(MultipartFormDataContent content)
@@ -284,7 +285,7 @@ public sealed record CorrespondenceRequest : MultipartCorrespondenceItem
         Validate();
 
         AddRequired(content, ResourceId, "Correspondence.ResourceId");
-        AddRequired(content, Sender.Get(OrganisationNumberFormat.International), "Correspondence.Sender");
+        AddRequired(content, Sender.ToUrnFormattedString(), "Correspondence.Sender");
         AddRequired(content, SendersReference, "Correspondence.SendersReference");
         AddRequired(content, AllowSystemDeleteAfter, "Correspondence.AllowSystemDeleteAfter");
         AddIfNotNull(content, MessageSender, "Correspondence.MessageSender");
@@ -294,7 +295,7 @@ public sealed record CorrespondenceRequest : MultipartCorrespondenceItem
         AddIfNotNull(content, IsConfirmationNeeded?.ToString(), "Correspondence.IsConfirmationNeeded");
         AddDictionaryItems(content, PropertyList, x => x, key => $"Correspondence.PropertyList.{key}");
         AddListItems(content, ExistingAttachments, x => x.ToString(), i => $"Correspondence.ExistingAttachments[{i}]");
-        AddListItems(content, Recipients, GetFormattedRecipient, i => $"Recipients[{i}]");
+        AddListItems(content, Recipients, x => x.ToUrnFormattedString(), i => $"Recipients[{i}]");
 
         Content.Serialise(content);
         Notification?.Serialise(content);
@@ -303,7 +304,7 @@ public sealed record CorrespondenceRequest : MultipartCorrespondenceItem
     }
 
     /// <summary>
-    /// Serialises the entire <see cref="CorrespondenceRequest"/> object to a newly created <see cref="MultipartFormDataContent"/>
+    /// Serialises the entire <see cref="CorrespondenceRequest"/> object to a newly created <see cref="MultipartFormDataContent"/>.
     /// </summary>
     internal MultipartFormDataContent Serialise()
     {
@@ -313,11 +314,9 @@ public sealed record CorrespondenceRequest : MultipartCorrespondenceItem
     }
 
     /// <summary>
-    /// Validates the state of the request based on some known requirements from the Correspondence API
+    /// <p>Validates the state of the request based on some known requirements from the Correspondence API.</p>
+    /// <p>Mostly stuff found here: https://github.com/Altinn/altinn-correspondence/blob/main/src/Altinn.Correspondence.Application/InitializeCorrespondences/InitializeCorrespondencesHandler.cs#L51.</p>
     /// </summary>
-    /// <remarks>
-    /// Mostly stuff found here: https://github.com/Altinn/altinn-correspondence/blob/main/src/Altinn.Correspondence.Application/InitializeCorrespondences/InitializeCorrespondencesHandler.cs#L51
-    /// </remarks>
     private void Validate()
     {
         if (Recipients.Count != Recipients.Distinct().Count())
@@ -347,17 +346,5 @@ public sealed record CorrespondenceRequest : MultipartCorrespondenceItem
     private static void ValidationError(string errorMessage)
     {
         throw new CorrespondenceArgumentException(errorMessage);
-    }
-
-    private static string GetFormattedRecipient(OrganisationOrPersonIdentifier recipient)
-    {
-        return recipient switch
-        {
-            OrganisationOrPersonIdentifier.Organisation org => org.Value.Get(OrganisationNumberFormat.International),
-            OrganisationOrPersonIdentifier.Person person => person.Value.Value,
-            _ => throw new CorrespondenceValueException(
-                $"Unknown {nameof(OrganisationOrPersonIdentifier)} type `{recipient.GetType()}`"
-            ),
-        };
     }
 }
