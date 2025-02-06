@@ -156,29 +156,28 @@ public class SigningNotificationServiceTests
         {
             new()
             {
-                Party = new Party(),
+                OriginalParty = new Party
+                {
+                    OrgNumber = "123456789",
+                    Organization = new Organization { Name = "Test Organisation", OrgNumber = "123456789" },
+                },
                 TaskId = "task-id",
                 SigneeState = new SigneeState { SignatureRequestSmsSent = false },
-                OrganisationSignee = new OrganisationSignee
+                Notifications = new Core.Features.Signing.Models.Notifications
                 {
-                    DisplayName = "Test Organisation",
-                    OrganisationNumber = "123456789",
-                    Notifications = new Core.Features.Signing.Models.Notifications
+                    OnSignatureAccessRightsDelegated = new Notification
                     {
-                        OnSignatureAccessRightsDelegated = new Notification
+                        Sms = new Sms
                         {
-                            Sms = new Sms
-                            {
-                                MobileNumber = "12345678",
-                                Body = "Test SMS",
-                                Reference = "sms-reference",
-                            },
-                            Email = new Email
-                            {
-                                EmailAddress = "test@test.no",
-                                Subject = "Test Email",
-                                Body = "This is a test email for testing purposes",
-                            },
+                            MobileNumber = "12345678",
+                            Body = "Test SMS",
+                            Reference = "sms-reference",
+                        },
+                        Email = new Email
+                        {
+                            EmailAddress = "test@test.no",
+                            Subject = "Test Email",
+                            Body = "This is a test email for testing purposes",
                         },
                     },
                 },
@@ -480,34 +479,35 @@ public class SigningNotificationServiceTests
             emailNotificationClient: SetupEmailNotificationClientMock().Object,
             smsNotificationClient: SetupSmsNotificationClientMock().Object
         );
+
         // Arrange
         var signeeContexts = new List<SigneeContext>
         {
             new()
             {
-                Party = new Party(),
+                OriginalParty = new Party()
+                {
+                    OrgNumber = "123456789",
+                    Organization = new Organization { Name = "Test Organisation", OrgNumber = "123456789" },
+                },
                 TaskId = "task-id",
                 SigneeState = new SigneeState { SignatureRequestSmsSent = false },
-                OrganisationSignee = new OrganisationSignee
+
+                Notifications = new Core.Features.Signing.Models.Notifications
                 {
-                    DisplayName = "Test Organisation",
-                    OrganisationNumber = "123456789",
-                    Notifications = new Core.Features.Signing.Models.Notifications
+                    OnSignatureAccessRightsDelegated = new Notification
                     {
-                        OnSignatureAccessRightsDelegated = new Notification
+                        Sms = new Sms
                         {
-                            Sms = new Sms
-                            {
-                                MobileNumber = "", // No mobile number set, will fail
-                                Body = "Test SMS",
-                                Reference = "sms-reference",
-                            },
-                            Email = new Email
-                            {
-                                EmailAddress = "test@test.no",
-                                Subject = "Test Email",
-                                Body = "This is a test email for testing purposes",
-                            },
+                            MobileNumber = "", // No mobile number set, will fail
+                            Body = "Test SMS",
+                            Reference = "sms-reference",
+                        },
+                        Email = new Email
+                        {
+                            EmailAddress = "test@test.no",
+                            Subject = "Test Email",
+                            Body = "This is a test email for testing purposes",
                         },
                     },
                 },
@@ -575,50 +575,35 @@ public class SigningNotificationServiceTests
         bool? hasSentSms = false
     )
     {
+        Party party = new();
+        if (isOrganisation)
+        {
+            party.OrgNumber = "123456789";
+            party.Organization = new Organization { Name = "Test Organisation", OrgNumber = "123456789" };
+        }
+        else
+        {
+            party.SSN = "123456789";
+            party.Person = new Person { Name = "Test Person", SSN = "123456789" };
+        }
+
         return new SigneeContext
         {
-            Party = new Party(),
+            OriginalParty = party,
             TaskId = "task-id",
             SigneeState = new SigneeState { SignatureRequestSmsSent = hasSentSms ?? false },
-            OrganisationSignee = isOrganisation
-                ? new OrganisationSignee
+            Notifications = new Core.Features.Signing.Models.Notifications
+            {
+                OnSignatureAccessRightsDelegated = new Notification
                 {
-                    DisplayName = "Test Organisation",
-                    OrganisationNumber = "123456789",
-                    Notifications = new Core.Features.Signing.Models.Notifications
+                    Sms = new Sms
                     {
-                        OnSignatureAccessRightsDelegated = new Notification
-                        {
-                            Sms = new Sms
-                            {
-                                MobileNumber = mobileNumber,
-                                Body = body,
-                                Reference = reference,
-                            },
-                        },
-                    },
-                }
-                : null,
-            PersonSignee = isOrganisation
-                ? null
-                : new PersonSignee
-                {
-                    DisplayName = "Test Person",
-                    SocialSecurityNumber = "123456789",
-                    FullName = "Test Person",
-                    Notifications = new Core.Features.Signing.Models.Notifications
-                    {
-                        OnSignatureAccessRightsDelegated = new Notification
-                        {
-                            Sms = new Sms
-                            {
-                                MobileNumber = mobileNumber,
-                                Body = body,
-                                Reference = reference,
-                            },
-                        },
+                        MobileNumber = mobileNumber,
+                        Body = body,
+                        Reference = reference,
                     },
                 },
+            },
         };
     }
 
@@ -630,50 +615,34 @@ public class SigningNotificationServiceTests
         bool? hasSentEmail = false
     )
     {
+        Party party = new();
+        if (isOrganisation)
+        {
+            party.OrgNumber = "123456789";
+            party.Organization = new Organization { Name = "Test Organisation", OrgNumber = "123456789" };
+        }
+        else
+        {
+            party.SSN = "123456789";
+            party.Person = new Person { Name = "Test Person", SSN = "123456789" };
+        }
         return new SigneeContext
         {
-            Party = new Party(),
+            OriginalParty = party,
             TaskId = "task-id",
             SigneeState = new SigneeState { SignatureRequestEmailSent = hasSentEmail ?? false },
-            OrganisationSignee = isOrganisation
-                ? new OrganisationSignee
+            Notifications = new Core.Features.Signing.Models.Notifications
+            {
+                OnSignatureAccessRightsDelegated = new Notification
                 {
-                    DisplayName = "Test Organisation",
-                    OrganisationNumber = "123456789",
-                    Notifications = new Core.Features.Signing.Models.Notifications
+                    Email = new Email
                     {
-                        OnSignatureAccessRightsDelegated = new Notification
-                        {
-                            Email = new Email
-                            {
-                                EmailAddress = email,
-                                Subject = subject,
-                                Body = body,
-                            },
-                        },
-                    },
-                }
-                : null,
-            PersonSignee = isOrganisation
-                ? null
-                : new PersonSignee
-                {
-                    DisplayName = "Test Person",
-                    SocialSecurityNumber = "123456789",
-                    FullName = "Test Person",
-                    Notifications = new Core.Features.Signing.Models.Notifications
-                    {
-                        OnSignatureAccessRightsDelegated = new Notification
-                        {
-                            Email = new Email
-                            {
-                                EmailAddress = email,
-                                Subject = subject,
-                                Body = body,
-                            },
-                        },
+                        EmailAddress = email,
+                        Subject = subject,
+                        Body = body,
                     },
                 },
+            },
         };
     }
 }

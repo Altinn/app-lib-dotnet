@@ -5,14 +5,8 @@ namespace Altinn.App.Core.Features.Signing.Models;
 /// <summary>
 /// Represents a person who is a signee.
 /// </summary>
-public class PersonSignee : ISigneeParty
+public class SigneeParty
 {
-    /// <summary>
-    /// The name of the signee.
-    /// </summary>
-    [JsonPropertyName("displayName")]
-    public required string DisplayName { get; init; }
-
     /// <summary>
     /// Notifications configuration.
     /// </summary>
@@ -23,49 +17,37 @@ public class PersonSignee : ISigneeParty
     /// The social security number.
     /// </summary>
     [JsonPropertyName("socialSecurityNumber")]
-    public required string SocialSecurityNumber { get; init; }
+    public string? SocialSecurityNumber { get; init; }
 
     /// <summary>
     /// The full name of the signee. {FirstName} {LastName} or {FirstName} {MiddleName} {LastName}.
     /// </summary>
     [JsonPropertyName("fullName")]
-    public required string FullName { get; init; }
+    public string? FullName { get; init; }
 
     /// <summary>
     /// The organisation the person signed on behalf of.
     /// </summary>
     [JsonPropertyName("onBehalfOfOrganisation")]
-    public string? OnBehalfOfOrganisation { get; set; }
+    public SigneePartyOrganisation? OnBehalfOfOrganisation { get; set; }
 }
 
 /// <summary>
-/// Represents an organization that is a signee.
+///  Represents which organisation a person is signing on behalf of.
 /// </summary>
-public class OrganisationSignee : ISigneeParty
+public class SigneePartyOrganisation
 {
     /// <summary>
     /// The name of the organisation.
     /// </summary>
-    [JsonPropertyName("displayName")]
-    public required string DisplayName { get; init; }
+    [JsonPropertyName("name")]
+    public required string Name { get; set; }
 
     /// <summary>
-    /// Notifications configuration.
-    /// </summary>
-    [JsonPropertyName("notifications")]
-    public Notifications? Notifications { get; init; }
-
-    /// <summary>
-    /// The organization number.
+    /// The organisation number.
     /// </summary>
     [JsonPropertyName("organisationNumber")]
-    public required string OrganisationNumber { get; init; }
-}
-
-internal interface ISigneeParty
-{
-    public Notifications? Notifications { get; init; }
-    public string DisplayName { get; init; }
+    public required string OrganisationNumber { get; set; }
 }
 
 /// <summary>

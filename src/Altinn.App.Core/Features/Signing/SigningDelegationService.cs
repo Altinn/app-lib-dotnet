@@ -14,79 +14,6 @@ internal sealed class SigningDelegationService(
     ILogger<SigningDelegationService> logger
 ) : ISigningDelegationService
 {
-    public async Task<(List<SigneeContext>, bool success)> RevokeSigneeRights(
-        string taskId,
-        string instanceIdCombo,
-        Guid InstanceOwnerPartyUuid,
-        AppIdentifier appIdentifier,
-        List<SigneeContext> signeeContexts,
-        CancellationToken ct,
-        Telemetry? telemetry = null
-    )
-    {
-        if (!Guid.TryParse(instanceIdCombo.Split("/")[1], out var instanceGuid))
-        {
-            throw new ArgumentException("Invalid instanceId format", nameof(instanceIdCombo));
-        }
-        var appResourceId = AppResourceId.FromAppIdentifier(appIdentifier);
-        bool success = true;
-        foreach (SigneeContext signeeContext in signeeContexts)
-        {
-            if (signeeContext.SigneeState.IsAccessDelegated is true)
-            {
-                try
-                {
-                    DelegationRequest delegationRequest = new()
-                    {
-                        ResourceId = appResourceId.Value,
-                        InstanceId = instanceGuid.ToString(),
-                        From = new DelegationParty { Value = InstanceOwnerPartyUuid.ToString() },
-                        To = new DelegationParty
-                        {
-                            Value =
-                                signeeContext.Party.PartyUuid.ToString()
-                                ?? throw new InvalidOperationException("Delegatee: PartyUuid is null"),
-                        },
-                        Rights =
-                        [
-                            new RightRequest
-                            {
-                                Resource =
-                                [
-                                    new AppResource { Value = appIdentifier.App },
-                                    new OrgResource { Value = appIdentifier.Org },
-                                    new TaskResource { Value = taskId },
-                                ],
-                                Action = new AltinnAction { Value = ActionType.Read },
-                            },
-                            new RightRequest
-                            {
-                                Resource =
-                                [
-                                    new AppResource { Value = appIdentifier.App },
-                                    new OrgResource { Value = appIdentifier.Org },
-                                    new TaskResource { Value = taskId },
-                                ],
-                                Action = new AltinnAction { Value = ActionType.Sign },
-                            },
-                        ],
-                    };
-                    DelegationResponse? response = await accessManagementClient.RevokeRights(delegationRequest, ct);
-                    signeeContext.SigneeState.IsAccessDelegated = false;
-                    telemetry?.RecordDelegationRevoke(DelegationResult.Success);
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Failed to revoke signee rights");
-                    signeeContext.SigneeState.DelegationFailedReason = "Failed to revoke signee rights: " + ex.Message;
-                    telemetry?.RecordDelegationRevoke(DelegationResult.Error);
-                    success = false;
-                }
-            }
-        }
-        return (signeeContexts, success);
-    }
-
     public async Task<(List<SigneeContext>, bool success)> DelegateSigneeRights(
         string taskId,
         string instanceIdCombo,
@@ -113,7 +40,7 @@ internal sealed class SigningDelegationService(
                 if (state.IsAccessDelegated is false)
                 {
                     logger.LogInformation(
-                        $"Delegating signee rights to {signeeContext.Party.PartyUuid} from {instanceOwnerPartyUuid} for {appResourceId.Value}"
+                        $"Delegating signee rights to {signeeContext.OriginalParty.PartyUuid} from {instanceOwnerPartyUuid} for {appResourceId.Value}"
                     );
                     DelegationRequest delegationRequest = new()
                     {
@@ -123,7 +50,7 @@ internal sealed class SigningDelegationService(
                         To = new DelegationParty
                         {
                             Value =
-                                signeeContext.Party.PartyUuid.ToString()
+                                signeeContext.OriginalParty.PartyUuid.ToString()
                                 ?? throw new InvalidOperationException("Delegatee: PartyUuid is null"),
                         },
                         Rights =
@@ -164,6 +91,79 @@ internal sealed class SigningDelegationService(
             }
         }
 
+        return (signeeContexts, success);
+    }
+
+    public async Task<(List<SigneeContext>, bool success)> RevokeSigneeRights(
+        string taskId,
+        string instanceIdCombo,
+        Guid instanceOwnerPartyUuid,
+        AppIdentifier appIdentifier,
+        List<SigneeContext> signeeContexts,
+        CancellationToken ct,
+        Telemetry? telemetry = null
+    )
+    {
+        if (!Guid.TryParse(instanceIdCombo.Split("/")[1], out var instanceGuid))
+        {
+            throw new ArgumentException("Invalid instanceId format", nameof(instanceIdCombo));
+        }
+        var appResourceId = AppResourceId.FromAppIdentifier(appIdentifier);
+        bool success = true;
+        foreach (SigneeContext signeeContext in signeeContexts)
+        {
+            if (signeeContext.SigneeState.IsAccessDelegated is true)
+            {
+                try
+                {
+                    DelegationRequest delegationRequest = new()
+                    {
+                        ResourceId = appResourceId.Value,
+                        InstanceId = instanceGuid.ToString(),
+                        From = new DelegationParty { Value = instanceOwnerPartyUuid.ToString() },
+                        To = new DelegationParty
+                        {
+                            Value =
+                                signeeContext.OriginalParty.PartyUuid.ToString()
+                                ?? throw new InvalidOperationException("Delegatee: PartyUuid is null"),
+                        },
+                        Rights =
+                        [
+                            new RightRequest
+                            {
+                                Resource =
+                                [
+                                    new AppResource { Value = appIdentifier.App },
+                                    new OrgResource { Value = appIdentifier.Org },
+                                    new TaskResource { Value = taskId },
+                                ],
+                                Action = new AltinnAction { Value = ActionType.Read },
+                            },
+                            new RightRequest
+                            {
+                                Resource =
+                                [
+                                    new AppResource { Value = appIdentifier.App },
+                                    new OrgResource { Value = appIdentifier.Org },
+                                    new TaskResource { Value = taskId },
+                                ],
+                                Action = new AltinnAction { Value = ActionType.Sign },
+                            },
+                        ],
+                    };
+                    DelegationResponse? response = await accessManagementClient.RevokeRights(delegationRequest, ct);
+                    signeeContext.SigneeState.IsAccessDelegated = false;
+                    telemetry?.RecordDelegationRevoke(DelegationResult.Success);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Failed to revoke signee rights");
+                    signeeContext.SigneeState.DelegationFailedReason = "Failed to revoke signee rights: " + ex.Message;
+                    telemetry?.RecordDelegationRevoke(DelegationResult.Error);
+                    success = false;
+                }
+            }
+        }
         return (signeeContexts, success);
     }
 }

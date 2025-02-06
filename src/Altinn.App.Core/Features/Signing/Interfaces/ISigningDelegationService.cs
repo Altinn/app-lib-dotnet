@@ -3,7 +3,10 @@ using Altinn.App.Core.Models;
 
 namespace Altinn.App.Core.Features.Signing.Interfaces;
 
-internal interface ISigningDelegationService
+/// <summary>
+/// Interface for implementing app-specific logic for delegating signee rights.
+/// </summary>
+public interface ISigningDelegationService
 {
     /// <summary>
     /// Delegate signee rights for the instance to a given party from the instance owner.

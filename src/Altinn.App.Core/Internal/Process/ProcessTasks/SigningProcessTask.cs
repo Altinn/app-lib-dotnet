@@ -95,13 +95,13 @@ internal sealed class SigningProcessTask : IProcessTask
                 _modelSerialization
             );
 
-            List<SigneeContext> signeeContexts = await _signingService.InitializeSignees(
+            List<SigneeContext> signeeContexts = await _signingService.GenerateSigneeContexts(
                 cachedDataMutator,
                 signatureConfiguration,
                 cts.Token
             );
 
-            await _signingService.ProcessSignees(
+            await _signingService.InitialiseSignees(
                 taskId,
                 cachedDataMutator,
                 signeeContexts,

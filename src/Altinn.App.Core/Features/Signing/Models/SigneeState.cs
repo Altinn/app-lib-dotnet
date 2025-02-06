@@ -5,7 +5,7 @@ namespace Altinn.App.Core.Features.Signing.Models;
 /// <summary>
 /// The signee state
 /// </summary>
-internal sealed class SigneeState
+public sealed class SigneeState
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="SigneeState"/> class.

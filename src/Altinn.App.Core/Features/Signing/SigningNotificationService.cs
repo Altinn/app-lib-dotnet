@@ -45,8 +45,7 @@ internal sealed class SigningNotificationService : ISigningNotificationService
         foreach (SigneeContext signeeContext in signeeContexts)
         {
             SigneeState state = signeeContext.SigneeState;
-            Models.Notifications? notifications =
-                signeeContext.OrganisationSignee?.Notifications ?? signeeContext.PersonSignee?.Notifications;
+            Models.Notifications? notifications = signeeContext?.Notifications;
 
             Notification? notification = notifications?.OnSignatureAccessRightsDelegated;
 
@@ -56,7 +55,7 @@ internal sealed class SigningNotificationService : ISigningNotificationService
 
                 if (success is false)
                 {
-                    signeeContext.SigneeState.SignatureRequestSmsNotSentReason = errorMessage;
+                    state.SignatureRequestSmsNotSentReason = errorMessage;
                     _telemetry?.RecordNotifySignees(NotifySigneesResult.Error);
                     _logger.LogError(errorMessage);
                 }
@@ -74,7 +73,7 @@ internal sealed class SigningNotificationService : ISigningNotificationService
 
                 if (success is false)
                 {
-                    signeeContext.SigneeState.SignatureRequestEmailNotSentReason = errorMessage;
+                    state.SignatureRequestEmailNotSentReason = errorMessage;
                     _telemetry?.RecordNotifySignees(NotifySigneesResult.Error);
                     _logger.LogError(errorMessage);
                 }

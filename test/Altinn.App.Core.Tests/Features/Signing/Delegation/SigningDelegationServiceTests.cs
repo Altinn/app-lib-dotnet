@@ -28,7 +28,7 @@ public class SigningDelegationServiceTests
             new()
             {
                 TaskId = taskId,
-                Party = new Party(),
+                OriginalParty = new Party(),
                 SigneeState = new SigneeState() { IsAccessDelegated = true },
             },
         };
@@ -69,7 +69,7 @@ public class SigningDelegationServiceTests
             new()
             {
                 TaskId = taskId,
-                Party = new Party(),
+                OriginalParty = new Party(),
                 SigneeState = new SigneeState() { IsAccessDelegated = false }, // Signee is not delegated signing rights
             },
         };
@@ -111,7 +111,7 @@ public class SigningDelegationServiceTests
             new()
             {
                 TaskId = taskId,
-                Party = new Party(),
+                OriginalParty = new Party(),
                 SigneeState = new SigneeState() { IsAccessDelegated = false },
             },
         };
@@ -152,7 +152,7 @@ public class SigningDelegationServiceTests
             new()
             {
                 TaskId = taskId,
-                Party = new Party(),
+                OriginalParty = new Party(),
                 SigneeState = new SigneeState() { IsAccessDelegated = true }, // Signee is already delegated signing rights
             },
         };
