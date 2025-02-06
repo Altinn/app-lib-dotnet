@@ -6,7 +6,6 @@ using Altinn.App.Core.Internal.Registers;
 using Altinn.Platform.Register.Models;
 using AltinnCore.Authentication.Utils;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Features.Auth;
@@ -14,7 +13,6 @@ namespace Altinn.App.Core.Features.Auth;
 internal sealed class AuthenticationContext : IAuthenticationContext
 {
     private const string ItemsKey = "Internal_AltinnAuthenticationInfo";
-    private readonly ILogger<AuthenticationContext> _logger;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IOptionsMonitor<AppSettings> _appSettings;
     private readonly IOptionsMonitor<GeneralSettings> _generalSettings;
@@ -24,7 +22,6 @@ internal sealed class AuthenticationContext : IAuthenticationContext
     private readonly IAppConfigurationCache _appConfigurationCache;
 
     public AuthenticationContext(
-        ILogger<AuthenticationContext> logger,
         IHttpContextAccessor httpContextAccessor,
         IOptionsMonitor<AppSettings> appSettings,
         IOptionsMonitor<GeneralSettings> generalSettings,
@@ -34,7 +31,6 @@ internal sealed class AuthenticationContext : IAuthenticationContext
         IAppConfigurationCache appConfigurationCache
     )
     {
-        _logger = logger;
         _httpContextAccessor = httpContextAccessor;
         _appSettings = appSettings;
         _generalSettings = generalSettings;
