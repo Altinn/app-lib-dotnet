@@ -2,7 +2,6 @@
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models.UserAction;
-using Altinn.Platform.Register.Models;
 
 namespace Altinn.App.Core.Features.Signing.Interfaces;
 
@@ -29,7 +28,6 @@ public interface ISigningService
     /// a new task to sign and saves the signee contexts to Storage.
     /// </summary>
     /// <param name="taskId"></param>
-    /// <param name="delegatorParty"></param>
     /// <param name="instanceMutator"></param>
     /// <param name="signeeContexts"></param>
     /// <param name="signatureConfiguration"></param>
@@ -37,7 +35,6 @@ public interface ISigningService
     /// <returns></returns>
     Task<List<SigneeContext>> InitialiseSignees(
         string taskId,
-        Party delegatorParty,
         IInstanceDataMutator instanceMutator,
         List<SigneeContext> signeeContexts,
         AltinnSignatureConfiguration signatureConfiguration,

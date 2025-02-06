@@ -85,7 +85,6 @@ internal sealed class SigningService(
 
     public async Task<List<SigneeContext>> InitialiseSignees(
         string taskId,
-        Party delegatorParty,
         IInstanceDataMutator instanceMutator,
         List<SigneeContext> signeeContexts,
         AltinnSignatureConfiguration signatureConfiguration,
@@ -94,13 +93,22 @@ internal sealed class SigningService(
     {
         using Activity? activity = telemetry?.StartAssignSigneesActivity();
 
-        string instanceId = instanceMutator.Instance.Id;
+        string instanceIdCombo = instanceMutator.Instance.Id;
+        InstanceOwner instanceOwner = instanceMutator.Instance.InstanceOwner;
+
+        Guid? instanceOwnerPartyUuid = altinnPartyClient
+            .LookupParty(
+                instanceOwner.OrganisationNumber is not null
+                    ? new PartyLookup { OrgNo = instanceOwner.OrganisationNumber }
+                    : new PartyLookup { Ssn = instanceOwner.PersonNumber }
+            )
+            .Result.PartyUuid;
 
         AppIdentifier appIdentifier = new(instanceMutator.Instance.AppId);
         (signeeContexts, var delegateSuccess) = await signingDelegationService.DelegateSigneeRights(
             taskId,
-            instanceId,
-            delegatorParty ?? throw new InvalidOperationException("Delegator party is null"),
+            instanceIdCombo,
+            instanceOwnerPartyUuid ?? throw new InvalidOperationException("Instance owner party UUID is null."),
             appIdentifier,
             signeeContexts,
             ct,

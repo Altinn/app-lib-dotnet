@@ -4,7 +4,6 @@ using Altinn.App.Core.Internal.AccessManagement;
 using Altinn.App.Core.Internal.AccessManagement.Models;
 using Altinn.App.Core.Internal.AccessManagement.Models.Shared;
 using Altinn.App.Core.Models;
-using Altinn.Platform.Register.Models;
 using Microsoft.Extensions.Logging;
 using static Altinn.App.Core.Features.Telemetry.DelegationConst;
 
@@ -17,15 +16,18 @@ internal sealed class SigningDelegationService(
 {
     public async Task<(List<SigneeContext>, bool success)> DelegateSigneeRights(
         string taskId,
-        string instanceId,
-        Party delegatorParty,
+        string instanceIdCombo,
+        Guid instanceOwnerPartyUuid,
         AppIdentifier appIdentifier,
         List<SigneeContext> signeeContexts,
         CancellationToken ct,
         Telemetry? telemetry = null
     )
     {
-        var instanceGuid = instanceId.Split("/")[1];
+        if (!Guid.TryParse(instanceIdCombo.Split("/")[1], out var instanceGuid))
+        {
+            throw new ArgumentException("Invalid instanceId format", nameof(instanceIdCombo));
+        }
         var appResourceId = AppResourceId.FromAppIdentifier(appIdentifier);
         bool success = true;
 
@@ -38,18 +40,13 @@ internal sealed class SigningDelegationService(
                 if (state.IsAccessDelegated is false)
                 {
                     logger.LogInformation(
-                        $"Delegating signee rights to {signeeContext.OriginalParty.PartyUuid} from {delegatorParty.PartyUuid} for {appResourceId.Value}"
+                        $"Delegating signee rights to {signeeContext.OriginalParty.PartyUuid} from {instanceOwnerPartyUuid} for {appResourceId.Value}"
                     );
                     DelegationRequest delegationRequest = new()
                     {
                         ResourceId = appResourceId.Value,
-                        InstanceId = instanceGuid,
-                        From = new DelegationParty
-                        {
-                            Value =
-                                delegatorParty.PartyUuid.ToString()
-                                ?? throw new InvalidOperationException("Delegator: PartyUuid is null"),
-                        },
+                        InstanceId = instanceGuid.ToString(),
+                        From = new DelegationParty { Value = instanceOwnerPartyUuid.ToString() },
                         To = new DelegationParty
                         {
                             Value =
@@ -99,15 +96,18 @@ internal sealed class SigningDelegationService(
 
     public async Task<(List<SigneeContext>, bool success)> RevokeSigneeRights(
         string taskId,
-        string instanceId,
-        Party delegatorParty,
+        string instanceIdCombo,
+        Guid InstanceOwnerPartyUuid,
         AppIdentifier appIdentifier,
         List<SigneeContext> signeeContexts,
         CancellationToken ct,
         Telemetry? telemetry = null
     )
     {
-        var instanceGuid = instanceId.Split("/")[1];
+        if (!Guid.TryParse(instanceIdCombo.Split("/")[1], out var instanceGuid))
+        {
+            throw new ArgumentException("Invalid instanceId format", nameof(instanceIdCombo));
+        }
         var appResourceId = AppResourceId.FromAppIdentifier(appIdentifier);
         bool success = true;
         foreach (SigneeContext signeeContext in signeeContexts)
@@ -119,11 +119,11 @@ internal sealed class SigningDelegationService(
                     DelegationRequest delegationRequest = new()
                     {
                         ResourceId = appResourceId.Value,
-                        InstanceId = instanceGuid,
+                        InstanceId = instanceGuid.ToString(),
                         From = new DelegationParty
                         {
                             Value =
-                                delegatorParty.PartyUuid.ToString()
+                                InstanceOwnerPartyUuid.ToString()
                                 ?? throw new InvalidOperationException("Delegator: PartyUuid is null"),
                         },
                         To = new DelegationParty
