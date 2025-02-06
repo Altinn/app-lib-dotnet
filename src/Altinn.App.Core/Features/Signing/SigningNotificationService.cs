@@ -41,6 +41,7 @@ internal sealed class SigningNotificationService : ISigningNotificationService
         CancellationToken? ct = null
     )
     {
+        _logger.LogInformation("Notifying signees of signature task.");
         using var activity = _telemetry?.StartNotifySigneesActivity();
         foreach (SigneeContext signeeContext in signeeContexts)
         {

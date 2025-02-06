@@ -107,9 +107,10 @@ public class SigningController : ControllerBase
                     Organisation = signeeContext.OnBehalfOfOrganisation?.Name,
                     HasSigned = signeeContext.SignDocument is not null,
                     DelegationSuccessful = signeeContext.SigneeState.IsAccessDelegated,
-                    NotificationSuccessful =
-                        signeeContext.SigneeState
-                            is { SignatureRequestEmailSent: false, SignatureRequestSmsSent: false },
+                    NotificationSuccessful = (
+                        signeeContext.SigneeState is
+                        { SignatureRequestEmailNotSentReason: null, SignatureRequestSmsNotSentReason: null }
+                    ),
                     PartyId = signeeContext.OriginalParty.PartyId,
                 }),
             ],
