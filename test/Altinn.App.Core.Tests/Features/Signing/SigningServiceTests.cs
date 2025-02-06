@@ -1,6 +1,5 @@
 ﻿using System.Text;
 using System.Text.Json;
-using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Signing;
 using Altinn.App.Core.Features.Signing.Interfaces;
@@ -8,15 +7,12 @@ using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
-using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Moq;
 
 namespace Altinn.App.Core.Tests.Features.Signing;
@@ -31,12 +27,8 @@ public class SigningServiceTests
     private readonly Mock<ISigneeProvider> _signeeProvider = new(MockBehavior.Strict);
     private readonly Mock<ILogger<SigningService>> _logger = new();
     private readonly Mock<IAppMetadata> _appMetadata = new(MockBehavior.Strict);
-    private readonly Mock<IHttpContextAccessor> _httpContextAccessor = new(MockBehavior.Strict);
     private readonly Mock<ISignClient> _signClient = new(MockBehavior.Strict);
     private readonly Mock<ISigningCorrespondenceService> _signingCorrespondenceService = new(MockBehavior.Strict);
-    private readonly Mock<IProfileClient> _profileClient = new(MockBehavior.Strict);
-    private readonly Mock<IAltinnPartyClient> _altinnPartyClientService = new(MockBehavior.Strict);
-    private readonly Mock<IOptions<GeneralSettings>> _settings = new();
     private readonly Mock<IDataClient> _dataClient = new(MockBehavior.Strict);
 
     public SigningServiceTests()
@@ -47,12 +39,8 @@ public class SigningServiceTests
             _signingNotificationService.Object,
             [_signeeProvider.Object],
             _appMetadata.Object,
-            _httpContextAccessor.Object,
             _signClient.Object,
             _signingCorrespondenceService.Object,
-            _profileClient.Object,
-            _altinnPartyClientService.Object,
-            _settings.Object,
             _dataClient.Object,
             _logger.Object
         );

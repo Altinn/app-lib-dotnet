@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+﻿using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
@@ -7,37 +7,46 @@ namespace Altinn.App.Core.Helpers;
 
 internal static class AllowedContributorsHelper
 {
-    public static bool IsValidContributor(DataType dataType, string? org, int? orgNr)
+    public static bool IsValidContributor(DataType dataType, Authenticated auth)
     {
         if (dataType.AllowedContributers is null || dataType.AllowedContributers.Count == 0)
         {
             return true;
         }
 
+        var (org, orgNr) = auth switch
+        {
+            Authenticated.Org a => (null, a.OrgNo),
+            Authenticated.ServiceOwner a => (a.Name, a.OrgNo),
+            Authenticated.SystemUser a => (null, a.SystemUserOrgNr.Get(OrganisationNumberFormat.Local)),
+            _ => (null, null),
+        };
+
         foreach (string item in dataType.AllowedContributers)
         {
-            string key = item.Split(':')[0];
-            string value = item.Split(':')[1];
+            var splitIndex = item.IndexOf(':');
+            ReadOnlySpan<char> key = item.AsSpan(0, splitIndex);
+            ReadOnlySpan<char> value = item.AsSpan(splitIndex + 1);
 
-            switch (key.ToLowerInvariant())
+            if (key.Equals("org", StringComparison.OrdinalIgnoreCase))
             {
-                case "app":
-                    return false;
+                if (org is null)
+                    continue;
 
-                case "org":
-                    if (value.Equals(org, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true;
-                    }
+                if (value.Equals(org, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+            else if (key.Equals("orgno", StringComparison.OrdinalIgnoreCase))
+            {
+                if (orgNr is null)
+                    continue;
 
-                    break;
-                case "orgno":
-                    if (value.Equals(orgNr?.ToString(CultureInfo.InvariantCulture), StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true;
-                    }
-
-                    break;
+                if (value.Equals(orgNr, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
             }
         }
 

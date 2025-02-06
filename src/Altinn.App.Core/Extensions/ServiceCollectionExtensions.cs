@@ -1,6 +1,7 @@
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.DataLists;
 using Altinn.App.Core.Features.DataProcessing;
 using Altinn.App.Core.Features.ExternalApi;
@@ -120,6 +121,8 @@ public static class ServiceCollectionExtensions
         services.TryAddTransient<IAccessTokenGenerator, AccessTokenGenerator>();
         services.TryAddTransient<IApplicationLanguage, Internal.Language.ApplicationLanguage>();
         services.TryAddTransient<IAuthorizationService, AuthorizationService>();
+
+        services.AddAuthenticationContext();
     }
 
     private static void AddApplicationIdentifier(IServiceCollection services)
@@ -183,7 +186,7 @@ public static class ServiceCollectionExtensions
         services.Configure<PdfGeneratorSettings>(configuration.GetSection(nameof(PdfGeneratorSettings)));
 
         if (env.IsDevelopment())
-            services.AddLocaltestValidation(configuration);
+            services.AddLocaltestValidation();
 
         AddValidationServices(services, configuration);
         AddAppOptions(services);

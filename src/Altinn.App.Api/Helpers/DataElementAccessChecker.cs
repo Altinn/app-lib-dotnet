@@ -1,6 +1,5 @@
 using System.Net;
-using System.Security.Claims;
-using Altinn.App.Core.Extensions;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Helpers;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -19,7 +18,7 @@ internal static class DataElementAccessChecker
     /// Checks if the user has access to read a data element of a given data type on an instance.
     /// </summary>
     /// <returns>null for success or ProblemDetails that can be an error response in the Apis</returns>
-    internal static ProblemDetails? GetReaderProblem(Instance instance, DataType dataType, ClaimsPrincipal user)
+    internal static ProblemDetails? GetReaderProblem(Instance instance, DataType dataType, Authenticated auth)
     {
         // We don't have any way to restrict reads based on data type yet, so just return null.
         // Might be used if we get a concept of internal server only data types or similar.
@@ -27,9 +26,9 @@ internal static class DataElementAccessChecker
     }
 
     // Common checks for create, update and delete
-    private static ProblemDetails? GetMutationProblem(Instance instance, DataType dataType, ClaimsPrincipal user)
+    private static ProblemDetails? GetMutationProblem(Instance instance, DataType dataType, Authenticated auth)
     {
-        if (GetReaderProblem(instance, dataType, user) is { } readProblem)
+        if (GetReaderProblem(instance, dataType, auth) is { } readProblem)
         {
             return readProblem;
         }
@@ -43,7 +42,7 @@ internal static class DataElementAccessChecker
             };
         }
 
-        if (!AllowedContributorsHelper.IsValidContributor(dataType, user.GetOrg(), user.GetOrgNumber()))
+        if (!AllowedContributorsHelper.IsValidContributor(dataType, auth))
         {
             return new ProblemDetails
             {
@@ -61,12 +60,12 @@ internal static class DataElementAccessChecker
     internal static ProblemDetails? GetCreateProblem(
         Instance instance,
         DataType dataType,
-        ClaimsPrincipal user,
+        Authenticated auth,
         long? contentLength = null
     )
     {
         // Run the general mutation checks
-        if (GetMutationProblem(instance, dataType, user) is { } problemDetails)
+        if (GetMutationProblem(instance, dataType, auth) is { } problemDetails)
         {
             return problemDetails;
         }
@@ -96,7 +95,7 @@ internal static class DataElementAccessChecker
         }
 
         // Verify that only orgs can create data elements when DisallowUserCreate is true
-        if (dataType.AppLogic?.DisallowUserCreate == true && string.IsNullOrWhiteSpace(user.GetOrg()))
+        if (dataType.AppLogic?.DisallowUserCreate == true && auth is not Authenticated.ServiceOwner)
         {
             return new ProblemDetails()
             {
@@ -113,9 +112,9 @@ internal static class DataElementAccessChecker
     /// Checks if the user has access to mutate a data element of a given data type on an instance.
     /// </summary>
     /// <returns>null for success or ProblemDetails that can be an error response in the Apis</returns>
-    internal static ProblemDetails? GetUpdateProblem(Instance instance, DataType dataType, ClaimsPrincipal user)
+    internal static ProblemDetails? GetUpdateProblem(Instance instance, DataType dataType, Authenticated auth)
     {
-        if (GetMutationProblem(instance, dataType, user) is { } problemDetails)
+        if (GetMutationProblem(instance, dataType, auth) is { } problemDetails)
         {
             return problemDetails;
         }
@@ -131,10 +130,10 @@ internal static class DataElementAccessChecker
         Instance instance,
         DataType dataType,
         Guid dataElementId,
-        ClaimsPrincipal user
+        Authenticated auth
     )
     {
-        if (GetMutationProblem(instance, dataType, user) is { } problemDetails)
+        if (GetMutationProblem(instance, dataType, auth) is { } problemDetails)
         {
             return problemDetails;
         }
@@ -151,7 +150,7 @@ internal static class DataElementAccessChecker
             };
         }
 
-        if (dataType.AppLogic?.DisallowUserDelete == true && !UserHasValidOrgClaim(user))
+        if (dataType.AppLogic?.DisallowUserDelete == true && auth is not Authenticated.ServiceOwner)
         {
             return new ProblemDetails()
             {
@@ -168,9 +167,4 @@ internal static class DataElementAccessChecker
     {
         return i?.Status?.Archived is null && i?.Status?.SoftDeleted is null && i?.Status?.HardDeleted is null;
     }
-
-    /// <summary>
-    /// Checks if the current claims principal has a valid `urn:altinn:org` claim
-    /// </summary>
-    private static bool UserHasValidOrgClaim(ClaimsPrincipal user) => !string.IsNullOrWhiteSpace(user.GetOrg());
 }

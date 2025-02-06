@@ -2,8 +2,8 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
-using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Exceptions;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Signing.Exceptions;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
@@ -12,16 +12,13 @@ using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
-using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.UserAction;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using JsonException = Newtonsoft.Json.JsonException;
 using Signee = Altinn.App.Core.Internal.Sign.Signee;
 
@@ -33,12 +30,8 @@ internal sealed class SigningService(
     ISigningNotificationService signingNotificationService,
     IEnumerable<ISigneeProvider> signeeProviders,
     IAppMetadata appMetadata,
-    IHttpContextAccessor httpContextAccessor,
     ISignClient signClient,
     ISigningCorrespondenceService signingCorrespondenceService,
-    IProfileClient profileClient,
-    IAltinnPartyClient altinnPartyClientService,
-    IOptions<GeneralSettings> settings,
     IDataClient dataClient,
     ILogger<SigningService> logger,
     Telemetry? telemetry = null
@@ -47,9 +40,7 @@ internal sealed class SigningService(
     private static readonly JsonSerializerOptions _jsonSerializerOptions = new(JsonSerializerDefaults.Web);
     private readonly ILogger<SigningService> _logger = logger;
     private readonly IAppMetadata _appMetadata = appMetadata;
-    private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
     private readonly ISignClient _signClient = signClient;
-    private readonly UserHelper _userHelper = new(profileClient, altinnPartyClientService, settings);
     private readonly ISigningCorrespondenceService _signingCorrespondenceService = signingCorrespondenceService;
     private readonly IDataClient _dataClient = dataClient;
     private const string ApplicationJsonContentType = "application/json";
@@ -185,9 +176,7 @@ internal sealed class SigningService(
             new InstanceIdentifier(userActionContext.Instance),
             currentTask.Id,
             signatureDataType,
-            await GetSignee(
-                _httpContextAccessor.HttpContext ?? throw new InvalidOperationException("HttpContext is not available.")
-            ),
+            await GetSignee(userActionContext),
             dataElementSignatures
         );
 
@@ -348,18 +337,31 @@ internal sealed class SigningService(
         return dataElementMatchExists || allDataTypesAreOptional ? signatureDataType : null;
     }
 
-    private async Task<Signee> GetSignee(HttpContext context)
+    private static async Task<Signee> GetSignee(UserActionContext context)
     {
-        UserContext? userProfile =
-            await _userHelper.GetUserContext(context)
-            ?? throw new Exception("Could not get user profile while getting signee");
-
-        return new Signee
+        switch (context.Authentication)
         {
-            UserId = userProfile.UserId.ToString(CultureInfo.InvariantCulture),
-            PersonNumber = userProfile.UserParty.SSN,
-            OrganisationNumber = userProfile.Party.OrgNumber,
-        };
+            case Authenticated.User user:
+            {
+                var userProfile = await user.LookupProfile();
+                return new Signee
+                {
+                    UserId = userProfile.UserId.ToString(CultureInfo.InvariantCulture),
+                    PersonNumber = userProfile.Party.SSN,
+                    OrganisationNumber = userProfile.Party.OrgNumber,
+                };
+            }
+            case Authenticated.SelfIdentifiedUser selfIdentifiedUser:
+                return new Signee { UserId = selfIdentifiedUser.UserId.ToString(CultureInfo.InvariantCulture) };
+            case Authenticated.SystemUser systemUser:
+                return new Signee
+                {
+                    SystemUserId = systemUser.SystemUserId[0],
+                    OrganisationNumber = systemUser.SystemUserOrgNr.Get(OrganisationNumberFormat.Local),
+                };
+            default:
+                throw new Exception("Could not get signee");
+        }
     }
 
     private async Task<SigneeContext> GenerateSigneeContext(
