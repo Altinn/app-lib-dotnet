@@ -299,7 +299,8 @@ public class PrefillSI : IPrefill
 
             if (string.IsNullOrEmpty(source))
             {
-                string errorMessage = $"Could not prefill, a source value was not set for target: {target}";
+                string errorMessage =
+                    $"Could not prefill, a source value was not set for target: {target.Replace(Environment.NewLine, "")}";
                 _logger.LogError(errorMessage);
                 throw new Exception(errorMessage);
             }
@@ -321,8 +322,6 @@ public class PrefillSI : IPrefill
                 sourceValue = JValue.CreateString(source);
             }
 
-            _logger.LogInformation($"Source: {source}, target: {target}");
-            _logger.LogInformation($"Value read from source object: {sourceValue}");
             string[] keys = target.Split(".");
 
             AssignValueToDataModel(keys, sourceValue, serviceModel, 0, continueOnError);
