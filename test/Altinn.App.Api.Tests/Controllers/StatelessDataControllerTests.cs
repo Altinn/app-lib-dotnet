@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using Altinn.App.Api.Controllers;
@@ -290,6 +291,9 @@ public class StatelessDataControllerTests
         var dataProcessorMock = new Mock<IDataProcessor>();
         var prefillMock = new Mock<IPrefill>();
         var registerMock = new Mock<IAltinnPartyClient>();
+        registerMock
+            .Setup(r => r.GetParty(501337))
+            .ReturnsAsync(new Platform.Register.Models.Party { PartyId = 501337 });
         var pdpMock = new Mock<IPDP>();
         var authContextMock = new Mock<IAuthenticationContext>();
         var dataType = "some-value";
@@ -307,6 +311,7 @@ public class StatelessDataControllerTests
         statelessDataController.ControllerContext = new ControllerContext();
         statelessDataController.ControllerContext.HttpContext = new DefaultHttpContext();
         statelessDataController.ControllerContext.HttpContext.User = TestAuthentication.GetUserPrincipal();
+
         authContextMock.Setup(c => c.Current).Returns(TestAuthentication.GetUserAuthentication());
         pdpMock
             .Setup(p => p.GetDecisionForRequest(It.IsAny<XacmlJsonRequestRoot>()))
@@ -322,17 +327,16 @@ public class StatelessDataControllerTests
 
         // Act
         appResourcesMock.Setup(x => x.GetClassRefForLogicDataType(dataType)).Returns(typeof(DummyModel).FullName!);
-        var result = await statelessDataController.Get("ttd", "demo-app", dataType, null!);
+        var result = await statelessDataController.Get("ttd", "demo-app", dataType, "partyId:501337");
 
         // Assert
-        result.Should().BeOfType<StatusCodeResult>().Which.StatusCode.Should().Be(403);
+        result.Should().BeOfType<StatusCodeResult>().Which.StatusCode.Should().Be(403);q
         appResourcesMock.Verify(x => x.GetClassRefForLogicDataType(dataType), Times.Once);
         appResourcesMock.VerifyNoOtherCalls();
         pdpMock.Verify(p => p.GetDecisionForRequest(It.IsAny<XacmlJsonRequestRoot>()));
         pdpMock.VerifyNoOtherCalls();
         dataProcessorMock.VerifyNoOtherCalls();
         prefillMock.VerifyNoOtherCalls();
-        registerMock.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -344,6 +348,9 @@ public class StatelessDataControllerTests
         var dataProcessorMock = new Mock<IDataProcessor>();
         var prefillMock = new Mock<IPrefill>();
         var registerMock = new Mock<IAltinnPartyClient>();
+        registerMock
+            .Setup(r => r.GetParty(501337))
+            .ReturnsAsync(new Platform.Register.Models.Party { PartyId = 501337 });
         var pdpMock = new Mock<IPDP>();
         var authContextMock = new Mock<IAuthenticationContext>();
         var dataType = "some-value";
@@ -379,7 +386,7 @@ public class StatelessDataControllerTests
 
         // Act
         appResourcesMock.Setup(x => x.GetClassRefForLogicDataType(dataType)).Returns(classRef);
-        var result = await statelessDataController.Get("ttd", "demo-app", dataType, null!);
+        var result = await statelessDataController.Get("ttd", "demo-app", dataType, "partyId:501337");
 
         // Assert
         result.Should().BeOfType<OkObjectResult>().Which.StatusCode.Should().Be(200);
@@ -400,6 +407,82 @@ public class StatelessDataControllerTests
         pdpMock.VerifyNoOtherCalls();
         dataProcessorMock.VerifyNoOtherCalls();
         prefillMock.VerifyNoOtherCalls();
-        registerMock.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task Get_Returns_OK_When_Party_Is_Valid()
+    {
+        // Arrange
+        var dataType = "some-value";
+        var classRef = typeof(DummyModel).FullName!;
+
+        // Create mocks
+        var appModelMock = new Mock<IAppModel>();
+        var appResourcesMock = new Mock<IAppResources>();
+        var dataProcessorMock = new Mock<IDataProcessor>();
+        var prefillMock = new Mock<IPrefill>();
+        var registerMock = new Mock<IAltinnPartyClient>();
+        var pdpMock = new Mock<IPDP>();
+        var authContextMock = new Mock<IAuthenticationContext>();
+
+        // Set up the app resources so we have a valid classRef
+        appResourcesMock.Setup(x => x.GetClassRefForLogicDataType(dataType)).Returns(classRef);
+
+        // Set up the AltinnPartyClient to return a valid party
+        registerMock.Setup(r => r.GetParty(123)).ReturnsAsync(new Platform.Register.Models.Party { PartyId = 123 });
+
+        // Set up PD decision to Permit
+        pdpMock
+            .Setup(p => p.GetDecisionForRequest(It.IsAny<XacmlJsonRequestRoot>()))
+            .ReturnsAsync(
+                new XacmlJsonResponse
+                {
+                    Response = new List<XacmlJsonResult>
+                    {
+                        new XacmlJsonResult { Decision = XacmlContextDecision.Permit.ToString() },
+                    },
+                }
+            );
+
+        // Set up IAppModel so it can create a dummy model
+        appModelMock.Setup(a => a.Create(classRef)).Returns(new DummyModel());
+
+        // For demonstration, mock the user principal in the controller context
+        var principal = TestAuthentication.GetUserPrincipal();
+        authContextMock.Setup(c => c.Current).Returns(TestAuthentication.GetUserAuthentication());
+
+        // Instantiate the controller
+        ILogger<DataController> logger = new NullLogger<DataController>();
+        var controller = new StatelessDataController(
+            logger,
+            appModelMock.Object,
+            appResourcesMock.Object,
+            prefillMock.Object,
+            registerMock.Object,
+            pdpMock.Object,
+            new IDataProcessor[] { dataProcessorMock.Object },
+            authContextMock.Object
+        )
+        {
+            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = principal } },
+        };
+
+        // Act
+        // We pass in "partyid:123" as the party header to match the mock above
+        var result = await controller.Get("ttd", "demo-app", dataType, "partyid:123");
+
+        // Assert
+        result.Should().BeOfType<OkObjectResult>().Which.StatusCode.Should().Be(200);
+        result.Should().BeOfType<OkObjectResult>().Which.Value.Should().BeOfType<DummyModel>();
+
+        // Verify the calls
+        registerMock.Verify(r => r.GetParty(123), Times.Once);
+        appResourcesMock.Verify(x => x.GetClassRefForLogicDataType(dataType), Times.Once);
+        pdpMock.Verify(p => p.GetDecisionForRequest(It.IsAny<XacmlJsonRequestRoot>()), Times.Once);
+        appModelMock.Verify(a => a.Create(classRef), Times.Once);
+        dataProcessorMock.Verify(
+            p => p.ProcessDataRead(It.IsAny<Instance>(), null, It.IsAny<DummyModel>(), null),
+            Times.Once
+        );
     }
 }
