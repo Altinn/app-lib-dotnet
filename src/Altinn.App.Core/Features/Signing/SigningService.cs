@@ -99,7 +99,7 @@ internal sealed class SigningService(
         (signeeContexts, var delegateSuccess) = await signingDelegationService.DelegateSigneeRights(
             taskId,
             instanceIdCombo,
-            instanceOwnerPartyUuid ?? throw new InvalidOperationException("Instance owner party UUID is null."),
+            instanceOwnerPartyUuid,
             appIdentifier,
             signeeContexts,
             ct,
