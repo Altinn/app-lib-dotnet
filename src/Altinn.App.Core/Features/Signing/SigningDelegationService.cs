@@ -58,7 +58,7 @@ internal sealed class SigningDelegationService(
                     {
                         ResourceId = appResourceId.Value,
                         InstanceId = instanceGuid.ToString(),
-                        From = new DelegationParty { Value = instanceOwnerPartyUuid.ToString() },
+                        From = new DelegationParty { Value = instanceOwnerPartyUuid.Value.ToString() },
                         To = new DelegationParty
                         {
                             Value =
