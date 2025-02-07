@@ -331,10 +331,10 @@ public static class ExpressionEvaluator
             return null;
         }
 
-        if (hasTimezone)
+        var timezone = state.GetTimeZone();
+        if (hasTimezone && timezone is not null)
         {
             // If the date has a timezone, we need to convert it to the user's timezone before displaying it
-            var timezone = state.GetTimeZone();
             date = TimeZoneInfo.ConvertTime(date.Value, timezone);
         }
 
@@ -400,7 +400,7 @@ public static class ExpressionEvaluator
                 { ValueKind: JsonValueKind.String } => arg.String,
                 { ValueKind: JsonValueKind.Null } => null,
                 _ => throw new ExpressionEvaluatorTypeErrorException(
-                    $"Date expressions only accept strings or null, got {arg.ToString()} of type {arg.ValueKind}"
+                    $"Date expressions only accept strings or null, got {arg} of type {arg.ValueKind}"
                 ),
             }
         );
