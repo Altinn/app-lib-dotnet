@@ -85,7 +85,7 @@ public class StatelessDataController : ControllerBase
         [FromRoute] string org,
         [FromRoute] string app,
         [FromQuery] string dataType,
-        [FromHeader(Name = "party")] string partyFromHeader,
+        [FromHeader(Name = "party")] string? partyFromHeader,
         [FromQuery] string? language = null
     )
     {
@@ -105,11 +105,20 @@ public class StatelessDataController : ControllerBase
             );
         }
 
-        InstanceOwner? owner = await GetInstanceOwner(partyFromHeader);
-        if (owner is null)
+        if (partyFromHeader is null)
         {
             return BadRequest(
                 $"Invalid party header. Please provide a party header on the form partyid:123, org:[orgnr] or person:[ssn]"
+            );
+        }
+
+        InstanceOwner? owner = await GetInstanceOwner(partyFromHeader);
+
+        if (owner is null)
+        {
+            return BadRequest(
+                $"Invalid party header. Could not lookup instance owner from the provided partyid: ${partyFromHeader}. "
+                    + $"Make sure partyid is represented with  prefix \"partyId:\", \"person:\" or \"org:\" (eg: \"partyId:123\")"
             );
         }
 
@@ -307,58 +316,33 @@ public class StatelessDataController : ControllerBase
         return Ok(appModel);
     }
 
-    private async Task<InstanceOwner?> GetInstanceOwner(string? partyFromHeader)
+    private async Task<InstanceOwner?> GetInstanceOwner(string partyFromHeader)
     {
-        // Use the party id of the logged in user, if no party id is given in the header
-        // Not sure if this is really used anywhere. It doesn't seem useful, as you'd
-        // always want to create an instance based on the selected party, not the person
-        // you happened to log in as.
-        if (partyFromHeader is null)
+        // Get the party as read in from the header. Authorization happens later.
+        var headerParts = partyFromHeader.Split(':');
+        if (partyFromHeader.Contains(',') || headerParts.Length != 2)
         {
-            var currentAuth = _authenticationContext.Current;
-            Party? party = currentAuth switch
-            {
-                Authenticated.User auth => await auth.LookupSelectedParty(),
-                Authenticated.SelfIdentifiedUser auth => (await auth.LoadDetails()).Party,
-                Authenticated.Org auth => (await auth.LoadDetails()).Party,
-                Authenticated.ServiceOwner auth => (await auth.LoadDetails()).Party,
-                Authenticated.SystemUser auth => (await auth.LoadDetails()).Party,
-                _ => null,
-            };
-
-            if (party is null)
-                return null;
-
-            return InstantiationHelper.PartyToInstanceOwner(party);
+            return null;
         }
-        else
+
+        var id = headerParts[1];
+        var idPrefix = headerParts[0].ToLowerInvariant();
+        var party = idPrefix switch
         {
-            // Get the party as read in from the header. Authorization happens later.
-            var headerParts = partyFromHeader.Split(':');
-            if (partyFromHeader.Contains(',') || headerParts.Length != 2)
-            {
-                return null;
-            }
+            PartyPrefix => await _altinnPartyClientClient.GetParty(int.TryParse(id, out var partyId) ? partyId : 0),
 
-            var id = headerParts[1];
-            var idPrefix = headerParts[0].ToLowerInvariant();
-            var party = idPrefix switch
-            {
-                PartyPrefix => await _altinnPartyClientClient.GetParty(int.TryParse(id, out var partyId) ? partyId : 0),
+            // Frontend seems to only use partyId, not orgnr or ssn.
+            PersonPrefix => await _altinnPartyClientClient.LookupParty(new PartyLookup { Ssn = id }),
+            OrgPrefix => await _altinnPartyClientClient.LookupParty(new PartyLookup { OrgNo = id }),
+            _ => null,
+        };
 
-                // Frontend seems to only use partyId, not orgnr or ssn.
-                PersonPrefix => await _altinnPartyClientClient.LookupParty(new PartyLookup { Ssn = id }),
-                OrgPrefix => await _altinnPartyClientClient.LookupParty(new PartyLookup { OrgNo = id }),
-                _ => null,
-            };
-
-            if (party is null || party.PartyId == 0)
-            {
-                return null;
-            }
-
-            return InstantiationHelper.PartyToInstanceOwner(party);
+        if (party is null || party.PartyId == 0)
+        {
+            return null;
         }
+
+        return InstantiationHelper.PartyToInstanceOwner(party);
     }
 
     private async Task<EnforcementResult> AuthorizeAction(string org, string app, int partyId, string action)
