@@ -344,11 +344,13 @@ internal sealed class SigningService(
             case Authenticated.User user:
             {
                 var userProfile = await user.LookupProfile();
+                var orgProfile = await user.LookupSelectedParty();
+
                 return new Signee
                 {
                     UserId = userProfile.UserId.ToString(CultureInfo.InvariantCulture),
                     PersonNumber = userProfile.Party.SSN,
-                    OrganisationNumber = userProfile.Party.OrgNumber,
+                    OrganisationNumber = orgProfile.OrgNumber,
                 };
             }
             case Authenticated.SelfIdentifiedUser selfIdentifiedUser:
