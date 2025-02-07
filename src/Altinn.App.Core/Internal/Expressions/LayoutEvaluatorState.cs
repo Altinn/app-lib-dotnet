@@ -80,7 +80,7 @@ public class LayoutEvaluatorState
     /// <summary>
     /// Gets the current timezone
     /// </summary>
-    public TimeZoneInfo GetTimeZone() => _timeZone ?? TimeZoneInfo.Utc;
+    public TimeZoneInfo? GetTimeZone() => _timeZone;
 
     /// <summary>
     /// Get component from componentModel

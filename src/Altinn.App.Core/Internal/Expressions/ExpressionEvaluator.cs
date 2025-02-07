@@ -331,10 +331,10 @@ public static class ExpressionEvaluator
             return null;
         }
 
-        if (hasTimezone)
+        var timezone = state.GetTimeZone();
+        if (hasTimezone && timezone is not null)
         {
             // If the date has a timezone, we need to convert it to the user's timezone before displaying it
-            var timezone = state.GetTimeZone();
             date = TimeZoneInfo.ConvertTime(date.Value, timezone);
         }
 
