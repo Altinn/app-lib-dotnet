@@ -17,13 +17,25 @@ internal sealed class SigningDelegationService(
     public async Task<(List<SigneeContext>, bool success)> DelegateSigneeRights(
         string taskId,
         string instanceIdCombo,
-        Guid instanceOwnerPartyUuid,
+        Guid? instanceOwnerPartyUuid,
         AppIdentifier appIdentifier,
         List<SigneeContext> signeeContexts,
         CancellationToken ct,
         Telemetry? telemetry = null
     )
     {
+        if (instanceOwnerPartyUuid is null)
+        {
+            signeeContexts.ForEach(signeeContext =>
+            {
+                signeeContext.SigneeState.DelegationFailedReason =
+                    "Failed to delegate signee rights: Instance owner party UUID is null and cannot be used for delegating access.";
+                signeeContext.SigneeState.IsAccessDelegated = false;
+            });
+
+            return (signeeContexts, false);
+        }
+
         if (!Guid.TryParse(instanceIdCombo.Split("/")[1], out var instanceGuid))
         {
             throw new ArgumentException("Invalid instanceId format", nameof(instanceIdCombo));
@@ -46,7 +58,7 @@ internal sealed class SigningDelegationService(
                     {
                         ResourceId = appResourceId.Value,
                         InstanceId = instanceGuid.ToString(),
-                        From = new DelegationParty { Value = instanceOwnerPartyUuid.ToString() },
+                        From = new DelegationParty { Value = instanceOwnerPartyUuid.Value.ToString() },
                         To = new DelegationParty
                         {
                             Value =

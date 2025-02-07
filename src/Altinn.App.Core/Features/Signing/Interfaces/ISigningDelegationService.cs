@@ -22,7 +22,7 @@ public interface ISigningDelegationService
     internal Task<(List<SigneeContext>, bool success)> DelegateSigneeRights(
         string taskId,
         string instanceIdCombo,
-        Guid InstanceOwnerPartyUuid,
+        Guid? InstanceOwnerPartyUuid,
         AppIdentifier appIdentifier,
         List<SigneeContext> signeeContexts,
         CancellationToken ct,
