@@ -181,16 +181,20 @@ internal static partial class UnicodeDateTimeTokenConverter
         string offsetString = match.Groups[1].Value;
         hasTimeZone = !string.IsNullOrEmpty(offsetString);
 
-        try
+        if (
+            DateTimeOffset.TryParse(
+                rawString,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.RoundtripKind,
+                out DateTimeOffset result
+            )
+        )
         {
-            DateTimeOffset result = DateTimeOffset.Parse(rawString, CultureInfo.InvariantCulture);
             return result;
         }
-        catch (FormatException)
-        {
-            throw new ExpressionEvaluatorTypeErrorException(
-                $"Unable to parse date \"{rawString}\": Format was recognized, but the date/time is invalid"
-            );
-        }
+
+        throw new ExpressionEvaluatorTypeErrorException(
+            $"Unable to parse date \"{rawString}\": Format was recognized, but the date/time is invalid"
+        );
     }
 }
