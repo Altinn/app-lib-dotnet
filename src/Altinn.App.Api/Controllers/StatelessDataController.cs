@@ -35,7 +35,6 @@ public class StatelessDataController : ControllerBase
     private readonly IPrefill _prefillService;
     private readonly IAltinnPartyClient _altinnPartyClientClient;
     private readonly IPDP _pdp;
-    private readonly IAuthenticationContext _authenticationContext;
     private const long REQUEST_SIZE_LIMIT = 2000 * 1024 * 1024;
 
     private const string PartyPrefix = "partyid";
@@ -63,7 +62,6 @@ public class StatelessDataController : ControllerBase
         _prefillService = prefillService;
         _altinnPartyClientClient = altinnPartyClientClient;
         _pdp = pdp;
-        _authenticationContext = authenticationContext;
     }
 
     /// <summary>
