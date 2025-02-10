@@ -610,12 +610,13 @@ public static class ExpressionEvaluator
         }
         string? subject = ToStringForEquals(args[0]);
         double? start = PrepareNumericArg(args[1]);
-        double? length = args.Length == 3 ? PrepareNumericArg(args[2]) : null;
+        double? end = args.Length == 3 ? PrepareNumericArg(args[2]) : null;
+        bool hasEnd = args.Length == 3;
 
-        if (start == null)
+        if (start == null || (hasEnd && end == null))
         {
             throw new ExpressionEvaluatorTypeErrorException(
-                "Start index cannot be null (if you used an expression like stringIndexOf here, make sure to guard against null)"
+                "Start/end index cannot be null (if you used an expression like stringIndexOf here, make sure to guard against null)"
             );
         }
 
@@ -626,20 +627,24 @@ public static class ExpressionEvaluator
 
         if (start < 0)
         {
-            throw new ExpressionEvaluatorTypeErrorException("Start index cannot be negative");
+            start = subject.Length + start;
         }
 
-        if (length != null && length < 0)
-        {
-            throw new ExpressionEvaluatorTypeErrorException("Length cannot be negative");
-        }
+        start = Math.Max(0, Math.Min(subject.Length, start.Value)); // Clamp to be within the string
 
-        if (length == null)
+        if (end == null)
         {
             return subject.Substring((int)start);
         }
 
-        return subject.Substring((int)start, (int)length);
+        if (end < 0)
+        {
+            end = subject.Length + end;
+        }
+
+        end = Math.Max(0, Math.Min(subject.Length, end.Value)); // Clamp to be within the string
+
+        return subject.Substring((int)start, (int)(end - start));
     }
 
     private static string Round(ExpressionValue[] args)
