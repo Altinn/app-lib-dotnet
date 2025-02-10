@@ -10,7 +10,6 @@ using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
-using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
 using Altinn.Platform.Storage.Interface.Enums;
@@ -30,7 +29,6 @@ public class ProcessEngine : IProcessEngine
     private readonly UserActionService _userActionService;
     private readonly Telemetry? _telemetry;
     private readonly IAuthenticationContext _authenticationContext;
-    private readonly IProcessTaskCleaner _processTaskCleaner;
     private readonly IDataClient _dataClient;
     private readonly IInstanceClient _instanceClient;
     private readonly ModelSerializationService _modelSerialization;
@@ -44,7 +42,6 @@ public class ProcessEngine : IProcessEngine
         IProcessNavigator processNavigator,
         IProcessEventHandlerDelegator processEventsDelegator,
         IProcessEventDispatcher processEventDispatcher,
-        IProcessTaskCleaner processTaskCleaner,
         UserActionService userActionService,
         IDataClient dataClient,
         IInstanceClient instanceClient,
@@ -58,7 +55,6 @@ public class ProcessEngine : IProcessEngine
         _processNavigator = processNavigator;
         _processEventHandlerDelegator = processEventsDelegator;
         _processEventDispatcher = processEventDispatcher;
-        _processTaskCleaner = processTaskCleaner;
         _userActionService = userActionService;
         _dataClient = dataClient;
         _instanceClient = instanceClient;
@@ -157,10 +153,6 @@ public class ProcessEngine : IProcessEngine
             activity?.SetProcessChangeResult(result);
             return result;
         }
-
-        // Removes existing/stale data elements previously generated from this task
-        // TODO: Move this logic to ProcessTaskInitializer.Initialize once the authentication model supports a service/app user with the appropriate scopes
-        await _processTaskCleaner.RemoveAllDataElementsGeneratedFromTask(instance, currentElementId);
 
         var currentAuth = _authenticationContext.Current;
         IUserAction? actionHandler = _userActionService.GetActionHandler(request.Action);
