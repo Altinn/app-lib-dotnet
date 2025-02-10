@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using Altinn.App.Core.Exceptions;
 using Altinn.App.Core.Features.Auth;
+using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Features.Signing.Exceptions;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
@@ -16,6 +17,7 @@ using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.UserAction;
+using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
@@ -65,7 +67,7 @@ internal sealed class SigningService(
         List<SigneeContext> signeeContexts = [];
         foreach (SigneeParty signeeParty in signeesResult.Signees)
         {
-            var signeeContext = await GenerateSigneeContext(taskId, signeeParty, ct);
+            SigneeContext signeeContext = await GenerateSigneeContext(taskId, signeeParty, ct);
             signeeContexts.Add(signeeContext);
         }
 
@@ -96,7 +98,7 @@ internal sealed class SigningService(
             .Result.PartyUuid;
 
         AppIdentifier appIdentifier = new(instanceMutator.Instance.AppId);
-        (signeeContexts, var delegateSuccess) = await signingDelegationService.DelegateSigneeRights(
+        (signeeContexts, bool delegateSuccess) = await signingDelegationService.DelegateSigneeRights(
             taskId,
             instanceIdCombo,
             instanceOwnerPartyUuid,
@@ -187,13 +189,14 @@ internal sealed class SigningService(
 
         try
         {
-            var result = await _signingCorrespondenceService.SendCorrespondence(
+            SendCorrespondenceResponse? result = await _signingCorrespondenceService.SendCorrespondence(
                 signatureContext.InstanceIdentifier,
                 signatureContext.Signee,
                 dataElementSignatures,
                 userActionContext,
                 signatureConfiguration?.CorrespondenceResources
             );
+
             if (result is not null)
             {
                 _logger.LogInformation(
@@ -224,7 +227,7 @@ internal sealed class SigningService(
         {
             List<SigneeContext> signeeContexts = await GetSigneeContexts(dataMutator, signatureConfiguration);
 
-            foreach (var signeeContext in signeeContexts)
+            foreach (SigneeContext signeeContext in signeeContexts)
             {
                 // Update the signee context with information about person signee if
                 // the original signee is an organisation and missing person information.
@@ -306,7 +309,7 @@ internal sealed class SigningService(
             return connectedDataElements;
         }
 
-        foreach (var dataType in dataTypesToSign)
+        foreach (DataType dataType in dataTypesToSign)
         {
             connectedDataElements.AddRange(
                 dataElements
@@ -324,7 +327,12 @@ internal sealed class SigningService(
         IEnumerable<DataType>? dataTypesToSign
     )
     {
-        var signatureDataType = currentTask.ExtensionElements?.TaskExtension?.SignatureConfiguration?.SignatureDataType;
+        string? signatureDataType = currentTask
+            .ExtensionElements
+            ?.TaskExtension
+            ?.SignatureConfiguration
+            ?.SignatureDataType;
+
         if (dataTypesToSign.IsNullOrEmpty())
         {
             return null;
@@ -343,8 +351,8 @@ internal sealed class SigningService(
         {
             case Authenticated.User user:
             {
-                var userProfile = await user.LookupProfile();
-                var orgProfile = await user.LookupSelectedParty();
+                UserProfile userProfile = await user.LookupProfile();
+                Party orgProfile = await user.LookupSelectedParty();
 
                 return new Signee
                 {
@@ -372,7 +380,7 @@ internal sealed class SigningService(
         CancellationToken ct
     )
     {
-        var socialSecurityNumber = signeeParty.SocialSecurityNumber;
+        string? socialSecurityNumber = signeeParty.SocialSecurityNumber;
         Party party = await altinnPartyClient.LookupParty(
             socialSecurityNumber is not null
                 ? new PartyLookup { Ssn = socialSecurityNumber }
