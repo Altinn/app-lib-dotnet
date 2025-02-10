@@ -329,7 +329,7 @@ public class StatelessDataControllerTests
         var result = await statelessDataController.Get("ttd", "demo-app", dataType, "partyId:501337");
 
         // Assert
-        result.Should().BeOfType<StatusCodeResult>().Which.StatusCode.Should().Be(403);q
+        result.Should().BeOfType<StatusCodeResult>().Which.StatusCode.Should().Be(403);
         appResourcesMock.Verify(x => x.GetClassRefForLogicDataType(dataType), Times.Once);
         appResourcesMock.VerifyNoOtherCalls();
         pdpMock.Verify(p => p.GetDecisionForRequest(It.IsAny<XacmlJsonRequestRoot>()));
