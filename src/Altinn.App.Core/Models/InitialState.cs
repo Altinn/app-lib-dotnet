@@ -1,3 +1,4 @@
+using Altinn.App.Core.Configuration;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -13,7 +14,7 @@ public class InitialState
 
     public ApplicationMetadata ApplicationMetadata { get; set; }
 
-    public JsonResult FrontEndSettings { get; set; }
+    public FrontEndSettings FrontEndSettings { get; set; }
 
     public UserProfile User { get; set; }
 

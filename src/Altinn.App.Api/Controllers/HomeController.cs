@@ -1,8 +1,13 @@
 using System.Text.Json;
 using System.Web;
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Auth;
+using Altinn.App.Core.Internal.Profile;
+using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Models;
+using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Mvc;
@@ -28,6 +33,14 @@ public class HomeController : Controller
     private readonly IAppMetadata _appMetadata;
     private readonly List<string> _onEntryWithInstance = new List<string> { "new-instance", "select-instance" };
 
+    private readonly ILogger<ApplicationMetadataController> _logger;
+    private readonly FrontEndSettings _frontEndSettings;
+    private readonly IProfileClient _profileClient;
+
+    private readonly IAuthorizationClient _authorizationClient;
+    private readonly UserHelper _userHelper;
+    private readonly GeneralSettings _settings;
+
     /// <summary>
     /// Initialize a new instance of the <see cref="HomeController"/> class.
     /// </summary>
@@ -43,7 +56,13 @@ public class HomeController : Controller
         IWebHostEnvironment env,
         IOptions<AppSettings> appSettings,
         IAppResources appResources,
-        IAppMetadata appMetadata
+        IAppMetadata appMetadata,
+        ILogger<ApplicationMetadataController> logger,
+        IOptions<FrontEndSettings> frontEndSettings,
+        IProfileClient profileClient,
+        IAuthorizationClient authorizationClient,
+        IOptions<GeneralSettings> settings,
+        IAltinnPartyClient altinnPartyClientClient
     )
     {
         _antiforgery = antiforgery;
@@ -52,6 +71,12 @@ public class HomeController : Controller
         _appSettings = appSettings.Value;
         _appResources = appResources;
         _appMetadata = appMetadata;
+        _appMetadata = appMetadata;
+        _logger = logger;
+        _frontEndSettings = frontEndSettings.Value;
+        _profileClient = profileClient;
+        _authorizationClient = authorizationClient;
+        _userHelper = new UserHelper(profileClient, altinnPartyClientClient, settings);
     }
 
     /// <summary>
@@ -84,6 +109,58 @@ public class HomeController : Controller
 
         if (await ShouldShowAppView())
         {
+            ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
+
+            string wantedAppId = $"{org}/{app}";
+
+            var initialState = new InitialState(application);
+
+            //Adding key from _appSettings to be backwards compatible.
+            if (
+                !_frontEndSettings.ContainsKey(nameof(_appSettings.AppOidcProvider))
+                && !string.IsNullOrEmpty(_appSettings.AppOidcProvider)
+            )
+            {
+                _frontEndSettings.Add(nameof(_appSettings.AppOidcProvider), _appSettings.AppOidcProvider);
+            }
+
+            //return new JsonResult(frontEndSettings, _jsonSerializerOptions);
+            initialState.FrontEndSettings = _frontEndSettings; // JsonSerializer.Serialize(initialState, _jsonSerializerOptions); //new JsonResult(_frontEndSettings, _jsonSerializerOptions);
+
+            int userId = AuthenticationHelper.GetUserId(HttpContext);
+            if (userId == 0)
+            {
+                return BadRequest("The userId is not provided in the context.");
+            }
+
+            try
+            {
+                var user = await _profileClient.GetUserProfile(userId);
+
+                if (user == null)
+                {
+                    return NotFound();
+                }
+
+                initialState.User = user;
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, e.Message);
+            }
+
+            UserContext userContext = await _userHelper.GetUserContext(HttpContext);
+            List<Party>? partyList = await _authorizationClient.GetPartyList(userContext.UserId);
+
+            List<Party> validParties = InstantiationHelper.FilterPartiesByAllowedPartyTypes(
+                partyList,
+                application.PartyTypesAllowed
+            );
+
+            initialState.ValidParties = validParties;
+
+            ViewBag.InitialState = JsonSerializer.Serialize(initialState, _jsonSerializerOptions);
+
             ViewBag.org = org;
             ViewBag.app = app;
             return PartialView("Index");
