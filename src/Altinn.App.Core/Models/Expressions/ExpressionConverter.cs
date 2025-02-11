@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -48,11 +49,7 @@ public class ExpressionConverter : JsonConverter<Expression>
             throw new JsonException("Function name in expression should be string");
         }
 
-        var stringFunction = reader.GetString();
-        if (!Enum.TryParse<ExpressionFunction>(stringFunction, ignoreCase: false, out var functionEnum))
-        {
-            throw new JsonException($"Function \"{stringFunction}\" not implemented");
-        }
+        var functionEnum = ParseFunctionName(ref reader);
 
         var args = new List<Expression>();
 
@@ -62,6 +59,47 @@ public class ExpressionConverter : JsonConverter<Expression>
         }
 
         return new Expression(functionEnum, args);
+    }
+
+    private static ExpressionFunction ParseFunctionName(ref Utf8JsonReader reader)
+    {
+        var functionSpan = reader.HasValueSequence ? reader.ValueSequence.ToArray() : reader.ValueSpan;
+        return functionSpan switch
+        {
+            [100, 97, 116, 97, 77, 111, 100, 101, 108] => ExpressionFunction.dataModel,
+            [99, 111, 109, 112, 111, 110, 101, 110, 116] => ExpressionFunction.component,
+            [105, 110, 115, 116, 97, 110, 99, 101, 67, 111, 110, 116, 101, 120, 116] =>
+                ExpressionFunction.instanceContext,
+            [105, 102] => ExpressionFunction.@if,
+            [102, 114, 111, 110, 116, 101, 110, 100, 83, 101, 116, 116, 105, 110, 103, 115] =>
+                ExpressionFunction.frontendSettings,
+            [99, 111, 110, 99, 97, 116] => ExpressionFunction.concat,
+            [117, 112, 112, 101, 114, 67, 97, 115, 101] => ExpressionFunction.upperCase,
+            [108, 111, 119, 101, 114, 67, 97, 115, 101] => ExpressionFunction.lowerCase,
+            [99, 111, 110, 116, 97, 105, 110, 115] => ExpressionFunction.contains,
+            [110, 111, 116, 67, 111, 110, 116, 97, 105, 110, 115] => ExpressionFunction.notContains,
+            [99, 111, 109, 109, 97, 67, 111, 110, 116, 97, 105, 110, 115] => ExpressionFunction.commaContains,
+            [101, 110, 100, 115, 87, 105, 116, 104] => ExpressionFunction.endsWith,
+            [115, 116, 97, 114, 116, 115, 87, 105, 116, 104] => ExpressionFunction.startsWith,
+            [101, 113, 117, 97, 108, 115] => ExpressionFunction.equals,
+            [110, 111, 116, 69, 113, 117, 97, 108, 115] => ExpressionFunction.notEquals,
+            [103, 114, 101, 97, 116, 101, 114, 84, 104, 97, 110, 69, 113] => ExpressionFunction.greaterThanEq,
+            [108, 101, 115, 115, 84, 104, 97, 110] => ExpressionFunction.lessThan,
+            [108, 101, 115, 115, 84, 104, 97, 110, 69, 113] => ExpressionFunction.lessThanEq,
+            [103, 114, 101, 97, 116, 101, 114, 84, 104, 97, 110] => ExpressionFunction.greaterThan,
+            [115, 116, 114, 105, 110, 103, 76, 101, 110, 103, 116, 104] => ExpressionFunction.stringLength,
+            [114, 111, 117, 110, 100] => ExpressionFunction.round,
+            [97, 110, 100] => ExpressionFunction.and,
+            [111, 114] => ExpressionFunction.or,
+            [110, 111, 116] => ExpressionFunction.not,
+            [118, 97, 108, 117, 101] => ExpressionFunction.value,
+            [97, 114, 103, 118] => ExpressionFunction.value, // "argv" works for compatibility
+            [103, 97, 116, 101, 119, 97, 121, 65, 99, 116, 105, 111, 110] => ExpressionFunction.gatewayAction,
+            [108, 97, 110, 103, 117, 97, 103, 101] => ExpressionFunction.language,
+            _ => throw new JsonException(
+                $"Function \"{System.Text.Encoding.UTF8.GetString(functionSpan)}\" not implemented"
+            ),
+        };
     }
 
     /// <inheritdoc />

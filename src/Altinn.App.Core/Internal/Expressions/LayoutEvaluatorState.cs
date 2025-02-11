@@ -138,6 +138,14 @@ public class LayoutEvaluatorState
     }
 
     /// <summary>
+    /// Get model data from an explicit data reference
+    /// </summary>
+    public async Task<object?> GetModelData(DataReference dataReference)
+    {
+        return await _dataModel.GetModelData(dataReference);
+    }
+
+    /// <summary>
     /// Get field from dataModel with key and context
     /// </summary>
     public async Task<object?> GetModelData(

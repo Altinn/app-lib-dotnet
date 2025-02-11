@@ -56,8 +56,7 @@ public static class ExpressionEvaluator
     public static async Task<object?> EvaluateExpression(
         LayoutEvaluatorState state,
         Expression expr,
-        ComponentContext context,
-        object?[]? positionalArguments = null
+        ComponentContext context
     )
     {
         if (!expr.IsFunctionExpression)
@@ -67,7 +66,7 @@ public static class ExpressionEvaluator
         var args = new object?[expr.Args.Count];
         for (var i = 0; i < args.Length; i++)
         {
-            args[i] = await EvaluateExpression(state, expr.Args[i], context, positionalArguments);
+            args[i] = await EvaluateExpression(state, expr.Args[i], context);
         }
         // ! TODO: should find better ways to deal with nulls here for the next major version
         var ret = expr.Function switch
@@ -96,7 +95,7 @@ public static class ExpressionEvaluator
             ExpressionFunction.round => Round(args),
             ExpressionFunction.upperCase => UpperCase(args),
             ExpressionFunction.lowerCase => LowerCase(args),
-            ExpressionFunction.argv => Argv(args, positionalArguments),
+            ExpressionFunction.value => ContextValueLookup(args, context),
             ExpressionFunction.gatewayAction => state.GetGatewayAction(),
             ExpressionFunction.language => state.GetLanguage() ?? "nb",
             _ => throw new ExpressionEvaluatorTypeErrorException($"Function \"{expr.Function}\" not implemented"),
@@ -108,12 +107,13 @@ public static class ExpressionEvaluator
     {
         if (args is [DataReference dataReference])
         {
-            return await DataModel(
-                new ModelBinding() { Field = dataReference.Field },
-                dataReference.DataElementIdentifier,
-                context.RowIndices,
-                state
-            );
+            // Only allow IConvertible types to be returned from data model
+            // Objects and arrays should return null
+            return await state.GetModelData(dataReference) switch
+            {
+                IConvertible c => c,
+                _ => null,
+            };
         }
         var key = args switch
         {
@@ -190,7 +190,7 @@ public static class ExpressionEvaluator
             args.Select(a =>
                 a switch
                 {
-                    string s => s,
+                    string s => s, // concat must not convert "NULL" to null
                     _ => ToStringForEquals(a),
                 }
             )
@@ -532,28 +532,19 @@ public static class ExpressionEvaluator
         return string.Equals(ToStringForEquals(args[0]), ToStringForEquals(args[1]), StringComparison.Ordinal);
     }
 
-    private static object? Argv(object?[] args, object?[]? positionalArguments)
+    private static object? ContextValueLookup(ReadOnlySpan<object?> args, ComponentContext? context)
     {
-        if (args.Length != 1)
+        IContextValueAccessor? contextValueAccessor = null;
+        while (context != null && contextValueAccessor == null)
         {
-            throw new ExpressionEvaluatorTypeErrorException($"Expected 1 argument(s), got {args.Length}");
+            contextValueAccessor = context.ContextValueAccessor;
+            context = context.Parent;
+        }
+        if (contextValueAccessor == null)
+        {
+            throw new ExpressionEvaluatorTypeErrorException("Tried to evaluate ");
         }
 
-        var index = (int?)PrepareNumericArg(args[0]);
-        if (!index.HasValue)
-        {
-            throw new ExpressionEvaluatorTypeErrorException($"Expected number, got value \"{args[0]}\"");
-        }
-
-        if (positionalArguments == null)
-        {
-            throw new ExpressionEvaluatorTypeErrorException("No positional arguments available");
-        }
-        if (index < 0 || index >= positionalArguments.Length)
-        {
-            throw new ExpressionEvaluatorTypeErrorException($"Index {index} out of range");
-        }
-
-        return positionalArguments[index.Value];
+        return contextValueAccessor.GetValue(ExpressionFunction.value, args);
     }
 }
