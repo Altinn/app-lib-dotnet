@@ -75,7 +75,7 @@ public class LayoutEvaluatorState
     /// <summary>
     /// Gets the current language of the instance viewer
     /// </summary>
-    public string? GetLanguage() => _language;
+    public string GetLanguage() => _language ?? "nb";
 
     /// <summary>
     /// Gets the current timezone

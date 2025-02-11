@@ -126,7 +126,7 @@ public static class ExpressionEvaluator
             ExpressionFunction.upperCaseFirst => UpperCaseFirst(args),
             ExpressionFunction.argv => Argv(args, positionalArguments),
             ExpressionFunction.gatewayAction => state.GetGatewayAction(),
-            ExpressionFunction.language => state.GetLanguage() ?? "nb",
+            ExpressionFunction.language => state.GetLanguage(),
             _ => throw new ExpressionEvaluatorTypeErrorException("Function not implemented", expr.Function, args),
         };
         return ret;
