@@ -28,10 +28,6 @@ public class HomeController : Controller
     private readonly IAppResources _appResources;
     private readonly IAppMetadata _appMetadata;
     private readonly List<string> _onEntryWithInstance = new List<string> { "new-instance", "select-instance" };
-    private static readonly System.Text.Json.JsonSerializerOptions _jsonOptions = new()
-    {
-        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-    };
 
     /// <summary>
     /// Initialize a new instance of the <see cref="HomeController"/> class.
@@ -197,7 +193,7 @@ public class HomeController : Controller
             return BadRequest("Found no valid query params.");
         }
 
-        var safeResultJson = System.Text.Json.JsonSerializer.Serialize(result, _jsonOptions);
+        var safeResultJson = System.Text.Json.JsonSerializer.Serialize(result);
         var encodedAppId = Uri.EscapeDataString(application.Id);
 
         string nonce = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(16));
