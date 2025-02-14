@@ -522,21 +522,12 @@ internal sealed class SigningService(
             taskId
         );
 
-        Party personParty = await altinnPartyClient.LookupParty(
-            new PartyLookup { Ssn = signDocument.SigneeInfo.PersonNumber }
-        );
-        Party? orgParty = string.IsNullOrEmpty(signDocument.SigneeInfo.OrganisationNumber)
-            ? null
-            : await altinnPartyClient.LookupParty(
-                new PartyLookup { OrgNo = signDocument.SigneeInfo.OrganisationNumber }
-            );
-
         return new SigneeContext
         {
             TaskId = taskId,
             Signee = await From(
                 signDocument.SigneeInfo.PersonNumber,
-                orgParty?.Organization?.OrgNumber,
+                signDocument.SigneeInfo.OrganisationNumber,
                 altinnPartyClient.LookupParty
             ),
             SigneeState = new SigneeState()
