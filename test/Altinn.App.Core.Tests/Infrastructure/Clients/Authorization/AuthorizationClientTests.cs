@@ -16,7 +16,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
-using Moq.Protected;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 using WireMock.Server;
@@ -265,6 +264,8 @@ public class AuthorizationClientTests
         var xacmlJesonRespons = File.ReadAllText(
             Path.Join("Infrastructure", "Clients", "Authorization", "TestData", $"{filename}.json")
         );
-        return JsonSerializer.Deserialize<XacmlJsonResponse>(xacmlJesonRespons);
+        var response = JsonSerializer.Deserialize<XacmlJsonResponse>(xacmlJesonRespons);
+        Assert.NotNull(response);
+        return response;
     }
 }
