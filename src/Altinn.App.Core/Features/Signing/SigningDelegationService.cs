@@ -51,7 +51,7 @@ internal sealed class SigningDelegationService(
             {
                 if (state.IsAccessDelegated is false)
                 {
-                    Guid? partyUuid = signeeContext.Signee.GetPartyUuid();
+                    Guid? partyUuid = signeeContext.Signee.GetParty().PartyUuid;
                     logger.LogInformation(
                         $"Delegating signee rights to {partyUuid} from {instanceOwnerPartyUuid} for {appResourceId.Value}"
                     );
@@ -127,7 +127,7 @@ internal sealed class SigningDelegationService(
         {
             if (signeeContext.SigneeState.IsAccessDelegated is true)
             {
-                Guid? partyUuid = signeeContext.Signee.GetPartyUuid();
+                Guid? partyUuid = signeeContext.Signee.GetParty().PartyUuid;
                 logger.LogInformation(
                     $"Revoking signee rights from {partyUuid} to {appResourceId.Value} by {instanceOwnerPartyUuid}"
                 );

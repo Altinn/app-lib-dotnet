@@ -41,28 +41,14 @@ public sealed class SigneeContext
 /// </summary>
 public abstract class Signee
 {
-    public int GetPartyId()
+    public Party GetParty()
     {
         return this switch
         {
-            PersonSignee personSignee => personSignee.Party.PartyId,
-            OrganisationSignee organisationSignee => organisationSignee.OrgParty.PartyId,
-            PersonOnBehalfOfOrgSignee personOnBehalfOfOrgSignee => personOnBehalfOfOrgSignee.Party.PartyId,
-            SystemSignee systemSignee => systemSignee.OnBehalfOfOrg.OrgParty.PartyId,
-            _ => throw new InvalidOperationException(
-                "Signee is neither a person, an organisation, a person on behalf of an organisation, nor a system"
-            ),
-        };
-    }
-
-    public Guid? GetPartyUuid()
-    {
-        return this switch
-        {
-            PersonSignee personSignee => personSignee.Party.PartyUuid,
-            OrganisationSignee organisationSignee => organisationSignee.OrgParty.PartyUuid,
-            PersonOnBehalfOfOrgSignee personOnBehalfOfOrgSignee => personOnBehalfOfOrgSignee.Party.PartyUuid,
-            SystemSignee systemSignee => systemSignee.OnBehalfOfOrg.OrgParty.PartyUuid,
+            PersonSignee personSignee => personSignee.Party,
+            OrganisationSignee organisationSignee => organisationSignee.OrgParty,
+            PersonOnBehalfOfOrgSignee personOnBehalfOfOrgSignee => personOnBehalfOfOrgSignee.Party,
+            SystemSignee systemSignee => systemSignee.OnBehalfOfOrg.OrgParty,
             _ => throw new InvalidOperationException(
                 "Signee is neither a person, an organisation, a person on behalf of an organisation, nor a system"
             ),
