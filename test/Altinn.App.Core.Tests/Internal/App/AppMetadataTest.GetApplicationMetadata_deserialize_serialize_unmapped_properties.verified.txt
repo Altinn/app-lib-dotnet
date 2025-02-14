@@ -71,6 +71,7 @@
     "SubUnit": true
   },
   "AutoDeleteOnProcessEnd": false,
+  "PreventInstanceDeletionForDays": null,
   "PresentationFields": null,
   "DataFields": null,
   "EFormidling": null,
