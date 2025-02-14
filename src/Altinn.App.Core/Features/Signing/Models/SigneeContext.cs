@@ -51,7 +51,7 @@ public abstract class Signee
         {
             PersonSignee personSignee => personSignee.Party,
             OrganisationSignee organisationSignee => organisationSignee.OrgParty,
-            PersonOnBehalfOfOrgSignee personOnBehalfOfOrgSignee => personOnBehalfOfOrgSignee.Party,
+            PersonOnBehalfOfOrgSignee personOnBehalfOfOrgSignee => personOnBehalfOfOrgSignee.OnBehalfOfOrg.OrgParty,
             SystemSignee systemSignee => systemSignee.OnBehalfOfOrg.OrgParty,
             _ => throw new InvalidOperationException(
                 "Signee is neither a person, an organisation, a person on behalf of an organisation, nor a system"
