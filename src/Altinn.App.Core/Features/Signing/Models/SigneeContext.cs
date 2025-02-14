@@ -45,7 +45,7 @@ public sealed class SigneeContext
 [JsonDerivedType(typeof(SystemSignee), typeDiscriminator: "system")]
 public abstract class Signee
 {
-    public Party GetParty()
+    internal Party GetParty()
     {
         return this switch
         {
@@ -177,12 +177,15 @@ public abstract class Signee
             };
         }
 
-        public SystemSignee ToSystemSignee(Guid systemId)
+        internal SystemSignee ToSystemSignee(Guid systemId)
         {
             return new SystemSignee { SystemId = systemId, OnBehalfOfOrg = this };
         }
     }
 
+    /// <summary>
+    /// A person signee signing on behalf of an organisation.
+    /// </summary>
     public sealed class PersonOnBehalfOfOrgSignee : Signee
     {
         /// <summary>
@@ -207,6 +210,9 @@ public abstract class Signee
         public required OrganisationSignee OnBehalfOfOrg { get; set; }
     }
 
+    /// <summary>
+    /// A signee that is a system.
+    /// </summary>
     public sealed class SystemSignee : Signee
     {
         /// <summary>
