@@ -13,31 +13,8 @@ public sealed class SigneeContext
     [JsonPropertyName("taskId")]
     public required string TaskId { get; init; }
 
-    /// <summary>
-    /// The original party associated with the signee.
-    /// </summary>
-    /// <remarks>Original party may be org or person. Actual signee will always be a person.</remarks>
-    [JsonPropertyName("originalParty")]
-    public required Party OriginalParty { get; set; }
-
-    /// <summary>
-    /// The social security number.
-    /// </summary>
-    [JsonPropertyName("socialSecurityNumber")]
-    public string? SocialSecurityNumber { get; set; }
-
-    /// <summary>
-    /// The full name of the signee. {FirstName} {LastName} or {FirstName} {MiddleName} {LastName}.
-    /// </summary>
-    [JsonPropertyName("fullName")]
-    public string? FullName { get; set; }
-
-    /// <summary>
-    /// The organisation the person signed on behalf of.
-    /// </summary>
-    /// <remarks>Only applicable if the original signee party is an org.</remarks>
-    [JsonPropertyName("onBehalfOfOrganisation")]
-    public SigneeContextOrganisation? OnBehalfOfOrganisation { get; set; }
+    /// <summary>The signee.</summary>
+    public required Signee Signee { get; set; }
 
     /// <summary>
     /// Notifications configuration.
@@ -60,19 +37,196 @@ public sealed class SigneeContext
 }
 
 /// <summary>
-/// Represents what organisation a person is signing on behalf of.
+///  Represents the state of a signee.
 /// </summary>
-public class SigneeContextOrganisation
+public abstract class Signee
 {
-    /// <summary>
-    /// The name of the organisation.
-    /// </summary>
-    [JsonPropertyName("name")]
-    public required string Name { get; set; }
+    public int GetPartyId()
+    {
+        return this switch
+        {
+            PersonSignee personSignee => personSignee.Party.PartyId,
+            OrganisationSignee organisationSignee => organisationSignee.OrgParty.PartyId,
+            PersonOnBehalfOfOrgSignee personOnBehalfOfOrgSignee => personOnBehalfOfOrgSignee.Party.PartyId,
+            SystemSignee systemSignee => systemSignee.OnBehalfOfOrg.OrgParty.PartyId,
+            _ => throw new InvalidOperationException(
+                "Signee is neither a person, an organisation, a person on behalf of an organisation, nor a system"
+            ),
+        };
+    }
+
+    public Guid? GetPartyUuid()
+    {
+        return this switch
+        {
+            PersonSignee personSignee => personSignee.Party.PartyUuid,
+            OrganisationSignee organisationSignee => organisationSignee.OrgParty.PartyUuid,
+            PersonOnBehalfOfOrgSignee personOnBehalfOfOrgSignee => personOnBehalfOfOrgSignee.Party.PartyUuid,
+            SystemSignee systemSignee => systemSignee.OnBehalfOfOrg.OrgParty.PartyUuid,
+            _ => throw new InvalidOperationException(
+                "Signee is neither a person, an organisation, a person on behalf of an organisation, nor a system"
+            ),
+        };
+    }
+
+    internal static async Task<Signee> From(string? ssn, string? orgNr, Func<PartyLookup, Task<Party>> lookupParty)
+    {
+        Party? personParty = null;
+        if (ssn != null)
+        {
+            personParty =
+                await lookupParty(new PartyLookup { Ssn = ssn })
+                ?? throw new ArgumentException($"No party found with SSN {ssn}");
+        }
+
+        Party? orgParty = null;
+        if (orgNr != null)
+        {
+            orgParty =
+                await lookupParty(new PartyLookup { OrgNo = orgNr })
+                ?? throw new ArgumentException($"No party found with org number {orgNr}");
+        }
+
+        if (orgParty is not null)
+        {
+            var orgSignee = new OrganisationSignee
+            {
+                OrgName = orgParty.Name,
+                OrgNumber = orgParty.OrgNumber,
+                OrgParty = orgParty,
+            };
+
+            return personParty is not null
+                ? new PersonOnBehalfOfOrgSignee
+                {
+                    SocialSecurityNumber = personParty.SSN,
+                    FullName = personParty.Name,
+                    Party = personParty,
+                    OnBehalfOfOrg = orgSignee,
+                }
+                : orgSignee;
+        }
+
+        if (personParty is not null)
+        {
+            return new PersonSignee
+            {
+                SocialSecurityNumber = personParty.SSN,
+                FullName = personParty.Name,
+                Party = personParty,
+            };
+        }
+
+        throw new ArgumentException(
+            "Either ssn and fullName must be provided, or orgName and orgNumber must be provided."
+        );
+    }
 
     /// <summary>
-    /// The organisation number.
+    /// A signee that is a specific person.
     /// </summary>
-    [JsonPropertyName("organisationNumber")]
-    public required string OrganisationNumber { get; set; }
+    public sealed class PersonSignee : Signee
+    {
+        /// <summary>
+        /// The party of the person signee.
+        /// </summary>
+        public required Party Party { get; set; }
+
+        /// <summary>
+        /// The social security number.
+        /// </summary>
+        public required string SocialSecurityNumber { get; set; }
+
+        /// <summary>
+        /// The full name of the signee. {FirstName} {LastName} or {FirstName} {MiddleName} {LastName}.
+        /// </summary>
+        public required string FullName { get; set; }
+    }
+
+    /// <summary>
+    /// A signee that is an organisation.
+    /// </summary>
+    public sealed class OrganisationSignee : Signee
+    {
+        /// <summary>
+        /// The party of the organisation signee.
+        /// </summary>
+        public required Party OrgParty { get; set; }
+
+        /// <summary>
+        /// The organisation number.
+        /// </summary>
+        public required string OrgNumber { get; set; }
+
+        /// <summary>
+        /// The name of the organisation.
+        /// </summary>
+        public required string OrgName { get; set; }
+
+        /// <summary>
+        /// Converts this organisation signee to a person signee
+        /// </summary>
+        /// <param name="ssn"></param>
+        /// <param name="lookupParty"></param>
+        /// <returns></returns>
+        public async Task<PersonOnBehalfOfOrgSignee> ToPersonOnBehalfOfOrgSignee(
+            string ssn,
+            Func<PartyLookup, Task<Party>> lookupParty
+        )
+        {
+            Party personParty =
+                await lookupParty(new PartyLookup { Ssn = ssn })
+                ?? throw new ArgumentException($"No party found with SSN {ssn}");
+
+            return new PersonOnBehalfOfOrgSignee
+            {
+                SocialSecurityNumber = ssn,
+                FullName = personParty.Name,
+                Party = personParty,
+                OnBehalfOfOrg = this,
+            };
+        }
+
+        public SystemSignee ToSystemSignee(Guid systemId)
+        {
+            return new SystemSignee { SystemId = systemId, OnBehalfOfOrg = this };
+        }
+    }
+
+    public sealed class PersonOnBehalfOfOrgSignee : Signee
+    {
+        /// <summary>
+        /// The party of the person signee.
+        /// </summary>
+        public required Party Party { get; set; }
+
+        /// <summary>
+        /// The social security number.
+        /// </summary>
+        public required string SocialSecurityNumber { get; set; }
+
+        /// <summary>
+        /// The full name of the signee. {FirstName} {LastName} or {FirstName} {MiddleName} {LastName}.
+        /// </summary>
+        public required string FullName { get; set; }
+
+        /// <summary>
+        /// The organisation on behalf of which the person is signing.
+        /// If this is null, the person is signing on their own behalf.
+        /// </summary>
+        public required OrganisationSignee OnBehalfOfOrg { get; set; }
+    }
+
+    public sealed class SystemSignee : Signee
+    {
+        /// <summary>
+        /// The system ID of the system signee.
+        /// </summary>
+        public required Guid SystemId { get; set; }
+
+        /// <summary>
+        /// The organisation on behalf of which the system is signing.
+        /// </summary>
+        public required OrganisationSignee OnBehalfOfOrg { get; set; }
+    }
 }

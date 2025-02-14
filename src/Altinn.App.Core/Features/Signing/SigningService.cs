@@ -8,9 +8,7 @@ using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Features.Signing.Exceptions;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
-using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
-using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Registers;
@@ -21,6 +19,7 @@ using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
+using static Altinn.App.Core.Features.Signing.Models.Signee;
 using JsonException = Newtonsoft.Json.JsonException;
 using Signee = Altinn.App.Core.Internal.Sign.Signee;
 
@@ -34,7 +33,6 @@ internal sealed class SigningService(
     IAppMetadata appMetadata,
     ISignClient signClient,
     ISigningCorrespondenceService signingCorrespondenceService,
-    IDataClient dataClient,
     ILogger<SigningService> logger,
     Telemetry? telemetry = null
 ) : ISigningService
@@ -44,7 +42,6 @@ internal sealed class SigningService(
     private readonly IAppMetadata _appMetadata = appMetadata;
     private readonly ISignClient _signClient = signClient;
     private readonly ISigningCorrespondenceService _signingCorrespondenceService = signingCorrespondenceService;
-    private readonly IDataClient _dataClient = dataClient;
     private const string ApplicationJsonContentType = "application/json";
 
     public async Task<List<SigneeContext>> GenerateSigneeContexts(
@@ -184,9 +181,6 @@ internal sealed class SigningService(
 
         await _signClient.SignDataElements(signatureContext);
 
-        // Update matching signeeContext with new signee information
-        await UpdateSigneeContext(signatureConfiguration, signatureContext, userActionContext.DataMutator);
-
         try
         {
             SendCorrespondenceResponse? result = await _signingCorrespondenceService.SendCorrespondence(
@@ -214,64 +208,6 @@ internal sealed class SigningService(
         {
             // TODO: What do we do here? This failure is pretty silent... but throwing would cause havoc
             _logger.LogError(e, "Correspondence send failed: {Exception}", e.Message);
-        }
-    }
-
-    private async Task UpdateSigneeContext(
-        AltinnSignatureConfiguration? signatureConfiguration,
-        SignatureContext signatureContext,
-        IInstanceDataMutator dataMutator
-    )
-    {
-        if (signatureConfiguration?.SigneeStatesDataTypeId is not null)
-        {
-            List<SigneeContext> signeeContexts = await GetSigneeContexts(dataMutator, signatureConfiguration);
-
-            foreach (SigneeContext signeeContext in signeeContexts)
-            {
-                // Update the signee context with information about person signee if
-                // the original signee is an organisation and missing person information.
-                if (
-                    signatureContext.Signee.OrganisationNumber is not null
-                    && signatureContext.Signee.OrganisationNumber
-                        == signeeContext.OnBehalfOfOrganisation?.OrganisationNumber
-                    && signeeContext.SocialSecurityNumber is null
-                )
-                {
-                    Party personParty = await altinnPartyClient.LookupParty(
-                        new PartyLookup { Ssn = signatureContext.Signee.PersonNumber }
-                    );
-
-                    signeeContext.FullName = personParty.Person.Name;
-                    signeeContext.SocialSecurityNumber = personParty.SSN;
-                }
-            }
-
-            IEnumerable<DataElement> dataElements = dataMutator.GetDataElementsForType(
-                signatureConfiguration.SigneeStatesDataTypeId
-            );
-
-            DataElement signeeStateDataElement =
-                dataElements.SingleOrDefault()
-                ?? throw new ApplicationException(
-                    $"Failed to find the data element containing signee contexts using dataTypeId {signatureConfiguration.SigneeStatesDataTypeId}."
-                );
-
-            try
-            {
-                await _dataClient.UpdateBinaryData(
-                    new InstanceIdentifier(dataMutator.Instance),
-                    signeeStateDataElement.ContentType,
-                    signeeStateDataElement.Filename,
-                    new DataElementIdentifier(signeeStateDataElement.Id).Guid,
-                    new MemoryAsStream(JsonSerializer.SerializeToUtf8Bytes(signeeContexts, _jsonSerializerOptions))
-                );
-            }
-            catch (PlatformHttpException ex)
-            {
-                // TODO: Successful signing, but failed to update signee context data element. Should this throw or smth?
-                _logger.LogError(ex, "Failed to update signee context data element.");
-            }
         }
     }
 
@@ -404,18 +340,9 @@ internal sealed class SigningService(
         return new SigneeContext
         {
             TaskId = taskId,
-            OriginalParty = party,
             SigneeState = new SigneeState(),
             Notifications = notifications,
-            FullName = signeeParty.FullName,
-            SocialSecurityNumber = signeeParty.SocialSecurityNumber,
-            OnBehalfOfOrganisation = signeeParty.OnBehalfOfOrganisation is null
-                ? null
-                : new SigneeContextOrganisation
-                {
-                    Name = signeeParty.OnBehalfOfOrganisation.Name,
-                    OrganisationNumber = signeeParty.OnBehalfOfOrganisation.OrganisationNumber,
-                },
+            Signee = await From(socialSecurityNumber, party.Organization?.OrgNumber, altinnPartyClient.LookupParty),
         };
     }
 
@@ -504,44 +431,86 @@ internal sealed class SigningService(
     /// <summary>
     /// This method exists to ensure we have a SigneeContext for both signees that have been delegated access to sign and signees that have signed using access granted through the policy.xml file.
     /// </summary>
-    private async Task SynchronizeSigneeContextsWithSignDocuments(
+    internal async Task SynchronizeSigneeContextsWithSignDocuments(
         string taskId,
-        List<SigneeContext> signeeContexts,
+        List<SigneeContext> unmatchedSigneeContexts,
         List<SignDocument> signDocuments
     )
     {
         _logger.LogInformation(
             "Synchronizing signee contexts {SigneeContexts} with sign documents {SignDocuments} for task {TaskId}.",
-            signeeContexts,
+            unmatchedSigneeContexts,
             signDocuments,
             taskId
         );
+
+        List<SigneeContext> matchedSigneeContexts = [];
+        List<SigneeContext> createdSigneeContexts = [];
+
         foreach (SignDocument signDocument in signDocuments)
         {
-            SigneeContext? matchingSigneeContext = signeeContexts.FirstOrDefault(x =>
-            {
-                bool doesSsnMatch = signDocument.SigneeInfo.PersonNumber == x.SocialSecurityNumber;
-                bool doesOrgNrMatch = string.Equals(
-                    signDocument.SigneeInfo.OrganisationNumber ?? "",
-                    x.OnBehalfOfOrganisation?.OrganisationNumber ?? "",
-                    StringComparison.Ordinal
-                );
+            SigneeContext? matchedPersonOnBehalfOfOrgSignee = unmatchedSigneeContexts.FirstOrDefault(signeeContext =>
+                signeeContext.Signee is PersonOnBehalfOfOrgSignee personOnBehalfOfOrgSignee
+                && personOnBehalfOfOrgSignee.SocialSecurityNumber == signDocument.SigneeInfo.PersonNumber
+                && personOnBehalfOfOrgSignee.OnBehalfOfOrg.OrgNumber == signDocument.SigneeInfo.OrganisationNumber
+            );
+            SigneeContext? matchedOrgSignee = unmatchedSigneeContexts.FirstOrDefault(signeeContext =>
+                signeeContext.Signee is OrganisationSignee orgSignee
+                && orgSignee.OrgNumber == signDocument.SigneeInfo.OrganisationNumber
+            );
+            SigneeContext? matchedPersonSignee = unmatchedSigneeContexts.FirstOrDefault(signeeContext =>
+                signeeContext.Signee is PersonSignee personSignee
+                && personSignee.SocialSecurityNumber == signDocument.SigneeInfo.PersonNumber
+            );
 
-                return doesSsnMatch && doesOrgNrMatch;
-            });
+            SigneeContext? matchedSigneeContext =
+                matchedPersonOnBehalfOfOrgSignee ?? matchedOrgSignee ?? matchedPersonSignee;
 
-            if (matchingSigneeContext is not null)
+            switch (matchedSigneeContext?.Signee)
             {
-                // If the signee has been delegated access to sign there will be a matching SigneeContext. Setting the sign document property on this context.
-                matchingSigneeContext.SignDocument = signDocument;
+                case OrganisationSignee orgSignee:
+                    await SynchronizeForOrg(signDocument, matchedSigneeContext, orgSignee);
+                    matchedSigneeContext.SignDocument = signDocument;
+                    matchedSigneeContexts.Add(matchedSigneeContext);
+                    unmatchedSigneeContexts.Remove(matchedSigneeContext);
+                    break;
+                case PersonSignee _:
+                case PersonOnBehalfOfOrgSignee _:
+                    matchedSigneeContext.SignDocument = signDocument;
+                    matchedSigneeContexts.Add(matchedSigneeContext);
+                    unmatchedSigneeContexts.Remove(matchedSigneeContext);
+                    break;
+                case null:
+                    SigneeContext newSigneeContext = await CreateSigneeContextFromSignDocument(taskId, signDocument);
+                    createdSigneeContexts.Add(newSigneeContext);
+                    break;
             }
-            else
-            {
-                // If the signee has signed using access granted through the policy.xml file, there is no persisted signee context. We create a signee context on the fly.
-                SigneeContext signeeContext = await CreateSigneeContextFromSignDocument(taskId, signDocument);
+        }
 
-                signeeContexts.Add(signeeContext);
-            }
+        // updates reference to signeeContexts with all types
+        unmatchedSigneeContexts.AddRange([.. matchedSigneeContexts, .. createdSigneeContexts]);
+    }
+
+    private async Task SynchronizeForOrg(
+        SignDocument signDocument,
+        SigneeContext orgSigneeContext,
+        OrganisationSignee orgSignee
+    )
+    {
+        if (signDocument.SigneeInfo.PersonNumber is not null)
+        {
+            orgSigneeContext.Signee = await orgSignee.ToPersonOnBehalfOfOrgSignee(
+                signDocument.SigneeInfo.PersonNumber,
+                altinnPartyClient.LookupParty
+            );
+        }
+        else if (signDocument.SigneeInfo.SystemUserId.HasValue)
+        {
+            orgSigneeContext.Signee = orgSignee.ToSystemSignee(signDocument.SigneeInfo.SystemUserId.Value);
+        }
+        else
+        {
+            throw new InvalidOperationException("Signee is neither a person nor a system user");
         }
     }
 
@@ -565,16 +534,11 @@ internal sealed class SigningService(
         return new SigneeContext
         {
             TaskId = taskId,
-            OriginalParty = orgParty ?? personParty,
-            SocialSecurityNumber = signDocument.SigneeInfo.PersonNumber,
-            FullName = personParty.Person.Name,
-            OnBehalfOfOrganisation = orgParty is null
-                ? null
-                : new SigneeContextOrganisation
-                {
-                    Name = orgParty.Organization.Name,
-                    OrganisationNumber = orgParty.Organization.OrgNumber,
-                },
+            Signee = await From(
+                signDocument.SigneeInfo.PersonNumber,
+                orgParty?.Organization?.OrgNumber,
+                altinnPartyClient.LookupParty
+            ),
             SigneeState = new SigneeState()
             {
                 IsAccessDelegated = true,

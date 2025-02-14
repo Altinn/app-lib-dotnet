@@ -12,6 +12,7 @@ using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Mvc;
+using static Altinn.App.Core.Features.Signing.Models.Signee;
 using SigneeState = Altinn.App.Api.Models.SigneeState;
 
 namespace Altinn.App.Api.Controllers;
@@ -30,6 +31,7 @@ public class SigningController : ControllerBase
     private readonly IDataClient _dataClient;
     private readonly ModelSerializationService _modelSerialization;
     private readonly IProcessReader _processReader;
+    private readonly ILogger<SigningController> _logger;
     private readonly ISigningService _signingService;
 
     /// <summary>
@@ -41,7 +43,8 @@ public class SigningController : ControllerBase
         IAppMetadata appMetadata,
         IDataClient dataClient,
         ModelSerializationService modelSerialization,
-        IProcessReader processReader
+        IProcessReader processReader,
+        ILogger<SigningController> logger
     )
     {
         _instanceClient = instanceClient;
@@ -49,6 +52,7 @@ public class SigningController : ControllerBase
         _dataClient = dataClient;
         _modelSerialization = modelSerialization;
         _processReader = processReader;
+        _logger = logger;
         _signingService = serviceProvider.GetRequiredService<ISigningService>();
     }
 
@@ -101,18 +105,82 @@ public class SigningController : ControllerBase
         {
             SigneeStates =
             [
-                .. signeeContexts.Select(signeeContext => new SigneeState
-                {
-                    Name = signeeContext.FullName,
-                    Organisation = signeeContext.OnBehalfOfOrganisation?.Name,
-                    HasSigned = signeeContext.SignDocument is not null,
-                    DelegationSuccessful = signeeContext.SigneeState.IsAccessDelegated,
-                    NotificationSuccessful = (
-                        signeeContext.SigneeState is
-                        { SignatureRequestEmailNotSentReason: null, SignatureRequestSmsNotSentReason: null }
-                    ),
-                    PartyId = signeeContext.OriginalParty.PartyId,
-                }),
+                .. signeeContexts
+                    .Select(signeeContext =>
+                    {
+                        switch (signeeContext.Signee)
+                        {
+                            case PersonSignee personSignee:
+                                return new SigneeState
+                                {
+                                    Name = personSignee.FullName,
+                                    Organisation = null,
+                                    HasSigned = signeeContext.SignDocument is not null,
+                                    DelegationSuccessful = signeeContext.SigneeState.IsAccessDelegated,
+                                    NotificationSuccessful = (
+                                        signeeContext.SigneeState is
+                                        {
+                                            SignatureRequestEmailNotSentReason: null,
+                                            SignatureRequestSmsNotSentReason: null
+                                        }
+                                    ),
+                                    PartyId = personSignee.Party.PartyId,
+                                };
+                            case PersonOnBehalfOfOrgSignee personOnBehalfOfOrgSignee:
+                                return new SigneeState
+                                {
+                                    Name = personOnBehalfOfOrgSignee.FullName,
+                                    Organisation = personOnBehalfOfOrgSignee.OnBehalfOfOrg.OrgName,
+                                    HasSigned = signeeContext.SignDocument is not null,
+                                    DelegationSuccessful = signeeContext.SigneeState.IsAccessDelegated,
+                                    NotificationSuccessful = (
+                                        signeeContext.SigneeState is
+                                        {
+                                            SignatureRequestEmailNotSentReason: null,
+                                            SignatureRequestSmsNotSentReason: null
+                                        }
+                                    ),
+                                    PartyId = personOnBehalfOfOrgSignee.OnBehalfOfOrg.OrgParty.PartyId,
+                                };
+                            case OrganisationSignee organisationSignee:
+                                return new SigneeState
+                                {
+                                    Name = organisationSignee.OrgName,
+                                    Organisation = null,
+                                    HasSigned = signeeContext.SignDocument is not null,
+                                    DelegationSuccessful = signeeContext.SigneeState.IsAccessDelegated,
+                                    NotificationSuccessful = (
+                                        signeeContext.SigneeState is
+                                        {
+                                            SignatureRequestEmailNotSentReason: null,
+                                            SignatureRequestSmsNotSentReason: null
+                                        }
+                                    ),
+                                    PartyId = organisationSignee.OrgParty.PartyId,
+                                };
+                            case SystemSignee systemSignee:
+                                return new SigneeState
+                                {
+                                    Name = "System",
+                                    Organisation = systemSignee.OnBehalfOfOrg.OrgName,
+                                    HasSigned = signeeContext.SignDocument is not null,
+                                    DelegationSuccessful = signeeContext.SigneeState.IsAccessDelegated,
+                                    NotificationSuccessful = (
+                                        signeeContext.SigneeState is
+                                        {
+                                            SignatureRequestEmailNotSentReason: null,
+                                            SignatureRequestSmsNotSentReason: null
+                                        }
+                                    ),
+                                    PartyId = systemSignee.OnBehalfOfOrg.OrgParty.PartyId,
+                                };
+                        }
+
+                        _logger.LogWarning("Unknown signee type: {SigneeType}", signeeContext.Signee.GetType().Name);
+                        return null;
+                    })
+                    .WhereNotNull()
+                    .ToList(),
             ],
         };
 
