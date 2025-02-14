@@ -132,18 +132,14 @@ public class SigningServiceTests
         _altinnPartyClient
             .Setup(x => x.LookupParty(It.IsAny<PartyLookup>()))
             .ReturnsAsync(
-                (PartyLookup it) =>
+                (PartyLookup lookup) =>
                 {
-                    return it.Ssn is not null
-                        ? new Party
-                        {
-                            SSN = it.Ssn,
-                            Person = new Person { SSN = it.Ssn },
-                        }
+                    return lookup.Ssn is not null
+                        ? new Party { SSN = lookup.Ssn, Name = "A person" }
                         : new Party
                         {
-                            OrgNumber = it.OrgNo,
-                            Organization = new Organization { OrgNumber = it.OrgNo },
+                            OrgNumber = lookup.OrgNo,
+                            Organization = new Organization { Name = "An organisation", OrgNumber = lookup.OrgNo },
                         };
                 }
             );
@@ -247,14 +243,21 @@ public class SigningServiceTests
         var orgNumber = "987654321";
 
         _altinnPartyClient
-            .Setup(x => x.LookupParty(Match.Create<PartyLookup>(p => p.Ssn == ssn || p.OrgNo == orgNumber)))
+            .Setup(x => x.LookupParty(It.IsAny<PartyLookup>()))
             .ReturnsAsync(
-                new Party
+                (PartyLookup lookup) =>
                 {
-                    SSN = ssn,
-                    Person = new Person { SSN = ssn },
-                    OrgNumber = orgNumber,
-                    Organization = new Organization { OrgNumber = orgNumber },
+                    return lookup.Ssn is not null
+                        ? new Party
+                        {
+                            SSN = lookup.Ssn,
+                            Person = new Person { SSN = lookup.Ssn },
+                        }
+                        : new Party
+                        {
+                            OrgNumber = lookup.OrgNo,
+                            Organization = new Organization { OrgNumber = lookup.OrgNo },
+                        };
                 }
             );
 
