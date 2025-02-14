@@ -6,11 +6,19 @@ using Altinn.App.Core.Models;
 using Altinn.Platform.Register.Models;
 using Microsoft.Extensions.Logging;
 using Moq;
+using static Altinn.App.Core.Features.Signing.Models.Signee;
 
 namespace Altinn.App.Core.Tests.Features.Signing.Delegation;
 
 public class SigningDelegationServiceTests
 {
+    private readonly Signee _signee = new PersonSignee
+    {
+        FullName = "Testperson 1",
+        SocialSecurityNumber = "123456678233",
+        Party = new Party(),
+    };
+
     [Fact]
     public async Task RevokeSigneeRights_RevokeSigneeRights()
     {
@@ -28,8 +36,9 @@ public class SigningDelegationServiceTests
             new()
             {
                 TaskId = taskId,
-                OriginalParty = new Party(),
+
                 SigneeState = new SigneeState() { IsAccessDelegated = true },
+                Signee = _signee,
             },
         };
         var ct = new CancellationToken();
@@ -69,8 +78,8 @@ public class SigningDelegationServiceTests
             new()
             {
                 TaskId = taskId,
-                OriginalParty = new Party(),
                 SigneeState = new SigneeState() { IsAccessDelegated = false }, // Signee is not delegated signing rights
+                Signee = _signee,
             },
         };
         var ct = new CancellationToken();
@@ -111,8 +120,8 @@ public class SigningDelegationServiceTests
             new()
             {
                 TaskId = taskId,
-                OriginalParty = new Party(),
                 SigneeState = new SigneeState() { IsAccessDelegated = false },
+                Signee = _signee,
             },
         };
         var ct = new CancellationToken();
@@ -152,8 +161,8 @@ public class SigningDelegationServiceTests
             new()
             {
                 TaskId = taskId,
-                OriginalParty = new Party(),
                 SigneeState = new SigneeState() { IsAccessDelegated = true }, // Signee is already delegated signing rights
+                Signee = _signee,
             },
         };
         var ct = new CancellationToken();
