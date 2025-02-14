@@ -39,6 +39,10 @@ public sealed class SigneeContext
 /// <summary>
 ///  Represents the state of a signee.
 /// </summary>
+[JsonDerivedType(typeof(PersonSignee), typeDiscriminator: "person")]
+[JsonDerivedType(typeof(OrganisationSignee), typeDiscriminator: "organisation")]
+[JsonDerivedType(typeof(PersonOnBehalfOfOrgSignee), typeDiscriminator: "personOnBehalfOfOrg")]
+[JsonDerivedType(typeof(SystemSignee), typeDiscriminator: "system")]
 public abstract class Signee
 {
     public Party GetParty()
