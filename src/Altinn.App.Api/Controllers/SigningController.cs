@@ -66,7 +66,7 @@ public class SigningController : ControllerBase
     /// <param name="language">The currently used language by the user (or null if not available)</param>
     /// <returns>An object containing updated signee state</returns>
     [HttpGet]
-    [ProducesResponseType(typeof(SingingStateResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(SigningStateResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetSigneesState(
         [FromRoute] string org,
@@ -109,7 +109,7 @@ public class SigningController : ControllerBase
             signingConfiguration
         );
 
-        var response = new SingingStateResponse
+        var response = new SigningStateResponse
         {
             SigneeStates =
             [
