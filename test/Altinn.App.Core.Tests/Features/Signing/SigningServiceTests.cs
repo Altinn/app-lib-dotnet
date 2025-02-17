@@ -46,7 +46,7 @@ public class SigningServiceTests
     }
 
     [Fact]
-    public async Task GetSigneeContexts()
+    public async Task GetSigneeContexts_HappyPath()
     {
         // Arrange
         var signatureConfiguration = new AltinnSignatureConfiguration
@@ -645,6 +645,77 @@ public class SigningServiceTests
         ];
 
         return testDocuments;
+    }
+
+    [Fact]
+    public void RemoveSingingData_Removes_SigneeState()
+    {
+        var signatureConfiguration = new AltinnSignatureConfiguration
+        {
+            SigneeStatesDataTypeId = "signeeStates",
+            SignatureDataType = "signature",
+        };
+
+        var signeeStateDataElement = new DataElement
+        {
+            Id = Guid.NewGuid().ToString(),
+            DataType = signatureConfiguration.SigneeStatesDataTypeId,
+        };
+
+        var cachedInstanceMutator = new Mock<IInstanceDataMutator>();
+        var instance = new Instance { Data = [signeeStateDataElement] };
+        cachedInstanceMutator.Setup(x => x.Instance).Returns(instance);
+
+        _signingService.RemoveSigneeState(cachedInstanceMutator.Object, signatureConfiguration.SigneeStatesDataTypeId!);
+
+        cachedInstanceMutator.Verify(x => x.Instance);
+        cachedInstanceMutator.Verify(x => x.RemoveDataElement(signeeStateDataElement), Times.Once);
+        cachedInstanceMutator.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public void RemoveAllSignatures_Removes_Signatures()
+    {
+        var signatureConfiguration = new AltinnSignatureConfiguration
+        {
+            SigneeStatesDataTypeId = "signeeStates",
+            SignatureDataType = "signature",
+        };
+
+        var signatureDataElement = new DataElement
+        {
+            Id = Guid.NewGuid().ToString(),
+            DataType = signatureConfiguration.SignatureDataType,
+        };
+
+        var cachedInstanceMutator = new Mock<IInstanceDataMutator>();
+        var instance = new Instance { Data = [signatureDataElement] };
+        cachedInstanceMutator.Setup(x => x.Instance).Returns(instance);
+
+        _signingService.RemoveAllSignatures(cachedInstanceMutator.Object, signatureConfiguration.SignatureDataType!);
+
+        cachedInstanceMutator.Verify(x => x.Instance);
+        cachedInstanceMutator.Verify(x => x.RemoveDataElement(signatureDataElement), Times.Once);
+        cachedInstanceMutator.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public void RemoveSingingData_Does_Nothing_If_No_Existing_Data()
+    {
+        var signatureConfiguration = new AltinnSignatureConfiguration
+        {
+            SigneeStatesDataTypeId = "signeeStates",
+            SignatureDataType = "signature",
+        };
+
+        var cachedInstanceMutator = new Mock<IInstanceDataMutator>();
+        var instance = new Instance { Data = [] };
+        cachedInstanceMutator.Setup(x => x.Instance).Returns(instance);
+
+        _signingService.RemoveSigneeState(cachedInstanceMutator.Object, signatureConfiguration.SigneeStatesDataTypeId!);
+
+        cachedInstanceMutator.Verify(x => x.Instance);
+        cachedInstanceMutator.VerifyNoOtherCalls();
     }
 
     private static byte[] ToBytes<T>(T obj)
