@@ -352,6 +352,13 @@ public class AppResourcesSI : IAppResources
     private LayoutSetComponent LoadLayout(LayoutSet layoutSet, List<DataType> dataTypes)
     {
         var settings = GetLayoutSettingsForSet(layoutSet.Id);
+        if (settings?.Pages?.Order is not null && settings?.Pages?.Groups is not null)
+        {
+            throw new InvalidDataException(
+                $"Both $Pages.Order and $Pages.Groups fields are set for layoutSet {layoutSet.Id}"
+            );
+        }
+
         var order = settings?.Pages?.Order;
         order ??= settings?.Pages?.Groups?.SelectMany(g => g.Order ?? new()).ToList();
 
