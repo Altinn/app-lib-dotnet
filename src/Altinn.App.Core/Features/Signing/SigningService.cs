@@ -217,6 +217,33 @@ internal sealed class SigningService(
         }
     }
 
+    public void RemoveSigneeState(IInstanceDataMutator instanceMutator, string signeeStatesDataTypeId)
+    {
+        using Activity? activity = telemetry?.StartRemoveSigneeStateActivity();
+
+        IEnumerable<DataElement> signeeStateDataElements = instanceMutator.GetDataElementsForType(
+            signeeStatesDataTypeId
+        );
+
+        DataElement? signeeStateDataElement = signeeStateDataElements.SingleOrDefault();
+        if (signeeStateDataElement is not null)
+        {
+            instanceMutator.RemoveDataElement(signeeStateDataElement);
+        }
+    }
+
+    public void RemoveAllSignatures(IInstanceDataMutator instanceMutator, string signatureDataType)
+    {
+        using Activity? activity = telemetry?.StartRemoveAllSignaturesActivity();
+
+        IEnumerable<DataElement> signatures = instanceMutator.GetDataElementsForType(signatureDataType);
+
+        foreach (DataElement signature in signatures)
+        {
+            instanceMutator.RemoveDataElement(signature);
+        }
+    }
+
     private async Task UpdateSigneeContext(
         AltinnSignatureConfiguration? signatureConfiguration,
         SignatureContext signatureContext,
@@ -253,8 +280,8 @@ internal sealed class SigningService(
 
             DataElement signeeStateDataElement =
                 dataElements.SingleOrDefault()
-                ?? throw new ApplicationException(
-                    $"Failed to find the data element containing signee contexts using dataTypeId {signatureConfiguration.SigneeStatesDataTypeId}."
+                ?? throw new SigningException(
+                    $"Failed to find the signee state data element containing signee contexts using dataTypeId {signatureConfiguration.SigneeStatesDataTypeId}."
                 );
 
             try
@@ -370,7 +397,7 @@ internal sealed class SigningService(
                     OrganisationNumber = systemUser.SystemUserOrgNr.Get(OrganisationNumberFormat.Local),
                 };
             default:
-                throw new Exception("Could not get signee");
+                throw new SigningException("Could not get signee");
         }
     }
 
@@ -434,7 +461,7 @@ internal sealed class SigningService(
 
         DataElement signeeStateDataElement =
             dataElements.SingleOrDefault()
-            ?? throw new ApplicationException(
+            ?? throw new SigningException(
                 $"Failed to find the data element containing signee contexts using dataTypeId {signatureConfiguration.SigneeStatesDataTypeId}."
             );
 

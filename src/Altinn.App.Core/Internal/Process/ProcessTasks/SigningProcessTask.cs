@@ -1,3 +1,4 @@
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Helpers;
@@ -10,7 +11,6 @@ using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 namespace Altinn.App.Core.Internal.Process.ProcessTasks;
 
@@ -27,7 +27,6 @@ internal sealed class SigningProcessTask : IProcessTask
     private readonly IInstanceClient _instanceClient;
     private readonly ModelSerializationService _modelSerialization;
     private readonly IPdfService _pdfService;
-    private readonly ILogger<SigningProcessTask> _logger;
 
     public SigningProcessTask(
         ISigningService signingService,
@@ -37,8 +36,7 @@ internal sealed class SigningProcessTask : IProcessTask
         IDataClient dataClient,
         IInstanceClient instanceClient,
         ModelSerializationService modelSerialization,
-        IPdfService pdfService,
-        ILogger<SigningProcessTask> logger
+        IPdfService pdfService
     )
     {
         _signingService = signingService;
@@ -49,7 +47,6 @@ internal sealed class SigningProcessTask : IProcessTask
         _instanceClient = instanceClient;
         _modelSerialization = modelSerialization;
         _pdfService = pdfService;
-        _logger = logger;
     }
 
     public string Type => "signing";
@@ -63,57 +60,30 @@ internal sealed class SigningProcessTask : IProcessTask
 
         AltinnSignatureConfiguration signatureConfiguration = GetAltinnSignatureConfiguration(taskId);
         ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
-        _logger.LogInformation($"Starting signing task for instance {instance.Id}");
-        _logger.LogInformation($"Signature configuration: {signatureConfiguration.SigneeStatesDataTypeId}");
-        _logger.LogInformation($"App metadata: {appMetadata}");
 
-        if (_hostEnvironment.IsDevelopment())
-        {
-            AllowedContributorsHelper.EnsureDataTypeIsAppOwned(
-                appMetadata,
-                signatureConfiguration.SigneeStatesDataTypeId
-            );
-        }
+        ValidateSigningConfiguration(appMetadata, signatureConfiguration);
 
-        if (signatureConfiguration.SigneeProviderId is null != signatureConfiguration.SigneeStatesDataTypeId is null)
-        {
-            throw new ApplicationConfigException(
-                $"Both {nameof(signatureConfiguration.SigneeProviderId)} and {nameof(signatureConfiguration.SigneeStatesDataTypeId)} must either be set together, or left unset. These properties are required to enable delegated signing."
-            );
-        }
+        var cachedDataMutator = new InstanceDataUnitOfWork(
+            instance,
+            _dataClient,
+            _instanceClient,
+            appMetadata,
+            _modelSerialization
+        );
+
+        _signingService.RemoveAllSignatures(cachedDataMutator, signatureConfiguration.SignatureDataType);
 
         if (
             signatureConfiguration.SigneeProviderId is not null
             && signatureConfiguration.SigneeStatesDataTypeId is not null
         )
         {
-            var cachedDataMutator = new InstanceDataUnitOfWork(
-                instance,
-                _dataClient,
-                _instanceClient,
-                appMetadata,
-                _modelSerialization
-            );
-
-            List<SigneeContext> signeeContexts = await _signingService.GenerateSigneeContexts(
-                cachedDataMutator,
-                signatureConfiguration,
-                cts.Token
-            );
-
-            await _signingService.InitialiseSignees(
-                taskId,
-                cachedDataMutator,
-                signeeContexts,
-                signatureConfiguration,
-                cts.Token
-            );
-
-            DataElementChanges changes = cachedDataMutator.GetDataElementChanges(false);
-
-            await cachedDataMutator.UpdateInstanceData(changes);
-            await cachedDataMutator.SaveChanges(changes);
+            await InitialiseRuntimeDelegatedSigning(taskId, cachedDataMutator, signatureConfiguration, cts.Token);
         }
+
+        DataElementChanges changes = cachedDataMutator.GetDataElementChanges(false);
+        await cachedDataMutator.UpdateInstanceData(changes);
+        await cachedDataMutator.SaveChanges(changes);
     }
 
     /// <inheritdoc/>
@@ -144,7 +114,54 @@ internal sealed class SigningProcessTask : IProcessTask
     /// <inheritdoc/>
     public async Task Abandon(string taskId, Instance instance)
     {
-        await Task.CompletedTask;
+        ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
+        AltinnSignatureConfiguration signatureConfiguration = GetAltinnSignatureConfiguration(taskId);
+
+        var cachedDataMutator = new InstanceDataUnitOfWork(
+            instance,
+            _dataClient,
+            _instanceClient,
+            appMetadata,
+            _modelSerialization
+        );
+
+        if (signatureConfiguration.SignatureDataType is not null)
+        {
+            _signingService.RemoveAllSignatures(cachedDataMutator, signatureConfiguration.SignatureDataType);
+        }
+
+        if (signatureConfiguration.SigneeStatesDataTypeId is not null)
+        {
+            _signingService.RemoveSigneeState(cachedDataMutator, signatureConfiguration.SigneeStatesDataTypeId);
+        }
+
+        DataElementChanges changes = cachedDataMutator.GetDataElementChanges(false);
+        await cachedDataMutator.UpdateInstanceData(changes);
+        await cachedDataMutator.SaveChanges(changes);
+    }
+
+    private async Task InitialiseRuntimeDelegatedSigning(
+        string taskId,
+        IInstanceDataMutator cachedDataMutator,
+        AltinnSignatureConfiguration signatureConfiguration,
+        CancellationToken ct
+    )
+    {
+        string signeeStateDataTypeId =
+            signatureConfiguration.SigneeStatesDataTypeId
+            ?? throw new ApplicationConfigException(
+                "SigneeStatesDataTypeId is not set, but should be set when initialising runtime delegated signing."
+            );
+
+        _signingService.RemoveSigneeState(cachedDataMutator, signeeStateDataTypeId);
+
+        List<SigneeContext> signeeContexts = await _signingService.GenerateSigneeContexts(
+            cachedDataMutator,
+            signatureConfiguration,
+            ct
+        );
+
+        await _signingService.InitialiseSignees(taskId, cachedDataMutator, signeeContexts, signatureConfiguration, ct);
     }
 
     private AltinnSignatureConfiguration GetAltinnSignatureConfiguration(string taskId)
@@ -153,7 +170,7 @@ internal sealed class SigningProcessTask : IProcessTask
             .GetAltinnTaskExtension(taskId)
             ?.SignatureConfiguration;
 
-        if (signatureConfiguration == null)
+        if (signatureConfiguration is null)
         {
             throw new ApplicationConfigException(
                 "SignatureConfig is missing in the signature process task configuration."
@@ -161,5 +178,41 @@ internal sealed class SigningProcessTask : IProcessTask
         }
 
         return signatureConfiguration;
+    }
+
+    private void ValidateSigningConfiguration(
+        ApplicationMetadata appMetadata,
+        AltinnSignatureConfiguration signatureConfiguration
+    )
+    {
+        string? signaturesDataType = signatureConfiguration.SignatureDataType;
+        string? signeeStatesDataTypeId = signatureConfiguration.SigneeStatesDataTypeId;
+        string? signeeProviderId = signatureConfiguration.SigneeProviderId;
+
+        if (signaturesDataType is null)
+        {
+            throw new ApplicationConfigException(
+                $"The {nameof(signatureConfiguration.SignatureDataType)} property must be set in the signature configuration."
+            );
+        }
+
+        // The signatures data type should be app owned, so that the end user can't manipulate the data. Tell the developer during development if this is not the case.
+        if (_hostEnvironment.IsDevelopment())
+        {
+            AllowedContributorsHelper.EnsureDataTypeIsAppOwned(appMetadata, signaturesDataType);
+        }
+
+        if (signeeProviderId is null != signeeStatesDataTypeId is null)
+        {
+            throw new ApplicationConfigException(
+                $"Both {nameof(signatureConfiguration.SigneeProviderId)} and {nameof(signatureConfiguration.SigneeStatesDataTypeId)} must either be set together, or left unset. These properties are required to enable delegation based signing."
+            );
+        }
+
+        // The signee state data type should be app owned, so that the end user can't manipulate the data. Tell the developer during development if this is not the case.
+        if (_hostEnvironment.IsDevelopment())
+        {
+            AllowedContributorsHelper.EnsureDataTypeIsAppOwned(appMetadata, signeeStatesDataTypeId);
+        }
     }
 }
