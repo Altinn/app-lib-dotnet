@@ -62,7 +62,7 @@ public abstract class Signee
     internal static async Task<Signee> From(string? ssn, string? orgNr, Func<PartyLookup, Task<Party>> lookupParty)
     {
         Party? personParty = null;
-        if (ssn != null)
+        if (string.IsNullOrEmpty(ssn) == false)
         {
             personParty =
                 await lookupParty(new PartyLookup { Ssn = ssn })
@@ -70,7 +70,7 @@ public abstract class Signee
         }
 
         Party? orgParty = null;
-        if (orgNr != null)
+        if (string.IsNullOrEmpty(orgNr) == false)
         {
             orgParty =
                 await lookupParty(new PartyLookup { OrgNo = orgNr })
