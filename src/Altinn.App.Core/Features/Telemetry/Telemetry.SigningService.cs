@@ -70,8 +70,11 @@ partial class Telemetry
 
     internal Activity? StartReadSigneesActivity() => ActivitySource.StartActivity("SigningService.ReadSignees");
 
-    internal Activity? StartDeleteSigneeStateActivity() =>
-        ActivitySource.StartActivity("SigningService.DeleteSigneeState");
+    internal Activity? StartRemoveSigneeStateActivity() =>
+        ActivitySource.StartActivity("SigningService.RemoveSigneeState");
+
+    internal Activity? StartRemoveAllSignaturesActivity() =>
+        ActivitySource.StartActivity("SigningService.RemoveAllSignatures");
 
     internal Activity? StartSignActivity() => ActivitySource.StartActivity("SigningService.Sign"); // TODO: expand to include signee id
 

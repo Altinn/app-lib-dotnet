@@ -6,6 +6,7 @@ using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
+using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
@@ -39,16 +40,12 @@ public class SigningProcessTaskTests
             new Mock<IDataClient>().Object,
             new Mock<IInstanceClient>().Object,
             new ModelSerializationService(new Mock<IAppModel>().Object),
-            new Mock<HttpContextAccessor>().Object,
-            new Mock<IProfileClient>().Object,
-            new Mock<IAltinnPartyClient>().Object,
-            new Mock<IOptions<GeneralSettings>>().Object,
-            new Mock<ILogger<SigningProcessTask>>().Object
+            new Mock<IPdfService>().Object
         );
     }
 
     [Fact]
-    public async Task Start_ShouldDeleteExistingSigneeState()
+    public async Task Start_ShouldDeleteExistingSigningData()
     {
         Instance instance = CreateInstance();
         string taskId = instance.Process.CurrentTask.ElementId;
@@ -58,7 +55,7 @@ public class SigningProcessTaskTests
         _processReaderMock.Setup(x => x.GetAltinnTaskExtension(It.IsAny<string>())).Returns(altinnTaskExtension);
         _signingServiceMock
             .Setup(x =>
-                x.InitializeSignees(
+                x.GenerateSigneeContexts(
                     It.IsAny<IInstanceDataMutator>(),
                     It.IsAny<AltinnSignatureConfiguration>(),
                     It.IsAny<CancellationToken>()
@@ -71,13 +68,26 @@ public class SigningProcessTaskTests
 
         // Assert
         _signingServiceMock.Verify(
-            x => x.RemoveSigningData(It.IsAny<IInstanceDataMutator>(), altinnTaskExtension.SignatureConfiguration),
+            x =>
+                x.RemoveAllSignatures(
+                    It.IsAny<IInstanceDataMutator>(),
+                    altinnTaskExtension.SignatureConfiguration.SignatureDataType!
+                ),
+            Times.Once
+        );
+
+        _signingServiceMock.Verify(
+            x =>
+                x.RemoveSigneeState(
+                    It.IsAny<IInstanceDataMutator>(),
+                    altinnTaskExtension.SignatureConfiguration.SigneeStatesDataTypeId!
+                ),
             Times.Once
         );
     }
 
     [Fact]
-    public async Task Abandon_ShouldDeleteExistingSigneeState()
+    public async Task Abandon_ShouldDeleteExistingSigningData()
     {
         Instance instance = CreateInstance();
         string taskId = instance.Process.CurrentTask.ElementId;
@@ -90,8 +100,20 @@ public class SigningProcessTaskTests
         await _paymentProcessTask.Abandon(taskId, instance);
 
         // Assert
+        _signingServiceMock.Verify(
+            x =>
+                x.RemoveAllSignatures(
+                    It.IsAny<IInstanceDataMutator>(),
+                    altinnTaskExtension.SignatureConfiguration.SignatureDataType!
+                ),
+            Times.Once
+        );
+
         _signingServiceMock.Verify(x =>
-            x.RemoveSigningData(It.IsAny<IInstanceDataMutator>(), altinnTaskExtension.SignatureConfiguration)
+            x.RemoveSigneeState(
+                It.IsAny<IInstanceDataMutator>(),
+                altinnTaskExtension.SignatureConfiguration.SigneeStatesDataTypeId!
+            )
         );
     }
 

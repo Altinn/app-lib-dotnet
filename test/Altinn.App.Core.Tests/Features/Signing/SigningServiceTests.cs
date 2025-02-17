@@ -203,7 +203,7 @@ public class SigningServiceTests
     }
 
     [Fact]
-    public void RemoveSingingData_Removes_SigneeState_And_Signatures()
+    public void RemoveSingingData_Removes_SigneeState()
     {
         var signatureConfiguration = new AltinnSignatureConfiguration
         {
@@ -217,6 +217,26 @@ public class SigningServiceTests
             DataType = signatureConfiguration.SigneeStatesDataTypeId,
         };
 
+        var cachedInstanceMutator = new Mock<IInstanceDataMutator>();
+        var instance = new Instance { Data = [signeeStateDataElement] };
+        cachedInstanceMutator.Setup(x => x.Instance).Returns(instance);
+
+        _signingService.RemoveSigneeState(cachedInstanceMutator.Object, signatureConfiguration.SigneeStatesDataTypeId!);
+
+        cachedInstanceMutator.Verify(x => x.Instance);
+        cachedInstanceMutator.Verify(x => x.RemoveDataElement(signeeStateDataElement), Times.Once);
+        cachedInstanceMutator.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public void RemoveAllSignatures_Removes_Signatures()
+    {
+        var signatureConfiguration = new AltinnSignatureConfiguration
+        {
+            SigneeStatesDataTypeId = "signeeStates",
+            SignatureDataType = "signature",
+        };
+
         var signatureDataElement = new DataElement
         {
             Id = Guid.NewGuid().ToString(),
@@ -224,13 +244,12 @@ public class SigningServiceTests
         };
 
         var cachedInstanceMutator = new Mock<IInstanceDataMutator>();
-        var instance = new Instance { Data = [signeeStateDataElement, signatureDataElement] };
+        var instance = new Instance { Data = [signatureDataElement] };
         cachedInstanceMutator.Setup(x => x.Instance).Returns(instance);
 
-        _signingService.RemoveSigningData(cachedInstanceMutator.Object, signatureConfiguration);
+        _signingService.RemoveAllSignatures(cachedInstanceMutator.Object, signatureConfiguration.SignatureDataType!);
 
         cachedInstanceMutator.Verify(x => x.Instance);
-        cachedInstanceMutator.Verify(x => x.RemoveDataElement(signeeStateDataElement), Times.Once);
         cachedInstanceMutator.Verify(x => x.RemoveDataElement(signatureDataElement), Times.Once);
         cachedInstanceMutator.VerifyNoOtherCalls();
     }
@@ -248,50 +267,10 @@ public class SigningServiceTests
         var instance = new Instance { Data = [] };
         cachedInstanceMutator.Setup(x => x.Instance).Returns(instance);
 
-        _signingService.RemoveSigningData(cachedInstanceMutator.Object, signatureConfiguration);
+        _signingService.RemoveSigneeState(cachedInstanceMutator.Object, signatureConfiguration.SigneeStatesDataTypeId!);
 
         cachedInstanceMutator.Verify(x => x.Instance);
         cachedInstanceMutator.VerifyNoOtherCalls();
-    }
-
-    [Fact]
-    public void RemoveSigningData_Throws_Exception_When_SigneeStatesDataTypeId_Is_Null()
-    {
-        // Arrange
-        var signatureConfiguration = new AltinnSignatureConfiguration
-        {
-            SigneeStatesDataTypeId = null,
-            SignatureDataType = "signatures",
-        };
-
-        var cachedInstanceMutator = new Mock<IInstanceDataMutator>();
-        var instance = new Instance { Data = [] };
-        cachedInstanceMutator.Setup(x => x.Instance).Returns(instance);
-
-        // Act & Assert
-        Assert.Throws<ApplicationConfigException>(
-            () => _signingService.RemoveSigningData(cachedInstanceMutator.Object, signatureConfiguration)
-        );
-    }
-
-    [Fact]
-    public void RemoveSigningData_Throws_Exception_When_SignatureDataType_Is_Null()
-    {
-        // Arrange
-        var signatureConfiguration = new AltinnSignatureConfiguration
-        {
-            SigneeStatesDataTypeId = "signeeStates",
-            SignatureDataType = null,
-        };
-
-        var cachedInstanceMutator = new Mock<IInstanceDataMutator>();
-        var instance = new Instance { Data = [] };
-        cachedInstanceMutator.Setup(x => x.Instance).Returns(instance);
-
-        // Act & Assert
-        Assert.Throws<ApplicationConfigException>(
-            () => _signingService.RemoveSigningData(cachedInstanceMutator.Object, signatureConfiguration)
-        );
     }
 
     private static byte[] ToBytes<T>(T obj)

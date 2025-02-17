@@ -148,7 +148,6 @@ internal sealed class SigningService(
         return signeeContexts;
     }
 
-    //TODO: There is already logic for the sign action in the SigningUserAction class. Maybe move most of it here?
     public async Task Sign(UserActionContext userActionContext, ProcessTask currentTask)
     {
         using Activity? activity = telemetry?.StartSignActivity();
@@ -218,18 +217,9 @@ internal sealed class SigningService(
         }
     }
 
-    public void RemoveSigningData(
-        IInstanceDataMutator instanceMutator,
-        AltinnSignatureConfiguration signatureConfiguration
-    )
+    public void RemoveSigneeState(IInstanceDataMutator instanceMutator, string signeeStatesDataTypeId)
     {
-        using Activity? activity = telemetry?.StartDeleteSigneeStateActivity();
-
-        string signeeStatesDataTypeId =
-            signatureConfiguration.SigneeStatesDataTypeId
-            ?? throw new ApplicationConfigException(
-                "SigneeStatesDataTypeId is not set in the signature configuration."
-            );
+        using Activity? activity = telemetry?.StartRemoveSigneeStateActivity();
 
         IEnumerable<DataElement> signeeStateDataElements = instanceMutator.GetDataElementsForType(
             signeeStatesDataTypeId
@@ -240,10 +230,11 @@ internal sealed class SigningService(
         {
             instanceMutator.RemoveDataElement(signeeStateDataElement);
         }
+    }
 
-        string signatureDataType =
-            signatureConfiguration.SignatureDataType
-            ?? throw new ApplicationConfigException("SignatureDataType is not set in the signature configuration.");
+    public void RemoveAllSignatures(IInstanceDataMutator instanceMutator, string signatureDataType)
+    {
+        using Activity? activity = telemetry?.StartRemoveAllSignaturesActivity();
 
         IEnumerable<DataElement> signatures = instanceMutator.GetDataElementsForType(signatureDataType);
 
@@ -289,8 +280,8 @@ internal sealed class SigningService(
 
             DataElement signeeStateDataElement =
                 dataElements.SingleOrDefault()
-                ?? throw new ApplicationException(
-                    $"Failed to find the data element containing signee contexts using dataTypeId {signatureConfiguration.SigneeStatesDataTypeId}."
+                ?? throw new SigningException(
+                    $"Failed to find the signee state data element containing signee contexts using dataTypeId {signatureConfiguration.SigneeStatesDataTypeId}."
                 );
 
             try
@@ -406,7 +397,7 @@ internal sealed class SigningService(
                     OrganisationNumber = systemUser.SystemUserOrgNr.Get(OrganisationNumberFormat.Local),
                 };
             default:
-                throw new Exception("Could not get signee");
+                throw new SigningException("Could not get signee");
         }
     }
 
@@ -470,7 +461,7 @@ internal sealed class SigningService(
 
         DataElement signeeStateDataElement =
             dataElements.SingleOrDefault()
-            ?? throw new ApplicationException(
+            ?? throw new SigningException(
                 $"Failed to find the data element containing signee contexts using dataTypeId {signatureConfiguration.SigneeStatesDataTypeId}."
             );
 
