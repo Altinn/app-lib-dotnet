@@ -11,6 +11,7 @@ using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
 using Moq;
+using static Altinn.App.Core.Features.Signing.Models.Signee;
 
 namespace Altinn.App.Core.Tests.Features.Validators.Default;
 
@@ -46,8 +47,13 @@ public class SigningTaskValidatorTest
             new()
             {
                 SignDocument = new SignDocument(),
-                OriginalParty = new Party(),
                 TaskId = taskId,
+                Signee = new PersonSignee
+                {
+                    FullName = "A signee",
+                    SocialSecurityNumber = "12334456674",
+                    Party = new Party(),
+                },
                 SigneeState = new SigneeState(),
             },
         };
@@ -81,9 +87,14 @@ public class SigningTaskValidatorTest
             new()
             {
                 SignDocument = null,
-                OriginalParty = new Party(),
                 TaskId = taskId,
                 SigneeState = new SigneeState(),
+                Signee = new PersonSignee
+                {
+                    FullName = "A signee",
+                    SocialSecurityNumber = "12334456674",
+                    Party = new Party(),
+                },
             },
         ];
 

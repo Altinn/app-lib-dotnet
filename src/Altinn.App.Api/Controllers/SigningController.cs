@@ -12,6 +12,7 @@ using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Mvc;
+using static Altinn.App.Core.Features.Signing.Models.Signee;
 using SigneeState = Altinn.App.Api.Models.SigneeState;
 
 namespace Altinn.App.Api.Controllers;
@@ -30,6 +31,7 @@ public class SigningController : ControllerBase
     private readonly IDataClient _dataClient;
     private readonly ModelSerializationService _modelSerialization;
     private readonly IProcessReader _processReader;
+    private readonly ILogger<SigningController> _logger;
     private readonly ISigningService _signingService;
 
     /// <summary>
@@ -41,7 +43,8 @@ public class SigningController : ControllerBase
         IAppMetadata appMetadata,
         IDataClient dataClient,
         ModelSerializationService modelSerialization,
-        IProcessReader processReader
+        IProcessReader processReader,
+        ILogger<SigningController> logger
     )
     {
         _instanceClient = instanceClient;
@@ -49,6 +52,7 @@ public class SigningController : ControllerBase
         _dataClient = dataClient;
         _modelSerialization = modelSerialization;
         _processReader = processReader;
+        _logger = logger;
         _signingService = serviceProvider.GetRequiredService<ISigningService>();
     }
 
@@ -74,6 +78,14 @@ public class SigningController : ControllerBase
     {
         Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
         ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
+
+        _logger.LogInformation(
+            "Getting signees state for org {Org} with instance {InstanceGuid} of app {App} for party {PartyId}",
+            org,
+            instanceGuid,
+            app,
+            instanceOwnerPartyId
+        );
 
         var cachedDataMutator = new InstanceDataUnitOfWork(
             instance,
@@ -101,18 +113,49 @@ public class SigningController : ControllerBase
         {
             SigneeStates =
             [
-                .. signeeContexts.Select(signeeContext => new SigneeState
-                {
-                    Name = signeeContext.FullName,
-                    Organisation = signeeContext.OnBehalfOfOrganisation?.Name,
-                    HasSigned = signeeContext.SignDocument is not null,
-                    DelegationSuccessful = signeeContext.SigneeState.IsAccessDelegated,
-                    NotificationSuccessful = (
-                        signeeContext.SigneeState is
-                        { SignatureRequestEmailNotSentReason: null, SignatureRequestSmsNotSentReason: null }
-                    ),
-                    PartyId = signeeContext.OriginalParty.PartyId,
-                }),
+                .. signeeContexts
+                    .Select(signeeContext =>
+                    {
+                        string? name = null;
+                        string? organisation = null;
+
+                        switch (signeeContext.Signee)
+                        {
+                            case PersonSignee personSignee:
+                                name = personSignee.FullName;
+                                break;
+
+                            case PersonOnBehalfOfOrgSignee personOnBehalfOfOrgSignee:
+                                name = personOnBehalfOfOrgSignee.FullName;
+                                organisation = personOnBehalfOfOrgSignee.OnBehalfOfOrg.OrgName;
+                                break;
+
+                            case OrganisationSignee organisationSignee:
+                                name = null;
+                                organisation = organisationSignee.OrgName;
+                                break;
+
+                            case SystemSignee systemSignee:
+                                name = "System";
+                                organisation = systemSignee.OnBehalfOfOrg.OrgName;
+                                break;
+                        }
+
+                        return new SigneeState
+                        {
+                            Name = name,
+                            Organisation = organisation,
+                            HasSigned = signeeContext.SignDocument is not null,
+                            DelegationSuccessful = signeeContext.SigneeState.IsAccessDelegated,
+                            NotificationSuccessful = (
+                                signeeContext.SigneeState is
+                                { SignatureRequestEmailNotSentReason: null, SignatureRequestSmsNotSentReason: null }
+                            ),
+                            PartyId = signeeContext.Signee.GetParty().PartyId,
+                        };
+                    })
+                    .WhereNotNull()
+                    .ToList(),
             ],
         };
 
@@ -147,18 +190,14 @@ public class SigningController : ControllerBase
             return NotSigningTask();
         }
 
-        AltinnSignatureConfiguration? signingConfiguration = _processReader
-            .GetAltinnTaskExtension(instance.Process.CurrentTask.ElementId)
-            ?.SignatureConfiguration;
+        AltinnSignatureConfiguration? signingConfiguration =
+            (_processReader.GetAltinnTaskExtension(instance.Process.CurrentTask.ElementId)?.SignatureConfiguration)
+            ?? throw new ApplicationConfigException("Signing configuration not found in AltinnTaskExtension");
 
-        if (signingConfiguration == null)
-        {
-            throw new ApplicationConfigException("Signing configuration not found in AltinnTaskExtension");
-        }
-
-        List<DataElement> dataElements = instance
-            .Data.Where(x => signingConfiguration.DataTypesToSign.Contains(x.DataType))
-            .ToList();
+        List<DataElement> dataElements =
+        [
+            .. instance.Data.Where(x => signingConfiguration.DataTypesToSign.Contains(x.DataType)),
+        ];
 
         foreach (DataElement dataElement in dataElements)
         {

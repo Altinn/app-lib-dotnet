@@ -7,6 +7,7 @@ using Altinn.App.Core.Models.Notifications.Sms;
 using Altinn.Platform.Register.Models;
 using Microsoft.Extensions.Logging;
 using Moq;
+using static Altinn.App.Core.Features.Signing.Models.Signee;
 using static Altinn.App.Core.Features.Signing.SigningNotificationService;
 
 namespace Altinn.App.Core.Tests.Features.Signing.Notifications;
@@ -156,12 +157,13 @@ public class SigningNotificationServiceTests
         {
             new()
             {
-                OriginalParty = new Party
-                {
-                    OrgNumber = "123456789",
-                    Organization = new Organization { Name = "Test Organisation", OrgNumber = "123456789" },
-                },
                 TaskId = "task-id",
+                Signee = new PersonSignee
+                {
+                    Party = new Party { },
+                    SocialSecurityNumber = "123456789",
+                    FullName = "Test Person",
+                },
                 SigneeState = new SigneeState { SignatureRequestSmsSent = false },
                 Notifications = new Core.Features.Signing.Models.Notifications
                 {
@@ -485,14 +487,14 @@ public class SigningNotificationServiceTests
         {
             new()
             {
-                OriginalParty = new Party()
-                {
-                    OrgNumber = "123456789",
-                    Organization = new Organization { Name = "Test Organisation", OrgNumber = "123456789" },
-                },
                 TaskId = "task-id",
+                Signee = new PersonSignee
+                {
+                    Party = new Party { },
+                    SocialSecurityNumber = "123456789",
+                    FullName = "Test Person",
+                },
                 SigneeState = new SigneeState { SignatureRequestSmsSent = false },
-
                 Notifications = new Core.Features.Signing.Models.Notifications
                 {
                     OnSignatureAccessRightsDelegated = new Notification
@@ -575,22 +577,23 @@ public class SigningNotificationServiceTests
         bool? hasSentSms = false
     )
     {
-        Party party = new();
-        if (isOrganisation)
+        PersonSignee personSignee = new()
         {
-            party.OrgNumber = "123456789";
-            party.Organization = new Organization { Name = "Test Organisation", OrgNumber = "123456789" };
-        }
-        else
+            Party = new Party { },
+            SocialSecurityNumber = "123456789",
+            FullName = "Test Person",
+        };
+        OrganisationSignee organisationSignee = new()
         {
-            party.SSN = "123456789";
-            party.Person = new Person { Name = "Test Person", SSN = "123456789" };
-        }
+            OrgParty = new Party { },
+            OrgNumber = "123456789",
+            OrgName = "Test Organisation",
+        };
 
         return new SigneeContext
         {
-            OriginalParty = party,
             TaskId = "task-id",
+            Signee = isOrganisation ? organisationSignee : personSignee,
             SigneeState = new SigneeState { SignatureRequestSmsSent = hasSentSms ?? false },
             Notifications = new Core.Features.Signing.Models.Notifications
             {
@@ -615,21 +618,23 @@ public class SigningNotificationServiceTests
         bool? hasSentEmail = false
     )
     {
-        Party party = new();
-        if (isOrganisation)
+        PersonSignee personSignee = new()
         {
-            party.OrgNumber = "123456789";
-            party.Organization = new Organization { Name = "Test Organisation", OrgNumber = "123456789" };
-        }
-        else
+            Party = new Party { },
+            SocialSecurityNumber = "123456789",
+            FullName = "Test Person",
+        };
+        OrganisationSignee organisationSignee = new()
         {
-            party.SSN = "123456789";
-            party.Person = new Person { Name = "Test Person", SSN = "123456789" };
-        }
+            OrgParty = new Party { },
+            OrgNumber = "123456789",
+            OrgName = "Test Organisation",
+        };
+
         return new SigneeContext
         {
-            OriginalParty = party,
             TaskId = "task-id",
+            Signee = isOrganisation ? organisationSignee : personSignee,
             SigneeState = new SigneeState { SignatureRequestEmailSent = hasSentEmail ?? false },
             Notifications = new Core.Features.Signing.Models.Notifications
             {

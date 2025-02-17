@@ -6225,6 +6225,11 @@ to a model, and then finally the state of the instance.,
           autoDeleteOnProcessEnd: {
             type: boolean
           },
+          preventInstanceDeletionForDays: {
+            type: integer,
+            format: int32,
+            nullable: true
+          },
           presentationFields: {
             type: array,
             items: {

@@ -51,8 +51,9 @@ internal sealed class SigningDelegationService(
             {
                 if (state.IsAccessDelegated is false)
                 {
+                    Guid? partyUuid = signeeContext.Signee.GetParty().PartyUuid;
                     logger.LogInformation(
-                        $"Delegating signee rights to {signeeContext.OriginalParty.PartyUuid} from {instanceOwnerPartyUuid} for {appResourceId.Value}"
+                        $"Delegating signee rights to {partyUuid} from {instanceOwnerPartyUuid} for {appResourceId.Value}"
                     );
                     DelegationRequest delegationRequest = new()
                     {
@@ -62,7 +63,7 @@ internal sealed class SigningDelegationService(
                         To = new DelegationParty
                         {
                             Value =
-                                signeeContext.OriginalParty.PartyUuid.ToString()
+                                partyUuid.ToString()
                                 ?? throw new InvalidOperationException("Delegatee: PartyUuid is null"),
                         },
                         Rights =
@@ -126,6 +127,10 @@ internal sealed class SigningDelegationService(
         {
             if (signeeContext.SigneeState.IsAccessDelegated is true)
             {
+                Guid? partyUuid = signeeContext.Signee.GetParty().PartyUuid;
+                logger.LogInformation(
+                    $"Revoking signee rights from {partyUuid} to {appResourceId.Value} by {instanceOwnerPartyUuid}"
+                );
                 try
                 {
                     DelegationRequest delegationRequest = new()
@@ -136,7 +141,7 @@ internal sealed class SigningDelegationService(
                         To = new DelegationParty
                         {
                             Value =
-                                signeeContext.OriginalParty.PartyUuid.ToString()
+                                partyUuid.ToString()
                                 ?? throw new InvalidOperationException("Delegatee: PartyUuid is null"),
                         },
                         Rights =
