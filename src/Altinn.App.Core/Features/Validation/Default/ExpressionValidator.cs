@@ -139,10 +139,9 @@ public class ExpressionValidator : IValidator
                 var context = new ComponentContext(
                     component: null,
                     rowIndices: DataModel.GetRowIndices(resolvedField.Field),
-                    rowLength: null,
                     dataElementIdentifier: resolvedField.DataElementIdentifier
                 );
-                var positionalArguments = new object[] { resolvedField };
+                var positionalArguments = new object[] { resolvedField.Field };
                 foreach (var validation in validations)
                 {
                     await RunValidation(
