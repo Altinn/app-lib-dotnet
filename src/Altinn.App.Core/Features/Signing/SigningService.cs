@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Altinn.App.Core.Exceptions;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Correspondence.Models;
@@ -37,7 +38,16 @@ internal sealed class SigningService(
     Telemetry? telemetry = null
 ) : ISigningService
 {
-    private static readonly JsonSerializerOptions _jsonSerializerOptions = new(JsonSerializerDefaults.Web);
+    private static readonly JsonSerializerOptions _jsonSerializerOptions = new(
+        new JsonSerializerOptions
+        {
+            Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
+            PropertyNameCaseInsensitive = true,
+            WriteIndented = true,
+            ReferenceHandler = ReferenceHandler.Preserve,
+            MaxDepth = 16,
+        }
+    );
     private readonly ILogger<SigningService> _logger = logger;
     private readonly IAppMetadata _appMetadata = appMetadata;
     private readonly ISignClient _signClient = signClient;
@@ -68,7 +78,11 @@ internal sealed class SigningService(
             signeeContexts.Add(signeeContext);
         }
 
-        _logger.LogInformation("Assigning signees to task {TaskId}: {SigneeContexts}", taskId, signeeContexts.Count);
+        _logger.LogInformation(
+            "Assigning signees to task {TaskId}: {SigneeContexts}",
+            taskId,
+            JsonSerializer.Serialize(signeeContexts, _jsonSerializerOptions)
+        );
 
         return signeeContexts;
     }
@@ -466,8 +480,8 @@ internal sealed class SigningService(
     {
         _logger.LogInformation(
             "Synchronizing signee contexts {SigneeContexts} with sign documents {SignDocuments} for task {TaskId}.",
-            unmatchedSigneeContexts,
-            signDocuments,
+            JsonSerializer.Serialize(unmatchedSigneeContexts, _jsonSerializerOptions),
+            JsonSerializer.Serialize(signDocuments, _jsonSerializerOptions),
             taskId
         );
 
@@ -545,7 +559,7 @@ internal sealed class SigningService(
     {
         _logger.LogInformation(
             "Creating signee context for sign document {SignDocument} for task {TaskId}.",
-            signDocument,
+            JsonSerializer.Serialize(signDocument, _jsonSerializerOptions),
             taskId
         );
 
