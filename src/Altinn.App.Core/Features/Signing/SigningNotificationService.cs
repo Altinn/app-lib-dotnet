@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Models.Notifications.Email;
@@ -7,8 +8,11 @@ using static Altinn.App.Core.Features.Telemetry.NotifySigneesConst;
 
 namespace Altinn.App.Core.Features.Signing;
 
-internal sealed class SigningNotificationService : ISigningNotificationService
+internal sealed partial class SigningNotificationService : ISigningNotificationService
 {
+    [GeneratedRegex("^\\+(\\d{2})\\d{8}$|^00(\\d{2})\\d{8}$")]
+    private static partial Regex PhoneRegex();
+
     private readonly ILogger<SigningNotificationService> _logger;
     private readonly ISmsNotificationClient? _smsNotificationClient;
     private readonly IEmailNotificationClient? _emailNotificationClient;
@@ -100,6 +104,12 @@ internal sealed class SigningNotificationService : ISigningNotificationService
         if (string.IsNullOrEmpty(sms.MobileNumber))
         {
             return (false, "No mobile number provided. Unable to send SMS notification.");
+        }
+
+        var regex = PhoneRegex();
+        if (!regex.IsMatch(sms.MobileNumber))
+        {
+            return (false, "Invalid mobile number provided. Unable to send SMS notification.");
         }
 
         var notification = new SmsNotification()

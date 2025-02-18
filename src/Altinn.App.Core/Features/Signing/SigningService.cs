@@ -361,12 +361,12 @@ internal sealed class SigningService(
         CancellationToken ct
     )
     {
-        string? socialSecurityNumber = signeeParty.SocialSecurityNumber;
-        Party party = await altinnPartyClient.LookupParty(
-            socialSecurityNumber is not null
-                ? new PartyLookup { Ssn = socialSecurityNumber }
-                : new PartyLookup { OrgNo = signeeParty.OnBehalfOfOrganisation?.OrganisationNumber }
+        var signee = await From(
+            signeeParty.SocialSecurityNumber,
+            signeeParty.OnBehalfOfOrganisation?.OrganisationNumber,
+            altinnPartyClient.LookupParty
         );
+        Party party = signee.GetParty();
 
         Models.Notifications? notifications = signeeParty.Notifications;
 
@@ -387,7 +387,7 @@ internal sealed class SigningService(
             TaskId = taskId,
             SigneeState = new SigneeState(),
             Notifications = notifications,
-            Signee = await From(socialSecurityNumber, party.Organization?.OrgNumber, altinnPartyClient.LookupParty),
+            Signee = signee,
         };
     }
 
