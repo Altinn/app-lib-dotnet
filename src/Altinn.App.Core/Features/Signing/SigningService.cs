@@ -79,8 +79,12 @@ internal sealed class SigningService(
         }
 
         _logger.LogInformation(
-            "Assigning signees to task {TaskId}: {SigneeContexts}",
-            taskId,
+            "Assigning {SigneeContextsCount} signees to task {TaskId}.",
+            signeeContexts.Count,
+            taskId
+        );
+        _logger.LogDebug(
+            "Signee context state: {SigneeContexts}",
             JsonSerializer.Serialize(signeeContexts, _jsonSerializerOptions)
         );
 
@@ -478,7 +482,7 @@ internal sealed class SigningService(
         List<SignDocument> signDocuments
     )
     {
-        _logger.LogInformation(
+        _logger.LogDebug(
             "Synchronizing signee contexts {SigneeContexts} with sign documents {SignDocuments} for task {TaskId}.",
             JsonSerializer.Serialize(unmatchedSigneeContexts, _jsonSerializerOptions),
             JsonSerializer.Serialize(signDocuments, _jsonSerializerOptions),
@@ -557,7 +561,7 @@ internal sealed class SigningService(
 
     private async Task<SigneeContext> CreateSigneeContextFromSignDocument(string taskId, SignDocument signDocument)
     {
-        _logger.LogInformation(
+        _logger.LogDebug(
             "Creating signee context for sign document {SignDocument} for task {TaskId}.",
             JsonSerializer.Serialize(signDocument, _jsonSerializerOptions),
             taskId
