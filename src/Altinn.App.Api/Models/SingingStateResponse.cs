@@ -3,7 +3,7 @@
 /// <summary>
 /// Contains the result of a get signees request.
 /// </summary>
-public class SingingStateResponse
+public class SigningStateResponse
 {
     /// <summary>
     /// The signees for the current task.

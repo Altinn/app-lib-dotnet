@@ -4944,27 +4944,27 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/SingingStateResponse"
+                  "$ref": "#/components/schemas/SigningStateResponse"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SingingStateResponse"
+                  "$ref": "#/components/schemas/SigningStateResponse"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SingingStateResponse"
+                  "$ref": "#/components/schemas/SigningStateResponse"
                 }
               },
               "application/xml": {
                 "schema": {
-                  "$ref": "#/components/schemas/SingingStateResponse"
+                  "$ref": "#/components/schemas/SigningStateResponse"
                 }
               },
               "text/xml": {
                 "schema": {
-                  "$ref": "#/components/schemas/SingingStateResponse"
+                  "$ref": "#/components/schemas/SigningStateResponse"
                 }
               }
             }
@@ -8154,6 +8154,24 @@
         "additionalProperties": false,
         "description": "Response that contains the data elements that should be signed."
       },
+      "SigningStateResponse": {
+        "required": [
+          "signeeStates"
+        ],
+        "type": "object",
+        "properties": {
+          "signeeStates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SigneeState"
+            },
+            "description": "The signees for the current task.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Contains the result of a get signees request."
+      },
       "SimpleInstance": {
         "type": "object",
         "properties": {
@@ -8190,24 +8208,6 @@
         },
         "additionalProperties": false,
         "description": "A simplified instance model used for presentation of key instance information."
-      },
-      "SingingStateResponse": {
-        "required": [
-          "signeeStates"
-        ],
-        "type": "object",
-        "properties": {
-          "signeeStates": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SigneeState"
-            },
-            "description": "The signees for the current task.",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false,
-        "description": "Contains the result of a get signees request."
       },
       "Substatus": {
         "type": "object",
