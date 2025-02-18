@@ -48,7 +48,7 @@ public class SigningNotificationServiceTests
         {
             SetupSmsSigneeContextNotification(
                 isOrganisation: false,
-                mobileNumber: "12345678",
+                mobileNumber: "+4712345678",
                 body: "Test SMS",
                 reference: "sms-reference"
             ),
@@ -75,7 +75,7 @@ public class SigningNotificationServiceTests
         {
             SetupSmsSigneeContextNotification(
                 isOrganisation: true,
-                mobileNumber: "12345678",
+                mobileNumber: "004712345678",
                 body: "Test SMS",
                 reference: "sms-reference"
             ),
@@ -171,7 +171,7 @@ public class SigningNotificationServiceTests
                     {
                         Sms = new Sms
                         {
-                            MobileNumber = "12345678",
+                            MobileNumber = "+4512345678",
                             Body = "Test SMS",
                             Reference = "sms-reference",
                         },
@@ -209,7 +209,7 @@ public class SigningNotificationServiceTests
         {
             SetupSmsSigneeContextNotification(
                 isOrganisation: false,
-                mobileNumber: "12345678",
+                mobileNumber: "+4712345678",
                 body: "Test SMS",
                 reference: "sms-reference",
                 hasSentSms: true
@@ -233,7 +233,7 @@ public class SigningNotificationServiceTests
         {
             SetupSmsSigneeContextNotification(
                 isOrganisation: false,
-                mobileNumber: "12345678",
+                mobileNumber: "+4712345678",
                 body: "Test SMS",
                 reference: "sms-reference"
             ),
@@ -369,7 +369,7 @@ public class SigningNotificationServiceTests
         {
             SetupSmsSigneeContextNotification(
                 isOrganisation: false,
-                mobileNumber: "12345678",
+                mobileNumber: "+4712345678",
                 body: "Test SMS",
                 reference: "sms-reference"
             ),
@@ -560,7 +560,7 @@ public class SigningNotificationServiceTests
     public void GetSmsBody_WhenNoBodySet_ReturnsDefaultBody()
     {
         // Arrange
-        var sms = new Sms { MobileNumber = "12345678" };
+        var sms = new Sms { MobileNumber = "+4712345678" };
 
         // Act
         string body = GetSmsBody(sms);
