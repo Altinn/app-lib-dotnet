@@ -10,8 +10,10 @@ namespace Altinn.App.Core.Features.Signing;
 
 internal sealed partial class SigningNotificationService : ISigningNotificationService
 {
-    [GeneratedRegex("^\\+(\\d{2})\\d{8}$|^00(\\d{2})\\d{8}$")]
+    [GeneratedRegex("^\\+(\\d{2})\\d{8}$|^00(\\d{2})\\d{8}$|^\\d{8}$")]
     private static partial Regex PhoneRegex();
+
+    private readonly string _defaultCountryCode = "+47";
 
     private readonly ILogger<SigningNotificationService> _logger;
     private readonly ISmsNotificationClient? _smsNotificationClient;
@@ -106,10 +108,16 @@ internal sealed partial class SigningNotificationService : ISigningNotificationS
             return (false, "No mobile number provided. Unable to send SMS notification.");
         }
 
-        var regex = PhoneRegex();
-        if (!regex.IsMatch(sms.MobileNumber))
+        var phoneRegex = PhoneRegex();
+        if (!phoneRegex.IsMatch(sms.MobileNumber))
         {
             return (false, "Invalid mobile number provided. Unable to send SMS notification.");
+        }
+
+        if (phoneRegex.IsMatch(sms.MobileNumber) && sms.MobileNumber.Length == 8)
+        {
+            sms.MobileNumber = _defaultCountryCode + sms.MobileNumber;
+            return await TrySendSms(sms, ct);
         }
 
         var notification = new SmsNotification()
