@@ -282,6 +282,37 @@ public class SigningNotificationServiceTests
     }
 
     [Fact]
+    public async Task NotifySignatureTask_TrySentSmsWithoutCountryCode_Fails()
+    {
+        SigningNotificationService signingNotificationService = new(
+            logger: _loggerMock.Object,
+            smsNotificationClient: SetupSmsNotificationClientMock().Object
+        );
+
+        // Arrange
+        var signeeContexts = new List<SigneeContext>
+        {
+            SetupSmsSigneeContextNotification(
+                isOrganisation: false,
+                mobileNumber: "12345678", // No country code set
+                body: "Test SMS",
+                reference: "sms-reference"
+            ),
+        };
+
+        // Act
+        signeeContexts = await signingNotificationService.NotifySignatureTask(signeeContexts);
+
+        // Assert
+        Assert.False(signeeContexts[0].SigneeState.SignatureRequestSmsSent); // SMS notification not sent
+        Assert.NotNull(signeeContexts[0].SigneeState.SignatureRequestSmsNotSentReason); // Error message
+        Assert.Equal(
+            "Invalid mobile number provided. Unable to send SMS notification.",
+            signeeContexts[0].SigneeState.SignatureRequestSmsNotSentReason
+        );
+    }
+
+    [Fact]
     public async Task NotifySignatureTask_TrySendEmailWithoutClient_Fails()
     {
         SigningNotificationService signingNotificationService = new(logger: _loggerMock.Object);
