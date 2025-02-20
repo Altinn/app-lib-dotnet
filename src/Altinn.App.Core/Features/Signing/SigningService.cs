@@ -29,7 +29,6 @@ namespace Altinn.App.Core.Features.Signing;
 internal sealed class SigningService(
     IAltinnPartyClient altinnPartyClient,
     ISigningDelegationService signingDelegationService,
-    ISigningNotificationService signingNotificationService,
     IEnumerable<ISigneeProvider> signeeProviders,
     IAppMetadata appMetadata,
     ISignClient signClient,
@@ -104,13 +103,13 @@ internal sealed class SigningService(
         string instanceIdCombo = instanceMutator.Instance.Id;
         InstanceOwner instanceOwner = instanceMutator.Instance.InstanceOwner;
 
-        Guid? instanceOwnerPartyUuid = altinnPartyClient
-            .LookupParty(
-                instanceOwner.OrganisationNumber is not null
-                    ? new PartyLookup { OrgNo = instanceOwner.OrganisationNumber }
-                    : new PartyLookup { Ssn = instanceOwner.PersonNumber }
-            )
-            .Result.PartyUuid;
+        Party instanceOwnerParty = await altinnPartyClient.LookupParty(
+            instanceOwner.OrganisationNumber is not null
+                ? new PartyLookup { OrgNo = instanceOwner.OrganisationNumber }
+                : new PartyLookup { Ssn = instanceOwner.PersonNumber }
+        );
+
+        Guid? instanceOwnerPartyUuid = instanceOwnerParty.PartyUuid;
 
         AppIdentifier appIdentifier = new(instanceMutator.Instance.AppId);
         (signeeContexts, bool delegateSuccess) = await signingDelegationService.DelegateSigneeRights(
@@ -123,9 +122,44 @@ internal sealed class SigningService(
             telemetry
         );
 
+        Party serviceOwnerParty = await altinnPartyClient.LookupParty(new PartyLookup { OrgNo = appIdentifier.Org });
+
         if (delegateSuccess)
         {
-            await signingNotificationService.NotifySignatureTask(signeeContexts, ct);
+            foreach (SigneeContext signeeContext in signeeContexts)
+            {
+                if (signeeContext.SigneeState.IsMessagedForCallToSign)
+                {
+                    continue;
+                }
+
+                try
+                {
+                    Party signingParty = signeeContext.OriginalParty;
+
+                    await _signingCorrespondenceService.SendSignCallToActionCorrespondence(
+                        signeeContext.Notifications?.OnSignatureAccessRightsDelegated,
+                        appIdentifier,
+                        new InstanceIdentifier(instanceMutator.Instance),
+                        signingParty,
+                        serviceOwnerParty,
+                        signatureConfiguration.CorrespondenceResources
+                    );
+                    signeeContext.SigneeState.IsMessagedForCallToSign = true;
+                }
+                catch (ConfigurationException e)
+                {
+                    _logger.LogError(e, "Correspondence configuration error: {Exception}", e.Message);
+                    signeeContext.SigneeState.IsMessagedForCallToSign = false;
+                    signeeContext.SigneeState.CallToSignFailedReason = $"Correspondence configuration error.";
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "Correspondence send failed: {Exception}", e.Message);
+                    signeeContext.SigneeState.IsMessagedForCallToSign = false;
+                    signeeContext.SigneeState.CallToSignFailedReason = $"Correspondence configuration error.";
+                }
+            }
         }
 
         // Saves the signee context state to Storage
@@ -201,7 +235,7 @@ internal sealed class SigningService(
 
         try
         {
-            SendCorrespondenceResponse? result = await _signingCorrespondenceService.SendCorrespondence(
+            SendCorrespondenceResponse? result = await _signingCorrespondenceService.SendSignConfirmationCorrespondence(
                 signatureContext.InstanceIdentifier,
                 signatureContext.Signee,
                 dataElementSignatures,
@@ -578,8 +612,7 @@ internal sealed class SigningService(
             SigneeState = new SigneeState()
             {
                 IsAccessDelegated = true,
-                SignatureRequestEmailSent = true,
-                SignatureRequestSmsSent = true,
+                IsMessagedForCallToSign = true,
                 IsReceiptSent = false,
             },
             SignDocument = signDocument,

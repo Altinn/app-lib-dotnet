@@ -24,29 +24,17 @@ public sealed class SigneeState
     [JsonPropertyName("delegationFailedReason")]
     public string? DelegationFailedReason { get; set; }
 
-    /// <summary>Indicates whether signee has been notified to sign via sms.</summary>
-    [JsonPropertyName("signatureRequestSmsSent")]
-    public bool SignatureRequestSmsSent { get; set; }
+    /// <summary>
+    /// Indicates whether the signee has been messaged about the signature call to action.
+    /// </summary>
+    [JsonPropertyName("isCalledToSign")]
+    public bool IsMessagedForCallToSign { get; set; }
 
     /// <summary>
-    /// The reason why the sms was not sent.
+    /// The reason why the message failed.
     /// </summary>
-    [JsonPropertyName("signatureRequestSmsNotSentReason")]
-    public string? SignatureRequestSmsNotSentReason { get; set; }
-
-    /// <summary>
-    /// Indicated whether signee has been notified to sign via email.
-    /// </summary>
-    [JsonPropertyName("signatureRequestEmailSent")]
-    public bool SignatureRequestEmailSent { get; set; }
-
-    /// <summary>
-    /// The reason why the email was not sent.
-    /// </summary>
-    [JsonPropertyName("signatureRequestEmailNotSentReason")]
-    public string? SignatureRequestEmailNotSentReason { get; set; }
-
-    // internal bool HasSigned { get; set; } //TODO: Probably don't want to store this here, but rather check for signature documents for this signee and make sure hash is correct?
+    [JsonPropertyName("callToSignFailedReason")]
+    public string? CallToSignFailedReason { get; set; }
 
     /// <summary>Indicates whether the receipt for the signature has been send to the signee.</summary>
     [JsonPropertyName("isReceiptSent")]
