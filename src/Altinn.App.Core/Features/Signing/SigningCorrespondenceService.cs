@@ -4,7 +4,10 @@ using Altinn.App.Core.Exceptions;
 using Altinn.App.Core.Features.Correspondence;
 using Altinn.App.Core.Features.Correspondence.Builder;
 using Altinn.App.Core.Features.Correspondence.Models;
+using Altinn.App.Core.Features.Signing.Enums;
+using Altinn.App.Core.Features.Signing.Helpers;
 using Altinn.App.Core.Features.Signing.Interfaces;
+using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
@@ -13,6 +16,7 @@ using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.UserAction;
+using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -36,7 +40,7 @@ internal sealed class SigningCorrespondenceService(
     private readonly IAppMetadata _appMetadata = appMetadata;
     private readonly ILogger<SigningCorrespondenceService> _logger = logger;
 
-    public async Task<SendCorrespondenceResponse?> SendCorrespondence(
+    public async Task<SendCorrespondenceResponse?> SendSignConfirmationCorrespondence(
         InstanceIdentifier instanceIdentifier,
         Signee signee,
         IEnumerable<DataElementSignature> dataElementSignatures,
@@ -46,13 +50,13 @@ internal sealed class SigningCorrespondenceService(
     {
         ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
         var (resource, senderOrgNumber, senderDetails, recipient) = await GetCorrespondenceHeaders(
-            signee,
+            signee.PersonNumber,
             appMetadata,
             correspondenceResources,
-            _hostEnvironment,
             context.AltinnCdnClient
         );
-        CorrespondenceContent content = await GetCorrespondenceContent(context, appMetadata, senderDetails);
+
+        CorrespondenceContent content = await GetContent(context, appMetadata, senderDetails);
         IEnumerable<CorrespondenceAttachment> attachments = await GetCorrespondenceAttachments(
             instanceIdentifier,
             dataElementSignatures,
@@ -76,22 +80,145 @@ internal sealed class SigningCorrespondenceService(
                 CorrespondenceAuthorisation.Maskinporten
             )
         );
+
+        async Task<(
+            string resource,
+            string senderOrgNumber,
+            AltinnCdnOrgDetails senderDetails,
+            string recipient
+        )> GetCorrespondenceHeaders(
+            string? recipientNin,
+            ApplicationMetadata appMetadata,
+            List<AltinnEnvironmentConfig>? correspondenceResources,
+            IAltinnCdnClient? altinnCdnClient = null
+        )
+        {
+            HostingEnvironment env = AltinnEnvironments.GetHostingEnvironment(_hostEnvironment);
+            var resource = AltinnTaskExtension.GetConfigForEnvironment(env, correspondenceResources)?.Value;
+            if (string.IsNullOrEmpty(resource))
+            {
+                throw new ConfigurationException(
+                    $"No correspondence resource configured for environment {env}, skipping correspondence send"
+                );
+            }
+
+            string? recipient = recipientNin;
+            if (string.IsNullOrEmpty(recipient))
+            {
+                throw new InvalidOperationException(
+                    "Signee's national identity number is missing, unable to send correspondence"
+                );
+            }
+
+            bool disposeClient = altinnCdnClient is null;
+            altinnCdnClient ??= new AltinnCdnClient();
+            try
+            {
+                AltinnCdnOrgs altinnCdnOrgs = await altinnCdnClient.GetOrgs();
+                AltinnCdnOrgDetails? senderDetails = altinnCdnOrgs.Orgs?.GetValueOrDefault(appMetadata.Org);
+                string? senderOrgNumber = senderDetails?.Orgnr;
+
+                if (senderDetails is null || string.IsNullOrEmpty(senderOrgNumber))
+                {
+                    throw new InvalidOperationException(
+                        $"Error looking up sender's organisation number from Altinn CDN, using key `{appMetadata.Org}`"
+                    );
+                }
+
+                return (resource, senderOrgNumber, senderDetails, recipient);
+            }
+            finally
+            {
+                if (disposeClient)
+                {
+                    altinnCdnClient.Dispose();
+                }
+            }
+        }
+
+        async Task<CorrespondenceContent> GetContent(
+            UserActionContext context,
+            ApplicationMetadata appMetadata,
+            AltinnCdnOrgDetails senderDetails
+        )
+        {
+            TextResource? textResource = null;
+            string? title = null;
+            string? summary = null;
+            string? body = null;
+            string? appName = null;
+
+            string appOwner =
+                senderDetails.Name?.Nb ?? senderDetails.Name?.Nn ?? senderDetails.Name?.En ?? appMetadata.Org;
+            string defaultLanguage = LanguageConst.Nb;
+            string defaultAppName =
+                appMetadata.Title?.GetValueOrDefault(defaultLanguage)
+                ?? appMetadata.Title?.FirstOrDefault().Value
+                ?? appMetadata.Id;
+
+            try
+            {
+                AppIdentifier appIdentifier = new(context.Instance);
+
+                textResource ??=
+                    await _appResources.GetTexts(
+                        appIdentifier.Org,
+                        appIdentifier.App,
+                        context.Language ?? defaultLanguage
+                    )
+                    ?? throw new InvalidOperationException(
+                        $"No text resource found for specified language ({context.Language}) nor the default language ({defaultLanguage})"
+                    );
+
+                title = textResource.GetText("signing.receipt_title");
+                summary = textResource.GetText("signing.receipt_summary");
+                body = textResource.GetText("signing.receipt_body");
+                appName = textResource.GetFirstMatchingText("appName", "ServiceName");
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning(
+                    e,
+                    "Unable to fetch custom message correspondence message content, falling back to default values: {Exception}",
+                    e.Message
+                );
+            }
+
+            if (string.IsNullOrWhiteSpace(appName))
+            {
+                appName = defaultAppName;
+            }
+
+            var defaults = new
+            {
+                Title = $"{appName}: Signeringen er bekreftet",
+                Summary = $"Du har signert for {appName}.",
+                Body = $"Dokumentene du har signert er vedlagt. Disse kan lastes ned om ønskelig. <br /><br />Hvis du lurer på noe, kan du kontakte {appOwner}.",
+            };
+
+            CorrespondenceContent content = new()
+            {
+                Language = LanguageCode<Iso6391>.Parse(textResource?.Language ?? defaultLanguage),
+                Title = title ?? defaults.Title,
+                Summary = summary ?? defaults.Summary,
+                Body = body ?? defaults.Body,
+            };
+            return content;
+        }
     }
 
-    internal static async Task<(
-        string resource,
-        string senderOrgNumber,
-        AltinnCdnOrgDetails senderDetails,
-        string recipient
-    )> GetCorrespondenceHeaders(
-        Signee signee,
-        ApplicationMetadata appMetadata,
-        List<AltinnEnvironmentConfig>? correspondenceResources,
-        IHostEnvironment hostEnvironment,
-        IAltinnCdnClient? altinnCdnClient = null
+    public async Task<SendCorrespondenceResponse?> SendSignCallToActionCorrespondence(
+        Notification? notification,
+        AppIdentifier appIdentifier,
+        InstanceIdentifier instanceIdentifier,
+        Party signingParty,
+        Party serviceOwnerParty,
+        List<AltinnEnvironmentConfig>? correspondenceResources
     )
     {
-        HostingEnvironment env = AltinnEnvironments.GetHostingEnvironment(hostEnvironment);
+        ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
+
+        HostingEnvironment env = AltinnEnvironments.GetHostingEnvironment(_hostEnvironment);
         var resource = AltinnTaskExtension.GetConfigForEnvironment(env, correspondenceResources)?.Value;
         if (string.IsNullOrEmpty(resource))
         {
@@ -100,7 +227,7 @@ internal sealed class SigningCorrespondenceService(
             );
         }
 
-        string? recipient = signee.PersonNumber;
+        string? recipient = signingParty.SSN;
         if (string.IsNullOrEmpty(recipient))
         {
             throw new InvalidOperationException(
@@ -108,105 +235,131 @@ internal sealed class SigningCorrespondenceService(
             );
         }
 
-        bool disposeClient = altinnCdnClient is null;
-        altinnCdnClient ??= new AltinnCdnClient();
-        try
-        {
-            AltinnCdnOrgs altinnCdnOrgs = await altinnCdnClient.GetOrgs();
-            AltinnCdnOrgDetails? senderDetails = altinnCdnOrgs.Orgs?.GetValueOrDefault(appMetadata.Org);
-            string? senderOrgNumber = senderDetails?.Orgnr;
+        CorrespondenceContent content = await GetContent(appIdentifier, appMetadata, serviceOwnerParty);
+        string? emailBody = notification?.Email?.Body;
+        string? emailSubject = notification?.Email?.Subject;
+        string? smsBody = notification?.Sms?.Body;
 
-            if (senderDetails is null || string.IsNullOrEmpty(senderOrgNumber))
+
+        // TODO: Language support
+        // TODO: Add link to app instance in the correspondence body
+        // TODO: Tests
+        return await _correspondenceClient.Send(
+            new SendCorrespondencePayload(
+                CorrespondenceRequestBuilder
+                    .Create()
+                    .WithResourceId(resource)
+                    .WithSender(serviceOwnerParty.OrgNumber)
+                    .WithSendersReference(instanceIdentifier.ToString())
+                    .WithRecipient(recipient)
+                    .WithAllowSystemDeleteAfter(DateTime.Now.AddYears(1))
+                    .WithContent(content)
+                    .WithNotificationIfConfigured(
+                        SigningCorrespondanceHelper.GetNotificationChoice(notification) switch
+                        {
+                            NotificationChoice.Email => new CorrespondenceNotification
+                            {
+                                NotificationTemplate = emailBody is not null
+                                    ? CorrespondenceNotificationTemplate.CustomMessage
+                                    : CorrespondenceNotificationTemplate.GenericAltinnMessage,
+                                NotificationChannel = CorrespondenceNotificationChannel.Email,
+                                EmailSubject = emailSubject ?? content.Title,
+                                EmailBody = emailBody,
+                                SendersReference = instanceIdentifier.ToString(),
+                                SendReminder = true,
+                            },
+                            NotificationChoice.Sms => new CorrespondenceNotification
+                            {
+                                NotificationTemplate = smsBody is not null
+                                    ? CorrespondenceNotificationTemplate.CustomMessage
+                                    : CorrespondenceNotificationTemplate.GenericAltinnMessage,
+                                NotificationChannel = CorrespondenceNotificationChannel.Sms,
+                                SmsBody = smsBody,
+                                SendersReference = instanceIdentifier.ToString(),
+                                SendReminder = true,
+                            },
+                            NotificationChoice.SmsAndEmail => new CorrespondenceNotification
+                            {
+                                NotificationTemplate = emailBody is not null
+                                    ? CorrespondenceNotificationTemplate.CustomMessage
+                                    : CorrespondenceNotificationTemplate.GenericAltinnMessage,
+                                NotificationChannel = CorrespondenceNotificationChannel.EmailPreferred,
+                                EmailSubject = emailSubject ?? content.Title,
+                                EmailBody = emailBody,
+                                SmsBody = smsBody,
+                                SendersReference = instanceIdentifier.ToString(),
+                                SendReminder = true,
+                            },
+                            NotificationChoice.None or _ => null,
+                        }
+                    )
+                    .Build(),
+                CorrespondenceAuthorisation.Maskinporten
+            )
+        );
+
+        async Task<CorrespondenceContent> GetContent(
+            AppIdentifier appIdentifier,
+            ApplicationMetadata appMetadata,
+            Party senderParty
+        )
+        {
+            TextResource? textResource = null;
+            string? title = null;
+            string? summary = null;
+            string? body = null;
+            string? appName = null;
+
+            string appOwner = senderParty.Name ?? appMetadata.Org;
+            string defaultLanguage = LanguageConst.Nb;
+            string defaultAppName =
+                appMetadata.Title?.GetValueOrDefault(defaultLanguage)
+                ?? appMetadata.Title?.FirstOrDefault().Value
+                ?? appMetadata.Id;
+
+            try
             {
-                throw new InvalidOperationException(
-                    $"Error looking up sender's organisation number from Altinn CDN, using key `{appMetadata.Org}`"
+                textResource ??=
+                    await _appResources.GetTexts(appIdentifier.Org, appIdentifier.App, defaultLanguage)
+                    ?? throw new InvalidOperationException(
+                        $"No text resource found for the default language ({defaultLanguage})"
+                    );
+
+                title = textResource.GetText("signing.cta_title");
+                summary = textResource.GetText("signing.cta_summary");
+                body = textResource.GetText("signing.cta_body");
+                appName = textResource.GetFirstMatchingText("appName", "ServiceName");
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning(
+                    e,
+                    "Unable to fetch custom message correspondence message content, falling back to default values: {Exception}",
+                    e.Message
                 );
             }
 
-            return (resource, senderOrgNumber, senderDetails, recipient);
-        }
-        finally
-        {
-            if (disposeClient)
+            if (string.IsNullOrWhiteSpace(appName))
             {
-                altinnCdnClient.Dispose();
+                appName = defaultAppName;
             }
+
+            var defaults = new
+            {
+                Title = $"{appName}: Oppgave til signering",
+                Summary = $"Din signatur ventes for {appName}.",
+                Body = $"Du har mottatt en oppgave som krever din signatur. <br /><br /> Hvis du lurer på noe, kan du kontakte {appOwner}.",
+            };
+
+            CorrespondenceContent content = new()
+            {
+                Language = LanguageCode<Iso6391>.Parse(textResource?.Language ?? defaultLanguage),
+                Title = title ?? defaults.Title,
+                Summary = summary ?? defaults.Summary,
+                Body = body ?? defaults.Body,
+            };
+            return content;
         }
-    }
-
-    internal async Task<CorrespondenceContent> GetCorrespondenceContent(
-        UserActionContext context,
-        ApplicationMetadata appMetadata,
-        AltinnCdnOrgDetails senderDetails
-    )
-    {
-        TextResource? textResource = null;
-        string? title = null;
-        string? summary = null;
-        string? body = null;
-        string? appName = null;
-
-        string appOwner = senderDetails.Name?.Nb ?? senderDetails.Name?.Nn ?? senderDetails.Name?.En ?? appMetadata.Org;
-        string defaultLanguage = LanguageConst.Nb;
-        string defaultAppName =
-            appMetadata.Title?.GetValueOrDefault(defaultLanguage)
-            ?? appMetadata.Title?.FirstOrDefault().Value
-            ?? appMetadata.Id;
-
-        try
-        {
-            AppIdentifier appIdentifier = new(context.Instance);
-
-            textResource ??=
-                await _appResources.GetTexts(appIdentifier.Org, appIdentifier.App, context.Language ?? defaultLanguage)
-                ?? throw new InvalidOperationException(
-                    $"No text resource found for specified language ({context.Language}) nor the default language ({defaultLanguage})"
-                );
-
-            title = textResource
-                .Resources.FirstOrDefault(x => x.Id.Equals("signing.receipt_title", StringComparison.Ordinal))
-                ?.Value;
-            summary = textResource
-                .Resources.FirstOrDefault(x => x.Id.Equals("signing.receipt_summary", StringComparison.Ordinal))
-                ?.Value;
-            body = textResource
-                .Resources.FirstOrDefault(x => x.Id.Equals("signing.receipt_body", StringComparison.Ordinal))
-                ?.Value;
-
-            appName =
-                textResource.Resources.FirstOrDefault(x => x.Id.Equals("appName", StringComparison.Ordinal))?.Value
-                ?? textResource
-                    .Resources.FirstOrDefault(x => x.Id.Equals("ServiceName", StringComparison.Ordinal))
-                    ?.Value;
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(
-                e,
-                "Unable to fetch custom message correspondence message content, falling back to default values: {Exception}",
-                e.Message
-            );
-        }
-
-        if (string.IsNullOrWhiteSpace(appName))
-        {
-            appName = defaultAppName;
-        }
-
-        var defaults = new
-        {
-            Title = $"{appName}: Signeringen er bekreftet",
-            Summary = $"Du har signert for {appName}.",
-            Body = $"Dokumentene du har signert er vedlagt. Disse kan lastes ned om ønskelig. <br /><br />Hvis du lurer på noe, kan du kontakte {appOwner}.",
-        };
-
-        return new CorrespondenceContent
-        {
-            Language = LanguageCode<Iso6391>.Parse(textResource?.Language ?? defaultLanguage),
-            Title = title ?? defaults.Title,
-            Summary = summary ?? defaults.Summary,
-            Body = body ?? defaults.Body,
-        };
     }
 
     internal static async Task<IEnumerable<CorrespondenceAttachment>> GetCorrespondenceAttachments(
