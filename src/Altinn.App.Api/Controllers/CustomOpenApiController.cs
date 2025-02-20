@@ -1218,7 +1218,7 @@ public class SchemaPostVisitor : OpenApiVisitorBase
         // Mark the id property as required
         if (schema.Properties.TryGetValue("id", out var property))
         {
-            // property.Nullable = false;
+            property.Nullable = false;
             schema.Required.Add("id");
         }
 

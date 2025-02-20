@@ -17,9 +17,6 @@ public class OpenApiSpecChangeDetection : ApiTestBase, IClassFixture<WebApplicat
         HttpResponseMessage response = await client.GetAsync("/swagger/v1/swagger.json");
         string openApiSpec = await response.Content.ReadAsStringAsync();
         response.EnsureSuccessStatusCode();
-        // Keep updating the old file from before I figured out how Verify
-        // could generate a valid json
-        // await File.WriteAllTextAsync("../../../OpenApi/swagger.json", openApiSpec);
         await VerifyJson(openApiSpec, _verifySettings);
     }
 
@@ -33,9 +30,6 @@ public class OpenApiSpecChangeDetection : ApiTestBase, IClassFixture<WebApplicat
         HttpResponseMessage response = await client.GetAsync($"/{org}/{app}/v1/customOpenapi.json");
         string openApiSpec = await response.Content.ReadAsStringAsync();
         response.EnsureSuccessStatusCode();
-        // Keep updating the old file from before I figured out how Verify
-        // could generate a valid json
-        // await File.WriteAllTextAsync("../../../OpenApi/customSwagger.json", openApiSpec);
         await VerifyJson(openApiSpec, _verifySettings);
     }
 
