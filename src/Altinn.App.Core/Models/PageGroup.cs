@@ -13,5 +13,5 @@ public class PageGroup
     /// <summary>
     /// Order
     /// </summary>
-    public List<string>? Order { get; set; }
+    required public List<string> Order { get; set; }
 }
