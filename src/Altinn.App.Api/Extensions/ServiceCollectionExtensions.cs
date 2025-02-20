@@ -124,6 +124,8 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<AuthorizationApiClient>();
 
         services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
+        services.AddSwaggerFilter();
     }
 
     /// <summary>
