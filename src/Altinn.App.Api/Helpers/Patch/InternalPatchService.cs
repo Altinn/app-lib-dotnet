@@ -1,4 +1,3 @@
-using System.Net;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -97,7 +96,7 @@ public class InternalPatchService
                 {
                     Title = "Unknown data element to patch",
                     Detail = $"Data element with id {dataElementGuid} not found in instance",
-                    Status = (int)HttpStatusCode.NotFound,
+                    Status = StatusCodes.Status404NotFound,
                 };
             }
 
@@ -134,7 +133,7 @@ public class InternalPatchService
                     Title = "Patch operation did not deserialize",
                     Type = "https://datatracker.ietf.org/doc/html/rfc6902/",
                     Detail = newModelResult.Error,
-                    Status = (int)HttpStatusCode.UnprocessableContent,
+                    Status = StatusCodes.Status422UnprocessableEntity,
                 };
             }
 
