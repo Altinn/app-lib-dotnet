@@ -1,4 +1,4 @@
-{
+﻿{
   "openapi": "3.0.1",
   "info": {
     "title": "Altinn 3 App API for Endring av navn (RF-1453)",
@@ -42,12 +42,12 @@
           }
         ],
         "requestBody": {
-          "description": "Instance document, formData and attachments\r\n\r\nAny mime type that is not ``\"application/json\"`` or ``\"multipart/form-data\"`` with an instance document\r\nwill require the ``instanceOwnerPartyId`` parameter. Otherwise you must use the simplified instance document to specify instance owner.\r\nEither using ``instanceOwner.partyId`` or ``instanceOwner.personNumber`` or ``instanceOwner.organisationNumber`` (or ``instanceOwner.username`` see [app-lib-dotnet/#652](https://github.com/Altinn/app-lib-dotnet/issues/652)).",
+          "description": "Instance document, formData and attachments\n\nAny mime type that is not ``\"application/json\"`` or ``\"multipart/form-data\"`` with an instance document\nwill require the ``instanceOwnerPartyId`` parameter. Otherwise you must use the simplified instance document to specify instance owner.\nEither using ``instanceOwner.partyId`` or ``instanceOwner.personNumber`` or ``instanceOwner.organisationNumber`` (or ``instanceOwner.username`` see [app-lib-dotnet/#652](https://github.com/Altinn/app-lib-dotnet/issues/652)).",
           "content": {
             "empty": {
               "schema": {
-                "type": "",
-                "example": ""
+                "type": "null",
+                "example": null
               }
             },
             "application/json": {
@@ -90,7 +90,8 @@
                     "type": "string",
                     "format": "binary"
                   }
-                }
+                },
+                "additionalProperties": false
               },
               "encoding": {
                 "instance": {
@@ -176,8 +177,20 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
           "404": {
-            "description": "Instance not found"
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "500": {
+            "$ref": "#/components/responses/ProblemDetails"
           }
         }
       },
@@ -191,11 +204,38 @@
           "204": {
             "description": "Instance deleted"
           },
+          "400": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
           "404": {
-            "description": "Instance not found"
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "500": {
+            "$ref": "#/components/responses/ProblemDetails"
           }
         }
       },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/instanceOwnerPartyId"
+        },
+        {
+          "$ref": "#/components/parameters/instanceGuid"
+        },
+        {
+          "$ref": "#/components/parameters/language"
+        }
+      ]
+    },
+    "/tdd/contributer-restriction/instances/{instanceOwnerPartyId}/{instanceGuid}/data": {
+      "summary": "Operations for data elements",
+      "description": "CRUD operations for data elements in an instance",
       "patch": {
         "tags": [
           "Instances"
@@ -247,18 +287,23 @@
                                     "type": "string"
                                   },
                                   "path": {
-                                    "title": "JsonPointer"
+                                    "title": "JsonPointer",
+                                    "type": "string"
                                   },
                                   "value": {
-                                    "type": "any"
+                                    "title": "the value",
+                                    "description": "The value to add or replace"
                                   }
-                                }
+                                },
+                                "additionalProperties": false
                               }
                             }
                           },
+                          "additionalProperties": false,
                           "description": "A standard RFC 6902 document describing changes to one data element"
                         }
-                      }
+                      },
+                      "additionalProperties": false
                     }
                   },
                   "ignoredValidators": {
@@ -268,7 +313,8 @@
                     },
                     "description": "This is used for saving server resources, when frontend has a duplicated version of the validator. The validators will be executed on process/next anyway"
                   }
-                }
+                },
+                "additionalProperties": false
               }
             }
           },
@@ -285,8 +331,40 @@
               }
             }
           },
+          "409": {
+            "description": "Precondition in patch failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataPatchError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "JsonPatch operation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataPatchError"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
           "404": {
-            "description": "Instance not found"
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "500": {
+            "$ref": "#/components/responses/ProblemDetails"
           }
         }
       },
@@ -418,13 +496,12 @@
         }
       ]
     },
-    "http://local.altinn.cloud/Home/GetTestUserToken": {
+    "/Home/GetTestUserToken": {
+      "description": "Get a test user token for use in the local development environment",
       "get": {
         "tags": [
           "Authentication"
         ],
-        "summary": "Get a test user token",
-        "description": "Get a test user token for use in the local development environment",
         "parameters": [
           {
             "name": "userId",
@@ -432,8 +509,8 @@
             "description": "The user id of the test user",
             "required": true,
             "schema": {
-              "type": "int32",
-              "example": "1337"
+              "type": "integer",
+              "example": 1337
             }
           },
           {
@@ -450,7 +527,7 @@
                 4,
                 5
               ],
-              "type": "int32",
+              "type": "integer",
               "default": 3
             }
           }
@@ -468,9 +545,14 @@
             }
           }
         }
-      }
+      },
+      "servers": [
+        {
+          "url": "http://local.altinn.cloud"
+        }
+      ]
     },
-    "/tdd/contributer-restriction/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/default": {
+    "/tdd/contributer-restriction/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/type/default": {
       "summary": "Operations for default",
       "description": "CRUD operations for data of type default",
       "get": {
@@ -478,10 +560,10 @@
           "FormData default"
         ],
         "summary": "Get data",
-        "description": "Get data for a specific data element\r\n\r\nsee [JSON Schema](/tdd/contributer-restriction/api/jsonschema/default)",
+        "description": "Get data for a specific data element\n\nsee [JSON Schema](/tdd/contributer-restriction/api/jsonschema/default)",
         "responses": {
           "200": {
-            "description": "# Data found\r\n\r\nThe response body contains the data in the format specified by the Accept header.\r\n\r\n",
+            "description": "# Data found\n\nThe response body contains the data in the format specified by the Accept header.\n\n",
             "content": {
               "application/json": {
                 "schema": {
@@ -492,10 +574,9 @@
                 "schema": {
                   "title": "Xml",
                   "type": "string",
-                  "description": "See [xml schema](/tdd/contributer-restriction/xmlSchema/default)",
+                  "description": "See xml schema",
                   "format": "binary"
-                },
-                "example": "<xml></xml>"
+                }
               }
             }
           },
@@ -533,15 +614,33 @@
               "schema": {
                 "title": "Xml",
                 "type": "string",
-                "description": "See [xml schema](/tdd/contributer-restriction/xmlSchema/default)",
+                "description": "See xml schema",
                 "format": "binary"
-              },
-              "example": "<xml></xml>"
+              }
             }
           },
           "required": true
         },
-        "responses": { }
+        "responses": {
+          "200": {
+            "description": "Data replaced"
+          },
+          "400": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "404": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "500": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        }
       },
       "parameters": [
         {
@@ -555,7 +654,7 @@
         }
       ]
     },
-    "/tdd/contributer-restriction/instances/{instanceOwnerPartyId}/{instanceGuid}/data/default": {
+    "/tdd/contributer-restriction/instances/{instanceOwnerPartyId}/{instanceGuid}/data/type/default": {
       "summary": "Operations for default",
       "description": "CRUD operations for data of type default",
       "post": {
@@ -575,15 +674,35 @@
               "schema": {
                 "title": "Xml",
                 "type": "string",
-                "description": "See [xml schema](/tdd/contributer-restriction/xmlSchema/default)",
+                "description": "See xml schema",
                 "format": "binary"
-              },
-              "example": "<xml></xml>"
+              }
             }
           },
           "required": true
         },
-        "responses": { }
+        "responses": {
+          "201": {
+            "description": "Data created",
+            "content": {
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataPostResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Failed to add data element",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataPostErrorResponse"
+                }
+              }
+            }
+          }
+        }
       },
       "parameters": [
         {
@@ -597,7 +716,7 @@
         }
       ]
     },
-    "/tdd/contributer-restriction/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/customElement": {
+    "/tdd/contributer-restriction/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/type/customElement": {
       "summary": "Operations for customElement",
       "description": "CRUD operations for data of type customElement",
       "get": {
@@ -634,7 +753,7 @@
         }
       ]
     },
-    "/tdd/contributer-restriction/instances/{instanceOwnerPartyId}/{instanceGuid}/data/customElement": {
+    "/tdd/contributer-restriction/instances/{instanceOwnerPartyId}/{instanceGuid}/data/type/customElement": {
       "summary": "Operations for customElement",
       "description": "CRUD operations for data of type customElement",
       "post": {
@@ -644,7 +763,7 @@
         "summary": "Create attachment",
         "requestBody": {
           "content": {
-            "application/octet-stream": { }
+            "application/octet-stream": {}
           },
           "required": true
         },
@@ -666,7 +785,7 @@
         }
       ]
     },
-    "/tdd/contributer-restriction/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/9edd53de-f46f-40a1-bb4d-3efb93dc113d": {
+    "/tdd/contributer-restriction/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/type/9edd53de-f46f-40a1-bb4d-3efb93dc113d": {
       "summary": "Operations for 9edd53de-f46f-40a1-bb4d-3efb93dc113d",
       "description": "CRUD operations for data of type 9edd53de-f46f-40a1-bb4d-3efb93dc113d",
       "get": {
@@ -703,7 +822,7 @@
         }
       ]
     },
-    "/tdd/contributer-restriction/instances/{instanceOwnerPartyId}/{instanceGuid}/data/9edd53de-f46f-40a1-bb4d-3efb93dc113d": {
+    "/tdd/contributer-restriction/instances/{instanceOwnerPartyId}/{instanceGuid}/data/type/9edd53de-f46f-40a1-bb4d-3efb93dc113d": {
       "summary": "Operations for 9edd53de-f46f-40a1-bb4d-3efb93dc113d",
       "description": "CRUD operations for data of type 9edd53de-f46f-40a1-bb4d-3efb93dc113d",
       "post": {
@@ -713,7 +832,7 @@
         "summary": "Create attachment",
         "requestBody": {
           "content": {
-            "application/octet-stream": { }
+            "application/octet-stream": {}
           },
           "required": true
         },
@@ -735,7 +854,7 @@
         }
       ]
     },
-    "/tdd/contributer-restriction/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/specificFileType": {
+    "/tdd/contributer-restriction/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/type/specificFileType": {
       "summary": "Operations for specificFileType",
       "description": "CRUD operations for data of type specificFileType",
       "get": {
@@ -772,7 +891,7 @@
         }
       ]
     },
-    "/tdd/contributer-restriction/instances/{instanceOwnerPartyId}/{instanceGuid}/data/specificFileType": {
+    "/tdd/contributer-restriction/instances/{instanceOwnerPartyId}/{instanceGuid}/data/type/specificFileType": {
       "summary": "Operations for specificFileType",
       "description": "CRUD operations for data of type specificFileType",
       "post": {
@@ -782,9 +901,9 @@
         "summary": "Create attachment",
         "requestBody": {
           "content": {
-            "application/pdf": { },
-            "image/png": { },
-            "application/json": { }
+            "application/pdf": {},
+            "image/png": {},
+            "application/json": {}
           },
           "required": true
         },
@@ -806,7 +925,7 @@
         }
       ]
     },
-    "/tdd/contributer-restriction/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/userInteractionUnspecified": {
+    "/tdd/contributer-restriction/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/type/userInteractionUnspecified": {
       "summary": "Operations for userInteractionUnspecified",
       "description": "CRUD operations for data of type userInteractionUnspecified",
       "get": {
@@ -814,10 +933,10 @@
           "FormData userInteractionUnspecified"
         ],
         "summary": "Get data",
-        "description": "Get data for a specific data element\r\n\r\nsee [JSON Schema](/tdd/contributer-restriction/api/jsonschema/userInteractionUnspecified)",
+        "description": "Get data for a specific data element\n\nsee [JSON Schema](/tdd/contributer-restriction/api/jsonschema/userInteractionUnspecified)",
         "responses": {
           "200": {
-            "description": "# Data found\r\n\r\nThe response body contains the data in the format specified by the Accept header.\r\n\r\n",
+            "description": "# Data found\n\nThe response body contains the data in the format specified by the Accept header.\n\n",
             "content": {
               "application/json": {
                 "schema": {
@@ -828,10 +947,9 @@
                 "schema": {
                   "title": "Xml",
                   "type": "string",
-                  "description": "See [xml schema](/tdd/contributer-restriction/xmlSchema/userInteractionUnspecified)",
+                  "description": "See xml schema",
                   "format": "binary"
-                },
-                "example": "<xml></xml>"
+                }
               }
             }
           },
@@ -869,15 +987,33 @@
               "schema": {
                 "title": "Xml",
                 "type": "string",
-                "description": "See [xml schema](/tdd/contributer-restriction/xmlSchema/userInteractionUnspecified)",
+                "description": "See xml schema",
                 "format": "binary"
-              },
-              "example": "<xml></xml>"
+              }
             }
           },
           "required": true
         },
-        "responses": { }
+        "responses": {
+          "200": {
+            "description": "Data replaced"
+          },
+          "400": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "404": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "500": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        }
       },
       "parameters": [
         {
@@ -891,7 +1027,7 @@
         }
       ]
     },
-    "/tdd/contributer-restriction/instances/{instanceOwnerPartyId}/{instanceGuid}/data/userInteractionUnspecified": {
+    "/tdd/contributer-restriction/instances/{instanceOwnerPartyId}/{instanceGuid}/data/type/userInteractionUnspecified": {
       "summary": "Operations for userInteractionUnspecified",
       "description": "CRUD operations for data of type userInteractionUnspecified",
       "post": {
@@ -911,15 +1047,35 @@
               "schema": {
                 "title": "Xml",
                 "type": "string",
-                "description": "See [xml schema](/tdd/contributer-restriction/xmlSchema/userInteractionUnspecified)",
+                "description": "See xml schema",
                 "format": "binary"
-              },
-              "example": "<xml></xml>"
+              }
             }
           },
           "required": true
         },
-        "responses": { }
+        "responses": {
+          "201": {
+            "description": "Data created",
+            "content": {
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataPostResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Failed to add data element",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataPostErrorResponse"
+                }
+              }
+            }
+          }
+        }
       },
       "parameters": [
         {
@@ -933,7 +1089,7 @@
         }
       ]
     },
-    "/tdd/contributer-restriction/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/disallowUserCreate": {
+    "/tdd/contributer-restriction/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/type/disallowUserCreate": {
       "summary": "Operations for disallowUserCreate",
       "description": "CRUD operations for data of type disallowUserCreate",
       "get": {
@@ -941,10 +1097,10 @@
           "FormData disallowUserCreate"
         ],
         "summary": "Get data",
-        "description": "Get data for a specific data element\r\n\r\nsee [JSON Schema](/tdd/contributer-restriction/api/jsonschema/disallowUserCreate)",
+        "description": "Get data for a specific data element\n\nsee [JSON Schema](/tdd/contributer-restriction/api/jsonschema/disallowUserCreate)",
         "responses": {
           "200": {
-            "description": "# Data found\r\n\r\nThe response body contains the data in the format specified by the Accept header.\r\n\r\n",
+            "description": "# Data found\n\nThe response body contains the data in the format specified by the Accept header.\n\n",
             "content": {
               "application/json": {
                 "schema": {
@@ -955,10 +1111,9 @@
                 "schema": {
                   "title": "Xml",
                   "type": "string",
-                  "description": "See [xml schema](/tdd/contributer-restriction/xmlSchema/disallowUserCreate)",
+                  "description": "See xml schema",
                   "format": "binary"
-                },
-                "example": "<xml></xml>"
+                }
               }
             }
           },
@@ -996,15 +1151,33 @@
               "schema": {
                 "title": "Xml",
                 "type": "string",
-                "description": "See [xml schema](/tdd/contributer-restriction/xmlSchema/disallowUserCreate)",
+                "description": "See xml schema",
                 "format": "binary"
-              },
-              "example": "<xml></xml>"
+              }
             }
           },
           "required": true
         },
-        "responses": { }
+        "responses": {
+          "200": {
+            "description": "Data replaced"
+          },
+          "400": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "404": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "500": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        }
       },
       "parameters": [
         {
@@ -1018,7 +1191,7 @@
         }
       ]
     },
-    "/tdd/contributer-restriction/instances/{instanceOwnerPartyId}/{instanceGuid}/data/disallowUserCreate": {
+    "/tdd/contributer-restriction/instances/{instanceOwnerPartyId}/{instanceGuid}/data/type/disallowUserCreate": {
       "summary": "Operations for disallowUserCreate",
       "description": "CRUD operations for data of type disallowUserCreate",
       "post": {
@@ -1038,15 +1211,35 @@
               "schema": {
                 "title": "Xml",
                 "type": "string",
-                "description": "See [xml schema](/tdd/contributer-restriction/xmlSchema/disallowUserCreate)",
+                "description": "See xml schema",
                 "format": "binary"
-              },
-              "example": "<xml></xml>"
+              }
             }
           },
           "required": true
         },
-        "responses": { }
+        "responses": {
+          "201": {
+            "description": "Data created",
+            "content": {
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataPostResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Failed to add data element",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataPostErrorResponse"
+                }
+              }
+            }
+          }
+        }
       },
       "parameters": [
         {
@@ -1060,7 +1253,7 @@
         }
       ]
     },
-    "/tdd/contributer-restriction/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/disallowUserDelete": {
+    "/tdd/contributer-restriction/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/type/disallowUserDelete": {
       "summary": "Operations for disallowUserDelete",
       "description": "CRUD operations for data of type disallowUserDelete",
       "get": {
@@ -1068,10 +1261,10 @@
           "FormData disallowUserDelete"
         ],
         "summary": "Get data",
-        "description": "Get data for a specific data element\r\n\r\nsee [JSON Schema](/tdd/contributer-restriction/api/jsonschema/disallowUserDelete)",
+        "description": "Get data for a specific data element\n\nsee [JSON Schema](/tdd/contributer-restriction/api/jsonschema/disallowUserDelete)",
         "responses": {
           "200": {
-            "description": "# Data found\r\n\r\nThe response body contains the data in the format specified by the Accept header.\r\n\r\n",
+            "description": "# Data found\n\nThe response body contains the data in the format specified by the Accept header.\n\n",
             "content": {
               "application/json": {
                 "schema": {
@@ -1082,10 +1275,9 @@
                 "schema": {
                   "title": "Xml",
                   "type": "string",
-                  "description": "See [xml schema](/tdd/contributer-restriction/xmlSchema/disallowUserDelete)",
+                  "description": "See xml schema",
                   "format": "binary"
-                },
-                "example": "<xml></xml>"
+                }
               }
             }
           },
@@ -1123,15 +1315,33 @@
               "schema": {
                 "title": "Xml",
                 "type": "string",
-                "description": "See [xml schema](/tdd/contributer-restriction/xmlSchema/disallowUserDelete)",
+                "description": "See xml schema",
                 "format": "binary"
-              },
-              "example": "<xml></xml>"
+              }
             }
           },
           "required": true
         },
-        "responses": { }
+        "responses": {
+          "200": {
+            "description": "Data replaced"
+          },
+          "400": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "404": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "500": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        }
       },
       "parameters": [
         {
@@ -1145,7 +1355,7 @@
         }
       ]
     },
-    "/tdd/contributer-restriction/instances/{instanceOwnerPartyId}/{instanceGuid}/data/disallowUserDelete": {
+    "/tdd/contributer-restriction/instances/{instanceOwnerPartyId}/{instanceGuid}/data/type/disallowUserDelete": {
       "summary": "Operations for disallowUserDelete",
       "description": "CRUD operations for data of type disallowUserDelete",
       "post": {
@@ -1165,15 +1375,35 @@
               "schema": {
                 "title": "Xml",
                 "type": "string",
-                "description": "See [xml schema](/tdd/contributer-restriction/xmlSchema/disallowUserDelete)",
+                "description": "See xml schema",
                 "format": "binary"
-              },
-              "example": "<xml></xml>"
+              }
             }
           },
           "required": true
         },
-        "responses": { }
+        "responses": {
+          "201": {
+            "description": "Data created",
+            "content": {
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataPostResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Failed to add data element",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataPostErrorResponse"
+                }
+              }
+            }
+          }
+        }
       },
       "parameters": [
         {
@@ -1447,6 +1677,9 @@
         "additionalProperties": false
       },
       "DataElement": {
+        "required": [
+          "id"
+        ],
         "type": "object",
         "properties": {
           "created": {
@@ -1468,8 +1701,7 @@
             "nullable": true
           },
           "id": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "instanceGuid": {
             "type": "string",
@@ -1554,6 +1786,9 @@
         "additionalProperties": false
       },
       "Instance": {
+        "required": [
+          "id"
+        ],
         "type": "object",
         "properties": {
           "created": {
@@ -1575,8 +1810,7 @@
             "nullable": true
           },
           "id": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "instanceOwner": {
             "$ref": "#/components/schemas/InstanceOwner"
@@ -1669,6 +1903,7 @@
                 "nullable": true
               }
             },
+            "additionalProperties": false,
             "description": "Only one of these should be spcecified when creating a new inistance"
           },
           "dueBefore": {
@@ -1773,7 +2008,7 @@
             "type": "string",
             "format": "uuid"
           },
-          "data": { }
+          "data": {}
         },
         "additionalProperties": false
       },
@@ -1802,6 +2037,47 @@
           }
         },
         "additionalProperties": false
+      },
+      "DataPatchError": {
+        "required": [
+          "dataElementId",
+          "patchOperationIndex",
+          "previousModel"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "detail": {
+            "type": "string",
+            "nullable": true
+          },
+          "instance": {
+            "type": "string",
+            "nullable": true
+          },
+          "previousModel": {},
+          "dataElementId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "patchOperationIndex": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": {}
       },
       "ShadowFields": {
         "type": "object",
@@ -1855,11 +2131,13 @@
         "additionalProperties": false
       },
       "DataType": {
+        "required": [
+          "id"
+        ],
         "type": "object",
         "properties": {
           "id": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "description": {
             "type": "object",
@@ -1960,11 +2238,13 @@
         "additionalProperties": false
       },
       "DataField": {
+        "required": [
+          "id"
+        ],
         "type": "object",
         "properties": {
           "id": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "path": {
             "type": "string",
@@ -2143,6 +2423,9 @@
         "additionalProperties": false
       },
       "ApplicationMetadata": {
+        "required": [
+          "id"
+        ],
         "type": "object",
         "properties": {
           "created": {
@@ -2241,8 +2524,7 @@
             "type": "boolean"
           },
           "id": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "features": {
             "type": "object",
@@ -2266,7 +2548,7 @@
             "nullable": true
           }
         },
-        "additionalProperties": { }
+        "additionalProperties": {}
       },
       "SimpleKeyvalues": {
         "type": "object",
@@ -2388,6 +2670,74 @@
           }
         },
         "additionalProperties": false
+      },
+      "DataPostResponse": {
+        "required": [
+          "instance",
+          "newDataElementId",
+          "newDataModels",
+          "validationIssues"
+        ],
+        "type": "object",
+        "properties": {
+          "newDataElementId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "instance": {
+            "$ref": "#/components/schemas/Instance"
+          },
+          "validationIssues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationSourcePair"
+            }
+          },
+          "newDataModels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DataModelPairResponse"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "DataPostErrorResponse": {
+        "required": [
+          "uploadValidationIssues"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "detail": {
+            "type": "string",
+            "nullable": true
+          },
+          "instance": {
+            "type": "string",
+            "nullable": true
+          },
+          "uploadValidationIssues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationIssueWithSource"
+            },
+            "readOnly": true
+          }
+        },
+        "additionalProperties": {}
       }
     },
     "responses": {
@@ -2423,7 +2773,8 @@
                   "type": "string",
                   "nullable": true
                 }
-              }
+              },
+              "additionalProperties": false
             }
           }
         }
@@ -2445,7 +2796,8 @@
         "description": "The guid part of instance.Id",
         "required": true,
         "schema": {
-          "type": "guid"
+          "type": "string",
+          "format": "guid"
         }
       },
       "dataGuid": {
@@ -2454,7 +2806,8 @@
         "description": "Id of this data element that belongs to an instance",
         "required": true,
         "schema": {
-          "type": "guid"
+          "type": "string",
+          "format": "guid"
         }
       },
       "language": {
@@ -2471,7 +2824,7 @@
     "securitySchemes": {
       "AltinnToken": {
         "type": "http",
-        "description": "Get a token for [localtest](http://local.altinn.cloud/Home/Tokens)\r\nor by exchanging a maskinporten token with the [token exchange endpoint](https://docs.altinn.studio/api/authentication/spec/#/Authentication/get_exchange__tokenProvider_)",
+        "description": "Get a token for [localtest](http://local.altinn.cloud/Home/Tokens)\nor by exchanging a maskinporten token with the [token exchange endpoint](https://docs.altinn.studio/api/authentication/spec/#/Authentication/get_exchange__tokenProvider_)",
         "scheme": "Bearer",
         "bearerFormat": "JWT"
       }
@@ -2479,7 +2832,7 @@
   },
   "security": [
     {
-      "AltinnToken": [ ]
+      "AltinnToken": []
     }
   ],
   "externalDocs": {

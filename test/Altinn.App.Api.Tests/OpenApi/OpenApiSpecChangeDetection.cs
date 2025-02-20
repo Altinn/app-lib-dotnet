@@ -1,3 +1,4 @@
+using Argon;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit.Abstractions;
 
@@ -16,8 +17,10 @@ public class OpenApiSpecChangeDetection : ApiTestBase, IClassFixture<WebApplicat
         HttpResponseMessage response = await client.GetAsync("/swagger/v1/swagger.json");
         string openApiSpec = await response.Content.ReadAsStringAsync();
         response.EnsureSuccessStatusCode();
-        await File.WriteAllTextAsync("../../../OpenApi/swagger.json", openApiSpec);
-        await VerifyJson(openApiSpec);
+        // Keep updating the old file from before I figured out how Verify
+        // could generate a valid json
+        // await File.WriteAllTextAsync("../../../OpenApi/swagger.json", openApiSpec);
+        await VerifyJson(openApiSpec, _verifySettings);
     }
 
     [Fact]
@@ -30,7 +33,22 @@ public class OpenApiSpecChangeDetection : ApiTestBase, IClassFixture<WebApplicat
         HttpResponseMessage response = await client.GetAsync($"/{org}/{app}/v1/customOpenapi.json");
         string openApiSpec = await response.Content.ReadAsStringAsync();
         response.EnsureSuccessStatusCode();
-        await File.WriteAllTextAsync("../../../OpenApi/customSwagger.json", openApiSpec);
-        await VerifyJson(openApiSpec).AutoVerify();
+        // Keep updating the old file from before I figured out how Verify
+        // could generate a valid json
+        // await File.WriteAllTextAsync("../../../OpenApi/customSwagger.json", openApiSpec);
+        await VerifyJson(openApiSpec, _verifySettings);
+    }
+
+    private static VerifySettings _verifySettings
+    {
+        get
+        {
+            VerifySettings settings = new();
+            settings.UseStrictJson();
+            settings.DontScrubGuids();
+            settings.DontIgnoreEmptyCollections();
+            settings.AddExtraSettings(settings => settings.MetadataPropertyHandling = MetadataPropertyHandling.Ignore);
+            return settings;
+        }
     }
 }

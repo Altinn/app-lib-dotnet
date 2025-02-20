@@ -533,7 +533,7 @@ public class DataController : ControllerBase
             }
             var (instance, dataTypeObject, dataElement) = instanceResult.Ok;
 
-            if (dataTypeObject.Id != dataType)
+            if (dataType is not null && dataTypeObject.Id != dataType)
             {
                 return BadRequest(
                     $"Data type {dataType} does not match data element {dataGuid}, which is of type {dataTypeObject.Id}"
@@ -620,7 +620,7 @@ public class DataController : ControllerBase
             }
 
             if (
-                DataElementAccessChecker.GetUpdateProblem(instance, dataType, _authenticationContext.Current) is
+                DataElementAccessChecker.GetUpdateProblem(instance, dataTypeObject, _authenticationContext.Current) is
                 { } accessProblem
             )
             {

@@ -110,19 +110,17 @@ public class InternalPatchService
             if (!patchResult.IsSuccess)
             {
                 bool testOperationFailed = patchResult.Error.Contains("is not equal to the indicated value.");
-                return new ProblemDetails()
+                return new DataPatchError()
                 {
                     Title = testOperationFailed ? "Precondition in patch failed" : "Patch Operation Failed",
                     Detail = patchResult.Error,
                     Type = "https://datatracker.ietf.org/doc/html/rfc6902/",
                     Status = testOperationFailed
-                        ? (int)HttpStatusCode.Conflict
-                        : (int)HttpStatusCode.UnprocessableContent,
-                    Extensions = new Dictionary<string, object?>()
-                    {
-                        { "previousModel", oldModel },
-                        { "patchOperationIndex", patchResult.Operation },
-                    },
+                        ? StatusCodes.Status409Conflict
+                        : StatusCodes.Status422UnprocessableEntity,
+                    PreviousModel = oldModel,
+                    DataElementId = dataElementGuid,
+                    PatchOperationIndex = patchResult.Operation,
                 };
             }
 
