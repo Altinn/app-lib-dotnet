@@ -303,6 +303,75 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
     }
 
     [Fact]
+    public async Task RunProcessNext_FailingValidator_Reject_ReturnsOk()
+    {
+        var dataValidator = new Mock<IFormDataValidator>(MockBehavior.Strict);
+        dataValidator.Setup(v => v.DataType).Returns("*");
+        dataValidator.Setup(v => v.ValidationSource).Returns("test-source");
+        dataValidator
+            .Setup(v =>
+                v.ValidateFormData(
+                    It.IsAny<Instance>(),
+                    It.IsAny<DataElement>(),
+                    It.IsAny<object>(),
+                    It.IsAny<string>()
+                )
+            )
+            .ReturnsAsync(
+                new List<ValidationIssue>
+                {
+                    new()
+                    {
+                        Code = "test-code",
+                        Description = "test-description",
+                        Severity = ValidationIssueSeverity.Error,
+                    },
+                }
+            );
+
+        OverrideServicesForThisTest = (services) =>
+        {
+            services.AddSingleton(dataValidator.Object);
+            services.AddTelemetrySink(
+                shouldAlsoListenToActivities: (sp, source) => source.Name == "Microsoft.AspNetCore",
+                activityFilter: this.ActivityFilter
+            );
+        };
+
+        using var client = GetRootedUserClient(Org, App, 1337, InstanceOwnerPartyId);
+
+        string processNextWithReject = JsonSerializer.Serialize(
+            new ProcessNext() { Action = "reject" },
+            _jsonSerializerOptions
+        );
+
+        using var processNextWithRejectStringContent = new StringContent(
+            processNextWithReject,
+            Encoding.UTF8,
+            "application/json"
+        );
+
+        var nextResponse = await client.PutAsync(
+            $"{Org}/{App}/instances/{_instanceId}/process/next",
+            processNextWithRejectStringContent
+        );
+
+        var nextResponseContent = await nextResponse.Content.ReadAsStringAsync();
+        OutputHelper.WriteLine(nextResponseContent);
+        nextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
+        using var document = JsonDocument.Parse(nextResponseContent);
+        document.RootElement.EnumerateObject().Should().NotContain(p => p.Name == "validationIssues");
+
+        var telemetry = this.Services.GetRequiredService<TelemetrySink>();
+        // Verify that the instance is updated to the ended state
+        var instance = await TestData.GetInstance(Org, App, InstanceOwnerPartyId, _instanceGuid);
+        instance.Process.CurrentTask.Should().BeNull();
+        instance.Process.EndEvent.Should().Be("EndEvent_1");
+
+        await telemetry.SnapshotActivities();
+    }
+
+    [Fact]
     public async Task RunProcessNext_DataFromHiddenComponents_GetsRemoved()
     {
         // Override config to remove hidden data

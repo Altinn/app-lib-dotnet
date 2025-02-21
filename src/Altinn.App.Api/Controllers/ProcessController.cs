@@ -309,7 +309,7 @@ public class ProcessController : ControllerBase
         {
             Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
 
-            var currentTaskId = instance.Process.CurrentTask?.ElementId;
+            string? currentTaskId = instance.Process.CurrentTask?.ElementId;
 
             if (currentTaskId is null)
             {
@@ -342,7 +342,23 @@ public class ProcessController : ControllerBase
                 );
             }
 
-            string? checkedAction = EnsureActionNotTaskType(processNext?.Action ?? altinnTaskType);
+            AltinnTaskExtension? actions = _processReader.GetAltinnTaskExtension(currentTaskId);
+            if (processNext?.Action != null)
+            {
+                if (actions?.AltinnActions?.Select(x => x.Value).Contains(processNext.Action) is false)
+                {
+                    return Conflict(
+                        new ProblemDetails()
+                        {
+                            Status = StatusCodes.Status409Conflict,
+                            Title = $"The action '{processNext.Action}' is not allowed for task '{currentTaskId}'!",
+                        }
+                    );
+                }
+            }
+
+            string checkedAction = EnsureActionNotTaskType(processNext?.Action ?? altinnTaskType);
+
             bool authorized = await AuthorizeAction(
                 checkedAction,
                 org,
@@ -366,6 +382,7 @@ public class ProcessController : ControllerBase
             }
 
             _logger.LogDebug("User is authorized to perform action {Action}", checkedAction);
+
             var request = new ProcessNextRequest()
             {
                 Instance = instance,
@@ -373,13 +390,28 @@ public class ProcessController : ControllerBase
                 Action = checkedAction,
                 Language = language,
             };
-            var validationProblem = await GetValidationProblemDetails(instance, currentTaskId, language);
-            if (validationProblem is not null)
+
+            if (checkedAction == "reject")
             {
-                return Conflict(validationProblem);
+                _logger.LogInformation(
+                    "Skipping validation during process next because the action is 'reject' and the task is being abandoned."
+                );
+            }
+            else
+            {
+                ProblemDetails? validationProblem = await GetValidationProblemDetails(
+                    instance,
+                    currentTaskId,
+                    language
+                );
+                if (validationProblem is not null)
+                {
+                    return Conflict(validationProblem);
+                }
             }
 
-            var result = await _processEngine.Next(request);
+            ProcessChangeResult result = await _processEngine.Next(request);
+
             if (!result.Success)
             {
                 return GetResultForError(result);
