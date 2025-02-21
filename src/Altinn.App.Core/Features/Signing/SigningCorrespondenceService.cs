@@ -1,4 +1,5 @@
 using System.Globalization;
+using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Exceptions;
 using Altinn.App.Core.Features.Correspondence;
@@ -8,6 +9,7 @@ using Altinn.App.Core.Features.Signing.Enums;
 using Altinn.App.Core.Features.Signing.Helpers;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
@@ -20,6 +22,7 @@ using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Signee = Altinn.App.Core.Internal.Sign.Signee;
 
 namespace Altinn.App.Core.Features.Signing;
@@ -30,7 +33,8 @@ internal sealed class SigningCorrespondenceService(
     IHostEnvironment hostEnvironment,
     IAppResources appResources,
     IAppMetadata appMetadata,
-    ILogger<SigningCorrespondenceService> logger
+    ILogger<SigningCorrespondenceService> logger,
+    IOptions<GeneralSettings> settings
 ) : ISigningCorrespondenceService
 {
     private readonly ICorrespondenceClient _correspondenceClient = correspondenceClient;
@@ -39,6 +43,7 @@ internal sealed class SigningCorrespondenceService(
     private readonly IAppResources _appResources = appResources;
     private readonly IAppMetadata _appMetadata = appMetadata;
     private readonly ILogger<SigningCorrespondenceService> _logger = logger;
+    private readonly UrlHelper _urlHelper = new(settings);
 
     public async Task<SendCorrespondenceResponse?> SendSignConfirmationCorrespondence(
         InstanceIdentifier instanceIdentifier,
@@ -235,14 +240,14 @@ internal sealed class SigningCorrespondenceService(
             );
         }
 
-        CorrespondenceContent content = await GetContent(appIdentifier, appMetadata, serviceOwnerParty);
+        string instanceUrl = _urlHelper.GetInstanceUrl(appIdentifier, instanceIdentifier);
+        CorrespondenceContent content = await GetContent(appIdentifier, appMetadata, serviceOwnerParty, instanceUrl);
         string? emailBody = notification?.Email?.Body;
         string? emailSubject = notification?.Email?.Subject;
         string? smsBody = notification?.Sms?.Body;
 
 
         // TODO: Language support
-        // TODO: Add link to app instance in the correspondence body
         // TODO: Tests
         return await _correspondenceClient.Send(
             new SendCorrespondencePayload(
@@ -301,7 +306,8 @@ internal sealed class SigningCorrespondenceService(
         async Task<CorrespondenceContent> GetContent(
             AppIdentifier appIdentifier,
             ApplicationMetadata appMetadata,
-            Party senderParty
+            Party senderParty,
+            string instanceUrl
         )
         {
             TextResource? textResource = null;
@@ -348,7 +354,7 @@ internal sealed class SigningCorrespondenceService(
             {
                 Title = $"{appName}: Oppgave til signering",
                 Summary = $"Din signatur ventes for {appName}.",
-                Body = $"Du har mottatt en oppgave som krever din signatur. <br /><br /> Hvis du lurer på noe, kan du kontakte {appOwner}.",
+                Body = $"Du har en oppgave som venter på din signatur. <a href=\"{instanceUrl}\">Klikk her for å åpne applikasjonen</a>.<br /><br />Hvis du lurer på noe, kan du kontakte {appOwner}.",
             };
 
             CorrespondenceContent content = new()
