@@ -20,6 +20,7 @@
     <PackageReference Include="Altinn.Platform.Storage.Interface" Version="4.0.7" />
     <PackageReference Include="JsonPatch.Net" Version="3.3.0" />
     <PackageReference Include="JWTCookieAuthentication" Version="3.0.1" />
+    <PackageReference Include="libphonenumber-csharp" Version="8.13.55" />
     <!-- The follwoing are depencencies for JWTCookieAuthentication, but we need newer versions-->
     <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.3.1" />
     <PackageReference Include="Microsoft.Rest.ClientRuntime" Version="2.3.24" />

@@ -1,18 +1,18 @@
-using System.Text.RegularExpressions;
+using System.Text.Json;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Models.Notifications.Email;
 using Altinn.App.Core.Models.Notifications.Sms;
+using Altinn.App.Core.Models.Result;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using PhoneNumbers;
 using static Altinn.App.Core.Features.Telemetry.NotifySigneesConst;
 
 namespace Altinn.App.Core.Features.Signing;
 
 internal sealed partial class SigningNotificationService : ISigningNotificationService
 {
-    [GeneratedRegex("^\\+(\\d{2})\\d{8}$|^00(\\d{2})\\d{8}$|^\\d{8}$")]
-    private static partial Regex PhoneRegex();
-
     private readonly string _defaultCountryCode = "+47";
 
     private readonly ILogger<SigningNotificationService> _logger;
@@ -103,22 +103,13 @@ internal sealed partial class SigningNotificationService : ISigningNotificationS
             return (false, "No implementation of ISmsNotificationClient registered. Unable to send notification.");
         }
 
-        if (string.IsNullOrEmpty(sms.MobileNumber))
+        var validationResult = ValidatePhoneNumber(sms.MobileNumber, ct ?? new CancellationToken());
+        if (!validationResult.Success)
         {
-            return (false, "No mobile number provided. Unable to send SMS notification.");
+            return (false, validationResult.Error?.Message);
         }
 
-        var phoneRegex = PhoneRegex();
-        if (!phoneRegex.IsMatch(sms.MobileNumber))
-        {
-            return (false, "Invalid mobile number provided. Unable to send SMS notification.");
-        }
-
-        if (phoneRegex.IsMatch(sms.MobileNumber) && sms.MobileNumber.Length == 8)
-        {
-            sms.MobileNumber = _defaultCountryCode + sms.MobileNumber;
-            return await TrySendSms(sms, ct);
-        }
+        sms.MobileNumber = validationResult.Ok;
 
         var notification = new SmsNotification()
         {
@@ -135,7 +126,7 @@ internal sealed partial class SigningNotificationService : ISigningNotificationS
         }
         catch (SmsNotificationException ex)
         {
-            _logger.LogError(ex.Message, ex);
+            _logger.LogError(ex.Message, JsonSerializer.Serialize(ex));
             return (false, "Failed to send SMS notification: " + ex.Message);
         }
     }
@@ -185,5 +176,37 @@ internal sealed partial class SigningNotificationService : ISigningNotificationS
     internal static string GetEmailSubject(Email email)
     {
         return email.Subject ?? NotificationDefaults.EmailSubject;
+    }
+
+    private ServiceResult<string, BadHttpRequestException> ValidatePhoneNumber(
+        string? phoneNumber,
+        CancellationToken ct
+    )
+    {
+        if (string.IsNullOrEmpty(phoneNumber))
+        {
+            return new BadHttpRequestException("No mobile number provided. Unable to send SMS notification.");
+        }
+
+        if (phoneNumber.Length == 8)
+        {
+            phoneNumber = _defaultCountryCode + phoneNumber;
+        }
+
+        var phoneNumberUtil = PhoneNumberUtil.GetInstance();
+        try
+        {
+            var number = phoneNumberUtil.Parse(phoneNumber, null);
+            if (!phoneNumberUtil.IsValidNumber(number))
+            {
+                return new BadHttpRequestException("Invalid mobile number provided. Unable to send SMS notification.");
+            }
+        }
+        catch (NumberParseException)
+        {
+            return new BadHttpRequestException("Invalid mobile number provided. Unable to send SMS notification.");
+        }
+
+        return phoneNumber;
     }
 }
