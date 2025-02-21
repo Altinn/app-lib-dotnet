@@ -147,9 +147,7 @@ public class SigningController : ControllerBase
                             Organisation = organisation,
                             HasSigned = signeeContext.SignDocument is not null,
                             DelegationSuccessful = signeeContext.SigneeState.IsAccessDelegated,
-                            NotificationSuccessful = (
-                                signeeContext.SigneeState is { CallToSignFailedReason: null }
-                            ),
+                            NotificationSuccessful = signeeContext.SigneeState is { CallToSignFailedReason: null },
                             PartyId = signeeContext.Signee.GetParty().PartyId,
                         };
                     })

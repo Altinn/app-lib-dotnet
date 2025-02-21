@@ -246,7 +246,6 @@ internal sealed class SigningCorrespondenceService(
         string? emailSubject = notification?.Email?.Subject;
         string? smsBody = notification?.Sms?.Body;
 
-
         // TODO: Language support
         // TODO: Tests
         return await _correspondenceClient.Send(

@@ -146,7 +146,7 @@ internal sealed class SigningService(
                         PersonOnBehalfOfOrgSignee personOnBehalfOfOrgSignee => await altinnPartyClient.LookupParty(
                             new PartyLookup { Ssn = personOnBehalfOfOrgSignee.SocialSecurityNumber }
                         ),
-                        _ => throw new SigningException("Signee is neither a person nor an organisation")
+                        _ => throw new SigningException("Signee is neither a person nor an organisation"),
                     };
 
                     await _signingCorrespondenceService.SendSignCallToActionCorrespondence(
