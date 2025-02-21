@@ -141,15 +141,19 @@ public class SigningController : ControllerBase
                                 break;
                         }
 
+                        var signeeState = signeeContext.SigneeState;
+
                         return new SigneeState
                         {
                             Name = name,
                             Organisation = organisation,
                             HasSigned = signeeContext.SignDocument is not null,
-                            DelegationSuccessful = signeeContext.SigneeState.IsAccessDelegated,
+                            DelegationSuccessful = signeeState.IsAccessDelegated,
                             NotificationSuccessful = (
-                                signeeContext.SigneeState is
-                                { SignatureRequestEmailNotSentReason: null, SignatureRequestSmsNotSentReason: null }
+                                signeeState.SignatureRequestEmailSent is true
+                                    && signeeState.SignatureRequestEmailNotSentReason is null
+                                || signeeState.SignatureRequestSmsSent is true
+                                    && signeeState.SignatureRequestSmsNotSentReason is null
                             ),
                             PartyId = signeeContext.Signee.GetParty().PartyId,
                         };
