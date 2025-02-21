@@ -135,7 +135,19 @@ internal sealed class SigningService(
 
                 try
                 {
-                    Party signingParty = signeeContext.OriginalParty;
+                    Party signingParty = signeeContext.Signee switch
+                    {
+                        PersonSignee personSignee => await altinnPartyClient.LookupParty(
+                            new PartyLookup { Ssn = personSignee.SocialSecurityNumber }
+                        ),
+                        OrganisationSignee orgSignee => await altinnPartyClient.LookupParty(
+                            new PartyLookup { OrgNo = orgSignee.OrgNumber }
+                        ),
+                        PersonOnBehalfOfOrgSignee personOnBehalfOfOrgSignee => await altinnPartyClient.LookupParty(
+                            new PartyLookup { Ssn = personOnBehalfOfOrgSignee.SocialSecurityNumber }
+                        ),
+                        _ => throw new SigningException("Signee is neither a person nor an organisation")
+                    };
 
                     await _signingCorrespondenceService.SendSignCallToActionCorrespondence(
                         signeeContext.Notifications?.OnSignatureAccessRightsDelegated,
