@@ -1,5 +1,7 @@
 using Altinn.Platform.Storage.Interface.Models;
 
+namespace Altinn.App.Core.Extensions;
+
 internal static class TextResourceExtensions
 {
     /// <summary>
