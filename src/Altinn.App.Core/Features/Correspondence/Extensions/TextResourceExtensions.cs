@@ -8,8 +8,12 @@ internal static class TextResourceExtensions
     /// <param name="resource">The text resource.</param>
     /// <param name="key">The key to look up.</param>
     /// <returns>The value if found; otherwise, null.</returns>
-    public static string? GetText(this TextResource resource, string key)
+    public static string? GetText(this TextResource resource, string? key)
     {
+        if (key is null)
+        {
+            return null;
+        }
         return resource.Resources?.FirstOrDefault(x => x.Id.Equals(key, StringComparison.Ordinal))?.Value;
     }
 

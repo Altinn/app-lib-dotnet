@@ -69,16 +69,18 @@ internal sealed class SigningCallToActionService(
             recipientProfile = await _profileClient.GetUserProfile(recipient.SSN);
         }
         string recipientLanguage = recipientProfile?.ProfileSettingPreference.Language ?? LanguageConst.Nb;
-        CorrespondenceContent content = await GetContent(
+        ContentWrapper contentWrapper = await GetContent(
+            notification,
             appIdentifier,
             applicationMetadata,
             serviceOwnerParty,
             instanceUrl,
             recipientLanguage
         );
-        string? emailBody = notification?.Email?.BodyTextResourceKey;
-        string? emailSubject = notification?.Email?.SubjectTextResourceKey;
-        string? smsBody = notification?.Sms?.TextResourceKey;
+        CorrespondenceContent correspondenceContent = contentWrapper.CorrespondenceContent;
+        string? emailBody = contentWrapper.EmailBody;
+        string? emailSubject = contentWrapper.EmailSubject;
+        string? smsBody = contentWrapper.SmsBody;
 
         // TODO: Tests
         return await _correspondenceClient.Send(
@@ -90,7 +92,7 @@ internal sealed class SigningCallToActionService(
                     .WithSendersReference(instanceIdentifier.ToString())
                     .WithRecipient(recipient.IsPerson ? recipient.SSN : recipient.OrganisationNumber)
                     .WithAllowSystemDeleteAfter(DateTime.Now.AddYears(1))
-                    .WithContent(content)
+                    .WithContent(correspondenceContent)
                     .WithNotificationIfConfigured(
                         SigningCorrespondanceHelper.GetNotificationChoice(notification) switch
                         {
@@ -100,7 +102,7 @@ internal sealed class SigningCallToActionService(
                                     ? CorrespondenceNotificationTemplate.CustomMessage
                                     : CorrespondenceNotificationTemplate.GenericAltinnMessage,
                                 NotificationChannel = CorrespondenceNotificationChannel.Email,
-                                EmailSubject = emailSubject ?? content.Title,
+                                EmailSubject = emailSubject ?? correspondenceContent.Title,
                                 EmailBody = emailBody,
                                 SendersReference = instanceIdentifier.ToString(),
                                 SendReminder = true,
@@ -121,7 +123,7 @@ internal sealed class SigningCallToActionService(
                                     ? CorrespondenceNotificationTemplate.CustomMessage
                                     : CorrespondenceNotificationTemplate.GenericAltinnMessage,
                                 NotificationChannel = CorrespondenceNotificationChannel.EmailPreferred, // TODO: document
-                                EmailSubject = emailSubject ?? content.Title,
+                                EmailSubject = emailSubject ?? correspondenceContent.Title,
                                 EmailBody = emailBody,
                                 SmsBody = smsBody,
                                 SendersReference = instanceIdentifier.ToString(),
@@ -136,7 +138,8 @@ internal sealed class SigningCallToActionService(
         );
     }
 
-    internal async Task<CorrespondenceContent> GetContent(
+    internal async Task<ContentWrapper> GetContent(
+        Notification? notification,
         AppIdentifier appIdentifier,
         ApplicationMetadata appMetadata,
         Party senderParty,
@@ -145,9 +148,12 @@ internal sealed class SigningCallToActionService(
     )
     {
         TextResource? textResource = null;
-        string? title = null;
-        string? summary = null;
-        string? body = null;
+        string? correspondenceTitle = null;
+        string? correspondenceSummary = null;
+        string? correspondenceBody = null;
+        string? smsBody = null;
+        string? emailBody = null;
+        string? emailSubject = null;
         string? appName = null;
 
         string appOwner = senderParty.Name ?? appMetadata.Org;
@@ -162,11 +168,15 @@ internal sealed class SigningCallToActionService(
                 await _appResources.GetTexts(appIdentifier.Org, appIdentifier.App, language)
                 ?? throw new InvalidOperationException($"No text resource found for language ({language})");
 
-            title = textResource.GetText("signing.cta_title"); // TODO: Document these text keys
-            summary = textResource.GetText("signing.cta_summary"); // TODO: Document these text keys
-            body = textResource.GetText("signing.cta_body"); // TODO: Document these text keys
-            body = body?.Replace("$InstanceUrl", instanceUrl, StringComparison.InvariantCultureIgnoreCase);
+            correspondenceTitle = textResource.GetText("signing.cta_title"); // TODO: Document these text keys
+            correspondenceSummary = textResource.GetText("signing.cta_summary"); // TODO: Document these text keys
+            correspondenceBody = textResource.GetText("signing.cta_body"); // TODO: Document these text keys
+            correspondenceBody = correspondenceBody?.Replace("$InstanceUrl", instanceUrl, StringComparison.InvariantCultureIgnoreCase);
             appName = textResource.GetFirstMatchingText("appName", "ServiceName");
+
+            smsBody = textResource.GetText(notification?.Sms?.TextResourceKey);
+            emailBody = textResource.GetText(notification?.Email?.BodyTextResourceKey);
+            emailSubject = textResource.GetText(notification?.Email?.SubjectTextResourceKey);
         }
         catch (Exception e)
         {
@@ -183,15 +193,19 @@ internal sealed class SigningCallToActionService(
         }
 
         var defaults = GetDefaultTexts(instanceUrl, language, appName, appOwner);
-
-        CorrespondenceContent content = new()
-        {
-            Language = LanguageCode<Iso6391>.Parse(textResource?.Language ?? language),
-            Title = title ?? defaults.Title,
-            Summary = summary ?? defaults.Summary,
-            Body = body ?? defaults.Body,
+        ContentWrapper contentWrapper = new (){
+            CorrespondenceContent = new CorrespondenceContent()
+            {
+                Language = LanguageCode<Iso6391>.Parse(textResource?.Language ?? language),
+                Title = correspondenceTitle ?? defaults.Title,
+                Summary = correspondenceSummary ?? defaults.Summary,
+                Body = correspondenceBody ?? defaults.Body,
+            },
+            SmsBody = smsBody,
+            EmailBody = emailBody,
+            EmailSubject = emailSubject,
         };
-        return content;
+        return contentWrapper;
     }
 
     /// <summary>
