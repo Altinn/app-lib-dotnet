@@ -5,6 +5,7 @@ using Altinn.App.Core.Features.Correspondence;
 using Altinn.App.Core.Features.Correspondence.Builder;
 using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Features.Signing.Interfaces;
+using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
@@ -181,12 +182,7 @@ internal sealed class SigningReceiptService(
             appName = defaultAppName;
         }
 
-        var defaults = new // TODO: Add language support, and use profile
-        {
-            Title = $"{appName}: Signeringen er bekreftet",
-            Summary = $"Du har signert for {appName}.",
-            Body = $"Dokumentene du har signert er vedlagt. Disse kan lastes ned om ønskelig. <br /><br />Hvis du lurer på noe, kan du kontakte {appOwner}.",
-        };
+        var defaults = GetDefaultTexts(context.Language ?? defaultLanguage, appName, appOwner);
 
         CorrespondenceContent content = new()
         {
@@ -270,5 +266,39 @@ internal sealed class SigningReceiptService(
         }
 
         return $"{filename}{extension}";
+    }
+
+    /// <summary>
+    /// Gets the default texts for the given language.
+    /// </summary>
+    /// <param name="language">The language to get the texts for</param>
+    /// <param name="appName">The name of the app</param>
+    /// <param name="appOwner">The owner of the app</param>
+    internal static DefaultTexts GetDefaultTexts(string language, string appName, string appOwner)
+    {
+        return language switch
+        {
+            LanguageConst.En => new DefaultTexts
+            {
+                Title = $"{appName}: Signature confirmed",
+                Summary = $"Your signature has been registered for {appName}.",
+                Body =
+                    $"The signed documents are attached. They may be downloaded. <br /><br />If you have any questions, you can contact {appOwner}.",
+            },
+            LanguageConst.Nn => new DefaultTexts
+            {
+                Title = $"{appName}: Signeringa er stadfesta",
+                Summary = $"Du har signert for {appName}.",
+                Body =
+                    $"Dokumenta du har signert er vedlagde. Dei kan lastast ned om ønskeleg. <br /><br />Om du lurer på noko, kan du kontakte {appOwner}.",
+            },
+            LanguageConst.Nb or _ => new DefaultTexts
+            {
+                Title = $"{appName}: Signeringen er bekreftet",
+                Summary = $"Du har signert for {appName}.",
+                Body =
+                    $"Dokumentene du har signert er vedlagt. Disse kan lastes ned om ønskelig. <br /><br />Hvis du lurer på noe, kan du kontakte {appOwner}.",
+            },
+        };
     }
 }
