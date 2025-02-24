@@ -1,8 +1,6 @@
 using System.Globalization;
-using System.Net;
 using System.Security.Claims;
 using Altinn.App.Core.Extensions;
-using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Mvc;
 
