@@ -103,7 +103,7 @@ internal sealed partial class SigningNotificationService : ISigningNotificationS
             return (false, "No implementation of ISmsNotificationClient registered. Unable to send notification.");
         }
 
-        var validationResult = ValidatePhoneNumber(sms.MobileNumber, ct ?? new CancellationToken());
+        var validationResult = ValidatePhoneNumber(sms.MobileNumber);
         if (!validationResult.Success)
         {
             return (false, validationResult.Error?.Message);
@@ -178,10 +178,7 @@ internal sealed partial class SigningNotificationService : ISigningNotificationS
         return email.Subject ?? NotificationDefaults.EmailSubject;
     }
 
-    private ServiceResult<string, BadHttpRequestException> ValidatePhoneNumber(
-        string? phoneNumber,
-        CancellationToken ct
-    )
+    private ServiceResult<string, BadHttpRequestException> ValidatePhoneNumber(string? phoneNumber)
     {
         if (string.IsNullOrEmpty(phoneNumber))
         {
