@@ -1,0 +1,231 @@
+using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Constants;
+using Altinn.App.Core.Exceptions;
+using Altinn.App.Core.Features.Correspondence;
+using Altinn.App.Core.Features.Correspondence.Builder;
+using Altinn.App.Core.Features.Correspondence.Models;
+using Altinn.App.Core.Features.Signing.Enums;
+using Altinn.App.Core.Features.Signing.Helpers;
+using Altinn.App.Core.Features.Signing.Interfaces;
+using Altinn.App.Core.Features.Signing.Models;
+using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Language;
+using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
+using Altinn.App.Core.Internal.Profile;
+using Altinn.App.Core.Models;
+using Altinn.Platform.Profile.Models;
+using Altinn.Platform.Register.Models;
+using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+
+namespace Altinn.App.Core.Features.Signing;
+
+internal sealed class SigningCallToActionService(
+    ICorrespondenceClient correspondenceClient,
+    IHostEnvironment hostEnvironment,
+    IAppResources appResources,
+    IAppMetadata appMetadata,
+    IProfileClient profileClient,
+    ILogger<SigningCallToActionService> logger,
+    IOptions<GeneralSettings> settings
+) : ISigningCallToActionService
+{
+    private readonly ICorrespondenceClient _correspondenceClient = correspondenceClient;
+    private readonly IHostEnvironment _hostEnvironment = hostEnvironment;
+    private readonly IAppResources _appResources = appResources;
+    private readonly IAppMetadata _appMetadata = appMetadata;
+    private readonly IProfileClient _profileClient = profileClient;
+    private readonly ILogger<SigningCallToActionService> _logger = logger;
+    private readonly UrlHelper _urlHelper = new(settings);
+
+    public async Task<SendCorrespondenceResponse?> SendSignCallToAction(
+        Notification? notification,
+        AppIdentifier appIdentifier,
+        InstanceIdentifier instanceIdentifier,
+        Party signingParty,
+        Party serviceOwnerParty,
+        List<AltinnEnvironmentConfig>? correspondenceResources
+    )
+    {
+        ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
+
+        HostingEnvironment env = AltinnEnvironments.GetHostingEnvironment(_hostEnvironment);
+        var resource = AltinnTaskExtension.GetConfigForEnvironment(env, correspondenceResources)?.Value;
+        if (string.IsNullOrEmpty(resource))
+        {
+            throw new ConfigurationException(
+                $"No correspondence resource configured for environment {env}, skipping correspondence send"
+            );
+        }
+
+        CorrespondanceRecipient recipient = new(signingParty);
+        string instanceUrl = _urlHelper.GetInstanceUrl(appIdentifier, instanceIdentifier);
+        UserProfile? recipientProfile = null;
+        if (recipient.IsPerson)
+        {
+            recipientProfile = await _profileClient.GetUserProfile(recipient.SSN);
+        }
+        string recipientLanguage = recipientProfile?.ProfileSettingPreference.Language ?? LanguageConst.Nb;
+        CorrespondenceContent content = await GetContent(
+            appIdentifier,
+            applicationMetadata,
+            serviceOwnerParty,
+            instanceUrl,
+            recipientLanguage
+        );
+        string? emailBody = notification?.Email?.BodyTextResourceKey;
+        string? emailSubject = notification?.Email?.SubjectTextResourceKey;
+        string? smsBody = notification?.Sms?.TextResourceKey;
+
+        // TODO: Tests
+        return await _correspondenceClient.Send(
+            new SendCorrespondencePayload(
+                CorrespondenceRequestBuilder
+                    .Create()
+                    .WithResourceId(resource)
+                    .WithSender(serviceOwnerParty.OrgNumber ?? "974760673") // staging - ttd finnes ikke
+                    .WithSendersReference(instanceIdentifier.ToString())
+                    .WithRecipient(recipient.IsPerson ? recipient.SSN : recipient.OrganisationNumber)
+                    .WithAllowSystemDeleteAfter(DateTime.Now.AddYears(1))
+                    .WithContent(content)
+                    .WithNotificationIfConfigured(
+                        SigningCorrespondanceHelper.GetNotificationChoice(notification) switch
+                        {
+                            NotificationChoice.Email => new CorrespondenceNotification
+                            {
+                                NotificationTemplate = emailBody is not null
+                                    ? CorrespondenceNotificationTemplate.CustomMessage
+                                    : CorrespondenceNotificationTemplate.GenericAltinnMessage,
+                                NotificationChannel = CorrespondenceNotificationChannel.Email,
+                                EmailSubject = emailSubject ?? content.Title,
+                                EmailBody = emailBody,
+                                SendersReference = instanceIdentifier.ToString(),
+                                SendReminder = true,
+                            },
+                            NotificationChoice.Sms => new CorrespondenceNotification
+                            {
+                                NotificationTemplate = smsBody is not null
+                                    ? CorrespondenceNotificationTemplate.CustomMessage
+                                    : CorrespondenceNotificationTemplate.GenericAltinnMessage,
+                                NotificationChannel = CorrespondenceNotificationChannel.Sms,
+                                SmsBody = smsBody,
+                                SendersReference = instanceIdentifier.ToString(),
+                                SendReminder = true,
+                            },
+                            NotificationChoice.SmsAndEmail => new CorrespondenceNotification
+                            {
+                                NotificationTemplate = emailBody is not null
+                                    ? CorrespondenceNotificationTemplate.CustomMessage
+                                    : CorrespondenceNotificationTemplate.GenericAltinnMessage,
+                                NotificationChannel = CorrespondenceNotificationChannel.EmailPreferred, // TODO: document
+                                EmailSubject = emailSubject ?? content.Title,
+                                EmailBody = emailBody,
+                                SmsBody = smsBody,
+                                SendersReference = instanceIdentifier.ToString(),
+                                SendReminder = true,
+                            },
+                            NotificationChoice.None or _ => null,
+                        }
+                    )
+                    .Build(),
+                CorrespondenceAuthorisation.Maskinporten
+            )
+        );
+    }
+
+    internal async Task<CorrespondenceContent> GetContent(
+        AppIdentifier appIdentifier,
+        ApplicationMetadata appMetadata,
+        Party senderParty,
+        string instanceUrl,
+        string language
+    )
+    {
+        TextResource? textResource = null;
+        string? title = null;
+        string? summary = null;
+        string? body = null;
+        string? appName = null;
+
+        string appOwner = senderParty.Name ?? appMetadata.Org;
+        string defaultAppName =
+            appMetadata.Title?.GetValueOrDefault(language)
+            ?? appMetadata.Title?.FirstOrDefault().Value
+            ?? appMetadata.Id;
+
+        try
+        {
+            textResource ??=
+                await _appResources.GetTexts(appIdentifier.Org, appIdentifier.App, language)
+                ?? throw new InvalidOperationException($"No text resource found for language ({language})");
+
+            title = textResource.GetText("signing.cta_title"); // TODO: Document these text keys
+            summary = textResource.GetText("signing.cta_summary"); // TODO: Document these text keys
+            body = textResource.GetText("signing.cta_body"); // TODO: Document these text keys
+            body = body?.Replace("$InstanceUrl", instanceUrl, StringComparison.InvariantCultureIgnoreCase);
+            appName = textResource.GetFirstMatchingText("appName", "ServiceName");
+        }
+        catch (Exception e)
+        {
+            _logger.LogWarning(
+                e,
+                "Unable to fetch custom message correspondence message content, falling back to default values: {Exception}",
+                e.Message
+            );
+        }
+
+        if (string.IsNullOrWhiteSpace(appName))
+        {
+            appName = defaultAppName;
+        }
+
+        var defaults = GetDefaultTexts(instanceUrl, language, appName, appOwner);
+
+        CorrespondenceContent content = new()
+        {
+            Language = LanguageCode<Iso6391>.Parse(textResource?.Language ?? language),
+            Title = title ?? defaults.Title,
+            Summary = summary ?? defaults.Summary,
+            Body = body ?? defaults.Body,
+        };
+        return content;
+    }
+
+    /// <summary>
+    /// Gets the default texts for the given language.
+    /// </summary>
+    /// <param name="instanceUrl">The url for the instance</param>
+    /// <param name="language">The language to get the texts for</param>
+    /// <param name="appName">The name of the app</param>
+    /// <param name="appOwner">The owner of the app</param>
+    internal static DefaultTexts GetDefaultTexts(string instanceUrl, string language, string appName, string appOwner)
+    {
+        return language switch
+        {
+            LanguageConst.En => new DefaultTexts
+            {
+                Title = $"{appName}: Task for signing",
+                Summary = $"Your signature is requested for {appName}.",
+                Body =
+                    $"You have a task waiting for your signature. <a href=\"{instanceUrl}\">Click here to open the application</a>.<br /><br />If you have any questions, you can contact {appOwner}.",
+            },
+            LanguageConst.Nn => new DefaultTexts
+            {
+                Title = $"{appName}: Oppgåve til signering",
+                Summary = $"Signaturen din vert venta for {appName}.",
+                Body =
+                    $"Du har ei oppgåve som ventar på signaturen din. <a href=\"{instanceUrl}\">Klikk her for å opne applikasjonen</a>.<br /><br />Om du lurer på noko, kan du kontakte {appOwner}.",
+            },
+            LanguageConst.Nb or _ => new DefaultTexts
+            {
+                Title = $"{appName}: Oppgave til signering",
+                Summary = $"Din signatur ventes for {appName}.",
+                Body =
+                    $"Du har en oppgave som venter på din signatur. <a href=\"{instanceUrl}\">Klikk her for å åpne applikasjonen</a>.<br /><br />Hvis du lurer på noe, kan du kontakte {appOwner}.",
+            },
+        };
+    }
+}

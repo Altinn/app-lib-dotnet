@@ -28,7 +28,8 @@ public class SigningServiceTests
     private readonly Mock<ILogger<SigningService>> _logger = new();
     private readonly Mock<IAppMetadata> _appMetadata = new(MockBehavior.Strict);
     private readonly Mock<ISignClient> _signClient = new(MockBehavior.Strict);
-    private readonly Mock<ISigningCorrespondenceService> _signingCorrespondenceService = new(MockBehavior.Strict);
+    private readonly Mock<ISigningCallToActionService> _signingCallToActionService = new(MockBehavior.Strict);
+    private readonly Mock<ISigningReceiptService> _signingReceiptService = new(MockBehavior.Strict);
 
     public SigningServiceTests()
     {
@@ -38,7 +39,8 @@ public class SigningServiceTests
             [_signeeProvider.Object],
             _appMetadata.Object,
             _signClient.Object,
-            _signingCorrespondenceService.Object,
+            _signingReceiptService.Object,
+            _signingCallToActionService.Object,
             _logger.Object
         );
     }

@@ -32,7 +32,8 @@ internal sealed class SigningService(
     IEnumerable<ISigneeProvider> signeeProviders,
     IAppMetadata appMetadata,
     ISignClient signClient,
-    ISigningCorrespondenceService signingCorrespondenceService,
+    ISigningReceiptService signingReceiptService,
+    ISigningCallToActionService signingCallToActionService,
     ILogger<SigningService> logger,
     Telemetry? telemetry = null
 ) : ISigningService
@@ -50,7 +51,8 @@ internal sealed class SigningService(
     private readonly ILogger<SigningService> _logger = logger;
     private readonly IAppMetadata _appMetadata = appMetadata;
     private readonly ISignClient _signClient = signClient;
-    private readonly ISigningCorrespondenceService _signingCorrespondenceService = signingCorrespondenceService;
+    private readonly ISigningReceiptService _signingReceiptService = signingReceiptService;
+    private readonly ISigningCallToActionService _signingCallToActionService = signingCallToActionService;
     private const string ApplicationJsonContentType = "application/json";
 
     public async Task<List<SigneeContext>> GenerateSigneeContexts(
@@ -137,7 +139,7 @@ internal sealed class SigningService(
                 {
                     Party signingParty = signeeContext.Signee.GetParty();
 
-                    await _signingCorrespondenceService.SendSignCallToActionCorrespondence(
+                    await _signingCallToActionService.SendSignCallToAction(
                         signeeContext.Notifications?.OnSignatureAccessRightsDelegated,
                         appIdentifier,
                         new InstanceIdentifier(instanceMutator.Instance),
@@ -235,7 +237,7 @@ internal sealed class SigningService(
 
         try
         {
-            SendCorrespondenceResponse? result = await _signingCorrespondenceService.SendSignConfirmationCorrespondence(
+            SendCorrespondenceResponse? result = await _signingReceiptService.SendSignatureReceipt(
                 signatureContext.InstanceIdentifier,
                 signatureContext.Signee,
                 dataElementSignatures,

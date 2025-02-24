@@ -1,17 +1,15 @@
 using Altinn.App.Core.Features.Correspondence.Models;
-using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.UserAction;
-using Altinn.Platform.Register.Models;
 
 namespace Altinn.App.Core.Features.Signing.Interfaces;
 
 /// <summary>
-/// Interface for sending correspondence for a signing task.
+/// Interface for sending correspondence receipt for a signing user action.
 /// </summary>
-public interface ISigningCorrespondenceService
+public interface ISigningReceiptService
 {
     /// <summary>
     /// Sends correspondence to a signee after signing action has been completed.
@@ -21,19 +19,6 @@ public interface ISigningCorrespondenceService
         Internal.Sign.Signee signee,
         IEnumerable<DataElementSignature> dataElementSignatures,
         UserActionContext context,
-        List<AltinnEnvironmentConfig>? correspondenceResources
-    );
-
-    /// <summary>
-    /// Sends correspondence to a signee to notify them of a signing call to action.
-    /// </summary>
-    // TODO: internal and locator
-    public Task<SendCorrespondenceResponse?> SendSignCallToAction(
-        Notification? notification,
-        AppIdentifier appIdentifier,
-        InstanceIdentifier instanceIdentifier,
-        Party signingParty,
-        Party serviceOwnerParty,
         List<AltinnEnvironmentConfig>? correspondenceResources
     );
 }
