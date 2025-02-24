@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Kiota.Bundle" Version="1.17.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="KiotaGenerated\" />
+  </ItemGroup>
+
+<!-- Refresh generated client -->
+  <Target Name="Kiota" BeforeTargets="PreBuildEvent">
+    <Exec Command="dotnet kiota generate --clean-output --openapi ../Altinn.App.Integration.FrontendTests/GenerateOpenApi/customOpenapi.verified.json --language CSharp --output KiotaGenerated --namespace-name Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated --class-name FrontendTestsClient --exclude-backward-compatible" />
+  </Target>
+</Project>

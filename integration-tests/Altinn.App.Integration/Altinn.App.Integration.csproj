@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.12" />
+      <PackageReference Include="Microsoft.Extensions.Diagnostics.Testing" Version="8.10.0" />
+      <PackageReference Include="Testcontainers" Version="4.1.0" />
+      <PackageReference Include="xunit.abstractions" Version="2.0.3" />
+      <PackageReference Include="xunit.extensibility.core" Version="2.9.3" />
+      <PackageReference Include="xunit.extensibility.execution" Version="2.9.3" />
+    </ItemGroup>
+
+<!--    <Target Name="PackCurrentAppLib" BeforeTargets="PreBuildEvent">-->
+<!--      <Exec Command="mkdir integration-tests/Apps/app-lib-nuget" WorkingDirectory="../.." Condition="!Exists('../Apps/app-lib-nuget')" />-->
+<!--      <Exec Command="mkdir integration-tests/Apps/app-lib-packages" WorkingDirectory="../.." Condition="!Exists('../Apps/app-lib-packages')"/>-->
+<!--      <Exec Command="dotnet pack src/Altinn.App.Api &#45;&#45;packages integration-tests/Apps/app-lib-nuget &#45;&#45;output integration-tests/Apps/app-lib-packages" WorkingDirectory="../.." />-->
+<!--    </Target>-->
+</Project>

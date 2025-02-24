@@ -1,0 +1,6525 @@
+﻿{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Altinn 3 App API for frontend-test ENGLISH",
+    "description": "This is the API for an Altinn 3 app. The API is based on the OpenAPI 3.0 specification.\nThis app has the following data types:\n| DataTypeId | Type | Allowed number | MimeTypes | TaskId |\n|------------|------|----------------|-----------|--------|\n|message|FormData (AutoCreate)|1|application/xml|Task_1|\n|fileUpload-message|Attachment|0-3|*|Task_1|\n|ServiceModel-test|FormData (AutoCreate)|1|application/xml|Task_2|\n|fileUpload-changename|Attachment|0-3|application/pdf|Task_2|\n|fileUploadWithTags-changename|Attachment|0-3|*|Task_2|\n|mainUploaderSingle|Attachment|0-1|*|Task_3|\n|mainUploaderMulti|Attachment|0-5|*|Task_3|\n|subUploader|Attachment|0-5|*|Task_3|\n|nested-group|FormData (AutoCreate)|1|application/xml|Task_3|\n|likert|FormData (AutoCreate)|1|application/xml|Task_4|\n|ref-data-as-pdf|Attachment|-|application/pdf||\n|datalist|FormData (AutoCreate)|1|application/xml|Task_5|\n",
+    "contact": {
+      "name": "Digitaliseringsdirektoratet (altinn)",
+      "url": "https://altinn.slack.com"
+    },
+    "version": "8.0.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://local.altinn.cloud",
+      "description": "Local development server"
+    },
+    {
+      "url": "https://ttd.apps.tt02.altinn.no",
+      "description": "TT02 server"
+    },
+    {
+      "url": "https://ttd.apps.altinn.no",
+      "description": "Production server"
+    }
+  ],
+  "paths": {
+    "/ttd/frontend-test/instances": {
+      "summary": "Operations for instances",
+      "description": "CRUD operations for instances",
+      "post": {
+        "tags": [
+          "Instances"
+        ],
+        "summary": "Create new instance",
+        "description": "The main api for creating new instances. ",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/instanceOwnerPartyId"
+          },
+          {
+            "$ref": "#/components/parameters/language"
+          }
+        ],
+        "requestBody": {
+          "description": "Instance document, formData and attachments\n\nAny mime type that is not ``\"application/json\"`` or ``\"multipart/form-data\"`` with an instance document\nwill require the ``instanceOwnerPartyId`` parameter. Otherwise you must use the simplified instance document to specify instance owner.\nEither using ``instanceOwner.partyId`` or ``instanceOwner.personNumber`` or ``instanceOwner.organisationNumber`` (or ``instanceOwner.username`` see [app-lib-dotnet/#652](https://github.com/Altinn/app-lib-dotnet/issues/652)).",
+          "content": {
+            "empty": {
+              "schema": {
+                "type": "null",
+                "example": null
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InstanceWrite"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "instance": {
+                    "$ref": "#/components/schemas/InstanceWrite"
+                  },
+                  "message": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "fileUpload-message": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "ServiceModel-test": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "fileUpload-changename": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "fileUploadWithTags-changename": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "mainUploaderSingle": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "mainUploaderMulti": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "subUploader": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "nested-group": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "likert": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "ref-data-as-pdf": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "datalist": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "encoding": {
+                "instance": {
+                  "contentType": "application/json"
+                },
+                "message": {
+                  "contentType": "application/xml"
+                },
+                "fileUpload-message": {
+                  "contentType": "application/octet-stream"
+                },
+                "ServiceModel-test": {
+                  "contentType": "application/xml"
+                },
+                "fileUpload-changename": {
+                  "contentType": "application/pdf"
+                },
+                "fileUploadWithTags-changename": {
+                  "contentType": "application/octet-stream"
+                },
+                "mainUploaderSingle": {
+                  "contentType": "application/octet-stream"
+                },
+                "mainUploaderMulti": {
+                  "contentType": "application/octet-stream"
+                },
+                "subUploader": {
+                  "contentType": "application/octet-stream"
+                },
+                "nested-group": {
+                  "contentType": "application/xml"
+                },
+                "likert": {
+                  "contentType": "application/xml"
+                },
+                "ref-data-as-pdf": {
+                  "contentType": "application/pdf"
+                },
+                "datalist": {
+                  "contentType": "application/xml"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Instance created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Instance"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "404": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "500": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        }
+      },
+      "servers": [
+        {
+          "url": "/ttd/frontend-test"
+        }
+      ]
+    },
+    "/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}": {
+      "summary": "Operations for instance",
+      "description": "CRUD operations for a specific instance",
+      "get": {
+        "tags": [
+          "Instances"
+        ],
+        "summary": "Get instance",
+        "description": "Get a specific instance",
+        "operationId": "GetInstance",
+        "responses": {
+          "200": {
+            "description": "Instance found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Instance"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "404": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "500": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Instances"
+        ],
+        "summary": "Delete instance",
+        "description": "Delete a specific instance",
+        "responses": {
+          "204": {
+            "description": "Instance deleted"
+          },
+          "400": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "404": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "500": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/instanceOwnerPartyId"
+        },
+        {
+          "$ref": "#/components/parameters/instanceGuid"
+        },
+        {
+          "$ref": "#/components/parameters/language"
+        }
+      ]
+    },
+    "/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}/data": {
+      "summary": "Operations for data elements",
+      "description": "CRUD operations for data elements in an instance",
+      "patch": {
+        "tags": [
+          "Instances"
+        ],
+        "summary": "Patch data elements on instance",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "Run patches on multiple Form data elements at once",
+                "required": [
+                  "patches"
+                ],
+                "type": "object",
+                "properties": {
+                  "patches": {
+                    "type": "array",
+                    "items": {
+                      "required": [
+                        "dataElementId",
+                        "patch"
+                      ],
+                      "type": "object",
+                      "properties": {
+                        "dataElementId": {
+                          "type": "string",
+                          "format": "guid"
+                        },
+                        "patch": {
+                          "title": "Json patch",
+                          "type": "array",
+                          "items": {
+                            "required": [
+                              "op",
+                              "path"
+                            ],
+                            "type": "object",
+                            "properties": {
+                              "op": {
+                                "title": "Patch operation",
+                                "enum": [
+                                  "add",
+                                  "remove",
+                                  "replace",
+                                  "move",
+                                  "copy",
+                                  "test"
+                                ],
+                                "type": "string"
+                              },
+                              "from": {
+                                "title": "JsonPointer",
+                                "type": "string"
+                              },
+                              "path": {
+                                "title": "JsonPointer",
+                                "type": "string"
+                              },
+                              "value": {
+                                "title": "the value",
+                                "description": "The value to add or replace"
+                              }
+                            },
+                            "additionalProperties": false
+                          },
+                          "description": "A standard RFC 6902 document describing changes to one data element"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "ignoredValidators": {
+                    "title": "List of validators to not run incrementally",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "This is used for saving server resources, when frontend has a duplicated version of the validator. The validators will be executed on process/next anyway"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Data elements patched",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataPatchResponseMultiple"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Precondition in patch failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataPatchError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "JsonPatch operation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataPatchError"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "404": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "500": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/instanceOwnerPartyId"
+        },
+        {
+          "$ref": "#/components/parameters/instanceGuid"
+        },
+        {
+          "$ref": "#/components/parameters/language"
+        }
+      ]
+    },
+    "/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}": {
+      "summary": "Delete data element",
+      "delete": {
+        "tags": [
+          "Instances"
+        ],
+        "summary": "Delete data element",
+        "description": "Delete data for a specific data element",
+        "responses": {
+          "204": {
+            "description": "Data deleted"
+          },
+          "404": {
+            "description": "Data not found"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/instanceOwnerPartyId"
+        },
+        {
+          "$ref": "#/components/parameters/instanceGuid"
+        },
+        {
+          "$ref": "#/components/parameters/dataGuid"
+        },
+        {
+          "$ref": "#/components/parameters/language"
+        }
+      ]
+    },
+    "/ttd/frontend-test/api/v1/applicationmetadata": {
+      "summary": "Get application metadata",
+      "description": "Get the metadata for the application",
+      "get": {
+        "tags": [
+          "Static"
+        ],
+        "summary": "Get application metadata",
+        "description": "Get the metadata for the application",
+        "responses": {
+          "200": {
+            "description": "Application metadata found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationMetadata"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/authentication/api/v1/exchange/{tokenProvider}": {
+      "get": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Action for exchanging a JWT generated by a trusted token provider with a new JWT for further use as authentication against rest of Altinn.",
+        "parameters": [
+          {
+            "name": "tokenProvider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "maskinporten",
+                "id-porten"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "Autorization",
+            "in": "header",
+            "description": "Bearer token from the selected token provider to exchange for an altinn token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "Bearer <token>"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Exchanged token",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "example": "eyJraWQiOiJIdFlaMU1UbFZXUGNCV0JQVWV3TmxZd1RCRklicU1Hb081O"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "429": {
+            "description": "Too Many Requests"
+          }
+        }
+      },
+      "servers": [
+        {
+          "url": "https://platform.altinn.no",
+          "description": "Production environment"
+        },
+        {
+          "url": "https://platform.tt02.altinn.no",
+          "description": "Test environment"
+        }
+      ]
+    },
+    "/Home/GetTestUserToken": {
+      "description": "Get a test user token for use in the local development environment",
+      "get": {
+        "tags": [
+          "Authentication"
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "description": "The user id of the test user",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 1337
+            }
+          },
+          {
+            "name": "authenticationLevel",
+            "in": "query",
+            "description": "The authentication level of the test user",
+            "required": true,
+            "schema": {
+              "enum": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "type": "integer",
+              "default": 3
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Test user token",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "example": "eyJraWQiOiJIdFlaMU1UbFZXUGNCV0JQVWV3TmxZd1RCRklicU1Hb081O"
+                }
+              }
+            }
+          }
+        }
+      },
+      "servers": [
+        {
+          "url": "http://local.altinn.cloud"
+        }
+      ]
+    },
+    "/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/type/message": {
+      "summary": "Operations for message",
+      "description": "CRUD operations for data of type message",
+      "get": {
+        "tags": [
+          "FormData message"
+        ],
+        "summary": "Get data",
+        "description": "Get data for a specific data element\n\nsee [JSON Schema](/ttd/frontend-test/api/jsonschema/message)",
+        "responses": {
+          "200": {
+            "description": "# Data found\n\nThe response body contains the data in the format specified by the Accept header.\n\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageV1"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "title": "Xml",
+                  "type": "string",
+                  "description": "See xml schema",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "404": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "500": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "FormData message"
+        ],
+        "summary": "Replace data element content",
+        "description": "Update data for a specific data element",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageV1"
+              }
+            },
+            "application/xml": {
+              "schema": {
+                "title": "Xml",
+                "type": "string",
+                "description": "See xml schema",
+                "format": "binary"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Data replaced"
+          },
+          "400": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "404": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "500": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/instanceOwnerPartyId"
+        },
+        {
+          "$ref": "#/components/parameters/instanceGuid"
+        },
+        {
+          "$ref": "#/components/parameters/dataGuid"
+        },
+        {
+          "$ref": "#/components/parameters/language"
+        }
+      ]
+    },
+    "/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}/data/type/message": {
+      "summary": "Operations for message",
+      "description": "CRUD operations for data of type message",
+      "post": {
+        "tags": [
+          "FormData message"
+        ],
+        "summary": "Create data",
+        "description": "Create data for a specific data element",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageV1"
+              }
+            },
+            "application/xml": {
+              "schema": {
+                "title": "Xml",
+                "type": "string",
+                "description": "See xml schema",
+                "format": "binary"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Data created",
+            "content": {
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataPostResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Failed to add data element",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataPostErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/instanceOwnerPartyId"
+        },
+        {
+          "$ref": "#/components/parameters/instanceGuid"
+        },
+        {
+          "$ref": "#/components/parameters/dataGuid"
+        },
+        {
+          "$ref": "#/components/parameters/language"
+        }
+      ]
+    },
+    "/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/type/fileUpload-message": {
+      "summary": "Operations for fileUpload-message",
+      "description": "CRUD operations for data of type fileUpload-message",
+      "get": {
+        "tags": [
+          "FileData fileUpload-message"
+        ],
+        "summary": "Get attachment",
+        "description": "Get attachment for a specific data element",
+        "responses": {
+          "200": {
+            "description": "Attachment found",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Attachment not found"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/instanceOwnerPartyId"
+        },
+        {
+          "$ref": "#/components/parameters/instanceGuid"
+        },
+        {
+          "$ref": "#/components/parameters/dataGuid"
+        },
+        {
+          "$ref": "#/components/parameters/language"
+        }
+      ]
+    },
+    "/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}/data/type/fileUpload-message": {
+      "summary": "Operations for fileUpload-message",
+      "description": "CRUD operations for data of type fileUpload-message",
+      "post": {
+        "tags": [
+          "FileData fileUpload-message"
+        ],
+        "summary": "Create attachment",
+        "requestBody": {
+          "content": {
+            "application/octet-stream": {}
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Attachment created"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/instanceOwnerPartyId"
+        },
+        {
+          "$ref": "#/components/parameters/instanceGuid"
+        },
+        {
+          "$ref": "#/components/parameters/dataGuid"
+        }
+      ]
+    },
+    "/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/type/ServiceModel-test": {
+      "summary": "Operations for ServiceModel-test",
+      "description": "CRUD operations for data of type ServiceModel-test",
+      "get": {
+        "tags": [
+          "FormData ServiceModel-test"
+        ],
+        "summary": "Get data",
+        "description": "Get data for a specific data element\n\nsee [JSON Schema](/ttd/frontend-test/api/jsonschema/ServiceModel-test)",
+        "responses": {
+          "200": {
+            "description": "# Data found\n\nThe response body contains the data in the format specified by the Accept header.\n\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Skjema"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "title": "Xml",
+                  "type": "string",
+                  "description": "See xml schema",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "404": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "500": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "FormData ServiceModel-test"
+        ],
+        "summary": "Replace data element content",
+        "description": "Update data for a specific data element",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Skjema"
+              }
+            },
+            "application/xml": {
+              "schema": {
+                "title": "Xml",
+                "type": "string",
+                "description": "See xml schema",
+                "format": "binary"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Data replaced"
+          },
+          "400": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "404": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "500": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/instanceOwnerPartyId"
+        },
+        {
+          "$ref": "#/components/parameters/instanceGuid"
+        },
+        {
+          "$ref": "#/components/parameters/dataGuid"
+        },
+        {
+          "$ref": "#/components/parameters/language"
+        }
+      ]
+    },
+    "/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}/data/type/ServiceModel-test": {
+      "summary": "Operations for ServiceModel-test",
+      "description": "CRUD operations for data of type ServiceModel-test",
+      "post": {
+        "tags": [
+          "FormData ServiceModel-test"
+        ],
+        "summary": "Create data",
+        "description": "Create data for a specific data element",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Skjema"
+              }
+            },
+            "application/xml": {
+              "schema": {
+                "title": "Xml",
+                "type": "string",
+                "description": "See xml schema",
+                "format": "binary"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Data created",
+            "content": {
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataPostResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Failed to add data element",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataPostErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/instanceOwnerPartyId"
+        },
+        {
+          "$ref": "#/components/parameters/instanceGuid"
+        },
+        {
+          "$ref": "#/components/parameters/dataGuid"
+        },
+        {
+          "$ref": "#/components/parameters/language"
+        }
+      ]
+    },
+    "/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/type/fileUpload-changename": {
+      "summary": "Operations for fileUpload-changename",
+      "description": "CRUD operations for data of type fileUpload-changename",
+      "get": {
+        "tags": [
+          "FileData fileUpload-changename"
+        ],
+        "summary": "Get attachment",
+        "description": "Get attachment for a specific data element",
+        "responses": {
+          "200": {
+            "description": "Attachment found",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Attachment not found"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/instanceOwnerPartyId"
+        },
+        {
+          "$ref": "#/components/parameters/instanceGuid"
+        },
+        {
+          "$ref": "#/components/parameters/dataGuid"
+        },
+        {
+          "$ref": "#/components/parameters/language"
+        }
+      ]
+    },
+    "/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}/data/type/fileUpload-changename": {
+      "summary": "Operations for fileUpload-changename",
+      "description": "CRUD operations for data of type fileUpload-changename",
+      "post": {
+        "tags": [
+          "FileData fileUpload-changename"
+        ],
+        "summary": "Create attachment",
+        "requestBody": {
+          "content": {
+            "application/pdf": {}
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Attachment created"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/instanceOwnerPartyId"
+        },
+        {
+          "$ref": "#/components/parameters/instanceGuid"
+        },
+        {
+          "$ref": "#/components/parameters/dataGuid"
+        }
+      ]
+    },
+    "/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/type/fileUploadWithTags-changename": {
+      "summary": "Operations for fileUploadWithTags-changename",
+      "description": "CRUD operations for data of type fileUploadWithTags-changename",
+      "get": {
+        "tags": [
+          "FileData fileUploadWithTags-changename"
+        ],
+        "summary": "Get attachment",
+        "description": "Get attachment for a specific data element",
+        "responses": {
+          "200": {
+            "description": "Attachment found",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Attachment not found"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/instanceOwnerPartyId"
+        },
+        {
+          "$ref": "#/components/parameters/instanceGuid"
+        },
+        {
+          "$ref": "#/components/parameters/dataGuid"
+        },
+        {
+          "$ref": "#/components/parameters/language"
+        }
+      ]
+    },
+    "/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}/data/type/fileUploadWithTags-changename": {
+      "summary": "Operations for fileUploadWithTags-changename",
+      "description": "CRUD operations for data of type fileUploadWithTags-changename",
+      "post": {
+        "tags": [
+          "FileData fileUploadWithTags-changename"
+        ],
+        "summary": "Create attachment",
+        "requestBody": {
+          "content": {
+            "application/octet-stream": {}
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Attachment created"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/instanceOwnerPartyId"
+        },
+        {
+          "$ref": "#/components/parameters/instanceGuid"
+        },
+        {
+          "$ref": "#/components/parameters/dataGuid"
+        }
+      ]
+    },
+    "/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/type/mainUploaderSingle": {
+      "summary": "Operations for mainUploaderSingle",
+      "description": "CRUD operations for data of type mainUploaderSingle",
+      "get": {
+        "tags": [
+          "FileData mainUploaderSingle"
+        ],
+        "summary": "Get attachment",
+        "description": "Get attachment for a specific data element",
+        "responses": {
+          "200": {
+            "description": "Attachment found",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Attachment not found"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/instanceOwnerPartyId"
+        },
+        {
+          "$ref": "#/components/parameters/instanceGuid"
+        },
+        {
+          "$ref": "#/components/parameters/dataGuid"
+        },
+        {
+          "$ref": "#/components/parameters/language"
+        }
+      ]
+    },
+    "/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}/data/type/mainUploaderSingle": {
+      "summary": "Operations for mainUploaderSingle",
+      "description": "CRUD operations for data of type mainUploaderSingle",
+      "post": {
+        "tags": [
+          "FileData mainUploaderSingle"
+        ],
+        "summary": "Create attachment",
+        "requestBody": {
+          "content": {
+            "application/octet-stream": {}
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Attachment created"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/instanceOwnerPartyId"
+        },
+        {
+          "$ref": "#/components/parameters/instanceGuid"
+        },
+        {
+          "$ref": "#/components/parameters/dataGuid"
+        }
+      ]
+    },
+    "/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/type/mainUploaderMulti": {
+      "summary": "Operations for mainUploaderMulti",
+      "description": "CRUD operations for data of type mainUploaderMulti",
+      "get": {
+        "tags": [
+          "FileData mainUploaderMulti"
+        ],
+        "summary": "Get attachment",
+        "description": "Get attachment for a specific data element",
+        "responses": {
+          "200": {
+            "description": "Attachment found",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Attachment not found"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/instanceOwnerPartyId"
+        },
+        {
+          "$ref": "#/components/parameters/instanceGuid"
+        },
+        {
+          "$ref": "#/components/parameters/dataGuid"
+        },
+        {
+          "$ref": "#/components/parameters/language"
+        }
+      ]
+    },
+    "/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}/data/type/mainUploaderMulti": {
+      "summary": "Operations for mainUploaderMulti",
+      "description": "CRUD operations for data of type mainUploaderMulti",
+      "post": {
+        "tags": [
+          "FileData mainUploaderMulti"
+        ],
+        "summary": "Create attachment",
+        "requestBody": {
+          "content": {
+            "application/octet-stream": {}
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Attachment created"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/instanceOwnerPartyId"
+        },
+        {
+          "$ref": "#/components/parameters/instanceGuid"
+        },
+        {
+          "$ref": "#/components/parameters/dataGuid"
+        }
+      ]
+    },
+    "/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/type/subUploader": {
+      "summary": "Operations for subUploader",
+      "description": "CRUD operations for data of type subUploader",
+      "get": {
+        "tags": [
+          "FileData subUploader"
+        ],
+        "summary": "Get attachment",
+        "description": "Get attachment for a specific data element",
+        "responses": {
+          "200": {
+            "description": "Attachment found",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Attachment not found"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/instanceOwnerPartyId"
+        },
+        {
+          "$ref": "#/components/parameters/instanceGuid"
+        },
+        {
+          "$ref": "#/components/parameters/dataGuid"
+        },
+        {
+          "$ref": "#/components/parameters/language"
+        }
+      ]
+    },
+    "/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}/data/type/subUploader": {
+      "summary": "Operations for subUploader",
+      "description": "CRUD operations for data of type subUploader",
+      "post": {
+        "tags": [
+          "FileData subUploader"
+        ],
+        "summary": "Create attachment",
+        "requestBody": {
+          "content": {
+            "application/octet-stream": {}
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Attachment created"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/instanceOwnerPartyId"
+        },
+        {
+          "$ref": "#/components/parameters/instanceGuid"
+        },
+        {
+          "$ref": "#/components/parameters/dataGuid"
+        }
+      ]
+    },
+    "/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/type/nested-group": {
+      "summary": "Operations for nested-group",
+      "description": "CRUD operations for data of type nested-group",
+      "get": {
+        "tags": [
+          "FormData nested-group"
+        ],
+        "summary": "Get data",
+        "description": "Get data for a specific data element\n\nsee [JSON Schema](/ttd/frontend-test/api/jsonschema/nested-group)",
+        "responses": {
+          "200": {
+            "description": "# Data found\n\nThe response body contains the data in the format specified by the Accept header.\n\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NestedGroup"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "title": "Xml",
+                  "type": "string",
+                  "description": "See xml schema",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "404": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "500": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "FormData nested-group"
+        ],
+        "summary": "Replace data element content",
+        "description": "Update data for a specific data element",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NestedGroup"
+              }
+            },
+            "application/xml": {
+              "schema": {
+                "title": "Xml",
+                "type": "string",
+                "description": "See xml schema",
+                "format": "binary"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Data replaced"
+          },
+          "400": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "404": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "500": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/instanceOwnerPartyId"
+        },
+        {
+          "$ref": "#/components/parameters/instanceGuid"
+        },
+        {
+          "$ref": "#/components/parameters/dataGuid"
+        },
+        {
+          "$ref": "#/components/parameters/language"
+        }
+      ]
+    },
+    "/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}/data/type/nested-group": {
+      "summary": "Operations for nested-group",
+      "description": "CRUD operations for data of type nested-group",
+      "post": {
+        "tags": [
+          "FormData nested-group"
+        ],
+        "summary": "Create data",
+        "description": "Create data for a specific data element",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NestedGroup"
+              }
+            },
+            "application/xml": {
+              "schema": {
+                "title": "Xml",
+                "type": "string",
+                "description": "See xml schema",
+                "format": "binary"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Data created",
+            "content": {
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataPostResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Failed to add data element",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataPostErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/instanceOwnerPartyId"
+        },
+        {
+          "$ref": "#/components/parameters/instanceGuid"
+        },
+        {
+          "$ref": "#/components/parameters/dataGuid"
+        },
+        {
+          "$ref": "#/components/parameters/language"
+        }
+      ]
+    },
+    "/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/type/likert": {
+      "summary": "Operations for likert",
+      "description": "CRUD operations for data of type likert",
+      "get": {
+        "tags": [
+          "FormData likert"
+        ],
+        "summary": "Get data",
+        "description": "Get data for a specific data element\n\nsee [JSON Schema](/ttd/frontend-test/api/jsonschema/likert)",
+        "responses": {
+          "200": {
+            "description": "# Data found\n\nThe response body contains the data in the format specified by the Accept header.\n\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LikertSurvey"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "title": "Xml",
+                  "type": "string",
+                  "description": "See xml schema",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "404": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "500": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "FormData likert"
+        ],
+        "summary": "Replace data element content",
+        "description": "Update data for a specific data element",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LikertSurvey"
+              }
+            },
+            "application/xml": {
+              "schema": {
+                "title": "Xml",
+                "type": "string",
+                "description": "See xml schema",
+                "format": "binary"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Data replaced"
+          },
+          "400": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "404": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "500": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/instanceOwnerPartyId"
+        },
+        {
+          "$ref": "#/components/parameters/instanceGuid"
+        },
+        {
+          "$ref": "#/components/parameters/dataGuid"
+        },
+        {
+          "$ref": "#/components/parameters/language"
+        }
+      ]
+    },
+    "/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}/data/type/likert": {
+      "summary": "Operations for likert",
+      "description": "CRUD operations for data of type likert",
+      "post": {
+        "tags": [
+          "FormData likert"
+        ],
+        "summary": "Create data",
+        "description": "Create data for a specific data element",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LikertSurvey"
+              }
+            },
+            "application/xml": {
+              "schema": {
+                "title": "Xml",
+                "type": "string",
+                "description": "See xml schema",
+                "format": "binary"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Data created",
+            "content": {
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataPostResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Failed to add data element",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataPostErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/instanceOwnerPartyId"
+        },
+        {
+          "$ref": "#/components/parameters/instanceGuid"
+        },
+        {
+          "$ref": "#/components/parameters/dataGuid"
+        },
+        {
+          "$ref": "#/components/parameters/language"
+        }
+      ]
+    },
+    "/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/type/ref-data-as-pdf": {
+      "summary": "Operations for ref-data-as-pdf",
+      "description": "CRUD operations for data of type ref-data-as-pdf",
+      "get": {
+        "tags": [
+          "FileData ref-data-as-pdf"
+        ],
+        "summary": "Get attachment",
+        "description": "Get attachment for a specific data element",
+        "responses": {
+          "200": {
+            "description": "Attachment found",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Attachment not found"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/instanceOwnerPartyId"
+        },
+        {
+          "$ref": "#/components/parameters/instanceGuid"
+        },
+        {
+          "$ref": "#/components/parameters/dataGuid"
+        },
+        {
+          "$ref": "#/components/parameters/language"
+        }
+      ]
+    },
+    "/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}/data/type/ref-data-as-pdf": {
+      "summary": "Operations for ref-data-as-pdf",
+      "description": "CRUD operations for data of type ref-data-as-pdf",
+      "post": {
+        "tags": [
+          "FileData ref-data-as-pdf"
+        ],
+        "summary": "Create attachment",
+        "requestBody": {
+          "content": {
+            "application/pdf": {}
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Attachment created"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/instanceOwnerPartyId"
+        },
+        {
+          "$ref": "#/components/parameters/instanceGuid"
+        },
+        {
+          "$ref": "#/components/parameters/dataGuid"
+        }
+      ]
+    },
+    "/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/type/datalist": {
+      "summary": "Operations for datalist",
+      "description": "CRUD operations for data of type datalist",
+      "get": {
+        "tags": [
+          "FormData datalist"
+        ],
+        "summary": "Get data",
+        "description": "Get data for a specific data element\n\nsee [JSON Schema](/ttd/frontend-test/api/jsonschema/datalist)",
+        "responses": {
+          "200": {
+            "description": "# Data found\n\nThe response body contains the data in the format specified by the Accept header.\n\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Datalist"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "title": "Xml",
+                  "type": "string",
+                  "description": "See xml schema",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "404": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "500": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "FormData datalist"
+        ],
+        "summary": "Replace data element content",
+        "description": "Update data for a specific data element",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Datalist"
+              }
+            },
+            "application/xml": {
+              "schema": {
+                "title": "Xml",
+                "type": "string",
+                "description": "See xml schema",
+                "format": "binary"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Data replaced"
+          },
+          "400": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "404": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "500": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/instanceOwnerPartyId"
+        },
+        {
+          "$ref": "#/components/parameters/instanceGuid"
+        },
+        {
+          "$ref": "#/components/parameters/dataGuid"
+        },
+        {
+          "$ref": "#/components/parameters/language"
+        }
+      ]
+    },
+    "/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}/data/type/datalist": {
+      "summary": "Operations for datalist",
+      "description": "CRUD operations for data of type datalist",
+      "post": {
+        "tags": [
+          "FormData datalist"
+        ],
+        "summary": "Create data",
+        "description": "Create data for a specific data element",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Datalist"
+              }
+            },
+            "application/xml": {
+              "schema": {
+                "title": "Xml",
+                "type": "string",
+                "description": "See xml schema",
+                "format": "binary"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Data created",
+            "content": {
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataPostResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Failed to add data element",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataPostErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/instanceOwnerPartyId"
+        },
+        {
+          "$ref": "#/components/parameters/instanceGuid"
+        },
+        {
+          "$ref": "#/components/parameters/dataGuid"
+        },
+        {
+          "$ref": "#/components/parameters/language"
+        }
+      ]
+    }
+  },
+  "components": {
+    "schemas": {
+      "InstanceOwner": {
+        "type": "object",
+        "properties": {
+          "partyId": {
+            "type": "string",
+            "nullable": true
+          },
+          "personNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "organisationNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "username": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ResourceLinks": {
+        "type": "object",
+        "properties": {
+          "apps": {
+            "type": "string",
+            "nullable": true
+          },
+          "platform": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidationStatus": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "canCompleteTask": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProcessElementInfo": {
+        "type": "object",
+        "properties": {
+          "flow": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "started": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "elementId": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "altinnTaskType": {
+            "type": "string",
+            "nullable": true
+          },
+          "ended": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "validated": {
+            "$ref": "#/components/schemas/ValidationStatus"
+          },
+          "flowType": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProcessState": {
+        "type": "object",
+        "properties": {
+          "started": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "startEvent": {
+            "type": "string",
+            "nullable": true
+          },
+          "currentTask": {
+            "$ref": "#/components/schemas/ProcessElementInfo"
+          },
+          "ended": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "endEvent": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ReadStatus": {
+        "enum": [
+          0,
+          1,
+          2
+        ],
+        "type": "integer",
+        "format": "int32"
+      },
+      "Substatus": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "InstanceStatus": {
+        "type": "object",
+        "properties": {
+          "isArchived": {
+            "type": "boolean"
+          },
+          "archived": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "isSoftDeleted": {
+            "type": "boolean"
+          },
+          "softDeleted": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "isHardDeleted": {
+            "type": "boolean"
+          },
+          "hardDeleted": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "readStatus": {
+            "$ref": "#/components/schemas/ReadStatus"
+          },
+          "substatus": {
+            "$ref": "#/components/schemas/Substatus"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CompleteConfirmation": {
+        "type": "object",
+        "properties": {
+          "stakeholderId": {
+            "type": "string",
+            "nullable": true
+          },
+          "confirmedOn": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "KeyValueEntry": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "nullable": true
+          },
+          "value": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DeleteStatus": {
+        "type": "object",
+        "properties": {
+          "isHardDeleted": {
+            "type": "boolean"
+          },
+          "hardDeleted": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "FileScanResult": {
+        "enum": [
+          "NotApplicable",
+          "Pending",
+          "Clean",
+          "Infected"
+        ],
+        "type": "string"
+      },
+      "RelationType": {
+        "enum": [
+          "GeneratedFrom"
+        ],
+        "type": "string"
+      },
+      "ReferenceType": {
+        "enum": [
+          "DataElement",
+          "Task"
+        ],
+        "type": "string"
+      },
+      "Reference": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "nullable": true
+          },
+          "relation": {
+            "$ref": "#/components/schemas/RelationType"
+          },
+          "valueType": {
+            "$ref": "#/components/schemas/ReferenceType"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DataElement": {
+        "required": [
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "created": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "createdBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastChanged": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "lastChangedBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "id": {
+            "type": "string"
+          },
+          "instanceGuid": {
+            "type": "string",
+            "nullable": true
+          },
+          "dataType": {
+            "type": "string",
+            "nullable": true
+          },
+          "filename": {
+            "type": "string",
+            "nullable": true
+          },
+          "contentType": {
+            "type": "string",
+            "nullable": true
+          },
+          "blobStoragePath": {
+            "type": "string",
+            "nullable": true
+          },
+          "selfLinks": {
+            "$ref": "#/components/schemas/ResourceLinks"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "contentHash": {
+            "type": "string",
+            "nullable": true
+          },
+          "locked": {
+            "type": "boolean"
+          },
+          "refs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "nullable": true
+          },
+          "isRead": {
+            "type": "boolean"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "userDefinedMetadata": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KeyValueEntry"
+            },
+            "nullable": true
+          },
+          "metadata": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KeyValueEntry"
+            },
+            "nullable": true
+          },
+          "deleteStatus": {
+            "$ref": "#/components/schemas/DeleteStatus"
+          },
+          "fileScanResult": {
+            "$ref": "#/components/schemas/FileScanResult"
+          },
+          "references": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Reference"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Instance": {
+        "required": [
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "created": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "createdBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastChanged": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "lastChangedBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "id": {
+            "type": "string"
+          },
+          "instanceOwner": {
+            "$ref": "#/components/schemas/InstanceOwner"
+          },
+          "appId": {
+            "type": "string",
+            "nullable": true
+          },
+          "org": {
+            "type": "string",
+            "nullable": true
+          },
+          "selfLinks": {
+            "$ref": "#/components/schemas/ResourceLinks"
+          },
+          "dueBefore": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "visibleAfter": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "process": {
+            "$ref": "#/components/schemas/ProcessState"
+          },
+          "status": {
+            "$ref": "#/components/schemas/InstanceStatus"
+          },
+          "completeConfirmations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CompleteConfirmation"
+            },
+            "nullable": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DataElement"
+            },
+            "nullable": true
+          },
+          "presentationTexts": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "nullable": true
+            },
+            "nullable": true
+          },
+          "dataValues": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "nullable": true
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "InstanceWrite": {
+        "title": "InstanceWrite",
+        "properties": {
+          "instanceOwner": {
+            "title": "Altnernate ways to spcecify the instance owner",
+            "type": "object",
+            "properties": {
+              "partyId": {
+                "type": "string",
+                "format": "int32",
+                "nullable": true
+              },
+              "personNumber": {
+                "pattern": "^\\d{11}$",
+                "type": "string",
+                "nullable": true
+              },
+              "organisationNumber": {
+                "pattern": "^\\d{9}$",
+                "type": "string",
+                "nullable": true
+              },
+              "username": {
+                "type": "string",
+                "description": "Initialization based on username is not yet supported (https://github.com/Altinn/app-lib-dotnet/issues/652)",
+                "nullable": true
+              }
+            },
+            "additionalProperties": false,
+            "description": "Only one of these should be spcecified when creating a new inistance"
+          },
+          "dueBefore": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "visibleAfter": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ValidationIssueSeverity": {
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "type": "integer",
+        "format": "int32"
+      },
+      "ValidationIssueWithSource": {
+        "required": [
+          "code",
+          "description",
+          "severity",
+          "source"
+        ],
+        "type": "object",
+        "properties": {
+          "severity": {
+            "$ref": "#/components/schemas/ValidationIssueSeverity"
+          },
+          "dataElementId": {
+            "type": "string",
+            "nullable": true
+          },
+          "field": {
+            "type": "string",
+            "nullable": true
+          },
+          "code": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "source": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "noIncrementalUpdates": {
+            "type": "boolean"
+          },
+          "customTextKey": {
+            "type": "string",
+            "nullable": true
+          },
+          "customTextParams": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidationSourcePair": {
+        "required": [
+          "issues",
+          "source"
+        ],
+        "type": "object",
+        "properties": {
+          "source": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "issues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationIssueWithSource"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "DataModelPairResponse": {
+        "required": [
+          "data",
+          "dataElementId"
+        ],
+        "type": "object",
+        "properties": {
+          "dataElementId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "data": {}
+        },
+        "additionalProperties": false
+      },
+      "DataPatchResponseMultiple": {
+        "required": [
+          "instance",
+          "newDataModels",
+          "validationIssues"
+        ],
+        "type": "object",
+        "properties": {
+          "validationIssues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationSourcePair"
+            }
+          },
+          "newDataModels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DataModelPairResponse"
+            }
+          },
+          "instance": {
+            "$ref": "#/components/schemas/Instance"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DataPatchError": {
+        "required": [
+          "dataElementId",
+          "patchOperationIndex",
+          "previousModel"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "detail": {
+            "type": "string",
+            "nullable": true
+          },
+          "instance": {
+            "type": "string",
+            "nullable": true
+          },
+          "previousModel": {},
+          "dataElementId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "patchOperationIndex": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": {}
+      },
+      "ShadowFields": {
+        "type": "object",
+        "properties": {
+          "prefix": {
+            "type": "string",
+            "nullable": true
+          },
+          "saveToDataType": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ApplicationLogic": {
+        "type": "object",
+        "properties": {
+          "autoCreate": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "classRef": {
+            "type": "string",
+            "nullable": true
+          },
+          "schemaRef": {
+            "type": "string",
+            "nullable": true
+          },
+          "allowAnonymousOnStateless": {
+            "type": "boolean"
+          },
+          "autoDeleteOnProcessEnd": {
+            "type": "boolean"
+          },
+          "disallowUserCreate": {
+            "type": "boolean"
+          },
+          "disallowUserDelete": {
+            "type": "boolean"
+          },
+          "allowInSubform": {
+            "type": "boolean",
+            "deprecated": true
+          },
+          "shadowFields": {
+            "$ref": "#/components/schemas/ShadowFields"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DataType": {
+        "required": [
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "description": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "allowedContentTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "allowedContributers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "appLogic": {
+            "$ref": "#/components/schemas/ApplicationLogic"
+          },
+          "taskId": {
+            "type": "string",
+            "nullable": true
+          },
+          "maxSize": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "maxCount": {
+            "type": "integer",
+            "format": "int32",
+            "default": 1
+          },
+          "minCount": {
+            "type": "integer",
+            "format": "int32",
+            "default": 1
+          },
+          "grouping": {
+            "type": "string",
+            "nullable": true
+          },
+          "enablePdfCreation": {
+            "type": "boolean"
+          },
+          "enableFileScan": {
+            "type": "boolean"
+          },
+          "validationErrorOnPendingFileScan": {
+            "type": "boolean"
+          },
+          "enabledFileAnalysers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "enabledFileValidators": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "allowedKeysForUserDefinedMetadata": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PartyTypesAllowed": {
+        "type": "object",
+        "properties": {
+          "bankruptcyEstate": {
+            "type": "boolean"
+          },
+          "organisation": {
+            "type": "boolean"
+          },
+          "person": {
+            "type": "boolean"
+          },
+          "subUnit": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DataField": {
+        "required": [
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string",
+            "nullable": true
+          },
+          "dataTypeId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "EFormidlingContract": {
+        "type": "object",
+        "properties": {
+          "serviceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "dpfShipmentType": {
+            "type": "string",
+            "nullable": true
+          },
+          "receiver": {
+            "type": "string",
+            "nullable": true
+          },
+          "sendAfterTaskId": {
+            "type": "string",
+            "nullable": true
+          },
+          "process": {
+            "type": "string",
+            "nullable": true
+          },
+          "standard": {
+            "type": "string",
+            "nullable": true
+          },
+          "typeVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "securityLevel": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "dataTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "OnEntryConfig": {
+        "type": "object",
+        "properties": {
+          "show": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "HideSettings": {
+        "type": "object",
+        "properties": {
+          "hideAlways": {
+            "type": "boolean"
+          },
+          "hideOnTask": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MessageBoxConfig": {
+        "type": "object",
+        "properties": {
+          "hideSettings": {
+            "$ref": "#/components/schemas/HideSettings"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CopyInstanceSettings": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "excludedDataTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "excludedDataFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "InstanceSelection": {
+        "type": "object",
+        "properties": {
+          "rowsPerPageOptions": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": true
+          },
+          "defaultRowsPerPage": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "defaultSelectedOption": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "sortDirection": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "OnEntry": {
+        "type": "object",
+        "properties": {
+          "show": {
+            "type": "string",
+            "nullable": true
+          },
+          "instanceSelection": {
+            "$ref": "#/components/schemas/InstanceSelection"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Logo": {
+        "type": "object",
+        "properties": {
+          "displayAppOwnerNameInHeader": {
+            "type": "boolean"
+          },
+          "source": {
+            "type": "string",
+            "nullable": true
+          },
+          "size": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ApplicationMetadata": {
+        "required": [
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "created": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "createdBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastChanged": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "lastChangedBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "versionId": {
+            "type": "string",
+            "nullable": true
+          },
+          "org": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "nullable": true
+            },
+            "nullable": true
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "validTo": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "processId": {
+            "type": "string",
+            "nullable": true
+          },
+          "dataTypes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DataType"
+            },
+            "nullable": true
+          },
+          "partyTypesAllowed": {
+            "$ref": "#/components/schemas/PartyTypesAllowed"
+          },
+          "autoDeleteOnProcessEnd": {
+            "type": "boolean"
+          },
+          "presentationFields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DataField"
+            },
+            "nullable": true
+          },
+          "dataFields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DataField"
+            },
+            "nullable": true
+          },
+          "eFormidling": {
+            "$ref": "#/components/schemas/EFormidlingContract"
+          },
+          "onEntry": {
+            "$ref": "#/components/schemas/OnEntry"
+          },
+          "messageBoxConfig": {
+            "$ref": "#/components/schemas/MessageBoxConfig"
+          },
+          "copyInstanceSettings": {
+            "$ref": "#/components/schemas/CopyInstanceSettings"
+          },
+          "storageAccountNumber": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "disallowUserInstantiation": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "string"
+          },
+          "features": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "nullable": true
+          },
+          "logo": {
+            "$ref": "#/components/schemas/Logo"
+          },
+          "altinnNugetVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "externalApiIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": {}
+      },
+      "MessageV1": {
+        "type": "object",
+        "properties": {
+          "ProcessTask": {
+            "type": "string",
+            "nullable": true
+          },
+          "Title": {
+            "type": "string",
+            "nullable": true
+          },
+          "Body": {
+            "type": "string",
+            "nullable": true
+          },
+          "Reference": {
+            "type": "string",
+            "nullable": true
+          },
+          "Sender": {
+            "type": "string",
+            "nullable": true
+          },
+          "IsSomeValue": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "SomeNumberValue": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "GwTargetTask": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DataPostResponse": {
+        "required": [
+          "instance",
+          "newDataElementId",
+          "newDataModels",
+          "validationIssues"
+        ],
+        "type": "object",
+        "properties": {
+          "newDataElementId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "instance": {
+            "$ref": "#/components/schemas/Instance"
+          },
+          "validationIssues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationSourcePair"
+            }
+          },
+          "newDataModels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DataModelPairResponse"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "DataPostErrorResponse": {
+        "required": [
+          "uploadValidationIssues"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "detail": {
+            "type": "string",
+            "nullable": true
+          },
+          "instance": {
+            "type": "string",
+            "nullable": true
+          },
+          "uploadValidationIssues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationIssueWithSource"
+            },
+            "readOnly": true
+          }
+        },
+        "additionalProperties": {}
+      },
+      "MeldingMeldingsmottakerFodselsnummerdatadef33548": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SubjektFodselsnummerdatadef34727": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SubjektFornavnFolkeregistrertdatadef34730": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 60,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SubjektMellomnavnFolkeregistrertdatadef34731": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 60,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SubjektEtternavnFolkeregistrertdatadef34729": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 60,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "NavneendringenGjelderForgrp9310": {
+        "type": "object",
+        "properties": {
+          "gruppeid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "MeldingMeldingsmottakerFodselsnummer-datadef-33548": {
+            "$ref": "#/components/schemas/MeldingMeldingsmottakerFodselsnummerdatadef33548"
+          },
+          "SubjektFodselsnummer-datadef-34727": {
+            "$ref": "#/components/schemas/SubjektFodselsnummerdatadef34727"
+          },
+          "SubjektFornavnFolkeregistrert-datadef-34730": {
+            "$ref": "#/components/schemas/SubjektFornavnFolkeregistrertdatadef34730"
+          },
+          "SubjektMellomnavnFolkeregistrert-datadef-34731": {
+            "$ref": "#/components/schemas/SubjektMellomnavnFolkeregistrertdatadef34731"
+          },
+          "SubjektEtternavnFolkeregistrert-datadef-34729": {
+            "$ref": "#/components/schemas/SubjektEtternavnFolkeregistrertdatadef34729"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SignererEkstraFodselsnummerdatadef34744": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SignererEkstraEtternavndatadef34745": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 60,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SignererEkstraFornavndatadef34746": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 60,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SignererEkstraMellomnavndatadef34747": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 60,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SignererEkstraEpostdatadef34749": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SignererEkstraMobiltelefonsnummerdatadef34750": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 15,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SignererEkstraReferanseAltinndatadef34751": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 10,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SignererEkstraArkivDatodatadef34752": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SignererEkstraTidspunktdatadef34753": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "pattern": "^([0,1][0-9]|[2][0-3]):[0-5][0-9]:[0-5][0-9](Z|(\\+|-)([0,1][0-9]|[2][0-3]):[0-5][0-9])?$",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SignererEkstraAkseptdatadef34754": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "pattern": "(J|N)",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SignererEkstraMalformdatadef34895": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 10,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Signerergrp9320": {
+        "type": "object",
+        "properties": {
+          "gruppeid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "SignererEkstraFodselsnummer-datadef-34744": {
+            "$ref": "#/components/schemas/SignererEkstraFodselsnummerdatadef34744"
+          },
+          "SignererEkstraEtternavn-datadef-34745": {
+            "$ref": "#/components/schemas/SignererEkstraEtternavndatadef34745"
+          },
+          "SignererEkstraFornavn-datadef-34746": {
+            "$ref": "#/components/schemas/SignererEkstraFornavndatadef34746"
+          },
+          "SignererEkstraMellomnavn-datadef-34747": {
+            "$ref": "#/components/schemas/SignererEkstraMellomnavndatadef34747"
+          },
+          "SignererEkstraEpost-datadef-34749": {
+            "$ref": "#/components/schemas/SignererEkstraEpostdatadef34749"
+          },
+          "SignererEkstraMobiltelefonsnummer-datadef-34750": {
+            "$ref": "#/components/schemas/SignererEkstraMobiltelefonsnummerdatadef34750"
+          },
+          "SignererEkstraReferanseAltinn-datadef-34751": {
+            "$ref": "#/components/schemas/SignererEkstraReferanseAltinndatadef34751"
+          },
+          "SignererEkstraArkivDato-datadef-34752": {
+            "$ref": "#/components/schemas/SignererEkstraArkivDatodatadef34752"
+          },
+          "SignererEkstraTidspunkt-datadef-34753": {
+            "$ref": "#/components/schemas/SignererEkstraTidspunktdatadef34753"
+          },
+          "SignererEkstraAksept-datadef-34754": {
+            "$ref": "#/components/schemas/SignererEkstraAkseptdatadef34754"
+          },
+          "SignererEkstraMalform-datadef-34895": {
+            "$ref": "#/components/schemas/SignererEkstraMalformdatadef34895"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SignererTredjeFodselsnummerdatadef34884": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SignererTredjeEtternavndatadef34885": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 60,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SignererTredjeFornavndatadef34886": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 60,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SignererTredjeMellomnavndatadef34887": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 60,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SignererTredjeEpostdatadef34889": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SignererTredjeMobiltelefonnummerdatadef34890": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 15,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SignererTredjeReferanseAltinndatadef34891": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 10,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SignererTredjeArkivDatodatadef34892": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SignererTredjeTidspunktdatadef34893": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "pattern": "^([0,1][0-9]|[2][0-3]):[0-5][0-9]:[0-5][0-9](Z|(\\+|-)([0,1][0-9]|[2][0-3]):[0-5][0-9])?$",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SignererTredjeAkseptdatadef34894": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "pattern": "(J|N)",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SignererTredjeMalformdatadef34883": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 10,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TredjeSignerergrp9349": {
+        "type": "object",
+        "properties": {
+          "gruppeid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "SignererTredjeFodselsnummer-datadef-34884": {
+            "$ref": "#/components/schemas/SignererTredjeFodselsnummerdatadef34884"
+          },
+          "SignererTredjeEtternavn-datadef-34885": {
+            "$ref": "#/components/schemas/SignererTredjeEtternavndatadef34885"
+          },
+          "SignererTredjeFornavn-datadef-34886": {
+            "$ref": "#/components/schemas/SignererTredjeFornavndatadef34886"
+          },
+          "SignererTredjeMellomnavn-datadef-34887": {
+            "$ref": "#/components/schemas/SignererTredjeMellomnavndatadef34887"
+          },
+          "SignererTredjeEpost-datadef-34889": {
+            "$ref": "#/components/schemas/SignererTredjeEpostdatadef34889"
+          },
+          "SignererTredjeMobiltelefonnummer-datadef-34890": {
+            "$ref": "#/components/schemas/SignererTredjeMobiltelefonnummerdatadef34890"
+          },
+          "SignererTredjeReferanseAltinn-datadef-34891": {
+            "$ref": "#/components/schemas/SignererTredjeReferanseAltinndatadef34891"
+          },
+          "SignererTredjeArkivDato-datadef-34892": {
+            "$ref": "#/components/schemas/SignererTredjeArkivDatodatadef34892"
+          },
+          "SignererTredjeTidspunkt-datadef-34893": {
+            "$ref": "#/components/schemas/SignererTredjeTidspunktdatadef34893"
+          },
+          "SignererTredjeAksept-datadef-34894": {
+            "$ref": "#/components/schemas/SignererTredjeAkseptdatadef34894"
+          },
+          "SignererTredjeMalform-datadef-34883": {
+            "$ref": "#/components/schemas/SignererTredjeMalformdatadef34883"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MeldingFodselsnummerdatadef34734": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MelderFornavndatadef34736": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 60,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MelderMellomnavndatadef34737": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 60,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MelderEtternavndatadef34735": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 60,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MelderFultnavn": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 60,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MelderEpostdatadef34739": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MelderMobiltelefonnummerdatadef34740": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 15,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MelderArkivDatodatadef34741": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MelderArkivTidspunktdatadef34742": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "pattern": "^([0,1][0-9]|[2][0-3]):[0-5][0-9]:[0-5][0-9](Z|(\\+|-)([0,1][0-9]|[2][0-3]):[0-5][0-9])?$",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MelderReferanseAltinndatadef34743": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 10,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MelderMalformdatadef34882": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 10,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Kontaktinformasjongrp9311": {
+        "type": "object",
+        "properties": {
+          "gruppeid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "MeldingFodselsnummer-datadef-34734": {
+            "$ref": "#/components/schemas/MeldingFodselsnummerdatadef34734"
+          },
+          "MelderFornavn-datadef-34736": {
+            "$ref": "#/components/schemas/MelderFornavndatadef34736"
+          },
+          "MelderMellomnavn-datadef-34737": {
+            "$ref": "#/components/schemas/MelderMellomnavndatadef34737"
+          },
+          "MelderEtternavn-datadef-34735": {
+            "$ref": "#/components/schemas/MelderEtternavndatadef34735"
+          },
+          "MelderFultnavn": {
+            "$ref": "#/components/schemas/MelderFultnavn"
+          },
+          "MelderEpost-datadef-34739": {
+            "$ref": "#/components/schemas/MelderEpostdatadef34739"
+          },
+          "MelderMobiltelefonnummer-datadef-34740": {
+            "$ref": "#/components/schemas/MelderMobiltelefonnummerdatadef34740"
+          },
+          "MelderArkivDato-datadef-34741": {
+            "$ref": "#/components/schemas/MelderArkivDatodatadef34741"
+          },
+          "MelderArkivTidspunkt-datadef-34742": {
+            "$ref": "#/components/schemas/MelderArkivTidspunktdatadef34742"
+          },
+          "MelderReferanseAltinn-datadef-34743": {
+            "$ref": "#/components/schemas/MelderReferanseAltinndatadef34743"
+          },
+          "MelderMalform-datadef-34882": {
+            "$ref": "#/components/schemas/MelderMalformdatadef34882"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AvgiverSkattSamtykkedatadef34755": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "pattern": "(J|N|D)",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AvgiverFolkeregisterSamtykkedatadef34756": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "pattern": "(J|N|D)",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SamtykkeTilElektroniskKommunikasjongrp9312": {
+        "type": "object",
+        "properties": {
+          "gruppeid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "AvgiverSkattSamtykke-datadef-34755": {
+            "$ref": "#/components/schemas/AvgiverSkattSamtykkedatadef34755"
+          },
+          "AvgiverFolkeregisterSamtykke-datadef-34756": {
+            "$ref": "#/components/schemas/AvgiverFolkeregisterSamtykkedatadef34756"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Innledninggrp9309": {
+        "type": "object",
+        "properties": {
+          "gruppeid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "NavneendringenGjelderFor-grp-9310": {
+            "$ref": "#/components/schemas/NavneendringenGjelderForgrp9310"
+          },
+          "Signerer-grp-9320": {
+            "$ref": "#/components/schemas/Signerergrp9320"
+          },
+          "TredjeSignerer-grp-9349": {
+            "$ref": "#/components/schemas/TredjeSignerergrp9349"
+          },
+          "Kontaktinformasjon-grp-9311": {
+            "$ref": "#/components/schemas/Kontaktinformasjongrp9311"
+          },
+          "SamtykkeTilElektroniskKommunikasjon-grp-9312": {
+            "$ref": "#/components/schemas/SamtykkeTilElektroniskKommunikasjongrp9312"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonEtternavnNyttdatadef34757": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonFornavnNyttdatadef34758": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonMellomnavnNyttdatadef34759": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonBekrefterNyttNavn": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "NyttNavngrp9314": {
+        "type": "object",
+        "properties": {
+          "gruppeid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "PersonEtternavnNytt-datadef-34757": {
+            "$ref": "#/components/schemas/PersonEtternavnNyttdatadef34757"
+          },
+          "PersonFornavnNytt-datadef-34758": {
+            "$ref": "#/components/schemas/PersonFornavnNyttdatadef34758"
+          },
+          "PersonMellomnavnNytt-datadef-34759": {
+            "$ref": "#/components/schemas/PersonMellomnavnNyttdatadef34759"
+          },
+          "PersonBekrefterNyttNavn": {
+            "$ref": "#/components/schemas/PersonBekrefterNyttNavn"
+          }
+        },
+        "additionalProperties": false
+      },
+      "NyttNavngrp9313": {
+        "type": "object",
+        "properties": {
+          "gruppeid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "NyttNavn-grp-9314": {
+            "$ref": "#/components/schemas/NyttNavngrp9314"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonEtternavnForstedatadef34896": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonEtternavnForsteTilknytningstypedatadef34897": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 2,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonEtternavnForsteTilknytningBeskrivelsedatadef34898": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 500,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonEtternavnForsteTilknyttetPersonsFodselsnummerdatadef34899": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonEtternavnForsteTilknyttetPersonsEtternavndatadef34900": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonEtternavnForsteTilknyttetGardNavndatadef34901": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonEtternavnForsteTilknyttetGardKommunenummerdatadef34902": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "pattern": "[0-9]{4}",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonEtternavnForsteTilknyttetGardGardsnummerdatadef34903": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 5,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonEtternavnForsteTilknyttetGardBruksnummerdatadef34904": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 4,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonEtternavnForsteTilknyttetGardFesteavgiftdatadef34905": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 4,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TilknytningEtternavn1grp9350": {
+        "type": "object",
+        "properties": {
+          "gruppeid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "PersonEtternavnForste-datadef-34896": {
+            "$ref": "#/components/schemas/PersonEtternavnForstedatadef34896"
+          },
+          "PersonEtternavnForsteTilknytningstype-datadef-34897": {
+            "$ref": "#/components/schemas/PersonEtternavnForsteTilknytningstypedatadef34897"
+          },
+          "PersonEtternavnForsteTilknytningBeskrivelse-datadef-34898": {
+            "$ref": "#/components/schemas/PersonEtternavnForsteTilknytningBeskrivelsedatadef34898"
+          },
+          "PersonEtternavnForsteTilknyttetPersonsFodselsnummer-datadef-34899": {
+            "$ref": "#/components/schemas/PersonEtternavnForsteTilknyttetPersonsFodselsnummerdatadef34899"
+          },
+          "PersonEtternavnForsteTilknyttetPersonsEtternavn-datadef-34900": {
+            "$ref": "#/components/schemas/PersonEtternavnForsteTilknyttetPersonsEtternavndatadef34900"
+          },
+          "PersonEtternavnForsteTilknyttetGardNavn-datadef-34901": {
+            "$ref": "#/components/schemas/PersonEtternavnForsteTilknyttetGardNavndatadef34901"
+          },
+          "PersonEtternavnForsteTilknyttetGardKommunenummer-datadef-34902": {
+            "$ref": "#/components/schemas/PersonEtternavnForsteTilknyttetGardKommunenummerdatadef34902"
+          },
+          "PersonEtternavnForsteTilknyttetGardGardsnummer-datadef-34903": {
+            "$ref": "#/components/schemas/PersonEtternavnForsteTilknyttetGardGardsnummerdatadef34903"
+          },
+          "PersonEtternavnForsteTilknyttetGardBruksnummer-datadef-34904": {
+            "$ref": "#/components/schemas/PersonEtternavnForsteTilknyttetGardBruksnummerdatadef34904"
+          },
+          "PersonEtternavnForsteTilknyttetGardFesteavgift-datadef-34905": {
+            "$ref": "#/components/schemas/PersonEtternavnForsteTilknyttetGardFesteavgiftdatadef34905"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonEtternavnAndredatadef34906": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonEtternavnAndreTilknytningstypedatadef34907": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 2,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonEtternavnAndreTilknytningBeskrivelsedatadef34908": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 500,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonEtternavnAndreTilknyttetPersonsFodselsnummerdatadef34909": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonEtternavnAndreTilknyttetPersonsEtternavndatadef34910": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonEtternavnAndreTilknyttetGardNavndatadef34911": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonEtternavnAndreTilknyttetGardKommunenummerdatadef34912": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "pattern": "[0-9]{4}",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonEtternavnAndreTilknyttetGardGardsnummerdatadef34913": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 5,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonEtternavnAndreTilknyttetGardBruksnummerdatadef34914": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 4,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonEtternavnAndreTilknyttetGardFesteavgiftdatadef34915": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 4,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TilknytningEtternavn2grp9351": {
+        "type": "object",
+        "properties": {
+          "gruppeid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "PersonEtternavnAndre-datadef-34906": {
+            "$ref": "#/components/schemas/PersonEtternavnAndredatadef34906"
+          },
+          "PersonEtternavnAndreTilknytningstype-datadef-34907": {
+            "$ref": "#/components/schemas/PersonEtternavnAndreTilknytningstypedatadef34907"
+          },
+          "PersonEtternavnAndreTilknytningBeskrivelse-datadef-34908": {
+            "$ref": "#/components/schemas/PersonEtternavnAndreTilknytningBeskrivelsedatadef34908"
+          },
+          "PersonEtternavnAndreTilknyttetPersonsFodselsnummer-datadef-34909": {
+            "$ref": "#/components/schemas/PersonEtternavnAndreTilknyttetPersonsFodselsnummerdatadef34909"
+          },
+          "PersonEtternavnAndreTilknyttetPersonsEtternavn-datadef-34910": {
+            "$ref": "#/components/schemas/PersonEtternavnAndreTilknyttetPersonsEtternavndatadef34910"
+          },
+          "PersonEtternavnAndreTilknyttetGardNavn-datadef-34911": {
+            "$ref": "#/components/schemas/PersonEtternavnAndreTilknyttetGardNavndatadef34911"
+          },
+          "PersonEtternavnAndreTilknyttetGardKommunenummer-datadef-34912": {
+            "$ref": "#/components/schemas/PersonEtternavnAndreTilknyttetGardKommunenummerdatadef34912"
+          },
+          "PersonEtternavnAndreTilknyttetGardGardsnummer-datadef-34913": {
+            "$ref": "#/components/schemas/PersonEtternavnAndreTilknyttetGardGardsnummerdatadef34913"
+          },
+          "PersonEtternavnAndreTilknyttetGardBruksnummer-datadef-34914": {
+            "$ref": "#/components/schemas/PersonEtternavnAndreTilknyttetGardBruksnummerdatadef34914"
+          },
+          "PersonEtternavnAndreTilknyttetGardFesteavgift-datadef-34915": {
+            "$ref": "#/components/schemas/PersonEtternavnAndreTilknyttetGardFesteavgiftdatadef34915"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonMellomnavnForstedatadef34916": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonMellomnavnForsteTilknytningstypedatadef34917": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 2,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonMellomnavnForsteTilknytningBeskrivelsedatadef34918": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 500,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonMellomnavnForsteTilknyttetPersonsFodselsnummerdatadef34919": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonMellomnavnForsteTilknyttetPersonsEtternavndatadef34920": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonMellomnavnForsteTilknyttetGardNavndatadef34921": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonMellomnavnForsteTilknyttetGardKommunenummerdatadef34922": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "pattern": "[0-9]{4}",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonMellomnavnForsteTilknyttetGardGardsnummerdatadef34923": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 5,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonMellomnavnForsteTilknyttetGardBruksnummerdatadef34924": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 4,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonMellomnavnForsteTilknyttetGardFestenummerdatadef34925": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 4,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TilknytningMellomnavn1grp9352": {
+        "type": "object",
+        "properties": {
+          "gruppeid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "PersonMellomnavnForste-datadef-34916": {
+            "$ref": "#/components/schemas/PersonMellomnavnForstedatadef34916"
+          },
+          "PersonMellomnavnForsteTilknytningstype-datadef-34917": {
+            "$ref": "#/components/schemas/PersonMellomnavnForsteTilknytningstypedatadef34917"
+          },
+          "PersonMellomnavnForsteTilknytningBeskrivelse-datadef-34918": {
+            "$ref": "#/components/schemas/PersonMellomnavnForsteTilknytningBeskrivelsedatadef34918"
+          },
+          "PersonMellomnavnForsteTilknyttetPersonsFodselsnummer-datadef-34919": {
+            "$ref": "#/components/schemas/PersonMellomnavnForsteTilknyttetPersonsFodselsnummerdatadef34919"
+          },
+          "PersonMellomnavnForsteTilknyttetPersonsEtternavn-datadef-34920": {
+            "$ref": "#/components/schemas/PersonMellomnavnForsteTilknyttetPersonsEtternavndatadef34920"
+          },
+          "PersonMellomnavnForsteTilknyttetGardNavn-datadef-34921": {
+            "$ref": "#/components/schemas/PersonMellomnavnForsteTilknyttetGardNavndatadef34921"
+          },
+          "PersonMellomnavnForsteTilknyttetGardKommunenummer-datadef-34922": {
+            "$ref": "#/components/schemas/PersonMellomnavnForsteTilknyttetGardKommunenummerdatadef34922"
+          },
+          "PersonMellomnavnForsteTilknyttetGardGardsnummer-datadef-34923": {
+            "$ref": "#/components/schemas/PersonMellomnavnForsteTilknyttetGardGardsnummerdatadef34923"
+          },
+          "PersonMellomnavnForsteTilknyttetGardBruksnummer-datadef-34924": {
+            "$ref": "#/components/schemas/PersonMellomnavnForsteTilknyttetGardBruksnummerdatadef34924"
+          },
+          "PersonMellomnavnForsteTilknyttetGardFestenummer-datadef-34925": {
+            "$ref": "#/components/schemas/PersonMellomnavnForsteTilknyttetGardFestenummerdatadef34925"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonMellomnavnAndredatadef34926": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonMellomnavnAndreTilknytningstypedatadef34927": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 2,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonMellomnavnAndreTilknytningBeskrivelsedatadef34928": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 500,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonMellomnavnAndreTilknyttetPersonsFodselsnummerdatadef34929": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonMellomnavnAndreTilknyttetPersonsEtternavndatadef34930": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonMellomnavnAndreTilknyttetGardNavndatadef34931": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonMellomnavnAndreTilknyttetGardKommunenummerdatadef34932": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "pattern": "[0-9]{4}",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonMellomnavnAndreTilknyttetGardGardsnummerdatadef34933": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 5,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonMellomnavnAndreTilknyttetGardBruksnummerdatadef34934": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 4,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonMellomnavnAndreTilknyttetGardFestenummerdatadef34935": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 4,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TilknytningMellomnavn2grp9353": {
+        "type": "object",
+        "properties": {
+          "gruppeid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "PersonMellomnavnAndre-datadef-34926": {
+            "$ref": "#/components/schemas/PersonMellomnavnAndredatadef34926"
+          },
+          "PersonMellomnavnAndreTilknytningstype-datadef-34927": {
+            "$ref": "#/components/schemas/PersonMellomnavnAndreTilknytningstypedatadef34927"
+          },
+          "PersonMellomnavnAndreTilknytningBeskrivelse-datadef-34928": {
+            "$ref": "#/components/schemas/PersonMellomnavnAndreTilknytningBeskrivelsedatadef34928"
+          },
+          "PersonMellomnavnAndreTilknyttetPersonsFodselsnummer-datadef-34929": {
+            "$ref": "#/components/schemas/PersonMellomnavnAndreTilknyttetPersonsFodselsnummerdatadef34929"
+          },
+          "PersonMellomnavnAndreTilknyttetPersonsEtternavn-datadef-34930": {
+            "$ref": "#/components/schemas/PersonMellomnavnAndreTilknyttetPersonsEtternavndatadef34930"
+          },
+          "PersonMellomnavnAndreTilknyttetGardNavn-datadef-34931": {
+            "$ref": "#/components/schemas/PersonMellomnavnAndreTilknyttetGardNavndatadef34931"
+          },
+          "PersonMellomnavnAndreTilknyttetGardKommunenummer-datadef-34932": {
+            "$ref": "#/components/schemas/PersonMellomnavnAndreTilknyttetGardKommunenummerdatadef34932"
+          },
+          "PersonMellomnavnAndreTilknyttetGardGardsnummer-datadef-34933": {
+            "$ref": "#/components/schemas/PersonMellomnavnAndreTilknyttetGardGardsnummerdatadef34933"
+          },
+          "PersonMellomnavnAndreTilknyttetGardBruksnummer-datadef-34934": {
+            "$ref": "#/components/schemas/PersonMellomnavnAndreTilknyttetGardBruksnummerdatadef34934"
+          },
+          "PersonMellomnavnAndreTilknyttetGardFestenummer-datadef-34935": {
+            "$ref": "#/components/schemas/PersonMellomnavnAndreTilknyttetGardFestenummerdatadef34935"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonMellomnavnTredjedatadef34936": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonMellomnavnTredjeTilknytningstypedatadef34937": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 2,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonMellomnavnTredjeTilknytningBeskrivelsedatadef34938": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 500,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonMellomnavnTredjeTilknyttetPersonsFodselsnummerdatadef34939": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonMellomnavnTredjeTilknyttetPersonsEtternavndatadef34940": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonMellomnavnTredjeTilknyttetGardNavndatadef34941": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonMellomnavnTredjeTilknyttetGardKommunenummerdatadef34942": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "pattern": "[0-9]{4}",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonMellomnavnTredjeTilknyttetGardGardsnummerdatadef34943": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 5,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonMellomnavnTredjeTilknyttetGardBruksnummerdatadef34944": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 4,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonMellomnavnTredjeTilknyttetGardFestenummerdatadef34945": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 4,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TilknytningMellomnavn3grp9354": {
+        "type": "object",
+        "properties": {
+          "gruppeid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "PersonMellomnavnTredje-datadef-34936": {
+            "$ref": "#/components/schemas/PersonMellomnavnTredjedatadef34936"
+          },
+          "PersonMellomnavnTredjeTilknytningstype-datadef-34937": {
+            "$ref": "#/components/schemas/PersonMellomnavnTredjeTilknytningstypedatadef34937"
+          },
+          "PersonMellomnavnTredjeTilknytningBeskrivelse-datadef-34938": {
+            "$ref": "#/components/schemas/PersonMellomnavnTredjeTilknytningBeskrivelsedatadef34938"
+          },
+          "PersonMellomnavnTredjeTilknyttetPersonsFodselsnummer-datadef-34939": {
+            "$ref": "#/components/schemas/PersonMellomnavnTredjeTilknyttetPersonsFodselsnummerdatadef34939"
+          },
+          "PersonMellomnavnTredjeTilknyttetPersonsEtternavn-datadef-34940": {
+            "$ref": "#/components/schemas/PersonMellomnavnTredjeTilknyttetPersonsEtternavndatadef34940"
+          },
+          "PersonMellomnavnTredjeTilknyttetGardNavn-datadef-34941": {
+            "$ref": "#/components/schemas/PersonMellomnavnTredjeTilknyttetGardNavndatadef34941"
+          },
+          "PersonMellomnavnTredjeTilknyttetGardKommunenummer-datadef-34942": {
+            "$ref": "#/components/schemas/PersonMellomnavnTredjeTilknyttetGardKommunenummerdatadef34942"
+          },
+          "PersonMellomnavnTredjeTilknyttetGardGardsnummer-datadef-34943": {
+            "$ref": "#/components/schemas/PersonMellomnavnTredjeTilknyttetGardGardsnummerdatadef34943"
+          },
+          "PersonMellomnavnTredjeTilknyttetGardBruksnummer-datadef-34944": {
+            "$ref": "#/components/schemas/PersonMellomnavnTredjeTilknyttetGardBruksnummerdatadef34944"
+          },
+          "PersonMellomnavnTredjeTilknyttetGardFestenummer-datadef-34945": {
+            "$ref": "#/components/schemas/PersonMellomnavnTredjeTilknyttetGardFestenummerdatadef34945"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonMellomnavnBeskrivelsedatadef34946": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 500,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TilknytningMellomnavnEkstragrp9355": {
+        "type": "object",
+        "properties": {
+          "gruppeid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "PersonMellomnavnBeskrivelse-datadef-34946": {
+            "$ref": "#/components/schemas/PersonMellomnavnBeskrivelsedatadef34946"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TilknytningTilNavnetgrp9316": {
+        "type": "object",
+        "properties": {
+          "gruppeid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "TilknytningEtternavn1-grp-9350": {
+            "$ref": "#/components/schemas/TilknytningEtternavn1grp9350"
+          },
+          "TilknytningEtternavn2-grp-9351": {
+            "$ref": "#/components/schemas/TilknytningEtternavn2grp9351"
+          },
+          "TilknytningMellomnavn1-grp-9352": {
+            "$ref": "#/components/schemas/TilknytningMellomnavn1grp9352"
+          },
+          "TilknytningMellomnavn2-grp-9353": {
+            "$ref": "#/components/schemas/TilknytningMellomnavn2grp9353"
+          },
+          "TilknytningMellomnavn3-grp-9354": {
+            "$ref": "#/components/schemas/TilknytningMellomnavn3grp9354"
+          },
+          "TilknytningMellomnavnEkstra-grp-9355": {
+            "$ref": "#/components/schemas/TilknytningMellomnavnEkstragrp9355"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Tilknytninggrp9315": {
+        "type": "object",
+        "properties": {
+          "gruppeid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "TilknytningTilNavnet-grp-9316": {
+            "$ref": "#/components/schemas/TilknytningTilNavnetgrp9316"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonForrigeFornavnValgtdatadef34947": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "pattern": "(0|1)",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonFornavnAnnetBegrunnelsedatadef34948": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 500,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BegrunnelseForNyttNavngrp9318": {
+        "type": "object",
+        "properties": {
+          "gruppeid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "PersonForrigeFornavnValgt-datadef-34947": {
+            "$ref": "#/components/schemas/PersonForrigeFornavnValgtdatadef34947"
+          },
+          "PersonFornavnAnnetBegrunnelse-datadef-34948": {
+            "$ref": "#/components/schemas/PersonFornavnAnnetBegrunnelsedatadef34948"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Begrunnelsegrp9317": {
+        "type": "object",
+        "properties": {
+          "gruppeid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "BegrunnelseForNyttNavn-grp-9318": {
+            "$ref": "#/components/schemas/BegrunnelseForNyttNavngrp9318"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Adresse": {
+        "type": "object",
+        "properties": {
+          "Gateadresse_æøå": {
+            "type": "string",
+            "nullable": true
+          },
+          "CareOf": {
+            "type": "string",
+            "nullable": true
+          },
+          "Poststed": {
+            "type": "string",
+            "nullable": true
+          },
+          "Kommune": {
+            "type": "string",
+            "nullable": true
+          },
+          "KommunerMetadata": {
+            "type": "string",
+            "nullable": true
+          },
+          "Postnr": {
+            "type": "string",
+            "nullable": true
+          },
+          "HouseNumber": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "GjeldsFordeling": {
+        "type": "object",
+        "properties": {
+          "Prosent": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "Belop": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "Verifisert": {
+            "type": "string",
+            "nullable": true
+          },
+          "IBruk": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "GridExamples": {
+        "type": "object",
+        "properties": {
+          "ExampleDate": {
+            "type": "string",
+            "nullable": true
+          },
+          "ExampleDropdown": {
+            "type": "string",
+            "nullable": true
+          },
+          "ExampleMultiSelect": {
+            "type": "string",
+            "nullable": true
+          },
+          "ExampleTextArea": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "GridData": {
+        "type": "object",
+        "properties": {
+          "TotalGjeld": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "Bolig": {
+            "$ref": "#/components/schemas/GjeldsFordeling"
+          },
+          "Studie": {
+            "$ref": "#/components/schemas/GjeldsFordeling"
+          },
+          "Kredittkort": {
+            "$ref": "#/components/schemas/GjeldsFordeling"
+          },
+          "TotalProsent": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "ShowAll": {
+            "type": "string",
+            "nullable": true
+          },
+          "Examples": {
+            "$ref": "#/components/schemas/GridExamples"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Numeric": {
+        "type": "object",
+        "properties": {
+          "Decimal": {
+            "type": "number",
+            "format": "double"
+          },
+          "Int32": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Int64": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "Int16": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Geometry": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "string",
+            "nullable": true
+          },
+          "label": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MapData": {
+        "type": "object",
+        "properties": {
+          "Location": {
+            "type": "string",
+            "nullable": true
+          },
+          "Geometries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Geometry"
+            },
+            "nullable": true
+          },
+          "Selected": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AnimalComment": {
+        "type": "object",
+        "properties": {
+          "Type": {
+            "type": "string",
+            "nullable": true
+          },
+          "TypeLabel": {
+            "type": "string",
+            "nullable": true
+          },
+          "Text": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Animal": {
+        "type": "object",
+        "properties": {
+          "Name": {
+            "type": "string",
+            "nullable": true
+          },
+          "NumLegs": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "Color": {
+            "type": "string",
+            "nullable": true
+          },
+          "Colors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "Comments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnimalComment"
+            },
+            "nullable": true
+          },
+          "CommentLabels": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ConflictingOptions": {
+        "required": [
+          "IsForeign"
+        ],
+        "type": "object",
+        "properties": {
+          "IsForeign": {
+            "type": "boolean"
+          },
+          "Animals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Animal"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Balloon": {
+        "required": [
+          "Num"
+        ],
+        "type": "object",
+        "properties": {
+          "Num": {
+            "type": "number",
+            "format": "double"
+          },
+          "Color": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ShiftingOptions": {
+        "required": [
+          "GlobalCounter"
+        ],
+        "type": "object",
+        "properties": {
+          "GlobalCounter": {
+            "type": "number",
+            "format": "double"
+          },
+          "Balloons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Balloon"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Ingredient": {
+        "required": [
+          "Amount"
+        ],
+        "type": "object",
+        "properties": {
+          "Type": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "Amount": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "FilteredOptions": {
+        "type": "object",
+        "properties": {
+          "UsedTypes": {
+            "type": "string",
+            "nullable": true
+          },
+          "Ingredients": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Ingredient"
+            },
+            "nullable": true
+          },
+          "Dislikes": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "LinkedHidden": {
+        "type": "object",
+        "properties": {
+          "Value1": {
+            "type": "string",
+            "nullable": true
+          },
+          "Value2": {
+            "type": "string",
+            "nullable": true
+          },
+          "Value3": {
+            "type": "string",
+            "nullable": true
+          },
+          "Value4": {
+            "type": "string",
+            "nullable": true
+          },
+          "Value5": {
+            "type": "string",
+            "nullable": true
+          },
+          "Value6": {
+            "type": "string",
+            "nullable": true
+          },
+          "Value7": {
+            "type": "string",
+            "nullable": true
+          },
+          "Value8": {
+            "type": "string",
+            "nullable": true
+          },
+          "Value9": {
+            "type": "string",
+            "nullable": true
+          },
+          "Value10": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Skjema": {
+        "type": "object",
+        "properties": {
+          "skjemanummer": {
+            "maximum": 2147483647,
+            "minimum": -2147483648,
+            "type": "number",
+            "format": "double"
+          },
+          "spesifikasjonsnummer": {
+            "maximum": 2147483647,
+            "minimum": -2147483648,
+            "type": "number",
+            "format": "double"
+          },
+          "blankettnummer": {
+            "type": "string",
+            "nullable": true
+          },
+          "tittel": {
+            "type": "string",
+            "nullable": true
+          },
+          "gruppeid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "etatid": {
+            "type": "string",
+            "nullable": true
+          },
+          "Innledning-grp-9309": {
+            "$ref": "#/components/schemas/Innledninggrp9309"
+          },
+          "NyttNavn-grp-9313": {
+            "$ref": "#/components/schemas/NyttNavngrp9313"
+          },
+          "Tilknytning-grp-9315": {
+            "$ref": "#/components/schemas/Tilknytninggrp9315"
+          },
+          "Begrunnelse-grp-9317": {
+            "$ref": "#/components/schemas/Begrunnelsegrp9317"
+          },
+          "Radioknapp": {
+            "type": "string",
+            "nullable": true
+          },
+          "ColorsLabelsVerify": {
+            "type": "string",
+            "nullable": true
+          },
+          "Colors": {
+            "type": "string",
+            "nullable": true
+          },
+          "Food": {
+            "type": "string",
+            "nullable": true
+          },
+          "FoodLabel": {
+            "type": "string",
+            "nullable": true
+          },
+          "ColorsLabels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "BegrunnelseFrivillig": {
+            "type": "string",
+            "nullable": true
+          },
+          "Adresse": {
+            "$ref": "#/components/schemas/Adresse"
+          },
+          "GridData": {
+            "$ref": "#/components/schemas/GridData"
+          },
+          "TestCustomButtonInput": {
+            "type": "string",
+            "nullable": true
+          },
+          "TestCustomButtonReadOnlyInput": {
+            "type": "string",
+            "nullable": true
+          },
+          "neverValidatedInput": {
+            "type": "string",
+            "nullable": true
+          },
+          "ChooseExtraPages": {
+            "type": "string",
+            "nullable": true
+          },
+          "Numeric": {
+            "$ref": "#/components/schemas/Numeric"
+          },
+          "MapData": {
+            "$ref": "#/components/schemas/MapData"
+          },
+          "ConflictingOptions": {
+            "$ref": "#/components/schemas/ConflictingOptions"
+          },
+          "ShiftingOptions": {
+            "$ref": "#/components/schemas/ShiftingOptions"
+          },
+          "FilteredOptions": {
+            "$ref": "#/components/schemas/FilteredOptions"
+          },
+          "LinkedHidden": {
+            "$ref": "#/components/schemas/LinkedHidden"
+          }
+        },
+        "additionalProperties": false
+      },
+      "OppgavegiverNavndatadef68": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 175,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "OppgavegiverFodselsnummerdatadef26": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "KontaktpersonEPostdatadef27688": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 45,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "KontaktpersonTelefonnummerdatadef3": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 13,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Avgivergrp9787": {
+        "type": "object",
+        "properties": {
+          "gruppeid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "OppgavegiverNavn-datadef-68": {
+            "$ref": "#/components/schemas/OppgavegiverNavndatadef68"
+          },
+          "OppgavegiverFodselsnummer-datadef-26": {
+            "$ref": "#/components/schemas/OppgavegiverFodselsnummerdatadef26"
+          },
+          "KontaktpersonEPost-datadef-27688": {
+            "$ref": "#/components/schemas/KontaktpersonEPostdatadef27688"
+          },
+          "KontaktpersonTelefonnummer-datadef-3": {
+            "$ref": "#/components/schemas/KontaktpersonTelefonnummerdatadef3"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SkattemeldingEndringEtterFristPostdatadef37130": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 35,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SkattemeldingEndringEtterFristOpprinneligBelopdatadef37131": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maximum": 2147483647,
+            "minimum": -2147483648,
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SkattemeldingEndringEtterFristNyttBelopdatadef37132": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maximum": 2147483647,
+            "minimum": -2147483648,
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SkattemeldingEndringEtterFristKommentardatadef37133": {
+        "type": "object",
+        "properties": {
+          "orid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "maxLength": 500,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "nestedgrp1234": {
+        "type": "object",
+        "properties": {
+          "gruppeid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "SkattemeldingEndringEtterFristPost-datadef-37130": {
+            "$ref": "#/components/schemas/SkattemeldingEndringEtterFristPostdatadef37130"
+          },
+          "SkattemeldingEndringEtterFristOpprinneligBelop-datadef-37131": {
+            "$ref": "#/components/schemas/SkattemeldingEndringEtterFristOpprinneligBelopdatadef37131"
+          },
+          "SkattemeldingEndringEtterFristNyttBelop-datadef-37132": {
+            "$ref": "#/components/schemas/SkattemeldingEndringEtterFristNyttBelopdatadef37132"
+          },
+          "SkattemeldingEndringEtterFristKommentar-datadef-37133": {
+            "$ref": "#/components/schemas/SkattemeldingEndringEtterFristKommentardatadef37133"
+          },
+          "fileUpload": {
+            "type": "string",
+            "nullable": true
+          },
+          "fileUploadList": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "extraOptionsToggle": {
+            "type": "string",
+            "nullable": true
+          },
+          "extraOptions": {
+            "type": "string",
+            "nullable": true
+          },
+          "source": {
+            "type": "string",
+            "nullable": true
+          },
+          "reference": {
+            "type": "string",
+            "nullable": true
+          },
+          "hideComment": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "OversiktOverEndringenegrp9788": {
+        "type": "object",
+        "properties": {
+          "gruppeid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "SkattemeldingEndringEtterFristPost-datadef-37130": {
+            "$ref": "#/components/schemas/SkattemeldingEndringEtterFristPostdatadef37130"
+          },
+          "SkattemeldingEndringEtterFristOpprinneligBelop-datadef-37131": {
+            "$ref": "#/components/schemas/SkattemeldingEndringEtterFristOpprinneligBelopdatadef37131"
+          },
+          "SkattemeldingEndringEtterFristNyttBelop-datadef-37132": {
+            "$ref": "#/components/schemas/SkattemeldingEndringEtterFristNyttBelopdatadef37132"
+          },
+          "SkattemeldingEndringEtterFristKommentar-datadef-37133": {
+            "$ref": "#/components/schemas/SkattemeldingEndringEtterFristKommentardatadef37133"
+          },
+          "fileUpload": {
+            "type": "string",
+            "nullable": true
+          },
+          "fileUploadList": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "isPrefill": {
+            "type": "boolean"
+          },
+          "nested-grp-1234": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/nestedgrp1234"
+            },
+            "nullable": true
+          },
+          "source": {
+            "type": "string",
+            "nullable": true
+          },
+          "reference": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Gruppe2": {
+        "type": "object",
+        "properties": {
+          "gruppeid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "felt1": {
+            "$ref": "#/components/schemas/SkattemeldingEndringEtterFristPostdatadef37130"
+          },
+          "teller": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Endringsmeldinggrp9786": {
+        "type": "object",
+        "properties": {
+          "gruppeid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "Avgiver-grp-9787": {
+            "$ref": "#/components/schemas/Avgivergrp9787"
+          },
+          "OversiktOverEndringene-grp-9788": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OversiktOverEndringenegrp9788"
+            },
+            "nullable": true
+          },
+          "Gruppe2": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Gruppe2"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Pet": {
+        "type": "object",
+        "properties": {
+          "UniqueId": {
+            "type": "string",
+            "nullable": true
+          },
+          "Species": {
+            "type": "string",
+            "nullable": true
+          },
+          "SpeciesLabel": {
+            "type": "string",
+            "nullable": true
+          },
+          "Name": {
+            "type": "string",
+            "nullable": true
+          },
+          "Age": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "NestedGroup": {
+        "type": "object",
+        "properties": {
+          "skjemanummer": {
+            "maximum": 2147483647,
+            "minimum": -2147483648,
+            "type": "number",
+            "format": "double"
+          },
+          "spesifikasjonsnummer": {
+            "maximum": 2147483647,
+            "minimum": -2147483648,
+            "type": "number",
+            "format": "double"
+          },
+          "hideRowValue": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sumAll": {
+            "type": "number",
+            "format": "double"
+          },
+          "sumAboveLimit": {
+            "type": "number",
+            "format": "double"
+          },
+          "numAboveLimit": {
+            "type": "number",
+            "format": "double"
+          },
+          "blankettnummer": {
+            "type": "string",
+            "nullable": true
+          },
+          "tittel": {
+            "type": "string",
+            "nullable": true
+          },
+          "gruppeid": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "number",
+            "format": "double"
+          },
+          "etatid": {
+            "type": "string",
+            "nullable": true
+          },
+          "Endringsmelding-grp-9786": {
+            "$ref": "#/components/schemas/Endringsmeldinggrp9786"
+          },
+          "PrefillValues": {
+            "type": "string",
+            "nullable": true
+          },
+          "PrefillValuesShadow": {
+            "type": "string",
+            "nullable": true
+          },
+          "PrefillValuesEnabled": {
+            "type": "boolean"
+          },
+          "Group2Teller": {
+            "type": "number",
+            "format": "double"
+          },
+          "Pets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Pet"
+            },
+            "nullable": true
+          },
+          "ForceShowPets": {
+            "type": "boolean"
+          },
+          "NumPets": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "HiddenPets": {
+            "type": "string",
+            "nullable": true
+          },
+          "PetSortOrder": {
+            "type": "string",
+            "nullable": true
+          },
+          "PetsUseOptionComponent": {
+            "type": "boolean",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Question": {
+        "type": "object",
+        "properties": {
+          "Id": {
+            "type": "string",
+            "nullable": true
+          },
+          "Answer": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "LikertSurvey": {
+        "type": "object",
+        "properties": {
+          "Questions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Question"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Datalist": {
+        "type": "object",
+        "properties": {
+          "SelectedItem": {
+            "type": "string",
+            "nullable": true
+          },
+          "SelectedItemProfession": {
+            "type": "string",
+            "nullable": true
+          },
+          "Search": {
+            "type": "string",
+            "nullable": true
+          },
+          "UseCustomConfirm": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "responses": {
+      "ProblemDetails": {
+        "description": "Problem details",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "nullable": true,
+                  "example": "https://datatracker.ietf.org/doc/html/rfc6902/"
+                },
+                "title": {
+                  "type": "string",
+                  "nullable": true,
+                  "example": "Error in data processing"
+                },
+                "status": {
+                  "type": "integer",
+                  "format": "int32",
+                  "nullable": true,
+                  "example": 400
+                },
+                "detail": {
+                  "type": "string",
+                  "nullable": true,
+                  "example": "Actually usefull description of the error"
+                },
+                "instance": {
+                  "type": "string",
+                  "nullable": true
+                }
+              },
+              "additionalProperties": {
+                "title": "Additional properties",
+                "description": "Additional properties can be added to the problem details"
+              }
+            }
+          }
+        }
+      }
+    },
+    "parameters": {
+      "instanceOwnerPartyId": {
+        "name": "instanceOwnerPartyId",
+        "in": "path",
+        "description": "PartyId for the owner of the instance, this is altinns internal id for the organisation, person or self registered user. Might be the current user, or ",
+        "required": true,
+        "schema": {
+          "type": "integer"
+        }
+      },
+      "instanceGuid": {
+        "name": "instanceGuid",
+        "in": "path",
+        "description": "The guid part of instance.Id",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "guid"
+        }
+      },
+      "dataGuid": {
+        "name": "dataGuid",
+        "in": "path",
+        "description": "Id of this data element that belongs to an instance",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "guid"
+        }
+      },
+      "language": {
+        "name": "language",
+        "in": "query",
+        "description": "Some apps make changes to the data models or validation based on the active language of the user",
+        "schema": {
+          "pattern": "\\w\\w",
+          "type": "string"
+        },
+        "example": "nb"
+      }
+    },
+    "securitySchemes": {
+      "AltinnToken": {
+        "type": "http",
+        "description": "Get a token for [localtest](http://local.altinn.cloud/Home/Tokens)\nor by exchanging a maskinporten token with the [token exchange endpoint](https://docs.altinn.studio/api/authentication/spec/#/Authentication/get_exchange__tokenProvider_)",
+        "scheme": "Bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "security": [
+    {
+      "AltinnToken": []
+    }
+  ],
+  "externalDocs": {
+    "description": "Altinn 3 Documentation",
+    "url": "https://docs.altinn.studio"
+  }
+}
