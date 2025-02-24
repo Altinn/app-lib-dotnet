@@ -1,4 +1,4 @@
-{
+﻿{
   "openapi": "3.0.1",
   "info": {
     "title": "Altinn App Api",
@@ -10,12 +10,10 @@
         "tags": [
           "Actions"
         ],
-        "summary": "Perform a task action on an instance",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "unique identifier of the organisation responsible for the app",
             "required": true,
             "schema": {
               "type": "string"
@@ -24,7 +22,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "application identifier which is unique within an organisation",
             "required": true,
             "schema": {
               "type": "string"
@@ -33,7 +30,6 @@
           {
             "name": "instanceOwnerPartyId",
             "in": "path",
-            "description": "unique id of the party that this the owner of the instance",
             "required": true,
             "schema": {
               "type": "integer",
@@ -43,7 +39,6 @@
           {
             "name": "instanceGuid",
             "in": "path",
-            "description": "unique id to identify the instance",
             "required": true,
             "schema": {
               "type": "string",
@@ -53,14 +48,12 @@
           {
             "name": "language",
             "in": "query",
-            "description": "The currently used language by the user (or null if not available)",
             "schema": {
               "type": "string"
             }
           }
         ],
         "requestBody": {
-          "description": "user action request",
           "content": {
             "application/json": {
               "schema": {
@@ -147,7 +140,6 @@
         "tags": [
           "ApplicationLanguage"
         ],
-        "summary": "Method to retrieve the supported languages from the application.",
         "parameters": [
           {
             "name": "org",
@@ -223,12 +215,10 @@
         "tags": [
           "ApplicationMetadata"
         ],
-        "summary": "Get the application metadata https://altinncdn.no/schemas/json/application/application-metadata.schema.v1.json\r\n            \r\nIf org and app does not match, this returns a 409 Conflict response",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "Unique identifier of the organisation responsible for the app.",
             "required": true,
             "schema": {
               "type": "string"
@@ -237,7 +227,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "Application identifier which is unique within an organisation.",
             "required": true,
             "schema": {
               "type": "string"
@@ -246,7 +235,6 @@
           {
             "name": "checkOrgApp",
             "in": "query",
-            "description": "Boolean get parameter to skip verification of correct org/app",
             "schema": {
               "type": "boolean",
               "default": true
@@ -282,12 +270,10 @@
         "tags": [
           "ApplicationMetadata"
         ],
-        "summary": "Get the application XACML policy file\r\n            \r\nIf org and app does not match, this returns a 409 Conflict response",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "Unique identifier of the organisation responsible for the app.",
             "required": true,
             "schema": {
               "type": "string"
@@ -296,7 +282,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "Application identifier which is unique within an organisation.",
             "required": true,
             "schema": {
               "type": "string"
@@ -342,12 +327,10 @@
         "tags": [
           "ApplicationMetadata"
         ],
-        "summary": "Get the application BPMN process file\r\n            \r\nIf org and app does not match, this returns a 409 Conflict response",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "Unique identifier of the organisation responsible for the app.",
             "required": true,
             "schema": {
               "type": "string"
@@ -356,7 +339,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "Application identifier which is unique within an organisation.",
             "required": true,
             "schema": {
               "type": "string"
@@ -402,7 +384,6 @@
         "tags": [
           "ApplicationSettings"
         ],
-        "summary": "Returns the application settings",
         "parameters": [
           {
             "name": "org",
@@ -433,7 +414,6 @@
         "tags": [
           "Authentication"
         ],
-        "summary": "Refreshes the AltinnStudioRuntime JwtToken when not in AltinnStudio mode.",
         "parameters": [
           {
             "name": "org",
@@ -464,7 +444,6 @@
         "tags": [
           "Authentication"
         ],
-        "summary": "Invalidates the AltinnStudioRuntime cookie.",
         "parameters": [
           {
             "name": "org",
@@ -495,7 +474,6 @@
         "tags": [
           "Authorization"
         ],
-        "summary": "Gets current party by reading cookie value and validating.",
         "parameters": [
           {
             "name": "returnPartyObject",
@@ -534,7 +512,6 @@
         "tags": [
           "Authorization"
         ],
-        "summary": "Fetches roles for current party.",
         "parameters": [
           {
             "name": "org",
@@ -637,12 +614,10 @@
         "tags": [
           "Data"
         ],
-        "summary": "Creates and instantiates a data element of a given element-type. Clients can upload the data element in the request content.",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "unique identifier of the organisation responsible for the app",
             "required": true,
             "schema": {
               "type": "string"
@@ -651,7 +626,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "application identifier which is unique within an organisation",
             "required": true,
             "schema": {
               "type": "string"
@@ -660,7 +634,6 @@
           {
             "name": "instanceOwnerPartyId",
             "in": "path",
-            "description": "unique id of the party that this the owner of the instance",
             "required": true,
             "schema": {
               "type": "integer",
@@ -670,7 +643,6 @@
           {
             "name": "instanceGuid",
             "in": "path",
-            "description": "unique id to identify the instance",
             "required": true,
             "schema": {
               "type": "string",
@@ -680,7 +652,6 @@
           {
             "name": "dataType",
             "in": "query",
-            "description": "identifies the data element type to create",
             "schema": {
               "type": "string"
             }
@@ -724,12 +695,10 @@
         "tags": [
           "Data"
         ],
-        "summary": "Updates an existing form data element with patches to multiple data elements.",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "unique identifier of the organisation responsible for the app",
             "required": true,
             "schema": {
               "type": "string"
@@ -738,7 +707,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "application identifier which is unique within an organisation",
             "required": true,
             "schema": {
               "type": "string"
@@ -747,7 +715,6 @@
           {
             "name": "instanceOwnerPartyId",
             "in": "path",
-            "description": "unique id of the party that is the owner of the instance",
             "required": true,
             "schema": {
               "type": "integer",
@@ -757,7 +724,6 @@
           {
             "name": "instanceGuid",
             "in": "path",
-            "description": "unique id to identify the instance",
             "required": true,
             "schema": {
               "type": "string",
@@ -767,14 +733,12 @@
           {
             "name": "language",
             "in": "query",
-            "description": "The language selected by the user.",
             "schema": {
               "type": "string"
             }
           }
         ],
         "requestBody": {
-          "description": "Container object for the Json.Patch.JsonPatch and list of ignored validators",
           "content": {
             "application/json": {
               "schema": {
@@ -937,17 +901,15 @@
         }
       }
     },
-    "/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataType}": {
+    "/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/type/{dataType}": {
       "post": {
         "tags": [
           "Data"
         ],
-        "summary": "Creates and instantiates a data element of a given element-type. Clients can upload the data element in the request content.",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "unique identifier of the organisation responsible for the app",
             "required": true,
             "schema": {
               "type": "string"
@@ -956,7 +918,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "application identifier which is unique within an organisation",
             "required": true,
             "schema": {
               "type": "string"
@@ -965,7 +926,6 @@
           {
             "name": "instanceOwnerPartyId",
             "in": "path",
-            "description": "unique id of the party that this the owner of the instance",
             "required": true,
             "schema": {
               "type": "integer",
@@ -975,7 +935,6 @@
           {
             "name": "instanceGuid",
             "in": "path",
-            "description": "unique id to identify the instance",
             "required": true,
             "schema": {
               "type": "string",
@@ -985,7 +944,6 @@
           {
             "name": "dataType",
             "in": "path",
-            "description": "identifies the data element type to create",
             "required": true,
             "schema": {
               "type": "string"
@@ -994,7 +952,6 @@
           {
             "name": "ignoredValidators",
             "in": "query",
-            "description": "comma separated string of validators to ignore",
             "schema": {
               "type": "string"
             }
@@ -1002,7 +959,6 @@
           {
             "name": "language",
             "in": "query",
-            "description": "The currently active user language",
             "schema": {
               "type": "string"
             }
@@ -1117,12 +1073,10 @@
         "tags": [
           "Data"
         ],
-        "summary": "Gets a data element from storage and applies business logic if necessary.",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "unique identifier of the organisation responsible for the app",
             "required": true,
             "schema": {
               "type": "string"
@@ -1131,7 +1085,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "application identifier which is unique within an organisation",
             "required": true,
             "schema": {
               "type": "string"
@@ -1140,7 +1093,6 @@
           {
             "name": "instanceOwnerPartyId",
             "in": "path",
-            "description": "unique id of the party that is the owner of the instance",
             "required": true,
             "schema": {
               "type": "integer",
@@ -1150,7 +1102,6 @@
           {
             "name": "instanceGuid",
             "in": "path",
-            "description": "unique id to identify the instance",
             "required": true,
             "schema": {
               "type": "string",
@@ -1160,7 +1111,6 @@
           {
             "name": "dataGuid",
             "in": "path",
-            "description": "unique id to identify the data element to get",
             "required": true,
             "schema": {
               "type": "string",
@@ -1168,9 +1118,16 @@
             }
           },
           {
+            "name": "dataType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "includeRowId",
             "in": "query",
-            "description": "Whether to initialize or remove AltinnRowId fields in the model",
             "schema": {
               "type": "boolean",
               "default": false
@@ -1179,7 +1136,6 @@
           {
             "name": "language",
             "in": "query",
-            "description": "The language selected by the user.",
             "schema": {
               "type": "string"
             }
@@ -1195,12 +1151,10 @@
         "tags": [
           "Data"
         ],
-        "summary": "Updates an existing data element with new content.",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "unique identifier of the organisation responsible for the app",
             "required": true,
             "schema": {
               "type": "string"
@@ -1209,7 +1163,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "application identifier which is unique within an organisation",
             "required": true,
             "schema": {
               "type": "string"
@@ -1218,7 +1171,6 @@
           {
             "name": "instanceOwnerPartyId",
             "in": "path",
-            "description": "unique id of the party that is the owner of the instance",
             "required": true,
             "schema": {
               "type": "integer",
@@ -1228,7 +1180,6 @@
           {
             "name": "instanceGuid",
             "in": "path",
-            "description": "unique id to identify the instance",
             "required": true,
             "schema": {
               "type": "string",
@@ -1238,7 +1189,6 @@
           {
             "name": "dataGuid",
             "in": "path",
-            "description": "unique id to identify the data element to update",
             "required": true,
             "schema": {
               "type": "string",
@@ -1246,9 +1196,16 @@
             }
           },
           {
+            "name": "dataType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "language",
             "in": "query",
-            "description": "The language selected by the user.",
             "schema": {
               "type": "string"
             }
@@ -1311,12 +1268,10 @@
         "tags": [
           "Data"
         ],
-        "summary": "Updates an existing form data element with a patch of changes.",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "unique identifier of the organisation responsible for the app",
             "required": true,
             "schema": {
               "type": "string"
@@ -1325,7 +1280,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "application identifier which is unique within an organisation",
             "required": true,
             "schema": {
               "type": "string"
@@ -1334,7 +1288,6 @@
           {
             "name": "instanceOwnerPartyId",
             "in": "path",
-            "description": "unique id of the party that is the owner of the instance",
             "required": true,
             "schema": {
               "type": "integer",
@@ -1344,7 +1297,6 @@
           {
             "name": "instanceGuid",
             "in": "path",
-            "description": "unique id to identify the instance",
             "required": true,
             "schema": {
               "type": "string",
@@ -1354,7 +1306,6 @@
           {
             "name": "dataGuid",
             "in": "path",
-            "description": "unique id to identify the data element to update",
             "required": true,
             "schema": {
               "type": "string",
@@ -1364,14 +1315,12 @@
           {
             "name": "language",
             "in": "query",
-            "description": "The language selected by the user.",
             "schema": {
               "type": "string"
             }
           }
         ],
         "requestBody": {
-          "description": "Container object for the Json.Patch.JsonPatch and list of ignored validators",
           "content": {
             "application/json": {
               "schema": {
@@ -1478,12 +1427,10 @@
         "tags": [
           "Data"
         ],
-        "summary": "Delete a data element.",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "unique identifier of the organisation responsible for the app",
             "required": true,
             "schema": {
               "type": "string"
@@ -1492,7 +1439,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "application identifier which is unique within an organisation",
             "required": true,
             "schema": {
               "type": "string"
@@ -1501,7 +1447,6 @@
           {
             "name": "instanceOwnerPartyId",
             "in": "path",
-            "description": "unique id of the party that is the owner of the instance",
             "required": true,
             "schema": {
               "type": "integer",
@@ -1511,7 +1456,6 @@
           {
             "name": "instanceGuid",
             "in": "path",
-            "description": "unique id to identify the instance",
             "required": true,
             "schema": {
               "type": "string",
@@ -1521,7 +1465,6 @@
           {
             "name": "dataGuid",
             "in": "path",
-            "description": "unique id to identify the data element to update",
             "required": true,
             "schema": {
               "type": "string",
@@ -1529,9 +1472,16 @@
             }
           },
           {
+            "name": "dataType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "ignoredValidators",
             "in": "query",
-            "description": "comma separated string of validators to ignore",
             "schema": {
               "type": "string"
             }
@@ -1539,7 +1489,6 @@
           {
             "name": "language",
             "in": "query",
-            "description": "The currently active language",
             "schema": {
               "type": "string"
             }
@@ -1574,12 +1523,10 @@
         "tags": [
           "DataLists"
         ],
-        "summary": "Api that exposes app related datalists",
         "parameters": [
           {
             "name": "id",
             "in": "path",
-            "description": "The listId",
             "required": true,
             "schema": {
               "type": "string"
@@ -1588,7 +1535,6 @@
           {
             "name": "queryParams",
             "in": "query",
-            "description": "Query parameteres supplied",
             "schema": {
               "type": "object",
               "additionalProperties": {
@@ -1599,7 +1545,6 @@
           {
             "name": "language",
             "in": "query",
-            "description": "The language selected by the user.",
             "schema": {
               "type": "string"
             }
@@ -1633,12 +1578,10 @@
         "tags": [
           "DataLists"
         ],
-        "summary": "Exposes datalists related to the app and logged in user",
         "parameters": [
           {
             "name": "instanceOwnerPartyId",
             "in": "path",
-            "description": "unique id of the party that is the owner of the instance",
             "required": true,
             "schema": {
               "type": "integer",
@@ -1648,7 +1591,6 @@
           {
             "name": "instanceGuid",
             "in": "path",
-            "description": "unique id to identify the instance",
             "required": true,
             "schema": {
               "type": "string",
@@ -1658,7 +1600,6 @@
           {
             "name": "id",
             "in": "path",
-            "description": "The datalistId",
             "required": true,
             "schema": {
               "type": "string"
@@ -1667,7 +1608,6 @@
           {
             "name": "queryParams",
             "in": "query",
-            "description": "Query parameters supplied",
             "schema": {
               "type": "object",
               "additionalProperties": {
@@ -1678,7 +1618,6 @@
           {
             "name": "language",
             "in": "query",
-            "description": "The language selected by the user.",
             "schema": {
               "type": "string"
             }
@@ -1742,12 +1681,10 @@
         "tags": [
           "DataTags"
         ],
-        "summary": "Retrieves all tags associated with the given data element.",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "The short name for the application owner.",
             "required": true,
             "schema": {
               "type": "string"
@@ -1756,7 +1693,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "The name of the application.",
             "required": true,
             "schema": {
               "type": "string"
@@ -1765,7 +1701,6 @@
           {
             "name": "instanceOwnerPartyId",
             "in": "path",
-            "description": "The party id of the owner of the instance.",
             "required": true,
             "schema": {
               "type": "integer",
@@ -1775,7 +1710,6 @@
           {
             "name": "instanceGuid",
             "in": "path",
-            "description": "The id of the instance.",
             "required": true,
             "schema": {
               "type": "string",
@@ -1785,7 +1719,6 @@
           {
             "name": "dataGuid",
             "in": "path",
-            "description": "The id of the data element.",
             "required": true,
             "schema": {
               "type": "string",
@@ -1810,12 +1743,10 @@
         "tags": [
           "DataTags"
         ],
-        "summary": "Adds a new tag to a data element.",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "The short name for the application owner.",
             "required": true,
             "schema": {
               "type": "string"
@@ -1824,7 +1755,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "The name of the application.",
             "required": true,
             "schema": {
               "type": "string"
@@ -1833,7 +1763,6 @@
           {
             "name": "instanceOwnerPartyId",
             "in": "path",
-            "description": "The party id of the owner of the instance.",
             "required": true,
             "schema": {
               "type": "integer",
@@ -1843,7 +1772,6 @@
           {
             "name": "instanceGuid",
             "in": "path",
-            "description": "The id of the instance.",
             "required": true,
             "schema": {
               "type": "string",
@@ -1853,7 +1781,6 @@
           {
             "name": "dataGuid",
             "in": "path",
-            "description": "The id of the data element.",
             "required": true,
             "schema": {
               "type": "string",
@@ -1862,7 +1789,6 @@
           }
         ],
         "requestBody": {
-          "description": "The new tag to be added.",
           "content": {
             "application/json": {
               "schema": {
@@ -1890,12 +1816,10 @@
         "tags": [
           "DataTags"
         ],
-        "summary": "Removes a tag from a data element.",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "The short name for the application owner.",
             "required": true,
             "schema": {
               "type": "string"
@@ -1904,7 +1828,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "The name of the application.",
             "required": true,
             "schema": {
               "type": "string"
@@ -1913,7 +1836,6 @@
           {
             "name": "instanceOwnerPartyId",
             "in": "path",
-            "description": "The party id of the owner of the instance.",
             "required": true,
             "schema": {
               "type": "integer",
@@ -1923,7 +1845,6 @@
           {
             "name": "instanceGuid",
             "in": "path",
-            "description": "The id of the instance.",
             "required": true,
             "schema": {
               "type": "string",
@@ -1933,7 +1854,6 @@
           {
             "name": "dataGuid",
             "in": "path",
-            "description": "The id of the data element.",
             "required": true,
             "schema": {
               "type": "string",
@@ -1943,7 +1863,6 @@
           {
             "name": "tag",
             "in": "path",
-            "description": "The name of the tag to be removed.",
             "required": true,
             "schema": {
               "type": "string"
@@ -1962,7 +1881,6 @@
         "tags": [
           "EventsReceiver"
         ],
-        "summary": "Create a new inbound event for the app to process.",
         "parameters": [
           {
             "name": "code",
@@ -2028,12 +1946,10 @@
         "tags": [
           "ExternalApi"
         ],
-        "summary": "Get the data for a specific implementation of an external api, identified by externalApiId",
         "parameters": [
           {
             "name": "instanceOwnerPartyId",
             "in": "path",
-            "description": "The instance owner party id",
             "required": true,
             "schema": {
               "type": "integer",
@@ -2043,7 +1959,6 @@
           {
             "name": "instanceGuid",
             "in": "path",
-            "description": "The instance guid",
             "required": true,
             "schema": {
               "type": "string",
@@ -2053,7 +1968,6 @@
           {
             "name": "externalApiId",
             "in": "path",
-            "description": "The id of the external api",
             "required": true,
             "schema": {
               "type": "string"
@@ -2062,7 +1976,6 @@
           {
             "name": "queryParams",
             "in": "query",
-            "description": "The query parameters to pass to the external api endpoint",
             "schema": {
               "type": "object",
               "additionalProperties": {
@@ -2129,12 +2042,10 @@
         "tags": [
           "FileScan"
         ],
-        "summary": "Checks that file scan result for an instance and it's data elements.",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "Unique identifier of the organisation responsible for the app.",
             "required": true,
             "schema": {
               "type": "string"
@@ -2143,7 +2054,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "Application identifier which is unique within an organisation",
             "required": true,
             "schema": {
               "type": "string"
@@ -2152,7 +2062,6 @@
           {
             "name": "instanceOwnerPartyId",
             "in": "path",
-            "description": "Unique id of the party that is the owner of the instance.",
             "required": true,
             "schema": {
               "type": "integer",
@@ -2162,7 +2071,6 @@
           {
             "name": "instanceGuid",
             "in": "path",
-            "description": "Unique id to identify the instance",
             "required": true,
             "schema": {
               "type": "string",
@@ -2229,12 +2137,10 @@
         "tags": [
           "Home"
         ],
-        "summary": "Returns the index view with references to the React app.",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "The application owner short name.",
             "required": true,
             "schema": {
               "type": "string"
@@ -2243,7 +2149,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "The name of the app",
             "required": true,
             "schema": {
               "type": "string"
@@ -2252,7 +2157,6 @@
           {
             "name": "dontChooseReportee",
             "in": "query",
-            "description": "Parameter to indicate disabling of reportee selection in Altinn Portal.",
             "schema": {
               "type": "boolean"
             }
@@ -2270,12 +2174,10 @@
         "tags": [
           "Instances"
         ],
-        "summary": "Gets an instance object from storage.",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "unique identifier of the organisation responsible for the app",
             "required": true,
             "schema": {
               "type": "string"
@@ -2284,7 +2186,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "application identifier which is unique within an organisation",
             "required": true,
             "schema": {
               "type": "string"
@@ -2293,7 +2194,6 @@
           {
             "name": "instanceOwnerPartyId",
             "in": "path",
-            "description": "unique id of the party that is the owner of the instance",
             "required": true,
             "schema": {
               "type": "integer",
@@ -2303,7 +2203,6 @@
           {
             "name": "instanceGuid",
             "in": "path",
-            "description": "unique id to identify the instance",
             "required": true,
             "schema": {
               "type": "string",
@@ -2338,12 +2237,10 @@
         "tags": [
           "Instances"
         ],
-        "summary": "Deletes an instance.",
         "parameters": [
           {
             "name": "instanceOwnerPartyId",
             "in": "path",
-            "description": "The party id of the instance owner.",
             "required": true,
             "schema": {
               "type": "integer",
@@ -2353,7 +2250,6 @@
           {
             "name": "instanceGuid",
             "in": "path",
-            "description": "The id of the instance to delete.",
             "required": true,
             "schema": {
               "type": "string",
@@ -2363,7 +2259,6 @@
           {
             "name": "hard",
             "in": "query",
-            "description": "A value indicating whether the instance should be unrecoverable.",
             "schema": {
               "type": "boolean"
             }
@@ -2404,12 +2299,10 @@
         "tags": [
           "Instances"
         ],
-        "summary": "Creates a new instance of an application in platform storage. Clients can send an instance as json or send a\r\nmultipart form-data with the instance in the first part named \"instance\" and the prefill data in the next parts, with\r\nnames that correspond to the element types defined in the application metadata.\r\nThe data elements are stored. Currently calculate and validate is not implemented.",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "unique identifier of the organisation responsible for the app",
             "required": true,
             "schema": {
               "type": "string"
@@ -2418,7 +2311,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "application identifier which is unique within an organisation",
             "required": true,
             "schema": {
               "type": "string"
@@ -2427,7 +2319,6 @@
           {
             "name": "instanceOwnerPartyId",
             "in": "query",
-            "description": "unique id of the party that is the owner of the instance",
             "schema": {
               "type": "integer",
               "format": "int32"
@@ -2436,7 +2327,6 @@
           {
             "name": "language",
             "in": "query",
-            "description": "The currently active user language",
             "schema": {
               "type": "string"
             }
@@ -2471,12 +2361,10 @@
         "tags": [
           "Instances"
         ],
-        "summary": "Simplified Instanciation with support for fieldprefill",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "unique identifier of the organisation responsible for the app",
             "required": true,
             "schema": {
               "type": "string"
@@ -2485,7 +2373,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "application identifier which is unique within an organisation",
             "required": true,
             "schema": {
               "type": "string"
@@ -2493,7 +2380,6 @@
           }
         ],
         "requestBody": {
-          "description": "instansiation information",
           "content": {
             "application/json": {
               "schema": {
@@ -2541,13 +2427,10 @@
         "tags": [
           "Instances"
         ],
-        "summary": "Add complete confirmation.",
-        "description": "Add to an instance that a given stakeholder considers the instance as no longer needed by them. The stakeholder has\r\ncollected all the data and information they needed from the instance and expect no additional data to be added to it.\r\nThe body of the request isn't used for anything despite this being a POST operation.",
         "parameters": [
           {
             "name": "instanceOwnerPartyId",
             "in": "path",
-            "description": "The party id of the instance owner.",
             "required": true,
             "schema": {
               "type": "integer",
@@ -2557,7 +2440,6 @@
           {
             "name": "instanceGuid",
             "in": "path",
-            "description": "The id of the instance to confirm as complete.",
             "required": true,
             "schema": {
               "type": "string",
@@ -2600,12 +2482,10 @@
         "tags": [
           "Instances"
         ],
-        "summary": "Allows an app owner to update the substatus of an instance.",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "unique identifier of the organisation responsible for the app",
             "required": true,
             "schema": {
               "type": "string"
@@ -2614,7 +2494,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "application identifier which is unique within an organisation",
             "required": true,
             "schema": {
               "type": "string"
@@ -2623,7 +2502,6 @@
           {
             "name": "instanceOwnerPartyId",
             "in": "path",
-            "description": "The party id of the instance owner.",
             "required": true,
             "schema": {
               "type": "integer",
@@ -2633,7 +2511,6 @@
           {
             "name": "instanceGuid",
             "in": "path",
-            "description": "The id of the instance to update.",
             "required": true,
             "schema": {
               "type": "string",
@@ -2642,7 +2519,6 @@
           }
         ],
         "requestBody": {
-          "description": "The new substatus of the instance.",
           "content": {
             "application/json": {
               "schema": {
@@ -2705,12 +2581,10 @@
         "tags": [
           "Instances"
         ],
-        "summary": "Retrieves all active instances that fulfull the org, app, and instanceOwnerParty Id combination.",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "unique identifier of the organisation responsible for the app",
             "required": true,
             "schema": {
               "type": "string"
@@ -2719,7 +2593,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "application identifier which is unique within an organisation",
             "required": true,
             "schema": {
               "type": "string"
@@ -2728,7 +2601,6 @@
           {
             "name": "instanceOwnerPartyId",
             "in": "path",
-            "description": "The party id of the instance owner.",
             "required": true,
             "schema": {
               "type": "integer",
@@ -2758,12 +2630,10 @@
         "tags": [
           "LookupOrganisation"
         ],
-        "summary": "Allows an organisation lookup by orgNr in ER",
         "parameters": [
           {
             "name": "orgNr",
             "in": "path",
-            "description": "Route param that contains the orgNr to look up in ER.",
             "required": true,
             "schema": {
               "type": "string"
@@ -2825,7 +2695,6 @@
         "tags": [
           "LookupPerson"
         ],
-        "summary": "Lookup a person in Folkeregisteret (DSF)",
         "parameters": [
           {
             "name": "org",
@@ -2845,7 +2714,6 @@
           }
         ],
         "requestBody": {
-          "description": "Payload that contains params for executing a person lookup.",
           "content": {
             "application/json": {
               "schema": {
@@ -2903,12 +2771,10 @@
         "tags": [
           "Options"
         ],
-        "summary": "Api that exposes app related options",
         "parameters": [
           {
             "name": "optionsId",
             "in": "path",
-            "description": "The optionsId",
             "required": true,
             "schema": {
               "type": "string"
@@ -2917,7 +2783,6 @@
           {
             "name": "queryParams",
             "in": "query",
-            "description": "Query parameters supplied",
             "schema": {
               "type": "object",
               "additionalProperties": {
@@ -2928,7 +2793,6 @@
           {
             "name": "language",
             "in": "query",
-            "description": "The language selected by the user.",
             "schema": {
               "type": "string"
             }
@@ -2962,12 +2826,10 @@
         "tags": [
           "Options"
         ],
-        "summary": "Exposes options related to the app and logged in user",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "unique identifier of the organisation responsible for the app",
             "required": true,
             "schema": {
               "type": "string"
@@ -2976,7 +2838,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "application identifier which is unique within an organisation",
             "required": true,
             "schema": {
               "type": "string"
@@ -2985,7 +2846,6 @@
           {
             "name": "instanceOwnerPartyId",
             "in": "path",
-            "description": "unique id of the party that is the owner of the instance",
             "required": true,
             "schema": {
               "type": "integer",
@@ -2995,7 +2855,6 @@
           {
             "name": "instanceGuid",
             "in": "path",
-            "description": "unique id to identify the instance",
             "required": true,
             "schema": {
               "type": "string",
@@ -3005,7 +2864,6 @@
           {
             "name": "optionsId",
             "in": "path",
-            "description": "The optionsId",
             "required": true,
             "schema": {
               "type": "string"
@@ -3014,7 +2872,6 @@
           {
             "name": "language",
             "in": "query",
-            "description": "The language selected by the user.",
             "schema": {
               "type": "string"
             }
@@ -3022,7 +2879,6 @@
           {
             "name": "queryParams",
             "in": "query",
-            "description": "Query parameteres supplied",
             "schema": {
               "type": "object",
               "additionalProperties": {
@@ -3073,7 +2929,6 @@
         "tags": [
           "Pages"
         ],
-        "summary": "Get the page order based on the current state of the instance",
         "parameters": [
           {
             "name": "org",
@@ -3134,22 +2989,22 @@
         "requestBody": {
           "content": {
             "application/json": {
-              "schema": { }
+              "schema": {}
             },
             "text/json": {
-              "schema": { }
+              "schema": {}
             },
             "application/*+json": {
-              "schema": { }
+              "schema": {}
             },
             "application/xml": {
-              "schema": { }
+              "schema": {}
             },
             "text/xml": {
-              "schema": { }
+              "schema": {}
             },
             "application/*+xml": {
-              "schema": { }
+              "schema": {}
             }
           }
         },
@@ -3208,12 +3063,10 @@
         "tags": [
           "Parties"
         ],
-        "summary": "Gets the list of parties the user can represent",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "Unique identifier of the organisation responsible for the app.",
             "required": true,
             "schema": {
               "type": "string"
@@ -3222,7 +3075,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "Application identifier which is unique within an organisation.",
             "required": true,
             "schema": {
               "type": "string"
@@ -3231,7 +3083,6 @@
           {
             "name": "allowedToInstantiateFilter",
             "in": "query",
-            "description": "when set to true returns parties that are allowed to instantiate",
             "schema": {
               "type": "boolean",
               "default": false
@@ -3250,12 +3101,10 @@
         "tags": [
           "Parties"
         ],
-        "summary": "Validates party and profile settings before the end user is allowed to instantiate a new app instance",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "Unique identifier of the organisation responsible for the app.",
             "required": true,
             "schema": {
               "type": "string"
@@ -3264,7 +3113,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "Application identifier which is unique within an organisation.",
             "required": true,
             "schema": {
               "type": "string"
@@ -3273,7 +3121,6 @@
           {
             "name": "partyId",
             "in": "query",
-            "description": "The selected partyId",
             "schema": {
               "type": "integer",
               "format": "int32"
@@ -3293,7 +3140,6 @@
         "tags": [
           "Parties"
         ],
-        "summary": "Updates the party the user represents",
         "parameters": [
           {
             "name": "partyId",
@@ -3333,12 +3179,10 @@
         "tags": [
           "Payment"
         ],
-        "summary": "Get updated payment information for the instance. Will contact the payment processor to check the status of the payment. Current task must be a payment task. See payment related documentation.",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "unique identifier of the organisation responsible for the app",
             "required": true,
             "schema": {
               "type": "string"
@@ -3347,7 +3191,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "application identifier which is unique within an organisation",
             "required": true,
             "schema": {
               "type": "string"
@@ -3356,7 +3199,6 @@
           {
             "name": "instanceOwnerPartyId",
             "in": "path",
-            "description": "unique id of the party that this the owner of the instance",
             "required": true,
             "schema": {
               "type": "integer",
@@ -3366,7 +3208,6 @@
           {
             "name": "instanceGuid",
             "in": "path",
-            "description": "unique id to identify the instance",
             "required": true,
             "schema": {
               "type": "string",
@@ -3376,7 +3217,6 @@
           {
             "name": "language",
             "in": "query",
-            "description": "The currently used language by the user (or null if not available)",
             "schema": {
               "type": "string"
             }
@@ -3451,12 +3291,10 @@
         "tags": [
           "Payment"
         ],
-        "summary": "Run order details calculations and return the result. Does not require the current task to be a payment task.",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "unique identifier of the organisation responsible for the app",
             "required": true,
             "schema": {
               "type": "string"
@@ -3465,7 +3303,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "application identifier which is unique within an organisation",
             "required": true,
             "schema": {
               "type": "string"
@@ -3474,7 +3311,6 @@
           {
             "name": "instanceOwnerPartyId",
             "in": "path",
-            "description": "unique id of the party that this the owner of the instance",
             "required": true,
             "schema": {
               "type": "integer",
@@ -3484,7 +3320,6 @@
           {
             "name": "instanceGuid",
             "in": "path",
-            "description": "unique id to identify the instance",
             "required": true,
             "schema": {
               "type": "string",
@@ -3494,7 +3329,6 @@
           {
             "name": "language",
             "in": "query",
-            "description": "The currently used language by the user (or null if not available)",
             "schema": {
               "type": "string"
             }
@@ -3569,7 +3403,6 @@
         "tags": [
           "Pdf"
         ],
-        "summary": "Get the pdf formatting",
         "parameters": [
           {
             "name": "org",
@@ -3627,12 +3460,10 @@
         "tags": [
           "Process"
         ],
-        "summary": "Get the process state of an instance.",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "unique identifier of the organisation responsible for the app",
             "required": true,
             "schema": {
               "type": "string"
@@ -3641,7 +3472,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "application identifier which is unique within an organisation",
             "required": true,
             "schema": {
               "type": "string"
@@ -3650,7 +3480,6 @@
           {
             "name": "instanceOwnerPartyId",
             "in": "path",
-            "description": "unique id of the party that is the owner of the instance",
             "required": true,
             "schema": {
               "type": "integer",
@@ -3660,7 +3489,6 @@
           {
             "name": "instanceGuid",
             "in": "path",
-            "description": "unique id to identify the instance",
             "required": true,
             "schema": {
               "type": "string",
@@ -3727,12 +3555,10 @@
         "tags": [
           "Process"
         ],
-        "summary": "Starts the process of an instance.",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "unique identifier of the organisation responsible for the app",
             "required": true,
             "schema": {
               "type": "string"
@@ -3741,7 +3567,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "application identifier which is unique within an organisation",
             "required": true,
             "schema": {
               "type": "string"
@@ -3750,7 +3575,6 @@
           {
             "name": "instanceOwnerPartyId",
             "in": "path",
-            "description": "unique id of the party that is the owner of the instance",
             "required": true,
             "schema": {
               "type": "integer",
@@ -3760,7 +3584,6 @@
           {
             "name": "instanceGuid",
             "in": "path",
-            "description": "unique id to identify the instance",
             "required": true,
             "schema": {
               "type": "string",
@@ -3770,7 +3593,6 @@
           {
             "name": "startEvent",
             "in": "query",
-            "description": "a specific start event id to start the process, must be used if there are more than one start events",
             "schema": {
               "type": "string"
             }
@@ -3865,12 +3687,10 @@
         "tags": [
           "Process"
         ],
-        "summary": "Gets a list of the next process elements that can be reached from the current process element.\r\nIf process is not started it returns the possible start events.",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "unique identifier of the organisation responsible for the app",
             "required": true,
             "schema": {
               "type": "string"
@@ -3879,7 +3699,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "application identifier which is unique within an organisation",
             "required": true,
             "schema": {
               "type": "string"
@@ -3888,7 +3707,6 @@
           {
             "name": "instanceOwnerPartyId",
             "in": "path",
-            "description": "unique id of the party that is the owner of the instance",
             "required": true,
             "schema": {
               "type": "integer",
@@ -3898,7 +3716,6 @@
           {
             "name": "instanceGuid",
             "in": "path",
-            "description": "unique id to identify the instance",
             "required": true,
             "schema": {
               "type": "string",
@@ -3989,12 +3806,10 @@
         "tags": [
           "Process"
         ],
-        "summary": "Change the instance's process state to next process element in accordance with process definition.",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "unique identifier of the organisation responsible for the app",
             "required": true,
             "schema": {
               "type": "string"
@@ -4003,7 +3818,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "application identifier which is unique within an organisation",
             "required": true,
             "schema": {
               "type": "string"
@@ -4012,7 +3826,6 @@
           {
             "name": "instanceOwnerPartyId",
             "in": "path",
-            "description": "unique id of the party that is the owner of the instance",
             "required": true,
             "schema": {
               "type": "integer",
@@ -4022,7 +3835,6 @@
           {
             "name": "instanceGuid",
             "in": "path",
-            "description": "unique id to identify the instance",
             "required": true,
             "schema": {
               "type": "string",
@@ -4032,7 +3844,6 @@
           {
             "name": "elementId",
             "in": "query",
-            "description": "obsolete: alias for action",
             "schema": {
               "type": "string"
             }
@@ -4040,14 +3851,12 @@
           {
             "name": "language",
             "in": "query",
-            "description": "Signal the language to use for pdf generation, error messages...",
             "schema": {
               "type": "string"
             }
           }
         ],
         "requestBody": {
-          "description": "The body of the request containing possible actions to perform before advancing the process",
           "content": {
             "application/json": {
               "schema": {
@@ -4170,12 +3979,10 @@
         "tags": [
           "Process"
         ],
-        "summary": "Attemts to end the process by running next until an end event is reached.\r\nNotice that process must have been started.",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "unique identifier of the organisation responsible for the app",
             "required": true,
             "schema": {
               "type": "string"
@@ -4184,7 +3991,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "application identifier which is unique within an organisation",
             "required": true,
             "schema": {
               "type": "string"
@@ -4193,7 +3999,6 @@
           {
             "name": "instanceOwnerPartyId",
             "in": "path",
-            "description": "unique id of the party that is the owner of the instance",
             "required": true,
             "schema": {
               "type": "integer",
@@ -4203,7 +4008,6 @@
           {
             "name": "instanceGuid",
             "in": "path",
-            "description": "unique id to identify the instance",
             "required": true,
             "schema": {
               "type": "string",
@@ -4213,7 +4017,6 @@
           {
             "name": "language",
             "in": "query",
-            "description": "The currently used language by the user (or null if not available)",
             "schema": {
               "type": "string"
             }
@@ -4308,7 +4111,6 @@
         "tags": [
           "Process"
         ],
-        "summary": "Get the process history for an instance.",
         "parameters": [
           {
             "name": "instanceOwnerPartyId",
@@ -4384,7 +4186,6 @@
         "tags": [
           "Profile"
         ],
-        "summary": "Method that returns the user information about the user that is logged in",
         "parameters": [
           {
             "name": "org",
@@ -4415,12 +4216,10 @@
         "tags": [
           "Redirect"
         ],
-        "summary": "Validates URL used for redirection",
         "parameters": [
           {
             "name": "url",
             "in": "query",
-            "description": "Base64 encoded string of the URL to validate",
             "required": true,
             "schema": {
               "type": "string"
@@ -4512,12 +4311,10 @@
         "tags": [
           "Resource"
         ],
-        "summary": "Get the json schema for the model",
         "parameters": [
           {
             "name": "id",
             "in": "path",
-            "description": "Unique identifier of the model to fetch json schema for.",
             "required": true,
             "schema": {
               "type": "string"
@@ -4552,7 +4349,6 @@
         "tags": [
           "Resource"
         ],
-        "summary": "Get the form layout\r\n<param name=\"org\">Unique identifier of the organisation responsible for the app.</param><param name=\"app\">Application identifier which is unique within an organisation.</param><returns>A collection of FormLayout objects in JSON format.</returns>",
         "parameters": [
           {
             "name": "org",
@@ -4583,12 +4379,10 @@
         "tags": [
           "Resource"
         ],
-        "summary": "Get the form layout",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "Unique identifier of the organisation responsible for the app.",
             "required": true,
             "schema": {
               "type": "string"
@@ -4597,7 +4391,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "Application identifier which is unique within an organisation.",
             "required": true,
             "schema": {
               "type": "string"
@@ -4606,7 +4399,6 @@
           {
             "name": "id",
             "in": "path",
-            "description": "The layoutset id",
             "required": true,
             "schema": {
               "type": "string"
@@ -4625,12 +4417,10 @@
         "tags": [
           "Resource"
         ],
-        "summary": "Get the layout settings.",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "The application owner short name",
             "required": true,
             "schema": {
               "type": "string"
@@ -4639,7 +4429,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "The application name",
             "required": true,
             "schema": {
               "type": "string"
@@ -4658,12 +4447,10 @@
         "tags": [
           "Resource"
         ],
-        "summary": "Get the layout settings.",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "The application owner short name",
             "required": true,
             "schema": {
               "type": "string"
@@ -4672,7 +4459,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "The application name",
             "required": true,
             "schema": {
               "type": "string"
@@ -4681,7 +4467,6 @@
           {
             "name": "id",
             "in": "path",
-            "description": "The layoutset id",
             "required": true,
             "schema": {
               "type": "string"
@@ -4700,12 +4485,10 @@
         "tags": [
           "Resource"
         ],
-        "summary": "Get the layout-sets",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "The application owner short name",
             "required": true,
             "schema": {
               "type": "string"
@@ -4714,7 +4497,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "The application name",
             "required": true,
             "schema": {
               "type": "string"
@@ -4733,7 +4515,6 @@
         "tags": [
           "Resource"
         ],
-        "summary": "Get the rule settings\r\n<param name=\"org\">Unique identifier of the organisation responsible for the app.</param><param name=\"app\">Application identifier which is unique within an organisation.</param><param name=\"id\">The layoutset id</param><returns>A collection of FormLayout objects in JSON format.</returns>",
         "parameters": [
           {
             "name": "org",
@@ -4772,12 +4553,10 @@
         "tags": [
           "Resource"
         ],
-        "summary": "Get the ruleconfiguration.",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "The application owner short name",
             "required": true,
             "schema": {
               "type": "string"
@@ -4786,7 +4565,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "The application name",
             "required": true,
             "schema": {
               "type": "string"
@@ -4795,7 +4573,6 @@
           {
             "name": "id",
             "in": "path",
-            "description": "The layoutset id",
             "required": true,
             "schema": {
               "type": "string"
@@ -4814,12 +4591,10 @@
         "tags": [
           "Resource"
         ],
-        "summary": "Get the footer layout",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "The application owner short name",
             "required": true,
             "schema": {
               "type": "string"
@@ -4828,7 +4603,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "The application name",
             "required": true,
             "schema": {
               "type": "string"
@@ -4847,12 +4621,10 @@
         "tags": [
           "Resource"
         ],
-        "summary": "Get validation configuration file.",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "The application owner short name",
             "required": true,
             "schema": {
               "type": "string"
@@ -4861,7 +4633,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "The application name",
             "required": true,
             "schema": {
               "type": "string"
@@ -4870,7 +4641,6 @@
           {
             "name": "dataTypeId",
             "in": "path",
-            "description": "Unique identifier of the model to fetch validations for.",
             "required": true,
             "schema": {
               "type": "string"
@@ -4889,12 +4659,10 @@
         "tags": [
           "StatelessData"
         ],
-        "summary": "Create a new data object of the defined data type",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "unique identfier of the organisation responsible for the app",
             "required": true,
             "schema": {
               "type": "string"
@@ -4903,7 +4671,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "application identifier which is unique within an organisation",
             "required": true,
             "schema": {
               "type": "string"
@@ -4912,7 +4679,6 @@
           {
             "name": "dataType",
             "in": "query",
-            "description": "The data type id",
             "schema": {
               "type": "string"
             }
@@ -4920,7 +4686,6 @@
           {
             "name": "party",
             "in": "header",
-            "description": "The party that should be represented with  prefix \"partyId:\", \"person:\" or \"org:\" (eg: \"partyId:123\")",
             "schema": {
               "type": "string"
             }
@@ -4928,7 +4693,6 @@
           {
             "name": "language",
             "in": "query",
-            "description": "Currently selected language by the user (if available)",
             "schema": {
               "type": "string"
             }
@@ -4971,12 +4735,10 @@
         "tags": [
           "StatelessData"
         ],
-        "summary": "Create a new data object of the defined data type",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "unique identifier of the organisation responsible for the app",
             "required": true,
             "schema": {
               "type": "string"
@@ -4985,7 +4747,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "application identifier which is unique within an organisation",
             "required": true,
             "schema": {
               "type": "string"
@@ -4994,7 +4755,6 @@
           {
             "name": "dataType",
             "in": "query",
-            "description": "The data type id",
             "schema": {
               "type": "string"
             }
@@ -5002,7 +4762,6 @@
           {
             "name": "party",
             "in": "header",
-            "description": "The party that should be represented with  prefix \"partyId:\", \"person:\" or \"org:\" (eg: \"partyId:123\")",
             "schema": {
               "type": "string"
             }
@@ -5010,7 +4769,6 @@
           {
             "name": "language",
             "in": "query",
-            "description": "The language selected by the user.",
             "schema": {
               "type": "string"
             }
@@ -5055,12 +4813,10 @@
         "tags": [
           "StatelessData"
         ],
-        "summary": "Create a new data object of the defined data type",
         "parameters": [
           {
             "name": "dataType",
             "in": "query",
-            "description": "The data type id",
             "schema": {
               "type": "string"
             }
@@ -5068,7 +4824,6 @@
           {
             "name": "language",
             "in": "query",
-            "description": "The language selected by the user.",
             "schema": {
               "type": "string"
             }
@@ -5127,12 +4882,10 @@
         "tags": [
           "StatelessData"
         ],
-        "summary": "Create a new data object of the defined data type",
         "parameters": [
           {
             "name": "dataType",
             "in": "query",
-            "description": "The data type id",
             "schema": {
               "type": "string"
             }
@@ -5140,7 +4893,6 @@
           {
             "name": "language",
             "in": "query",
-            "description": "The language selected by the user.",
             "schema": {
               "type": "string"
             }
@@ -5201,7 +4953,6 @@
         "tags": [
           "StatelessPages"
         ],
-        "summary": "Get the page order based on the current state of the instance",
         "parameters": [
           {
             "name": "org",
@@ -5244,22 +4995,22 @@
         "requestBody": {
           "content": {
             "application/json": {
-              "schema": { }
+              "schema": {}
             },
             "text/json": {
-              "schema": { }
+              "schema": {}
             },
             "application/*+json": {
-              "schema": { }
+              "schema": {}
             },
             "application/xml": {
-              "schema": { }
+              "schema": {}
             },
             "text/xml": {
-              "schema": { }
+              "schema": {}
             },
             "application/*+xml": {
-              "schema": { }
+              "schema": {}
             }
           }
         },
@@ -5318,12 +5069,10 @@
         "tags": [
           "Texts"
         ],
-        "summary": "Method to retrieve text resources",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "Unique identifier of the organisation responsible for the app.",
             "required": true,
             "schema": {
               "type": "string"
@@ -5332,7 +5081,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "Application identifier which is unique within an organisation.",
             "required": true,
             "schema": {
               "type": "string"
@@ -5341,7 +5089,6 @@
           {
             "name": "language",
             "in": "path",
-            "description": "The text language to use.",
             "required": true,
             "schema": {
               "type": "string"
@@ -5387,12 +5134,10 @@
         "tags": [
           "UserDefinedMetadata"
         ],
-        "summary": "Retrieves user defined metadata associated with the given data element.",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "The short name for the application owner.",
             "required": true,
             "schema": {
               "type": "string"
@@ -5401,7 +5146,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "The name of the application.",
             "required": true,
             "schema": {
               "type": "string"
@@ -5410,7 +5154,6 @@
           {
             "name": "instanceOwnerPartyId",
             "in": "path",
-            "description": "The party id of the owner of the instance.",
             "required": true,
             "schema": {
               "type": "integer",
@@ -5420,7 +5163,6 @@
           {
             "name": "instanceGuid",
             "in": "path",
-            "description": "The id of the instance.",
             "required": true,
             "schema": {
               "type": "string",
@@ -5430,7 +5172,6 @@
           {
             "name": "dataGuid",
             "in": "path",
-            "description": "The id of the data element.",
             "required": true,
             "schema": {
               "type": "string",
@@ -5455,12 +5196,10 @@
         "tags": [
           "UserDefinedMetadata"
         ],
-        "summary": "Update user defined metadata associated with the given data element.",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "The short name for the application owner.",
             "required": true,
             "schema": {
               "type": "string"
@@ -5469,7 +5208,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "The name of the application.",
             "required": true,
             "schema": {
               "type": "string"
@@ -5478,7 +5216,6 @@
           {
             "name": "instanceOwnerPartyId",
             "in": "path",
-            "description": "The party id of the owner of the instance.",
             "required": true,
             "schema": {
               "type": "integer",
@@ -5488,7 +5225,6 @@
           {
             "name": "instanceGuid",
             "in": "path",
-            "description": "The id of the instance.",
             "required": true,
             "schema": {
               "type": "string",
@@ -5498,7 +5234,6 @@
           {
             "name": "dataGuid",
             "in": "path",
-            "description": "The id of the data element.",
             "required": true,
             "schema": {
               "type": "string",
@@ -5507,7 +5242,6 @@
           }
         ],
         "requestBody": {
-          "description": "Object with a list of properties.",
           "content": {
             "application/json": {
               "schema": {
@@ -5535,12 +5269,10 @@
         "tags": [
           "Validate"
         ],
-        "summary": "Validate an app instance. This will validate all individual data elements, both the binary elements and the elements bound\r\nto a model, and then finally the state of the instance.",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "Unique identifier of the organisation responsible for the app.",
             "required": true,
             "schema": {
               "type": "string"
@@ -5549,7 +5281,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "Application identifier which is unique within an organisation",
             "required": true,
             "schema": {
               "type": "string"
@@ -5558,7 +5289,6 @@
           {
             "name": "instanceOwnerPartyId",
             "in": "path",
-            "description": "Unique id of the party that is the owner of the instance.",
             "required": true,
             "schema": {
               "type": "integer",
@@ -5568,7 +5298,6 @@
           {
             "name": "instanceGuid",
             "in": "path",
-            "description": "Unique id to identify the instance",
             "required": true,
             "schema": {
               "type": "string",
@@ -5578,7 +5307,6 @@
           {
             "name": "ignoredValidators",
             "in": "query",
-            "description": "Comma separated list of validators to ignore",
             "schema": {
               "type": "string"
             }
@@ -5586,7 +5314,6 @@
           {
             "name": "onlyIncrementalValidators",
             "in": "query",
-            "description": "Ignore validators that don't run on PATCH requests",
             "schema": {
               "type": "boolean"
             }
@@ -5594,7 +5321,6 @@
           {
             "name": "language",
             "in": "query",
-            "description": "The currently used language by the user (or null if not available)",
             "schema": {
               "type": "string"
             }
@@ -5639,12 +5365,10 @@
         "tags": [
           "Validate"
         ],
-        "summary": "Validate an app instance. This will validate a single data element",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "Unique identifier of the organisation responsible for the app.",
             "required": true,
             "schema": {
               "type": "string"
@@ -5653,7 +5377,6 @@
           {
             "name": "app",
             "in": "path",
-            "description": "Application identifier which is unique within an organisation",
             "required": true,
             "schema": {
               "type": "string"
@@ -5662,7 +5385,6 @@
           {
             "name": "instanceOwnerId",
             "in": "path",
-            "description": "Unique id of the party that is the owner of the instance.",
             "required": true,
             "schema": {
               "type": "integer",
@@ -5672,7 +5394,6 @@
           {
             "name": "instanceId",
             "in": "path",
-            "description": "Unique id to identify the instance",
             "required": true,
             "schema": {
               "type": "string",
@@ -5682,7 +5403,6 @@
           {
             "name": "dataGuid",
             "in": "path",
-            "description": "Unique id identifying specific data element",
             "required": true,
             "schema": {
               "type": "string",
@@ -5692,7 +5412,6 @@
           {
             "name": "language",
             "in": "query",
-            "description": "The currently used language by the user (or null if not available)",
             "schema": {
               "type": "string"
             }
@@ -6047,7 +5766,7 @@
             "nullable": true
           }
         },
-        "additionalProperties": { }
+        "additionalProperties": {}
       },
       "CalculationResult": {
         "type": "object",
@@ -6186,7 +5905,7 @@
           },
           "metadata": {
             "type": "object",
-            "additionalProperties": { },
+            "additionalProperties": {},
             "nullable": true
           }
         },
@@ -6273,7 +5992,7 @@
           },
           "parameters": {
             "type": "array",
-            "items": { },
+            "items": {},
             "nullable": true,
             "readOnly": true
           }
@@ -6415,15 +6134,13 @@
         "properties": {
           "id": {
             "type": "string",
-            "description": "Gets or sets the data element id",
             "nullable": true
           },
           "fileScanResult": {
             "$ref": "#/components/schemas/FileScanResult"
           }
         },
-        "additionalProperties": false,
-        "description": "File scan result for an individual data element."
+        "additionalProperties": false
       },
       "DataField": {
         "type": "object",
@@ -6452,19 +6169,14 @@
         "properties": {
           "dataElementId": {
             "type": "string",
-            "description": "The guid of the DataElement",
             "format": "uuid"
           },
-          "data": {
-            "description": "The form data of the data element"
-          }
+          "data": {}
         },
-        "additionalProperties": false,
-        "description": "Pair of Guid and data object."
+        "additionalProperties": false
       },
       "DataPatchRequest": {
         "required": [
-          "ignoredValidators",
           "patch"
         ],
         "type": "object",
@@ -6477,16 +6189,13 @@
             "items": {
               "type": "string"
             },
-            "description": "List of validators to ignore during the patch operation.\r\nIssues from these validators will not be run during the save operation, but the validator will run on process/next",
             "nullable": true
           }
         },
-        "additionalProperties": false,
-        "description": "Represents the request to patch data on the Altinn.App.Api.Controllers.DataController."
+        "additionalProperties": false
       },
       "DataPatchRequestMultiple": {
         "required": [
-          "ignoredValidators",
           "patches"
         ],
         "type": "object",
@@ -6495,21 +6204,17 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/PatchListItem"
-            },
-            "description": "The Patch operations to perform.",
-            "nullable": true
+            }
           },
           "ignoredValidators": {
             "type": "array",
             "items": {
               "type": "string"
             },
-            "description": "List of validators to ignore during the patch operation.\r\nIssues from these validators will not be run during the save operation, but the validator will run on process/next",
             "nullable": true
           }
         },
-        "additionalProperties": false,
-        "description": "Represents the request to patch data on the Altinn.App.Api.Controllers.DataController in the\r\nversion that supports multiple data models in the same request."
+        "additionalProperties": false
       },
       "DataPatchResponse": {
         "required": [
@@ -6527,19 +6232,16 @@
                 "$ref": "#/components/schemas/ValidationIssueWithSource"
               }
             },
-            "description": "The validation issues that were found during the patch operation.",
             "nullable": true
           },
           "newDataModel": {
-            "description": "The current data model after the patch operation.",
             "nullable": true
           },
           "instance": {
             "$ref": "#/components/schemas/Instance"
           }
         },
-        "additionalProperties": false,
-        "description": "Represents the response from a data patch operation on the Altinn.App.Api.Controllers.DataController."
+        "additionalProperties": false
       },
       "DataPatchResponseMultiple": {
         "required": [
@@ -6553,22 +6255,19 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ValidationSourcePair"
-            },
-            "description": "The validation issues that were found during the patch operation."
+            }
           },
           "newDataModels": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/DataModelPairResponse"
-            },
-            "description": "The current data in all data models updated by the patch operation."
+            }
           },
           "instance": {
             "$ref": "#/components/schemas/Instance"
           }
         },
-        "additionalProperties": false,
-        "description": "Represents the response from a data patch operation on the Altinn.App.Api.Controllers.DataController."
+        "additionalProperties": false
       },
       "DataPostErrorResponse": {
         "required": [
@@ -6602,12 +6301,10 @@
             "items": {
               "$ref": "#/components/schemas/ValidationIssueWithSource"
             },
-            "description": "List of the validators that reported to have relevant changes after a new data element was added",
             "readOnly": true
           }
         },
-        "additionalProperties": { },
-        "description": "Extension of ProblemDetails to include Validation issues from the file upload."
+        "additionalProperties": {}
       },
       "DataPostResponse": {
         "required": [
@@ -6620,7 +6317,6 @@
         "properties": {
           "newDataElementId": {
             "type": "string",
-            "description": "The Id of the created data element",
             "format": "uuid"
           },
           "instance": {
@@ -6630,19 +6326,16 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ValidationSourcePair"
-            },
-            "description": "List of validation issues that reported to have relevant changes after a new data element was added"
+            }
           },
           "newDataModels": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/DataModelPairResponse"
-            },
-            "description": "List of updated DataModels caused by dataProcessing"
+            }
           }
         },
-        "additionalProperties": false,
-        "description": "Response object for POST to /org/app/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/data/{dataType}"
+        "additionalProperties": false
       },
       "DataType": {
         "type": "object",
@@ -6912,7 +6605,6 @@
         "properties": {
           "id": {
             "type": "string",
-            "description": "Instance id",
             "nullable": true,
             "readOnly": true
           },
@@ -6924,13 +6616,11 @@
             "items": {
               "$ref": "#/components/schemas/DataElementFileScanResult"
             },
-            "description": "File scan result for individual data elements.",
             "nullable": true,
             "readOnly": true
           }
         },
-        "additionalProperties": false,
-        "description": "Light weight model representing an instance and it's file scan result status."
+        "additionalProperties": false
       },
       "InstanceOwner": {
         "type": "object",
@@ -7026,13 +6716,11 @@
           },
           "dueBefore": {
             "type": "string",
-            "description": "Gets or sets the due date to submit the instance to application owner.",
             "format": "date-time",
             "nullable": true
           },
           "visibleAfter": {
             "type": "string",
-            "description": "Gets or sets date and time for when the instance should first become visible for the instance owner.",
             "format": "date-time",
             "nullable": true
           },
@@ -7042,17 +6730,14 @@
               "type": "string",
               "nullable": true
             },
-            "description": "Gets or sets the prefill values for the instance.",
             "nullable": true
           },
           "sourceInstanceId": {
             "type": "string",
-            "description": "Gets or sets the id of the instance to use as a source for the new instance.",
             "nullable": true
           }
         },
-        "additionalProperties": false,
-        "description": "Specialized model for instansiation of instances"
+        "additionalProperties": false
       },
       "InvoiceDetails": {
         "type": "object",
@@ -7136,15 +6821,13 @@
         "type": "object",
         "properties": {
           "success": {
-            "type": "boolean",
-            "description": "Indicates whether a person was found or not."
+            "type": "boolean"
           },
           "organisationDetails": {
             "$ref": "#/components/schemas/OrganisationDetails"
           }
         },
-        "additionalProperties": false,
-        "description": "Contains the result of an organisation lookup."
+        "additionalProperties": false
       },
       "LookupPersonRequest": {
         "required": [
@@ -7155,31 +6838,26 @@
         "properties": {
           "socialSecurityNumber": {
             "type": "string",
-            "description": "The social security number of the person to search for.",
             "nullable": true
           },
           "lastName": {
             "type": "string",
-            "description": "The last name of the person to search for.",
             "nullable": true
           }
         },
-        "additionalProperties": false,
-        "description": "Data transfer object for the request to search for a person."
+        "additionalProperties": false
       },
       "LookupPersonResponse": {
         "type": "object",
         "properties": {
           "success": {
-            "type": "boolean",
-            "description": "Indicates whether a person was found or not."
+            "type": "boolean"
           },
           "personDetails": {
             "$ref": "#/components/schemas/PersonDetails"
           }
         },
-        "additionalProperties": false,
-        "description": "Contains the result of a person search request."
+        "additionalProperties": false
       },
       "MessageBoxConfig": {
         "type": "object",
@@ -7293,17 +6971,14 @@
         "properties": {
           "orgNr": {
             "type": "string",
-            "description": "The organisation number",
             "nullable": true
           },
           "name": {
             "type": "string",
-            "description": "The full name",
             "nullable": true
           }
         },
-        "additionalProperties": false,
-        "description": "Contains details about an organisation"
+        "additionalProperties": false
       },
       "PartyTypesAllowed": {
         "type": "object",
@@ -7328,15 +7003,13 @@
         "properties": {
           "dataElementId": {
             "type": "string",
-            "description": "The guid for the data element this patch applies to",
             "format": "uuid"
           },
           "patch": {
             "$ref": "#/components/schemas/JsonPatch"
           }
         },
-        "additionalProperties": false,
-        "description": "Item class for the list of patches with Id"
+        "additionalProperties": false
       },
       "PatchOperation": {
         "type": "object",
@@ -7584,32 +7257,26 @@
         "properties": {
           "ssn": {
             "type": "string",
-            "description": "The social security number",
             "nullable": true
           },
           "name": {
             "type": "string",
-            "description": "The full name",
             "nullable": true
           },
           "firstName": {
             "type": "string",
-            "description": "The first name",
             "nullable": true
           },
           "middleName": {
             "type": "string",
-            "description": "The middle name",
             "nullable": true
           },
           "lastName": {
             "type": "string",
-            "description": "The last name",
             "nullable": true
           }
         },
-        "additionalProperties": false,
-        "description": "Contains details about a person"
+        "additionalProperties": false
       },
       "PhoneNumber": {
         "type": "object",
@@ -7650,7 +7317,7 @@
             "nullable": true
           }
         },
-        "additionalProperties": { }
+        "additionalProperties": {}
       },
       "ProcessElementInfo": {
         "type": "object",
@@ -7743,12 +7410,10 @@
         "properties": {
           "action": {
             "type": "string",
-            "description": "Action performed",
             "nullable": true
           }
         },
-        "additionalProperties": false,
-        "description": "Model for process next body"
+        "additionalProperties": false
       },
       "ProcessState": {
         "type": "object",
@@ -7862,7 +7527,6 @@
         "properties": {
           "id": {
             "type": "string",
-            "description": "The instance identifier formated as {instanceOwner.partyId}/{instanceGuid}.",
             "nullable": true
           },
           "presentationTexts": {
@@ -7870,29 +7534,24 @@
             "additionalProperties": {
               "type": "string"
             },
-            "description": "Presentation texts from the instance",
             "nullable": true
           },
           "dueBefore": {
             "type": "string",
-            "description": "Gets or sets the due date to submit the instance to application owner.",
             "format": "date-time",
             "nullable": true
           },
           "lastChanged": {
             "type": "string",
-            "description": "Last changed date time in UTC format.",
             "format": "date-time",
             "nullable": true
           },
           "lastChangedBy": {
             "type": "string",
-            "description": "Full name of user to last change the instance.",
             "nullable": true
           }
         },
-        "additionalProperties": false,
-        "description": "A simplified instance model used for presentation of key instance information."
+        "additionalProperties": false
       },
       "Substatus": {
         "type": "object",
@@ -7916,12 +7575,10 @@
             "items": {
               "type": "string"
             },
-            "description": "A list of tags represented as sting values.",
             "nullable": true
           }
         },
-        "additionalProperties": false,
-        "description": "Represents the response from an API endpoint providing a list of tags."
+        "additionalProperties": false
       },
       "TextResource": {
         "type": "object",
@@ -8011,12 +7668,10 @@
         "properties": {
           "action": {
             "type": "string",
-            "description": "Action performed",
             "nullable": true
           },
           "buttonId": {
             "type": "string",
-            "description": "The id of the button that was clicked",
             "nullable": true
           },
           "metadata": {
@@ -8024,7 +7679,6 @@
             "additionalProperties": {
               "type": "string"
             },
-            "description": "Additional metadata for the action",
             "nullable": true
           },
           "ignoredValidators": {
@@ -8032,12 +7686,10 @@
             "items": {
               "type": "string"
             },
-            "description": "Ignored validators that should not be evauated as part of this action",
             "nullable": true
           }
         },
-        "additionalProperties": false,
-        "description": "Request model for user action"
+        "additionalProperties": false
       },
       "UserActionResponse": {
         "required": [
@@ -8050,8 +7702,7 @@
           },
           "updatedDataModels": {
             "type": "object",
-            "additionalProperties": { },
-            "description": "Data models that have been updated",
+            "additionalProperties": {},
             "nullable": true
           },
           "updatedValidationIssues": {
@@ -8065,7 +7716,6 @@
                 }
               }
             },
-            "description": "Gets a dictionary of updated validation issues. The first key is the data model id, the second key is the validator id\r\nValidators that are not listed in the dictionary are assumed to have not been executed",
             "nullable": true
           },
           "clientActions": {
@@ -8073,7 +7723,6 @@
             "items": {
               "$ref": "#/components/schemas/ClientAction"
             },
-            "description": "Actions the client should perform after action has been performed backend",
             "nullable": true
           },
           "error": {
@@ -8081,13 +7730,11 @@
           },
           "redirectUrl": {
             "type": "string",
-            "description": "If the action requires the client to redirect to another url, this property should be set",
             "format": "uri",
             "nullable": true
           }
         },
-        "additionalProperties": false,
-        "description": "Response object from action endpoint"
+        "additionalProperties": false
       },
       "UserDefinedMetadataDto": {
         "type": "object",
@@ -8097,12 +7744,10 @@
             "items": {
               "$ref": "#/components/schemas/KeyValueEntry"
             },
-            "description": "A list of properties represented as key-value pairs.",
             "nullable": true
           }
         },
-        "additionalProperties": false,
-        "description": "Represents the response from an API endpoint providing a list of key-value properties."
+        "additionalProperties": false
       },
       "ValidationIssueSeverity": {
         "enum": [

@@ -1,0 +1,60 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Altinn.App.Integration.FrontendTests", "Altinn.App.Integration.FrontendTests\Altinn.App.Integration.FrontendTests.csproj", "{D61C69A9-3CA0-437E-BDA3-D53C8991B4E3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Apps", "Apps", "{C9C5AEC1-031A-47AB-94CD-83F00B003D34}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "frontend-test", "frontend-test", "{606768E6-F5F8-472F-A225-D1C505A59A9D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "App", "Apps\frontend-test\App\App.csproj", "{0A69FBF4-AC8D-4BA2-8FA8-9BCFF63BEEA6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Altinn.App.Integration", "Altinn.App.Integration\Altinn.App.Integration.csproj", "{0167C643-3B71-4CF5-A9BF-4298B726F1E0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AppTest", "AppTest\AppTest.csproj", "{118BEC03-F60A-45EB-8369-A75F3440A0B8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Altinn.App.Integration.FrontendTests.GeneratedClient", "Altinn.App.Integration.FrontendTests.GeneratedClient\Altinn.App.Integration.FrontendTests.GeneratedClient.csproj", "{684BB6A0-D67B-4748-A460-9FBBA69C9B37}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "App", "Apps\frontend-test\App\App.csproj", "{F5F4A9D6-9139-460A-8E7B-1B91DE6E1F08}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D61C69A9-3CA0-437E-BDA3-D53C8991B4E3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D61C69A9-3CA0-437E-BDA3-D53C8991B4E3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D61C69A9-3CA0-437E-BDA3-D53C8991B4E3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D61C69A9-3CA0-437E-BDA3-D53C8991B4E3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0A69FBF4-AC8D-4BA2-8FA8-9BCFF63BEEA6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0A69FBF4-AC8D-4BA2-8FA8-9BCFF63BEEA6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0A69FBF4-AC8D-4BA2-8FA8-9BCFF63BEEA6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0A69FBF4-AC8D-4BA2-8FA8-9BCFF63BEEA6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0167C643-3B71-4CF5-A9BF-4298B726F1E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0167C643-3B71-4CF5-A9BF-4298B726F1E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0167C643-3B71-4CF5-A9BF-4298B726F1E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0167C643-3B71-4CF5-A9BF-4298B726F1E0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{118BEC03-F60A-45EB-8369-A75F3440A0B8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{118BEC03-F60A-45EB-8369-A75F3440A0B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{118BEC03-F60A-45EB-8369-A75F3440A0B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{118BEC03-F60A-45EB-8369-A75F3440A0B8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{684BB6A0-D67B-4748-A460-9FBBA69C9B37}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{684BB6A0-D67B-4748-A460-9FBBA69C9B37}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{684BB6A0-D67B-4748-A460-9FBBA69C9B37}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{684BB6A0-D67B-4748-A460-9FBBA69C9B37}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F5F4A9D6-9139-460A-8E7B-1B91DE6E1F08}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F5F4A9D6-9139-460A-8E7B-1B91DE6E1F08}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F5F4A9D6-9139-460A-8E7B-1B91DE6E1F08}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F5F4A9D6-9139-460A-8E7B-1B91DE6E1F08}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{606768E6-F5F8-472F-A225-D1C505A59A9D} = {C9C5AEC1-031A-47AB-94CD-83F00B003D34}
+		{0A69FBF4-AC8D-4BA2-8FA8-9BCFF63BEEA6} = {606768E6-F5F8-472F-A225-D1C505A59A9D}
+	EndGlobalSection
+EndGlobal
