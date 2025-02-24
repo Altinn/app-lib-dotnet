@@ -15,9 +15,11 @@ using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
+using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.UserAction;
+using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Hosting;
@@ -33,6 +35,7 @@ internal sealed class SigningCorrespondenceService(
     IHostEnvironment hostEnvironment,
     IAppResources appResources,
     IAppMetadata appMetadata,
+    IProfileClient profileClient,
     ILogger<SigningCorrespondenceService> logger,
     IOptions<GeneralSettings> settings
 ) : ISigningCorrespondenceService
@@ -42,6 +45,7 @@ internal sealed class SigningCorrespondenceService(
     private readonly IHostEnvironment _hostEnvironment = hostEnvironment;
     private readonly IAppResources _appResources = appResources;
     private readonly IAppMetadata _appMetadata = appMetadata;
+    private readonly IProfileClient _profileClient = profileClient;
     private readonly ILogger<SigningCorrespondenceService> _logger = logger;
     private readonly UrlHelper _urlHelper = new(settings);
 
@@ -241,12 +245,19 @@ internal sealed class SigningCorrespondenceService(
         }
 
         string instanceUrl = _urlHelper.GetInstanceUrl(appIdentifier, instanceIdentifier);
-        CorrespondenceContent content = await GetContent(appIdentifier, appMetadata, serviceOwnerParty, instanceUrl);
+        UserProfile? recipientProfile = await _profileClient.GetUserProfile(recipient);
+        string recipientLanguage = recipientProfile?.ProfileSettingPreference.Language ?? LanguageConst.Nb;
+        CorrespondenceContent content = await GetContent(
+            appIdentifier,
+            appMetadata,
+            serviceOwnerParty,
+            instanceUrl,
+            recipientLanguage
+        );
         string? emailBody = notification?.Email?.Body;
         string? emailSubject = notification?.Email?.Subject;
         string? smsBody = notification?.Sms?.Body;
 
-        // TODO: Language support
         // TODO: Tests
         return await _correspondenceClient.Send(
             new SendCorrespondencePayload(
@@ -306,7 +317,8 @@ internal sealed class SigningCorrespondenceService(
             AppIdentifier appIdentifier,
             ApplicationMetadata appMetadata,
             Party senderParty,
-            string instanceUrl
+            string instanceUrl,
+            string language
         )
         {
             TextResource? textResource = null;
@@ -316,19 +328,16 @@ internal sealed class SigningCorrespondenceService(
             string? appName = null;
 
             string appOwner = senderParty.Name ?? appMetadata.Org;
-            string defaultLanguage = LanguageConst.Nb;
             string defaultAppName =
-                appMetadata.Title?.GetValueOrDefault(defaultLanguage)
+                appMetadata.Title?.GetValueOrDefault(language)
                 ?? appMetadata.Title?.FirstOrDefault().Value
                 ?? appMetadata.Id;
 
             try
             {
                 textResource ??=
-                    await _appResources.GetTexts(appIdentifier.Org, appIdentifier.App, defaultLanguage)
-                    ?? throw new InvalidOperationException(
-                        $"No text resource found for the default language ({defaultLanguage})"
-                    );
+                    await _appResources.GetTexts(appIdentifier.Org, appIdentifier.App, language)
+                    ?? throw new InvalidOperationException($"No text resource found for language ({language})");
 
                 title = textResource.GetText("signing.cta_title");
                 summary = textResource.GetText("signing.cta_summary");
@@ -349,16 +358,31 @@ internal sealed class SigningCorrespondenceService(
                 appName = defaultAppName;
             }
 
-            var defaults = new
+            var defaults = language switch
             {
-                Title = $"{appName}: Oppgave til signering",
-                Summary = $"Din signatur ventes for {appName}.",
-                Body = $"Du har en oppgave som venter på din signatur. <a href=\"{instanceUrl}\">Klikk her for å åpne applikasjonen</a>.<br /><br />Hvis du lurer på noe, kan du kontakte {appOwner}.",
+                LanguageConst.En => new
+                {
+                    Title = $"{appName}: Task for signing",
+                    Summary = $"Your signature is requested for {appName}.",
+                    Body = $"You have a task waiting for your signature. <a href=\"{instanceUrl}\">Click here to open the application</a>.<br /><br />If you have any questions, you can contact {appOwner}.",
+                },
+                LanguageConst.Nn => new
+                {
+                    Title = $"{appName}: Oppgåve til signering",
+                    Summary = $"Signaturen din vert venta for {appName}.",
+                    Body = $"Du har ei oppgåve som ventar på signaturen din. <a href=\"{instanceUrl}\">Klikk her for å opne applikasjonen</a>.<br /><br />Om du lurer på noko, kan du kontakte {appOwner}.",
+                },
+                LanguageConst.Nb or _ => new
+                {
+                    Title = $"{appName}: Oppgave til signering",
+                    Summary = $"Din signatur ventes for {appName}.",
+                    Body = $"Du har en oppgave som venter på din signatur. <a href=\"{instanceUrl}\">Klikk her for å åpne applikasjonen</a>.<br /><br />Hvis du lurer på noe, kan du kontakte {appOwner}.",
+                },
             };
 
             CorrespondenceContent content = new()
             {
-                Language = LanguageCode<Iso6391>.Parse(textResource?.Language ?? defaultLanguage),
+                Language = LanguageCode<Iso6391>.Parse(textResource?.Language ?? language),
                 Title = title ?? defaults.Title,
                 Summary = summary ?? defaults.Summary,
                 Body = body ?? defaults.Body,
