@@ -20,8 +20,8 @@ targetNamespace="http://bpmn.io/schema/bpmn" >
             <altinn:actions>
                 <altinn:action>reject</altinn:action>
 
-                <!-- Adding this 'unknown-action_unauthorized' to ensure the unit test that uses it keeps testing authorization. If the action isn't specified in the bpmn file it would fail because of that validation instead. -->
-                <altinn:action>unknown-action_unauthorized</altinn:action>
+                <!-- Adding this 'action_defined_in_bpmn_but_unauthorized' to ensure the unit test that uses it keeps testing authorization, not bpmn related validation. If the action isn't specified in the bpmn file it would fail because of validation instead. -->
+                <altinn:action>action_defined_in_bpmn_but_unauthorized</altinn:action>
             </altinn:actions>
         </altinn:taskExtension>
       </bpmn:extensionElements>

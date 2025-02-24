@@ -642,6 +642,28 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
     }
 
     [Fact]
+    public async Task RunNextWithAction_WhenActionIsNotDefinedInBpmn_ReturnsConflict()
+    {
+        var pdfMock = new Mock<IPdfGeneratorClient>(MockBehavior.Strict);
+        using var pdfReturnStream = new MemoryStream();
+        pdfMock.Setup(p => p.GeneratePdf(It.IsAny<Uri>(), It.IsAny<CancellationToken>())).ReturnsAsync(pdfReturnStream);
+        OverrideServicesForThisTest = (services) =>
+        {
+            services.AddSingleton(pdfMock.Object);
+        };
+        using var client = GetRootedUserClient(Org, App, 1337, InstanceOwnerPartyId);
+        using var content = new StringContent(
+            """{"action": "unknown-action_not_in_bpmn_task"}""",
+            Encoding.UTF8,
+            "application/json"
+        );
+        var nextResponse = await client.PutAsync($"{Org}/{App}/instances/{_instanceId}/process/next", content);
+        var nextResponseContent = await nextResponse.Content.ReadAsStringAsync();
+        OutputHelper.WriteLine(nextResponseContent);
+        nextResponse.Should().HaveStatusCode(HttpStatusCode.Conflict);
+    }
+
+    [Fact]
     public async Task RunNextWithAction_WhenActionIsNotAuthorized_ReturnsUnauthorized()
     {
         var pdfMock = new Mock<IPdfGeneratorClient>(MockBehavior.Strict);
@@ -653,7 +675,7 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         };
         using var client = GetRootedUserClient(Org, App, 1337, InstanceOwnerPartyId);
         using var content = new StringContent(
-            """{"action": "unknown-action_unauthorized"}""",
+            """{"action": "action_defined_in_bpmn_but_unauthorized"}""",
             Encoding.UTF8,
             "application/json"
         );
