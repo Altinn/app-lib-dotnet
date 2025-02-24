@@ -11,7 +11,10 @@ internal static class SwaggerFilterExtensions
     /// <param name="services"></param>
     public static void AddSwaggerFilter(this IServiceCollection services)
     {
-        services.Configure<SwaggerGenOptions>(c => c.DocumentFilter<DocumentFilter>());
+        services.Configure<SwaggerGenOptions>(c =>
+        {
+            c.DocumentFilter<DocumentFilter>();
+        });
     }
 }
 

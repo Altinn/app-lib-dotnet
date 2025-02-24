@@ -702,7 +702,7 @@ public class DataController : ControllerBase
     /// <param name="app">application identifier which is unique within an organisation</param>
     /// <param name="instanceOwnerPartyId">unique id of the party that is the owner of the instance</param>
     /// <param name="instanceGuid">unique id to identify the instance</param>
-    /// <param name="dataPatchRequest">Container object for the <see cref="JsonPatch" /> and list of ignored validators</param>
+    /// <param name="dataPatchRequestMultiple">Container object for the <see cref="JsonPatch" /> and list of ignored validators</param>
     /// <param name="language">The language selected by the user.</param>
     /// <returns>A response object with the new full model and validation issues from all the groups that run</returns>
     [Authorize(Policy = AuthzConstants.POLICY_INSTANCE_WRITE)]
@@ -717,7 +717,7 @@ public class DataController : ControllerBase
         [FromRoute] string app,
         [FromRoute] int instanceOwnerPartyId,
         [FromRoute] Guid instanceGuid,
-        [FromBody] DataPatchRequestMultiple dataPatchRequest,
+        [FromBody] DataPatchRequestMultiple dataPatchRequestMultiple,
         [FromQuery] string? language = null
     )
     {
@@ -728,7 +728,7 @@ public class DataController : ControllerBase
                 app,
                 instanceOwnerPartyId,
                 instanceGuid,
-                dataPatchRequest.Patches.Select(p => p.DataElementId)
+                dataPatchRequestMultiple.Patches.Select(p => p.DataElementId)
             );
             if (!instanceResult.Success)
             {
@@ -750,9 +750,9 @@ public class DataController : ControllerBase
 
             ServiceResult<DataPatchResult, ProblemDetails> res = await _patchService.ApplyPatches(
                 instance,
-                dataPatchRequest.Patches.ToDictionary(i => i.DataElementId, i => i.Patch),
+                dataPatchRequestMultiple.Patches.ToDictionary(i => i.DataElementId, i => i.Patch),
                 language,
-                dataPatchRequest.IgnoredValidators
+                dataPatchRequestMultiple.IgnoredValidators
             );
 
             if (res.Success)
@@ -773,7 +773,7 @@ public class DataController : ControllerBase
         {
             return HandlePlatformHttpException(
                 e,
-                $"Unable to update data element {string.Join(", ", dataPatchRequest.Patches.Select(i => i.DataElementId))} for instance {instanceOwnerPartyId}/{instanceGuid}"
+                $"Unable to update data element {string.Join(", ", dataPatchRequestMultiple.Patches.Select(i => i.DataElementId))} for instance {instanceOwnerPartyId}/{instanceGuid}"
             );
         }
     }

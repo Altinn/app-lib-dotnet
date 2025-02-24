@@ -80,9 +80,12 @@ public class CustomOpenApiController : Controller
             Components = new OpenApiComponents()
             {
                 Schemas = _schemaRepository.Schemas,
-                SecuritySchemes = { ["AltinnToken"] = Snippets.AltinnTokenSecurityScheme },
-                Responses = { ["ProblemDetails"] = Snippets.ProblemDetailsResponseSchema },
-                Parameters = Snippets.ComponentParameters,
+                SecuritySchemes =
+                {
+                    [Snippets.AltinnTokenSecurityScheme.Reference.Id] = Snippets.AltinnTokenSecurityScheme,
+                },
+                Responses = { [Snippets.ProblemDetailsResponseReference.Id] = Snippets.ProblemDetailsResponseSchema },
+                Parameters = Snippets.CommonParameters,
             },
             SecurityRequirements = [new OpenApiSecurityRequirement() { [Snippets.AltinnTokenSecurityScheme] = [] }],
             Servers =
@@ -418,6 +421,7 @@ public class CustomOpenApiController : Controller
                     Snippets.InstanceOwnerPartyIdParameterReference,
                     Snippets.InstanceGuidParameterReference,
                     Snippets.DataGuidParameterReference,
+                    Snippets.LanguageParameterReference,
                 ],
             }
         );
@@ -710,6 +714,7 @@ public class CustomOpenApiController : Controller
                     Snippets.InstanceOwnerPartyIdParameterReference,
                     Snippets.InstanceGuidParameterReference,
                     Snippets.DataGuidParameterReference,
+                    Snippets.LanguageParameterReference,
                 ],
             }
         );
@@ -769,6 +774,7 @@ public class CustomOpenApiController : Controller
                     Snippets.InstanceOwnerPartyIdParameterReference,
                     Snippets.InstanceGuidParameterReference,
                     Snippets.DataGuidParameterReference,
+                    Snippets.LanguageParameterReference,
                 ],
             }
         );
@@ -816,6 +822,7 @@ public class CustomOpenApiController : Controller
                     Snippets.InstanceOwnerPartyIdParameterReference,
                     Snippets.InstanceGuidParameterReference,
                     Snippets.DataGuidParameterReference,
+                    Snippets.LanguageParameterReference,
                 ],
             }
         );
@@ -948,47 +955,48 @@ public static class Snippets
                     Items = new()
                     {
                         Type = "object",
+                        Required = new HashSet<string>(["dataElementId", "patch"]),
                         Properties =
                         {
-                            ["dataElementId"] = new() { Type = "string", Format = "guid" },
+                            ["dataElementId"] = new()
+                            {
+                                Type = "string",
+                                Format = "guid",
+                                Nullable = false,
+                            },
                             ["patch"] = new()
                             {
-                                Type = "object",
+                                Type = "array",
                                 Title = "Json patch",
                                 Description = "A standard RFC 6902 document describing changes to one data element",
-                                Properties =
+                                Nullable = false,
+                                Items = new()
                                 {
-                                    ["operations"] = new()
+                                    Type = "object",
+                                    Required = new HashSet<string>() { "op", "path" },
+                                    Nullable = false,
+                                    Properties =
                                     {
-                                        Type = "array",
-                                        Items = new()
+                                        ["op"] = new()
                                         {
-                                            Type = "object",
-                                            Required = new HashSet<string>() { "op", "path" },
-                                            Properties =
-                                            {
-                                                ["op"] = new()
-                                                {
-                                                    Title = "Patch operation",
-                                                    Type = "string",
-                                                    Enum =
-                                                    [
-                                                        new OpenApiString("add"),
-                                                        new OpenApiString("remove"),
-                                                        new OpenApiString("replace"),
-                                                        new OpenApiString("move"),
-                                                        new OpenApiString("copy"),
-                                                        new OpenApiString("test"),
-                                                    ],
-                                                },
-                                                ["from"] = new() { Title = "JsonPointer", Type = "string" },
-                                                ["path"] = new() { Type = "string", Title = "JsonPointer" },
-                                                ["value"] = new()
-                                                {
-                                                    Title = "the value",
-                                                    Description = "The value to add or replace",
-                                                },
-                                            },
+                                            Title = "Patch operation",
+                                            Type = "string",
+                                            Enum =
+                                            [
+                                                new OpenApiString("add"),
+                                                new OpenApiString("remove"),
+                                                new OpenApiString("replace"),
+                                                new OpenApiString("move"),
+                                                new OpenApiString("copy"),
+                                                new OpenApiString("test"),
+                                            ],
+                                        },
+                                        ["from"] = new() { Title = "JsonPointer", Type = "string" },
+                                        ["path"] = new() { Title = "JsonPointer", Type = "string" },
+                                        ["value"] = new()
+                                        {
+                                            Title = "the value",
+                                            Description = "The value to add or replace",
                                         },
                                     },
                                 },
@@ -1002,8 +1010,10 @@ public static class Snippets
                     Description =
                         "This is used for saving server resources, when frontend has a duplicated version of the validator. The validators will be executed on process/next anyway",
                     Items = new() { Type = "string" },
+                    Type = "array",
                 },
             },
+            Required = new HashSet<string>(["patches"]),
         };
 
     /// <summary>
@@ -1043,9 +1053,9 @@ public static class Snippets
         };
 
     /// <summary>
-    /// q
+    /// Common parameters that are used multiple places in the api
     /// </summary>
-    public static IDictionary<string, OpenApiParameter> ComponentParameters =>
+    public static IDictionary<string, OpenApiParameter> CommonParameters =>
         new Dictionary<string, OpenApiParameter>
         {
             [InstanceOwnerPartyIdParameterReference.Reference.Id] = new()
@@ -1128,6 +1138,11 @@ public static class Snippets
                                 Example = new OpenApiString("Actually usefull description of the error"),
                             },
                             ["instance"] = new OpenApiSchema() { Type = "string", Nullable = true },
+                        },
+                        AdditionalProperties = new()
+                        {
+                            Title = "Additional properties",
+                            Description = "Additional properties can be added to the problem details",
                         },
                     },
                 },

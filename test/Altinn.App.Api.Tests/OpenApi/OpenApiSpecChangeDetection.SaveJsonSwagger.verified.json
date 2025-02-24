@@ -6491,7 +6491,6 @@
       },
       "DataPatchRequest": {
         "required": [
-          "ignoredValidators",
           "patch"
         ],
         "type": "object",
@@ -6513,7 +6512,6 @@
       },
       "DataPatchRequestMultiple": {
         "required": [
-          "ignoredValidators",
           "patches"
         ],
         "type": "object",
@@ -6523,8 +6521,7 @@
             "items": {
               "$ref": "#/components/schemas/PatchListItem"
             },
-            "description": "The Patch operations to perform.",
-            "nullable": true
+            "description": "The Patch operations to perform."
           },
           "ignoredValidators": {
             "type": "array",

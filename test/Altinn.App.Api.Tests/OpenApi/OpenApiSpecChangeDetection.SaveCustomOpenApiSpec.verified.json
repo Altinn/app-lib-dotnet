@@ -246,11 +246,18 @@
             "application/json": {
               "schema": {
                 "title": "Run patches on multiple Form data elements at once",
+                "required": [
+                  "patches"
+                ],
                 "type": "object",
                 "properties": {
                   "patches": {
                     "type": "array",
                     "items": {
+                      "required": [
+                        "dataElementId",
+                        "patch"
+                      ],
                       "type": "object",
                       "properties": {
                         "dataElementId": {
@@ -259,47 +266,41 @@
                         },
                         "patch": {
                           "title": "Json patch",
-                          "type": "object",
-                          "properties": {
-                            "operations": {
-                              "type": "array",
-                              "items": {
-                                "required": [
-                                  "op",
-                                  "path"
+                          "type": "array",
+                          "items": {
+                            "required": [
+                              "op",
+                              "path"
+                            ],
+                            "type": "object",
+                            "properties": {
+                              "op": {
+                                "title": "Patch operation",
+                                "enum": [
+                                  "add",
+                                  "remove",
+                                  "replace",
+                                  "move",
+                                  "copy",
+                                  "test"
                                 ],
-                                "type": "object",
-                                "properties": {
-                                  "op": {
-                                    "title": "Patch operation",
-                                    "enum": [
-                                      "add",
-                                      "remove",
-                                      "replace",
-                                      "move",
-                                      "copy",
-                                      "test"
-                                    ],
-                                    "type": "string"
-                                  },
-                                  "from": {
-                                    "title": "JsonPointer",
-                                    "type": "string"
-                                  },
-                                  "path": {
-                                    "title": "JsonPointer",
-                                    "type": "string"
-                                  },
-                                  "value": {
-                                    "title": "the value",
-                                    "description": "The value to add or replace"
-                                  }
-                                },
-                                "additionalProperties": false
+                                "type": "string"
+                              },
+                              "from": {
+                                "title": "JsonPointer",
+                                "type": "string"
+                              },
+                              "path": {
+                                "title": "JsonPointer",
+                                "type": "string"
+                              },
+                              "value": {
+                                "title": "the value",
+                                "description": "The value to add or replace"
                               }
-                            }
+                            },
+                            "additionalProperties": false
                           },
-                          "additionalProperties": false,
                           "description": "A standard RFC 6902 document describing changes to one data element"
                         }
                       },
@@ -308,6 +309,7 @@
                   },
                   "ignoredValidators": {
                     "title": "List of validators to not run incrementally",
+                    "type": "array",
                     "items": {
                       "type": "string"
                     },
@@ -406,6 +408,9 @@
         },
         {
           "$ref": "#/components/parameters/dataGuid"
+        },
+        {
+          "$ref": "#/components/parameters/language"
         }
       ]
     },
@@ -651,6 +656,9 @@
         },
         {
           "$ref": "#/components/parameters/dataGuid"
+        },
+        {
+          "$ref": "#/components/parameters/language"
         }
       ]
     },
@@ -713,6 +721,9 @@
         },
         {
           "$ref": "#/components/parameters/dataGuid"
+        },
+        {
+          "$ref": "#/components/parameters/language"
         }
       ]
     },
@@ -750,6 +761,9 @@
         },
         {
           "$ref": "#/components/parameters/dataGuid"
+        },
+        {
+          "$ref": "#/components/parameters/language"
         }
       ]
     },
@@ -819,6 +833,9 @@
         },
         {
           "$ref": "#/components/parameters/dataGuid"
+        },
+        {
+          "$ref": "#/components/parameters/language"
         }
       ]
     },
@@ -888,6 +905,9 @@
         },
         {
           "$ref": "#/components/parameters/dataGuid"
+        },
+        {
+          "$ref": "#/components/parameters/language"
         }
       ]
     },
@@ -1024,6 +1044,9 @@
         },
         {
           "$ref": "#/components/parameters/dataGuid"
+        },
+        {
+          "$ref": "#/components/parameters/language"
         }
       ]
     },
@@ -1086,6 +1109,9 @@
         },
         {
           "$ref": "#/components/parameters/dataGuid"
+        },
+        {
+          "$ref": "#/components/parameters/language"
         }
       ]
     },
@@ -1188,6 +1214,9 @@
         },
         {
           "$ref": "#/components/parameters/dataGuid"
+        },
+        {
+          "$ref": "#/components/parameters/language"
         }
       ]
     },
@@ -1250,6 +1279,9 @@
         },
         {
           "$ref": "#/components/parameters/dataGuid"
+        },
+        {
+          "$ref": "#/components/parameters/language"
         }
       ]
     },
@@ -1352,6 +1384,9 @@
         },
         {
           "$ref": "#/components/parameters/dataGuid"
+        },
+        {
+          "$ref": "#/components/parameters/language"
         }
       ]
     },
@@ -1414,6 +1449,9 @@
         },
         {
           "$ref": "#/components/parameters/dataGuid"
+        },
+        {
+          "$ref": "#/components/parameters/language"
         }
       ]
     }
@@ -2774,7 +2812,10 @@
                   "nullable": true
                 }
               },
-              "additionalProperties": false
+              "additionalProperties": {
+                "title": "Additional properties",
+                "description": "Additional properties can be added to the problem details"
+              }
             }
           }
         }
