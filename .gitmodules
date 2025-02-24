@@ -1,0 +1,3 @@
+[submodule "integration-tests/Apps/frontend-test"]
+	path = integration-tests/Apps/frontend-test
+	url = https://dev.altinn.studio/repos/ttd/frontend-test.git
