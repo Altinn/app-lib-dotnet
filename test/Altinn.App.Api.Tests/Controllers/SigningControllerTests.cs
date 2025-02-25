@@ -18,7 +18,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using static Altinn.App.Core.Features.Signing.Models.Signee;
 using SigneeContextSigneeState = Altinn.App.Core.Features.Signing.Models.SigneeState;
-using SigneeStateDTO = Altinn.App.Api.Models.SigneeState;
+using SigneeStateDTO = Altinn.App.Api.Models.SigneeStateDTO;
 
 namespace Altinn.App.Api.Tests.Controllers;
 
@@ -97,6 +97,9 @@ public class SigningControllerTests
     public async Task GetSigneesState_WhenSigneeContextIsOrg_Returns_Expected_Signees()
     {
         // Arrange
+
+        var signedTime = DateTime.Now;
+
         List<SigneeContext> signeeContexts =
         [
             new SigneeContext
@@ -144,7 +147,7 @@ public class SigningControllerTests
                     DataElementSignatures = [],
                     Id = "signDocument",
                     InstanceGuid = "instanceGuid",
-                    SignedTime = DateTime.Now,
+                    SignedTime = signedTime,
                 },
             },
             new SigneeContext
@@ -171,7 +174,7 @@ public class SigningControllerTests
                     DataElementSignatures = [],
                     Id = "signDocument",
                     InstanceGuid = "instanceGuid",
-                    SignedTime = DateTime.Now,
+                    SignedTime = signedTime,
                 },
             },
             new SigneeContext
@@ -228,10 +231,10 @@ public class SigningControllerTests
         var okResult = actionResult as OkObjectResult;
         Assert.NotNull(okResult);
 
-        var signingStateResponse = okResult.Value as SigningStateResponse;
+        var signingStateResponse = okResult.Value as SigningStateResponseDTO;
         // Assert
 
-        var expected = new SigningStateResponse
+        var expected = new SigningStateResponseDTO
         {
             SigneeStates =
             [
@@ -241,7 +244,7 @@ public class SigningControllerTests
                     Organisation = "org1",
                     DelegationSuccessful = false,
                     NotificationSuccessful = NotificationState.Failed,
-                    HasSigned = false,
+                    SignedTime = null,
                     PartyId = 1,
                 },
                 new SigneeStateDTO
@@ -250,7 +253,7 @@ public class SigningControllerTests
                     Organisation = "org1",
                     DelegationSuccessful = true,
                     NotificationSuccessful = NotificationState.NotSent,
-                    HasSigned = true,
+                    SignedTime = signedTime,
                     PartyId = 1,
                 },
                 new SigneeStateDTO
@@ -259,7 +262,7 @@ public class SigningControllerTests
                     Organisation = "org2",
                     DelegationSuccessful = true,
                     NotificationSuccessful = NotificationState.Failed,
-                    HasSigned = true,
+                    SignedTime = signedTime,
                     PartyId = 2,
                 },
                 new SigneeStateDTO
@@ -268,7 +271,7 @@ public class SigningControllerTests
                     Organisation = "org2",
                     DelegationSuccessful = true,
                     NotificationSuccessful = NotificationState.Sent,
-                    HasSigned = false,
+                    SignedTime = null,
                     PartyId = 2,
                 },
                 new SigneeStateDTO
@@ -277,7 +280,7 @@ public class SigningControllerTests
                     Organisation = "org2",
                     DelegationSuccessful = true,
                     NotificationSuccessful = NotificationState.Sent,
-                    HasSigned = false,
+                    SignedTime = null,
                     PartyId = 2,
                 },
             ],
@@ -326,10 +329,10 @@ public class SigningControllerTests
         var okResult = actionResult as OkObjectResult;
         Assert.NotNull(okResult);
 
-        var signingStateResponse = okResult.Value as SigningStateResponse;
+        var signingStateResponse = okResult.Value as SigningStateResponseDTO;
         // Assert
 
-        var expected = new SigningStateResponse
+        var expected = new SigningStateResponseDTO
         {
             SigneeStates =
             [
@@ -339,7 +342,7 @@ public class SigningControllerTests
                     Organisation = null,
                     DelegationSuccessful = false,
                     NotificationSuccessful = NotificationState.Failed,
-                    HasSigned = false,
+                    SignedTime = null,
                     PartyId = 1,
                 },
             ],
@@ -352,6 +355,7 @@ public class SigningControllerTests
     public async Task GetSigneesState_WhenSigneeContextIsPersonOnBehalfOfOrg_Returns_Expected_Signees()
     {
         // Arrange
+        var signedTime = DateTime.Now;
         List<SigneeContext> signeeContexts =
         [
             new SigneeContext
@@ -384,7 +388,7 @@ public class SigningControllerTests
                     DataElementSignatures = [],
                     Id = "signDocument",
                     InstanceGuid = "instanceGuid",
-                    SignedTime = DateTime.Now,
+                    SignedTime = signedTime,
                 },
             },
         ];
@@ -400,10 +404,10 @@ public class SigningControllerTests
         var okResult = actionResult as OkObjectResult;
         Assert.NotNull(okResult);
 
-        var signingStateResponse = okResult.Value as SigningStateResponse;
+        var signingStateResponse = okResult.Value as SigningStateResponseDTO;
         // Assert
 
-        var expected = new SigningStateResponse
+        var expected = new SigningStateResponseDTO
         {
             SigneeStates =
             [
@@ -413,7 +417,7 @@ public class SigningControllerTests
                     Organisation = "org1",
                     DelegationSuccessful = true,
                     NotificationSuccessful = NotificationState.NotSent,
-                    HasSigned = true,
+                    SignedTime = signedTime,
                     PartyId = 321,
                 },
             ],
@@ -426,6 +430,8 @@ public class SigningControllerTests
     public async Task GetSigneesState_WhenSigneeContextIsSystem_Returns_Expected_Signees()
     {
         // Arrange
+
+        var signedTime = DateTime.Now;
         List<SigneeContext> signeeContexts =
         [
             new SigneeContext
@@ -456,7 +462,7 @@ public class SigningControllerTests
                     DataElementSignatures = [],
                     Id = "signDocument",
                     InstanceGuid = "instanceGuid",
-                    SignedTime = DateTime.Now,
+                    SignedTime = signedTime,
                 },
             },
         ];
@@ -472,10 +478,10 @@ public class SigningControllerTests
         var okResult = actionResult as OkObjectResult;
         Assert.NotNull(okResult);
 
-        var signingStateResponse = okResult.Value as SigningStateResponse;
+        var signingStateResponse = okResult.Value as SigningStateResponseDTO;
         // Assert
 
-        var expected = new SigningStateResponse
+        var expected = new SigningStateResponseDTO
         {
             SigneeStates =
             [
@@ -485,7 +491,7 @@ public class SigningControllerTests
                     Organisation = "org1",
                     DelegationSuccessful = true,
                     NotificationSuccessful = NotificationState.Sent,
-                    HasSigned = true,
+                    SignedTime = signedTime,
                     PartyId = 123,
                 },
             ],

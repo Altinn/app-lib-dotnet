@@ -13,7 +13,6 @@ using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Mvc;
 using static Altinn.App.Core.Features.Signing.Models.Signee;
-using SigneeState = Altinn.App.Api.Models.SigneeState;
 
 namespace Altinn.App.Api.Controllers;
 
@@ -66,7 +65,7 @@ public class SigningController : ControllerBase
     /// <param name="language">The currently used language by the user (or null if not available)</param>
     /// <returns>An object containing updated signee state</returns>
     [HttpGet]
-    [ProducesResponseType(typeof(SigningStateResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(SigningStateResponseDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetSigneesState(
         [FromRoute] string org,
@@ -109,7 +108,7 @@ public class SigningController : ControllerBase
             signingConfiguration
         );
 
-        var response = new SigningStateResponse
+        var response = new SigningStateResponseDTO
         {
             SigneeStates =
             [
@@ -143,11 +142,11 @@ public class SigningController : ControllerBase
 
                         var signeeState = signeeContext.SigneeState;
 
-                        return new SigneeState
+                        return new SigneeStateDTO
                         {
                             Name = name,
                             Organisation = organisation,
-                            HasSigned = signeeContext.SignDocument is not null,
+                            SignedTime = signeeContext.SignDocument?.SignedTime,
                             DelegationSuccessful = signeeState.IsAccessDelegated,
                             NotificationSuccessful = GetNotificationState(signeeContext),
                             PartyId = signeeContext.Signee.GetParty().PartyId,

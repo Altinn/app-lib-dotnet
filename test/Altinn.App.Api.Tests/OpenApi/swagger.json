@@ -4841,27 +4841,27 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/SigningStateResponse"
+                  "$ref": "#/components/schemas/SigningStateResponseDTO"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SigningStateResponse"
+                  "$ref": "#/components/schemas/SigningStateResponseDTO"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SigningStateResponse"
+                  "$ref": "#/components/schemas/SigningStateResponseDTO"
                 }
               },
               "application/xml": {
                 "schema": {
-                  "$ref": "#/components/schemas/SigningStateResponse"
+                  "$ref": "#/components/schemas/SigningStateResponseDTO"
                 }
               },
               "text/xml": {
                 "schema": {
-                  "$ref": "#/components/schemas/SigningStateResponse"
+                  "$ref": "#/components/schemas/SigningStateResponseDTO"
                 }
               }
             }
@@ -7990,9 +7990,8 @@
         },
         "additionalProperties": false
       },
-      "SigneeState": {
+      "SigneeStateDTO": {
         "required": [
-          "hasSigned",
           "partyId"
         ],
         "type": "object",
@@ -8007,10 +8006,6 @@
             "description": "The organisation of the signee.",
             "nullable": true
           },
-          "hasSigned": {
-            "type": "boolean",
-            "description": "Whether the signee has signed or not."
-          },
           "delegationSuccessful": {
             "type": "boolean",
             "description": "Whether delegation of signing rights has been successful."
@@ -8022,6 +8017,12 @@
             "type": "integer",
             "description": "The party id of the signee.",
             "format": "int32"
+          },
+          "signedTime": {
+            "type": "string",
+            "description": "The time the signee signed.",
+            "format": "date-time",
+            "nullable": true
           }
         },
         "additionalProperties": false,
@@ -8045,7 +8046,7 @@
         "additionalProperties": false,
         "description": "Response that contains the data elements that should be signed."
       },
-      "SigningStateResponse": {
+      "SigningStateResponseDTO": {
         "required": [
           "signeeStates"
         ],
@@ -8054,7 +8055,7 @@
           "signeeStates": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/SigneeState"
+              "$ref": "#/components/schemas/SigneeStateDTO"
             },
             "description": "The signees for the current task.",
             "nullable": true

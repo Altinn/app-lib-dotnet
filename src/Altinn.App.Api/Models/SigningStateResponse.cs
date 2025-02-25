@@ -5,18 +5,18 @@ namespace Altinn.App.Api.Models;
 /// <summary>
 /// Contains the result of a get signees request.
 /// </summary>
-public class SigningStateResponse
+public class SigningStateResponseDTO
 {
     /// <summary>
     /// The signees for the current task.
     /// </summary>
-    public required List<SigneeState> SigneeStates { get; set; }
+    public required List<SigneeStateDTO> SigneeStates { get; set; }
 }
 
 /// <summary>
 /// Contains information about a signee and the current signing status.
 /// </summary>
-public class SigneeState
+public class SigneeStateDTO
 {
     /// <summary>
     /// The name of the signee.
@@ -29,12 +29,6 @@ public class SigneeState
     /// </summary>
     [JsonPropertyName("organisation")]
     public string? Organisation { get; set; }
-
-    /// <summary>
-    /// Whether the signee has signed or not.
-    /// </summary>
-    [JsonPropertyName("hasSigned")]
-    public required bool HasSigned { get; set; }
 
     /// <summary>
     /// Whether delegation of signing rights has been successful.
@@ -53,7 +47,12 @@ public class SigneeState
     /// </summary>
     [JsonPropertyName("partyId")]
     public required int PartyId { get; set; }
-    //TODO: Add necessary properties
+
+    /// <summary>
+    /// The time the signee signed.
+    /// </summary>
+    [JsonPropertyName("signedTime")]
+    public DateTime? SignedTime { get; set; }
 }
 
 /// <summary>
