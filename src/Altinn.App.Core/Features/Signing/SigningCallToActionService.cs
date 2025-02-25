@@ -113,7 +113,7 @@ internal sealed class SigningCallToActionService(
                                     ? CorrespondenceNotificationTemplate.CustomMessage
                                     : CorrespondenceNotificationTemplate.GenericAltinnMessage,
                                 NotificationChannel = CorrespondenceNotificationChannel.Email,
-                                EmailSubject = emailSubject ?? correspondenceContent.Title,
+                                EmailSubject = emailSubject,
                                 EmailBody = emailBody,
                                 SendersReference = instanceIdentifier.ToString(),
                                 SendReminder = true,
@@ -140,7 +140,16 @@ internal sealed class SigningCallToActionService(
                                 SendersReference = instanceIdentifier.ToString(),
                                 SendReminder = true,
                             },
-                            NotificationChoice.None or _ => null,
+                            NotificationChoice.None => new CorrespondenceNotification
+                            {
+                                NotificationTemplate = CorrespondenceNotificationTemplate.GenericAltinnMessage,
+                                NotificationChannel = CorrespondenceNotificationChannel.Email,
+                                EmailSubject = emailSubject,
+                                EmailBody = emailBody,
+                                SendersReference = instanceIdentifier.ToString(),
+                                SendReminder = true,
+                            },
+                            _ => null,
                         }
                     )
                     .Build(),

@@ -17,6 +17,11 @@ internal static class SigningCorrespondanceHelper
             return NotificationChoice.None;
         }
 
+        if (notification.Email is null && notification.Sms is null)
+        {
+            return NotificationChoice.None;
+        }
+
         if (notification.Email is not null && notification.Sms is not null)
         {
             return NotificationChoice.SmsAndEmail;
