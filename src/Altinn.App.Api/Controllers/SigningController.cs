@@ -226,9 +226,7 @@ public class SigningController : ControllerBase
             return NotificationState.Sent;
         }
 
-        if (
-            signeeState.CallToSignFailedReason is not null
-        )
+        if (signeeState.CallToSignFailedReason is not null)
         {
             return NotificationState.Failed;
         }
