@@ -39,11 +39,32 @@ public class SigneeState
     /// <summary>
     /// Whether the signee has been notified to sign via email or sms.
     /// </summary>
-    public bool NotificationSuccessful { get; set; }
+    public NotificationState NotificationSuccessful { get; set; }
 
     /// <summary>
     /// The party id of the signee.
     /// </summary>
     public required int PartyId { get; set; }
     //TODO: Add necessary properties
+}
+
+/// <summary>
+/// Represents the state of a notification.
+/// </summary>
+public enum NotificationState
+{
+    /// <summary>
+    /// Notification has not been configures and thus has not been sent.
+    /// </summary>
+    NotSent,
+
+    /// <summary>
+    /// The notification has been sent successfully.
+    /// </summary>
+    Sent,
+
+    /// <summary>
+    /// The notification sending has failed.
+    /// </summary>
+    Failed,
 }
