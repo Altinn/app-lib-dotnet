@@ -137,6 +137,16 @@ public class FrontendTestsRunner
         {
             throw new Exception("Data not updated. Expected /Title to be 'New title', was " + updatedDataViaPut?.Title);
         }
+
+        var nextResult = await apiClient
+            .Ttd.FrontendTest.Instances[partyId][instanceId]
+            .Process.Next.PutAsync(
+                new ProcessNext()
+                {
+                    // Action = "next"
+                }
+            );
+        throw new Exception("Expected 409 error, got " + nextResult);
     }
 }
 

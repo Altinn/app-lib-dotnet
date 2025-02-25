@@ -2,7 +2,7 @@
   "openapi": "3.0.1",
   "info": {
     "title": "Altinn 3 App API for frontend-test ENGLISH",
-    "description": "This is the API for an Altinn 3 app. The API is based on the OpenAPI 3.0 specification.\nThis app has the following data types:\n| DataTypeId | Type | Allowed number | MimeTypes | TaskId |\n|------------|------|----------------|-----------|--------|\n|message|FormData (AutoCreate)|1|application/xml|Task_1|\n|fileUpload-message|Attachment|0-3|*|Task_1|\n|ServiceModel-test|FormData (AutoCreate)|1|application/xml|Task_2|\n|fileUpload-changename|Attachment|0-3|application/pdf|Task_2|\n|fileUploadWithTags-changename|Attachment|0-3|*|Task_2|\n|mainUploaderSingle|Attachment|0-1|*|Task_3|\n|mainUploaderMulti|Attachment|0-5|*|Task_3|\n|subUploader|Attachment|0-5|*|Task_3|\n|nested-group|FormData (AutoCreate)|1|application/xml|Task_3|\n|likert|FormData (AutoCreate)|1|application/xml|Task_4|\n|ref-data-as-pdf|Attachment|-|application/pdf||\n|datalist|FormData (AutoCreate)|1|application/xml|Task_5|\n",
+    "description": "This is the API for an Altinn 3 app. The API is based on the OpenAPI 3.0 specification.\nThis app has the following data types:\n| DataTypeId | Type | Allowed number | MimeTypes | TaskId |\n|------------|------|----------------|-----------|--------|\n|message|FormData (AutoCreate)|1|application/xml|Task_1|\n|fileUpload-message|Attachment|0-3|*|Task_1|\n|ServiceModel-test|FormData (AutoCreate)|1|application/xml|Task_2|\n|fileUpload-changename|Attachment|0-3|application/pdf|Task_2|\n|fileUploadWithTags-changename|Attachment|0-3|*|Task_2|\n|mainUploaderSingle|Attachment|0-1|*|Task_3|\n|mainUploaderMulti|Attachment|0-5|*|Task_3|\n|subUploader|Attachment|0-5|*|Task_3|\n|nested-group|FormData (AutoCreate)|1|application/xml|Task_3|\n|likert|FormData (AutoCreate)|1|application/xml|Task_4|\n|ref-data-as-pdf|Attachment|-|application/pdf||\n|datalist|FormData (AutoCreate)|1|application/xml|Task_5|\n\n## This app has the following process tasks:\n| TaskId | Name | Type | Actions |\n|--------|------|------|---------|\n| Task_1 | Utfylling (message) | data |  |\n| Task_2 | Utfylling (changename) | data | fill, conflictingOptionsResetshiftingOptionsAddshiftingOptionsRemoveAll |\n| Task_3 | Utfylling (group) | data | sortPets, generatePets |\n| Task_4 | Utfylling (likert) | data |  |\n| Task_5 | Utfylling (datalist) | data |  |\n| Task_Custom_Confirm | Tilbakemelding (custom) | confirmation | reject, confirm |\n| Task_Default_Confirm | Tilbakemelding (default) | confirmation | confirm |\n",
     "contact": {
       "name": "Digitaliseringsdirektoratet (altinn)",
       "url": "https://altinn.slack.com"
@@ -443,6 +443,67 @@
         },
         {
           "$ref": "#/components/parameters/dataGuid"
+        },
+        {
+          "$ref": "#/components/parameters/language"
+        }
+      ]
+    },
+    "/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}/process/next": {
+      "summary": "Move instance to next process step",
+      "put": {
+        "tags": [
+          "Instances"
+        ],
+        "summary": "Move instance to next process step",
+        "description": "Move the instance to the next process step",
+        "requestBody": {
+          "description": "Optional body with specification of the action to perform",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProcessNext"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Instance moved to next process step. Returns the new process state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppProcessState"
+                }
+              }
+            }
+          },
+          "409": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "400": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "404": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "500": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/instanceOwnerPartyId"
+        },
+        {
+          "$ref": "#/components/parameters/instanceGuid"
         },
         {
           "$ref": "#/components/parameters/language"
@@ -2607,6 +2668,50 @@
           }
         },
         "additionalProperties": {}
+      },
+      "ProcessNext": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AppProcessState": {
+        "type": "object",
+        "properties": {
+          "started": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "startEvent": {
+            "type": "string",
+            "nullable": true
+          },
+          "currentTask": {
+            "$ref": "#/components/schemas/ProcessElementInfo"
+          },
+          "ended": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "endEvent": {
+            "type": "string",
+            "nullable": true
+          },
+          "actions": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
       },
       "ShadowFields": {
         "type": "object",

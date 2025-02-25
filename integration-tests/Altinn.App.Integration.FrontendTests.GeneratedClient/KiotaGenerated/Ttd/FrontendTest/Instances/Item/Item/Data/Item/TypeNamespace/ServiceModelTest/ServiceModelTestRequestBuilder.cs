@@ -22,7 +22,7 @@ namespace Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Tt
         /// </summary>
         /// <param name="pathParameters">Path parameters for the request</param>
         /// <param name="requestAdapter">The request adapter to use to execute the requests.</param>
-        public ServiceModelTestRequestBuilder(Dictionary<string, object> pathParameters, IRequestAdapter requestAdapter) : base(requestAdapter, "{+baseurl}/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/type/ServiceModel-test", pathParameters)
+        public ServiceModelTestRequestBuilder(Dictionary<string, object> pathParameters, IRequestAdapter requestAdapter) : base(requestAdapter, "{+baseurl}/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/type/ServiceModel-test{?language*}", pathParameters)
         {
         }
         /// <summary>
@@ -30,7 +30,7 @@ namespace Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Tt
         /// </summary>
         /// <param name="rawUrl">The raw URL to use for the request builder.</param>
         /// <param name="requestAdapter">The request adapter to use to execute the requests.</param>
-        public ServiceModelTestRequestBuilder(string rawUrl, IRequestAdapter requestAdapter) : base(requestAdapter, "{+baseurl}/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/type/ServiceModel-test", rawUrl)
+        public ServiceModelTestRequestBuilder(string rawUrl, IRequestAdapter requestAdapter) : base(requestAdapter, "{+baseurl}/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/type/ServiceModel-test{?language*}", rawUrl)
         {
         }
         /// <summary>
@@ -46,11 +46,11 @@ namespace Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Tt
         /// <exception cref="global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Models.Skjema500Error">When receiving a 500 status code</exception>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public async Task<global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Models.Skjema?> GetAsync(Action<RequestConfiguration<DefaultQueryParameters>>? requestConfiguration = default, CancellationToken cancellationToken = default)
+        public async Task<global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Models.Skjema?> GetAsync(Action<RequestConfiguration<global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Ttd.FrontendTest.Instances.Item.Item.Data.Item.TypeNamespace.ServiceModelTest.ServiceModelTestRequestBuilder.ServiceModelTestRequestBuilderGetQueryParameters>>? requestConfiguration = default, CancellationToken cancellationToken = default)
         {
 #nullable restore
 #else
-        public async Task<global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Models.Skjema> GetAsync(Action<RequestConfiguration<DefaultQueryParameters>> requestConfiguration = default, CancellationToken cancellationToken = default)
+        public async Task<global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Models.Skjema> GetAsync(Action<RequestConfiguration<global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Ttd.FrontendTest.Instances.Item.Item.Data.Item.TypeNamespace.ServiceModelTest.ServiceModelTestRequestBuilder.ServiceModelTestRequestBuilderGetQueryParameters>> requestConfiguration = default, CancellationToken cancellationToken = default)
         {
 #endif
             var requestInfo = ToGetRequestInformation(requestConfiguration);
@@ -78,11 +78,11 @@ namespace Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Tt
         /// <exception cref="global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Models.ServiceModelTest500Error">When receiving a 500 status code</exception>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public async Task<Stream?> PutAsync(global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Models.Skjema body, Action<RequestConfiguration<DefaultQueryParameters>>? requestConfiguration = default, CancellationToken cancellationToken = default)
+        public async Task<Stream?> PutAsync(global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Models.Skjema body, Action<RequestConfiguration<global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Ttd.FrontendTest.Instances.Item.Item.Data.Item.TypeNamespace.ServiceModelTest.ServiceModelTestRequestBuilder.ServiceModelTestRequestBuilderPutQueryParameters>>? requestConfiguration = default, CancellationToken cancellationToken = default)
         {
 #nullable restore
 #else
-        public async Task<Stream> PutAsync(global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Models.Skjema body, Action<RequestConfiguration<DefaultQueryParameters>> requestConfiguration = default, CancellationToken cancellationToken = default)
+        public async Task<Stream> PutAsync(global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Models.Skjema body, Action<RequestConfiguration<global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Ttd.FrontendTest.Instances.Item.Item.Data.Item.TypeNamespace.ServiceModelTest.ServiceModelTestRequestBuilder.ServiceModelTestRequestBuilderPutQueryParameters>> requestConfiguration = default, CancellationToken cancellationToken = default)
         {
 #endif
             _ = body ?? throw new ArgumentNullException(nameof(body));
@@ -104,11 +104,11 @@ namespace Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Tt
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public RequestInformation ToGetRequestInformation(Action<RequestConfiguration<DefaultQueryParameters>>? requestConfiguration = default)
+        public RequestInformation ToGetRequestInformation(Action<RequestConfiguration<global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Ttd.FrontendTest.Instances.Item.Item.Data.Item.TypeNamespace.ServiceModelTest.ServiceModelTestRequestBuilder.ServiceModelTestRequestBuilderGetQueryParameters>>? requestConfiguration = default)
         {
 #nullable restore
 #else
-        public RequestInformation ToGetRequestInformation(Action<RequestConfiguration<DefaultQueryParameters>> requestConfiguration = default)
+        public RequestInformation ToGetRequestInformation(Action<RequestConfiguration<global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Ttd.FrontendTest.Instances.Item.Item.Data.Item.TypeNamespace.ServiceModelTest.ServiceModelTestRequestBuilder.ServiceModelTestRequestBuilderGetQueryParameters>> requestConfiguration = default)
         {
 #endif
             var requestInfo = new RequestInformation(Method.GET, UrlTemplate, PathParameters);
@@ -124,11 +124,11 @@ namespace Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Tt
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public RequestInformation ToPutRequestInformation(global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Models.Skjema body, Action<RequestConfiguration<DefaultQueryParameters>>? requestConfiguration = default)
+        public RequestInformation ToPutRequestInformation(global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Models.Skjema body, Action<RequestConfiguration<global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Ttd.FrontendTest.Instances.Item.Item.Data.Item.TypeNamespace.ServiceModelTest.ServiceModelTestRequestBuilder.ServiceModelTestRequestBuilderPutQueryParameters>>? requestConfiguration = default)
         {
 #nullable restore
 #else
-        public RequestInformation ToPutRequestInformation(global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Models.Skjema body, Action<RequestConfiguration<DefaultQueryParameters>> requestConfiguration = default)
+        public RequestInformation ToPutRequestInformation(global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Models.Skjema body, Action<RequestConfiguration<global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Ttd.FrontendTest.Instances.Item.Item.Data.Item.TypeNamespace.ServiceModelTest.ServiceModelTestRequestBuilder.ServiceModelTestRequestBuilderPutQueryParameters>> requestConfiguration = default)
         {
 #endif
             _ = body ?? throw new ArgumentNullException(nameof(body));
@@ -146,6 +146,40 @@ namespace Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Tt
         public global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Ttd.FrontendTest.Instances.Item.Item.Data.Item.TypeNamespace.ServiceModelTest.ServiceModelTestRequestBuilder WithUrl(string rawUrl)
         {
             return new global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Ttd.FrontendTest.Instances.Item.Item.Data.Item.TypeNamespace.ServiceModelTest.ServiceModelTestRequestBuilder(rawUrl, RequestAdapter);
+        }
+        /// <summary>
+        /// Get data for a specific data elementsee [JSON Schema](/ttd/frontend-test/api/jsonschema/ServiceModel-test)
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
+        public partial class ServiceModelTestRequestBuilderGetQueryParameters 
+        {
+            /// <summary>Some apps make changes to the data models or validation based on the active language of the user</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+            [QueryParameter("language")]
+            public string? Language { get; set; }
+#nullable restore
+#else
+            [QueryParameter("language")]
+            public string Language { get; set; }
+#endif
+        }
+        /// <summary>
+        /// Update data for a specific data element
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
+        public partial class ServiceModelTestRequestBuilderPutQueryParameters 
+        {
+            /// <summary>Some apps make changes to the data models or validation based on the active language of the user</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+            [QueryParameter("language")]
+            public string? Language { get; set; }
+#nullable restore
+#else
+            [QueryParameter("language")]
+            public string Language { get; set; }
+#endif
         }
     }
 }

@@ -22,7 +22,7 @@ namespace Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Tt
         /// </summary>
         /// <param name="pathParameters">Path parameters for the request</param>
         /// <param name="requestAdapter">The request adapter to use to execute the requests.</param>
-        public DatalistRequestBuilder(Dictionary<string, object> pathParameters, IRequestAdapter requestAdapter) : base(requestAdapter, "{+baseurl}/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}/data/type/datalist", pathParameters)
+        public DatalistRequestBuilder(Dictionary<string, object> pathParameters, IRequestAdapter requestAdapter) : base(requestAdapter, "{+baseurl}/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}/data/type/datalist{?language*}", pathParameters)
         {
         }
         /// <summary>
@@ -30,7 +30,7 @@ namespace Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Tt
         /// </summary>
         /// <param name="rawUrl">The raw URL to use for the request builder.</param>
         /// <param name="requestAdapter">The request adapter to use to execute the requests.</param>
-        public DatalistRequestBuilder(string rawUrl, IRequestAdapter requestAdapter) : base(requestAdapter, "{+baseurl}/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}/data/type/datalist", rawUrl)
+        public DatalistRequestBuilder(string rawUrl, IRequestAdapter requestAdapter) : base(requestAdapter, "{+baseurl}/ttd/frontend-test/instances/{instanceOwnerPartyId}/{instanceGuid}/data/type/datalist{?language*}", rawUrl)
         {
         }
         /// <summary>
@@ -42,11 +42,11 @@ namespace Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Tt
         /// <exception cref="global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Models.DataPostErrorResponse">When receiving a 400 status code</exception>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public async Task PostAsync(global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Models.Datalist body, Action<RequestConfiguration<DefaultQueryParameters>>? requestConfiguration = default, CancellationToken cancellationToken = default)
+        public async Task PostAsync(global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Models.Datalist body, Action<RequestConfiguration<global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Ttd.FrontendTest.Instances.Item.Item.Data.TypeNamespace.Datalist.DatalistRequestBuilder.DatalistRequestBuilderPostQueryParameters>>? requestConfiguration = default, CancellationToken cancellationToken = default)
         {
 #nullable restore
 #else
-        public async Task PostAsync(global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Models.Datalist body, Action<RequestConfiguration<DefaultQueryParameters>> requestConfiguration = default, CancellationToken cancellationToken = default)
+        public async Task PostAsync(global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Models.Datalist body, Action<RequestConfiguration<global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Ttd.FrontendTest.Instances.Item.Item.Data.TypeNamespace.Datalist.DatalistRequestBuilder.DatalistRequestBuilderPostQueryParameters>> requestConfiguration = default, CancellationToken cancellationToken = default)
         {
 #endif
             _ = body ?? throw new ArgumentNullException(nameof(body));
@@ -65,11 +65,11 @@ namespace Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Tt
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public RequestInformation ToPostRequestInformation(global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Models.Datalist body, Action<RequestConfiguration<DefaultQueryParameters>>? requestConfiguration = default)
+        public RequestInformation ToPostRequestInformation(global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Models.Datalist body, Action<RequestConfiguration<global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Ttd.FrontendTest.Instances.Item.Item.Data.TypeNamespace.Datalist.DatalistRequestBuilder.DatalistRequestBuilderPostQueryParameters>>? requestConfiguration = default)
         {
 #nullable restore
 #else
-        public RequestInformation ToPostRequestInformation(global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Models.Datalist body, Action<RequestConfiguration<DefaultQueryParameters>> requestConfiguration = default)
+        public RequestInformation ToPostRequestInformation(global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Models.Datalist body, Action<RequestConfiguration<global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Ttd.FrontendTest.Instances.Item.Item.Data.TypeNamespace.Datalist.DatalistRequestBuilder.DatalistRequestBuilderPostQueryParameters>> requestConfiguration = default)
         {
 #endif
             _ = body ?? throw new ArgumentNullException(nameof(body));
@@ -87,6 +87,23 @@ namespace Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Tt
         public global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Ttd.FrontendTest.Instances.Item.Item.Data.TypeNamespace.Datalist.DatalistRequestBuilder WithUrl(string rawUrl)
         {
             return new global::Altinn.App.Integration.FrontendTests.GeneratedClient.KiotaGenerated.Ttd.FrontendTest.Instances.Item.Item.Data.TypeNamespace.Datalist.DatalistRequestBuilder(rawUrl, RequestAdapter);
+        }
+        /// <summary>
+        /// Create data for a specific data element
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
+        public partial class DatalistRequestBuilderPostQueryParameters 
+        {
+            /// <summary>Some apps make changes to the data models or validation based on the active language of the user</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+            [QueryParameter("language")]
+            public string? Language { get; set; }
+#nullable restore
+#else
+            [QueryParameter("language")]
+            public string Language { get; set; }
+#endif
         }
     }
 }
