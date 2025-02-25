@@ -124,7 +124,7 @@ public class SigningCallToActionServiceTests
         InstanceIdentifier instanceIdentifier = new(123, Guid.Parse("ab0cdeb5-dc5e-4faa-966b-d18bb932ca07"));
         Party signingParty = new() { Name = "Signee", SSN = "17858296439" };
         Party serviceOwnerParty = new() { Name = "Service owner", OrgNumber = "043871668" };
-        List<AltinnEnvironmentConfig> CorrespondenceResources =
+        List<AltinnEnvironmentConfig> correspondenceResources =
         [
             new AltinnEnvironmentConfig { Environment = "tt02", Value = "app_ttd_appname" },
         ];
@@ -136,7 +136,7 @@ public class SigningCallToActionServiceTests
             instanceIdentifier,
             signingParty,
             serviceOwnerParty,
-            CorrespondenceResources
+            correspondenceResources
         );
 
         // Assert
@@ -211,7 +211,7 @@ public class SigningCallToActionServiceTests
         InstanceIdentifier instanceIdentifier = new(123, Guid.Parse("ab0cdeb5-dc5e-4faa-966b-d18bb932ca07"));
         Party signingParty = new() { Name = "Signee", SSN = "17858296439" };
         Party serviceOwnerParty = new() { Name = "Service owner", OrgNumber = "043871668" };
-        List<AltinnEnvironmentConfig> CorrespondenceResources =
+        List<AltinnEnvironmentConfig> correspondenceResources =
         [
             new AltinnEnvironmentConfig { Environment = "tt02", Value = "app_ttd_appname" },
         ];
@@ -223,7 +223,7 @@ public class SigningCallToActionServiceTests
             instanceIdentifier,
             signingParty,
             serviceOwnerParty,
-            CorrespondenceResources
+            correspondenceResources
         );
 
         // Assert
@@ -301,7 +301,7 @@ public class SigningCallToActionServiceTests
         InstanceIdentifier instanceIdentifier = new(123, Guid.Parse("ab0cdeb5-dc5e-4faa-966b-d18bb932ca07"));
         Party signingParty = new() { Name = "Signee", SSN = "17858296439" };
         Party serviceOwnerParty = new() { Name = "Service owner", OrgNumber = "043871668" };
-        List<AltinnEnvironmentConfig> CorrespondenceResources =
+        List<AltinnEnvironmentConfig> correspondenceResources =
         [
             new AltinnEnvironmentConfig { Environment = "tt02", Value = "app_ttd_appname" },
         ];
@@ -313,7 +313,7 @@ public class SigningCallToActionServiceTests
             instanceIdentifier,
             signingParty,
             serviceOwnerParty,
-            CorrespondenceResources
+            correspondenceResources
         );
 
         // Assert
@@ -375,7 +375,7 @@ public class SigningCallToActionServiceTests
         InstanceIdentifier instanceIdentifier = new(123, Guid.Parse("ab0cdeb5-dc5e-4faa-966b-d18bb932ca07"));
         Party signingParty = new() { Name = "Signee", SSN = "17858296439" };
         Party serviceOwnerParty = new() { Name = "Service owner", OrgNumber = "043871668" };
-        List<AltinnEnvironmentConfig> CorrespondenceResources =
+        List<AltinnEnvironmentConfig> correspondenceResources =
         [
             new AltinnEnvironmentConfig { Environment = "tt02", Value = "app_ttd_appname" },
         ];
@@ -387,7 +387,7 @@ public class SigningCallToActionServiceTests
             instanceIdentifier,
             signingParty,
             serviceOwnerParty,
-            CorrespondenceResources
+            correspondenceResources
         );
 
         // Assert
@@ -455,7 +455,7 @@ public class SigningCallToActionServiceTests
         InstanceIdentifier instanceIdentifier = new(123, Guid.Parse("ab0cdeb5-dc5e-4faa-966b-d18bb932ca07"));
         Party signingParty = new() { Name = "Signee", SSN = "17858296439" };
         Party serviceOwnerParty = new() { Name = "Service owner", OrgNumber = "043871668" };
-        List<AltinnEnvironmentConfig> CorrespondenceResources =
+        List<AltinnEnvironmentConfig> correspondenceResources =
         [
             // No resource for tt02 - should throw exception
         ];
@@ -469,7 +469,7 @@ public class SigningCallToActionServiceTests
                     instanceIdentifier,
                     signingParty,
                     serviceOwnerParty,
-                    CorrespondenceResources
+                    correspondenceResources
                 )
         );
     }

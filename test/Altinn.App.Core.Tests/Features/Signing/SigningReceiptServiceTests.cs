@@ -1,3 +1,4 @@
+using Altinn.App.Core.Exceptions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Correspondence;
 using Altinn.App.Core.Features.Correspondence.Models;
@@ -11,20 +12,16 @@ using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.UserAction;
-using Altinn.Platform.Register.Enums;
-using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Moq;
-using static Altinn.App.Core.Features.Signing.Models.Signee;
-using Signee = Altinn.App.Core.Features.Signing.Models.Signee;
 
 namespace Altinn.App.Core.Tests.Features.Signing;
 
 public class SigningReceiptServiceTests
 {
-    SigningReceiptService SetupService(
+    static SigningReceiptService SetupService(
         Mock<ICorrespondenceClient>? correspondenceClientMockOverride = null,
         Mock<IHostEnvironment>? hostEnvironmentMockOverride = null,
         Mock<IDataClient>? dataClientMockOverride = null,
@@ -139,7 +136,7 @@ public class SigningReceiptServiceTests
             new DataElementSignature("11111111-1111-1111-1111-111111111111"),
         ];
 
-        List<AltinnEnvironmentConfig> CorrespondenceResources =
+        List<AltinnEnvironmentConfig> correspondenceResources =
         [
             new AltinnEnvironmentConfig { Environment = "tt02", Value = "app_ttd_receipt" },
         ];
@@ -150,7 +147,7 @@ public class SigningReceiptServiceTests
             signee,
             dataElementSignatures,
             context,
-            CorrespondenceResources
+            correspondenceResources
         );
 
         // Assert
@@ -173,6 +170,62 @@ public class SigningReceiptServiceTests
         Assert.Equal(
             "Dokumentene du har signert er vedlagt. Disse kan lastes ned om ønskelig. <br /><br />Hvis du lurer på noe, kan du kontakte Brønnøysundregistrene.",
             capturedPayload.CorrespondenceRequest.Content.Body
+        );
+    }
+
+    [Fact]
+    public async Task GetCorrespondenceHeaders_NoResource_ThrowsConfigurationException()
+    {
+        // Arrange
+        ApplicationMetadata applicationMetadata = new("org/app")
+        {
+            Title = new Dictionary<string, string> { { LanguageConst.Nb, "TestAppName" } },
+            Org = "brg",
+        };
+
+        Mock<IHostEnvironment> hostEnvironmentMock = new();
+        hostEnvironmentMock.Setup(m => m.EnvironmentName).Returns("tt02");
+
+        SigningReceiptService service = SetupService(hostEnvironmentMockOverride: hostEnvironmentMock);
+
+        var recipientNin = "11854995997";
+
+        List<AltinnEnvironmentConfig> correspondenceResources =
+        [
+            // No resource configured for the environment
+        ];
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ConfigurationException>(
+            () => service.GetCorrespondenceHeaders(recipientNin, applicationMetadata, correspondenceResources)
+        );
+    }
+
+    [Fact]
+    public async Task GetCorrespondenceHeaders_RecipientNinIsNull_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        ApplicationMetadata applicationMetadata = new("org/app")
+        {
+            Title = new Dictionary<string, string> { { LanguageConst.Nb, "TestAppName" } },
+            Org = "brg",
+        };
+
+        Mock<IHostEnvironment> hostEnvironmentMock = new();
+        hostEnvironmentMock.Setup(m => m.EnvironmentName).Returns("tt02");
+
+        SigningReceiptService service = SetupService(hostEnvironmentMockOverride: hostEnvironmentMock);
+
+        string? recipientNin = null;
+
+        List<AltinnEnvironmentConfig> correspondenceResources =
+        [
+            new AltinnEnvironmentConfig { Environment = "tt02", Value = "app_ttd_receipt" },
+        ];
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.GetCorrespondenceHeaders(recipientNin, applicationMetadata, correspondenceResources)
         );
     }
 
