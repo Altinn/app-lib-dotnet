@@ -89,7 +89,7 @@ internal sealed class SigningCallToActionService(
                 CorrespondenceRequestBuilder
                     .Create()
                     .WithResourceId(resource)
-                    .WithSender(serviceOwnerParty.OrgNumber ?? "974760673") // staging - ttd finnes ikke
+                    .WithSender(serviceOwnerParty.OrgNumber) // will fail if using ttd, as it has no org number
                     .WithSendersReference(instanceIdentifier.ToString())
                     .WithRecipient(recipient.IsPerson ? recipient.SSN : recipient.OrganisationNumber)
                     .WithAllowSystemDeleteAfter(DateTime.Now.AddYears(1))
@@ -124,7 +124,7 @@ internal sealed class SigningCallToActionService(
                                     ? CorrespondenceNotificationTemplate.CustomMessage
                                     : CorrespondenceNotificationTemplate.GenericAltinnMessage,
                                 NotificationChannel = CorrespondenceNotificationChannel.EmailPreferred, // TODO: document
-                                EmailSubject = emailSubject ?? correspondenceContent.Title,
+                                EmailSubject = emailSubject,
                                 EmailBody = emailBody,
                                 SmsBody = smsBody,
                                 SendersReference = instanceIdentifier.ToString(),
@@ -207,9 +207,9 @@ internal sealed class SigningCallToActionService(
                 Summary = correspondenceSummary ?? defaults.Summary,
                 Body = correspondenceBody ?? defaults.Body,
             },
-            SmsBody = smsBody,
-            EmailBody = emailBody,
-            EmailSubject = emailSubject,
+            SmsBody = smsBody ?? defaults.SmsBody,
+            EmailBody = emailBody ?? defaults.EmailBody,
+            EmailSubject = emailSubject ?? defaults.Title,
         };
         return contentWrapper;
     }
@@ -231,6 +231,10 @@ internal sealed class SigningCallToActionService(
                 Summary = $"Your signature is requested for {appName}.",
                 Body =
                     $"You have a task waiting for your signature. <a href=\"{instanceUrl}\">Click here to open the application</a>.<br /><br />If you have any questions, you can contact {appOwner}.",
+                SmsBody = $"Your signature is requested for {appName}. Open your Altinn inbox to proceed.",
+                EmailSubject = $"{appName}: Task for signing",
+                EmailBody =
+                    $"Your signature is requested for {appName}. Open your Altinn inbox to proceed.<br /><br />If you have any questions, you can contact {appOwner}.",
             },
             LanguageConst.Nn => new DefaultTexts
             {
@@ -238,6 +242,10 @@ internal sealed class SigningCallToActionService(
                 Summary = $"Signaturen din vert venta for {appName}.",
                 Body =
                     $"Du har ei oppgåve som ventar på signaturen din. <a href=\"{instanceUrl}\">Klikk her for å opne applikasjonen</a>.<br /><br />Om du lurer på noko, kan du kontakte {appOwner}.",
+                SmsBody = $"Signaturen din vert venta for {appName}. Opne Altinn-innboksen din for å gå vidare.",
+                EmailSubject = $"{appName}: Oppgåve til signering",
+                EmailBody =
+                    $"Signaturen din vert venta for {appName}. Opne Altinn-innboksen din for å gå vidare.<br /><br />Om du lurer på noko, kan du kontakte {appOwner}.",
             },
             LanguageConst.Nb or _ => new DefaultTexts
             {
@@ -245,6 +253,10 @@ internal sealed class SigningCallToActionService(
                 Summary = $"Din signatur ventes for {appName}.",
                 Body =
                     $"Du har en oppgave som venter på din signatur. <a href=\"{instanceUrl}\">Klikk her for å åpne applikasjonen</a>.<br /><br />Hvis du lurer på noe, kan du kontakte {appOwner}.",
+                SmsBody = $"Din signatur ventes for {appName}. Åpne Altinn-innboksen din for å fortsette.",
+                EmailSubject = $"{appName}: Oppgave til signering",
+                EmailBody =
+                    $"Din signatur ventes for {appName}. Åpne Altinn-innboksen din for å fortsette.<br /><br />Hvis du lurer på noe, kan du kontakte {appOwner}.",
             },
         };
     }
