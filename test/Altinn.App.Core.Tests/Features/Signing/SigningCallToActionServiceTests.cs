@@ -99,11 +99,13 @@ public class SigningCallToActionServiceTests
             instanceUrl,
             language
         );
+        string defaultEmailSubjectContains = "Task for signing";
+        string defaultEmailBodyContains = "Your signature is requested for";
 
         // Assert
         Assert.Equal("Custom sms content", res.SmsBody);
-        Assert.Null(res.EmailBody);
-        Assert.Null(res.EmailSubject);
+        Assert.Contains(defaultEmailSubjectContains, res.EmailSubject);
+        Assert.Contains(defaultEmailBodyContains, res.EmailBody);
         Assert.Equal(language, res.CorrespondenceContent.Language);
         Assert.Equal("Custom title", res.CorrespondenceContent.Title);
         Assert.Equal("Custom summary", res.CorrespondenceContent.Summary);
