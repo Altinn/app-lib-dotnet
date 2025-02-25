@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Models.Notifications.Email;
@@ -6,13 +7,15 @@ using Altinn.App.Core.Models.Notifications.Sms;
 using Altinn.App.Core.Models.Result;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using PhoneNumbers;
 using static Altinn.App.Core.Features.Telemetry.NotifySigneesConst;
 
 namespace Altinn.App.Core.Features.Signing;
 
 internal sealed partial class SigningNotificationService : ISigningNotificationService
 {
+    [GeneratedRegex("^\\+(\\d{2})\\d{8}$|^00(\\d{2})\\d{8}$|^\\d{8}$")]
+    private static partial Regex PhoneRegex();
+
     private readonly string _defaultCountryCode = "+47";
 
     private readonly ILogger<SigningNotificationService> _logger;
@@ -185,23 +188,14 @@ internal sealed partial class SigningNotificationService : ISigningNotificationS
             return new BadHttpRequestException("No mobile number provided. Unable to send SMS notification.");
         }
 
+        if (!PhoneRegex().IsMatch(phoneNumber))
+        {
+            return new BadHttpRequestException("Invalid mobile number provided. Unable to send SMS notification.");
+        }
+
         if (phoneNumber.Length == 8)
         {
             phoneNumber = _defaultCountryCode + phoneNumber;
-        }
-
-        var phoneNumberUtil = PhoneNumberUtil.GetInstance();
-        try
-        {
-            var number = phoneNumberUtil.Parse(phoneNumber, null);
-            if (!phoneNumberUtil.IsValidNumber(number))
-            {
-                return new BadHttpRequestException("Invalid mobile number provided. Unable to send SMS notification.");
-            }
-        }
-        catch (NumberParseException)
-        {
-            return new BadHttpRequestException("Invalid mobile number provided. Unable to send SMS notification.");
         }
 
         return phoneNumber;
