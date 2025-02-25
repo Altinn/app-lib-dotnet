@@ -1,3 +1,6 @@
+using Altinn.App.Core.Internal.Process;
+using Microsoft.Extensions.Primitives;
+
 namespace Altinn.App.Api.Controllers;
 
 using System.Collections.Generic;
@@ -32,6 +35,7 @@ public class CustomOpenApiController : Controller
     private readonly IAppModel _appModel;
     private readonly SchemaGenerator _schemaGenerator;
     private readonly SchemaRepository _schemaRepository;
+    private readonly IProcessReader _processReader;
 
     /// <summary>
     /// Constructor with services from dependency injection
@@ -40,11 +44,13 @@ public class CustomOpenApiController : Controller
         IAppModel appModel,
         IAppMetadata appMetadata,
         ISerializerDataContractResolver dataContractResolver,
-        IOptions<MvcOptions> mvcOptions
+        IOptions<MvcOptions> mvcOptions,
+        IProcessReader processReader
     )
     {
         _appModel = appModel;
         _appMetadata = appMetadata;
+        _processReader = processReader;
         _schemaGenerator = new SchemaGenerator(new SchemaGeneratorOptions(), dataContractResolver, mvcOptions);
         _schemaRepository = new SchemaRepository();
     }
@@ -118,7 +124,7 @@ public class CustomOpenApiController : Controller
         return Ok(document.Serialize(OpenApiSpecVersion.OpenApi3_0, OpenApiFormat.Json));
     }
 
-    private static string GetIntroDoc(ApplicationMetadata appMetadata)
+    private string GetIntroDoc(ApplicationMetadata appMetadata)
     {
         StringBuilder sb = new();
         sb.AppendLine("This is the API for an Altinn 3 app. The API is based on the OpenAPI 3.0 specification.");
@@ -184,6 +190,46 @@ public class CustomOpenApiController : Controller
             sb.Append('|');
             sb.AppendLine();
         }
+
+        var processTasks = _processReader.GetProcessTasks();
+        sb.Append(
+            """
+
+            ## This app has the following process tasks:
+            | TaskId | Name | Type | Actions |
+            |--------|------|------|---------|
+
+            """
+        );
+        foreach (var processTask in processTasks)
+        {
+            sb.Append("| ");
+            sb.Append(processTask.Id);
+            sb.Append(" | ");
+            sb.Append(processTask.Name);
+            sb.Append(" | ");
+            sb.Append(processTask.ExtensionElements?.TaskExtension?.TaskType ?? processTask.Name);
+            sb.Append(" | ");
+            if (processTask.ExtensionElements?.TaskExtension?.AltinnActions is { } actions)
+            {
+                int i = 0;
+                foreach (var action in actions)
+                {
+                    if (i++ == 1)
+                    {
+                        sb.Append(", ");
+                    }
+                    sb.Append(action.Value);
+                }
+            }
+            else
+            {
+                sb.Append("[no actions]");
+            }
+
+            sb.AppendLine(" |");
+        }
+
         return sb.ToString();
     }
 
@@ -421,6 +467,65 @@ public class CustomOpenApiController : Controller
                     Snippets.InstanceOwnerPartyIdParameterReference,
                     Snippets.InstanceGuidParameterReference,
                     Snippets.DataGuidParameterReference,
+                    Snippets.LanguageParameterReference,
+                ],
+            }
+        );
+
+        document.Paths.Add(
+            $"/{appMetadata.Id}/instances/{{instanceOwnerPartyId}}/{{instanceGuid}}/process/next",
+            new OpenApiPathItem()
+            {
+                Summary = "Move instance to next process step",
+                Operations =
+                {
+                    [OperationType.Put] = new OpenApiOperation()
+                    {
+                        Tags = instanceTags,
+                        Summary = "Move instance to next process step",
+                        Description = "Move the instance to the next process step",
+                        RequestBody = new OpenApiRequestBody()
+                        {
+                            Required = false,
+                            Description = "Optional body with specification of the action to perform",
+                            Content =
+                            {
+                                ["application/json"] = new OpenApiMediaType()
+                                {
+                                    Schema = _schemaGenerator.GenerateSchema(typeof(ProcessNext), _schemaRepository),
+                                },
+                            },
+                        },
+                        Responses = Snippets.AddCommonErrorResponses(
+                            new OpenApiResponses()
+                            {
+                                ["200"] = new OpenApiResponse()
+                                {
+                                    Description = "Instance moved to next process step. Returns the new process state",
+                                    Content =
+                                    {
+                                        ["application/json"] = new OpenApiMediaType()
+                                        {
+                                            Schema = _schemaGenerator.GenerateSchema(
+                                                typeof(AppProcessState),
+                                                _schemaRepository
+                                            ),
+                                        },
+                                    },
+                                },
+                                ["409"] = new OpenApiResponse()
+                                {
+                                    Description = "Precondition failed",
+                                    Reference = Snippets.ProblemDetailsResponseReference,
+                                },
+                            }
+                        ),
+                    },
+                },
+                Parameters =
+                [
+                    Snippets.InstanceOwnerPartyIdParameterReference,
+                    Snippets.InstanceGuidParameterReference,
                     Snippets.LanguageParameterReference,
                 ],
             }
