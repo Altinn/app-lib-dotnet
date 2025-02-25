@@ -72,6 +72,7 @@
     <InternalsVisibleTo Include="$(AssemblyName).Tests" />
     <InternalsVisibleTo Include="Altinn.App.Api.Tests" />
     <InternalsVisibleTo Include="Altinn.App.Tests.Common" />
+    <InternalsVisibleTo Include="Altinn.App.Clients.Fiks" />
     <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
   </ItemGroup>
 </Project>

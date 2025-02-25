@@ -13,6 +13,7 @@ using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Cache;
 using Altinn.App.Core.Features.Correspondence.Extensions;
+// using Altinn.App.Core.Features.FiksIO.Extensions;
 using Altinn.App.Core.Features.Maskinporten;
 using Altinn.App.Core.Features.Maskinporten.Extensions;
 using Altinn.App.Core.Features.Maskinporten.Models;
@@ -109,6 +110,7 @@ public static class ServiceCollectionExtensions
         // due to a bug in app insights: https://github.com/microsoft/ApplicationInsights-dotnet/issues/2828
         services.AddMaskinportenClient();
         services.AddCorrespondenceClient();
+        // services.AddFiksIOClient();
 
         AddAuthenticationScheme(services, config, env);
         AddAuthorizationPolicies(services);

@@ -45,6 +45,9 @@ public class EndTaskEventHandler : IEndTaskEventHandler
         var eformidlingServiceTask =
             serviceTasks.FirstOrDefault(x => x is IEformidlingServiceTask)
             ?? throw new InvalidOperationException("EformidlingServiceTask not found in serviceTasks");
+        var fiksArkivServiceTask = serviceTasks.FirstOrDefault(x =>
+            x is INamedServiceTask { Id: ServiceTaskIdentifiers.FiksArkiv }
+        );
 
         await processTask.End(taskId, instance);
         await _processTaskFinisher.Finalize(taskId, instance);
@@ -72,6 +75,20 @@ public class EndTaskEventHandler : IEndTaskEventHandler
             _logger.LogError(e, "Error executing eFormidling service task. Unlocking data again.");
             await _processTaskDataLocker.Unlock(taskId, instance);
             throw;
+        }
+
+        if (fiksArkivServiceTask is not null)
+        {
+            try
+            {
+                await fiksArkivServiceTask.Execute(taskId, instance);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error executing Fiks Arkiv service task. Unlocking data again.");
+                await _processTaskDataLocker.Unlock(taskId, instance);
+                throw;
+            }
         }
     }
 
