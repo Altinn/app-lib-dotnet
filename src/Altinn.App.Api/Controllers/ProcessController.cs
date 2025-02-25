@@ -342,19 +342,15 @@ public class ProcessController : ControllerBase
                 );
             }
 
-            AltinnTaskExtension? actions = _processReader.GetAltinnTaskExtension(currentTaskId);
-            if (processNext?.Action != null)
+            if (!IsActionAllowedForTask(currentTaskId, processNext?.Action))
             {
-                if (actions?.AltinnActions?.Select(x => x.Value).Contains(processNext.Action) is false)
-                {
-                    return Conflict(
-                        new ProblemDetails()
-                        {
-                            Status = StatusCodes.Status409Conflict,
-                            Title = $"The action '{processNext.Action}' is not allowed for task '{currentTaskId}'!",
-                        }
-                    );
-                }
+                return Conflict(
+                    new ProblemDetails()
+                    {
+                        Status = StatusCodes.Status409Conflict,
+                        Title = $"The action '{processNext?.Action}' is not allowed for task '{currentTaskId}'!",
+                    }
+                );
             }
 
             string checkedAction = EnsureActionNotTaskType(processNext?.Action ?? altinnTaskType);
@@ -787,5 +783,20 @@ public class ProcessController : ControllerBase
         }
 
         return ExceptionResponse(e, defaultMessage);
+    }
+
+    /// <summary>
+    /// Validates the selected action against the ones specified for the task in process.xml
+    /// </summary>
+    private bool IsActionAllowedForTask(string currentTaskId, string? attemptedAction)
+    {
+        if (string.IsNullOrEmpty(attemptedAction))
+        {
+            return true;
+        }
+
+        AltinnTaskExtension? altinnTaskExtension = _processReader.GetAltinnTaskExtension(currentTaskId);
+
+        return altinnTaskExtension?.AltinnActions?.Select(x => x.Value).Contains(attemptedAction) is true;
     }
 }
