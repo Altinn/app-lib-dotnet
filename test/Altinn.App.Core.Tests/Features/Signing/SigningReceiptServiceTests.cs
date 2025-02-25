@@ -4,12 +4,14 @@ using Altinn.App.Core.Features.Correspondence;
 using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Features.Signing;
 using Altinn.App.Core.Features.Signing.Models;
+using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.UserAction;
+using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -49,6 +51,121 @@ public class SigningReceiptServiceTests
             appMetadataMock.Object,
             loggerMock.Object
         );
+    }
+
+    Mock<IAppResources> SetupAppResourcesMock(
+        TextResource? textResourceOverride = null,
+        List<TextResourceElement>? additionalTextResourceElements = null
+    )
+    {
+        Mock<IAppResources> appResourcesMock = new();
+        TextResource textResource =
+            textResourceOverride ?? new TextResource { Resources = additionalTextResourceElements ?? [] };
+        textResource.Resources.AddRange(additionalTextResourceElements ?? []);
+        appResourcesMock
+            .Setup(m => m.GetTexts(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(textResource);
+        return appResourcesMock;
+    }
+
+    [Fact]
+    public async Task GetContent_WithCustomTexts_ReturnsCustomContent()
+    {
+        // Arrange
+        List<TextResourceElement> textResourceElements =
+        [
+            new TextResourceElement { Id = "signing.receipt_title", Value = "Custom receipt title" },
+            new TextResourceElement { Id = "signing.receipt_summary", Value = "Custom receipt summary" },
+            new TextResourceElement { Id = "signing.receipt_body", Value = "Custom receipt body" },
+            new TextResourceElement { Id = "appName", Value = "Custom app name" },
+        ];
+
+        // Setup IAppResources mock to return the custom text resource.
+        Mock<IAppResources> appResourcesMock = SetupAppResourcesMock(
+            additionalTextResourceElements: textResourceElements
+        );
+
+        var service = SetupService(appResourcesMockOverride: appResourcesMock);
+
+        Instance instance = new()
+        {
+            Id = "org/app",
+        };
+
+        Mock<IInstanceDataMutator> instanceDataMutatorMock = new();
+        instanceDataMutatorMock.Setup(x => x.Instance).Returns(instance);
+        UserActionContext context = new(instanceDataMutatorMock.Object, 123456);
+
+        // Setup ApplicationMetadata with a fallback title.
+        ApplicationMetadata appMetadata = new("org/app")
+        {
+            Title = new Dictionary<string, string> { { LanguageConst.Nb, "Fallback App Name" } },
+        };
+
+        AltinnCdnOrgDetails senderDetails = new()
+        {
+            Name = new AltinnCdnOrgName
+            {
+                Nb = "Sender NB",
+                Nn = "Sender NN",
+                En = "Sender EN",
+            },
+        };
+
+        // Act
+        CorrespondenceContent result = await service.GetContent(context, appMetadata, senderDetails);
+
+        // Assert
+        Assert.Equal("Fallback App Name: Signeringen er bekreftet", result.Title);
+        Assert.Equal("Du har signert for Fallback App Name.", result.Summary);
+        Assert.Equal(
+            "Dokumentene du har signert er vedlagt. Disse kan lastes ned om ønskelig. <br /><br />Hvis du lurer på noe, kan du kontakte Sender NB.",
+            result.Body
+        );
+        Assert.Equal(LanguageCode<Iso6391>.Parse(LanguageConst.Nb), result.Language);
+    }
+
+    [Fact]
+    public async Task GetContent_GetTextsThrows_UsesDefaultTexts()
+    {
+        // Arrange
+        // Configure the IAppResources mock to throw an exception.
+        var appResourcesMock = new Mock<IAppResources>();
+        appResourcesMock
+            .Setup(r => r.GetTexts(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ThrowsAsync(new Exception("Test exception"));
+
+        var service = SetupService(appResourcesMockOverride: appResourcesMock);
+
+        Instance instance = new() { Id = "org/app" };
+
+        Mock<IInstanceDataMutator> instanceDataMutatorMock = new();
+        instanceDataMutatorMock.Setup(x => x.Instance).Returns(instance);
+        UserActionContext context = new(instanceDataMutatorMock.Object, 123456);
+
+        ApplicationMetadata appMetadata = new("org/app")
+        {
+            Title = new Dictionary<string, string> { { LanguageConst.Nb, "Fallback App Name" } },
+        };
+
+        AltinnCdnOrgDetails senderDetails = new()
+        {
+            Name = new AltinnCdnOrgName
+            {
+                Nb = "Sender NB",
+                Nn = "Sender NN",
+                En = "Sender EN",
+            },
+        };
+
+        // Act
+        CorrespondenceContent result = await service.GetContent(context, appMetadata, senderDetails);
+
+        // Assert
+        Assert.Contains("Signeringen er bekreftet", result.Title);
+        Assert.Contains("Du har signert for", result.Summary);
+        Assert.Contains("Dokumentene du har signert er vedlagt", result.Body);
+        Assert.Equal(LanguageCode<Iso6391>.Parse(LanguageConst.Nb), result.Language);
     }
 
     [Fact]
