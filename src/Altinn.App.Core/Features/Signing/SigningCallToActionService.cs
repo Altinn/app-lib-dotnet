@@ -67,7 +67,18 @@ internal sealed class SigningCallToActionService(
         UserProfile? recipientProfile = null;
         if (recipient.IsPerson)
         {
-            recipientProfile = await _profileClient.GetUserProfile(recipient.SSN);
+            try
+            {
+                recipientProfile = await _profileClient.GetUserProfile(recipient.SSN);
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning(
+                    e,
+                    "Unable to fetch profile for user with SSN, falling back to default values: {Exception}",
+                    e.Message
+                );
+            }
         }
         string recipientLanguage = recipientProfile?.ProfileSettingPreference.Language ?? LanguageConst.Nb;
         ContentWrapper contentWrapper = await GetContent(
@@ -83,13 +94,12 @@ internal sealed class SigningCallToActionService(
         string? emailSubject = contentWrapper.EmailSubject;
         string? smsBody = contentWrapper.SmsBody;
 
-        // TODO: Tests
         return await _correspondenceClient.Send(
             new SendCorrespondencePayload(
                 CorrespondenceRequestBuilder
                     .Create()
                     .WithResourceId(resource)
-                    .WithSender(serviceOwnerParty.OrgNumber) // will fail if using ttd, as it has no org number
+                    .WithSender(serviceOwnerParty.OrgNumber) // Will fail if using ttd, as it has no org number
                     .WithSendersReference(instanceIdentifier.ToString())
                     .WithRecipient(recipient.IsPerson ? recipient.SSN : recipient.OrganisationNumber)
                     .WithAllowSystemDeleteAfter(DateTime.Now.AddYears(1))

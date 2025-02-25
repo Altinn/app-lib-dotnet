@@ -10,15 +10,14 @@ internal sealed class CorrespondanceRecipient
 
     public CorrespondanceRecipient(Party party)
     {
+        OrganisationNumber = party.OrgNumber;
+        SSN = party.SSN;
         if (string.IsNullOrEmpty(OrganisationNumber) && string.IsNullOrEmpty(SSN))
         {
             throw new InvalidOperationException(
                 "Signee does not have a national identification number nor an organisation number, unable to send correspondence"
             );
         }
-
-        OrganisationNumber = party.OrgNumber;
-        SSN = party.SSN;
     }
 
     [MemberNotNullWhen(true, nameof(SSN))]
