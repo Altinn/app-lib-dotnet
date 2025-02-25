@@ -141,16 +141,15 @@ public class SigningController : ControllerBase
                                 break;
                         }
 
+                        var signeeState = signeeContext.SigneeState;
+
                         return new SigneeState
                         {
                             Name = name,
                             Organisation = organisation,
                             HasSigned = signeeContext.SignDocument is not null,
-                            DelegationSuccessful = signeeContext.SigneeState.IsAccessDelegated,
-                            NotificationSuccessful = (
-                                signeeContext.SigneeState is
-                                { SignatureRequestEmailNotSentReason: null, SignatureRequestSmsNotSentReason: null }
-                            ),
+                            DelegationSuccessful = signeeState.IsAccessDelegated,
+                            NotificationSuccessful = GetNotificationState(signeeContext),
                             PartyId = signeeContext.Signee.GetParty().PartyId,
                         };
                     })
@@ -219,5 +218,24 @@ public class SigningController : ControllerBase
                 Status = StatusCodes.Status400BadRequest,
             }
         );
+    }
+
+    private static NotificationState GetNotificationState(SigneeContext signeeContext)
+    {
+        var signeeState = signeeContext.SigneeState;
+        if (signeeState.SignatureRequestEmailSent is true || signeeState.SignatureRequestSmsSent is true)
+        {
+            return NotificationState.Sent;
+        }
+
+        if (
+            signeeState.SignatureRequestEmailNotSentReason is not null
+            || signeeState.SignatureRequestSmsNotSentReason is not null
+        )
+        {
+            return NotificationState.Failed;
+        }
+
+        return NotificationState.NotSent;
     }
 }

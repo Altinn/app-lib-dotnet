@@ -7431,6 +7431,15 @@
         },
         "additionalProperties": false
       },
+      "NotificationState": {
+        "enum": [
+          "NotSent",
+          "Sent",
+          "Failed"
+        ],
+        "type": "string",
+        "description": "Represents the state of a notification."
+      },
       "OnEntry": {
         "type": "object",
         "properties": {
@@ -8124,8 +8133,7 @@
             "description": "Whether delegation of signing rights has been successful."
           },
           "notificationSuccessful": {
-            "type": "boolean",
-            "description": "Whether the signee has been notified to sign via email or sms."
+            "$ref": "#/components/schemas/NotificationState"
           },
           "partyId": {
             "type": "integer",
