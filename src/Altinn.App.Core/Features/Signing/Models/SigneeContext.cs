@@ -59,7 +59,12 @@ public abstract class Signee
         };
     }
 
-    internal static async Task<Signee> From(string? ssn, string? orgNr, Func<PartyLookup, Task<Party>> lookupParty)
+    internal static async Task<Signee> From(
+        string? ssn,
+        string? orgNr,
+        Guid? systemId,
+        Func<PartyLookup, Task<Party>> lookupParty
+    )
     {
         Party? personParty = null;
         if (string.IsNullOrEmpty(ssn) is false)
@@ -77,16 +82,18 @@ public abstract class Signee
                 ?? throw new ArgumentException($"No party found with org number {orgNr}");
         }
 
-        if (orgParty is not null)
-        {
-            var orgSignee = new OrganisationSignee
+        OrganisationSignee? orgSignee = orgParty is not null
+            ? new OrganisationSignee
             {
                 OrgName = orgParty.Name,
                 OrgNumber = orgParty.OrgNumber,
                 OrgParty = orgParty,
-            };
+            }
+            : null;
 
-            return personParty is not null
+        if (personParty is not null)
+        {
+            return orgSignee is not null
                 ? new PersonOnBehalfOfOrgSignee
                 {
                     SocialSecurityNumber = personParty.SSN,
@@ -94,21 +101,23 @@ public abstract class Signee
                     Party = personParty,
                     OnBehalfOfOrg = orgSignee,
                 }
+                : new PersonSignee
+                {
+                    SocialSecurityNumber = personParty.SSN,
+                    FullName = personParty.Name,
+                    Party = personParty,
+                };
+        }
+
+        if (orgSignee is not null)
+        {
+            return systemId.HasValue
+                ? new SystemSignee { SystemId = (Guid)systemId, OnBehalfOfOrg = orgSignee }
                 : orgSignee;
         }
 
-        if (personParty is not null)
-        {
-            return new PersonSignee
-            {
-                SocialSecurityNumber = personParty.SSN,
-                FullName = personParty.Name,
-                Party = personParty,
-            };
-        }
-
         throw new ArgumentException(
-            "Either ssn and fullName must be provided, or orgName and orgNumber must be provided."
+            "Could not find party for person or organisation. A valid SSN or OrgNr must be provided."
         );
     }
 

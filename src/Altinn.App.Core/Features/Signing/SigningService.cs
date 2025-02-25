@@ -361,11 +361,13 @@ internal sealed class SigningService(
         CancellationToken ct
     )
     {
-        var signee = await From(
+        Models.Signee signee = await From(
             signeeParty.SocialSecurityNumber,
             signeeParty.OnBehalfOfOrganisation?.OrganisationNumber,
+            null,
             altinnPartyClient.LookupParty
         );
+
         Party party = signee.GetParty();
 
         Models.Notifications? notifications = signeeParty.Notifications;
@@ -478,80 +480,94 @@ internal sealed class SigningService(
     /// </summary>
     internal async Task SynchronizeSigneeContextsWithSignDocuments(
         string taskId,
-        List<SigneeContext> unmatchedSigneeContexts,
+        List<SigneeContext> signeeContexts,
         List<SignDocument> signDocuments
     )
     {
         _logger.LogDebug(
             "Synchronizing signee contexts {SigneeContexts} with sign documents {SignDocuments} for task {TaskId}.",
-            JsonSerializer.Serialize(unmatchedSigneeContexts, _jsonSerializerOptions),
+            JsonSerializer.Serialize(signeeContexts, _jsonSerializerOptions),
             JsonSerializer.Serialize(signDocuments, _jsonSerializerOptions),
             taskId
         );
 
-        List<SigneeContext> matchedSigneeContexts = [];
-        List<SigneeContext> createdSigneeContexts = [];
+        List<SignDocument> unmatchedSignDocuments = signDocuments;
 
-        foreach (SignDocument signDocument in signDocuments)
+        // OrganisationSignee is most general, so it should be sorted to the end of the list
+        signeeContexts.Sort(
+            (a, b) =>
+                a.Signee is OrganisationSignee ? 1
+                : b.Signee is OrganisationSignee ? -1
+                : 0
+        );
+
+        foreach (SigneeContext signeeContext in signeeContexts)
         {
-            SigneeContext? matchedPersonOnBehalfOfOrgSignee = unmatchedSigneeContexts.FirstOrDefault(signeeContext =>
-                signeeContext.Signee is PersonOnBehalfOfOrgSignee personOnBehalfOfOrgSignee
-                && personOnBehalfOfOrgSignee.SocialSecurityNumber == signDocument.SigneeInfo.PersonNumber
-                && personOnBehalfOfOrgSignee.OnBehalfOfOrg.OrgNumber == signDocument.SigneeInfo.OrganisationNumber
-            );
-            SigneeContext? matchedOrgSignee = unmatchedSigneeContexts.FirstOrDefault(signeeContext =>
-                signeeContext.Signee is OrganisationSignee orgSignee
-                && orgSignee.OrgNumber == signDocument.SigneeInfo.OrganisationNumber
-            );
-            SigneeContext? matchedPersonSignee = unmatchedSigneeContexts.FirstOrDefault(signeeContext =>
-                signeeContext.Signee is PersonSignee personSignee
-                && personSignee.SocialSecurityNumber == signDocument.SigneeInfo.PersonNumber
-            );
-
-            SigneeContext? matchedSigneeContext =
-                matchedPersonOnBehalfOfOrgSignee ?? matchedOrgSignee ?? matchedPersonSignee;
-
-            switch (matchedSigneeContext?.Signee)
+            SignDocument? matchedSignDocument = signDocuments.FirstOrDefault(signDocument =>
             {
-                case OrganisationSignee orgSignee:
-                    await SynchronizeForOrg(signDocument, matchedSigneeContext, orgSignee);
-                    matchedSigneeContext.SignDocument = signDocument;
-                    matchedSigneeContexts.Add(matchedSigneeContext);
-                    unmatchedSigneeContexts.Remove(matchedSigneeContext);
-                    break;
-                case PersonSignee _:
-                case PersonOnBehalfOfOrgSignee _:
-                    matchedSigneeContext.SignDocument = signDocument;
-                    matchedSigneeContexts.Add(matchedSigneeContext);
-                    unmatchedSigneeContexts.Remove(matchedSigneeContext);
-                    break;
-                case null:
-                    SigneeContext newSigneeContext = await CreateSigneeContextFromSignDocument(taskId, signDocument);
-                    createdSigneeContexts.Add(newSigneeContext);
-                    break;
+                return signeeContext.Signee switch
+                {
+                    PersonSignee personSignee => IsPersonSignDocument(signDocument)
+                        && personSignee.SocialSecurityNumber == signDocument.SigneeInfo.PersonNumber,
+                    PersonOnBehalfOfOrgSignee personOnBehalfOfOrgSignee => IsPersonOnBehalfOfOrgSignDocument(
+                        signDocument
+                    )
+                        && personOnBehalfOfOrgSignee.OnBehalfOfOrg.OrgNumber
+                            == signDocument.SigneeInfo.OrganisationNumber
+                        && personOnBehalfOfOrgSignee.SocialSecurityNumber == signDocument.SigneeInfo.PersonNumber,
+                    SystemSignee systemSignee => IsSystemSignDocument(signDocument)
+                        && systemSignee.OnBehalfOfOrg.OrgNumber == signDocument.SigneeInfo.OrganisationNumber
+                        && systemSignee.SystemId.Equals(signDocument.SigneeInfo.SystemUserId),
+                    OrganisationSignee orgSignee => IsOrgSignDocument(signDocument)
+                        && orgSignee.OrgNumber == signDocument.SigneeInfo.OrganisationNumber,
+
+                    _ => throw new InvalidOperationException("Signee is not of a supported type."),
+                };
+            });
+
+            if (matchedSignDocument is not null)
+            {
+                if (signeeContext.Signee is OrganisationSignee orgSignee)
+                {
+                    await ConvertOrgSignee(matchedSignDocument, signeeContext, orgSignee);
+                }
+
+                signeeContext.SignDocument = matchedSignDocument;
+                unmatchedSignDocuments.Remove(matchedSignDocument);
             }
         }
 
-        // updates reference to signeeContexts with all types
-        unmatchedSigneeContexts.AddRange([.. matchedSigneeContexts, .. createdSigneeContexts]);
+        // Create new contexts for documents that aren't matched with existing signee contexts
+        foreach (SignDocument signDocument in unmatchedSignDocuments)
+        {
+            SigneeContext newSigneeContext = await CreateSigneeContextFromSignDocument(taskId, signDocument);
+            signeeContexts.Add(newSigneeContext);
+        }
     }
 
-    private async Task SynchronizeForOrg(
-        SignDocument signDocument,
+    private async Task ConvertOrgSignee(
+        SignDocument? signDocument,
         SigneeContext orgSigneeContext,
         OrganisationSignee orgSignee
     )
     {
-        if (signDocument.SigneeInfo.PersonNumber is not null)
+        if (signDocument is null)
+        {
+            return;
+        }
+
+        var signeeInfo = signDocument.SigneeInfo;
+
+        if (signeeInfo.PersonNumber is not null)
         {
             orgSigneeContext.Signee = await orgSignee.ToPersonOnBehalfOfOrgSignee(
-                signDocument.SigneeInfo.PersonNumber,
+                signeeInfo.PersonNumber,
                 altinnPartyClient.LookupParty
             );
         }
-        else if (signDocument.SigneeInfo.SystemUserId.HasValue)
+        else if (signeeInfo.SystemUserId.HasValue)
         {
-            orgSigneeContext.Signee = orgSignee.ToSystemSignee(signDocument.SigneeInfo.SystemUserId.Value);
+            orgSigneeContext.Signee = orgSignee.ToSystemSignee(signeeInfo.SystemUserId.Value);
         }
         else
         {
@@ -573,6 +589,7 @@ internal sealed class SigningService(
             Signee = await From(
                 signDocument.SigneeInfo.PersonNumber,
                 signDocument.SigneeInfo.OrganisationNumber,
+                signDocument.SigneeInfo.SystemUserId,
                 altinnPartyClient.LookupParty
             ),
             SigneeState = new SigneeState()
@@ -584,5 +601,26 @@ internal sealed class SigningService(
             },
             SignDocument = signDocument,
         };
+    }
+
+    private static bool IsPersonOnBehalfOfOrgSignDocument(SignDocument signDocument)
+    {
+        return signDocument.SigneeInfo.PersonNumber is not null
+            && signDocument.SigneeInfo.OrganisationNumber is not null;
+    }
+
+    private static bool IsPersonSignDocument(SignDocument signDocument)
+    {
+        return signDocument.SigneeInfo.PersonNumber is not null && signDocument.SigneeInfo.OrganisationNumber is null;
+    }
+
+    private static bool IsOrgSignDocument(SignDocument signDocument)
+    {
+        return signDocument.SigneeInfo.OrganisationNumber is not null;
+    }
+
+    private static bool IsSystemSignDocument(SignDocument signDocument)
+    {
+        return signDocument.SigneeInfo.OrganisationNumber is not null && signDocument.SigneeInfo.SystemUserId.HasValue;
     }
 }
