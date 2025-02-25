@@ -1,4 +1,3 @@
-using System.Text.Json;
 using System.Text.RegularExpressions;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
@@ -129,7 +128,6 @@ internal sealed partial class SigningNotificationService : ISigningNotificationS
         }
         catch (SmsNotificationException ex)
         {
-            _logger.LogError(ex.Message, JsonSerializer.Serialize(ex));
             return (false, "Failed to send SMS notification: " + ex.Message);
         }
     }
