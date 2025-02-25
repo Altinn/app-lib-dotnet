@@ -432,7 +432,7 @@ public class SigningControllerTests
                     DelegationFailedReason = null,
                     IsAccessDelegated = true,
                     IsReceiptSent = false,
-                    IsMessagedForCallToSign = false,
+                    IsMessagedForCallToSign = true,
                     CallToSignFailedReason = null,
                 },
                 SignDocument = new SignDocument
