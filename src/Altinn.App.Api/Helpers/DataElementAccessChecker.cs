@@ -1,4 +1,3 @@
-using System.Net;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Helpers;
 using Altinn.Platform.Storage.Interface.Models;
@@ -38,7 +37,7 @@ internal static class DataElementAccessChecker
             {
                 Title = "Instance Not Active",
                 Detail = $"Cannot update data element of archived or deleted instance {instance.Id}",
-                Status = (int)HttpStatusCode.Conflict,
+                Status = StatusCodes.Status409Conflict,
             };
         }
 
@@ -78,7 +77,7 @@ internal static class DataElementAccessChecker
             {
                 Title = "Max Count Exceeded",
                 Detail = $"Cannot create more than {dataType.MaxCount} data elements of type {dataType.Id}",
-                Status = (int)HttpStatusCode.Conflict,
+                Status = StatusCodes.Status409Conflict,
             };
         }
 
@@ -90,7 +89,7 @@ internal static class DataElementAccessChecker
                 Title = "Max Size Exceeded",
                 Detail =
                     $"Cannot create data element of size {contentLength} which exceeds the max size of {dataType.MaxSize}",
-                Status = (int)HttpStatusCode.BadRequest,
+                Status = StatusCodes.Status400BadRequest,
             };
         }
 
@@ -101,7 +100,7 @@ internal static class DataElementAccessChecker
             {
                 Title = "User Create Disallowed",
                 Detail = $"Cannot create data element of type {dataType.Id} as it is disallowed by app logic",
-                Status = (int)HttpStatusCode.BadRequest,
+                Status = StatusCodes.Status400BadRequest,
             };
         }
 
@@ -146,7 +145,7 @@ internal static class DataElementAccessChecker
             {
                 Title = "Cannot Delete main data element",
                 Detail = "Cannot delete the only data element of a class with app logic",
-                Status = (int)HttpStatusCode.BadRequest,
+                Status = StatusCodes.Status400BadRequest,
             };
         }
 
@@ -156,7 +155,7 @@ internal static class DataElementAccessChecker
             {
                 Title = "User Delete Disallowed",
                 Detail = $"Cannot delete data element of type {dataType.Id} as it is disallowed by app logic",
-                Status = (int)HttpStatusCode.BadRequest,
+                Status = StatusCodes.Status400BadRequest,
             };
         }
 

@@ -168,6 +168,42 @@ public class SigningControllerTests
                     SignedTime = DateTime.Now,
                 },
             },
+            new SigneeContext
+            {
+                TaskId = "task1",
+                Signee = new OrganisationSignee
+                {
+                    OrgName = "org2",
+                    OrgNumber = "987654321",
+                    OrgParty = new Party { PartyId = 2 },
+                },
+                SigneeState = new SigneeContextSigneeState
+                {
+                    IsReceiptSent = false,
+                    DelegationFailedReason = null,
+                    IsAccessDelegated = true,
+                    IsMessagedForCallToSign = true,
+                    CallToSignFailedReason = null,
+                },
+            },
+            new SigneeContext
+            {
+                TaskId = "task1",
+                Signee = new OrganisationSignee
+                {
+                    OrgName = "org2",
+                    OrgNumber = "987654321",
+                    OrgParty = new Party { PartyId = 2 },
+                },
+                SigneeState = new SigneeContextSigneeState
+                {
+                    IsReceiptSent = false,
+                    DelegationFailedReason = null,
+                    IsAccessDelegated = true,
+                    IsMessagedForCallToSign = true,
+                    CallToSignFailedReason = null,
+                },
+            },
         ];
 
         _signingServiceMock
@@ -194,7 +230,7 @@ public class SigningControllerTests
                     Name = null,
                     Organisation = "org1",
                     DelegationSuccessful = false,
-                    NotificationSuccessful = false,
+                    NotificationSuccessful = NotificationState.Failed,
                     HasSigned = false,
                     PartyId = 1,
                 },
@@ -203,7 +239,7 @@ public class SigningControllerTests
                     Name = null,
                     Organisation = "org1",
                     DelegationSuccessful = true,
-                    NotificationSuccessful = true,
+                    NotificationSuccessful = NotificationState.NotSent,
                     HasSigned = true,
                     PartyId = 1,
                 },
@@ -212,8 +248,26 @@ public class SigningControllerTests
                     Name = null,
                     Organisation = "org2",
                     DelegationSuccessful = true,
-                    NotificationSuccessful = false,
+                    NotificationSuccessful = NotificationState.Failed,
                     HasSigned = true,
+                    PartyId = 2,
+                },
+                new SigneeStateDTO
+                {
+                    Name = null,
+                    Organisation = "org2",
+                    DelegationSuccessful = true,
+                    NotificationSuccessful = NotificationState.Sent,
+                    HasSigned = false,
+                    PartyId = 2,
+                },
+                new SigneeStateDTO
+                {
+                    Name = null,
+                    Organisation = "org2",
+                    DelegationSuccessful = true,
+                    NotificationSuccessful = NotificationState.Sent,
+                    HasSigned = false,
                     PartyId = 2,
                 },
             ],
@@ -272,7 +326,7 @@ public class SigningControllerTests
                     Name = "person1",
                     Organisation = null,
                     DelegationSuccessful = false,
-                    NotificationSuccessful = false,
+                    NotificationSuccessful = NotificationState.Failed,
                     HasSigned = false,
                     PartyId = 1,
                 },
@@ -344,7 +398,7 @@ public class SigningControllerTests
                     Name = "person1",
                     Organisation = "org1",
                     DelegationSuccessful = true,
-                    NotificationSuccessful = true,
+                    NotificationSuccessful = NotificationState.NotSent,
                     HasSigned = true,
                     PartyId = 321,
                 },
@@ -414,7 +468,7 @@ public class SigningControllerTests
                     Name = "System",
                     Organisation = "org1",
                     DelegationSuccessful = true,
-                    NotificationSuccessful = true,
+                    NotificationSuccessful = NotificationState.Sent,
                     HasSigned = true,
                     PartyId = 123,
                 },
