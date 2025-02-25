@@ -172,7 +172,11 @@ internal sealed class SigningCallToActionService(
             correspondenceTitle = textResource.GetText("signing.cta_title"); // TODO: Document these text keys
             correspondenceSummary = textResource.GetText("signing.cta_summary"); // TODO: Document these text keys
             correspondenceBody = textResource.GetText("signing.cta_body"); // TODO: Document these text keys
-            correspondenceBody = correspondenceBody?.Replace("$InstanceUrl", instanceUrl, StringComparison.InvariantCultureIgnoreCase);
+            correspondenceBody = correspondenceBody?.Replace(
+                "$InstanceUrl",
+                instanceUrl,
+                StringComparison.InvariantCultureIgnoreCase
+            );
             appName = textResource.GetFirstMatchingText("appName", "ServiceName");
 
             smsBody = textResource.GetText(notification?.Sms?.TextResourceKey);
@@ -194,7 +198,8 @@ internal sealed class SigningCallToActionService(
         }
 
         var defaults = GetDefaultTexts(instanceUrl, language, appName, appOwner);
-        ContentWrapper contentWrapper = new (){
+        ContentWrapper contentWrapper = new()
+        {
             CorrespondenceContent = new CorrespondenceContent()
             {
                 Language = LanguageCode<Iso6391>.Parse(textResource?.Language ?? language),
