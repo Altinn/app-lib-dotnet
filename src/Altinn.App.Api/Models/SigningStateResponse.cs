@@ -1,4 +1,6 @@
-﻿namespace Altinn.App.Api.Models;
+﻿using Newtonsoft.Json;
+
+namespace Altinn.App.Api.Models;
 
 /// <summary>
 /// Contains the result of a get signees request.
@@ -19,31 +21,37 @@ public class SigneeState
     /// <summary>
     /// The name of the signee.
     /// </summary>
+    [JsonProperty(PropertyName = "name")]
     public string? Name { get; set; }
 
     /// <summary>
     /// The organisation of the signee.
     /// </summary>
+    [JsonProperty(PropertyName = "organisation")]
     public string? Organisation { get; set; }
 
     /// <summary>
     /// Whether the signee has signed or not.
     /// </summary>
+    [JsonProperty(PropertyName = "hasSigned")]
     public required bool HasSigned { get; set; }
 
     /// <summary>
     /// Whether delegation of signing rights has been successful.
     /// </summary>
+    [JsonProperty(PropertyName = "delegationSuccessful")]
     public bool DelegationSuccessful { get; set; }
 
     /// <summary>
     /// Whether the signee has been notified to sign via email or sms.
     /// </summary>
+    [JsonProperty(PropertyName = "notificationSuccessful")]
     public NotificationState NotificationSuccessful { get; set; }
 
     /// <summary>
     /// The party id of the signee.
     /// </summary>
+    [JsonProperty(PropertyName = "partyId")]
     public required int PartyId { get; set; }
     //TODO: Add necessary properties
 }
