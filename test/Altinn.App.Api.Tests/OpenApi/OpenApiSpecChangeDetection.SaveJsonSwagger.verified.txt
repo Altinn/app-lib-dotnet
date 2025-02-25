@@ -7437,13 +7437,12 @@ version that supports multiple data models in the same request.
       },
       NotificationState: {
         enum: [
-          0,
-          1,
-          2
+          NotSent,
+          Sent,
+          Failed
         ],
-        type: integer,
-        description: Represents the state of a notification.,
-        format: int32
+        type: string,
+        description: Represents the state of a notification.
       },
       OnEntry: {
         type: object,

@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace Altinn.App.Api.Models;
 
@@ -21,37 +21,37 @@ public class SigneeState
     /// <summary>
     /// The name of the signee.
     /// </summary>
-    [JsonProperty(PropertyName = "name")]
+    [JsonPropertyName("name")]
     public string? Name { get; set; }
 
     /// <summary>
     /// The organisation of the signee.
     /// </summary>
-    [JsonProperty(PropertyName = "organisation")]
+    [JsonPropertyName("organisation")]
     public string? Organisation { get; set; }
 
     /// <summary>
     /// Whether the signee has signed or not.
     /// </summary>
-    [JsonProperty(PropertyName = "hasSigned")]
+    [JsonPropertyName("hasSigned")]
     public required bool HasSigned { get; set; }
 
     /// <summary>
     /// Whether delegation of signing rights has been successful.
     /// </summary>
-    [JsonProperty(PropertyName = "delegationSuccessful")]
+    [JsonPropertyName("delegationSuccessful")]
     public bool DelegationSuccessful { get; set; }
 
     /// <summary>
     /// Whether the signee has been notified to sign via email or sms.
     /// </summary>
-    [JsonProperty(PropertyName = "notificationSuccessful")]
+    [JsonPropertyName("notificationSuccessful")]
     public NotificationState NotificationSuccessful { get; set; }
 
     /// <summary>
     /// The party id of the signee.
     /// </summary>
-    [JsonProperty(PropertyName = "partyId")]
+    [JsonPropertyName("partyId")]
     public required int PartyId { get; set; }
     //TODO: Add necessary properties
 }
@@ -59,6 +59,7 @@ public class SigneeState
 /// <summary>
 /// Represents the state of a notification.
 /// </summary>
+[JsonConverter(typeof(JsonStringEnumConverter<NotificationState>))]
 public enum NotificationState
 {
     /// <summary>
