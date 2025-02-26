@@ -213,18 +213,4 @@ public class ProcessReader : IProcessReader
 
         return null;
     }
-
-    /// <inheritdoc />
-    /// <remarks>Empty action returns false</remarks>
-    public bool IsActionAllowedForTask(string taskId, string action)
-    {
-        if (string.IsNullOrEmpty(action))
-        {
-            return false;
-        }
-
-        AltinnTaskExtension? altinnTaskExtension = GetAltinnTaskExtension(taskId);
-
-        return altinnTaskExtension?.AltinnActions?.Select(x => x.Value).Contains(action) is true;
-    }
 }
