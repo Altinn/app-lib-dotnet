@@ -31,12 +31,6 @@ public class SigneeState
     public string? Organisation { get; set; }
 
     /// <summary>
-    /// Whether the signee has signed or not.
-    /// </summary>
-    [JsonPropertyName("hasSigned")]
-    public required bool HasSigned { get; set; }
-
-    /// <summary>
     /// Whether delegation of signing rights has been successful.
     /// </summary>
     [JsonPropertyName("delegationSuccessful")]
@@ -45,22 +39,27 @@ public class SigneeState
     /// <summary>
     /// Whether the signee has been notified to sign via email or sms.
     /// </summary>
-    [JsonPropertyName("notificationSuccessful")]
-    public NotificationState NotificationSuccessful { get; set; }
+    [JsonPropertyName("notificationStatus")]
+    public NotificationStatus NotificationStatus { get; set; }
 
     /// <summary>
     /// The party id of the signee.
     /// </summary>
     [JsonPropertyName("partyId")]
     public required int PartyId { get; set; }
-    //TODO: Add necessary properties
+
+    /// <summary>
+    /// The time the signee signed.
+    /// </summary>
+    [JsonPropertyName("signedTime")]
+    public DateTime? SignedTime { get; set; }
 }
 
 /// <summary>
 /// Represents the state of a notification.
 /// </summary>
-[JsonConverter(typeof(JsonStringEnumConverter<NotificationState>))]
-public enum NotificationState
+[JsonConverter(typeof(JsonStringEnumConverter<NotificationStatus>))]
+public enum NotificationStatus
 {
     /// <summary>
     /// Notification has not been configures and thus has not been sent.
