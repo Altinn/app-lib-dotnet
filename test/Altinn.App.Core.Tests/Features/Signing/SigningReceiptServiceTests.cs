@@ -235,9 +235,9 @@ public class SigningReceiptServiceTests
         // Arrange
         List<TextResourceElement> textResourceElements =
         [
-            new TextResourceElement { Id = "signing.receipt_title", Value = "Custom receipt title" },
-            new TextResourceElement { Id = "signing.receipt_summary", Value = "Custom receipt summary" },
-            new TextResourceElement { Id = "signing.receipt_body", Value = "Custom receipt body" },
+            new TextResourceElement { Id = "signing.correspondence_receipt_title", Value = "Custom receipt title" },
+            new TextResourceElement { Id = "signing.correspondence_receipt_summary", Value = "Custom receipt summary" },
+            new TextResourceElement { Id = "signing.correspondence_receipt_body", Value = "Custom receipt body" },
             new TextResourceElement { Id = "appName", Value = "Custom app name" },
         ];
 

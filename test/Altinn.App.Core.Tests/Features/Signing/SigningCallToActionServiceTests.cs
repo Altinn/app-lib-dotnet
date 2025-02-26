@@ -64,11 +64,11 @@ public class SigningCallToActionServiceTests
             {
                 Resources =
                 [
-                    new TextResourceElement { Id = "signing.cta_title", Value = "Custom title" },
-                    new TextResourceElement { Id = "signing.cta_summary", Value = "Custom summary" },
+                    new TextResourceElement { Id = "signing.correspondence_cta_title", Value = "Custom title" },
+                    new TextResourceElement { Id = "signing.correspondence_cta_summary", Value = "Custom summary" },
                     new TextResourceElement
                     {
-                        Id = "signing.cta_body",
+                        Id = "signing.correspondence_cta_body",
                         Value =
                             "Custom body with replacement for instance url here: $InstanceUrl, and some more text after",
                     },
