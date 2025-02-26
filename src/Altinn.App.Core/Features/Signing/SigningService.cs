@@ -146,6 +146,12 @@ internal sealed class SigningService(
 
         AltinnCdnOrgDetails? serviceOwnerDetails = altinnCdnOrgs.Orgs?.GetValueOrDefault(applicationMetadata.Org);
 
+        if (serviceOwnerDetails?.Orgnr == "ttd")
+        {
+            // TestDepartementet is often used in test environments, it does not have a organisation number, so we use Digitaliseringsdirektoratet's orgnr instead.
+            serviceOwnerDetails.Orgnr = "991825827";
+        }
+
         Party serviceOwnerParty = await altinnPartyClient.LookupParty(
             new PartyLookup { OrgNo = serviceOwnerDetails?.Orgnr }
         );
