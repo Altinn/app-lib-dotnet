@@ -5,7 +5,7 @@ namespace Altinn.App.Core.Internal.Process;
 /// <summary>
 /// Extension methods for <see cref="IProcessReader"/>. Utility functions etc.
 /// </summary>
-public static class ProcessReaderExtensions
+internal static class ProcessReaderExtensions
 {
     /// <summary>
     /// Checks if the action is included in the AltinnActions list for the given task, which means it is allowed for the task.
