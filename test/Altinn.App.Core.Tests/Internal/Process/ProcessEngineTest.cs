@@ -43,6 +43,7 @@ public sealed class ProcessEngineTest : IDisposable
     private readonly Mock<IInstanceClient> _instanceClientMock = new(MockBehavior.Strict);
     private readonly Mock<IAppModel> _appModelMock = new(MockBehavior.Strict);
     private readonly Mock<IAppMetadata> _appMetadataMock = new(MockBehavior.Strict);
+    private readonly Mock<IProcessEnd> _processEndMock = new();
 
     public ProcessEngineTest(ITestOutputHelper output)
     {
@@ -784,10 +785,16 @@ public sealed class ProcessEngineTest : IDisposable
             );
     }
 
-    [Fact]
-    public async Task Next_moves_instance_to_end_event_and_ends_proces()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Next_moves_instance_to_end_event_and_ends_process(bool registerProcessEnd)
     {
         _appMetadataMock.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(new ApplicationMetadata("org/app"));
+        _processEndMock
+            .Setup(x => x.End(It.IsAny<Instance>(), It.IsAny<List<InstanceEvent>>()))
+            .Verifiable(registerProcessEnd ? Times.Once : Times.Never);
+
         var expectedInstance = new Instance()
         {
             Id = _instanceId,
@@ -801,7 +808,10 @@ public sealed class ProcessEngineTest : IDisposable
                 EndEvent = "EndEvent_1",
             },
         };
-        ProcessEngine processEngine = GetProcessEngine(updatedInstance: expectedInstance);
+        ProcessEngine processEngine = GetProcessEngine(
+            updatedInstance: expectedInstance,
+            processEnd: registerProcessEnd ? _processEndMock.Object : null
+        );
         Instance instance = new Instance()
         {
             Id = _instanceId,
@@ -924,6 +934,8 @@ public sealed class ProcessEngineTest : IDisposable
             d.RegisterEventWithEventsComponent(It.Is<Instance>(i => CompareInstance(expectedInstance, i)))
         );
 
+        _processEndMock.Verify();
+
         result.Success.Should().BeTrue();
         result
             .ProcessStateChange.Should()
@@ -1035,7 +1047,8 @@ public sealed class ProcessEngineTest : IDisposable
         Instance? updatedInstance = null,
         List<IUserAction>? userActions = null,
         TelemetrySink? telemetrySink = null,
-        TestJwtToken? token = null
+        TestJwtToken? token = null,
+        IProcessEnd? processEnd = null
     )
     {
         if (setupProcessReaderMock)
@@ -1103,6 +1116,8 @@ public sealed class ProcessEngineTest : IDisposable
                 .ReturnsAsync(() => updatedInstance);
         }
 
+        List<IProcessEnd> processEnds = processEnd is not null ? [processEnd] : [];
+
         return new ProcessEngine(
             _processReaderMock.Object,
             _processNavigatorMock.Object,
@@ -1115,6 +1130,7 @@ public sealed class ProcessEngineTest : IDisposable
             new ModelSerializationService(_appModelMock.Object, telemetrySink?.Object),
             _appMetadataMock.Object,
             _authenticationContextMock.Object,
+            processEnds,
             telemetrySink?.Object
         );
     }
