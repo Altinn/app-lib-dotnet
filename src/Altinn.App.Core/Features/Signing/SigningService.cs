@@ -9,6 +9,7 @@ using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Features.Signing.Exceptions;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
+using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
@@ -30,6 +31,7 @@ internal sealed class SigningService(
     IAltinnPartyClient altinnPartyClient,
     ISigningDelegationService signingDelegationService,
     IEnumerable<ISigneeProvider> signeeProviders,
+    IAltinnCdnClient altinnCdnClient,
     IAppMetadata appMetadata,
     ISignClient signClient,
     ISigningReceiptService signingReceiptService,
@@ -50,6 +52,7 @@ internal sealed class SigningService(
     );
     private readonly ILogger<SigningService> _logger = logger;
     private readonly IAppMetadata _appMetadata = appMetadata;
+    private readonly IAltinnCdnClient _altinnCdnClient = altinnCdnClient;
     private readonly ISignClient _signClient = signClient;
     private readonly ISigningReceiptService _signingReceiptService = signingReceiptService;
     private readonly ISigningCallToActionService _signingCallToActionService = signingCallToActionService;
@@ -137,7 +140,15 @@ internal sealed class SigningService(
             telemetry
         );
 
-        Party serviceOwnerParty = await altinnPartyClient.LookupParty(new PartyLookup { OrgNo = appIdentifier.Org });
+        ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
+
+        AltinnCdnOrgs altinnCdnOrgs = await _altinnCdnClient.GetOrgs(ct);
+
+        AltinnCdnOrgDetails? serviceOwnerDetails = altinnCdnOrgs.Orgs?.GetValueOrDefault(applicationMetadata.Org);
+
+        Party serviceOwnerParty = await altinnPartyClient.LookupParty(
+            new PartyLookup { OrgNo = serviceOwnerDetails?.Orgnr }
+        );
 
         if (delegateSuccess)
         {
