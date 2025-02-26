@@ -106,7 +106,7 @@ internal sealed class SigningService(
         InstanceOwner instanceOwner = instanceMutator.Instance.InstanceOwner;
 
         Party instanceOwnerParty = await altinnPartyClient.LookupParty(
-            instanceOwner.OrganisationNumber is not null
+            !string.IsNullOrEmpty(instanceOwner.OrganisationNumber)
                 ? new PartyLookup { OrgNo = instanceOwner.OrganisationNumber }
                 : new PartyLookup { Ssn = instanceOwner.PersonNumber }
         );
