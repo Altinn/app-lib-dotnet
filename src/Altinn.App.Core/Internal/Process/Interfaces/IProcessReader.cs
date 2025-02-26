@@ -121,4 +121,9 @@ public interface IProcessReader
     /// If the element with the given elementId is a ProcessTask, this method will return the AltinnTaskExtension for that task. If it is not, null is returned.
     /// </summary>
     public AltinnTaskExtension? GetAltinnTaskExtension(string elementId);
+
+    /// <summary>
+    /// Checks if the action is included in the AltinnActions list for the given task, which means it is allowed for the task.
+    /// </summary>
+    public bool IsActionAllowedForTask(string taskId, string action);
 }

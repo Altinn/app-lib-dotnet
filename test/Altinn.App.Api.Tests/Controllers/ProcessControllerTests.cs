@@ -642,11 +642,13 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
     }
 
     [Fact]
-    public async Task RunNextWithAction_WhenActionIsNotDefinedInBpmn_ReturnsConflict()
+    public async Task RunNextWithAction_WhenActionIsNotDefinedInBpmn_ReturnsOk()
     {
         var pdfMock = new Mock<IPdfGeneratorClient>(MockBehavior.Strict);
         using var pdfReturnStream = new MemoryStream();
-        pdfMock.Setup(p => p.GeneratePdf(It.IsAny<Uri>(), It.IsAny<CancellationToken>())).ReturnsAsync(pdfReturnStream);
+        pdfMock
+            .Setup(p => p.GeneratePdf(It.IsAny<Uri>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(pdfReturnStream);
         OverrideServicesForThisTest = (services) =>
         {
             services.AddSingleton(pdfMock.Object);
@@ -660,7 +662,12 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         var nextResponse = await client.PutAsync($"{Org}/{App}/instances/{_instanceId}/process/next", content);
         var nextResponseContent = await nextResponse.Content.ReadAsStringAsync();
         OutputHelper.WriteLine(nextResponseContent);
-        nextResponse.Should().HaveStatusCode(HttpStatusCode.Conflict);
+        nextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
+
+        // Verify that the instance is updated to the ended state
+        var instance = await TestData.GetInstance(Org, App, InstanceOwnerPartyId, _instanceGuid);
+        instance.Process.CurrentTask.Should().BeNull();
+        instance.Process.EndEvent.Should().Be("EndEvent_1");
     }
 
     [Fact]

@@ -159,14 +159,6 @@
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.GetAltinnTaskExtension,
-      IdFormat: W3C
-    },
-    {
-      ActivityName: ProcessReader.GetFlowElement,
-      IdFormat: W3C
-    },
-    {
       ActivityName: SerializationService.DeserializeXml,
       Tags: [
         {

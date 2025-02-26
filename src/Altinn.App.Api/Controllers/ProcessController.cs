@@ -342,17 +342,6 @@ public class ProcessController : ControllerBase
                 );
             }
 
-            if (!IsActionAllowedForTask(currentTaskId, processNext?.Action))
-            {
-                return Conflict(
-                    new ProblemDetails()
-                    {
-                        Status = StatusCodes.Status409Conflict,
-                        Title = $"The action '{processNext?.Action}' is not allowed for task '{currentTaskId}'!",
-                    }
-                );
-            }
-
             string checkedAction = EnsureActionNotTaskType(processNext?.Action ?? altinnTaskType);
 
             bool authorized = await AuthorizeAction(
@@ -387,7 +376,8 @@ public class ProcessController : ControllerBase
                 Language = language,
             };
 
-            if (checkedAction == "reject")
+            // If the action is 'reject' the task is being abandoned, and we should skip validation, but only if reject has been allowed for the task in bpmn.
+            if (checkedAction == "reject" && _processReader.IsActionAllowedForTask(currentTaskId, checkedAction))
             {
                 _logger.LogInformation(
                     "Skipping validation during process next because the action is 'reject' and the task is being abandoned."
@@ -788,11 +778,11 @@ public class ProcessController : ControllerBase
     /// <summary>
     /// Validates the selected action against the ones specified for the task in process.xml
     /// </summary>
-    private bool IsActionAllowedForTask(string currentTaskId, string? attemptedAction)
+    private bool IsActionAllowedForTask(string currentTaskId, string attemptedAction)
     {
         if (string.IsNullOrEmpty(attemptedAction))
         {
-            return true;
+            return false;
         }
 
         AltinnTaskExtension? altinnTaskExtension = _processReader.GetAltinnTaskExtension(currentTaskId);
