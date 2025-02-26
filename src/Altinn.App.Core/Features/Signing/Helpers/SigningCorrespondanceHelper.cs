@@ -3,7 +3,7 @@ using Altinn.App.Core.Features.Signing.Models;
 
 namespace Altinn.App.Core.Features.Signing.Helpers;
 
-internal static class SigningCorrespondanceHelper
+internal static class SigningCorrespondenceHelper
 {
     /// <summary>
     /// Gets the notification choice.

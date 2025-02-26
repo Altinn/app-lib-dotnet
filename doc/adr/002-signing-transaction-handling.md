@@ -23,12 +23,12 @@ In the case of signing we have two transactions:
 #### Setting signees transaction
 
 1. Delegate right to action **sign** on the signing task.
-2. Send a notification to the signee using the correspondance API
+2. Send a notification to the signee using the correspondence API
 
 #### Signing
 
 1. A signee signs data elements
-2. The person in charge of moving the process out of the sign task is notified using the correspondance API
+2. The person in charge of moving the process out of the sign task is notified using the correspondence API
 
 We will refer to step 1 as the **action** and step 2 as the **message**
 

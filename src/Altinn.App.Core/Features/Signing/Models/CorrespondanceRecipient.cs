@@ -3,12 +3,12 @@ using Altinn.Platform.Register.Models;
 
 namespace Altinn.App.Core.Features.Signing.Models;
 
-internal sealed class CorrespondanceRecipient
+internal sealed class CorrespondenceRecipient
 {
     internal string? OrganisationNumber { get; init; }
     internal string? SSN { get; init; }
 
-    public CorrespondanceRecipient(Party party)
+    public CorrespondenceRecipient(Party party)
     {
         OrganisationNumber = party.OrgNumber;
         SSN = party.SSN;

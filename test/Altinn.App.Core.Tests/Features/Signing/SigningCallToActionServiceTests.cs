@@ -421,7 +421,7 @@ public class SigningCallToActionServiceTests
     }
 
     /// <summary>
-    /// Test case: resource for correspondance not found.
+    /// Test case: resource for correspondence not found.
     /// Expected: Exception thrown.
     /// </summary>
     /// <returns></returns>

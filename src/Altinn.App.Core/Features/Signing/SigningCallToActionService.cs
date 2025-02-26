@@ -62,7 +62,7 @@ internal sealed class SigningCallToActionService(
             );
         }
 
-        CorrespondanceRecipient recipient = new(signingParty);
+        CorrespondenceRecipient recipient = new(signingParty);
         string instanceUrl = _urlHelper.GetInstanceUrl(appIdentifier, instanceIdentifier);
         UserProfile? recipientProfile = null;
         if (recipient.IsPerson)
@@ -111,7 +111,7 @@ internal sealed class SigningCallToActionService(
                     .WithAllowSystemDeleteAfter(DateTime.Now.AddYears(1))
                     .WithContent(correspondenceContent)
                     .WithNotificationIfConfigured(
-                        SigningCorrespondanceHelper.GetNotificationChoice(notification) switch
+                        SigningCorrespondenceHelper.GetNotificationChoice(notification) switch
                         {
                             NotificationChoice.Email => new CorrespondenceNotification
                             {
