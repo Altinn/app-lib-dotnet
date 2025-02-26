@@ -94,12 +94,18 @@ internal sealed class SigningCallToActionService(
         string? emailSubject = contentWrapper.EmailSubject;
         string? smsBody = contentWrapper.SmsBody;
 
+        if (serviceOwnerParty.OrgNumber == "ttd")
+        {
+            // TestDepartementet is often used in test environments, it does not have a organisation number, so we use Digitaliseringsdirektoratet's orgnr instead.
+            serviceOwnerParty.OrgNumber = "991825827";
+        }
+
         return await _correspondenceClient.Send(
             new SendCorrespondencePayload(
                 CorrespondenceRequestBuilder
                     .Create()
                     .WithResourceId(resource)
-                    .WithSender(serviceOwnerParty.OrgNumber) // Will fail if using ttd, as it has no org number
+                    .WithSender(serviceOwnerParty.OrgNumber)
                     .WithSendersReference(instanceIdentifier.ToString())
                     .WithRecipient(recipient.IsPerson ? recipient.SSN : recipient.OrganisationNumber)
                     .WithAllowSystemDeleteAfter(DateTime.Now.AddYears(1))

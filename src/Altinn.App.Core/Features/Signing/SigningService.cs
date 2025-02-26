@@ -108,6 +108,11 @@ internal sealed class SigningService(
         Party? instanceOwnerParty = null;
         try
         {
+            if (instanceOwner.OrganisationNumber == "ttd")
+            {
+                // TestDepartementet is often used in test environments, it does not have a organisation number, so we use Digitaliseringsdirektoratet's orgnr instead.
+                instanceOwner.OrganisationNumber = "991825827";
+            }
             instanceOwnerParty = await altinnPartyClient.LookupParty(
                 !string.IsNullOrEmpty(instanceOwner.OrganisationNumber)
                     ? new PartyLookup { OrgNo = instanceOwner.OrganisationNumber }
