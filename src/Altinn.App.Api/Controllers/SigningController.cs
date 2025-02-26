@@ -65,7 +65,7 @@ public class SigningController : ControllerBase
     /// <param name="language">The currently used language by the user (or null if not available)</param>
     /// <returns>An object containing updated signee state</returns>
     [HttpGet]
-    [ProducesResponseType(typeof(SigningStateResponseDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(SigningStateResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetSigneesState(
         [FromRoute] string org,
@@ -108,7 +108,7 @@ public class SigningController : ControllerBase
             signingConfiguration
         );
 
-        var response = new SigningStateResponseDTO
+        var response = new SigningStateResponse
         {
             SigneeStates =
             [
@@ -142,13 +142,13 @@ public class SigningController : ControllerBase
 
                         var signeeState = signeeContext.SigneeState;
 
-                        return new SigneeStateDTO
+                        return new Models.SigneeState
                         {
                             Name = name,
                             Organisation = organisation,
                             SignedTime = signeeContext.SignDocument?.SignedTime,
                             DelegationSuccessful = signeeState.IsAccessDelegated,
-                            NotificationSuccessful = GetNotificationState(signeeContext),
+                            NotificationStatus = GetNotificationState(signeeContext),
                             PartyId = signeeContext.Signee.GetParty().PartyId,
                         };
                     })
@@ -219,12 +219,12 @@ public class SigningController : ControllerBase
         );
     }
 
-    private static NotificationState GetNotificationState(SigneeContext signeeContext)
+    private static NotificationStatus GetNotificationState(SigneeContext signeeContext)
     {
         var signeeState = signeeContext.SigneeState;
         if (signeeState.SignatureRequestEmailSent is true || signeeState.SignatureRequestSmsSent is true)
         {
-            return NotificationState.Sent;
+            return NotificationStatus.Sent;
         }
 
         if (
@@ -232,9 +232,9 @@ public class SigningController : ControllerBase
             || signeeState.SignatureRequestSmsNotSentReason is not null
         )
         {
-            return NotificationState.Failed;
+            return NotificationStatus.Failed;
         }
 
-        return NotificationState.NotSent;
+        return NotificationStatus.NotSent;
     }
 }

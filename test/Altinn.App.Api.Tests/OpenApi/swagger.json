@@ -4841,27 +4841,27 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/SigningStateResponseDTO"
+                  "$ref": "#/components/schemas/SigningStateResponse"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SigningStateResponseDTO"
+                  "$ref": "#/components/schemas/SigningStateResponse"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SigningStateResponseDTO"
+                  "$ref": "#/components/schemas/SigningStateResponse"
                 }
               },
               "application/xml": {
                 "schema": {
-                  "$ref": "#/components/schemas/SigningStateResponseDTO"
+                  "$ref": "#/components/schemas/SigningStateResponse"
                 }
               },
               "text/xml": {
                 "schema": {
-                  "$ref": "#/components/schemas/SigningStateResponseDTO"
+                  "$ref": "#/components/schemas/SigningStateResponse"
                 }
               }
             }
@@ -7328,7 +7328,7 @@
         },
         "additionalProperties": false
       },
-      "NotificationState": {
+      "NotificationStatus": {
         "enum": [
           "NotSent",
           "Sent",
@@ -7990,7 +7990,7 @@
         },
         "additionalProperties": false
       },
-      "SigneeStateDTO": {
+      "SigneeState": {
         "required": [
           "partyId"
         ],
@@ -8010,8 +8010,8 @@
             "type": "boolean",
             "description": "Whether delegation of signing rights has been successful."
           },
-          "notificationSuccessful": {
-            "$ref": "#/components/schemas/NotificationState"
+          "notificationStatus": {
+            "$ref": "#/components/schemas/NotificationStatus"
           },
           "partyId": {
             "type": "integer",
@@ -8046,7 +8046,7 @@
         "additionalProperties": false,
         "description": "Response that contains the data elements that should be signed."
       },
-      "SigningStateResponseDTO": {
+      "SigningStateResponse": {
         "required": [
           "signeeStates"
         ],
@@ -8055,7 +8055,7 @@
           "signeeStates": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/SigneeStateDTO"
+              "$ref": "#/components/schemas/SigneeState"
             },
             "description": "The signees for the current task.",
             "nullable": true

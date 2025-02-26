@@ -5,18 +5,18 @@ namespace Altinn.App.Api.Models;
 /// <summary>
 /// Contains the result of a get signees request.
 /// </summary>
-public class SigningStateResponseDTO
+public class SigningStateResponse
 {
     /// <summary>
     /// The signees for the current task.
     /// </summary>
-    public required List<SigneeStateDTO> SigneeStates { get; set; }
+    public required List<SigneeState> SigneeStates { get; set; }
 }
 
 /// <summary>
 /// Contains information about a signee and the current signing status.
 /// </summary>
-public class SigneeStateDTO
+public class SigneeState
 {
     /// <summary>
     /// The name of the signee.
@@ -39,8 +39,8 @@ public class SigneeStateDTO
     /// <summary>
     /// Whether the signee has been notified to sign via email or sms.
     /// </summary>
-    [JsonPropertyName("notificationSuccessful")]
-    public NotificationState NotificationSuccessful { get; set; }
+    [JsonPropertyName("notificationStatus")]
+    public NotificationStatus NotificationStatus { get; set; }
 
     /// <summary>
     /// The party id of the signee.
@@ -58,8 +58,8 @@ public class SigneeStateDTO
 /// <summary>
 /// Represents the state of a notification.
 /// </summary>
-[JsonConverter(typeof(JsonStringEnumConverter<NotificationState>))]
-public enum NotificationState
+[JsonConverter(typeof(JsonStringEnumConverter<NotificationStatus>))]
+public enum NotificationStatus
 {
     /// <summary>
     /// Notification has not been configures and thus has not been sent.

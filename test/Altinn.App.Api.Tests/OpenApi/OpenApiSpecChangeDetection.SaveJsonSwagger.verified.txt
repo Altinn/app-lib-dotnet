@@ -4853,27 +4853,27 @@ Get the rule settings
             content: {
               text/plain: {
                 schema: {
-                  $ref: #/components/schemas/SigningStateResponseDTO
+                  $ref: #/components/schemas/SigningStateResponse
                 }
               },
               application/json: {
                 schema: {
-                  $ref: #/components/schemas/SigningStateResponseDTO
+                  $ref: #/components/schemas/SigningStateResponse
                 }
               },
               text/json: {
                 schema: {
-                  $ref: #/components/schemas/SigningStateResponseDTO
+                  $ref: #/components/schemas/SigningStateResponse
                 }
               },
               application/xml: {
                 schema: {
-                  $ref: #/components/schemas/SigningStateResponseDTO
+                  $ref: #/components/schemas/SigningStateResponse
                 }
               },
               text/xml: {
                 schema: {
-                  $ref: #/components/schemas/SigningStateResponseDTO
+                  $ref: #/components/schemas/SigningStateResponse
                 }
               }
             }
@@ -7332,7 +7332,7 @@ version that supports multiple data models in the same request.
         },
         additionalProperties: false
       },
-      NotificationState: {
+      NotificationStatus: {
         enum: [
           NotSent,
           Sent,
@@ -7993,7 +7993,7 @@ version that supports multiple data models in the same request.
         },
         additionalProperties: false
       },
-      SigneeStateDTO: {
+      SigneeState: {
         required: [
           partyId
         ],
@@ -8013,8 +8013,8 @@ version that supports multiple data models in the same request.
             type: boolean,
             description: Whether delegation of signing rights has been successful.
           },
-          notificationSuccessful: {
-            $ref: #/components/schemas/NotificationState
+          notificationStatus: {
+            $ref: #/components/schemas/NotificationStatus
           },
           partyId: {
             type: integer,
@@ -8049,7 +8049,7 @@ version that supports multiple data models in the same request.
         additionalProperties: false,
         description: Response that contains the data elements that should be signed.
       },
-      SigningStateResponseDTO: {
+      SigningStateResponse: {
         required: [
           signeeStates
         ],
@@ -8058,7 +8058,7 @@ version that supports multiple data models in the same request.
           signeeStates: {
             type: array,
             items: {
-              $ref: #/components/schemas/SigneeStateDTO
+              $ref: #/components/schemas/SigneeState
             },
             description: The signees for the current task.,
             nullable: true

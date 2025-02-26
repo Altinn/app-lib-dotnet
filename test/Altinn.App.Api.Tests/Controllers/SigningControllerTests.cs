@@ -18,7 +18,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using static Altinn.App.Core.Features.Signing.Models.Signee;
 using SigneeContextSigneeState = Altinn.App.Core.Features.Signing.Models.SigneeState;
-using SigneeStateDTO = Altinn.App.Api.Models.SigneeStateDTO;
+using SigneeState = Altinn.App.Api.Models.SigneeState;
 
 namespace Altinn.App.Api.Tests.Controllers;
 
@@ -231,55 +231,55 @@ public class SigningControllerTests
         var okResult = actionResult as OkObjectResult;
         Assert.NotNull(okResult);
 
-        var signingStateResponse = okResult.Value as SigningStateResponseDTO;
+        var signingStateResponse = okResult.Value as SigningStateResponse;
         // Assert
 
-        var expected = new SigningStateResponseDTO
+        var expected = new SigningStateResponse
         {
             SigneeStates =
             [
-                new SigneeStateDTO
+                new SigneeState
                 {
                     Name = null,
                     Organisation = "org1",
                     DelegationSuccessful = false,
-                    NotificationSuccessful = NotificationState.Failed,
+                    NotificationStatus = NotificationStatus.Failed,
                     SignedTime = null,
                     PartyId = 1,
                 },
-                new SigneeStateDTO
+                new SigneeState
                 {
                     Name = null,
                     Organisation = "org1",
                     DelegationSuccessful = true,
-                    NotificationSuccessful = NotificationState.NotSent,
+                    NotificationStatus = NotificationStatus.NotSent,
                     SignedTime = signedTime,
                     PartyId = 1,
                 },
-                new SigneeStateDTO
+                new SigneeState
                 {
                     Name = null,
                     Organisation = "org2",
                     DelegationSuccessful = true,
-                    NotificationSuccessful = NotificationState.Failed,
+                    NotificationStatus = NotificationStatus.Failed,
                     SignedTime = signedTime,
                     PartyId = 2,
                 },
-                new SigneeStateDTO
+                new SigneeState
                 {
                     Name = null,
                     Organisation = "org2",
                     DelegationSuccessful = true,
-                    NotificationSuccessful = NotificationState.Sent,
+                    NotificationStatus = NotificationStatus.Sent,
                     SignedTime = null,
                     PartyId = 2,
                 },
-                new SigneeStateDTO
+                new SigneeState
                 {
                     Name = null,
                     Organisation = "org2",
                     DelegationSuccessful = true,
-                    NotificationSuccessful = NotificationState.Sent,
+                    NotificationStatus = NotificationStatus.Sent,
                     SignedTime = null,
                     PartyId = 2,
                 },
@@ -329,19 +329,19 @@ public class SigningControllerTests
         var okResult = actionResult as OkObjectResult;
         Assert.NotNull(okResult);
 
-        var signingStateResponse = okResult.Value as SigningStateResponseDTO;
+        var signingStateResponse = okResult.Value as SigningStateResponse;
         // Assert
 
-        var expected = new SigningStateResponseDTO
+        var expected = new SigningStateResponse
         {
             SigneeStates =
             [
-                new SigneeStateDTO
+                new SigneeState
                 {
                     Name = "person1",
                     Organisation = null,
                     DelegationSuccessful = false,
-                    NotificationSuccessful = NotificationState.Failed,
+                    NotificationStatus = NotificationStatus.Failed,
                     SignedTime = null,
                     PartyId = 1,
                 },
@@ -404,19 +404,19 @@ public class SigningControllerTests
         var okResult = actionResult as OkObjectResult;
         Assert.NotNull(okResult);
 
-        var signingStateResponse = okResult.Value as SigningStateResponseDTO;
+        var signingStateResponse = okResult.Value as SigningStateResponse;
         // Assert
 
-        var expected = new SigningStateResponseDTO
+        var expected = new SigningStateResponse
         {
             SigneeStates =
             [
-                new SigneeStateDTO
+                new SigneeState
                 {
                     Name = "person1",
                     Organisation = "org1",
                     DelegationSuccessful = true,
-                    NotificationSuccessful = NotificationState.NotSent,
+                    NotificationStatus = NotificationStatus.NotSent,
                     SignedTime = signedTime,
                     PartyId = 321,
                 },
@@ -478,19 +478,19 @@ public class SigningControllerTests
         var okResult = actionResult as OkObjectResult;
         Assert.NotNull(okResult);
 
-        var signingStateResponse = okResult.Value as SigningStateResponseDTO;
+        var signingStateResponse = okResult.Value as SigningStateResponse;
         // Assert
 
-        var expected = new SigningStateResponseDTO
+        var expected = new SigningStateResponse
         {
             SigneeStates =
             [
-                new SigneeStateDTO
+                new SigneeState
                 {
                     Name = "System",
                     Organisation = "org1",
                     DelegationSuccessful = true,
-                    NotificationSuccessful = NotificationState.Sent,
+                    NotificationStatus = NotificationStatus.Sent,
                     SignedTime = signedTime,
                     PartyId = 123,
                 },
