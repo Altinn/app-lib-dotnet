@@ -63,7 +63,7 @@ internal class InitializeDelegatedSigningUserAction : IUserAction
         }
 
         _logger.LogInformation(
-            "Initialize delegated singing action handler invoked for instance {Id}. In task: {CurrentTaskId}",
+            "Initialize delegated signing action handler invoked for instance {Id}. In task: {CurrentTaskId}",
             context.Instance.Id,
             currentTask.Id
         );

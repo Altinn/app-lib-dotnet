@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using System.Text.Json;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Signing;
@@ -823,7 +823,7 @@ public class SigningServiceTests
     }
 
     [Fact]
-    public void RemoveSingingData_Removes_SigneeState()
+    public void RemoveSigningData_Removes_SigneeState()
     {
         var signatureConfiguration = new AltinnSignatureConfiguration
         {
@@ -875,7 +875,7 @@ public class SigningServiceTests
     }
 
     [Fact]
-    public void RemoveSingingData_Does_Nothing_If_No_Existing_Data()
+    public void RemoveSigningData_Does_Nothing_If_No_Existing_Data()
     {
         var signatureConfiguration = new AltinnSignatureConfiguration
         {
