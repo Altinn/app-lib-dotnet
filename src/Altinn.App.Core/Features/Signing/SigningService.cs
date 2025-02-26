@@ -122,11 +122,6 @@ internal sealed class SigningService(
         catch (Exception e)
         {
             _logger.LogError(e, "Failed to look up party for instance owner.");
-            _logger.LogInformation(
-                "Initialising with service owner orgnr {OrganisationNumber} and ssn {PersonNumber}.",
-                instanceOwner.OrganisationNumber,
-                instanceOwner.PersonNumber
-            );
         }
 
         Guid? instanceOwnerPartyUuid = instanceOwnerParty?.PartyUuid;
