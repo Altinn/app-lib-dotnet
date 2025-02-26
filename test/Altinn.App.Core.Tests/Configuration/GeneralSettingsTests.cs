@@ -37,6 +37,6 @@ public class GeneralSettingsTests
         var result = _settings.FormattedExternalAppBaseUrlWithTrailingPound(app);
 
         // Assert
-        Assert.Equal($"http://localhost.altinn.cloud/testOrg/testApp#/", result);
+        Assert.Equal($"http://localhost.altinn.cloud/testOrg/testApp/#", result);
     }
 }

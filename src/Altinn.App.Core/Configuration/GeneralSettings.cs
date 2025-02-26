@@ -93,6 +93,6 @@ internal static class GeneralSettingsExtensions
     /// <returns>The formatted url</returns>
     public static string FormattedExternalAppBaseUrlWithTrailingPound(this GeneralSettings settings, AppIdentifier app)
     {
-        return settings.FormattedExternalAppBaseUrl(app).TrimEnd('/') + "#/";
+        return settings.FormattedExternalAppBaseUrl(app).TrimEnd('/') + "/#";
     }
 }

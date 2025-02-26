@@ -23,7 +23,7 @@ internal class UrlHelper
     {
         string baseUrl = _settings.FormattedExternalAppBaseUrlWithTrailingPound(app);
 
-        string url = $"{baseUrl}{instance.InstanceOwnerPartyId}/{instance.InstanceGuid}";
+        string url = $"{baseUrl}/instance/{instance.InstanceOwnerPartyId}/{instance.InstanceGuid}";
 
         return url;
     }
