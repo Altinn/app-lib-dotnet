@@ -110,8 +110,8 @@ internal sealed class SigningService(
         {
             instanceOwnerParty = await altinnPartyClient.LookupParty(
                 !string.IsNullOrEmpty(instanceOwner.OrganisationNumber)
-                ? new PartyLookup { OrgNo = instanceOwner.OrganisationNumber }
-                : new PartyLookup { Ssn = instanceOwner.PersonNumber }
+                    ? new PartyLookup { OrgNo = instanceOwner.OrganisationNumber }
+                    : new PartyLookup { Ssn = instanceOwner.PersonNumber }
             );
         }
         catch (Exception e)
@@ -123,7 +123,6 @@ internal sealed class SigningService(
                 instanceOwner.PersonNumber
             );
         }
-
 
         Guid? instanceOwnerPartyUuid = instanceOwnerParty?.PartyUuid;
 
