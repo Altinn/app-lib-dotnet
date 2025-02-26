@@ -16,7 +16,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
-using static Altinn.App.Core.Features.Signing.Models.Signee;
+using static Altinn.App.Core.Features.Signing.Models.SigneeContextSignee;
+using OrganisationSignee = Altinn.App.Core.Features.Signing.Models.SigneeContextSignee.OrganisationSignee;
+using PersonSignee = Altinn.App.Core.Features.Signing.Models.SigneeContextSignee.PersonSignee;
 using SigneeContextSigneeState = Altinn.App.Core.Features.Signing.Models.SigneeState;
 using SigneeState = Altinn.App.Api.Models.SigneeState;
 

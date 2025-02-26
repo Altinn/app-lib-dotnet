@@ -12,7 +12,9 @@ using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Mvc;
-using static Altinn.App.Core.Features.Signing.Models.Signee;
+using static Altinn.App.Core.Features.Signing.Models.SigneeContextSignee;
+using OrganisationSignee = Altinn.App.Core.Features.Signing.Models.SigneeContextSignee.OrganisationSignee;
+using PersonSignee = Altinn.App.Core.Features.Signing.Models.SigneeContextSignee.PersonSignee;
 
 namespace Altinn.App.Api.Controllers;
 

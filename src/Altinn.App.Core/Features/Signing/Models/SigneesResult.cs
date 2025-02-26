@@ -3,51 +3,62 @@ using System.Text.Json.Serialization;
 namespace Altinn.App.Core.Features.Signing.Models;
 
 /// <summary>
+/// A result containing persons and organizations that should sign and related info for each of them.
+/// </summary>
+public class SigneesResult
+{
+    /// <summary>
+    /// The signees who are persons that should sign.
+    /// </summary>
+    public required List<SigneesResultSignee> Signees { get; set; }
+}
+
+/// <summary>
 /// Represents a person who is a signee.
 /// </summary>
-public class SigneeParty
+public abstract class SigneesResultSignee
 {
     /// <summary>
     /// Notifications configuration.
     /// </summary>
     [JsonPropertyName("notifications")]
     public Notifications? Notifications { get; init; }
+}
 
+/// <summary>
+/// Represents a signee that is a person.
+/// </summary>
+public class PersonSignee : SigneesResultSignee
+{
     /// <summary>
     /// The social security number.
     /// </summary>
     [JsonPropertyName("socialSecurityNumber")]
-    public string? SocialSecurityNumber { get; init; }
+    public required string SocialSecurityNumber { get; init; }
 
     /// <summary>
     /// The full name of the signee. {FirstName} {LastName} or {FirstName} {MiddleName} {LastName}.
     /// </summary>
     [JsonPropertyName("fullName")]
-    public string? FullName { get; init; }
-
-    /// <summary>
-    /// The organisation the person signed on behalf of.
-    /// </summary>
-    [JsonPropertyName("onBehalfOfOrganisation")]
-    public SigneePartyOrganisation? OnBehalfOfOrganisation { get; set; }
+    public required string FullName { get; init; }
 }
 
 /// <summary>
-///  Represents which organisation a person is signing on behalf of.
+/// Represents a signee that is an organisation.
 /// </summary>
-public class SigneePartyOrganisation
+public class OrganisationSignee : SigneesResultSignee
 {
     /// <summary>
     /// The name of the organisation.
     /// </summary>
     [JsonPropertyName("name")]
-    public required string Name { get; set; }
+    public required string Name { get; init; }
 
     /// <summary>
     /// The organisation number.
     /// </summary>
     [JsonPropertyName("organisationNumber")]
-    public required string OrganisationNumber { get; set; }
+    public required string OrganisationNumber { get; init; }
 }
 
 /// <summary>

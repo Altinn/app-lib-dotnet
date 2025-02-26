@@ -21,8 +21,10 @@ using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
-using static Altinn.App.Core.Features.Signing.Models.Signee;
+using static Altinn.App.Core.Features.Signing.Models.SigneeContextSignee;
 using JsonException = Newtonsoft.Json.JsonException;
+using OrganisationSignee = Altinn.App.Core.Features.Signing.Models.SigneeContextSignee.OrganisationSignee;
+using PersonSignee = Altinn.App.Core.Features.Signing.Models.SigneeContextSignee.PersonSignee;
 using Signee = Altinn.App.Core.Internal.Sign.Signee;
 
 namespace Altinn.App.Core.Features.Signing;
@@ -74,7 +76,7 @@ internal sealed class SigningService(
         }
 
         List<SigneeContext> signeeContexts = [];
-        foreach (SigneeParty signeeParty in signeesResult.Signees)
+        foreach (SigneesResultSignee signeeParty in signeesResult.Signees)
         {
             SigneeContext signeeContext = await GenerateSigneeContext(taskId, signeeParty, ct);
             signeeContexts.Add(signeeContext);
@@ -444,17 +446,11 @@ internal sealed class SigningService(
 
     private async Task<SigneeContext> GenerateSigneeContext(
         string taskId,
-        SigneeParty signeeParty,
+        SigneesResultSignee signeeParty,
         CancellationToken ct
     )
     {
-        Models.Signee signee = await From(
-            signeeParty.SocialSecurityNumber,
-            signeeParty.OnBehalfOfOrganisation?.OrganisationNumber,
-            null,
-            altinnPartyClient.LookupParty
-        );
-
+        SigneeContextSignee signee = await From(signeeParty, altinnPartyClient.LookupParty);
         Party party = signee.GetParty();
 
         Models.Notifications? notifications = signeeParty.Notifications;

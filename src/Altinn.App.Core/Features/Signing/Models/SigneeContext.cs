@@ -14,7 +14,7 @@ public sealed class SigneeContext
     public required string TaskId { get; init; }
 
     /// <summary>The signee.</summary>
-    public required Signee Signee { get; set; }
+    public required SigneeContextSignee Signee { get; set; }
 
     /// <summary>
     /// Notifications configuration.
@@ -43,7 +43,7 @@ public sealed class SigneeContext
 [JsonDerivedType(typeof(OrganisationSignee), typeDiscriminator: "organisation")]
 [JsonDerivedType(typeof(PersonOnBehalfOfOrgSignee), typeDiscriminator: "personOnBehalfOfOrg")]
 [JsonDerivedType(typeof(SystemSignee), typeDiscriminator: "system")]
-public abstract class Signee
+public abstract class SigneeContextSignee
 {
     internal Party GetParty()
     {
@@ -59,7 +59,30 @@ public abstract class Signee
         };
     }
 
-    internal static async Task<Signee> From(
+    internal static async Task<SigneeContextSignee> From(
+        SigneesResultSignee signeeParty,
+        Func<PartyLookup, Task<Party>> lookupParty
+    )
+    {
+        return signeeParty switch
+        {
+            Models.PersonSignee personSigneeParty => await From(
+                ssn: personSigneeParty.SocialSecurityNumber,
+                orgNr: null,
+                systemId: null,
+                lookupParty
+            ),
+            Models.OrganisationSignee organisationSigneeParty => await From(
+                ssn: null,
+                orgNr: organisationSigneeParty.OrganisationNumber,
+                systemId: null,
+                lookupParty
+            ),
+            _ => throw new InvalidOperationException("SigneeParty is neither a person nor an organisation"),
+        };
+    }
+
+    internal static async Task<SigneeContextSignee> From(
         string? ssn,
         string? orgNr,
         Guid? systemId,
@@ -124,7 +147,7 @@ public abstract class Signee
     /// <summary>
     /// A signee that is a specific person.
     /// </summary>
-    public sealed class PersonSignee : Signee
+    public sealed class PersonSignee : SigneeContextSignee
     {
         /// <summary>
         /// The party of the person signee.
@@ -145,7 +168,7 @@ public abstract class Signee
     /// <summary>
     /// A signee that is an organisation.
     /// </summary>
-    public sealed class OrganisationSignee : Signee
+    public sealed class OrganisationSignee : SigneeContextSignee
     {
         /// <summary>
         /// The party of the organisation signee.
@@ -195,7 +218,7 @@ public abstract class Signee
     /// <summary>
     /// A person signee signing on behalf of an organisation.
     /// </summary>
-    public sealed class PersonOnBehalfOfOrgSignee : Signee
+    public sealed class PersonOnBehalfOfOrgSignee : SigneeContextSignee
     {
         /// <summary>
         /// The party of the person signee.
@@ -222,7 +245,7 @@ public abstract class Signee
     /// <summary>
     /// A signee that is a system.
     /// </summary>
-    public sealed class SystemSignee : Signee
+    public sealed class SystemSignee : SigneeContextSignee
     {
         /// <summary>
         /// The system ID of the system signee.

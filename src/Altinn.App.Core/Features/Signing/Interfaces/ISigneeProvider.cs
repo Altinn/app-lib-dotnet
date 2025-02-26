@@ -18,14 +18,3 @@ public interface ISigneeProvider
     /// </summary>
     Task<SigneesResult> GetSigneesAsync(Instance instance);
 }
-
-/// <summary>
-/// A result containing persons and organizations that should sign and related info for each of them.
-/// </summary>
-public class SigneesResult
-{
-    /// <summary>
-    /// The signees who are persons that should sign.
-    /// </summary>
-    public required List<SigneeParty> Signees { get; set; }
-}

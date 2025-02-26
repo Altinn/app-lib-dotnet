@@ -6,13 +6,12 @@ using Altinn.App.Core.Models;
 using Altinn.Platform.Register.Models;
 using Microsoft.Extensions.Logging;
 using Moq;
-using static Altinn.App.Core.Features.Signing.Models.Signee;
 
 namespace Altinn.App.Core.Tests.Features.Signing.Delegation;
 
 public class SigningDelegationServiceTests
 {
-    private readonly Signee _signee = new PersonSignee
+    private readonly SigneeContextSignee _signee = new SigneeContextSignee.PersonSignee
     {
         FullName = "Testperson 1",
         SocialSecurityNumber = "123456678233",
