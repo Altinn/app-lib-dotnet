@@ -774,19 +774,4 @@ public class ProcessController : ControllerBase
 
         return ExceptionResponse(e, defaultMessage);
     }
-
-    /// <summary>
-    /// Validates the selected action against the ones specified for the task in process.xml
-    /// </summary>
-    private bool IsActionAllowedForTask(string currentTaskId, string attemptedAction)
-    {
-        if (string.IsNullOrEmpty(attemptedAction))
-        {
-            return false;
-        }
-
-        AltinnTaskExtension? altinnTaskExtension = _processReader.GetAltinnTaskExtension(currentTaskId);
-
-        return altinnTaskExtension?.AltinnActions?.Select(x => x.Value).Contains(attemptedAction) is true;
-    }
 }
