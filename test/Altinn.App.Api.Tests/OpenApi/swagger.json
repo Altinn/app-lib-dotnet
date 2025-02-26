@@ -7328,7 +7328,7 @@
         },
         "additionalProperties": false
       },
-      "NotificationState": {
+      "NotificationStatus": {
         "enum": [
           "NotSent",
           "Sent",
@@ -7992,7 +7992,6 @@
       },
       "SigneeState": {
         "required": [
-          "hasSigned",
           "partyId"
         ],
         "type": "object",
@@ -8007,21 +8006,23 @@
             "description": "The organisation of the signee.",
             "nullable": true
           },
-          "hasSigned": {
-            "type": "boolean",
-            "description": "Whether the signee has signed or not."
-          },
           "delegationSuccessful": {
             "type": "boolean",
             "description": "Whether delegation of signing rights has been successful."
           },
-          "notificationSuccessful": {
-            "$ref": "#/components/schemas/NotificationState"
+          "notificationStatus": {
+            "$ref": "#/components/schemas/NotificationStatus"
           },
           "partyId": {
             "type": "integer",
             "description": "The party id of the signee.",
             "format": "int32"
+          },
+          "signedTime": {
+            "type": "string",
+            "description": "The time the signee signed.",
+            "format": "date-time",
+            "nullable": true
           }
         },
         "additionalProperties": false,

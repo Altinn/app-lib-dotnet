@@ -18,7 +18,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using static Altinn.App.Core.Features.Signing.Models.Signee;
 using SigneeContextSigneeState = Altinn.App.Core.Features.Signing.Models.SigneeState;
-using SigneeStateDTO = Altinn.App.Api.Models.SigneeState;
+using SigneeState = Altinn.App.Api.Models.SigneeState;
 
 namespace Altinn.App.Api.Tests.Controllers;
 
@@ -97,6 +97,9 @@ public class SigningControllerTests
     public async Task GetSigneesState_WhenSigneeContextIsOrg_Returns_Expected_Signees()
     {
         // Arrange
+
+        var signedTime = DateTime.Now;
+
         List<SigneeContext> signeeContexts =
         [
             new SigneeContext
@@ -140,7 +143,7 @@ public class SigningControllerTests
                     DataElementSignatures = [],
                     Id = "signDocument",
                     InstanceGuid = "instanceGuid",
-                    SignedTime = DateTime.Now,
+                    SignedTime = signedTime,
                 },
             },
             new SigneeContext
@@ -165,7 +168,7 @@ public class SigningControllerTests
                     DataElementSignatures = [],
                     Id = "signDocument",
                     InstanceGuid = "instanceGuid",
-                    SignedTime = DateTime.Now,
+                    SignedTime = signedTime,
                 },
             },
             new SigneeContext
@@ -225,49 +228,49 @@ public class SigningControllerTests
         {
             SigneeStates =
             [
-                new SigneeStateDTO
+                new SigneeState
                 {
                     Name = null,
                     Organisation = "org1",
                     DelegationSuccessful = false,
-                    NotificationSuccessful = NotificationState.Failed,
-                    HasSigned = false,
+                    NotificationStatus = NotificationStatus.Failed,
+                    SignedTime = null,
                     PartyId = 1,
                 },
-                new SigneeStateDTO
+                new SigneeState
                 {
                     Name = null,
                     Organisation = "org1",
                     DelegationSuccessful = true,
-                    NotificationSuccessful = NotificationState.NotSent,
-                    HasSigned = true,
+                    NotificationStatus = NotificationStatus.NotSent,
+                    SignedTime = signedTime,
                     PartyId = 1,
                 },
-                new SigneeStateDTO
+                new SigneeState
                 {
                     Name = null,
                     Organisation = "org2",
                     DelegationSuccessful = true,
-                    NotificationSuccessful = NotificationState.Failed,
-                    HasSigned = true,
+                    NotificationStatus = NotificationStatus.Failed,
+                    SignedTime = signedTime,
                     PartyId = 2,
                 },
-                new SigneeStateDTO
+                new SigneeState
                 {
                     Name = null,
                     Organisation = "org2",
                     DelegationSuccessful = true,
-                    NotificationSuccessful = NotificationState.Sent,
-                    HasSigned = false,
+                    NotificationStatus = NotificationStatus.Sent,
+                    SignedTime = null,
                     PartyId = 2,
                 },
-                new SigneeStateDTO
+                new SigneeState
                 {
                     Name = null,
                     Organisation = "org2",
                     DelegationSuccessful = true,
-                    NotificationSuccessful = NotificationState.Sent,
-                    HasSigned = false,
+                    NotificationStatus = NotificationStatus.Sent,
+                    SignedTime = null,
                     PartyId = 2,
                 },
             ],
@@ -321,13 +324,13 @@ public class SigningControllerTests
         {
             SigneeStates =
             [
-                new SigneeStateDTO
+                new SigneeState
                 {
                     Name = "person1",
                     Organisation = null,
                     DelegationSuccessful = false,
-                    NotificationSuccessful = NotificationState.Failed,
-                    HasSigned = false,
+                    NotificationStatus = NotificationStatus.Failed,
+                    SignedTime = null,
                     PartyId = 1,
                 },
             ],
@@ -340,6 +343,7 @@ public class SigningControllerTests
     public async Task GetSigneesState_WhenSigneeContextIsPersonOnBehalfOfOrg_Returns_Expected_Signees()
     {
         // Arrange
+        var signedTime = DateTime.Now;
         List<SigneeContext> signeeContexts =
         [
             new SigneeContext
@@ -370,7 +374,7 @@ public class SigningControllerTests
                     DataElementSignatures = [],
                     Id = "signDocument",
                     InstanceGuid = "instanceGuid",
-                    SignedTime = DateTime.Now,
+                    SignedTime = signedTime,
                 },
             },
         ];
@@ -393,13 +397,13 @@ public class SigningControllerTests
         {
             SigneeStates =
             [
-                new SigneeStateDTO
+                new SigneeState
                 {
                     Name = "person1",
                     Organisation = "org1",
                     DelegationSuccessful = true,
-                    NotificationSuccessful = NotificationState.NotSent,
-                    HasSigned = true,
+                    NotificationStatus = NotificationStatus.NotSent,
+                    SignedTime = signedTime,
                     PartyId = 321,
                 },
             ],
@@ -412,6 +416,8 @@ public class SigningControllerTests
     public async Task GetSigneesState_WhenSigneeContextIsSystem_Returns_Expected_Signees()
     {
         // Arrange
+
+        var signedTime = DateTime.Now;
         List<SigneeContext> signeeContexts =
         [
             new SigneeContext
@@ -440,7 +446,7 @@ public class SigningControllerTests
                     DataElementSignatures = [],
                     Id = "signDocument",
                     InstanceGuid = "instanceGuid",
-                    SignedTime = DateTime.Now,
+                    SignedTime = signedTime,
                 },
             },
         ];
@@ -463,13 +469,13 @@ public class SigningControllerTests
         {
             SigneeStates =
             [
-                new SigneeStateDTO
+                new SigneeState
                 {
                     Name = "System",
                     Organisation = "org1",
                     DelegationSuccessful = true,
-                    NotificationSuccessful = NotificationState.Sent,
-                    HasSigned = true,
+                    NotificationStatus = NotificationStatus.Sent,
+                    SignedTime = signedTime,
                     PartyId = 123,
                 },
             ],

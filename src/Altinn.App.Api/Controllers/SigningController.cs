@@ -13,7 +13,6 @@ using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Mvc;
 using static Altinn.App.Core.Features.Signing.Models.Signee;
-using SigneeState = Altinn.App.Api.Models.SigneeState;
 
 namespace Altinn.App.Api.Controllers;
 
@@ -141,13 +140,13 @@ public class SigningController : ControllerBase
                                 break;
                         }
 
-                        return new SigneeState
+                        return new Models.SigneeState
                         {
                             Name = name,
                             Organisation = organisation,
-                            HasSigned = signeeContext.SignDocument is not null,
+                            SignedTime = signeeContext.SignDocument?.SignedTime,
                             DelegationSuccessful = signeeContext.SigneeState.IsAccessDelegated,
-                            NotificationSuccessful = GetNotificationState(signeeContext),
+                            NotificationStatus = GetNotificationState(signeeContext),
                             PartyId = signeeContext.Signee.GetParty().PartyId,
                         };
                     })
@@ -218,19 +217,19 @@ public class SigningController : ControllerBase
         );
     }
 
-    private static NotificationState GetNotificationState(SigneeContext signeeContext)
+    private static NotificationStatus GetNotificationState(SigneeContext signeeContext)
     {
         var signeeState = signeeContext.SigneeState;
         if (signeeState.IsMessagedForCallToSign)
         {
-            return NotificationState.Sent;
+            return NotificationStatus.Sent;
         }
 
         if (signeeState.CallToSignFailedReason is not null)
         {
-            return NotificationState.Failed;
+            return NotificationStatus.Failed;
         }
 
-        return NotificationState.NotSent;
+        return NotificationStatus.NotSent;
     }
 }
