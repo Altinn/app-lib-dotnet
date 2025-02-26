@@ -105,13 +105,27 @@ internal sealed class SigningService(
         string instanceIdCombo = instanceMutator.Instance.Id;
         InstanceOwner instanceOwner = instanceMutator.Instance.InstanceOwner;
 
-        Party instanceOwnerParty = await altinnPartyClient.LookupParty(
-            !string.IsNullOrEmpty(instanceOwner.OrganisationNumber)
+        Party? instanceOwnerParty = null;
+        try
+        {
+            instanceOwnerParty = await altinnPartyClient.LookupParty(
+                !string.IsNullOrEmpty(instanceOwner.OrganisationNumber)
                 ? new PartyLookup { OrgNo = instanceOwner.OrganisationNumber }
                 : new PartyLookup { Ssn = instanceOwner.PersonNumber }
-        );
+            );
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Failed to look up party for instance owner.");
+            _logger.LogInformation(
+                "Initialising with service owner orgnr {OrganisationNumber} and ssn {PersonNumber}.",
+                instanceOwner.OrganisationNumber,
+                instanceOwner.PersonNumber
+            );
+        }
 
-        Guid? instanceOwnerPartyUuid = instanceOwnerParty.PartyUuid;
+
+        Guid? instanceOwnerPartyUuid = instanceOwnerParty?.PartyUuid;
 
         AppIdentifier appIdentifier = new(instanceMutator.Instance.AppId);
         (signeeContexts, bool delegateSuccess) = await signingDelegationService.DelegateSigneeRights(
