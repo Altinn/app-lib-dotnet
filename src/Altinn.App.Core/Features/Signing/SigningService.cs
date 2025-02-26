@@ -31,7 +31,6 @@ internal sealed class SigningService(
     IAltinnPartyClient altinnPartyClient,
     ISigningDelegationService signingDelegationService,
     IEnumerable<ISigneeProvider> signeeProviders,
-    IAltinnCdnClient altinnCdnClient,
     IAppMetadata appMetadata,
     ISignClient signClient,
     ISigningReceiptService signingReceiptService,
@@ -52,7 +51,6 @@ internal sealed class SigningService(
     );
     private readonly ILogger<SigningService> _logger = logger;
     private readonly IAppMetadata _appMetadata = appMetadata;
-    private readonly IAltinnCdnClient _altinnCdnClient = altinnCdnClient;
     private readonly ISignClient _signClient = signClient;
     private readonly ISigningReceiptService _signingReceiptService = signingReceiptService;
     private readonly ISigningCallToActionService _signingCallToActionService = signingCallToActionService;
@@ -142,7 +140,9 @@ internal sealed class SigningService(
 
         ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
 
-        AltinnCdnOrgs altinnCdnOrgs = await _altinnCdnClient.GetOrgs(ct);
+        using var altinnCdnClient = new AltinnCdnClient();
+
+        AltinnCdnOrgs altinnCdnOrgs = await altinnCdnClient.GetOrgs(ct);
 
         AltinnCdnOrgDetails? serviceOwnerDetails = altinnCdnOrgs.Orgs?.GetValueOrDefault(applicationMetadata.Org);
 
