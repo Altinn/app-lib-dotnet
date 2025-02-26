@@ -122,7 +122,6 @@ internal sealed class SigningCallToActionService(
                                 EmailSubject = emailSubject,
                                 EmailBody = emailBody,
                                 SendersReference = instanceIdentifier.ToString(),
-                                SendReminder = true,
                             },
                             NotificationChoice.Sms => new CorrespondenceNotification
                             {
@@ -132,7 +131,6 @@ internal sealed class SigningCallToActionService(
                                 NotificationChannel = CorrespondenceNotificationChannel.Sms,
                                 SmsBody = smsBody,
                                 SendersReference = instanceIdentifier.ToString(),
-                                SendReminder = true,
                             },
                             NotificationChoice.SmsAndEmail => new CorrespondenceNotification
                             {
@@ -144,7 +142,6 @@ internal sealed class SigningCallToActionService(
                                 EmailBody = emailBody,
                                 SmsBody = smsBody,
                                 SendersReference = instanceIdentifier.ToString(),
-                                SendReminder = true,
                             },
                             NotificationChoice.None => new CorrespondenceNotification
                             {
@@ -153,7 +150,6 @@ internal sealed class SigningCallToActionService(
                                 EmailSubject = emailSubject,
                                 EmailBody = emailBody,
                                 SendersReference = instanceIdentifier.ToString(),
-                                SendReminder = true,
                             },
                             _ => null,
                         }
