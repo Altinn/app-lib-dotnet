@@ -164,9 +164,9 @@ internal sealed class SigningReceiptService(
                     $"No text resource found for specified language ({context.Language}) nor the default language ({defaultLanguage})"
                 );
 
-            title = textResource.GetText("signing.receipt_title"); // TODO: Document these text keys
-            summary = textResource.GetText("signing.receipt_summary"); // TODO: Document these text keys
-            body = textResource.GetText("signing.receipt_body"); // TODO: Document these text keys
+            title = textResource.GetText("signing.correspondence_receipt_title"); // TODO: Document these text keys
+            summary = textResource.GetText("signing.correspondence_receipt_summary"); // TODO: Document these text keys
+            body = textResource.GetText("signing.correspondence_receipt_body"); // TODO: Document these text keys
             appName = textResource.GetFirstMatchingText("appName", "ServiceName");
         }
         catch (Exception e)

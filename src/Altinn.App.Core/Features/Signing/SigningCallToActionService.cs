@@ -188,9 +188,9 @@ internal sealed class SigningCallToActionService(
                 await _appResources.GetTexts(appIdentifier.Org, appIdentifier.App, language)
                 ?? throw new InvalidOperationException($"No text resource found for language ({language})");
 
-            correspondenceTitle = textResource.GetText("signing.cta_title"); // TODO: Document these text keys
-            correspondenceSummary = textResource.GetText("signing.cta_summary"); // TODO: Document these text keys
-            correspondenceBody = textResource.GetText("signing.cta_body"); // TODO: Document these text keys
+            correspondenceTitle = textResource.GetText("signing.correspondence_cta_title"); // TODO: Document these text keys
+            correspondenceSummary = textResource.GetText("signing.correspondence_cta_summary"); // TODO: Document these text keys
+            correspondenceBody = textResource.GetText("signing.correspondence_cta_body"); // TODO: Document these text keys
             correspondenceBody = correspondenceBody?.Replace(
                 "$InstanceUrl",
                 instanceUrl,
