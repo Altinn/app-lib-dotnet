@@ -151,7 +151,7 @@ public class SigningCallToActionServiceTests
         Assert.Equal("Custom title", capturedPayload.CorrespondenceRequest.Content.Title);
         Assert.Equal("Custom summary", capturedPayload.CorrespondenceRequest.Content.Summary);
         Assert.Equal(
-            "Custom body with replacement for instance url here: http://local.altinn.cloud/org/app#/123/ab0cdeb5-dc5e-4faa-966b-d18bb932ca07, and some more text after",
+            "Custom body with replacement for instance url here: http://local.altinn.cloud/org/app/#/instance/123/ab0cdeb5-dc5e-4faa-966b-d18bb932ca07, and some more text after",
             capturedPayload.CorrespondenceRequest.Content.Body
         );
         Assert.Equal("app_ttd_appname", capturedPayload.CorrespondenceRequest.ResourceId);
@@ -238,7 +238,7 @@ public class SigningCallToActionServiceTests
         Assert.Equal("Custom title", capturedPayload.CorrespondenceRequest.Content.Title);
         Assert.Equal("Custom summary", capturedPayload.CorrespondenceRequest.Content.Summary);
         Assert.Equal(
-            "Custom body with replacement for instance url here: http://local.altinn.cloud/org/app#/123/ab0cdeb5-dc5e-4faa-966b-d18bb932ca07, and some more text after",
+            "Custom body with replacement for instance url here: http://local.altinn.cloud/org/app/#/instance/123/ab0cdeb5-dc5e-4faa-966b-d18bb932ca07, and some more text after",
             capturedPayload.CorrespondenceRequest.Content.Body
         );
         Assert.Equal("app_ttd_appname", capturedPayload.CorrespondenceRequest.ResourceId);
@@ -328,7 +328,7 @@ public class SigningCallToActionServiceTests
         Assert.Equal("Custom title", capturedPayload.CorrespondenceRequest.Content.Title);
         Assert.Equal("Custom summary", capturedPayload.CorrespondenceRequest.Content.Summary);
         Assert.Equal(
-            "Custom body with replacement for instance url here: http://local.altinn.cloud/org/app#/123/ab0cdeb5-dc5e-4faa-966b-d18bb932ca07, and some more text after",
+            "Custom body with replacement for instance url here: http://local.altinn.cloud/org/app/#/instance/123/ab0cdeb5-dc5e-4faa-966b-d18bb932ca07, and some more text after",
             capturedPayload.CorrespondenceRequest.Content.Body
         );
         Assert.Equal("app_ttd_appname", capturedPayload.CorrespondenceRequest.ResourceId);
@@ -408,7 +408,7 @@ public class SigningCallToActionServiceTests
         Assert.Equal("Custom title", capturedPayload.CorrespondenceRequest.Content.Title);
         Assert.Equal("Custom summary", capturedPayload.CorrespondenceRequest.Content.Summary);
         Assert.Equal(
-            "Custom body with replacement for instance url here: http://local.altinn.cloud/org/app#/123/ab0cdeb5-dc5e-4faa-966b-d18bb932ca07, and some more text after",
+            "Custom body with replacement for instance url here: http://local.altinn.cloud/org/app/#/instance/123/ab0cdeb5-dc5e-4faa-966b-d18bb932ca07, and some more text after",
             capturedPayload.CorrespondenceRequest.Content.Body
         );
         Assert.Equal("app_ttd_appname", capturedPayload.CorrespondenceRequest.ResourceId);

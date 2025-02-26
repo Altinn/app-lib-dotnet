@@ -115,9 +115,7 @@ internal sealed class SigningCallToActionService(
                         {
                             NotificationChoice.Email => new CorrespondenceNotification
                             {
-                                NotificationTemplate = emailBody is not null
-                                    ? CorrespondenceNotificationTemplate.CustomMessage
-                                    : CorrespondenceNotificationTemplate.GenericAltinnMessage,
+                                NotificationTemplate = CorrespondenceNotificationTemplate.CustomMessage,
                                 NotificationChannel = CorrespondenceNotificationChannel.Email,
                                 EmailSubject = emailSubject,
                                 EmailBody = emailBody,
@@ -125,18 +123,14 @@ internal sealed class SigningCallToActionService(
                             },
                             NotificationChoice.Sms => new CorrespondenceNotification
                             {
-                                NotificationTemplate = smsBody is not null
-                                    ? CorrespondenceNotificationTemplate.CustomMessage
-                                    : CorrespondenceNotificationTemplate.GenericAltinnMessage,
+                                NotificationTemplate = CorrespondenceNotificationTemplate.CustomMessage,
                                 NotificationChannel = CorrespondenceNotificationChannel.Sms,
                                 SmsBody = smsBody,
                                 SendersReference = instanceIdentifier.ToString(),
                             },
                             NotificationChoice.SmsAndEmail => new CorrespondenceNotification
                             {
-                                NotificationTemplate = emailBody is not null
-                                    ? CorrespondenceNotificationTemplate.CustomMessage
-                                    : CorrespondenceNotificationTemplate.GenericAltinnMessage,
+                                NotificationTemplate = CorrespondenceNotificationTemplate.CustomMessage,
                                 NotificationChannel = CorrespondenceNotificationChannel.EmailPreferred, // TODO: document
                                 EmailSubject = emailSubject,
                                 EmailBody = emailBody,
