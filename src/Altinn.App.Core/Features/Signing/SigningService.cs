@@ -237,7 +237,7 @@ internal sealed class SigningService(
         using Activity? activity = telemetry?.StartReadSigneesActivity();
 
         // If no SigneeStatesDataTypeId is set, delegated signing is not enabled and there is nothing to download.
-        List<SigneeContext> signeeContexts = signatureConfiguration.SigneeStatesDataTypeId is not null
+        List<SigneeContext> signeeContexts = !string.IsNullOrEmpty(signatureConfiguration.SigneeStatesDataTypeId)
             ? await DownloadSigneeContexts(instanceDataAccessor, signatureConfiguration)
             : [];
 
@@ -353,7 +353,7 @@ internal sealed class SigningService(
     )
     {
         string? signeeProviderId = signatureConfiguration.SigneeProviderId;
-        if (signeeProviderId is null)
+        if (string.IsNullOrEmpty(signeeProviderId))
             return null;
 
         ISigneeProvider signeeProvider =
@@ -460,13 +460,13 @@ internal sealed class SigningService(
         Models.Notifications? notifications = signeeParty.Notifications;
 
         Email? emailNotification = notifications?.OnSignatureAccessRightsDelegated?.Email;
-        if (emailNotification is not null && emailNotification.EmailAddress is null)
+        if (emailNotification is not null && string.IsNullOrEmpty(emailNotification.EmailAddress))
         {
             emailNotification.EmailAddress = party.Organization?.EMailAddress;
         }
 
         Sms? smsNotification = notifications?.OnSignatureAccessRightsDelegated?.Sms;
-        if (smsNotification is not null && smsNotification.MobileNumber is null)
+        if (smsNotification is not null && string.IsNullOrEmpty(smsNotification.MobileNumber))
         {
             smsNotification.MobileNumber = party.Organization?.MobileNumber ?? party.Person?.MobileNumber;
         }
@@ -645,7 +645,7 @@ internal sealed class SigningService(
 
         var signeeInfo = signDocument.SigneeInfo;
 
-        if (signeeInfo.PersonNumber is not null)
+        if (!string.IsNullOrEmpty(signeeInfo.PersonNumber))
         {
             orgSigneeContext.Signee = await orgSignee.ToPersonOnBehalfOfOrgSignee(
                 signeeInfo.PersonNumber,
@@ -691,22 +691,24 @@ internal sealed class SigningService(
 
     private static bool IsPersonOnBehalfOfOrgSignDocument(SignDocument signDocument)
     {
-        return signDocument.SigneeInfo.PersonNumber is not null
-            && signDocument.SigneeInfo.OrganisationNumber is not null;
+        return !string.IsNullOrEmpty(signDocument.SigneeInfo.PersonNumber)
+            && !string.IsNullOrEmpty(signDocument.SigneeInfo.OrganisationNumber);
     }
 
     private static bool IsPersonSignDocument(SignDocument signDocument)
     {
-        return signDocument.SigneeInfo.PersonNumber is not null && signDocument.SigneeInfo.OrganisationNumber is null;
+        return !string.IsNullOrEmpty(signDocument.SigneeInfo.PersonNumber)
+            && string.IsNullOrEmpty(signDocument.SigneeInfo.OrganisationNumber);
     }
 
     private static bool IsOrgSignDocument(SignDocument signDocument)
     {
-        return signDocument.SigneeInfo.OrganisationNumber is not null;
+        return !string.IsNullOrEmpty(signDocument.SigneeInfo.OrganisationNumber);
     }
 
     private static bool IsSystemSignDocument(SignDocument signDocument)
     {
-        return signDocument.SigneeInfo.OrganisationNumber is not null && signDocument.SigneeInfo.SystemUserId.HasValue;
+        return !string.IsNullOrEmpty(signDocument.SigneeInfo.OrganisationNumber)
+            && signDocument.SigneeInfo.SystemUserId.HasValue;
     }
 }
