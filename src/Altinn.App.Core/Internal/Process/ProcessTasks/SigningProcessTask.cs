@@ -71,8 +71,6 @@ internal sealed class SigningProcessTask : IProcessTask
             _modelSerialization
         );
 
-        _signingService.RemoveAllSignatures(cachedDataMutator, signatureConfiguration.SignatureDataType);
-
         if (
             signatureConfiguration.SigneeProviderId is not null
             && signatureConfiguration.SigneeStatesDataTypeId is not null
