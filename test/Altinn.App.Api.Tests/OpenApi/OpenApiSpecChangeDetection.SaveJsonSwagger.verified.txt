@@ -4835,6 +4835,14 @@ Get the rule settings
             }
           },
           {
+            name: prefill,
+            in: query,
+            description: Prefilled fields from query parameters,
+            schema: {
+              type: string
+            }
+          },
+          {
             name: language,
             in: query,
             description: Currently selected language by the user (if available),
@@ -4870,6 +4878,36 @@ Get the rule settings
               text/xml: {
                 schema: {
                   $ref: #/components/schemas/DataElement
+                }
+              }
+            }
+          },
+          400: {
+            description: Bad Request,
+            content: {
+              text/plain: {
+                schema: {
+                  $ref: #/components/schemas/ProblemDetails
+                }
+              },
+              application/json: {
+                schema: {
+                  $ref: #/components/schemas/ProblemDetails
+                }
+              },
+              text/json: {
+                schema: {
+                  $ref: #/components/schemas/ProblemDetails
+                }
+              },
+              application/xml: {
+                schema: {
+                  $ref: #/components/schemas/ProblemDetails
+                }
+              },
+              text/xml: {
+                schema: {
+                  $ref: #/components/schemas/ProblemDetails
                 }
               }
             }

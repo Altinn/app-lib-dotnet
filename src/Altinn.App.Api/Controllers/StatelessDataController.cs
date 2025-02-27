@@ -34,6 +34,7 @@ public class StatelessDataController : ControllerBase
     private readonly IPrefill _prefillService;
     private readonly IAltinnPartyClient _altinnPartyClientClient;
     private readonly IPDP _pdp;
+    private readonly IValidateQueryParamPrefill _validateQueryParamPrefill;
     private readonly IAuthenticationContext _authenticationContext;
     private const long REQUEST_SIZE_LIMIT = 2000 * 1024 * 1024;
 
@@ -52,6 +53,7 @@ public class StatelessDataController : ControllerBase
         IAltinnPartyClient altinnPartyClientClient,
         IPDP pdp,
         IEnumerable<IDataProcessor> dataProcessors,
+        IValidateQueryParamPrefill validateQueryParamPrefill,
         IAuthenticationContext authenticationContext
     )
     {
@@ -62,6 +64,7 @@ public class StatelessDataController : ControllerBase
         _prefillService = prefillService;
         _altinnPartyClientClient = altinnPartyClientClient;
         _pdp = pdp;
+        _validateQueryParamPrefill = validateQueryParamPrefill;
         _authenticationContext = authenticationContext;
     }
 
@@ -72,6 +75,7 @@ public class StatelessDataController : ControllerBase
     /// <param name="app">application identifier which is unique within an organisation</param>
     /// <param name="dataType">The data type id</param>
     /// <param name="partyFromHeader">The party that should be represented with  prefix "partyId:", "person:" or "org:" (eg: "partyId:123")</param>
+    /// <param name="prefill">Prefilled fields from query parameters</param>
     /// <param name="language">Currently selected language by the user (if available)</param>
     /// <returns>Return a new instance of the data object including prefill and initial calculations</returns>
     [Authorize]
@@ -79,12 +83,14 @@ public class StatelessDataController : ControllerBase
     [DisableFormValueModelBinding]
     [RequestSizeLimit(REQUEST_SIZE_LIMIT)]
     [ProducesResponseType(typeof(DataElement), 200)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public async Task<ActionResult> Get(
         [FromRoute] string org,
         [FromRoute] string app,
         [FromQuery] string dataType,
         [FromHeader(Name = "party")] string partyFromHeader,
+        [FromQuery] string? prefill,
         [FromQuery] string? language = null
     )
     {
@@ -112,6 +118,25 @@ public class StatelessDataController : ControllerBase
             );
         }
 
+        Dictionary<string, string>? prefillFromQueryParams = null;
+
+        if (!string.IsNullOrEmpty(prefill))
+        {
+            try
+            {
+                string decodedJson = Uri.UnescapeDataString(prefill);
+                prefillFromQueryParams = JsonConvert.DeserializeObject<Dictionary<string, string>>(decodedJson);
+                if (prefillFromQueryParams != null)
+                {
+                    await _validateQueryParamPrefill.PrefillFromQueryParamsIsValid(prefillFromQueryParams);
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Failed to parse prefill parameter: {ex.Message}");
+            }
+        }
+
         EnforcementResult enforcementResult = await AuthorizeAction(
             org,
             app,
@@ -127,7 +152,7 @@ public class StatelessDataController : ControllerBase
         object appModel = _appModel.Create(classRef);
 
         // runs prefill from repo configuration if config exists
-        await _prefillService.PrefillDataModel(owner.PartyId, dataType, appModel);
+        await _prefillService.PrefillDataModel(owner.PartyId, dataType, appModel, prefillFromQueryParams);
 
         Instance virtualInstance = new Instance() { InstanceOwner = owner };
         await ProcessAllDataRead(virtualInstance, appModel, language);
