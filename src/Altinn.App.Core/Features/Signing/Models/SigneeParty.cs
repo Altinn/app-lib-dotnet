@@ -121,7 +121,7 @@ public class Email
     public string? SubjectTextResourceKey { get; set; }
 
     /// <summary>
-    /// The body. If not set, a default will be used.
+    /// The body. If not set, a default will be used. Replaces "$InstanceUrl" with the Url.
     /// </summary>
     [JsonPropertyName("bodyTextResourceKey")]
     public string? BodyTextResourceKey { get; set; }
