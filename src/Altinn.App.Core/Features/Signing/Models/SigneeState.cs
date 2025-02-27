@@ -27,8 +27,8 @@ public sealed class SigneeState
     /// <summary>
     /// Indicates whether the signee has been messaged about the signature call to action.
     /// </summary>
-    [JsonPropertyName("isCalledToSign")]
-    public bool IsMessagedForCallToSign { get; set; }
+    [JsonPropertyName("hasBeenMessagedForCallToSign")]
+    public bool HasBeenMessagedForCallToSign { get; set; }
 
     /// <summary>
     /// The reason why the message failed.
