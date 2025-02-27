@@ -9,6 +9,7 @@ using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Features.Signing.Exceptions;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
+using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
@@ -29,11 +30,11 @@ namespace Altinn.App.Core.Features.Signing;
 internal sealed class SigningService(
     IAltinnPartyClient altinnPartyClient,
     ISigningDelegationService signingDelegationService,
-    ISigningNotificationService signingNotificationService,
     IEnumerable<ISigneeProvider> signeeProviders,
     IAppMetadata appMetadata,
     ISignClient signClient,
-    ISigningCorrespondenceService signingCorrespondenceService,
+    ISigningReceiptService signingReceiptService,
+    ISigningCallToActionService signingCallToActionService,
     ILogger<SigningService> logger,
     Telemetry? telemetry = null
 ) : ISigningService
@@ -51,7 +52,8 @@ internal sealed class SigningService(
     private readonly ILogger<SigningService> _logger = logger;
     private readonly IAppMetadata _appMetadata = appMetadata;
     private readonly ISignClient _signClient = signClient;
-    private readonly ISigningCorrespondenceService _signingCorrespondenceService = signingCorrespondenceService;
+    private readonly ISigningReceiptService _signingReceiptService = signingReceiptService;
+    private readonly ISigningCallToActionService _signingCallToActionService = signingCallToActionService;
     private const string ApplicationJsonContentType = "application/json";
 
     public async Task<List<SigneeContext>> GenerateSigneeContexts(
@@ -104,13 +106,26 @@ internal sealed class SigningService(
         string instanceIdCombo = instanceMutator.Instance.Id;
         InstanceOwner instanceOwner = instanceMutator.Instance.InstanceOwner;
 
-        Guid? instanceOwnerPartyUuid = altinnPartyClient
-            .LookupParty(
-                instanceOwner.OrganisationNumber is not null
+        Party? instanceOwnerParty = null;
+        try
+        {
+            if (instanceOwner.OrganisationNumber == "ttd")
+            {
+                // TestDepartementet is often used in test environments, it does not have a organisation number, so we use Digitaliseringsdirektoratet's orgnr instead.
+                instanceOwner.OrganisationNumber = "991825827";
+            }
+            instanceOwnerParty = await altinnPartyClient.LookupParty(
+                !string.IsNullOrEmpty(instanceOwner.OrganisationNumber)
                     ? new PartyLookup { OrgNo = instanceOwner.OrganisationNumber }
                     : new PartyLookup { Ssn = instanceOwner.PersonNumber }
-            )
-            .Result.PartyUuid;
+            );
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Failed to look up party for instance owner.");
+        }
+
+        Guid? instanceOwnerPartyUuid = instanceOwnerParty?.PartyUuid;
 
         AppIdentifier appIdentifier = new(instanceMutator.Instance.AppId);
         (signeeContexts, bool delegateSuccess) = await signingDelegationService.DelegateSigneeRights(
@@ -123,9 +138,50 @@ internal sealed class SigningService(
             telemetry
         );
 
+        Party serviceOwnerParty = new();
+        bool getServiceOwnerSuccess = false;
+
         if (delegateSuccess)
         {
-            await signingNotificationService.NotifySignatureTask(signeeContexts, ct);
+            (serviceOwnerParty, getServiceOwnerSuccess) = await GetServiceOwnerParty(ct);
+        }
+
+        if (getServiceOwnerSuccess)
+        {
+            foreach (SigneeContext signeeContext in signeeContexts)
+            {
+                if (signeeContext.SigneeState.HasBeenMessagedForCallToSign)
+                {
+                    continue;
+                }
+
+                try
+                {
+                    Party signingParty = signeeContext.Signee.GetParty();
+
+                    await _signingCallToActionService.SendSignCallToAction(
+                        signeeContext.Notifications?.OnSignatureAccessRightsDelegated,
+                        appIdentifier,
+                        new InstanceIdentifier(instanceMutator.Instance),
+                        signingParty,
+                        serviceOwnerParty,
+                        signatureConfiguration.CorrespondenceResources
+                    );
+                    signeeContext.SigneeState.HasBeenMessagedForCallToSign = true;
+                }
+                catch (ConfigurationException e)
+                {
+                    _logger.LogError(e, "Correspondence configuration error: {Exception}", e.Message);
+                    signeeContext.SigneeState.HasBeenMessagedForCallToSign = false;
+                    signeeContext.SigneeState.CallToSignFailedReason = $"Correspondence configuration error.";
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "Correspondence send failed: {Exception}", e.Message);
+                    signeeContext.SigneeState.HasBeenMessagedForCallToSign = false;
+                    signeeContext.SigneeState.CallToSignFailedReason = $"Correspondence configuration error.";
+                }
+            }
         }
 
         // Saves the signee context state to Storage
@@ -140,6 +196,37 @@ internal sealed class SigningService(
         await Task.CompletedTask;
 
         return signeeContexts;
+    }
+
+    internal async Task<(Party serviceOwnerParty, bool success)> GetServiceOwnerParty(CancellationToken ct)
+    {
+        Party serviceOwnerParty = new();
+        try
+        {
+            ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
+
+            using var altinnCdnClient = new AltinnCdnClient();
+
+            AltinnCdnOrgs altinnCdnOrgs = await altinnCdnClient.GetOrgs(ct);
+
+            AltinnCdnOrgDetails? serviceOwnerDetails = altinnCdnOrgs.Orgs?.GetValueOrDefault(applicationMetadata.Org);
+
+            if (serviceOwnerDetails?.Orgnr == "ttd")
+            {
+                // TestDepartementet is often used in test environments, it does not have a organisation number, so we use Digitaliseringsdirektoratet's orgnr instead.
+                serviceOwnerDetails.Orgnr = "991825827";
+            }
+
+            serviceOwnerParty = await altinnPartyClient.LookupParty(
+                new PartyLookup { OrgNo = serviceOwnerDetails?.Orgnr }
+            );
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Failed to look up party for service owner.");
+            return (new Party(), false);
+        }
+        return (serviceOwnerParty, true);
     }
 
     public async Task<List<SigneeContext>> GetSigneeContexts(
@@ -201,7 +288,7 @@ internal sealed class SigningService(
 
         try
         {
-            SendCorrespondenceResponse? result = await _signingCorrespondenceService.SendCorrespondence(
+            SendCorrespondenceResponse? result = await _signingReceiptService.SendSignatureReceipt(
                 signatureContext.InstanceIdentifier,
                 signatureContext.Signee,
                 dataElementSignatures,
@@ -595,8 +682,7 @@ internal sealed class SigningService(
             SigneeState = new SigneeState()
             {
                 IsAccessDelegated = true,
-                SignatureRequestEmailSent = true,
-                SignatureRequestSmsSent = true,
+                HasBeenMessagedForCallToSign = true,
                 IsReceiptSent = false,
             },
             SignDocument = signDocument,

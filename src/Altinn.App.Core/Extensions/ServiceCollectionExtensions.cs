@@ -305,8 +305,8 @@ public static class ServiceCollectionExtensions
     {
         services.AddHttpClient<ISignClient, SignClient>();
         services.AddTransient<ISigningDelegationService, SigningDelegationService>();
-        services.AddTransient<ISigningNotificationService, SigningNotificationService>();
-        services.AddTransient<ISigningCorrespondenceService, SigningCorrespondenceService>();
+        services.AddTransient<ISigningReceiptService, SigningReceiptService>();
+        services.AddTransient<ISigningCallToActionService, SigningCallToActionService>();
         services.AddTransient<ISigningService, SigningService>();
     }
 

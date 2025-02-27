@@ -13,7 +13,7 @@ public interface ISigningDelegationService
     /// </summary>
     /// <param name="taskId">The id of the Task.</param>
     /// <param name="instanceIdCombo">Instance id on the form {instanceOwnerId}/{instanceGuid}</param>
-    /// <param name="InstanceOwnerPartyUuid">The party uuid of the instance owner.</param>
+    /// <param name="instanceOwnerPartyUuid">The party uuid of the instance owner.</param>
     /// <param name="appIdentifier">The AppIdentifier.</param>
     /// <param name="signeeContexts">The signee contexts.</param>
     /// <param name="ct">Cancellation token.</param>
@@ -22,7 +22,7 @@ public interface ISigningDelegationService
     internal Task<(List<SigneeContext>, bool success)> DelegateSigneeRights(
         string taskId,
         string instanceIdCombo,
-        Guid? InstanceOwnerPartyUuid,
+        Guid? instanceOwnerPartyUuid,
         AppIdentifier appIdentifier,
         List<SigneeContext> signeeContexts,
         CancellationToken ct,
@@ -34,7 +34,7 @@ public interface ISigningDelegationService
     /// </summary>
     /// <param name="taskId">The id of the Task.</param>
     /// <param name="instanceIdCombo">Instance id on the form {instanceOwnerId}/{instanceGuid}</param>
-    /// <param name="InstanceOwnerPartyUuid">The party uuid of the instance owner.</param>
+    /// <param name="instanceOwnerPartyUuid">The party uuid of the instance owner.</param>
     /// <param name="appIdentifier">The AppIdentifier.</param>
     /// <param name="signeeContexts">The signee contexts.</param>
     /// <param name="ct">Cancellation token.</param>
@@ -43,7 +43,7 @@ public interface ISigningDelegationService
     internal Task<(List<SigneeContext>, bool success)> RevokeSigneeRights(
         string taskId,
         string instanceIdCombo,
-        Guid InstanceOwnerPartyUuid,
+        Guid instanceOwnerPartyUuid,
         AppIdentifier appIdentifier,
         List<SigneeContext> signeeContexts,
         CancellationToken ct,

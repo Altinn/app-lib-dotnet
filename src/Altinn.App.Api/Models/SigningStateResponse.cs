@@ -37,7 +37,7 @@ public class SigneeState
     public bool DelegationSuccessful { get; set; }
 
     /// <summary>
-    /// Whether the signee has been notified to sign via email or sms.
+    /// Whether the signee has been notified to sign via message to Altinn inbox.
     /// </summary>
     [JsonPropertyName("notificationStatus")]
     public NotificationStatus NotificationStatus { get; set; }

@@ -236,6 +236,17 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     }
 
     /// <inheritdoc/>
+    public ICorrespondenceRequestBuilder WithNotificationIfConfigured(CorrespondenceNotification? notification)
+    {
+        if (notification is not null)
+        {
+            return WithNotification(notification);
+        }
+
+        return this;
+    }
+
+    /// <inheritdoc/>
     public ICorrespondenceRequestBuilder WithNotification(ICorrespondenceNotificationBuilder builder)
     {
         return WithNotification(builder.Build());

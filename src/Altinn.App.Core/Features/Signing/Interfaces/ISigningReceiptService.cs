@@ -7,16 +7,16 @@ using Altinn.App.Core.Models.UserAction;
 namespace Altinn.App.Core.Features.Signing.Interfaces;
 
 /// <summary>
-/// Interface for sending correspondence for a signing task.
+/// Interface for sending correspondence receipt for a signing user action.
 /// </summary>
-public interface ISigningCorrespondenceService
+public interface ISigningReceiptService
 {
     /// <summary>
-    /// Sends correspondence for a signing task.
+    /// Sends correspondence to a signee after signing action has been completed.
     /// </summary>
-    public Task<SendCorrespondenceResponse?> SendCorrespondence(
+    public Task<SendCorrespondenceResponse?> SendSignatureReceipt(
         InstanceIdentifier instanceIdentifier,
-        Signee signee,
+        Internal.Sign.Signee signee,
         IEnumerable<DataElementSignature> dataElementSignatures,
         UserActionContext context,
         List<AltinnEnvironmentConfig>? correspondenceResources

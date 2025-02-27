@@ -1,10 +1,12 @@
 using System.Globalization;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Exceptions;
+using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features.Correspondence;
 using Altinn.App.Core.Features.Correspondence.Builder;
 using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Features.Signing.Interfaces;
+using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
@@ -20,23 +22,23 @@ using Signee = Altinn.App.Core.Internal.Sign.Signee;
 
 namespace Altinn.App.Core.Features.Signing;
 
-internal sealed class SigningCorrespondenceService(
+internal sealed class SigningReceiptService(
     ICorrespondenceClient correspondenceClient,
     IDataClient dataClient,
     IHostEnvironment hostEnvironment,
     IAppResources appResources,
     IAppMetadata appMetadata,
-    ILogger<SigningCorrespondenceService> logger
-) : ISigningCorrespondenceService
+    ILogger<SigningReceiptService> logger
+) : ISigningReceiptService
 {
     private readonly ICorrespondenceClient _correspondenceClient = correspondenceClient;
     private readonly IDataClient _dataClient = dataClient;
     private readonly IHostEnvironment _hostEnvironment = hostEnvironment;
     private readonly IAppResources _appResources = appResources;
     private readonly IAppMetadata _appMetadata = appMetadata;
-    private readonly ILogger<SigningCorrespondenceService> _logger = logger;
+    private readonly ILogger<SigningReceiptService> _logger = logger;
 
-    public async Task<SendCorrespondenceResponse?> SendCorrespondence(
+    public async Task<SendCorrespondenceResponse?> SendSignatureReceipt(
         InstanceIdentifier instanceIdentifier,
         Signee signee,
         IEnumerable<DataElementSignature> dataElementSignatures,
@@ -44,19 +46,19 @@ internal sealed class SigningCorrespondenceService(
         List<AltinnEnvironmentConfig>? correspondenceResources
     )
     {
-        ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
+        ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
         var (resource, senderOrgNumber, senderDetails, recipient) = await GetCorrespondenceHeaders(
-            signee,
-            appMetadata,
+            signee.PersonNumber,
+            applicationMetadata,
             correspondenceResources,
-            _hostEnvironment,
             context.AltinnCdnClient
         );
-        CorrespondenceContent content = await GetCorrespondenceContent(context, appMetadata, senderDetails);
+
+        CorrespondenceContent content = await GetContent(context, applicationMetadata, senderDetails);
         IEnumerable<CorrespondenceAttachment> attachments = await GetCorrespondenceAttachments(
             instanceIdentifier,
             dataElementSignatures,
-            appMetadata,
+            applicationMetadata,
             context,
             _dataClient
         );
@@ -78,20 +80,19 @@ internal sealed class SigningCorrespondenceService(
         );
     }
 
-    internal static async Task<(
+    internal async Task<(
         string resource,
         string senderOrgNumber,
         AltinnCdnOrgDetails senderDetails,
         string recipient
     )> GetCorrespondenceHeaders(
-        Signee signee,
+        string? recipientNin,
         ApplicationMetadata appMetadata,
         List<AltinnEnvironmentConfig>? correspondenceResources,
-        IHostEnvironment hostEnvironment,
         IAltinnCdnClient? altinnCdnClient = null
     )
     {
-        HostingEnvironment env = AltinnEnvironments.GetHostingEnvironment(hostEnvironment);
+        HostingEnvironment env = AltinnEnvironments.GetHostingEnvironment(_hostEnvironment);
         var resource = AltinnTaskExtension.GetConfigForEnvironment(env, correspondenceResources)?.Value;
         if (string.IsNullOrEmpty(resource))
         {
@@ -100,7 +101,7 @@ internal sealed class SigningCorrespondenceService(
             );
         }
 
-        string? recipient = signee.PersonNumber;
+        string? recipient = recipientNin;
         if (string.IsNullOrEmpty(recipient))
         {
             throw new InvalidOperationException(
@@ -134,7 +135,7 @@ internal sealed class SigningCorrespondenceService(
         }
     }
 
-    internal async Task<CorrespondenceContent> GetCorrespondenceContent(
+    internal async Task<CorrespondenceContent> GetContent(
         UserActionContext context,
         ApplicationMetadata appMetadata,
         AltinnCdnOrgDetails senderDetails
@@ -163,25 +164,14 @@ internal sealed class SigningCorrespondenceService(
                     $"No text resource found for specified language ({context.Language}) nor the default language ({defaultLanguage})"
                 );
 
-            title = textResource
-                .Resources.FirstOrDefault(x => x.Id.Equals("signing.receipt_title", StringComparison.Ordinal))
-                ?.Value;
-            summary = textResource
-                .Resources.FirstOrDefault(x => x.Id.Equals("signing.receipt_summary", StringComparison.Ordinal))
-                ?.Value;
-            body = textResource
-                .Resources.FirstOrDefault(x => x.Id.Equals("signing.receipt_body", StringComparison.Ordinal))
-                ?.Value;
-
-            appName =
-                textResource.Resources.FirstOrDefault(x => x.Id.Equals("appName", StringComparison.Ordinal))?.Value
-                ?? textResource
-                    .Resources.FirstOrDefault(x => x.Id.Equals("ServiceName", StringComparison.Ordinal))
-                    ?.Value;
+            title = textResource.GetText("signing.correspondence_receipt_title"); // TODO: Document these text keys
+            summary = textResource.GetText("signing.correspondence_receipt_summary"); // TODO: Document these text keys
+            body = textResource.GetText("signing.correspondence_receipt_body"); // TODO: Document these text keys
+            appName = textResource.GetFirstMatchingText("appName", "ServiceName");
         }
         catch (Exception e)
         {
-            _logger.LogError(
+            _logger.LogWarning(
                 e,
                 "Unable to fetch custom message correspondence message content, falling back to default values: {Exception}",
                 e.Message
@@ -193,20 +183,16 @@ internal sealed class SigningCorrespondenceService(
             appName = defaultAppName;
         }
 
-        var defaults = new
-        {
-            Title = $"{appName}: Signeringen er bekreftet",
-            Summary = $"Du har signert for {appName}.",
-            Body = $"Dokumentene du har signert er vedlagt. Disse kan lastes ned om ønskelig. <br /><br />Hvis du lurer på noe, kan du kontakte {appOwner}.",
-        };
+        var defaults = GetDefaultTexts(context.Language ?? defaultLanguage, appName, appOwner);
 
-        return new CorrespondenceContent
+        CorrespondenceContent content = new()
         {
             Language = LanguageCode<Iso6391>.Parse(textResource?.Language ?? defaultLanguage),
             Title = title ?? defaults.Title,
             Summary = summary ?? defaults.Summary,
             Body = body ?? defaults.Body,
         };
+        return content;
     }
 
     internal static async Task<IEnumerable<CorrespondenceAttachment>> GetCorrespondenceAttachments(
@@ -281,5 +267,39 @@ internal sealed class SigningCorrespondenceService(
         }
 
         return $"{filename}{extension}";
+    }
+
+    /// <summary>
+    /// Gets the default texts for the given language.
+    /// </summary>
+    /// <param name="language">The language to get the texts for</param>
+    /// <param name="appName">The name of the app</param>
+    /// <param name="appOwner">The owner of the app</param>
+    internal static DefaultTexts GetDefaultTexts(string language, string appName, string appOwner)
+    {
+        return language switch
+        {
+            LanguageConst.En => new DefaultTexts
+            {
+                Title = $"{appName}: Signature confirmed",
+                Summary = $"Your signature has been registered for {appName}.",
+                Body =
+                    $"The signed documents are attached. They may be downloaded. <br /><br />If you have any questions, you can contact {appOwner}.",
+            },
+            LanguageConst.Nn => new DefaultTexts
+            {
+                Title = $"{appName}: Signeringa er stadfesta",
+                Summary = $"Du har signert for {appName}.",
+                Body =
+                    $"Dokumenta du har signert er vedlagde. Dei kan lastast ned om ønskeleg. <br /><br />Om du lurer på noko, kan du kontakte {appOwner}.",
+            },
+            LanguageConst.Nb or _ => new DefaultTexts
+            {
+                Title = $"{appName}: Signeringen er bekreftet",
+                Summary = $"Du har signert for {appName}.",
+                Body =
+                    $"Dokumentene du har signert er vedlagt. Disse kan lastes ned om ønskelig. <br /><br />Hvis du lurer på noe, kan du kontakte {appOwner}.",
+            },
+        };
     }
 }

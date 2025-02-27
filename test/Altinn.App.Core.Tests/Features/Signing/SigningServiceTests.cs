@@ -24,23 +24,23 @@ public class SigningServiceTests
 
     private readonly Mock<IAltinnPartyClient> _altinnPartyClient = new(MockBehavior.Strict);
     private readonly Mock<ISigningDelegationService> _signingDelegationService = new(MockBehavior.Strict);
-    private readonly Mock<ISigningNotificationService> _signingNotificationService = new(MockBehavior.Strict);
     private readonly Mock<ISigneeProvider> _signeeProvider = new(MockBehavior.Strict);
     private readonly Mock<ILogger<SigningService>> _logger = new();
     private readonly Mock<IAppMetadata> _appMetadata = new(MockBehavior.Strict);
     private readonly Mock<ISignClient> _signClient = new(MockBehavior.Strict);
-    private readonly Mock<ISigningCorrespondenceService> _signingCorrespondenceService = new(MockBehavior.Strict);
+    private readonly Mock<ISigningCallToActionService> _signingCallToActionService = new(MockBehavior.Strict);
+    private readonly Mock<ISigningReceiptService> _signingReceiptService = new(MockBehavior.Strict);
 
     public SigningServiceTests()
     {
         _signingService = new SigningService(
             _altinnPartyClient.Object,
             _signingDelegationService.Object,
-            _signingNotificationService.Object,
             [_signeeProvider.Object],
             _appMetadata.Object,
             _signClient.Object,
-            _signingCorrespondenceService.Object,
+            _signingReceiptService.Object,
+            _signingCallToActionService.Object,
             _logger.Object
         );
 

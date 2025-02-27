@@ -92,10 +92,10 @@ public class Sms
     public string? MobileNumber { get; set; }
 
     /// <summary>
-    /// The body. If not set, a default will be used.
+    /// The body of the sms. If not set, a default will be used.
     /// </summary>
-    [JsonPropertyName("body")]
-    public string? Body { get; set; }
+    [JsonPropertyName("bodyTextResourceKey")]
+    public string? BodyTextResourceKey { get; set; }
 
     /// <summary>
     /// The reference used to track the sms. Can be set to a custom value. If not set, a random guid will be used.
@@ -117,14 +117,14 @@ public class Email
     /// <summary>
     /// The subject. If not set, a default will be used.
     /// </summary>
-    [JsonPropertyName("subject")]
-    public string? Subject { get; set; }
+    [JsonPropertyName("subjectTextResourceKey")]
+    public string? SubjectTextResourceKey { get; set; }
 
     /// <summary>
-    /// The body. If not set, a default will be used.
+    /// The body. If not set, a default will be used. Replaces "$InstanceUrl" with the Url.
     /// </summary>
-    [JsonPropertyName("body")]
-    public string? Body { get; set; }
+    [JsonPropertyName("bodyTextResourceKey")]
+    public string? BodyTextResourceKey { get; set; }
 
     /// <summary>
     /// The reference used to track the email. Can be set to a custom value. If not set, a random guid will be used.

@@ -140,14 +140,12 @@ public class SigningController : ControllerBase
                                 break;
                         }
 
-                        var signeeState = signeeContext.SigneeState;
-
                         return new Models.SigneeState
                         {
                             Name = name,
                             Organisation = organisation,
                             SignedTime = signeeContext.SignDocument?.SignedTime,
-                            DelegationSuccessful = signeeState.IsAccessDelegated,
+                            DelegationSuccessful = signeeContext.SigneeState.IsAccessDelegated,
                             NotificationStatus = GetNotificationState(signeeContext),
                             PartyId = signeeContext.Signee.GetParty().PartyId,
                         };
@@ -222,15 +220,12 @@ public class SigningController : ControllerBase
     private static NotificationStatus GetNotificationState(SigneeContext signeeContext)
     {
         var signeeState = signeeContext.SigneeState;
-        if (signeeState.SignatureRequestEmailSent is true || signeeState.SignatureRequestSmsSent is true)
+        if (signeeState.HasBeenMessagedForCallToSign)
         {
             return NotificationStatus.Sent;
         }
 
-        if (
-            signeeState.SignatureRequestEmailNotSentReason is not null
-            || signeeState.SignatureRequestSmsNotSentReason is not null
-        )
+        if (signeeState.CallToSignFailedReason is not null)
         {
             return NotificationStatus.Failed;
         }
