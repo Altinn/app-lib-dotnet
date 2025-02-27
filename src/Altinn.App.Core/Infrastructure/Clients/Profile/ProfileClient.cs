@@ -122,8 +122,6 @@ public class ProfileClient : IProfileClient
     {
         using var activity = _telemetry?.StartGetUserProfileActivity();
 
-        UserProfile? userProfile = null;
-
         if (string.IsNullOrEmpty(ssn))
         {
             _logger.LogError("Tried to get user profile with empty SSN");
@@ -142,6 +140,8 @@ public class ProfileClient : IProfileClient
             content,
             _accessTokenGenerator.GenerateAccessToken(applicationMetadata.Org, applicationMetadata.AppIdentifier.App)
         );
+
+        UserProfile? userProfile = null;
 
         if (response.StatusCode == System.Net.HttpStatusCode.OK)
         {
