@@ -160,7 +160,7 @@ internal sealed class SigningService(
         {
             foreach (SigneeContext signeeContext in signeeContexts)
             {
-                if (signeeContext.SigneeState.IsMessagedForCallToSign)
+                if (signeeContext.SigneeState.HasBeenMessagedForCallToSign)
                 {
                     continue;
                 }
@@ -177,18 +177,18 @@ internal sealed class SigningService(
                         serviceOwnerParty,
                         signatureConfiguration.CorrespondenceResources
                     );
-                    signeeContext.SigneeState.IsMessagedForCallToSign = true;
+                    signeeContext.SigneeState.HasBeenMessagedForCallToSign = true;
                 }
                 catch (ConfigurationException e)
                 {
                     _logger.LogError(e, "Correspondence configuration error: {Exception}", e.Message);
-                    signeeContext.SigneeState.IsMessagedForCallToSign = false;
+                    signeeContext.SigneeState.HasBeenMessagedForCallToSign = false;
                     signeeContext.SigneeState.CallToSignFailedReason = $"Correspondence configuration error.";
                 }
                 catch (Exception e)
                 {
                     _logger.LogError(e, "Correspondence send failed: {Exception}", e.Message);
-                    signeeContext.SigneeState.IsMessagedForCallToSign = false;
+                    signeeContext.SigneeState.HasBeenMessagedForCallToSign = false;
                     signeeContext.SigneeState.CallToSignFailedReason = $"Correspondence configuration error.";
                 }
             }
@@ -661,7 +661,7 @@ internal sealed class SigningService(
             SigneeState = new SigneeState()
             {
                 IsAccessDelegated = true,
-                IsMessagedForCallToSign = true,
+                HasBeenMessagedForCallToSign = true,
                 IsReceiptSent = false,
             },
             SignDocument = signDocument,

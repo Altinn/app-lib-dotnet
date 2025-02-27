@@ -220,7 +220,7 @@ public class SigningController : ControllerBase
     private static NotificationStatus GetNotificationState(SigneeContext signeeContext)
     {
         var signeeState = signeeContext.SigneeState;
-        if (signeeState.IsMessagedForCallToSign)
+        if (signeeState.HasBeenMessagedForCallToSign)
         {
             return NotificationStatus.Sent;
         }
