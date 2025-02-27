@@ -22,8 +22,10 @@ using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
 using static Altinn.App.Core.Features.Signing.Models.Signee;
+using InternalSignee = Altinn.App.Core.Internal.Sign.Signee;
 using JsonException = Newtonsoft.Json.JsonException;
-using Signee = Altinn.App.Core.Internal.Sign.Signee;
+using OrganisationSignee = Altinn.App.Core.Features.Signing.Models.Signee.OrganisationSignee;
+using PersonSignee = Altinn.App.Core.Features.Signing.Models.Signee.PersonSignee;
 
 namespace Altinn.App.Core.Features.Signing;
 
@@ -74,7 +76,7 @@ internal sealed class SigningService(
         }
 
         List<SigneeContext> signeeContexts = [];
-        foreach (SigneeParty signeeParty in signeesResult.Signees)
+        foreach (ProvidedSignee signeeParty in signeesResult.Signees)
         {
             SigneeContext signeeContext = await GenerateSigneeContext(taskId, signeeParty, ct);
             signeeContexts.Add(signeeContext);
@@ -413,7 +415,7 @@ internal sealed class SigningService(
         return dataElementMatchExists || allDataTypesAreOptional ? signatureDataType : null;
     }
 
-    private static async Task<Signee> GetSignee(UserActionContext context)
+    private static async Task<InternalSignee> GetSignee(UserActionContext context)
     {
         switch (context.Authentication)
         {
@@ -422,7 +424,7 @@ internal sealed class SigningService(
                 UserProfile userProfile = await user.LookupProfile();
                 Party orgProfile = await user.LookupSelectedParty();
 
-                return new Signee
+                return new InternalSignee
                 {
                     UserId = userProfile.UserId.ToString(CultureInfo.InvariantCulture),
                     PersonNumber = userProfile.Party.SSN,
@@ -430,9 +432,9 @@ internal sealed class SigningService(
                 };
             }
             case Authenticated.SelfIdentifiedUser selfIdentifiedUser:
-                return new Signee { UserId = selfIdentifiedUser.UserId.ToString(CultureInfo.InvariantCulture) };
+                return new InternalSignee { UserId = selfIdentifiedUser.UserId.ToString(CultureInfo.InvariantCulture) };
             case Authenticated.SystemUser systemUser:
-                return new Signee
+                return new InternalSignee
                 {
                     SystemUserId = systemUser.SystemUserId[0],
                     OrganisationNumber = systemUser.SystemUserOrgNr.Get(OrganisationNumberFormat.Local),
@@ -444,17 +446,11 @@ internal sealed class SigningService(
 
     private async Task<SigneeContext> GenerateSigneeContext(
         string taskId,
-        SigneeParty signeeParty,
+        ProvidedSignee signeeParty,
         CancellationToken ct
     )
     {
-        Models.Signee signee = await From(
-            signeeParty.SocialSecurityNumber,
-            signeeParty.OnBehalfOfOrganisation?.OrganisationNumber,
-            null,
-            altinnPartyClient.LookupParty
-        );
-
+        Models.Signee signee = await From(signeeParty, altinnPartyClient.LookupParty);
         Party party = signee.GetParty();
 
         Models.Notifications? notifications = signeeParty.Notifications;

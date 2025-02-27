@@ -14,6 +14,8 @@ using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
 using Moq;
 using static Altinn.App.Core.Features.Signing.Models.Signee;
+using OrganisationSignee = Altinn.App.Core.Features.Signing.Models.Signee.OrganisationSignee;
+using PersonSignee = Altinn.App.Core.Features.Signing.Models.Signee.PersonSignee;
 using StorageSignee = Altinn.Platform.Storage.Interface.Models.Signee;
 
 namespace Altinn.App.Core.Tests.Features.Signing;
@@ -823,7 +825,7 @@ public class SigningServiceTests
     }
 
     [Fact]
-    public void RemoveSingingData_Removes_SigneeState()
+    public void RemoveSigningData_Removes_SigneeState()
     {
         var signatureConfiguration = new AltinnSignatureConfiguration
         {
@@ -875,7 +877,7 @@ public class SigningServiceTests
     }
 
     [Fact]
-    public void RemoveSingingData_Does_Nothing_If_No_Existing_Data()
+    public void RemoveSigningData_Does_Nothing_If_No_Existing_Data()
     {
         var signatureConfiguration = new AltinnSignatureConfiguration
         {

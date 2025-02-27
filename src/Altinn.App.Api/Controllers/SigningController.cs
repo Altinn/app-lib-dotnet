@@ -12,7 +12,7 @@ using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Mvc;
-using static Altinn.App.Core.Features.Signing.Models.Signee;
+using Signee = Altinn.App.Core.Features.Signing.Models.Signee;
 
 namespace Altinn.App.Api.Controllers;
 
@@ -120,21 +120,21 @@ public class SigningController : ControllerBase
 
                         switch (signeeContext.Signee)
                         {
-                            case PersonSignee personSignee:
+                            case Signee.PersonSignee personSignee:
                                 name = personSignee.FullName;
                                 break;
 
-                            case PersonOnBehalfOfOrgSignee personOnBehalfOfOrgSignee:
+                            case Signee.PersonOnBehalfOfOrgSignee personOnBehalfOfOrgSignee:
                                 name = personOnBehalfOfOrgSignee.FullName;
                                 organisation = personOnBehalfOfOrgSignee.OnBehalfOfOrg.OrgName;
                                 break;
 
-                            case OrganisationSignee organisationSignee:
+                            case Signee.OrganisationSignee organisationSignee:
                                 name = null;
                                 organisation = organisationSignee.OrgName;
                                 break;
 
-                            case SystemSignee systemSignee:
+                            case Signee.SystemSignee systemSignee:
                                 name = "System";
                                 organisation = systemSignee.OnBehalfOfOrg.OrgName;
                                 break;

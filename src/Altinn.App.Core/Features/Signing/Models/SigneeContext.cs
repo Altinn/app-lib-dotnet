@@ -59,6 +59,26 @@ public abstract class Signee
         };
     }
 
+    internal static async Task<Signee> From(ProvidedSignee signeeParty, Func<PartyLookup, Task<Party>> lookupParty)
+    {
+        return signeeParty switch
+        {
+            Models.PersonSignee personSigneeParty => await From(
+                ssn: personSigneeParty.SocialSecurityNumber,
+                orgNr: null,
+                systemId: null,
+                lookupParty
+            ),
+            Models.OrganisationSignee organisationSigneeParty => await From(
+                ssn: null,
+                orgNr: organisationSigneeParty.OrganisationNumber,
+                systemId: null,
+                lookupParty
+            ),
+            _ => throw new InvalidOperationException("SigneeParty is neither a person nor an organisation"),
+        };
+    }
+
     internal static async Task<Signee> From(
         string? ssn,
         string? orgNr,
