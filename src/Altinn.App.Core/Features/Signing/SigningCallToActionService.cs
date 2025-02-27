@@ -194,7 +194,7 @@ internal sealed class SigningCallToActionService(
             );
             appName = textResource.GetFirstMatchingText("appName", "ServiceName");
 
-            smsBody = textResource.GetText(notification?.Sms?.TextResourceKey);
+            smsBody = textResource.GetText(notification?.Sms?.BodyTextResourceKey);
             emailBody = textResource.GetText(notification?.Email?.BodyTextResourceKey);
             emailSubject = textResource.GetText(notification?.Email?.SubjectTextResourceKey);
         }
