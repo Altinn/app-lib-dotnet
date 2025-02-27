@@ -138,25 +138,15 @@ internal sealed class SigningService(
             telemetry
         );
 
-        ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
-
-        using var altinnCdnClient = new AltinnCdnClient();
-
-        AltinnCdnOrgs altinnCdnOrgs = await altinnCdnClient.GetOrgs(ct);
-
-        AltinnCdnOrgDetails? serviceOwnerDetails = altinnCdnOrgs.Orgs?.GetValueOrDefault(applicationMetadata.Org);
-
-        if (serviceOwnerDetails?.Orgnr == "ttd")
-        {
-            // TestDepartementet is often used in test environments, it does not have a organisation number, so we use Digitaliseringsdirektoratet's orgnr instead.
-            serviceOwnerDetails.Orgnr = "991825827";
-        }
-
-        Party serviceOwnerParty = await altinnPartyClient.LookupParty(
-            new PartyLookup { OrgNo = serviceOwnerDetails?.Orgnr }
-        );
+        Party serviceOwnerParty = new();
+        bool getServiceOwnerSuccess = false;
 
         if (delegateSuccess)
+        {
+            (serviceOwnerParty, getServiceOwnerSuccess) = await GetServiceOwnerParty(ct);
+        }
+
+        if (getServiceOwnerSuccess)
         {
             foreach (SigneeContext signeeContext in signeeContexts)
             {
@@ -206,6 +196,37 @@ internal sealed class SigningService(
         await Task.CompletedTask;
 
         return signeeContexts;
+    }
+
+    internal async Task<(Party serviceOwnerParty, bool success)> GetServiceOwnerParty(CancellationToken ct)
+    {
+        Party serviceOwnerParty = new();
+        try
+        {
+            ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
+
+            using var altinnCdnClient = new AltinnCdnClient();
+
+            AltinnCdnOrgs altinnCdnOrgs = await altinnCdnClient.GetOrgs(ct);
+
+            AltinnCdnOrgDetails? serviceOwnerDetails = altinnCdnOrgs.Orgs?.GetValueOrDefault(applicationMetadata.Org);
+
+            if (serviceOwnerDetails?.Orgnr == "ttd")
+            {
+                // TestDepartementet is often used in test environments, it does not have a organisation number, so we use Digitaliseringsdirektoratet's orgnr instead.
+                serviceOwnerDetails.Orgnr = "991825827";
+            }
+
+            serviceOwnerParty = await altinnPartyClient.LookupParty(
+                new PartyLookup { OrgNo = serviceOwnerDetails?.Orgnr }
+            );
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Failed to look up party for service owner.");
+            return (new Party(), false);
+        }
+        return (serviceOwnerParty, true);
     }
 
     public async Task<List<SigneeContext>> GetSigneeContexts(
