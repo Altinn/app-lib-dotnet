@@ -184,12 +184,13 @@ internal sealed class SigningCallToActionService(
                 await _appResources.GetTexts(appIdentifier.Org, appIdentifier.App, language)
                 ?? throw new InvalidOperationException($"No text resource found for language ({language})");
 
+            string linkDisplayText = GetLinkDisplayText(language);
             correspondenceTitle = textResource.GetText("signing.correspondence_cta_title"); // TODO: Document these text keys
             correspondenceSummary = textResource.GetText("signing.correspondence_cta_summary"); // TODO: Document these text keys
             correspondenceBody = textResource.GetText("signing.correspondence_cta_body"); // TODO: Document these text keys
             correspondenceBody = correspondenceBody?.Replace(
                 "$InstanceUrl",
-                instanceUrl,
+                $"[{linkDisplayText}]({instanceUrl})",
                 StringComparison.InvariantCultureIgnoreCase
             );
             appName = textResource.GetFirstMatchingText("appName", "ServiceName");
@@ -227,6 +228,16 @@ internal sealed class SigningCallToActionService(
             EmailSubject = emailSubject ?? defaults.Title,
         };
         return contentWrapper;
+    }
+
+    internal static string GetLinkDisplayText(string language)
+    {
+        return language switch
+        {
+            LanguageConst.Nn => "Klikk her for å opne skjema",
+            LanguageConst.En => "Click here to open the form",
+            LanguageConst.Nb or _ => "Klikk her for å åpne skjema",
+        };
     }
 
     /// <summary>
