@@ -92,10 +92,10 @@ public class Sms
     public string? MobileNumber { get; set; }
 
     /// <summary>
-    /// The body. If not set, a default will be used.
+    /// The body of the sms. If not set, a default will be used.
     /// </summary>
-    [JsonPropertyName("textResourceKey")]
-    public string? TextResourceKey { get; set; }
+    [JsonPropertyName("bodyTextResourceKey")]
+    public string? BodyTextResourceKey { get; set; }
 
     /// <summary>
     /// The reference used to track the sms. Can be set to a custom value. If not set, a random guid will be used.
