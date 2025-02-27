@@ -118,7 +118,7 @@ public class SigningCallToActionServiceTests
 
         Notification notification = new()
         {
-            Sms = new Sms { MobileNumber = "12345678", TextResourceKey = smsContentTextResourceKey },
+            Sms = new Sms { MobileNumber = "12345678", BodyTextResourceKey = smsContentTextResourceKey },
         };
         AppIdentifier appIdentifier = new("org", "app");
         InstanceIdentifier instanceIdentifier = new(123, Guid.Parse("ab0cdeb5-dc5e-4faa-966b-d18bb932ca07"));
@@ -289,7 +289,7 @@ public class SigningCallToActionServiceTests
 
         Notification notification = new()
         {
-            Sms = new Sms { MobileNumber = "12345678", TextResourceKey = smsContentTextResourceKey },
+            Sms = new Sms { MobileNumber = "12345678", BodyTextResourceKey = smsContentTextResourceKey },
             Email = new Email
             {
                 EmailAddress = "my.email@test.no",
@@ -487,7 +487,7 @@ public class SigningCallToActionServiceTests
         SigningCallToActionService service = SetupService(appResourcesMockOverride: mock);
         Notification notification = new()
         {
-            Sms = new Sms { MobileNumber = "12345678", TextResourceKey = smsContentTextResourceKey },
+            Sms = new Sms { MobileNumber = "12345678", BodyTextResourceKey = smsContentTextResourceKey },
         };
         AppIdentifier appIdentifier = new("org", "app");
         ApplicationMetadata applicationMetadata = new("org/app")
@@ -533,7 +533,7 @@ public class SigningCallToActionServiceTests
         SigningCallToActionService service = SetupService(appResourcesMockOverride: mock);
         Notification notification = new()
         {
-            Sms = new Sms { MobileNumber = "12345678", TextResourceKey = "signing.sms_content" },
+            Sms = new Sms { MobileNumber = "12345678", BodyTextResourceKey = "signing.sms_content" },
         };
         AppIdentifier appIdentifier = new("org", "app");
         ApplicationMetadata applicationMetadata = new("org/app")
