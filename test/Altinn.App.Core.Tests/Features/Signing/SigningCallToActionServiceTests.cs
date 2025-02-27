@@ -151,7 +151,7 @@ public class SigningCallToActionServiceTests
         Assert.Equal("Custom title", capturedPayload.CorrespondenceRequest.Content.Title);
         Assert.Equal("Custom summary", capturedPayload.CorrespondenceRequest.Content.Summary);
         Assert.Equal(
-            "Custom body with replacement for instance url here: http://local.altinn.cloud/org/app/#/instance/123/ab0cdeb5-dc5e-4faa-966b-d18bb932ca07, and some more text after",
+            "Custom body with replacement for instance url here: [Klikk her for å åpne skjema](http://local.altinn.cloud/org/app/#/instance/123/ab0cdeb5-dc5e-4faa-966b-d18bb932ca07), and some more text after",
             capturedPayload.CorrespondenceRequest.Content.Body
         );
         Assert.Equal("app_ttd_appname", capturedPayload.CorrespondenceRequest.ResourceId);
@@ -238,7 +238,7 @@ public class SigningCallToActionServiceTests
         Assert.Equal("Custom title", capturedPayload.CorrespondenceRequest.Content.Title);
         Assert.Equal("Custom summary", capturedPayload.CorrespondenceRequest.Content.Summary);
         Assert.Equal(
-            "Custom body with replacement for instance url here: http://local.altinn.cloud/org/app/#/instance/123/ab0cdeb5-dc5e-4faa-966b-d18bb932ca07, and some more text after",
+            "Custom body with replacement for instance url here: [Klikk her for å åpne skjema](http://local.altinn.cloud/org/app/#/instance/123/ab0cdeb5-dc5e-4faa-966b-d18bb932ca07), and some more text after",
             capturedPayload.CorrespondenceRequest.Content.Body
         );
         Assert.Equal("app_ttd_appname", capturedPayload.CorrespondenceRequest.ResourceId);
@@ -328,7 +328,7 @@ public class SigningCallToActionServiceTests
         Assert.Equal("Custom title", capturedPayload.CorrespondenceRequest.Content.Title);
         Assert.Equal("Custom summary", capturedPayload.CorrespondenceRequest.Content.Summary);
         Assert.Equal(
-            "Custom body with replacement for instance url here: http://local.altinn.cloud/org/app/#/instance/123/ab0cdeb5-dc5e-4faa-966b-d18bb932ca07, and some more text after",
+            "Custom body with replacement for instance url here: [Klikk her for å åpne skjema](http://local.altinn.cloud/org/app/#/instance/123/ab0cdeb5-dc5e-4faa-966b-d18bb932ca07), and some more text after",
             capturedPayload.CorrespondenceRequest.Content.Body
         );
         Assert.Equal("app_ttd_appname", capturedPayload.CorrespondenceRequest.ResourceId);
@@ -408,7 +408,7 @@ public class SigningCallToActionServiceTests
         Assert.Equal("Custom title", capturedPayload.CorrespondenceRequest.Content.Title);
         Assert.Equal("Custom summary", capturedPayload.CorrespondenceRequest.Content.Summary);
         Assert.Equal(
-            "Custom body with replacement for instance url here: http://local.altinn.cloud/org/app/#/instance/123/ab0cdeb5-dc5e-4faa-966b-d18bb932ca07, and some more text after",
+            "Custom body with replacement for instance url here: [Klikk her for å åpne skjema](http://local.altinn.cloud/org/app/#/instance/123/ab0cdeb5-dc5e-4faa-966b-d18bb932ca07), and some more text after",
             capturedPayload.CorrespondenceRequest.Content.Body
         );
         Assert.Equal("app_ttd_appname", capturedPayload.CorrespondenceRequest.ResourceId);
@@ -518,7 +518,7 @@ public class SigningCallToActionServiceTests
         Assert.Equal("Custom title", res.CorrespondenceContent.Title);
         Assert.Equal("Custom summary", res.CorrespondenceContent.Summary);
         Assert.Equal(
-            "Custom body with replacement for instance url here: https://altinn.local.cloud, and some more text after",
+            "Custom body with replacement for instance url here: [Click here to open the form](https://altinn.local.cloud), and some more text after",
             res.CorrespondenceContent.Body
         );
     }
@@ -559,6 +559,20 @@ public class SigningCallToActionServiceTests
         Assert.Contains("You have a task waiting for your signature.", res.CorrespondenceContent.Body);
         Assert.Contains(instanceUrl, res.CorrespondenceContent.Body);
         Assert.Contains(sendersParty.Name, res.CorrespondenceContent.Body);
+    }
+
+    [Theory]
+    [InlineData(LanguageConst.En, "Click here to open the form")]
+    [InlineData(LanguageConst.Nn, "Klikk her for å opne skjema")]
+    [InlineData(LanguageConst.Nb, "Klikk her for å åpne skjema")]
+    [InlineData("NotALanguage", "Klikk her for å åpne skjema")]
+    public void GetLinkDisplayText(string language, string expected)
+    {
+        // Arrange & Act
+        string result = SigningCallToActionService.GetLinkDisplayText(language);
+
+        // Assert
+        Assert.Equal(expected, result);
     }
 
     [Theory]
