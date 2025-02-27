@@ -11,7 +11,7 @@ using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
 using Moq;
-using PersonSignee = Altinn.App.Core.Features.Signing.Models.SigneeContextSignee.PersonSignee;
+using PersonSignee = Altinn.App.Core.Features.Signing.Models.Signee.PersonSignee;
 
 namespace Altinn.App.Core.Tests.Features.Validators.Default;
 

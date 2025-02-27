@@ -2,7 +2,6 @@ using System.Text.Json;
 using Altinn.App.Api.Controllers;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Features.Signing.Interfaces;
-using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
@@ -16,11 +15,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
-using static Altinn.App.Core.Features.Signing.Models.SigneeContextSignee;
-using OrganisationSignee = Altinn.App.Core.Features.Signing.Models.SigneeContextSignee.OrganisationSignee;
-using PersonSignee = Altinn.App.Core.Features.Signing.Models.SigneeContextSignee.PersonSignee;
-using SigneeContextSigneeState = Altinn.App.Core.Features.Signing.Models.SigneeState;
-using SigneeState = Altinn.App.Api.Models.SigneeState;
+using static Altinn.App.Core.Features.Signing.Models.Signee;
+using SigneeContext = Altinn.App.Core.Features.Signing.Models.SigneeContext;
+using SigneeContextState = Altinn.App.Core.Features.Signing.Models.SigneeState;
 
 namespace Altinn.App.Api.Tests.Controllers;
 
@@ -113,7 +110,7 @@ public class SigningControllerTests
                     OrgNumber = "123456789",
                     OrgParty = new Party { PartyId = 1 },
                 },
-                SigneeState = new SigneeContextSigneeState
+                SigneeState = new SigneeContextState
                 {
                     DelegationFailedReason = "delegationFailedReason",
                     IsAccessDelegated = false,
@@ -132,7 +129,7 @@ public class SigningControllerTests
                     OrgNumber = "123456789",
                     OrgParty = new Party { PartyId = 1 },
                 },
-                SigneeState = new SigneeContextSigneeState
+                SigneeState = new SigneeContextState
                 {
                     IsReceiptSent = false,
                     DelegationFailedReason = null,
@@ -157,7 +154,7 @@ public class SigningControllerTests
                     OrgNumber = "987654321",
                     OrgParty = new Party { PartyId = 2 },
                 },
-                SigneeState = new SigneeContextSigneeState
+                SigneeState = new SigneeContextState
                 {
                     IsReceiptSent = false,
                     DelegationFailedReason = null,
@@ -182,7 +179,7 @@ public class SigningControllerTests
                     OrgNumber = "987654321",
                     OrgParty = new Party { PartyId = 2 },
                 },
-                SigneeState = new SigneeContextSigneeState
+                SigneeState = new SigneeContextState
                 {
                     IsReceiptSent = false,
                     DelegationFailedReason = null,
@@ -200,7 +197,7 @@ public class SigningControllerTests
                     OrgNumber = "987654321",
                     OrgParty = new Party { PartyId = 2 },
                 },
-                SigneeState = new SigneeContextSigneeState
+                SigneeState = new SigneeContextState
                 {
                     IsReceiptSent = false,
                     DelegationFailedReason = null,
@@ -296,7 +293,7 @@ public class SigningControllerTests
                     SocialSecurityNumber = "123456789",
                     Party = new Party { PartyId = 1 },
                 },
-                SigneeState = new SigneeContextSigneeState
+                SigneeState = new SigneeContextState
                 {
                     DelegationFailedReason = "delegationFailedReason",
                     IsAccessDelegated = false,
@@ -363,7 +360,7 @@ public class SigningControllerTests
                         OrgParty = new Party { PartyId = 321 },
                     },
                 },
-                SigneeState = new SigneeContextSigneeState
+                SigneeState = new SigneeContextState
                 {
                     DelegationFailedReason = null,
                     IsAccessDelegated = true,
@@ -435,7 +432,7 @@ public class SigningControllerTests
                         OrgParty = new Party { PartyId = 123 },
                     },
                 },
-                SigneeState = new SigneeContextSigneeState
+                SigneeState = new SigneeContextState
                 {
                     DelegationFailedReason = null,
                     IsAccessDelegated = true,

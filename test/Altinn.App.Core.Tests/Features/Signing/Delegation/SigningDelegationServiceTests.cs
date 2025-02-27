@@ -11,7 +11,7 @@ namespace Altinn.App.Core.Tests.Features.Signing.Delegation;
 
 public class SigningDelegationServiceTests
 {
-    private readonly SigneeContextSignee _signee = new SigneeContextSignee.PersonSignee
+    private readonly Signee _signee = new Signee.PersonSignee
     {
         FullName = "Testperson 1",
         SocialSecurityNumber = "123456678233",

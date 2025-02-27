@@ -13,9 +13,9 @@ using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
 using Moq;
-using static Altinn.App.Core.Features.Signing.Models.SigneeContextSignee;
-using OrganisationSignee = Altinn.App.Core.Features.Signing.Models.SigneeContextSignee.OrganisationSignee;
-using PersonSignee = Altinn.App.Core.Features.Signing.Models.SigneeContextSignee.PersonSignee;
+using static Altinn.App.Core.Features.Signing.Models.Signee;
+using OrganisationSignee = Altinn.App.Core.Features.Signing.Models.Signee.OrganisationSignee;
+using PersonSignee = Altinn.App.Core.Features.Signing.Models.Signee.PersonSignee;
 using StorageSignee = Altinn.Platform.Storage.Interface.Models.Signee;
 
 namespace Altinn.App.Core.Tests.Features.Signing;
