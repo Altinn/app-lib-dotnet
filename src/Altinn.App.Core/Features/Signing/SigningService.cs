@@ -282,14 +282,23 @@ internal sealed class SigningService(
     {
         if (signatureConfiguration.SigneeStatesDataTypeId is not null)
         {
+            _logger.LogInformation("---------------------------------------------------------------");
+            _logger.LogInformation("Removing signee state");
+            _logger.LogInformation("---------------------------------------------------------------");
             RemoveSigneeState(instanceDataMutator, signatureConfiguration.SigneeStatesDataTypeId);
         }
 
         if (signatureConfiguration.SignatureDataType is not null)
         {
+            _logger.LogInformation("---------------------------------------------------------------");
+            _logger.LogInformation("Removing signatures");
+            _logger.LogInformation("---------------------------------------------------------------");
             RemoveAllSignatures(instanceDataMutator, signatureConfiguration.SignatureDataType);
         }
 
+        _logger.LogInformation("---------------------------------------------------------------");
+        _logger.LogInformation("Filtering contexts");
+        _logger.LogInformation("---------------------------------------------------------------");
         List<SigneeContext> signeeContexts = await GetSigneeContexts(instanceDataMutator, signatureConfiguration);
         List<SigneeContext> signeeContextsWithDelegation = signeeContexts
             .Where(x => x.SigneeState.IsAccessDelegated)
@@ -301,16 +310,37 @@ internal sealed class SigningService(
             return;
         }
 
+        _logger.LogInformation("---------------------------------------------------------------");
+        _logger.LogInformation("Found matches");
+        _logger.LogInformation("---------------------------------------------------------------");
+
         string instanceIdCombo = instanceDataMutator.Instance.Id;
         InstanceOwner instanceOwner = instanceDataMutator.Instance.InstanceOwner;
         Party instanceOwnerParty =
             await GetInstanceOwnerParty(instanceOwner)
             ?? throw new SigningException("Failed to lookup instance owner party.");
 
+        _logger.LogInformation("---------------------------------------------------------------");
+        _logger.LogInformation("Found instance owner party");
+        _logger.LogInformation("---------------------------------------------------------------");
+
         Guid instanceOwnerPartyUuid =
             instanceOwnerParty.PartyUuid ?? throw new SigningException("PartyUuid was missing on instance owner party");
 
+        _logger.LogInformation("---------------------------------------------------------------");
+        _logger.LogInformation("Found instance owner party uuid");
+        _logger.LogInformation("---------------------------------------------------------------");
+
         AppIdentifier appIdentifier = new(instanceDataMutator.Instance.AppId);
+
+        _logger.LogInformation("---------------------------------------------------------------");
+        _logger.LogInformation(
+            "Revoking signee rights for task {TaskId} with instance {InstanceIdCombo}. Number of matches: {Matches}",
+            taskId,
+            instanceIdCombo,
+            signeeContextsWithDelegation.Count
+        );
+        _logger.LogInformation("---------------------------------------------------------------");
 
         await signingDelegationService.RevokeSigneeRights(
             taskId,
