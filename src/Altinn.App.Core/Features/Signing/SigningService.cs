@@ -105,31 +105,21 @@ internal sealed class SigningService(
     {
         using Activity? activity = telemetry?.StartAssignSigneesActivity();
 
+        string signeeStateDataTypeId =
+            signatureConfiguration.SigneeStatesDataTypeId
+            ?? throw new ApplicationConfigException(
+                "SigneeStatesDataTypeId is not set in the signature configuration."
+            );
+
+        //TODO: Can be removed when AddBinaryDataElement supports setting generatedFromTask, because then it will be automatically deleted in ProcessTaskInitializer.
+        RemoveSigneeState(instanceMutator, signeeStateDataTypeId);
+
         string instanceIdCombo = instanceMutator.Instance.Id;
         InstanceOwner instanceOwner = instanceMutator.Instance.InstanceOwner;
-
-        Party? instanceOwnerParty = null;
-        try
-        {
-            if (instanceOwner.OrganisationNumber == "ttd")
-            {
-                // TestDepartementet is often used in test environments, it does not have a organisation number, so we use Digitaliseringsdirektoratet's orgnr instead.
-                instanceOwner.OrganisationNumber = "991825827";
-            }
-            instanceOwnerParty = await altinnPartyClient.LookupParty(
-                !string.IsNullOrEmpty(instanceOwner.OrganisationNumber)
-                    ? new PartyLookup { OrgNo = instanceOwner.OrganisationNumber }
-                    : new PartyLookup { Ssn = instanceOwner.PersonNumber }
-            );
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, "Failed to look up party for instance owner.");
-        }
-
+        Party? instanceOwnerParty = await GetInstanceOwnerParty(instanceOwner);
         Guid? instanceOwnerPartyUuid = instanceOwnerParty?.PartyUuid;
-
         AppIdentifier appIdentifier = new(instanceMutator.Instance.AppId);
+
         (signeeContexts, bool delegateSuccess) = await signingDelegationService.DelegateSigneeRights(
             taskId,
             instanceIdCombo,
@@ -186,16 +176,12 @@ internal sealed class SigningService(
             }
         }
 
-        // Saves the signee context state to Storage
-        // ! TODO: Remove nullable
         instanceMutator.AddBinaryDataElement(
-            dataTypeId: signatureConfiguration.SigneeStatesDataTypeId!,
+            dataTypeId: signeeStateDataTypeId,
             contentType: ApplicationJsonContentType,
             filename: null,
             bytes: JsonSerializer.SerializeToUtf8Bytes(signeeContexts, _jsonSerializerOptions)
         );
-
-        await Task.CompletedTask;
 
         return signeeContexts;
     }
@@ -318,31 +304,53 @@ internal sealed class SigningService(
         }
     }
 
-    public void RemoveSigneeState(IInstanceDataMutator instanceMutator, string signeeStatesDataTypeId)
+    public async Task AbortRuntimeDelegatedSigning(
+        string taskId,
+        IInstanceDataMutator instanceMutator,
+        AltinnSignatureConfiguration signatureConfiguration,
+        CancellationToken ct
+    )
     {
-        using Activity? activity = telemetry?.StartRemoveSigneeStateActivity();
+        if (signatureConfiguration.SigneeStatesDataTypeId is not null)
+        {
+            RemoveSigneeState(instanceMutator, signatureConfiguration.SigneeStatesDataTypeId);
+        }
 
-        IEnumerable<DataElement> signeeStateDataElements = instanceMutator.GetDataElementsForType(
-            signeeStatesDataTypeId
+        if (signatureConfiguration.SignatureDataType is not null)
+        {
+            RemoveAllSignatures(instanceMutator, signatureConfiguration.SignatureDataType);
+        }
+
+        List<SigneeContext> signeeContexts = await GetSigneeContexts(instanceMutator, signatureConfiguration);
+        List<SigneeContext> signeeContextsWithDelegation = signeeContexts
+            .Where(x => x.SigneeState.IsAccessDelegated)
+            .ToList();
+
+        if (signeeContextsWithDelegation.IsNullOrEmpty())
+        {
+            _logger.LogInformation("Didn't find any signee contexts with delegated access rights. Nothing to revoke.");
+            return;
+        }
+
+        string instanceIdCombo = instanceMutator.Instance.Id;
+        InstanceOwner instanceOwner = instanceMutator.Instance.InstanceOwner;
+        Party instanceOwnerParty =
+            await GetInstanceOwnerParty(instanceOwner)
+            ?? throw new SigningException("Failed to lookup instance owner party.");
+
+        Guid instanceOwnerPartyUuid =
+            instanceOwnerParty.PartyUuid ?? throw new SigningException("PartyUuid was missing on intance owner party");
+
+        AppIdentifier appIdentifier = new(instanceMutator.Instance.AppId);
+
+        await signingDelegationService.RevokeSigneeRights(
+            taskId,
+            instanceIdCombo,
+            instanceOwnerPartyUuid,
+            appIdentifier,
+            signeeContextsWithDelegation,
+            ct
         );
-
-        DataElement? signeeStateDataElement = signeeStateDataElements.SingleOrDefault();
-        if (signeeStateDataElement is not null)
-        {
-            instanceMutator.RemoveDataElement(signeeStateDataElement);
-        }
-    }
-
-    public void RemoveAllSignatures(IInstanceDataMutator instanceMutator, string signatureDataType)
-    {
-        using Activity? activity = telemetry?.StartRemoveAllSignaturesActivity();
-
-        IEnumerable<DataElement> signatures = instanceMutator.GetDataElementsForType(signatureDataType);
-
-        foreach (DataElement signature in signatures)
-        {
-            instanceMutator.RemoveDataElement(signature);
-        }
     }
 
     /// <summary>
@@ -476,7 +484,7 @@ internal sealed class SigningService(
         };
     }
 
-    private static async Task<List<SigneeContext>> DownloadSigneeContexts(
+    private async Task<List<SigneeContext>> DownloadSigneeContexts(
         IInstanceDataAccessor instanceDataAccessor,
         AltinnSignatureConfiguration signatureConfiguration
     )
@@ -489,11 +497,13 @@ internal sealed class SigningService(
 
         IEnumerable<DataElement> dataElements = instanceDataAccessor.GetDataElementsForType(signeeStatesDataTypeId);
 
-        DataElement signeeStateDataElement =
-            dataElements.SingleOrDefault()
-            ?? throw new SigningException(
-                $"Failed to find the data element containing signee contexts using dataTypeId {signatureConfiguration.SigneeStatesDataTypeId}."
-            );
+        DataElement? signeeStateDataElement = dataElements.SingleOrDefault();
+
+        if (signeeStateDataElement is null)
+        {
+            _logger.LogInformation("Didn't find any signees state for task.");
+            return [];
+        }
 
         ReadOnlyMemory<byte> data = await instanceDataAccessor.GetBinaryData(signeeStateDataElement);
         string signeeStateSerialized = Encoding.UTF8.GetString(data.ToArray());
@@ -513,9 +523,9 @@ internal sealed class SigningService(
             signatureConfiguration.SignatureDataType
             ?? throw new ApplicationConfigException("SignatureDataType is not set in the signature configuration.");
 
-        List<DataElement> signatureDataElements = instanceDataAccessor
-            .Instance.Data.Where(x => x.DataType == signatureDataTypeId)
-            .ToList();
+        IEnumerable<DataElement> signatureDataElements = instanceDataAccessor.GetDataElementsForType(
+            signatureDataTypeId
+        );
 
         try
         {
@@ -683,6 +693,57 @@ internal sealed class SigningService(
             },
             SignDocument = signDocument,
         };
+    }
+
+    private async Task<Party?> GetInstanceOwnerParty(InstanceOwner instanceOwner)
+    {
+        try
+        {
+            if (instanceOwner.OrganisationNumber == "ttd")
+            {
+                // TestDepartementet is often used in test environments, it does not have a organisation number, so we use Digitaliseringsdirektoratet's orgnr instead.
+                instanceOwner.OrganisationNumber = "991825827";
+            }
+
+            return await altinnPartyClient.LookupParty(
+                !string.IsNullOrEmpty(instanceOwner.OrganisationNumber)
+                    ? new PartyLookup { OrgNo = instanceOwner.OrganisationNumber }
+                    : new PartyLookup { Ssn = instanceOwner.PersonNumber }
+            );
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Failed to look up party for instance owner.");
+        }
+
+        return null;
+    }
+
+    private void RemoveSigneeState(IInstanceDataMutator instanceMutator, string signeeStatesDataTypeId)
+    {
+        using Activity? activity = telemetry?.StartRemoveSigneeStateActivity();
+
+        IEnumerable<DataElement> signeeStateDataElements = instanceMutator.GetDataElementsForType(
+            signeeStatesDataTypeId
+        );
+
+        DataElement? signeeStateDataElement = signeeStateDataElements.SingleOrDefault();
+        if (signeeStateDataElement is not null)
+        {
+            instanceMutator.RemoveDataElement(signeeStateDataElement);
+        }
+    }
+
+    private void RemoveAllSignatures(IInstanceDataMutator instanceMutator, string signatureDataType)
+    {
+        using Activity? activity = telemetry?.StartRemoveAllSignaturesActivity();
+
+        IEnumerable<DataElement> signatures = instanceMutator.GetDataElementsForType(signatureDataType);
+
+        foreach (DataElement signature in signatures)
+        {
+            instanceMutator.RemoveDataElement(signature);
+        }
     }
 
     private static bool IsPersonOnBehalfOfOrgSignDocument(SignDocument signDocument)

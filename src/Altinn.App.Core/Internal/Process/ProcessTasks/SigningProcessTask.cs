@@ -112,6 +112,8 @@ internal sealed class SigningProcessTask : IProcessTask
     /// <inheritdoc/>
     public async Task Abandon(string taskId, Instance instance)
     {
+        var cts = new CancellationTokenSource();
+
         ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
         AltinnSignatureConfiguration signatureConfiguration = GetAltinnSignatureConfiguration(taskId);
 
@@ -123,15 +125,12 @@ internal sealed class SigningProcessTask : IProcessTask
             _modelSerialization
         );
 
-        if (signatureConfiguration.SignatureDataType is not null)
-        {
-            _signingService.RemoveAllSignatures(cachedDataMutator, signatureConfiguration.SignatureDataType);
-        }
-
-        if (signatureConfiguration.SigneeStatesDataTypeId is not null)
-        {
-            _signingService.RemoveSigneeState(cachedDataMutator, signatureConfiguration.SigneeStatesDataTypeId);
-        }
+        await _signingService.AbortRuntimeDelegatedSigning(
+            taskId,
+            cachedDataMutator,
+            signatureConfiguration,
+            cts.Token
+        );
 
         DataElementChanges changes = cachedDataMutator.GetDataElementChanges(false);
         await cachedDataMutator.UpdateInstanceData(changes);
@@ -145,14 +144,6 @@ internal sealed class SigningProcessTask : IProcessTask
         CancellationToken ct
     )
     {
-        string signeeStateDataTypeId =
-            signatureConfiguration.SigneeStatesDataTypeId
-            ?? throw new ApplicationConfigException(
-                "SigneeStatesDataTypeId is not set, but should be set when initialising runtime delegated signing."
-            );
-
-        _signingService.RemoveSigneeState(cachedDataMutator, signeeStateDataTypeId);
-
         List<SigneeContext> signeeContexts = await _signingService.GenerateSigneeContexts(
             cachedDataMutator,
             signatureConfiguration,

@@ -45,12 +45,12 @@ public interface ISigningService
     Task Sign(UserActionContext userActionContext, ProcessTask currentTask);
 
     /// <summary>
-    /// Removes the signee state for the given datatype.
+    /// Aborts runtime delegated signing. Deletes all signing data and revokes delegated access.
     /// </summary>
-    void RemoveSigneeState(IInstanceDataMutator cachedDataMutator, string signeeStateDataTypeId);
-
-    /// <summary>
-    /// Remove all signatures for the given datatype.
-    /// </summary>
-    void RemoveAllSignatures(IInstanceDataMutator cachedDataMutator, string signaturesDataTypeId);
+    Task AbortRuntimeDelegatedSigning(
+        string taskId,
+        IInstanceDataMutator instanceDataMutator,
+        AltinnSignatureConfiguration signatureConfiguration,
+        CancellationToken ct
+    );
 }
