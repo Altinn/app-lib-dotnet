@@ -14,7 +14,7 @@ public interface ISigningService
     /// Creates the signee contexts for the current task.
     /// </summary>
     Task<List<SigneeContext>> GenerateSigneeContexts(
-        IInstanceDataMutator instanceMutator,
+        IInstanceDataMutator instanceDataMutator,
         AltinnSignatureConfiguration signatureConfiguration,
         CancellationToken ct
     );
@@ -25,7 +25,7 @@ public interface ISigningService
     /// </summary>
     Task<List<SigneeContext>> InitialiseSignees(
         string taskId,
-        IInstanceDataMutator instanceMutator,
+        IInstanceDataMutator instanceDataMutator,
         List<SigneeContext> signeeContexts,
         AltinnSignatureConfiguration signatureConfiguration,
         CancellationToken ct

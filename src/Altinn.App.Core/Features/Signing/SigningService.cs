@@ -59,14 +59,14 @@ internal sealed class SigningService(
     private const string ApplicationJsonContentType = "application/json";
 
     public async Task<List<SigneeContext>> GenerateSigneeContexts(
-        IInstanceDataMutator instanceMutator,
+        IInstanceDataMutator instanceDataMutator,
         AltinnSignatureConfiguration signatureConfiguration,
         CancellationToken ct
     )
     {
         using Activity? activity = telemetry?.StartAssignSigneesActivity();
 
-        Instance instance = instanceMutator.Instance;
+        Instance instance = instanceDataMutator.Instance;
         string taskId = instance.Process.CurrentTask.ElementId;
 
         SigneesResult? signeesResult = await GetSigneesFromProvider(instance, signatureConfiguration);
@@ -97,7 +97,7 @@ internal sealed class SigningService(
 
     public async Task<List<SigneeContext>> InitialiseSignees(
         string taskId,
-        IInstanceDataMutator instanceMutator,
+        IInstanceDataMutator instanceDataMutator,
         List<SigneeContext> signeeContexts,
         AltinnSignatureConfiguration signatureConfiguration,
         CancellationToken ct
@@ -112,13 +112,13 @@ internal sealed class SigningService(
             );
 
         //TODO: Can be removed when AddBinaryDataElement supports setting generatedFromTask, because then it will be automatically deleted in ProcessTaskInitializer.
-        RemoveSigneeState(instanceMutator, signeeStateDataTypeId);
+        RemoveSigneeState(instanceDataMutator, signeeStateDataTypeId);
 
-        string instanceIdCombo = instanceMutator.Instance.Id;
-        InstanceOwner instanceOwner = instanceMutator.Instance.InstanceOwner;
+        string instanceIdCombo = instanceDataMutator.Instance.Id;
+        InstanceOwner instanceOwner = instanceDataMutator.Instance.InstanceOwner;
         Party? instanceOwnerParty = await GetInstanceOwnerParty(instanceOwner);
         Guid? instanceOwnerPartyUuid = instanceOwnerParty?.PartyUuid;
-        AppIdentifier appIdentifier = new(instanceMutator.Instance.AppId);
+        AppIdentifier appIdentifier = new(instanceDataMutator.Instance.AppId);
 
         (signeeContexts, bool delegateSuccess) = await signingDelegationService.DelegateSigneeRights(
             taskId,
@@ -154,7 +154,7 @@ internal sealed class SigningService(
                     await _signingCallToActionService.SendSignCallToAction(
                         signeeContext.Notifications?.OnSignatureAccessRightsDelegated,
                         appIdentifier,
-                        new InstanceIdentifier(instanceMutator.Instance),
+                        new InstanceIdentifier(instanceDataMutator.Instance),
                         signingParty,
                         serviceOwnerParty,
                         signatureConfiguration.CorrespondenceResources
@@ -176,7 +176,7 @@ internal sealed class SigningService(
             }
         }
 
-        instanceMutator.AddBinaryDataElement(
+        instanceDataMutator.AddBinaryDataElement(
             dataTypeId: signeeStateDataTypeId,
             contentType: ApplicationJsonContentType,
             filename: null,
@@ -184,37 +184,6 @@ internal sealed class SigningService(
         );
 
         return signeeContexts;
-    }
-
-    internal async Task<(Party serviceOwnerParty, bool success)> GetServiceOwnerParty(CancellationToken ct)
-    {
-        Party serviceOwnerParty = new();
-        try
-        {
-            ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
-
-            using var altinnCdnClient = new AltinnCdnClient();
-
-            AltinnCdnOrgs altinnCdnOrgs = await altinnCdnClient.GetOrgs(ct);
-
-            AltinnCdnOrgDetails? serviceOwnerDetails = altinnCdnOrgs.Orgs?.GetValueOrDefault(applicationMetadata.Org);
-
-            if (serviceOwnerDetails?.Orgnr == "ttd")
-            {
-                // TestDepartementet is often used in test environments, it does not have a organisation number, so we use Digitaliseringsdirektoratet's orgnr instead.
-                serviceOwnerDetails.Orgnr = "991825827";
-            }
-
-            serviceOwnerParty = await altinnPartyClient.LookupParty(
-                new PartyLookup { OrgNo = serviceOwnerDetails?.Orgnr }
-            );
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, "Failed to look up party for service owner.");
-            return (new Party(), false);
-        }
-        return (serviceOwnerParty, true);
     }
 
     public async Task<List<SigneeContext>> GetSigneeContexts(
@@ -306,22 +275,22 @@ internal sealed class SigningService(
 
     public async Task AbortRuntimeDelegatedSigning(
         string taskId,
-        IInstanceDataMutator instanceMutator,
+        IInstanceDataMutator instanceDataMutator,
         AltinnSignatureConfiguration signatureConfiguration,
         CancellationToken ct
     )
     {
         if (signatureConfiguration.SigneeStatesDataTypeId is not null)
         {
-            RemoveSigneeState(instanceMutator, signatureConfiguration.SigneeStatesDataTypeId);
+            RemoveSigneeState(instanceDataMutator, signatureConfiguration.SigneeStatesDataTypeId);
         }
 
         if (signatureConfiguration.SignatureDataType is not null)
         {
-            RemoveAllSignatures(instanceMutator, signatureConfiguration.SignatureDataType);
+            RemoveAllSignatures(instanceDataMutator, signatureConfiguration.SignatureDataType);
         }
 
-        List<SigneeContext> signeeContexts = await GetSigneeContexts(instanceMutator, signatureConfiguration);
+        List<SigneeContext> signeeContexts = await GetSigneeContexts(instanceDataMutator, signatureConfiguration);
         List<SigneeContext> signeeContextsWithDelegation = signeeContexts
             .Where(x => x.SigneeState.IsAccessDelegated)
             .ToList();
@@ -332,16 +301,16 @@ internal sealed class SigningService(
             return;
         }
 
-        string instanceIdCombo = instanceMutator.Instance.Id;
-        InstanceOwner instanceOwner = instanceMutator.Instance.InstanceOwner;
+        string instanceIdCombo = instanceDataMutator.Instance.Id;
+        InstanceOwner instanceOwner = instanceDataMutator.Instance.InstanceOwner;
         Party instanceOwnerParty =
             await GetInstanceOwnerParty(instanceOwner)
             ?? throw new SigningException("Failed to lookup instance owner party.");
 
         Guid instanceOwnerPartyUuid =
-            instanceOwnerParty.PartyUuid ?? throw new SigningException("PartyUuid was missing on intance owner party");
+            instanceOwnerParty.PartyUuid ?? throw new SigningException("PartyUuid was missing on instance owner party");
 
-        AppIdentifier appIdentifier = new(instanceMutator.Instance.AppId);
+        AppIdentifier appIdentifier = new(instanceDataMutator.Instance.AppId);
 
         await signingDelegationService.RevokeSigneeRights(
             taskId,
@@ -701,7 +670,7 @@ internal sealed class SigningService(
         {
             if (instanceOwner.OrganisationNumber == "ttd")
             {
-                // TestDepartementet is often used in test environments, it does not have a organisation number, so we use Digitaliseringsdirektoratet's orgnr instead.
+                // Testdepartementet is often used in test environments, it does not have an organisation number, so we use Digitaliseringsdirektoratet's orgnr instead.
                 instanceOwner.OrganisationNumber = "991825827";
             }
 
@@ -719,30 +688,62 @@ internal sealed class SigningService(
         return null;
     }
 
-    private void RemoveSigneeState(IInstanceDataMutator instanceMutator, string signeeStatesDataTypeId)
+    private async Task<(Party serviceOwnerParty, bool success)> GetServiceOwnerParty(CancellationToken ct)
+    {
+        Party serviceOwnerParty;
+        try
+        {
+            ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
+
+            using var altinnCdnClient = new AltinnCdnClient();
+
+            AltinnCdnOrgs altinnCdnOrgs = await altinnCdnClient.GetOrgs(ct);
+
+            AltinnCdnOrgDetails? serviceOwnerDetails = altinnCdnOrgs.Orgs?.GetValueOrDefault(applicationMetadata.Org);
+
+            if (serviceOwnerDetails?.Orgnr == "ttd")
+            {
+                // TestDepartementet is often used in test environments, it does not have an organisation number, so we use Digitaliseringsdirektoratet's orgnr instead.
+                serviceOwnerDetails.Orgnr = "991825827";
+            }
+
+            serviceOwnerParty = await altinnPartyClient.LookupParty(
+                new PartyLookup { OrgNo = serviceOwnerDetails?.Orgnr }
+            );
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Failed to look up party for service owner.");
+            return (new Party(), false);
+        }
+
+        return (serviceOwnerParty, true);
+    }
+
+    private void RemoveSigneeState(IInstanceDataMutator instanceDataMutator, string signeeStatesDataTypeId)
     {
         using Activity? activity = telemetry?.StartRemoveSigneeStateActivity();
 
-        IEnumerable<DataElement> signeeStateDataElements = instanceMutator.GetDataElementsForType(
+        IEnumerable<DataElement> signeeStateDataElements = instanceDataMutator.GetDataElementsForType(
             signeeStatesDataTypeId
         );
 
         DataElement? signeeStateDataElement = signeeStateDataElements.SingleOrDefault();
         if (signeeStateDataElement is not null)
         {
-            instanceMutator.RemoveDataElement(signeeStateDataElement);
+            instanceDataMutator.RemoveDataElement(signeeStateDataElement);
         }
     }
 
-    private void RemoveAllSignatures(IInstanceDataMutator instanceMutator, string signatureDataType)
+    private void RemoveAllSignatures(IInstanceDataMutator instanceDataMutator, string signatureDataType)
     {
         using Activity? activity = telemetry?.StartRemoveAllSignaturesActivity();
 
-        IEnumerable<DataElement> signatures = instanceMutator.GetDataElementsForType(signatureDataType);
+        IEnumerable<DataElement> signatures = instanceDataMutator.GetDataElementsForType(signatureDataType);
 
         foreach (DataElement signature in signatures)
         {
-            instanceMutator.RemoveDataElement(signature);
+            instanceDataMutator.RemoveDataElement(signature);
         }
     }
 
