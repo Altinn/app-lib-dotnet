@@ -501,7 +501,7 @@ internal sealed class SigningService(
 
         if (signeeStateDataElement is null)
         {
-            _logger.LogInformation("Didn't find any signees state for task.");
+            _logger.LogInformation("Didn't find any signee states for task.");
             return [];
         }
 
