@@ -16,11 +16,15 @@ namespace Altinn.App.Core.Tests.Internal.Process.ProcessTasks.Common;
 
 public class ProcessTaskFinalizerTests
 {
-    private readonly Mock<IAppMetadata> _appMetadataMock = new();
-    private readonly Mock<IDataClient> _dataClientMock = new();
+    private readonly Mock<IAppMetadata> _appMetadataMock = new(MockBehavior.Strict);
+    private readonly Mock<IDataClient> _dataClientMock = new(MockBehavior.Strict);
     private readonly Mock<IInstanceClient> _instanceClientMock = new(MockBehavior.Strict);
-    private readonly Mock<IAppModel> _appModelMock = new();
-    private readonly Mock<ILayoutEvaluatorStateInitializer> _layoutEvaluatorStateInitializerMock = new();
+    private readonly Mock<IAppModel> _appModelMock = new(MockBehavior.Strict);
+    private readonly Mock<ILayoutEvaluatorStateInitializer> _layoutEvaluatorStateInitializerMock = new(
+        MockBehavior.Strict
+    );
+    private readonly Mock<IAppResources> _appResourcesMock = new(MockBehavior.Strict);
+
     private readonly IOptions<AppSettings> _appSettings = Options.Create(new AppSettings());
     private readonly ProcessTaskFinalizer _processTaskFinalizer;
 
@@ -28,11 +32,16 @@ public class ProcessTaskFinalizerTests
     {
         _processTaskFinalizer = new ProcessTaskFinalizer(
             _appMetadataMock.Object,
-            _dataClientMock.Object,
-            _instanceClientMock.Object,
             _appModelMock.Object,
-            new ModelSerializationService(_appModelMock.Object),
             _layoutEvaluatorStateInitializerMock.Object,
+            new InternalInstanceDataUnitOfWorkInitializer(
+                _dataClientMock.Object,
+                _instanceClientMock.Object,
+                _appMetadataMock.Object,
+                new ModelSerializationService(_appModelMock.Object),
+                _appResourcesMock.Object,
+                Options.Create<FrontEndSettings>(new())
+            ),
             _appSettings
         );
     }
@@ -70,7 +79,7 @@ public class ProcessTaskFinalizerTests
         await _processTaskFinalizer.Finalize(instance.Process.CurrentTask.ElementId, instance);
 
         // Assert
-        // Called once in Finalize and once in CachedInstanceDataAccessor.UpdateInstanceData
-        _appMetadataMock.Verify(x => x.GetApplicationMetadata(), Times.Once);
+        // Called once in Finalize and once when initializing the dataAccessor
+        _appMetadataMock.Verify(x => x.GetApplicationMetadata(), Times.Exactly(2));
     }
 }

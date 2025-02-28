@@ -1,5 +1,6 @@
 using System.Net;
 using Altinn.App.Api.Controllers;
+using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.Serialization;
@@ -13,6 +14,7 @@ using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Moq;
 
 namespace Altinn.App.Api.Tests.Controllers;
@@ -24,11 +26,12 @@ public class ValidateControllerTests
     private const int InstanceOwnerPartyId = 1337;
     private static readonly Guid _instanceId = Guid.NewGuid();
 
-    private readonly Mock<IInstanceClient> _instanceMock = new();
-    private readonly Mock<IAppMetadata> _appMetadataMock = new();
-    private readonly Mock<IValidationService> _validationMock = new();
-    private readonly Mock<IDataClient> _dataClientMock = new();
-    private readonly Mock<IAppModel> _appModelMock = new();
+    private readonly Mock<IInstanceClient> _instanceMock = new(MockBehavior.Strict);
+    private readonly Mock<IAppMetadata> _appMetadataMock = new(MockBehavior.Strict);
+    private readonly Mock<IValidationService> _validationMock = new(MockBehavior.Strict);
+    private readonly Mock<IDataClient> _dataClientMock = new(MockBehavior.Strict);
+    private readonly Mock<IAppModel> _appModelMock = new(MockBehavior.Strict);
+    private readonly Mock<IAppResources> _appResourcesMock = new(MockBehavior.Strict);
 
     public ValidateControllerTests()
     {
@@ -215,8 +218,14 @@ public class ValidateControllerTests
             _instanceMock.Object,
             _validationMock.Object,
             _appMetadataMock.Object,
-            _dataClientMock.Object,
-            new ModelSerializationService(_appModelMock.Object)
+            new InternalInstanceDataUnitOfWorkInitializer(
+                _dataClientMock.Object,
+                _instanceMock.Object,
+                _appMetadataMock.Object,
+                new ModelSerializationService(_appModelMock.Object),
+                _appResourcesMock.Object,
+                Options.Create<FrontEndSettings>(new())
+            )
         );
     }
 }
