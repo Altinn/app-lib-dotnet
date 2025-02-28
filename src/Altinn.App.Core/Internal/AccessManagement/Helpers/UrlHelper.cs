@@ -16,7 +16,7 @@ internal sealed class UrlHelper(PlatformSettings platformSettings)
     internal string CreateInstanceRevokeUrl(string appResourceId, string instanceId)
     {
         return platformSettings.ApiAccessManagementEndpoint.TrimEnd('/')
-            + "app/delegationrevoke/resource/"
+            + "/app/delegationrevoke/resource/"
             + appResourceId
             + "/instance/"
             + instanceId;
