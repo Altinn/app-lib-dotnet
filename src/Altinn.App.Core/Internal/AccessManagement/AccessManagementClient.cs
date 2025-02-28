@@ -43,6 +43,12 @@ internal sealed class AccessManagementClient(
             var body = JsonSerializer.Serialize(DelegationRequest.ConvertToDto(delegation));
             logger.LogInformation($"Revoking rights from {delegation.To?.Value} for {delegation.ResourceId}");
 
+            logger.LogInformation($"Delegation ResourceId: {delegation.ResourceId}, InstanceId: {delegation.InstanceId}");
+            logger.LogInformation($"Delegation To: {delegation.To?.Value}");
+            logger.LogInformation($"Request body: {body}");
+            logger.LogInformation($"Full URL: {uri}");
+            logger.LogInformation($"Revoking rights from {delegation.To?.Value} for {delegation.ResourceId}");
+
             using var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, uri)
             {
                 Content = new StringContent(body, new MediaTypeHeaderValue("application/json")),
