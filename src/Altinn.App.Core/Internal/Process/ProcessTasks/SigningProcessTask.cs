@@ -112,7 +112,7 @@ internal sealed class SigningProcessTask : IProcessTask
     /// <inheritdoc/>
     public async Task Abandon(string taskId, Instance instance)
     {
-        var cts = new CancellationTokenSource();
+        using var cts = new CancellationTokenSource();
 
         ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
         AltinnSignatureConfiguration signatureConfiguration = GetAltinnSignatureConfiguration(taskId);
