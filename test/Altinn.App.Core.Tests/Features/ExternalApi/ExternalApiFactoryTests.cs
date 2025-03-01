@@ -1,5 +1,7 @@
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.ExternalApi;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
 namespace Altinn.App.Core.Tests.Features.ExternalApi;
@@ -17,7 +19,13 @@ public class ExternalApiFactoryTests
     public void GetExternalApiClient_UnknownApiId_ShouldThrowException()
     {
         // Arrange
-        var factory = new ExternalApiFactory([]);
+        var services = new ServiceCollection();
+        services.AddTestAppImplementationFactory();
+        services.AddSingleton<ExternalApiFactory>();
+        using var sp = services.BuildServiceProvider(
+            new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }
+        );
+        var factory = sp.GetRequiredService<ExternalApiFactory>();
 
         // Act
         var externalApiClient = factory.GetExternalApiClient("unknown");
@@ -31,7 +39,14 @@ public class ExternalApiFactoryTests
     {
         // Arrange
         _externalApiClientMock.SetupGet(x => x.Id).Returns("api1");
-        var factory = new ExternalApiFactory([_externalApiClientMock.Object]);
+        var services = new ServiceCollection();
+        services.AddTestAppImplementationFactory();
+        services.AddSingleton<ExternalApiFactory>();
+        services.AddSingleton<IExternalApiClient>(_externalApiClientMock.Object);
+        using var sp = services.BuildServiceProvider(
+            new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }
+        );
+        var factory = sp.GetRequiredService<ExternalApiFactory>();
 
         // Act
         var externalApiClient = factory.GetExternalApiClient("api1");
