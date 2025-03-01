@@ -3,19 +3,43 @@ using Altinn.App.Core.Features.Options;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Models;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
 namespace Altinn.App.Core.Tests.Features.Options;
 
 public class AppOptionsFactoryTests
 {
+    private sealed record Fixture(IServiceProvider ServiceProvider) : IDisposable
+    {
+        public AppOptionsFactory Factory => ServiceProvider.GetRequiredService<AppOptionsFactory>();
+
+        // public Mock<T> Mock<T>()
+        //     where T : class => Moq.Mock.Get(ServiceProvider.GetRequiredService<T>());
+
+        public static Fixture Create(Action<IServiceCollection>? configure = null)
+        {
+            var services = new ServiceCollection();
+            services.AddTestAppImplementationFactory();
+            services.AddSingleton<IAppOptionsFileHandler>(new Mock<IAppOptionsFileHandler>().Object);
+            services.AddSingleton<AppOptionsFactory>();
+            configure?.Invoke(services);
+            var serviceProvider = services.BuildServiceProvider(
+                new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }
+            );
+            return new(serviceProvider);
+        }
+
+        public void Dispose() => (ServiceProvider as IDisposable)?.Dispose();
+    }
+
     [Fact]
     public void GetOptionsProvider_NoCustomOptionsProvider_ShouldReturnDefault()
     {
-        var appOptionsFileHandler = new Mock<IAppOptionsFileHandler>();
-        var factory = new AppOptionsFactory(
-            new List<IAppOptionsProvider>() { new DefaultAppOptionsProvider(appOptionsFileHandler.Object) }
+        using var fixture = Fixture.Create(services =>
+            services.AddSingleton<IAppOptionsProvider, DefaultAppOptionsProvider>()
         );
+        var factory = fixture.Factory;
 
         IAppOptionsProvider optionsProvider = factory.GetOptionsProvider("country");
 
@@ -26,10 +50,10 @@ public class AppOptionsFactoryTests
     [Fact]
     public void GetOptionsProvider_NoCustomOptionsProvider_ShouldReturnDefaultTwice()
     {
-        var appOptionsFileHandler = new Mock<IAppOptionsFileHandler>();
-        var factory = new AppOptionsFactory(
-            new List<IAppOptionsProvider>() { new DefaultAppOptionsProvider(appOptionsFileHandler.Object) }
+        using var fixture = Fixture.Create(services =>
+            services.AddSingleton<IAppOptionsProvider, DefaultAppOptionsProvider>()
         );
+        var factory = fixture.Factory;
 
         IAppOptionsProvider optionsProvider1 = factory.GetOptionsProvider("fylke");
         IAppOptionsProvider optionsProvider2 = factory.GetOptionsProvider("kommune");
@@ -41,7 +65,8 @@ public class AppOptionsFactoryTests
     [Fact]
     public void GetOptionsProvider_NoDefaultProvider_ShouldThrowException()
     {
-        var factory = new AppOptionsFactory(new List<IAppOptionsProvider>());
+        using var fixture = Fixture.Create();
+        var factory = fixture.Factory;
 
         System.Action action = () => factory.GetOptionsProvider("country");
 
@@ -51,14 +76,12 @@ public class AppOptionsFactoryTests
     [Fact]
     public void GetOptionsProvider_CustomOptionsProvider_ShouldReturnCustomType()
     {
-        var appOptionsFileHandler = new Mock<IAppOptionsFileHandler>();
-        var factory = new AppOptionsFactory(
-            new List<IAppOptionsProvider>()
-            {
-                new DefaultAppOptionsProvider(appOptionsFileHandler.Object),
-                new CountryAppOptionsProvider(),
-            }
-        );
+        using var fixture = Fixture.Create(services =>
+        {
+            services.AddSingleton<IAppOptionsProvider, DefaultAppOptionsProvider>();
+            services.AddSingleton<IAppOptionsProvider, CountryAppOptionsProvider>();
+        });
+        var factory = fixture.Factory;
 
         IAppOptionsProvider optionsProvider = factory.GetOptionsProvider("country");
 
@@ -69,14 +92,12 @@ public class AppOptionsFactoryTests
     [Fact]
     public void GetOptionsProvider_CustomOptionsProviderWithUpperCase_ShouldReturnCustomType()
     {
-        var appOptionsFileHandler = new Mock<IAppOptionsFileHandler>();
-        var factory = new AppOptionsFactory(
-            new List<IAppOptionsProvider>()
-            {
-                new DefaultAppOptionsProvider(appOptionsFileHandler.Object),
-                new CountryAppOptionsProvider(),
-            }
-        );
+        using var fixture = Fixture.Create(services =>
+        {
+            services.AddSingleton<IAppOptionsProvider, DefaultAppOptionsProvider>();
+            services.AddSingleton<IAppOptionsProvider, CountryAppOptionsProvider>();
+        });
+        var factory = fixture.Factory;
 
         IAppOptionsProvider optionsProvider = factory.GetOptionsProvider("Country");
 
@@ -87,14 +108,12 @@ public class AppOptionsFactoryTests
     [Fact]
     public async Task GetParameters_CustomOptionsProviderWithUpperCase_ShouldReturnCustomType()
     {
-        var appOptionsFileHandler = new Mock<IAppOptionsFileHandler>();
-        var factory = new AppOptionsFactory(
-            new List<IAppOptionsProvider>()
-            {
-                new DefaultAppOptionsProvider(appOptionsFileHandler.Object),
-                new CountryAppOptionsProvider(),
-            }
-        );
+        using var fixture = Fixture.Create(services =>
+        {
+            services.AddSingleton<IAppOptionsProvider, DefaultAppOptionsProvider>();
+            services.AddSingleton<IAppOptionsProvider, CountryAppOptionsProvider>();
+        });
+        var factory = fixture.Factory;
 
         IAppOptionsProvider optionsProvider = factory.GetOptionsProvider("Country");
 
