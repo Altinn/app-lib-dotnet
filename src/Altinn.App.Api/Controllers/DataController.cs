@@ -45,7 +45,6 @@ public class DataController : ControllerBase
 {
     private readonly ILogger<DataController> _logger;
     private readonly IDataClient _dataClient;
-    private readonly IEnumerable<IDataProcessor> _dataProcessors;
     private readonly IInstanceClient _instanceClient;
     private readonly IAppModel _appModel;
     private readonly IAppMetadata _appMetadata;
@@ -66,7 +65,6 @@ public class DataController : ControllerBase
     /// <param name="logger">logger</param>
     /// <param name="instanceClient">instance service to store instances</param>
     /// <param name="dataClient">A service with access to data storage.</param>
-    /// <param name="dataProcessors">Services implementing logic during data read/write</param>
     /// <param name="appModel">Service for generating app model</param>
     /// <param name="appMetadata">The app metadata service</param>
     /// <param name="featureManager">The feature manager controlling enabled features.</param>
@@ -81,7 +79,6 @@ public class DataController : ControllerBase
         ILogger<DataController> logger,
         IInstanceClient instanceClient,
         IDataClient dataClient,
-        IEnumerable<IDataProcessor> dataProcessors,
         IAppModel appModel,
         IPrefill prefillService,
         IFileAnalysisService fileAnalyserService,
@@ -98,7 +95,6 @@ public class DataController : ControllerBase
 
         _instanceClient = instanceClient;
         _dataClient = dataClient;
-        _dataProcessors = dataProcessors;
         _appModel = appModel;
         _appMetadata = appMetadata;
         _prefillService = prefillService;
@@ -951,7 +947,8 @@ public class DataController : ControllerBase
         // we need to save a copy to detect changes if dataProcessRead changes the model
         byte[] beforeProcessDataRead = JsonSerializer.SerializeToUtf8Bytes(appModel);
 
-        foreach (var dataProcessor in _dataProcessors)
+        var dataProcessors = _appImplementationFactory.GetRequired<IEnumerable<IDataProcessor>>();
+        foreach (var dataProcessor in dataProcessors)
         {
             _logger.LogInformation(
                 "ProcessDataRead for {ModelType} using {DataProcessor}",

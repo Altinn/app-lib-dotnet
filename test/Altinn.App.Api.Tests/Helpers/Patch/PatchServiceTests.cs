@@ -95,6 +95,7 @@ public sealed class PatchServiceTests : IDisposable
         services.AddSingleton<IFormDataValidator>(_formDataValidator.Object);
         services.AddSingleton<IValidatorFactory, ValidatorFactory>();
         services.AddSingleton(_appMetadataMock.Object);
+        services.AddSingleton(_dataProcessorMock.Object);
         services.Configure<GeneralSettings>(_ => { });
         _serviceProvider = services.BuildServiceProvider(
             new ServiceProviderOptions() { ValidateOnBuild = true, ValidateScopes = true }
@@ -109,10 +110,9 @@ public sealed class PatchServiceTests : IDisposable
             _dataClientMock.Object,
             _instanceClientMock.Object,
             validationService,
-            [_dataProcessorMock.Object],
-            [],
             _modelSerializationService,
             _webHostEnvironment.Object,
+            _serviceProvider,
             _telemetrySink.Object
         );
     }
