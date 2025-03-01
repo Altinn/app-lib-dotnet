@@ -2,6 +2,7 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Options;
 using Altinn.App.Core.Models;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Altinn.App.Core.Tests.Features.Options;
 
@@ -10,9 +11,15 @@ public class InstanceAppOptionsFactoryTests
     [Fact]
     public void GetOptionsProvider_NoCustomOptionsProvider_ShouldReturnDefault()
     {
-        var factory = new InstanceAppOptionsFactory(
-            new List<IInstanceAppOptionsProvider>() { new VehiclesInstanceAppOptionsProvider() }
+        var services = new ServiceCollection();
+        services.AddTestAppImplementationFactory();
+        services.AddSingleton<IInstanceAppOptionsProvider, VehiclesInstanceAppOptionsProvider>();
+        services.AddSingleton<InstanceAppOptionsFactory>();
+        using var serviceProvider = services.BuildServiceProvider(
+            new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }
         );
+
+        var factory = serviceProvider.GetRequiredService<InstanceAppOptionsFactory>();
 
         IInstanceAppOptionsProvider optionsProvider = factory.GetOptionsProvider("not-vehicles");
 
@@ -22,10 +29,15 @@ public class InstanceAppOptionsFactoryTests
     [Fact]
     public void GetOptionsProvider_CustomOptionsProvider_ShouldReturnCustomType()
     {
-        var factory = new InstanceAppOptionsFactory(
-            new List<IInstanceAppOptionsProvider>() { new VehiclesInstanceAppOptionsProvider() }
+        var services = new ServiceCollection();
+        services.AddTestAppImplementationFactory();
+        services.AddSingleton<IInstanceAppOptionsProvider, VehiclesInstanceAppOptionsProvider>();
+        services.AddSingleton<InstanceAppOptionsFactory>();
+        using var serviceProvider = services.BuildServiceProvider(
+            new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }
         );
 
+        var factory = serviceProvider.GetRequiredService<InstanceAppOptionsFactory>();
         IInstanceAppOptionsProvider optionsProvider = factory.GetOptionsProvider("vehicles");
 
         optionsProvider.Should().BeOfType<VehiclesInstanceAppOptionsProvider>();
