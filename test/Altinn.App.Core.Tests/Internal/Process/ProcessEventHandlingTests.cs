@@ -261,7 +261,7 @@ public class ProcessEventHandlingTests
                 },
             },
         };
-        fixture.Mock<IInstanceClient>().Setup(i => i.UpdateProcess(instance)).ReturnsAsync(instance);
+        fixture.Mock<IInstanceClient>().Setup(i => i.UpdateProcessAndEvents(instance, events)).ReturnsAsync(instance);
         Dictionary<string, string> prefill = new Dictionary<string, string>();
 
         // Act

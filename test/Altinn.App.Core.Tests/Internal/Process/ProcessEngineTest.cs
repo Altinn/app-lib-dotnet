@@ -120,7 +120,7 @@ public sealed class ProcessEngineTest
     [ClassData(typeof(TestAuthentication.AllTokens))]
     public async Task StartProcess_starts_process_and_moves_to_first_task(TestJwtToken token)
     {
-        using var fixture = Fixture.Create(withTelemetry: true);
+        using var fixture = Fixture.Create(withTelemetry: true, token: token);
         var instanceOwnerPartyId = token.Auth switch
         {
             Authenticated.User auth when await auth.LoadDetails() is { } details => details.SelectedParty.PartyId,
