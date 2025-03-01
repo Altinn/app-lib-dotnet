@@ -3,6 +3,7 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.DataLists;
 using Altinn.App.Core.Models;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Altinn.App.PlatformServices.Tests.DataLists;
 
@@ -11,7 +12,15 @@ public class DataListsFactoryTest
     [Fact]
     public void GetDataListProvider_CustomDataListProvider_ShouldReturnCustomType()
     {
-        var factory = new DataListsFactory(new List<IDataListProvider>() { new CountryDataListProvider() });
+        var services = new ServiceCollection();
+        services.AddTestAppImplementationFactory();
+        services.AddSingleton<DataListsFactory>();
+        services.AddSingleton<IDataListProvider, CountryDataListProvider>();
+        using var serviceProvider = services.BuildServiceProvider(
+            new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }
+        );
+
+        var factory = serviceProvider.GetRequiredService<DataListsFactory>();
 
         IDataListProvider dataListProvider = factory.GetDataListProvider("country");
 
@@ -22,7 +31,14 @@ public class DataListsFactoryTest
     [Fact]
     public void GetDataListProvider_NoDataListProvider_ShouldReturnNullDataListProvider()
     {
-        var factory = new DataListsFactory(new List<IDataListProvider>() { });
+        var services = new ServiceCollection();
+        services.AddTestAppImplementationFactory();
+        services.AddSingleton<DataListsFactory>();
+        using var serviceProvider = services.BuildServiceProvider(
+            new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }
+        );
+
+        var factory = serviceProvider.GetRequiredService<DataListsFactory>();
 
         IDataListProvider dataListProvider = factory.GetDataListProvider("country");
 
