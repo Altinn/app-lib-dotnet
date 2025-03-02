@@ -154,7 +154,7 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
         return request;
     }
 
-    private ProblemDetails? GetProblemDetails(string responseBody)
+    private ValidationProblemDetails? GetProblemDetails(string responseBody)
     {
         if (string.IsNullOrWhiteSpace(responseBody))
         {
@@ -163,7 +163,18 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
 
         try
         {
-            return JsonSerializer.Deserialize<ProblemDetails>(responseBody);
+            var problemDetails = JsonSerializer.Deserialize<ValidationProblemDetails>(responseBody);
+            if (problemDetails is null)
+            {
+                return null;
+            }
+
+            problemDetails.Detail ??=
+                problemDetails.Errors.Count > 0
+                    ? JsonSerializer.Serialize(problemDetails.Errors)
+                    : $"Unknown error. Full server response: {responseBody}";
+
+            return problemDetails;
         }
         catch (Exception e)
         {
