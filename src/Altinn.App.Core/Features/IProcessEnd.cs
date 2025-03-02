@@ -5,6 +5,7 @@ namespace Altinn.App.Core.Features;
 /// <summary>
 /// Custom logic to run when the entire process has ended. E.g. when we have arrived at an `endEvent` in the BPMN model
 /// </summary>
+[ImplementableByApps]
 public interface IProcessEnd
 {
     /// <summary>

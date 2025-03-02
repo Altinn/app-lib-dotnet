@@ -16,6 +16,7 @@ using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
 using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Altinn.App.Core.Internal.Process;
 
@@ -31,12 +32,12 @@ public class ProcessEngine : IProcessEngine
     private readonly UserActionService _userActionService;
     private readonly Telemetry? _telemetry;
     private readonly IAuthenticationContext _authenticationContext;
+    private readonly AppImplementationFactory _appImplementationFactory;
     private readonly IProcessTaskCleaner _processTaskCleaner;
     private readonly IDataClient _dataClient;
     private readonly IInstanceClient _instanceClient;
     private readonly ModelSerializationService _modelSerialization;
     private readonly IAppMetadata _appMetadata;
-    private readonly IEnumerable<IProcessEnd> _processEnds;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessEngine"/> class
@@ -53,7 +54,7 @@ public class ProcessEngine : IProcessEngine
         ModelSerializationService modelSerialization,
         IAppMetadata appMetadata,
         IAuthenticationContext authenticationContext,
-        IEnumerable<IProcessEnd> processEnds,
+        IServiceProvider serviceProvider,
         Telemetry? telemetry = null
     )
     {
@@ -69,7 +70,7 @@ public class ProcessEngine : IProcessEngine
         _appMetadata = appMetadata;
         _telemetry = telemetry;
         _authenticationContext = authenticationContext;
-        _processEnds = processEnds;
+        _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
     }
 
     /// <inheritdoc/>
@@ -467,9 +468,10 @@ public class ProcessEngine : IProcessEngine
     /// </summary>
     private async Task RunAppDefinedProcessEndHandlers(Instance instance, List<InstanceEvent>? events)
     {
-        foreach (IProcessEnd taskEnd in _processEnds)
+        var processEnds = _appImplementationFactory.GetAll<IProcessEnd>();
+        foreach (IProcessEnd processend in processEnds)
         {
-            await taskEnd.End(instance, events);
+            await processend.End(instance, events);
         }
     }
 
