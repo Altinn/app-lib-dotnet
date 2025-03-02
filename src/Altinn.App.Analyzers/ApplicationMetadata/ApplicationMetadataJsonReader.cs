@@ -44,7 +44,7 @@ internal static class ApplicationMetadataJsonReader
             JsonLoadSettings loadSettings = new JsonLoadSettings()
             {
                 CommentHandling = CommentHandling.Ignore,
-                LineInfoHandling = LineInfoHandling.Load
+                LineInfoHandling = LineInfoHandling.Load,
             };
 
             var metadata = JObject.Load(reader, loadSettings);

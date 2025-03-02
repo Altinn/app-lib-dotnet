@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices.ComTypes;
 using Altinn.App.Analyzers.Json;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -42,7 +41,7 @@ internal static class LayoutSetsJsonReader
             JsonLoadSettings loadSettings = new JsonLoadSettings()
             {
                 CommentHandling = CommentHandling.Ignore,
-                LineInfoHandling = LineInfoHandling.Load
+                LineInfoHandling = LineInfoHandling.Load,
             };
 
             var layoutSets = JObject.Load(reader, loadSettings);
