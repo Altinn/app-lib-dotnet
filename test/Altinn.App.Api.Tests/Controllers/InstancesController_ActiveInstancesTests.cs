@@ -1,5 +1,4 @@
 using Altinn.App.Api.Controllers;
-using Altinn.App.Api.Helpers.Patch;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Profile;

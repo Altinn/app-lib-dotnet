@@ -947,7 +947,7 @@ public class DataController : ControllerBase
         // we need to save a copy to detect changes if dataProcessRead changes the model
         byte[] beforeProcessDataRead = JsonSerializer.SerializeToUtf8Bytes(appModel);
 
-        var dataProcessors = _appImplementationFactory.GetRequired<IEnumerable<IDataProcessor>>();
+        var dataProcessors = _appImplementationFactory.GetAll<IDataProcessor>();
         foreach (var dataProcessor in dataProcessors)
         {
             _logger.LogInformation(

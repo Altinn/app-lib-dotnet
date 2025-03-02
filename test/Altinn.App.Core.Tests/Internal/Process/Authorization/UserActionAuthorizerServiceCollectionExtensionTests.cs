@@ -67,8 +67,6 @@ public class UserActionAuthorizerServiceCollectionExtensionTests
         var provider = sp.GetServices<IUserActionAuthorizerProvider>();
         provider.Should().NotBeNull();
         provider.Should().HaveCount(2);
-        // provider.Should().ContainEquivalentOf(new UserActionAuthorizerProvider(taskId, action, authorizer.First()));
-        // provider.Should().ContainEquivalentOf(new UserActionAuthorizerProvider(taskId2, action, authorizer.First()));
         provider
             .Should()
             .ContainSingle(p => p.TaskId == taskId && p.Action == action && p.Authorizer == authorizer.First());

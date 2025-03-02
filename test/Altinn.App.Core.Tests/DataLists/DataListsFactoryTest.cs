@@ -1,4 +1,3 @@
-#nullable disable
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.DataLists;
 using Altinn.App.Core.Models;
@@ -46,7 +45,7 @@ public class DataListsFactoryTest
     {
         public string Id { get; set; } = "country";
 
-        public Task<DataList> GetDataListAsync(string language, Dictionary<string, string> keyValuePairs)
+        public Task<DataList> GetDataListAsync(string? language, Dictionary<string, string> keyValuePairs)
         {
             var dataList = new DataList
             {

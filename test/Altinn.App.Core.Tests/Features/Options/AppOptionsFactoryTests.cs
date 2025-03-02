@@ -14,9 +14,6 @@ public class AppOptionsFactoryTests
     {
         public AppOptionsFactory Factory => ServiceProvider.GetRequiredService<AppOptionsFactory>();
 
-        // public Mock<T> Mock<T>()
-        //     where T : class => Moq.Mock.Get(ServiceProvider.GetRequiredService<T>());
-
         public static Fixture Create(Action<IServiceCollection>? configure = null)
         {
             var services = new ServiceCollection();
