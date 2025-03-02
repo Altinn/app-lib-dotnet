@@ -14,7 +14,6 @@ namespace Altinn.App.Core.Features.Payment.Services;
 /// </summary>
 internal class PaymentService : IPaymentService
 {
-    private readonly IEnumerable<IPaymentProcessor> _paymentProcessors;
     private readonly IDataService _dataService;
     private readonly ILogger<PaymentService> _logger;
     private readonly AppImplementationFactory _appImplementationFactory;
@@ -23,13 +22,11 @@ internal class PaymentService : IPaymentService
     /// Initializes a new instance of the <see cref="PaymentService"/> class.
     /// </summary>
     public PaymentService(
-        IEnumerable<IPaymentProcessor> paymentProcessors,
         IDataService dataService,
         ILogger<PaymentService> logger,
         AppImplementationFactory appImplementationFactory
     )
     {
-        _paymentProcessors = paymentProcessors;
         _dataService = dataService;
         _logger = logger;
         _appImplementationFactory = appImplementationFactory;
@@ -80,8 +77,9 @@ internal class PaymentService : IPaymentService
         }
 
         OrderDetails orderDetails = await orderDetailsCalculator.CalculateOrderDetails(instance, language);
+        var paymentProcessors = _appImplementationFactory.GetAll<IPaymentProcessor>();
         IPaymentProcessor paymentProcessor =
-            _paymentProcessors.FirstOrDefault(p => p.PaymentProcessorId == orderDetails.PaymentProcessorId)
+            paymentProcessors.FirstOrDefault(p => p.PaymentProcessorId == orderDetails.PaymentProcessorId)
             ?? throw new PaymentException(
                 $"Payment processor with ID '{orderDetails.PaymentProcessorId}' not found for instance {instance.Id}."
             );
@@ -164,8 +162,9 @@ internal class PaymentService : IPaymentService
             return paymentInformation;
         }
 
+        var paymentProcessors = _appImplementationFactory.GetAll<IPaymentProcessor>();
         IPaymentProcessor paymentProcessor =
-            _paymentProcessors.FirstOrDefault(p => p.PaymentProcessorId == paymentProcessorId)
+            paymentProcessors.FirstOrDefault(p => p.PaymentProcessorId == paymentProcessorId)
             ?? throw new PaymentException($"Payment processor with ID '{paymentProcessorId}' not found.");
 
         PaymentDetails paymentDetails =
@@ -247,8 +246,9 @@ internal class PaymentService : IPaymentService
         if (paymentInformation.Status != PaymentStatus.Skipped)
         {
             string paymentProcessorId = paymentInformation.OrderDetails.PaymentProcessorId;
+            var paymentProcessors = _appImplementationFactory.GetAll<IPaymentProcessor>();
             IPaymentProcessor paymentProcessor =
-                _paymentProcessors.FirstOrDefault(pp => pp.PaymentProcessorId == paymentProcessorId)
+                paymentProcessors.FirstOrDefault(pp => pp.PaymentProcessorId == paymentProcessorId)
                 ?? throw new PaymentException($"Payment processor with ID '{paymentProcessorId}' not found.");
 
             bool success = await paymentProcessor.TerminatePayment(instance, paymentInformation);
