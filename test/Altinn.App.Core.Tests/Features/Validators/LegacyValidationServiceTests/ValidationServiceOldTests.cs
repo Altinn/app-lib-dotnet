@@ -44,7 +44,7 @@ public class ValidationServiceOldTests
 
     public ValidationServiceOldTests()
     {
-        _serviceCollection.AddTestAppImplementationFactory();
+        _serviceCollection.AddAppImplementationFactory();
         _serviceCollection.AddSingleton(_loggerMock.Object);
         _serviceCollection.AddSingleton(_dataClientMock.Object);
         _serviceCollection.AddSingleton<IValidationService, ValidationService>();

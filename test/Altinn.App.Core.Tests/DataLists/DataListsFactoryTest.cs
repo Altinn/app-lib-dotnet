@@ -12,7 +12,7 @@ public class DataListsFactoryTest
     public void GetDataListProvider_CustomDataListProvider_ShouldReturnCustomType()
     {
         var services = new ServiceCollection();
-        services.AddTestAppImplementationFactory();
+        services.AddAppImplementationFactory();
         services.AddSingleton<DataListsFactory>();
         services.AddSingleton<IDataListProvider, CountryDataListProvider>();
         using var serviceProvider = services.BuildStrictServiceProvider();
@@ -29,7 +29,7 @@ public class DataListsFactoryTest
     public void GetDataListProvider_NoDataListProvider_ShouldReturnNullDataListProvider()
     {
         var services = new ServiceCollection();
-        services.AddTestAppImplementationFactory();
+        services.AddAppImplementationFactory();
         services.AddSingleton<DataListsFactory>();
         using var serviceProvider = services.BuildStrictServiceProvider();
 

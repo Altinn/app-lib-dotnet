@@ -40,7 +40,7 @@ public class ProcessEventHandlingTests
         {
             services ??= new ServiceCollection();
             services.AddLogging(builder => builder.AddProvider(NullLoggerProvider.Instance));
-            services.AddTestAppImplementationFactory();
+            services.AddAppImplementationFactory();
 
             services.AddTransient<IProcessEventHandlerDelegator, ProcessEventHandlingDelegator>();
             services.AddTransient<IProcessEventDispatcher, ProcessEventDispatcher>();

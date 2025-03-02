@@ -12,7 +12,7 @@ public class InstanceDataListsFactoryTest
     public void GetInstanceDataListProvider_CustomInstanceDataListProvider_ShouldReturnCustomType()
     {
         var services = new ServiceCollection();
-        services.AddTestAppImplementationFactory();
+        services.AddAppImplementationFactory();
         services.AddSingleton<IInstanceDataListProvider, CountryDataListProvider>();
         services.AddSingleton<InstanceDataListsFactory>();
         using var serviceProvider = services.BuildStrictServiceProvider();
@@ -29,7 +29,7 @@ public class InstanceDataListsFactoryTest
     public void GetInstanceDataListProvider_NoInstanceDataListProvider_ShouldReturnNullDataListProvider()
     {
         var services = new ServiceCollection();
-        services.AddTestAppImplementationFactory();
+        services.AddAppImplementationFactory();
         services.AddSingleton<InstanceDataListsFactory>();
         using var serviceProvider = services.BuildStrictServiceProvider();
 

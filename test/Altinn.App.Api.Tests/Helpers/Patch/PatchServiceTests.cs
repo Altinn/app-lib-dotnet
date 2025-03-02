@@ -90,7 +90,7 @@ public sealed class PatchServiceTests : IDisposable
 
         _webHostEnvironment.SetupGet(whe => whe.EnvironmentName).Returns("Development");
         var services = new ServiceCollection();
-        services.AddTestAppImplementationFactory();
+        services.AddAppImplementationFactory();
         services.AddSingleton<IDataElementValidator>(_dataElementValidator.Object);
         services.AddSingleton<IFormDataValidator>(_formDataValidator.Object);
         services.AddSingleton<IValidatorFactory, ValidatorFactory>();

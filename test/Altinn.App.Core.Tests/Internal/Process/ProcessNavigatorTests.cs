@@ -278,7 +278,7 @@ public class ProcessNavigatorTests
         var services = new ServiceCollection();
 
         services.AddLogging(builder => builder.AddProvider(NullLoggerProvider.Instance));
-        services.AddTestAppImplementationFactory();
+        services.AddAppImplementationFactory();
 
         foreach (var filter in gatewayFilters)
             services.AddSingleton<IProcessExclusiveGateway>(_ => filter);

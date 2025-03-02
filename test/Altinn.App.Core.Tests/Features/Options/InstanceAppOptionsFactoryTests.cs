@@ -12,7 +12,7 @@ public class InstanceAppOptionsFactoryTests
     public void GetOptionsProvider_NoCustomOptionsProvider_ShouldReturnDefault()
     {
         var services = new ServiceCollection();
-        services.AddTestAppImplementationFactory();
+        services.AddAppImplementationFactory();
         services.AddSingleton<IInstanceAppOptionsProvider, VehiclesInstanceAppOptionsProvider>();
         services.AddSingleton<InstanceAppOptionsFactory>();
         using var serviceProvider = services.BuildStrictServiceProvider();
@@ -28,7 +28,7 @@ public class InstanceAppOptionsFactoryTests
     public void GetOptionsProvider_CustomOptionsProvider_ShouldReturnCustomType()
     {
         var services = new ServiceCollection();
-        services.AddTestAppImplementationFactory();
+        services.AddAppImplementationFactory();
         services.AddSingleton<IInstanceAppOptionsProvider, VehiclesInstanceAppOptionsProvider>();
         services.AddSingleton<InstanceAppOptionsFactory>();
         using var serviceProvider = services.BuildStrictServiceProvider();

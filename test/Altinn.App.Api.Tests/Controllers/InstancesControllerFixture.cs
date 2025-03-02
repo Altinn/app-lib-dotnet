@@ -60,7 +60,7 @@ internal sealed record InstancesControllerFixture(IServiceProvider ServiceProvid
         var services = new ServiceCollection();
         services.AddLogging(logging => logging.AddProvider(NullLoggerProvider.Instance));
         services.AddOptions<AppSettings>().Configure(_ => { });
-        services.AddTestAppImplementationFactory();
+        services.AddAppImplementationFactory();
 
         services.AddSingleton(new Mock<IAltinnPartyClient>().Object);
         services.AddSingleton(new Mock<IInstanceClient>().Object);

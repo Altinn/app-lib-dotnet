@@ -277,7 +277,7 @@ public class SubFormTests : IClassFixture<DataAnnotationsTestFixture>
     public SubFormTests(ITestOutputHelper output, DataAnnotationsTestFixture fixture)
     {
         _output = output;
-        _services.AddTestAppImplementationFactory();
+        _services.AddAppImplementationFactory();
         _services.AddSingleton(_appResourcesMock.Object);
         _services.AddSingleton(_appMetadataMock.Object);
         _services.AddSingleton(_httpContextAccessorMock.Object);

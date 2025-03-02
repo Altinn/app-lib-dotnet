@@ -20,7 +20,7 @@ public class ExternalApiFactoryTests
     {
         // Arrange
         var services = new ServiceCollection();
-        services.AddTestAppImplementationFactory();
+        services.AddAppImplementationFactory();
         services.AddSingleton<ExternalApiFactory>();
         using var sp = services.BuildStrictServiceProvider();
         var factory = sp.GetRequiredService<ExternalApiFactory>();
@@ -38,7 +38,7 @@ public class ExternalApiFactoryTests
         // Arrange
         _externalApiClientMock.SetupGet(x => x.Id).Returns("api1");
         var services = new ServiceCollection();
-        services.AddTestAppImplementationFactory();
+        services.AddAppImplementationFactory();
         services.AddSingleton<ExternalApiFactory>();
         services.AddSingleton<IExternalApiClient>(_externalApiClientMock.Object);
         using var sp = services.BuildStrictServiceProvider();

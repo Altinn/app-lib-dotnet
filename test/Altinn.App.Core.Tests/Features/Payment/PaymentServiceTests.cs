@@ -30,7 +30,7 @@ public class PaymentServiceTests
         {
             var services = new ServiceCollection();
             services.AddLogging(logging => logging.AddProvider(NullLoggerProvider.Instance));
-            services.AddTestAppImplementationFactory();
+            services.AddAppImplementationFactory();
             services.AddSingleton(new Mock<IDataService>(MockBehavior.Strict).Object);
 
             if (addOrderDetailsCalculator)

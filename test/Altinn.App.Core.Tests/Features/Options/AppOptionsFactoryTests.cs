@@ -17,7 +17,7 @@ public class AppOptionsFactoryTests
         public static Fixture Create(Action<IServiceCollection>? configure = null)
         {
             var services = new ServiceCollection();
-            services.AddTestAppImplementationFactory();
+            services.AddAppImplementationFactory();
             services.AddSingleton<IAppOptionsFileHandler>(new Mock<IAppOptionsFileHandler>().Object);
             services.AddSingleton<AppOptionsFactory>();
             configure?.Invoke(services);

@@ -20,7 +20,7 @@ public class AbandonTaskEventHandlerTests
         {
             var services = new ServiceCollection();
 
-            services.AddTestAppImplementationFactory();
+            services.AddAppImplementationFactory();
 
             services.AddTransient<IAbandonTaskEventHandler, AbandonTaskEventHandler>();
 

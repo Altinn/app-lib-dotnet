@@ -57,7 +57,7 @@ public class AuthorizationServiceTests
                 .Returns(TestAuthentication.GetUserAuthentication(userId: userId, userPartyId: partyId));
 
             services.AddLogging(builder => builder.AddProvider(NullLoggerProvider.Instance));
-            services.AddTestAppImplementationFactory();
+            services.AddAppImplementationFactory();
             if (withTelemetry)
                 services.AddTelemetrySink();
 

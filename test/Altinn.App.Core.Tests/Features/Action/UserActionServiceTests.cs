@@ -15,7 +15,7 @@ public class UserActionServiceTests
         public static Fixture Create(IEnumerable<IUserAction> actions)
         {
             var services = new ServiceCollection();
-            services.AddTestAppImplementationFactory();
+            services.AddAppImplementationFactory();
 
             services.AddTransient<UserActionService>();
 

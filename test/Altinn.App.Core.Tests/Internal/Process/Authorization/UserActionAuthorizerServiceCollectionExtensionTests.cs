@@ -17,7 +17,7 @@ public class UserActionAuthorizerServiceCollectionExtensionTests
         string taskId = "Task_1";
         string action = "Action_1";
         IServiceCollection services = new ServiceCollection();
-        services.AddTestAppImplementationFactory();
+        services.AddAppImplementationFactory();
 
         // Act
         services.IsAdded(typeof(IUserActionAuthorizerProvider)).Should().BeFalse();
@@ -42,7 +42,7 @@ public class UserActionAuthorizerServiceCollectionExtensionTests
         string action = "Action_1";
         string taskId2 = "Task_2";
         IServiceCollection services = new ServiceCollection();
-        services.AddTestAppImplementationFactory();
+        services.AddAppImplementationFactory();
 
         // Act
         services.IsAdded(typeof(IUserActionAuthorizerProvider)).Should().BeFalse();
@@ -81,7 +81,7 @@ public class UserActionAuthorizerServiceCollectionExtensionTests
         // Arrange
         string action = "Action_1";
         IServiceCollection services = new ServiceCollection();
-        services.AddTestAppImplementationFactory();
+        services.AddAppImplementationFactory();
 
         // Act
         services.IsAdded(typeof(IUserActionAuthorizerProvider)).Should().BeFalse();
@@ -104,7 +104,7 @@ public class UserActionAuthorizerServiceCollectionExtensionTests
         // Arrange
         string taskId = "Task_1";
         IServiceCollection services = new ServiceCollection();
-        services.AddTestAppImplementationFactory();
+        services.AddAppImplementationFactory();
 
         // Act
         services.IsAdded(typeof(IUserActionAuthorizerProvider)).Should().BeFalse();
@@ -126,7 +126,7 @@ public class UserActionAuthorizerServiceCollectionExtensionTests
     {
         // Arrange
         IServiceCollection services = new ServiceCollection();
-        services.AddTestAppImplementationFactory();
+        services.AddAppImplementationFactory();
 
         // Act
         services.IsAdded(typeof(IUserActionAuthorizerProvider)).Should().BeFalse();

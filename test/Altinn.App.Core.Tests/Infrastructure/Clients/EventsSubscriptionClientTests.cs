@@ -23,7 +23,7 @@ public class EventsSubscriptionClientTests
         public static Fixture Create()
         {
             var services = new ServiceCollection();
-            services.AddTestAppImplementationFactory();
+            services.AddAppImplementationFactory();
             services.AddLogging(logging => logging.AddProvider(NullLoggerProvider.Instance));
             services.Configure<GeneralSettings>(s => s.HostName = "at22.altinn.cloud");
             services.Configure<PlatformSettings>(s =>

@@ -15,7 +15,7 @@ public class EventHandlerResolverTests
         public static Fixture Create(IEnumerable<IEventHandler> eventHandlers)
         {
             var services = new ServiceCollection();
-            services.AddTestAppImplementationFactory();
+            services.AddAppImplementationFactory();
 
             services.AddTransient<IEventHandlerResolver, EventHandlerResolver>();
 

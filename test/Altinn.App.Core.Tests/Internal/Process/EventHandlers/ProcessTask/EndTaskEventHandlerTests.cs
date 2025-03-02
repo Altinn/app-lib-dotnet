@@ -30,7 +30,7 @@ public class EndTaskEventHandlerTests
         {
             var services = new ServiceCollection();
             services.AddLogging(builder => builder.AddProvider(NullLoggerProvider.Instance));
-            services.AddTestAppImplementationFactory();
+            services.AddAppImplementationFactory();
 
             services.AddSingleton(new Mock<IProcessTaskDataLocker>().Object);
             services.AddSingleton(new Mock<IProcessTaskFinalizer>().Object);

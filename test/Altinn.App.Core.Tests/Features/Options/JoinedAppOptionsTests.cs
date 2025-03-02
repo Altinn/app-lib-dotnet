@@ -27,7 +27,7 @@ public class JoinedAppOptionsTests
 
     public JoinedAppOptionsTests()
     {
-        _serviceCollection.AddTestAppImplementationFactory();
+        _serviceCollection.AddAppImplementationFactory();
         _countryAppOptionsMock.Setup(p => p.Id).Returns("country-no-sentinel");
         _countryAppOptionsMock
             .Setup(p => p.GetAppOptionsAsync(_language, It.IsAny<Dictionary<string, string>>()))
