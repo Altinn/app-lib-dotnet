@@ -74,12 +74,21 @@ internal static class LayoutSetsFileReader
 
             return parseResult switch
             {
-                LayoutSetsParseResult.Ok { Value: var metadata }
-                    => new LayoutSetsResult.Content(metadata, sourceText, file),
-                LayoutSetsParseResult.FailedToParse { Token: var token }
-                    => new LayoutSetsResult.CouldNotParseField(token, sourceText, file),
-                LayoutSetsParseResult.Error { Exception: var ex }
-                    => new LayoutSetsResult.CouldNotParse(ex, sourceText, file),
+                LayoutSetsParseResult.Ok { Value: var metadata } => new LayoutSetsResult.Content(
+                    metadata,
+                    sourceText,
+                    file
+                ),
+                LayoutSetsParseResult.FailedToParse { Token: var token } => new LayoutSetsResult.CouldNotParseField(
+                    token,
+                    sourceText,
+                    file
+                ),
+                LayoutSetsParseResult.Error { Exception: var ex } => new LayoutSetsResult.CouldNotParse(
+                    ex,
+                    sourceText,
+                    file
+                ),
                 LayoutSetsParseResult.Cancelled => new LayoutSetsResult.Cancelled(),
             };
         }

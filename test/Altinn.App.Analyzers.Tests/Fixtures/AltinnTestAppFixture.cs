@@ -103,11 +103,11 @@ public sealed partial class AltinnTestAppFixture : IDisposable
         Assert.NotNull(compilation);
         var globalOptions = new Dictionary<string, string>()
         {
-            ["build_property.projectdir"] = _projectDir
+            ["build_property.projectdir"] = _projectDir,
         }.ToImmutableDictionary();
 
         var additionalFiles = ImmutableArray.CreateRange<AdditionalText>(
-            [new TestAdditionalText(Content.ApplicationMetadata), new TestAdditionalText(Content.LayoutSets),]
+            [new TestAdditionalText(Content.ApplicationMetadata), new TestAdditionalText(Content.LayoutSets)]
         );
 
         var analyzerOptions = new AnalyzerOptions(

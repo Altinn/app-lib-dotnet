@@ -76,12 +76,15 @@ internal static class ApplicationMetadataFileReader
 
             return parseResult switch
             {
-                ApplicationMetadataParseResult.Ok { Value: var metadata }
-                    => new ApplicationMetadataResult.Content(metadata, sourceText, file),
-                ApplicationMetadataParseResult.FailedToParse { Token: var token }
-                    => new ApplicationMetadataResult.CouldNotParseField(token, sourceText, file),
-                ApplicationMetadataParseResult.Error { Exception: var ex }
-                    => new ApplicationMetadataResult.CouldNotParse(ex, sourceText, file),
+                ApplicationMetadataParseResult.Ok { Value: var metadata } => new ApplicationMetadataResult.Content(
+                    metadata,
+                    sourceText,
+                    file
+                ),
+                ApplicationMetadataParseResult.FailedToParse { Token: var token } =>
+                    new ApplicationMetadataResult.CouldNotParseField(token, sourceText, file),
+                ApplicationMetadataParseResult.Error { Exception: var ex } =>
+                    new ApplicationMetadataResult.CouldNotParse(ex, sourceText, file),
                 ApplicationMetadataParseResult.Cancelled => new ApplicationMetadataResult.Cancelled(),
             };
         }

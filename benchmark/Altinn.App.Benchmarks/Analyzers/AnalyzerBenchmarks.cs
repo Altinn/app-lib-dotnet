@@ -49,7 +49,7 @@ public class AnalyzerBenchmarks
 
         var globalOptions = new Dictionary<string, string>()
         {
-            ["build_property.projectdir"] = projectDir
+            ["build_property.projectdir"] = projectDir,
         }.ToImmutableDictionary();
         _options = new CompilationWithAnalyzersOptions(
             new AnalyzerOptions(

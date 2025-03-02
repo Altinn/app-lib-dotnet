@@ -89,7 +89,7 @@ public sealed class MetadataAnalyzer : DiagnosticAnalyzer
         context.RegisterAdditionalFileAction(OnAdditionalFileAction);
     }
 
-    private bool TryGetProjectDir(
+    private static bool TryGetProjectDir(
         AnalyzerConfigOptionsProvider optionsProvider,
         [NotNullWhen(true)] out string? projectDir
     )
