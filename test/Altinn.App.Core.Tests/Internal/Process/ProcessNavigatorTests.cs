@@ -293,9 +293,7 @@ public class ProcessNavigatorTests
         services.AddSingleton(new Mock<IAppModel>(MockBehavior.Strict).Object);
         services.AddSingleton<ModelSerializationService>();
 
-        var sp = services.BuildServiceProvider(
-            new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }
-        );
+        var sp = services.BuildStrictServiceProvider();
         return new(sp);
     }
 

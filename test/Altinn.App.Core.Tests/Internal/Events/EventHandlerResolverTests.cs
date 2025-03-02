@@ -22,11 +22,7 @@ public class EventHandlerResolverTests
             foreach (var eventHandler in eventHandlers)
                 services.AddTransient(_ => eventHandler);
 
-            return new Fixture(
-                services.BuildServiceProvider(
-                    new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }
-                )
-            );
+            return new Fixture(services.BuildStrictServiceProvider());
         }
 
         public void Dispose() => (ServiceProvider as IDisposable)?.Dispose();

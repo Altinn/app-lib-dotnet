@@ -185,9 +185,7 @@ public class DefaultEFormidlingServiceTests
 
         services.TryAddTransient<IEFormidlingService, DefaultEFormidlingService>();
 
-        var serviceProvider = services.BuildServiceProvider(
-            new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }
-        );
+        var serviceProvider = services.BuildStrictServiceProvider();
         return new(serviceProvider, instance, instanceGuid);
     }
 

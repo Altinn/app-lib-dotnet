@@ -91,9 +91,7 @@ internal sealed record InstancesControllerFixture(IServiceProvider ServiceProvid
             return controller;
         });
 
-        var serviceProvider = services.BuildServiceProvider(
-            new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }
-        );
+        var serviceProvider = services.BuildStrictServiceProvider();
         return new(serviceProvider);
     }
 }

@@ -15,9 +15,7 @@ public class InstanceAppOptionsFactoryTests
         services.AddTestAppImplementationFactory();
         services.AddSingleton<IInstanceAppOptionsProvider, VehiclesInstanceAppOptionsProvider>();
         services.AddSingleton<InstanceAppOptionsFactory>();
-        using var serviceProvider = services.BuildServiceProvider(
-            new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }
-        );
+        using var serviceProvider = services.BuildStrictServiceProvider();
 
         var factory = serviceProvider.GetRequiredService<InstanceAppOptionsFactory>();
 
@@ -33,9 +31,7 @@ public class InstanceAppOptionsFactoryTests
         services.AddTestAppImplementationFactory();
         services.AddSingleton<IInstanceAppOptionsProvider, VehiclesInstanceAppOptionsProvider>();
         services.AddSingleton<InstanceAppOptionsFactory>();
-        using var serviceProvider = services.BuildServiceProvider(
-            new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }
-        );
+        using var serviceProvider = services.BuildStrictServiceProvider();
 
         var factory = serviceProvider.GetRequiredService<InstanceAppOptionsFactory>();
         IInstanceAppOptionsProvider optionsProvider = factory.GetOptionsProvider("vehicles");

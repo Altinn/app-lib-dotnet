@@ -22,9 +22,7 @@ public class ExternalApiFactoryTests
         var services = new ServiceCollection();
         services.AddTestAppImplementationFactory();
         services.AddSingleton<ExternalApiFactory>();
-        using var sp = services.BuildServiceProvider(
-            new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }
-        );
+        using var sp = services.BuildStrictServiceProvider();
         var factory = sp.GetRequiredService<ExternalApiFactory>();
 
         // Act
@@ -43,9 +41,7 @@ public class ExternalApiFactoryTests
         services.AddTestAppImplementationFactory();
         services.AddSingleton<ExternalApiFactory>();
         services.AddSingleton<IExternalApiClient>(_externalApiClientMock.Object);
-        using var sp = services.BuildServiceProvider(
-            new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }
-        );
+        using var sp = services.BuildStrictServiceProvider();
         var factory = sp.GetRequiredService<ExternalApiFactory>();
 
         // Act

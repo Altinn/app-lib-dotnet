@@ -60,7 +60,7 @@ public class ValidationServiceOldTests
     [Fact]
     public async Task FileScanEnabled_VirusFound_ValidationShouldFail()
     {
-        await using var serviceProvider = _serviceCollection.BuildServiceProvider();
+        await using var serviceProvider = _serviceCollection.BuildStrictServiceProvider();
         IValidationService validationService = serviceProvider.GetRequiredService<IValidationService>();
 
         var dataType = new DataType()
@@ -90,7 +90,7 @@ public class ValidationServiceOldTests
     [Fact]
     public async Task FileScanEnabled_PendingScanNotEnabled_ValidationShouldNotFail()
     {
-        await using var serviceProvider = _serviceCollection.BuildServiceProvider();
+        await using var serviceProvider = _serviceCollection.BuildStrictServiceProvider();
         IValidationService validationService = serviceProvider.GetRequiredService<IValidationService>();
 
         var dataType = new DataType()
@@ -121,7 +121,7 @@ public class ValidationServiceOldTests
     [Fact]
     public async Task FileScanEnabled_PendingScanEnabled_ValidationShouldNotFail()
     {
-        await using var serviceProvider = _serviceCollection.BuildServiceProvider();
+        await using var serviceProvider = _serviceCollection.BuildStrictServiceProvider();
         IValidationService validationService = serviceProvider.GetRequiredService<IValidationService>();
 
         var dataType = new DataType()
@@ -152,7 +152,7 @@ public class ValidationServiceOldTests
     [Fact]
     public async Task FileScanEnabled_Clean_ValidationShouldNotFail()
     {
-        await using var serviceProvider = _serviceCollection.BuildServiceProvider();
+        await using var serviceProvider = _serviceCollection.BuildStrictServiceProvider();
         IValidationService validationService = serviceProvider.GetRequiredService<IValidationService>();
 
         var dataType = new DataType() { EnableFileScan = true, ValidationErrorOnPendingFileScan = true };
@@ -196,7 +196,7 @@ public class ValidationServiceOldTests
         var appMetadata = new ApplicationMetadata("ttd/test-app") { DataTypes = [dataType] };
         _appMetadataMock.Setup(a => a.GetApplicationMetadata()).ReturnsAsync(appMetadata);
 
-        await using var serviceProvider = _serviceCollection.BuildServiceProvider();
+        await using var serviceProvider = _serviceCollection.BuildStrictServiceProvider();
         IValidationService validationService = serviceProvider.GetRequiredService<IValidationService>();
 
         // Testdata
@@ -234,7 +234,7 @@ public class ValidationServiceOldTests
         var appMetadata = new ApplicationMetadata("ttd/test-app") { DataTypes = [dataType] };
         _appMetadataMock.Setup(a => a.GetApplicationMetadata()).ReturnsAsync(appMetadata);
 
-        await using var serviceProvider = _serviceCollection.BuildServiceProvider();
+        await using var serviceProvider = _serviceCollection.BuildStrictServiceProvider();
         IValidationService validationService = serviceProvider.GetRequiredService<IValidationService>();
 
         // Testdata

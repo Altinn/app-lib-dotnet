@@ -26,7 +26,7 @@ public class UserActionAuthorizerServiceCollectionExtensionTests
         // Assert
         services.IsAdded(typeof(IUserActionAuthorizerProvider)).Should().BeTrue();
         services.IsAdded(typeof(UserActionAuthorizerStub)).Should().BeTrue();
-        var sp = services.BuildServiceProvider();
+        var sp = services.BuildStrictServiceProvider();
         var provider = sp.GetService<IUserActionAuthorizerProvider>();
         provider.Should().NotBeNull();
         provider.TaskId.Should().Be(taskId);
@@ -60,9 +60,7 @@ public class UserActionAuthorizerServiceCollectionExtensionTests
         // Assert
         services.IsAdded(typeof(IUserActionAuthorizerProvider)).Should().BeTrue();
         services.IsAdded(typeof(UserActionAuthorizerStub)).Should().BeTrue();
-        using var sp = services.BuildServiceProvider(
-            new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }
-        );
+        using var sp = services.BuildStrictServiceProvider();
         var authorizer = sp.GetServices<UserActionAuthorizerStub>();
         authorizer.Should().NotBeNull();
         authorizer.Should().HaveCount(1);
@@ -94,7 +92,7 @@ public class UserActionAuthorizerServiceCollectionExtensionTests
         // Assert
         services.IsAdded(typeof(IUserActionAuthorizerProvider)).Should().BeTrue();
         services.IsAdded(typeof(UserActionAuthorizerStub)).Should().BeTrue();
-        var sp = services.BuildServiceProvider();
+        var sp = services.BuildStrictServiceProvider();
         var provider = sp.GetService<IUserActionAuthorizerProvider>();
         provider.Should().NotBeNull();
         provider.TaskId.Should().BeNull();
@@ -117,7 +115,7 @@ public class UserActionAuthorizerServiceCollectionExtensionTests
         // Assert
         services.IsAdded(typeof(IUserActionAuthorizerProvider)).Should().BeTrue();
         services.IsAdded(typeof(UserActionAuthorizerStub)).Should().BeTrue();
-        var sp = services.BuildServiceProvider();
+        var sp = services.BuildStrictServiceProvider();
         var provider = sp.GetService<IUserActionAuthorizerProvider>();
         provider.Should().NotBeNull();
         provider.TaskId.Should().Be(taskId);
@@ -139,7 +137,7 @@ public class UserActionAuthorizerServiceCollectionExtensionTests
         // Assert
         services.IsAdded(typeof(IUserActionAuthorizerProvider)).Should().BeTrue();
         services.IsAdded(typeof(UserActionAuthorizerStub)).Should().BeTrue();
-        var sp = services.BuildServiceProvider();
+        var sp = services.BuildStrictServiceProvider();
         var provider = sp.GetService<IUserActionAuthorizerProvider>();
         provider.Should().NotBeNull();
         provider.TaskId.Should().BeNull();

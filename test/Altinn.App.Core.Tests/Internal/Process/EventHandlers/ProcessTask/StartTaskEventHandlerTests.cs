@@ -35,11 +35,7 @@ public class StartTaskEventHandlerTests
             foreach (var handler in handlers)
                 services.AddTransient(_ => handler);
 
-            return new Fixture(
-                services.BuildServiceProvider(
-                    new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }
-                )
-            );
+            return new Fixture(services.BuildStrictServiceProvider());
         }
     }
 

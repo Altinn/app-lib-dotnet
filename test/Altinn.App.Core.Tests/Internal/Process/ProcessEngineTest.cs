@@ -1203,11 +1203,7 @@ public sealed class ProcessEngineTest
             foreach (var userAction in userActions ?? [])
                 services.TryAddTransient(_ => userAction);
 
-            return new Fixture(
-                services.BuildServiceProvider(
-                    new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }
-                )
-            );
+            return new Fixture(services.BuildStrictServiceProvider());
         }
 
         public void Dispose() => (ServiceProvider as IDisposable)?.Dispose();

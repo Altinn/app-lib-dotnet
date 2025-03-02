@@ -78,11 +78,7 @@ public class AuthorizationServiceTests
 
             services.AddTransient<IAuthorizationService, AuthorizationService>();
 
-            return new Fixture(
-                services.BuildServiceProvider(
-                    new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }
-                )
-            );
+            return new Fixture(services.BuildStrictServiceProvider());
         }
     }
 

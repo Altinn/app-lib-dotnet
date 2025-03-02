@@ -75,11 +75,7 @@ public class ProcessEventHandlingTests
                 services.AddTransient(_ => task);
             }
 
-            return new Fixture(
-                services.BuildServiceProvider(
-                    new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }
-                )
-            );
+            return new Fixture(services.BuildStrictServiceProvider());
         }
     }
 

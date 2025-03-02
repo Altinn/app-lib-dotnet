@@ -24,9 +24,7 @@ public class AppOptionsFactoryTests
             services.AddSingleton<IAppOptionsFileHandler>(new Mock<IAppOptionsFileHandler>().Object);
             services.AddSingleton<AppOptionsFactory>();
             configure?.Invoke(services);
-            var serviceProvider = services.BuildServiceProvider(
-                new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }
-            );
+            var serviceProvider = services.BuildStrictServiceProvider();
             return new(serviceProvider);
         }
 

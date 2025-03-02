@@ -97,9 +97,7 @@ public sealed class PatchServiceTests : IDisposable
         services.AddSingleton(_appMetadataMock.Object);
         services.AddSingleton(_dataProcessorMock.Object);
         services.Configure<GeneralSettings>(_ => { });
-        _serviceProvider = services.BuildServiceProvider(
-            new ServiceProviderOptions() { ValidateOnBuild = true, ValidateScopes = true }
-        );
+        _serviceProvider = services.BuildStrictServiceProvider();
         var validatorFactory = _serviceProvider.GetRequiredService<IValidatorFactory>();
         var validationService = new ValidationService(validatorFactory, _vLoggerMock.Object);
 

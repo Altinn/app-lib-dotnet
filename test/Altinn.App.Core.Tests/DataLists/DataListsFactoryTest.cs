@@ -16,9 +16,7 @@ public class DataListsFactoryTest
         services.AddTestAppImplementationFactory();
         services.AddSingleton<DataListsFactory>();
         services.AddSingleton<IDataListProvider, CountryDataListProvider>();
-        using var serviceProvider = services.BuildServiceProvider(
-            new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }
-        );
+        using var serviceProvider = services.BuildStrictServiceProvider();
 
         var factory = serviceProvider.GetRequiredService<DataListsFactory>();
 
@@ -34,9 +32,7 @@ public class DataListsFactoryTest
         var services = new ServiceCollection();
         services.AddTestAppImplementationFactory();
         services.AddSingleton<DataListsFactory>();
-        using var serviceProvider = services.BuildServiceProvider(
-            new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }
-        );
+        using var serviceProvider = services.BuildStrictServiceProvider();
 
         var factory = serviceProvider.GetRequiredService<DataListsFactory>();
 

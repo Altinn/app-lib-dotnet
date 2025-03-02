@@ -53,9 +53,7 @@ public class StatelessDataControllerTests
 
             services.AddTransient<StatelessDataController>();
 
-            var sp = services.BuildServiceProvider(
-                new ServiceProviderOptions() { ValidateOnBuild = true, ValidateScopes = true }
-            );
+            var sp = services.BuildStrictServiceProvider();
             return new SimpleFixture(sp);
         }
 
