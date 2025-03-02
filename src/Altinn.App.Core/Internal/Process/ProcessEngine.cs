@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
@@ -15,6 +16,7 @@ using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
 using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Altinn.App.Core.Internal.Process;
 
@@ -30,6 +32,7 @@ public class ProcessEngine : IProcessEngine
     private readonly UserActionService _userActionService;
     private readonly Telemetry? _telemetry;
     private readonly IAuthenticationContext _authenticationContext;
+    private readonly AppImplementationFactory _appImplementationFactory;
     private readonly IProcessTaskCleaner _processTaskCleaner;
     private readonly IDataClient _dataClient;
     private readonly IInstanceClient _instanceClient;
@@ -51,6 +54,7 @@ public class ProcessEngine : IProcessEngine
         ModelSerializationService modelSerialization,
         IAppMetadata appMetadata,
         IAuthenticationContext authenticationContext,
+        IServiceProvider serviceProvider,
         Telemetry? telemetry = null
     )
     {
@@ -66,6 +70,7 @@ public class ProcessEngine : IProcessEngine
         _appMetadata = appMetadata;
         _telemetry = telemetry;
         _authenticationContext = authenticationContext;
+        _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
     }
 
     /// <inheritdoc/>
@@ -214,14 +219,19 @@ public class ProcessEngine : IProcessEngine
 
         // TODO: consider using the same cachedDataMutator for the rest of the process to avoid refetching data from storage
 
-        ProcessStateChange? nextResult = await HandleMoveToNext(instance, request.Action);
+        MoveToNextResult moveToNextResult = await HandleMoveToNext(instance, request.Action);
 
-        if (nextResult?.NewProcessState?.Ended is not null)
+        if (moveToNextResult.IsEndEvent)
         {
-            _telemetry?.ProcessEnded(nextResult);
+            _telemetry?.ProcessEnded(moveToNextResult.ProcessStateChange);
+            await RunAppDefinedProcessEndHandlers(instance, moveToNextResult.ProcessStateChange?.Events);
         }
 
-        var changeResult = new ProcessChangeResult() { Success = true, ProcessStateChange = nextResult };
+        var changeResult = new ProcessChangeResult()
+        {
+            Success = true,
+            ProcessStateChange = moveToNextResult.ProcessStateChange,
+        };
         activity?.SetProcessChangeResult(changeResult);
         return changeResult;
     }
@@ -438,18 +448,36 @@ public class ProcessEngine : IProcessEngine
         return instanceEvent;
     }
 
-    private async Task<ProcessStateChange?> HandleMoveToNext(Instance instance, string? action)
+    private async Task<MoveToNextResult> HandleMoveToNext(Instance instance, string? action)
     {
         ProcessStateChange? processStateChange = await ProcessNext(instance, action);
 
-        if (processStateChange == null)
+        if (processStateChange is null)
         {
-            return processStateChange;
+            return new MoveToNextResult(instance, null);
         }
 
         instance = await HandleEventsAndUpdateStorage(instance, null, processStateChange.Events);
         await _processEventDispatcher.RegisterEventWithEventsComponent(instance);
 
-        return processStateChange;
+        return new MoveToNextResult(instance, processStateChange);
     }
+
+    /// <summary>
+    /// Runs IProcessEnd implementations defined in the app.
+    /// </summary>
+    private async Task RunAppDefinedProcessEndHandlers(Instance instance, List<InstanceEvent>? events)
+    {
+        var processEnds = _appImplementationFactory.GetAll<IProcessEnd>();
+        foreach (IProcessEnd processend in processEnds)
+        {
+            await processend.End(instance, events);
+        }
+    }
+
+    private sealed record MoveToNextResult(Instance Instance, ProcessStateChange? ProcessStateChange)
+    {
+        [MemberNotNullWhen(true, nameof(ProcessStateChange))]
+        public bool IsEndEvent => ProcessStateChange?.NewProcessState?.Ended is not null;
+    };
 }
