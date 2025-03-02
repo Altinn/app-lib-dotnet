@@ -6,6 +6,7 @@ namespace Altinn.App.Core.Features.Signing.Interfaces;
 /// <summary>
 /// Interface for implementing app-specific logic for deriving signees.
 /// </summary>
+[ImplementableByApps]
 public interface ISigneeProvider
 {
     /// <summary>

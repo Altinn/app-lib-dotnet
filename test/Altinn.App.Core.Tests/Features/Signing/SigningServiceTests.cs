@@ -11,6 +11,7 @@ using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using static Altinn.App.Core.Features.Signing.Models.Signee;
@@ -20,8 +21,9 @@ using StorageSignee = Altinn.Platform.Storage.Interface.Models.Signee;
 
 namespace Altinn.App.Core.Tests.Features.Signing;
 
-public class SigningServiceTests
+public sealed class SigningServiceTests : IDisposable
 {
+    private readonly ServiceProvider _serviceProvider;
     private readonly SigningService _signingService;
 
     private readonly Mock<IAltinnPartyClient> _altinnPartyClient = new(MockBehavior.Strict);
@@ -33,12 +35,19 @@ public class SigningServiceTests
     private readonly Mock<ISigningCallToActionService> _signingCallToActionService = new(MockBehavior.Strict);
     private readonly Mock<ISigningReceiptService> _signingReceiptService = new(MockBehavior.Strict);
 
+    public void Dispose() => _serviceProvider.Dispose();
+
     public SigningServiceTests()
     {
+        var services = new ServiceCollection();
+        services.AddAppImplementationFactory();
+        services.AddSingleton(_signeeProvider.Object);
+        _serviceProvider = services.BuildStrictServiceProvider();
+
         _signingService = new SigningService(
             _altinnPartyClient.Object,
             _signingDelegationService.Object,
-            [_signeeProvider.Object],
+            _serviceProvider.GetRequiredService<AppImplementationFactory>(),
             _appMetadata.Object,
             _signClient.Object,
             _signingReceiptService.Object,

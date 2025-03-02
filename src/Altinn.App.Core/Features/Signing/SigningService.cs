@@ -32,7 +32,7 @@ namespace Altinn.App.Core.Features.Signing;
 internal sealed class SigningService(
     IAltinnPartyClient altinnPartyClient,
     ISigningDelegationService signingDelegationService,
-    IEnumerable<ISigneeProvider> signeeProviders,
+    AppImplementationFactory appImplementationFactory,
     IAppMetadata appMetadata,
     ISignClient signClient,
     ISigningReceiptService signingReceiptService,
@@ -56,6 +56,7 @@ internal sealed class SigningService(
     private readonly ISignClient _signClient = signClient;
     private readonly ISigningReceiptService _signingReceiptService = signingReceiptService;
     private readonly ISigningCallToActionService _signingCallToActionService = signingCallToActionService;
+    private readonly AppImplementationFactory _appImplementationFactory = appImplementationFactory;
     private const string ApplicationJsonContentType = "application/json";
 
     public async Task<List<SigneeContext>> GenerateSigneeContexts(
@@ -335,6 +336,7 @@ internal sealed class SigningService(
         if (string.IsNullOrEmpty(signeeProviderId))
             return null;
 
+        var signeeProviders = _appImplementationFactory.GetAll<ISigneeProvider>();
         ISigneeProvider signeeProvider =
             signeeProviders.FirstOrDefault(sp => sp.Id == signeeProviderId)
             ?? throw new SigneeProviderNotFoundException(
