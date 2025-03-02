@@ -43,21 +43,14 @@ public class StatelessDataControllerTests
             services.AddLogging(builder => builder.AddProvider(NullLoggerProvider.Instance));
             services.AddTestAppImplementationFactory();
 
-            var altinnAppModelMock = new Mock<IAppModel>();
-            var appResourcesMock = new Mock<IAppResources>();
-            var dataProcessorMock = new Mock<IDataProcessor>();
-            var prefillMock = new Mock<IPrefill>();
-            var registerMock = new Mock<IAltinnPartyClient>();
-            var pdpMock = new Mock<IPDP>();
-            var authContextMock = new Mock<IAuthenticationContext>();
+            services.AddSingleton(new Mock<IAppModel>().Object);
+            services.AddSingleton(new Mock<IAppResources>().Object);
+            services.AddSingleton(new Mock<IDataProcessor>().Object);
+            services.AddSingleton(new Mock<IPrefill>().Object);
+            services.AddSingleton(new Mock<IAltinnPartyClient>().Object);
+            services.AddSingleton(new Mock<IPDP>().Object);
+            services.AddSingleton(new Mock<IAuthenticationContext>().Object);
 
-            services.AddSingleton(altinnAppModelMock.Object);
-            services.AddSingleton(appResourcesMock.Object);
-            services.AddSingleton(dataProcessorMock.Object);
-            services.AddSingleton(prefillMock.Object);
-            services.AddSingleton(registerMock.Object);
-            services.AddSingleton(pdpMock.Object);
-            services.AddSingleton(authContextMock.Object);
             services.AddTransient<StatelessDataController>();
 
             var sp = services.BuildServiceProvider(

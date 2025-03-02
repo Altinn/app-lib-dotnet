@@ -32,11 +32,8 @@ public class EndTaskEventHandlerTests
             services.AddLogging(builder => builder.AddProvider(NullLoggerProvider.Instance));
             services.AddTestAppImplementationFactory();
 
-            Mock<IProcessTaskDataLocker> processTaskDataLocker = new();
-            services.AddTransient(_ => processTaskDataLocker.Object);
-
-            Mock<IProcessTaskFinalizer> processTaskFinisher = new();
-            services.AddTransient(_ => processTaskFinisher.Object);
+            services.AddSingleton(new Mock<IProcessTaskDataLocker>().Object);
+            services.AddSingleton(new Mock<IProcessTaskFinalizer>().Object);
 
             if (addPdfServiceTask)
             {

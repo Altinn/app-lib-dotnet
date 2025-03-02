@@ -27,11 +27,8 @@ public class StartTaskEventHandlerTests
             services.AddLogging(builder => builder.AddProvider(NullLoggerProvider.Instance));
             services.AddTestAppImplementationFactory();
 
-            Mock<IProcessTaskDataLocker> processTaskDataLocker = new();
-            services.AddTransient(_ => processTaskDataLocker.Object);
-
-            Mock<IProcessTaskInitializer> processTaskInitializer = new();
-            services.AddTransient(_ => processTaskInitializer.Object);
+            services.AddSingleton(new Mock<IProcessTaskDataLocker>().Object);
+            services.AddSingleton(new Mock<IProcessTaskInitializer>().Object);
 
             services.AddTransient<IStartTaskEventHandler, StartTaskEventHandler>();
 

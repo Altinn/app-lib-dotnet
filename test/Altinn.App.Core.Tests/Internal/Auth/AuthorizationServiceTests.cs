@@ -61,8 +61,7 @@ public class AuthorizationServiceTests
             if (withTelemetry)
                 services.AddTelemetrySink();
 
-            Mock<IAuthorizationClient> authorizationClientMock = new();
-            services.AddSingleton(authorizationClientMock.Object);
+            services.AddSingleton(new Mock<IAuthorizationClient>().Object);
 
             if (registerUserActionAuthorizer != null)
             {

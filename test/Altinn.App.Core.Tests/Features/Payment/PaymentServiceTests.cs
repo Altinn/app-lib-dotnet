@@ -31,16 +31,12 @@ public class PaymentServiceTests
             var services = new ServiceCollection();
             services.AddLogging(logging => logging.AddProvider(NullLoggerProvider.Instance));
             services.AddTestAppImplementationFactory();
-            Mock<IPaymentProcessor> paymentProcessor = new(MockBehavior.Strict);
-            Mock<IOrderDetailsCalculator> orderDetailsCalculator = new(MockBehavior.Strict);
-            Mock<IDataService> dataService = new(MockBehavior.Strict);
-
-            services.AddSingleton(dataService.Object);
+            services.AddSingleton(new Mock<IDataService>(MockBehavior.Strict).Object);
 
             if (addOrderDetailsCalculator)
-                services.AddSingleton(orderDetailsCalculator.Object);
+                services.AddSingleton(new Mock<IOrderDetailsCalculator>(MockBehavior.Strict).Object);
             if (addProcessor)
-                services.AddSingleton(paymentProcessor.Object);
+                services.AddSingleton(new Mock<IPaymentProcessor>(MockBehavior.Strict).Object);
 
             services.AddSingleton<IPaymentService, PaymentService>();
 

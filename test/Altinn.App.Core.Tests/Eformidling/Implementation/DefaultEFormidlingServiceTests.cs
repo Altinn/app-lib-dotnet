@@ -57,11 +57,7 @@ public class DefaultEFormidlingServiceTests
     {
         services ??= new ServiceCollection();
         services.AddTestAppImplementationFactory();
-        services.AddLogging(logging =>
-        {
-            logging.ClearProviders();
-            logging.AddProvider(NullLoggerProvider.Instance);
-        });
+        services.AddLogging(logging => logging.AddProvider(NullLoggerProvider.Instance));
 
         var userTokenProvider = new Mock<IUserTokenProvider>();
         var appMetadata = new Mock<IAppMetadata>();
