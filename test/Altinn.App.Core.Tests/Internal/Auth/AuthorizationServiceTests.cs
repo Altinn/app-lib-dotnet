@@ -294,7 +294,6 @@ public class AuthorizationServiceTests
         fixture
             .TestAuthorizer1.Mock.Setup(a => a.AuthorizeAction(It.IsAny<UserActionAuthorizerContext>()))
             .ReturnsAsync(true);
-        IUserActionAuthorizerProvider userActionAuthorizerProvider = fixture.UserActionAuthorizerProvider;
 
         AuthorizationService authorizationService = fixture.AuthorizationService;
 

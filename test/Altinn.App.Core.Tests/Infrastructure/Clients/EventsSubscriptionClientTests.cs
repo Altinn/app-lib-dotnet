@@ -48,7 +48,7 @@ public class EventsSubscriptionClientTests
                 )
                 .ReturnsAsync(httpResponseMessage);
             HttpClient httpClient = new HttpClient(handlerMock.Object);
-            services.AddSingleton(httpClient);
+            services.AddSingleton(_ => httpClient);
 
             services.AddTransient<IEventSecretCodeProvider, TestSecretCodeProvider>();
             services.AddTransient<IEventsSubscription, EventsSubscriptionClient>();
