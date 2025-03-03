@@ -235,7 +235,7 @@ public class DataController : ControllerBase
                 return instanceResult.Error;
             }
 
-            var (instance, dataType, applicationMetadata) = instanceResult.Ok;
+            var (instance, dataType, _) = instanceResult.Ok;
 
             if (
                 DataElementAccessChecker.GetCreateProblem(instance, dataType, _authenticationContext.Current) is
