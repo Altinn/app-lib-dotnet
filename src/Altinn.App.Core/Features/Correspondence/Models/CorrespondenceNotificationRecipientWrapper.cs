@@ -1,10 +1,9 @@
-
 namespace Altinn.App.Core.Features.Correspondence.Models;
 
 /// <summary>
 /// Recipients for the notification. If not set, the notification will be sent to the recipient of the Correspondence.
 /// </summary>
-public sealed record CorrespondenceNotificationRecipientWrapper: MultipartCorrespondenceListItem
+public sealed record CorrespondenceNotificationRecipientWrapper : MultipartCorrespondenceListItem
 {
     /// <summary>
     /// The correspondance recipient which the notification should be overridden for. Organization number or national identification number.
@@ -18,7 +17,11 @@ public sealed record CorrespondenceNotificationRecipientWrapper: MultipartCorres
 
     internal override void Serialise(MultipartFormDataContent content, int index)
     {
-        AddRequired(content, RecipientToOverride, $"Correspondence.NotificationRecipients[{index}].RecipientToOverride");
+        AddRequired(
+            content,
+            RecipientToOverride,
+            $"Correspondence.NotificationRecipients[{index}].RecipientToOverride"
+        );
         SerializeListItems(content, CorrespondenceNotificationRecipient);
     }
 }
