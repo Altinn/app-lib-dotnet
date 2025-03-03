@@ -12,6 +12,7 @@ using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
 using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Altinn.App.Core.Internal.Process;
 
@@ -27,7 +28,7 @@ public class ProcessEngine : IProcessEngine
     private readonly UserActionService _userActionService;
     private readonly Telemetry? _telemetry;
     private readonly IAuthenticationContext _authenticationContext;
-    private readonly InternalInstanceDataUnitOfWorkInitializer _internalInstanceDataUnitOfWorkInitializer;
+    private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
     private readonly IProcessTaskCleaner _processTaskCleaner;
 
     /// <summary>
@@ -41,7 +42,7 @@ public class ProcessEngine : IProcessEngine
         IProcessTaskCleaner processTaskCleaner,
         UserActionService userActionService,
         IAuthenticationContext authenticationContext,
-        InternalInstanceDataUnitOfWorkInitializer internalInstanceDataUnitOfWorkInitializer,
+        IServiceProvider serviceProvider,
         Telemetry? telemetry = null
     )
     {
@@ -53,7 +54,7 @@ public class ProcessEngine : IProcessEngine
         _userActionService = userActionService;
         _telemetry = telemetry;
         _authenticationContext = authenticationContext;
-        _internalInstanceDataUnitOfWorkInitializer = internalInstanceDataUnitOfWorkInitializer;
+        _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
     }
 
     /// <inheritdoc/>
@@ -152,11 +153,7 @@ public class ProcessEngine : IProcessEngine
 
         var currentAuth = _authenticationContext.Current;
         IUserAction? actionHandler = _userActionService.GetActionHandler(request.Action);
-        var cachedDataMutator = await _internalInstanceDataUnitOfWorkInitializer.Init(
-            instance,
-            taskId: null,
-            request.Language
-        );
+        var cachedDataMutator = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId: null, request.Language);
 
         int? userId = currentAuth switch
         {

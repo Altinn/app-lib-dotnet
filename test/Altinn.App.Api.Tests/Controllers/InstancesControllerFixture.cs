@@ -84,7 +84,7 @@ internal sealed record InstancesControllerFixture(IServiceProvider ServiceProvid
 
         services.AddTransient<InternalPatchService>();
         services.AddTransient<ModelSerializationService>();
-        services.AddTransient<InternalInstanceDataUnitOfWorkInitializer>();
+        services.AddTransient<InstanceDataUnitOfWorkInitializer>();
 
         services.AddTransient(sp =>
         {

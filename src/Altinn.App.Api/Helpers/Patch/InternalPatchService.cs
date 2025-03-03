@@ -21,7 +21,7 @@ namespace Altinn.App.Api.Helpers.Patch;
 public class InternalPatchService
 {
     private readonly IHostEnvironment _hostingEnvironment;
-    private readonly InternalInstanceDataUnitOfWorkInitializer _internalInstanceDataUnitOfWorkInitializer;
+    private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
     private readonly AppImplementationFactory _appImplementationFactory;
     private readonly Telemetry? _telemetry;
     private readonly IValidationService _validationService;
@@ -44,8 +44,7 @@ public class InternalPatchService
     {
         _validationService = validationService;
         _hostingEnvironment = hostingEnvironment;
-        _internalInstanceDataUnitOfWorkInitializer =
-            serviceProvider.GetRequiredService<InternalInstanceDataUnitOfWorkInitializer>();
+        _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
         _telemetry = telemetry;
     }
@@ -63,7 +62,7 @@ public class InternalPatchService
         using var activity = _telemetry?.StartDataPatchActivity(instance);
         var taskId = instance.Process.CurrentTask.ElementId;
 
-        var dataAccessor = await _internalInstanceDataUnitOfWorkInitializer.Init(instance, taskId, language);
+        var dataAccessor = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId, language);
 
         List<FormDataChange> changesAfterPatch = [];
 

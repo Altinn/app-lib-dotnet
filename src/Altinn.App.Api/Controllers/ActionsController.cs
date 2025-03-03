@@ -30,7 +30,7 @@ public class ActionsController : ControllerBase
     private readonly IInstanceClient _instanceClient;
     private readonly UserActionService _userActionService;
     private readonly IValidationService _validationService;
-    private readonly InternalInstanceDataUnitOfWorkInitializer _internalInstanceDataUnitOfWorkInitializer;
+    private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
     private readonly IAuthenticationContext _authenticationContext;
 
     /// <summary>
@@ -41,7 +41,7 @@ public class ActionsController : ControllerBase
         IInstanceClient instanceClient,
         UserActionService userActionService,
         IValidationService validationService,
-        InternalInstanceDataUnitOfWorkInitializer internalInstanceDataUnitOfWorkInitializer,
+        IServiceProvider serviceProvider,
         IAuthenticationContext authenticationContext
     )
     {
@@ -49,7 +49,7 @@ public class ActionsController : ControllerBase
         _instanceClient = instanceClient;
         _userActionService = userActionService;
         _validationService = validationService;
-        _internalInstanceDataUnitOfWorkInitializer = internalInstanceDataUnitOfWorkInitializer;
+        _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
         _authenticationContext = authenticationContext;
     }
 
@@ -120,7 +120,7 @@ public class ActionsController : ControllerBase
             return Forbid();
         }
         var taskId = instance.Process?.CurrentTask?.ElementId;
-        var dataMutator = await _internalInstanceDataUnitOfWorkInitializer.Init(instance, taskId, language);
+        var dataMutator = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId, language);
 
         UserActionContext userActionContext = new(
             dataMutator,

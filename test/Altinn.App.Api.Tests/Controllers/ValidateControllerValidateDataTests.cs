@@ -15,6 +15,7 @@ using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Moq;
 
@@ -194,6 +195,7 @@ public class ValidationControllerValidateDataTests
     private readonly Mock<IDataClient> _dataClientMock = new(MockBehavior.Strict);
     private readonly Mock<IAppModel> _appModelMock = new(MockBehavior.Strict);
     private readonly Mock<IAppResources> _appResourcesMock = new(MockBehavior.Strict);
+    private readonly ServiceCollection _services = new();
 
     [Theory]
     [ClassData(typeof(TestScenariosData))]
@@ -202,19 +204,9 @@ public class ValidationControllerValidateDataTests
         // Arrange
 
         SetupMocks(App, Org, InstanceOwnerId, testScenario);
-        var validateController = new ValidateController(
-            _instanceMock.Object,
-            _validationMock.Object,
-            _appMetadataMock.Object,
-            new InternalInstanceDataUnitOfWorkInitializer(
-                _dataClientMock.Object,
-                _instanceMock.Object,
-                _appMetadataMock.Object,
-                new ModelSerializationService(_appModelMock.Object),
-                _appResourcesMock.Object,
-                Options.Create<FrontEndSettings>(new())
-            )
-        );
+        await using var sp = _services.BuildStrictServiceProvider();
+
+        var validateController = sp.GetRequiredService<ValidateController>();
 
         // Act and Assert
         if (testScenario.ExpectedExceptionMessage == null)
@@ -266,6 +258,16 @@ public class ValidationControllerValidateDataTests
                 )
                 .ReturnsAsync(testScenario.ReceivedValidationIssues);
         }
+        _services.AddSingleton(_instanceMock.Object);
+        _services.AddSingleton(_appMetadataMock.Object);
+        _services.AddSingleton(_validationMock.Object);
+        _services.AddSingleton(_dataClientMock.Object);
+        _services.AddSingleton(_appModelMock.Object);
+        _services.AddSingleton(_appResourcesMock.Object);
+        _services.AddSingleton(Options.Create(new FrontEndSettings()));
+        _services.AddTransient<InstanceDataUnitOfWorkInitializer>();
+        _services.AddTransient<ModelSerializationService>();
+        _services.AddTransient<ValidateController>();
     }
 }
 

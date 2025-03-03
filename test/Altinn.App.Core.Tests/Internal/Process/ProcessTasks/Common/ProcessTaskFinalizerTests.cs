@@ -9,6 +9,7 @@ using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Moq;
 
@@ -20,30 +21,24 @@ public class ProcessTaskFinalizerTests
     private readonly Mock<IDataClient> _dataClientMock = new(MockBehavior.Strict);
     private readonly Mock<IInstanceClient> _instanceClientMock = new(MockBehavior.Strict);
     private readonly Mock<IAppModel> _appModelMock = new(MockBehavior.Strict);
-    private readonly Mock<ILayoutEvaluatorStateInitializer> _layoutEvaluatorStateInitializerMock = new(
-        MockBehavior.Strict
-    );
     private readonly Mock<IAppResources> _appResourcesMock = new(MockBehavior.Strict);
 
     private readonly IOptions<AppSettings> _appSettings = Options.Create(new AppSettings());
-    private readonly ProcessTaskFinalizer _processTaskFinalizer;
+    private readonly ServiceCollection _services = new();
 
     public ProcessTaskFinalizerTests()
     {
-        _processTaskFinalizer = new ProcessTaskFinalizer(
-            _appMetadataMock.Object,
-            _appModelMock.Object,
-            _layoutEvaluatorStateInitializerMock.Object,
-            new InternalInstanceDataUnitOfWorkInitializer(
-                _dataClientMock.Object,
-                _instanceClientMock.Object,
-                _appMetadataMock.Object,
-                new ModelSerializationService(_appModelMock.Object),
-                _appResourcesMock.Object,
-                Options.Create<FrontEndSettings>(new())
-            ),
-            _appSettings
-        );
+        _services.AddSingleton(_appSettings);
+        _services.AddSingleton(_appMetadataMock.Object);
+        _services.AddSingleton(_dataClientMock.Object);
+        _services.AddSingleton(_instanceClientMock.Object);
+        _services.AddSingleton(_appModelMock.Object);
+        _services.AddSingleton(_appResourcesMock.Object);
+        _services.AddSingleton(Options.Create(new FrontEndSettings()));
+        _services.AddTransient<IProcessTaskFinalizer, ProcessTaskFinalizer>();
+        _services.AddTransient<ILayoutEvaluatorStateInitializer, LayoutEvaluatorStateInitializer>();
+        _services.AddTransient<InstanceDataUnitOfWorkInitializer>();
+        _services.AddTransient<ModelSerializationService>();
     }
 
     [Fact]
@@ -76,7 +71,9 @@ public class ProcessTaskFinalizerTests
         _appMetadataMock.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(applicationMetadata);
 
         // Act
-        await _processTaskFinalizer.Finalize(instance.Process.CurrentTask.ElementId, instance);
+        await using var sp = _services.BuildStrictServiceProvider();
+        var processTaskFinalizer = sp.GetRequiredService<IProcessTaskFinalizer>();
+        await processTaskFinalizer.Finalize(instance.Process.CurrentTask.ElementId, instance);
 
         // Assert
         // Called once in Finalize and once when initializing the dataAccessor

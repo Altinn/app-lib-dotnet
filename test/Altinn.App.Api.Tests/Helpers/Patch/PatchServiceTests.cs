@@ -95,7 +95,7 @@ public sealed class PatchServiceTests : IDisposable
         services.AddSingleton<IDataElementValidator>(_dataElementValidator.Object);
         services.AddSingleton<IFormDataValidator>(_formDataValidator.Object);
         services.AddSingleton<IValidatorFactory, ValidatorFactory>();
-        services.AddTransient<InternalInstanceDataUnitOfWorkInitializer>();
+        services.AddTransient<InstanceDataUnitOfWorkInitializer>();
         services.AddSingleton(_appMetadataMock.Object);
         services.AddSingleton(_dataProcessorMock.Object);
         services.AddSingleton(_appResourcesMock.Object);

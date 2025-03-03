@@ -10,7 +10,7 @@ namespace Altinn.App.Core.Internal.Data;
 /// <summary>
 /// Service for initializing an <see cref="InstanceDataUnitOfWork"/> with all the services it needs.
 /// </summary>
-public class InternalInstanceDataUnitOfWorkInitializer
+internal class InstanceDataUnitOfWorkInitializer
 {
     private readonly IDataClient _dataClient;
     private readonly IInstanceClient _instanceClient;
@@ -22,7 +22,7 @@ public class InternalInstanceDataUnitOfWorkInitializer
     /// <summary>
     /// Constructor with services from dependency injection
     /// </summary>
-    public InternalInstanceDataUnitOfWorkInitializer(
+    public InstanceDataUnitOfWorkInitializer(
         IDataClient dataClient,
         IInstanceClient instanceClient,
         IAppMetadata applicationMetadata,

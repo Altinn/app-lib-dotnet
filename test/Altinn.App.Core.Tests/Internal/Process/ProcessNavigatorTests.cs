@@ -295,7 +295,7 @@ public class ProcessNavigatorTests
         services.AddSingleton(new Mock<IAppModel>(MockBehavior.Strict).Object);
         services.AddSingleton(new Mock<IAppResources>(MockBehavior.Strict).Object);
         services.AddSingleton<ModelSerializationService>();
-        services.AddTransient<InternalInstanceDataUnitOfWorkInitializer>();
+        services.AddTransient<InstanceDataUnitOfWorkInitializer>();
 
         var sp = services.BuildStrictServiceProvider();
         return new(sp);

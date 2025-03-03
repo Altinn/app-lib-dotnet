@@ -39,7 +39,7 @@ public class ProcessController : ControllerBase
     private readonly IAuthorizationService _authorization;
     private readonly IProcessEngine _processEngine;
     private readonly IProcessReader _processReader;
-    private readonly InternalInstanceDataUnitOfWorkInitializer _internalInstanceDataUnitOfWorkInitializer;
+    private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessController"/>
@@ -52,7 +52,7 @@ public class ProcessController : ControllerBase
         IAuthorizationService authorization,
         IProcessReader processReader,
         IProcessEngine processEngine,
-        InternalInstanceDataUnitOfWorkInitializer internalInstanceDataUnitOfWorkInitializer
+        IServiceProvider serviceProvider
     )
     {
         _logger = logger;
@@ -62,7 +62,7 @@ public class ProcessController : ControllerBase
         _authorization = authorization;
         _processReader = processReader;
         _processEngine = processEngine;
-        _internalInstanceDataUnitOfWorkInitializer = internalInstanceDataUnitOfWorkInitializer;
+        _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
     }
 
     /// <summary>
@@ -241,7 +241,7 @@ public class ProcessController : ControllerBase
         string? language
     )
     {
-        var dataAccessor = await _internalInstanceDataUnitOfWorkInitializer.Init(instance, currentTaskId, language);
+        var dataAccessor = await _instanceDataUnitOfWorkInitializer.Init(instance, currentTaskId, language);
 
         var validationIssues = await _validationService.ValidateInstanceAtTask(
             dataAccessor,

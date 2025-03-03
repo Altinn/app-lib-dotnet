@@ -19,7 +19,7 @@ namespace Altinn.App.Api.Controllers;
 public class ValidateController : ControllerBase
 {
     private readonly IInstanceClient _instanceClient;
-    private readonly InternalInstanceDataUnitOfWorkInitializer _internalInstanceDataUnitOfWorkInitializer;
+    private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
     private readonly IAppMetadata _appMetadata;
     private readonly IValidationService _validationService;
 
@@ -30,13 +30,13 @@ public class ValidateController : ControllerBase
         IInstanceClient instanceClient,
         IValidationService validationService,
         IAppMetadata appMetadata,
-        InternalInstanceDataUnitOfWorkInitializer internalInstanceDataUnitOfWorkInitializer
+        IServiceProvider serviceProvider
     )
     {
         _instanceClient = instanceClient;
         _validationService = validationService;
         _appMetadata = appMetadata;
-        _internalInstanceDataUnitOfWorkInitializer = internalInstanceDataUnitOfWorkInitializer;
+        _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
     }
 
     /// <summary>
@@ -77,7 +77,7 @@ public class ValidateController : ControllerBase
 
         try
         {
-            var dataAccessor = await _internalInstanceDataUnitOfWorkInitializer.Init(instance, taskId, language);
+            var dataAccessor = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId, language);
 
             var ignoredSources = ignoredValidators?.Split(',').ToList();
             List<ValidationIssueWithSource> messages = await _validationService.ValidateInstanceAtTask(
@@ -171,7 +171,7 @@ public class ValidateController : ControllerBase
             messages.Add(message);
         }
 
-        var dataAccessor = await _internalInstanceDataUnitOfWorkInitializer.Init(instance, dataType.TaskId, language);
+        var dataAccessor = await _instanceDataUnitOfWorkInitializer.Init(instance, dataType.TaskId, language);
 
         // Run validations for all data elements, but only return the issues for the specific data element
         var issues = await _validationService.ValidateInstanceAtTask(

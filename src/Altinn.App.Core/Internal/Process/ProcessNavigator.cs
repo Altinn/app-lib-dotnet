@@ -4,6 +4,7 @@ using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
 using Altinn.App.Core.Models.Process;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Altinn.App.Core.Internal.Process;
@@ -16,7 +17,7 @@ public class ProcessNavigator : IProcessNavigator
     private readonly IProcessReader _processReader;
     private readonly ExclusiveGatewayFactory _gatewayFactory;
     private readonly ILogger<ProcessNavigator> _logger;
-    private readonly InternalInstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
+    private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
 
     /// <summary>
     /// Initialize a new instance of <see cref="ProcessNavigator"/>
@@ -25,13 +26,13 @@ public class ProcessNavigator : IProcessNavigator
         IProcessReader processReader,
         ExclusiveGatewayFactory gatewayFactory,
         ILogger<ProcessNavigator> logger,
-        InternalInstanceDataUnitOfWorkInitializer instanceDataUnitOfWorkInitializer
+        IServiceProvider serviceProvider
     )
     {
         _processReader = processReader;
         _gatewayFactory = gatewayFactory;
         _logger = logger;
-        _instanceDataUnitOfWorkInitializer = instanceDataUnitOfWorkInitializer;
+        _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
     }
 
     /// <inheritdoc/>

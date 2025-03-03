@@ -1202,7 +1202,7 @@ public sealed class ProcessEngineTest
             services.TryAddTransient<IAppModel>(_ => appModelMock.Object);
             services.TryAddTransient<IAppMetadata>(_ => appMetadataMock.Object);
             services.TryAddTransient<IAppResources>(_ => appResourcesMock.Object);
-            services.TryAddTransient<InternalInstanceDataUnitOfWorkInitializer>();
+            services.TryAddTransient<InstanceDataUnitOfWorkInitializer>();
             services.TryAddTransient<ModelSerializationService>();
 
             foreach (var userAction in userActions ?? [])

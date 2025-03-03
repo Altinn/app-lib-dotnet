@@ -7,6 +7,7 @@ using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Internal.Process.ProcessTasks;
@@ -17,7 +18,7 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
     private readonly IAppMetadata _appMetadata;
     private readonly IAppModel _appModel;
     private readonly ILayoutEvaluatorStateInitializer _layoutEvaluatorStateInitializer;
-    private readonly InternalInstanceDataUnitOfWorkInitializer _internalInstanceDataUnitOfWorkInitializer;
+    private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
     private readonly IOptions<AppSettings> _appSettings;
 
     /// <summary>
@@ -27,13 +28,13 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
         IAppMetadata appMetadata,
         IAppModel appModel,
         ILayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer,
-        InternalInstanceDataUnitOfWorkInitializer internalInstanceDataUnitOfWorkInitializer,
+        IServiceProvider serviceProvider,
         IOptions<AppSettings> appSettings
     )
     {
         _appMetadata = appMetadata;
         _layoutEvaluatorStateInitializer = layoutEvaluatorStateInitializer;
-        _internalInstanceDataUnitOfWorkInitializer = internalInstanceDataUnitOfWorkInitializer;
+        _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
         _appSettings = appSettings;
         _appModel = appModel;
     }
@@ -43,7 +44,7 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
     {
         ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
 
-        var dataAccessor = await _internalInstanceDataUnitOfWorkInitializer.Init(instance, taskId, "nb");
+        var dataAccessor = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId, "nb");
 
         List<Task> tasks = [];
         foreach (
