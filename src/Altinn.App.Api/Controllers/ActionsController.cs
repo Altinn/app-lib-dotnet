@@ -113,8 +113,16 @@ public class ActionsController : ControllerBase
         }
 
         var currentAuth = _authenticationContext.Current;
-        if (currentAuth is not Authenticated.User user)
-            return Unauthorized();
+
+        switch (currentAuth)
+        {
+            case Authenticated.User:
+            case Authenticated.SystemUser:
+            case Authenticated.SelfIdentifiedUser:
+                break;
+            default:
+                return Unauthorized();
+        }
 
         bool authorized = await _authorization.AuthorizeAction(
             new AppIdentifier(org, app),
@@ -137,7 +145,7 @@ public class ActionsController : ControllerBase
         );
         UserActionContext userActionContext = new(
             dataMutator,
-            user.UserId,
+            null, // let userId be derived from currentAuth
             actionRequest.ButtonId,
             actionRequest.Metadata,
             language,
