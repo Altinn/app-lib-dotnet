@@ -120,6 +120,11 @@ internal sealed class SigningCallToActionService(
                                 EmailSubject = emailSubject,
                                 EmailBody = emailBody,
                                 SendersReference = instanceIdentifier.ToString(),
+                                Recipients = OverrideRecipientIfConfigured(
+                                    recipient,
+                                    notification,
+                                    NotificationChoice.Email
+                                ),
                             },
                             NotificationChoice.Sms => new CorrespondenceNotification
                             {
@@ -127,6 +132,11 @@ internal sealed class SigningCallToActionService(
                                 NotificationChannel = CorrespondenceNotificationChannel.Sms,
                                 SmsBody = smsBody,
                                 SendersReference = instanceIdentifier.ToString(),
+                                Recipients = OverrideRecipientIfConfigured(
+                                    recipient,
+                                    notification,
+                                    NotificationChoice.Sms
+                                ),
                             },
                             NotificationChoice.SmsAndEmail => new CorrespondenceNotification
                             {
@@ -136,6 +146,11 @@ internal sealed class SigningCallToActionService(
                                 EmailBody = emailBody,
                                 SmsBody = smsBody,
                                 SendersReference = instanceIdentifier.ToString(),
+                                Recipients = OverrideRecipientIfConfigured(
+                                    recipient,
+                                    notification,
+                                    NotificationChoice.SmsAndEmail
+                                ),
                             },
                             NotificationChoice.None => new CorrespondenceNotification
                             {
@@ -152,6 +167,77 @@ internal sealed class SigningCallToActionService(
                 CorrespondenceAuthorisation.Maskinporten
             )
         );
+    }
+
+    internal static List<CorrespondenceNotificationRecipientWrapper>? OverrideRecipientIfConfigured(
+        CorrespondenceRecipient recipient,
+        Notification? notification,
+        NotificationChoice notificationChoice
+    )
+    {
+        if (notification is null || notificationChoice == NotificationChoice.None)
+        {
+            return null;
+        }
+        return
+        [
+            new CorrespondenceNotificationRecipientWrapper
+            {
+                RecipientToOverride = recipient.IsPerson ? recipient.SSN : recipient.OrganisationNumber,
+                CorrespondenceNotificationRecipient =
+                [
+                    new CorrespondenceNotificationRecipient
+                    {
+                        EmailAddress = notificationChoice switch
+                        {
+                            NotificationChoice.Email => GetEmailOrThrow(notification),
+                            NotificationChoice.SmsAndEmail => notification.Email?.EmailAddress,
+                            NotificationChoice.Sms or _ => null,
+                        },
+                        MobileNumber = notificationChoice switch
+                        {
+                            NotificationChoice.Sms => GetMobileNumberOrThrow(notification),
+                            NotificationChoice.SmsAndEmail => notification.Sms?.MobileNumber,
+                            NotificationChoice.Email or _ => null,
+                        },
+                        OrganizationNumber = recipient.OrganisationNumber,
+                        NationalIdentityNumber = recipient.SSN,
+                    },
+                ],
+            },
+        ];
+    }
+
+    internal static string GetEmailOrThrow(Notification notification)
+    {
+        if (notification.Email?.EmailAddress is null)
+        {
+            throw new InvalidOperationException("Email address is required for email notifications.");
+        }
+        // TODO: regex
+
+        return notification.Email.EmailAddress;
+    }
+
+    internal static string GetMobileNumberOrThrow(Notification notification)
+    {
+        if (notification.Sms?.MobileNumber is null)
+        {
+            throw new InvalidOperationException("Mobile number is required for sms notifications.");
+        }
+        // TODO: regex
+
+        return notification.Sms.MobileNumber;
+    }
+
+    internal static string GetLinkDisplayText(string language)
+    {
+        return language switch
+        {
+            LanguageConst.Nn => "Klikk her for å opne skjema",
+            LanguageConst.En => "Click here to open the form",
+            LanguageConst.Nb or _ => "Klikk her for å åpne skjema",
+        };
     }
 
     internal async Task<ContentWrapper> GetContent(
@@ -228,16 +314,6 @@ internal sealed class SigningCallToActionService(
             EmailSubject = emailSubject ?? defaults.Title,
         };
         return contentWrapper;
-    }
-
-    internal static string GetLinkDisplayText(string language)
-    {
-        return language switch
-        {
-            LanguageConst.Nn => "Klikk her for å opne skjema",
-            LanguageConst.En => "Click here to open the form",
-            LanguageConst.Nb or _ => "Klikk her for å åpne skjema",
-        };
     }
 
     /// <summary>
