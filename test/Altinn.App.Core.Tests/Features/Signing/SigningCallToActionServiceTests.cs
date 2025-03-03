@@ -3,6 +3,7 @@ using Altinn.App.Core.Exceptions;
 using Altinn.App.Core.Features.Correspondence;
 using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Features.Signing;
+using Altinn.App.Core.Features.Signing.Enums;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Language;
@@ -559,6 +560,169 @@ public class SigningCallToActionServiceTests
         Assert.Contains("You have a task waiting for your signature.", res.CorrespondenceContent.Body);
         Assert.Contains(instanceUrl, res.CorrespondenceContent.Body);
         Assert.Contains(sendersParty.Name, res.CorrespondenceContent.Body);
+    }
+
+    [Fact]
+    public void OverrideRecipientIfConfigured_SmsWithConfiguredRecipient_OverridesRecipient()
+    {
+        // Arrange
+        Party party = new() { SSN = "12345678901" };
+        CorrespondenceRecipient recipient = new(party);
+
+        Notification notification = new() { Sms = new Sms { MobileNumber = "12345678" } };
+
+        // Act
+        CorrespondenceNotificationRecipientWrapper wrapper = SigningCallToActionService
+            .OverrideRecipientIfConfigured(recipient, notification, NotificationChoice.Sms)!
+            .FirstOrDefault()!;
+        CorrespondenceNotificationRecipient correspondenceNotificationRecipient =
+            wrapper.CorrespondenceNotificationRecipient.FirstOrDefault()!;
+        string recipientToOverride = wrapper.RecipientToOverride;
+
+        // Assert
+        Assert.Equal("12345678901", recipientToOverride);
+        Assert.Equal("12345678901", correspondenceNotificationRecipient.NationalIdentityNumber);
+        Assert.Null(correspondenceNotificationRecipient.OrganizationNumber);
+        Assert.Equal("12345678", correspondenceNotificationRecipient.MobileNumber);
+        Assert.Null(correspondenceNotificationRecipient.EmailAddress);
+    }
+
+    [Fact]
+    public void OverrideRecipientIfConfigured_EmailWithConfiguredRecipient_OverridesRecipient()
+    {
+        // Arrange
+        Party party = new() { SSN = "12345678901" };
+        CorrespondenceRecipient recipient = new(party);
+
+        Notification notification = new() { Email = new Email { EmailAddress = "test@tester.no" } };
+
+        // Act
+        CorrespondenceNotificationRecipientWrapper wrapper = SigningCallToActionService
+            .OverrideRecipientIfConfigured(recipient, notification, NotificationChoice.Email)!
+            .FirstOrDefault()!;
+        CorrespondenceNotificationRecipient correspondenceNotificationRecipient =
+            wrapper.CorrespondenceNotificationRecipient.FirstOrDefault()!;
+        string recipientToOverride = wrapper.RecipientToOverride;
+
+        // Assert
+        Assert.Equal("12345678901", recipientToOverride);
+        Assert.Equal("12345678901", correspondenceNotificationRecipient.NationalIdentityNumber);
+        Assert.Null(correspondenceNotificationRecipient.OrganizationNumber);
+        Assert.Equal("test@tester.no", correspondenceNotificationRecipient.EmailAddress);
+        Assert.Null(correspondenceNotificationRecipient.MobileNumber);
+    }
+
+    [Fact]
+    public void OverrideRecipientIfConfigured_EmailAndSmsWithConfiguredRecipient_OverridesRecipient()
+    {
+        // Arrange
+        Party party = new() { OrgNumber = "123456789" };
+        CorrespondenceRecipient recipient = new(party);
+
+        Notification notification = new()
+        {
+            Email = new Email { EmailAddress = "test@tester.no" },
+            Sms = new Sms { MobileNumber = "12345678" },
+        };
+
+        // Act
+        CorrespondenceNotificationRecipientWrapper wrapper = SigningCallToActionService
+            .OverrideRecipientIfConfigured(recipient, notification, NotificationChoice.SmsAndEmail)!
+            .FirstOrDefault()!;
+        CorrespondenceNotificationRecipient correspondenceNotificationRecipient =
+            wrapper.CorrespondenceNotificationRecipient.FirstOrDefault()!;
+        string recipientToOverride = wrapper.RecipientToOverride;
+
+        // Assert
+        Assert.Equal("123456789", recipientToOverride);
+        Assert.Equal("123456789", correspondenceNotificationRecipient.OrganizationNumber);
+        Assert.Null(correspondenceNotificationRecipient.NationalIdentityNumber);
+        Assert.Equal("12345678", correspondenceNotificationRecipient.MobileNumber);
+        Assert.Equal("test@tester.no", correspondenceNotificationRecipient.EmailAddress);
+    }
+
+    [Fact]
+    public void OverrideRecipientIfConfigured_NoNotificationConfigured_ReturnsNull()
+    {
+        // Arrange
+        Party party = new() { SSN = "12345678901" };
+        CorrespondenceRecipient recipient = new(party);
+
+        Notification? notification = null;
+
+        // Act
+        List<CorrespondenceNotificationRecipientWrapper>? wrapperList =
+            SigningCallToActionService.OverrideRecipientIfConfigured(recipient, notification, NotificationChoice.Email);
+
+        // Assert
+        Assert.Null(wrapperList);
+    }
+
+    [Fact]
+    public void OverrideRecipientIfConfigured_NoNotificationChoiceConfigured_ReturnsNull()
+    {
+        // Arrange
+        Party party = new() { SSN = "12345678901" };
+        CorrespondenceRecipient recipient = new(party);
+
+        Notification notification = new()
+        {
+            Email = new Email { EmailAddress = "test@tester.no" },
+            Sms = new Sms { MobileNumber = "12345678" },
+        };
+
+        // Act
+        List<CorrespondenceNotificationRecipientWrapper>? wrapperList =
+            SigningCallToActionService.OverrideRecipientIfConfigured(recipient, notification, NotificationChoice.None); // No notification choice configured
+
+        // Assert
+        Assert.Null(wrapperList);
+    }
+
+    [Fact]
+    public void GetEmailOrThrow_WithValidEmail_ReturnsEmail()
+    {
+        // Arrange
+        Notification notification = new() { Email = new Email { EmailAddress = "test@tester.no" } };
+
+        // Act
+        string email = SigningCallToActionService.GetEmailOrThrow(notification);
+
+        // Assert
+        Assert.Equal("test@tester.no", email);
+    }
+
+    [Fact]
+    public void GetEmailOrThrow_WithNoEmail_ThrowsException()
+    {
+        // Arrange
+        Notification notification = new();
+
+        // Act & Assert
+        Assert.Throws<InvalidOperationException>(() => SigningCallToActionService.GetEmailOrThrow(notification));
+    }
+
+    [Fact]
+    public void GetMobileNumberOrThrow_WithValidMobileNumber_ReturnsMobileNumber()
+    {
+        // Arrange
+        Notification notification = new() { Sms = new Sms { MobileNumber = "12345678" } };
+
+        // Act
+        string mobileNumber = SigningCallToActionService.GetMobileNumberOrThrow(notification);
+
+        // Assert
+        Assert.Equal("12345678", mobileNumber);
+    }
+
+    [Fact]
+    public void GetMobileNumberOrThrow_WithNoMobileNumber_ThrowsException()
+    {
+        // Arrange
+        Notification notification = new();
+
+        // Act & Assert
+        Assert.Throws<InvalidOperationException>(() => SigningCallToActionService.GetMobileNumberOrThrow(notification));
     }
 
     [Theory]

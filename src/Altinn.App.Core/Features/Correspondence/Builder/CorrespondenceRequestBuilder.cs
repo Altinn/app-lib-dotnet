@@ -229,6 +229,12 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     }
 
     /// <inheritdoc/>
+    public ICorrespondenceRequestBuilder WithNotification(ICorrespondenceNotificationBuilder builder)
+    {
+        return WithNotification(builder.Build());
+    }
+
+    /// <inheritdoc/>
     public ICorrespondenceRequestBuilder WithNotification(CorrespondenceNotification notification)
     {
         _notification = notification;
@@ -244,12 +250,6 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
         }
 
         return this;
-    }
-
-    /// <inheritdoc/>
-    public ICorrespondenceRequestBuilder WithNotification(ICorrespondenceNotificationBuilder builder)
-    {
-        return WithNotification(builder.Build());
     }
 
     /// <inheritdoc/>
