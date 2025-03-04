@@ -4,8 +4,6 @@ using Altinn.App.Api.Models;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Features.Auth;
-using Altinn.App.Core.Helpers.Serialization;
-using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Validation;
@@ -32,9 +30,7 @@ public class ActionsController : ControllerBase
     private readonly IInstanceClient _instanceClient;
     private readonly UserActionService _userActionService;
     private readonly IValidationService _validationService;
-    private readonly IDataClient _dataClient;
-    private readonly IAppMetadata _appMetadata;
-    private readonly ModelSerializationService _modelSerialization;
+    private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
     private readonly IAuthenticationContext _authenticationContext;
 
     /// <summary>
@@ -45,9 +41,7 @@ public class ActionsController : ControllerBase
         IInstanceClient instanceClient,
         UserActionService userActionService,
         IValidationService validationService,
-        IDataClient dataClient,
-        IAppMetadata appMetadata,
-        ModelSerializationService modelSerialization,
+        IServiceProvider serviceProvider,
         IAuthenticationContext authenticationContext
     )
     {
@@ -55,9 +49,7 @@ public class ActionsController : ControllerBase
         _instanceClient = instanceClient;
         _userActionService = userActionService;
         _validationService = validationService;
-        _dataClient = dataClient;
-        _appMetadata = appMetadata;
-        _modelSerialization = modelSerialization;
+        _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
         _authenticationContext = authenticationContext;
     }
 
@@ -88,7 +80,7 @@ public class ActionsController : ControllerBase
     )
     {
         string? action = actionRequest.Action;
-        if (action == null)
+        if (action is null)
         {
             return new BadRequestObjectResult(
                 new ProblemDetails()
@@ -102,7 +94,7 @@ public class ActionsController : ControllerBase
         }
 
         Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
-        if (instance?.Process == null)
+        if (instance?.Process is null)
         {
             return Conflict($"Process is not started.");
         }
@@ -113,8 +105,16 @@ public class ActionsController : ControllerBase
         }
 
         var currentAuth = _authenticationContext.Current;
-        if (currentAuth is not Authenticated.User user)
-            return Unauthorized();
+
+        switch (currentAuth)
+        {
+            case Authenticated.User:
+            case Authenticated.SystemUser:
+            case Authenticated.SelfIdentifiedUser:
+                break;
+            default:
+                return Unauthorized();
+        }
 
         bool authorized = await _authorization.AuthorizeAction(
             new AppIdentifier(org, app),
@@ -127,24 +127,19 @@ public class ActionsController : ControllerBase
         {
             return Forbid();
         }
+        var taskId = instance.Process?.CurrentTask?.ElementId;
+        var dataMutator = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId, language);
 
-        var dataMutator = new InstanceDataUnitOfWork(
-            instance,
-            _dataClient,
-            _instanceClient,
-            await _appMetadata.GetApplicationMetadata(),
-            _modelSerialization
-        );
         UserActionContext userActionContext = new(
             dataMutator,
-            user.UserId,
+            null, // let userId be derived from currentAuth
             actionRequest.ButtonId,
             actionRequest.Metadata,
             language,
             currentAuth
         );
         IUserAction? actionHandler = _userActionService.GetActionHandler(action);
-        if (actionHandler == null)
+        if (actionHandler is null)
         {
             return new NotFoundObjectResult(
                 new UserActionResponse()
@@ -161,7 +156,7 @@ public class ActionsController : ControllerBase
 
         UserActionResult result = await actionHandler.HandleAction(userActionContext);
 
-        if (result.ResultType == ResultType.Failure)
+        if (result.ResultType is ResultType.Failure)
         {
             return StatusCode(
                 statusCode: result.ErrorType switch

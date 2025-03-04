@@ -5,10 +5,7 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Helpers;
-using Altinn.App.Core.Helpers.Serialization;
-using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
-using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
@@ -32,12 +29,8 @@ public class ProcessEngine : IProcessEngine
     private readonly UserActionService _userActionService;
     private readonly Telemetry? _telemetry;
     private readonly IAuthenticationContext _authenticationContext;
-    private readonly AppImplementationFactory _appImplementationFactory;
+    private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
     private readonly IProcessTaskCleaner _processTaskCleaner;
-    private readonly IDataClient _dataClient;
-    private readonly IInstanceClient _instanceClient;
-    private readonly ModelSerializationService _modelSerialization;
-    private readonly IAppMetadata _appMetadata;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessEngine"/> class
@@ -49,10 +42,6 @@ public class ProcessEngine : IProcessEngine
         IProcessEventDispatcher processEventDispatcher,
         IProcessTaskCleaner processTaskCleaner,
         UserActionService userActionService,
-        IDataClient dataClient,
-        IInstanceClient instanceClient,
-        ModelSerializationService modelSerialization,
-        IAppMetadata appMetadata,
         IAuthenticationContext authenticationContext,
         IServiceProvider serviceProvider,
         Telemetry? telemetry = null
@@ -64,13 +53,9 @@ public class ProcessEngine : IProcessEngine
         _processEventDispatcher = processEventDispatcher;
         _processTaskCleaner = processTaskCleaner;
         _userActionService = userActionService;
-        _dataClient = dataClient;
-        _instanceClient = instanceClient;
-        _modelSerialization = modelSerialization;
-        _appMetadata = appMetadata;
         _telemetry = telemetry;
         _authenticationContext = authenticationContext;
-        _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
+        _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
     }
 
     /// <inheritdoc/>
@@ -169,13 +154,7 @@ public class ProcessEngine : IProcessEngine
 
         var currentAuth = _authenticationContext.Current;
         IUserAction? actionHandler = _userActionService.GetActionHandler(request.Action);
-        var cachedDataMutator = new InstanceDataUnitOfWork(
-            instance,
-            _dataClient,
-            _instanceClient,
-            await _appMetadata.GetApplicationMetadata(),
-            _modelSerialization
-        );
+        var cachedDataMutator = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId: null, request.Language);
 
         int? userId = currentAuth switch
         {
