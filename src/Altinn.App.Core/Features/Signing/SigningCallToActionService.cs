@@ -1,3 +1,4 @@
+using System.Reflection;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Exceptions;
@@ -21,6 +22,8 @@ using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace Altinn.App.Core.Features.Signing;
 
@@ -162,7 +165,13 @@ internal sealed class SigningCallToActionService(
             CorrespondenceAuthorisation.Maskinporten
         );
 
-        string serializedPayload = System.Text.Json.JsonSerializer.Serialize(request);
+        var jsettings = new JsonSerializerSettings
+        {
+            ContractResolver = new InternalContractResolver(),
+            Formatting = Formatting.Indented,
+        };
+
+        string serializedPayload = JsonConvert.SerializeObject(request, jsettings);
         _logger.LogInformation(
             "Sending correspondence request. URL: {InstanceUrl}, Payload: {Payload}",
             instanceUrl,
@@ -364,5 +373,34 @@ internal sealed class SigningCallToActionService(
                     $"Din signatur ventes for {appName}. Åpne Altinn-innboksen din for å fortsette.<br /><br />Hvis du lurer på noe, kan du kontakte {appOwner}.",
             },
         };
+    }
+}
+
+/// <summary>
+/// Represents the default texts for a correspondence message.
+/// </summary>
+public class InternalContractResolver : DefaultContractResolver
+{
+    /// <summary>
+    /// Creates the properties for the given type.
+    /// </summary>
+    /// <param name="type"></param>
+    /// <param name="memberSerialization"></param>
+    /// <returns></returns>
+    protected override IList<JsonProperty> CreateProperties(Type type, MemberSerialization memberSerialization)
+    {
+        // Retrieve properties with public and non-public instance binding flags.
+        var properties = type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+            .Select(p => base.CreateProperty(p, memberSerialization))
+            .ToList();
+
+        // Ensure each property is set to be readable and writable.
+        foreach (var prop in properties)
+        {
+            prop.Readable = true;
+            prop.Writable = true;
+        }
+
+        return properties;
     }
 }
