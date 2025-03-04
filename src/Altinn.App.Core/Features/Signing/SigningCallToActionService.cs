@@ -122,7 +122,7 @@ internal sealed class SigningCallToActionService(
                             EmailSubject = emailSubject,
                             EmailBody = emailBody,
                             SendersReference = instanceIdentifier.ToString(),
-                            Recipients = OverrideRecipientIfConfigured(
+                            CustomNotificationRecipients = OverrideRecipientIfConfigured(
                                 recipient,
                                 notification,
                                 NotificationChoice.Email
@@ -134,7 +134,11 @@ internal sealed class SigningCallToActionService(
                             NotificationChannel = CorrespondenceNotificationChannel.Sms,
                             SmsBody = smsBody,
                             SendersReference = instanceIdentifier.ToString(),
-                            Recipients = OverrideRecipientIfConfigured(recipient, notification, NotificationChoice.Sms),
+                            CustomNotificationRecipients = OverrideRecipientIfConfigured(
+                                recipient,
+                                notification,
+                                NotificationChoice.Sms
+                            ),
                         },
                         NotificationChoice.SmsAndEmail => new CorrespondenceNotification
                         {
@@ -144,7 +148,7 @@ internal sealed class SigningCallToActionService(
                             EmailBody = emailBody,
                             SmsBody = smsBody,
                             SendersReference = instanceIdentifier.ToString(),
-                            Recipients = OverrideRecipientIfConfigured(
+                            CustomNotificationRecipients = OverrideRecipientIfConfigured(
                                 recipient,
                                 notification,
                                 NotificationChoice.SmsAndEmail
@@ -196,7 +200,7 @@ internal sealed class SigningCallToActionService(
             new CorrespondenceNotificationRecipientWrapper
             {
                 RecipientToOverride = recipient.IsPerson ? recipient.SSN : recipient.OrganisationNumber,
-                NotificationRecipient =
+                Recipients =
                 [
                     new NotificationRecipient
                     {
@@ -212,8 +216,6 @@ internal sealed class SigningCallToActionService(
                             NotificationChoice.SmsAndEmail => notification.Sms?.MobileNumber,
                             NotificationChoice.Email or _ => null,
                         },
-                        OrganizationNumber = recipient.OrganisationNumber,
-                        NationalIdentityNumber = recipient.SSN,
                     },
                 ],
             },

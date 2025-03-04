@@ -46,7 +46,7 @@ public class CorrespondenceNotificationOverrideBuilder : ICorrespondenceNotifica
         return new CorrespondenceNotificationRecipientWrapper
         {
             RecipientToOverride = _recipientToOverride,
-            NotificationRecipient = _correspondenceNotificationRecipient,
+            Recipients = _correspondenceNotificationRecipient,
         };
     }
 }
