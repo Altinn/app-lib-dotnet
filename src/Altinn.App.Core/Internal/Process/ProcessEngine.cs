@@ -31,6 +31,7 @@ public class ProcessEngine : IProcessEngine
     private readonly IAuthenticationContext _authenticationContext;
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
     private readonly IProcessTaskCleaner _processTaskCleaner;
+    private readonly AppImplementationFactory _appImplementationFactory;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessEngine"/> class
@@ -55,6 +56,7 @@ public class ProcessEngine : IProcessEngine
         _userActionService = userActionService;
         _telemetry = telemetry;
         _authenticationContext = authenticationContext;
+        _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
     }
 
@@ -447,10 +449,13 @@ public class ProcessEngine : IProcessEngine
     /// </summary>
     private async Task RunAppDefinedProcessEndHandlers(Instance instance, List<InstanceEvent>? events)
     {
+        using var mainActivity = _telemetry?.StartProcessEndHandlersActivity(instance);
+
         var processEnds = _appImplementationFactory.GetAll<IProcessEnd>();
-        foreach (IProcessEnd processend in processEnds)
+        foreach (IProcessEnd processEnd in processEnds)
         {
-            await processend.End(instance, events);
+            using var nestedActivity = _telemetry?.StartProcessEndHandlerActivity(instance, processEnd);
+            await processEnd.End(instance, events);
         }
     }
 

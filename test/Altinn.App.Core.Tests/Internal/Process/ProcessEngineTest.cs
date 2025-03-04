@@ -846,7 +846,11 @@ public sealed class ProcessEngineTest
                 EndEvent = "EndEvent_1",
             },
         };
-        using var fixture = Fixture.Create(updatedInstance: expectedInstance, registerProcessEnd: registerProcessEnd);
+        using var fixture = Fixture.Create(
+            updatedInstance: expectedInstance,
+            registerProcessEnd: registerProcessEnd,
+            withTelemetry: registerProcessEnd
+        );
         fixture
             .Mock<IAppMetadata>()
             .Setup(x => x.GetApplicationMetadata())
@@ -990,7 +994,10 @@ public sealed class ProcessEngineTest
             );
 
         if (registerProcessEnd)
+        {
             fixture.Mock<IProcessEnd>().Verify();
+            await Verify(fixture.TelemetrySink.GetSnapshot());
+        }
 
         result.Success.Should().BeTrue();
         result
@@ -1218,6 +1225,7 @@ public sealed class ProcessEngineTest
             services.TryAddTransient<IAppMetadata>(_ => appMetadataMock.Object);
             services.TryAddTransient<IAppResources>(_ => appResourcesMock.Object);
             services.TryAddTransient<InstanceDataUnitOfWorkInitializer>();
+
             if (registerProcessEnd)
                 services.AddSingleton<IProcessEnd>(_ => new Mock<IProcessEnd>().Object);
 
