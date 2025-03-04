@@ -13,6 +13,7 @@ using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
+using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Models;
@@ -37,6 +38,7 @@ internal sealed class SigningService(
     ISignClient signClient,
     ISigningReceiptService signingReceiptService,
     ISigningCallToActionService signingCallToActionService,
+    IProfileClient profileClient,
     ILogger<SigningService> logger,
     Telemetry? telemetry = null
 ) : ISigningService
@@ -57,6 +59,7 @@ internal sealed class SigningService(
     private readonly ISigningReceiptService _signingReceiptService = signingReceiptService;
     private readonly ISigningCallToActionService _signingCallToActionService = signingCallToActionService;
     private readonly AppImplementationFactory _appImplementationFactory = appImplementationFactory;
+    private readonly IProfileClient _profileClient = profileClient;
     private const string ApplicationJsonContentType = "application/json";
 
     public async Task<List<SigneeContext>> GenerateSigneeContexts(
@@ -429,7 +432,12 @@ internal sealed class SigningService(
         CancellationToken ct
     )
     {
-        Models.Signee signee = await From(signeeParty, altinnPartyClient.LookupParty);
+        Models.Signee signee = await From(
+            signeeParty,
+            altinnPartyClient.LookupParty,
+            _profileClient.GetUserProfile,
+            _profileClient.GetUserProfile
+        );
         Party party = signee.GetParty();
 
         Models.Notifications? notifications = signeeParty.Notifications;
@@ -579,6 +587,9 @@ internal sealed class SigningService(
                         && personOnBehalfOfOrgSignee.OnBehalfOfOrg.OrgNumber
                             == signDocument.SigneeInfo.OrganisationNumber
                         && personOnBehalfOfOrgSignee.SocialSecurityNumber == signDocument.SigneeInfo.PersonNumber,
+                    SelfIdentifiedUserSignee selfIdentifiedUserSignee => IsSelfIdentifiedUserSignDocument(signDocument)
+                        && int.TryParse(signDocument.SigneeInfo.UserId, out int userId)
+                        && selfIdentifiedUserSignee.UserId == userId,
                     SystemSignee systemSignee => IsSystemSignDocument(signDocument)
                         && systemSignee.OnBehalfOfOrg.OrgNumber == signDocument.SigneeInfo.OrganisationNumber
                         && systemSignee.SystemId.Equals(signDocument.SigneeInfo.SystemUserId),
@@ -626,7 +637,7 @@ internal sealed class SigningService(
         {
             orgSigneeContext.Signee = await orgSignee.ToPersonOnBehalfOfOrgSignee(
                 signeeInfo.PersonNumber,
-                altinnPartyClient.LookupParty
+                _profileClient.GetUserProfile
             );
         }
         else if (signeeInfo.SystemUserId.HasValue)
@@ -651,10 +662,13 @@ internal sealed class SigningService(
         {
             TaskId = taskId,
             Signee = await From(
+                signDocument.SigneeInfo.UserId,
                 signDocument.SigneeInfo.PersonNumber,
                 signDocument.SigneeInfo.OrganisationNumber,
                 signDocument.SigneeInfo.SystemUserId,
-                altinnPartyClient.LookupParty
+                altinnPartyClient.LookupParty,
+                _profileClient.GetUserProfile,
+                _profileClient.GetUserProfile
             ),
             SigneeState = new SigneeState()
             {
@@ -770,5 +784,14 @@ internal sealed class SigningService(
     {
         return !string.IsNullOrEmpty(signDocument.SigneeInfo.OrganisationNumber)
             && signDocument.SigneeInfo.SystemUserId.HasValue;
+    }
+
+    private static bool IsSelfIdentifiedUserSignDocument(SignDocument signDocument)
+    {
+        return !string.IsNullOrEmpty(signDocument.SigneeInfo.UserId)
+            && int.TryParse(signDocument.SigneeInfo.UserId, out _)
+            && string.IsNullOrEmpty(signDocument.SigneeInfo.PersonNumber)
+            && string.IsNullOrEmpty(signDocument.SigneeInfo.OrganisationNumber)
+            && !signDocument.SigneeInfo.SystemUserId.HasValue;
     }
 }
