@@ -13,6 +13,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client.Events;
+using IMaskinportenClient = Altinn.App.Core.Features.Maskinporten.IMaskinportenClient;
 
 namespace Altinn.App.Clients.Fiks.FiksIO;
 
@@ -26,6 +27,7 @@ internal sealed class FiksIOClient : IFiksIOClient
     private readonly ILoggerFactory _loggerFactory;
     private KS.Fiks.IO.Client.FiksIOClient? _fiksIoClient;
     private EventHandler<FiksIOReceivedMessageArgs>? _messageReceivedHandler;
+    private readonly IMaskinportenClient _maskinportenClient;
 
     public Guid AccountId => _fiksIOSettings.CurrentValue.AccountId;
     public Guid IntegrationId => _fiksIOSettings.CurrentValue.IntegrationId;
@@ -36,6 +38,7 @@ internal sealed class FiksIOClient : IFiksIOClient
         IOptionsMonitor<FiksIOSettings> fiksIOSettings,
         IWebHostEnvironment env,
         IAppMetadata appMetadata,
+        IMaskinportenClient maskinportenClient,
         ILoggerFactory loggerFactory
     )
     {
@@ -44,6 +47,7 @@ internal sealed class FiksIOClient : IFiksIOClient
         _appMetadata = appMetadata;
         _env = env;
         _loggerFactory = loggerFactory;
+        _maskinportenClient = maskinportenClient;
         _logger = loggerFactory.CreateLogger<FiksIOClient>();
 
         // Force load of settings, which triggers validation
@@ -143,12 +147,12 @@ internal sealed class FiksIOClient : IFiksIOClient
     [MemberNotNull(nameof(_fiksIoClient))]
     private async Task InitialiseFiksIOClient()
     {
-        var maskinportenSettings = _maskinportenSettings.CurrentValue;
+        // var maskinportenSettings = _maskinportenSettings.CurrentValue;
         var fiksIOSettings = _fiksIOSettings.CurrentValue;
 
-        var maskinportenJwk = maskinportenSettings.GetJsonWebKey();
-        var maskinportenClientId = maskinportenSettings.ClientId;
-        var (maskinportenPublicKey, maskinportenPrivateKey) = maskinportenJwk.ConvertJwkToRsa();
+        // var maskinportenJwk = maskinportenSettings.GetJsonWebKey();
+        // var maskinportenClientId = maskinportenSettings.ClientId;
+        // var (maskinportenPublicKey, maskinportenPrivateKey) = maskinportenJwk.ConvertJwkToRsa();
 
         var appMeta = await _appMetadata.GetApplicationMetadata();
         var environmentConfig = GetConfiguration(appMeta.AppIdentifier);
@@ -165,20 +169,24 @@ internal sealed class FiksIOClient : IFiksIOClient
                 fiksIOSettings.IntegrationId,
                 fiksIOSettings.IntegrationPassword
             ),
-            kontoConfiguration: new KontoConfiguration(fiksIOSettings.AccountId, fiksIOSettings.AccountPrivateKey),
-            maskinportenConfiguration: new MaskinportenClientConfiguration(
-                audience: environmentConfig.MaskinportenAuthority,
-                tokenEndpoint: environmentConfig.MaskinportenTokenEndpoint,
-                issuer: maskinportenClientId,
-                numberOfSecondsLeftBeforeExpire: 10,
-                publicKey: maskinportenPublicKey,
-                privateKey: maskinportenPrivateKey,
-                keyIdentifier: maskinportenJwk.Kid
-            )
+            kontoConfiguration: new KontoConfiguration(fiksIOSettings.AccountId, fiksIOSettings.AccountPrivateKey)
+        // maskinportenConfiguration: new MaskinportenClientConfiguration(
+        //     audience: environmentConfig.MaskinportenAuthority,
+        //     tokenEndpoint: environmentConfig.MaskinportenTokenEndpoint,
+        //     issuer: maskinportenClientId,
+        //     numberOfSecondsLeftBeforeExpire: 10,
+        //     publicKey: maskinportenPublicKey,
+        //     privateKey: maskinportenPrivateKey,
+        //     keyIdentifier: maskinportenJwk.Kid
+        // )
         );
 
         _fiksIoClient?.Dispose();
-        _fiksIoClient = await KS.Fiks.IO.Client.FiksIOClient.CreateAsync(fiksConfiguration, _loggerFactory);
+        _fiksIoClient = await KS.Fiks.IO.Client.FiksIOClient.CreateAsync(
+            configuration: fiksConfiguration,
+            maskinportenClient: new FiksIOMaskinportenClient(_maskinportenClient),
+            loggerFactory: _loggerFactory
+        );
 
         if (_messageReceivedHandler is not null)
             SubscribeToEvents();
