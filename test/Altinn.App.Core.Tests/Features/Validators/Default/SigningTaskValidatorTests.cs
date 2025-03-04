@@ -51,6 +51,7 @@ public class SigningTaskValidatorTest
                 Signee = new PersonSignee
                 {
                     FullName = "A signee",
+                    UserId = 1,
                     SocialSecurityNumber = "12334456674",
                     Party = new Party(),
                 },
@@ -92,6 +93,7 @@ public class SigningTaskValidatorTest
                 Signee = new PersonSignee
                 {
                     FullName = "A signee",
+                    UserId = 1,
                     SocialSecurityNumber = "12334456674",
                     Party = new Party(),
                 },

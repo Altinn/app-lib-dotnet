@@ -1,4 +1,6 @@
+using System.Globalization;
 using System.Text.Json.Serialization;
+using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 
@@ -9,7 +11,9 @@ namespace Altinn.App.Core.Features.Signing.Models;
 /// </summary>
 public sealed class SigneeContext
 {
-    /// <summary>The task associated with the signee state.</summary>
+    /// <summary>
+    /// The task associated with the signee state.
+    /// </summary>
     [JsonPropertyName("taskId")]
     public required string TaskId { get; init; }
 
@@ -43,6 +47,7 @@ public sealed class SigneeContext
 [JsonDerivedType(typeof(OrganisationSignee), typeDiscriminator: "organisation")]
 [JsonDerivedType(typeof(PersonOnBehalfOfOrgSignee), typeDiscriminator: "personOnBehalfOfOrg")]
 [JsonDerivedType(typeof(SystemSignee), typeDiscriminator: "system")]
+[JsonDerivedType(typeof(SelfIdentifiedUserSignee), typeDiscriminator: "selfIdentifiedUser")]
 public abstract class Signee
 {
     internal Party GetParty()
@@ -50,50 +55,57 @@ public abstract class Signee
         return this switch
         {
             PersonSignee personSignee => personSignee.Party,
+            SelfIdentifiedUserSignee selfIdentifiedUserSignee => selfIdentifiedUserSignee.Party,
             OrganisationSignee organisationSignee => organisationSignee.OrgParty,
             PersonOnBehalfOfOrgSignee personOnBehalfOfOrgSignee => personOnBehalfOfOrgSignee.OnBehalfOfOrg.OrgParty,
             SystemSignee systemSignee => systemSignee.OnBehalfOfOrg.OrgParty,
             _ => throw new InvalidOperationException(
-                "Signee is neither a person, an organisation, a person on behalf of an organisation, nor a system"
+                "Signee is neither a person, an organisation, a person on behalf of an organisation, a self identified user or a system"
             ),
         };
     }
 
-    internal static async Task<Signee> From(ProvidedSignee signeeParty, Func<PartyLookup, Task<Party>> lookupParty)
+    internal static async Task<Signee> From(
+        ProvidedSignee signeeParty,
+        Func<PartyLookup, Task<Party>> lookupParty,
+        Func<int, Task<UserProfile?>> getUserProfileUserId,
+        Func<string, Task<UserProfile?>> getUserProfileSsn
+    )
     {
         return signeeParty switch
         {
             Models.PersonSignee personSigneeParty => await From(
+                userId: null,
                 ssn: personSigneeParty.SocialSecurityNumber,
                 orgNr: null,
                 systemId: null,
-                lookupParty
+                lookupParty,
+                getUserProfileUserId,
+                getUserProfileSsn
             ),
             Models.OrganisationSignee organisationSigneeParty => await From(
+                userId: null,
                 ssn: null,
                 orgNr: organisationSigneeParty.OrganisationNumber,
                 systemId: null,
-                lookupParty
+                lookupParty,
+                getUserProfileUserId,
+                getUserProfileSsn
             ),
             _ => throw new InvalidOperationException("SigneeParty is neither a person nor an organisation"),
         };
     }
 
     internal static async Task<Signee> From(
+        string? userId,
         string? ssn,
         string? orgNr,
         Guid? systemId,
-        Func<PartyLookup, Task<Party>> lookupParty
+        Func<PartyLookup, Task<Party>> lookupParty,
+        Func<int, Task<UserProfile?>> getUserProfileUserId,
+        Func<string, Task<UserProfile?>> getUserProfileSsn
     )
     {
-        Party? personParty = null;
-        if (string.IsNullOrEmpty(ssn) is false)
-        {
-            personParty =
-                await lookupParty(new PartyLookup { Ssn = ssn })
-                ?? throw new ArgumentException($"No party found with SSN {ssn}");
-        }
-
         Party? orgParty = null;
         if (string.IsNullOrEmpty(orgNr) is false)
         {
@@ -111,21 +123,28 @@ public abstract class Signee
             }
             : null;
 
-        if (personParty is not null)
+        if (ssn is not null)
         {
+            var userProfile =
+                await getUserProfileSsn(ssn) ?? throw new ArgumentException($"No user profile found for ssn.");
+
             return orgSignee is not null
                 ? new PersonOnBehalfOfOrgSignee
                 {
-                    SocialSecurityNumber = personParty.SSN,
-                    FullName = personParty.Name,
-                    Party = personParty,
+                    SocialSecurityNumber = userProfile.Party.SSN,
+                    FullName = userProfile.Party.Name,
+                    Party = userProfile.Party,
                     OnBehalfOfOrg = orgSignee,
+                    UserId = userProfile.UserId,
+                    UserUuid = userProfile.UserUuid,
                 }
                 : new PersonSignee
                 {
-                    SocialSecurityNumber = personParty.SSN,
-                    FullName = personParty.Name,
-                    Party = personParty,
+                    SocialSecurityNumber = userProfile.Party.SSN,
+                    FullName = userProfile.Party.Name,
+                    Party = userProfile.Party,
+                    UserId = userProfile.UserId,
+                    UserUuid = userProfile.UserUuid,
                 };
         }
 
@@ -136,8 +155,24 @@ public abstract class Signee
                 : orgSignee;
         }
 
+        if (userId is not null)
+        {
+            UserProfile userProfile =
+                await getUserProfileUserId(int.Parse(userId, CultureInfo.InvariantCulture))
+                ?? throw new ArgumentException($"No user profile found for user ID {userId}");
+
+            return new SelfIdentifiedUserSignee
+            {
+                UserId = userProfile.UserId,
+                UserUuid = userProfile.UserUuid,
+                Party = userProfile.Party,
+                Username = userProfile.UserName,
+                FullName = userProfile.Party.Name,
+            };
+        }
+
         throw new ArgumentException(
-            "Could not find party for person or organisation. A valid SSN or OrgNr must be provided."
+            "Could not find party for person or organisation. A valid SSN, UserId or OrgNr must be provided."
         );
     }
 
@@ -146,10 +181,9 @@ public abstract class Signee
     /// </summary>
     public sealed class PersonSignee : Signee
     {
-        /// <summary>
-        /// The party of the person signee.
-        /// </summary>
         public required Party Party { get; set; }
+        public required int UserId { get; set; }
+        public Guid? UserUuid { get; set; }
 
         /// <summary>
         /// The social security number.
@@ -186,22 +220,23 @@ public abstract class Signee
         /// Converts this organisation signee to a person signee
         /// </summary>
         /// <param name="ssn"></param>
-        /// <param name="lookupParty"></param>
+        /// <param name="getUserProfileBySsn"></param>
         /// <returns></returns>
-        public async Task<PersonOnBehalfOfOrgSignee> ToPersonOnBehalfOfOrgSignee(
+        internal async Task<PersonOnBehalfOfOrgSignee> ToPersonOnBehalfOfOrgSignee(
             string ssn,
-            Func<PartyLookup, Task<Party>> lookupParty
+            Func<string, Task<UserProfile?>> getUserProfileBySsn
         )
         {
-            Party personParty =
-                await lookupParty(new PartyLookup { Ssn = ssn })
-                ?? throw new ArgumentException($"No party found with SSN {ssn}");
+            UserProfile userProfile =
+                await getUserProfileBySsn(ssn) ?? throw new ArgumentException($"No user profile found for ssn.");
 
             return new PersonOnBehalfOfOrgSignee
             {
                 SocialSecurityNumber = ssn,
-                FullName = personParty.Name,
-                Party = personParty,
+                FullName = userProfile.Party.Name,
+                Party = userProfile.Party,
+                UserId = userProfile.UserId,
+                UserUuid = userProfile.UserUuid,
                 OnBehalfOfOrg = this,
             };
         }
@@ -217,10 +252,9 @@ public abstract class Signee
     /// </summary>
     public sealed class PersonOnBehalfOfOrgSignee : Signee
     {
-        /// <summary>
-        /// The party of the person signee.
-        /// </summary>
         public required Party Party { get; set; }
+        public required int UserId { get; set; }
+        public Guid? UserUuid { get; set; }
 
         /// <summary>
         /// The social security number.
@@ -253,5 +287,14 @@ public abstract class Signee
         /// The organisation on behalf of which the system is signing.
         /// </summary>
         public required OrganisationSignee OnBehalfOfOrg { get; set; }
+    }
+
+    public sealed class SelfIdentifiedUserSignee : Signee
+    {
+        public required Party Party { get; set; }
+        public required int UserId { get; set; }
+        public Guid? UserUuid { get; set; }
+        public string? FullName { get; set; }
+        public required string Username { get; set; }
     }
 }

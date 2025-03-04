@@ -138,6 +138,9 @@ public class SigningController : ControllerBase
                                 name = "System";
                                 organisation = systemSignee.OnBehalfOfOrg.OrgName;
                                 break;
+                            case Signee.SelfIdentifiedUserSignee selfIdentifiedUserSignee:
+                                name = selfIdentifiedUserSignee.FullName ?? selfIdentifiedUserSignee.Username;
+                                break;
                         }
 
                         return new Models.SigneeState

@@ -6,14 +6,17 @@ using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
+using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Models;
+using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Xunit.Abstractions;
 using static Altinn.App.Core.Features.Signing.Models.Signee;
 using OrganisationSignee = Altinn.App.Core.Features.Signing.Models.Signee.OrganisationSignee;
 using PersonSignee = Altinn.App.Core.Features.Signing.Models.Signee.PersonSignee;
@@ -23,6 +26,7 @@ namespace Altinn.App.Core.Tests.Features.Signing;
 
 public sealed class SigningServiceTests : IDisposable
 {
+    private readonly ITestOutputHelper _output;
     private readonly ServiceProvider _serviceProvider;
     private readonly SigningService _signingService;
 
@@ -34,11 +38,13 @@ public sealed class SigningServiceTests : IDisposable
     private readonly Mock<ISignClient> _signClient = new(MockBehavior.Strict);
     private readonly Mock<ISigningCallToActionService> _signingCallToActionService = new(MockBehavior.Strict);
     private readonly Mock<ISigningReceiptService> _signingReceiptService = new(MockBehavior.Strict);
+    private readonly Mock<IProfileClient> _profileClient = new(MockBehavior.Strict);
 
     public void Dispose() => _serviceProvider.Dispose();
 
-    public SigningServiceTests()
+    public SigningServiceTests(ITestOutputHelper output)
     {
+        _output = output;
         var services = new ServiceCollection();
         services.AddAppImplementationFactory();
         services.AddSingleton(_signeeProvider.Object);
@@ -52,6 +58,7 @@ public sealed class SigningServiceTests : IDisposable
             _signClient.Object,
             _signingReceiptService.Object,
             _signingCallToActionService.Object,
+            _profileClient.Object,
             _logger.Object
         );
 
@@ -65,6 +72,13 @@ public sealed class SigningServiceTests : IDisposable
                         : new Party { OrgNumber = lookup.OrgNo };
                 }
             );
+
+        _profileClient
+            .Setup(x => x.GetUserProfile(It.IsAny<int>()))
+            .ReturnsAsync((int userId) => new UserProfile() { UserId = userId, Party = new Party() });
+        _profileClient
+            .Setup(x => x.GetUserProfile(It.IsAny<string>()))
+            .ReturnsAsync((string ssn) => new UserProfile { Party = new Party { SSN = ssn } });
     }
 
     [Fact]
@@ -106,6 +120,17 @@ public sealed class SigningServiceTests : IDisposable
         var org = new Organization { OrgNumber = "123456789", Name = "An org" };
         var person = new Person { SSN = "12345678910", Name = "A person" };
 
+        _profileClient
+            .Setup(x => x.GetUserProfile(It.IsAny<string>()))
+            .ReturnsAsync(
+                (string ssn) =>
+                    new UserProfile
+                    {
+                        UserId = 1,
+                        Party = new Party { SSN = ssn, Name = "A person" },
+                    }
+            );
+
         List<SigneeContext> signeeContexts =
         [
             new()
@@ -116,6 +141,7 @@ public sealed class SigningServiceTests : IDisposable
                 Signee = new PersonOnBehalfOfOrgSignee
                 {
                     FullName = "A person",
+                    UserId = 1,
                     SocialSecurityNumber = person.SSN,
                     Party = new Party { SSN = person.SSN, Name = person.Name },
                     OnBehalfOfOrg = new OrganisationSignee
@@ -244,6 +270,7 @@ public sealed class SigningServiceTests : IDisposable
                 Signee = new PersonSignee
                 {
                     FullName = "Test Testesen",
+                    UserId = 1,
                     SocialSecurityNumber = ssn,
                     Party = new Party { Name = "Test Testesen", SSN = ssn },
                 },
@@ -275,6 +302,7 @@ public sealed class SigningServiceTests : IDisposable
                 {
                     FullName = "Test Testesen",
                     SocialSecurityNumber = ssn,
+                    UserId = 1,
                     Party = new Party { Name = "Test Testesen", SSN = ssn },
                     OnBehalfOfOrg = new OrganisationSignee
                     {
@@ -312,6 +340,7 @@ public sealed class SigningServiceTests : IDisposable
                 {
                     FullName = "Test Testesen",
                     SocialSecurityNumber = "11111111111",
+                    UserId = 1,
                     Party = new Party { Name = "Test Testesen" },
                     OnBehalfOfOrg = new OrganisationSignee
                     {
@@ -354,6 +383,7 @@ public sealed class SigningServiceTests : IDisposable
                 Signee = new PersonSignee
                 {
                     FullName = "Test Testesen",
+                    UserId = 1,
                     SocialSecurityNumber = ssn,
                     Party = new Party { Name = "Test Testesen", SSN = ssn },
                 },
@@ -416,38 +446,119 @@ public sealed class SigningServiceTests : IDisposable
         var systemUserId1 = new Guid("11111111-1111-1111-1111-111111111111");
         var systemUserId2 = new Guid("22222222-2222-2222-2222-222222222222");
 
-        var ssn1 = "11111111111";
-        var ssn2 = "22222222222";
+        UserProfile user1 = new()
+        {
+            UserId = 1,
+            Party = new Party { SSN = "11111111111", Name = "Test Testesen 1" },
+        };
 
-        var orgNumber1 = "111111111";
-        var orgNumber2 = "222222222";
+        PersonSignee personSignee1 = new()
+        {
+            FullName = user1.Party.Name,
+            UserId = user1.UserId,
+            SocialSecurityNumber = user1.Party.SSN,
+            Party = user1.Party,
+        };
+
+        UserProfile user2 = new()
+        {
+            UserId = 2,
+            Party = new Party { SSN = "22222222222", Name = "Test Testesen 2" },
+        };
+
+        PersonSignee personSignee2 = new()
+        {
+            FullName = user2.Party.Name,
+            UserId = user2.UserId,
+            SocialSecurityNumber = user2.Party.SSN,
+            Party = user2.Party,
+        };
+
+        OrganisationSignee orgSignee1 = new()
+        {
+            OrgName = "TestOrg 1",
+            OrgNumber = "111111111",
+            OrgParty = new Party { Name = "TestOrg 1", OrgNumber = "111111111" },
+        };
+
+        OrganisationSignee orgSignee2 = new()
+        {
+            OrgName = "TestOrg 2",
+            OrgNumber = "222222222",
+            OrgParty = new Party { Name = "TestOrg 2", OrgNumber = "222222222" },
+        };
         var unmatchedOrgNumber = "12324323423";
+
+        _profileClient
+            .Setup(x => x.GetUserProfile(It.IsAny<int>()))
+            .ReturnsAsync((int userId) => new UserProfile() { UserId = userId, Party = new Party() });
+        _profileClient
+            .Setup(x => x.GetUserProfile(It.IsAny<string>()))
+            .ReturnsAsync(
+                (string ssn) =>
+                {
+                    if (ssn == user1.Party.SSN)
+                    {
+                        return user1;
+                    }
+                    else if (ssn == user2.Party.SSN)
+                    {
+                        return user2;
+                    }
+
+                    return new UserProfile { Party = new Party { SSN = ssn } };
+                }
+            );
 
         List<SignDocument> signDocuments =
         [
             new SignDocument
             {
-                SigneeInfo = new StorageSignee { PersonNumber = ssn1, OrganisationNumber = null },
+                SigneeInfo = new StorageSignee
+                {
+                    PersonNumber = personSignee1.SocialSecurityNumber,
+                    OrganisationNumber = null,
+                },
             },
             new SignDocument
             {
-                SigneeInfo = new StorageSignee { PersonNumber = ssn2, OrganisationNumber = null },
+                SigneeInfo = new StorageSignee
+                {
+                    PersonNumber = personSignee2.SocialSecurityNumber,
+                    OrganisationNumber = null,
+                },
             },
             new SignDocument
             {
-                SigneeInfo = new StorageSignee { PersonNumber = ssn1, OrganisationNumber = orgNumber1 },
+                SigneeInfo = new StorageSignee
+                {
+                    PersonNumber = personSignee1.SocialSecurityNumber,
+                    OrganisationNumber = orgSignee1.OrgNumber,
+                },
             },
             new SignDocument
             {
-                SigneeInfo = new StorageSignee { PersonNumber = ssn2, OrganisationNumber = orgNumber1 },
+                SigneeInfo = new StorageSignee
+                {
+                    PersonNumber = personSignee2.SocialSecurityNumber,
+                    OrganisationNumber = orgSignee1.OrgNumber,
+                },
             },
             new SignDocument
             {
-                SigneeInfo = new StorageSignee { SystemUserId = systemUserId1, OrganisationNumber = orgNumber1 },
+                SigneeInfo = new StorageSignee
+                {
+                    SystemUserId = systemUserId1,
+                    OrganisationNumber = orgSignee1.OrgNumber,
+                },
             },
             new SignDocument
             {
-                SigneeInfo = new StorageSignee { SystemUserId = systemUserId2, OrganisationNumber = orgNumber2 },
+                SigneeInfo = new StorageSignee
+                {
+                    SystemUserId = systemUserId2,
+                    OrganisationNumber = orgSignee2.OrgNumber,
+                },
             },
         ];
 
@@ -457,67 +568,37 @@ public sealed class SigningServiceTests : IDisposable
             {
                 TaskId = "Task_1",
                 SigneeState = new SigneeState(),
-                Signee = new OrganisationSignee
-                {
-                    OrgName = "TestOrg 2",
-                    OrgNumber = orgNumber2,
-                    OrgParty = new Party { Name = "TestOrg 2", OrgNumber = orgNumber2 },
-                },
+                Signee = orgSignee2,
             },
             new SigneeContext
             {
                 TaskId = "Task_1",
                 SigneeState = new SigneeState(),
-                Signee = new OrganisationSignee
-                {
-                    OrgName = "TestOrg 1",
-                    OrgNumber = orgNumber1,
-                    OrgParty = new Party { Name = "TestOrg 1", OrgNumber = orgNumber1 },
-                },
+                Signee = orgSignee1,
             },
             new SigneeContext
             {
                 TaskId = "Task_1",
                 SigneeState = new SigneeState(),
-                Signee = new OrganisationSignee
-                {
-                    OrgName = "TestOrg 1",
-                    OrgNumber = orgNumber1,
-                    OrgParty = new Party { Name = "TestOrg 1", OrgNumber = orgNumber1 },
-                },
+                Signee = orgSignee1,
             },
             new SigneeContext
             {
                 TaskId = "Task_1",
                 SigneeState = new SigneeState(),
-                Signee = new OrganisationSignee
-                {
-                    OrgName = "TestOrg 1",
-                    OrgNumber = orgNumber1,
-                    OrgParty = new Party { Name = "TestOrg 1", OrgNumber = orgNumber1 },
-                },
+                Signee = orgSignee1,
             },
             new SigneeContext
             {
                 TaskId = "Task_1",
                 SigneeState = new SigneeState(),
-                Signee = new PersonSignee
-                {
-                    FullName = "Test Testesen 2",
-                    SocialSecurityNumber = ssn2,
-                    Party = new Party { Name = "Test Testesen 2", SSN = ssn2 },
-                },
+                Signee = personSignee2,
             },
             new SigneeContext
             {
                 TaskId = "Task_1",
                 SigneeState = new SigneeState(),
-                Signee = new PersonSignee
-                {
-                    FullName = "Test Testesen 1",
-                    SocialSecurityNumber = ssn1,
-                    Party = new Party { Name = "Test Testesen 1", SSN = ssn1 },
-                },
+                Signee = personSignee1,
             },
             new SigneeContext
             {
@@ -538,40 +619,21 @@ public sealed class SigningServiceTests : IDisposable
             {
                 TaskId = "Task_1",
                 SigneeState = new SigneeState(),
-                Signee = new PersonSignee
-                {
-                    FullName = "Test Testesen 2",
-                    SocialSecurityNumber = ssn2,
-                    Party = new Party { Name = "Test Testesen 2", SSN = ssn2 },
-                },
+                Signee = personSignee2,
                 SignDocument = signDocuments[1],
             },
             new SigneeContext
             {
                 TaskId = "Task_1",
                 SigneeState = new SigneeState(),
-                Signee = new PersonSignee
-                {
-                    FullName = "Test Testesen 1",
-                    SocialSecurityNumber = ssn1,
-                    Party = new Party { Name = "Test Testesen 1", SSN = ssn1 },
-                },
+                Signee = personSignee1,
                 SignDocument = signDocuments[0],
             },
             new SigneeContext
             {
                 TaskId = "Task_1",
                 SigneeState = new SigneeState(),
-                Signee = new SystemSignee
-                {
-                    SystemId = systemUserId2,
-                    OnBehalfOfOrg = new OrganisationSignee
-                    {
-                        OrgName = "TestOrg 2",
-                        OrgNumber = orgNumber2,
-                        OrgParty = new Party { Name = "TestOrg 2", OrgNumber = orgNumber2 },
-                    },
-                },
+                Signee = new SystemSignee { SystemId = systemUserId2, OnBehalfOfOrg = orgSignee2 },
                 SignDocument = signDocuments[5],
             },
             new SigneeContext
@@ -580,15 +642,11 @@ public sealed class SigningServiceTests : IDisposable
                 SigneeState = new SigneeState(),
                 Signee = new PersonOnBehalfOfOrgSignee
                 {
-                    SocialSecurityNumber = ssn1,
+                    SocialSecurityNumber = user1.Party.SSN,
+                    UserId = 1,
                     FullName = null!,
-                    Party = new Party { SSN = ssn1 },
-                    OnBehalfOfOrg = new OrganisationSignee
-                    {
-                        OrgName = "TestOrg 1",
-                        OrgNumber = orgNumber1,
-                        OrgParty = new Party { Name = "TestOrg 1", OrgNumber = orgNumber1 },
-                    },
+                    Party = new Party { SSN = user1.Party.SSN },
+                    OnBehalfOfOrg = orgSignee1,
                 },
                 SignDocument = signDocuments[2],
             },
@@ -598,15 +656,11 @@ public sealed class SigningServiceTests : IDisposable
                 SigneeState = new SigneeState(),
                 Signee = new PersonOnBehalfOfOrgSignee
                 {
-                    SocialSecurityNumber = ssn2,
-                    FullName = null!,
-                    Party = new Party { SSN = ssn2 },
-                    OnBehalfOfOrg = new OrganisationSignee
-                    {
-                        OrgName = "TestOrg 1",
-                        OrgNumber = orgNumber1,
-                        OrgParty = new Party { Name = "TestOrg 1", OrgNumber = orgNumber1 },
-                    },
+                    SocialSecurityNumber = personSignee2.SocialSecurityNumber,
+                    UserId = personSignee2.UserId,
+                    FullName = personSignee2.FullName,
+                    Party = personSignee2.Party,
+                    OnBehalfOfOrg = orgSignee1,
                 },
                 SignDocument = signDocuments[3],
             },
@@ -614,16 +668,7 @@ public sealed class SigningServiceTests : IDisposable
             {
                 TaskId = "Task_1",
                 SigneeState = new SigneeState(),
-                Signee = new SystemSignee
-                {
-                    SystemId = systemUserId1,
-                    OnBehalfOfOrg = new OrganisationSignee
-                    {
-                        OrgName = "TestOrg 1",
-                        OrgNumber = orgNumber1,
-                        OrgParty = new Party { Name = "TestOrg 1", OrgNumber = orgNumber1 },
-                    },
-                },
+                Signee = new SystemSignee { SystemId = systemUserId1, OnBehalfOfOrg = orgSignee1 },
                 SignDocument = signDocuments[4],
             },
             new SigneeContext
@@ -638,6 +683,11 @@ public sealed class SigningServiceTests : IDisposable
                 },
             },
         ];
+
+        _output.WriteLine("actual: ");
+        _output.WriteLine(JsonSerializer.Serialize(signeeContexts));
+        _output.WriteLine("\n expected: ");
+        _output.WriteLine(JsonSerializer.Serialize(expected));
 
         await _signingService.SynchronizeSigneeContextsWithSignDocuments("Task_1", signeeContexts, signDocuments);
         Assert.Equal(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(signeeContexts));
@@ -698,6 +748,7 @@ public sealed class SigningServiceTests : IDisposable
                 {
                     FullName = "Test Testesen",
                     SocialSecurityNumber = ssn,
+                    UserId = 1,
                     Party = new Party { Name = "Test Testesen", SSN = ssn },
                     OnBehalfOfOrg = new OrganisationSignee
                     {
@@ -734,6 +785,7 @@ public sealed class SigningServiceTests : IDisposable
                 {
                     FullName = "Test Testesen",
                     SocialSecurityNumber = ssn,
+                    UserId = 1,
                     Party = new Party { Name = "Test Testesen", SSN = ssn },
                     OnBehalfOfOrg = new OrganisationSignee
                     {
@@ -774,6 +826,7 @@ public sealed class SigningServiceTests : IDisposable
                 {
                     FullName = "Test Testesen",
                     SocialSecurityNumber = ssn,
+                    UserId = 1,
                     Party = new Party { Name = "Test Testesen", SSN = ssn },
                     OnBehalfOfOrg = new OrganisationSignee
                     {
@@ -878,6 +931,7 @@ public sealed class SigningServiceTests : IDisposable
                 Signee = new PersonSignee
                 {
                     SocialSecurityNumber = "12345678910",
+                    UserId = 1,
                     FullName = "Name",
                     Party = new Party(),
                 },
