@@ -181,7 +181,7 @@ public class CorrespondenceBuilderTests
                             .WithRecipientToOverride(data.recipient.ToString())
                             .WithCorrespondenceNotificationRecipients(
                                 [
-                                    new CorrespondenceNotificationRecipient
+                                    new NotificationRecipient
                                     {
                                         OrganizationNumber = data.recipient.ToString(),
                                         MobileNumber = data.notification.overrideMobileNumber,
@@ -316,12 +316,12 @@ public class CorrespondenceBuilderTests
         correspondence.Notification.Recipients.Should().HaveCount(1);
         correspondence
             .Notification.Recipients![0]
-            .CorrespondenceNotificationRecipient[0]
+            .NotificationRecipient[0]
             .OrganizationNumber.Should()
             .Be(data.recipient.ToString());
         correspondence
             .Notification.Recipients![0]
-            .CorrespondenceNotificationRecipient[0]
+            .NotificationRecipient[0]
             .MobileNumber.Should()
             .Be(data.notification.overrideMobileNumber);
 

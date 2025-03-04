@@ -196,9 +196,9 @@ internal sealed class SigningCallToActionService(
             new CorrespondenceNotificationRecipientWrapper
             {
                 RecipientToOverride = recipient.IsPerson ? recipient.SSN : recipient.OrganisationNumber,
-                CorrespondenceNotificationRecipient =
+                NotificationRecipient =
                 [
-                    new CorrespondenceNotificationRecipient
+                    new NotificationRecipient
                     {
                         EmailAddress = notificationChoice switch
                         {

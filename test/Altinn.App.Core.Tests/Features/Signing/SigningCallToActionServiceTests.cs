@@ -575,8 +575,7 @@ public class SigningCallToActionServiceTests
         CorrespondenceNotificationRecipientWrapper wrapper = SigningCallToActionService
             .OverrideRecipientIfConfigured(recipient, notification, NotificationChoice.Sms)!
             .FirstOrDefault()!;
-        CorrespondenceNotificationRecipient correspondenceNotificationRecipient =
-            wrapper.CorrespondenceNotificationRecipient.FirstOrDefault()!;
+        NotificationRecipient correspondenceNotificationRecipient = wrapper.NotificationRecipient.FirstOrDefault()!;
         string recipientToOverride = wrapper.RecipientToOverride;
 
         // Assert
@@ -600,8 +599,7 @@ public class SigningCallToActionServiceTests
         CorrespondenceNotificationRecipientWrapper wrapper = SigningCallToActionService
             .OverrideRecipientIfConfigured(recipient, notification, NotificationChoice.Email)!
             .FirstOrDefault()!;
-        CorrespondenceNotificationRecipient correspondenceNotificationRecipient =
-            wrapper.CorrespondenceNotificationRecipient.FirstOrDefault()!;
+        NotificationRecipient correspondenceNotificationRecipient = wrapper.NotificationRecipient.FirstOrDefault()!;
         string recipientToOverride = wrapper.RecipientToOverride;
 
         // Assert
@@ -629,8 +627,7 @@ public class SigningCallToActionServiceTests
         CorrespondenceNotificationRecipientWrapper wrapper = SigningCallToActionService
             .OverrideRecipientIfConfigured(recipient, notification, NotificationChoice.SmsAndEmail)!
             .FirstOrDefault()!;
-        CorrespondenceNotificationRecipient correspondenceNotificationRecipient =
-            wrapper.CorrespondenceNotificationRecipient.FirstOrDefault()!;
+        NotificationRecipient correspondenceNotificationRecipient = wrapper.NotificationRecipient.FirstOrDefault()!;
         string recipientToOverride = wrapper.RecipientToOverride;
 
         // Assert

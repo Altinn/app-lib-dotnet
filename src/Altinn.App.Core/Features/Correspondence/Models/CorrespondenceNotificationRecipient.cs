@@ -3,7 +3,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models;
 /// <summary>
 /// Represents a recipient of a correspondence notification.
 /// </summary>
-public sealed record CorrespondenceNotificationRecipient : MultipartCorrespondenceListItem
+public sealed record NotificationRecipient : MultipartCorrespondenceListItem
 {
     /// <summary>
     /// The email address of the recipient.
