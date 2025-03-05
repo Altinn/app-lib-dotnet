@@ -8,7 +8,7 @@ namespace Altinn.App.Core.Features.Correspondence.Builder;
 public class CorrespondenceNotificationOverrideBuilder : ICorrespondenceNotificationOverrideBuilder
 {
     private string? _recipientToOverride;
-    private List<CorrespondenceNotificationRecipient>? _correspondenceNotificationRecipient;
+    private List<CorrespondenceNotificationRecipient>? _correspondenceNotificationRecipients;
 
     private CorrespondenceNotificationOverrideBuilder() { }
 
@@ -28,10 +28,10 @@ public class CorrespondenceNotificationOverrideBuilder : ICorrespondenceNotifica
 
     /// <inheritdoc/>
     public ICorrespondenceNotificationOverrideBuilder WithCorrespondenceNotificationRecipients(
-        List<CorrespondenceNotificationRecipient> correspondenceNotificationRecipient
+        List<CorrespondenceNotificationRecipient> correspondenceNotificationRecipients
     )
     {
-        _correspondenceNotificationRecipient = correspondenceNotificationRecipient;
+        _correspondenceNotificationRecipients = correspondenceNotificationRecipients;
         return this;
     }
 
@@ -40,13 +40,13 @@ public class CorrespondenceNotificationOverrideBuilder : ICorrespondenceNotifica
     {
         BuilderUtils.NotNullOrEmpty(_recipientToOverride, "Recipient to override cannot be empty");
         BuilderUtils.NotNullOrEmpty(
-            _correspondenceNotificationRecipient,
+            _correspondenceNotificationRecipients,
             "Correspondence notification recipient cannot be empty"
         );
         return new CorrespondenceNotificationRecipientWrapper
         {
             RecipientToOverride = _recipientToOverride,
-            CorrespondenceNotificationRecipients = _correspondenceNotificationRecipient,
+            CorrespondenceNotificationRecipients = _correspondenceNotificationRecipients,
         };
     }
 }
