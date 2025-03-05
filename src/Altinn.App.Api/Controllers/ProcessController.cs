@@ -733,10 +733,11 @@ public class ProcessController : ControllerBase
         {
             case "data":
             case "feedback":
-            case "signing":
                 return "write";
             case "confirmation":
                 return "confirm";
+            case "signing":
+                return "sign";
             default:
                 // Not any known task type, so assume it is an action type
                 return actionOrTaskType;
