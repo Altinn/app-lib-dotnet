@@ -576,12 +576,12 @@ public class SigningCallToActionServiceTests
             .OverrideRecipientIfConfigured(recipient, notification, NotificationChoice.Sms)!
             .FirstOrDefault()!;
         CorrespondenceNotificationRecipient correspondenceNotificationRecipient =
-            wrapper.CorrespondenceNotificationRecipient.FirstOrDefault()!;
+            wrapper.CorrespondenceNotificationRecipients.FirstOrDefault()!;
         string recipientToOverride = wrapper.RecipientToOverride;
 
         // Assert
         Assert.Equal("12345678901", recipientToOverride);
-        Assert.Equal("12345678901", correspondenceNotificationRecipient.NationalIdentityNumber);
+        Assert.Null(correspondenceNotificationRecipient.NationalIdentityNumber);
         Assert.Null(correspondenceNotificationRecipient.OrganizationNumber);
         Assert.Equal("12345678", correspondenceNotificationRecipient.MobileNumber);
         Assert.Null(correspondenceNotificationRecipient.EmailAddress);
@@ -601,12 +601,12 @@ public class SigningCallToActionServiceTests
             .OverrideRecipientIfConfigured(recipient, notification, NotificationChoice.Email)!
             .FirstOrDefault()!;
         CorrespondenceNotificationRecipient correspondenceNotificationRecipient =
-            wrapper.CorrespondenceNotificationRecipient.FirstOrDefault()!;
+            wrapper.CorrespondenceNotificationRecipients.FirstOrDefault()!;
         string recipientToOverride = wrapper.RecipientToOverride;
 
         // Assert
         Assert.Equal("12345678901", recipientToOverride);
-        Assert.Equal("12345678901", correspondenceNotificationRecipient.NationalIdentityNumber);
+        Assert.Null(correspondenceNotificationRecipient.NationalIdentityNumber);
         Assert.Null(correspondenceNotificationRecipient.OrganizationNumber);
         Assert.Equal("test@tester.no", correspondenceNotificationRecipient.EmailAddress);
         Assert.Null(correspondenceNotificationRecipient.MobileNumber);
@@ -630,12 +630,12 @@ public class SigningCallToActionServiceTests
             .OverrideRecipientIfConfigured(recipient, notification, NotificationChoice.SmsAndEmail)!
             .FirstOrDefault()!;
         CorrespondenceNotificationRecipient correspondenceNotificationRecipient =
-            wrapper.CorrespondenceNotificationRecipient.FirstOrDefault()!;
+            wrapper.CorrespondenceNotificationRecipients.FirstOrDefault()!;
         string recipientToOverride = wrapper.RecipientToOverride;
 
         // Assert
         Assert.Equal("123456789", recipientToOverride);
-        Assert.Equal("123456789", correspondenceNotificationRecipient.OrganizationNumber);
+        Assert.Null(correspondenceNotificationRecipient.NationalIdentityNumber);
         Assert.Null(correspondenceNotificationRecipient.NationalIdentityNumber);
         Assert.Equal("12345678", correspondenceNotificationRecipient.MobileNumber);
         Assert.Equal("test@tester.no", correspondenceNotificationRecipient.EmailAddress);

@@ -100,73 +100,76 @@ internal sealed class SigningCallToActionService(
             serviceOwnerParty.OrgNumber = "991825827";
         }
 
-        return await _correspondenceClient.Send(
-            new SendCorrespondencePayload(
-                CorrespondenceRequestBuilder
-                    .Create()
-                    .WithResourceId(resource)
-                    .WithSender(serviceOwnerParty.OrgNumber)
-                    .WithSendersReference(instanceIdentifier.ToString())
-                    .WithRecipient(recipient.IsPerson ? recipient.SSN : recipient.OrganisationNumber)
-                    .WithAllowSystemDeleteAfter(DateTime.Now.AddYears(1))
-                    .WithContent(correspondenceContent)
-                    .WithNotificationIfConfigured(
-                        SigningCorrespondenceHelper.GetNotificationChoice(notification) switch
+        var request = new SendCorrespondencePayload(
+            CorrespondenceRequestBuilder
+                .Create()
+                .WithResourceId(resource)
+                .WithSender(serviceOwnerParty.OrgNumber)
+                .WithSendersReference(instanceIdentifier.ToString())
+                .WithRecipient(recipient.IsPerson ? recipient.SSN : recipient.OrganisationNumber)
+                .WithAllowSystemDeleteAfter(DateTime.Now.AddYears(1))
+                .WithContent(correspondenceContent)
+                .WithNotificationIfConfigured(
+                    SigningCorrespondenceHelper.GetNotificationChoice(notification) switch
+                    {
+                        NotificationChoice.Email => new CorrespondenceNotification
                         {
-                            NotificationChoice.Email => new CorrespondenceNotification
-                            {
-                                NotificationTemplate = CorrespondenceNotificationTemplate.CustomMessage,
-                                NotificationChannel = CorrespondenceNotificationChannel.Email,
-                                EmailSubject = emailSubject,
-                                EmailBody = emailBody,
-                                SendersReference = instanceIdentifier.ToString(),
-                                Recipients = OverrideRecipientIfConfigured(
-                                    recipient,
-                                    notification,
-                                    NotificationChoice.Email
-                                ),
-                            },
-                            NotificationChoice.Sms => new CorrespondenceNotification
-                            {
-                                NotificationTemplate = CorrespondenceNotificationTemplate.CustomMessage,
-                                NotificationChannel = CorrespondenceNotificationChannel.Sms,
-                                SmsBody = smsBody,
-                                SendersReference = instanceIdentifier.ToString(),
-                                Recipients = OverrideRecipientIfConfigured(
-                                    recipient,
-                                    notification,
-                                    NotificationChoice.Sms
-                                ),
-                            },
-                            NotificationChoice.SmsAndEmail => new CorrespondenceNotification
-                            {
-                                NotificationTemplate = CorrespondenceNotificationTemplate.CustomMessage,
-                                NotificationChannel = CorrespondenceNotificationChannel.EmailPreferred, // TODO: document
-                                EmailSubject = emailSubject,
-                                EmailBody = emailBody,
-                                SmsBody = smsBody,
-                                SendersReference = instanceIdentifier.ToString(),
-                                Recipients = OverrideRecipientIfConfigured(
-                                    recipient,
-                                    notification,
-                                    NotificationChoice.SmsAndEmail
-                                ),
-                            },
-                            NotificationChoice.None => new CorrespondenceNotification
-                            {
-                                NotificationTemplate = CorrespondenceNotificationTemplate.GenericAltinnMessage,
-                                NotificationChannel = CorrespondenceNotificationChannel.Email,
-                                EmailSubject = emailSubject,
-                                EmailBody = emailBody,
-                                SendersReference = instanceIdentifier.ToString(),
-                            },
-                            _ => null,
-                        }
-                    )
-                    .Build(),
-                CorrespondenceAuthorisation.Maskinporten
-            )
+                            NotificationTemplate = CorrespondenceNotificationTemplate.CustomMessage,
+                            NotificationChannel = CorrespondenceNotificationChannel.Email,
+                            EmailSubject = emailSubject,
+                            EmailBody = emailBody,
+                            SendersReference = instanceIdentifier.ToString(),
+                            CustomNotificationRecipients = OverrideRecipientIfConfigured(
+                                recipient,
+                                notification,
+                                NotificationChoice.Email
+                            ),
+                        },
+                        NotificationChoice.Sms => new CorrespondenceNotification
+                        {
+                            NotificationTemplate = CorrespondenceNotificationTemplate.CustomMessage,
+                            NotificationChannel = CorrespondenceNotificationChannel.Sms,
+                            SmsBody = smsBody,
+                            SendersReference = instanceIdentifier.ToString(),
+                            CustomNotificationRecipients = OverrideRecipientIfConfigured(
+                                recipient,
+                                notification,
+                                NotificationChoice.Sms
+                            ),
+                        },
+                        NotificationChoice.SmsAndEmail => new CorrespondenceNotification
+                        {
+                            NotificationTemplate = CorrespondenceNotificationTemplate.CustomMessage,
+                            NotificationChannel = CorrespondenceNotificationChannel.EmailPreferred,
+                            EmailSubject = emailSubject,
+                            EmailBody = emailBody,
+                            SmsBody = smsBody,
+                            SendersReference = instanceIdentifier.ToString(),
+                            CustomNotificationRecipients = OverrideRecipientIfConfigured(
+                                recipient,
+                                notification,
+                                NotificationChoice.SmsAndEmail
+                            ),
+                        },
+                        NotificationChoice.None => new CorrespondenceNotification
+                        {
+                            NotificationTemplate = CorrespondenceNotificationTemplate.GenericAltinnMessage,
+                            NotificationChannel = CorrespondenceNotificationChannel.Email,
+                            EmailSubject = emailSubject,
+                            EmailBody = emailBody,
+                            SendersReference = instanceIdentifier.ToString(),
+                        },
+                        _ => null,
+                    }
+                )
+                .Build(),
+            CorrespondenceAuthorisation.Maskinporten
         );
+
+        SendCorrespondenceResponse response = await _correspondenceClient.Send(request);
+        var correspondenceId = response?.Correspondences[0]?.CorrespondenceId ?? Guid.Empty;
+        _logger.LogInformation("Correspondence request sent. CorrespondenceId: {CorrespondenceId}", correspondenceId);
+        return response;
     }
 
     internal static List<CorrespondenceNotificationRecipientWrapper>? OverrideRecipientIfConfigured(
@@ -184,7 +187,7 @@ internal sealed class SigningCallToActionService(
             new CorrespondenceNotificationRecipientWrapper
             {
                 RecipientToOverride = recipient.IsPerson ? recipient.SSN : recipient.OrganisationNumber,
-                CorrespondenceNotificationRecipient =
+                CorrespondenceNotificationRecipients =
                 [
                     new CorrespondenceNotificationRecipient
                     {
@@ -200,8 +203,6 @@ internal sealed class SigningCallToActionService(
                             NotificationChoice.SmsAndEmail => notification.Sms?.MobileNumber,
                             NotificationChoice.Email or _ => null,
                         },
-                        OrganizationNumber = recipient.OrganisationNumber,
-                        NationalIdentityNumber = recipient.SSN,
                     },
                 ],
             },
@@ -271,9 +272,9 @@ internal sealed class SigningCallToActionService(
                 ?? throw new InvalidOperationException($"No text resource found for language ({language})");
 
             string linkDisplayText = GetLinkDisplayText(language);
-            correspondenceTitle = textResource.GetText("signing.correspondence_cta_title"); // TODO: Document these text keys
-            correspondenceSummary = textResource.GetText("signing.correspondence_cta_summary"); // TODO: Document these text keys
-            correspondenceBody = textResource.GetText("signing.correspondence_cta_body"); // TODO: Document these text keys
+            correspondenceTitle = textResource.GetText("signing.correspondence_cta_title");
+            correspondenceSummary = textResource.GetText("signing.correspondence_cta_summary");
+            correspondenceBody = textResource.GetText("signing.correspondence_cta_body");
             correspondenceBody = correspondenceBody?.Replace(
                 "$InstanceUrl",
                 $"[{linkDisplayText}]({instanceUrl})",

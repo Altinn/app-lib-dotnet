@@ -313,15 +313,15 @@ public class CorrespondenceBuilderTests
         correspondence
             .Notification.ReminderNotificationChannel.Should()
             .Be(data.notification.reminderNotificationChannel);
-        correspondence.Notification.Recipients.Should().HaveCount(1);
+        correspondence.Notification.CustomNotificationRecipients.Should().HaveCount(1);
         correspondence
-            .Notification.Recipients![0]
-            .CorrespondenceNotificationRecipient[0]
+            .Notification.CustomNotificationRecipients![0]
+            .CorrespondenceNotificationRecipients[0]
             .OrganizationNumber.Should()
             .Be(data.recipient.ToString());
         correspondence
-            .Notification.Recipients![0]
-            .CorrespondenceNotificationRecipient[0]
+            .Notification.CustomNotificationRecipients![0]
+            .CorrespondenceNotificationRecipients[0]
             .MobileNumber.Should()
             .Be(data.notification.overrideMobileNumber);
 

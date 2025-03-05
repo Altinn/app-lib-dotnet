@@ -156,7 +156,7 @@ public class CorrespondenceNotificationBuilder : ICorrespondenceNotificationBuil
             ReminderNotificationChannel = _reminderNotificationChannel,
             SendersReference = _sendersReference,
             RequestedSendTime = _requestedSendTime,
-            Recipients = _recipientToOverrideWrapper,
+            CustomNotificationRecipients = _recipientToOverrideWrapper,
         };
     }
 }

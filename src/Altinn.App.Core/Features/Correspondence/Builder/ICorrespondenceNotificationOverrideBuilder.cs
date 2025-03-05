@@ -16,9 +16,9 @@ public interface ICorrespondenceNotificationOverrideBuilder
     /// <summary>
     /// Sets the custom recipients to override the default recipient.
     /// </summary>
-    /// <param name="correspondenceNotificationRecipient">The custom recipients</param>
+    /// <param name="correspondenceNotificationRecipients">The custom recipients</param>
     public ICorrespondenceNotificationOverrideBuilder WithCorrespondenceNotificationRecipients(
-        List<CorrespondenceNotificationRecipient> correspondenceNotificationRecipient
+        List<CorrespondenceNotificationRecipient> correspondenceNotificationRecipients
     );
 
     /// <summary>

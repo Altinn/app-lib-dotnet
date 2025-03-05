@@ -32,14 +32,59 @@ public sealed record CorrespondenceNotificationRecipient : MultipartCorresponden
 
     internal override void Serialise(MultipartFormDataContent content, int index)
     {
-        AddIfNotNull(content, EmailAddress, $"Correspondence.NotificationRecipients[{index}].EmailAddress");
-        AddIfNotNull(content, MobileNumber, $"Correspondence.NotificationRecipients[{index}].MobileNumber");
-        AddIfNotNull(content, OrganizationNumber, $"Correspondence.NotificationRecipients[{index}].OrganizationNumber");
+        AddIfNotNull(
+            content,
+            EmailAddress,
+            $"Correspondence.Notification.CustomNotificationRecipients[0].Recipients[{index}].EmailAddress"
+        );
+        AddIfNotNull(
+            content,
+            MobileNumber,
+            $"Correspondence.Notification.CustomNotificationRecipients[0].Recipients[{index}].MobileNumber"
+        );
+        AddIfNotNull(
+            content,
+            OrganizationNumber,
+            $"Correspondence.Notification.CustomNotificationRecipients[0].Recipients[{index}].OrganizationNumber"
+        );
         AddIfNotNull(
             content,
             NationalIdentityNumber,
-            $"Correspondence.NotificationRecipients[{index}].NationalIdentityNumber"
+            $"Correspondence.Notification.CustomNotificationRecipients[0].Recipients[{index}].NationalIdentityNumber"
         );
-        AddRequired(content, IsReserved.ToString(), $"Correspondence.NotificationRecipients[{index}].IsReserved");
+        AddRequired(
+            content,
+            IsReserved.ToString(),
+            $"Correspondence.Notification.CustomNotificationRecipients[0].Recipients[{index}].IsReserved"
+        );
+    }
+
+    internal void Serialise(MultipartFormDataContent content, int index, int parentIndex)
+    {
+        AddIfNotNull(
+            content,
+            EmailAddress,
+            $"Correspondence.Notification.CustomNotificationRecipients[{parentIndex}].Recipients[{index}].EmailAddress"
+        );
+        AddIfNotNull(
+            content,
+            MobileNumber,
+            $"Correspondence.Notification.CustomNotificationRecipients[{parentIndex}].Recipients[{index}].MobileNumber"
+        );
+        AddIfNotNull(
+            content,
+            OrganizationNumber,
+            $"Correspondence.Notification.CustomNotificationRecipients[{parentIndex}].Recipients[{index}].OrganizationNumber"
+        );
+        AddIfNotNull(
+            content,
+            NationalIdentityNumber,
+            $"Correspondence.Notification.CustomNotificationRecipients[{parentIndex}].Recipients[{index}].NationalIdentityNumber"
+        );
+        AddRequired(
+            content,
+            IsReserved.ToString(),
+            $"Correspondence.Notification.CustomNotificationRecipients[{parentIndex}].Recipients[{index}].IsReserved"
+        );
     }
 }
