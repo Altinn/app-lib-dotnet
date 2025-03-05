@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Altinn.App.Api.Controllers;
 using Altinn.App.Api.Models;
-using Altinn.App.Api.Tests.Mocks;
+using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
@@ -15,6 +15,7 @@ using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using static Altinn.App.Core.Features.Signing.Models.Signee;
 using SigneeContext = Altinn.App.Core.Features.Signing.Models.SigneeContext;
@@ -24,23 +25,43 @@ namespace Altinn.App.Api.Tests.Controllers;
 
 public class SigningControllerTests
 {
-    private readonly Mock<IServiceProvider> _serviceProviderMock;
-    private readonly Mock<IInstanceClient> _instanceClientMock;
-    private readonly Mock<IProcessReader> _processReaderMock;
-    private readonly Mock<ILogger<SigningController>> _loggerMock;
-    private readonly Mock<ISigningService> _signingServiceMock;
-    private readonly InstanceDataUnitOfWorkInitializerMock _instanceDataUnitOfWorkInitializerMock;
-    private readonly SigningController _controller;
-    private readonly AltinnTaskExtension _altinnTaskExtension;
+    private readonly Mock<IInstanceClient> _instanceClientMock = new();
+    private readonly Mock<IProcessReader> _processReaderMock = new();
+    private readonly Mock<ILogger<SigningController>> _loggerMock = new();
+    private readonly Mock<ISigningService> _signingServiceMock = new();
+    private readonly Mock<IDataClient> _dataClientMock = new();
+    private readonly Mock<IAppMetadata> _applicationMetadataMock = new();
+    private readonly Mock<IAppModel> _appModelMock = new();
+    private readonly Mock<IAppResources> _appResourcesMock = new();
+    private readonly ServiceCollection _serviceCollection = new();
+    private readonly AltinnTaskExtension _altinnTaskExtension = new()
+    {
+        SignatureConfiguration = new AltinnSignatureConfiguration
+        {
+            DataTypesToSign = ["dataTypeToSign"],
+            SignatureDataType = "signatureDataType",
+            SigneeProviderId = "signeeProviderId",
+            SigneeStatesDataTypeId = "signeeStatesDataTypeId",
+            SigningPdfDataType = "signingPdfDataType",
+            CorrespondenceResources = [],
+            RunDefaultValidator = true,
+        },
+    };
 
     public SigningControllerTests()
     {
-        _serviceProviderMock = new Mock<IServiceProvider>();
-        _instanceClientMock = new Mock<IInstanceClient>();
-        _processReaderMock = new Mock<IProcessReader>();
-        _loggerMock = new Mock<ILogger<SigningController>>();
-        _signingServiceMock = new Mock<ISigningService>();
-        _instanceDataUnitOfWorkInitializerMock = InstanceDataUnitOfWorkInitializerMock.Create();
+        _serviceCollection.AddTransient<ModelSerializationService>();
+        _serviceCollection.AddTransient<InstanceDataUnitOfWorkInitializer>();
+        _serviceCollection.AddTransient<SigningController>();
+        _serviceCollection.AddSingleton(Options.Create(new FrontEndSettings()));
+        _serviceCollection.AddSingleton(_instanceClientMock.Object);
+        _serviceCollection.AddSingleton(_signingServiceMock.Object);
+        _serviceCollection.AddSingleton(_appModelMock.Object);
+        _serviceCollection.AddSingleton(_dataClientMock.Object);
+        _serviceCollection.AddSingleton(_applicationMetadataMock.Object);
+        _serviceCollection.AddSingleton(_appResourcesMock.Object);
+        _serviceCollection.AddSingleton(_processReaderMock.Object);
+        _serviceCollection.AddSingleton(_loggerMock.Object);
 
         _instanceClientMock
             .Setup(x => x.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>()))
@@ -55,39 +76,6 @@ public class SigningControllerTests
                 }
             );
 
-        _serviceProviderMock.Setup(x => x.GetService(typeof(ISigningService))).Returns(_signingServiceMock.Object);
-        _serviceProviderMock
-            .Setup(x => x.GetService(typeof(InstanceDataUnitOfWorkInitializer)))
-            .Returns(_instanceDataUnitOfWorkInitializerMock.InstanceDataUnitOfWorkInitializer);
-
-        var serviceScope = new Mock<IServiceScope>();
-        serviceScope.Setup(x => x.ServiceProvider).Returns(_serviceProviderMock.Object);
-
-        var serviceScopeFactory = new Mock<IServiceScopeFactory>();
-        serviceScopeFactory.Setup(x => x.CreateScope()).Returns(serviceScope.Object);
-
-        _serviceProviderMock.Setup(x => x.GetService(typeof(IServiceScopeFactory))).Returns(serviceScopeFactory.Object);
-
-        _controller = new SigningController(
-            _serviceProviderMock.Object,
-            _instanceClientMock.Object,
-            _processReaderMock.Object,
-            _loggerMock.Object
-        );
-
-        _altinnTaskExtension = new()
-        {
-            SignatureConfiguration = new AltinnSignatureConfiguration
-            {
-                DataTypesToSign = ["dataTypeToSign"],
-                SignatureDataType = "signatureDataType",
-                SigneeProviderId = "signeeProviderId",
-                SigneeStatesDataTypeId = "signeeStatesDataTypeId",
-                SigningPdfDataType = "signingPdfDataType",
-                CorrespondenceResources = [],
-                RunDefaultValidator = true,
-            },
-        };
         _processReaderMock.Setup(s => s.GetAltinnTaskExtension(It.IsAny<string>())).Returns(_altinnTaskExtension);
     }
 
@@ -95,8 +83,10 @@ public class SigningControllerTests
     public async Task GetSigneesState_WhenSigneeContextIsOrg_Returns_Expected_Signees()
     {
         // Arrange
-
         var signedTime = DateTime.Now;
+
+        await using var sp = _serviceCollection.BuildStrictServiceProvider();
+        var controller = sp.GetRequiredService<SigningController>();
 
         List<SigneeContext> signeeContexts =
         [
@@ -214,14 +204,14 @@ public class SigningControllerTests
             .ReturnsAsync(signeeContexts);
 
         // Act
-        var actionResult = await _controller.GetSigneesState("tdd", "app", 1337, Guid.NewGuid());
+        var actionResult = await controller.GetSigneesState("tdd", "app", 1337, Guid.NewGuid());
 
         var okResult = actionResult as OkObjectResult;
         Assert.NotNull(okResult);
 
         var signingStateResponse = okResult.Value as SigningStateResponse;
-        // Assert
 
+        // Assert
         var expected = new SigningStateResponse
         {
             SigneeStates =
@@ -281,6 +271,9 @@ public class SigningControllerTests
     public async Task GetSigneesState_WhenSigneeContextIsPerson_Returns_Expected_Signees()
     {
         // Arrange
+        await using var sp = _serviceCollection.BuildStrictServiceProvider();
+        var controller = sp.GetRequiredService<SigningController>();
+
         List<SigneeContext> signeeContexts =
         [
             new SigneeContext
@@ -310,14 +303,14 @@ public class SigningControllerTests
             .ReturnsAsync(signeeContexts);
 
         // Act
-        var actionResult = await _controller.GetSigneesState("tdd", "app", 1337, Guid.NewGuid());
+        var actionResult = await controller.GetSigneesState("tdd", "app", 1337, Guid.NewGuid());
 
         var okResult = actionResult as OkObjectResult;
         Assert.NotNull(okResult);
 
         var signingStateResponse = okResult.Value as SigningStateResponse;
-        // Assert
 
+        // Assert
         var expected = new SigningStateResponse
         {
             SigneeStates =
@@ -342,6 +335,10 @@ public class SigningControllerTests
     {
         // Arrange
         var signedTime = DateTime.Now;
+
+        await using var sp = _serviceCollection.BuildStrictServiceProvider();
+        var controller = sp.GetRequiredService<SigningController>();
+
         List<SigneeContext> signeeContexts =
         [
             new SigneeContext
@@ -383,14 +380,14 @@ public class SigningControllerTests
             .ReturnsAsync(signeeContexts);
 
         // Act
-        var actionResult = await _controller.GetSigneesState("tdd", "app", 1337, Guid.NewGuid());
+        var actionResult = await controller.GetSigneesState("tdd", "app", 1337, Guid.NewGuid());
 
         var okResult = actionResult as OkObjectResult;
         Assert.NotNull(okResult);
 
         var signingStateResponse = okResult.Value as SigningStateResponse;
-        // Assert
 
+        // Assert
         var expected = new SigningStateResponse
         {
             SigneeStates =
@@ -414,8 +411,11 @@ public class SigningControllerTests
     public async Task GetSigneesState_WhenSigneeContextIsSystem_Returns_Expected_Signees()
     {
         // Arrange
-
         var signedTime = DateTime.Now;
+
+        await using var sp = _serviceCollection.BuildStrictServiceProvider();
+        var controller = sp.GetRequiredService<SigningController>();
+
         List<SigneeContext> signeeContexts =
         [
             new SigneeContext
@@ -455,14 +455,14 @@ public class SigningControllerTests
             .ReturnsAsync(signeeContexts);
 
         // Act
-        var actionResult = await _controller.GetSigneesState("tdd", "app", 1337, Guid.NewGuid());
+        var actionResult = await controller.GetSigneesState("tdd", "app", 1337, Guid.NewGuid());
 
         var okResult = actionResult as OkObjectResult;
         Assert.NotNull(okResult);
 
         var signingStateResponse = okResult.Value as SigningStateResponse;
-        // Assert
 
+        // Assert
         var expected = new SigningStateResponse
         {
             SigneeStates =
