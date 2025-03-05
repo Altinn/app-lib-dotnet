@@ -87,6 +87,7 @@ internal sealed class FiksArkivEventService : BackgroundService
                 await _errorHandler.HandleError(dummyInstance, receivedMessage);
             }
 
+            // TODO: Send /complete notification
             receivedMessage.Responder.Ack();
         }
         catch (Exception e)
