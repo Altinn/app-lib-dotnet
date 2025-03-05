@@ -829,9 +829,10 @@ public sealed class ProcessEngineTest
     }
 
     [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public async Task Next_moves_instance_to_end_event_and_ends_process(bool registerProcessEnd)
+    [InlineData(true, true)]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    public async Task Next_moves_instance_to_end_event_and_ends_process(bool registerProcessEnd, bool useTelemetry)
     {
         var expectedInstance = new Instance()
         {
@@ -849,7 +850,7 @@ public sealed class ProcessEngineTest
         using var fixture = Fixture.Create(
             updatedInstance: expectedInstance,
             registerProcessEnd: registerProcessEnd,
-            withTelemetry: registerProcessEnd
+            withTelemetry: useTelemetry
         );
         fixture
             .Mock<IAppMetadata>()
@@ -996,7 +997,13 @@ public sealed class ProcessEngineTest
         if (registerProcessEnd)
         {
             fixture.Mock<IProcessEnd>().Verify();
-            await Verify(fixture.TelemetrySink.GetSnapshot());
+        }
+
+        if (useTelemetry)
+        {
+            var snapshotFilename =
+                $"ProcessEngineTest.Telemetry.IProcessEnd_{(registerProcessEnd ? "registered" : "not_registered")}.json";
+            await Verify(fixture.TelemetrySink.GetSnapshot()).UseFileName(snapshotFilename);
         }
 
         result.Success.Should().BeTrue();

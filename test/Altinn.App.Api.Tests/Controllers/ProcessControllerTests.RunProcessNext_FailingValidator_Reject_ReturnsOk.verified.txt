@@ -86,15 +86,6 @@
       IdFormat: W3C
     },
     {
-      ActivityName: Process.EndHandlers,
-      Tags: [
-        {
-          instance.guid: Guid_1
-        }
-      ],
-      IdFormat: W3C
-    },
-    {
       ActivityName: Process.HandleEvents,
       Tags: [
         {

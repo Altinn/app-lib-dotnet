@@ -449,9 +449,12 @@ public class ProcessEngine : IProcessEngine
     /// </summary>
     private async Task RunAppDefinedProcessEndHandlers(Instance instance, List<InstanceEvent>? events)
     {
+        var processEnds = _appImplementationFactory.GetAll<IProcessEnd>().ToList();
+        if (processEnds.Count is 0)
+            return;
+
         using var mainActivity = _telemetry?.StartProcessEndHandlersActivity(instance);
 
-        var processEnds = _appImplementationFactory.GetAll<IProcessEnd>();
         foreach (IProcessEnd processEnd in processEnds)
         {
             using var nestedActivity = _telemetry?.StartProcessEndHandlerActivity(instance, processEnd);
