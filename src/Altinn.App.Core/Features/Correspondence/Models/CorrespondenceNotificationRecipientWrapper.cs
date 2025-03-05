@@ -20,7 +20,7 @@ public sealed record CorrespondenceNotificationRecipientWrapper : MultipartCorre
         AddRequired(
             content,
             RecipientToOverride,
-            $"Correspondence.CustomNotificationRecipients[{index}].RecipientToOverride"
+            $"Correspondence.Notification.CustomNotificationRecipients[{index}].RecipientToOverride"
         );
         SerializeOverrideNotificationRecipients(content, Recipients, index);
     }

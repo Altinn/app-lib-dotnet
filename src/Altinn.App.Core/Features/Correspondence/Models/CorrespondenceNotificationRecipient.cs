@@ -35,27 +35,27 @@ public sealed record CorrespondenceNotificationRecipient : MultipartCorresponden
         AddIfNotNull(
             content,
             EmailAddress,
-            $"Correspondence.CustomNotificationRecipients[0].Recipients[{index}].EmailAddress"
+            $"Correspondence.Notification.CustomNotificationRecipients[0].Recipients[{index}].EmailAddress"
         );
         AddIfNotNull(
             content,
             MobileNumber,
-            $"Correspondence.CustomNotificationRecipients[0].Recipients[{index}].MobileNumber"
+            $"Correspondence.Notification.CustomNotificationRecipients[0].Recipients[{index}].MobileNumber"
         );
         AddIfNotNull(
             content,
             OrganizationNumber,
-            $"Correspondence.CustomNotificationRecipients[0].Recipients[{index}].OrganizationNumber"
+            $"Correspondence.Notification.CustomNotificationRecipients[0].Recipients[{index}].OrganizationNumber"
         );
         AddIfNotNull(
             content,
             NationalIdentityNumber,
-            $"Correspondence.CustomNotificationRecipients[0].Recipients[{index}].NationalIdentityNumber"
+            $"Correspondence.Notification.CustomNotificationRecipients[0].Recipients[{index}].NationalIdentityNumber"
         );
         AddRequired(
             content,
             IsReserved.ToString(),
-            $"Correspondence.CustomNotificationRecipients[0].Recipients[{index}].IsReserved"
+            $"Correspondence.Notification.CustomNotificationRecipients[0].Recipients[{index}].IsReserved"
         );
     }
 
@@ -64,27 +64,27 @@ public sealed record CorrespondenceNotificationRecipient : MultipartCorresponden
         AddIfNotNull(
             content,
             EmailAddress,
-            $"Correspondence.CustomNotificationRecipients[{parentIndex}].Recipients[{index}].EmailAddress"
+            $"Correspondence.Notification.CustomNotificationRecipients[{parentIndex}].Recipients[{index}].EmailAddress"
         );
         AddIfNotNull(
             content,
             MobileNumber,
-            $"Correspondence.CustomNotificationRecipients[{parentIndex}].Recipients[{index}].MobileNumber"
+            $"Correspondence.Notification.CustomNotificationRecipients[{parentIndex}].Recipients[{index}].MobileNumber"
         );
         AddIfNotNull(
             content,
             OrganizationNumber,
-            $"Correspondence.CustomNotificationRecipients[{parentIndex}].Recipients[{index}].OrganizationNumber"
+            $"Correspondence.Notification.CustomNotificationRecipients[{parentIndex}].Recipients[{index}].OrganizationNumber"
         );
         AddIfNotNull(
             content,
             NationalIdentityNumber,
-            $"Correspondence.CustomNotificationRecipients[{parentIndex}].Recipients[{index}].NationalIdentityNumber"
+            $"Correspondence.Notification.CustomNotificationRecipients[{parentIndex}].Recipients[{index}].NationalIdentityNumber"
         );
         AddRequired(
             content,
             IsReserved.ToString(),
-            $"Correspondence.CustomNotificationRecipients[{parentIndex}].Recipients[{index}].IsReserved"
+            $"Correspondence.Notification.CustomNotificationRecipients[{parentIndex}].Recipients[{index}].IsReserved"
         );
     }
 }
