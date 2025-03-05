@@ -8,7 +8,7 @@ namespace Altinn.App.Core.Features.Correspondence.Builder;
 public class CorrespondenceNotificationOverrideBuilder : ICorrespondenceNotificationOverrideBuilder
 {
     private string? _recipientToOverride;
-    private List<NotificationRecipient>? _correspondenceNotificationRecipient;
+    private List<CorrespondenceNotificationRecipient>? _correspondenceNotificationRecipient;
 
     private CorrespondenceNotificationOverrideBuilder() { }
 
@@ -28,7 +28,7 @@ public class CorrespondenceNotificationOverrideBuilder : ICorrespondenceNotifica
 
     /// <inheritdoc/>
     public ICorrespondenceNotificationOverrideBuilder WithCorrespondenceNotificationRecipients(
-        List<NotificationRecipient> correspondenceNotificationRecipient
+        List<CorrespondenceNotificationRecipient> correspondenceNotificationRecipient
     )
     {
         _correspondenceNotificationRecipient = correspondenceNotificationRecipient;

@@ -18,7 +18,7 @@ public interface ICorrespondenceNotificationOverrideBuilder
     /// </summary>
     /// <param name="correspondenceNotificationRecipient">The custom recipients</param>
     public ICorrespondenceNotificationOverrideBuilder WithCorrespondenceNotificationRecipients(
-        List<NotificationRecipient> correspondenceNotificationRecipient
+        List<CorrespondenceNotificationRecipient> correspondenceNotificationRecipient
     );
 
     /// <summary>

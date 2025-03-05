@@ -181,7 +181,7 @@ public class CorrespondenceBuilderTests
                             .WithRecipientToOverride(data.recipient.ToString())
                             .WithCorrespondenceNotificationRecipients(
                                 [
-                                    new NotificationRecipient
+                                    new CorrespondenceNotificationRecipient
                                     {
                                         OrganizationNumber = data.recipient.ToString(),
                                         MobileNumber = data.notification.overrideMobileNumber,
