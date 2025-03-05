@@ -2,11 +2,8 @@ using Altinn.App.Api.Tests.Mocks;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
-using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
-using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
-using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
@@ -22,7 +19,6 @@ public class SigningProcessTaskTests
     private readonly Mock<IProcessReader> _processReaderMock;
     private readonly Mock<ISigningService> _signingServiceMock;
     private readonly InstanceDataUnitOfWorkInitializerMock _instanceDataUnitOfWorkInitializerMock;
-    private readonly Mock<InstanceDataUnitOfWork> _instanceDataUnitOfWorkMock;
     private readonly SigningProcessTask _paymentProcessTask;
 
     public SigningProcessTaskTests()
