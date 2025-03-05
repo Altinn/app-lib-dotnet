@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Altinn.App.Api.Controllers;
 using Altinn.App.Api.Models;
+using Altinn.App.Api.Tests.Mocks;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
@@ -25,11 +26,10 @@ public class SigningControllerTests
 {
     private readonly Mock<IServiceProvider> _serviceProviderMock;
     private readonly Mock<IInstanceClient> _instanceClientMock;
-    private readonly Mock<IAppMetadata> _appMetadataMock;
-    private readonly Mock<IDataClient> _dataClientMock;
     private readonly Mock<IProcessReader> _processReaderMock;
     private readonly Mock<ILogger<SigningController>> _loggerMock;
     private readonly Mock<ISigningService> _signingServiceMock;
+    private readonly InstanceDataUnitOfWorkInitializerMock _instanceDataUnitOfWorkInitializerMock;
     private readonly SigningController _controller;
     private readonly AltinnTaskExtension _altinnTaskExtension;
 
@@ -37,11 +37,10 @@ public class SigningControllerTests
     {
         _serviceProviderMock = new Mock<IServiceProvider>();
         _instanceClientMock = new Mock<IInstanceClient>();
-        _appMetadataMock = new Mock<IAppMetadata>();
-        _dataClientMock = new Mock<IDataClient>();
         _processReaderMock = new Mock<IProcessReader>();
         _loggerMock = new Mock<ILogger<SigningController>>();
         _signingServiceMock = new Mock<ISigningService>();
+        _instanceDataUnitOfWorkInitializerMock = InstanceDataUnitOfWorkInitializerMock.Create();
 
         _instanceClientMock
             .Setup(x => x.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>()))
@@ -57,6 +56,9 @@ public class SigningControllerTests
             );
 
         _serviceProviderMock.Setup(x => x.GetService(typeof(ISigningService))).Returns(_signingServiceMock.Object);
+        _serviceProviderMock
+            .Setup(x => x.GetService(typeof(InstanceDataUnitOfWorkInitializer)))
+            .Returns(_instanceDataUnitOfWorkInitializerMock.InstanceDataUnitOfWorkInitializer);
 
         var serviceScope = new Mock<IServiceScope>();
         serviceScope.Setup(x => x.ServiceProvider).Returns(_serviceProviderMock.Object);
@@ -69,9 +71,6 @@ public class SigningControllerTests
         _controller = new SigningController(
             _serviceProviderMock.Object,
             _instanceClientMock.Object,
-            _appMetadataMock.Object,
-            _dataClientMock.Object,
-            new ModelSerializationService(new Mock<IAppModel>().Object),
             _processReaderMock.Object,
             _loggerMock.Object
         );

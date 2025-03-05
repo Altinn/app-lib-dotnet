@@ -29,7 +29,6 @@ public class ProcessEngine : IProcessEngine
     private readonly Telemetry? _telemetry;
     private readonly IAuthenticationContext _authenticationContext;
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
-    private readonly IProcessTaskCleaner _processTaskCleaner;
     private readonly AppImplementationFactory _appImplementationFactory;
 
     /// <summary>

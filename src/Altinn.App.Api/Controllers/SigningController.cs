@@ -3,13 +3,11 @@ using Altinn.App.Api.Models;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Helpers;
-using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
-using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Mvc;
 using Signee = Altinn.App.Core.Features.Signing.Models.Signee;
@@ -26,12 +24,10 @@ namespace Altinn.App.Api.Controllers;
 public class SigningController : ControllerBase
 {
     private readonly IInstanceClient _instanceClient;
-    private readonly IAppMetadata _appMetadata;
-    private readonly IDataClient _dataClient;
-    private readonly ModelSerializationService _modelSerialization;
     private readonly IProcessReader _processReader;
     private readonly ILogger<SigningController> _logger;
     private readonly ISigningService _signingService;
+    private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SigningController"/> class.
@@ -39,20 +35,15 @@ public class SigningController : ControllerBase
     public SigningController(
         IServiceProvider serviceProvider,
         IInstanceClient instanceClient,
-        IAppMetadata appMetadata,
-        IDataClient dataClient,
-        ModelSerializationService modelSerialization,
         IProcessReader processReader,
         ILogger<SigningController> logger
     )
     {
         _instanceClient = instanceClient;
-        _appMetadata = appMetadata;
-        _dataClient = dataClient;
-        _modelSerialization = modelSerialization;
         _processReader = processReader;
         _logger = logger;
         _signingService = serviceProvider.GetRequiredService<ISigningService>();
+        _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
     }
 
     /// <summary>
@@ -76,7 +67,6 @@ public class SigningController : ControllerBase
     )
     {
         Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
-        ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
 
         _logger.LogInformation(
             "Getting signees state for org {Org} with instance {InstanceGuid} of app {App} for party {PartyId}",
@@ -86,13 +76,8 @@ public class SigningController : ControllerBase
             instanceOwnerPartyId
         );
 
-        var cachedDataMutator = new InstanceDataUnitOfWork(
-            instance,
-            _dataClient,
-            _instanceClient,
-            appMetadata,
-            _modelSerialization
-        );
+        var taskId = instance.Process.CurrentTask.ElementId;
+        var cachedDataMutator = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId, language);
 
         if (instance.Process.CurrentTask.AltinnTaskType != "signing")
         {

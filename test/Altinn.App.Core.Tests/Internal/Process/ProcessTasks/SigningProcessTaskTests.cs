@@ -1,3 +1,4 @@
+using Altinn.App.Api.Tests.Mocks;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
@@ -20,12 +21,15 @@ public class SigningProcessTaskTests
 {
     private readonly Mock<IProcessReader> _processReaderMock;
     private readonly Mock<ISigningService> _signingServiceMock;
+    private readonly InstanceDataUnitOfWorkInitializerMock _instanceDataUnitOfWorkInitializerMock;
+    private readonly Mock<InstanceDataUnitOfWork> _instanceDataUnitOfWorkMock;
     private readonly SigningProcessTask _paymentProcessTask;
 
     public SigningProcessTaskTests()
     {
         _processReaderMock = new Mock<IProcessReader>();
         _signingServiceMock = new Mock<ISigningService>();
+        _instanceDataUnitOfWorkInitializerMock = InstanceDataUnitOfWorkInitializerMock.Create();
 
         _paymentProcessTask = new SigningProcessTask(
             _signingServiceMock.Object,
@@ -33,9 +37,8 @@ public class SigningProcessTaskTests
             new Mock<IAppMetadata>().Object,
             new Mock<IHostEnvironment>().Object,
             new Mock<IDataClient>().Object,
-            new Mock<IInstanceClient>().Object,
-            new ModelSerializationService(new Mock<IAppModel>().Object),
-            new Mock<IPdfService>().Object
+            new Mock<IPdfService>().Object,
+            _instanceDataUnitOfWorkInitializerMock.InstanceDataUnitOfWorkInitializer
         );
     }
 

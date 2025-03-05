@@ -2,10 +2,8 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Helpers;
-using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
-using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models;
@@ -24,9 +22,8 @@ internal sealed class SigningProcessTask : IProcessTask
     private readonly IAppMetadata _appMetadata;
     private readonly IHostEnvironment _hostEnvironment;
     private readonly IDataClient _dataClient;
-    private readonly IInstanceClient _instanceClient;
-    private readonly ModelSerializationService _modelSerialization;
     private readonly IPdfService _pdfService;
+    private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
 
     public SigningProcessTask(
         ISigningService signingService,
@@ -34,9 +31,8 @@ internal sealed class SigningProcessTask : IProcessTask
         IAppMetadata appMetadata,
         IHostEnvironment hostEnvironment,
         IDataClient dataClient,
-        IInstanceClient instanceClient,
-        ModelSerializationService modelSerialization,
-        IPdfService pdfService
+        IPdfService pdfService,
+        InstanceDataUnitOfWorkInitializer instanceDataUnitOfWorkInitializer
     )
     {
         _signingService = signingService;
@@ -44,9 +40,8 @@ internal sealed class SigningProcessTask : IProcessTask
         _appMetadata = appMetadata;
         _hostEnvironment = hostEnvironment;
         _dataClient = dataClient;
-        _instanceClient = instanceClient;
-        _modelSerialization = modelSerialization;
         _pdfService = pdfService;
+        _instanceDataUnitOfWorkInitializer = instanceDataUnitOfWorkInitializer;
     }
 
     public string Type => "signing";
@@ -63,13 +58,7 @@ internal sealed class SigningProcessTask : IProcessTask
 
         ValidateSigningConfiguration(appMetadata, signatureConfiguration);
 
-        var cachedDataMutator = new InstanceDataUnitOfWork(
-            instance,
-            _dataClient,
-            _instanceClient,
-            appMetadata,
-            _modelSerialization
-        );
+        var cachedDataMutator = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId, null);
 
         if (
             signatureConfiguration.SigneeProviderId is not null
@@ -117,13 +106,7 @@ internal sealed class SigningProcessTask : IProcessTask
         ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
         AltinnSignatureConfiguration signatureConfiguration = GetAltinnSignatureConfiguration(taskId);
 
-        var cachedDataMutator = new InstanceDataUnitOfWork(
-            instance,
-            _dataClient,
-            _instanceClient,
-            appMetadata,
-            _modelSerialization
-        );
+        var cachedDataMutator = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId, null);
 
         await _signingService.AbortRuntimeDelegatedSigning(
             taskId,
