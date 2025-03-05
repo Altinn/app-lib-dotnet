@@ -177,12 +177,18 @@ internal sealed class SigningCallToActionService(
 
         string serializedPayload = JsonConvert.SerializeObject(request, jsettings);
         _logger.LogInformation(
-            "Sending correspondence request. URL: {InstanceUrl}, Payload: {Payload}",
-            instanceUrl,
+            "Sending correspondence request. Payload: {Payload}",
             serializedPayload
         );
 
-        return await _correspondenceClient.Send(request);
+        SendCorrespondenceResponse response =  await _correspondenceClient.Send(request);
+        var correspondenceId = response.Correspondences.Single().CorrespondenceId;
+
+        _logger.LogInformation(
+            "Correspondence request sent. CorrespondenceId: {CorrespondenceId}",
+            correspondenceId
+        );
+        return response;
     }
 
     internal static List<CorrespondenceNotificationRecipientWrapper>? OverrideRecipientIfConfigured(
