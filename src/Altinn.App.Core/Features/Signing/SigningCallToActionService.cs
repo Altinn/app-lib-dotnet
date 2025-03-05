@@ -179,8 +179,7 @@ internal sealed class SigningCallToActionService(
         _logger.LogInformation("Sending correspondence request. Payload: {Payload}", serializedPayload);
 
         SendCorrespondenceResponse response = await _correspondenceClient.Send(request);
-        var correspondenceId = response.Correspondences.Single().CorrespondenceId;
-
+        var correspondenceId = response?.Correspondences[0]?.CorrespondenceId ?? Guid.Empty;
         _logger.LogInformation("Correspondence request sent. CorrespondenceId: {CorrespondenceId}", correspondenceId);
         return response;
     }
