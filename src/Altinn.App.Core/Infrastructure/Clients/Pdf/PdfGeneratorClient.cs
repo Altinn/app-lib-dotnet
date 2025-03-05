@@ -121,8 +121,7 @@ public class PdfGeneratorClient : IPdfGeneratorClient
         );
 
         if (
-            uri.Host.Contains("local.altinn.cloud")
-            && _httpContextAccessor.HttpContext?.Request.Cookies.TryGetValue("frontendVersion", out var frontendVersion)
+            _httpContextAccessor.HttpContext?.Request.Cookies.TryGetValue("frontendVersion", out var frontendVersion)
                 == true
             && !string.IsNullOrEmpty(frontendVersion)
         )
