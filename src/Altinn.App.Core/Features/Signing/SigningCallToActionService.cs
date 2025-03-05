@@ -176,18 +176,12 @@ internal sealed class SigningCallToActionService(
         };
 
         string serializedPayload = JsonConvert.SerializeObject(request, jsettings);
-        _logger.LogInformation(
-            "Sending correspondence request. Payload: {Payload}",
-            serializedPayload
-        );
+        _logger.LogInformation("Sending correspondence request. Payload: {Payload}", serializedPayload);
 
-        SendCorrespondenceResponse response =  await _correspondenceClient.Send(request);
+        SendCorrespondenceResponse response = await _correspondenceClient.Send(request);
         var correspondenceId = response.Correspondences.Single().CorrespondenceId;
 
-        _logger.LogInformation(
-            "Correspondence request sent. CorrespondenceId: {CorrespondenceId}",
-            correspondenceId
-        );
+        _logger.LogInformation("Correspondence request sent. CorrespondenceId: {CorrespondenceId}", correspondenceId);
         return response;
     }
 
