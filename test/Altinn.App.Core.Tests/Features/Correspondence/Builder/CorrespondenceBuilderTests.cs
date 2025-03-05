@@ -316,12 +316,12 @@ public class CorrespondenceBuilderTests
         correspondence.Notification.CustomNotificationRecipients.Should().HaveCount(1);
         correspondence
             .Notification.CustomNotificationRecipients![0]
-            .Recipients[0]
+            .CorrespondenceNotificationRecipients[0]
             .OrganizationNumber.Should()
             .Be(data.recipient.ToString());
         correspondence
             .Notification.CustomNotificationRecipients![0]
-            .Recipients[0]
+            .CorrespondenceNotificationRecipients[0]
             .MobileNumber.Should()
             .Be(data.notification.overrideMobileNumber);
 

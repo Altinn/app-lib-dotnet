@@ -1,4 +1,3 @@
-using System.Reflection;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Exceptions;
@@ -22,8 +21,6 @@ using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 
 namespace Altinn.App.Core.Features.Signing;
 
@@ -143,7 +140,7 @@ internal sealed class SigningCallToActionService(
                         NotificationChoice.SmsAndEmail => new CorrespondenceNotification
                         {
                             NotificationTemplate = CorrespondenceNotificationTemplate.CustomMessage,
-                            NotificationChannel = CorrespondenceNotificationChannel.EmailPreferred, // TODO: document
+                            NotificationChannel = CorrespondenceNotificationChannel.EmailPreferred,
                             EmailSubject = emailSubject,
                             EmailBody = emailBody,
                             SmsBody = smsBody,
@@ -169,15 +166,6 @@ internal sealed class SigningCallToActionService(
             CorrespondenceAuthorisation.Maskinporten
         );
 
-        var jsettings = new JsonSerializerSettings
-        {
-            ContractResolver = new InternalContractResolver(),
-            Formatting = Formatting.Indented,
-        };
-
-        string serializedPayload = JsonConvert.SerializeObject(request, jsettings);
-        _logger.LogInformation("Sending correspondence request. Payload: {Payload}", serializedPayload);
-
         SendCorrespondenceResponse response = await _correspondenceClient.Send(request);
         var correspondenceId = response?.Correspondences[0]?.CorrespondenceId ?? Guid.Empty;
         _logger.LogInformation("Correspondence request sent. CorrespondenceId: {CorrespondenceId}", correspondenceId);
@@ -199,7 +187,7 @@ internal sealed class SigningCallToActionService(
             new CorrespondenceNotificationRecipientWrapper
             {
                 RecipientToOverride = recipient.IsPerson ? recipient.SSN : recipient.OrganisationNumber,
-                Recipients =
+                CorrespondenceNotificationRecipients =
                 [
                     new CorrespondenceNotificationRecipient
                     {
@@ -284,9 +272,9 @@ internal sealed class SigningCallToActionService(
                 ?? throw new InvalidOperationException($"No text resource found for language ({language})");
 
             string linkDisplayText = GetLinkDisplayText(language);
-            correspondenceTitle = textResource.GetText("signing.correspondence_cta_title"); // TODO: Document these text keys
-            correspondenceSummary = textResource.GetText("signing.correspondence_cta_summary"); // TODO: Document these text keys
-            correspondenceBody = textResource.GetText("signing.correspondence_cta_body"); // TODO: Document these text keys
+            correspondenceTitle = textResource.GetText("signing.correspondence_cta_title");
+            correspondenceSummary = textResource.GetText("signing.correspondence_cta_summary");
+            correspondenceBody = textResource.GetText("signing.correspondence_cta_body");
             correspondenceBody = correspondenceBody?.Replace(
                 "$InstanceUrl",
                 $"[{linkDisplayText}]({instanceUrl})",
@@ -374,34 +362,5 @@ internal sealed class SigningCallToActionService(
                     $"Din signatur ventes for {appName}. Åpne Altinn-innboksen din for å fortsette.<br /><br />Hvis du lurer på noe, kan du kontakte {appOwner}.",
             },
         };
-    }
-}
-
-/// <summary>
-/// Represents the default texts for a correspondence message.
-/// </summary>
-public class InternalContractResolver : DefaultContractResolver
-{
-    /// <summary>
-    /// Creates the properties for the given type.
-    /// </summary>
-    /// <param name="type"></param>
-    /// <param name="memberSerialization"></param>
-    /// <returns></returns>
-    protected override IList<JsonProperty> CreateProperties(Type type, MemberSerialization memberSerialization)
-    {
-        // Retrieve properties with public and non-public instance binding flags.
-        var properties = type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
-            .Select(p => base.CreateProperty(p, memberSerialization))
-            .ToList();
-
-        // Ensure each property is set to be readable and writable.
-        foreach (var prop in properties)
-        {
-            prop.Readable = true;
-            prop.Writable = true;
-        }
-
-        return properties;
     }
 }

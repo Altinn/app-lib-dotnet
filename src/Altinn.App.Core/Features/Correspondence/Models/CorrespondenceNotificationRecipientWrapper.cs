@@ -13,7 +13,7 @@ public sealed record CorrespondenceNotificationRecipientWrapper : MultipartCorre
     /// <summary>
     /// List of custom recipients to override the default recipient.
     /// </summary>
-    public required List<CorrespondenceNotificationRecipient> Recipients { get; init; }
+    public required List<CorrespondenceNotificationRecipient> CorrespondenceNotificationRecipients { get; init; }
 
     internal override void Serialise(MultipartFormDataContent content, int index)
     {
@@ -22,6 +22,6 @@ public sealed record CorrespondenceNotificationRecipientWrapper : MultipartCorre
             RecipientToOverride,
             $"Correspondence.Notification.CustomNotificationRecipients[{index}].RecipientToOverride"
         );
-        SerializeOverrideNotificationRecipients(content, Recipients, index);
+        SerializeOverrideNotificationRecipients(content, CorrespondenceNotificationRecipients, index);
     }
 }

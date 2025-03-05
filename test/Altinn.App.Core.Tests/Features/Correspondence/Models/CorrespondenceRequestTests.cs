@@ -113,7 +113,7 @@ public class CorrespondenceRequestTests
                         RecipientToOverride = OrganisationOrPersonIdentifier
                             .Create(TestHelpers.GetNationalIdentityNumber(2))
                             .ToString(),
-                        Recipients =
+                        CorrespondenceNotificationRecipients =
                         [
                             new CorrespondenceNotificationRecipient
                             {
@@ -132,7 +132,7 @@ public class CorrespondenceRequestTests
                         RecipientToOverride = OrganisationOrPersonIdentifier
                             .Create(TestHelpers.GetOrganisationNumber(1))
                             .ToString(),
-                        Recipients =
+                        CorrespondenceNotificationRecipients =
                         [
                             new CorrespondenceNotificationRecipient
                             {
@@ -213,15 +213,15 @@ public class CorrespondenceRequestTests
             ["Correspondence.Notification.SendersReference"] = correspondence.Notification.SendersReference,
             ["Correspondence.Notification.RequestedSendTime"] = correspondence.Notification.RequestedSendTime,
             ["Correspondence.Notification.CustomNotificationRecipients[0].RecipientToOverride"] = $"{correspondence.Notification.CustomNotificationRecipients[0].RecipientToOverride}",
-            ["Correspondence.Notification.CustomNotificationRecipients[0].Recipients[0].EmailAddress"] = correspondence.Notification.CustomNotificationRecipients[0].Recipients[0].EmailAddress!,
-            ["Correspondence.Notification.CustomNotificationRecipients[0].Recipients[0].IsReserved"] = correspondence.Notification.CustomNotificationRecipients[0].Recipients[0].IsReserved,
-            ["Correspondence.Notification.CustomNotificationRecipients[0].Recipients[1].MobileNumber"] = correspondence.Notification.CustomNotificationRecipients[0].Recipients[1].MobileNumber!,
-            ["Correspondence.Notification.CustomNotificationRecipients[0].Recipients[1].IsReserved"] = correspondence.Notification.CustomNotificationRecipients[0].Recipients[1].IsReserved,
+            ["Correspondence.Notification.CustomNotificationRecipients[0].Recipients[0].EmailAddress"] = correspondence.Notification.CustomNotificationRecipients[0].CorrespondenceNotificationRecipients[0].EmailAddress!,
+            ["Correspondence.Notification.CustomNotificationRecipients[0].Recipients[0].IsReserved"] = correspondence.Notification.CustomNotificationRecipients[0].CorrespondenceNotificationRecipients[0].IsReserved,
+            ["Correspondence.Notification.CustomNotificationRecipients[0].Recipients[1].MobileNumber"] = correspondence.Notification.CustomNotificationRecipients[0].CorrespondenceNotificationRecipients[1].MobileNumber!,
+            ["Correspondence.Notification.CustomNotificationRecipients[0].Recipients[1].IsReserved"] = correspondence.Notification.CustomNotificationRecipients[0].CorrespondenceNotificationRecipients[1].IsReserved,
             ["Correspondence.Notification.CustomNotificationRecipients[1].RecipientToOverride"] = $"{correspondence.Notification.CustomNotificationRecipients[1].RecipientToOverride}",
-            ["Correspondence.Notification.CustomNotificationRecipients[1].Recipients[0].OrganizationNumber"] = correspondence.Notification.CustomNotificationRecipients[1].Recipients[0].OrganizationNumber!,
-            ["Correspondence.Notification.CustomNotificationRecipients[1].Recipients[0].IsReserved"] = correspondence.Notification.CustomNotificationRecipients[1].Recipients[0].IsReserved,
-            ["Correspondence.Notification.CustomNotificationRecipients[1].Recipients[1].NationalIdentityNumber"] = correspondence.Notification.CustomNotificationRecipients[1].Recipients[1].NationalIdentityNumber!,
-            ["Correspondence.Notification.CustomNotificationRecipients[1].Recipients[1].IsReserved"] = correspondence.Notification.CustomNotificationRecipients[1].Recipients[1].IsReserved,
+            ["Correspondence.Notification.CustomNotificationRecipients[1].Recipients[0].OrganizationNumber"] = correspondence.Notification.CustomNotificationRecipients[1].CorrespondenceNotificationRecipients[0].OrganizationNumber!,
+            ["Correspondence.Notification.CustomNotificationRecipients[1].Recipients[0].IsReserved"] = correspondence.Notification.CustomNotificationRecipients[1].CorrespondenceNotificationRecipients[0].IsReserved,
+            ["Correspondence.Notification.CustomNotificationRecipients[1].Recipients[1].NationalIdentityNumber"] = correspondence.Notification.CustomNotificationRecipients[1].CorrespondenceNotificationRecipients[1].NationalIdentityNumber!,
+            ["Correspondence.Notification.CustomNotificationRecipients[1].Recipients[1].IsReserved"] = correspondence.Notification.CustomNotificationRecipients[1].CorrespondenceNotificationRecipients[1].IsReserved,
 
         };
 
