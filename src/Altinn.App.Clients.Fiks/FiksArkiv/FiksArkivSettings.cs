@@ -21,15 +21,18 @@ public sealed record FiksArkivAutoSendSettings
     [JsonPropertyName("recipient")]
     public string? Recipient { get; set; }
 
+    [JsonPropertyName("formDocument")]
+    public FiksArkivPayloadSettings? FormDocument { get; set; }
+
     [JsonPropertyName("attachments")]
-    public IReadOnlyList<FiksArkivAttachmentSettings>? Attachments { get; set; }
+    public IReadOnlyList<FiksArkivPayloadSettings>? Attachments { get; set; }
 }
 
-public sealed record FiksArkivAttachmentSettings
+public sealed record FiksArkivPayloadSettings
 {
     [JsonPropertyName("dataType")]
     public required string DataType { get; set; }
 
     [JsonPropertyName("filename")]
-    public required string Filename { get; set; }
+    public string? Filename { get; set; }
 }

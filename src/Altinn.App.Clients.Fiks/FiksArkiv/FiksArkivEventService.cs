@@ -16,7 +16,6 @@ internal sealed class FiksArkivEventService : BackgroundService
     public FiksArkivEventService(
         IFiksIOClient fiksIOClient,
         IFiksArkivErrorHandler errorHandler,
-        IOptions<FiksArkivSettings> fiksArkivSettings,
         ILogger<FiksArkivEventService> logger
     )
     {

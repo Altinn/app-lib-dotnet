@@ -1,35 +1,70 @@
+using Altinn.App.Clients.Fiks.FiksArkiv;
 using Altinn.App.Clients.Fiks.FiksIO;
 using Altinn.App.Core.Extensions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace Altinn.App.Clients.Fiks.Extensions;
+namespace Altinn.App;
 
-internal static class ServiceCollectionExtensions
+public static class ServiceCollectionExtensions
 {
-    /// <summary>
-    /// Adds a <see cref="IFiksIOClient"/> service to the service collection.
-    /// </summary>
-    /// <param name="services">The service collection</param>
-    public static IServiceCollection AddFiksIOClient(this IServiceCollection services)
+    public static IFiksIOSetupBuilder AddFiksIOClient(this IServiceCollection services)
     {
-        // Only auto-add FiksIOSettings if not already configured.
-        // Users sometimes wish to bind the default options to another configuration path than "FiksIOSettings".
         if (services.IsConfigured<FiksIOSettings>() is false)
             services.ConfigureFiksIOClient("FiksIOSettings");
 
-        services.AddTransient<IFiksIOClient, FiksIOClient>();
+        services.TryAddTransient<IFiksIOClient, FiksIOClient>();
+
+        return new FiksIOSetupBuilder(services);
+    }
+
+    public static IFiksArkivSetupBuilder AddFiksArkiv(this IServiceCollection services)
+    {
+        if (services.IsConfigured<FiksArkivSettings>() is false)
+        {
+            services.ConfigureFiksArkiv("FiksArkivSettings");
+        }
+
+        services.AddFiksIOClient();
+        services.AddTransient<IFiksArkivErrorHandler, FiksArkivDefaultErrorHandler>();
+        services.AddTransient<IFiksArkivMessageProvider, FiksArkivDefaultMessageProvider>();
+        services.AddTransient<IFiksArkivServiceTask, FiksArkivServiceTask>();
+        services.AddHostedService<FiksArkivConfigValidationService>();
+        services.AddHostedService<FiksArkivEventService>();
+
+        return new FiksArkivSetupBuilder(services);
+    }
+
+    public static IServiceCollection ConfigureFiksIOClient(
+        this IServiceCollection services,
+        Action<FiksIOSettings> configureOptions
+    )
+    {
+        services.AddOptions<FiksIOSettings>().Configure(configureOptions).ValidateDataAnnotations();
 
         return services;
     }
 
-    /// <summary>
-    /// Binds a <see cref="FiksIOSettings"/> configuration to the supplied config section path and options name.
-    /// </summary>
-    /// <param name="services">The service collection</param>
-    /// <param name="configSectionPath">The configuration section path, e.g. "MaskinportenSettingsInternal"</param>
     public static IServiceCollection ConfigureFiksIOClient(this IServiceCollection services, string configSectionPath)
     {
         services.AddOptions<FiksIOSettings>().BindConfiguration(configSectionPath).ValidateDataAnnotations();
+
+        return services;
+    }
+
+    public static IServiceCollection ConfigureFiksArkiv(
+        this IServiceCollection services,
+        Action<FiksArkivSettings> configureOptions
+    )
+    {
+        services.AddOptions<FiksArkivSettings>().Configure(configureOptions);
+
+        return services;
+    }
+
+    public static IServiceCollection ConfigureFiksArkiv(this IServiceCollection services, string configSectionPath)
+    {
+        services.AddOptions<FiksArkivSettings>().BindConfiguration(configSectionPath);
 
         return services;
     }

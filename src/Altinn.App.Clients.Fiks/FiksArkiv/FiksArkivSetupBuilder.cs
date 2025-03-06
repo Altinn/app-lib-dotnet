@@ -3,48 +3,48 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Altinn.App.Clients.Fiks.FiksArkiv;
 
-internal sealed class FiksArkivSetupBuilder(IServiceCollection ServiceCollection) : IFiksArkivSetupBuilder
+internal sealed class FiksArkivSetupBuilder(IServiceCollection serviceCollection) : IFiksArkivSetupBuilder
 {
     public IFiksArkivSetupBuilder WithErrorHandler<TErrorHandler>()
         where TErrorHandler : IFiksArkivErrorHandler
     {
-        ServiceCollection.AddTransient(typeof(IFiksArkivErrorHandler), typeof(TErrorHandler));
+        serviceCollection.AddTransient(typeof(IFiksArkivErrorHandler), typeof(TErrorHandler));
         return this;
     }
 
     public IFiksArkivSetupBuilder WithFiksIOConfig(Action<FiksIOSettings> configureOptions)
     {
-        ServiceCollection.ConfigureFiksIOClient(configureOptions);
+        serviceCollection.ConfigureFiksIOClient(configureOptions);
         return this;
     }
 
     public IFiksArkivSetupBuilder WithFiksIOConfig(string configSectionPath)
     {
-        ServiceCollection.ConfigureFiksIOClient(configSectionPath);
+        serviceCollection.ConfigureFiksIOClient(configSectionPath);
         return this;
     }
 
     public IFiksArkivSetupBuilder WithFiksArkivConfig(Action<FiksArkivSettings> configureOptions)
     {
-        ServiceCollection.ConfigureFiksArkiv(configureOptions);
+        serviceCollection.ConfigureFiksArkiv(configureOptions);
         return this;
     }
 
     public IFiksArkivSetupBuilder WithFiksArkivConfig(string configSectionPath)
     {
-        ServiceCollection.ConfigureFiksArkiv(configSectionPath);
+        serviceCollection.ConfigureFiksArkiv(configSectionPath);
         return this;
     }
 
     public IFiksArkivSetupBuilder WithMessageProvider<TMessageBuilder>()
         where TMessageBuilder : IFiksArkivMessageProvider
     {
-        ServiceCollection.AddTransient(typeof(IFiksArkivMessageProvider), typeof(TMessageBuilder));
+        serviceCollection.AddTransient(typeof(IFiksArkivMessageProvider), typeof(TMessageBuilder));
         return this;
     }
 
     public IServiceCollection CompleteSetup()
     {
-        return ServiceCollection;
+        return serviceCollection;
     }
 }

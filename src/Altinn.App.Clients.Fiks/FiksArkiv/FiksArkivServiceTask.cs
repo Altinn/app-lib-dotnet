@@ -1,4 +1,5 @@
 using Altinn.App.Clients.Fiks.FiksIO;
+using Altinn.App.Core.Internal.Process.ServiceTasks;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -11,6 +12,8 @@ internal class FiksArkivServiceTask : IFiksArkivServiceTask
     private readonly IFiksArkivMessageProvider _fiksArkivMessageProvider;
     private readonly IFiksIOClient _fiksIOClient;
     private readonly ILogger<FiksArkivServiceTask> _logger;
+
+    public string Id => ServiceTaskIdentifiers.FiksArkiv;
 
     public FiksArkivServiceTask(
         IFiksArkivMessageProvider fiksArkivMessageProvider,
