@@ -1,19 +1,20 @@
-using System.Text;
+using System.Globalization;
 using System.Xml.Serialization;
 using Altinn.App.Clients.Fiks.FiksIO;
 using Altinn.App.Core.Extensions;
+using Altinn.App.Core.Features.Auth;
+using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Models;
+using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using KS.Fiks.Arkiv.Forenklet.Arkivering.V1;
-using KS.Fiks.Arkiv.Forenklet.Arkivering.V1.Helpers;
 using KS.Fiks.Arkiv.Models.V1.Arkivering.Arkivmelding;
 using KS.Fiks.Arkiv.Models.V1.Kodelister;
 using KS.Fiks.Arkiv.Models.V1.Meldingstyper;
 using KS.Fiks.IO.Arkiv.Client.ForenkletArkivering;
-using KS.Fiks.IO.Crypto.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Kode = KS.Fiks.IO.Arkiv.Client.ForenkletArkivering.Kode;
@@ -26,16 +27,22 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
     private readonly IAppMetadata _appMetadata;
     private readonly IDataClient _dataClient;
     private readonly ILogger<FiksArkivDefaultMessageProvider> _logger;
+    private IAltinnCdnClient? _altinnCdnClient;
+    private readonly IAuthenticationContext _authenticationContext;
 
     public FiksArkivDefaultMessageProvider(
         IOptions<FiksArkivSettings> fiksArkivSettings,
         IAppMetadata appMetadata,
         IDataClient dataClient,
+        IAltinnCdnClient? altinnCdnClient,
+        IAuthenticationContext authenticationContext,
         ILogger<FiksArkivDefaultMessageProvider> logger
     )
     {
         _appMetadata = appMetadata;
         _dataClient = dataClient;
+        _altinnCdnClient = altinnCdnClient;
+        _authenticationContext = authenticationContext;
         _fiksArkivSettings = fiksArkivSettings.Value;
         _logger = logger;
     }
@@ -47,14 +54,14 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
         var instanceId = new InstanceIdentifier(instance.Id);
 
         // TODO: Build arkivmelding.xml
-        var arkivMelding = await GenerateArkivmelding(documents);
+        var archiveMessage = await GenerateArchiveMessage(documents, instance);
 
         return new FiksIOMessageRequest(
             Recipient: recipient,
             MessageType: FiksArkivMeldingtype.ArkivmeldingOpprett,
             SendersReference: instanceId.InstanceGuid,
             MessageLifetime: TimeSpan.FromDays(14),
-            Payload: [arkivMelding, documents.FormDocument, .. documents.Attachments]
+            Payload: [archiveMessage, documents.FormDocument, .. documents.Attachments]
         );
     }
 
@@ -85,7 +92,7 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
             throw new Exception("Fiks Arkiv error: Attachments must have DataType set for all entries.");
     }
 
-    private async Task<ArkivDocuments> GetDocuments(Instance instance)
+    private async Task<ArchiveDocuments> GetDocuments(Instance instance)
     {
         var instanceId = new InstanceIdentifier(instance.Id);
         var appMetadata = await _appMetadata.GetApplicationMetadata();
@@ -122,9 +129,9 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
         }
 
         // TODO: This specifically requires testing
-        EnsureUniqueFilenames([formDocument, ..attachments]);
+        EnsureUniqueFilenames([formDocument, .. attachments]);
 
-        return new ArkivDocuments(formDocument, attachments);
+        return new ArchiveDocuments(formDocument, attachments);
     }
 
     private async Task<FiksIOMessagePayload> GetPayload(
@@ -156,7 +163,7 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
         );
     }
 
-    private static List<FiksIOMessagePayload> EnsureUniqueFilenames(List<FiksIOMessagePayload> attachments)
+    private static void EnsureUniqueFilenames(List<FiksIOMessagePayload> attachments)
     {
         var hasDuplicateFilenames = attachments
             .GroupBy(x => x.Filename.ToLowerInvariant())
@@ -174,8 +181,6 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
                 duplicates[i] = duplicates[i] with { Filename = $"{filename}({uniqueId}){extension}" };
             }
         }
-
-        return attachments;
     }
 
     private Task<Guid> GetRecipient(Instance instance)
@@ -227,14 +232,72 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
     //     );
     // }
 
-    private async Task<FiksIOMessagePayload> GenerateArkivmelding(ArkivDocuments documents)
+    private async Task<AltinnCdnOrgDetails?> GetAltinnCdnOrgDetails(ApplicationMetadata appMetadata)
+    {
+        bool disposeClient = _altinnCdnClient is null;
+        _altinnCdnClient ??= new AltinnCdnClient();
+
+        try
+        {
+            AltinnCdnOrgs altinnCdnOrgs = await _altinnCdnClient.GetOrgs();
+            return altinnCdnOrgs.Orgs?.GetValueOrDefault(appMetadata.Org);
+        }
+        finally
+        {
+            if (disposeClient)
+            {
+                _altinnCdnClient?.Dispose();
+                _altinnCdnClient = null;
+            }
+        }
+    }
+
+    private async Task<KlasseForenklet> GetSenderDetails()
+    {
+        switch (_authenticationContext.Current)
+        {
+            case Authenticated.User user:
+            {
+                UserProfile userProfile = await user.LookupProfile();
+
+                return new KlasseForenklet
+                {
+                    klasseID = userProfile.Party.SSN.ToString(CultureInfo.InvariantCulture),
+                    klassifikasjonssystem = "Fødselsnummer",
+                    tittel = userProfile.Party.Name,
+                };
+            }
+            case Authenticated.SelfIdentifiedUser selfIdentifiedUser:
+                return new KlasseForenklet
+                {
+                    klasseID = selfIdentifiedUser.UserId.ToString(CultureInfo.InvariantCulture),
+                    klassifikasjonssystem = "AltinnBrukerId",
+                    tittel = selfIdentifiedUser.Username,
+                };
+            case Authenticated.SystemUser systemUser:
+                return new KlasseForenklet
+                {
+                    klasseID = systemUser.SystemUserId[0].ToString(),
+                    klassifikasjonssystem = "SystembrukerId",
+                    tittel = systemUser.SystemUserOrgNr.Get(OrganisationNumberFormat.Local),
+                };
+            case Authenticated.Org org:
+                return new KlasseForenklet { klasseID = org.OrgNo, klassifikasjonssystem = "Organisasjonsnummer" };
+            default:
+                throw new Exception("Could not determine sender details");
+        }
+    }
+
+    private async Task<FiksIOMessagePayload> GenerateArchiveMessage(ArchiveDocuments documents, Instance instance)
     {
         var factory = new ArkivmeldingFactory();
         var appMetadata = await _appMetadata.GetApplicationMetadata();
         var documentTitle = appMetadata.Title[LanguageConst.Nb];
         var documentCreator = appMetadata.AppIdentifier.Org;
+        var seriviceOwnerDetails = await GetAltinnCdnOrgDetails(appMetadata);
+        var senderDetails = await GetSenderDetails();
 
-        var referanseSaksmappeForenklet = new SaksmappeForenklet
+        var caseFile = new SaksmappeForenklet
         {
             saksaar = DateTime.Now.Year,
             // sakssekvensnummer = 0,
@@ -244,7 +307,7 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
             offentligTittel = documentTitle,
             administrativEnhet = documentCreator,
             // referanseAdministrativEnhet = "ref",
-            saksansvarlig = "Ingen",
+            // saksansvarlig = "Ingen",
             // referanseSaksansvarlig = "ref",
             // saksstatus = "status",
             // avsluttetAv = "avsluttet",
@@ -254,19 +317,10 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
                 fagsystem = "SaksOgArkivsystem", // TODO: What should this value really be?
                 noekkel = Guid.NewGuid().ToString(),
             },
-            klasse =
-            [
-                new KlasseForenklet
-                {
-                    klasseID = <PERSONNUMMER>,
-                    klassifikasjonssystem = "Fødselsnummer",
-                    // skjermetKlasse = false,
-                    tittel = <NAVNPAAPERSON>,
-                },
-            ],
+            klasse = [senderDetails],
         };
 
-        var nyUtgaaendeJournalpost = new UtgaaendeJournalpost
+        var journalEntry = new UtgaaendeJournalpost
         {
             journalaar = DateTime.Now.Year,
             // journalsekvensnummer = 0,
@@ -287,26 +341,30 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
             [
                 new KorrespondansepartForenklet
                 {
-                    systemID = "id",
-                    enhetsidentifikator = new Enhetsidentifikator { organisasjonsnummer = "orgnr", landkode = "kode" },
-                    personid = new Personidentifikator
+                    systemID = "FIKS-ARKIV-MOTTAKER-KONTO",
+                    enhetsidentifikator = new Enhetsidentifikator
                     {
-                        personidentifikatorNr = "fnr",
-                        personidentifikatorLandkode = "kode",
+                        organisasjonsnummer = "MOTTAKERS-ORGNUMMER",
+                        landkode = "NO",
                     },
-                    korrespondanseparttype = new Kode { kodeverdi = "tja", kodebeskrivelse = "..." },
-                    navn = "navn",
+                    // personid = new Personidentifikator
+                    // {
+                    //     personidentifikatorNr = "fnr",
+                    //     personidentifikatorLandkode = "kode",
+                    // },
+                    // korrespondanseparttype = new Kode { kodeverdi = "tja", kodebeskrivelse = "..." },
+                    navn = "MOTTAKERS-NAVN",
                     // skjermetKorrespondansepart = false,
-                    postadresse = null,
-                    kontaktinformasjonForenklet = new KontaktinformasjonForenklet
-                    {
-                        epostadresse = "epost",
-                        mobiltelefon = "nummer",
-                        telefon = "nummer",
-                    },
-                    kontaktperson = "person",
-                    deresReferanse = "deresreferanse",
-                    forsendelsemåte = "måte",
+                    // postadresse = null,
+                    // kontaktinformasjonForenklet = new KontaktinformasjonForenklet
+                    // {
+                    //     epostadresse = "epost",
+                    //     mobiltelefon = "nummer",
+                    //     telefon = "nummer",
+                    // },
+                    // kontaktperson = "person",
+                    deresReferanse = instance.Id,
+                    // forsendelsemåte = "måte",
                 },
             ],
             avsender =
@@ -314,25 +372,33 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
                 new KorrespondansepartForenklet
                 {
                     systemID = documentCreator,
-                    enhetsidentifikator = new Enhetsidentifikator { organisasjonsnummer = "orgnr", landkode = "NO" },
-                    personid = new Personidentifikator
+                    enhetsidentifikator = new Enhetsidentifikator
                     {
-                        personidentifikatorNr = "fnr",
-                        personidentifikatorLandkode = "kode",
+                        organisasjonsnummer = seriviceOwnerDetails?.Orgnr ?? appMetadata.Org,
+                        landkode = "NO",
                     },
-                    korrespondanseparttype = new Kode { kodeverdi = "tja", kodebeskrivelse = "..." },
-                    navn = "navn",
+                    // personid = new Personidentifikator
+                    // {
+                    //     personidentifikatorNr = "fnr",
+                    //     personidentifikatorLandkode = "kode",
+                    // },
+                    // korrespondanseparttype = new Kode { kodeverdi = "tja", kodebeskrivelse = "..." },
+                    navn =
+                        seriviceOwnerDetails?.Name?.Nb
+                        ?? seriviceOwnerDetails?.Name?.Nn
+                        ?? seriviceOwnerDetails?.Name?.En
+                        ?? appMetadata.Org,
                     // skjermetKorrespondansepart = false,
-                    postadresse = null,
-                    kontaktinformasjonForenklet = new KontaktinformasjonForenklet
-                    {
-                        epostadresse = "epost",
-                        mobiltelefon = "nummer",
-                        telefon = "nummer",
-                    },
-                    kontaktperson = "person",
-                    deresReferanse = "deresreferanse",
-                    forsendelsemåte = "måte",
+                    // postadresse = null,
+                    // kontaktinformasjonForenklet = new KontaktinformasjonForenklet
+                    // {
+                    //     epostadresse = "epost",
+                    //     mobiltelefon = "nummer",
+                    //     telefon = "nummer",
+                    // },
+                    // kontaktperson = "person",
+                    deresReferanse = instance.Id,
+                    // forsendelsemåte = "måte",
                 },
             ],
             internAvsender =
@@ -347,21 +413,22 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
             ],
         };
 
-        var forenkletUtgaaende = new ArkivmeldingForenkletUtgaaende
-        {
-            sluttbrukerIdentifikator = documentCreator,
-            referanseSaksmappeForenklet = referanseSaksmappeForenklet,
-            nyUtgaaendeJournalpost = nyUtgaaendeJournalpost,
-        };
+        var message = factory.GetArkivmelding(
+            new ArkivmeldingForenkletUtgaaende
+            {
+                sluttbrukerIdentifikator = documentCreator,
+                referanseSaksmappeForenklet = caseFile,
+                nyUtgaaendeJournalpost = journalEntry,
+            }
+        );
 
-        var arkivmelding = factory.GetArkivmelding(forenkletUtgaaende);
-        // StringWriter logWriter = new StringWriter();
-        // XmlSerializer logSerializer = new XmlSerializer(typeof(Arkivmelding));
-        // logSerializer.Serialize(logWriter, arkivmelding);
-        // _logger.LogWarning(logWriter.ToString());
+        StringWriter logWriter = new();
+        XmlSerializer logSerializer = new(typeof(Arkivmelding));
+        logSerializer.Serialize(logWriter, message);
+        _logger.LogWarning(logWriter.ToString());
 
-        return new FiksIOMessagePayload("arkivmelding.xml", arkivmelding);
+        return new FiksIOMessagePayload("arkivmelding.xml", message);
     }
 
-    private record ArkivDocuments(FiksIOMessagePayload FormDocument, List<FiksIOMessagePayload> Attachments);
+    private record ArchiveDocuments(FiksIOMessagePayload FormDocument, List<FiksIOMessagePayload> Attachments);
 }
