@@ -2,6 +2,7 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.App.Core.Internal.Process.ServiceTasks;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask;
@@ -13,10 +14,7 @@ public class EndTaskEventHandler : IEndTaskEventHandler
 {
     private readonly IProcessTaskDataLocker _processTaskDataLocker;
     private readonly IProcessTaskFinalizer _processTaskFinisher;
-    private readonly IServiceTask _pdfServiceTask;
-    private readonly IServiceTask _eformidlingServiceTask;
-    private readonly IServiceTask? _fiksArkivServiceTask;
-    private readonly IEnumerable<IProcessTaskEnd> _processTaskEnds;
+    private readonly AppImplementationFactory _appImplementationFactory;
     private readonly ILogger<EndTaskEventHandler> _logger;
 
     /// <summary>
@@ -25,25 +23,13 @@ public class EndTaskEventHandler : IEndTaskEventHandler
     public EndTaskEventHandler(
         IProcessTaskDataLocker processTaskDataLocker,
         IProcessTaskFinalizer processTaskFinisher,
-        IEnumerable<IServiceTask> serviceTasks,
-        IEnumerable<IProcessTaskEnd> processTaskEnds,
+        IServiceProvider serviceProvider,
         ILogger<EndTaskEventHandler> logger
     )
     {
         _processTaskDataLocker = processTaskDataLocker;
         _processTaskFinisher = processTaskFinisher;
-        _pdfServiceTask =
-            serviceTasks.FirstOrDefault(x => x is IPdfServiceTask)
-            ?? throw new InvalidOperationException("PdfServiceTask not found in serviceTasks");
-        _eformidlingServiceTask =
-            serviceTasks.FirstOrDefault(x => x is IEformidlingServiceTask)
-            ?? throw new InvalidOperationException("EformidlingServiceTask not found in serviceTasks");
-
-        _fiksArkivServiceTask = serviceTasks.FirstOrDefault(x =>
-            x is INamedServiceTask { Id: ServiceTaskIdentifiers.FiksArkiv }
-        );
-
-        _processTaskEnds = processTaskEnds;
+        _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
         _logger = logger;
     }
 
@@ -52,6 +38,17 @@ public class EndTaskEventHandler : IEndTaskEventHandler
     /// </summary>
     public async Task Execute(IProcessTask processTask, string taskId, Instance instance)
     {
+        var serviceTasks = _appImplementationFactory.GetAll<IServiceTask>().ToList();
+        var pdfServiceTask =
+            serviceTasks.FirstOrDefault(x => x is IPdfServiceTask)
+            ?? throw new InvalidOperationException("PdfServiceTask not found in serviceTasks");
+        var eformidlingServiceTask =
+            serviceTasks.FirstOrDefault(x => x is IEformidlingServiceTask)
+            ?? throw new InvalidOperationException("EformidlingServiceTask not found in serviceTasks");
+        var fiksArkivServiceTask = serviceTasks.FirstOrDefault(x =>
+            x is INamedServiceTask { Id: ServiceTaskIdentifiers.FiksArkiv }
+        );
+
         await processTask.End(taskId, instance);
         await _processTaskFinisher.Finalize(taskId, instance);
         await RunAppDefinedProcessTaskEndHandlers(taskId, instance);
@@ -60,7 +57,7 @@ public class EndTaskEventHandler : IEndTaskEventHandler
         //These two services are scheduled to be removed and replaced by services tasks defined in the processfile.
         try
         {
-            await _pdfServiceTask.Execute(taskId, instance);
+            await pdfServiceTask.Execute(taskId, instance);
         }
         catch (Exception e)
         {
@@ -71,7 +68,7 @@ public class EndTaskEventHandler : IEndTaskEventHandler
 
         try
         {
-            await _eformidlingServiceTask.Execute(taskId, instance);
+            await eformidlingServiceTask.Execute(taskId, instance);
         }
         catch (Exception e)
         {
@@ -80,11 +77,11 @@ public class EndTaskEventHandler : IEndTaskEventHandler
             throw;
         }
 
-        if (_fiksArkivServiceTask is not null)
+        if (fiksArkivServiceTask is not null)
         {
             try
             {
-                await _fiksArkivServiceTask.Execute(taskId, instance);
+                await fiksArkivServiceTask.Execute(taskId, instance);
             }
             catch (Exception e)
             {
@@ -100,7 +97,8 @@ public class EndTaskEventHandler : IEndTaskEventHandler
     /// </summary>
     private async Task RunAppDefinedProcessTaskEndHandlers(string endEvent, Instance instance)
     {
-        foreach (IProcessTaskEnd taskEnd in _processTaskEnds)
+        var handlers = _appImplementationFactory.GetAll<IProcessTaskEnd>();
+        foreach (IProcessTaskEnd taskEnd in handlers)
         {
             await taskEnd.End(endEvent, instance);
         }
