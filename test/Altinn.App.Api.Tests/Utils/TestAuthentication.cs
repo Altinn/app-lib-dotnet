@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text.Json;
 using Altinn.App.Api.Tests.Mocks;
@@ -10,6 +11,7 @@ using Altinn.Platform.Register.Enums;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using AltinnCore.Authentication.Constants;
+using Xunit.Abstractions;
 using static Altinn.App.Core.Features.Auth.Authenticated;
 
 namespace Altinn.App.Api.Tests.Utils;
@@ -23,9 +25,57 @@ public enum AuthenticationTypes
     ServiceOwner,
 }
 
-public sealed record TestJwtToken(AuthenticationTypes Type, int PartyId, string Token, Authenticated Auth)
+public sealed class TestJwtToken : IXunitSerializable
 {
+    public AuthenticationTypes Type { get; set; }
+    public int PartyId { get; set; }
+    public string Token { get; set; } = "";
+
+    private Authenticated? _auth;
+    public Authenticated Auth
+    {
+        get
+        {
+            if (_auth is not null)
+                return _auth;
+            // csharpier-ignore
+            _auth = Type switch
+            {
+                AuthenticationTypes.User => TestAuthentication.GetUserAuthentication(userPartyId: PartyId),
+                AuthenticationTypes.SelfIdentifiedUser => TestAuthentication.GetSelfIdentifiedUserAuthentication(partyId: PartyId),
+                // AuthenticationTypes.Org => TestAuthentication.GetOrgAuthentication(),
+                AuthenticationTypes.ServiceOwner => TestAuthentication.GetServiceOwnerAuthentication(partyId: PartyId),
+                AuthenticationTypes.SystemUser => TestAuthentication.GetSystemUserAuthentication(partyId: PartyId),
+                _ => throw new Exception(),
+            };
+            return _auth;
+        }
+    }
+
     public override string ToString() => $"{Type}={PartyId}";
+
+    public TestJwtToken() { }
+
+    public TestJwtToken(AuthenticationTypes type, int partyId, string token)
+    {
+        Type = type;
+        PartyId = partyId;
+        Token = token;
+    }
+
+    public void Deserialize(IXunitSerializationInfo info)
+    {
+        Type = (AuthenticationTypes)info.GetValue<int>("Type");
+        PartyId = info.GetValue<int>("PartyId");
+        Token = info.GetValue<string>("Token");
+    }
+
+    public void Serialize(IXunitSerializationInfo info)
+    {
+        info.AddValue("Type", (int)Type);
+        info.AddValue("PartyId", PartyId);
+        info.AddValue("Token", Token);
+    }
 }
 
 public static class TestAuthentication
@@ -51,32 +101,11 @@ public static class TestAuthentication
     {
         public AllTokens()
         {
-            Add(new(AuthenticationTypes.User, DefaultUserPartyId, GetUserToken(), GetUserAuthentication()));
-            Add(
-                new(
-                    AuthenticationTypes.SelfIdentifiedUser,
-                    DefaultUserPartyId,
-                    GetSelfIdentifiedUserToken(),
-                    GetSelfIdentifiedUserAuthentication()
-                )
-            );
-            // Add(new(AuthenticationTypes.Org, DefaultOrgPartyId, GetOrgAuthentication()));
-            Add(
-                new(
-                    AuthenticationTypes.ServiceOwner,
-                    DefaultOrgPartyId,
-                    GetServiceOwnerToken(),
-                    GetServiceOwnerAuthentication()
-                )
-            );
-            Add(
-                new(
-                    AuthenticationTypes.SystemUser,
-                    DefaultOrgPartyId,
-                    GetSystemUserToken(),
-                    GetSystemUserAuthentication()
-                )
-            );
+            Add(new(AuthenticationTypes.User, DefaultUserPartyId, GetUserToken()));
+            Add(new(AuthenticationTypes.SelfIdentifiedUser, DefaultUserPartyId, GetSelfIdentifiedUserToken()));
+            // Add(new(AuthenticationTypes.Org, DefaultOrgPartyId));
+            Add(new(AuthenticationTypes.ServiceOwner, DefaultOrgPartyId, GetServiceOwnerToken()));
+            Add(new(AuthenticationTypes.SystemUser, DefaultOrgPartyId, GetSystemUserToken()));
         }
     }
 
@@ -425,7 +454,7 @@ public static class TestAuthentication
         );
     }
 
-    public static ClaimsPrincipal GetSystemUserPrincipal(
+    public static JwtPayload GetSystemUserPayload(
         string systemId = DefaultSystemId,
         string systemUserId = DefaultSystemUserId,
         string systemUserOrgNumber = DefaultSystemUserOrgNumber,
@@ -441,7 +470,19 @@ public static class TestAuthentication
         if (scopes.HasScopeWithPrefix("altinn:serviceowner/"))
             throw new InvalidOperationException("System user tokens cannot have serviceowner scopes");
 
-        AuthorizationDetailsClaim details = new SystemUserAuthorizationDetailsClaim(
+        var payload = new JwtPayload
+        {
+            { JwtClaimTypes.Issuer, iss },
+            { "token_type", "Bearer" },
+            { JwtClaimTypes.Scope, scope },
+            { "client_id", Guid.NewGuid().ToString() },
+            { "jti", Guid.NewGuid().ToString() },
+            { AltinnCoreClaimTypes.OrgNumber, supplierOrgNumber },
+            { AltinnCoreClaimTypes.AuthenticateMethod, "maskinporten" },
+            { AltinnCoreClaimTypes.AuthenticationLevel, "3" },
+        };
+
+        AuthorizationDetailsClaim authorizationDetails = new SystemUserAuthorizationDetailsClaim(
             [Guid.Parse(systemUserId)],
             systemId,
             new OrgClaim(
@@ -449,27 +490,15 @@ public static class TestAuthentication
                 OrganisationNumber.Parse(systemUserOrgNumber).Get(OrganisationNumberFormat.International)
             )
         );
-        var consumer = JsonSerializer.Serialize(
-            new OrgClaim(
-                "iso6523-actorid-upis",
-                OrganisationNumber.Parse(supplierOrgNumber).Get(OrganisationNumberFormat.International)
-            )
-        );
-        List<Claim> claims =
-        [
-            new("authorization_details", JsonSerializer.Serialize(details), ClaimValueTypes.String, iss),
-            new(JwtClaimTypes.Scope, scope, ClaimValueTypes.String, iss),
-            new("token_type", "Bearer", ClaimValueTypes.String, iss),
-            new("client_id", Guid.NewGuid().ToString(), ClaimValueTypes.String, iss),
-            new("consumer", consumer, ClaimValueTypes.String, iss),
-            new(AltinnCoreClaimTypes.OrgNumber, supplierOrgNumber, ClaimValueTypes.String, iss),
-            new(AltinnCoreClaimTypes.AuthenticateMethod, "maskinporten", ClaimValueTypes.String, iss),
-            new(AltinnCoreClaimTypes.AuthenticationLevel, "3", ClaimValueTypes.Integer32, iss),
-            new(JwtClaimTypes.Issuer, iss, ClaimValueTypes.String, iss),
-            new("jti", Guid.NewGuid().ToString(), ClaimValueTypes.String, iss),
-        ];
 
-        return new ClaimsPrincipal(new ClaimsIdentity(claims, "mock"));
+        var consumer = new OrgClaim(
+            "iso6523-actorid-upis",
+            OrganisationNumber.Parse(supplierOrgNumber).Get(OrganisationNumberFormat.International)
+        );
+        payload.Add("authorization_details", JsonSerializer.SerializeToElement(authorizationDetails));
+        payload.Add("consumer", JsonSerializer.SerializeToElement(consumer));
+
+        return payload;
     }
 
     public static string GetSystemUserToken(
@@ -482,14 +511,14 @@ public static class TestAuthentication
         TimeProvider? timeProvider = null
     )
     {
-        ClaimsPrincipal principal = GetSystemUserPrincipal(
+        JwtPayload payload = GetSystemUserPayload(
             systemId,
             systemUserId,
             systemUserOrgNumber,
             supplierOrgNumber,
             scope
         );
-        return JwtTokenMock.GenerateToken(principal, expiry ?? TimeSpan.FromMinutes(2), timeProvider);
+        return JwtTokenMock.GenerateToken(payload, expiry ?? TimeSpan.FromMinutes(2), timeProvider);
     }
 
     public static SystemUser GetSystemUserAuthentication(
