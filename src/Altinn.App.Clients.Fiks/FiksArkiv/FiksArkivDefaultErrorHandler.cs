@@ -27,7 +27,7 @@ internal sealed class FiksArkivDefaultErrorHandler : IFiksArkivErrorHandler
     public async Task HandleError(Instance instance, FiksIOReceivedMessageArgs receivedMessage)
     {
         _logger.LogError("Full message details: {Melding}", receivedMessage.Message);
-        string recipientEmailAddress = ValidateAndReturnEmailAddress();
+        string recipientEmailAddress = GetRecipientEmailAddress();
 
         var result = await _emailNotificationClient.Order(
             new EmailNotification
@@ -45,7 +45,7 @@ internal sealed class FiksArkivDefaultErrorHandler : IFiksArkivErrorHandler
         _logger.LogInformation("Email order successfully submitted: {OrderId}", result.OrderId);
     }
 
-    private string ValidateAndReturnEmailAddress()
+    private string GetRecipientEmailAddress()
     {
         if (string.IsNullOrWhiteSpace(_fiksArkivSettings.ErrorNotificationEmailAddress))
             throw new Exception(
@@ -57,6 +57,6 @@ internal sealed class FiksArkivDefaultErrorHandler : IFiksArkivErrorHandler
 
     public void ValidateConfiguration()
     {
-        ValidateAndReturnEmailAddress();
+        GetRecipientEmailAddress();
     }
 }
