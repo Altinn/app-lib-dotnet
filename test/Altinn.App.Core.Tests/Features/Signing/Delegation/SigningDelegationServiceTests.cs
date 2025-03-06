@@ -15,6 +15,7 @@ public class SigningDelegationServiceTests
     {
         FullName = "Testperson 1",
         SocialSecurityNumber = "123456678233",
+        UserId = 1,
         Party = new Party(),
     };
 

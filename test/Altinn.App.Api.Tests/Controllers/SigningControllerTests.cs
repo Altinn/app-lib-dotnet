@@ -282,6 +282,7 @@ public class SigningControllerTests
                 Signee = new PersonSignee
                 {
                     FullName = "person1",
+                    UserId = 1,
                     SocialSecurityNumber = "123456789",
                     Party = new Party { PartyId = 1 },
                 },
@@ -347,6 +348,7 @@ public class SigningControllerTests
                 Signee = new PersonOnBehalfOfOrgSignee
                 {
                     FullName = "person1",
+                    UserId = 1,
                     SocialSecurityNumber = "123456789",
                     Party = new Party { PartyId = 123 },
                     OnBehalfOfOrg = new OrganisationSignee
